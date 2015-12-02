@@ -134,12 +134,14 @@ exit_streams( bstream *fin, stream *fout )
 {
 	if (fout && fout != GDKstdout) {
 		mnstr_flush(fout);
-		(void) mnstr_close(fout);
-		(void) mnstr_destroy(fout);
+		mnstr_close(fout);
+		mnstr_destroy(fout);
 	}
 	if (fin) 
 		(void) bstream_destroy(fin);
 }
+
+const char* mal_enableflag = "mal_for_all";
 
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
@@ -236,7 +238,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		/* access control: verify the credentials supplied by the user,
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, &root, &user, &passwd, &challenge, &algo);
+		err = AUTHcheckCredentials(&uid, root, &user, &passwd, &challenge, &algo);
 		if (err != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", err);
 			exit_streams(fin, fout);
@@ -296,6 +298,15 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			GDKfree(s);
 			c->mode = FINISHCLIENT;
 		}
+		if (!GDKgetenv_isyes(mal_enableflag) &&
+				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {
+
+			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
+					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
+			exit_streams(fin, fout);
+			GDKfree(command);
+			return;
+		}
 	}
 
 	MSinitClientPrg(c, "user", "main");
@@ -333,7 +344,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
  * symbol table should also not be affected.  Aside from removing
  * instruction, we should also condense the variable stack, i.e.
  * removing at least the temporary variables, but maybe everything
- * beyond a previous defined pont.
+ * beyond a previous defined point.
  *
  * Beware that we have to cleanup the global stack as well. This to
  * avoid subsequent calls to find garbage information.  However, this
@@ -361,7 +372,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
-	int i, k;
+	int i;
 	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
 	if( used == NULL){
 		GDKerror("MSresetVariables" MAL_MALLOC_FAIL);
@@ -373,12 +384,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 	if (mb->errors == 0)
 		for (i = start; i < mb->vtop; i++) {
 			if (used[i] || !isTmpVar(mb, i)) {
-				VarPtr v = getVar(mb, i);
 				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
-
-				/* keep all properties as well */
-				for (k = 0; k < v->propc; k++)
-					used[mb->prps[k].var] = 1;
 				used[i] = 1;
 			}
 			if (glb && !used[i]) {
@@ -507,9 +513,9 @@ MALreader(Client c)
 			return MAL_SUCCEED;
 	} else if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
-	MT_lock_set(&mal_contextLock, "MALreader");
+	MT_lock_set(&mal_contextLock);
 	c->mode = FINISHCLIENT;
-	MT_lock_unset(&mal_contextLock, "MALreader");
+	MT_lock_unset(&mal_contextLock);
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
 	else

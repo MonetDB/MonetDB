@@ -24,7 +24,7 @@ import java.io.*;
  * JDBC driver and Mserver is reported. The log file is put in the current
  * working directory and names like monet_[unix timestamp].log
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ * @author Fabian Groffen
  */
 
 public class SQLImport {

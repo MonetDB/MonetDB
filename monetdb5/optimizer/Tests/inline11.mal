@@ -1,6 +1,6 @@
 # remapping inline functions
 # recursive inlining
-function bar{inline}(a:int,b:int):int;
+inline function bar(a:int,b:int):int;
 	z:= bar(a,b);
 	return bar:=z;
 end bar;

@@ -58,7 +58,7 @@ void finishNamespace(void) {
 	NamePtr n,m;
 
 	/* assume we are at the end of the server session */
-	MT_lock_set(&mal_namespaceLock, "finishNamespace");
+	MT_lock_set(&mal_namespaceLock);
 	for ( i =0; i < HASHMASK; i++){
 		n = hash[i];
 		hash[i] = ehash[i] = 0;
@@ -72,7 +72,7 @@ void finishNamespace(void) {
 	GDKfree(hash);
 	GDKfree(ehash);
 	hash = ehash = 0;
-	MT_lock_unset(&mal_namespaceLock, "finishNamespace");
+	MT_lock_unset(&mal_namespaceLock);
 }
 
 /*
@@ -154,7 +154,7 @@ str putName(const char *nme, size_t len)
 	NME_HASH(nme, k, l);
 	key = (int) k;
 
-	MT_lock_set(&mal_namespaceLock, "putName");
+	MT_lock_set(&mal_namespaceLock);
 	/* add new elements to the end of the list */
 	if ( ehash[key] == 0)
 		hash[key] = ehash[key] = n;
@@ -162,6 +162,6 @@ str putName(const char *nme, size_t len)
 		ehash[key]->next = n;
 		ehash[key] = n;
 	}
-	MT_lock_unset(&mal_namespaceLock, "putName");
+	MT_lock_unset(&mal_namespaceLock);
 	return putName(nme, len);	/* just to be sure */
 }

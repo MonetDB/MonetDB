@@ -1,0 +1,109 @@
+stdout of test 'check_files` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 10:58:06 >  
+# 10:58:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34492" "--set" "mapi_usock=/var/tmp/mtest-8049/.s.monetdb.34492" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:58:06 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:34492/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8049/.s.monetdb.34492
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:58:06 >  
+# 10:58:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8049" "--port=34492"
+# 10:58:06 >  
+
+#SELECT dbschema, format_version, sorting_order, comments
+#FROM bam.files
+#ORDER BY file_id;
+% bam.files,	bam.files,	bam.files,	bam.files # table_name
+% dbschema,	format_version,	sorting_order,	comments # name
+% smallint,	varchar,	varchar,	clob # type
+% 1,	3,	9,	0 # length
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 0,	"1.0",	"unsorted",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+[ 1,	"1.0",	"queryname",	NULL	]
+
+# 10:58:06 >  
+# 10:58:06 >  "Done."
+# 10:58:06 >  

@@ -1,4 +1,4 @@
-import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil
+import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -88,11 +88,7 @@ def freeport():
 
 ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests')
 ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
-tmpdir = os.path.join(os.environ.get('TMPDIR', '/tmp'), 'remotetest')
-if os.path.exists(tmpdir):
-    shutil.rmtree(tmpdir)
-if not os.path.exists(tmpdir):
-    os.makedirs(tmpdir)
+tmpdir = tempfile.mkdtemp()
 
 masterport = freeport()
 masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
@@ -108,7 +104,7 @@ if not os.path.exists(lineorderdir):
     os.makedirs(lineorderdir)
 inputData = open(lineordertbl, 'r').read().split('\n')
 linesperslice = len(inputData) / nworkers + 1
-i = 1
+i = 0
 for lines in range(0, len(inputData), linesperslice):
     outputData = inputData[lines:lines+linesperslice]
     outputStr = '\n'.join(outputData)
@@ -119,6 +115,7 @@ for lines in range(0, len(inputData), linesperslice):
     outputFile.close()
     i += 1
 loadsplits =  glob.glob(os.path.join(lineorderdir, 'split-*'))
+loadsplits.sort()
 
 # load data (in parallel)
 def worker_load(workerrec):
@@ -190,6 +187,12 @@ for workerrec in workers:
 c.execute("select count(*) from lineorder")
 print str(c.fetchall()[0][0]) + ' rows in mergetable'
 
+c.execute("select * from lineorder where lo_orderkey=356")
+print str(c.fetchall()[0][0])
+
+c.execute("select * from " + shardtable + workers[0]['tpf'] + " where lo_orderkey=356")
+print str(c.fetchall()[0][0])
+
 # run queries, use mclient so output is comparable
 queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
 queries.sort()
@@ -202,3 +205,11 @@ for q in queries:
     # old way
     # c.execute(codecs.open(q, 'r', encoding='utf8').read())
     # print c.fetchall()
+
+
+for workerrec in workers:
+    workerrec['proc'].communicate()
+
+masterproc.communicate()
+
+shutil.rmtree(tmpdir)

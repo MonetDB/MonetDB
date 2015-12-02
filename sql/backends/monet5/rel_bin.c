@@ -58,7 +58,7 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 
 	if (!l)
 		return NULL;
-	MT_lock_set(&l->ht_lock, "list_find_column");
+	MT_lock_set(&l->ht_lock);
 	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
 		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
 
@@ -96,12 +96,12 @@ list_find_column(sql_allocator *sa, list *l, char *rname, char *name )
 				}
 			}
 		}
-		MT_lock_unset(&l->ht_lock, "list_find_column");
+		MT_lock_unset(&l->ht_lock);
 		if (!res)
 			return NULL;
 		return res;
 	}
-	MT_lock_unset(&l->ht_lock, "list_find_column");
+	MT_lock_unset(&l->ht_lock);
 	if (rname) {
 		for (n = l->h; n; n = n->next) {
 			char *rnme = table_name(sa, n->data);
@@ -377,8 +377,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 
 		if (from->type->localtype == 0) {
 			l = stmt_atom(sql->sa, atom_general(sql->sa, to, NULL));
-			if (exp_card(e->l) > CARD_ATOM) 
-				l = const_column(sql->sa, l);
 		} else {
 	       		l = exp_bin(sql, e->l, left, right, grp, ext, cnt, sel);
 		}
@@ -531,9 +529,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		s = stmt_aggr(sql->sa, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/ );
 		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
 			s->flag |= OUTER_ZERO;
-		/* HACK: correct cardinality for window functions */
-		if (exp_card(e) > CARD_AGGR)
-			s->nrcols = 2;
 	} 	break;
 	case e_column: {
 		if (right) /* check relation names */
@@ -616,6 +611,18 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 				s = exp_bin(sql, n->data, left, right, grp, ext, cnt, sel1); 
 				if (!s) 
 					return s;
+				if (sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+					sql_subtype *bt = sql_bind_localtype("bit");
+					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+					assert(f);
+					s = stmt_binop(sql->sa, sel1, s, f);
+				}
+				if (sel1 && sel1->nrcols && s->nrcols == 0) {
+					stmt *predicate = bin_first_column(sql->sa, left);
+				
+					predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
+					s = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel1);
+				}
 				sel1 = s;
 			}
 			l = e->r;
@@ -623,6 +630,18 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 				s = exp_bin(sql, n->data, left, right, grp, ext, cnt, sel2); 
 				if (!s) 
 					return s;
+				if (sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
+					sql_subtype *bt = sql_bind_localtype("bit");
+					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+					assert(f);
+					s = stmt_binop(sql->sa, sel2, s, f);
+				}
+				if (sel2 && sel2->nrcols && s->nrcols == 0) {
+					stmt *predicate = bin_first_column(sql->sa, left);
+				
+					predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
+					s = stmt_uselect(sql->sa, predicate, s, cmp_equal, sel2);
+				}
 				sel2 = s;
 			}
 			if (sel1->nrcols == 0 && sel2->nrcols == 0) {
@@ -1208,6 +1227,138 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 	return stmt_list(sql->sa, l);
 }
 
+static int 
+alias_cmp( stmt *s, char *nme )
+{
+	return strcmp(s->cname, nme);
+}
+
+static list* exps2bin_args( mvc *sql, list *exps, list *args);
+
+static list *
+exp2bin_args( mvc *sql, sql_exp *e, list *args)
+{
+	if (!e)
+		return args;
+	switch(e->type){
+	case e_column:
+	case e_psm:
+		return args;
+	case e_cmp:
+		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+			args = exps2bin_args(sql, e->l, args);
+			args = exps2bin_args(sql, e->r, args);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			args = exp2bin_args(sql, e->l, args);
+			args = exps2bin_args(sql, e->r, args);
+		} else {
+			args = exp2bin_args(sql, e->l, args);
+			args = exp2bin_args(sql, e->r, args);
+			if (e->f)
+				args = exp2bin_args(sql, e->f, args);
+		}
+		return args;
+	case e_convert:
+		if (e->l)
+			return exp2bin_args(sql, e->l, args);
+		break;
+	case e_aggr:
+	case e_func: 
+		if (e->l)
+			return exps2bin_args(sql, e->l, args);
+		break;
+	case e_atom:
+		if (e->l) {
+			return args;
+		} else if (e->f) {
+			return exps2bin_args(sql, e->f, args);
+		} else if (e->r) {
+			char nme[64];
+
+			snprintf(nme, 64, "A%s", (char*)e->r);
+			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
+				stmt *s = stmt_var(sql->sa, e->r, &e->tpe, 0, 0);
+
+				s = stmt_alias(sql->sa, s, NULL, sa_strdup(sql->sa, nme));
+				list_append(args, s);
+			}
+		} else {
+			char nme[16];
+
+			snprintf(nme, 16, "A%d", e->flag);
+			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
+				atom *a = sql->args[e->flag];
+				stmt *s = stmt_varnr(sql->sa, e->flag, &a->tpe);
+
+				s = stmt_alias(sql->sa, s, NULL, sa_strdup(sql->sa, nme));
+				list_append(args, s);
+			}
+		}
+	}
+	return args;
+}
+
+static list *
+exps2bin_args( mvc *sql, list *exps, list *args)
+{
+	node *n;
+
+	if (!exps)
+		return args;
+	for (n = exps->h; n; n = n->next)
+		args = exp2bin_args(sql, n->data, args);
+	return args;
+}
+
+static list *
+rel2bin_args( mvc *sql, sql_rel *rel, list *args)
+{
+	if (!rel)
+		return args;
+	switch(rel->op) {
+	case op_basetable:
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+
+	case op_apply: 
+	case op_semi: 
+	case op_anti: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		args = rel2bin_args(sql, rel->l, args);
+		args = rel2bin_args(sql, rel->r, args);
+		break;
+	case op_groupby: 
+		if (rel->r) 
+			args = exps2bin_args(sql, rel->r, args);
+	case op_project:
+	case op_select: 
+	case op_topn: 
+	case op_sample: 
+		if (rel->exps)
+			args = exps2bin_args(sql, rel->exps, args);
+		args = rel2bin_args(sql, rel->l, args);
+		break;
+	case op_ddl: 
+		args = rel2bin_args(sql, rel->l, args);
+		if (rel->r)
+			args = rel2bin_args(sql, rel->r, args);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		args = rel2bin_args(sql, rel->r, args);
+		break;
+	}
+	return args;
+}
+
 static stmt *
 rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 {
@@ -1266,25 +1417,13 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 			osub = sub;
 		}
 		sub = stmt_list(sql->sa, l);
-	} else if (rel->l) {
-		int i, argc;
+	} else if (rel->l) { /* handle sub query via function */
+		int i;
 		char name[16], *nme;
-		/* handle sub query via function */
-		(void)refs;
 
 		nme = number2name(name, 16, ++sql->label);
 
-		/* arguments (todo check which are used) */
-		l = sa_list(sql->sa);
-		for (argc = 0; argc < sql->argc; argc++) {
-			atom *a = sql->args[argc];
-			stmt *s = stmt_varnr(sql->sa, argc, &a->tpe);
-			char nme[16];
-
-			snprintf(nme, 16, "A%d", argc);
-			s = stmt_alias(sql->sa, s, NULL, sa_strdup(sql->sa, nme));
-			list_append(l, s);
-		}
+		l = rel2bin_args(sql, rel->l, sa_list(sql->sa));
 		sub = stmt_list(sql->sa, l);
 		sub = stmt_func(sql->sa, sub, sa_strdup(sql->sa, nme), rel->l);
 		l = sa_list(sql->sa);
@@ -1461,9 +1600,9 @@ releqjoin( mvc *sql, list *l1, list *l2, int used_hash, comp_type cmp_op, int ne
 		sql_subfunc *f = NULL;
 		stmt * cmp;
 
-		if (cmp_op == cmp_equal)
+		if (cmp_op == cmp_equal) 
 			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-		else	/* TODO cmp_equal_nil */
+		else 
 			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
@@ -1997,7 +2136,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil, 0);
+	s = releqjoin(sql, lje, rje, 1 /* cannot use hash */, cmp_equal_nil, 0);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 
@@ -2107,7 +2246,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		list_append(lje, l);
 		list_append(rje, r);
 	}
-	s = releqjoin(sql, lje, rje, 1 /* no hash used */, cmp_equal_nil, 0);
+	s = releqjoin(sql, lje, rje, 1 /* cannot use hash */, cmp_equal_nil, 0);
 	lm = stmt_result(sql->sa, s, 0);
 	rm = stmt_result(sql->sa, s, 1);
 		
@@ -2710,6 +2849,15 @@ stmt_selectnonil( mvc *sql, stmt *col, stmt *s )
 }
 
 static stmt *
+stmt_selectnil( mvc *sql, stmt *col)
+{
+	sql_subtype *t = tail_type(col);
+	stmt *n = stmt_atom(sql->sa, atom_general(sql->sa, t, NULL));
+	stmt *nn = stmt_uselect2(sql->sa, col, n, n, 3, NULL);
+	return nn;
+}
+
+static stmt *
 insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 {
 /* pkey's cannot have NULLs, ukeys however can
@@ -2810,7 +2958,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		s = stmt_col(sql, c->c, dels);
 		if ((k->type == ukey) && stmt_has_null(s)) {
 			stmt *nn = stmt_selectnonil(sql, s, NULL);
-			s = stmt_reorder_project(sql->sa, nn, s);
+			s = stmt_project(sql->sa, nn, s);
 		}
 		if (h->nrcols) {
 			s = stmt_join(sql->sa, s, h, cmp_equal);
@@ -2837,7 +2985,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			/* inserted vaules may be null */
 			if ((k->type == ukey) && stmt_has_null(ins)) {
 				stmt *nn = stmt_selectnonil(sql, ins, NULL);
-				ins = stmt_reorder_project(sql->sa, nn, ins);
+				ins = stmt_project(sql->sa, nn, ins);
 			}
 		
 			g = stmt_group(sql->sa, ins, NULL, NULL, NULL);
@@ -2969,8 +3117,7 @@ sql_insert_check_null(mvc *sql, sql_table *t, list *inserts, list *l)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				s = stmt_uselect(sql->sa, i->op1, s, cmp_equal, NULL);
+				s = stmt_selectnil(sql, i->op1);
 				s = stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);
@@ -3294,7 +3441,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			/* remove nulls */
 			if ((k->type == ukey) && stmt_has_null(upd)) {
 				stmt *nn = stmt_selectnonil(sql, upd, NULL);
-				upd = stmt_reorder_project(sql->sa, nn, upd);
+				upd = stmt_project(sql->sa, nn, upd);
 			}
 
 			g = stmt_group(sql->sa, upd, NULL, NULL, NULL);
@@ -3324,18 +3471,44 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 	return res;
 }
 
+/*
+         A referential constraint is satisfied if one of the following con-
+         ditions is true, depending on the <match option> specified in the
+         <referential constraint definition>:
+
+         -  If no <match type> was specified then, for each row R1 of the
+            referencing table, either at least one of the values of the
+            referencing columns in R1 shall be a null value, or the value of
+            each referencing column in R1 shall be equal to the value of the
+            corresponding referenced column in some row of the referenced
+            table.
+
+         -  If MATCH FULL was specified then, for each row R1 of the refer-
+            encing table, either the value of every referencing column in R1
+            shall be a null value, or the value of every referencing column
+            in R1 shall not be null and there shall be some row R2 of the
+            referenced table such that the value of each referencing col-
+            umn in R1 is equal to the value of the corresponding referenced
+            column in R2.
+
+         -  If MATCH PARTIAL was specified then, for each row R1 of the
+            referencing table, there shall be some row R2 of the refer-
+            enced table such that the value of each referencing column in
+            R1 is either null or is equal to the value of the corresponding
+            referenced column in R2.
+*/
+
 static stmt *
 update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol, stmt *pup)
 {
 	char *msg = NULL;
-	stmt *s;
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	stmt *s, *cur, *null = NULL, *cntnulls;
+	sql_subtype *wrd = sql_bind_localtype("wrd"), *bt = sql_bind_localtype("bit");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
-	stmt *cur;
+	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
+	node *m;
 
-	(void)tids;/*TODO*/
 	if (!idx_updates)
 		return NULL;
 	/* releqjoin.count <> updates[updcol].count */
@@ -3349,6 +3522,37 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 		cur = stmt_col(sql, c->c, dels);
 	}
 	s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_updates, NULL, NULL, cnt, 1, 0), stmt_aggr(sql->sa, cur, NULL, NULL, cnt, 1, 0), ne);
+
+	for (m = k->columns->h; m; m = m->next) {
+		sql_kc *c = m->data;
+
+		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
+		/* Currently only the default MATCH SIMPLE is supported */
+		if (c->c->null) {
+			stmt *upd, *nn;
+
+			if (updates && updates[c->c->colnr]) {
+				upd = updates[c->c->colnr]->op2;
+			} else if (updates && updcol >= 0) {
+				upd = updates[updcol]->op1;
+				upd = stmt_project(sql->sa, upd, stmt_col(sql, c->c, tids));
+			} else { /* created idx/key using alter */ 
+				upd = stmt_col(sql, c->c, tids);
+			}
+			nn = stmt_selectnil(sql, upd);
+			if (null)
+				null = stmt_tunion(sql->sa, null, nn);
+			else
+				null = nn;
+		}
+	}
+	if (null) {
+		cntnulls = stmt_aggr(sql->sa, null, NULL, NULL, cnt, 1, 0); 
+	} else {
+		cntnulls = stmt_atom_wrd(sql->sa, 0);
+	}
+	s = stmt_binop(sql->sa, s, 
+		stmt_binop(sql->sa, stmt_aggr(sql->sa, stmt_selectnil(sql, idx_updates), NULL, NULL, cnt, 1, 0), cntnulls , ne), or);
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
@@ -3389,9 +3593,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 			upd = stmt_project(sql->sa, upd, stmt_col(sql, c->c, dels));
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
-			stmt *nn = upd;
-
-			nn = stmt_uselect(sql->sa, nn, stmt_atom(sql->sa, atom_general(sql->sa, &c->c->type, NULL)), cmp_equal, NULL);
+			stmt *nn = stmt_selectnil(sql, upd);
 			if (null)
 				null = stmt_tunion(sql->sa, null, nn);
 			else
@@ -3629,48 +3831,18 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	return h;
 }
 
-/*
-         A referential constraint is satisfied if one of the following con-
-         ditions is true, depending on the <match option> specified in the
-         <referential constraint definition>:
-
-         -  If no <match type> was specified then, for each row R1 of the
-            referencing table, either at least one of the values of the
-            referencing columns in R1 shall be a null value, or the value of
-            each referencing column in R1 shall be equal to the value of the
-            corresponding referenced column in some row of the referenced
-            table.
-
-         -  If MATCH FULL was specified then, for each row R1 of the refer-
-            encing table, either the value of every referencing column in R1
-            shall be a null value, or the value of every referencing column
-            in R1 shall not be null and there shall be some row R2 of the
-            referenced table such that the value of each referencing col-
-            umn in R1 is equal to the value of the corresponding referenced
-            column in R2.
-
-         -  If MATCH PARTIAL was specified then, for each row R1 of the
-            referencing table, there shall be some row R2 of the refer-
-            enced table such that the value of each referencing column in
-            R1 is either null or is equal to the value of the corresponding
-            referenced column in R2.
-*/
-
 static stmt *
-join_idx_update(mvc *sql, sql_idx * i, stmt *rows, stmt **updates, int updcol)
+join_idx_update(mvc *sql, sql_idx * i, stmt *ftids, stmt **updates, int updcol)
 {
-	int nulls = 0, len;
 	node *m, *o;
 	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
-	stmt *s = NULL, *ptids = stmt_tid(sql->sa, rk->t), *ftids, *l, *r;
-	stmt *null = NULL;
-	stmt **new_updates = table_update_stmts(sql, i->t, &len);
+	stmt *s = NULL, *ptids = stmt_tid(sql->sa, rk->t), *l, *r;
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
-	ftids = stmt_tid(sql->sa, i->t);
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
+		sql_kc *rc = o->data;
 		stmt *upd;
 
 		if (updates && updates[c->c->colnr]) {
@@ -3681,44 +3853,15 @@ join_idx_update(mvc *sql, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 		} else { /* created idx/key using alter */ 
 			upd = stmt_col(sql, c->c, ftids);
 		}
-		new_updates[c->c->colnr] = upd;
 
-		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
-		/* Currently only the default MATCH SIMPLE is supported */
-		if (c->c->null) {
-			stmt *nn = upd;
-
-			nn = stmt_uselect(sql->sa, nn, stmt_atom(sql->sa, atom_general(sql->sa, &c->c->type, NULL)), cmp_equal, NULL);
-			if (null)
-				null = stmt_tunion(sql->sa, null, nn);
-			else
-				null = nn;
-			nulls = 1;
-		}
-	}
-
-	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
-		sql_kc *c = m->data;
-		sql_kc *rc = o->data;
-		stmt *upd = new_updates[c->c->colnr];
-
-		/* the join will remove any nulls */
 		list_append(lje, check_types(sql, &rc->c->type, upd, type_equal));
 		list_append(rje, stmt_col(sql, rc->c, ptids));
 	}
-	s = releqjoin(sql, lje, rje, 0 /* no hash used */, cmp_equal, 0);
+	s = releqjoin(sql, lje, rje, 0 /* use hash */, cmp_equal, 0);
 	l = stmt_result(sql->sa, s, 0);
 	r = stmt_result(sql->sa, s, 1);
-
-	/* add missing nulls */
 	r = stmt_project(sql->sa, r, ptids);
-	if (nulls) {
-		l = stmt_append(sql->sa, l, null);
-		r = stmt_append(sql->sa, r, stmt_const(sql->sa, null, stmt_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL))));
-	}
-	/* correct the order */
-	l = stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, rows), stmt_reverse(sql->sa, l));
-	return stmt_project(sql->sa, l, r);
+	return stmt_left_project(sql->sa, ftids, l, r);
 }
 
 static list *
@@ -3826,8 +3969,7 @@ sql_update_check_null(mvc *sql, sql_table *t, stmt **updates, list *l)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				s = stmt_uselect(sql->sa, updates[c->colnr]->op2, s, cmp_equal, NULL);
+				s = stmt_selectnil(sql, updates[c->colnr]->op2);
 				s = stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->type, NULL, F_FUNC);

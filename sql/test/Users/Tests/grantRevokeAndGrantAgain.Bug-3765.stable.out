@@ -1,0 +1,145 @@
+stdout of test 'grantRevokeAndGrantAgain.Bug-3765` in directory 'sql/test/Users` itself:
+
+
+# 10:09:32 >  
+# 10:09:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35979" "--set" "mapi_usock=/var/tmp/mtest-18691/.s.monetdb.35979" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/installation/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:09:32 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Users', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 3.746 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://buzu:35979/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18691/.s.monetdb.35979
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 10:09:33 >  
+# 10:09:33 >  "/usr/bin/python2" "grantRevokeAndGrantAgain.SQL.py" "grantRevokeAndGrantAgain"
+# 10:09:33 >  
+
+#CREATE SCHEMA schemaTest;
+#CREATE USER user_delete with password 'delete' name 'user can only delete' schema schemaTest;
+#CREATE USER user_insert with password 'insert' name 'user can only insert' schema schemaTest;
+#CREATE USER user_update with password 'update' name 'user can only update' schema schemaTest;
+#CREATE USER user_select with password 'select' name 'user can only select' schema schemaTest;
+#CREATE table schemaTest.testTable (v1 int, v2 int);
+#INSERT into schemaTest.testTable values(1, 1);
+[ 1	]
+#INSERT into schemaTest.testTable values(2, 2);
+[ 1	]
+#INSERT into schemaTest.testTable values(3, 3);
+[ 1	]
+#GRANT DELETE on table schemaTest.testTable to user_delete;
+#GRANT INSERT on table schemaTest.testTable to user_insert;
+#GRANT UPDATE on table schemaTest.testTable to user_update;
+#GRANT SELECT on table schemaTest.testTable to user_select;
+#DELETE FROM testTable where v1 = 2; -- should work
+[ 1	]
+#SELECT * FROM testTable; -- not enough privileges
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
+#UPDATE testTable set v1 = 2 where v2 = 7;
+[ 0	]
+#SELECT * FROM testTable; -- not enough privileges
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
+#INSERT into testTable values (3, 3);
+[ 1	]
+#SELECT * FROM testTable;
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
+[ 3,	3	]
+#SELECT * FROM schemaTest.testTable;
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
+[ 3,	3	]
+#REVOKE DELETE on schemaTest.testTable from user_delete;
+#REVOKE INSERT on schemaTest.testTable from user_insert;
+#REVOKE UPDATE on schemaTest.testTable from user_update;
+#REVOKE SELECT on schemaTest.testTable from user_select;
+#SELECT * from schemaTest.testTable;
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 3,	3	]
+[ 3,	3	]
+#GRANT DELETE on table schemaTest.testTable to user_delete;
+#GRANT INSERT on table schemaTest.testTable to user_insert;
+#GRANT UPDATE on table schemaTest.testTable to user_update;
+#GRANT SELECT on table schemaTest.testTable to user_select;
+#DELETE from testTable where v1 = 42; -- privilege granted
+[ 0	]
+#INSERT into testTable values (42, 42); -- privilege granted
+[ 1	]
+#UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted
+[ 1	]
+#SELECT * FROM testTable where v1 = 42; -- privilege granted
+% schematest.testtable,	schematest.testtable # table_name
+% v1,	v2 # name
+% int,	int # type
+% 2,	2 # length
+[ 42,	42	]
+
+# 10:09:34 >  
+# 10:09:34 >  "Done."
+# 10:09:34 >  
+

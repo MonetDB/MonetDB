@@ -10,6 +10,7 @@
 #define SQL_STORAGE_H
 
 #include "sql_catalog.h"
+#include "gdk_logger.h"
 
 #define COLSIZE	1024
 
@@ -51,6 +52,13 @@ typedef struct rids {
 	void *data;
 } rids;
 
+typedef struct subrids {
+	BUN pos;
+	int id;
+	void *ids;
+	void *rids;
+} subrids;
+
 /* returns table rids, for the given select ranges */
 typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, void *key_value_low, void *key_value_high, ...);
 
@@ -58,12 +66,24 @@ typedef rids *(*rids_select_fptr)( sql_trans *tr, sql_column *key, void *key_val
 typedef rids *(*rids_orderby_fptr)( sql_trans *tr, rids *r, sql_column *orderby_col);
 
 typedef rids *(*rids_join_fptr)( sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc);
+typedef rids *(*rids_diff_fptr)( sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc);
 
 /* return table rids from result of table_select, return (-1) when done */
 typedef oid (*rids_next_fptr)(rids *r);
 
 /* clean up the resources taken by the result of table_select */
 typedef void (*rids_destroy_fptr)(rids *r);
+typedef int (*rids_empty_fptr)(rids *r);
+
+typedef subrids *(*subrids_create_fptr)( sql_trans *tr, rids *l, sql_column *jc1, sql_column *jc2, sql_column *obc);
+
+/* return table rids from result of table_select, return (-1) when done */
+typedef oid (*subrids_next_fptr)(subrids *r);
+typedef sqlid (*subrids_nextid_fptr)(subrids *r);
+
+/* clean up the resources taken by the result of table_select */
+typedef void (*subrids_destroy_fptr)(subrids *r);
+
 
 typedef struct table_functions {
 	column_find_row_fptr column_find_row;
@@ -77,6 +97,13 @@ typedef struct table_functions {
 	rids_join_fptr rids_join;
 	rids_next_fptr rids_next;
 	rids_destroy_fptr rids_destroy;
+	rids_empty_fptr rids_empty;
+
+	subrids_create_fptr subrids_create;
+	subrids_next_fptr subrids_next;
+	subrids_nextid_fptr subrids_nextid;
+	subrids_destroy_fptr subrids_destroy;
+	rids_diff_fptr rids_diff;
 } table_functions; 
 
 extern table_functions table_funcs;
@@ -104,6 +131,7 @@ typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int all /* all or new only */);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
+typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
@@ -180,6 +208,7 @@ typedef struct store_functions {
 	count_del_fptr count_del;
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
+	dcount_col_fptr dcount_col;
 	prop_col_fptr sorted_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 
@@ -235,14 +264,19 @@ typedef struct store_functions {
 
 extern store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
+typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version, int keep_persisted_log_files);
+typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int catalog_version, const char *slave_logdir);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
-typedef int (*logger_cleanup_fptr) (void);
+typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
+typedef lng (*logger_read_last_transaction_id_fptr)(void);
+typedef lng (*logger_get_transaction_drift_fptr)(void);
+
+typedef int (*logger_reload_fptr) (void);
 
 typedef int (*log_isnew_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
@@ -251,12 +285,17 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 
 typedef struct logger_functions {
 	logger_create_fptr create;
+	logger_create_shared_fptr create_shared;
 	logger_destroy_fptr destroy;
 	logger_restart_fptr restart;
 	logger_cleanup_fptr cleanup;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
+	logger_read_last_transaction_id_fptr read_last_transaction_id;
+	logger_get_transaction_drift_fptr get_transaction_drift;
+
+	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
@@ -277,11 +316,11 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 extern void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int
- store_init(int debug, store_type store, int readonly, int singleuser, const char *logdir, backend_stack stk);
+extern int store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk);
 extern void store_exit(void);
 
 extern void store_apply_deltas(void);
+extern void store_flush_log(void);
 extern void store_manager(void);
 extern void minmax_manager(void);
 

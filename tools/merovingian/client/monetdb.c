@@ -790,7 +790,7 @@ command_status(int argc, char *argv[])
 				dbwidth = t;
 			if (stats->uri != NULL && (t = strlen(stats->uri)) > uriwidth)
 				uriwidth = t;
-			if (stats->locked && uriwidth < 32)
+			if (uriwidth < 32)
 				uriwidth = 32;
 		}
 
@@ -1047,7 +1047,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 		 * started databases, so we need to check first. */
 
 		if (doall == 1 && (
-				((mode == STOP || mode == KILL) && stats->state != SABdbRunning)
+				((mode == STOP || mode == KILL) && (stats->state != SABdbRunning && stats->state != SABdbStarting))
 				|| (mode == START && stats->state == SABdbRunning)))
 		{
 			/* needs not to be started/stopped, remove from list */
@@ -1584,7 +1584,7 @@ command_destroy(int argc, char *argv[])
 		char *ret;
 		char *out;
 		for (stats = orig; stats != NULL; stats = stats->next) {
-			if (stats->state == SABdbRunning) {
+			if (stats->state == SABdbRunning || stats->state == SABdbStarting) {
 				ret = control_send(&out, mero_host, mero_port,
 						stats->dbname, "stop", 0, mero_pass);
 				if (ret != NULL)

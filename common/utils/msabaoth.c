@@ -501,6 +501,161 @@ msab_getMyStatus(sabdb** ret)
 }
 
 #define MAINTENANCEFILE ".maintenance"
+
+static sabdb *
+msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
+{
+	char buf[PATHLENGTH];
+	char data[8096];
+	char log[PATHLENGTH];
+	FILE *f;
+	int fd;
+	struct stat statbuf;
+
+	sabdb *sdb;
+	sdb = NULL;
+
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
+	if (stat(buf, &statbuf) == -1)
+		return next;
+
+	sdb = malloc(sizeof(sabdb));
+	sdb->uplog = NULL;
+	sdb->uri = NULL;
+	sdb->next = next;
+
+	/* store the database name */
+	snprintf(buf, sizeof(buf), "%s/%s", pathbuf, dbname);
+	sdb->path = strdup(buf);
+	sdb->dbname = sdb->path + strlen(sdb->path) - strlen(dbname);
+
+	/* add scenarios that are supported */
+	sdb->scens = NULL;
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
+	if ((f = fopen(buf, "r")) != NULL) {
+		sablist* np = NULL;
+		while (fgets(data, 8095, f) != NULL) {
+			if (*data != '\0' && data[strlen(data) - 1] == '\n')
+				data[strlen(data) - 1] = '\0';
+			if (sdb->scens == NULL) {
+				sdb->scens = malloc(sizeof(sablist));
+				sdb->scens->val = strdup(data);
+				sdb->scens->next = NULL;
+				np = sdb->scens;
+			} else {
+				np = np->next = malloc(sizeof(sablist));
+				np->val = strdup(data);
+				np->next = NULL;
+			}
+		}
+		(void)fclose(f);
+	}
+
+	/* add how this server can be reached */
+	sdb->conns = NULL;
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
+	if ((f = fopen(buf, "r")) != NULL) {
+		sablist* np = NULL;
+		while (fgets(data, 8095, f) != NULL) {
+			if (*data != '\0' && data[strlen(data) - 1] == '\n')
+				data[strlen(data) - 1] = '\0';
+			if (sdb->conns == NULL) {
+				sdb->conns = malloc(sizeof(sablist));
+				sdb->conns->val = strdup(data);
+				sdb->conns->next = NULL;
+				np = sdb->conns;
+			} else {
+				np = np->next = malloc(sizeof(sablist));
+				np->val = strdup(data);
+				np->next = NULL;
+			}
+		}
+		(void)fclose(f);
+	}
+
+
+	/* check the state of the server by looking at its gdk lock:
+	 * - if we can lock it, the server has crashed or isn't running
+	 * - if we can't open it because it's locked, the server is
+	 *   running
+	 * - to distinguish between a crash and proper shutdown, consult
+	 *   the uplog
+	 * - one exception to all above; if this is the same process, we
+	 *   cannot lock (it always succeeds), hence, if we have the
+	 *   same signature, we assume running if the uplog states so.
+	 */
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname,
+			 _sabaoth_internal_uuid);
+	if (stat(buf, &statbuf) != -1) {
+		/* database has the same process signature as ours, which
+		 * means, it must be us, rely on the uplog state */
+		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
+		if ((f = fopen(log, "r")) != NULL) {
+			(void)fseek(f, -1, SEEK_END);
+			if (fread(data, 1, 1, f) != 1) {
+				/* the log is empty, assume no crash */
+				sdb->state = SABdbInactive;
+			} else if (data[0] == '\t') {
+				/* see if the database has finished starting */
+				snprintf(buf, sizeof(buf), "%s/%s/%s",
+						 pathbuf, dbname, STARTEDFILE);
+				if (stat(buf, &statbuf) == -1) {
+					sdb->state = SABdbStarting;
+				} else {
+					sdb->state = SABdbRunning;
+				}
+			} else { /* should be \n */
+				sdb->state = SABdbInactive;
+			}
+			(void)fclose(f);
+		}
+	} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock") > 0) & /* no typo */
+			   ((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2)) {
+		/* Locking failed; this can be because the lockfile couldn't
+		 * be created.  Probably there is no Mserver running for
+		 * that case also.
+		 */
+		sdb->state = SABdbInactive;
+	} else if (fd == -1) {
+		/* lock denied, so mserver is running, see if the database
+		 * has finished starting */
+		snprintf(buf, sizeof(buf), "%s/%s/%s",
+				 pathbuf, dbname, STARTEDFILE);
+		if (stat(buf, &statbuf) == -1) {
+			sdb->state = SABdbStarting;
+		} else {
+			sdb->state = SABdbRunning;
+		}
+	} else {
+		/* locking succeed, check for a crash in the uplog */
+		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
+		if ((f = fdopen(fd, "r+")) != NULL) {
+			(void)fseek(f, -1, SEEK_END);
+			if (fread(data, 1, 1, f) != 1) {
+				/* the log is empty, assume no crash */
+				sdb->state = SABdbInactive;
+			} else if (data[0] == '\n') {
+				sdb->state = SABdbInactive;
+			} else { /* should be \t */
+				sdb->state = SABdbCrashed;
+			}
+			/* release the lock */
+			MT_lockf(buf, F_ULOCK, 4, 1);
+			(void)fclose(f);
+		} else {
+			/* shouldn't happen */
+			close(fd);
+		}
+	}
+	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
+	if (stat(buf, &statbuf) == -1) {
+		sdb->locked = 0;
+	} else {
+		sdb->locked = 1;
+	}
+	return sdb;
+}
+
 /**
  * Returns a list of populated sabdb structs.  If dbname == NULL, the
  * list contains sabdb structs for all found databases in the dbfarm.
@@ -514,26 +669,26 @@ msab_getStatus(sabdb** ret, char *dbname)
 {
 	DIR *d;
 	struct dirent *e;
-	char buf[PATHLENGTH];
 	char data[8096];
 	char pathbuf[PATHLENGTH];
-	char log[PATHLENGTH];
 	char *p;
-	FILE *f;
-	int fd;
-	struct stat statbuf;
 
 	/* Caching strategies (might be nice) should create a new struct with
 	 * the last modified time_t of the files involved, such that a stat is
 	 * sufficient to see if reparsing is necessary.  The gdk_lock always has
 	 * to be checked to detect crashes. */
 
-	sabdb *sdb, *top;
-	sdb = top = *ret = NULL;
+	sabdb *sdb;
+	sdb = *ret = NULL;
 
 	/* scan the parent for directories */
 	if ((p = getFarmPath(pathbuf, sizeof(pathbuf), NULL)) != NULL)
 		return(p);
+	if (dbname) {
+		*ret = msab_getSingleStatus(pathbuf, dbname, NULL);
+		return NULL;
+	}
+
 	d = opendir(pathbuf);
 	if (d == NULL) {
 		snprintf(data, sizeof(data), "failed to open directory %s: %s",
@@ -541,159 +696,14 @@ msab_getStatus(sabdb** ret, char *dbname)
 		return(strdup(data));
 	}
 	while ((e = readdir(d)) != NULL) {
-		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
-			continue;
 		if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
 			continue;
 
-		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, e->d_name, UPLOGFILE);
-		if (stat(buf, &statbuf) == -1)
-			continue;
-
-		if (sdb == NULL) {
-			top = sdb = malloc(sizeof(sabdb));
-		} else {
-			sdb = sdb->next = malloc(sizeof(sabdb));
-		}
-		sdb->uplog = NULL;
-		sdb->uri = NULL;
-		sdb->next = NULL;
-
-		/* store the database name */
-		snprintf(buf, sizeof(buf), "%s/%s", pathbuf, e->d_name);
-		sdb->path = strdup(buf);
-		sdb->dbname = sdb->path + strlen(sdb->path) - strlen(e->d_name);
-
-		/* add scenarios that are supported */
-		sdb->scens = NULL;
-		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, e->d_name, SCENARIOFILE);
-		if ((f = fopen(buf, "r")) != NULL) {
-			sablist* np = NULL;
-			while (fgets(data, 8095, f) != NULL) {
-				if (*data != '\0' && data[strlen(data) - 1] == '\n')
-					data[strlen(data) - 1] = '\0';
-				if (sdb->scens == NULL) {
-					sdb->scens = malloc(sizeof(sablist));
-					sdb->scens->val = strdup(data);
-					sdb->scens->next = NULL;
-					np = sdb->scens;
-				} else {
-					np = np->next = malloc(sizeof(sablist));
-					np->val = strdup(data);
-					np->next = NULL;
-				}
-			}
-			(void)fclose(f);
-		}
-
-		/* add how this server can be reached */
-		sdb->conns = NULL;
-		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, e->d_name, CONNECTIONFILE);
-		if ((f = fopen(buf, "r")) != NULL) {
-			sablist* np = NULL;
-			while (fgets(data, 8095, f) != NULL) {
-				if (*data != '\0' && data[strlen(data) - 1] == '\n')
-					data[strlen(data) - 1] = '\0';
-				if (sdb->conns == NULL) {
-					sdb->conns = malloc(sizeof(sablist));
-					sdb->conns->val = strdup(data);
-					sdb->conns->next = NULL;
-					np = sdb->conns;
-				} else {
-					np = np->next = malloc(sizeof(sablist));
-					np->val = strdup(data);
-					np->next = NULL;
-				}
-			}
-			(void)fclose(f);
-		}
-
-
-		/* check the state of the server by looking at its gdk lock:
-		 * - if we can lock it, the server has crashed or isn't running
-		 * - if we can't open it because it's locked, the server is
-		 *   running
-		 * - to distinguish between a crash and proper shutdown, consult
-		 *   the uplog
-		 * - one exception to all above; if this is the same process, we
-		 *   cannot lock (it always succeeds), hence, if we have the
-		 *   same signature, we assume running if the uplog states so.
-		 */
-		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, e->d_name,
-				_sabaoth_internal_uuid);
-		if (stat(buf, &statbuf) != -1) {
-			/* database has the same process signature as ours, which
-			 * means, it must be us, rely on the uplog state */
-			snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, e->d_name, UPLOGFILE);
-			if ((f = fopen(log, "r")) != NULL) {
-				(void)fseek(f, -1, SEEK_END);
-				if (fread(data, 1, 1, f) != 1) {
-					/* the log is empty, assume no crash */
-					sdb->state = SABdbInactive;
-				} else if (data[0] == '\t') {
-					/* see if the database has finished starting */
-					snprintf(buf, sizeof(buf), "%s/%s/%s",
-							pathbuf, e->d_name, STARTEDFILE);
-					if (stat(buf, &statbuf) == -1) {
-						sdb->state = SABdbStarting;
-					} else {
-						sdb->state = SABdbRunning;
-					}
-				} else { /* should be \n */
-					sdb->state = SABdbInactive;
-				}
-				(void)fclose(f);
-			}
-		} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, e->d_name, ".gdk_lock") > 0) & /* no typo */
-				((fd = MT_lockf(buf, F_TLOCK, 4, 1)) == -2))
-		{
-			/* Locking failed; this can be because the lockfile couldn't
-			 * be created.  Probably there is no Mserver running for
-			 * that case also.
-			 */
-			sdb->state = SABdbInactive;
-		} else if (fd == -1) {
-			/* lock denied, so mserver is running, see if the database
-			 * has finished starting */
-			snprintf(buf, sizeof(buf), "%s/%s/%s",
-					pathbuf, e->d_name, STARTEDFILE);
-			if (stat(buf, &statbuf) == -1) {
-				sdb->state = SABdbStarting;
-			} else {
-				sdb->state = SABdbRunning;
-			}
-		} else {
-			/* locking succeed, check for a crash in the uplog */
-			snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, e->d_name, UPLOGFILE);
-			if ((f = fdopen(fd, "r+")) != NULL) {
-				(void)fseek(f, -1, SEEK_END);
-				if (fread(data, 1, 1, f) != 1) {
-					/* the log is empty, assume no crash */
-					sdb->state = SABdbInactive;
-				} else if (data[0] == '\n') {
-					sdb->state = SABdbInactive;
-				} else { /* should be \t */
-					sdb->state = SABdbCrashed;
-				}
-				/* release the lock */
-				MT_lockf(buf, F_ULOCK, 4, 1);
-				(void)fclose(f);
-			} else {
-				/* shouldn't happen */
-				close(fd);
-			}
-		}
-		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, e->d_name,
-				MAINTENANCEFILE);
-		if (stat(buf, &statbuf) == -1) {
-			sdb->locked = 0;
-		} else {
-			sdb->locked = 1;
-		}
+		sdb = msab_getSingleStatus(pathbuf, e->d_name, sdb);
 	}
 	(void)closedir(d);
 
-	*ret = top;
+	*ret = sdb;
 	return(NULL);
 }
 

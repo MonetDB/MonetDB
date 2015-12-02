@@ -96,6 +96,8 @@ str
 SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
+	str logmsg;
+	int cnt=0;
 
 	(void) mb;
 	(void) stk;
@@ -103,6 +105,13 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
+	// Wait for any recovery process to be finished
+	do {
+		MT_sleep_ms(1000);
+		logmsg = GDKgetenv("recovery");
+		if( logmsg== NULL && ++cnt  == 5)
+			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
+    }while (logmsg == NULL);
 	return msg;
 }
 
@@ -110,6 +119,8 @@ str
 SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
+	str logmsg;
+	int cnt=0;
 
 	(void) mb;
 	(void) stk;
@@ -117,6 +128,13 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "msql");
+	// Wait for any recovery process to be finished
+	do {
+		MT_sleep_ms(1000);
+		logmsg = GDKgetenv("recovery");
+		if( logmsg== NULL && ++cnt  == 5)
+			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
+    }while (logmsg == NULL);
 	return msg;
 }
 
@@ -213,7 +231,7 @@ SQLinit(void)
 	MT_lock_init(&sql_contextLock, "sql_contextLock");
 #endif
 
-	MT_lock_set(&sql_contextLock, "SQL init");
+	MT_lock_set(&sql_contextLock);
 	memset((char *) &be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack = &monet5_freestack;
 	be_funcs.fcode = &monet5_freecode;
@@ -233,7 +251,7 @@ SQLinit(void)
 	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0)
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
-	MT_lock_unset(&sql_contextLock, "SQL init");
+	MT_lock_unset(&sql_contextLock);
 	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
@@ -261,7 +279,7 @@ SQLexit(Client c)
 	stack_push_var(sql, name, &ctype);	   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 9
+#define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -291,7 +309,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	if (!opt)
 		opt = "default_pipe";
 	SQLglobal("optimizer", opt);
-	SQLglobal("trace", "show,ticks,stmt");
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
@@ -301,6 +318,10 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("history", &F);
 
+	typename = "bigint";
+	sql_find_subtype(&ctype, typename, 0, 0);
+	SQLglobal("last_id", &sql->last_id);
+	SQLglobal("rowcnt", &sql->rowcnt);
 	return 0;
 }
 
@@ -377,8 +398,18 @@ void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (!m->session->active)
+	if (!m->session->active) {
+		sql_session *s;
+
 		mvc_trans(m);
+		s = m->session;
+		if (!s->schema) {
+			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
+			assert(s->schema_name);
+			s->schema = find_sql_schema(s->tr, s->schema_name);
+			assert(s->schema);
+		}
+	}
 }
 
 str
@@ -390,12 +421,14 @@ SQLinitClient(Client c)
 	backend *be;
 	bstream *bfd = NULL;
 	stream *fd = NULL;
+	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
+	MT_lock_set(&sql_contextLock);
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -426,7 +459,7 @@ SQLinitClient(Client c)
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	/* pass through credentials of the user if not console */
-	schema = monet5_user_get_def_schema(m, c->user);
+	schema = monet5_user_set_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
 		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
@@ -457,6 +490,7 @@ SQLinitClient(Client c)
 		str fullname;
 
 		SQLnewcatalog = 0;
+		maybeupgrade = 0;
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -503,8 +537,11 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		SQLupgrades(c,m);
+		if (maybeupgrade)
+			SQLupgrades(c,m);
+		maybeupgrade = 0;
 	}
+	MT_lock_unset(&sql_contextLock);
 	fflush(stdout);
 	fflush(stderr);
 
@@ -781,7 +818,7 @@ SQLreader(Client c)
 #endif
 		}
 	}
-	if ( (c->stimeout &&  GDKusec()- c->session > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return NULL;
@@ -820,103 +857,121 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 /*
  * The trace operation collects the events in the BATs
  * and creates a secondary result set upon termination
- * of the query. This feature is extended with
- * a SQL variable to identify which trace flags are needed.
- * The control term 'keep' avoids clearing the performance tables,
- * which makes it possible to inspect the results later using
- * SQL itself. (Script needed to bind the BATs to a SQL table.)
+ * of the query. 
  */
 static void
-SQLsetTrace(backend *be, Client c, bit onoff)
+SQLsetTrace(backend *be, Client cntxt, bit onoff)
 {
-	int i = 0, j = 0;
-	InstrPtr q;
-	int n, r;
-#define MAXCOLS 24
-	int rs[MAXCOLS];
-	str colname[MAXCOLS];
-	int coltype[MAXCOLS];
-	MalBlkPtr mb = c->curprg->def;
-	str traceFlag, t, s, def = GDKstrdup("show,ticks,stmt");
+	InstrPtr q, resultset;
+	InstrPtr tbls, cols, types, clen, scale;
+	MalBlkPtr mb = cntxt->curprg->def;
+	int k;
 
-	traceFlag = stack_get_string(be->mvc, "trace");
-	if (traceFlag && *traceFlag) {
-		GDKfree(def);
-		def = GDKstrdup(traceFlag);
-	}
-	t = def;
-
+	(void) be;
 	if (onoff) {
-		if (strstr(def, "keep") == 0)
-			(void) newStmt(mb, "profiler", "reset");
-		q= newStmt(mb, "profiler", "stethoscope");
-		(void) pushInt(mb,q,1);
-	} else if (def && strstr(def, "show")) {
+		(void) newStmt(mb, "profiler", "start");
+	} else {
 		(void) newStmt(mb, "profiler", "stop");
+		/* cook a new resultSet instruction */
+		resultset = newInstruction(mb,ASSIGNsymbol);
+		setModuleId(resultset, sqlRef);
+		setFunctionId(resultset, resultSetRef);
+	    getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
 
-		do {
-			s = t;
-			t = strchr(t + 1, ',');
-			if (t)
-				*t = 0;
-			if (strcmp("keep", s) && strcmp("show", s)) {
-				q = newStmt(mb, profilerRef, "getTrace");
-				q = pushStr(mb, q, s);
-				n = getDestVar(q);
-				rs[i] = getDestVar(q);
-				colname[i] = s;
-				/* FIXME: type for name should come from
-				 * mal_profiler.mx, second FIXME: check the user
-				 * supplied values */
-				if (strcmp(s, "time") == 0 || strcmp(s, "pc") == 0 || strcmp(s, "stmt") == 0) {
-					coltype[i] = TYPE_str;
-				} else if (strcmp(s, "ticks") == 0 || strcmp(s, "rssMB") == 0 || strcmp(s, "tmpspace") == 0 || 
-						   strcmp(s, "inblock") == 0 || strcmp(s, "oublock") == 0 || strcmp(s,"minflt") == 0 ||
-						   strcmp(s,"majflt") ==0  || strcmp(s,"nvcsw") == 0) {
-					coltype[i] = TYPE_lng;
-				} else if ( strcmp(s,"event") == 0 || strcmp(s, "thread") == 0) {
-					coltype[i] = TYPE_int;
-				}
-				i++;
-				if (i == MAXCOLS)	/* just ignore the rest */
-					break;
-			}
-		} while (t++);
 
-		if (i > 0) {
-			q = newStmt(mb, sqlRef, "resultSet");
-			q = pushInt(mb, q, i);
-			q = pushInt(mb, q, 1);
-			q = pushArgument(mb, q, rs[0]);
-			r = getDestVar(q);
+		/* build table defs */
+		tbls = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(tbls,0), newBatType(TYPE_oid, TYPE_str));
+		tbls = pushType(mb, tbls, TYPE_oid);
+		tbls = pushType(mb, tbls, TYPE_str);
+		resultset= pushArgument(mb,resultset, getArg(tbls,0));
 
-			for (j = 0; j < i; j++) {
-				q = newStmt(mb, sqlRef, "rsColumn");
-				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, ".trace");
-				q = pushStr(mb, q, colname[j]);
-				if (coltype[j] == TYPE_str) {
-					q = pushStr(mb, q, "varchar");
-					q = pushInt(mb, q, 1024);
-				} else if (coltype[j] == TYPE_lng) {
-					q = pushStr(mb, q, "bigint");
-					q = pushInt(mb, q, 64);
-				} else if (coltype[j] == TYPE_int) {
-					q = pushStr(mb, q, "int");
-					q = pushInt(mb, q, 32);
-				}
-				q = pushInt(mb, q, 0);
-				(void) pushArgument(mb, q, rs[j]);
-			}
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q,getArg(tbls,0));
+		q= pushStr(mb,q,".trace");
+		k= getArg(q,0);
 
-			q = newStmt(mb, ioRef, "stdout");
-			n = getDestVar(q);
-			q = newStmt(mb, sqlRef, "exportResult");
-			q = pushArgument(mb, q, n);
-			(void) pushArgument(mb, q, r);
-		}
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q,k);
+		q= pushStr(mb,q,".trace");
+
+		/* build colum defs */
+		cols = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(cols,0), newBatType(TYPE_oid, TYPE_str));
+		cols = pushType(mb, cols, TYPE_oid);
+		cols = pushType(mb, cols, TYPE_str);
+		resultset= pushArgument(mb,resultset, getArg(cols,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q,getArg(cols,0));
+		q= pushStr(mb,q,"usec");
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(cols,0));
+		q= pushStr(mb,q,"statement");
+
+		/* build type defs */
+		types = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(types,0), newBatType(TYPE_oid, TYPE_str));
+		types = pushType(mb, types, TYPE_oid);
+		types = pushType(mb, types, TYPE_str);
+		resultset= pushArgument(mb,resultset, getArg(types,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(types,0));
+		q= pushStr(mb,q,"bigint");
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, k);
+		q= pushStr(mb,q,"clob");
+
+		/* build scale defs */
+		clen = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(clen,0), newBatType(TYPE_oid, TYPE_int));
+		clen = pushType(mb, clen, TYPE_oid);
+		clen = pushType(mb, clen, TYPE_int);
+		resultset= pushArgument(mb,resultset, getArg(clen,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(clen,0));
+		q= pushInt(mb,q,64);
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, k);
+		q= pushInt(mb,q,0);
+
+		/* build scale defs */
+		scale = newStmt(mb,batRef, newRef);
+		setVarType(mb, getArg(scale,0), newBatType(TYPE_oid, TYPE_int));
+		scale = pushType(mb, scale, TYPE_oid);
+		scale = pushType(mb, scale, TYPE_int);
+		resultset= pushArgument(mb,resultset, getArg(scale,0));
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb,q, getArg(scale,0));
+		q= pushInt(mb,q,0);
+		k= getArg(q,0);
+
+		q= newStmt(mb,batRef,appendRef);
+		q= pushArgument(mb, q, k);
+		q= pushInt(mb,q,0);
+
+		/* add the ticks column */
+
+		q = newStmt(mb, profilerRef, "getTrace");
+		q = pushStr(mb, q, putName("usec",4));
+		resultset= pushArgument(mb,resultset, getArg(q,0));
+
+		/* add the stmt column */
+		q = newStmt(mb, profilerRef, "getTrace");
+		q = pushStr(mb, q, putName("stmt",4));
+		resultset= pushArgument(mb,resultset, getArg(q,0));
+
+		pushInstruction(mb,resultset);
 	}
-	GDKfree(def);
 }
 
 #define MAX_QUERY 	(64*1024*1024)
@@ -930,6 +985,8 @@ caching(mvc *m)
 static int
 cachable(mvc *m, stmt *s)
 {
+	if (m->emode == m_prepare)
+		return 1;
 	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
@@ -982,8 +1039,6 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 
-	if (m->history)
-		be->mvc->Tparse = GDKusec();
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (be->language == 'X') {
@@ -1110,7 +1165,7 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		// look for outdated plans
-		if ( OPTmitosisPlanOverdue(c,be->q->name) ){
+		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
 			msg = SQLCacheRemove(c, be->q->name);
 			qc_delete(be->mvc->qc, be->q);
 			goto recompilequery;
@@ -1199,8 +1254,7 @@ recompilequery:
 		 * The default action is to print them out at the end of the
 		 * query block.
 		 */
-		//if (be->q || opt)
-			pushEndInstruction(c->curprg->def);
+		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
 		if (opt) {
@@ -1216,8 +1270,8 @@ recompilequery:
 			}
 			c->curprg->def = mb;
 		}
-		/* we know more in this case than
-		   chkProgram(c->fdout, c->nspace, c->curprg->def); */
+		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
+		/* we know more in this case than chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			showErrors(c);
 			/* restore the state */

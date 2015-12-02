@@ -1,10 +1,10 @@
 #testing simple stuff around type BAT
-function tst(b:bat[:any_1,:any_2]):bat;
+function tst(b:bat[:oid,:any_2]):bat[:oid,:any_2];
 	return b;
 end tst;
 
 z:= bat.new(:oid,:int);
-b:= nil:bat;
+b:= nil:bat[:oid,:int];
 b:= z;
 #io.print(b);
 c:= tst(b);

@@ -48,6 +48,7 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 #include "mal_runtime.h"
+#include "mal_authorize.h"
 #include <mapi.h> /* for PROMPT1 */
 
 
@@ -129,10 +130,10 @@ static Client
 MCnewClient(void)
 {
 	Client c;
-	MT_lock_set(&mal_contextLock, "newClient");
+	MT_lock_set(&mal_contextLock);
 	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHCLIENT) {
 		/*system shutdown in progress */
-		MT_lock_unset(&mal_contextLock, "newClient");
+		MT_lock_unset(&mal_contextLock);
 		return NULL;
 	}
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
@@ -141,7 +142,7 @@ MCnewClient(void)
 			break;
 		}
 	}
-	MT_lock_unset(&mal_contextLock, "newClient");
+	MT_lock_unset(&mal_contextLock);
 
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
@@ -200,6 +201,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	str prompt;
 
 	c->user = user;
+	c->username = 0;
 	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->srcFile = NULL;
@@ -242,6 +244,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->totaltime = 0;
 	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
+	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	(void) AUTHgetUsername(&c->username, c);
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
@@ -372,10 +376,21 @@ freeClient(Client c)
 	c->qtimeout = 0;
 	c->stimeout = 0;
 	c->user = oid_nil;
+	if( c->username){
+		GDKfree(c->username);
+		c->username = 0;
+	}
 	c->mythread = 0;
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 	GDKfree(c->glb);
 	c->glb = NULL;
+	if( c->error_row){
+		BBPdecref(c->error_row->batCacheid,TRUE);
+		BBPdecref(c->error_fld->batCacheid,TRUE);
+		BBPdecref(c->error_msg->batCacheid,TRUE);
+		BBPdecref(c->error_input->batCacheid,TRUE);
+		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+	}
 	if (t)
 		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);
@@ -408,7 +423,7 @@ MCstopClients(Client cntxt)
 {
 	Client c = mal_clients;
 
-	MT_lock_set(&mal_contextLock,"stopClients");
+	MT_lock_set(&mal_contextLock);
 	for(c= mal_clients +1;  c < mal_clients+MAL_MAXCLIENTS; c++)
 	if( cntxt != c){
 		if ( c->mode == RUNCLIENT)
@@ -417,7 +432,7 @@ MCstopClients(Client cntxt)
 			c->mode = BLOCKCLIENT;
 	}
 	shutdowninprogress =1;
-	MT_lock_unset(&mal_contextLock,"stopClients");
+	MT_lock_unset(&mal_contextLock);
 }
 
 int
@@ -560,3 +575,19 @@ MCreadClient(Client c)
 #endif
 	return 1;
 }
+
+str
+PROFinitClient(Client c){
+	(void) c;
+	startProfiler();
+	return MAL_SUCCEED;
+}
+
+str
+PROFexitClient(Client c){
+	(void) c;
+	stopProfiler();
+	return MAL_SUCCEED;
+}
+
+

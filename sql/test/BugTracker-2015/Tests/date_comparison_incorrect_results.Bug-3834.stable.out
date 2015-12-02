@@ -1,0 +1,174 @@
+stdout of test 'date_comparison_incorrect_results.Bug-3834` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 18:06:39 >  
+# 18:06:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35641" "--set" "mapi_usock=/var/tmp/mtest-13939/.s.monetdb.35641" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/jennie/scratch/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 18:06:39 >  
+
+# MonetDB 5 server v11.21.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 2 threads
+# Compiled for x86_64-apple-darwin14.5.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 4.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-33.eduroam.cwi.nl:35641/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13939/.s.monetdb.35641
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 18:06:40 >  
+# 18:06:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13939" "--port=35641"
+# 18:06:40 >  
+
+#CREATE TABLE datepoint_wrong (mydate DATE, insiderange BOOLEAN DEFAULT FALSE, rangename CHAR(8));
+#INSERT INTO datepoint_wrong (mydate) VALUES ('2012-05-09');
+[ 1	]
+#INSERT INTO datepoint_wrong (mydate) VALUES ('2012-03-09');
+[ 1	]
+#CREATE TABLE daterange_wrong (startdate DATE, enddate DATE, name CHAR(8));
+#INSERT INTO daterange_wrong (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A');
+[ 1	]
+#SELECT * FROM datepoint_wrong A, daterange_wrong B WHERE A.mydate BETWEEN B.startdate AND B.enddate;
+% sys.a,	sys.a,	sys.a,	sys.b,	sys.b,	sys.b # table_name
+% mydate,	insiderange,	rangename,	startdate,	enddate,	name # name
+% date,	boolean,	char,	date,	date,	char # type
+% 10,	5,	8,	10,	10,	8 # length
+[ 2012-03-09,	false,	NULL,	2012-03-01,	2012-03-31,	"A"	]
+#UPDATE datepoint_wrong
+#SET (insiderange, rangename) = (
+#	SELECT TRUE, name
+#	FROM (
+#		SELECT startdate, enddate, name
+#		FROM daterange_wrong
+#	) AS B
+#	WHERE datepoint_wrong.mydate >= B.startdate
+#	AND datepoint_wrong.mydate <= B.enddate
+#);
+[ 2	]
+#SELECT * FROM datepoint_wrong;
+% sys.datepoint_wrong,	sys.datepoint_wrong,	sys.datepoint_wrong # table_name
+% mydate,	insiderange,	rangename # name
+% date,	boolean,	char # type
+% 10,	5,	8 # length
+[ 2012-05-09,	NULL,	NULL	]
+[ 2012-03-09,	true,	"A"	]
+#CREATE TABLE datepoint_correct1 (mydate DATE, insiderange BOOLEAN DEFAULT FALSE, rangename CHAR(8));
+#INSERT INTO datepoint_correct1 (mydate) VALUES ('2012-05-09');
+[ 1	]
+#INSERT INTO datepoint_correct1 (mydate) VALUES ('2012-03-09');
+[ 1	]
+#INSERT INTO datepoint_correct1 (mydate) VALUES ('2012-04-09');
+[ 1	]
+#CREATE TABLE daterange_correct1 (startdate DATE, enddate DATE, name CHAR(8));
+#INSERT INTO daterange_correct1 (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A');
+[ 1	]
+#SELECT * FROM datepoint_correct1 A, daterange_correct1 B WHERE A.mydate BETWEEN B.startdate AND B.enddate;
+% sys.a,	sys.a,	sys.a,	sys.b,	sys.b,	sys.b # table_name
+% mydate,	insiderange,	rangename,	startdate,	enddate,	name # name
+% date,	boolean,	char,	date,	date,	char # type
+% 10,	5,	8,	10,	10,	8 # length
+[ 2012-03-09,	false,	NULL,	2012-03-01,	2012-03-31,	"A"	]
+#UPDATE datepoint_correct1
+#SET (insiderange, rangename) = (
+#	SELECT TRUE, name
+#	FROM (
+#		SELECT startdate, enddate, name
+#		FROM daterange_correct1
+#	) AS B
+#	WHERE datepoint_correct1.mydate >= B.startdate
+#	AND datepoint_correct1.mydate <= B.enddate
+#);
+[ 3	]
+#SELECT * FROM datepoint_correct1;
+% sys.datepoint_correct1,	sys.datepoint_correct1,	sys.datepoint_correct1 # table_name
+% mydate,	insiderange,	rangename # name
+% date,	boolean,	char # type
+% 10,	5,	8 # length
+[ 2012-05-09,	NULL,	NULL	]
+[ 2012-03-09,	true,	"A"	]
+[ 2012-04-09,	NULL,	NULL	]
+#CREATE TABLE datepoint_correct2 (mydate DATE, insiderange BOOLEAN DEFAULT FALSE, rangename CHAR(8));
+#INSERT INTO datepoint_correct2 (mydate) VALUES ('2012-03-09');
+[ 1	]
+#INSERT INTO datepoint_correct2 (mydate) VALUES ('2012-05-09');
+[ 1	]
+#CREATE TABLE daterange_correct2 (startdate DATE, enddate DATE, name CHAR(8));
+#INSERT INTO daterange_correct2 (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A');
+[ 1	]
+#SELECT * FROM datepoint_correct2 A, daterange_correct2 B WHERE A.mydate BETWEEN B.startdate AND B.enddate;
+% sys.a,	sys.a,	sys.a,	sys.b,	sys.b,	sys.b # table_name
+% mydate,	insiderange,	rangename,	startdate,	enddate,	name # name
+% date,	boolean,	char,	date,	date,	char # type
+% 10,	5,	8,	10,	10,	8 # length
+[ 2012-03-09,	false,	NULL,	2012-03-01,	2012-03-31,	"A"	]
+#UPDATE datepoint_correct2
+#SET (insiderange, rangename) = (
+#	SELECT TRUE, name
+#	FROM (
+#		SELECT startdate, enddate, name
+#		FROM daterange_correct2
+#	) AS B
+#	WHERE datepoint_correct2.mydate >= B.startdate
+#	AND datepoint_correct2.mydate <= B.enddate
+#);
+[ 2	]
+#SELECT * FROM datepoint_correct2;
+% sys.datepoint_correct2,	sys.datepoint_correct2,	sys.datepoint_correct2 # table_name
+% mydate,	insiderange,	rangename # name
+% date,	boolean,	char # type
+% 10,	5,	8 # length
+[ 2012-03-09,	true,	"A"	]
+[ 2012-05-09,	NULL,	NULL	]
+#DROP TABLE datepoint_wrong;
+#DROP TABLE datepoint_correct1;
+#DROP TABLE datepoint_correct2;
+#DROP TABLE daterange_wrong;
+#DROP TABLE daterange_correct1;
+#DROP TABLE daterange_correct2;
+
+# 18:06:40 >  
+# 18:06:40 >  "Done."
+# 18:06:40 >  
+

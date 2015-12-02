@@ -29,80 +29,60 @@ stderr of test 'strings` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING('abcdefg' FROM 'a#"(b_d)#"%' FOR '#') AS "bcd";
 ERROR = !conversion of string 'a#"(b_d)#"%' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING('abcdefg' FROM '#"(b_d)#"%' FOR '#') IS NULL AS "True";
 ERROR = !conversion of string '#"(b_d)#"%' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True";
-ERROR = !syntax error, unexpected sqlNULL in: "select substring('abcdefg' from '(b|c)' for null"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !conversion of string '(b|c)' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING(NULL FROM '(b|c)' FOR '#') IS NULL AS "True";
-ERROR = !syntax error, unexpected sqlNULL in: "select substring(null"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !conversion of string '(b|c)' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING('abcdefg' FROM NULL FOR '#') IS NULL AS "True";
-ERROR = !syntax error, unexpected sqlNULL in: "select substring('abcdefg' from null"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !conversion of string '#' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING('abcdefg' FROM 'c.e') AS "cde";
 ERROR = !conversion of string 'c.e' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT SUBSTRING('abcdefg' FROM 'b(.*)f') AS "cde";
 ERROR = !conversion of string 'b(.*)f' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT OVERLAY('abcdef' PLACING '45' FROM 4) AS "abc45f";
 ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('abcdef' placing"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5) AS "yabadaba";
 ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('yabadoo' placing"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5 FOR 0) AS "yabadabadoo";
 ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('yabadoo' placing"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = SELECT OVERLAY('babosa' PLACING 'ubb' FROM 2 FOR 4) AS "bubba";
 ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "select overlay('babosa' placing"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 ERROR = !SELECT: no such binary operator 'decode(char,char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 ERROR = !SELECT: no such binary operator 'decode(char,char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 ERROR = !SELECT: no such binary operator 'decode(char,char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 ERROR = !SELECT: no such binary operator 'decode(char,char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = select split_part('joeuser@mydatabase','@',0) AS "an error";
-ERROR = !SELECT: no such operator 'split_part'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = select split_part('joeuser@mydatabase','@',1) AS "joeuser";
-ERROR = !SELECT: no such operator 'split_part'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
-ERROR = !SELECT: no such operator 'split_part'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = select split_part('joeuser@mydatabase','@',3) AS "empty string";
-ERROR = !SELECT: no such operator 'split_part'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
-ERROR = !SELECT: no such operator 'split_part'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !field position must be greater than zero
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = select to_hex(256*256*256 - 1) AS "ffffff";
 ERROR = !SELECT: no such unary operator 'to_hex(bigint)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-24268/.s.monetdb.38583
 QUERY = select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff";
 ERROR = !SELECT: no such unary operator 'to_hex(bigint)'
-
-
-
-
-
-
-
-
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

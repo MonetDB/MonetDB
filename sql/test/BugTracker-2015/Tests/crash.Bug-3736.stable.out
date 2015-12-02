@@ -1,0 +1,131 @@
+stdout of test 'crash.Bug-3736` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 10:50:37 >  
+# 10:50:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38510" "--set" "mapi_usock=/var/tmp/mtest-30636/.s.monetdb.38510" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:50:37 >  
+
+# MonetDB 5 server v11.19.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:38510/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30636/.s.monetdb.38510
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:50:37 >  
+# 10:50:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30636" "--port=38510"
+# 10:50:37 >  
+
+#CREATE TABLE open_auctions (
+#	  id int NOT NULL AUTO_INCREMENT,
+#	  open_auction_id varchar(255) NOT NULL,
+#	  initial double NOT NULL,
+#	  reserve double NOT NULL,
+#	  aktuell double NOT NULL,
+#	  privacy varchar(255) NOT NULL,
+#	  itemref varchar(255) NOT NULL,
+#	  seller varchar(255) NOT NULL,
+#	  quantity double NOT NULL,
+#	  type varchar(255) NOT NULL,
+#	  start varchar(255) NOT NULL,
+#	  ende varchar(255) NOT NULL,
+#	  PRIMARY KEY (id)
+#);
+#INSERT INTO "open_auctions" ("id", "open_auction_id", "initial", "reserve", "aktuell", "privacy", "itemref", "seller", "quantity", "type", "start", "ende") VALUES
+#(1, 'open_auction0', 210.62, 1540.75, 263.12, 'No', 'item0', 'person11', 1, 'Regular', '02/27/1998', '03/09/1999'),
+#(2, 'open_auction1', 69.64, 398.65, 168.64, '', 'item2', 'person10', 1, 'Featured', '06/14/1998', '02/27/1999'),
+#(3, 'open_auction2', 13.9, 0, 16.9, 'No', 'item3', 'person11', 1, 'Featured', '07/16/2000', '10/22/2000'),
+#(4, 'open_auction3', 17.12, 0, 179.12, '', 'item5', 'person13', 1, 'Featured', '02/01/2001', '07/22/1999'),
+[ 12	]
+#CREATE TABLE bidder (
+#	  id int NOT NULL AUTO_INCREMENT,
+#	  open_auction_id varchar(255) NOT NULL,
+#	  date varchar(255) NOT NULL,
+#	  time varchar(255) NOT NULL,
+#	  personref varchar(255) NOT NULL,
+#	  increase double NOT NULL,
+#	  PRIMARY KEY (id)
+#);
+#INSERT INTO "bidder" ("id", "open_auction_id", "date", "time", "personref", "increase") VALUES
+#(1, 'open_auction0', '06/13/2001', '13:16:15', 'person0', 18),
+#(2, 'open_auction0', '09/18/2000', '11:29:44', 'person23', 12),
+#(3, 'open_auction0', '01/07/1998', '10:23:59', 'person14', 18),
+#(4, 'open_auction0', '07/10/2001', '14:00:39', 'person16', 4.5),
+#(5, 'open_auction1', '11/12/1998', '11:23:38', 'person20', 4.5),
+#(6, 'open_auction1', '10/02/2000', '22:48:00', 'person4', 15),
+#(7, 'open_auction1', '12/04/1998', '22:29:38', 'person23', 1.5),
+[ 60	]
+#plan Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
+% .plan # table_name
+% rel # name
+% clob # type
+% 366 # length
+project (
+| select (
+| | project (
+| | | select (
+| | | | group by (
+| | | | | join (
+| | | | | | table(sys.bidder) [ bidder.id NOT NULL as L6.id, bidder.open_auction_id NOT NULL as L6.open_auction_id ] COUNT ,
+| | | | | | project (
+| | | | | | | crossproduct (
+| | | | | | | | project (
+| | | | | | | | | select (
+| | | | | | | | | | group by (
+| | | | | | | | | | | join (
+| | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3a.id, bidder.open_auction_id NOT NULL as b3a.open_auction_id ] COUNT ,
+| | | | | | | | | | | | project (
+| | | | | | | | | | | | | crossproduct (
+| | | | | | | | | | | | | | project (
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | table(sys.open_auctions) [ open_auctions.id NOT NULL HASHCOL  as o.id, open_auctions.open_auction_id NOT NULL as o.open_auction_id ] COUNT ,
+| | | | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b.id, bidder.open_auction_id NOT NULL as b.open_auction_id, bidder.date NOT NULL as b.date, bidder.time NOT NULL as b.time, bidder.personref NOT NULL as b.personref, bidder.increase NOT NULL as b.increase ] COUNT 
+| | | | | | | | | | | | | | | ) [ o.open_auction_id NOT NULL = b.open_auction_id NOT NULL ]
+| | | | | | | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L10.L10 ],
+| | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3.id, bidder.increase NOT NULL as b3.increase ] COUNT 
+| | | | | | | | | | | | | ) [  ]
+| | | | | | | | | | | | ) [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L7.L7 ]
+| | | | | | | | | | | ) [ b3a.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
+| | | | | | | | | | ) [ L7.L7, L10.L10 ] [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, L7.L7 HASHCOL , sys.min no nil (b3a.id NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
+| | | | | | | | | ) [ b3.id NOT NULL HASHCOL  = L1 NOT NULL ]
+| | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.increase NOT NULL as L2.L2, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L12.L12 ],
+| | | | | | | | table(sys.bidder) [ bidder.id NOT NULL as L5.id, bidder.increase NOT NULL as L5.increase ] COUNT 
+| | | | | | | ) [  ]
+| | | | | | ) [ L12.L12 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L11.L11 ]
+| | | | | ) [ L6.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
+| | | | ) [ L11.L11, L12.L12 ] [ L12.L12 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, L11.L11 HASHCOL , sys.max no nil (L6.id NOT NULL HASHCOL  as b2a.id) NOT NULL as L3.L3 ]
+| | | ) [ L5.id NOT NULL = L3.L3 NOT NULL ]
+| | ) [ L12.L12 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, L11.L11 HASHCOL , L3.L3 NOT NULL, sys.sql_mul(L2.L2 NOT NULL, double "2.000000") as L13.L13, L5.increase NOT NULL as L14.L14 ]
+| ) [ L13.L13 <= L14.L14 NOT NULL ]
+) [ b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL ]
+#Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id;
+% sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b # table_name
+% id,	open_auction_id,	date,	time,	personref,	increase # name
+% int,	varchar,	varchar,	varchar,	varchar,	double # type
+% 2,	13,	10,	8,	8,	24 # length
+[ 11,	"open_auction1",	"05/21/2001",	"08:02:16",	"person5",	12	]
+[ 8,	"open_auction1",	"06/22/1999",	"12:43:47",	"person19",	15	]
+[ 29,	"open_auction5",	"07/07/2000",	"08:53:00",	"person15",	6	]
+[ 30,	"open_auction5",	"08/06/2001",	"10:16:15",	"person13",	4.5	]
+[ 31,	"open_auction5",	"08/23/1999",	"08:26:06",	"person17",	30	]
+[ 6,	"open_auction1",	"10/02/2000",	"22:48:00",	"person4",	15	]
+[ 5,	"open_auction1",	"11/12/1998",	"11:23:38",	"person20",	4.5	]
+[ 10,	"open_auction1",	"11/12/2001",	"04:50:27",	"person9",	6	]
+[ 9,	"open_auction1",	"12/02/2001",	"13:38:51",	"person15",	45	]
+[ 7,	"open_auction1",	"12/04/1998",	"22:29:38",	"person23",	1.5	]
+#drop table bidder;
+#drop table open_auctions;
+
+# 10:50:38 >  
+# 10:50:38 >  "Done."
+# 10:50:38 >  
+

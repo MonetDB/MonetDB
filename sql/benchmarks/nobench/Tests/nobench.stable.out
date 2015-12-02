@@ -108,6 +108,21 @@ Ready.
 [ "[]"	]
 [ "[\"GBRDA===\",\"GBRDA===\"]"	]
 [ "[]"	]
+#select json.filter(js,'..sparse_000,..sparse_110') from bench10;
+% sys.L # table_name
+% filter_js # name
+% json # type
+% 12 # length
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[]"	]
+[ "[\"GBRDA===\"]"	]
+[ "[]"	]
 #select json.filter(js,'str1') from bench10;
 % sys.L # table_name
 % filter_js # name
@@ -142,8 +157,8 @@ Ready.
 % sys.bench10 # table_name
 % js # name
 % json # type
-% 463 # length
-[ "{\"nested_obj\": {\"num\": 0, \"str\": \"GBRDA===\"}, \"dyn2\": 5, \"dyn1\": 5, \"nested_arr\": [\"the\", \"state\", \"aware\", \"''\", \"the\"], \"str2\": \"GBRDA===\", \"str1\": \"GBRDCMBR\", \"sparse_058\": \"GBRDCMBR\", \"thousandth\": 5, \"num\": 5, \"bool\": true, \"sparse_059\": \"GBRDCMBR\", \"sparse_054\": \"GBRDCMBR\", \"sparse_055\": \"GBRDCMBR\", \"sparse_056\": \"GBRDCMBR\", \"sparse_057\": \"GBRDCMBR\", \"sparse_050\": \"GBRDCMBR\", \"sparse_051\": \"GBRDCMBR\", \"sparse_052\": \"GBRDCMBR\", \"sparse_053\": \"GBRDCMBR\"},"	]
+% 462 # length
+[ "{\"nested_obj\": {\"num\": 0, \"str\": \"GBRDA===\"}, \"dyn2\": 5, \"dyn1\": 5, \"nested_arr\": [\"the\", \"state\", \"aware\", \"''\", \"the\"], \"str2\": \"GBRDA===\", \"str1\": \"GBRDCMBR\", \"sparse_058\": \"GBRDCMBR\", \"thousandth\": 5, \"num\": 5, \"bool\": true, \"sparse_059\": \"GBRDCMBR\", \"sparse_054\": \"GBRDCMBR\", \"sparse_055\": \"GBRDCMBR\", \"sparse_056\": \"GBRDCMBR\", \"sparse_057\": \"GBRDCMBR\", \"sparse_050\": \"GBRDCMBR\", \"sparse_051\": \"GBRDCMBR\", \"sparse_052\": \"GBRDCMBR\", \"sparse_053\": \"GBRDCMBR\"}"	]
 #select json.number(json.filter(js,'num')) from bench10;
 % sys.L # table_name
 % number_filter_js # name
@@ -193,11 +208,11 @@ Ready.
 % sys.bench10 # table_name
 % js # name
 % json # type
-% 466 # length
-[ "{\"nested_obj\": {\"num\": 8, \"str\": \"GBRDCMBQGA======\"}, \"sparse_035\": \"GBRDCMI=\", \"dyn2\": true, \"dyn1\": 3, \"nested_arr\": [\"check\", \"it\", \"the\"], \"str2\": \"GBRDCMBQGA======\", \"str1\": \"GBRDCMI=\", \"thousandth\": 3, \"sparse_036\": \"GBRDCMI=\", \"sparse_037\": \"GBRDCMI=\", \"sparse_034\": \"GBRDCMI=\", \"num\": 3, \"bool\": true, \"sparse_033\": \"GBRDCMI=\", \"sparse_030\": \"GBRDCMI=\", \"sparse_031\": \"GBRDCMI=\", \"sparse_032\": \"GBRDCMI=\", \"sparse_038\": \"GBRDCMI=\", \"sparse_039\": \"GBRDCMI=\"},"	]
-[ "{\"sparse_018\": \"GBRDC===\", \"nested_obj\": {\"num\": 6, \"str\": \"GBRDCMJQ\"}, \"dyn2\": \"GBRDC===\", \"dyn1\": 1, \"nested_arr\": [\"button-down\"], \"sparse_010\": \"GBRDC===\", \"str2\": \"GBRDCMJQ\", \"str1\": \"GBRDC===\", \"sparse_013\": \"GBRDC===\", \"sparse_014\": \"GBRDC===\", \"sparse_015\": \"GBRDC===\", \"sparse_016\": \"GBRDC===\", \"sparse_017\": \"GBRDC===\", \"num\": 1, \"bool\": true, \"sparse_011\": \"GBRDC===\", \"thousandth\": 1, \"sparse_019\": \"GBRDC===\", \"sparse_012\": \"GBRDC===\"},"	]
-[ "{\"nested_obj\": {\"num\": 7, \"str\": \"GBRDCMJR\"}, \"dyn2\": 2, \"dyn1\": 2, \"nested_arr\": [\"she\", \"beyond\"], \"str2\": \"GBRDCMJR\", \"str1\": \"GBRDCMA=\", \"thousandth\": 2, \"sparse_025\": \"GBRDCMA=\", \"sparse_024\": \"GBRDCMA=\", \"sparse_027\": \"GBRDCMA=\", \"num\": 2, \"bool\": false, \"sparse_020\": \"GBRDCMA=\", \"sparse_023\": \"GBRDCMA=\", \"sparse_022\": \"GBRDCMA=\", \"sparse_021\": \"GBRDCMA=\", \"sparse_029\": \"GBRDCMA=\", \"sparse_028\": \"GBRDCMA=\", \"sparse_026\": \"GBRDCMA=\"},"	]
-[ "{\"nested_obj\": {\"num\": 5, \"str\": \"GBRDCMBR\"}, \"sparse_008\": \"GBRDA===\", \"sparse_009\": \"GBRDA===\", \"dyn2\": false, \"dyn1\": \"GBRDA===\", \"nested_arr\": [], \"sparse_007\": \"GBRDA===\", \"str2\": \"GBRDCMBR\", \"str1\": \"GBRDA===\", \"sparse_004\": \"GBRDA===\", \"sparse_003\": \"GBRDA===\", \"sparse_002\": \"GBRDA===\", \"sparse_001\": \"GBRDA===\", \"sparse_000\": \"GBRDA===\", \"num\": 0, \"bool\": false, \"sparse_006\": \"GBRDA===\", \"thousandth\": 0, \"sparse_005\": \"GBRDA===\"},"	]
+% 465 # length
+[ "{\"nested_obj\": {\"num\": 8, \"str\": \"GBRDCMBQGA======\"}, \"sparse_035\": \"GBRDCMI=\", \"dyn2\": true, \"dyn1\": 3, \"nested_arr\": [\"check\", \"it\", \"the\"], \"str2\": \"GBRDCMBQGA======\", \"str1\": \"GBRDCMI=\", \"thousandth\": 3, \"sparse_036\": \"GBRDCMI=\", \"sparse_037\": \"GBRDCMI=\", \"sparse_034\": \"GBRDCMI=\", \"num\": 3, \"bool\": true, \"sparse_033\": \"GBRDCMI=\", \"sparse_030\": \"GBRDCMI=\", \"sparse_031\": \"GBRDCMI=\", \"sparse_032\": \"GBRDCMI=\", \"sparse_038\": \"GBRDCMI=\", \"sparse_039\": \"GBRDCMI=\"}"	]
+[ "{\"sparse_018\": \"GBRDC===\", \"nested_obj\": {\"num\": 6, \"str\": \"GBRDCMJQ\"}, \"dyn2\": \"GBRDC===\", \"dyn1\": 1, \"nested_arr\": [\"button-down\"], \"sparse_010\": \"GBRDC===\", \"str2\": \"GBRDCMJQ\", \"str1\": \"GBRDC===\", \"sparse_013\": \"GBRDC===\", \"sparse_014\": \"GBRDC===\", \"sparse_015\": \"GBRDC===\", \"sparse_016\": \"GBRDC===\", \"sparse_017\": \"GBRDC===\", \"num\": 1, \"bool\": true, \"sparse_011\": \"GBRDC===\", \"thousandth\": 1, \"sparse_019\": \"GBRDC===\", \"sparse_012\": \"GBRDC===\"}"	]
+[ "{\"nested_obj\": {\"num\": 7, \"str\": \"GBRDCMJR\"}, \"dyn2\": 2, \"dyn1\": 2, \"nested_arr\": [\"she\", \"beyond\"], \"str2\": \"GBRDCMJR\", \"str1\": \"GBRDCMA=\", \"thousandth\": 2, \"sparse_025\": \"GBRDCMA=\", \"sparse_024\": \"GBRDCMA=\", \"sparse_027\": \"GBRDCMA=\", \"num\": 2, \"bool\": false, \"sparse_020\": \"GBRDCMA=\", \"sparse_023\": \"GBRDCMA=\", \"sparse_022\": \"GBRDCMA=\", \"sparse_021\": \"GBRDCMA=\", \"sparse_029\": \"GBRDCMA=\", \"sparse_028\": \"GBRDCMA=\", \"sparse_026\": \"GBRDCMA=\"}"	]
+[ "{\"nested_obj\": {\"num\": 5, \"str\": \"GBRDCMBR\"}, \"sparse_008\": \"GBRDA===\", \"sparse_009\": \"GBRDA===\", \"dyn2\": false, \"dyn1\": \"GBRDA===\", \"nested_arr\": [], \"sparse_007\": \"GBRDA===\", \"str2\": \"GBRDCMBR\", \"str1\": \"GBRDA===\", \"sparse_004\": \"GBRDA===\", \"sparse_003\": \"GBRDA===\", \"sparse_002\": \"GBRDA===\", \"sparse_001\": \"GBRDA===\", \"sparse_000\": \"GBRDA===\", \"num\": 0, \"bool\": false, \"sparse_006\": \"GBRDA===\", \"thousandth\": 0, \"sparse_005\": \"GBRDA===\"}"	]
 #select json.number(json.filter(js,'dyn1')) from bench10;
 % sys.L # table_name
 % number_filter_js # name
@@ -228,21 +243,52 @@ Ready.
 [ 2	]
 [ NULL	]
 [ 6	]
-#select json.text(json.filter(js,'dyn1')) from bench10;
+#select * from bench10 where json.number(json.filter(js,'dyn1')) between 0.0 and 3.0;
+% sys.bench10 # table_name
+% js # name
+% json # type
+% 465 # length
+[ "{\"nested_obj\": {\"num\": 8, \"str\": \"GBRDCMBQGA======\"}, \"sparse_035\": \"GBRDCMI=\", \"dyn2\": true, \"dyn1\": 3, \"nested_arr\": [\"check\", \"it\", \"the\"], \"str2\": \"GBRDCMBQGA======\", \"str1\": \"GBRDCMI=\", \"thousandth\": 3, \"sparse_036\": \"GBRDCMI=\", \"sparse_037\": \"GBRDCMI=\", \"sparse_034\": \"GBRDCMI=\", \"num\": 3, \"bool\": true, \"sparse_033\": \"GBRDCMI=\", \"sparse_030\": \"GBRDCMI=\", \"sparse_031\": \"GBRDCMI=\", \"sparse_032\": \"GBRDCMI=\", \"sparse_038\": \"GBRDCMI=\", \"sparse_039\": \"GBRDCMI=\"}"	]
+[ "{\"sparse_018\": \"GBRDC===\", \"nested_obj\": {\"num\": 6, \"str\": \"GBRDCMJQ\"}, \"dyn2\": \"GBRDC===\", \"dyn1\": 1, \"nested_arr\": [\"button-down\"], \"sparse_010\": \"GBRDC===\", \"str2\": \"GBRDCMJQ\", \"str1\": \"GBRDC===\", \"sparse_013\": \"GBRDC===\", \"sparse_014\": \"GBRDC===\", \"sparse_015\": \"GBRDC===\", \"sparse_016\": \"GBRDC===\", \"sparse_017\": \"GBRDC===\", \"num\": 1, \"bool\": true, \"sparse_011\": \"GBRDC===\", \"thousandth\": 1, \"sparse_019\": \"GBRDC===\", \"sparse_012\": \"GBRDC===\"}"	]
+[ "{\"nested_obj\": {\"num\": 7, \"str\": \"GBRDCMJR\"}, \"dyn2\": 2, \"dyn1\": 2, \"nested_arr\": [\"she\", \"beyond\"], \"str2\": \"GBRDCMJR\", \"str1\": \"GBRDCMA=\", \"thousandth\": 2, \"sparse_025\": \"GBRDCMA=\", \"sparse_024\": \"GBRDCMA=\", \"sparse_027\": \"GBRDCMA=\", \"num\": 2, \"bool\": false, \"sparse_020\": \"GBRDCMA=\", \"sparse_023\": \"GBRDCMA=\", \"sparse_022\": \"GBRDCMA=\", \"sparse_021\": \"GBRDCMA=\", \"sparse_029\": \"GBRDCMA=\", \"sparse_028\": \"GBRDCMA=\", \"sparse_026\": \"GBRDCMA=\"}"	]
+#select json.filter(js,'nested_arr') from bench10;
 % sys.L # table_name
-% text_filter_js # name
-% clob # type
-% 8 # length
-[ "9"	]
-[ "7"	]
-[ "8"	]
-[ "5"	]
-[ "3"	]
-[ "4"	]
-[ "1"	]
-[ "2"	]
-[ "GBRDA==="	]
-[ "6"	]
+% filter_js # name
+% json # type
+% 59 # length
+[ "[[\"especially\"]]"	]
+[ "[[\"its\", \"for\", \"if\", \"he\", \"questions\", \"to\", \"put\"]]"	]
+[ "[[]]"	]
+[ "[[\"the\", \"state\", \"aware\", \"''\", \"the\"]]"	]
+[ "[[\"check\", \"it\", \"the\"]]"	]
+[ "[[\"potatoes\", \"a\", \"to\", \"authentic\"]]"	]
+[ "[[\"button-down\"]]"	]
+[ "[[\"she\", \"beyond\"]]"	]
+[ "[[]]"	]
+[ "[[\"to\", \"interrupted\", \"some\", \"daily\", \"has\", \"averages\"]]"	]
+#select * from bench10 where json.text(json.filter(js,'nested_arr')) = 'check it the';
+% sys.bench10 # table_name
+% js # name
+% json # type
+% 465 # length
+[ "{\"nested_obj\": {\"num\": 8, \"str\": \"GBRDCMBQGA======\"}, \"sparse_035\": \"GBRDCMI=\", \"dyn2\": true, \"dyn1\": 3, \"nested_arr\": [\"check\", \"it\", \"the\"], \"str2\": \"GBRDCMBQGA======\", \"str1\": \"GBRDCMI=\", \"thousandth\": 3, \"sparse_036\": \"GBRDCMI=\", \"sparse_037\": \"GBRDCMI=\", \"sparse_034\": \"GBRDCMI=\", \"num\": 3, \"bool\": true, \"sparse_033\": \"GBRDCMI=\", \"sparse_030\": \"GBRDCMI=\", \"sparse_031\": \"GBRDCMI=\", \"sparse_032\": \"GBRDCMI=\", \"sparse_038\": \"GBRDCMI=\", \"sparse_039\": \"GBRDCMI=\"}"	]
+#select * from bench10 where json.text(json.filter(js,'parse_000')) = 'GBRDA===';
+% sys.bench10 # table_name
+% js # name
+% json # type
+% 440 # length
+[ "{\"nested_obj\": {\"num\": 5, \"str\": \"GBRDCMBR\"}, \"sparse_008\": \"GBRDA===\", \"sparse_009\": \"GBRDA===\", \"dyn2\": false, \"dyn1\": \"GBRDA===\", \"nested_arr\": [], \"sparse_007\": \"GBRDA===\", \"str2\": \"GBRDCMBR\", \"str1\": \"GBRDA===\", \"sparse_004\": \"GBRDA===\", \"sparse_003\": \"GBRDA===\", \"sparse_002\": \"GBRDA===\", \"sparse_001\": \"GBRDA===\", \"sparse_000\": \"GBRDA===\", \"num\": 0, \"bool\": false, \"sparse_006\": \"GBRDA===\", \"thousandth\": 0, \"sparse_005\": \"GBRDA===\"}"	]
+#select f.h, count(*) from (
+#	select json.filter(js,'..thousanth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
+#group by f.h;
+% sys.f,	sys.L1 # table_name
+% h,	L1 # name
+% double,	wrd # type
+% 24,	1 # length
+[ 3,	1	]
+[ 1,	1	]
+[ 2,	1	]
+[ 0,	1	]
 #drop table bench10;
 
 # 13:08:14 >  

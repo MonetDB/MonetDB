@@ -226,7 +226,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C07D912740F414490DD35D5A179D268"
             {
-            "SourcePath" = "8:C:\\Libraries\\geos-3.4.2.win32\\bin\\geos_c.dll"
+            "SourcePath" = "8:C:\\Libraries\\geos-3.4.2.win32-vs2010\\bin\\geos_c.dll"
             "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
             "Folder" = "8:_5A4CF78A6BC241B6AAEFF30075ECAE13"
@@ -439,7 +439,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.20.0"
+        "ProductVersion" = "8:11.22.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"
@@ -999,7 +999,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x86.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x86.msm"
                 "Properties"
                 {
                 }

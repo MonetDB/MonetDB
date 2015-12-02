@@ -798,7 +798,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							stk->stk[getArg(pci, i)].val.bval != 0) {
 							b = BBPquickdesc(abs(stk->stk[getArg(pci, i)].val.bval), FALSE);
 							if (b == NULL) {
-								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+								if (ret == MAL_SUCCEED)
+									ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
 								continue;
 							}
 							if (b->batStamp <= stamp) {
@@ -919,7 +920,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* assure correct variable type */
 				if (getVarType(mb, exceptionVar) == TYPE_str) {
 					/* watch out for concurrent access */
-					MT_lock_set(&mal_contextLock, "exception handler");
+					MT_lock_set(&mal_contextLock);
 					v = &stk->stk[exceptionVar];
 					if (v->val.sval)
 						FREE_EXCEPTION(v->val.sval);    /* old exception*/
@@ -927,7 +928,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					v->val.sval = ret;
 					v->len = (int)strlen(v->val.sval);
 					ret = 0;
-					MT_lock_unset(&mal_contextLock, "exception handler");
+					MT_lock_unset(&mal_contextLock);
 				} else {
 					mnstr_printf(cntxt->fdout, "%s", ret);
 					FREE_EXCEPTION(ret);

@@ -1,3 +1,7 @@
+###
+# SET a GRANTed ROLE for a USER (possible).
+###
+
 import os, sys
 try:
     from MonetDBtesting import process

@@ -24,18 +24,26 @@ Ready.
 # 14:44:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25322" "--port=34339"
 # 14:44:45 >  
 
+#SET TIME ZONE INTERVAL '+1:0' HOUR TO MINUTE;
+#SELECT CURRENT_TIMEZONE;
+% . # table_name
+# .L # table_name
+% single_value # name
+% sec_interval # type
+% 8 # length
+[ 3600.000      ]
 #SELECT timestamp with time zone '2001-12-27 04:05:06.789-08';
 % .L # table_name
 % single_value # name
 % timestamptz # type
 % 32 # length
-[ 2001-12-27 06:05:06.789000+02:00	]
+[ 2001-12-27 05:05:06.789000+01:00	]
 #SELECT timestamp with time zone '2001/12/27 04:05:06.789-08';
 % .L # table_name
 % single_value # name
 % timestamptz # type
 % 32 # length
-[ 2001-12-27 06:05:06.789000+02:00	]
+[ 2001-12-27 05:05:06.789000+01:00	]
 #CREATE TABLE TEMP_TIMESTAMP (f1 timestamp with time zone);
 #SELECT '' AS "16", f1 AS "timestamp"
 #  FROM TEMP_TIMESTAMP
@@ -52,14 +60,14 @@ Ready.
 % .L,	sys.L,	.L,	sys.L # table_name
 % 16,	timestamp,	gpstime_zero,	difference # name
 % char,	timestamptz,	timestamptz,	sec_interval # type
-% 0,	32,	32,	0 # length
+% 0,	32,	32,	5 # length
 #SELECT '' AS "226", d1.f1 AS timestamp1, d2.f1 AS timestamp2, d1.f1 - d2.f1 AS difference
 #  FROM TEMP_TIMESTAMP d1, TEMP_TIMESTAMP d2
 #  ORDER BY timestamp1, timestamp2, difference;
 % .L,	sys.L,	sys.L,	sys.L # table_name
 % 226,	timestamp1,	timestamp2,	difference # name
 % char,	timestamptz,	timestamptz,	sec_interval # type
-% 0,	32,	32,	0 # length
+% 0,	32,	32,	5 # length
 #DROP TABLE TEMP_TIMESTAMP;
 
 # 17:11:19 >  

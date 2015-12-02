@@ -1,10 +1,10 @@
-import(DBI,digest,methods)
+import(DBI,digest,methods,codetools,utils)
 
 # export only driver constructor, everything else is DBI stuff..
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
 export(monet.read.csv,monetdb.read.csv)
 # this one is not in the DBI
-exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction)
+exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,mdbapply)
 # shorthands
 export(mc,mq)
 useDynLib(MonetDB.R)

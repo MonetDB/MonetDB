@@ -27,8 +27,7 @@
  * (likewise, @emph{BATcopy()}, which makes a copy, instead of
  * in-place shuffling, has the same alignment effect, @emph{BATmark()}
  * marks the tail column as synced with the head of the original
- * @emph{BAT}, and for instance @emph{BATsemijoin()} marks both return
- * columns as aligned with its left parameter).
+ * @emph{BAT}).
  *
  * Each alignment sequence is given a unique identifier, so as to
  * easily detect this situation. It is retained in the @emph{BAT
@@ -113,7 +112,8 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		b1->hdense = FALSE;
 		BATseqbase(b1, oid_nil);
 		b1->H->nonil = b2->H->nonil;
-	}
+	} else if (BAThkey(b2))
+		BATseqbase(b1, 0);
 	BATkey(b1, BAThkey(b2));
 	b1->hsorted = BAThordered(b2);
 	b1->hrevsorted = BAThrevordered(b2);
@@ -207,7 +207,6 @@ VIEWhcreate(BAT *h)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid != 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 
@@ -290,13 +289,11 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (bn->H->vheap) {
 		assert(h->H->vheap);
 		assert(bn->H->vheap->parentid > 0);
-		bn->H->vheap->farmid = h->H->vheap->farmid;
 		BBPshare(bn->H->vheap->parentid);
 	}
 	if (bn->T->vheap) {
 		assert(t->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
-		bn->T->vheap->farmid = t->T->vheap->farmid;
 		BBPshare(bn->T->vheap->parentid);
 	}
 
@@ -411,74 +408,77 @@ VIEWcombine(BAT *b)
  */
 
 gdk_return
-BATmaterializeh(BAT *b)
+BATmaterializet(BAT *b)
 {
-	int ht;
+	int tt;
 	BUN cnt;
-	Heap head;
+	Heap tail;
 	BUN p, q;
-	oid h, *x;
-	bte tshift;
+	oid t, *x;
+	bte hshift;
 
 	BATcheck(b, "BATmaterialize", GDK_FAIL);
 	assert(!isVIEW(b));
-	ht = b->htype;
+	tt = b->ttype;
 	cnt = BATcapacity(b);
-	head = b->H->heap;
+	tail = b->T->heap;
 	p = BUNfirst(b);
 	q = BUNlast(b);
 	assert(cnt >= q - p);
 	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
 
-	if (!BAThdense(b) || ht != TYPE_void) {
+	if (!BATtdense(b) || tt != TYPE_void) {
 		/* no voids */
 		return GDK_SUCCEED;
 	}
-	ht = TYPE_oid;
+	tt = TYPE_oid;
 
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
 
-	b->H->heap.filename = NULL;
-	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
-		b->H->heap = head;
+	b->T->heap.filename = NULL;
+	if (HEAPalloc(&b->T->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
+		b->T->heap = tail;
 		return GDK_FAIL;
 	}
 
 	/* point of no return */
-	b->htype = ht;
-	tshift = b->T->shift;
+	b->ttype = tt;
+	hshift = b->H->shift;
 	BATsetdims(b);
-	if (b->ttype) {
-		b->T->shift = tshift;	/* restore in case it got changed */
-		b->T->width = 1 << tshift;
+	if (b->htype) {
+		b->H->shift = hshift;	/* restore in case it got changed */
+		b->H->width = 1 << hshift;
 	}
 	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
-	b->H->heap.dirty = TRUE;
+	b->T->heap.dirty = TRUE;
 
 	/* set the correct dense info */
-	b->hdense = TRUE;
+	b->tdense = TRUE;
 
-	/* So now generate [h..h+cnt-1] */
-	h = b->hseqbase;
-	x = (oid *) b->H->heap.base;
+	/* So now generate [t..t+cnt-1] */
+	t = b->tseqbase;
+	x = (oid *) b->T->heap.base;
 	for (; p < q; p++)
-		*x++ = h++;
-	cnt = h - b->hseqbase;
+		*x++ = t++;
+	cnt = t - b->tseqbase;
 	BATsetcount(b, cnt);
 
 	/* cleanup the old heaps */
-	HEAPfree(&head, 0);
+	HEAPfree(&tail, 0);
 	return GDK_SUCCEED;
 }
 
+#undef BATmaterializeh
+#undef BATmaterialize
+
 /* only materialize the tail */
 gdk_return
-BATmaterializet(BAT *b)
+BATmaterializeh(BAT *b)
 {
-	return BATmaterializeh(BATmirror(b));
+	return BATmaterializet(BATmirror(b));
 }
 
 gdk_return
@@ -555,7 +555,7 @@ gdk_return
 VIEWreset(BAT *b)
 {
 	bat hp, tp, hvp, tvp;
-	Heap head, tail, hh, th;
+	Heap head, tail, *hh = NULL, *th = NULL;
 	BAT *n = NULL, *v = NULL;
 
 	if (b == NULL)
@@ -564,7 +564,7 @@ VIEWreset(BAT *b)
 	tp = VIEWtparent(b);
 	hvp = VIEWvhparent(b);
 	tvp = VIEWvtparent(b);
-	if (hp || tp) {
+	if (hp || tp || hvp || tvp) {
 		BAT *m;
 		BATstore *bs;
 		BUN cnt;
@@ -574,21 +574,22 @@ VIEWreset(BAT *b)
 		/* alloc heaps */
 		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
-		memset(&hh, 0, sizeof(Heap));
-		memset(&th, 0, sizeof(Heap));
 
-		n = BATdescriptor(abs(b->batCacheid)); /* normalized */
-		if (n == NULL)
-			goto bailout;
-		m = BATmirror(n); /* mirror of normalized */
+		if (b->batCacheid > 0) {
+			n = b;
+			m = BATmirror(b);
+		} else {
+			n = BATmirror(b);
+			m = b;
+		}
 		bs = BBP_desc(n->batCacheid);
 		cnt = BATcount(n) + 1;
 		nme = BBP_physical(n->batCacheid);
 		nmelen = nme ? strlen(nme) : 0;
 
 		assert(n->batCacheid > 0);
-		assert(hp || !b->htype);
-		assert(tp || !b->ttype);
+		assert(hp || hvp || !b->htype);
+		assert(tp || tvp || !b->ttype);
 
 		head.farmid = BBPselectfarm(n->batRole, n->htype, offheap);
 		tail.farmid = BBPselectfarm(n->batRole, n->ttype, offheap);
@@ -609,21 +610,27 @@ VIEWreset(BAT *b)
 				goto bailout;
 		}
 		if (n->H->vheap) {
-			hh.farmid = BBPselectfarm(n->batRole, n->htype, varheap);
-			hh.filename = (str) GDKmalloc(nmelen + 12);
-			if (hh.filename == NULL)
+			hh = GDKzalloc(sizeof(Heap));
+			if (hh == NULL)
 				goto bailout;
-			snprintf(hh.filename, nmelen + 12, "%s.hheap", nme);
-			if (ATOMheap(n->htype, &hh, cnt) != GDK_SUCCEED)
+			hh->farmid = BBPselectfarm(n->batRole, n->htype, varheap);
+			hh->filename = (str) GDKmalloc(nmelen + 12);
+			if (hh->filename == NULL)
+				goto bailout;
+			snprintf(hh->filename, nmelen + 12, "%s.hheap", nme);
+			if (ATOMheap(n->htype, hh, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
 		if (n->T->vheap) {
-			th.farmid = BBPselectfarm(n->batRole, n->ttype, varheap);
-			th.filename = (str) GDKmalloc(nmelen + 12);
-			if (th.filename == NULL)
+			th = GDKzalloc(sizeof(Heap));
+			if (th == NULL)
 				goto bailout;
-			snprintf(th.filename, nmelen + 12, "%s.theap", nme);
-			if (ATOMheap(n->ttype, &th, cnt) != GDK_SUCCEED)
+			th->farmid = BBPselectfarm(n->batRole, n->ttype, varheap);
+			th->filename = (str) GDKmalloc(nmelen + 12);
+			if (th->filename == NULL)
+				goto bailout;
+			snprintf(th->filename, nmelen + 12, "%s.theap", nme);
+			if (ATOMheap(n->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
 
@@ -679,23 +686,33 @@ VIEWreset(BAT *b)
 		n->T->heap = tail;
 
 		/* unshare from parents heap */
-		if (hh.base) {
+		if (hh) {
 			assert(n->H->vheap == NULL);
-			n->H->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (n->H->vheap == NULL)
-				goto bailout;
-			*n->H->vheap = hh;
+			n->H->vheap = hh;
+			hh = NULL;
 			n->H->vheap->parentid = n->batCacheid;
 		}
-		if (th.base) {
+		if (th) {
 			assert(n->T->vheap == NULL);
-			n->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (n->T->vheap == NULL)
-				goto bailout;
-			*n->T->vheap = th;
+			n->T->vheap = th;
+			th = NULL;
 			n->T->vheap->parentid = n->batCacheid;
 		}
 
+		if (v->H->heap.parentid == n->batCacheid) {
+			assert(hp == 0);
+			assert(n->batSharecnt > 0);
+			BBPunshare(n->batCacheid);
+			BBPunfix(n->batCacheid);
+			v->H->heap.parentid = 0;
+		}
+		if (v->T->heap.parentid == -n->batCacheid) {
+			assert(tp == 0);
+			assert(n->batSharecnt > 0);
+			BBPunshare(n->batCacheid);
+			BBPunfix(n->batCacheid);
+			v->T->heap.parentid = 0;
+		}
 		n->batSharecnt = 0;
 		n->batCopiedtodisk = 0;
 		n->batDirty = 1;
@@ -720,17 +737,14 @@ VIEWreset(BAT *b)
 		/* insert all of v in n, and quit */
 		BATins(n, m, FALSE);
 		BBPreclaim(v);
-		BBPunfix(n->batCacheid);
 	}
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	if (n != NULL)
-		BBPunfix(n->batCacheid);
 	HEAPfree(&head, 0);
 	HEAPfree(&tail, 0);
-	HEAPfree(&hh, 0);
-	HEAPfree(&th, 0);
+	GDKfree(hh);
+	GDKfree(th);
 	return GDK_FAIL;
 }
 
@@ -745,10 +759,8 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	BUN cnt;
 	BATiter bi = bat_iterator(b);
 
-	if (b == NULL || view == NULL) {
-		GDKerror("VIEWbounds: bat argument missing");
+	if (b == NULL || view == NULL)
 		return;
-	}
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)

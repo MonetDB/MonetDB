@@ -1,0 +1,40 @@
+stderr of test 'crash.Bug-3736` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 10:50:37 >  
+# 10:50:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38510" "--set" "mapi_usock=/var/tmp/mtest-30636/.s.monetdb.38510" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:50:37 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38510
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30636/.s.monetdb.38510
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 10:50:37 >  
+# 10:50:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30636" "--port=38510"
+# 10:50:37 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-15304/.s.monetdb.34590
+QUERY = Select b.* FROM open_auctions o, b bidder WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min (b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX (b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
+ERROR = !SELECT: no such table 'b'
+
+# 10:50:38 >  
+# 10:50:38 >  "Done."
+# 10:50:38 >  
+

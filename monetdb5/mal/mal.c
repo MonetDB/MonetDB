@@ -29,7 +29,6 @@ int have_hge;
 #include "mal_recycle.h"
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
-#include "mal_http_daemon.h"
 #include "mal_private.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
@@ -38,6 +37,7 @@ MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
 MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
+MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -79,6 +79,7 @@ int mal_init(void){
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
+	MT_lock_init( &mal_beatLock, "mal_beatLock");
 #endif
 
 	tstAligned();
@@ -96,10 +97,8 @@ int mal_init(void){
 		return -1;
 	/* set up the profiler if needed, output sent to console */
 	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace ) {
-		openProfilerStream(mal_clients[0].fdout);
-		startProfiler(1,0);
-	} 
+	if ( mal_trace ) 
+		openProfilerStream(mal_clients[0].fdout,0);
 	return 0;
 }
 /*
@@ -154,12 +153,12 @@ void mal_exit(void){
 		GDKfree(mal_clients->bak);
 	if( mal_clients->fdin){
 		/* missing protection against closing stdin stream */
-		(void) mnstr_close(mal_clients->fdin->s);
-		(void) bstream_destroy(mal_clients->fdin);
+		mnstr_close(mal_clients->fdin->s);
+		bstream_destroy(mal_clients->fdin);
 	}
 	if( mal_clients->fdout && mal_clients->fdout != GDKstdout) {
-		(void) mnstr_close(mal_clients->fdout);
-		(void) mnstr_destroy(mal_clients->fdout);
+		mnstr_close(mal_clients->fdout);
+		mnstr_destroy(mal_clients->fdout);
 	}
 #endif
 	/* deregister everything that was registered, ignore errors */

@@ -94,6 +94,10 @@ copy_into
 antiselect
 median_stdev
 
-HAVE_GEOM?trace
+#HAVE_GEOM?trace
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
+
+str-pad
+str-trim
+alastair_udf_mergetable_bug

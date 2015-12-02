@@ -33,10 +33,9 @@ function user.main():void;
     bat.append(b,5442033);
     bat.append(b,5645862);
     io.print(b);
-# it left one behind 
-    bat.delete(b,b);
+    bat.delete(b,1@0);
     io.print(b);
-    bat.delete(b,b);
+    bat.delete(b);
     io.print(b);
 end user.main;
 #--------------------------#
@@ -46,14 +45,16 @@ end user.main;
 [ 0@0,	  5140046	  ]
 [ 1@0,	  5442033	  ]
 [ 2@0,	  5645862	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
+#--------------------------#
+# t	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	5140046  ]
+[ 1@0,	5645862  ]
+#--------------------------#
+# t	t  # name
+# void	int  # type
+#--------------------------#
 
 # 15:29:54 >  
 # 15:29:54 >  Done.

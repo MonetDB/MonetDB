@@ -83,7 +83,7 @@ static void GDKunlockHome(void);
  */
 
 static int
-GDKenvironment(str dbpath)
+GDKenvironment(const char *dbpath)
 {
 	if (dbpath == 0) {
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
@@ -404,7 +404,7 @@ MT_init(void)
 	/* NetBSD, OpenBSD, Darwin, 32-bits; FreeBSD 32 & 64-bits */
 	{
 # ifdef __FreeBSD__
-		unsigned long size = 0;
+		unsigned long size = 0; /* type long required by sysctl() (?) */
 # else
 		int size = 0;
 # endif
@@ -435,14 +435,14 @@ size_t
 GDKmem_cursize(void)
 {
 	/* RAM/swapmem that Monet is really using now */
-	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock, "GDKmem_cursize");
+	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock);
 }
 
 size_t
 GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */
-	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock, "GDKvm_cursize") + GDKmem_cursize();
+	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock) + GDKmem_cursize();
 }
 
 #ifdef GDK_MEM_KEEPHISTO
@@ -450,50 +450,50 @@ GDKvm_cursize(void)
 	do {								\
 		int _idx;						\
 									\
-		(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc"); \
+		(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock); \
 		GDKmallidx(_idx, _memdelta);				\
-		(void) ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock, "heapinc"); \
+		(void) ATOMIC_INC(GDK_nmallocs[_idx], mbyteslock);	\
 	} while (0)
 #define heapdec(memdelta)						\
 	do {								\
 		ssize_t _memdelta = (ssize_t) (memdelta);		\
 		int _idx;						\
 									\
-		(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec"); \
+		(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock); \
 		GDKmallidx(_idx, _memdelta);				\
-		(void) ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock, "heapdec"); \
+		(void) ATOMIC_DEC(GDK_nmallocs[_idx], mbyteslock);	\
 	} while (0)
 #else
 #define heapinc(_memdelta)						\
-	(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapinc")
+	(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock)
 #define heapdec(_memdelta)						\
-	(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock, "heapdec")
+	(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock)
 #endif
 
 #ifdef GDK_VM_KEEPHISTO
-#define meminc(vmdelta, fcn)						\
+#define meminc(vmdelta)							\
 	do {								\
 		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
 		int _idx;						\
 									\
 		GDKmallidx(_idx, _vmdelta);				\
-		(void) ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
-		(void) ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock, fcn); \
+		(void) ATOMIC_INC(GDK_vm_nallocs[_idx], mbyteslock);	\
+		(void) ATOMIC_ADD(GDK_vm_cursize, _vmdelta, mbyteslock); \
 	} while (0)
-#define memdec(vmdelta, fcn)						\
+#define memdec(vmdelta)							\
 	do {								\
 		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
 		int _idx;						\
 									\
 		GDKmallidx(_idx, _vmdelta);				\
-		(void) ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock, fcn); \
-		(void) ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock, fcn); \
+		(void) ATOMIC_DEC(GDK_vm_nallocs[_idx], mbyteslock);	\
+		(void) ATOMIC_SUB(GDK_vm_cursize, _vmdelta, mbyteslock); \
 	} while (0)
 #else
-#define meminc(vmdelta, fcn)						\
-	(void) ATOMIC_ADD(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
-#define memdec(vmdelta, fcn)						\
-	(void) ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock, fcn)
+#define meminc(vmdelta)							\
+	(void) ATOMIC_ADD(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock)
+#define memdec(vmdelta)							\
+	(void) ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock)
 #endif
 
 #ifndef STATIC_CODE_ANALYSIS
@@ -588,7 +588,7 @@ GDKmemdump(void)
  * applied: for all mallocs > 1MB.
  */
 static void
-GDKmemfail(str s, size_t len)
+GDKmemfail(const char *s, size_t len)
 {
 	int bak = GDKdebug;
 
@@ -813,10 +813,8 @@ ptr
 GDKrealloc(void *blk, size_t size)
 {
 	size_t sz = size;
-	void *p;
 
-	p = GDKreallocmax(blk, sz, &size, 0);
-	return p;
+	return GDKreallocmax(blk, sz, &size, 0);
 }
 
 #undef GDKstrdup
@@ -848,7 +846,10 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 void *
 GDKmalloc(size_t size)
 {
-	return malloc(size);
+	void *p = malloc(size);
+	if (p == NULL)
+		GDKerror("GDKmalloc: failed for " SZFMT " bytes", size);
+	return p;
 }
 
 void
@@ -864,6 +865,8 @@ GDKzalloc(size_t size)
 	void *ptr = malloc(size);
 	if (ptr)
 		memset(ptr, 0, size);
+	else
+		GDKerror("GDKzalloc: failed for " SZFMT " bytes", size);
 	return ptr;
 }
 
@@ -872,21 +875,32 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 {
 	void *ptr = realloc(blk, size);
 	*maxsize = size;
-	if (ptr == 0 && emergency)
-		GDKfatal("fatal\n");
+	if (ptr == 0) {
+		if (emergency)
+			GDKfatal("fatal\n");
+		else
+			GDKerror("GDKreallocmax: failed for "
+				 SZFMT " bytes", newsize);
+	}
 	return ptr;
 }
 
 void *
 GDKrealloc(void *ptr, size_t size)
 {
-	return realloc(ptr, size);
+	void *p = realloc(ptr, size);
+	if (p == NULL)
+		GDKerror("GDKrealloc: failed for " SZFMT " bytes", size);
+	return p;
 }
 
 char *
 GDKstrdup(const char *s)
 {
-	return strdup(s);
+	char *p = strdup(s);
+	if (p == NULL)
+		GDKerror("GDKstrdup failed for %s\n", s);
+	return p;
 }
 
 #endif	/* STATIC_CODE_ANALYSIS */
@@ -925,7 +939,7 @@ GDKmmap(const char *path, int mode, size_t len)
 		/* since mmap directly have content we say it's zero-ed
 		 * memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
-		meminc(len, "GDKmmap");
+		meminc(len);
 	}
 	return ret;
 }
@@ -939,10 +953,29 @@ GDKmunmap(void *addr, size_t size)
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0)
-		memdec(size, "GDKunmap");
+		memdec(size);
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
 
+#undef GDKmremap
+void *
+GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+{
+	void *ret;
+
+	ret = MT_mremap(path, mode, old_address, old_size, new_size);
+	if (ret == NULL) {
+		GDKmemfail("GDKmremap", *new_size);
+		ret = MT_mremap(path, mode, old_address, old_size, new_size);
+		if (ret != NULL)
+			fprintf(stderr, "#GDKmremap: recovery ok. Continuing..\n");
+	}
+	if (ret != NULL) {
+		memdec(old_size);
+		meminc(*new_size);
+	}
+	return ret;
+}
 
 /*
  * @+ Session Initialization
@@ -998,7 +1031,7 @@ GDKvmtrim(void *limit)
 	} while (!GDKexiting());
 }
 
-static int THRinit(void);
+static void THRinit(void);
 static void GDKlockHome(void);
 
 int
@@ -1028,8 +1061,8 @@ GDKinit(opt *set, int setlen)
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock,"MT_system_lock");
-	ATOMIC_INIT(GDKstoppedLock, "GDKstoppedLock");
-	ATOMIC_INIT(mbyteslock, "mbyteslock");
+	ATOMIC_INIT(GDKstoppedLock);
+	ATOMIC_INIT(mbyteslock);
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
 	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
 	MT_lock_init(&GDKtmLock, "GDKtmLock");
@@ -1210,30 +1243,30 @@ GDKexit(int status)
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 	}
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock, "GDKexit") == 0) {
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) == 0) {
 		MT_Id pid = MT_getpid();
 		Thread t, s;
 		int i;
 
-		MT_lock_set(&GDKthreadLock, "GDKexit");
+		MT_lock_set(&GDKthreadLock);
 		GDKnrofthreads = 0;
-		MT_lock_unset(&GDKthreadLock, "GDKexit");
+		MT_lock_unset(&GDKthreadLock);
 		if (GDKvmtrim_id)
 			MT_join_thread(GDKvmtrim_id);
 		/* first give the other threads a chance to exit */
 		for (i = 0; i < 10; i++) {
-			MT_lock_set(&GDKthreadLock, "GDKexit");
+			MT_lock_set(&GDKthreadLock);
 			for (t = GDKthreads, s = t + THREADS; t < s; t++)
 				if (t->pid && t->pid != pid)
 					break;
-			MT_lock_unset(&GDKthreadLock, "GDKexit");
+			MT_lock_unset(&GDKthreadLock);
 			if (t == s) /* no other threads? */
 				break;
 			MT_sleep_ms(CATNAP);
 		}
 		if (status == 0) {
 			/* they had there chance, now kill them */
-			MT_lock_set(&GDKthreadLock, "GDKexit");
+			MT_lock_set(&GDKthreadLock);
 			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 				if (t->pid) {
 					MT_Id victim = t->pid;
@@ -1244,7 +1277,7 @@ GDKexit(int status)
 					}
 				}
 			}
-			MT_lock_unset(&GDKthreadLock, "GDKexit");
+			MT_lock_unset(&GDKthreadLock);
 		}
 #if 0
 		/* we can't clean up after killing threads */
@@ -1621,6 +1654,9 @@ THRget(int tid)
 	return (GDKthreads + tid - 1);
 }
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#pragma warning(disable : 4172)
+#endif
 static inline size_t
 THRsp(void)
 {
@@ -1644,19 +1680,19 @@ GDK_find_thread(MT_Id pid)
 }
 
 Thread
-THRnew(str name)
+THRnew(const char *name)
 {
 	int tid = 0;
 	Thread t;
 	Thread s;
 	MT_Id pid = MT_getpid();
 
-	MT_lock_set(&GDKthreadLock, "THRnew");
+	MT_lock_set(&GDKthreadLock);
 	s = GDK_find_thread(pid);
 	if (s == NULL) {
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == pid) {
-				MT_lock_unset(&GDKthreadLock, "THRnew");
+				MT_lock_unset(&GDKthreadLock);
 				IODEBUG fprintf(stderr, "#THRnew:duplicate " SZFMT "\n", (size_t) pid);
 				return s;
 			}
@@ -1667,8 +1703,9 @@ THRnew(str name)
 			}
 		}
 		if (s == t) {
-			MT_lock_unset(&GDKthreadLock, "THRnew");
+			MT_lock_unset(&GDKthreadLock);
 			IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
+			GDKerror("THRnew: too many threads\n");
 			return NULL;
 		}
 		tid = s->tid;
@@ -1684,8 +1721,8 @@ THRnew(str name)
 
 		GDKnrofthreads++;
 	}
-	s->name = name;
-	MT_lock_unset(&GDKthreadLock, "THRnew");
+	s->name = GDKstrdup(name);
+	MT_lock_unset(&GDKthreadLock);
 
 	return s;
 }
@@ -1696,12 +1733,14 @@ THRdel(Thread t)
 	if (t < GDKthreads || t > GDKthreads + THREADS) {
 		GDKfatal("THRdel: illegal call\n");
 	}
-	MT_lock_set(&GDKthreadLock, "THRdel");
+	MT_lock_set(&GDKthreadLock);
 	PARDEBUG fprintf(stderr, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 
+	GDKfree(t->name);
+	t->name = NULL;
 	t->pid = 0;
 	GDKnrofthreads--;
-	MT_lock_unset(&GDKthreadLock, "THRdel");
+	MT_lock_unset(&GDKthreadLock);
 }
 
 int
@@ -1712,7 +1751,7 @@ THRhighwater(void)
 	size_t diff;
 	int rc = 0;
 
-	MT_lock_set(&GDKthreadLock, "THRhighwater");
+	MT_lock_set(&GDKthreadLock);
 	s = GDK_find_thread(MT_getpid());
 	if (s != NULL) {
 		c = THRsp();
@@ -1720,7 +1759,7 @@ THRhighwater(void)
 		if (diff > THREAD_STACK_SIZE - 16 * 1024)
 			rc = 1;
 	}
-	MT_lock_unset(&GDKthreadLock, "THRhighwater");
+	MT_lock_unset(&GDKthreadLock);
 	return rc;
 }
 
@@ -1729,7 +1768,7 @@ THRhighwater(void)
  * the network.  The code below should be improved to gain speed.
  */
 
-static int
+static void
 THRinit(void)
 {
 	int i = 0;
@@ -1739,7 +1778,6 @@ THRinit(void)
 	for (i = 0; i < THREADS; i++) {
 		GDKthreads[i].tid = i + 1;
 	}
-	return 0;
 }
 
 void
@@ -1747,11 +1785,11 @@ THRsetdata(int n, ptr val)
 {
 	Thread s;
 
-	MT_lock_set(&GDKthreadLock, "THRsetdata");
+	MT_lock_set(&GDKthreadLock);
 	s = GDK_find_thread(MT_getpid());
 	if (s)
 		s->data[n] = val;
-	MT_lock_unset(&GDKthreadLock, "THRsetdata");
+	MT_lock_unset(&GDKthreadLock);
 }
 
 void *
@@ -1760,10 +1798,10 @@ THRgetdata(int n)
 	Thread s;
 	void *d;
 
-	MT_lock_set(&GDKthreadLock, "THRgetdata");
+	MT_lock_set(&GDKthreadLock);
 	s = GDK_find_thread(MT_getpid());
 	d = s ? s->data[n] : THRdata[n];
-	MT_lock_unset(&GDKthreadLock, "THRgetdata");
+	MT_lock_unset(&GDKthreadLock);
 	return d;
 }
 
@@ -1773,10 +1811,10 @@ THRgettid(void)
 	Thread s;
 	int t;
 
-	MT_lock_set(&GDKthreadLock, "THRgettid");
+	MT_lock_set(&GDKthreadLock);
 	s = GDK_find_thread(MT_getpid());
 	t = s ? s->tid : 1;
-	MT_lock_unset(&GDKthreadLock, "THRgettid");
+	MT_lock_unset(&GDKthreadLock);
 	return t;
 }
 
@@ -1795,7 +1833,7 @@ THRprintf(stream *s, const char *format, ...)
 	if (!s)
 		return -1;
 
-	MT_lock_set(&MT_system_lock, "THRprintf");
+	MT_lock_set(&MT_system_lock);
 	if (*format != '!') {
 		c = '#';
 		if (*format == '#')
@@ -1836,11 +1874,11 @@ THRprintf(stream *s, const char *format, ...)
       cleanup:
 	if (bf != THRprintbuf)
 		free(bf);
-	MT_lock_unset(&MT_system_lock, "THRprintf");
+	MT_lock_unset(&MT_system_lock);
 	return n;
 }
 
-static char *_gdk_version_string = VERSION;
+static const char *_gdk_version_string = VERSION;
 /**
  * Returns the GDK version as internally allocated string.  Hence the
  * string does not have to (and should not) be freed.  Do not inline
@@ -1852,3 +1890,35 @@ GDKversion(void)
 	return (_gdk_version_string);
 }
 
+/**
+ * Extracts the last directory from a path string, if possible.
+ * Stores the parent directory (path) in last_dir_parent and
+ * the last directory (name) without a leading separators in last_dir.
+ * Returns GDK_SUCCEED for success, GDK_FAIL on failure.
+ */
+gdk_return
+GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
+{
+	char *last_dir_with_sep;
+	ptrdiff_t last_dirsep_index;
+
+	if (path == NULL || *path == 0) {
+		GDKerror("GDKextractParentAndLastDirFromPath: no path\n");
+		return GDK_FAIL;
+	}
+
+	last_dir_with_sep = strrchr(path, DIR_SEP);
+	if (last_dir_with_sep == NULL) {
+		/* it wasn't a path, can't work with that */
+		GDKerror("GDKextractParentAndLastDirFromPath: no separator\n");
+		return GDK_FAIL;
+	}
+	last_dirsep_index = last_dir_with_sep - path;
+	/* split the dir string into absolute parent dir path and
+	 * (relative) log dir name */
+	strncpy(last_dir, last_dir_with_sep + 1, strlen(path));
+	strncpy(last_dir_parent, path, last_dirsep_index);
+	last_dir_parent[last_dirsep_index] = 0;
+
+	return GDK_SUCCEED;
+}

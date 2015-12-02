@@ -5,11 +5,14 @@
 -- Copyright 2008-2015 MonetDB B.V.
 
 -- assume milliseconds when converted to TIMESTAMP
-create function "epoch"(sec BIGINT) returns TIMESTAMP
+create function sys."epoch"(sec BIGINT) returns TIMESTAMP
 	external name timestamp."epoch";
 
-create function "epoch"(sec INT) returns TIMESTAMP
+create function sys."epoch"(sec INT) returns TIMESTAMP
 	external name timestamp."epoch";
 
-create function "epoch"(ts TIMESTAMP) returns INT
+create function sys."epoch"(ts TIMESTAMP) returns INT
+	external name timestamp."epoch";
+
+create function sys."epoch"(ts TIMESTAMP WITH TIME ZONE) returns INT
 	external name timestamp."epoch";

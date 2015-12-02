@@ -9,10 +9,16 @@ if not os.path.exists(db):
     print >> sys.stderr, 'database directory %s does not exist' % db
     sys.exit(1)
 
-f = open(os.path.join(db, 'bat', 'BACKUP', 'BBP.dir'), 'rU')
+try:
+    f = open(os.path.join(db, 'bat', 'BACKUP', 'SUBCOMMIT', 'BBP.dir'), 'rU')
+except IOError:
+    try:
+        f = open(os.path.join(db, 'bat', 'BACKUP', 'BBP.dir'), 'rU')
+    except IOError:
+        f = open(os.path.join(db, 'bat', 'BBP.dir'), 'rU')
 hdr = f.readline()
 ptroid = f.readline()
-ptr, oid = ptroid.split()
+ptr, oid, hge = ptroid.split()
 f.close()
 
 z = zipfile.ZipFile(archive)
@@ -31,6 +37,8 @@ if rev:
     revcomment = ' (hg id %s)' % rev
 else:
     revcomment = ''
+if hge == '16' and 'largest integer size 16' not in comment:
+    revcomment = ' with largest integer size 16' + revcomment
 z.comment = comment + 'Chained on host %s%s.\n' % (os.getenv('HOSTNAME', 'unknown'), revcomment)
 
 for root, dirs, files in os.walk(db):

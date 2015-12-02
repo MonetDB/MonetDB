@@ -1,0 +1,51 @@
+stderr of test 'key_copy` in directory 'sql/test/copy` itself:
+
+
+# 18:36:17 >  
+# 18:36:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32293" "--set" "mapi_usock=/var/tmp/mtest-6766/.s.monetdb.32293" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/resultset/Linux-x86_64/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 18:36:17 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/resultset/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32293
+# cmdline opt 	mapi_usock = /var/tmp/mtest-6766/.s.monetdb.32293
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/resultset/Linux-x86_64/var/MonetDB/mTests_sql_test_copy
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 18:36:17 >  
+# 18:36:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6766" "--port=32293"
+# 18:36:17 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27471/.s.monetdb.33963
+QUERY = copy 4 records into cik1 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+        0
+        5
+        5
+        9
+ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik1.cik1_i_pkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-27471/.s.monetdb.33963
+QUERY = copy 4 records into cik2 from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+        0,1
+        5,1
+        5,1
+        9,1
+ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik2.cik2_i_j_pkey' violated
+
+# 18:36:17 >  
+# 18:36:17 >  "Done."
+# 18:36:17 >  
+

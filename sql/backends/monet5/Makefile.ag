@@ -4,7 +4,7 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-SUBDIRS = NOT_WIN32?vaults UDF HAVE_SAMTOOLS?bam LSST HAVE_GSL?gsl generator
+SUBDIRS = NOT_WIN32?vaults UDF LSST HAVE_GSL?gsl generator
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \
@@ -45,7 +45,8 @@ lib__sql = {
 		sql_cast_impl_up_to_flt.h \
 		sql_cast_impl_up_to_int.h \
 		sql_round.c sql_round_impl.h sql_bat2time.c \
-		sql_fround.c sql_fround_impl.h
+		sql_fround.c sql_fround_impl.h \
+		sql_rank.c sql_rank.h
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
@@ -67,7 +68,6 @@ lib__sql = {
 #	LIBS = ../../server/libsqlserver \
 #		   ../../storage/libstore \
 #		   ../../storage/bat/libbatstore \
-#		   ../../storage/restrict/librestrictstore \
 #		   ../../common/libsqlcommon \
 #		   ../../../monetdb5/tools/libmonetdb5 \
 #		   ../../../gdk/libbat \
@@ -82,7 +82,6 @@ lib__sql = {
 #		   ../../server/libsqlserver \
 #		   ../../storage/libstore \
 #		   ../../storage/bat/libbatstore \
-#		   ../../storage/restrict/librestrictstore \
 #		   ../../common/libsqlcommon \
 #		   ../../../monetdb5/tools/libmonetdb5 \
 #		   ../../../gdk/libbat \

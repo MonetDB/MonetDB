@@ -49,10 +49,10 @@ Ready.
 % sys.L # table_name
 % r # name
 % decimal # type
-% 24 # length
-[ 0.00	]
-[ -1.00	]
-[ -1.00	]
+% 27 # length
+[ 0.023	]
+[ -1.000	]
+[ -1.000	]
 #rollback;
 
 # 20:44:31 >  

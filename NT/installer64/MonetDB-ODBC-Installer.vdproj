@@ -230,7 +230,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_17D7FB69076E415C8973295D502161C5"
             {
-            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64\\bin\\iconv.dll"
+            "SourcePath" = "8:C:\\Libraries\\iconv-1.11.1.win64-vs2010\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -250,7 +250,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2E74F1B1BDE548A7922BAD968E690A3A"
             {
-            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64\\bin\\libbz2.dll"
+            "SourcePath" = "8:C:\\Libraries\\bzip2-1.0.6.win64-vs2010\\bin\\libbz2.dll"
             "TargetName" = "8:libbz2.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -290,7 +290,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F0D2367141846EFA634DA35B05CDA4D"
             {
-            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.8.win64\\bin\\zlib1.dll"
+            "SourcePath" = "8:C:\\Libraries\\zlib-1.2.8.win64-vs2010\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -330,7 +330,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_779449EF5BAD4B068A50802402E52278"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1k.win64\\bin\\libeay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2d.win64-vs2010\\bin\\libeay32.dll"
             "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -370,7 +370,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B1B1C0011D7945F892A77F529772EA72"
             {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1k.win64\\bin\\ssleay32.dll"
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.2d.win64-vs2010\\bin\\ssleay32.dll"
             "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
@@ -574,7 +574,7 @@
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.20.0"
+        "ProductVersion" = "8:11.22.0"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"
@@ -1207,7 +1207,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x64.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x64.msm"
                 "Properties"
                 {
                 }

@@ -26,13 +26,6 @@
 #include "mal_exception.h"
 #include "str.h"
 
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
-#endif
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#endif
-
 #ifdef WIN32
 #define batstr_export extern __declspec(dllexport)
 #else
@@ -109,34 +102,27 @@ batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const ba
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}
 #define prepareResult(X,Y,T,Z)						\
-	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);	\
+	X= BATnew(TYPE_void,T,BATcount(Y), TRANSIENT);	\
 	if( X == NULL){									\
 		BBPunfix(Y->batCacheid);					\
 		throw(MAL, Z, MAL_MALLOC_FAIL);				\
 	}												\
-	if( Y->htype== TYPE_void)						\
-		BATseqbase(X, Y->hseqbase);					\
-	X->hsorted=Y->hsorted;							\
-	X->hrevsorted=Y->hrevsorted;					\
 	X->tsorted=0;									\
 	X->trevsorted=0;
 #define prepareResult2(X,Y,A,T,Z)					\
-	X= BATnew(Y->htype,T,BATcount(Y), TRANSIENT);	\
+	X= BATnew(TYPE_void,T,BATcount(Y), TRANSIENT);	\
 	if( X == NULL){									\
 		BBPunfix(Y->batCacheid);					\
 		BBPunfix(A->batCacheid);					\
 		throw(MAL, Z, MAL_MALLOC_FAIL);				\
 	}												\
-	if( Y->htype== TYPE_void)						\
-		BATseqbase(X, Y->hseqbase);					\
-	X->hsorted=Y->hsorted;							\
-	X->hrevsorted=Y->hrevsorted;					\
 	X->tsorted=0;									\
 	X->trevsorted=0;
-#define finalizeResult(X,Y,Z)									\
-	if (!((Y)->batDirty&2)) BATsetaccess((Y), BAT_READ);		\
-	*X = (Y)->batCacheid;										\
-	BBPkeepref(*(X));											\
+#define finalizeResult(X,Y,Z)								\
+	BATseqbase((Y), (Z)->hseqbase);						\
+	if (!((Y)->batDirty&2)) BATsetaccess((Y), BAT_READ);	\
+	*X = (Y)->batCacheid;									\
+	BBPkeepref(*(X));										\
 	BBPunfix(Z->batCacheid);
 
 static str
@@ -155,7 +141,6 @@ do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const
 	bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
 		x = (str) BUNtail(bi, p);
 		if (x == 0 || strcmp(x, str_nil) == 0) {
 			y = int_nil;
@@ -164,7 +149,7 @@ do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const
 		} else if ((msg = (*func)(&y, &x)) != MAL_SUCCEED) {
 			goto bunins_failed;
 		}
-		bunfastins(bn, h, &y);
+		bunfastapp(bn, &y);
 	}
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
@@ -209,8 +194,6 @@ do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const
 	bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
@@ -218,7 +201,7 @@ do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -256,8 +239,6 @@ do_batstr_conststr_str(bat *ret, const bat *l, const str *s2, const char *name, 
 	bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
@@ -265,7 +246,7 @@ do_batstr_conststr_str(bat *ret, const bat *l, const str *s2, const char *name, 
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -306,8 +287,6 @@ do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, st
 	bi2 = bat_iterator(b2);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		x2 = (str) BUNtail(bi2, p);
@@ -317,7 +296,7 @@ do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, st
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -356,8 +335,6 @@ do_batstr_constint_str(bat *ret, const bat *l, const int *n, const char *name, s
 	bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
@@ -365,7 +342,7 @@ do_batstr_constint_str(bat *ret, const bat *l, const int *n, const char *name, s
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -407,8 +384,6 @@ do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str
 	bi2 = bat_iterator(b2);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		nn = *(int *)BUNtail(bi2, p);
@@ -417,7 +392,7 @@ do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -456,8 +431,6 @@ do_batstr_constint_conststr_str(bat *ret, const bat *l, const int *n, const str 
 	bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
@@ -465,7 +438,7 @@ do_batstr_constint_conststr_str(bat *ret, const bat *l, const int *n, const str 
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -507,8 +480,6 @@ do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s
 	bi2 = bat_iterator(b2);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		nn = *(int *)BUNtail(bi2, p);
@@ -517,7 +488,7 @@ do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -559,8 +530,6 @@ do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l
 	bi2 = bat_iterator(b2);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		x2 = (str) BUNtail(bi2, p);
@@ -570,7 +539,7 @@ do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -617,8 +586,6 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 	bi3 = bat_iterator(b3);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = NULL;
 		x = (str) BUNtail(bi, p);
 		nn = *(int *)BUNtail(bi2, p);
@@ -629,7 +596,7 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y == str_nil) {
 			bn->T->nonil = 0;
 			bn->T->nil = 1;
@@ -811,11 +778,10 @@ str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 	righti = bat_iterator(right);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
 		STRPrefix(vp, &tl, &tr);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	BBPunfix(right->batCacheid);
@@ -842,10 +808,9 @@ str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 	lefti = bat_iterator(left);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		STRPrefix(vp, &tl, cst);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
@@ -873,11 +838,10 @@ str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 	righti = bat_iterator(right);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
 		STRSuffix(vp, &tl, &tr);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	BBPunfix(right->batCacheid);
@@ -904,10 +868,9 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 	lefti = bat_iterator(left);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		STRSuffix(vp, &tl, cst);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
@@ -935,11 +898,10 @@ str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
 	righti = bat_iterator(right);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
 		STRstrSearch(vp, &tl, &tr);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	BBPunfix(right->batCacheid);
@@ -966,10 +928,9 @@ str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
 	lefti = bat_iterator(left);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		STRstrSearch(vp, &tl, cst);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
@@ -997,11 +958,10 @@ str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 	righti = bat_iterator(right);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
 		STRReverseStrSearch(vp, &tl, &tr);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	BBPunfix(right->batCacheid);
@@ -1028,10 +988,9 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 	lefti = bat_iterator(left);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		STRReverseStrSearch(vp, &tl, cst);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
@@ -1059,11 +1018,10 @@ str STRbatTail(bat *ret, const bat *l, const bat *r)
 	righti = bat_iterator(right);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		int *tr = (int *) BUNtail(righti,p);
 		STRTail(&v, &tl, tr);
-		bunfastins(bn, h, v);
+		bunfastapp(bn, v);
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
@@ -1092,10 +1050,9 @@ str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 	lefti = bat_iterator(left);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		STRTail(&v, &tl, cst);
-		bunfastins(bn, h, v);
+		bunfastapp(bn, v);
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
@@ -1125,11 +1082,10 @@ str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 	righti = bat_iterator(right);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		ptr tr = BUNtail(righti,p);
 		STRWChrAt(vp, &tl, tr);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	BBPunfix(right->batCacheid);
@@ -1156,10 +1112,9 @@ str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 	lefti = bat_iterator(left);
 
 	BATloop(left, p, q) {
-		ptr h = BUNhead(lefti,p);
 		str tl = (str) BUNtail(lefti,p);
 		STRWChrAt(vp, &tl, cst);
-		bunfastins(bn, h, vp);
+		bunfastapp(bn, vp);
 	}
 	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
@@ -1186,13 +1141,11 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 	bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
 		y = (str) str_nil;
 		x = (str) BUNtail(bi, p);
 		if (x != 0 && strcmp(x, str_nil) != 0)
 			STRSubstitute(&y, &x, arg2, arg3, rep);
-		bunfastins(bn, h, y);
+		bunfastapp(bn, y);
 		if (y != str_nil)
 			GDKfree(y);
 	}
@@ -1240,13 +1193,6 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 			goto bunins_failed;
 		BUNappend(bn, (ptr)res, FALSE);
 		GDKfree(res);
-	}
-
-	if (b->htype != bn->htype) {
-		BAT *r = VIEWcreate(b,bn);
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
 	}
 
 	bn->T->nonil = 0;
@@ -1305,12 +1251,6 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		STRsubstring(vp, &tl, t1, t2);
 		BUNappend(bn, *vp, FALSE);
 		GDKfree(*vp);
-	}
-	if (left->htype != bn->htype) {
-		BAT *r = VIEWcreate(left,bn);
-
-		BBPunfix(bn->batCacheid);
-		bn = r;
 	}
 	bn->T->nonil = 0;
 	BBPunfix(start->batCacheid);

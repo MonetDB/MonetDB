@@ -86,33 +86,29 @@ Dependencies between database objects
 % sys.a,	sys.s,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	4,	10 # length
+% 7,	8,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
-% .t,	.v,	.L # table_name
+% .t,	.v,	.L4 # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 11,	16,	8 # length
-[ "environment",	"geometry_columns",	"DEP_VIEW"	]
-[ "tables",	"geometry_columns",	"DEP_VIEW"	]
-[ "columns",	"geometry_columns",	"DEP_VIEW"	]
-[ "types",	"geometry_columns",	"DEP_VIEW"	]
-[ "schemas",	"geometry_columns",	"DEP_VIEW"	]
+% 2,	2,	8 # length
 [ "t1",	"v1",	"DEP_VIEW"	]
 [ "v1",	"v2",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
-% .t,	.i,	.L4 # table_name
-% name,	name,	L4 # name
+% .t,	.i,	.L6 # table_name
+% name,	name,	L6 # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
 #(SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
-% .L2,	.L2,	.L2 # table_name
-% name,	trigname,	L1 # name
+% .L6,	.L6,	.L6 # table_name
+% name,	trigname,	L5 # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
@@ -120,17 +116,17 @@ Dependencies between database objects
 [ "t2",	"trigger_test",	"DEP_TRIGGER"	]
 [ "t3",	"trigger_test_4",	"DEP_TRIGGER"	]
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
-% .t,	.fk,	.L1 # table_name
-% name,	name,	L1 # name
+% .t,	.fk,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 5,	15,	8 # length
 [ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
-#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
-% .t,	.f,	.L1 # table_name
-% name,	name,	L1 # name
+#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name;
+% .t,	.f,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -160,7 +156,6 @@ Dependencies between database objects
 [ "objects",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
-[ "spatial_ref_sys",	"getproj4",	"DEP_FUNC"	]
 [ "storagemodelinput",	"storagemodel",	"DEP_FUNC"	]
 [ "t1",	"f2",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
@@ -168,14 +163,10 @@ Dependencies between database objects
 [ "triggers",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 #SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
-% .c,	.v,	.L # table_name
+% .c,	.v,	.L2 # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 10,	16,	8 # length
-[ "sqlname",	"geometry_columns",	"DEP_VIEW"	]
-[ "systemname",	"geometry_columns",	"DEP_VIEW"	]
-[ "id",	"geometry_columns",	"DEP_VIEW"	]
-[ "name",	"geometry_columns",	"DEP_VIEW"	]
+% 4,	2,	8 # length
 [ "id",	"v1",	"DEP_VIEW"	]
 [ "name",	"v1",	"DEP_VIEW"	]
 [ "age",	"v1",	"DEP_VIEW"	]
@@ -183,8 +174,12 @@ Dependencies between database objects
 % .c,	.k,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 7,	25,	7 # length
-[ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
+% 20,	44,	7 # length
+[ "keyword",	"keywords_keyword_pkey",	"DEP_KEY"	]
+[ "table_type_id",	"table_types_table_type_id_pkey",	"DEP_KEY"	]
+[ "table_type_name",	"table_types_table_type_name_unique",	"DEP_KEY"	]
+[ "dependency_type_id",	"dependency_types_dependency_type_id_pkey",	"DEP_KEY"	]
+[ "dependency_type_name",	"dependency_types_dependency_type_name_unique",	"DEP_KEY"	]
 [ "file_id",	"files_pkey_file_id",	"DEP_KEY"	]
 [ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "file_id",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
@@ -279,14 +274,12 @@ Dependencies between database objects
 [ "name",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 [ "name",	"f2",	"DEP_FUNC"	]
 [ "owner",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
-[ "proj4text",	"getproj4",	"DEP_FUNC"	]
 [ "reference",	"storagemodel",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_keys_on_foreignkeys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "schema",	"storagemodel",	"DEP_FUNC"	]
 [ "sorted",	"storagemodel",	"DEP_FUNC"	]
-[ "srid",	"getproj4",	"DEP_FUNC"	]
 [ "table",	"storagemodel",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
@@ -303,9 +296,9 @@ Dependencies between database objects
 [ "id_t1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "age_v1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id",	"trigger_test_4",	"DEP_TRIGGER"	]
-#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
-% .v,	.f,	.L1 # table_name
-% name,	name,	L1 # name
+#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name;
+% .v,	.f,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 7,	34,	8 # length
 [ "columns",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
@@ -324,20 +317,20 @@ Dependencies between database objects
 [ "users",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "v1",	"f2",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
-% .v,	.i,	.L4 # table_name
-% name,	name,	L4 # name
+% .v,	.i,	.L6 # table_name
+% name,	name,	L6 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
-% .v,	.tri,	.L1 # table_name
-% name,	name,	L1 # name
+% .v,	.tri,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
 % sys.f1,	sys.f2,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 17,	31,	8 # length
+% 15,	31,	8 # length
 [ "=",	"columnsize",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "sql_mul",	"columnsize",	"DEP_FUNC"	]
@@ -358,7 +351,6 @@ Dependencies between database objects
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
-[ "zero_or_one",	"getproj4",	"DEP_FUNC"	]
 [ "=",	"hashsize",	"DEP_FUNC"	]
 [ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
@@ -385,14 +377,6 @@ Dependencies between database objects
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
-[ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
-[ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
-[ "getproj4",	"st_transform",	"DEP_FUNC"	]
-[ "internaltransform",	"st_transform",	"DEP_FUNC"	]
-[ "isnull",	"st_transform",	"DEP_FUNC"	]
-[ "not",	"st_transform",	"DEP_FUNC"	]
-[ "or",	"st_transform",	"DEP_FUNC"	]
-[ "st_srid",	"st_transform",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
 [ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
@@ -461,7 +445,7 @@ Dependencies between functions with same name
 % sys.f1,	sys.f2,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 17,	31,	8 # length
+% 15,	31,	8 # length
 [ "=",	"columnsize",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "sql_mul",	"columnsize",	"DEP_FUNC"	]
@@ -485,7 +469,6 @@ Dependencies between functions with same name
 [ "f1",	"f2",	"DEP_FUNC"	]
 [ "<",	"f3",	"DEP_FUNC"	]
 [ "f1",	"f3",	"DEP_FUNC"	]
-[ "zero_or_one",	"getproj4",	"DEP_FUNC"	]
 [ "=",	"hashsize",	"DEP_FUNC"	]
 [ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
@@ -512,14 +495,6 @@ Dependencies between functions with same name
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
-[ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
-[ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
-[ "getproj4",	"st_transform",	"DEP_FUNC"	]
-[ "internaltransform",	"st_transform",	"DEP_FUNC"	]
-[ "isnull",	"st_transform",	"DEP_FUNC"	]
-[ "not",	"st_transform",	"DEP_FUNC"	]
-[ "or",	"st_transform",	"DEP_FUNC"	]
-[ "st_srid",	"st_transform",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
 [ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
@@ -531,7 +506,7 @@ Dependencies between functions with same name
 % sys.f1,	sys.f2,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 17,	31,	8 # length
+% 15,	31,	8 # length
 [ "=",	"columnsize",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "sql_mul",	"columnsize",	"DEP_FUNC"	]
@@ -545,7 +520,6 @@ Dependencies between functions with same name
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
-[ "zero_or_one",	"getproj4",	"DEP_FUNC"	]
 [ "=",	"hashsize",	"DEP_FUNC"	]
 [ "sql_mul",	"hashsize",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
@@ -572,14 +546,6 @@ Dependencies between functions with same name
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
-[ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
-[ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
-[ "getproj4",	"st_transform",	"DEP_FUNC"	]
-[ "internaltransform",	"st_transform",	"DEP_FUNC"	]
-[ "isnull",	"st_transform",	"DEP_FUNC"	]
-[ "not",	"st_transform",	"DEP_FUNC"	]
-[ "or",	"st_transform",	"DEP_FUNC"	]
-[ "st_srid",	"st_transform",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
 [ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
@@ -608,42 +574,38 @@ Cleanup
 % sys.a,	sys.s,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 7,	4,	10 # length
+% 7,	8,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
+[ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
-% .t,	.v,	.L # table_name
+% .t,	.v,	.L4 # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 11,	16,	8 # length
-[ "environment",	"geometry_columns",	"DEP_VIEW"	]
-[ "tables",	"geometry_columns",	"DEP_VIEW"	]
-[ "columns",	"geometry_columns",	"DEP_VIEW"	]
-[ "types",	"geometry_columns",	"DEP_VIEW"	]
-[ "schemas",	"geometry_columns",	"DEP_VIEW"	]
+% 0,	0,	8 # length
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
-% .t,	.i,	.L4 # table_name
-% name,	name,	L4 # name
+% .t,	.i,	.L6 # table_name
+% name,	name,	L6 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #(SELECT t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
-% .L2,	.L2,	.L2 # table_name
-% name,	name,	L1 # name
+% .L6,	.L6,	.L6 # table_name
+% name,	name,	L5 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
-% .t,	.fk,	.L1 # table_name
-% name,	name,	L1 # name
+% .t,	.fk,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 5,	15,	8 # length
 [ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
-#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type = 0 ORDER BY t.name, f.name;
-% .t,	.f,	.L1 # table_name
-% name,	name,	L1 # name
+#SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name;
+% .t,	.f,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -673,27 +635,26 @@ Cleanup
 [ "objects",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
-[ "spatial_ref_sys",	"getproj4",	"DEP_FUNC"	]
 [ "storagemodelinput",	"storagemodel",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_functions_os_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 #SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
-% .c,	.v,	.L # table_name
+% .c,	.v,	.L2 # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 10,	16,	8 # length
-[ "sqlname",	"geometry_columns",	"DEP_VIEW"	]
-[ "systemname",	"geometry_columns",	"DEP_VIEW"	]
-[ "id",	"geometry_columns",	"DEP_VIEW"	]
-[ "name",	"geometry_columns",	"DEP_VIEW"	]
+% 0,	0,	8 # length
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
 % .c,	.k,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 7,	25,	7 # length
-[ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
+% 20,	44,	7 # length
+[ "keyword",	"keywords_keyword_pkey",	"DEP_KEY"	]
+[ "table_type_id",	"table_types_table_type_id_pkey",	"DEP_KEY"	]
+[ "table_type_name",	"table_types_table_type_name_unique",	"DEP_KEY"	]
+[ "dependency_type_id",	"dependency_types_dependency_type_id_pkey",	"DEP_KEY"	]
+[ "dependency_type_name",	"dependency_types_dependency_type_name_unique",	"DEP_KEY"	]
 [ "file_id",	"files_pkey_file_id",	"DEP_KEY"	]
 [ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "file_id",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
@@ -784,14 +745,12 @@ Cleanup
 [ "name",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 [ "name",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 [ "owner",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
-[ "proj4text",	"getproj4",	"DEP_FUNC"	]
 [ "reference",	"storagemodel",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_keys_on_foreignkeys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "schema",	"storagemodel",	"DEP_FUNC"	]
 [ "sorted",	"storagemodel",	"DEP_FUNC"	]
-[ "srid",	"getproj4",	"DEP_FUNC"	]
 [ "table",	"storagemodel",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
@@ -804,9 +763,9 @@ Cleanup
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
-#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type = 1 ORDER BY v.name, f.name;
-% .v,	.f,	.L1 # table_name
-% name,	name,	L1 # name
+#SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name;
+% .v,	.f,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 7,	34,	8 # length
 [ "columns",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
@@ -824,20 +783,20 @@ Cleanup
 [ "tables",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 [ "users",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
-% .v,	.i,	.L4 # table_name
-% name,	name,	L4 # name
+% .v,	.i,	.L6 # table_name
+% name,	name,	L6 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
-% .v,	.tri,	.L1 # table_name
-% name,	name,	L1 # name
+% .v,	.tri,	.L3 # table_name
+% name,	name,	L3 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name;
 % sys.f1,	sys.f2,	.L1 # table_name
 % name,	name,	L1 # name
 % varchar,	varchar,	char # type
-% 17,	31,	8 # length
+% 15,	31,	8 # length
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
 [ "<>",	"heapsize",	"DEP_FUNC"	]
 [ "=",	"columnsize",	"DEP_FUNC"	]
@@ -850,24 +809,19 @@ Cleanup
 [ "and",	"heapsize",	"DEP_FUNC"	]
 [ "columnsize",	"storagemodel",	"DEP_FUNC"	]
 [ "concat",	"ms_stuff",	"DEP_FUNC"	]
-[ "getproj4",	"st_transform",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "hash",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "hashsize",	"storagemodel",	"DEP_FUNC"	]
 [ "heapsize",	"storagemodel",	"DEP_FUNC"	]
 [ "imprintsize",	"storagemodel",	"DEP_FUNC"	]
-[ "internaltransform",	"st_transform",	"DEP_FUNC"	]
 [ "isnull",	"ms_round",	"DEP_FUNC"	]
-[ "isnull",	"st_transform",	"DEP_FUNC"	]
 [ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "length",	"ms_stuff",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
-[ "not",	"st_transform",	"DEP_FUNC"	]
 [ "or",	"imprintsize",	"DEP_FUNC"	]
 [ "or",	"ms_round",	"DEP_FUNC"	]
 [ "or",	"ms_stuff",	"DEP_FUNC"	]
-[ "or",	"st_transform",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "rotate_xor_hash",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
@@ -885,11 +839,7 @@ Cleanup
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_sub",	"ms_stuff",	"DEP_FUNC"	]
-[ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
-[ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
-[ "st_srid",	"st_transform",	"DEP_FUNC"	]
 [ "substring",	"ms_stuff",	"DEP_FUNC"	]
-[ "zero_or_one",	"getproj4",	"DEP_FUNC"	]
 #SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % sys.f,	sys.tri,	.L # table_name
 % name,	name,	single_value # name

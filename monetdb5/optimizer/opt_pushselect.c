@@ -114,6 +114,20 @@ lastbat_arg(MalBlkPtr mb, InstrPtr p)
 	return 0;
 }
 
+/* check for updates inbetween assignment to variables newv and oldv */
+static int 
+no_updates(InstrPtr *old, int *vars, int oldv, int newv) 
+{
+	while(newv > oldv) {
+		InstrPtr q = old[vars[newv]];
+
+		if (isUpdateInstruction(q)) 
+			return 0;
+		newv = getArg(q, 1);
+	}
+	return 1;
+}
+
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -148,8 +162,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		if (getModuleId(p) == algebraRef && 
-			(getFunctionId(p) == tintersectRef || getFunctionId(p) == tinterRef || 
-			 getFunctionId(p) == tdifferenceRef || getFunctionId(p) == tdiffRef)) {
+			(getFunctionId(p) == subinterRef || 
+			 getFunctionId(p) == subdiffRef)) {
 			GDKfree(vars);
 			return 0;
 		}
@@ -170,9 +184,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = old[vars[subselects.tid[s]]];
 				int Qsname = getArg(q, 2), Qtname = getArg(q, 3);
 
-				if ((sname == Qsname && tname == Qtname) ||
+				if (no_updates(old, vars, getArg(q,1), getArg(p,1)) &&
+				    ((sname == Qsname && tname == Qtname) ||
 				    (0 && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
-				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0)) {
+				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0))) {
 					clrFunction(p);
 					p->retc = 1;
 					p->argc = 2;
@@ -189,7 +204,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* find the table ids */
 			while(!tid) {
-				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef) {
 					int i1 = getArg(q, 1);
 					InstrPtr s = old[vars[i1]];
 	
@@ -225,7 +240,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* find the table ids */
 			while(!tid) {
-				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef) {
 					int i1 = getArg(q, 1);
 					InstrPtr s = old[vars[i1]];
 	
@@ -255,7 +270,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			/* find the table ids */
 			while(!tid) {
-				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
+				if (getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef) {
 					int i1 = getArg(q, 1);
 					InstrPtr s = old[vars[i1]];
 	
@@ -386,11 +401,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 		/* Leftfetchjoins involving rewriten table ids need to be flattend
-		 * l = leftfetchjoin(t, c); => l = c;
+		 * l = projection(t, c); => l = c;
 		 * and
-		 * l = leftfetchjoin(s, ntids); => l = s;
+		 * l = projection(s, ntids); => l = s;
 		 */
-		else if (getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef) {
+		else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
 			int var = getArg(p, 1);
 			
 			if (subselect_find_subselect(&subselects, var) > 0) {
@@ -420,7 +435,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					continue;
 				}
 				/* c = sql.delta(b,uid,uval,ins);
-		 		 * l = leftfetchjoin(x, c); 
+		 		 * l = projection(x, c); 
 		 		 * into
 		 		 * l = sql.projectdelta(x,b,uid,uval,ins);
 		 		 */
@@ -483,6 +498,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(s, 1); 
 				cst.vtype = getArgType(mb, r, 2);
 				cst.val.wval = 0;
@@ -522,9 +538,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr u = copyInstruction(q);
 		
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(q, 1); /* column */
 				pushInstruction(mb,r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				setVarCList(mb,getArg(s,0));
 				getArg(s, 1) = getArg(q, 3); /* updates */
 				s = ReplaceWithNil(mb, s, 2, TYPE_bat); /* no candidate list */
 				setArgType(mb, s, 2, newBatType(TYPE_oid,TYPE_oid));
@@ -535,6 +553,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
         			s->blk = NULL;
 				pushInstruction(mb,s);
 				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				setVarCList(mb,getArg(t,0));
 				getArg(t, 1) = getArg(q, 4); /* inserts */
 				pushInstruction(mb,t);
 

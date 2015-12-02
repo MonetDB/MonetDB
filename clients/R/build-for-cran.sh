@@ -25,6 +25,6 @@ mkdir -p /tmp/rcheck
 $R CMD build MonetDB.R
 $R CMD check -o /tmp/rcheck --as-cran MonetDB.R_*.tar.gz
 
-hgid=`hg id -i | sed s/+//`
-newname=`basename MonetDB.R_*.tar.gz .tar.gz`-$hgid.tar.gz
-mv MonetDB.R_*.tar.gz $newname
+#hgid=`hg id -i | sed s/+//`
+#newname=`basename MonetDB.R_*.tar.gz .tar.gz`-$hgid.tar.gz
+#mv MonetDB.R_*.tar.gz $newname

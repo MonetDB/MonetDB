@@ -4419,3 +4419,4 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 -- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
+CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";

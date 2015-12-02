@@ -449,7 +449,7 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 	
-	return AUTHaddUser(ret, &cntxt, usr, pw);
+	return AUTHaddUser(ret, cntxt, usr, pw);
 }
 
 str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -458,14 +458,14 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	usr = getArgReference_str(stk, pci, 1);
 
-	return AUTHremoveUser(&cntxt, usr);
+	return AUTHremoveUser(cntxt, usr);
 }
 
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = getArgReference_str(stk, pci, 0);
 	(void)mb;
 
-	return AUTHgetUsername(ret, &cntxt);
+	return AUTHgetUsername(ret, cntxt);
 }
 
 str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -474,7 +474,7 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 
 	(void)mb;
 
-	return AUTHgetPasswordHash(ret, &cntxt, user);
+	return AUTHgetPasswordHash(ret, cntxt, user);
 }
 
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -483,7 +483,7 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHchangeUsername(&cntxt, old, new);
+	return AUTHchangeUsername(cntxt, old, new);
 }
 
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -492,7 +492,7 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHchangePassword(&cntxt, old, new);
+	return AUTHchangePassword(cntxt, old, new);
 }
 
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -501,7 +501,7 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)mb;
 
-	return AUTHsetPassword(&cntxt, usr, new);
+	return AUTHsetPassword(cntxt, usr, new);
 }
 
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
@@ -515,22 +515,24 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	(void)mb;
 
 	pwd = mcrypt_SHA1Sum(*pw, strlen(*pw));
-	msg = AUTHcheckCredentials(&id, &cntxt, usr, &pwd, &ch, &algo);
+	msg = AUTHcheckCredentials(&id, cntxt, usr, &pwd, &ch, &algo);
 	free(pwd);
 	return msg;
 }
 
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	bat *ret = getArgReference_bat(stk, pci, 0);
-	BAT *r = NULL;
+	bat *ret1 = getArgReference_bat(stk, pci, 0);
+	bat *ret2 = getArgReference_bat(stk, pci, 1);
+	BAT *uid, *nme;
 	str tmp;
 
 	(void)mb;
 
-	tmp = AUTHgetUsers(&r, &cntxt);
+	tmp = AUTHgetUsers(&uid, &nme, cntxt);
 	if (tmp)
 		return tmp;
-	BBPkeepref(*ret = r->batCacheid);
+	BBPkeepref(*ret1 = uid->batCacheid);
+	BBPkeepref(*ret2 = nme->batCacheid);
 	return(MAL_SUCCEED);
 }
 
@@ -591,9 +593,9 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	user = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-	login = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	login = BATnew(TYPE_void, TYPE_timestamp, 0, TRANSIENT);
 	stimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-	last = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	last = BATnew(TYPE_void, TYPE_timestamp, 0, TRANSIENT);
 	qtimeout = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
 	active = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	if ( user == NULL || login == NULL || stimeout == NULL || qtimeout == NULL || active == NULL){
@@ -612,7 +614,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(qtimeout,0);
 	BATseqbase(active,0);
 	
-    MT_lock_set(&mal_contextLock, "clients.sessions");
+    MT_lock_set(&mal_contextLock);
 	
     for (c = mal_clients + (GDKgetenv_isyes("monet_daemon") != 0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
@@ -639,7 +641,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(qtimeout, &timeout, FALSE);
 		BUNappend(active, &c->active, FALSE);
     }
-    MT_lock_unset(&mal_contextLock, "clients.sessions");
+    MT_lock_unset(&mal_contextLock);
 	BBPkeepref(*userId = user->batCacheid);
 	BBPkeepref(*loginId = login->batCacheid);
 	BBPkeepref(*stimeoutId = stimeout->batCacheid);
@@ -649,7 +651,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-    MT_lock_unset(&mal_contextLock, "clients.sessions");
+    MT_lock_unset(&mal_contextLock);
 	BBPunfix(user->batCacheid);
 	BBPunfix(login->batCacheid);
 	BBPunfix(stimeout->batCacheid);

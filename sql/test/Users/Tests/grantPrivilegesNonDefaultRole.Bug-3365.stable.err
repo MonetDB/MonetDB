@@ -1,0 +1,40 @@
+stderr of test 'grantPrivilegesNonDefaultRole.Bug-3365` in directory 'sql/test/Users` itself:
+
+
+# 17:10:01 >  
+# 17:10:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32045" "--set" "mapi_usock=/var/tmp/mtest-24011/.s.monetdb.32045" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:10:01 >  
+
+# builtin opt 	gdk_dbpath = /home/vera/Desktop/MonetDB/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32045
+# cmdline opt 	mapi_usock = /var/tmp/mtest-24011/.s.monetdb.32045
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:10:02 >  
+# 17:10:02 >  "/usr/bin/python2" "grantPrivilegesNonDefaultRole.Bug-3365.SQL.py" "grantPrivilegesNonDefaultRole.Bug-3365"
+# 17:10:02 >  
+
+MAPI  = (blake) /var/tmp/mtest-15247/.s.monetdb.36393
+QUERY = grant select on employees to clark;
+ERROR = !GRANT: grantor 'blake' is not allowed to grant privileges for table 'employees'
+
+# 17:10:02 >  
+# 17:10:02 >  "Done."
+# 17:10:02 >  
+

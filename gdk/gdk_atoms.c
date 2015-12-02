@@ -166,7 +166,7 @@ ATOMallocate(const char *id)
 {
 	int t;
 
-	MT_lock_set(&GDKthreadLock, "ATOMallocate");
+	MT_lock_set(&GDKthreadLock);
 	t = ATOMindex(id);
 
 	if (t < 0) {
@@ -185,7 +185,7 @@ ATOMallocate(const char *id)
 		BATatoms[t].linear = 1;			/* default */
 		BATatoms[t].storage = t;		/* default */
 	}
-	MT_lock_unset(&GDKthreadLock, "ATOMallocate");
+	MT_lock_unset(&GDKthreadLock);
 	return t;
 }
 
@@ -315,23 +315,27 @@ int
 ATOMprint(int t, const void *p, stream *s)
 {
 	int (*tostr) (str *, int *, const void *);
+	ssize_t res;
 
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		if (t != TYPE_bat && t < TYPE_str) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 			int sz = dblStrlen, l = (*tostr) (&addr, &sz, p);
 
-			return (int) mnstr_write(s, buf, l, 1);
+			res = mnstr_write(s, buf, l, 1);
 		} else {
 			str buf = 0;
 			int sz = 0, l = (*tostr) (&buf, &sz, p);
 
-			l = (int) mnstr_write(s, buf, l, 1);
+			res = mnstr_write(s, buf, l, 1);
 			GDKfree(buf);
-			return l;
 		}
+	} else {
+		res = mnstr_write(s, "nil", 1, 3);
 	}
-	return (int) mnstr_write(s, "nil", 1, 3);
+	if (res < 0)
+		GDKsyserror("ATOMprint: write failure\n");
+	return (int) res;
 }
 
 
@@ -395,8 +399,7 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 	if (*src == TYPE##_nil) {			\
 		return snprintf(*dst, *len, "nil");	\
 	}						\
-	snprintf(*dst, *len, FMT, FMTCAST *src);	\
-	return (int) strlen(*dst);			\
+	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
 }
 
 #define num08(x)	((x) >= '0' && (x) <= '7')
@@ -507,8 +510,10 @@ bitWrite(const bit *a, stream *s, size_t cnt)
 {
 	if (mnstr_write(s, (const char *) a, 1, cnt) == (ssize_t) cnt)
 		return GDK_SUCCEED;
-	else
+	else {
+		GDKsyserror("bitWrite: write failure\n");
 		return GDK_FAIL;
+	}
 }
 
 int
@@ -765,7 +770,7 @@ hgeToStr(char **dst, int *len, const hge *src)
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
-	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
+	if ((hge) GDK_lng_min < *src && *src <= (hge) GDK_lng_max) {
 		lng s = (lng) *src;
 		return lngToStr(dst, len, &s);
 	} else {
@@ -1277,20 +1282,26 @@ strPut(Heap *h, var_t *dst, const char *v)
 				/* 110bbbba 10aaaaaa
 				 * one of the b's must be set*/
 				assert(v[i] & 0x4D);
-				assert((v[++i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
 			} else if ((v[i] & 0xF0) == 0xE0) {
 				/* 1110cccc 10cbbbba 10aaaaaa
 				 * one of the c's must be set*/
 				assert(v[i] & 0x0F || v[i + 1] & 0x20);
-				assert((v[++i] & 0xC0) == 0x80);
-				assert((v[++i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
 			} else if ((v[i] & 0xF8) == 0xF0) {
 				/* 11110ddd 10ddcccc 10cbbbba 10aaaaaa
 				 * one of the d's must be set */
 				assert(v[i] & 0x07 || v[i + 1] & 0x30);
-				assert((v[++i] & 0xC0) == 0x80);
-				assert((v[++i] & 0xC0) == 0x80);
-				assert((v[++i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
+				i++;
+				assert((v[i] & 0xC0) == 0x80);
 			} else {
 				/* this will fail */
 				assert((v[i] & 0x80) == 0);
@@ -1741,7 +1752,7 @@ int
 OIDinit(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(GDKoidLock, "GDKoidLock");
+	ATOMIC_INIT(GDKoidLock);
 #endif
 	GDKflushed = 0;
 	GDKoid = OIDrand();
@@ -1756,14 +1767,14 @@ OIDinit(void)
 oid
 OIDbase(oid o)
 {
-	ATOMIC_SET(GDKoid, (ATOMIC_TYPE) o, GDKoidLock, "OIDbase");
+	ATOMIC_SET(GDKoid, (ATOMIC_TYPE) o, GDKoidLock);
 	return o;
 }
 
 static oid
 OIDseed(oid o)
 {
-	oid t, p = (oid) ATOMIC_GET(GDKoid, GDKoidLock, "OIDseed");
+	oid t, p = (oid) ATOMIC_GET(GDKoid, GDKoidLock);
 
 	t = OIDrand();
 	if (o > t)
@@ -1803,14 +1814,14 @@ OIDwrite(FILE *f)
 	int ret = 0;
 	ATOMIC_TYPE o;
 
-	MT_lock_set(&MT_system_lock, "OIDwrite");
-	o = ATOMIC_GET(GDKoid, GDKoidLock, "OIDwrite");
+	MT_lock_set(&MT_system_lock);
+	o = ATOMIC_GET(GDKoid, GDKoidLock);
 	if (o) {
 		GDKflushed = (oid) o;
 		if (fprintf(f, OIDFMT "@0", GDKflushed) < 0 || ferror(f))
 			ret = -1;
 	}
-	MT_lock_unset(&MT_system_lock, "OIDwrite");
+	MT_lock_unset(&MT_system_lock);
 	return ret;
 }
 
@@ -1818,9 +1829,9 @@ int
 OIDdirty(void)
 {
 	int ret;
-	MT_lock_set(&MT_system_lock, "OIDdirty");
-	ret = (oid) ATOMIC_GET(GDKoid, GDKoidLock, "OIDdirty") > GDKflushed;
-	MT_lock_unset(&MT_system_lock, "OIDdirty");
+	MT_lock_set(&MT_system_lock);
+	ret = (oid) ATOMIC_GET(GDKoid, GDKoidLock) > GDKflushed;
+	MT_lock_unset(&MT_system_lock);
 	return ret;
 }
 
@@ -1830,7 +1841,7 @@ OIDdirty(void)
 oid
 OIDnew(oid inc)
 {
-	return (oid) ATOMIC_ADD(GDKoid, (ATOMIC_TYPE) inc, GDKoidLock, "OIDnew");
+	return (oid) ATOMIC_ADD(GDKoid, (ATOMIC_TYPE) inc, GDKoidLock);
 }
 
 /*

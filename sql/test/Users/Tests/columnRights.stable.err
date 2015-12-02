@@ -1,0 +1,46 @@
+stderr of test 'columnRights` in directory 'sql/test/Users` itself:
+
+
+# 11:31:51 >  
+# 11:31:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33621" "--set" "mapi_usock=/var/tmp/mtest-1284/.s.monetdb.33621" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:31:51 >  
+
+# builtin opt 	gdk_dbpath = /home/vera/Desktop/MonetDB/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33621
+# cmdline opt 	mapi_usock = /var/tmp/mtest-1284/.s.monetdb.33621
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:31:52 >  
+# 11:31:52 >  "/usr/bin/python2" "columnRights.SQL.py" "columnRights"
+# 11:31:52 >  
+
+MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+QUERY = SELECT price FROM orders;
+ERROR = !SELECT: access denied for alice to table 'library.orders'
+MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+QUERY = SELECT name FROM orders; --insufficient rights
+ERROR = !SELECT: access denied for alice to table 'library.orders'
+MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+QUERY = UPDATE orders SET price = 0; --insufficient rights
+ERROR = !UPDATE: insufficient privileges for user 'alice' to update table 'orders' on column 'price'
+
+# 11:31:52 >  
+# 11:31:52 >  "Done."
+# 11:31:52 >  
+

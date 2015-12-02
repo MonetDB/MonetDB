@@ -105,6 +105,7 @@ backend_schema_user_dependencies(ptr trans, int schema_id)
 		return(be_funcs.fschuserdep(trans, schema_id));
 	return NULL;
 }
+
 int	
 backend_resolve_function(ptr M, sql_func *f)
 {

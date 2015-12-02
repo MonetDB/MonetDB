@@ -32,12 +32,10 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff = BATkdiff(tids, BATmirror(d));
-
-		bat_destroy(tids);
-		tids = BATmirror(BATmark(diff, 0));
-		bat_destroy(diff);
+		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		bat_destroy(d);
+		bat_destroy(tids);
+		tids = diff;
 	}
 	return tids;
 }
@@ -143,23 +141,42 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	va_list va;
 	BAT *b = NULL, *s = NULL, *r = NULL;
 	oid rid = oid_nil;
+	sql_column *n = NULL;
 
 	s = delta_cands(tr, c->t);
 	va_start(va, value);
 	b = full_column(tr, c);
+	if ((n = va_arg(va, sql_column *)) == NULL) {
+		if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
+			BATiter cni = bat_iterator(b);
+			BUN p;
+
+			HASHloop(cni, cni.b->T->hash, p, value) {
+				oid pos = p;
+
+				if (s && BUNfnd(s, &pos) != BUN_NONE) {
+					rid = p;
+					break;
+				}
+			}
+		}
+		bat_destroy(s);
+		return rid;
+	}
 	r = BATsubselect(b, s, value, NULL, 1, 0, 0);
 	bat_destroy(s);
 	s = r;
 	full_destroy(c, b);
-	while ((c = va_arg(va, sql_column *)) != NULL) {
+	do {
 		value = va_arg(va, void *);
+		c = n;
 
 		b = full_column(tr, c);
 		r = BATsubselect(b, s, value, NULL, 1, 0, 0);
 		bat_destroy(s);
 		s = r;
 		full_destroy(c, b);
-	}
+	} while ((n = va_arg(va, sql_column *)) != NULL); 
 	va_end(va);
 	if (BATcount(s) == 1) {
 		BATiter ri = bat_iterator(s);
@@ -236,51 +253,6 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 }
 
 
-#if 0
-static int
-table_dump(sql_trans *tr, sql_table *t)
-{
-	node *n = cs_first_node(&t->columns);
-	int i, l = cs_size(&t->columns);
-	BAT **b = (BAT**)GDKzalloc(sizeof(BAT*) * l);
-	
-	(void)tr;
-	for (i = 0; n; n = n->next, i++) {
-		sql_column *c = n->data;
-		sql_delta *bat = c->data;
-
-		b[i] = temp_descriptor(bat->bid);
-	}
-	BATmultiprintf(GDKstdout, l +1, b, TRUE, 0, 1);
-	for (i = 0; i < l; i++)
-		bat_destroy(b[i]);
-	GDKfree(b);
-	return 0;
-}
-
-static int
-table_check(sql_trans *tr, sql_table *t)
-{
-	node *n = cs_first_node(&t->columns);
-	BUN cnt = BUN_NONE;
-
-	(void)tr;
-	for (; n; n = n->next) {
-		sql_column *c = n->data;
-		sql_delta *bat = c->data;
-		BAT *b = temp_descriptor(bat->bid);
-
-		if (cnt == BUN_NONE) {
-			cnt = BATcount(b);
-		} else if (cnt != BATcount(b)) {
-			assert(0);
-			return (int)(cnt - BATcount(b));
-		}
-		bat_destroy(b);
-	}
-	return 0;
-}
-#endif
 
 /* returns table rids, for the given select ranges */
 static rids *
@@ -296,14 +268,15 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	b = full_column(tr, key);
 	if (!kvl)
 		kvl = ATOMnilptr(b->ttype);
-	if (!kvh && key_value_low != ATOMnilptr(b->ttype))
+	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
-	hi = (kvl == kvh);
-	if (!b->T->hash)
-		BAThash(b, 0);
-	r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
-	bat_destroy(s);
-	s = r;
+	if (key_value_low) {
+		if (!b->T->hash)
+			BAThash(b, 0);
+		r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
+		bat_destroy(s);
+		s = r;
+	}
 	full_destroy(key, b);
 	if (key_value_low || key_value_high) {
 		va_start(va, key_value_high);
@@ -314,9 +287,9 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 			b = full_column(tr, key);
 			if (!kvl)
 				kvl = ATOMnilptr(b->ttype);
-			if (!kvh)
+			if (!kvh && kvl != ATOMnilptr(b->ttype))
 				kvh = ATOMnilptr(b->ttype);
-			hi = (kvl == kvh);
+			assert(kvh);
 			r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
 			bat_destroy(s);
 			s = r;
@@ -367,6 +340,138 @@ rids_destroy(rids *r)
 	_DELETE(r);
 }
 
+static int
+rids_empty(rids *r )
+{
+	BAT *b = r->data;
+	return BATcount(b) <= 0;
+}
+
+static rids *
+rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
+{
+	BAT *lcb, *rcb, *s = NULL, *d = NULL;
+	
+	lcb = full_column(tr, lc);
+	rcb = full_column(tr, rc);
+	BATsubjoin(&s, &d, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
+	bat_destroy(l->data);
+	bat_destroy(d);
+	l->data = s;
+	full_destroy(lc, lcb);
+	full_destroy(rc, rcb);
+	return l;
+}
+
+static subrids *
+subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_column *obc)
+{
+	/* join t1.rc with lc order by obc */
+	subrids *r = ZNEW(subrids);
+	BAT *lcb, *rcb, *s, *obb, *d = NULL, *o, *g, *ids, *rids = NULL;
+	
+	lcb = full_column(tr, lc);
+	rcb = full_column(tr, rc);
+
+	s = delta_cands(tr, lc->t);
+	BATsubjoin(&rids, &d, lcb, rcb, s, t1->data, FALSE, BATcount(lcb));
+	bat_destroy(d);
+	bat_destroy(s);
+	full_destroy(rc, rcb);
+
+	s = BATproject(rids, lcb);
+	full_destroy(lc, lcb);
+	lcb = s;
+
+	obb = full_column(tr, obc);
+	s = BATproject(rids, obb);
+	full_destroy(obc, obb);
+	obb = s;
+
+	/* need id, obc */
+	ids = o = g = NULL;
+	BATsubsort(&ids, &o, &g, lcb, NULL, NULL, 0, 0);
+	bat_destroy(lcb);
+
+	s = NULL;
+	BATsubsort(NULL, &s, NULL, obb, o, g, 0, 0);
+	bat_destroy(obb);
+	bat_destroy(o);
+	bat_destroy(g);
+
+	o = BATproject(s, rids);
+	bat_destroy(rids);
+	bat_destroy(s);
+	rids = o;
+
+	assert(ids->ttype == TYPE_int && rids->ttype == TYPE_oid);
+	r->id = 0;
+	r->pos = 0;
+	r->ids = ids;
+	r->rids = rids;
+	return r;
+}
+
+static oid
+subrids_next(subrids *r)
+{
+	if (r->pos < BATcount((BAT *) r->ids)) {
+		BATiter ii = bat_iterator((BAT *) r->ids);
+		BATiter ri = bat_iterator((BAT *) r->rids);
+		int id = *(int*)BUNtail(ii, r->pos);
+		if (id == r->id)
+			return *(oid*)BUNtail(ri, r->pos++);
+	}
+	return oid_nil;
+}
+
+static sqlid
+subrids_nextid(subrids *r)
+{
+	if (r->pos < BATcount((BAT *) r->ids)) {
+		BATiter ii = bat_iterator((BAT *) r->ids);
+		r->id = *(int*)BUNtail(ii, r->pos);
+		return r->id;
+	}
+	return -1;
+}
+
+static void
+subrids_destroy(subrids *r )
+{
+	if (r->ids)
+		bat_destroy(r->ids);
+	if (r->rids)
+		bat_destroy(r->rids);
+	_DELETE(r);
+}
+
+/* get the non - join results */
+static rids *
+rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
+{
+	BAT *lcb = full_column(tr, lc), *s, *d, *rids, *diff;
+	BAT *rcb = full_column(tr, rc);
+
+	s = BATproject(r->rids, rcb);
+	full_destroy(rc, rcb);
+	rcb = s;
+
+	s = BATproject(l->data, lcb);
+
+	diff = BATsubdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
+
+	BATsubjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
+	bat_destroy(diff);
+	bat_destroy(d);
+	full_destroy(lc, lcb);
+	bat_destroy(s);
+
+	bat_destroy(l->data);
+	l->data = rids;
+	return l;
+}
+
 int 
 bat_table_init( table_functions *tf )
 {
@@ -379,7 +484,15 @@ bat_table_init( table_functions *tf )
 	
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
+	tf->rids_join = rids_join;
 	tf->rids_next = rids_next;
 	tf->rids_destroy = rids_destroy;
+	tf->rids_empty = rids_empty;
+
+	tf->subrids_create = subrids_create;
+	tf->subrids_next = subrids_next;
+	tf->subrids_nextid = subrids_nextid;
+	tf->subrids_destroy = subrids_destroy;
+	tf->rids_diff = rids_diff;
 	return LOG_OK;
 }

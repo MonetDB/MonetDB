@@ -7,3 +7,5 @@ bla
 
 select * from "number";
 drop table "number";
+select * from sys.rejects;
+call sys.clearrejects();

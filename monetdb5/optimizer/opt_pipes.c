@@ -46,10 +46,12 @@ static struct PIPELINES {
  */
 	{"minimal_pipe",
 	 "optimizer.inline();"
+	 "optimizer.candidates();"
 	 "optimizer.remap();"
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
+	 "optimizer.profiler();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* The default pipe line contains as of Feb2010
@@ -63,6 +65,7 @@ static struct PIPELINES {
  */
 	{"default_pipe",
 	 "optimizer.inline();"
+	 "optimizer.candidates();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
@@ -72,6 +75,8 @@ static struct PIPELINES {
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
@@ -82,6 +87,7 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
+	 "optimizer.profiler();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
@@ -97,6 +103,7 @@ static struct PIPELINES {
 	{"no_mitosis_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
+	 "optimizer.candidates();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
@@ -104,6 +111,8 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
@@ -113,6 +122,7 @@ static struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
+	 "optimizer.profiler();"
 	 "optimizer.generator();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -128,6 +138,7 @@ static struct PIPELINES {
  */
 	{"sequential_pipe",
 	 "optimizer.inline();"
+	 "optimizer.candidates();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
@@ -136,6 +147,8 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
@@ -145,12 +158,12 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
+	 "optimizer.profiler();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
  * settings!
- */
 	{"recycler_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -161,7 +174,9 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
+	 "optimizer.aliases();"
 	 "optimizer.deadcode();"
+	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
@@ -173,8 +188,10 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
+	 "optimizer.profiler();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
+ */
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -307,7 +324,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 static str
 validatePipe(MalBlkPtr mb)
 {
-	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE;
+	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
 
 	if (mb == NULL || getInstrPtr(mb, 1) == 0)
@@ -315,18 +332,21 @@ validatePipe(MalBlkPtr mb)
 	if (getFunctionId(getInstrPtr(mb, 1)) == NULL || idcmp(getFunctionId(getInstrPtr(mb, 1)), "inline"))
 		throw(MAL, "optimizer.validate", "'inline' should be the first\n");
 
-	/* deadcode should be used */
 	for (i = 1; i < mb->stop - 1; i++)
 		if (getFunctionId(getInstrPtr(mb, i)) != NULL) {
 			if (strcmp(getFunctionId(getInstrPtr(mb, i)), "deadcode") == 0)
 				deadcode = TRUE;
+			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "remap") == 0)
+				remap = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mitosis") == 0)
 				mitosis = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mergetable") == 0)
 				mergetable = TRUE;
 			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "multiplex") == 0)
 				multiplex = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0 && i == mb->stop - 2)
+			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "generator") == 0)
+				generator = TRUE;
+			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0)
 				garbage = TRUE;
 		} else
 			throw(MAL, "optimizer.validate", "Missing optimizer call\n");
@@ -334,12 +354,17 @@ validatePipe(MalBlkPtr mb)
 	if (mitosis == TRUE && mergetable == FALSE)
 		throw(MAL, "optimizer.validate", "'mitosis' needs 'mergetable'\n");
 
+	/* several optimizer should be used */
 	if (multiplex == 0)
 		throw(MAL, "optimizer.validate", "'multiplex' should be used\n");
 	if (deadcode == FALSE)
-		throw(MAL, "optimizeri.validate", "'deadcode' should be used at least once\n");
+		throw(MAL, "optimizer.validate", "'deadcode' should be used at least once\n");
 	if (garbage == FALSE)
 		throw(MAL, "optimizer.validate", "'garbageCollector' should be used as the last one\n");
+	if (remap == FALSE)
+		throw(MAL, "optimizer.validate", "'remap' should be used\n");
+	if (generator == FALSE)
+		throw(MAL, "optimizer.validate", "'generator' should be used\n");
 
 	return MAL_SUCCEED;
 }
@@ -350,14 +375,14 @@ validateOptimizerPipes(void)
 	int i;
 	str msg = MAL_SUCCEED;
 
-	MT_lock_set(&mal_contextLock, "optimizer validation");
+	MT_lock_set(&mal_contextLock);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].def; i++)
 		if (pipes[i].mb) {
 			msg = validatePipe(pipes[i].mb);
 			if (msg != MAL_SUCCEED)
 				break;
 		}
-	MT_lock_unset(&mal_contextLock, "optimizer validation");
+	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
 

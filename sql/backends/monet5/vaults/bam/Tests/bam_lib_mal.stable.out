@@ -1,0 +1,187 @@
+stdout of test 'bam_lib_mal` in directory 'sql/backends/monet5/vaults/bam` itself:
+
+
+# 16:51:57 >  
+# 16:51:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39916" "--set" "mapi_usock=/var/tmp/mtest-16560/.s.monetdb.39916" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/robin/MonetDB/PREFIX/var/MonetDB/mTests_sql_backends_monet5_bam" "bam_lib_mal.mal"
+# 16:51:57 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://robin-xps13:39916/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16560/.s.monetdb.39916
+# MonetDB/SQL module loaded
+function user.main():void;
+    sht1 := calc.sht(200);
+    sht2 := calc.sht(0);
+    sht3 := calc.sht(100);
+    f := bam.bam_flag(sht1,"segm_unma");
+    io.print(f);
+    fs := bat.new(:oid,:sht);
+    bat.append(fs,sht1);
+    bat.append(fs,sht2);
+    bat.append(fs,sht3);
+    fsb := batbam.bam_flag(fs,"segm_unma");
+    io.print(fsb);
+    seq_rev := bam.reverse_seq("ACGTCGTA");
+    io.print(seq_rev);
+    seqs := bat.new(:oid,:str);
+    bat.append(seqs,seq_rev);
+    bat.append(seqs,"TVGHCDMKNYSABWR");
+    bat.append(seqs,"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    io.print(seqs);
+    seqs_rev := batbam.reverse_seq(seqs);
+    io.print(seqs_rev);
+    seqs_revrev := batbam.reverse_seq(seqs_rev);
+    io.print(seqs_revrev);
+    qual_rev := bam.reverse_qual("dJwn!@dJ!#jjjnsl");
+    io.print(qual_rev);
+    quals := bat.new(:oid,:str);
+    bat.append(quals,qual_rev);
+    bat.append(quals,"dJwn!@dJ!#jjjnsl");
+    bat.append(quals,"I_am_a_quality_string_without_a_purpose");
+    io.print(quals);
+    quals_rev := batbam.reverse_qual(quals);
+    io.print(quals_rev);
+    quals_revrev := batbam.reverse_qual(quals_rev);
+    io.print(quals_revrev);
+    l := bam.seq_length("100M3I200D5M");
+    io.print(l);
+    cigars := bat.new(:oid,:str);
+    bat.append(cigars,"100M3I200D5M");
+    bat.append(cigars,"*");
+    ls := batbam.seq_length(cigars);
+    io.print(ls);
+    seq_char := bam.seq_char(12,"ACTAGAATGGCT",5,"3M1I3M1D5M");
+    io.print(seq_char);
+    sc_seqs := bat.new(:oid,:str);
+    sc_poss := bat.new(:oid,:int);
+    sc_cgrs := bat.new(:oid,:str);
+    bat.append(sc_seqs,"ATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT");
+    bat.append(sc_seqs,"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT");
+    bat.append(sc_seqs,"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA");
+    bat.append(sc_poss,17922987);
+    bat.append(sc_poss,18225784);
+    bat.append(sc_poss,18226024);
+    bat.append(sc_cgrs,"3=1X1=1X43=1X16=1X33=");
+    bat.append(sc_cgrs,"5=1X31=1X62=");
+    bat.append(sc_cgrs,"100=");
+    io.print(sc_seqs);
+    io.print(sc_poss);
+    io.print(sc_cgrs);
+    i := 17922987;
+    res1:bat[:oid,:str]  := mal.manifold("bam","seq_char",i,sc_seqs,sc_poss,sc_cgrs);
+    io.print(res1);
+    is := sc_poss;
+    res2:bat[:oid,:str]  := mal.manifold("bam","seq_char",is,sc_seqs,sc_poss,sc_cgrs);
+    io.print(res2);
+    is := bat.new(:oid,:int);
+    bat.append(is,17922987);
+    res3:bat[:oid,:str]  := mal.manifold("bam","seq_char",is,sc_seqs,sc_poss,sc_cgrs);
+    io.print(res3);
+end user.main;
+[ false ]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	false  ]
+[ 1@0,	false  ]
+[ 2@0,	true  ]
+[ "TACGACGT" ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"TACGACGT"  ]
+[ 1@0,	"TVGHCDMKNYSABWR"  ]
+[ 2@0,	"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"ACGTCGTA"  ]
+[ 1@0,	"YWVTSRNMKHGDCBA"  ]
+[ 2@0,	"TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"TACGACGT"  ]
+[ 1@0,	"TVGHCDMKNYSABWR"  ]
+[ 2@0,	"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"  ]
+[ "lsnjjj#!Jd@!nwJd" ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"lsnjjj#!Jd@!nwJd"  ]
+[ 1@0,	"dJwn!@dJ!#jjjnsl"  ]
+[ 2@0,	"I_am_a_quality_string_without_a_purpose"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"dJwn!@dJ!#jjjnsl"  ]
+[ 1@0,	"lsnjjj#!Jd@!nwJd"  ]
+[ 2@0,	"esoprup_a_tuohtiw_gnirts_ytilauq_a_ma_I"  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"lsnjjj#!Jd@!nwJd"  ]
+[ 1@0,	"dJwn!@dJ!#jjjnsl"  ]
+[ 2@0,	"I_am_a_quality_string_without_a_purpose"  ]
+[ 305 ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	305  ]
+[ 1@0,	-1  ]
+[ "T" ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"ATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT"  ]
+[ 1@0,	"TATACTTATAGAACAAATGAACCCAAAACCACATAAGGTAAACAACAAAGCTACTGGTTCAAAATTAAGCCTAACTTCAACAGTACCAGGCAAAAACCAT"  ]
+[ 2@0,	"GTACAAAAGTGGGAAATTTTAAAGCTGGGCATCCAGGGGAGACATCACGTGTCAGTAGGTTCCGTGATGCCCCCCAAGCCGCAAAACCAGCAAGTTTTTA"  ]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	17922987  ]
+[ 1@0,	18225784  ]
+[ 2@0,	18226024  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"3=1X1=1X43=1X16=1X33="  ]
+[ 1@0,	"5=1X31=1X62="  ]
+[ 2@0,	"100="  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"A"  ]
+[ 1@0,	nil  ]
+[ 2@0,	nil  ]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"A"  ]
+[ 1@0,	"T"  ]
+[ 2@0,	"G"  ]
+!MALException:mal.manifold:Columns must be of same length
+
+# 16:51:57 >  
+# 16:51:57 >  "Done."
+# 16:51:57 >  

@@ -1,0 +1,135 @@
+stdout of test 'rapi13` in directory 'sql/backends/monet5` itself:
+
+
+# 09:48:02 >  
+# 09:48:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30337" "--set" "mapi_usock=/var/tmp/mtest-14428/.s.monetdb.30337" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 09:48:02 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-apple-darwin14.4.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:30337/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14428/.s.monetdb.30337
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 09:48:03 >  
+# 09:48:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14428" "--port=30337"
+# 09:48:03 >  
+
+#start transaction;
+#CREATE TABLE "streams" (
+#    "ts"      TIMESTAMP,
+#    "type"    TINYINT,
+#    "station" CHARACTER LARGE OBJECT,
+#    "lat"     DOUBLE,
+#    "lon"     DOUBLE,
+#    "alt"     DOUBLE
+#);
+#copy 5 records into streams from stdin;
+#2015-06-03 15:11:17.000000|2|"4CA56B"|52.08069|5.86654|3.8e+04
+#2015-06-03 15:11:17.000000|2|"4010EA"|51.19084|4.98646|38025
+#2015-06-03 15:11:17.000000|2|"406C71"|52.36768|7.17085|3.5e+04
+#2015-06-03 15:11:17.000000|2|"4006A4"|52.44951|5.21294|37025
+#2015-06-03 15:11:17.000000|2|"45AC45"|52.12491|6.03063|3.6e+04
+[ 5	]
+#CREATE FUNCTION working_test(stt string, tss bigint, lat double, lon double, alt double) returns table (i int, j int, k int) language R {
+#	return(data.frame(1:10, 1:10, 1:10))
+#};
+#CREATE FUNCTION broken_test(stt string, tss bigint, lat double, lon double, alt double) returns table (i int, j int, k int, l int) language R {
+#	return(data.frame(1:10, 1:10, 1:10, 1:10))
+#};
+#create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)), lat, lon, alt*0.3048 FROM streams WHERE type = 2 and alt > 0 with data;
+#select * from planes;
+% tmp.planes,	tmp.planes,	tmp.planes,	tmp.planes,	tmp.planes # table_name
+% station,	L2,	lat,	lon,	v # name
+% clob,	sec_interval,	double,	double,	double # type
+% 8,	14,	24,	24,	24 # length
+[ "\"4CA56B\"",	1433344277.000,	52.08069,	5.86654,	11582.4	]
+[ "\"4010EA\"",	1433344277.000,	51.19084,	4.98646,	11590.02	]
+[ "\"406C71\"",	1433344277.000,	52.36768,	7.17085,	10668	]
+[ "\"4006A4\"",	1433344277.000,	52.44951,	5.21294,	11285.22	]
+[ "\"45AC45\"",	1433344277.000,	52.12491,	6.03063,	10972.8	]
+#select * from working_test( (SELECT * FROM planes AS p) );
+% .,	.,	. # table_name
+% i,	j,	k # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 1,	1,	1	]
+[ 2,	2,	2	]
+[ 3,	3,	3	]
+[ 4,	4,	4	]
+[ 5,	5,	5	]
+[ 6,	6,	6	]
+[ 7,	7,	7	]
+[ 8,	8,	8	]
+[ 9,	9,	9	]
+[ 10,	10,	10	]
+#select * from broken_test( (SELECT * FROM planes AS p) );
+% .,	.,	.,	. # table_name
+% i,	j,	k,	l # name
+% int,	int,	int,	int # type
+% 2,	2,	2,	2 # length
+[ 1,	1,	1,	1	]
+[ 2,	2,	2,	2	]
+[ 3,	3,	3,	3	]
+[ 4,	4,	4,	4	]
+[ 5,	5,	5,	5	]
+[ 6,	6,	6,	6	]
+[ 7,	7,	7,	7	]
+[ 8,	8,	8,	8	]
+[ 9,	9,	9,	9	]
+[ 10,	10,	10,	10	]
+#drop table planes;
+#drop function working_test;
+#drop function broken_test;
+#rollback;
+
+# 09:48:03 >  
+# 09:48:03 >  "Done."
+# 09:48:03 >  
+

@@ -29,9 +29,9 @@ function user.main():void;
     bat.append(b,8);
     bat.append(b,9);
     io.print(b);
-    slice1 := algebra.slice(b,nil:oid,4@0);
+    slice1 := algebra.slice(b,0@0,4@0);
     io.print(slice1);
-    slice2 := algebra.slice(b,4@0,nil:oid);
+    slice2 := algebra.slice(b,5@0,nil:oid);
     io.print(slice2);
 end user.main;
 #--------------------------#
@@ -55,15 +55,15 @@ end user.main;
 [ 1@0,	  2	  ]
 [ 2@0,	  3	  ]
 [ 3@0,	  4	  ]
-#-----------------#
-# t	h	  # name
+[ 4@0,	5  ]
+#--------------------------#
+# h	t  # name
 # void	int	  # type
-#-----------------#
-[ 4@0,	  5	  ]
-[ 5@0,	  6	  ]
-[ 6@0,	  7	  ]
-[ 7@0,	  8	  ]
-[ 8@0,	  9	  ]
+#--------------------------#
+[ 5@0,	6  ]
+[ 6@0,	7  ]
+[ 7@0,	8  ]
+[ 8@0,	9  ]
 
 # 16:18:09 >  
 # 16:18:09 >  "Done."

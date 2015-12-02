@@ -1,0 +1,46 @@
+stderr of test 'grantRole.Bug-3772` in directory 'sql/test/Users` itself:
+
+
+# 22:31:48 >  
+# 22:31:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33682" "--set" "mapi_usock=/var/tmp/mtest-3949/.s.monetdb.33682" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 22:31:48 >  
+
+# builtin opt 	gdk_dbpath = /home/vera/Desktop/MonetDB/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33682
+# cmdline opt 	mapi_usock = /var/tmp/mtest-3949/.s.monetdb.33682
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/vera/Desktop/MonetDB/BUILD/var/MonetDB/mTests_sql_test_Users
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 22:00:19 >  
+# 22:00:19 >  "/usr/bin/python2" "grantRole.Bug-3772.SQL.py" "grantRole.Bug-3772"
+# 22:00:19 >  
+
+MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
+QUERY = GRANT role1 to bruce;
+ERROR = !GRANT: insufficient privileges to grant ROLE 'role1'
+MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
+QUERY = SET role role1;
+ERROR = !Role (role1) missing
+MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
+QUERY = select * from test;
+ERROR = !SELECT: access denied for bruce to table 's1.test'
+
+# 22:00:20 >  
+# 22:00:20 >  "Done."
+# 22:00:20 >  
+

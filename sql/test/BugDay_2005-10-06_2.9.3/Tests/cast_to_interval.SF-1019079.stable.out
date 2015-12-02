@@ -18,7 +18,7 @@ Ready.
 % .L1 # table_name
 % L1 # name
 % month_interval # type
-% 0 # length
+% 1 # length
 [ 0	]
 
 # 12:42:49 >  

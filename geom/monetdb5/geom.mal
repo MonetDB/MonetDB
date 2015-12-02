@@ -31,7 +31,7 @@ command del()			address wkbDEL; #delete from heap
 command length()		address wkbLENGTH; 
 command heap()			address wkbHEAP; #create heap
 
-#command wkb{unsafe}(v:str) :wkb address wkbFromString;
+#command wkb(v:str) :wkb address wkbFromString;
 
 atom wkba;
 command tostr() address wkbaTOSTR;
@@ -48,15 +48,15 @@ command heap() address wkbaHEAP; #create heap
 
 module geom;
 
-command hasZ{unsafe}(flags:int) :int address geoHasZ
+command hasZ(flags:int) :int address geoHasZ
 comment "returns 1 if the geometry has z coordinate";
-command hasM{unsafe}(flags:int) :int address geoHasM
+command hasM(flags:int) :int address geoHasM
 comment "returns 1 if the geometry has m coordinate";
-command getType{unsafe}(flags:int, format:int) :str address geoGetType
+command getType(flags:int, format:int) :str address geoGetType
 comment "returns the str representation of the geometry type";
 
 
-command MLineStringToPolygon{unsafe}(wkt:str, srid:int, flag:int) :wkb address wkbMLineStringToPolygon
+command MLineStringToPolygon(wkt:str, srid:int, flag:int) :wkb address wkbMLineStringToPolygon
 comment "Creates polygons using the MultiLineString provided as WKT. Depending on the flag creates one (flag=0) or multiple (flag=1) polygons"; 
 
 
@@ -148,7 +148,7 @@ function GeomCollFromText(wkt:str) :wkb;
 	return x;
 end GeomCollFromText;
 
-#function GeomFromWKB{unsafe}(wkb_raw:????, srid:int) : wkb;
+#function GeomFromWKB(wkb_raw:????, srid:int) : wkb;
 #	x := wkb.FromWKB(wkb_raw, srid, 0);
 #	return x;
 #end GeomFromWKB;
@@ -164,11 +164,11 @@ function NRings(w:wkb) :int;
 	return x;
 end NRings;
 
-function BdPolyFromText{unsafe}(wkt:str, srid:int) :wkb;
+function BdPolyFromText(wkt:str, srid:int) :wkb;
 	x := MLineStringToPolygon(wkt,srid,0);
 	return x;
 end BdPolyFromText;
-function BdMPolyFromText{unsafe}(wkt:str, srid:int) :wkb;
+function BdMPolyFromText(wkt:str, srid:int) :wkb;
 	x := MLineStringToPolygon(wkt,srid,1);
 	return x;
 end BdMPolyFromText;
@@ -195,14 +195,14 @@ end MakePoint;
 
 
 
-#command MakePoint{unsafe}(x:dbl, y:dbl) :wkb address geomMakePoint2D
+#command MakePoint(x:dbl, y:dbl) :wkb address geomMakePoint2D
 #comment "creates a point using the coordinates";
-#command MakePoint{unsafe}(x:dbl, y:dbl, z:dbl) :wkb address geomMakePoint3D
+#command MakePoint(x:dbl, y:dbl, z:dbl) :wkb address geomMakePoint3D
 #comment "creates a point using the coordinates";
 ##Gives error. I do not know how to create 4d point
-#command MakePoint{unsafe}(x:dbl, y:dbl, z:dbl, m:dbl) :wkb address geomMakePoint4D
+#command MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb address geomMakePoint4D
 #comment "creates a point using the coordinates";
-#command MakePointM{unsafe}(x:dbl, y:dbl, m:dbl) :wkb address geomMakePointM
+#command MakePointM(x:dbl, y:dbl, m:dbl) :wkb address geomMakePointM
 #comment "creates a point using the coordinates";
 
 #Geometry Accessors
@@ -350,6 +350,10 @@ function Force3D(g:wkb) :wkb;
 	return x;
 end Force3D;
 
+command Contains(a:wkb, x:dbl, y:dbl) :bit
+address wkbContains_point
+comment "Returns true if the Geometry a 'spatially contains' Geometry b";
+
 
 command Translate3D(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb address wkbTranslate
 comment "Moves all points of the geometry by dx, dy, dz";
@@ -363,6 +367,11 @@ function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;
 	x := Translate3D(g,dx,dy,dz);
 	return x;
 end Translate;
+
+command Contains(a:wkb, px:bat[:oid,:dbl], py:bat[:oid,:dbl]) :bat[:oid,:bit]
+address wkbContains_point_bat
+comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
+
 
 command PointsNum(w:wkb, check:int) :int address wkbNumPoints
 comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
@@ -758,7 +767,7 @@ module calc;
 command mbr(v:str) :mbr address mbrFromString;
 #It is needed to add a new mbr colum to an existing table
 command mbr(v:mbr) :mbr address mbrFromMBR;
-#command wkb{unsafe}(v:str) :wkb address wkbFromString;
+#command wkb(v:str) :wkb address wkbFromString;
 command wkb(v:wkb) :wkb address wkbFromWKB
 comment "It is called when adding a new geometry column to an existing table";
 command wkb(geo:wkb, columnType:int, columnSRID:int) :wkb address geom_2_geom
@@ -776,7 +785,7 @@ comment "Called when inserting values to a table in order to check if the insert
 
 #module geom;
 #loading string without the need to use st_wkbtosql OR st_wkttosql
-function calc.wkb{unsafe}( wkt:str, srid:int, type:int ) :wkb;
+function calc.wkb( wkt:str, srid:int, type:int ) :wkb;
         x := geom.FromText(wkt,0,0);
         return x;
 end wkb;

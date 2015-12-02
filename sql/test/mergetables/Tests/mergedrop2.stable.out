@@ -1,0 +1,54 @@
+stdout of test 'mergedrop2` in directory 'sql/test/mergetables` itself:
+
+
+# 16:18:35 >  
+# 16:18:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33833" "--set" "mapi_usock=/var/tmp/mtest-26503/.s.monetdb.33833" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:18:35 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33833/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26503/.s.monetdb.33833
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:18:36 >  
+# 16:18:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26503" "--port=33833"
+# 16:18:36 >  
+
+#drop table t;
+#drop table t1;
+#drop table t2;
+#drop table t3;
+#create merge table t(x double);
+#create table t1(x double);
+#create table t2(x double);
+#create table t3(x double);
+#insert into t1 values(1);
+[ 1	]
+#insert into t2 values(1);
+[ 1	]
+#insert into t3 values(1);
+[ 1	]
+#alter table t1 set read only;
+#alter table t2 set read only;
+#alter table t3 set read only;
+#alter table t add table t1;
+#alter table t add table t2;
+#alter table t add table t3;
+#alter table t drop table t1;
+#alter table t add table t1;
+
+# 16:18:36 >  
+# 16:18:36 >  "Done."
+# 16:18:36 >  
+

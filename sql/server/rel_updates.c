@@ -12,6 +12,9 @@
 #include "rel_select.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
+#include "rel_optimizer.h"
+#include "rel_dump.h"
+#include "sql_symbol.h"
 
 static sql_exp *
 insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
@@ -233,7 +236,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
 	if (!t->idxs.set)
 		return inserts;
 
-	inserts->r = rel_label(sql, inserts->r); 
+	inserts->r = rel_label(sql, inserts->r, 1); 
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 		sql_rel *ins = inserts->r;
@@ -369,6 +372,55 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount)
 	return exps;
 }
 
+
+static sql_table *
+insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
+{
+	if (!t) {
+		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (t->access == TABLE_READONLY) {
+		return sql_error(sql, 02, "%s: cannot %s read only table '%s'", op, opname, tname);
+	}
+	if (t && !isTempTable(t) && STORE_READONLY)
+		return sql_error(sql, 02, "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+
+	if (!table_privs(sql, t, PRIV_INSERT)) {
+		return sql_error(sql, 02, "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+	}
+	return t;
+}
+
+static int 
+copy_allowed(mvc *sql, int from)
+{
+	if (!global_privs(sql, (from)?PRIV_COPYFROMFILE:PRIV_COPYINTOFILE)) 
+		return 0;
+	return 1;
+}
+
+static sql_table *
+update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
+{
+	if (!t) {
+		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+	} else if (isView(t)) {
+		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
+	} else if (isMergeTable(t)) {
+		return sql_error(sql, 02, "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
+		return sql_error(sql, 02, "%s: cannot %s read or append only table '%s'", op, opname, tname);
+	}
+	if (t && !isTempTable(t) && STORE_READONLY)
+		return sql_error(sql, 02, "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+	if (is_delete && !table_privs(sql, t, PRIV_DELETE)) 
+		return sql_error(sql, 02, "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+	return t;
+}
+
 static sql_rel *
 insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 {
@@ -393,22 +445,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
 	}
-	if (!t) {
-		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
-	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "INSERT INTO: cannot insert into merge table '%s'", tname);
-	} else if (t->access == TABLE_READONLY) {
-		return sql_error(sql, 02, "INSERT INTO: cannot insert into read only table '%s'", tname);
-	}
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "INSERT INTO: insert into table '%s' not allowed in readonly mode", tname);
-
-	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, "INSERT INTO: insufficient privileges for user '%s' to insert into table '%s'", stack_get_string(sql, "current_user"), tname);
-	}
-
+	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
+		return NULL;
 	collist = check_table_columns(sql, t, columns, "INSERT", tname);
 	if (!collist)
 		return NULL;
@@ -821,27 +859,64 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) {
-		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
-	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "UPDATE: cannot update merge table '%s'", tname);
-	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
-		return sql_error(sql, 02, "UPDATE: cannot update read or append only table '%s'", tname);
-	} else {
+	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
 		list *exps;
 		dnode *n;
 		char *rname = NULL;
 
-		if (t && !isTempTable(t) && STORE_READONLY)
-			return sql_error(sql, 02, "UPDATE: update table '%s' not allowed in readonly mode", tname);
+#if 0
+			dlist *selection = dlist_create(sql->sa);
+			dlist *from_list = dlist_create(sql->sa);
+			symbol *sym;
+			sql_rel *sq;
+
+			dlist_append_list(sql->sa, from_list, qname);
+			dlist_append_symbol(sql->sa, from_list, NULL);
+			sym = symbol_create_list(sql->sa, SQL_NAME, from_list);
+			from_list = dlist_create(sql->sa);
+			dlist_append_symbol(sql->sa, from_list, sym);
+
+			{
+				dlist *l = dlist_create(sql->sa);
+
+
+				dlist_append_string(sql->sa, l, tname);
+				dlist_append_string(sql->sa, l, TID);
+				sym = symbol_create_list(sql->sa, SQL_COLUMN, l);
+
+				l = dlist_create(sql->sa);
+				dlist_append_symbol(sql->sa, l, sym);
+				dlist_append_string(sql->sa, l, TID);
+				dlist_append_symbol(sql->sa, selection, 
+				  symbol_create_list(sql->sa, SQL_COLUMN, l));
+			}
+			for (n = assignmentlist->h; n; n = n->next) {
+				dlist *assignment = n->data.sym->data.lval, *l;
+				int single = (assignment->h->next->type == type_string);
+				symbol *a = assignment->h->data.sym;
+
+				l = dlist_create(sql->sa);
+				dlist_append_symbol(sql->sa, l, a);
+				dlist_append_string(sql->sa, l, (single)?assignment->h->next->data.sval:NULL);
+				a = symbol_create_list(sql->sa, SQL_COLUMN, l);
+				dlist_append_symbol(sql->sa, selection, a);
+			}
+		       
+			sym = newSelectNode(sql->sa, 0, selection, NULL, symbol_create_list(sql->sa, SQL_FROM, from_list), opt_where, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+			sq = rel_selects(sql, sym);
+			if (sq)
+				sq = rel_optimizer(sql, sq);
+			rel_print(sql,sq,0);
+		}
+#endif
 
 		if (opt_where) {
 			int status = sql->session->status;
 	
+			if (!table_privs(sql, t, PRIV_SELECT)) 
+				return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
@@ -891,7 +966,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					if (single) {
 						v = rel_value_exp(sql, &r, a, sql_sel, ek);
 					} else if (!rel_val && r) {
-						r = rel_subquery(sql, r, a, ek, APPLY_JOIN);
+						r = rel_subquery(sql, r, a, ek, APPLY_LOJ);
 						if (r) {
 							list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
 
@@ -912,7 +987,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 						rel_project_add_exp(sql, rel_val, v);
 					}
-					r = rel_crossproduct(sql->sa, r, rel_val, op_join);
+					r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 					if (single) 
 						v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 				}
@@ -971,6 +1046,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		r = rel_update(sql, bt, r, updates, exps);
 		return r;
 	}
+	return NULL;
 }
 
 sql_rel *
@@ -1007,24 +1083,14 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) {
-		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
-	} else if (isView(t)) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
-	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from merge table '%s'", tname);
-	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
-		return sql_error(sql, 02, "DELETE FROM: cannot delete from read or append only table '%s'", tname);
-	}
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "DELETE FROM: delete from table '%s' not allowed in readonly mode", tname);
-	if (!table_privs(sql, t, PRIV_DELETE)) {
-		return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
-	} else {
+	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
 
 		if (opt_where) {
 			int status = sql->session->status;
+
+			if (!table_privs(sql, t, PRIV_SELECT)) 
+				return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
 
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
@@ -1051,6 +1117,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		}
 		return r;
 	}
+	return NULL;
 }
 
 static list *
@@ -1068,7 +1135,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1076,8 +1143,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	int len = 7 + (filename != NULL);
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", len, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 9, F_UNION, NULL); 
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1090,15 +1156,16 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		exp_atom_str(sql->sa, ssep, &tpe)), 
 		exp_atom_str(sql->sa, ns, &tpe));
 
-	if (filename)
-		append( args, exp_atom_str(sql->sa, filename, &tpe)); 
+	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
 	import = exp_op(sql->sa,  
+	append(
 		append(
 			append( 
 				append( args, 
 					exp_atom_lng(sql->sa, nr)), 
 					exp_atom_lng(sql->sa, offset)), 
-					exp_atom_int(sql->sa, locked)), f); 
+					exp_atom_int(sql->sa, locked)),
+					exp_atom_int(sql->sa, best_effort)), f); 
 	
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -1111,7 +1178,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1141,16 +1208,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) 
-		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->access == TABLE_READONLY) 
-		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
-
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+		return NULL;
 	/* Only the MONETDB user is allowed copy into with 
 	   a lock and only on tables without idx */
-	if (locked && sql->user_id != USER_MONETDB) {
+	if (locked && !copy_allowed(sql, 1)) {
 		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 		    "COPY INTO from .. LOCKED requires database administrator rights");
 	}
@@ -1218,11 +1280,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (files) {
 		dnode *n = files->h;
 
-		if (sql->user_id != USER_MONETDB)
+		if (!copy_allowed(sql, 1))
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO from file(s) requires database administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
-
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
@@ -1232,7 +1293,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort);
 
 			if (!rel)
 				rel = nrel;
@@ -1242,7 +1303,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort);
 	}
 	if (headers) {
 		dnode *n;
@@ -1265,11 +1326,14 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				sql_subtype st;
 				sql_subfunc *f;
 				list *args = sa_list(sql->sa);
+				size_t l = strlen(cs->type.type->sqlname);
+				char *fname = sa_alloc(sql->sa, l+8);
 
+				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
 				sql_find_subtype(&st, "clob", 0, 0);
-				f = sql_bind_func_result(sql->sa, sys, "convert", &st, &st, &cs->type); 
+				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type); 
 				if (!f)
-					return sql_error(sql, 02, "COPY INTO: 'convert' missing for type %s", cs->type.type->sqlname);
+					return sql_error(sql, 02, "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
 				append(args, e);
 				append(args, exp_atom_clob(sql->sa, format));
 				e = exp_op(sql->sa, args, f);
@@ -1310,7 +1374,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
 
-	if (sql->user_id != USER_MONETDB) {
+	if (!copy_allowed(sql, 1)) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 		return NULL;
@@ -1329,12 +1393,8 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 		if (!t) 
 			t = stack_find_table(sql, tname);
 	}
-	if (!t) 
-		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
-	if (t->access == TABLE_READONLY) 
-		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
-	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "COPY INTO: copy into table '%s' not allowed in readonly mode", tname);
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+		return NULL;
 	if (files == NULL)
 		return sql_error(sql, 02, "COPY INTO: must specify files");
 
@@ -1408,7 +1468,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 
 	if (filename) {
 		struct stat fs;
-		if (sql->user_id != USER_MONETDB)
+		if (!copy_allowed(sql, 0)) 
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 					"COPY INTO file requires database administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
@@ -1503,7 +1563,17 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.sval, l->h->next->next->next->next->next->next->next->data.i_val, l->h->next->next->next->next->next->next->next->next->data.i_val);
+		ret = copyfrom(sql, 
+				l->h->data.lval, 
+				l->h->next->data.lval, 
+				l->h->next->next->data.lval, 
+				l->h->next->next->next->data.lval, 
+				l->h->next->next->next->next->data.lval, 
+				l->h->next->next->next->next->next->data.lval, 
+				l->h->next->next->next->next->next->next->data.sval, 
+				l->h->next->next->next->next->next->next->next->data.i_val, 
+				l->h->next->next->next->next->next->next->next->next->data.i_val, 
+				l->h->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

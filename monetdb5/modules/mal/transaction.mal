@@ -29,7 +29,3 @@ comment "Abort changes in certain BATs.";
 pattern clean(c:any...)
 address TRNtrans_clean
 comment "Declare a BAT clean without flushing to disk.";
-
-command prev(b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address TRNtrans_prev
-comment "The previous state of this BAT";

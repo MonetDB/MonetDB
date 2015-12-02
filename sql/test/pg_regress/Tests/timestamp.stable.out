@@ -93,7 +93,7 @@ Ready.
 [ 1 ]
 #INSERT INTO TIMESTAMP_TBL VALUES ('now');
 [ 1 ]
-#SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 = cast(now as timestamp);
+#SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(now as timestamp);
 % sys.L2 # table_name
 % two # name
 % wrd # type
@@ -190,7 +190,7 @@ Ready.
 % .L,	sys.L1 # table_name
 % 54,	diff # name
 % char,	sec_interval # type
-% 0,	0 # length
+% 0,	13 # length
 [ "",	0.000	]
 [ "",	11045.000	]
 [ "",	3461521.000	]
@@ -205,7 +205,7 @@ Ready.
 % .L2,	sys.L3 # table_name
 % 54,	diff # name
 % char,	sec_interval # type
-% 0,	0 # length
+% 0,	13 # length
 [ "",	0.000	]
 [ "",	11045.000	]
 [ "",	3461521.000	]
@@ -544,7 +544,7 @@ Ready.
 % sys.timestamp_tbl,	sys.L1 # table_name
 % d1,	sql_sub_d1 # name
 % timestamp,	sec_interval # type
-% 22,	0 # length
+% 22,	14 # length
 [ 1997-01-02 00:00:00.00,	-156036141.000	]
 [ 1997-01-02 03:04:05.00,	-156025096.000	]
 [ 1997-02-11 01:32:01.00,	-152574620.000	]
@@ -557,7 +557,7 @@ Ready.
 % sys.timestamp_tbl,	.L1 # table_name
 % d1,	sql_sub_single_value # name
 % timestamp,	sec_interval # type
-% 22,	0 # length
+% 22,	13 # length
 [ 1997-01-02 00:00:00.00,	156036141.000	]
 [ 1997-01-02 03:04:05.00,	156025096.000	]
 [ 1997-02-11 01:32:01.00,	152574620.000	]

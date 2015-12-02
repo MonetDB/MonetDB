@@ -36,7 +36,6 @@ transaction_export str TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNsubcommit(bit *ret, bat *bid);
-transaction_export str TRNtrans_prev(bat *ret, bat *bid);
 
 #include "mal_exception.h"
 str
@@ -49,7 +48,8 @@ TRNglobal_sync(bit *ret)
 str
 TRNglobal_abort(bit *ret)
 {
-	*ret = TMabort() == GDK_SUCCEED;
+	TMabort();
+	*ret = TRUE;
 	return MAL_SUCCEED;
 }
 
@@ -129,18 +129,5 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BATcommit(b);
 		BBPunfix(b->batCacheid);
 	}
-	return MAL_SUCCEED;
-}
-
-str
-TRNtrans_prev(bat *ret, bat *bid)
-{
-	BAT *b,*bn= NULL;
-	b= BATdescriptor(*bid);
-	if (b  == NULL)
-		throw(MAL, "transaction.prev", RUNTIME_OBJECT_MISSING);
-	bn = BATprev(b);
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

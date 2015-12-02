@@ -6,12 +6,6 @@
 
 module optimizer;
 
-pattern optimizer.accumulators():str
-address OPTwrapper;
-pattern optimizer.accumulators(mod:str, fcn:str):str
-address OPTwrapper
-comment "Replace calculations with accumulator model";
-
 #opt_aliases.mal
 
 pattern optimizer.aliases():str
@@ -36,12 +30,26 @@ pattern optimizer.commonTerms(mod:any_1, fcn:any_2):str
 address OPTwrapper
 comment "Common sub-expression optimizer"
 
+#opt_candidates
+pattern optimizer.candidates():str
+address OPTwrapper;
+pattern optimizer.candidates(mod:str, fcn:str):str 
+address OPTwrapper
+comment "Mark candidate list variables";
+
 #opt_constants
 pattern optimizer.constants():str
 address OPTwrapper;
 pattern optimizer.constants(mod:str, fcn:str):str 
 address OPTwrapper
 comment "Duplicate constant removal optimizer";
+
+#opt_profiler
+pattern optimizer.profiler():str
+address OPTwrapper;
+pattern optimizer.profiler(mod:str, fcn:str):str 
+address OPTwrapper
+comment "Collect properties for the profiler";
 
 #opt_costModel.mal
 
@@ -162,15 +170,11 @@ pattern optimizer.joinPath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:oid,:any]
+pattern algebra.projectionPath(l:bat[:oid,:any]...):bat[:oid,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
-pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any]
-address ALGjoinPath
-comment "Routine to handle join paths.  The type analysis is rather tricky.";
-
-pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any]
+pattern algebra.semijoinPath(l:bat[:oid,:any]...):bat[:oid,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 

@@ -1,3 +1,9 @@
+###
+# Use functions that contain SELECT. INSERT, UPDATE, DELETE on a
+# table for which the USER does *not* have GRANTs (not possible).
+###
+
+
 import os, sys
 try:
     from MonetDBtesting import process

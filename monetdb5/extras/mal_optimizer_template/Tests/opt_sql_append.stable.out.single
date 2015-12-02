@@ -55,17 +55,17 @@ Ready.
 % .L # table_name
 % def # name
 % clob # type
-% 449 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.garbageCollector();"	]
+% 535 # length
+[ "optimizer.inline();optimizer.candidates();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
 % clob # type
-% 131 # length
+% 133 # length
 function user.s4_1{autoCommit=true}():void;
     X_26:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",10);
     X_2 := sql.mvc();
-    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0);
+    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0);
     X_15 := sql.append(X_2,"sys","ttt","a",X_12);
     X_19 := sql.append(X_15,"sys","ttt","b",X_13);
     X_21 := sql.append(X_19,"sys","ttt","c",X_14);
@@ -87,17 +87,17 @@ end user.s4_1;
 % .L # table_name
 % def # name
 % clob # type
-% 472 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.sql_append();optimizer.garbageCollector();"	]
+% 558 # length
+[ "optimizer.inline();optimizer.candidates();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
 % clob # type
-% 131 # length
+% 133 # length
 function user.s12_1{autoCommit=true}():void;
     X_26:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",10);
     X_2 := sql.mvc();
-    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0);
+    (X_12:bat[:oid,:int],X_13:bat[:oid,:int],X_14:bat[:oid,:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0);
     X_15 := sql.append(X_2,"sys","ttt","a",X_12);
     X_19 := sql.append(X_15,"sys","ttt","b",X_13);
     X_23 := aggr.count(X_14);

@@ -28,40 +28,28 @@ stderr of test 'quantiles` in directory 'sql/test/quantiles` itself:
 # 12:24:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30339" "--port=34927"
 # 12:24:30 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,-1.0) from lit;
 ERROR = !quantile value of -1.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,-1) from lit;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
-QUERY = select quantile(l_extendedprice,1) from lit;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
-QUERY = select quantile(l_extendedprice,0) from lit;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,42) from lit;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,42.0) from lit;
 ERROR = !quantile value of 42.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,-1.0) from lit group by l_returnflag;
 ERROR = !quantile value of -1.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,-1) from lit group by l_returnflag;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
-QUERY = select quantile(l_extendedprice,1) from lit group by l_returnflag;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
-QUERY = select quantile(l_extendedprice,0) from lit group by l_returnflag;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,42) from lit group by l_returnflag;
-ERROR = !value (21168) exceeds limits of type bte
-MAPI  = (monetdb) /var/tmp/mtest-30339/.s.monetdb.34927
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,42.0) from lit group by l_returnflag;
 ERROR = !quantile value of 42.000000 is not in range [0,1]
 

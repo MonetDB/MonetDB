@@ -65,6 +65,10 @@ lex.yy.c
 *.gem
 # java:
 *.jar
+java/build
+java/target
+java/bin
+java/src/main/java/nl/cwi/monetdb/jdbc/MonetDriver.java
 # python:
 dist
 
@@ -91,3 +95,15 @@ NT/sql
 NT/testing
 NT/tools
 NT/unistd.h
+
+# package building on Mac OS X
+MacOSX/build
+MacOSX/usr
+
+# Build directory
+BUILD
+
+syntax: regexp
+^java/build$
+syntax: regexp
+^java/target$

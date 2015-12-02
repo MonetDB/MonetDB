@@ -11,38 +11,25 @@
 
 CREATE TABLE sys.statistics(
 	"column_id" integer,
-	"type" string, 
+	"type" string,
 	width integer,
-	stamp timestamp, 
-	"sample" bigint, 
-	"count" bigint, 
-	"unique" bigint, 
-	"nils" bigint, 
-	minval string, 
+	stamp timestamp,
+	"sample" bigint,
+	"count" bigint,
+	"unique" bigint,
+	"nils" bigint,
+	minval string,
 	maxval string,
 	sorted boolean);
 
-create procedure analyze()
+create procedure sys.analyze(minmax int, "sample" bigint)
 external name sql.analyze;
 
-create procedure analyze(tbl string)
+create procedure sys.analyze(minmax int, "sample" bigint, sch string)
 external name sql.analyze;
 
-create procedure analyze(sch string, tbl string)
+create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string)
 external name sql.analyze;
 
-create procedure analyze(sch string, tbl string, col string)
-external name sql.analyze;
-
--- control the sample size
-create procedure analyze("sample" bigint)
-external name sql.analyze;
-
-create procedure analyze(tbl string, "sample" bigint)
-external name sql.analyze;
-
-create procedure analyze(sch string, tbl string, "sample" bigint)
-external name sql.analyze;
-
-create procedure analyze(sch string, tbl string, col string, "sample" bigint)
+create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
 external name sql.analyze;

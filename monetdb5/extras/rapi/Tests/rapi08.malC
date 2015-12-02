@@ -17,12 +17,12 @@ bat.append(ti,1:oid);
 bat.append(ti,2:oid);
 bat.append(ti,3:oid);
 
-X_8 := algebra.leftfetchjoin(ti,gv);
+X_8 := algebra.projection(ti,gv);
 (X_9,r1_9,r2_9) := group.subgroupdone(X_8);
-X_12 := algebra.leftfetchjoin(r1_9,X_8);
-X_15 := algebra.leftfetchjoin(ti,dv); 
+X_12 := algebra.projection(r1_9,X_8);
+X_15 := algebra.projection(ti,dv); 
 
 io.print(X_9);
-X_16:bat[:any,:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",X_8,X_15);
+X_16:bat[:oid,:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",X_8,X_15);
 io.print(X_16);
 

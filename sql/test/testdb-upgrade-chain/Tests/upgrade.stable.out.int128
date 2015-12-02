@@ -30,27 +30,20 @@ external name generator.series;
 create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
 returns table (value hugeint)
 external name generator.series;
-create aggregate sys.stddev_samp(val hugeint)
-returns double
-external name aggr.stdev;
-create aggregate sys.stddev_pop(val hugeint)
-returns double
-external name aggr.stdevp;
-create aggregate sys.var_samp(val hugeint)
-returns double
-external name aggr.variance;
-create aggregate sys.var_pop(val hugeint)
-returns double
-external name aggr.variancep;
-create aggregate sys.median(val hugeint)
-returns hugeint
-external name aggr.median;
-create aggregate sys.quantile(val hugeint, q double)
-returns hugeint
-external name aggr.quantile;
-create aggregate sys.corr(e1 hugeint, e2 hugeint)
-returns hugeint
-external name aggr.corr;
+create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE
+    external name "aggr"."stdev";
+create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE
+    external name "aggr"."stdevp";
+create aggregate sys.var_samp(val HUGEINT) returns DOUBLE
+    external name "aggr"."variance";
+create aggregate sys.var_pop(val HUGEINT) returns DOUBLE
+    external name "aggr"."variancep";
+create aggregate sys.median(val HUGEINT) returns HUGEINT
+    external name "aggr"."median";
+create aggregate sys.quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+    external name "aggr"."quantile";
+create aggregate sys.corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT
+    external name "aggr"."corr";
 create function json.filter(js json, name hugeint)
 returns json
 external name json.filter;
@@ -66,158 +59,11 @@ from sys.storagemodel() group by "schema","table";
 insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
 update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
-insert into sys.types values(7305, 'hge', 'hugeint', 128, 1, 2, 6, 0);
-insert into sys.types values(7306, 'hge', 'decimal', 39, 1, 10, 8, 0);
+insert into sys.types values(7608, 'hge', 'hugeint', 128, 1, 2, 6, 0);
+insert into sys.types values(7609, 'hge', 'decimal', 39, 1, 10, 8, 0);
 update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';
 set schema "testschema";
 
-Running database upgrade commands:
-set schema "sys";
-drop filter function sys."like";
-create filter function sys."like"(val string, pat string, esc string) external name algebra."like";
-create filter function sys."like"(val string, pat string) external name algebra."like";
-drop filter function sys."ilike";
-create filter function sys."ilike"(val string, pat string, esc string) external name algebra."ilike";
-create filter function sys."ilike"(val string, pat string) external name algebra."ilike";
-drop view sys.storagemodel;
-drop view sys.tablestoragemodel;
-drop view sys.storage;
-drop function sys.storagemodel;
-drop function sys.imprintsize;
-drop function sys.columnsize;
-drop function sys.storage;
-create function sys.storage()
-returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean)
-external name sql.storage;
-create view sys.storage as select * from sys.storage();
-create function sys.columnsize(nme string, i bigint, d bigint)
-returns bigint
-begin
-	case
-	when nme = 'boolean' then return i;
-	when nme = 'char' then return 2*i;
-	when nme = 'smallint' then return 2 * i;
-	when nme = 'int' then return 4 * i;
-	when nme = 'bigint' then return 8 * i;
-	when nme = 'hugeint' then return 16 * i;
-	when nme = 'timestamp' then return 8 * i;
-	when  nme = 'varchar' then
-		case
-		when cast(d as bigint) << 8 then return i;
-		when cast(d as bigint) << 16 then return 2 * i;
-		when cast(d as bigint) << 32 then return 4 * i;
-		else return 8 * i;
-		end case;
-	else return 8 * i;
-	end case;
-end;
-create function sys.imprintsize(i bigint, nme string)
-returns bigint
-begin
-	if nme = 'boolean'
-		or nme = 'tinyint'
-		or nme = 'smallint'
-		or nme = 'int'
-		or nme = 'bigint'
-		or nme = 'hugeint'
-		or nme = 'decimal'
-		or nme = 'date'
-		or nme = 'timestamp'
-		or nme = 'real'
-		or nme = 'double'
-	then
-		return cast( i * 0.12 as bigint);
-	end if;
-	return 0;
-end;
-create function sys.storagemodel()
-returns table (
-	"schema" string,
-	"table" string,
-	"column" string,
-	"type" string,
-	"count" bigint,
-	columnsize bigint,
-	heapsize bigint,
-	hashes bigint,
-	imprints bigint,
-	sorted boolean)
-begin
-	return select I."schema", I."table", I."column", I."type", I."count",
-	columnsize(I."type", I.count, I."distinct"),
-	heapsize(I."type", I."distinct", I."atomwidth"),
-	hashsize(I."reference", I."count"),
-	imprintsize(I."count",I."type"),
-	I.sorted
-	from sys.storagemodelinput I;
-end;
-create view sys.storagemodel as select * from sys.storagemodel();
-create view sys.tablestoragemodel
-as select "schema","table",max(count) as "count",
-	sum(columnsize) as columnsize,
-	sum(heapsize) as heapsize,
-	sum(hashes) as hashes,
-	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
-from sys.storagemodel() group by "schema","table";
-drop table sys.statistics;
-create table sys.statistics(
-	"column_id" integer,
-	"type" string,
-	width integer,
-	stamp timestamp,
-	"sample" bigint,
-	"count" bigint,
-	"unique" bigint,
-	"nils" bigint,
-	minval string,
-	maxval string,
-	sorted boolean);
-drop view sys.querylog_history;
-drop view sys.querylog_calls;
-drop function sys.querylog_calls;
-create function sys.querylog_calls()	returns table(	    id oid,
-	    "start" timestamp,
-	    "stop" timestamp,
-	    arguments string,
-	    tuples wrd,
-	    run bigint,
-	    ship bigint,
-	    cpu int,
-	    io int 
-	) external name sql.querylog_calls;
-create view sys.querylog_calls as select * from sys.querylog_calls();
-create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
-from sys.querylog_catalog() qd, sys.querylog_calls() ql
-where qd.id = ql.id and qd.owner = user;
-drop view sys.tracelog;
-drop function sys.tracelog;
-create function sys.tracelog()
-	returns table (
-	event integer,      
-	clk varchar(20),    
-	pc varchar(50),     
-	thread int,         
-	ticks bigint,       
-	rrsMB bigint,       
-	vmMB bigint,        
-	reads bigint,       
-	writes bigint,  
-	minflt bigint,  
-	majflt bigint,  
-	nvcsw bigint,  
-	stmt string         
-	) external name sql.dump_trace;
-create view sys.tracelog as select * from sys.tracelog();
-insert into sys.systemfunctions (select id from sys.functions where name in ('like', 'ilike', 'columnsize', 'imprintsize', 'storage', 'storagemodel', 'querylog_calls', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-delete from systemfunctions where function_id not in (select id from functions);
-update sys._tables set system = true where name in ('statistics', 'storage', 'storagemodel', 'tablestoragemodel', 'querylog_calls', 'querylog_history', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');
-drop procedure sys.cluster1;
-drop procedure sys.cluster2;
-set schema "testschema";
-
-#Interpreting bte as bit.
 
 # 12:48:11 >  
 # 12:48:11 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"

@@ -1,0 +1,37 @@
+stderr of test 'incorrect_columns` in directory 'sql/test/copy` itself:
+
+
+# 08:11:47 >  
+# 08:11:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37579" "--set" "mapi_usock=/var/tmp/mtest-26664/.s.monetdb.37579" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/Jul2015//Linux/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 08:11:47 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/Jul2015//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37579
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26664/.s.monetdb.37579
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/Jul2015//Linux/var/MonetDB/mTests_sql_test_copy
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 08:11:47 >  
+# 08:11:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26664" "--port=37579"
+# 08:11:47 >  
+
+
+# 16:14:08 >  
+# 16:14:08 >  "Done."
+# 16:14:08 >  
+

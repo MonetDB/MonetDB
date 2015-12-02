@@ -77,7 +77,7 @@ prelude(int cnt, bat *subcommit)
  * the previous checkpoint that were deleted now are physically
  * destroyed.
  */
-static gdk_return
+static void
 epilogue(int cnt, bat *subcommit)
 {
 	int i = 0;
@@ -120,7 +120,7 @@ epilogue(int cnt, bat *subcommit)
 		}
 		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW, subcommit ? "TMsubcommit" : "TMcommit");
 	}
-	return GDK_SUCCEED;
+	GDKclrerr();
 }
 
 /*
@@ -137,7 +137,8 @@ TMcommit(void)
 	BBPlock("TMcommit");
 	if (prelude(getBBPsize(), NULL) == GDK_SUCCEED &&
 	    BBPsync(getBBPsize(), NULL) == GDK_SUCCEED) {
-		ret = epilogue(getBBPsize(), NULL);
+		epilogue(getBBPsize(), NULL);
+		ret = GDK_SUCCEED;
 	}
 	BBPunlock("TMcommit");
 	return ret;
@@ -186,12 +187,13 @@ TMsubcommit_list(bat *subcommit, int cnt)
 		/* lock just prevents BBPtrims, and other global
 		 * (sub-)commits */
 		for (xx = 0; xx <= BBP_THREADMASK; xx++)
-			MT_lock_set(&GDKtrimLock(xx), "TMsubcommit");
+			MT_lock_set(&GDKtrimLock(xx));
 		if (BBPsync(cnt, subcommit) == GDK_SUCCEED) { /* write BBP.dir (++) */
-			ret = epilogue(cnt, subcommit);
+			epilogue(cnt, subcommit);
+			ret = GDK_SUCCEED;
 		}
 		for (xx = BBP_THREADMASK; xx >= 0; xx--)
-			MT_lock_unset(&GDKtrimLock(xx), "TMsubcommit");
+			MT_lock_unset(&GDKtrimLock(xx));
 	}
 	return ret;
 }
@@ -233,7 +235,7 @@ TMsubcommit(BAT *b)
  * swapped out. Persistent BATs that were made transient in this
  * transaction become persistent again.
  */
-gdk_return
+void
 TMabort(void)
 {
 	int i;
@@ -291,5 +293,5 @@ TMabort(void)
 		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMabort");
 	}
 	BBPunlock("TMabort");
-	return GDK_SUCCEED;
+	GDKclrerr();
 }

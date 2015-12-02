@@ -28,28 +28,28 @@ stderr of test 'test_privs2_p2` in directory 'sql/test/Users` itself:
 # 15:54:47 >  "/usr/bin/python2" "test_privs2_p2.SQL.py" "test_privs2_p2"
 # 15:54:47 >  
 
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT * FROM version;
 ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = insert into version (name ,i) values ('test2' ,2) ;
 ERROR = !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT insertversion('test3', 3);
 ERROR = !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT * FROM version;
 ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT updateversion('test1', 4);
-ERROR = !UPDATE: insufficient privileges for user 'my_user2' to update table 'version' on column 'i'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+ERROR = !UPDATE: insufficient privileges for user 'my_user2' to update table 'version'
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT * FROM version;
 ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT deleteversion(4);
 ERROR = !DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-17082/.s.monetdb.34660
+MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT * FROM version;
 ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
 

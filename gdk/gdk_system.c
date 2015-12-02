@@ -127,7 +127,7 @@ GDKlockstatistics(int what)
 {
 	MT_Lock *l;
 
-	if (ATOMIC_TAS(GDKlocklistlock, dummy, "") != 0) {
+	if (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) {
 		fprintf(stderr, "#WARNING: GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
@@ -146,7 +146,7 @@ GDKlockstatistics(int what)
 	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
-	ATOMIC_CLEAR(GDKlocklistlock, dummy, "");
+	ATOMIC_CLEAR(GDKlocklistlock, dummy);
 }
 #endif
 
@@ -161,6 +161,7 @@ static struct winthread {
 } *winthreads = NULL;
 #define EXITED		1
 #define DETACHED	2
+#define WAITING		4
 static CRITICAL_SECTION winthread_cs;
 static int winthread_cs_init = 0;
 
@@ -211,7 +212,8 @@ join_threads(void)
 		waited = 0;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
-			if ((w->flags & (EXITED | DETACHED)) == (EXITED | DETACHED)) {
+			if ((w->flags & (EXITED | DETACHED | WAITING)) == (EXITED | DETACHED)) {
+				w->flags |= WAITING;
 				LeaveCriticalSection(&winthread_cs);
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);

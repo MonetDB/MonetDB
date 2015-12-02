@@ -69,12 +69,11 @@ stderr of test 'copy_into_error_off_by_one.SF-2833696` in directory 'sql/test/Bu
 # 14:07:47 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=37202 
 # 14:07:47 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
 QUERY = COPY 2 RECORDS INTO number FROM stdin USING DELIMITERS '\n';
         1
         bla
-ERROR = !value 'bla' from line 2 field 1 not inserted, expecting type int
-        !failed to import table
+ERROR = !Failed to import table line 2 field 1 'int' expected in 'bla'
 
 # 14:07:47 >  
 # 14:07:47 >  Done.

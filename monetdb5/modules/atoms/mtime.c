@@ -191,6 +191,12 @@
 #include "monetdb_config.h"
 #include "mtime.h"
 
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#include "strptime.c"
+#endif
+
+
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
 #define set_rule(r,i)							\
 	do {										\
@@ -1578,7 +1584,8 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
 	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
 	bn->T->nonil = !bn->T->nil;
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *b2 = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
@@ -1811,7 +1818,8 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
 	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
 	bn->T->nonil = !bn->T->nil;
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *b2 = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
@@ -1893,7 +1901,8 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
 	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
 	bn->T->nonil = !bn->T->nil;
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *b2 = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
@@ -2056,14 +2065,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	BATsetcount(bn, (BUN) (tn - (int *) Tloc(bn, BUNfirst(bn))));
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	if (b1->htype != bn->htype) {
-		/* temporarily reuse b2 */
-		b2 = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b1->hseqbase);
-	}
+	BATseqbase(bn, b1->hseqbase);
 	BBPunfix(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	*ret = bn->batCacheid;
@@ -2143,14 +2145,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, BUNfirst(bn))));
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	if (b1->htype != bn->htype) {
-		/* temporarily reuse b2 */
-		b2 = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b1->hseqbase);
-	}
+	BATseqbase(bn, b1->hseqbase);
 	BBPunfix(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);
 	*ret = bn->batCacheid;
@@ -2580,7 +2575,8 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
 	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
 	bn->T->nonil = !bn->T->nil;
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *b2 = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
@@ -2719,7 +2715,8 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
 	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
 	bn->T->nonil = !bn->T->nil;
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *b2 = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
@@ -2783,7 +2780,8 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
 	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
 	bn->T->nonil = !bn->T->nil;
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *b2 = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
@@ -3073,7 +3071,8 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3129,7 +3128,8 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 		m++;
 		t++;
 	}
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3186,7 +3186,8 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3242,7 +3243,8 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 		h++;
 		t++;
 	}
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3296,7 +3298,8 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 		m++;
 		t++;
 	}
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3349,7 +3352,8 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 		}
 		s++; t++;
 	}
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3403,7 +3407,8 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3456,7 +3461,8 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 		s++;
 		t++;
 	}
-	if (b->htype != bn->htype) {
+	if (!BAThdense(b)) {
+		/* legacy */
 		BAT *r = VIEWcreate(b,bn);
 		BBPunfix(bn->batCacheid);
 		bn = r;
@@ -3477,9 +3483,8 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 }
 
 str
-MTIMEstrptime(date *d, const char * const *s, const char * const *format)
+MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 {
-#ifdef HAVE_STRPTIME
 	struct tm t;
 
 	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
@@ -3491,13 +3496,10 @@ MTIMEstrptime(date *d, const char * const *s, const char * const *format)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
 	*d = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.str_to_date", "strptime support missing");
-#endif
 }
 
 str
-MTIMEstrftime(str *s, const date *d, const char * const *format)
+MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 {
 #ifdef HAVE_STRFTIME
 	struct tm t;
@@ -3517,10 +3519,102 @@ MTIMEstrftime(str *s, const date *d, const char * const *format)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
-		throw(MAL, "mtime.str_to_date", "memory allocation failure");
+		throw(MAL, "mtime.date_to_str", "memory allocation failure");
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
 #else
-	throw(MAL, "mtime.str_to_date", "strftime support missing");
+	throw(MAL, "mtime.date_to_str", "strftime support missing");
+#endif
+}
+
+str
+MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
+{
+	struct tm t;
+
+	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
+		*d = daytime_nil;
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	if (strptime(*s, *format, &t) == NULL)
+		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'\n", *format, *s);
+	*d = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
+{
+#ifdef HAVE_STRFTIME
+	struct tm t;
+	char buf[BUFSIZ + 1];
+	size_t sz;
+	int msec;
+
+	if (daytime_isnil(*d) || strcmp(*format, str_nil) == 0) {
+		*s = GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	(void)msec;
+	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
+	*s = GDKmalloc(sz + 1);
+	if (*s == NULL)
+		throw(MAL, "mtime.time_to_str", "memory allocation failure");
+	strncpy(*s, buf, sz + 1);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "mtime.time_to_str", "strftime support missing");
+#endif
+}
+
+str
+MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *format)
+{
+	struct tm t;
+
+	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
+		*ts = *timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	if (strptime(*s, *format, &t) == NULL)
+		throw(MAL, "mtime.str_to_timestamp", "format '%s', doesn't match timestamp '%s'\n", *format, *s);
+	ts->days = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
+	ts->msecs = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
+{
+#ifdef HAVE_STRFTIME
+	struct tm t;
+	char buf[BUFSIZ + 1];
+	size_t sz;
+	int mon, year, msec;
+
+	if (timestamp_isnil(*ts) || strcmp(*format, str_nil) == 0) {
+		*s = GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	memset(&t, 0, sizeof(struct tm));
+	fromdate(ts->days, &t.tm_mday, &mon, &year);
+	t.tm_mon = mon - 1;
+	t.tm_year = year - 1900;
+	fromtime(ts->msecs, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	(void)msec;
+	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
+	*s = GDKmalloc(sz + 1);
+	if (*s == NULL)
+		throw(MAL, "mtime.timestamp_to_str", "memory allocation failure");
+	strncpy(*s, buf, sz + 1);
+	return MAL_SUCCEED;
+#else
+	throw(MAL, "mtime.timestamp_to_str", "strftime support missing");
 #endif
 }

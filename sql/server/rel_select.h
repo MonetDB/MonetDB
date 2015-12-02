@@ -19,6 +19,7 @@ extern sql_rel* rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_ty
 extern sql_rel* rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
+extern sql_rel *schema_selects(mvc *sql, sql_schema *s, symbol *sym);
 extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek, int apply);
 extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
 extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f);
@@ -26,7 +27,7 @@ extern sql_rel * rel_project(sql_allocator *sa, sql_rel *l, list *e);
 extern sql_rel * rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
 extern list * rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname , int intern);
-extern sql_rel * rel_label( mvc *sql, sql_rel *r);
+extern sql_rel * rel_label( mvc *sql, sql_rel *r, int all);
 extern sql_exp *rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f);
 
 extern void rel_add_intern(mvc *sql, sql_rel *rel);

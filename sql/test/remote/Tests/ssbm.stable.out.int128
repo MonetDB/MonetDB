@@ -3,7 +3,8 @@ stdout of test 'ssbm` in directory 'sql/test/remote` itself:
 Ready.
 
 60175 rows in mergetable
-
+356
+356
 # manually adapted test output from ssbm test cases
 # Q1
 % .L1 # table_name

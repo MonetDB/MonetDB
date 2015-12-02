@@ -10,7 +10,7 @@ dnl Copyright 2008-2015 MonetDB B.V.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.20.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
+AC_INIT([MonetDB], [11.22.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -162,6 +162,13 @@ AC_ARG_ENABLE(netcdf,
 		[enable support for netcdf (default=auto)]),
 	enable_netcdf=$enableval,
 	enable_netcdf=$dft_netcdf)
+
+dft_lidar=auto
+AC_ARG_ENABLE(lidar,
+	AS_HELP_STRING([--enable-lidar],
+		[enable support for LiDAR data (default=auto)]),
+	enable_lidar=$enableval,
+	enable_lidar=$dft_lidar)
 
 dft_sql=yes
 AC_ARG_ENABLE(sql,
@@ -1017,7 +1024,7 @@ if test "x$enable_optimize" = xyes; then
 	      dnl  -mp does no longer exist with icc 15; using -mieee-fp, instead.
 	      dnl  adding -axSSE4.2 (or even -axCORE-AVX512) results in errors like
 	      dnl  "error: ODBCFetch has been targeted for automatic cpu dispatch" ...
-	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -xHost -xHOST";; 
+	      x86_64-*-*-15.*) CFLAGS="$CFLAGS -mieee-fp -O3 -restrict -unroll -no-inline-max-size -no-inline-max-total-size -inline-level=1 -xHost";;
 
 	      i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 	      i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
@@ -1447,12 +1454,14 @@ case "$have_rubygem_dir" in
 esac
 case "$RUBY_DIR" in
 ${prefix}/*)
-	RUBY_DIR="\${prefix}`echo "$RUBY_DIR" | sed "s|^$prefix||"`";;
-/*)	RUBY_DIR="\${prefix}$RUBY_DIR";;
-*)
-	RUBY_DIR="\${prefix}/$RUBY_DIR";;
+	RUBY_DIR="`echo "$RUBY_DIR" | sed "s|^$prefix/||"`";;
+/*)	RUBY_DIR="${RUBY_DIR#/}";;
 esac
 AC_SUBST(RUBY_DIR)
+QRUBY_DIR="$RUBY_DIR"
+XRUBY_DIR="`$translatepath "$QRUBY_DIR"`"
+QXRUBY_DIR="`echo "$XRUBY_DIR" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QXRUBY_DIR)
 
 RUBYGEM=gem
 org_have_rubygem=auto
@@ -1698,14 +1707,14 @@ no-*)
 	fi
 	;;
 *)
-	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.6") ; then
+	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.7") ; then
 		have_java_jdbc=yes
 	else
 		if test "x$enable_jdbc" = xyes; then
-			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 6 or higher])
+			AC_MSG_ERROR([MonetDB JDBC requires ant and Java 7 or higher])
 		else
 			enable_jdbc=no
-			disable_jdbc="(MonetDB JDBC currently requires Java 6 or higher to build)"
+			disable_jdbc="(MonetDB JDBC currently requires Java 7 or higher to build)"
 		fi
 	fi
 	;;
@@ -1729,7 +1738,7 @@ no-*)
 	fi
 	;;
 *)
-	req_java_ver_min=1.6 # >= $req_java_ver_min required
+	req_java_ver_min=1.7 # >= $req_java_ver_min required
 	if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_java_ver_min"); then
 		have_java_control=yes
 	else
@@ -1870,8 +1879,8 @@ if test "x$have_pthread" != xno; then
 	save_LIBS="$LIBS"
 	save_CPPFLAGS="$CPPFLAGS"
 	case $GCC-$have_pthread-$CC_ver in
-		yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*)
-			# clang 5.*/6.* (Xcode 6.0) does not
+		yes-auto-clang-5.*|yes-yes-clang-5.*|yes-auto-clang-6.*|yes-yes-clang-6.*|yes-auto-clang-7.*|yes-yes-clang-7.*)
+			# clang 5.*/6.*/7.* (Xcode 6.0) does not
 			# seem to have / require -pthread as compiler
 			# option; on Mac OS X Yosamite, "Apple LLVM 
 			# version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)"
@@ -2168,9 +2177,14 @@ fi
 AM_CONDITIONAL(HAVE_CURL, test x"$have_curl" != xno)
 
 PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_have_zlib="(zlib not found)"])
+if test x"$have_zlib" = x"no" ; then
+	# Solaris doesn't provide zlib.pc, but zlib may well be present
+	AC_CHECK_LIB(z, gzopen, [ have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS= ])
+elif test x"$have_zlib" = x"yes" ; then
+	AC_SUBST(PKG_ZLIB, zlib)
+fi
 if test x"$have_zlib" = x"yes" ; then
 	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
-	AC_SUBST(PKG_ZLIB, zlib)
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
@@ -2419,19 +2433,43 @@ if test "x$have_samtools" != xno; then
 	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
 
 	AC_CHECK_HEADER(samtools/bam.h,
-		[ why_have_samtools= ],
-		[ why_have_samtools="samtools/bam.h header not found" ])
+		[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
+		[ why_have_samtools="bam.h header not found" ])
+	if test -n "$why_have_samtools"; then
+		AC_CHECK_HEADER(bam/bam.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
+			[ why_have_samtools="Neither bam/bam.h or bam/bam.h header not found" ])
+	fi
+	
+	if test -z "$why_have_samtools"; then
+		AC_CHECK_HEADER(samtools/sam.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_SAM_H], 1, [Define to 1 if you have the <samtools/sam.h> header file.]) ],
+			[ why_have_samtools="sam.h header not found" ])
+	fi
+	if test -n "$why_have_samtools"; then
+		AC_CHECK_HEADER(bam/sam.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_SAM_H], 1, [Define to 1 if you have the <bam/sam.h> header file.]) ],
+			[ why_have_samtools="Neither samtools/sam.h or bam/sam.h header not found" ])
+	fi
+
 	if test -z "$why_have_samtools"; then
 		AC_CHECK_HEADER(samtools/bgzf.h,
-			[ why_have_samtools= ],
-			[ why_have_samtools="samtools/bgzf.h header not found" ])
+			[ why_have_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BGZF_H], 1, [Define to 1 if you have the <samtools/bgzf.h> header file.]) ],
+			[ why_have_samtools="bgzf.h header not found" ])
 	fi
+	if test -n "$why_have_samtools"; then
+		AC_CHECK_HEADER(bam/bgzf.h,
+			[ why_have_samtools=; AC_DEFINE([HAVE_BAM_BGZF_H], 1, [Define to 1 if you have the <bam/bgzf.h> header file.]) ],
+			[ why_have_samtools="Neither samtool/bgzf.h nor bam/bgzf.h header not found" ])
+	fi
+
 	if test -z "$why_have_samtools"; then
 		AC_CHECK_LIB(bam, bam_header_read,
-			AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools (providing the bam library)]),
+			AC_DEFINE(HAVE_SAMTOOLS, 1, [Define if you have the samtools version 0.1.x (providing the bam library)]),
 			[ why_have_samtools="bam library not found" ],
 			[-lm -lpthread -lz])
 	fi
+
 	if test -n "$why_have_samtools"; then
 		if test "x$have_samtools" != xauto; then
 			AC_MSG_ERROR([$why_have_samtools])
@@ -2444,7 +2482,7 @@ if test "x$have_samtools" != xno; then
 	if test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"; then
 		SAMTOOLS_CFLAGS=
 		SAMTOOLS_LIBS="-lbam"
-		AC_CHECK_HEADERS([samtools/kstring.h])
+		AC_CHECK_HEADERS([samtools/kstring.h bam/kstring.h])
 	fi
 fi
 AC_SUBST(SAMTOOLS_CFLAGS, $SAMTOOLS_CFLAGS)
@@ -2521,6 +2559,7 @@ esac
 AC_SUBST(GEOS_INCS)
 AC_SUBST(GEOS_LIBS)
 
+# fits, only used by sql
 org_have_cfitsio=no
 have_cfitsio=$org_have_cfitsio
 if test "x$enable_fits" != xno; then
@@ -2532,6 +2571,7 @@ if test "x$enable_fits" != xno; then
 fi
 AM_CONDITIONAL(HAVE_FITS, test x"$have_cfitsio" != xno)
 
+# netcdf, only used by sql
 org_have_netcdf=no
 have_netcdf=$org_have_netcdf
 if test "x$enable_netcdf" != xno; then
@@ -2543,6 +2583,86 @@ if test "x$enable_netcdf" != xno; then
 		 enable_netcdf=no; disable_netcdf="(netcdf library not found)"])
 fi
 AM_CONDITIONAL(HAVE_NETCDF, test x"$have_netcdf" != xno)
+
+# liblas, only used in lidar module
+org_have_liblas=auto
+have_liblas=$org_have_liblas
+LIBLAS_INCS=''
+LIBLAS_LIBS=''
+AC_ARG_WITH(liblas,
+	AS_HELP_STRING([--with-liblas=DIR],
+		[liblas library is installed in DIR]),
+	have_liblas="$withval")
+case "$enable_lidar" in
+yes|auto)
+	# liblas >= 1.8.0 required
+	LIBLAS_VERSION_REQUIRED_MIN=1.8.0
+	LIBLAS_CONFIG=''
+	# locate liblas-config
+	if test "x$have_liblas" != xno; then
+		case "$have_liblas" in
+		yes|auto)
+			XPATH="$PATH"
+			;;
+		*)
+			XPATH="$have_liblas/bin"
+			have_liblas=yes
+			;;
+		esac
+		AC_PATH_PROG(LIBLAS_CONFIG,liblas-config,,$XPATH)
+		if test "x$LIBLAS_CONFIG" = x; then
+			if test "x$have_liblas" = "xyes" ; then
+				AC_MSG_ERROR([liblas-config not found in $XPATH])
+			else
+				have_liblas=no
+				why_have_liblas="(liblas-config not found)"
+			fi
+		fi
+	fi
+	# check the version if liblas
+	if test "x$have_liblas" != xno; then
+		AC_MSG_CHECKING([for liblas >= $LIBLAS_VERSION_REQUIRED_MIN])
+		LIBLAS_VERSION="`$LIBLAS_CONFIG --version`"
+		AC_MSG_RESULT(found $LIBLAS_VERSION)
+		if test MONETDB_VERSION_TO_NUMBER(echo $LIBLAS_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $LIBLAS_VERSION_REQUIRED_MIN); then
+			if test "x$have_liblas" = "xyes" ; then
+				AC_MSG_ERROR([liblas version $LIBLAS_VERSION is too old])
+			else
+				have_liblas=no
+				why_have_liblas="(liblas version $LIBLAS_VERSION is older than required version $LIBLAS_VERSION_REQUIRED_MIN)"
+			fi
+		fi
+	fi
+	# read include dirs, libs and cflags
+	if test "x$have_liblas" != xno; then
+		LIBLAS_INCS="`$LIBLAS_CONFIG --includes`" 
+		LIBLAS_LIBS="`$LIBLAS_CONFIG --libs`"
+	fi
+	# if lidar is enabled and liblas was not found abort
+	if test "x$have_liblas" = xno; then
+		if test "x$enable_lidar" = xyes; then
+			AC_MSG_ERROR([liblas library required for lidar module])
+		fi
+		# no liblas, so don't compile lidar
+		enable_lidar=no
+		if test "x$disable_lidar" = x; then
+			disable_lidar=${why_have_liblas:-"(liblas library required for lidar module)"}
+		fi
+	fi
+	;;
+no)
+	enable_lidar=no
+	have_liblas=no
+	why_have_liblas="(lidar module is disabled)"
+	;;
+esac
+AC_SUBST(LIBLAS_INCS)
+AC_SUBST(LIBLAS_LIBS)
+AC_MSG_CHECKING(['enable lidar: $enable_lidar'])
+
+AM_CONDITIONAL(HAVE_LIDAR, test "x$enable_lidar" = xyes -o "x$enable_lidar" = xauto)
+
+AC_MSG_CHECKING(['enable lidar: $enable_lidar'])
 
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
@@ -2796,6 +2916,7 @@ AC_CHECK_SIZEOF(size_t)
 AC_CHECK_SIZEOF(ssize_t)
 AC_CHECK_SIZEOF(ptrdiff_t,,[#include <stddef.h>
 #include <sys/types.h>])
+AC_CHECK_SIZEOF(wchar_t)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(__int128)
@@ -2849,7 +2970,7 @@ AC_DEFINE([__hidden], [/* empty */],
 
 dnl     checks for library functions
 case $host in
-	*-darwin1[[01234]]*)
+	*-darwin1[[012345]]*)
 		# OSX 10.6 (Snow Leopard) and up somehow makes configure believe
 		# that fdatasync exists, in reality however, it does not on this
 		# platform.
@@ -3079,6 +3200,8 @@ fi
 Qdatadir="$datadir"
 Xdatadir="`$translatepath "$datadir"`"
 QXdatadir="`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`"
+eval "Edatadir=${Xdatadir}"
+QEdatadir="`echo "$Edatadir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qdatadir)
 AC_SUBST(Xdatadir)
 AC_SUBST(QXdatadir)
@@ -3114,6 +3237,7 @@ AC_SUBST(QSOURCE)
 AC_SUBST(XSOURCE)
 AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(DATA_DIR,"$QEdatadir",[read-only architecture-independent data])
 AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
@@ -3166,21 +3290,25 @@ typedef size_t uintptr_t;
 
 #ifdef HAVE_LONG_LONG
 typedef long long lng;
+typedef unsigned long long ulng;
 # define SIZEOF_LNG SIZEOF_LONG_LONG
 #else
 # ifdef HAVE___INT64
 typedef __int64 lng;
+typedef unsigned __int64 ulng;
 #  define SIZEOF_LNG SIZEOF___INT64
 # endif
 #endif
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
+typedef unsigned __int128 uhge;
 # define HAVE_HGE 1
 # define SIZEOF_HGE SIZEOF___INT128
 #else
 # if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
+typedef __uint128_t uhge;
 #  define HAVE_HGE 1
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif
@@ -3268,6 +3396,14 @@ typedef lng ptrdiff_t;
 # define __declspec(x)
 #endif
 
+/* work around problem compiling batxml.c with clang
+ * clang 3.5.0 claims to be GnuC 4.3, but doesn't accept
+ * __attribute__((alloc_size(N))), as libml2 2.9.2 expects
+ */
+#if defined(__GNUC__) && defined(__clang__)
+#define LIBXML_ATTR_ALLOC_SIZE(x)
+#endif
+
 #endif /* _SEEN_MONETDB_CONFIG_H */
 ])
 
@@ -3325,20 +3461,12 @@ for comp in \
 	'sql         ' \
 	'geom        ' \
 	'console     ' \
-	'gsl         ' \
-	'fits        ' \
-	'netcdf      ' \
 	'microhttpd  ' \
 	'rintegration' \
 	'odbc        ' \
 	'jdbc        ' \
 	'control     ' \
 	'testing     ' \
-	'developer   ' \
-	'strict      ' \
-	'debug       ' \
-	'assert      ' \
-	'optimize    ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3356,12 +3484,16 @@ for comp in \
 	'atomic_ops   ' \
 	'bz2          ' \
 	'curl         ' \
+	'fits         ' \
 	'getaddrinfo  ' \
 	'gsl          ' \
 	'java         ' \
 	'java_control ' \
 	'java_jdbc    ' \
+	'liblas       ' \
 	'libxml2      ' \
+	'lidar        ' \
+	'netcdf       ' \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \

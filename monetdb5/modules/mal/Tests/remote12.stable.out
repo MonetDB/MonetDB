@@ -16,28 +16,21 @@ stdout of test 'remote12` in directory 'monetdb5/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33456/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# SQLException:mvc:SQL module not initialized
 function user.main():void;
 #causing a sigfault  
     uri := sabaoth.getLocalConnectionURI();
     conn:str  := remote.connect(uri,"monetdb","monetdb");
-    e := nil:BAT;
-    m:str  := remote.put(conn,e);
+    e := nil:bat[:oid,:int];
+    m:str := remote.put(conn,e);
     io.print(m);
-    v:BAT  := remote.get(conn,m);
+    v:bat[:oid,:int] := remote.get(conn,m);
     io.print(v);
     mdb.var();
 end user.main;
-[ "rmt0_e_BAT" ]
-[ nil ]
-#Stack 'main' size=3200 top=12
-#[2]   uri = "mapi:monetdb://eir.ins.cwi.nl:33456/mTests_modules_mal" :str  
-#[3]  conn = "mTests_modules_mal_monetdb_0" :str  
-#[4]    _4 = "monetdb" :str  constant 
-#[5]     e = nil :BAT  
-#[6]    _6 = nil :BAT  constant 
-#[7]     m = "rmt0_e_BAT" :str  
-#[9]     v = nil :BAT  
+!MALException:remote.put:Object not found
+
+
+
 
 # 20:06:20 >  
 # 20:06:20 >  Done.

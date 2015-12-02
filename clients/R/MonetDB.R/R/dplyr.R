@@ -13,7 +13,9 @@ src_translate_env.src_monetdb <- function(x) {
       n = function() dplyr::sql("COUNT(*)"),
       sd =  dplyr::sql_prefix("STDDEV_SAMP"),
       var = dplyr::sql_prefix("VAR_SAMP"),
-      median = dplyr::sql_prefix("MEDIAN")
+      median = dplyr::sql_prefix("MEDIAN"),
+      n_distinct = function(x) {dplyr::build_sql(dplyr::sql("count(distinct "), 
+        x, dplyr::sql(")"))}
     )
   )
 }

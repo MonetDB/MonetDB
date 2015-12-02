@@ -1,7 +1,7 @@
 mergeinit
 mergeload
 mergeloadidx
-mergequery
+THREADS>=4?mergequery
 emptymergequery
 alter
 types
@@ -12,3 +12,7 @@ mergedrop
 mergekey
 crash0
 mergedropcrash
+mergedrop1
+mergedrop2
+mergemergeload
+singlekeyconstraint

@@ -1,0 +1,41 @@
+stderr of test 'local-remotetable-crash.Bug-3754` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 18:16:19 >  
+# 18:16:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37515" "--set" "mapi_usock=/var/tmp/mtest-19202/.s.monetdb.37515" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 18:16:19 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/zhang/monet-install/Jul2015/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37515
+# cmdline opt 	mapi_usock = /var/tmp/mtest-19202/.s.monetdb.37515
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2015
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 18:16:20 >  
+# 18:16:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19202" "--port=37515"
+# 18:16:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-5803/.s.monetdb.31110
+QUERY = SELECT * FROM rt;
+ERROR = !(mapi:monetdb://monetdb@localhost/mTests_sql_test_BugTracker-2015) unable to find sys.rt(i)
+
+
+# 18:16:20 >  
+# 18:16:20 >  "Done."
+# 18:16:20 >  
+

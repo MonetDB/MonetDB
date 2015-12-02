@@ -6,10 +6,9 @@ bat.append(b, 5442033);
 bat.append(b, 5645862);
 io.print(b);
 
-# it left one behind
-bat.delete(b,b);
+bat.delete(b,1@0);
 io.print(b);
 
-bat.delete(b,b);
+bat.delete(b);
 io.print(b);
 

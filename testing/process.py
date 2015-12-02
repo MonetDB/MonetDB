@@ -229,7 +229,8 @@ class Popen(subprocess.Popen):
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), dbname = os.getenv('TSTDB'), host = None,
            user = 'monetdb', passwd = 'monetdb', log = False,
-           interactive = None, echo = None):
+           interactive = None, echo = None,
+           input = None, communicate = False):
     '''Start a client process.'''
     if lang == 'mal':
         cmd = _mal_client[:]
@@ -318,6 +319,12 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         p.stdout = _BufferedPipe(p.stdout)
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
+    if input is not None:
+        p.stdin.write(input)
+    if communicate:
+        out, err = p.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
     return p
 
 def server(args = [], stdin = None, stdout = None, stderr = None,
@@ -375,7 +382,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
             s = args[i+1].partition('=')[0]
             for j in range(len(cmd)):
                 if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
-                    del cmd[i:i+2]
+                    del cmd[j:j+2]
                     break
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')

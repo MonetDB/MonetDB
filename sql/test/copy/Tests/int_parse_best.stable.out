@@ -1,0 +1,146 @@
+stdout of test 'int_parse_best` in directory 'sql/test/copy` itself:
+
+
+# 20:58:16 >  
+# 20:58:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39103" "--set" "mapi_usock=/var/tmp/mtest-21474/.s.monetdb.39103" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/resultset//Linux/var/MonetDB/mTests_sql_test_copy" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 20:58:16 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_copy', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:39103/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21474/.s.monetdb.39103
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 20:58:16 >  
+# 20:58:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21474" "--port=39103"
+# 20:58:16 >  
+
+#create table t_int(i int);
+#copy 1 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '' best effort;
+#""
+[ 1	]
+#select * from t_int;
+% sys.t_int # table_name
+% i # name
+% int # type
+% 1 # length
+[ NULL	]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	0,	0 # length
+#delete from t_int;
+[ 1	]
+#copy 2 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '' best effort;
+#3.00
+#-4.0000
+[ 2	]
+#select * from t_int;
+% sys.t_int # table_name
+% i # name
+% int # type
+% 2 # length
+[ 3	]
+[ -4	]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	0,	0 # length
+#delete from t_int;
+[ 2	]
+#copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '' best effort;
+#0
+#5.1
+#9
+[ 2	]
+#select * from t_int;
+% sys.t_int # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 9	]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	14,	4 # length
+[ 2,	1,	"'int' expected",	"5.1\n"	]
+#delete from t_int;
+[ 2	]
+#copy 5 records into t_int from stdin delimiters ',','\n' NULL as '' best effort;
+#1
+#nil
+#
+#null
+#abc
+[ 2	]
+#select * from t_int;
+% sys.t_int # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1 ]
+[ NULL ]
+#select * from sys.rejects;
+% .rejects,	.rejects,	.rejects,	.rejects # table_name
+% rowid,	fldid,	message,	input # name
+% bigint,	int,	clob,	clob # type
+% 1,	1,	14,	5 # length
+[ 2,	1,	"'int' expected",	"nil\n"	]
+[ 4,	1,	"'int' expected",	"null\n"	]
+[ 5,	1,	"'int' expected",	"abc\n"	]
+#delete from t_int;
+[ 2	]
+#drop table t_int;
+
+# 20:58:16 >  
+# 20:58:16 >  "Done."
+# 20:58:16 >  
+

@@ -36,7 +36,7 @@
 				if (*Buf)				\
 					GDKfree(*Buf);			\
 				*len = 5;				\
-				*Buf = GDKmalloc(*len);			\
+				*Buf = GDKzalloc(*len);			\
 				if (*Buf == NULL) {			\
 					GDKerror("Allocation failed\n"); \
 					return 0;			\
@@ -69,7 +69,7 @@
 			if (*Buf)					\
 				GDKfree(*Buf);				\
 			*len = l+1;					\
-			*Buf = GDKmalloc(*len);				\
+			*Buf = GDKzalloc(*len);				\
 			if (*Buf == NULL) {				\
 				GDKerror("Allocation failed\n");	\
 				return 0;				\
@@ -134,7 +134,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		if (*len < 4 || *buf == NULL) {
 			if (*buf)
 				GDKfree(*buf);
-			*buf = (str) GDKmalloc(*len = 4);
+			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
 				GDKerror("Allocation failed\n");
 				return 0;
@@ -152,7 +152,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (*len < len1 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + 8);
+		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
 			GDKerror("Allocation failed\n");
 			return 0;
@@ -203,7 +203,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (*len < len1 + len2 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = len1 + len2 + 8);
+		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
 		if (*buf == NULL) {
 			GDKerror("Allocation failed\n");
 			return 0;
@@ -230,6 +230,91 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 }
 
 static int
+STRwidth(const char *s)
+{
+	int len = 0;
+	int c;
+	int n;
+
+	if (GDK_STRNIL(s))
+		return int_nil;
+	c = 0;
+	n = 0;
+	while (*s != 0) {
+		if ((*s & 0x80) == 0) {
+			assert(n == 0);
+			len++;
+			n = 0;
+		} else if ((*s & 0xC0) == 0x80) {
+			c = (c << 6) | (*s & 0x3F);
+			if (--n == 0) {
+				/* last byte of a multi-byte character */
+				len++;
+				/* the following code points are all East
+				 * Asian Fullwidth and East Asian Wide
+				 * characters as defined in Unicode 8.0 */
+				if ((0x1100 <= c && c <= 0x115F) ||
+				    c == 0x2329 ||
+				    c == 0x232A ||
+				    (0x2E80 <= c && c <= 0x2E99) ||
+				    (0x2E9B <= c && c <= 0x2EF3) ||
+				    (0x2F00 <= c && c <= 0x2FD5) ||
+				    (0x2FF0 <= c && c <= 0x2FFB) ||
+				    (0x3000 <= c && c <= 0x303E) ||
+				    (0x3041 <= c && c <= 0x3096) ||
+				    (0x3099 <= c && c <= 0x30FF) ||
+				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3131 <= c && c <= 0x318E) ||
+				    (0x3190 <= c && c <= 0x31BA) ||
+				    (0x31C0 <= c && c <= 0x31E3) ||
+				    (0x31F0 <= c && c <= 0x321E) ||
+				    (0x3220 <= c && c <= 0x3247) ||
+				    (0x3250 <= c && c <= 0x4DBF) ||
+				    (0x4E00 <= c && c <= 0xA48C) ||
+				    (0xA490 <= c && c <= 0xA4C6) ||
+				    (0xA960 <= c && c <= 0xA97C) ||
+				    (0xAC00 <= c && c <= 0xD7A3) ||
+				    (0xF900 <= c && c <= 0xFAFF) ||
+				    (0xFE10 <= c && c <= 0xFE19) ||
+				    (0xFE30 <= c && c <= 0xFE52) ||
+				    (0xFE54 <= c && c <= 0xFE66) ||
+				    (0xFE68 <= c && c <= 0xFE6B) ||
+				    (0xFF01 <= c && c <= 0xFFE6) ||
+				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1F200 <= c && c <= 0x1F202) ||
+				    (0x1F210 <= c && c <= 0x1F23A) ||
+				    (0x1F240 <= c && c <= 0x1F248) ||
+				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x20000 <= c && c <= 0x2FFFD) ||
+				    (0x30000 <= c && c <= 0x3FFFD))
+					len++;
+			}
+		} else if ((*s & 0xE0) == 0xC0) {
+			assert(n == 0);
+			n = 1;
+			c = *s & 0x1F;
+		} else if ((*s & 0xF0) == 0xE0) {
+			assert(n == 0);
+			n = 2;
+			c = *s & 0x0F;
+		} else if ((*s & 0xF8) == 0xF0) {
+			assert(n == 0);
+			n = 3;
+			c = *s & 0x07;
+		} else if ((*s & 0xFC) == 0xF8) {
+			assert(n == 0);
+			n = 4;
+			c = *s & 0x03;
+		} else {
+			assert(0);
+			n = 0;
+		}
+		s++;
+	}
+	return len;
+}
+
+static int
 bat_max_strlength(BAT *b)
 {
 	BUN p, q;
@@ -238,8 +323,7 @@ bat_max_strlength(BAT *b)
 	BATiter bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
-		STRLength(&l, &v);
+		l = STRwidth((const char *) BUNtail(bi, p));
 
 		if (l == int_nil)
 			l = 0;
@@ -454,7 +538,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-		    (r = GDKmalloc(sizeof(X))) == NULL)			\
+		    (r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -465,14 +549,12 @@ bat_max_hgelength(BAT *b)
 	} while (0)
 
 static void *
-dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
+dec_frstr(Column *c, int type, const char *s)
 {
 	/* support dec map to bte, sht, int and lng */
-	(void) e;
-	(void) quote;
-	if (s == e) {
+	if( strcmp(s,"nil")== 0)
 		return NULL;
-	} else if (type == TYPE_bte) {
+	if (type == TYPE_bte) {
 		DEC_FRSTR(bte);
 	} else if (type == TYPE_sht) {
 		DEC_FRSTR(sht);
@@ -489,7 +571,7 @@ dec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 }
 
 static void *
-sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
+sec_frstr(Column *c, int type, const char *s)
 {
 	/* read a sec_interval value
 	 * this knows that the stored scale is always 3 */
@@ -499,12 +581,10 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 
 	(void) c;
 	(void) type;
-	(void) quote;
 	assert(type == TYPE_lng);
 
-	if (s == e)
+	if( strcmp(s,"nil")== 0)
 		return NULL;
-
 	if (*s == '-') {
 		neg = 1;
 		s++;
@@ -540,7 +620,7 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	if (*s)
 		return NULL;
 	r = c->data;
-	if (r == NULL && (r = (lng *) GDKmalloc(sizeof(lng))) == NULL)
+	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
 		return NULL;
 	c->data = r;
 	if (neg)
@@ -550,14 +630,20 @@ sec_frstr(Column *c, int type, const char *s, const char *e, char quote)
 	return (void *) r;
 }
 
+/* Literal parsing for SQL all pass through this routine */
 static void *
-_ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
+_ASCIIadt_frStr(Column *c, int type, const char *s)
 {
 	int len;
-	(void) quote;
+	const char *e; 
+
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
-		int len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+		int len, slen;
+
+		for (e = s; *e; e++) ;
+		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+
 		/* or shouldn't len rather be ssize_t, here? */
 
 		if (c->len < len) {
@@ -571,8 +657,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 			}
 			c->data = p;
 		}
-
-		if (s == e) {
+		if (s == e || *s == 0) {
 			len = -1;
 			*(char *) c->data = 0;
 		} else if ((len = (int) GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
@@ -580,19 +665,23 @@ _ASCIIadt_frStr(Column *c, int type, const char *s, const char *e, char quote)
 			/* or shouldn't len rather be ssize_t, here? */
 			return NULL;
 		}
-		if (col->type.digits > 0 && len > 0 && len > (int) col->type.digits) {
-			str v = c->data;
-			STRLength(&len, &v);
+		s = c->data;
+		STRLength(&slen, (const str *) &s);
+		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
+			len = STRwidth(c->data);
 			if (len > (int) col->type.digits)
 				return NULL;
 		}
 		return c->data;
 	}
+	// All other values are not allowed to the MonetDB nil value
+	if( strcmp(s,"nil")== 0)
+		return NULL;
 
 	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
 	if (len < 0)
 		return NULL;
-	if (len == 0 || len != e - s) {
+	if (len == 0 || s[len]) {
 		/* decimals can be converted to integers when *.000 */
 		if (s[len++] == '.')
 			switch (type) {
@@ -630,7 +719,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 		if (l + 3 > *len) {
 			GDKfree(*buf);
 			*len = 2 * l + 3;
-			*buf = GDKmalloc(*len);
+			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
 				GDKerror("Allocation failed\n");
 				return 0;
@@ -669,15 +758,17 @@ has_whitespace(const char *s)
 	return 0;
 }
 
-BAT **
-mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked)
+str
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
 {
 	int i = 0;
 	node *n;
 	Tablet as;
 	Column *fmt;
 	BUN cnt = 0;
-	BAT **bats = NULL;
+	str msg = MAL_SUCCEED;
+
+	*bats =0;	// initialize the receiver
 
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
@@ -714,7 +805,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 		as.error = NULL;
 		as.tryall = 0;
 		as.complaints = NULL;
-		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
+		as.filename = "";
+		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");
 			return NULL;
@@ -735,7 +827,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
 			fmt[i].len = fmt[i].nillen = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-			fmt[i].data = GDKmalloc(fmt[i].len);
+			fmt[i].data = GDKzalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
 			fmt[i].quote = ssep ? ssep[0] : 0;
@@ -754,6 +846,8 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+				if (b == NULL)
+					sql_error(m, 500, "failed to bind to table column");
 
 				HASHdestroy(b);
 
@@ -763,25 +857,36 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
 						for (i--; i >= 0; i--)
 							BBPunfix(fmt[i].c->batCacheid);
-						sql_error(m, 500, "failed to allocate result table sizes ");
+						sql_error(m, 500, "failed to allocate space for column");
 						return NULL;
 					}
 				}
 				fmt[i].ci = bat_iterator(fmt[i].c);
+				fmt[i].c->batDirty = TRUE;
 			}
 		}
-		if (locked || TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz) != BUN_NONE && !as.error) {
+		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
+				(best || !as.error)) {
+				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+				if ( *bats == NULL){
+					TABLETdestroy_format(&as);
+					return NULL;
+				}
 				if (locked)
-					bats = TABLETcollect_parts(&as, cnt);
+					msg = TABLETcollect_parts(*bats,&as, cnt);
 				else
-					bats = TABLETcollect(&as);
+					msg = TABLETcollect(*bats,&as);
 			} else if (locked) {	/* restore old counts */
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;
 					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-					BATsetcount(b, cnt);
-					BBPunfix(b->batCacheid);
+					if (b == NULL)
+						sql_error(m, 500, "failed to bind to temporary column");
+					else {
+						BATsetcount(b, cnt);
+						BBPunfix(b->batCacheid);
+					}
 				}
 			}
 		}
@@ -792,12 +897,16 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 				sql_delta *d = c->data;
 
 				c->base.wtime = t->base.wtime = t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
-				d->ibase = (oid) (d->cnt = BATcount(b));
-				BBPunfix(b->batCacheid);
+				if ( b == NULL)
+					sql_error(m, 500, "failed to bind to delta column");
+				else {
+					d->ibase = (oid) (d->cnt = BATcount(b));
+					BBPunfix(b->batCacheid);
+				}
 			}
 		}
 		if (as.error) {
-			sql_error(m, 500, "%s", as.error);
+			if( !best) sql_error(m, 500, "%s", as.error);
 			if (as.error != M5OutOfMemory)
 				GDKfree(as.error);
 			as.error = NULL;
@@ -809,7 +918,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, sql_table *t, char *sep, cha
 		}
 		TABLETdestroy_format(&as);
 	}
-	return bats;
+	return msg;
 }
 
 /*
@@ -1225,7 +1334,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	as.nr = nr;
 	as.offset = offset;
 	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-	tres = GDKmalloc(sizeof(struct time_res) * (as.nr_attrs));
+	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
 
 	fmt[0].c = NULL;
 	fmt[0].sep = (csv) ? btag : "";
@@ -1339,7 +1448,9 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 	int ok = 1;
 	size_t count = 0, incr = 0;;
 
-	if (mtype == TYPE_oid)
+	if (eclass == EC_SEC)
+		incr = 1;
+	else if (mtype == TYPE_oid)
 		incr = 2;
 	mtype = ATOMbasetype(mtype);
 	if (mtype == TYPE_str) {
@@ -1364,15 +1475,13 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 					 */
 				}
 			} else if (p) {
-				str v = (str) p;
-
-				STRLength(&l, &v);
+				l = STRwidth((const char *) p);
 				if (l == int_nil)
 					l = 0;
 			}
 			ok = mvc_send_int(s, l);
 		}
-	} else if (eclass == EC_NUM || eclass == EC_POS) {
+	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
 		count = 0;
 		if (bid) {
 			BAT *b = BATdescriptor(bid);
@@ -1438,6 +1547,8 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 				count = 0;
 			}
 		}
+		if (eclass == EC_SEC && count < 5)
+			count = 5;
 		ok = mvc_send_lng(s, (lng) count);
 		/* the following two could be done once by taking the
 		   max value and calculating the number of digits from that
@@ -1568,12 +1679,12 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w)
 	if (!s)
 		return 0;
 
+	m->rowcnt = val;
+	stack_set_number(m, "rowcnt", m->rowcnt);
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) || mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->last_id) || mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
-
-	m->last_id = -1;	/* reset after we exposed the value */
 
 	return 0;
 }
@@ -1617,6 +1728,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 		} else
 			count = 1;
 	}
+	m->rowcnt = count;
+	stack_set_number(m, "rowcnt", m->rowcnt);
 	if (!mvc_send_lng(s, (lng) count) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 
