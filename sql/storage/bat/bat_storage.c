@@ -20,7 +20,7 @@ timestamp_delta( sql_delta *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
-	if (d && d->cached) {
+	if (0 && d && d->cached) {
 		bat_destroy(d->cached);
 		d->cached = NULL;
 	}
@@ -32,7 +32,7 @@ timestamp_dbat( sql_dbat *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
-	if (d && d->cached) {
+	if (0 && d && d->cached) {
 		bat_destroy(d->cached);
 		d->cached = NULL;
 	}
