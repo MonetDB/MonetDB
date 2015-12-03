@@ -2859,7 +2859,7 @@ comment Routine to handle join paths.  The type analysis is rather tricky.
 
 command algebra.projection(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGprojection;
-comment Hook directly into the left fetch join implementation.
+comment Project left input onto right input.
 
 pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;

@@ -29,7 +29,7 @@ comment "Fill the tail with a constant";
 
 command projection( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
 address ALGprojection
-comment "Hook directly into the left fetch join implementation.";
+comment "Project left input onto right input.";
 
 # BAT copying
 command copy( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
