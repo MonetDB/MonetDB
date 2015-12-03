@@ -377,10 +377,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				p = pushBit(mb, p, FALSE); /* do not match nils */
 				p = pushNil(mb, p, TYPE_lng); /* no estimate */
 
-				if(getFunctionId(p) == thetajoinRef)
-					getFunctionId(p) = subthetajoinRef;
-				else if(getFunctionId(p) == bandjoinRef)
-					getFunctionId(p) = subbandjoinRef;
 				/* make sure to resolve again */
 				p->token = ASSIGNsymbol; 
 				p->typechk = TYPE_UNKNOWN;

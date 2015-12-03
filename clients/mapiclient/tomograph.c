@@ -365,7 +365,6 @@ base_colors[NUM_COLORS] = {
 /*     2 */	{ 0, 0, "calc", "max", 0 },
 /*     2 */	{ 0, 0, "calc", "bit", 0 },
 /*     2 */	{ 0, 0, "calc", "*", 0 },
-/*     2 */	{ 0, 0, "algebra", "thetajoin", 0 },
 /*     2 */	{ 0, 0, "algebra", "subthetajoin", 0 },
 /*     1 */	{ 0, 0, "sql", "dec_round", 0 },
 /*     1 */	{ 0, 0, "pqueue", "topn_min", 0 },
