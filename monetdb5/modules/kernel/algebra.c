@@ -220,7 +220,7 @@ ALGcard(lng *result, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.card", RUNTIME_OBJECT_MISSING);
 	}
-	if ((en = BATsubunique(b, NULL)) == NULL) {
+	if ((en = BATunique(b, NULL)) == NULL) {
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
 	*result = BATcount(en);
@@ -256,7 +256,7 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		/* special case: equi-select for NIL */
 		high = NULL;
 	}
-	bn = BATsubselect(b, s, low, high, *li, *hi, *anti);
+	bn = BATselect(b, s, low, high, *li, *hi, *anti);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -287,7 +287,7 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, t, val);
-	bn = BATthetasubselect(b, s, val, *op);
+	bn = BATthetaselect(b, s, val, *op);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -317,7 +317,7 @@ ALGselectNotNil(bat *result, const bat *bid)
 		BAT *s = NULL;
 		ptr low = ATOMnilptr(b->ttype);
 
-		s = BATsubselect(b, s, low, NULL, TRUE, TRUE, TRUE);
+		s = BATselect(b, s, low, NULL, TRUE, TRUE, TRUE);
 		if (s) {
 			bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);
@@ -442,7 +442,7 @@ ALGsubjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, co
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubjoin, NULL, NULL, NULL, NULL, "algebra.subjoin");
+				   BATjoin, NULL, NULL, NULL, NULL, "algebra.subjoin");
 }
 
 str
@@ -451,7 +451,7 @@ ALGsubleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubleftjoin, NULL, NULL, NULL, NULL, "algebra.subleftjoin");
+				   BATleftjoin, NULL, NULL, NULL, NULL, "algebra.subleftjoin");
 }
 
 str
@@ -460,7 +460,7 @@ ALGsubouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubouterjoin, NULL, NULL, NULL, NULL, "algebra.subouterjoin");
+				   BATouterjoin, NULL, NULL, NULL, NULL, "algebra.subouterjoin");
 }
 
 str
@@ -469,7 +469,7 @@ ALGsubsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubsemijoin, NULL, NULL, NULL, NULL, "algebra.subsemijoin");
+				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.subsemijoin");
 }
 
 str
@@ -478,7 +478,7 @@ ALGsubthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *sli
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, *op, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   NULL, BATsubthetajoin, NULL, NULL, NULL, "algebra.subthetajoin");
+				   NULL, BATthetajoin, NULL, NULL, NULL, "algebra.subthetajoin");
 }
 
 str
@@ -488,7 +488,7 @@ ALGsubbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid
 {
 	return do_join(r1, r2, lid, rid, NULL, slid, srid, 0, c1, c2, *li, *hi,
 				   NULL, estimate,
-				   NULL, NULL, BATsubbandjoin, NULL, NULL, "algebra.subbandjoin");
+				   NULL, NULL, BATbandjoin, NULL, NULL, "algebra.subbandjoin");
 }
 
 str
@@ -496,7 +496,7 @@ ALGsubrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rh
 {
 	return do_join(r1, r2, lid, rlid, rhid, slid, srid, 0, NULL, NULL, *li, *hi,
 				   NULL, estimate,
-				   NULL, NULL, NULL, BATsubrangejoin, NULL, "algebra.subrangejoin");
+				   NULL, NULL, NULL, BATrangejoin, NULL, "algebra.subrangejoin");
 }
 
 str
@@ -505,7 +505,7 @@ ALGsubdiff(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   NULL, NULL, NULL, NULL, BATsubdiff, "algebra.subdiff");
+				   NULL, NULL, NULL, NULL, BATdiff, "algebra.subdiff");
 }
 
 str
@@ -514,7 +514,7 @@ ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat 
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsubsemijoin, NULL, NULL, NULL, NULL, "algebra.subdiff");
+				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.subdiff");
 }
 
 /* algebra.firstn(b:bat[:oid,:any],
@@ -649,7 +649,7 @@ ALGsubunique2(bat *result, const bat *bid, const bat *sid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subunique", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATsubunique(b, s);
+	bn = BATunique(b, s);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -682,7 +682,7 @@ ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
 		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
 	}
 
-	ret = BATsubthetajoin(&j1, &j2, L, R, NULL, NULL, JOIN_NE, 0, BUN_NONE);
+	ret = BATthetajoin(&j1, &j2, L, R, NULL, NULL, JOIN_NE, 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)
@@ -710,7 +710,7 @@ ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
 	}
 
-	ret = BATsubjoin(&j1, &j2, L, R, NULL, NULL, 0, BUN_NONE);
+	ret = BATjoin(&j1, &j2, L, R, NULL, NULL, 0, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED) 
@@ -766,7 +766,7 @@ ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *rig
 		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
 	}
 
-	ret = BATsubrangejoin(&bn1, &bn2, L, RL, RH, NULL, NULL, *li, *hi, BUN_NONE);
+	ret = BATrangejoin(&bn1, &bn2, L, RL, RH, NULL, NULL, *li, *hi, BUN_NONE);
 	BBPunfix(L->batCacheid);
 	BBPunfix(RL->batCacheid);
 	BBPunfix(RH->batCacheid);

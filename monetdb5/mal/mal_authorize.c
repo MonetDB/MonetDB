@@ -599,7 +599,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 
 	*ret1 = VIEWcombine(user);
 	if (BATcount(duser)) {
-		bn = BATsubdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
+		bn = BATdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;

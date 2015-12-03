@@ -144,7 +144,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 			BAT *ui = temp_descriptor(bat->uibid), *uv = temp_descriptor(bat->uvbid), *nui = ui, *nuv = uv, *o;
 			
 			if (BATcount(nui)) {
-				o = BATthetasubselect(ui, NULL, &b->hseqbase, ">=");
+				o = BATthetaselect(ui, NULL, &b->hseqbase, ">=");
 				nui = BATproject(o, ui);
 				bat_destroy(ui);
 				nuv = BATproject(o, uv);
@@ -219,7 +219,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		if (BATcount(ib)) { 
 			BAT *nui = tids, *nuv = updates, *o;
 
-			o = BATthetasubselect(tids, NULL, &ib->hseqbase, ">=");
+			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
 			assert(BATcount(nui) == BATcount(nuv));
@@ -228,7 +228,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(nui);
 			bat_destroy(nuv);
 
-			o = BATthetasubselect(tids, NULL, &ib->hseqbase, "<");
+			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
 			assert(BATcount(nui) == BATcount(nuv));
@@ -271,7 +271,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		if (BATcount(ib)) { 
 			BAT *nui = tids, *nuv = updates, *o;
 
-			o = BATthetasubselect(tids, NULL, &ib->hseqbase, ">=");
+			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
 			assert(BATcount(nui) == BATcount(nuv));
@@ -280,7 +280,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 			bat_destroy(nui);
 			bat_destroy(nuv);
 
-			o = BATthetasubselect(tids, NULL, &ib->hseqbase, "<");
+			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
 			nui = BATproject(o, tids);
 			nuv = BATproject(o, updates);
 			assert(BATcount(nui) == BATcount(nuv));
@@ -816,7 +816,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 			v = BATsample(v, 1024);
 			f = dcnt/1024.0;
 		}
-		u = BATsubunique(v, NULL);
+		u = BATunique(v, NULL);
 		bat_destroy(o);
 		if (v!=o)
 			bat_destroy(v);

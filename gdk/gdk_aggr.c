@@ -29,7 +29,7 @@
  * The tail values of s refer to the head of b and g.  Only entries at
  * the specified ids are taken into account for the grouped
  * aggregates.  All other values are ignored.  s is compatible with
- * the result of BATsubselect().
+ * the result of BATselect().
  *
  * If e is not specified, we need to do an extra scan over g to find
  * out the range of the group ids that are used.  e is defined in such

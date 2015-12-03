@@ -32,31 +32,31 @@
  * whether NIL must be considered to never match.
  *
  * The join functions that are provided here are:
- * BATsubjoin
+ * BATjoin
  *	normal equi-join
- * BATsubleftjoin
+ * BATleftjoin
  *	normal equi-join, but the left output is sorted
- * BATsubouterjoin
+ * BATouterjoin
  *	equi-join, but the left output is sorted, and if there is no
  *	match for a value in the left input, there is still an output
  *	with NIL in the right output
- * BATsubsemijoin
+ * BATsemijoin
  *	equi-join, but the left output is sorted, and if there are
  *	multiple matches, only one is returned (i.e., the left output
  *	is also key)
- * BATsubthetajoin
+ * BATthetajoin
  *	theta-join: an extra operator must be provided encoded as an
  *	integer (macros JOIN_EQ, JOIN_NE, JOIN_LT, JOIN_LE, JOIN_GT,
  *	JOIN_GE); value match if the left input has the given
  *	relationship with the right input; order of the outputs is not
  *	guaranteed
- * BATsubbandjoin
+ * BATbandjoin
  *	band-join: two extra input values (c1, c2) must be provided as
  *	well as Booleans (li, hi) that indicate whether the value
  *	ranges are inclusive or not; values in the left and right
  *	inputs match if right - c1 <[=] left <[=] right + c2; if c1 or
  *	c2 is NIL, there are no matches
- * BATsubrangejoin
+ * BATrangejoin
  *	range-join: the right input consists of two aligned BATs,
  *	values match if the left value is between two corresponding
  *	right values; two extra Boolean parameters, li and hi,
@@ -64,7 +64,7 @@
  *
  * In addition to these functions, there are two more functions that
  * are closely related:
- * BATsubdiff
+ * BATdiff
  *	difference: return a candidate list compatible list of OIDs of
  *	tuples in the left input whose value does not occur in the
  *	right input
@@ -2693,7 +2693,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			return GDK_SUCCEED;
 		break;
 	default:
-		GDKerror("BATsubbandjoin: unsupported type\n");
+		GDKerror("BATbandjoin: unsupported type\n");
 		goto bailout;
 	}
 
@@ -3059,10 +3059,10 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * matching tuples.  The result is in the same order as l (i.e. r1 is
  * sorted). */
 gdk_return
-BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 0, 0, estimate, "BATsubleftjoin");
+			   0, 0, 0, estimate, "BATleftjoin");
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -3071,10 +3071,10 @@ BATsubleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_m
  * second output bat if the value in l does not occur in r.  The
  * result is in the same order as l (i.e. r1 is sorted). */
 gdk_return
-BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   1, 0, 0, estimate, "BATsubouterjoin");
+			   1, 0, 0, estimate, "BATouterjoin");
 }
 
 /* Perform a semi-join over l and r.  Returns two new, aligned,
@@ -3082,10 +3082,10 @@ BATsubouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_
  * matching tuples.  The result is in the same order as l (i.e. r1 is
  * sorted). */
 gdk_return
-BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 1, 0, estimate, "BATsubsemijoin");
+			   0, 1, 0, estimate, "BATsemijoin");
 }
 
 /* Return the difference of l and r.  The result is a BAT with in the
@@ -3093,18 +3093,18 @@ BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_m
  * what you might call an anti-semi-join.  The result can be used as a
  * candidate list. */
 BAT *
-BATsubdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *bn;
 
 	if (subleftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
-			0, 0, 1, estimate, "BATsubdiff") == GDK_SUCCEED)
+			0, 0, 1, estimate, "BATdiff") == GDK_SUCCEED)
 		return bn;
 	return NULL;
 }
 
 gdk_return
-BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate)
+BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN maxsize;
@@ -3113,7 +3113,7 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 	/* encode operator as a bit mask into opcode */
 	switch (op) {
 	case JOIN_EQ:
-		return BATsubjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
+		return BATjoin(r1p, r2p, l, r, sl, sr, nil_matches, estimate);
 	case JOIN_NE:
 		opcode = MASK_NE;
 		break;
@@ -3130,13 +3130,13 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 		opcode = MASK_GE;
 		break;
 	default:
-		GDKerror("BATsubthetajoin: unknown operator %d.\n", op);
+		GDKerror("BATthetajoin: unknown operator %d.\n", op);
 		return GDK_FAIL;
 	}
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubthetajoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATthetajoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;
@@ -3147,7 +3147,7 @@ BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, 
 }
 
 gdk_return
-BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN lcount, rcount, lpcount, rpcount;
@@ -3162,7 +3162,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubjoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	lcount = BATcount(l);
 	if (sl)
@@ -3297,7 +3297,7 @@ BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_match
 }
 
 gdk_return
-BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
+BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	       const void *c1, const void *c2, int li, int hi, BUN estimate)
 {
 	BAT *r1, *r2;
@@ -3305,7 +3305,7 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATsubbandjoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, "BATbandjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;
@@ -3316,7 +3316,7 @@ BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 }
 
 gdk_return
-BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
+BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 		BAT *sl, BAT *sr, int li, int hi, BUN estimate)
 {
 	BAT *r1, *r2;
@@ -3324,7 +3324,7 @@ BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 
 	*r1p = NULL;
 	*r2p = NULL;
-	if (joinparamcheck(l, rl, rh, sl, sr, "BATsubrangejoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, rl, rh, sl, sr, "BATrangejoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
 		return GDK_FAIL;

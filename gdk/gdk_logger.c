@@ -1194,7 +1194,7 @@ bm_tids(BAT *b, BAT *d)
 	tids->H->dense = 1;
 
 	if (BATcount(d)) {
-		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		logbat_destroy(tids);
 		tids = diff;
 	}
@@ -2600,7 +2600,7 @@ log_tend(logger *lg)
 		BAT *cands, *tids, *bids;
 
 		tids = bm_tids(lg->snapshots_tid, lg->dsnapshots);
-		cands = BATsubselect(lg->snapshots_tid, tids, &lg->tid, &lg->tid,
+		cands = BATselect(lg->snapshots_tid, tids, &lg->tid, &lg->tid,
 				     TRUE, TRUE, FALSE);
 		if (tids == NULL || cands == NULL) {
 			fprintf(stderr, "!ERROR: log_tend: subselect failed\n");

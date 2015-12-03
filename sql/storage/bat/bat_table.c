@@ -32,7 +32,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		bat_destroy(d);
 		bat_destroy(tids);
 		tids = diff;
@@ -163,7 +163,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		bat_destroy(s);
 		return rid;
 	}
-	r = BATsubselect(b, s, value, NULL, 1, 0, 0);
+	r = BATselect(b, s, value, NULL, 1, 0, 0);
 	bat_destroy(s);
 	s = r;
 	full_destroy(c, b);
@@ -172,7 +172,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		c = n;
 
 		b = full_column(tr, c);
-		r = BATsubselect(b, s, value, NULL, 1, 0, 0);
+		r = BATselect(b, s, value, NULL, 1, 0, 0);
 		bat_destroy(s);
 		s = r;
 		full_destroy(c, b);
@@ -273,7 +273,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	if (key_value_low) {
 		if (!b->T->hash)
 			BAThash(b, 0);
-		r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
+		r = BATselect(b, s, kvl, kvh, 1, hi, 0);
 		bat_destroy(s);
 		s = r;
 	}
@@ -290,7 +290,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 			if (!kvh && kvl != ATOMnilptr(b->ttype))
 				kvh = ATOMnilptr(b->ttype);
 			assert(kvh);
-			r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
+			r = BATselect(b, s, kvl, kvh, 1, hi, 0);
 			bat_destroy(s);
 			s = r;
 			full_destroy(key, b);
@@ -354,7 +354,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
-	BATsubjoin(&s, &d, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
+	BATjoin(&s, &d, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
 	bat_destroy(l->data);
 	bat_destroy(d);
 	l->data = s;
@@ -374,7 +374,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	rcb = full_column(tr, rc);
 
 	s = delta_cands(tr, lc->t);
-	BATsubjoin(&rids, &d, lcb, rcb, s, t1->data, FALSE, BATcount(lcb));
+	BATjoin(&rids, &d, lcb, rcb, s, t1->data, FALSE, BATcount(lcb));
 	bat_destroy(d);
 	bat_destroy(s);
 	full_destroy(rc, rcb);
@@ -459,9 +459,9 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 
 	s = BATproject(l->data, lcb);
 
-	diff = BATsubdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
+	diff = BATdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
 
-	BATsubjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
+	BATjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
 	bat_destroy(diff);
 	bat_destroy(d);
 	full_destroy(lc, lcb);
