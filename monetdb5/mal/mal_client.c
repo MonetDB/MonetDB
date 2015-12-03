@@ -245,7 +245,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	/* create a recycler cache */
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
+#ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
 	(void) AUTHgetUsername(&c->username, c);
+#endif
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
