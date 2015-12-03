@@ -93,7 +93,7 @@ char* monetdb_startup(char* libdir, char* dbdir, char silent) {
 		goto cleanup;
 	}
 	MT_lock_init(&monetdb_embedded_lock, "monetdb_embedded_lock");
-	MT_lock_set(&monetdb_embedded_lock, "monetdb.startup");
+	MT_lock_set(&monetdb_embedded_lock);
 	if (monetdb_embedded_initialized) goto cleanup;
 
 	setlen = mo_builtin_settings(&set);
@@ -161,7 +161,7 @@ char* monetdb_startup(char* libdir, char* dbdir, char silent) {
 	monetdb_disconnect(c);
 cleanup:
 	mo_free_options(set, setlen);
-	MT_lock_unset(&monetdb_embedded_lock, "monetdb.startup");
+	MT_lock_unset(&monetdb_embedded_lock);
 	return retval;
 }
 
@@ -293,7 +293,7 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 }
 
 void monetdb_shutdown() {
-	MT_lock_set(&monetdb_embedded_lock, "monetdb.shutdown");
+	MT_lock_set(&monetdb_embedded_lock);
 	// kill SQL
 	(*SQLepilogue_ptr)(NULL);
 	// kill MAL & GDK
@@ -301,5 +301,5 @@ void monetdb_shutdown() {
 	// clean up global state
 	BBPresetfarms();
 	monetdb_embedded_initialized = 0;
-	MT_lock_unset(&monetdb_embedded_lock, "monetdb.shutdown");
+	MT_lock_unset(&monetdb_embedded_lock);
 }
