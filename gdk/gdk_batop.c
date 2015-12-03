@@ -913,7 +913,8 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
 	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	void_replace_bat(b, p, n, force);
+	if (void_replace_bat(b, p, n, force) == BUN_NONE)
+		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 

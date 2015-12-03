@@ -20,7 +20,6 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 function user.main():void;
 #Same as tst200, but includes testing of the profiler 
-    profiler.openStream("/tmp/MonetEvents");
     o := calc.oid(20000000);
     calc.setoid(o);
 #test basic functionality of the BAT library. 
@@ -31,7 +30,7 @@ function user.main():void;
     (bk,bv) := bat.info(b);
     io.print(bk,bv);
     io.printf("#~EndVariableOutput~#\n");
-    profiler.stethoscope(0);
+    profiler.start();
     err := bat.append(b,15);
     err := bat.append(b,4);
     n0 := calc.int(nil);
@@ -47,15 +46,14 @@ function user.main():void;
     io.print(b);
     io.print(b,b,b);
     profiler.stop();
-    profiler.cleanup();
 end user.main;
 #~BeginVariableOutput~#
 #--------------------------#
 # t	t	t  # name
 # void	str	str  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_461"  ]
-[ 1@0,	"batCacheid",	"305"  ]
+[ 0@0,	"batId",	"tmp_525"  ]
+[ 1@0,	"batCacheid",	"341"  ]
 [ 2@0,	  "hparentid",		  "0"		  ]
 [ 3@0,	  "tparentid",		  "0"		  ]
 [ 4@0,	  "batSharecnt",	  "0"		  ]
@@ -102,9 +100,9 @@ end user.main;
 [ 45@0,	"batFirst",	"0"  ]
 [ 46@0,	"htop",	"0"  ]
 [ 47@0,	"ttop",	"0"  ]
-[ 48@0,	"batStamp",	"535"  ]
-[ 49@0,	"lastUsed",	"45504"  ]
-[ 50@0,	"curStamp",	"537"  ]
+[ 48@0,	"batStamp",	"152"  ]
+[ 49@0,	"lastUsed",	"1117"  ]
+[ 50@0,	"curStamp",	"154"  ]
 [ 51@0,	"batCopiedtodisk",	"0"  ]
 [ 52@0,	"batDirtydesc",	"dirty"  ]
 [ 53@0,	"H->heap.dirty",	"clean"  ]
@@ -118,7 +116,7 @@ end user.main;
 [ 61@0,	"tail.size",	"1024"  ]
 [ 62@0,	"tail.storage",	"malloced"  ]
 [ 63@0,	"tail.newstorage",	"malloced"  ]
-[ 64@0,	"tail.filename",	"04/461.tail"  ]
+[ 64@0,	"tail.filename",	"05/525.tail"  ]
 [ 65@0,	"H->vheap->dirty",	"clean"  ]
 [ 66@0,	"T->vheap->dirty",	"clean"  ]
 #~EndVariableOutput~#

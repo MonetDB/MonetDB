@@ -2008,6 +2008,8 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
 	if (mid->database)
 		free(mid->database);
 	mid->database = NULL;
@@ -2218,6 +2220,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
 
 	if (mid->database)
 		free(mid->database);
@@ -2299,6 +2303,8 @@ parse_uri_query(Mapi mid, char *uri)
 					mid->languageId = LANG_MAL;
 				else if (strstr(val, "sql") == val)
 					mid->languageId = LANG_SQL;
+				else if (strstr(val, "profiler") == val)
+					mid->languageId = LANG_PROFILER;
 			} else if (strcmp("user", uri) == 0) {
 				/* until we figure out how this can be
 				   done safely wrt security, ignore */

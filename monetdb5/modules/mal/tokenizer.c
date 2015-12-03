@@ -94,9 +94,9 @@ TKNZRopen(void *ret, str *in)
 		throw(MAL, "tokenizer.open",
 				ILLEGAL_ARGUMENT " tokenizer name too long");
 
-	MT_lock_set(&mal_contextLock, "tokenizer");
+	MT_lock_set(&mal_contextLock);
 	if (TRANS != NULL) {
-		MT_lock_unset(&mal_contextLock, "tokenizer");
+		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", "Another tokenizer is already open");
 	}
 
@@ -108,11 +108,11 @@ TKNZRopen(void *ret, str *in)
 
 	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
 	if (TRANS == NULL) {
-		MT_lock_unset(&mal_contextLock, "tokenizer");
+		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 	}
 	/* now we are sure that none overwrites the tokenizer table*/
-	MT_lock_unset(&mal_contextLock, "tokenizer");
+	MT_lock_unset(&mal_contextLock);
 	BATseqbase(TRANS, 0);
 
 	snprintf(name, 128, "%s", *in);

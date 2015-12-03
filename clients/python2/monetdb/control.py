@@ -17,7 +17,7 @@ def parse_statusline(line):
     if line.startswith("="):
         line = line[1:]
     if not line.startswith('sabdb:'):
-        raise OperationalError('wrong result recieved')
+        raise OperationalError('wrong result received')
 
     code, prot_version, rest = line.split(":", 2)
 

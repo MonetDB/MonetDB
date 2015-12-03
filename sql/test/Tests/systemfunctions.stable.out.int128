@@ -58,7 +58,7 @@ Ready.
 % sys.L3,	sys.L3,	sys.L3,	sys.L3,	sys.L3 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
-% 4,	35,	2,	15,	1328 # length
+% 8,	35,	2,	15,	1328 # length
 [ "bam",	"bam_drop_file",	0,	"bigint",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint)\nexternal name bam.bam_drop_file;"	]
 [ "bam",	"bam_drop_file",	1,	"smallint",	""	]
 [ "bam",	"bam_export",	0,	"clob",	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	]
@@ -135,6 +135,10 @@ Ready.
 [ "json",	"tojsonarray",	1,	"double",	""	]
 [ "json",	"valuearray",	0,	"json",	"create function json.valuearray(js json)\nreturns  json external name json.valuearray;"	]
 [ "json",	"valuearray",	1,	"json",	""	]
+[ "profiler",	"setheartbeat",	0,	"int",	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"	]
+[ "profiler",	"setpoolsize",	0,	"int",	"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"	]
+[ "profiler",	"setstream",	0,	"clob",	"create procedure profiler.setstream(host string, port int) external name profiler.setstream;"	]
+[ "profiler",	"setstream",	1,	"int",	""	]
 [ "sys",	"Intersect",	0,	"boolean",	"create function \"Intersect\"(a geometry, b geometry) returns boolean external name geom.\"Intersect\";"	]
 [ "sys",	"Intersect",	1,	"geometry",	""	]
 [ "sys",	"Intersect",	2,	"geometry",	""	]
@@ -563,9 +567,6 @@ Ready.
 [ "sys",	"polygonfromtext",	0,	"polygon",	"-- alias\ncreate function polygonfromtext(wkt string, srid smallint) returns polygon external name geom.\"PolyFromText\";"	]
 [ "sys",	"polygonfromtext",	1,	"clob",	""	]
 [ "sys",	"polygonfromtext",	2,	"smallint",	""	]
-[ "sys",	"profiler_openstream",	0,	"clob",	"create procedure profiler_openstream(host string, port int) external name profiler.\"openStream\";"	]
-[ "sys",	"profiler_openstream",	1,	"int",	""	]
-[ "sys",	"profiler_stethoscope",	0,	"int",	"create procedure profiler_stethoscope(ticks int) external name profiler.stethoscope;"	]
 [ "sys",	"quantile",	0,	"tinyint",	"create aggregate quantile(val tinyint, q double) returns tinyint\n\texternal name \"aggr\".\"quantile\";"	]
 [ "sys",	"quantile",	1,	"tinyint",	""	]
 [ "sys",	"quantile",	2,	"double",	""	]

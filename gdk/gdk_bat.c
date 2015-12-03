@@ -1857,11 +1857,11 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				v = BATmirror(v);
 			}
 			if (v->H->hash) {
-				MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BUNlocate");
+				MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 				if (b->H->hash == NULL) {	/* give it to the parent */
 					b->H->hash = v->H->hash;
 				}
-				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BUNlocate");
+				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 			}
 			BBPreclaim(v);
 			v = NULL;
@@ -2433,7 +2433,7 @@ backup_new(Heap *hp, int lockbat)
 
 	/* file actions here interact with the global commits */
 	for (xx = 0; xx <= lockbat; xx++)
-		MT_lock_set(&GDKtrimLock(xx), "TMsubcommit");
+		MT_lock_set(&GDKtrimLock(xx));
 
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
 	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
@@ -2457,7 +2457,7 @@ backup_new(Heap *hp, int lockbat)
 	GDKfree(batpath);
 	GDKfree(bakpath);
 	for (xx = lockbat; xx >= 0; xx--)
-		MT_lock_unset(&GDKtrimLock(xx), "TMsubcommit");
+		MT_lock_unset(&GDKtrimLock(xx));
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -2697,7 +2697,7 @@ BATmode(BAT *b, int mode)
 		} else if (b->batPersistence == PERSISTENT) {
 			BBPdecref(bid, TRUE);
 		}
-		MT_lock_set(&GDKswapLock(bid), "BATmode");
+		MT_lock_set(&GDKswapLock(bid));
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
@@ -2721,7 +2721,7 @@ BATmode(BAT *b, int mode)
 			}
 		}
 		b->batPersistence = mode;
-		MT_lock_unset(&GDKswapLock(bid), "BATmode");
+		MT_lock_unset(&GDKswapLock(bid));
 	}
 	return GDK_SUCCEED;
 }

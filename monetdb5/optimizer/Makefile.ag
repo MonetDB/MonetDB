@@ -50,6 +50,7 @@ lib_optimizer = {
 		opt_statistics.c opt_statistics.h \
 		opt_support.c opt_support.h \
 		opt_pushselect.c opt_pushselect.h \
+		opt_profiler.c opt_profiler.h \
 		opt_wrapper.c
 }
 

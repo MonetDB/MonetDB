@@ -1313,7 +1313,7 @@ exps_bind_column( list *exps, char *cname, int *ambiguous )
 		node *en;
 
 		if (exps) {
-			MT_lock_set(&exps->ht_lock, "exps_bind_column");
+			MT_lock_set(&exps->ht_lock);
 			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
 
@@ -1337,16 +1337,16 @@ exps_bind_column( list *exps, char *cname, int *ambiguous )
 						if (e) {
 							if (ambiguous)
 								*ambiguous = 1;
-							MT_lock_unset(&exps->ht_lock, "exps_bind_column");
+							MT_lock_unset(&exps->ht_lock);
 							return NULL;
 						}
 						e = ce;
 					}
 				}
-				MT_lock_unset(&exps->ht_lock, "exps_bind_column");
+				MT_lock_unset(&exps->ht_lock);
 				return e;
 			}
-			MT_lock_unset(&exps->ht_lock, "exps_bind_column");
+			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *ce = en->data;
@@ -1370,7 +1370,7 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 		node *en;
 
 		if (exps) {
-			MT_lock_set(&exps->ht_lock, "exps_bind_column2");
+			MT_lock_set(&exps->ht_lock);
 			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
 
@@ -1392,14 +1392,14 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 
 					if ((e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0) ||
 					    (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)) {
-						MT_lock_unset(&exps->ht_lock, "exps_bind_column2");
+						MT_lock_unset(&exps->ht_lock);
 						return e;
 					}
 				}
-				MT_lock_unset(&exps->ht_lock, "exps_bind_column2");
+				MT_lock_unset(&exps->ht_lock);
 				return NULL;
 			}
-			MT_lock_unset(&exps->ht_lock, "exps_bind_column2");
+			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;

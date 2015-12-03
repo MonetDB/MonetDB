@@ -1630,14 +1630,16 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 /* insert upgrade code here */
-	pos += snprintf(buf + pos, bufsize - pos,"drop function sys.bbp();");
-	pos += snprintf(buf + pos, bufsize - pos,"create function sys.bbp () returns table (id int, name string, "
-        "ttype string, count BIGINT, refcnt int, lrefcnt int,"
-        "location string, heat int, dirty string,"
-        "status string, kind string)"
-		"external name bbp.get;");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_openstream(host string, port int);");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_stethoscope(ticks int);");
+	pos += snprintf(buf + pos, bufsize - pos, "create schema profiler;"
+		"create procedure profiler.start() external name profiler.\"start\";"
+		"create procedure profiler.stop() external name profiler.stop;"
+		"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"
+		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"
+		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;");
 
-	if (schema) {
+			if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
 	}

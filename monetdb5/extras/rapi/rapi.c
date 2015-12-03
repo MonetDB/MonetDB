@@ -258,7 +258,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	}
 
 	// get the lock even before initialization of the R interpreter, as this can take a second and must be done only once.
-	MT_lock_set(&rapiLock, "rapi.evaluate");
+	MT_lock_set(&rapiLock);
 
 	env = PROTECT(eval(lang1(install("new.env")),R_GlobalEnv));
 	assert(env != NULL);
@@ -424,7 +424,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	/* unprotect environment, so it will be eaten by the GC. */
 	UNPROTECT(1);
   wrapup:
-	MT_lock_unset(&rapiLock, "rapi.evaluate");
+	MT_lock_unset(&rapiLock);
 	free(rcall);
 	GDKfree(args);
 
@@ -436,7 +436,7 @@ str RAPIprelude(void *ret) {
 	MT_lock_init(&rapiLock, "rapi_lock");
 
 	if (RAPIEnabled()) {
-		MT_lock_set(&rapiLock, "rapi.evaluate");
+		MT_lock_set(&rapiLock);
 		/* startup internal R environment  */
 		if (!rapiInitialized) {
 			char *initstatus;
@@ -446,7 +446,7 @@ str RAPIprelude(void *ret) {
 					  "failed to initialise R environment (%s)", initstatus);
 			}
 		}
-		MT_lock_unset(&rapiLock, "rapi.evaluate");
+		MT_lock_unset(&rapiLock);
 		printf("# MonetDB/R   module loaded\n");
 	}
 	return MAL_SUCCEED;
