@@ -101,7 +101,6 @@ str ioRef;
 str iteratorRef;
 str joinPathRef;
 str jsonRef;
-str joinRef;
 str bandjoinRef;
 str thetajoinRef;
 str subjoinRef;
@@ -316,7 +315,6 @@ void optimizerInit(void)
 	ioRef = putName("io",2);
 	iteratorRef = putName("iterator",8);
 	joinPathRef = putName("joinPath",8);
-	joinRef = putName("join",4);
 	bandjoinRef = putName("bandjoin",8);
 	thetajoinRef = putName("thetajoin",9);
 	subjoinRef = putName("subjoin",7);

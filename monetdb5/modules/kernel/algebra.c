@@ -669,34 +669,6 @@ ALGsubunique1(bat *result, const bat *bid)
 }
 
 str
-ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
-{
-	BAT *L, *R, *j1, *j2;
-	gdk_return ret;
-
-	if ((L = BATdescriptor(*left)) == NULL) {
-		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
-	}
-	if ((R = BATdescriptor(*right)) == NULL) {
-		BBPunfix(L->batCacheid);
-		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
-	}
-
-	ret = BATjoin(&j1, &j2, L, R, NULL, NULL, 0, BUN_NONE);
-	BBPunfix(L->batCacheid);
-	BBPunfix(R->batCacheid);
-	if (ret != GDK_SUCCEED) 
-		throw(MAL, "algebra.join", GDK_EXCEPTION);
-	if (!(j1->batDirty&2))
-		BATsetaccess(j1, BAT_READ);
-	if (!(j2->batDirty&2))
-		BATsetaccess(j2, BAT_READ);
-	BBPkeepref(*l = j1->batCacheid);
-	BBPkeepref(*r = j2->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 {
 	BAT *L, *R, *bn1, *bn2;
@@ -714,40 +686,6 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
-	BBPkeepref(*l = bn1->batCacheid);
-	BBPkeepref(*r = bn2->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGrangejoin2(bat *l, bat *r, const bat *left, const bat *rightl, const bat *righth, const bit *li, const bit *hi)
-{
-	BAT *L, *RL, *RH, *bn1, *bn2;
-	gdk_return ret;
-
-	if ((L = BATdescriptor(*left)) == NULL) {
-		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
-	}
-	if ((RL = BATdescriptor(*rightl)) == NULL) {
-		BBPunfix(L->batCacheid);
-		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
-	}
-	if ((RH = BATdescriptor(*righth)) == NULL) {
-		BBPunfix(L->batCacheid);
-		BBPunfix(RL->batCacheid);
-		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
-	}
-
-	ret = BATrangejoin(&bn1, &bn2, L, RL, RH, NULL, NULL, *li, *hi, BUN_NONE);
-	BBPunfix(L->batCacheid);
-	BBPunfix(RL->batCacheid);
-	BBPunfix(RH->batCacheid);
-	if (ret != GDK_SUCCEED)
-		throw(MAL, "algebra.rangejoin", GDK_EXCEPTION);
-	if (!(bn1->batDirty&2))
-		BATsetaccess(bn1, BAT_READ);
-	if (!(bn2->batDirty&2))
-		BATsetaccess(bn2, BAT_READ);
 	BBPkeepref(*l = bn1->batCacheid);
 	BBPkeepref(*r = bn2->batCacheid);
 	return MAL_SUCCEED;

@@ -281,7 +281,6 @@ base_colors[NUM_COLORS] = {
 /*  5941 */	{ 0, 0, "sql", "bind", 0 },
 /*  5664 */	{ 0, 0, "mat", "packIncrement", 0 },
 /*  4796 */	{ 0, 0, "algebra", "subselect", 0 },
-/*  4789 */	{ 0, 0, "algebra", "join", 0 },
 /*  4789 */	{ 0, 0, "algebra", "subjoin", 0 },
 /*  2664 */	{ 0, 0, "sql", "projectdelta", 0 },
 /*  2112 */	{ 0, 0, "batcalc", "!=", 0 },
