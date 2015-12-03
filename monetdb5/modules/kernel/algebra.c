@@ -669,34 +669,6 @@ ALGsubunique1(bat *result, const bat *bid)
 }
 
 str
-ALGantijoin2( bat *l, bat *r, const bat *left, const bat *right)
-{
-	BAT *L, *R, *j1, *j2;
-	gdk_return ret;
-
-	if ((L = BATdescriptor(*left)) == NULL) {
-		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
-	}
-	if ((R = BATdescriptor(*right)) == NULL) {
-		BBPunfix(L->batCacheid);
-		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
-	}
-
-	ret = BATthetajoin(&j1, &j2, L, R, NULL, NULL, JOIN_NE, 0, BUN_NONE);
-	BBPunfix(L->batCacheid);
-	BBPunfix(R->batCacheid);
-	if (ret != GDK_SUCCEED)
-		throw(MAL, "algebra.antijoin", GDK_EXCEPTION);
-	if (!(j1->batDirty&2))
-		BATsetaccess(j1, BAT_READ);
-	if (!(j2->batDirty&2))
-		BATsetaccess(j2, BAT_READ);
-	BBPkeepref(*l = j1->batCacheid);
-	BBPkeepref(*r = j2->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 ALGjoin2( bat *l, bat *r, const bat *left, const bat *right)
 {
 	BAT *L, *R, *j1, *j2;

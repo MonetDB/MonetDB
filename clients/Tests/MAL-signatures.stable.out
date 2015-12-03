@@ -2254,10 +2254,6 @@ command aggr.variance(b:bat[:oid,:any_2]):dbl
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address ALGantijoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
-
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails

@@ -378,16 +378,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				done = 1;
 			}
 			if (done) {
-				if(getFunctionId(p) == antijoinRef)
-					p = pushInt(mb, p, JOIN_NE); 
 				p = pushBit(mb, p, FALSE); /* do not match nils */
 				p = pushNil(mb, p, TYPE_lng); /* no estimate */
 
 				/* TODO join* -> subjoin* */
 				if(getFunctionId(p) == joinRef)
 					getFunctionId(p) = subjoinRef;
-				else if(getFunctionId(p) == antijoinRef)
-					getFunctionId(p) = subthetajoinRef;
 				else if(getFunctionId(p) == thetajoinRef)
 					getFunctionId(p) = subthetajoinRef;
 				else if(getFunctionId(p) == bandjoinRef)

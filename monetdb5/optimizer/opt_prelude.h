@@ -100,7 +100,6 @@ opt_export  str iteratorRef;
 opt_export  str joinPathRef;
 opt_export  str jsonRef;
 opt_export  str joinRef;
-opt_export  str antijoinRef;
 opt_export  str bandjoinRef;
 opt_export  str thetajoinRef;
 opt_export  str subjoinRef;

@@ -176,12 +176,6 @@ comment "Select all unique values from the tail of the input.
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
-command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
-address ALGantijoin2
-comment "Returns 2 columns with all BUNs, consisting of the head-oids
-	  from 'left' and 'right' for which there are BUNs in 'left'
-	  and 'right' with equal tails";
-
 command join( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
 		(l:bat[:oid,:oid],r:bat[:oid,:oid])
 address ALGjoin2

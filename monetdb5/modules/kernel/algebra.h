@@ -48,7 +48,6 @@ algebra_export str ALGsubdiff(bat *r1, const bat *lid, const bat *rid, const bat
 algebra_export str ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 
 /* legacy join functions */
-algebra_export str ALGantijoin2(bat *l, bat *r, const bat *lid, const bat *rid);
 algebra_export str ALGjoin2(bat *l, bat *r, const bat *lid, const bat *rid);
 algebra_export str ALGcrossproduct2(bat *l, bat *r, const bat *lid, const bat *rid);
 algebra_export str ALGrangejoin2(bat *l, bat *r, const bat *lid, const bat *rlid, const bat *rhid, const bit *li, const bit *hi);
