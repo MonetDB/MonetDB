@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-gdk_return
+static gdk_return
 BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 {
 	BAT *bn1, *bn2;
@@ -57,6 +57,10 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	return GDK_SUCCEED;
 }
 
+/* Calculate a cross product between bats l and r with optional
+ * candidate lists sl for l and sr for r.
+ * The result is two bats r1 and r2 which contain the OID (head
+ * values) of the input bats l and r. */
 gdk_return
 BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 {

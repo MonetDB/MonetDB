@@ -1814,7 +1814,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
+				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
 			}
 			BBPunfix(b->batCacheid);
@@ -1911,7 +1911,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
+				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
 			}
 			BBPunfix(b->batCacheid);
@@ -2264,7 +2264,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		u_id = BATdescriptor(*uid);
 		if (!u_id)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-		cminu = BATsubdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
+		cminu = BATdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate");
@@ -2299,7 +2299,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			rc = BATsubsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
+			rc = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (rc != GDK_SUCCEED) {
 				BBPunfix(u->batCacheid);
@@ -2328,7 +2328,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
-			cminu = BATsubdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
+			cminu = BATdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
 			if (!cminu)
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2437,7 +2437,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		/* create subsets of u_id and u_val where the tail
 		 * values of u_id are also in s, and where those tail
 		 * values occur as head value in res */
-		if (BATsubsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		if (BATsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -2453,7 +2453,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (nu_id == NULL ||
 		    nu_val == NULL ||
 		    tres == NULL ||
-		    BATsubsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		    BATsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPreclaim(nu_id);
@@ -2628,7 +2628,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( d == NULL)
 			throw(SQL,"sql.tid","Can not bind delete column");
 
-		diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+		diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		BATseqbase(diff, sb);

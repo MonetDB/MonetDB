@@ -1958,8 +1958,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mnstr_printf(GDKout, "#leftover input:%.63s\n",
 				 task->b->buf + task->b->pos);
 #endif
-	for (i = 0; i < as->nr_attrs; i++)
+	for (i = 0; i < as->nr_attrs; i++) {
+		BAT *b = task->as->format[i].c;
+		BATsettrivprop(b);
 		GDKfree(task->fields[i]);
+	}
 	GDKfree(task->fields);
 	GDKfree(task->cols);
 	GDKfree(task->time);

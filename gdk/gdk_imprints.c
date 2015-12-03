@@ -718,7 +718,7 @@ BATimprints(BAT *b)
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		smp = BATsubunique(b, s);
+		smp = BATunique(b, s);
 		BBPunfix(s->batCacheid);
 		if (smp == NULL) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
