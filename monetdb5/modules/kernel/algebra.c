@@ -737,7 +737,7 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 		BBPunfix(L->batCacheid);
 		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
 	}
-	ret = BATcross1(&bn1, &bn2, L, R);
+	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)

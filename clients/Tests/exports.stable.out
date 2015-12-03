@@ -107,7 +107,6 @@ BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
 BAT *BATconvert(BAT *b, BAT *s, int tp, int abort_on_error);
 BAT *BATcopy(BAT *b, int ht, int tt, int writeable, int role);
 BUN BATcount_no_nil(BAT *b);
-gdk_return BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r);
 gdk_return BATdel(BAT *b, BAT *c, bit force);
 BAT *BATdelta(BAT *b);
 void BATderiveHeadProps(BAT *b, int expensive);
