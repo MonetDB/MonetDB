@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Thu Dec  3 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATsubleftfetchjoin: it was not used.
 - Removed BATcross1.  Use BATsubcross instead.
 
 * Thu Oct  8 2015 Sjoerd Mullender <sjoerd@acm.org>

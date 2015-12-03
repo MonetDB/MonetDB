@@ -3037,7 +3037,6 @@ gdk_export gdk_return BATsubthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT 
 gdk_export gdk_return BATsubsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export BAT *BATsubdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATsubprojection(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_export gdk_return BATsubbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate);
 gdk_export gdk_return BATsubrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_export BAT *BATproject(BAT *l, BAT *r);
