@@ -52,11 +52,11 @@ SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) >> p.f1;
 
 -- above 
 --SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE '(0.0,0.0)' >^ p.f1;
-SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) >^ p.f1;
+SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) |>> p.f1;
 
 -- below 
 --SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 <^ '(0.0, 0.0)';
-SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 <^ ST_MakePoint(0.0, 0.0);
+SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 <<| ST_MakePoint(0.0, 0.0);
 
 -- equal 
 --SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 ~= '(5.1, 34.5)';

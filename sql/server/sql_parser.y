@@ -4887,6 +4887,23 @@ data_type:
 | GEOMETRYA {
 		sql_find_subtype(&$$, "geometrya", 0, 0 );
 	}
+| GEOMETRYSUBTYPE {
+	int geoSubType = find_subgeometry_type($1);
+
+	if(geoSubType == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		$$.type = NULL;
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
+	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
+	char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		yyerror(m, msg);
+		_DELETE(msg);
+		$$.type = NULL;
+		YYABORT;
+	}
+}
  ;
 
 subgeometry_type:

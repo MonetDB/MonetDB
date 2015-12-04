@@ -4754,7 +4754,7 @@ str mbrDistance(dbl *out, mbr **b1, mbr **b2) {
 	b2_Cy = ((*b2)->ymin+(*b2)->ymax)/2.0;
 
 	//compute the euclidean distance
-	*out = sqrt( pow(b1_Cx*b2_Cx, 2.0) + pow(b1_Cy*b2_Cy, 2.0));
+	*out = sqrt( pow(b2_Cx-b1_Cx, 2.0) + pow(b2_Cy-b1_Cy, 2.0));
 
 	return MAL_SUCCEED;
 }

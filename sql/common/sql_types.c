@@ -1347,10 +1347,12 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "mbr_contained", "geom", "mbrContained", MBR, MBR, BIT, SCALE_FIX);
 	sql_create_func(sa, "mbr_equal", "geom", "mbrEqual", GEOM, GEOM, BIT, SCALE_FIX);
 	sql_create_func(sa, "mbr_equal", "geom", "mbrEqual", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", MBR, MBR, BIT, SCALE_FIX);
-	
-	
+	sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", GEOM, GEOM, DBL, SCALE_FIX);
+	sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", MBR, MBR, DBL, SCALE_FIX);
+	sql_create_func(sa, "left_shift", "geom", "mbrLeft", GEOM, GEOM, BIT, SCALE_FIX);
+	sql_create_func(sa, "left_shift", "geom", "mbrLeft", MBR, MBR, BIT, SCALE_FIX);
+	sql_create_func(sa, "right_shift", "geom", "mbrRight", GEOM, GEOM, BIT, SCALE_FIX);
+	sql_create_func(sa, "right_shift", "geom", "mbrRight", MBR, MBR, BIT, SCALE_FIX);
 
 	end = t;
 	*t = NULL;
