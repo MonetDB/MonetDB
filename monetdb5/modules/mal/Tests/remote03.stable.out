@@ -69,7 +69,7 @@ exit MALException:str;
     remote.disconnect(conn);
 end user.main;
 [ "Received first error from the remote site" ]
-!SyntaxException:remote.exec:(mapi:monetdb://monetdb@gaai.mullender.nl/mTests_monetdb5_modules_mal) rmt0_X_8_void := io.print.bla();
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@athens.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_9_void := io.print.bla();
 SyntaxException:parseError:                       ^'(' expected
 
 [ "rmt1_bn_bat_oid_str" ]
@@ -110,6 +110,7 @@ SyntaxException:parseError:                       ^'(' expected
 [ 29@0,	"pcre"  ]
 [ 30@0,	"mbr"  ]
 [ 31@0,	"wkb"  ]
+[ 32@0,	"wkba"  ]
 [ "rmt2_X_9_void" ]
 [ nil ]
 
