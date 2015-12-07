@@ -1289,6 +1289,7 @@ GDKexit(int status)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
 #ifdef HAVE_EMBEDDED
+		GDKatomcnt = TYPE_str + 1;
 		return;
 #else
 		MT_global_exit(status);

@@ -68,10 +68,10 @@ monetdb.server.start <-
   }
 
 # oh the humanity
-monetdb.server.stop <- function(correct.pid, wait=TRUE ){
+monetdb.server.stop <- function(correct.pid, wait=TRUE){
   .Deprecated("monetdb.server.shutdown")
-  if (getOption('monetdb.debug.control', F)) {
-    message('Killing process ', correct.pid)
+  if (length(correct.pid) != 1) {
+    stop("Need single pid, got ", correct.pid)
   }
   correct.pid <- as.integer(correct.pid)
   if (.Platform$OS.type == "windows")

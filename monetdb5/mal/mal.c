@@ -31,6 +31,7 @@ int have_hge;
 #include "mal_profiler.h"
 #include "mal_private.h"
 
+
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
 MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
@@ -142,6 +143,7 @@ void mal_exit(void){
 	stopProfiler();
 	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
 	unloadLibraries();
+
 #if 0
 	/* skip this to solve random crashes, needs work */
 	freeModuleList(mal_clients->nspace);
@@ -173,6 +175,12 @@ void mal_exit(void){
 		fprintf(stderr, "!%s", err);
 		free(err);
 	}
+#ifdef HAVE_EMBEDDED
+	//freeModuleList(mal_clients->nspace);
+	freeModuleList(NULL);
+	finishNamespace();
 	MTIMEreset();
+
+#endif
 	GDKexit(0); 	/* properly end GDK */
 }
