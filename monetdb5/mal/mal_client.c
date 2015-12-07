@@ -381,7 +381,6 @@ freeClient(Client c)
 		c->username = 0;
 	}
 	c->mythread = 0;
-	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 	GDKfree(c->glb);
 	c->glb = NULL;
 	if( c->error_row){
@@ -394,6 +393,7 @@ freeClient(Client c)
 	if (t)
 		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);
+	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 }
 
 /*

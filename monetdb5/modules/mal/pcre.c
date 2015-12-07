@@ -261,7 +261,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 #define candscanloop(TEST)										\
 	do {														\
 		ALGODEBUG fprintf(stderr,								\
-			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+			    "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
 			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
 			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
 		while (p < q) {											\
@@ -278,7 +278,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 #define scanloop(TEST)											\
 	do {														\
 		ALGODEBUG fprintf(stderr,								\
-			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+			    "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
 			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
 			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
 		while (p < q) {											\
@@ -1321,7 +1321,7 @@ PCRElikesubselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 		res = re_likesubselect(&bn, b, s, *pat, *caseignore, *anti);
 	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
-		bn = BATsubselect(b, s, *pat, NULL, 1, 1, *anti);
+		bn = BATselect(b, s, *pat, NULL, 1, 1, *anti);
 		if (bn == NULL)
 			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
 		else

@@ -2318,8 +2318,11 @@ decref(bat i, int logical, int releaseShare, int lock)
 	}
 
 	/* we destroy transients asap and unload persistent bats only
-	 * if they have been made cold */
-	if (BBP_refs(i) > 0 || (BBP_lrefs(i) > 0 && BBP_lastused(i) != 0)) {
+	 * if they have been made cold or are not dirty */
+	if (BBP_refs(i) > 0 ||
+	    (BBP_lrefs(i) > 0 &&
+	     BBP_lastused(i) != 0 &&
+	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT)))) {
 		/* bat cannot be swapped out. renew its last usage
 		 * stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(BBPstamp());
@@ -3876,19 +3879,22 @@ BBPdiskscan(const char *parent)
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "hhash", 5) == 0) {
+		} else if (strncmp(p + 1, "hhash", 5) == 0 ||
+			   strncmp(p + 1, "thash", 5) == 0) {
+#ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
-		} else if (strncmp(p + 1, "thash", 5) == 0) {
+#else
+			delete = TRUE;
+#endif
+		} else if (strncmp(p + 1, "himprints", 9) == 0 ||
+			   strncmp(p + 1, "timprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
-		} else if (strncmp(p + 1, "himprints", 9) == 0) {
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-		} else if (strncmp(p + 1, "timprints", 9) == 0) {
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-		} else if (strncmp(p + 1, "priv", 4) != 0 && strncmp(p + 1, "new", 3) != 0 && strncmp(p + 1, "head", 4) != 0 && strncmp(p + 1, "tail", 4) != 0) {
+		} else if (strncmp(p + 1, "priv", 4) != 0 &&
+			   strncmp(p + 1, "new", 3) != 0 &&
+			   strncmp(p + 1, "head", 4) != 0 &&
+			   strncmp(p + 1, "tail", 4) != 0) {
 			ok = FALSE;
 		}
 		if (!ok) {
