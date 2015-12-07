@@ -2272,12 +2272,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             # test program exited with error => expect major differences!
             ACCURACYout = -1
         else:
-            fs = open("%s%s.FILTERED" % (TST, STABLEout))
-            ft = open("%s.test.out.FILTERED" % TST)
-            szs = os.fstat(fs.fileno())[6]
-            szt = os.fstat(ft.fileno())[6]
-            fs.close()
-            ft.close()
+            szs = os.stat("%s%s.FILTERED" % (TST, STABLEout)).st_size
+            szt = os.stat("%s.test.out.FILTERED" % TST).st_size
             if szt < szs*0.5 or szt > szs*1.5:
                 # filesizes differ significantly => expect major differences!
                 ACCURACYout = -1
@@ -2344,12 +2340,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             # test program exited with error => expect major differences!
             ACCURACYerr = -1
         else:
-            fs = open("%s%s.FILTERED" % (TST, STABLEerr))
-            ft = open("%s.test.err.FILTERED" % TST)
-            szs = os.fstat(fs.fileno())[6]
-            szt = os.fstat(ft.fileno())[6]
-            fs.close()
-            ft.close()
+            szs = os.stat("%s%s.FILTERED" % (TST, STABLEerr)).st_size
+            szt = os.stat("%s.test.err.FILTERED" % TST).st_size
             if szt < szs*0.5 or szt > szs*1.5:
                 # filesizes differ significantly => expect major differences!
                 ACCURACYerr = -1

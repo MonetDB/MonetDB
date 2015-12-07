@@ -1158,11 +1158,13 @@ atom_neg( atom *a )
 		break;
 	case TYPE_dbl:
 		a->data.val.dval = -a->data.val.dval;
+		if (a->data.val.dval == dbl_nil)
+			return -1;
 		break;
 	default:
 		return -1;
 	}
-	if (a->d != dbl_nil)
+	if (a->d != dbl_nil && a->tpe.type->localtype != TYPE_dbl)
 		a->d = -a->d;
 	return 0;
 }
