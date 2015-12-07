@@ -1194,7 +1194,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		 * return group information, or we can trivially
 		 * deduce the groups */
 		if (sorted) {
-			bn = BATcopy(b, TYPE_void, b->ttype, 0, TRANSIENT);
+			bn = COLcopy(b, b->ttype, 0, TRANSIENT);
 			if (bn == NULL)
 				goto error;
 			*sorted = bn;
@@ -1235,12 +1235,12 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		if (bn == NULL)
 			goto error;
 		if (bn->ttype == TYPE_void || isVIEW(bn)) {
-			b = BATcopy(bn, TYPE_void, ATOMtype(bn->ttype), TRUE, TRANSIENT);
+			b = COLcopy(bn, ATOMtype(bn->ttype), TRUE, TRANSIENT);
 			BBPunfix(bn->batCacheid);
 			bn = b;
 		}
 	} else {
-		bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
+		bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 	}
 	if (bn == NULL)
 		goto error;
@@ -1250,7 +1250,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			/* make copy of input so that we can refine it;
 			 * copy can be read-only if we take the shortcut
 			 * below in the case g is "key" */
-			on = BATcopy(o, TYPE_void, TYPE_oid,
+			on = COLcopy(o, TYPE_oid,
 				     g == NULL ||
 				     !(g->tkey || g->ttype == TYPE_void),
 				     TRANSIENT);
@@ -1302,7 +1302,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				}
 			}
 			if (groups) {
-				gn = BATcopy(g, TYPE_void, g->ttype, 0, TRANSIENT);
+				gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 				if (gn == NULL)
 					goto error;
 				*groups = gn;
@@ -1403,7 +1403,8 @@ BATmark(BAT *b, oid oid_base)
 		if (BAThrestricted(b) != BAT_READ) {
 			BAT *v = bn;
 
-			bn = BATcopy(v, v->htype, v->ttype, TRUE, TRANSIENT);
+			assert(v->htype == TYPE_void);
+			bn = COLcopy(v, v->ttype, TRUE, TRANSIENT);
 			BBPreclaim(v);
 		}
 	}
@@ -1718,10 +1719,10 @@ BATmergecand(BAT *a, BAT *b)
 
 	/* we can return a if b is empty (and v.v.) */
 	if (BATcount(a) == 0) {
-		return BATcopy(b, b->htype, b->ttype, 0, TRANSIENT);
+		return COLcopy(b, b->ttype, 0, TRANSIENT);
 	}
 	if (BATcount(b) == 0) {
-		return BATcopy(a, a->htype, a->ttype, 0, TRANSIENT);
+		return COLcopy(a, a->ttype, 0, TRANSIENT);
 	}
 	/* we can return a if a fully covers b (and v.v) */
 	ai = bat_iterator(a);

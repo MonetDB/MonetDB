@@ -1461,7 +1461,7 @@ gdk_export int BATgetaccess(BAT *b);
  * @item BAT *
  * @tab BATclear (BAT *b, int force)
  * @item BAT *
- * @tab BATcopy (BAT *b, int ht, int tt, int writeable, int role)
+ * @tab COLcopy (BAT *b, int tt, int writeable, int role)
  * @item BAT *
  * @tab BATmark (BAT *b, oid base)
  * @item BAT *
@@ -1473,7 +1473,7 @@ gdk_export int BATgetaccess(BAT *b);
  *
  * The routine BATclear removes the binary associations, leading to an
  * empty, but (re-)initialized BAT. Its properties are retained.  A
- * temporary copy is obtained with BATcopy. The new BAT has an unique
+ * temporary copy is obtained with Colcopy. The new BAT has an unique
  * name.  The routine BATmark creates a binary association that
  * introduces a new tail column of fresh densely ascending OIDs.  The
  * base OID can be given explicitly, or if oid_nil is passed, is
@@ -1485,7 +1485,7 @@ gdk_export int BATgetaccess(BAT *b);
  * exist at the same time.
  */
 gdk_export gdk_return BATclear(BAT *b, int force);
-gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable, int role);
+gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
 

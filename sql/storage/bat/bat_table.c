@@ -79,7 +79,8 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		b = i;
 	} else {
 		if (BATcount(i)) {
-			r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
+			assert(b->htype == TYPE_void);
+			r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 			bat_destroy(b); 
 			b = r;
 			BATappend(b, i, TRUE); 
@@ -92,7 +93,8 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		uv = temp_descriptor(bat->uvbid);
 		if (BATcount(ui)) {
 			if (needcopy) {
-				r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
+				assert(b->htype == TYPE_void);
+				r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 				bat_destroy(b); 
 				b = r;
 			}

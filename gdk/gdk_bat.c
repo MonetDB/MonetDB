@@ -650,8 +650,8 @@ BATdestroy( BATstore *bs )
  *   implementation. We may even want to allow 'dirty' trick such as
  *   viewing a flt-column suddenly as int.
  *
- *   To allow such changes, the desired head- and tail-types are a
- *   parameter of BATcopy.
+ *   To allow such changes, the desired column-types is a
+ *   parameter of COLcopy.
  *
  * - access mode. If we want a read-only copy of a read-only BAT, a
  *   VIEW may do (in this case, the user may be after just an
@@ -723,7 +723,7 @@ wrongtype(int t1, int t2)
  * do inline array[T] inserts.
  */
 /* TODO make it simpler, ie copy per column */
-BAT *
+static BAT *
 BATcopy(BAT *b, int ht, int tt, int writable, int role)
 {
 	BUN bunstocopy = BUN_NONE;
@@ -951,6 +951,12 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
       bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
+}
+
+BAT *
+COLcopy(BAT *b, int tt, int writable, int role)
+{
+	return BATcopy(b, TYPE_void, tt, writable, role);
 }
 
 #ifdef HAVE_HGE

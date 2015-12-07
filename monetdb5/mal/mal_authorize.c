@@ -186,7 +186,7 @@ AUTHinitTables(str *passwd) {
 		bat blist[5];
 		assert(pass->htype == TYPE_oid);
 		blist[0] = 0;
-		b = BATcopy(user, TYPE_void, user->ttype, 1, PERSISTENT);
+		b = COLcopy(user, user->ttype, 1, PERSISTENT);
 		BATseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(user, TRANSIENT);
@@ -197,7 +197,7 @@ AUTHinitTables(str *passwd) {
 		blist[2] = b->batCacheid;
 		BBPunfix(user->batCacheid);
 		user = b;
-		b = BATcopy(pass, TYPE_void, pass->ttype, 1, PERSISTENT);
+		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
 		BATseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(pass, TRANSIENT);
@@ -604,7 +604,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = BATcopy(user, TYPE_void, user->ttype, FALSE, TRANSIENT);
+		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
 	}
 	return(NULL);
 }

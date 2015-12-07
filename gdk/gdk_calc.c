@@ -14151,8 +14151,10 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->T->type) == ATOMbasetype(tp))
-		return BATcopy(b, b->H->type, tp, 0, TRANSIENT);
+	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->T->type) == ATOMbasetype(tp)){
+		assert(b->H->type == TYPE_void);
+		return COLcopy(b, tp, 0, TRANSIENT);
+	}
 
 	bn = BATnew(TYPE_void, tp, b->batCount, TRANSIENT);
 	if (bn == NULL)
