@@ -3872,8 +3872,12 @@ BBPdiskscan(const char *parent)
 			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hhash", 5) == 0 ||
 			   strncmp(p + 1, "thash", 5) == 0) {
+#ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
+#else
+			delete = TRUE;
+#endif
 		} else if (strncmp(p + 1, "himprints", 9) == 0 ||
 			   strncmp(p + 1, "timprints", 9) == 0) {
 			BAT *b = getdesc(bid);

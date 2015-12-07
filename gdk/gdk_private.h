@@ -135,6 +135,8 @@ __hidden int GDKssort(void *h, void *t, const void *base, size_t n, int hs, int 
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
+__hidden void HASHfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden int HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
@@ -160,6 +162,8 @@ __hidden gdk_return HEAPshrink(Heap *h, size_t size)
 __hidden int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
 __hidden void IMPSdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
+__hidden void IMPSfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));

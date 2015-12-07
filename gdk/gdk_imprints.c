@@ -988,16 +988,45 @@ void
 IMPSdestroy(BAT *b)
 {
 	if (b) {
-		if (b->T->imprints != NULL && !VIEWtparent(b)) {
+		if (b->T->imprints != NULL && !VIEWtparent(b))
 			IMPSremove(b);
-		}
+		else
+			GDKunlink(BBPselectfarm(b->batRole, b->ttype, imprintsheap),
+				  BATDIR,
+				  BBP_physical(b->batCacheid),
+				  "timprints");
 
-		if (b->H->imprints != NULL && !VIEWhparent(b)) {
+		if (b->H->imprints != NULL && !VIEWhparent(b))
 			IMPSremove(BATmirror(b));
-		}
+		else
+			GDKunlink(BBPselectfarm(b->batRole, b->htype, imprintsheap),
+				  BATDIR,
+				  BBP_physical(b->batCacheid),
+				  "himprints");
 	}
 
 	return;
+}
+
+/* free the memory associated with the imprints, do not remove the
+ * heap files */
+void
+IMPSfree(BAT *b)
+{
+	Imprints *imprints;
+
+	if (b) {
+		MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "IMPSdelete");
+		if ((imprints = b->T->imprints) != NULL) {
+			b->T->imprints = NULL;
+			if (!VIEWtparent(b)) {
+				HEAPfree(imprints->imprints, 0);
+				GDKfree(imprints->imprints);
+				GDKfree(imprints);
+			}
+		}
+		MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "IMPSdelete");
+	}
 }
 
 #ifndef NDEBUG
