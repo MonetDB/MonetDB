@@ -19,6 +19,8 @@
  * _MSC_VER = 1900: Visual Studio 14.0
  */
 
+#define HAVE_EMBEDDED 1
+
 #ifndef _SEEN_MONETDB_CONFIG_H
 #define _SEEN_MONETDB_CONFIG_H 1
 
