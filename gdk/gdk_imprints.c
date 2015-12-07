@@ -968,8 +968,9 @@ IMPSremove(BAT *b)
 	if ((imprints = b->T->imprints) != NULL) {
 		b->T->imprints = NULL;
 
-		if (* (size_t *) imprints->imprints->base & (1 << 16))
-			ALGODEBUG fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
+		if ((GDKdebug & ALGOMASK) &&
+		    * (size_t *) imprints->imprints->base & (1 << 16))
+			fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
 		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
 			       b->batCacheid > 0 ? "timprints" : "himprints"))
 			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
