@@ -774,8 +774,6 @@ BATappend(BAT *b, BAT *n, bit force)
 					r++;
 				}
 			}
-			if (b->hseqbase != oid_nil)
-				b->hrevsorted = 0;
 		} else {
 			oid o = MAXoid(b);
 			BATiter ni = bat_iterator(n);
@@ -786,7 +784,6 @@ BATappend(BAT *b, BAT *n, bit force)
 				o++;
 				r++;
 			}
-			b->hrevsorted = 0;
 		}
 	} else {
 		BUN p, q;
@@ -810,7 +807,6 @@ BATappend(BAT *b, BAT *n, bit force)
 						i++;
 					}
 				}
-				b->hrevsorted = 0;
 			} else {
 				oid on = oid_nil;
 
@@ -868,6 +864,8 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tdense = b->tsorted = b->trevsorted = 0;
 		}
 	}
+	if (b->hseqbase != oid_nil)
+		b->hrevsorted = BATcount(b) <= 1;
 	b->H->nonil &= n->H->nonil;
 	b->T->nonil &= n->T->nonil;
 	return GDK_SUCCEED;

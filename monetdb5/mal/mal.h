@@ -79,6 +79,7 @@ mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
+mal_export MT_Lock  mal_beatLock ;
 
 
 mal_export int mal_init(void);
@@ -149,6 +150,7 @@ typedef struct VARRECORD {
 	ValRecord value;
 	int eolife;					/* pc index when it should be garbage collected */
 	int worker;					/* tread id of last worker producing it */
+	str stc;					/* rendering schema.table.column */
 	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
 

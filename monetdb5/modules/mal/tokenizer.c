@@ -623,7 +623,7 @@ TKNZRgetCardinality(bat *r)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
 	BATseqbase(b, 0);
 	for (i = 0; i < tokenDepth; i++) {
-		if ((en = BATsubunique(tokenBAT[i].val, NULL)) == NULL) {
+		if ((en = BATunique(tokenBAT[i].val, NULL)) == NULL) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}

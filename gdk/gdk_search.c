@@ -237,8 +237,6 @@ BATcheckhash(BAT *b)
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 	t = GDKusec() - t;
-// use or ignore a persistent hash
-#ifdef PERSISTENTHASH
 	if (b->T->hash == NULL) {
 		Hash *h;
 		Heap *hp;
@@ -258,7 +256,11 @@ BATcheckhash(BAT *b)
 
 				if ((h = GDKmalloc(sizeof(*h))) != NULL &&
 				    read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-				    hdata[0] == (((size_t) 1 << 24) | HASH_VERSION) &&
+				    hdata[0] == (
+#ifdef PERSISTENTHASH
+					    ((size_t) 1 << 24) |
+#endif
+					    HASH_VERSION) &&
 				    hdata[4] == (size_t) BATcount(b) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
@@ -301,7 +303,6 @@ BATcheckhash(BAT *b)
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
-#endif
 	ret = b->T->hash != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d, waited " LLFMT " usec\n", b->batCacheid, t);
@@ -592,21 +593,28 @@ HASHlist(Hash *h, BUN i)
 void
 HASHremove(BAT *b)
 {
-	if (b && b->T->hash) {
-		bat p = -VIEWtparent(b);
-		BAT *hp = NULL;
+	if (b) {
+		if (b->T->hash) {
+			bat p = -VIEWtparent(b);
+			BAT *hp = NULL;
 
-		if (p)
-			hp = BBP_cache(p);
+			if (p)
+				hp = BBP_cache(p);
 
-		if ((!hp || b->T->hash != hp->T->hash) && b->T->hash != (Hash *) -1) {
-			ALGODEBUG if (*(size_t *) b->T->hash->heap->base & (1 << 24))
-				fprintf(stderr, "#HASHremove: removing persisted hash %d\n", b->batCacheid);
-			HEAPfree(b->T->hash->heap, 1);
-			GDKfree(b->T->hash->heap);
-			GDKfree(b->T->hash);
+			if ((!hp || b->T->hash != hp->T->hash) && b->T->hash != (Hash *) -1) {
+				ALGODEBUG if (*(size_t *) b->T->hash->heap->base & (1 << 24))
+					fprintf(stderr, "#HASHremove: removing persisted hash %d\n", b->batCacheid);
+				HEAPfree(b->T->hash->heap, 1);
+				GDKfree(b->T->hash->heap);
+				GDKfree(b->T->hash);
+			}
+			b->T->hash = NULL;
+		} else {
+			GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+				  BATDIR,
+				  BBP_physical(b->batCacheid),
+				  b->batCacheid > 0 ? "thash" : "hhash");
 		}
-		b->T->hash = NULL;
 	}
 }
 
@@ -618,6 +626,21 @@ HASHdestroy(BAT *b)
 		if (BATmirror(b))
 			HASHremove(BATmirror(b));
 
+	}
+}
+
+void
+HASHfree(BAT *b)
+{
+	if (b) {
+		MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
+		if (b->T->hash && b->T->hash != (Hash *) -1) {
+			HEAPfree(b->T->hash->heap, 0);
+			GDKfree(b->T->hash->heap);
+			GDKfree(b->T->hash);
+		}
+		b->T->hash = NULL;
+		MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 	}
 }
 

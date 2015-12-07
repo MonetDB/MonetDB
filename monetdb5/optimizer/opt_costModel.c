@@ -58,7 +58,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getFunctionId(p) == subsortRef  ||
 				getFunctionId(p) == projectRef  ){
 				newRows(1,1,c1,0);
-			} else if (getFunctionId(p) == joinRef ||
+			} else if (getFunctionId(p) == subjoinRef ||
 				getFunctionId(p) == projectionRef ||
 				getFunctionId(p) == subbandjoinRef ||
 				getFunctionId(p) == projectionPathRef ) {

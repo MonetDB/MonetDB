@@ -597,8 +597,8 @@ BATfree(BAT *b)
 	if (b->T->props)
 		PROPdestroy(b->T->props);
 	b->T->props = NULL;
-	HASHdestroy(b);
-	IMPSdestroy(b);
+	HASHfree(b);
+	IMPSfree(b);
 	OIDXdestroy(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap, 0);

@@ -110,12 +110,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
 			errorCheck(p,algebraRef,getArg(p,2));
 		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && series[getArg(p,2)] ){
-			errorCheck(p,algebraRef,getArg(p,2));
-		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && series[getArg(p,3)]){
-			errorCheck(p,algebraRef,getArg(p,3));
-		} else
 		if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue",11) && isaBatType(getArgType(mb,p,0)) ){
 			// interface expects scalar type only, not expressable in MAL signature
 			mb->errors++;

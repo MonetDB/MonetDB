@@ -15,12 +15,6 @@ tachograph [options]
   -u | --user=<user>
   -p | --port=<portnr>
   -h | --host=<hostname>
-  -b | --beat=<delay> in milliseconds (default 5000)
-  -i | --interactive=<o | 1> show trace on stdout
-  -o | --output=<webfile>
-  -c | --cache=<query pool location>
-  -q | --queries=<query pool capacity>
-  -w | --wait=<delay time> in milliseconds
   -? | --help
 
 # 23:54:13 >  

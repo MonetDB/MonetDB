@@ -54,12 +54,12 @@ Operation successful
 |     X_1 := sql.mvc();                                                                            |
 |     X_8:bat[:oid,:sht] := sql.bind(X_1,"sys","_tables","type",0);                                |
 |     C_5:bat[:oid,:oid] := sql.tid(X_1,"sys","_tables");                                          |
-|     C_49 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                       |
+|     C_50 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                       |
 |     (C_11,r1_11) := sql.bind(X_1,"sys","_tables","type",2);                                      |
-|     C_50 := algebra.subselect(r1_11,nil:bat[:oid,:oid],2,2,true,true,true);                      |
+|     C_51 := algebra.subselect(r1_11,nil:bat[:oid,:oid],2,2,true,true,true);                      |
 |     X_14:bat[:oid,:sht] := sql.bind(X_1,"sys","_tables","type",1);                               |
-|     C_52 := algebra.subselect(X_14,C_5,2,2,true,true,true);                                      |
-|     C_17 := sql.subdelta(C_49,C_5,C_11,C_50,C_52);                                               |
+|     C_53 := algebra.subselect(X_14,C_5,2,2,true,true,true);                                      |
+|     C_17 := sql.subdelta(C_50,C_5,C_11,C_51,C_53);                                               |
 |     X_19:bat[:oid,:int] := sql.bind(X_1,"sys","_tables","id",0);                                 |
 |     (C_21,r1_25) := sql.bind(X_1,"sys","_tables","id",2);                                        |
 |     X_23:bat[:oid,:int] := sql.bind(X_1,"sys","_tables","id",1);                                 |

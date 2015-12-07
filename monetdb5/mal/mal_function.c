@@ -956,9 +956,6 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		bufstr = buffer_create(8096);
 		f = buffer_wastream(bufstr, "bufstr_write");
 		mapimode = 1;
-	} else if (idcmp(fname, "stethoscope") == 0) {
-		f = getProfilerStream();
-		stethoscope =1;
 	} else {
 		f = open_wastream(fname);
 	}

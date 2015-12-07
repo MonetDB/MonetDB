@@ -94,7 +94,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
 							bsample = NULL;
-						br = BATsubselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 0, 0, 0);
+						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 0, 0, 0);
 						nils = BATcount(br);
 						BBPunfix(br->batCacheid);
 						if (bn->tkey)
@@ -105,7 +105,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								br = BATproject(bsample, bn);
 							else
 								br = bn;
-							if (br && (en = BATsubunique(br, NULL)) != NULL) {
+							if (br && (en = BATunique(br, NULL)) != NULL) {
 								uniq = BATcount(en);
 								BBPunfix(en->batCacheid);
 							} else

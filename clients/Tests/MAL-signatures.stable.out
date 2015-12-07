@@ -2254,10 +2254,6 @@ command aggr.variance(b:bat[:oid,:any_2]):dbl
 address ALGvariance;
 comment Gives the variance of all tail values
 
-command algebra.antijoin(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address ALGantijoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
-
 command algebra.crossproduct(left:bat[:oid,:any_1],right:bat[:oid,:any_2]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address ALGcrossproduct2;
 comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
@@ -2320,14 +2316,6 @@ command algebra.ilike(s:str,pat:str):bit
 address PCREilike2;
 command algebra.ilike(s:str,pat:str,esc:str):bit 
 address PCREilike3;
-command algebra.join(left:bat[:oid,:any_2],rl:bat[:oid,:any_2],rh:bat[:oid,:any_2],li:bit,hi:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address ALGrangejoin2;
-comment Deprecated, see algebra.subrangejoin. Range join
-
-command algebra.join(left:bat[:oid,:any_1],right:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
-address ALGjoin2;
-comment Returns 2 columns with all BUNs, consisting of the head-oids	  from 'left' and 'right' for which there are BUNs in 'left'	  and 'right' with equal tails
-
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid,:oid],X_8:bat[:oid,:oid]) 
 address LIKEsubjoin1;
 command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (X_8:bat[:oid,:oid],X_9:bat[:oid,:oid]) 
@@ -2361,7 +2349,7 @@ comment Routine to handle join paths.  The type analysis is rather tricky.
 
 command algebra.projection(left:bat[:oid,:oid],right:bat[:oid,:any_3]):bat[:oid,:any_3] 
 address ALGprojection;
-comment Hook directly into the left fetch join implementation.
+comment Project left input onto right input.
 
 pattern algebra.project(b:bat[:oid,:any_1],v:any_3):bat[:oid,:any_3] 
 address ALGprojecttail;
@@ -38012,22 +38000,22 @@ pattern generator.join(b:bat[:oid,:sht],gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:
 address VLTgenerator_join;
 pattern generator.join(b:bat[:oid,:bte],gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
 address VLTgenerator_join;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
-address VLTgenerator_leftfetchjoin;
-comment Overloaded leftfetchjoin operation
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
+address VLTgenerator_projection;
+comment Overloaded projection operation
 
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
-address VLTgenerator_leftfetchjoin;
-pattern generator.leftfetchjoin(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
-address VLTgenerator_leftfetchjoin;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
+address VLTgenerator_projection;
+pattern generator.projection(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
+address VLTgenerator_projection;
 pattern generator.parameters(first:dbl,last:dbl):bat[:oid,:dbl] 
 address VLTgenerator_noop;
 pattern generator.parameters(first:flt,last:flt):bat[:oid,:flt] 
@@ -40048,6 +40036,12 @@ pattern optimizer.prelude():void
 address optimizer_prelude;
 comment Initialize the optimizer
 
+pattern optimizer.profiler(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Collect properties for the profiler
+
+pattern optimizer.profiler():str 
+address OPTwrapper;
 pattern optimizer.querylog(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Collect SQL query statistics
@@ -40159,16 +40153,12 @@ address CMDcpustats;
 comment Extract cpu statistics from the kernel
 
 command profiler.cleanup():void 
-address CMDcleanup;
+address CMDcleanupTraces;
 comment Remove the temporary tables for profiling
 
-command profiler.closeStream():void 
+command profiler.closestream():void 
 address CMDcloseProfilerStream;
-comment Stop sending the event records
-
-command profiler.dumpTrace():void 
-address CMDdumpTrace;
-comment List the events collected
+comment Stop offline proviling
 
 command profiler.getSystemTime():lng 
 address CMDgetSystemTime;
@@ -40194,37 +40184,21 @@ command profiler.noop():void
 address CMDnoopProfiler;
 comment Fetch any pending performance events
 
-pattern profiler.openStream(host:str,port:int):void 
-address CMDsetProfilerStream;
-comment Send the log events to a stream 
-
-pattern profiler.openStream(fnme:str):void 
-address CMDsetProfilerFile;
-comment Send the log events to a file, stdout or console
-
-pattern profiler.openStream():void 
+pattern profiler.openstream(mode:int):void 
 address CMDopenProfilerStream;
-comment Send the events to output stream
+comment Start profiling the events, sent to output stream
 
-command profiler.reset():void 
-address CMDclearTrace;
-comment Clear the profiler traces
-
-command profiler.setHeartbeat(b:int):void 
+command profiler.setheartbeat(b:int):void 
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
 
 pattern profiler.stop():void 
 address CMDstopProfiler;
-comment Stop performance tracing
+comment Stop offline performance profiling
 
-pattern profiler.stethoscope(b:int):void 
-address CMDstethoscope;
-comment Start stethoscope profiling with heart beat
-
-pattern profiler.tomograph(b:int):void 
-address CMDtomograph;
-comment Start tomograph profiler with heart beat
+pattern profiler.start():void 
+address CMDstartProfiler;
+comment Start offline performance profiling
 
 pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;

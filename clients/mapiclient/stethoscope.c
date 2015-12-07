@@ -18,17 +18,21 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
 #include <stream.h>
+#include <stream_socket.h>
+#include <mapi.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 #include "mprompt.h"
 #include "dotmonetdb.h"
+#include "eventparser.h"
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -38,16 +42,15 @@
 # endif
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+# include <netinet/in.h>
 #endif
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET (-1)
+#endif
+
 
 #define die(dbh, hdl)						\
 	do {							\
@@ -66,15 +69,70 @@
 
 static stream *conn = NULL;
 static char hostname[128];
-static char *basefilename = "stethoscope";
-static int debug = 0;
+static char *filename = NULL;
 static int beat = 50;
+static int json = 0;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
+static FILE *trace = NULL;
 
 /*
- * Parsing the argument list of a MAL call to obtain un-quoted string values
+ * Tuple level reformatting
  */
+
+static void
+renderEvent(EventRecord *ev){
+	FILE *s;
+	if(trace != NULL) 
+		s = trace;
+	else
+		s = stdout;
+	if( ev->eventnr ==0 && ev->version){
+		fprintf(s, "[ ");
+		fprintf(s, "0,	");
+		fprintf(s, "0,	");
+		fprintf(s, "\"\",	" );
+		fprintf(s, "0,	");
+		fprintf(s, "\"system\",	"); 
+		fprintf(s, "0,	");
+		fprintf(s, "0,	");
+		fprintf(s, "0,	");
+		fprintf(s, "0,	");
+		fprintf(s, "0,	");
+		fprintf(s, "0,	");
+		fprintf(s, "\"");
+		fprintf(s, "version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ", 
+			ev->version, ev->release, ev->threads, ev->memory, ev->host, ev->oid, ev->package);
+		fprintf(s, "\"	]\n");
+		return ;
+	}
+	if( ev->eventnr < 0)
+		return;
+	fprintf(s, "[ ");
+	fprintf(s, LLFMT",	", ev->eventnr);
+	printf("\"%s\",	", ev->time);
+	if( ev->function && *ev->function)
+		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
+	else
+		fprintf(s, "\"\",	");
+	fprintf(s, "%d,	", ev->thread);
+	switch(ev->state){
+	case MDB_START: fprintf(s, "\"start\",	"); break;
+	case MDB_DONE: fprintf(s, "\"done \",	"); break;
+	case MDB_WAIT: fprintf(s, "\"wait \",	"); break;
+	case MDB_PING: fprintf(s, "\"ping \",	"); break;
+	case MDB_SYSTEM: fprintf(s, "\"system\",	"); 
+	}
+	fprintf(s, LLFMT",	", ev->ticks);
+	fprintf(s, LLFMT",	", ev->rss);
+	fprintf(s, LLFMT",	", ev->size);
+	fprintf(s, LLFMT",	", ev->inblock);
+	fprintf(s, LLFMT",	", ev->oublock);
+	fprintf(s, LLFMT",	", ev->majflt);
+	fprintf(s, LLFMT",	", ev->swaps);
+	fprintf(s, LLFMT",	", ev->csw);
+	fprintf(s, "\"%s\"	]\n", ev->stmt);
+}
 
 static void
 usageStethoscope(void)
@@ -82,10 +140,13 @@ usageStethoscope(void)
     fprintf(stderr, "stethoscope [options] \n");
     fprintf(stderr, "  -d | --dbname=<database_name>\n");
     fprintf(stderr, "  -u | --user=<user>\n");
+    fprintf(stderr, "  -P | --password=<password>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
+    fprintf(stderr, "  -j | --json\n");
     fprintf(stderr, "  -o | --output=<file>\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+	fprintf(stderr, "  -D | --debug\n");
     fprintf(stderr, "  -? | --help\n");
 	exit(-1);
 }
@@ -101,6 +162,8 @@ stopListening(int i)
 		doQ("profiler.stop();");
 stop_disconnect:
 	// show follow up action only once
+	if(trace)
+		fclose(trace);
 	if(dbh)
 		mapi_disconnect(dbh);
 	exit(0);
@@ -118,28 +181,35 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
-	int line = 0;
-	FILE *trace = NULL;
+	int done = 0;
+	EventRecord *ev = malloc(sizeof(EventRecord));
 
-	static struct option long_options[15] = {
+	static struct option long_options[11] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
+		{ "json", 0, 0, 'j'},
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
 		{ 0, 0, 0, 0 }
 	};
 
+	if( ev) memset((char*)ev,0, sizeof(EventRecord));
+	else {
+		fprintf(stderr,"could not allocate space\n");
+		exit(-1);
+	}
+
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &password, NULL, NULL, NULL, NULL);
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?:o:D:b",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?jo:Db:",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -174,11 +244,12 @@ main(int argc, char **argv)
 		case 'h':
 			host = optarg;
 			break;
+		case 'j':
+			json = 1;
+			break;
 		case 'o':
-			basefilename = strdup(optarg);
-			if( strstr(basefilename,".trace"))
-				*strstr(basefilename,".trace") = 0;
-			printf("-- Output directed towards %s\n", basefilename);
+			filename = strdup(optarg);
+			printf("-- Output directed towards %s\n", filename);
 			break;
 		case '?':
 			usageStethoscope();
@@ -198,7 +269,7 @@ main(int argc, char **argv)
 	}
 
 	if(debug)
-		printf("stethoscope -d %s -o %s\n",dbname,basefilename);
+		printf("stethoscope -d %s -o %s\n",dbname,filename);
 
 	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
 		uri = dbname;
@@ -240,32 +311,24 @@ main(int argc, char **argv)
 	if(debug)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
-	for (portnr = 50010; portnr < 62010; portnr++) 
-		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
-			break;
-	
-	if ( conn == NULL) {
-		fprintf(stderr, "!! opening stream failed: no free ports available\n");
-		fflush(stderr);
-		goto stop_disconnect;
-	}
-
-	printf("-- opened UDP profile stream %s:%d for %s\n", hostname, portnr, host);
-
-	snprintf(buf, BUFSIZ, " port := profiler.openStream(\"%s\", %d);", hostname, portnr);
-	if( debug)
-		fprintf(stderr,"--%s\n",buf);
-	doQ(buf);
-
-	snprintf(buf,BUFSIZ-1,"profiler.stethoscope(%d);",beat);
+	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
 	if( debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf,BUFSIZ,"%s.trace",basefilename);
-	trace = fopen(buf,"w");
-	if( trace == NULL)
-		fprintf(stderr,"Could not create trace file\n");
+	snprintf(buf, BUFSIZ, " profiler.openstream(1);");
+	if( debug)
+		fprintf(stderr,"--%s\n",buf);
+	doQ(buf);
+
+	if(filename != NULL) {
+		trace = fopen(filename,"w");
+
+		if( trace == NULL) {
+			fprintf(stderr,"Could not create file '%s', printing to stdout instead...\n", filename);
+			filename = NULL;
+		}
+	}
 
 	len = 0;
 	buflen = BUFSIZ;
@@ -274,20 +337,32 @@ main(int argc, char **argv)
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
-	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len -1)) > 0) {
+	conn = mapi_get_from(dbh);
+	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		buffer[len + n] = 0;
-		if( trace) 
-			fprintf(trace,"%s",buffer);
 		response = buffer;
+		if(json) {
+			if(trace != NULL) {
+				fprintf(trace, "%s", response);
+			} else {
+				printf("%s", response);
+				fflush(stdout);
+			}
+		}
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			printf("%s\n", response);
-			if (++line % 200) {
-				line = 0;
+			if(!json) {
+				//printf("%s\n", response);
+				done= keyvalueparser(response,ev);
+				if( done== 1){
+					renderEvent(ev);
+					resetEventRecord(ev);
+				}
 			}
 			response = e + 1;
 		}
-		/* handle the case that the current line is too long to
+
+		/* handle the case that the line is too long to
 		 * fit in the buffer */
 		if( response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
@@ -316,6 +391,8 @@ main(int argc, char **argv)
 stop_disconnect:
 	if(dbh)
 		mapi_disconnect(dbh);
+	if(trace)
+		fclose(trace);
 	printf("-- connection with server %s closed\n", uri ? uri : host);
 	return 0;
 }

@@ -93,7 +93,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		sample = BATcount(b) < 1000 ? BATcount(b): 1000;
 		bs = BATsample( b, sample);
 		if (bs) {
-			bh = BATsubunique(b, bs);
+			bh = BATunique(b, bs);
 			if (bh) {
 				a->unique[a->last] = BATcount(bh);
 				BBPunfix(bh->batCacheid);

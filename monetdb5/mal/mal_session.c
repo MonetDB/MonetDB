@@ -141,6 +141,8 @@ exit_streams( bstream *fin, stream *fout )
 		(void) bstream_destroy(fin);
 }
 
+const char* mal_enableflag = "mal_for_all";
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
@@ -295,6 +297,15 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			mnstr_flush(c->fdout);
 			GDKfree(s);
 			c->mode = FINISHCLIENT;
+		}
+		if (!GDKgetenv_isyes(mal_enableflag) &&
+				(strncasecmp("sql", lang, 3) != 0 && uid != 0)) {
+
+			mnstr_printf(fout, "!only the 'monetdb' user can use non-sql languages. "
+					           "run mserver5 with --set %s=yes to change this.\n", mal_enableflag);
+			exit_streams(fin, fout);
+			GDKfree(command);
+			return;
 		}
 	}
 
