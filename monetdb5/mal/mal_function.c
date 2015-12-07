@@ -296,7 +296,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			    tx= 0;
 			    tail = t;
 			}
-			y= newBatType(TYPE_oid,tail);
+			y= newBatType(TYPE_void,tail);
 			setAnyColumnIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN

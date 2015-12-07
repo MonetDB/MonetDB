@@ -159,6 +159,9 @@ AUTHinitTables(str *passwd) {
 		isNew = 0;
 	}
 	assert(user);
+	if( user->htype != TYPE_void){
+		throw(MAL, "initTables", INTERNAL_AUTHORIZATION " authorization table outdated !");
+	}
 
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
@@ -180,6 +183,7 @@ AUTHinitTables(str *passwd) {
 	}
 	assert(pass);
 
+	// automagically convert an old authorization table
 	if (user->htype == TYPE_oid) {
 		BAT *b;
 		char name[10];
