@@ -2327,8 +2327,11 @@ decref(bat i, int logical, int releaseShare, int lock)
 	}
 
 	/* we destroy transients asap and unload persistent bats only
-	 * if they have been made cold */
-	if (BBP_refs(i) > 0 || (BBP_lrefs(i) > 0 && BBP_lastused(i) != 0)) {
+	 * if they have been made cold or are not dirty */
+	if (BBP_refs(i) > 0 ||
+	    (BBP_lrefs(i) > 0 &&
+	     BBP_lastused(i) != 0 &&
+	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT)))) {
 		/* bat cannot be swapped out. renew its last usage
 		 * stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(BBPstamp());
