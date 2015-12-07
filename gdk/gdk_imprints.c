@@ -951,8 +951,9 @@ IMPSremove(BAT *b)
 	if ((imprints = b->T->imprints) != NULL) {
 		b->T->imprints = NULL;
 
-		if (* (size_t *) imprints->imprints->base & (1 << 16))
-			ALGODEBUG fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
+		if ((GDKdebug & ALGOMASK) &&
+		    * (size_t *) imprints->imprints->base & (1 << 16))
+			fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
 		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
 			       b->batCacheid > 0 ? "timprints" : "himprints"))
 			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
@@ -968,13 +969,42 @@ void
 IMPSdestroy(BAT *b)
 {
 	if (b) {
-		if (b->T->imprints != NULL && !VIEWtparent(b)) {
+		if (b->T->imprints != NULL && !VIEWtparent(b))
 			IMPSremove(b);
-		}
+		else
+			GDKunlink(BBPselectfarm(b->batRole, b->ttype, imprintsheap),
+				  BATDIR,
+				  BBP_physical(b->batCacheid),
+				  "timprints");
 
-		if (b->H->imprints != NULL && !VIEWhparent(b)) {
+		if (b->H->imprints != NULL && !VIEWhparent(b))
 			IMPSremove(BATmirror(b));
+		else
+			GDKunlink(BBPselectfarm(b->batRole, b->htype, imprintsheap),
+				  BATDIR,
+				  BBP_physical(b->batCacheid),
+				  "himprints");
+	}
+}
+
+/* free the memory associated with the imprints, do not remove the
+ * heap files */
+void
+IMPSfree(BAT *b)
+{
+	Imprints *imprints;
+
+	if (b) {
+		MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)));
+		if ((imprints = b->T->imprints) != NULL) {
+			b->T->imprints = NULL;
+			if (!VIEWtparent(b)) {
+				HEAPfree(imprints->imprints, 0);
+				GDKfree(imprints->imprints);
+				GDKfree(imprints);
+			}
 		}
+		MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
 	}
 }
 

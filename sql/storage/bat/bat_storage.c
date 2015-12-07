@@ -494,6 +494,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->ibid = id;
 		temp_dup(id);
 		bat_destroy(b);
+		i->hseqbase = bat->ibase;
 	} else {
 		if (!isEbat(b)){
 			assert(b->T->heap.storage != STORE_PRIV);
@@ -1871,7 +1872,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		return ok;
 	}
 	ins = temp_descriptor(cbat->ibid);
-	if (unique)
+	if (0 && unique)
 		BATkey(BATmirror(cur), TRUE);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
@@ -1879,7 +1880,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			/* swap cur and ins */
 			BAT *newcur = ins;
 
-			if (unique)
+			if (0 && unique)
 				BATkey(BATmirror(newcur), TRUE);
 			temp_destroy(cbat->bid);
 			temp_destroy(obat->bid);
@@ -1940,6 +1941,78 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 	return ok;
 }
 
+static int 
+tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
+{
+	int ok = LOG_OK;
+	BAT *ins, *cur = NULL;
+	int cleared = 0;
+
+	(void)tr;
+	assert(store_nr_active==1);
+	assert (obat->bid != 0 || tr != gtrans);
+
+	if (obat->cached) {
+		bat_destroy(obat->cached);
+		obat->cached = NULL;
+	}
+	if (obat->bid)
+		cur = temp_descriptor(obat->bid);
+	ins = temp_descriptor(obat->ibid);
+	if (0 && unique)
+		BATkey(BATmirror(cur), TRUE);
+	/* any inserts */
+	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
+		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
+			/* swap cur and ins */
+			BAT *newcur = ins;
+			bat id = obat->bid;
+
+			if (0 && unique)
+				BATkey(BATmirror(newcur), TRUE);
+			obat->bid = obat->ibid;
+			obat->ibid = id;
+
+			BATmsync(ins);
+			ins = cur;
+			cur = newcur;
+		} else {
+			BATappend(cur,ins,TRUE);
+			BATcleanProps(cur);
+			if (cur->batPersistence == PERSISTENT)
+				BATmsync(cur);
+		}
+		obat->cnt = obat->ibase = BATcount(cur);
+		temp_destroy(obat->ibid);
+		obat->ibid = e_bat(cur->ttype);
+	}
+	bat_destroy(ins);
+
+	if (obat->ucnt || cleared) {
+		BAT *ui = temp_descriptor(obat->uibid);
+		BAT *uv = temp_descriptor(obat->uvbid);
+
+		/* any updates */
+		if (BUNlast(ui) > BUNfirst(ui)) {
+			void_replace_bat(cur, ui, uv, TRUE);
+			/* cleanup the old deltas */
+			temp_destroy(obat->uibid);
+			temp_destroy(obat->uvbid);
+			obat->uibid = e_bat(TYPE_oid);
+			obat->uvbid = e_bat(cur->ttype);
+			obat->ucnt = 0;
+		}
+		bat_destroy(ui);
+		bat_destroy(uv);
+	}
+	bat_destroy(cur);
+	if (obat->next) { 
+		ok = destroy_bat(tr, obat->next);
+		obat->next = NULL;
+	}
+	return ok;
+}
+
 static int
 tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 {
@@ -1983,6 +2056,23 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 }
 
 static int
+tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
+{
+	int ok = LOG_OK;
+
+	if (tdb->cached) {
+		bat_destroy(tdb->cached);
+		tdb->cached = NULL;
+	}
+	assert(store_nr_active==1);
+	if (tdb->next) {
+		ok = destroy_dbat(tr, tdb->next);
+		tdb->next = NULL;
+	}
+	return ok;
+}
+
+static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
 	sql_trans *oldest = active_transactions->h->data;
@@ -2006,8 +2096,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		}
 	}
 
-	if (ft->base.allocated) {
-		if (store_nr_active > 1) { /* move delta */
+	if (store_nr_active == 1 || ft->base.allocated) {
+		if (store_nr_active > 1 && ft->data) { /* move delta */
 			sql_dbat *b = ft->data;
 
 			ft->data = NULL;
@@ -2020,46 +2110,55 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			if (b && b->wtime < oldest->stime) {
+			if (0 && b && b->wtime < oldest->stime) {
 				/* anything older can go */
 				destroy_dbat(tr, b->next);
 				b->next = NULL;
 			}
-		} else if (tt->base.allocated) {
+		} else if (tt->data && ft->base.allocated) {
 			tr_update_dbat(tr, tt->data, ft->data, ft->cleared);
-		} else {
+		} else if (store_nr_active == 1 && !ft->base.allocated) {
+			tr_merge_dbat(tr, tt->data);
+			ft->data = NULL;
+		} else if (ft->data) {
 			tt->data = ft->data;
 			tt->base.allocated = 1;
+			ft->data = NULL;
 		}
 	}
 	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
 
-		if (cc->base.wtime && cc->base.allocated) {
-			assert(oc->base.wtime < cc->base.wtime);
-			if (store_nr_active > 1) { /* move delta */
+		if (store_nr_active == 1 || (cc->base.wtime && cc->base.allocated)) {
+			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime);
+			if (store_nr_active > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 
 				cc->data = NULL;
 				b->next = oc->data;
 				oc->data = b;
+
 				if (b->cached) {
 					bat_destroy(b->cached);
 					b->cached = NULL;
 				}
 				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				if (b && b->wtime < oldest->stime) {
+				if (0 && b && b->wtime < oldest->stime) {
 					/* anything older can go */
 					destroy_bat(tr, b->next);
 					b->next = NULL;
 				}
-			} else if (oc->base.allocated) {
+			} else if (oc->data && cc->base.allocated) {
 				tr_update_delta(tr, oc->data, cc->data, cc->unique == 1);
-			} else {
+			} else if (store_nr_active == 1 && !cc->base.allocated) {
+				tr_merge_delta(tr, oc->data, oc->unique == 1);
+				cc->data = NULL;
+			} else if (cc->data) {
 				oc->data = cc->data; 
 				oc->base.allocated = 1;
+				cc->data = NULL;
 			}
 		}
 
@@ -2088,34 +2187,39 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			sql_idx *oi = m->data;
 
 			/* some indices have no bats */
-			if (!oi->data || !ci->base.wtime || !ci->base.allocated) {
+			if (!oi->data) {
 				ci->data = NULL;
 				ci->base.allocated = ci->base.rtime = ci->base.wtime = 0;
 				continue;
 			}
-			if (store_nr_active > 1) { /* move delta */
-				sql_delta *b = ci->data;
+			if (store_nr_active == 1 || (ci->base.wtime && ci->base.allocated)) {
+				if (store_nr_active > 1 && ci->data) { /* move delta */
+					sql_delta *b = ci->data;
 
-				ci->data = NULL;
-				b->next = oi->data;
-				oi->data = b;
-				if (b->cached) {
-					bat_destroy(b->cached);
-					b->cached = NULL;
+					ci->data = NULL;
+					b->next = oi->data;
+					oi->data = b;
+					if (b->cached) {
+						bat_destroy(b->cached);
+						b->cached = NULL;
+					}
+					while (b && b->wtime >= oldest->stime) 
+						b = b->next;
+					if (0 && b && b->wtime < oldest->stime) {
+						/* anything older can go */
+						destroy_bat(tr, b->next);
+						b->next = NULL;
+					}
+				} else if (oi->data && ci->base.allocated) {
+					tr_update_delta(tr, oi->data, ci->data, 0);
+				} else if (store_nr_active == 1 && !ci->base.allocated) {
+					tr_merge_delta(tr, oi->data, 0);
+					ci->data = NULL;
+				} else if (ci->data) {
+					oi->data = ci->data;
+					oi->base.allocated = 1;
+					ci->data = NULL;
 				}
-				while (b && b->wtime >= oldest->stime) 
-					b = b->next;
-				if (b && b->wtime < oldest->stime) {
-					/* anything older can go */
-					destroy_bat(tr, b->next);
-					b->next = NULL;
-				}
-			} else if (oi->base.allocated) {
-				assert(oi->base.allocated);
-				tr_update_delta(tr, oi->data, ci->data, 0);
-			} else {
-				oi->data = ci->data;
-				oi->base.allocated = 1;
 			}
 
 			if (oi->base.rtime < ci->base.rtime)

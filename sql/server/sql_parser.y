@@ -3464,8 +3464,16 @@ simple_scalar_exp:
 			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
 			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
 				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
-				if (!atom_neg(a))
+				if (!atom_neg(a)) {
 					$$ = $2;
+				} else {
+					char *msg = sql_message("\b22003!value too large or not a number");
+
+					yyerror(m, msg);
+					_DELETE(msg);
+					$$ = NULL;
+					YYABORT;
+				}
 			  } 
 			  if (!$$) {
 				dlist *l = L();
@@ -4214,7 +4222,7 @@ literal:
 
 			errno = 0;
 			val = strtod($1,&p);
-			if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
+			if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message("\b22003!double value too large or not a number (%s)", $1);
 
 				yyerror(m, msg);
@@ -4233,7 +4241,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
+		  if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message("\b22003!double value too large or not a number (%s)", $1);
 
 			yyerror(m, msg);
