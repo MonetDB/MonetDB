@@ -2042,9 +2042,9 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cntxt->error_row) {
 		MT_lock_set(&errorlock);
 		BATclear(cntxt->error_row, TRUE);
-		BATclear(cntxt->error_fld, TRUE);
-		BATclear(cntxt->error_msg, TRUE);
-		BATclear(cntxt->error_input, TRUE);
+		if(cntxt->error_fld) BATclear(cntxt->error_fld, TRUE);
+		if(cntxt->error_msg) BATclear(cntxt->error_msg, TRUE);
+		if(cntxt->error_input) BATclear(cntxt->error_input, TRUE);
 		MT_lock_unset(&errorlock);
 	}
 	(void) mb;
