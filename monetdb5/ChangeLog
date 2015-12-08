@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Dec  8 2015 Sjoerd Mullender <sjoerd@acm.org>
+- The server now stops executing a query when the client disconnects.
+
 * Thu Dec  3 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed algebra.join.  Use algebra.subjoin instead.
 - Removed algebra.antijoin.  Use algebra.subantijoin or
