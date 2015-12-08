@@ -173,6 +173,7 @@ struct stream {
 	int (*fgetpos) (stream *s, lng *p);
 	int (*fsetpos) (stream *s, lng p);
 	void (*update_timeout) (stream *s);
+	int (*isalive) (stream *s);
 };
 
 int
@@ -516,6 +517,17 @@ mnstr_fsetpos(stream *s, lng p)
 	return 0;
 }
 
+int
+mnstr_isalive(stream *s)
+{
+	if (s == NULL)
+		return 0;
+	if (s->errnr)
+		return -1;
+	if (s->isalive)
+		return (*s->isalive)(s);
+	return 1;
+}
 
 char *
 mnstr_name(stream *s)
@@ -687,6 +699,7 @@ create_stream(const char *name)
 	s->timeout = 0;
 	s->timeout_func = NULL;
 	s->update_timeout = NULL;
+	s->isalive = NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
@@ -1965,6 +1978,22 @@ socket_update_timeout(stream *s)
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
+static int
+socket_isalive(stream *s)
+{
+	SOCKET fd = s->stream_data.s;
+	char buffer[32];
+	fd_set fds;
+	struct timeval t;
+
+	t.tv_sec = 0;
+	t.tv_usec = 0;
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+	return select(fd + 1, &fds, NULL, NULL, &t) <= 0 ||
+		recv(fd, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) != 0;
+}
+
 static stream *
 socket_open(SOCKET sock, const char *name)
 {
@@ -1980,6 +2009,7 @@ socket_open(SOCKET sock, const char *name)
 	s->close = socket_close;
 	s->stream_data.s = sock;
 	s->update_timeout = socket_update_timeout;
+	s->isalive = socket_isalive;
 
 	errno = 0;
 #ifdef _MSC_VER
@@ -2897,6 +2927,19 @@ ic_update_timeout(stream *s)
 	}
 }
 
+static int
+ic_isalive(stream *s)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+
+	if (ic && ic->s) {
+		if (ic->s->isalive)
+			return (*ic->s->isalive)(ic->s);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 ic_clrerr(stream *s)
 {
@@ -2920,6 +2963,7 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	s->clrerr = ic_clrerr;
 	s->flush = ic_flush;
 	s->update_timeout = ic_update_timeout;
+	s->isalive = ic_isalive;
 	s->stream_data.p = malloc(sizeof(struct icstream));
 	if (s->stream_data.p == NULL) {
 		mnstr_destroy(s);
@@ -3488,6 +3532,19 @@ bs_update_timeout(stream *ss)
 	}
 }
 
+static int
+bs_isalive(stream *ss)
+{
+	struct bs *s;
+
+	if ((s = ss->stream_data.p) != NULL && s->s) {
+		if (s->s->isalive)
+			return (*s->s->isalive)(s->s);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 bs_close(stream *ss)
 {
@@ -3555,6 +3612,7 @@ block_stream(stream *s)
 	ns->read = bs_read;
 	ns->write = bs_write;
 	ns->update_timeout = bs_update_timeout;
+	ns->isalive = bs_isalive;
 	ns->stream_data.p = (void *) b;
 
 	return ns;
@@ -4129,6 +4187,19 @@ wbs_update_timeout(stream *s)
 	}
 }
 
+static int
+wbs_isalive(stream *s)
+{
+	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
+
+	if (wbs && wbs->s) {
+		if (wbs->s->isalive)
+			return (*wbs->s->isalive)(wbs->s);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 wbs_clrerr(stream *s)
 {
@@ -4159,6 +4230,7 @@ wbstream(stream *s, size_t buflen)
 	ns->destroy = wbs_destroy;
 	ns->flush = wbs_flush;
 	ns->update_timeout = wbs_update_timeout;
+	ns->isalive = wbs_isalive;
 	ns->write = wbs_write;
 	ns->stream_data.p = (void *) wbs;
 	wbs->s = s;
