@@ -1006,18 +1006,13 @@ struct MapiStatement {
 		mapi_clrError((X)->mid);				\
 	} while (0)
 
-static Mapi mapi_new(void);
 static int mapi_extend_bindings(MapiHdl hdl, int minbindings);
 static int mapi_extend_params(MapiHdl hdl, int minparams);
-static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error);
 static void close_connection(Mapi mid);
 static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
 static int unquote(const char *msg, char **start, const char **next, int endchar, size_t *lenp);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
-static void parse_uri_query(Mapi mid, char *uri);
-static void set_uri(Mapi mid);
-static MapiMsg connect_to_server(Mapi mid);
 
 static int mapi_initialized = 0;
 
@@ -1872,9 +1867,9 @@ mapi_new(void)
 	mid->index = index++;	/* for distinctions in log records */
 	mid->auto_commit = 1;
 	mid->error = MOK;
-	mid->hostname = strdup("localhost");
+	mid->hostname = NULL;
 	mid->server = NULL;
-	mid->language = strdup("sql");
+	mid->language = NULL;
 
 	mid->languageId = LANG_SQL;
 	mid->noexplain = NULL;
@@ -1901,378 +1896,7 @@ mapi_new(void)
 
 	mid->first = NULL;
 
-	if (mid->hostname == NULL || mid->language == NULL) {
-		/* strdup failed, give up */
-		mapi_destroy(mid);
-		return NULL;
-	}
-
 	return mid;
-}
-
-Mapi
-mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang)
-{
-	char *uri;
-	char *host;
-	int port;
-	char *dbname;
-	char *p;
-	Mapi mid;
-
-	if (!mapi_initialized) {
-		mapi_initialized = 1;
-		if (mnstr_init() < 0)
-			return NULL;
-	}
-
-	mid = mapi_new();
-	if (mid == NULL)
-		return NULL;
-
-	if (url == NULL) {
-		mapi_setError(mid, "url is null", "mapi_mapiuri", MERROR);
-		return mid;
-	}
-	if (user == NULL) {
-		mapi_setError(mid, "user is null", "mapi_mapiuri", MERROR);
-		return mid;
-	}
-	if (pass == NULL) {
-		mapi_setError(mid, "pass is null", "mapi_mapiuri", MERROR);
-		return mid;
-	}
-	if (lang == NULL) {
-		mapi_setError(mid, "lang is null", "mapi_mapiuri", MERROR);
-		return mid;
-	}
-
-	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) != 0) {
-		mapi_setError(mid,
-			      "url has unsupported scheme, "
-			      "expecting mapi:monetdb://...",
-			      "mapi_mapiuri", MERROR);
-		return mid;
-	}
-
-	/* copy to a writable working buffer */
-	uri = strdup(url + sizeof("mapi:monetdb://") - 1);
-
-	if (uri[0] != '/') {
-		if ((p = strchr(uri, ':')) == NULL) {
-			mapi_setError(mid, "URI must contain a port number after "
-					"the hostname", "mapi_mapiuri", MERROR);
-			free(uri);
-			return mid;
-		}
-		*p++ = '\0';
-		dbname = p;		/* temp misuse */
-		host = uri;
-		if ((p = strchr(dbname, '/')) == NULL) {
-			p = dbname;
-			dbname = NULL;
-		} else {
-			*p++ = '\0';
-			if (*p == '\0') {
-				p = dbname;
-				dbname = NULL;
-			} else {
-				char *t = dbname;
-				dbname = p;
-				p = t;
-			}
-		}
-		port = atoi(p);
-		if (port <= 0) {
-			mapi_setError(mid, "URI contains invalid port",
-					"mapi_mapiuri", MERROR);
-			free(uri);
-			return mid;
-		}
-	} else {
-		host = uri;
-		port = 0;
-		dbname = NULL;
-	}
-
-	mid->port = port;
-	if (mid->username != NULL)
-		free(mid->username);
-	mid->username = strdup(user);
-	if (mid->password)
-		free(mid->password);
-	mid->password = strdup(pass);
-	free(mid->language);
-	mid->language = strdup(lang);
-	if (strcmp(lang, "mal") == 0 || strcmp(lang, "msql") == 0)
-		mid->languageId = LANG_MAL;
-	else if (strstr(lang, "sql") == lang)
-		mid->languageId = LANG_SQL;
-	else if (strstr(lang, "profiler") == lang)
-		mid->languageId = LANG_PROFILER;
-	if (mid->database)
-		free(mid->database);
-	mid->database = NULL;
-
-	/* this is in particular important for unix sockets */
-	parse_uri_query(mid, uri);
-
-	/* doing this here, because parse_uri_query will terminate the
-	 * string if a ? is in place */
-	if (mid->hostname)
-		free(mid->hostname);
-	mid->hostname = strdup(host);
-	if (mid->database == NULL && dbname != NULL)
-		mid->database = strdup(dbname);
-
-	set_uri(mid);
-	free(uri);
-
-	return mid;
-}
-
-/* Allocate a new connection handle and fill in the information needed
-   to connect to a server, but don't connect yet. */
-Mapi
-mapi_mapi(const char *host, int port, const char *username,
-	  const char *password, const char *lang, const char *dbname)
-{
-	Mapi mid;
-#ifdef HAVE_SYS_UN_H
-	char buf[1024];
-#endif
-
-	if (!mapi_initialized) {
-		mapi_initialized = 1;
-		if (mnstr_init() < 0)
-			return NULL;
-	}
-
-	mid = mapi_new();
-	if (mid == NULL)
-		return NULL;
-
-	/* connection searching strategy:
-	 * 0) if host and port are given, resort to those
-	 * 1) if no dbname given, make TCP connection (merovingian will
-	 *    complain regardless, so it is more likely an mserver is
-	 *    meant to be directly addressed)
-	 *    a) resort to default (hardwired) port 50000, unless port given, then
-	 *    b) resort to port given
-	 * 2) a dbname is given
-	 *    a) if a port is given, open unix socket for that port, resort
-	 *       to TCP connection if not found
-	 *    b) no port given, start looking for a matching merovingian, by
-	 *       searching through socket files, attempting connect to given
-	 *       dbname
-	 *       I) try available sockets that have a matching owner with
-	 *          the current user
-	 *       II) try other sockets
-	 *       III) resort to TCP connection on hardwired port
-	 *            (localhost:50000)
-	 */
-	if (host != NULL && port != 0) {
-		/* case 0), just do what the user told us */
-#ifdef HAVE_SYS_UN_H
-		if (*host == '/') {
-			/* don't stat or anything, the connect_to_server will return
-			 * the error if it doesn't exists, falling back to TCP with
-			 * a hostname like '/var/sockets' won't work anyway */
-			snprintf(buf, sizeof(buf), "%s/.s.monetdb.%d", host, port);
-			host = buf;
-		}
-#endif
-	} else if (dbname == NULL) {
-		/* case 1) */
-		if (port == 0)
-			port = 50000;	/* case 1a), hardwired default */
-		if (host == NULL)
-			host = "localhost";
-	} else {
-		/* case 2), dbname is given */
-		if (port != 0) {
-			/* case 2a), if unix socket found, use it, otherwise TCP */
-#ifdef HAVE_SYS_UN_H
-			struct stat st;
-			snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", port);
-			if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode))
-				host = buf;
-			else
-#endif
-				host = "localhost";
-		} else if (host != NULL) {
-#ifdef HAVE_SYS_UN_H
-			if (*host == '/') {
-				/* see comment above for why we don't stat */
-				snprintf(buf, sizeof(buf), "%s/.s.monetdb.50000", host);
-				host = buf;
-			}
-#endif
-			port = 50000;
-		} else {
-			/* case 2b), no host, no port, but a dbname, search for meros */
-#ifdef HAVE_SYS_UN_H
-			DIR *d;
-			struct dirent *e;
-			struct stat st;
-			char found = 0;
-			struct {
-				int port;
-				uid_t owner;
-			} socks[24];
-			int i = 0;
-			int len;
-			uid_t me = getuid();
-
-			d = opendir("/tmp");
-			if (d != NULL) {
-				while ((e = readdir(d)) != NULL) {
-					if (strncmp(e->d_name, ".s.monetdb.", 11) != 0)
-						continue;
-					if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= (int) sizeof(buf))
-						continue; /* ignore long name */
-					if (stat(buf, &st) != -1 && S_ISSOCK(st.st_mode)) {
-						socks[i].owner = st.st_uid;
-						socks[i++].port = atoi(e->d_name + 11);
-					}
-					if (i == sizeof(socks) / sizeof(socks[0]))
-						break;
-				}
-				closedir(d);
-				len = i;
-				/* case 2bI) first those with a matching owner */
-				for (i = 0; found == 0 && i < len; i++) {
-					if (socks[i].port != 0 &&
-					    socks[i].owner == me) {
-						Mapi tmid;
-						/* try this server for the database */
-						tmid = mapi_mapi("/tmp", socks[i].port, "mero", "mero",
-								 lang, dbname);
-						tmid->redirmax = 0;
-						if (connect_to_server(tmid) == MOK &&
-						    (mapi_start_talking(tmid) == MOK ||
-						     *tmid->redirects != NULL ||
-						     (tmid->errorstr != NULL &&
-						      strstr(tmid->errorstr, "under maintenance") != NULL))) {
-							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
-							host = buf;
-							port = socks[i].port;
-							found = 1;
-						}
-						mapi_disconnect(tmid);
-						mapi_destroy(tmid);
-						socks[i].port = 0; /* don't need to try again */
-					}
-				}
-				/* case 2bII) the other sockets */
-				for (i = 0; found == 0 && i < len; i++) {
-					if (socks[i].port != 0) {
-						Mapi tmid;
-						/* try this server for the database */
-						tmid = mapi_mapi("/tmp", socks[i].port, "mero", "mero",
-								lang, dbname);
-						tmid->redirmax = 0;
-						if (connect_to_server(tmid) == MOK &&
-						    (mapi_start_talking(tmid) == MOK ||
-						     *tmid->redirects != NULL ||
-						     (tmid->errorstr != NULL &&
-						      strstr(tmid->errorstr, "under maintenance") != NULL))) {
-							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
-							host = buf;
-							port = socks[i].port;
-							found = 1;
-						}
-						mapi_disconnect(tmid);
-						mapi_destroy(tmid);
-					}
-				}
-			}
-			if (!found)
-#endif
-			{
-				/* case 2bIII) resort to TCP connection on hardwired port */
-				host = "localhost";
-				port = 50000;
-			}
-		}
-	}
-
-	if (mid->hostname)
-		free(mid->hostname);
-	mid->hostname = strdup(host);
-
-	if (mid->username != NULL)
-		free(mid->username);
-	mid->username = username == NULL ? NULL : strdup(username);
-
-	if (mid->password)
-		free(mid->password);
-	mid->password = password == NULL ? NULL : strdup(password);
-
-	mid->port = port;
-
-	if (lang == NULL)
-		lang = "sql";
-	free(mid->language);
-	mid->language = strdup(lang);
-
-	if (strcmp(lang, "mal") == 0 || strcmp(lang, "msql") == 0)
-		mid->languageId = LANG_MAL;
-	else if (strstr(lang, "sql") == lang)
-		mid->languageId = LANG_SQL;
-	else if (strstr(lang, "profiler") == lang)
-		mid->languageId = LANG_PROFILER;
-
-	if (mid->database)
-		free(mid->database);
-	mid->database = dbname ? strdup(dbname) : NULL;
-
-	set_uri(mid);
-
-	return mid;
-}
-
-/* Close a connection and free all memory associated with the
-   connection handle. */
-MapiMsg
-mapi_destroy(Mapi mid)
-{
-	char **r;
-
-	mapi_clrError(mid);
-
-	while (mid->first)
-		mapi_close_handle(mid->first);
-	if (mid->connected)
-		(void) mapi_disconnect(mid);
-	if (mid->blk.buf)
-		free(mid->blk.buf);
-	if (mid->errorstr)
-		free(mid->errorstr);
-	if (mid->hostname)
-		free(mid->hostname);
-	if (mid->username)
-		free(mid->username);
-	if (mid->password)
-		free(mid->password);
-	if (mid->language)
-		free(mid->language);
-
-	if (mid->database)
-		free(mid->database);
-	if (mid->server)
-		free(mid->server);
-	if (mid->uri)
-		free(mid->uri);
-
-	r = mid->redirects;
-	while (*r) {
-		free(*r);
-		r++;
-	}
-
-	free(mid);
-	return MOK;
 }
 
 static void
@@ -2353,16 +1977,394 @@ set_uri(Mapi mid)
 	mid->uri = uri;
 }
 
+Mapi
+mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang)
+{
+	Mapi mid;
+	char *uri;
+	char *host;
+	int port;
+	char *dbname;
+
+	if (!mapi_initialized) {
+		mapi_initialized = 1;
+		if (mnstr_init() < 0)
+			return NULL;
+	}
+
+	mid = mapi_new();
+	if (mid == NULL)
+		return NULL;
+
+	if (url == NULL) {
+		mapi_setError(mid, "url is null", "mapi_mapiuri", MERROR);
+		return mid;
+	}
+	if (user == NULL) {
+		mapi_setError(mid, "user is null", "mapi_mapiuri", MERROR);
+		return mid;
+	}
+	if (pass == NULL) {
+		mapi_setError(mid, "pass is null", "mapi_mapiuri", MERROR);
+		return mid;
+	}
+	if (lang == NULL) {
+		mapi_setError(mid, "lang is null", "mapi_mapiuri", MERROR);
+		return mid;
+	}
+
+	if ((mid->username = strdup(user)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if ((mid->password = strdup(pass)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if ((mid->language = strdup(lang)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) != 0) {
+		mapi_setError(mid,
+			      "url has unsupported scheme, "
+			      "expecting mapi:monetdb://...",
+			      "mapi_mapiuri", MERROR);
+		return mid;
+	}
+	if ((uri = strdup(url + sizeof("mapi:monetdb://") - 1)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if (strcmp(lang, "mal") == 0 || strcmp(lang, "msql") == 0)
+		mid->languageId = LANG_MAL;
+	else if (strstr(lang, "sql") == lang)
+		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
+
+	if (uri[0] == '/') {
+		host = uri;
+		port = 0;
+		dbname = NULL;
+	} else {
+		char *p;
+
+		if ((p = strchr(uri, ':')) == NULL) {
+			free(uri);
+			mapi_setError(mid,
+				      "URI must contain a port number after "
+				      "the hostname",
+				      "mapi_mapiuri", MERROR);
+			return mid;
+		}
+		*p++ = 0;
+		host = uri;
+		if ((dbname = strchr(p, '/')) != NULL) {
+			*dbname++ = 0;
+			if (*dbname == 0) {
+				dbname = NULL;
+			}
+		}
+		port = atoi(p);
+		if (port <= 0) {
+			free(uri);
+			mapi_setError(mid,
+				      "URI contains invalid port",
+				      "mapi_mapiuri", MERROR);
+			return mid;
+		}
+	}
+	mid->port = port;
+
+	/* this is in particular important for unix sockets */
+	parse_uri_query(mid, uri);
+
+	/* doing this here, because parse_uri_query will
+	 * terminate the string if a ? is in place */
+	mid->hostname = strdup(host);
+	if (mid->database == NULL && dbname != NULL)
+		mid->database = strdup(dbname);
+
+	set_uri(mid);
+	free(uri);
+
+	return mid;
+}
+
+/* Allocate a new connection handle and fill in the information needed
+   to connect to a server, but don't connect yet. */
+Mapi
+mapi_mapi(const char *host, int port, const char *username,
+	  const char *password, const char *lang, const char *dbname)
+{
+	Mapi mid;
+
+	if (!mapi_initialized) {
+		mapi_initialized = 1;
+		if (mnstr_init() < 0)
+			return NULL;
+	}
+
+	mid = mapi_new();
+	if (mid == NULL)
+		return NULL;
+
+	if (lang == NULL)
+		lang = "sql";
+
+	if (host && (mid->hostname = strdup(host)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	mid->port = port;
+	if (username && (mid->username = strdup(username)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if (password && (mid->password = strdup(password)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if ((mid->language = strdup(lang)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if (dbname && (mid->database = strdup(dbname)) == NULL) {
+		mapi_destroy(mid);
+		return NULL;
+	}
+	if (strcmp(lang, "mal") == 0 || strcmp(lang, "msql") == 0)
+		mid->languageId = LANG_MAL;
+	else if (strstr(lang, "sql") == lang)
+		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
+
+	return mid;
+}
+
+/* Close a connection and free all memory associated with the
+   connection handle. */
+MapiMsg
+mapi_destroy(Mapi mid)
+{
+	char **r;
+
+	mapi_clrError(mid);
+
+	while (mid->first)
+		mapi_close_handle(mid->first);
+	if (mid->connected)
+		(void) mapi_disconnect(mid);
+	if (mid->blk.buf)
+		free(mid->blk.buf);
+	if (mid->errorstr)
+		free(mid->errorstr);
+	if (mid->hostname)
+		free(mid->hostname);
+	if (mid->username)
+		free(mid->username);
+	if (mid->password)
+		free(mid->password);
+	if (mid->language)
+		free(mid->language);
+
+	if (mid->database)
+		free(mid->database);
+	if (mid->server)
+		free(mid->server);
+	if (mid->uri)
+		free(mid->uri);
+
+	r = mid->redirects;
+	while (*r) {
+		free(*r);
+		r++;
+	}
+
+	free(mid);
+	return MOK;
+}
+
 /* (Re-)establish a connection with the server. */
-static MapiMsg
-connect_to_server(Mapi mid)
+MapiMsg
+mapi_reconnect(Mapi mid)
 {
 	SOCKET s = INVALID_SOCKET;
-
 	char errbuf[8096];
+	char buf[BLOCK];
+	size_t len;
+	MapiHdl hdl;
+	int pversion = 0;
+	char *chal;
+	char *server;
+	char *protover;
+	char *rest;
 
 	if (mid->connected)
 		close_connection(mid);
+	else if (mid->uri == NULL) {
+		/* continue work started by mapi_mapi */
+
+		/* connection searching strategy:
+		 * 0) if host and port are given, resort to those
+		 * 1) if no dbname given, make TCP connection
+		 *    (merovingian will complain regardless, so it is
+		 *    more likely an mserver is meant to be directly
+		 *    addressed)
+		 *    a) resort to default (hardwired) port 50000,
+		 *       unless port given, then
+		 *    b) resort to port given
+		 * 2) a dbname is given
+		 *    a) if a port is given, open unix socket for that
+		 *       port, resort to TCP connection if not found
+		 *    b) no port given, start looking for a matching
+		 *       merovingian, by searching through socket
+		 *       files, attempting connect to given dbname
+		 *       I) try available sockets that have a matching
+		 *          owner with the current user
+		 *       II) try other sockets
+		 *       III) resort to TCP connection on hardwired
+		 *            port (localhost:50000)
+		 */
+
+		char *host;
+		int port;
+#ifdef HAVE_SYS_UN_H
+		char buf[1024];
+#endif
+
+		host = mid->hostname;
+		port = mid->port;
+
+		if (host != NULL && port != 0) {
+			/* case 0), just do what the user told us */
+#ifdef HAVE_SYS_UN_H
+			if (*host == '/') {
+				/* don't stat or anything, the
+				 * mapi_reconnect will return the
+				 * error if it doesn't exists, falling
+				 * back to TCP with a hostname like
+				 * '/var/sockets' won't work anyway */
+				snprintf(buf, sizeof(buf),
+					 "%s/.s.monetdb.%d", host, port);
+				host = buf;
+			}
+#endif
+		} else if (mid->database == NULL) {
+			/* case 1) */
+			if (port == 0)
+				port = 50000;	/* case 1a), hardwired default */
+			if (host == NULL)
+				host = "localhost";
+		} else {
+			/* case 2), database name is given */
+			if (port != 0) {
+				/* case 2a), if unix socket found, use
+				 * it, otherwise TCP */
+#ifdef HAVE_SYS_UN_H
+				struct stat st;
+				snprintf(buf, sizeof(buf),
+					 "/tmp/.s.monetdb.%d", port);
+				if (stat(buf, &st) != -1 &&
+				    S_ISSOCK(st.st_mode))
+					host = buf;
+				else
+#endif
+					host = "localhost";
+			} else if (host != NULL) {
+#ifdef HAVE_SYS_UN_H
+				if (*host == '/') {
+					/* see comment above for why
+					 * we don't stat */
+					snprintf(buf, sizeof(buf),
+						 "%s/.s.monetdb.50000", host);
+					host = buf;
+				}
+#endif
+				port = 50000;
+			} else {
+				/* case 2b), no host, no port, but a
+				 * dbname, search for meros */
+#ifdef HAVE_SYS_UN_H
+				DIR *d;
+				struct dirent *e;
+				struct stat st;
+				struct {
+					int port;
+					uid_t owner;
+				} socks[24];
+				int i = 0;
+				int len;
+				uid_t me = getuid();
+
+				d = opendir("/tmp");
+				if (d != NULL) {
+					while ((e = readdir(d)) != NULL) {
+						if (strncmp(e->d_name, ".s.monetdb.", 11) != 0)
+							continue;
+						if (snprintf(buf, sizeof(buf), "/tmp/%s", e->d_name) >= (int) sizeof(buf))
+							continue; /* ignore long name */
+						if (stat(buf, &st) != -1 &&
+						    S_ISSOCK(st.st_mode)) {
+							socks[i].owner = st.st_uid;
+							socks[i++].port = atoi(e->d_name + 11);
+						}
+						if (i == sizeof(socks) / sizeof(socks[0]))
+							break;
+					}
+					closedir(d);
+					len = i;
+					/* case 2bI) first those with
+					 * a matching owner */
+					for (i = 0; i < len; i++) {
+						if (socks[i].port != 0 &&
+						    socks[i].owner == me) {
+							/* try this server for the database */
+							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
+							if (mid->hostname)
+								free(mid->hostname);
+							mid->hostname = strdup(buf);
+							mid->port = socks[i].port;
+							set_uri(mid);
+							if (mapi_reconnect(mid) == MOK)
+								return MOK;
+							mapi_clrError(mid);
+							socks[i].port = 0; /* don't need to try again */
+						}
+					}
+					/* case 2bII) the other sockets */
+					for (i = 0; i < len; i++) {
+						if (socks[i].port != 0) {
+							/* try this server for the database */
+							snprintf(buf, sizeof(buf), "/tmp/.s.monetdb.%d", socks[i].port);
+							if (mid->hostname)
+								free(mid->hostname);
+							mid->hostname = strdup(buf);
+							mid->port = socks[i].port;
+							set_uri(mid);
+							if (mapi_reconnect(mid) == MOK)
+								return MOK;
+							mapi_clrError(mid);
+						}
+					}
+				}
+#endif
+				/* case 2bIII) resort to TCP
+				 * connection on hardwired port */
+				host = "localhost";
+				port = 50000;
+			}
+		}
+		if (host != mid->hostname) {
+			if (mid->hostname)
+				free(mid->hostname);
+			mid->hostname = strdup(host);
+		}
+		mid->port = port;
+		set_uri(mid);
+	}
 
 #ifdef HAVE_SYS_UN_H
 	if (mid->hostname && mid->hostname[0] == '/') {
@@ -2527,33 +2529,20 @@ connect_to_server(Mapi mid)
 
 	mid->connected = 1;
 
-	return MOK;
-}
-
-MapiMsg
-mapi_start_talking(Mapi mid)
-{
-	char buf[BLOCK];
-	size_t len;
-	MapiHdl hdl;
-	int pversion = 0;
-	char *chal;
-	char *server;
-	char *protover;
-	char *rest;
-
 	if (!isa_block_stream(mid->to)) {
 		mid->to = block_stream(mid->to);
-		check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_start_talking", mid->error);
+		check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_reconnect", mid->error);
 
 		mid->from = block_stream(mid->from);
-		check_stream(mid, mid->from, mnstr_error(mid->from), "mapi_start_talking", mid->error);
+		check_stream(mid, mid->from, mnstr_error(mid->from), "mapi_reconnect", mid->error);
 	}
+
+  try_again_after_redirect:
 
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
 
-	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_reconnect", (mid->blk.eos = 1, mid->error));
 
 	assert(len < BLOCK);
 	buf[len] = 0;
@@ -2566,13 +2555,15 @@ mapi_start_talking(Mapi mid)
 	chal = buf;
 	server = strchr(chal, ':');
 	if (server == NULL) {
-		mapi_setError(mid, "Challenge string is not valid, server not found", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, server not found", "mapi_reconnect", MERROR);
+		close_connection(mid);
 		return mid->error;
 	}
 	*server++ = '\0';
 	protover = strchr(server, ':');
 	if (protover == NULL) {
-		mapi_setError(mid, "Challenge string is not valid, protocol not found", "mapi_start_talking", MERROR);
+		mapi_setError(mid, "Challenge string is not valid, protocol not found", "mapi_reconnect", MERROR);
+		close_connection(mid);
 		return mid->error;
 	}
 	*protover++ = '\0';
@@ -2600,7 +2591,8 @@ mapi_start_talking(Mapi mid)
 
 		if (mid->username == NULL || mid->password == NULL) {
 			mapi_setError(mid, "username and password must be set",
-					"mapi_start_talking", MERROR);
+					"mapi_reconnect", MERROR);
+			close_connection(mid);
 			return mid->error;
 		}
 
@@ -2610,7 +2602,8 @@ mapi_start_talking(Mapi mid)
 		if (rest == NULL) {
 			/* protocol violation, not enough fields */
 			mapi_setError(mid, "Not enough fields in challenge string",
-					"mapi_start_talking", MERROR);
+					"mapi_reconnect", MERROR);
+			close_connection(mid);
 			return mid->error;
 		}
 		hashes = rest;
@@ -2667,7 +2660,7 @@ mapi_start_talking(Mapi mid)
 				snprintf(buf, BLOCK, "server requires unknown hash '%.100s'",
 						serverhash);
 				close_connection(mid);
-				return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 			}
 
 			free(mid->password);
@@ -2697,7 +2690,7 @@ mapi_start_talking(Mapi mid)
 			/* the server doesn't support what we can */
 			snprintf(buf, BLOCK, "unsupported hash algorithms: %.100s", hashes);
 			close_connection(mid);
-			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+			return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 		}
 
 		mnstr_set_byteorder(mid->from, strcmp(byteo, "BIG") == 0);
@@ -2712,8 +2705,9 @@ mapi_start_talking(Mapi mid)
 #endif
 			     mid->username, hash, mid->language,
 			     mid->database == NULL ? "" : mid->database) >= BLOCK) {;
-			mapi_setError(mid, "combination of database name and user name too long", "mapi_start_talking", MERROR);
+			mapi_setError(mid, "combination of database name and user name too long", "mapi_reconnect", MERROR);
 			free(hash);
+			close_connection(mid);
 			return mid->error;
 		}
 
@@ -2724,7 +2718,8 @@ mapi_start_talking(Mapi mid)
 		 * with a friendly message saying so */
 		snprintf(buf, BLOCK, "unsupported protocol version: %d, "
 			 "this client only supports version 9", pversion);
-		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+		mapi_setError(mid, buf, "mapi_reconnect", MERROR);
+		close_connection(mid);
 		return mid->error;
 	}
 	if (mid->trace == MAPI_TRACE) {
@@ -2734,14 +2729,16 @@ mapi_start_talking(Mapi mid)
 	len = strlen(buf);
 	mnstr_write(mid->to, buf, 1, len);
 	mapi_log_record(mid, buf);
-	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
+	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 	mnstr_flush(mid->to);
-	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_start_talking", mid->error);
+	check_stream(mid, mid->to, "Could not send initial byte sequence", "mapi_reconnect", mid->error);
 
 	/* consume the welcome message from the server */
 	hdl = mapi_new_handle(mid);
-	if (hdl == NULL)
+	if (hdl == NULL) {
+		close_connection(mid);
 		return MERROR;
+	}
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	if (mid->error) {
@@ -2763,8 +2760,9 @@ mapi_start_talking(Mapi mid)
 			hdl->result->errorstr = NULL;	/* clear these so errorstr doesn't get freed */
 		mid->errorstr = NULL;
 		mapi_close_handle(hdl);
-		mapi_setError(mid, errorstr, "mapi_start_talking", error);
+		mapi_setError(mid, errorstr, "mapi_reconnect", error);
 		free(errorstr);	/* now free it after a copy has been made */
+		close_connection(mid);
 		return mid->error;
 	}
 	if (hdl->result && hdl->result->cache.line) {
@@ -2774,21 +2772,24 @@ mapi_start_talking(Mapi mid)
 
 		for (i = 0; i < result->cache.writer; i++) {
 			if (result->cache.line[i].rows) {
+				char **r;
+				int m;
 				switch (result->cache.line[i].rows[0]) {
 				case '#':
 					motdlen += strlen(result->cache.line[i].rows) + 1;
 					break;
-				case '^':{
-					char **r = mid->redirects;
-					int m = sizeof(mid->redirects) / sizeof(mid->redirects[0]) - 1;
-					for (; *r != NULL && m > 0; r++)
+				case '^':
+					r = mid->redirects;
+					m = sizeof(mid->redirects) / sizeof(mid->redirects[0]) - 1;
+					while (*r != NULL && m > 0) {
 						m--;
+						r++;
+					}
 					if (m == 0)
 						break;
 					*r++ = strdup(result->cache.line[i].rows + 1);
 					*r = NULL;
 					break;
-				}
 				}
 			}
 		}
@@ -2815,18 +2816,20 @@ mapi_start_talking(Mapi mid)
 			/* first see if we reached our redirection limit */
 			if (mid->redircnt >= mid->redirmax) {
 				mapi_close_handle(hdl);
-				mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
+				mapi_setError(mid, "too many redirects", "mapi_reconnect", MERROR);
+				close_connection(mid);
 				return mid->error;
 			}
 			/* we only implement following the first */
 			red = mid->redirects[0];
 
 			/* see if we can possibly handle the redirect */
-			if (strncmp("mapi:monetdb", red, 12) == 0) {
+			if (strncmp("mapi:monetdb://", red, 15) == 0) {
 				char *db = NULL;
 				/* parse components (we store the args
-				 * immediately in the mid... ok, that's dirty) */
-				red += strlen("mapi:monetdb://");
+				 * immediately in the mid... ok,
+				 * that's dirty) */
+				red += 15; /* "mapi:monetdb://" */
 				p = red;
 				q = NULL;
 				if ((red = strchr(red, ':')) != NULL) {
@@ -2880,13 +2883,14 @@ mapi_start_talking(Mapi mid)
 					*fr = NULL;
 					fr++;
 				}
-				return mapi_start_talking(mid);
+				goto try_again_after_redirect;
 			} else {
 				char re[BUFSIZ];
 				snprintf(re, sizeof(re),
 					 "error while parsing redirect: %.100s\n", red);
 				mapi_close_handle(hdl);
-				mapi_setError(mid, re, "mapi_start_talking", MERROR);
+				mapi_setError(mid, re, "mapi_reconnect", MERROR);
+				close_connection(mid);
 				return mid->error;
 			}
 		}
@@ -2901,17 +2905,6 @@ mapi_start_talking(Mapi mid)
 	/* tell server about cachelimit */
 	mapi_cache_limit(mid, mid->cachelimit);
 	return mid->error;
-}
-
-MapiMsg
-mapi_reconnect(Mapi mid)
-{
-	MapiMsg rc;
-
-	rc = connect_to_server(mid);
-	if (rc == MOK)
-		rc = mapi_start_talking(mid);
-	return rc;
 }
 
 /* Create a connection handle and connect to the server using the

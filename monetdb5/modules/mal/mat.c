@@ -326,7 +326,7 @@ MATpack2Internal(MalStkPtr stk, InstrPtr p)
 	b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-	bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
+	bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);

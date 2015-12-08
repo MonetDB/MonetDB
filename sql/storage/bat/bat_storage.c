@@ -505,7 +505,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			b = temp_descriptor(bat->ibid);
 		}
 		if (isVIEW(i) && b->batCacheid == abs(VIEWtparent(i))) {
-			BAT *ic = BATcopy(i, TYPE_void, i->ttype, TRUE, TRANSIENT);
+			BAT *ic = COLcopy(i, i->ttype, TRUE, TRANSIENT);
 			BATappend(b, ic, TRUE);
 			bat_destroy(ic);
 		} else 
@@ -1060,7 +1060,7 @@ copyBat (bat i, int type, oid seq)
 	b = BATconst(tb, type, ATOMnilptr(type), PERSISTENT);
 	bat_destroy(tb);
 	if (isVIEW(b)) {
-		tb = BATcopy(b, TYPE_void, b->ttype, TRUE, PERSISTENT);
+		tb = COLcopy(b, b->ttype, TRUE, PERSISTENT);
 		BATseqbase(b, 0); 
 		b->H->dense = 1;
 		bat_destroy(b);

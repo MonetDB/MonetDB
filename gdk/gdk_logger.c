@@ -1622,8 +1622,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			if (o_id == NULL || o_val == NULL)
 				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
 
-			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
-			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
+			lg->seqs_id = COLcopy(o_id, TYPE_int, 1, TRANSIENT);
+			lg->seqs_val = COLcopy(o_val, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
 			BATseqbase(lg->seqs_id, 0);
@@ -1650,7 +1650,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (lg->snapshots_bid->htype == TYPE_oid) {
 			BAT *b;
 			assert(lg->snapshots_tid->htype == TYPE_oid);
-			b = BATcopy(lg->snapshots_bid, TYPE_void, lg->snapshots_bid->ttype, 1, PERSISTENT);
+			b = COLcopy(lg->snapshots_bid, lg->snapshots_bid->ttype, 1, PERSISTENT);
 			BATseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
@@ -1661,7 +1661,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			logbat_destroy(lg->snapshots_bid);
 			lg->snapshots_bid = b;
 			logger_add_bat(lg, b, "snapshots_bid");
-			b = BATcopy(lg->snapshots_tid, TYPE_void, lg->snapshots_tid->ttype, 1, PERSISTENT);
+			b = COLcopy(lg->snapshots_tid, lg->snapshots_tid->ttype, 1, PERSISTENT);
 			BATseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);

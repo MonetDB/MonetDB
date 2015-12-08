@@ -159,6 +159,9 @@ AUTHinitTables(str *passwd) {
 		isNew = 0;
 	}
 	assert(user);
+	if( user->htype != TYPE_void){
+		throw(MAL, "initTables", INTERNAL_AUTHORIZATION " authorization table outdated !");
+	}
 
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
@@ -180,13 +183,14 @@ AUTHinitTables(str *passwd) {
 	}
 	assert(pass);
 
+	// automagically convert an old authorization table
 	if (user->htype == TYPE_oid) {
 		BAT *b;
 		char name[10];
 		bat blist[5];
 		assert(pass->htype == TYPE_oid);
 		blist[0] = 0;
-		b = BATcopy(user, TYPE_void, user->ttype, 1, PERSISTENT);
+		b = COLcopy(user, user->ttype, 1, PERSISTENT);
 		BATseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(user, TRANSIENT);
@@ -197,7 +201,7 @@ AUTHinitTables(str *passwd) {
 		blist[2] = b->batCacheid;
 		BBPunfix(user->batCacheid);
 		user = b;
-		b = BATcopy(pass, TYPE_void, pass->ttype, 1, PERSISTENT);
+		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
 		BATseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(pass, TRANSIENT);
@@ -604,7 +608,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = BATcopy(user, TYPE_void, user->ttype, FALSE, TRANSIENT);
+		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
 	}
 	return(NULL);
 }

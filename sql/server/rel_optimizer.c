@@ -7735,8 +7735,13 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_select] || gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
-	if (gp.cnt[op_project])
-		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &changes);
+	if (gp.cnt[op_project]) {
+		int lchanges = 0;
+		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &lchanges);
+		if (lchanges)
+			rel = rewrite(sql, rel, &rel_merge_projects, &lchanges);
+		changes += lchanges;
+	}
 
 	/* Remove unused expressions */
 	if (level <= 0)
