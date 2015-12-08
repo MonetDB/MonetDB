@@ -14,7 +14,6 @@
 #include "mal.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#include "mal_atom.h"		/* for showAtoms() */
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
