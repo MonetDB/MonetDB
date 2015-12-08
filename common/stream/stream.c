@@ -1978,6 +1978,10 @@ socket_update_timeout(stream *s)
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
+#endif
+
 static int
 socket_isalive(stream *s)
 {
@@ -1990,7 +1994,13 @@ socket_isalive(stream *s)
 	t.tv_usec = 0;
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
-	return select(fd + 1, &fds, NULL, NULL, &t) <= 0 ||
+	return select(
+#ifdef _MSC_VER
+		0,		/* ignored on Windows */
+#else
+		fd + 1,
+#endif
+		&fds, NULL, NULL, &t) <= 0 ||
 		recv(fd, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) != 0;
 }
 
