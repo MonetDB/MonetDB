@@ -1,32 +1,37 @@
 #include <Rdefines.h>
 #include "mal.h"
 
-#define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval)\
+#define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy)\
 	do {													\
 		tpe v; size_t j;									\
 		ctype *valptr = NULL;                               \
+		tpe* p = (tpe*) Tloc(bat,BUNfirst(bat));            \
 		retsxp = PROTECT(newfun(BATcount(bat)));		    \
 		valptr = ptrfun(retsxp);                            \
 		if (bat->T->nonil && !bat->T->nil) {                \
-			for (j = 0; j < BATcount(bat); j++) {           \
-				valptr[j] =                         \
-				(ctype) ((tpe*) Tloc(bat, BUNfirst(bat)))[j];\
-			}                                               \
+			if (memcopy) {									\
+				memcpy(valptr, Tloc(bat, BUNfirst(bat)),    \
+					BATcount(bat) * sizeof(tpe));           \
+			} else {                                        \
+				for (j = 0; j < BATcount(bat); j++) {       \
+					valptr[j] = (ctype) p[j];               \
+				}                                           \
+			} 												\
 		} else {                                            \
 		for (j = 0; j < BATcount(bat); j++) {				\
-			v = ((tpe*) Tloc(bat, BUNfirst(bat)))[j];		\
+			v = p[j];                                       \
 			if ( v == tpe##_nil)							\
-				valptr[j] = naval;	                \
+				valptr[j] = naval;	                        \
 			else											\
-				valptr[j] = (ctype)v;	            \
+				valptr[j] = (ctype) v;	                    \
 		}}													\
 	} while (0)
 
-#define BAT_TO_INTSXP(bat,tpe,retsxp)						\
-	BAT_TO_SXP(bat,tpe,retsxp,NEW_INTEGER,INTEGER_POINTER,int,NA_INTEGER)\
+#define BAT_TO_INTSXP(bat,tpe,retsxp,memcopy)						\
+	BAT_TO_SXP(bat,tpe,retsxp,NEW_INTEGER,INTEGER_POINTER,int,NA_INTEGER,memcopy)\
 
-#define BAT_TO_REALSXP(bat,tpe,retsxp)						\
-	BAT_TO_SXP(bat,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL)\
+#define BAT_TO_REALSXP(bat,tpe,retsxp,memcopy)						\
+	BAT_TO_SXP(bat,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy)\
 
 
 #define SCALAR_TO_INTSXP(tpe,retsxp)					\
@@ -40,7 +45,7 @@
 			INTEGER_POINTER(retsxp)[0] = 	(int)v;		\
 	} while (0)
 
-#define SCALAR_TO_REALSXP(tpe,retsxp) \
+#define SCALAR_TO_REALSXP(tpe,retsxp)                   \
 	do {												\
 		tpe v;											\
 		retsxp = PROTECT(NEW_NUMERIC(1));				\
@@ -83,27 +88,29 @@ static SEXP bat_to_sexp(BAT* b) {
 	// TODO: deal with SQL types (DECIMAL/DATE)
 	switch (ATOMstorage(getColumnType(b->T->type))) {
 		case TYPE_bte:
-			BAT_TO_INTSXP(b, bte, varvalue);
+			BAT_TO_INTSXP(b, bte, varvalue,0);
 			break;
 		case TYPE_sht:
-			BAT_TO_INTSXP(b, sht, varvalue);
+			BAT_TO_INTSXP(b, sht, varvalue,0);
 			break;
 		case TYPE_int:
-			BAT_TO_INTSXP(b, int, varvalue);
+			// special case: memcpy for int-to-int conversion without NULLs
+			BAT_TO_INTSXP(b, int, varvalue, 1);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge: /* R's integers are stored as int, so we cannot be sure hge will fit */
-			BAT_TO_REALSXP(b, hge, varvalue);
+			BAT_TO_REALSXP(b, hge, varvalue, 0);
 			break;
 #endif
 		case TYPE_flt:
-			BAT_TO_REALSXP(b, flt, varvalue);
+			BAT_TO_REALSXP(b, flt, varvalue, 0);
 			break;
 		case TYPE_dbl:
-			BAT_TO_REALSXP(b, dbl, varvalue);
+			// special case: memcpy for double-to-double conversion without NULLs
+			BAT_TO_REALSXP(b, dbl, varvalue, 1);
 			break;
 		case TYPE_lng: /* R's integers are stored as int, so we cannot be sure long will fit */
-			BAT_TO_REALSXP(b, lng, varvalue);
+			BAT_TO_REALSXP(b, lng, varvalue, 0);
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
 			BUN p = 0, q = 0, j = 0;
