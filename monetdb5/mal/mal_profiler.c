@@ -28,6 +28,7 @@ stream *eventstream = 0;
 static int sqlProfiling = FALSE;
 static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
+static str prettify = "\n"; /* or ' ' for single line json output */
 
 static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
@@ -130,7 +131,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	/* make profile event tuple  */
 	lognew();
-	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
+	logadd("{%s\"event\":         ,%s",prettify,prettify); // fill in later with the event counter
 
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
@@ -145,29 +146,29 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	/* there should be less than 10^6 == 1M usecs in 1 sec */
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
 	if( usrname)
-		logadd("\"user\":\"%s\",\n",usrname);
-	logadd("\"clk\":"LLFMT",\n",GDKusec());
-	logadd("\"ctime\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
-	logadd("\"thread\":%d,\n", THRgettid());
+		logadd("\"user\":\"%s\",%s",usrname, prettify);
+	logadd("\"clk\":"LLFMT",%s",GDKusec(),prettify);
+	logadd("\"ctime\":\"%s.%06ld\",%s", tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
-	logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
-	logadd("\"pc\":%d,\n", mb?getPC(mb,pci):0);
-	logadd("\"tag\":%d,\n", stk?stk->tag:0);
+	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
+	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
+	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 
 	if( start){
-		logadd("\"state\":\"start\",\n");
+		logadd("\"state\":\"start\",%s", prettify);
 		// determine the Estimated Time of Completion
 		if ( pci->calls){
-			logadd("\"usec\":"LLFMT",\n", pci->totticks/pci->calls);
+			logadd("\"usec\":"LLFMT",%s", pci->totticks/pci->calls, prettify);
 		} else{
-			logadd("\"usec\":"LLFMT",\n", pci->ticks);
+			logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 		}
 	} else {
-		logadd("\"state\":\"done\",\n");
-		logadd("\"usec\":"LLFMT",\n", pci->ticks);
+		logadd("\"state\":\"done\",%s", prettify);
+		logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 	}
-	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
-	logadd("\"size\":"LLFMT ",\n", pci? pci->wbytes/1024/1024:0);	// result size
+	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
+	logadd("\"size\":"LLFMT ",%s", pci? pci->wbytes/1024/1024:0, prettify);	// result size
 
 #ifdef NUMAprofiling
 		logadd("\"numa\":[");
@@ -175,21 +176,21 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		for( i= pci->retc ; i < pci->argc; i++)
 		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
 			logadd("%c %d", (i?',':' '), mb->var[getArg(pci,i)]->worker);
-		logadd("],\n");
+		logadd("],%s", prettify);
 #endif
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("\"inblock\":%ld,%s", infoUsage.ru_inblock - prevUsage.ru_inblock, prettify);
 	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		logadd("\"oublock\":%ld,%s", infoUsage.ru_oublock - prevUsage.ru_oublock, prettify);
 	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("\"majflt\":%ld,%s", infoUsage.ru_majflt - prevUsage.ru_majflt, prettify);
 	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("\"nswap\":%ld,s%sn", infoUsage.ru_nswap - prevUsage.ru_nswap, prettify);
 	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		logadd("\"nvcsw\":%ld,%s", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw, prettify);
 	prevUsage = infoUsage;
 #endif
 
@@ -208,7 +209,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		if( *c){
 			stmtq = mal_quote(c, strlen(c));
 			if (stmtq != NULL) {
-				logadd("\"stmt\":\"%s\",\n", stmtq);
+				logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
 				//GDKfree(stmtq);
 			}
 		} 
@@ -219,7 +220,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		stmt = shortStmtRendering(mb, stk, pci);
 		stmtq = mal_quote(stmt, strlen(stmt));
 		if (stmtq != NULL) {
-			logadd("\"short\":\"%s\",\n", stmtq);
+			logadd("\"short\":\"%s\",%s", stmtq, prettify);
 			GDKfree(stmtq);
 		} 
 		GDKfree(stmt);
@@ -246,9 +247,9 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		}
 //#define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
-		logadd("\"prereq\":%s],\n", prereq);
+		logadd("\"prereq\":%s],%s", prereq, prettify);
 #else
-		logadd("\"prereq\":%s]\n", prereq);
+		logadd("\"prereq\":%s]%s", prereq, prettify);
 #endif
 		
 /* EXAMPLE MAL statement argument decomposition
@@ -288,7 +289,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 				GDKfree(stmtq);
 			}
 			GDKfree(tname);
-			logadd("}%s\n", (j< pci->argc-1?",":""));
+			logadd("}%s%s", (j< pci->argc-1?",":""), prettify);
 		}
 #endif
 	}
@@ -381,7 +382,7 @@ profilerHeartbeatEvent(char *alter)
 	clk = clock.tv_sec;
 	
 	lognew();
-	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
+	logadd("{\n\"event\":         ,%s",prettify); // fill in later with the event counter
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
@@ -392,24 +393,24 @@ profilerHeartbeatEvent(char *alter)
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
-	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
+	logadd("\"time\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("\"inblock\":%ld,%s", infoUsage.ru_inblock - prevUsage.ru_inblock, prettify);
 	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		logadd("\"oublock\":%ld,%s", infoUsage.ru_oublock - prevUsage.ru_oublock, prettify);
 	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("\"majflt\":%ld,%s", infoUsage.ru_majflt - prevUsage.ru_majflt, prettify);
 	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("\"nswap\":%ld,%s", infoUsage.ru_nswap - prevUsage.ru_nswap, prettify);
 	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		logadd("\"nvcsw\":%ld,%s", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw, prettify);
 	prevUsage = infoUsage;
 #endif
-	logadd("\"state\":\"%s\",\n",alter);
-	logadd("\"cpuload\":\"%s\",\n",cpuload);
+	logadd("\"state\":\"%s\",%s",alter,prettify);
+	logadd("\"cpuload\":\"%s\",%s",cpuload,prettify);
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }
@@ -436,7 +437,12 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 
 /* The first scheme dumps the events
  * on a stream (and in the pool)
+ * The mode encodes two flags: 
+ * - showing all running instructions
+ * - single line json
  */
+#define PROFSHOWRUNNING	1
+#define PROFSINGLELINE 2
 str
 openProfilerStream(stream *fd, int mode)
 {
@@ -455,8 +461,10 @@ openProfilerStream(stream *fd, int mode)
 		closeProfilerStream();
 	malProfileMode = -1;
 	eventstream = fd;
+	prettify = (mode & PROFSINGLELINE) ? " ": "\n";
+
 	/* show all in progress instructions for stethoscope startup */
-	if( mode > 0){
+	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
 			if ( c->active ) 
