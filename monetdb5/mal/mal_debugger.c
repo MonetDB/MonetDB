@@ -442,10 +442,6 @@ retryRead:
 		case 0:
 			m = 0;
 			break;
-		case 'a':
-			if (strncmp("atom", b, 1) == 0)
-				showAtoms(out);
-			break;
 		case 'c':
 			if (strncmp("catch", b, 3) == 0) {
 				/* catch the next exception */
