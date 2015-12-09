@@ -455,7 +455,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
     return(invisible(TRUE))
   }
   if (is.vector(value) && !is.list(value)) value <- data.frame(x=value, stringsAsFactors=F)
-  if (length(value)<1) stop("value must have at least one column")
+  if (length(value) < 1) stop("value must have at least one column")
   if (is.null(names(value))) names(value) <- paste("V", 1:length(value), sep='')
   if (length(value[[1]])>0) {
     if (!is.data.frame(value)) value <- as.data.frame(value, row.names=1:length(value[[1]]) , stringsAsFactors=F)
@@ -853,11 +853,12 @@ setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, header=TRUE, 
                                                locked=FALSE, best.effort=FALSE, na.strings="", nrow.check=500, 
                                                delim=",", newline="\\n", quote="\"", create=TRUE, 
-                                               col.names=NULL, lower.case.names=FALSE, ...){
+                                               col.names=NULL, lower.case.names=FALSE, sep=delim, ...){
   
   if (length(na.strings)>1) stop("na.strings must be of length 1")
-  headers <- lapply(files, utils::read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, header=header, ...)
+  if (!missing(sep)) delim <- sep
 
+  headers <- lapply(files, utils::read.csv, sep=delim, na.strings=na.strings, quote=quote, nrows=nrow.check, header=header, ...)
   if (length(files)>1){
     nn <- sapply(headers, ncol)
     if (!all(nn==nn[1])) stop("Files have different numbers of columns")

@@ -1354,7 +1354,8 @@ as_subquery_clause:
  ;
 
 with_or_without_data:
-     WITH NO DATA  	{ $$ = 0; }
+	 /* empty */	{ $$ = 1; }
+ |   WITH NO DATA  	{ $$ = 0; }
  |   WITH DATA 		{ $$ = 1; }
  ;
 

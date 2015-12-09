@@ -10,7 +10,7 @@
 		valptr = ptrfun(retsxp);                            \
 		if (bat->T->nonil && !bat->T->nil) {                \
 			if (memcopy) {									\
-				memcpy(valptr, Tloc(bat, BUNfirst(bat)),    \
+				memcpy(valptr, p,                           \
 					BATcount(bat) * sizeof(tpe));           \
 			} else {                                        \
 				for (j = 0; j < BATcount(bat); j++) {       \
