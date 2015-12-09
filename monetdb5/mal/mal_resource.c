@@ -13,7 +13,7 @@
 #include "mal_private.h"
 
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if ((X) && (X)->mask) vol = (((X)->mask + cnt ) * (X)-> width); else vol = 0;
+#define hashinfo(X) if ((X) && (X) != (Hash *) 1 && (X)->mask) vol = (((X)->mask + cnt ) * (X)-> width); else vol = 0;
 
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */

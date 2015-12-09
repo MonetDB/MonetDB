@@ -149,7 +149,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	va_start(va, value);
 	b = full_column(tr, c);
 	if ((n = va_arg(va, sql_column *)) == NULL) {
-		if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
+		if (BAThash(b, 0) == GDK_SUCCEED) {
 			BATiter cni = bat_iterator(b);
 			BUN p;
 
@@ -318,8 +318,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	if (key_value_low) {
-		if (!b->T->hash)
-			BAThash(b, 0);
+		BAThash(b, 0);
 		r = BATsubselect(b, s, kvl, kvh, 1, hi, 0);
 		bat_destroy(s);
 		s = r;

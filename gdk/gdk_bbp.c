@@ -1569,14 +1569,14 @@ BBPdump(void)
 			HEAPvmsize(&b->H->heap),
 			HEAPmemsize(b->H->vheap),
 			HEAPvmsize(b->H->vheap),
-			b->H->hash && b->H->hash != (Hash *) -1 ? HEAPmemsize(b->H->hash->heap) : 0,
-			b->H->hash && b->H->hash != (Hash *) -1 ? HEAPvmsize(b->H->hash->heap) : 0,
+			b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1 ? HEAPmemsize(b->H->hash->heap) : 0,
+			b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1 ? HEAPvmsize(b->H->hash->heap) : 0,
 			HEAPmemsize(&b->T->heap),
 			HEAPvmsize(&b->T->heap),
 			HEAPmemsize(b->T->vheap),
 			HEAPvmsize(b->T->vheap),
-			b->T->hash && b->T->hash != (Hash *) -1 ? HEAPmemsize(b->T->hash->heap) : 0,
-			b->T->hash && b->T->hash != (Hash *) -1 ? HEAPvmsize(b->T->hash->heap) : 0);
+			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPmemsize(b->T->hash->heap) : 0,
+			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPvmsize(b->T->hash->heap) : 0);
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 			cmem += HEAPmemsize(&b->H->heap);
 			cvm += HEAPvmsize(&b->H->heap);
@@ -1595,7 +1595,7 @@ BBPdump(void)
 				vm += HEAPvmsize(b->H->vheap);
 			}
 		}
-		if (b->H->hash && b->H->hash != (Hash *) -1) {
+		if (b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->H->hash->heap);
 				cvm += HEAPvmsize(b->H->hash->heap);
@@ -1620,7 +1620,7 @@ BBPdump(void)
 				vm += HEAPvmsize(b->T->vheap);
 			}
 		}
-		if (b->T->hash && b->T->hash != (Hash *) -1) {
+		if (b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->T->hash->heap);
 				cvm += HEAPvmsize(b->T->hash->heap);
@@ -3873,18 +3873,35 @@ BBPdiskscan(const char *parent)
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
+		} else if (strncmp(p + 1, "hhash", 5) == 0) {
+#ifdef PERSISTENTHASH
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+			if (!delete)
+				b->H->hash = (Hash *) 1;
+#else
+			delete = TRUE;
+#endif
 		} else if (strncmp(p + 1, "hhash", 5) == 0 ||
 			   strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
+			if (!delete)
+				b->T->hash = (Hash *) 1;
 #else
 			delete = TRUE;
 #endif
-		} else if (strncmp(p + 1, "himprints", 9) == 0 ||
-			   strncmp(p + 1, "timprints", 9) == 0) {
+		} else if (strncmp(p + 1, "himprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
+			if (!delete)
+				b->H->imprints = (Imprints *) 1;
+		} else if (strncmp(p + 1, "timprints", 9) == 0) {
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+			if (!delete)
+				b->T->imprints = (Imprints *) 1;
 		} else if (strncmp(p + 1, "priv", 4) != 0 &&
 			   strncmp(p + 1, "new", 3) != 0 &&
 			   strncmp(p + 1, "head", 4) != 0 &&

@@ -1763,7 +1763,7 @@ BUNfnd(BAT *b, const void *v)
 		return r;
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
-	if (!b->T->hash) {
+	if (!BATcheckhash(b)) {
 		if (BATtordered(b) || BATtrevordered(b))
 			return SORTfnd(b, v);
 	}
@@ -1894,6 +1894,8 @@ BUNlocate(BAT *b, const void *x, const void *y)
 		 * strategy: create a hash on both columns, and select
 		 * the column with the best distribution
 		 */
+		BATcheckhash(b);
+		BATcheckhash(BATmirror(b));
 		if ((b->T->hash && b->H->hash == NULL) || !dohash(b->H))
 			usemirror();
 		if (b->H->hash == NULL && (v = VIEWcreate_(b, b, TRUE)) != NULL) {
@@ -2116,8 +2118,8 @@ BATvmsize(BAT *b, int dirty)
 		dirty = 0;
 	return (!dirty || b->H->heap.dirty ? HEAPvmsize(&b->H->heap) : 0) +
 		(!dirty || b->T->heap.dirty ? HEAPvmsize(&b->T->heap) : 0) +
-		((!dirty || b->H->heap.dirty) && b->H->hash ? HEAPvmsize(b->H->hash->heap) : 0) +
-		((!dirty || b->T->heap.dirty) && b->T->hash ? HEAPvmsize(b->T->hash->heap) : 0) +
+		((!dirty || b->H->heap.dirty) && b->H->hash && b->H->hash != (Hash *) 1 ? HEAPvmsize(b->H->hash->heap) : 0) +
+		((!dirty || b->T->heap.dirty) && b->T->hash && b->T->hash != (Hash *) 1 ? HEAPvmsize(b->T->hash->heap) : 0) +
 		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPvmsize(b->H->vheap) : 0) +
 		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPvmsize(b->T->vheap) : 0);
 }
@@ -2132,8 +2134,8 @@ BATmemsize(BAT *b, int dirty)
 	return (!dirty || b->batDirtydesc ? sizeof(BATstore) : 0) +
 		(!dirty || b->H->heap.dirty ? HEAPmemsize(&b->H->heap) : 0) +
 		(!dirty || b->T->heap.dirty ? HEAPmemsize(&b->T->heap) : 0) +
-		((!dirty || b->H->heap.dirty) && b->H->hash ? HEAPmemsize(b->H->hash->heap) : 0) +
-		((!dirty || b->T->heap.dirty) && b->T->hash ? HEAPmemsize(b->T->hash->heap) : 0) +
+		((!dirty || b->H->heap.dirty) && b->H->hash && b->H->hash != (Hash *) 1 ? HEAPmemsize(b->H->hash->heap) : 0) +
+		((!dirty || b->T->heap.dirty) && b->T->hash && b->T->hash != (Hash *) 1 ? HEAPmemsize(b->T->hash->heap) : 0) +
 		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPmemsize(b->H->vheap) : 0) +
 		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPmemsize(b->T->vheap) : 0);
 }

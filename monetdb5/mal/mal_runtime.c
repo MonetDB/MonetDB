@@ -21,7 +21,7 @@
 #include "mal_authorize.h"
 
 #define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
-#define hashinfo(X) (((X) && (X)->mask)? ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int):  0)
+#define hashinfo(X) (((X) && (X) != (Hash *) 1 && (X)->mask)? ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int):  0)
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;

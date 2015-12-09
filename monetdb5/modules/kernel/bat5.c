@@ -312,10 +312,10 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	infoHeap(bk, bv, b->T->vheap, "theap.");
 
 	/* dump index information */
-	if (b->H->hash) {
+	if (b->H->hash && b->H->hash != (Hash *) 1) {
 		HASHinfo(bk, bv, b->H->hash, "hhash->");
 	}
-	if (b->T->hash) {
+	if (b->T->hash && b->T->hash != (Hash *) 1) {
 		HASHinfo(bk, bv, b->T->hash, "thash->");
 	}
 	assert(BATcount(bk) == BATcount(bv));

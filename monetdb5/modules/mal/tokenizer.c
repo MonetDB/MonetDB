@@ -68,8 +68,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BATiter biidx = bat_iterator(bidx);
 
 	BUN p;
-	if (b->T->hash == NULL)
-		BAThash(b, 2 * BATcount(b));
+	BAThash(b, 2 * BATcount(b));
 	HASHloop_str(bi, b->T->hash, p, part)
 	{
 		if (*((oid *) BUNtail(biidx, p)) == *prv) {
@@ -349,6 +348,7 @@ TKNZRappend(oid *pos, str *s)
 					OPERATION_FAILED " could not append");
 		}
 		if (tokenBAT[i].val->T->hash == NULL ||
+			tokenBAT[i].val->T->hash == (Hash *) 1 ||
 			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->T->hash->mask) {
 			HASHdestroy(tokenBAT[i].val);
 			BAThash(tokenBAT[i].val, 2 * BATcount(tokenBAT[i].val));
@@ -367,6 +367,7 @@ TKNZRappend(oid *pos, str *s)
 	comp = COMP(prv, depth);
 	BUNappend(tokenBAT[INDEX].val, (ptr) & comp, TRUE);
 	if (tokenBAT[INDEX].val->T->hash == NULL ||
+		tokenBAT[INDEX].val->T->hash == (Hash *) 1 ||
 		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->T->hash->mask) {
 		HASHdestroy(tokenBAT[INDEX].val);
 		BAThash(tokenBAT[INDEX].val, 2 * BATcount(tokenBAT[INDEX].val));

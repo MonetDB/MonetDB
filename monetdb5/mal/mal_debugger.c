@@ -1477,7 +1477,7 @@ memProfileVector(stream *out, int cells)
 				mnstr_printf(out, "\ttheap=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
 			}
 			h = b->T->hash;
-			if (h && h->mask) {
+			if (h && h != (Hash *) 1 && h->mask) {
 				mnstr_printf(out, "\tthash=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h, sizeof(*h));
 				mnstr_printf(out, "\tthashlink=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST h->Link,
 						(h->mask + h->lim + 1) * sizeof(int));
