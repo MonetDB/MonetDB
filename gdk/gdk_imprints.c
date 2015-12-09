@@ -559,8 +559,8 @@ do {									\
  * a view and there are imprints on b's parent.
  *
  * Note that the b->T->imprints pointer can be NULL, meaning there are
- * no imprints; (Heap *) 1, meaning there are no imprints loaded, but
- * they may exist on disk; or a valid pointer to loaded imprints.
+ * no imprints; (Imprints *) 1, meaning there are no imprints loaded,
+ * but they may exist on disk; or a valid pointer to loaded imprints.
  * These values are maintained here, in the IMPSdestroy and IMPSfree
  * functions, and in BBPdiskscan during initialization. */
 int
