@@ -323,8 +323,8 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		}
 		heap(1,&c->H->heap,hbuns,"hbuns");
 		heap(1,&c->T->heap,tbuns,"tbuns");
-		heap(c->H->hash,c->H->hash->heap,hhsh,"hhsh");
-		heap(c->T->hash,c->T->hash->heap,thsh,"thsh");
+		heap(c->H->hash && c->H->hash != (Hash *) 1,c->H->hash->heap,hhsh,"hhsh");
+		heap(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
 		heap(c->H->vheap,c->H->vheap,head,"head");
 		heap(c->T->vheap,c->T->vheap,tail,"tail");
 	}
@@ -423,8 +423,8 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		}
 		heapvm(1,&c->H->heap,hbuns,"hcuns");
 		heapvm(1,&c->T->heap,tbuns,"tcuns");
-		heapvm(c->H->hash,c->H->hash->heap,hhsh,"hshh");
-		heapvm(c->T->hash,c->T->hash->heap,thsh,"thsh");
+		heapvm(c->H->hash && c->H->hash != (Hash *) 1,c->H->hash->heap,hhsh,"hshh");
+		heapvm(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
 		heapvm(c->H->vheap,c->H->vheap,head,"head");
 		heapvm(c->T->vheap,c->T->vheap,tail,"tail");
 	}

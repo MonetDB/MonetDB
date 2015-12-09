@@ -40,7 +40,7 @@ setaccess(BAT *b, int mode)
 
 	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
 		if (b->batSharecnt && mode != BAT_READ) {
-			bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
+			bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, mode);
 		} else {
@@ -227,7 +227,7 @@ BKCmirror(bat *ret, const bat *bid)
 	if (bn != NULL) {
 		if (b->batRestricted == BAT_WRITE) {
 			BAT *bn1;
-			bn1 = BATcopy(bn, TYPE_void, bn->ttype, FALSE, TRANSIENT);
+			bn1 = COLcopy(bn, bn->ttype, FALSE, TRANSIENT);
 			BBPreclaim(bn);
 			bn = bn1;
 		}

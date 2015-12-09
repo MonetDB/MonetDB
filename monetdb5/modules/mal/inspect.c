@@ -434,10 +434,10 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 
-	b = BATcopy(GDKkey, TYPE_void, GDKkey->ttype, 0, TRANSIENT);
+	b = COLcopy(GDKkey, GDKkey->ttype, 0, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
-	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0, TRANSIENT);
+	bn = COLcopy(GDKval, GDKval->ttype, 0, TRANSIENT);
 	if (bn == 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);

@@ -107,7 +107,7 @@ log_find(BAT *b, BAT *d, int val)
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
-	if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
+	if (BAThash(b, 0) == GDK_SUCCEED) {
 		HASHloop_int(cni, cni.b->T->hash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
@@ -882,7 +882,10 @@ logger_open(logger *lg)
 		return LOG_ERR;
 	}
 	if ((bid = logger_find_bat(lg, "seqs_id")) != 0) {
-		BAT *b = BATdescriptor(bid);
+		int dbg = GDKdebug;
+		BAT *b;
+		GDKdebug &= ~CHECKMASK;
+		b = BATdescriptor(bid);
 		BATmode(b, TRANSIENT);
 		logger_del_bat(lg, bid);
 		logbat_destroy(b);
@@ -891,6 +894,7 @@ logger_open(logger *lg)
 		BATmode(b, TRANSIENT);
 		logger_del_bat(lg, bid);
 		logbat_destroy(b);
+		GDKdebug = dbg;
 		if (bm_commit(lg) != LOG_OK)
 			return LOG_ERR;
 	}
@@ -1627,8 +1631,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			if (o_id == NULL || o_val == NULL)
 				logger_fatal("Logger_new: inconsistent database: cannot find seqs bats", 0, 0, 0);
 
-			lg->seqs_id = BATcopy(o_id, TYPE_void, TYPE_int, 1, TRANSIENT);
-			lg->seqs_val = BATcopy(o_val, TYPE_void, TYPE_lng, 1, TRANSIENT);
+			lg->seqs_id = COLcopy(o_id, TYPE_int, 1, TRANSIENT);
+			lg->seqs_val = COLcopy(o_val, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
 			BATseqbase(lg->seqs_id, 0);
@@ -1655,7 +1659,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (lg->snapshots_bid->htype == TYPE_oid) {
 			BAT *b;
 			assert(lg->snapshots_tid->htype == TYPE_oid);
-			b = BATcopy(lg->snapshots_bid, TYPE_void, lg->snapshots_bid->ttype, 1, PERSISTENT);
+			b = COLcopy(lg->snapshots_bid, lg->snapshots_bid->ttype, 1, PERSISTENT);
 			BATseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
@@ -1666,7 +1670,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			logbat_destroy(lg->snapshots_bid);
 			lg->snapshots_bid = b;
 			logger_add_bat(lg, b, "snapshots_bid");
-			b = BATcopy(lg->snapshots_tid, TYPE_void, lg->snapshots_tid->ttype, 1, PERSISTENT);
+			b = COLcopy(lg->snapshots_tid, lg->snapshots_tid->ttype, 1, PERSISTENT);
 			BATseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
@@ -2855,7 +2859,7 @@ logger_find_bat(logger *lg, const char *name)
 	BATiter cni = bat_iterator(lg->catalog_nme);
 	BUN p;
 
-	if (lg->catalog_nme->T->hash || BAThash(lg->catalog_nme, 0) == GDK_SUCCEED) {
+	if (BAThash(lg->catalog_nme, 0) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->T->hash, p, name) {
 			oid pos = p;
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)

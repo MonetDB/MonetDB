@@ -499,18 +499,21 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			gn = BATcopy(g, g->htype, g->ttype, 0, TRANSIENT);
+			assert(g->htype == TYPE_void);
+			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			*groups = gn;
 			if (extents) {
-				en = BATcopy(e, e->htype, e->ttype, 0, TRANSIENT);
+				assert(e->htype == TYPE_void);
+				en = COLcopy(e, e->ttype, 0, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				hn = BATcopy(h, h->htype, h->ttype, 0, TRANSIENT);
+				assert(h->htype == TYPE_void);
+				hn = COLcopy(h, h->ttype, 0, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;

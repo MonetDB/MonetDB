@@ -535,7 +535,7 @@ resolveType(int dsttype, int srctype)
 			GDKfree(tpe3);
 		}
 #endif
-		return newBatType(TYPE_oid, t3);
+		return newBatType(TYPE_void, t3);
 	}
 #ifdef DEBUG_MAL_RESOLVE
 	if (tracefcn)
@@ -843,7 +843,7 @@ getPolyType(malType t, int *polytype)
 
 	tail = ti == 0 ? getColumnType(t) : polytype[ti];
 	if (isaBatType(t)) 
-		return newBatType(TYPE_oid, tail);
+		return newBatType(TYPE_void, tail);
 	return tail;
 }
 

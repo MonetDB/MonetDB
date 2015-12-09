@@ -481,6 +481,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int garbages[16], *garbage;
 	int stkpc = 0;
 	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
+	lng lastcheck = 0;
+#define CHECKINTERVAL 1000 /* how often do we check for client disconnect */
 	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
 
 	if (stk == NULL)
@@ -525,7 +527,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
-			ret= createException(MAL, "mal.interpreter", "premature stopped client");
+			ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
 		if (cntxt->itrace || mb->trap || stk->status) {
@@ -550,6 +552,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
+		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
+			if (!mnstr_isalive(cntxt->fdin->s)) {
+				cntxt->mode = FINISHCLIENT;
+				stkpc = stoppc;
+				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
+				break;
+			}
+			lastcheck = runtimeProfile.ticks;
+		}
+
         if (!RECYCLEentry(cntxt, mb, stk, pci,&runtimeProfile)){
 			/* The interpreter loop
 			 * The interpreter is geared towards execution a MAL

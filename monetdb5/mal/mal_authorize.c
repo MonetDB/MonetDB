@@ -42,7 +42,7 @@ AUTHfindUser(const char *username)
 	BATiter cni = bat_iterator(user);
 	BUN p;
 
-	if (user->T->hash || BAThash(user, 0) == GDK_SUCCEED) {
+	if (BAThash(user, 0) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->T->hash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE)
@@ -180,13 +180,14 @@ AUTHinitTables(str *passwd) {
 	}
 	assert(pass);
 
+	/* convert an old authorization table */
 	if (user->htype == TYPE_oid) {
 		BAT *b;
 		char name[10];
 		bat blist[5];
 		assert(pass->htype == TYPE_oid);
 		blist[0] = 0;
-		b = BATcopy(user, TYPE_void, user->ttype, 1, PERSISTENT);
+		b = COLcopy(user, user->ttype, 1, PERSISTENT);
 		BATseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(user, TRANSIENT);
@@ -197,7 +198,7 @@ AUTHinitTables(str *passwd) {
 		blist[2] = b->batCacheid;
 		BBPunfix(user->batCacheid);
 		user = b;
-		b = BATcopy(pass, TYPE_void, pass->ttype, 1, PERSISTENT);
+		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
 		BATseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(pass, TRANSIENT);
@@ -221,7 +222,7 @@ AUTHinitTables(str *passwd) {
 
 		BBPrename(BBPcacheid(duser), "M5system_auth_deleted");
 		BATmode(duser, PERSISTENT);
-		if (!isNew) 
+		if (!isNew)
 			AUTHcommit();
 	} else {
 		duser = BATdescriptor(bid);
@@ -604,7 +605,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = BATcopy(user, TYPE_void, user->ttype, FALSE, TRANSIENT);
+		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
 	}
 	return(NULL);
 }

@@ -2149,7 +2149,7 @@ setwritable(BAT *b)
 
 	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
-			bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
+			bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, BAT_WRITE);
 		} else {
@@ -2206,7 +2206,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	c = BATdescriptor(*col);
 	if (c == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE, TRANSIENT)) == NULL) {
+	if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL) {
 		BBPunfix(c->batCacheid);
 		throw(MAL, "sql.delta", OPERATION_FAILED);
 	}
@@ -2340,7 +2340,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			i = u_id;
 		}
 		if (isVIEW(res)) {
-			BAT *n = BATcopy(res, TYPE_void, res->ttype, TRUE, TRANSIENT);
+			BAT *n = COLcopy(res, res->ttype, TRUE, TRANSIENT);
 			BBPunfix(res->batCacheid);
 			res = n;
 			if (res == NULL) {
@@ -2400,7 +2400,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			res = i;
 			i = c;
 		} else {
-			if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE, TRANSIENT)) == NULL)
+			if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL)
 				throw(MAL, "sql.projectdelta", OPERATION_FAILED);
 			BATappend(res, i, FALSE);
 			BBPunfix(c->batCacheid);
@@ -4831,8 +4831,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz += bn->H->vheap ? bn->H->vheap->size : 0;
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize(bn)
-								sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize(bn)
+								sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize(bn)
+								sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize(bn)
 								BUNappend(indices, &sz, FALSE);
 								bitval = 0; // HASHispersistent(bn);
 								BUNappend(phash, &bitval, FALSE);
@@ -4909,8 +4909,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize()
-									sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize()
+									sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize()
+									sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize()
 									BUNappend(indices, &sz, FALSE);
 									bitval = 0; // HASHispersistent(bn);
 									BUNappend(phash, &bitval, FALSE);

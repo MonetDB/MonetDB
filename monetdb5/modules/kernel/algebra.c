@@ -628,7 +628,7 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 static BAT *
 BATwcopy(BAT *b)
 {
-	return BATcopy(b, TYPE_void, b->ttype, 1, TRANSIENT);
+	return COLcopy(b, b->ttype, 1, TRANSIENT);
 }
 
 str

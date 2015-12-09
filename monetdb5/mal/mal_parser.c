@@ -703,7 +703,7 @@ parseTypeId(Client cntxt, int defaultType)
 		} else
 			tt = TYPE_any;
 
-		i = newBatType(TYPE_oid, tt);
+		i = newBatType(TYPE_void, tt);
 		if (kh > 0)
 			setAnyHeadIndex(i, kh);
 		if (kt > 0)

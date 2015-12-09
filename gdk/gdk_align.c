@@ -24,7 +24,7 @@
  * shuffles the first argument, such that the BUNs are in the same
  * order as those in the second argument.  This operation will mark
  * both columns of the first @emph{BAT} as synced with the second
- * (likewise, @emph{BATcopy()}, which makes a copy, instead of
+ * (likewise, @emph{Colcopy()}, which makes a copy, instead of
  * in-place shuffling, has the same alignment effect, @emph{BATmark()}
  * marks the tail column as synced with the head of the original
  * @emph{BAT}).
@@ -785,10 +785,7 @@ VIEWdestroy(BAT *b)
 	assert(isVIEW(b));
 
 	/* remove any leftover private hash structures */
-	if (b->H->hash)
-		HASHremove(BATmirror(b));
-	if (b->T->hash)
-		HASHremove(b);
+	HASHdestroy(b);
 	IMPSdestroy(b);
 	VIEWunlink(b);
 

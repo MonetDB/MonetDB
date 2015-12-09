@@ -159,7 +159,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			assigned[getArg(p,k)]++;
 	}
 
-	for (i = 1; i < limit; i++) {
+	for (i = 1; i < limit && cntxt->mode != FINISHCLIENT; i++) {
 		p = getInstrPtr(mb, i);
 		// to avoid management of duplicate assignments over multiple blocks
 		// we limit ourselfs to evaluation of the first assignment only.
