@@ -2599,6 +2599,7 @@ int mnstr_fsetpos(stream *s, lng p);
 int mnstr_fsync(stream *s);
 buffer *mnstr_get_buffer(stream *s);
 int mnstr_init(void);
+int mnstr_isalive(stream *s);
 char *mnstr_name(stream *s);
 int mnstr_printf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
 ssize_t mnstr_read(stream *s, void *buf, size_t elmsize, size_t cnt);
