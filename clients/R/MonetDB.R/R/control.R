@@ -176,7 +176,7 @@ monetdb.server.setup <-
       bat.contents <- c('#!/bin/sh',
         paste0( ifelse(monetdb.program.path=="","",paste0(monetdb.program.path,"/")) ,
                 'mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
-                dbport, " --daemon yes > /dev/null &" 
+                dbport, " --daemon yes >> ",paste0(database.directory,"_",dbname,".log")," 2&>1 &" 
         ),paste0("echo $! > ",database.directory,"/mserver5.started.from.R.pid"))
     }
     
