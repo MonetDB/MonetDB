@@ -228,7 +228,7 @@ SERVERlistenThread(SOCKET *Sock)
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;
 #ifdef HAVE_SYS_UN_H
-		if (usock != INVALID_SOCKET)
+		if (usock != INVALID_SOCKET && (sock == INVALID_SOCKET || usock > sock))
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
@@ -326,14 +326,13 @@ SERVERlistenThread(SOCKET *Sock)
 				{	int *c_d;
 					/* filedescriptor, put it in place of msgsock */
 					cmsg = CMSG_FIRSTHDR(&msgh);
+					closesocket(msgsock);
 					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
-						closesocket(msgsock);
 						fprintf(stderr, "!mal_mapi.listen: "
 								"expected filedescriptor, but "
 								"received something else\n");
 						continue;
 					}
-					closesocket(msgsock);
 					/* HACK to avoid
 					 * "dereferencing type-punned pointer will break strict-aliasing rules"
 					 * (with gcc 4.5.1 on Fedora 14)
