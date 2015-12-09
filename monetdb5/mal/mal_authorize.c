@@ -42,7 +42,7 @@ AUTHfindUser(const char *username)
 	BATiter cni = bat_iterator(user);
 	BUN p;
 
-	if (user->T->hash || BAThash(user, 0) == GDK_SUCCEED) {
+	if (BAThash(user, 0) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->T->hash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE)

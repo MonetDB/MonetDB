@@ -414,6 +414,9 @@ BATins(BAT *b, BAT *n, bit force)
 		return GDK_FAIL;
 	}
 
+	BATcheckhash(b);
+	BATcheckhash(BATmirror(b));
+
 	if (b->htype != TYPE_void &&
 	    (b->ttype == TYPE_void ||
 	     (!b->H->hash && b->T->hash &&
@@ -694,7 +697,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (b->H->hash)
 		HASHremove(BATmirror(b));
 
-	if (b->T->hash && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
+	if (BATcheckhash(b) && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
 		HASHremove(b);
 	}
 	if (b->T->hash != NULL ||

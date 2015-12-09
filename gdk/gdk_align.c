@@ -785,10 +785,7 @@ VIEWdestroy(BAT *b)
 	assert(isVIEW(b));
 
 	/* remove any leftover private hash structures */
-	if (b->H->hash)
-		HASHremove(BATmirror(b));
-	if (b->T->hash)
-		HASHremove(b);
+	HASHdestroy(b);
 	IMPSdestroy(b);
 	VIEWunlink(b);
 

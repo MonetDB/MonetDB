@@ -4823,8 +4823,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz += bn->H->vheap ? bn->H->vheap->size : 0;
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize(bn)
-								sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize(bn)
+								sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize(bn)
+								sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize(bn)
 								BUNappend(indices, &sz, FALSE);
 								bitval = 0; // HASHispersistent(bn);
 								BUNappend(phash, &bitval, FALSE);
@@ -4901,8 +4901,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize()
-									sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize()
+									sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize()
+									sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize()
 									BUNappend(indices, &sz, FALSE);
 									bitval = 0; // HASHispersistent(bn);
 									BUNappend(phash, &bitval, FALSE);
