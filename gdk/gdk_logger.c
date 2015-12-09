@@ -835,7 +835,10 @@ logger_open(logger *lg)
 		return LOG_ERR;
 	}
 	if ((bid = logger_find_bat(lg, "seqs_id")) != 0) {
-		BAT *b = BATdescriptor(bid);
+		int dbg = GDKdebug;
+		BAT *b;
+		GDKdebug &= ~CHECKMASK;
+		b = BATdescriptor(bid);
 		BATmode(b, TRANSIENT);
 		logger_del_bat(lg, bid);
 		logbat_destroy(b);
@@ -844,6 +847,7 @@ logger_open(logger *lg)
 		BATmode(b, TRANSIENT);
 		logger_del_bat(lg, bid);
 		logbat_destroy(b);
+		GDKdebug = dbg;
 		if (bm_commit(lg) != LOG_OK)
 			return LOG_ERR;
 	}
