@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Dec 10 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed grouped aggregate functions from the aggr module in which the
+  groups were indicated by the head column of the bat to be aggregated.
+  Use the interface with a separate group bat instead.
+
 * Tue Dec  8 2015 Sjoerd Mullender <sjoerd@acm.org>
 - The server now stops executing a query when the client disconnects.
 
