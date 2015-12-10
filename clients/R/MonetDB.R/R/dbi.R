@@ -823,6 +823,12 @@ setMethod("isIdCurrent", signature(dbObj="MonetDBResult"), def=function(dbObj, .
    dbIsValid(dbObj)
 })
 
+if (is.null(getGeneric("initExtension"))) setGeneric("initExtension", function(dbObj, ...) standardGeneric("initExtension"))
+setMethod("initExtension", signature(dbObj="MonetDBConnection"), def=function(dbObj, ...) {
+  .Deprecated(msg="initExtension() is not required for MonetDBLite")
+})
+
+
 setMethod("dbIsValid", signature(dbObj="MonetDBResult"), def=function(dbObj, ...) {
   if (dbObj@env$info$type == Q_TABLE) {
     return(dbObj@env$open)

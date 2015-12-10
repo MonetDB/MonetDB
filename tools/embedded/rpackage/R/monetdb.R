@@ -13,7 +13,7 @@ monetdb_embedded_env$install_dir <- ""
 classname <- "monetdb_embedded_connection"
 
 monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
-	dir <- normalizePath(as.character(dir), mustWork=FALSE)
+	dir <- as.character(dir)
 	quiet <- as.logical(quiet)
 	if (length(dir) != 1) {
 		stop("Need a single directory name as parameter.")
@@ -24,6 +24,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	if (file.access(dir, mode=2) < 0) {
 		stop("Cannot write to ", dir)
 	}
+	dir <- normalizePath(dir)
 	if (!monetdb_embedded_env$is_started) {
 		res <- .Call("monetdb_startup_R", monetdb_embedded_env$install_dir, dir, quiet, PACKAGE="libmonetdb5")
 	} else {
