@@ -6,7 +6,46 @@ stderr of test 'tst019` in directory 'monetdb5/mal` itself:
 # 10:58:00 >  
 
 
-# 10:58:00 >  
-# 10:58:00 >  Done.
-# 10:58:00 >  
+# 11:22:44 >  
+# 11:22:44 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12237" "--port=31044"
+# 11:22:44 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = end welcome;
+ERROR = !TypeException:user.welcome[3]:type mismatch void := str
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = end welcome0;
+ERROR = !TypeException:user.welcome0[3]:Multiple assignment mismatch
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = end welcome1;
+ERROR = !ERROR: MSresetVariablescould not allocate space for
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = end welcome3;
+ERROR = !SyntaxException:user.welcome3[2]:invalid return target!
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = end welcome4;
+ERROR = !TypeException:user.welcome4[2]:Multiple assignment mismatch
+        !ERROR: MSresetVariablescould not allocate space for
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = end welcome5;
+ERROR = !ERROR: MSresetVariablescould not allocate space for
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = y:= user.welcome1(1);
+ERROR = !SyntaxException:user.main[0]:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = io.print(y);
+ERROR = !SyntaxException:user.main[0]:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = y:= user.welcome2(1);
+ERROR = !SyntaxException:user.main[0]:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = io.print(y);
+ERROR = !SyntaxException:user.main[0]:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-12237/.s.monetdb.31044
+QUERY = (x,y):= user.welcome2(1);
+ERROR = !TypeException:user.main[1]:'user.welcome2' undefined in:     (x:any,y:any) := user.welcome2(1:int);
+
+# 11:22:45 >  
+# 11:22:45 >  "Done."
+# 11:22:45 >  
 
