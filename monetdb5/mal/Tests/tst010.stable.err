@@ -30,37 +30,37 @@ stderr of test 'tst010` in directory 'monetdb5/mal` itself:
 # 10:57:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8357" "--port=35088"
 # 10:57:16 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = exit 	L;
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[3]:label 'Z' not in guarded block
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = 	redo L;		# outside block
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[1]:label 'L' not in guarded block
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = 	leave X;	# outside block
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[1]:label 'X' not in guarded block
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = 	redo A;		# outside block
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[1]:label 'A' not in guarded block
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = exit	X;
-
+ERROR = !SyntaxException:user.main[2]:label 'L' not in guarded block
         !SyntaxException:user.main[5]:label 'L' not in guarded block
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = 	exit	B;	# out of order
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[8]:exit-label 'B' doesnot match 'A'
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = 	exit	F;	# unknown
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[1]:exit-label 'F' without begin-label
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = exit	A;
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[1]:exit-label 'A' without begin-label
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = end;
-
-MAPI  = (monetdb) /var/tmp/mtest-8357/.s.monetdb.35088
+ERROR = !SyntaxException:user.main[3]:barrier 'unfinished' without exit in main[4]
+MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
 QUERY = end foo;
-
+ERROR = !SyntaxException:parseError:end foo;
         !SyntaxException:parseError:   ^non matching end label
 
 # 10:57:17 >  
