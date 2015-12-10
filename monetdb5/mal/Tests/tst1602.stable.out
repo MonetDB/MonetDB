@@ -1,9 +1,9 @@
 stdout of test 'tst1602` in directory 'monetdb5/mal` itself:
 
 
-# 07:59:09 >  
-# 07:59:09 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst1602.mal </dev/null
-# 07:59:09 >  
+# 16:12:05 >  
+# 16:12:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36897" "--set" "mapi_usock=/var/tmp/mtest-23788/.s.monetdb.36897" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 16:12:05 >  
 
 # MonetDB 5 server v11.22.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'tst1602` in directory 'monetdb5/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33827/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16148/.s.monetdb.33827
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:36897/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23788/.s.monetdb.36897
 # MonetDB/GIS module loaded
 # Start processing logs sql/sql_logs version 52200
 # Start reading the write-ahead log 'sql_logs/sql/log.4'
@@ -25,30 +25,30 @@ stdout of test 'tst1602` in directory 'monetdb5/mal` itself:
 
 Ready.
 
-# 15:36:17 >  
-# 15:36:17 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
-# 15:36:17 >  
+# 16:12:06 >  
+# 16:12:06 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23788" "--port=36897"
+# 16:12:06 >  
 
 #        xg_a := io.printf("#count %d = ",wg_a);
 #count 1000000 = 
 #	   ah_a := io.printf("%d ms\n",yg_a);
-135 ms
+133 ms
 #        xg_a := io.printf("#count %d = ",wg_a);
 #count 1000000 = 
 #		ah_a := io.printf("%d ms\n",yg_a);
-137 ms
-#        xg_a := io.printf("#count %d = ",wg_a);
-#count 1000000 = 
-#        ah_a := io.printf("%d ms\n",yg_a);
-139 ms
+135 ms
 #        xg_a := io.printf("#count %d = ",wg_a);
 #count 1000000 = 
 #        ah_a := io.printf("%d ms\n",yg_a);
 138 ms
+#        xg_a := io.printf("#count %d = ",wg_a);
+#count 1000000 = 
+#        ah_a := io.printf("%d ms\n",yg_a);
+135 ms
 #        xxx := io.printf("#count %d = ",wg_b);
 #count 1000000 = 
 #       ah_b := io.printf("%d ms\n",zzz);
-132 ms
+131 ms
 #        xxx := io.printf("#count %d = ",wg_b);
 #count 1000000 = 
 #       ah_b := io.printf("%d ms\n",zzz);
@@ -56,13 +56,13 @@ Ready.
 #        xxx := io.printf("#count %d = ",wg_b);
 #count 1000000 = 
 #       ah_b := io.printf("%d ms\n",zzz);
-137 ms
+136 ms
 #        xxx := io.printf("#count %d = ",wg_b);
 #count 1000000 = 
 #      ah_b := io.printf("%d ms\n",zzz);
-137 ms
+136 ms
 
-# 15:36:30 >  
-# 15:36:30 >  "Done."
-# 15:36:30 >  
+# 16:12:18 >  
+# 16:12:18 >  "Done."
+# 16:12:18 >  
 
