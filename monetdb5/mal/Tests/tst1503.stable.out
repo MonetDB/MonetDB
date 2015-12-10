@@ -6,108 +6,13 @@ stdout of test 'tst1503` in directory 'monetdb5/mal` itself:
 # 07:59:07 >  
 
 
+Ready.
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#	x := new(:oid,:chr);
-#	de_a := insert(x,1@0,'a');
-#	ee_a := insert(x,2@0,'a');
-#	fe_a := insert(x,3@0,'b');
-#	ge_a := insert(x,4@0,'b');
-#	he_a := insert(x,5@0,'b');
-#	ie_a := insert(x,6@0,'b');
-#	je_a := insert(x,7@0,'c');
-#	ke_a := insert(x,8@0,'c');
-#
-#	y := new(:oid,:dbl);
-#	le_a := dbl(1.0);
-#	me_a := insert(y,1@0,le_a);
-#	ne_a := dbl(2.0);
-#	oe_a := insert(y,2@0,ne_a);
-#	pe_a := dbl(2.0);
-#	qe_a := insert(y,3@0,pe_a);
-#	re_a := dbl(2.0);
-#	se_a := insert(y,4@0,re_a);
-#	te_a := dbl(2.0);
-#	ue_a := insert(y,5@0,te_a);
-#	ve_a := dbl(3.0);
-#	we_a := insert(y,6@0,ve_a);
-#	xe_a := dbl(1.0);
-#	ye_a := insert(y,7@0,xe_a);
-#	af_a := dbl(1.0);
-#	bf_a := insert(y,8@0,af_a);
-#
-#	z := new(:oid,:str);
-#	cf_a := insert(z,1@0,"c");
-#	df_a := insert(z,2@0,"a");
-#	ef_a := insert(z,3@0,"b");
-#	ff_a := insert(z,4@0,"c");
-#	gf_a := insert(z,5@0,"a");
-#	hf_a := insert(z,6@0,"a");
-#	if_a := insert(z,7@0,"c");
-#	jf_a := insert(z,8@0,"a");
-#print("group x");print(x,y,z);
-#        (zb1,b1) := group(x);
-#print("b1 becomes"); print(b1);
-#print("zb1 becomes"); print(zb1);
-#        b2 := group(b1,y);
-#print("b2 becomes"); print(b2);
-#
-#
-function user.main():void;
-    x := bat.new(:oid,:bte);
-    de_a := bat.append(x,1:bte);
-    ee_a := bat.append(x,1:bte);
-    fe_a := bat.append(x,2:bte);
-    ge_a := bat.append(x,2:bte);
-    he_a := bat.append(x,2:bte);
-    ie_a := bat.append(x,2:bte);
-    je_a := bat.append(x,3:bte);
-    ke_a := bat.append(x,3:bte);
-    y := bat.new(:oid,:dbl);
-    le_a := calc.dbl(1);
-    me_a := bat.append(y,le_a);
-    ne_a := calc.dbl(2);
-    oe_a := bat.append(y,ne_a);
-    pe_a := calc.dbl(2);
-    qe_a := bat.append(y,pe_a);
-    re_a := calc.dbl(2);
-    se_a := bat.append(y,re_a);
-    te_a := calc.dbl(2);
-    ue_a := bat.append(y,te_a);
-    ve_a := calc.dbl(3);
-    we_a := bat.append(y,ve_a);
-    xe_a := calc.dbl(1);
-    ye_a := bat.append(y,xe_a);
-    af_a := calc.dbl(1);
-    bf_a := bat.append(y,af_a);
-    z := bat.new(:oid,:str);
-    cf_a := bat.append(z,"c");
-    df_a := bat.append(z,"a");
-    ef_a := bat.append(z,"b");
-    ff_a := bat.append(z,"c");
-    gf_a := bat.append(z,"a");
-    hf_a := bat.append(z,"a");
-    if_a := bat.append(z,"c");
-    jf_a := bat.append(z,"a");
-    io.print("group x");
-    io.print(x,y,z);
-    (g1,e1,h1) := group.subgroup(x);
-    io.print("g1 becomes");
-    io.print(g1);
-    io.print("e1 becomes");
-    io.print(e1);
-    io.print("h1 becomes");
-    io.print(h1);
-    (g2,e2,h2) := group.subgroup(y,g1,e1,h1);
-    io.print("g2 becomes");
-    io.print(g2);
-end user.main;
+# 15:36:15 >  
+# 15:36:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
+# 15:36:15 >  
+
+#io.print("group x");io.print(x,y,z);
 [ "group x" ]
 #--------------------------#
 # h	t	t	t  # name

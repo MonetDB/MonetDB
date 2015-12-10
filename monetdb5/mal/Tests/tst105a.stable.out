@@ -19,15 +19,16 @@ stdout of test 'tst105a` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-command bbp.new(t:any_2):bat[:oid,:any_2] address GDKbatnew;
-!TypeException:user.main[2]:object code for command bbp.new missing
-!TypeException:user.main[2]:'bbp.new' undefined in:     b:bat[:oid,:int] := bbp.new(:int);
-function user.main():void;
-# check classification of functions in the proper module 
-    b := bbp.new(:int);
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:58:57 >  
-# 07:58:57 >  Done.
-# 07:58:57 >  
+Ready.
+
+# 15:56:09 >  
+# 15:56:09 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21504" "--port=34844"
+# 15:56:09 >  
+
+
+# 15:56:09 >  
+# 15:56:09 >  "Done."
+# 15:56:09 >  
 
