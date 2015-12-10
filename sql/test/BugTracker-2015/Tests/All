@@ -95,3 +95,4 @@ mserver-creates-but-not-accept-column-types-decimal19-decimal39.Bug-3863
 NOT_x_LIKE-triggers-too_many_nested_operators-error.Bug-3871
 foreignkey_over_schemas.Bug-3855
 mserver-crashes-under-specific-combination-of-JOIN-and-WHERE-conditions.Bug-3872
+many_union_all.Bug-3897
