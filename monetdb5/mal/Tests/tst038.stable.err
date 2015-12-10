@@ -6,7 +6,17 @@ stderr of test 'tst038` in directory 'monetdb5/mal` itself:
 # 18:26:03 >  
 
 
-# 18:26:04 >  
-# 18:26:04 >  Done.
-# 18:26:04 >  
+# 11:43:41 >  
+# 11:43:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14232" "--port=35042"
+# 11:43:41 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-14232/.s.monetdb.35042
+QUERY = user.tst2(b);
+ERROR = !TypeException:user.tst2[1]:'bat.append' undefined in:     bat.append(b:bat[:oid,:int],"hello":str);
+        !MALException:user.tst2[0]:Error in cloned function
+        !TypeException:user.main[1]:'user.tst2' undefined in:     user.tst2(b:bat[:oid,:int]);
+
+# 11:43:41 >  
+# 11:43:41 >  "Done."
+# 11:43:41 >  
 

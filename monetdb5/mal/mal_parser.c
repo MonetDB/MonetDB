@@ -37,13 +37,12 @@ static str parseError(Client cntxt, str msg);
 static void 
 echoInput(Client cntxt)
 {
-	if (cntxt->listing == 1) {
-		char *c = CURRENT(cntxt);
+	char *c = CURRENT(cntxt);
+	if (cntxt->listing == 1 && *c && !NL(*c)) {
 		mnstr_printf(cntxt->fdout,"#");
 		while (*c && !NL(*c)) {
 			mnstr_printf(cntxt->fdout, "%c", *c++);
 		}
-
 		mnstr_printf(cntxt->fdout, "\n");
 	}
 }

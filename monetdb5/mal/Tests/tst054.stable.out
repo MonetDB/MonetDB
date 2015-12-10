@@ -11,21 +11,25 @@ stdout of test 'tst054` in directory 'monetdb5/mal` itself:
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31658/
-# MonetDB/SQL module v2.39.0 loaded
-# MonetDB/GIS module v0.19.0 loaded
-!SyntaxException:parseError:return (1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0);
-!SyntaxException:parseError:       ^<identifier> expected
-function user.z() (X_1:int,X_2:int,X_3:int,X_4:int,X_5:int,X_6:int,X_7:int,X_8:int,X_9:int,X_10:int,X_11:int,X_12:int,X_13:int,X_14:int,X_15:int,X_16:int,X_17:int,X_18:int,X_19:int,X_20:int,X_21:int,X_22:int,X_23:int,X_24:int,X_25:int,X_26:int,X_27:int,X_28:int,X_29:int,X_30:int);
-    io.print("hello");
-end user.z;
-!TypeException:user.main[1]:'user.z' undefined in: user.z();
-function user.main():void;
-    user.z();
-end user.main;
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32539/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21399/.s.monetdb.32539
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 11:11:08 >  
-# 11:11:08 >  Done.
-# 11:11:08 >  
+Ready.
+
+# 12:52:40 >  
+# 12:52:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
+# 12:52:40 >  
+
+
+# 12:52:40 >  
+# 12:52:40 >  "Done."
+# 12:52:40 >  
 

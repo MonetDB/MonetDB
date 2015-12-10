@@ -7,4 +7,3 @@ b:= bat.new(:oid,:int);
 
 #The call to tst2 fails at runtime
 user.tst2(b);
-io.print("shouldn't come here\n");

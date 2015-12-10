@@ -17,20 +17,15 @@ stdout of test 'tst028` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.f(a:bat[:oid,:any]):void;
-    io.print(a);
-end user.f;
-function user.h(a:bat[:oid,:str]):void;
-    io.print(a);
-end user.h;
-function user.g(b:any):void;
-end user.g;
-function user.main():void;
-    z := bat.new(:oid,:str);
-    user.f(z);
-    user.g(z);
-    user.h(z);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:26:58 >  
+# 11:26:58 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12804" "--port=35327"
+# 11:26:58 >  
+
+#f(z);
 #--------------------------#
 # h	t	  # name
 # int	str	  # type

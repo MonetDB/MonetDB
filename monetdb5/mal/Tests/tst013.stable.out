@@ -17,27 +17,16 @@ stdout of test 'tst013` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12850/.s.monetdb.31390
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-!SyntaxException:user.main[3]:label 'X_4' not in guarded block
-!SyntaxException:user.main[14]:label 't' not in guarded block
-function user.main():void;
-# incomplete barrier blocks. Resolve them when unambigous 
-barrier z := true;
-    leave ;
-exit z;
-barrier i := 1;
-    i := calc.+(i,1);
-    io.print(i);
-barrier t := calc.>(i,3);
-# new envelop 
-    io.print("leave loop");
-    leave i;
-# leave outer envelop 
-exit t;
-    redo t;
-exit i;
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:58:37 >  
-# 07:58:37 >  Done.
-# 07:58:37 >  
+Ready.
+
+# 11:10:25 >  
+# 11:10:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10484" "--port=37868"
+# 11:10:25 >  
+
+
+# 11:10:25 >  
+# 11:10:25 >  "Done."
+# 11:10:25 >  
 

@@ -16,20 +16,16 @@ stdout of test 'tst058` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:33363/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-!SyntaxException:convertConstant:integer parse error
-!SyntaxException:parseError:-- some typos
-!SyntaxException:parseError:^<identifier> expected
-!SyntaxException:parseError:i:= 1 + 1 + 1;
-!SyntaxException:parseError:         ^';' expected
-!SyntaxException:parseError:j:= 1 + + 1;
-!SyntaxException:parseError:       ^<term> expected
-function user.main():void;
-    ;
-    i := calc.+(1,1);
-    j := calc.+(1);
-end user.main;
+# MonetDB/R   module loaded
 
-# 20:18:21 >  
-# 20:18:21 >  Done.
-# 20:18:21 >  
+Ready.
+
+# 12:52:41 >  
+# 12:52:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
+# 12:52:41 >  
+
+
+# 12:52:42 >  
+# 12:52:42 >  "Done."
+# 12:52:42 >  
 

@@ -17,18 +17,16 @@ stdout of test 'tst027` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.test(s:str,b:bat[:oid,:any_1]...):void;
-    io.print(s);
-end user.test;
-!TypeException:user.main[4]:'user.test' undefined in:     user.test("hello":str,b:bat[:oid,:int],c:bat[:oid,:int]);
-function user.main():void;
-#variable arguments are only allowed in patterns 
-    b := bat.new(:oid,:int);
-    c := bat.new(:oid,:int);
-    user.test("hello",b,c);
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:58:40 >  
-# 07:58:40 >  Done.
-# 07:58:40 >  
+Ready.
+
+# 11:26:57 >  
+# 11:26:57 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12804" "--port=35327"
+# 11:26:57 >  
+
+
+# 11:26:57 >  
+# 11:26:57 >  "Done."
+# 11:26:57 >  
 

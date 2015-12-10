@@ -9,18 +9,26 @@ stdout of test 'tst102` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
-command user.+(L:any_1,R:any_1):any_1 address addIntInt;
-!TypeException:user.main[2]:'calc.+' undefined in:     a:any := calc.+(1:int,"hello":str);
-function user.main():void;
-# the calls are wrong, they violate the type constraint 
-    a := calc.+(1,"hello");
-    b := calc.+(3.5,1);
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30954/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26037/.s.monetdb.30954
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 22:05:24 >  
-# 22:05:24 >  Done.
-# 22:05:24 >  
+Ready.
+
+# 13:25:17 >  
+# 13:25:17 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26037" "--port=30954"
+# 13:25:17 >  
+
+
+# 13:25:17 >  
+# 13:25:17 >  "Done."
+# 13:25:17 >  
 

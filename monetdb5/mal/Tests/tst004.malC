@@ -9,3 +9,4 @@ barrier m:=3;
 exit	m:= 4;
 	io.print(m);
 end foo;
+user.foo();

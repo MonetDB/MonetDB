@@ -9,6 +9,7 @@ module clients;
 pattern setListing(flag:int):int
 address CLTsetListing
 comment "Turn on/off echo of MAL instructions:
+	1 - echo input,
 	2 - show mal instruction,
 	4 - show details of type resolutoin, 
 	8 - show binding information.";

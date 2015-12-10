@@ -14,7 +14,6 @@
 #include "mal.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#include "mal_atom.h"		/* for showAtoms() */
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
@@ -381,7 +380,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int m = 1;
 	char *b, *c, lastcmd = 0;
 	stream *out = cntxt->fdout;
-	/* int listing = cntxt->listing;*/
 	char *oldprompt = cntxt->prompt;
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
@@ -442,10 +440,6 @@ retryRead:
 		switch (*b) {
 		case 0:
 			m = 0;
-			break;
-		case 'a':
-			if (strncmp("atom", b, 1) == 0)
-				showAtoms(out);
 			break;
 		case 'c':
 			if (strncmp("catch", b, 3) == 0) {
