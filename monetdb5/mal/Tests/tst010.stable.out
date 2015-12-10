@@ -1,164 +1,36 @@
 stdout of test 'tst010` in directory 'monetdb5/mal` itself:
 
 
-# 22:31:16 >  
-# 22:31:16 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=35230 --set sql_port=49695 --set xquery_port=55253 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst010.mal </dev/null
-# 22:31:16 >  
+# 10:57:16 >  
+# 10:57:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35088" "--set" "mapi_usock=/var/tmp/mtest-8357/.s.monetdb.35088" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 10:57:16 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## syntax analysis test for guarded blocks, redo's and leave's
-## forcefully end the block, because the parser counts barrier/exit pairs
-#barrier	L:= 1;
-#	#do it
-#	leave Z;	# not known in block
-#	redo L;
-#exit 	L;
-#	redo L;		# outside block
-#	leave X;	# outside block
-#	redo A;		# outside block
-#barrier X:=1;
-#	leave L;	# outside block
-#	leave X;
-#	redo L;		# outside block
-#exit	X;
-#barrier A:=1;
-#	barrier B:= 1;
-#		redo A;
-#	exit	B;
-#	barrier C:=1;
-#		leave A;
-#	exit 	C;
-#
-#	exit	B;	# out of order
-#	exit	F;	# unknown
-#
-#	barrier D:=1;
-#		leave D;
-#		redo  D;  # dead code
-#	exit	D;
-#	barrier D:=2;		# duplicate block
-#	exit	D;
-#exit	A;
-#barrier  unfinished:= 1;
-#	f:=1;
-#end;
-!SyntaxException:user.main[5]:label 'Z' not in guarded block
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35088/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8357/.s.monetdb.35088
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-!SyntaxException:user.main[9]:label 'L' not in guarded block
+Ready.
 
-!SyntaxException:user.main[11]:label 'X' not in guarded block
+# 10:57:16 >  
+# 10:57:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8357" "--port=35088"
+# 10:57:16 >  
 
-!SyntaxException:user.main[13]:label 'A' not in guarded block
 
-!SyntaxException:user.main[16]:label 'L' not in guarded block
-
-!SyntaxException:user.main[19]:label 'L' not in guarded block
-
-!SyntaxException:user.main[29]:exit-label 'B' doesnot match 'A'
-
-!SyntaxException:user.main[31]:exit-label 'F' without begin-label
-
-!SyntaxException:user.main[41]:exit-label 'A' without begin-label
-!SyntaxException:user.main[44]:barrier 'unfinished' without exit in main[45]
-function user.main():void;
-# syntax analysis test for guarded blocks, redo's and leave's 
-# forcefully end the block, because the parser counts barrier/exit pairs 
-barrier L := 1;
-#do it 
-    leave Z;
-# not known in block 
-    redo L;
-exit L;
-    redo L;
-# outside block 
-    leave X;
-# outside block 
-    redo A;
-# outside block 
-barrier X := 1;
-    leave L;
-# outside block 
-    leave X;
-    redo L;
-# outside block 
-exit X;
-barrier A := 1;
-barrier B := 1;
-    redo A;
-exit B;
-barrier C := 1;
-    leave A;
-exit C;
-exit B;
-# out of order 
-exit F;
-# unknown 
-barrier D := 1;
-    leave D;
-    redo D;
-# dead code 
-exit D;
-barrier D := 2;
-# duplicate block 
-exit D;
-exit A;
-barrier unfinished := 1;
-    f := 1;
-end user.main;
-function user.main():void;
-# syntax analysis test for guarded blocks, redo's and leave's 
-# forcefully end the block, because the parser counts barrier/exit pairs 
-barrier L := 1;
-#do it 
-    leave Z;
-# not known in block 
-    redo L;
-exit L;
-    redo L;
-# outside block 
-    leave X;
-# outside block 
-    redo A;
-# outside block 
-barrier X := 1;
-    leave L;
-# outside block 
-    leave X;
-    redo L;
-# outside block 
-exit X;
-barrier A := 1;
-barrier B := 1;
-    redo A;
-exit B;
-barrier C := 1;
-    leave A;
-exit C;
-exit B;
-# out of order 
-exit F;
-# unknown 
-barrier D := 1;
-    leave D;
-    redo D;
-# dead code 
-exit D;
-barrier D := 2;
-# duplicate block 
-exit D;
-exit A;
-barrier unfinished := 1;
-    f := 1;
-end user.main;
-end user.main;
-
-# 19:42:58 >  
-# 19:42:58 >  Done.
-# 19:42:58 >  
+# 10:57:17 >  
+# 10:57:17 >  "Done."
+# 10:57:17 >  
 
