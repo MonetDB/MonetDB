@@ -1,10 +1,10 @@
 # parsing operations with multi-assignments
-function swap(x:bat[:oid,:int],y:bat[:oid,:int]) 
-	(a:str,b:bat[:oid,:int]);
+function swap(x:bat[:oid,:int],y:bat[:oid,:int]) (a:str,b:bat[:oid,:int]);
         a:="done"; 
         return (a,x);
 end swap;
 
+function foo();
 X:= bat.new(:oid,:int);
 bat.append(X,1);
 Y:= bat.new(:oid,:int);
@@ -12,4 +12,7 @@ bat.append(Y,2);
 (x,y):= user.swap(X,Y);
 io.print(x);
 io.print(y);
+end foo;
+
+user.foo();
 
