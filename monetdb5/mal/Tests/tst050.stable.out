@@ -5,45 +5,30 @@ stdout of test 'tst050` in directory 'monetdb5/mal` itself:
 # 07:58:46 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst050.mal </dev/null
 # 07:58:46 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## Variables names may be tagged with a type upfront.
-## They may be initialized with a lexical constant using
-## either their stored type syntax or with a string literal
-#
-#s:str := "hello";
-#i:sht := 1:sht;
-#b:bit   := true;
-#z:bat[:int,:int]:= new(:int,:int);
-#
-## type resolver should complain on the rest
-#j:sht := 1:lng;
-#k:lng := 1:sht;
-#y:bat[:str,:int]:= new(:int,:int);
-#f:flt := "wrong";
-#
-!TypeException:user.main[9]:type mismatch sht := lng
-function user.main():void;
-# Variables names may be tagged with a type upfront. 
-# They may be initialized with a lexical constant using 
-# either their stored type syntax or with a string literal 
-    s:str  := "hello";
-    i:sht  := 1:sht;
-    b:bit  := true;
-    z:bat[:oid,:int]  := bat.new(:oid,:int);
-# type resolver should complain on the rest 
-    j:sht  := 1:lng;
-    k:lng  := 1:sht;
-    y:bat[:oid,:str]  := bat.new(:oid,:int);
-    f:flt  := "wrong";
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35231/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19653/.s.monetdb.35231
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 19:43:03 >  
-# 19:43:03 >  Done.
-# 19:43:03 >  
+Ready.
+
+# 12:43:25 >  
+# 12:43:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19653" "--port=35231"
+# 12:43:25 >  
+
+
+# 12:43:25 >  
+# 12:43:25 >  "Done."
+# 12:43:25 >  
 
