@@ -17,18 +17,15 @@ stdout of test 'tst281` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12107/.s.monetdb.30245
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:str);
-    bat.append(b,"Hello");
-    bat.append(b,"world");
-    io.print(b);
-    x := algebra.find(b,"Hello");
-    io.print(x);
-    x := algebra.find(b,"world");
-    io.print(x);
-    x := algebra.find(b,"its the end");
-    io.print(x);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:04:32 >  
+# 15:04:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:32 >  
+
+#io.print(b);
 #--------------------------#
 # h	t  # name
 # void	str  # type

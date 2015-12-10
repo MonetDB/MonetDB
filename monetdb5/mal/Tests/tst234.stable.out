@@ -5,45 +5,31 @@ stdout of test 'tst234` in directory 'monetdb5/mal` itself:
 # 09:11:11 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=37247 --set monet_prompt= --trace --dbname=mTests_src_mal  tst234.mal < /dev/null
 # 09:11:11 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## dealing with BAT references in functions
-#
-#function dir():void;
-#	d:= bbp.getRefCount();
-#	dl:=bbp.getLRefCount();
-#	dn:= bbp.getNames();
-#	io.print(dn,d,dl);
-#end dir;
-function user.dir():void;
-    d := bbp.getRefCount();
-    dl := bbp.getLRefCount();
-    dn := bbp.getNames();
-    ds := algebra.subsort(dn,false,false);
-    io.print(ds,d,dl);
-end user.dir;
-function user.tmp1(b:bat[:oid,:any_2]):bat[:oid,:any_2];
-    tmp1 := algebra.copy(b);
-    io.print("inside tmp1");
-    i := bbp.getLRefCount(b);
-    io.print(i);
-    return tmp1 := tmp1;
-end user.tmp1;
-function user.main():void;
-# dealing with BAT references in functions 
-    b := bat.new(:oid,:int);
-    d := user.tmp1(b);
-    i := bbp.getLRefCount(d);
-    io.print(i);
-    d := user.tmp1(d);
-    i := bbp.getLRefCount(d);
-    io.print(i);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:38657/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6764/.s.monetdb.38657
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:04:24 >  
+# 15:04:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:24 >  
+
+#d:= user.tmp1(b);
 [ "inside tmp1" ]
 [ 2 ]
 [ 1 ]

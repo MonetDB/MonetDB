@@ -1,1 +1,52 @@
 stderr of test 'tst120` in directory 'monetdb5/mal` itself:
+
+
+# 14:57:20 >  
+# 14:57:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37326" "--set" "mapi_usock=/var/tmp/mtest-5138/.s.monetdb.37326" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 14:57:20 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37326
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5138/.s.monetdb.37326
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:57:20 >  
+# 14:57:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
+# 14:57:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = a:= bottom.second("hh");
+ERROR = !TypeException:user.main[1]:'bottom.second' undefined in:     a:any := bottom.second("hh":str);
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = b:= top.first(1);
+ERROR = !TypeException:user.main[1]:'top.first' undefined in:     b:any := top.first(1:int);
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = c:= top.first(1:sht);
+ERROR = !TypeException:user.main[1]:'top.first' undefined in:     c:any := top.first(1:sht);
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = d:= bottom.first("hello world");
+ERROR = !TypeException:user.main[1]:'bottom.first' undefined in:     d:any := bottom.first("hello world":str);
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = e:= top.first(2:sht);
+ERROR = !TypeException:user.main[1]:'top.first' undefined in:     e:any := top.first(2:sht);
+
+# 14:57:20 >  
+# 14:57:20 >  "Done."
+# 14:57:20 >  
+

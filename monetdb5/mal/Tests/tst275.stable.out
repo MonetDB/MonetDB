@@ -18,42 +18,22 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#Same as tst200, but includes testing of the profiler 
-    o := calc.oid(20000000);
-    calc.setoid(o);
-#test basic functionality of the BAT library. 
-#focussed on integers 
-#it includes insertions,deletions,selections, and joins. 
-    b := bat.new(:oid,:int);
-    io.printf("#~BeginVariableOutput~#\n");
-    (bk,bv) := bat.info(b);
-    io.print(bk,bv);
-    io.printf("#~EndVariableOutput~#\n");
-    profiler.start();
-    err := bat.append(b,15);
-    err := bat.append(b,4);
-    n0 := calc.int(nil);
-    err := bat.append(b,n0);
-    err := bat.append(b,16);
-    err := bat.append(b,25);
-    err := bat.append(b,36);
-    err := bat.append(b,49);
-    err := bat.append(b,64);
-    err := bat.append(b,n0);
-    err := bat.append(b,n0);
-    err := bat.append(b,81);
-    io.print(b);
-    io.print(b,b,b);
-    profiler.stop();
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:04:31 >  
+# 15:04:31 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:31 >  
+
+#io.printf("#~BeginVariableOutput~#\n"); 
 #~BeginVariableOutput~#
 #--------------------------#
 # t	t	t  # name
 # void	str	str  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_525"  ]
-[ 1@0,	"batCacheid",	"341"  ]
+[ 0@0,	"batId",	"tmp_12"	]
+[ 1@0,	"batCacheid",	"10"	]
 [ 2@0,	  "hparentid",		  "0"		  ]
 [ 3@0,	  "tparentid",		  "0"		  ]
 [ 4@0,	  "batSharecnt",	  "0"		  ]
@@ -116,7 +96,7 @@ end user.main;
 [ 61@0,	"tail.size",	"1024"  ]
 [ 62@0,	"tail.storage",	"malloced"  ]
 [ 63@0,	"tail.newstorage",	"malloced"  ]
-[ 64@0,	"tail.filename",	"05/525.tail"  ]
+[ 64@0,	"tail.filename",	"12.tail"	]
 [ 65@0,	"H->vheap->dirty",	"clean"  ]
 [ 66@0,	"T->vheap->dirty",	"clean"  ]
 #~EndVariableOutput~#

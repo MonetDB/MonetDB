@@ -1,5 +1,4 @@
-command lookup(nme:str):bat[:oid,:str] 
-address CMDlookup; 
+command lookup(nme:str):bat[:oid,:str] address CMDlookup; 
 
 function sample(nme:str, val:any_1):bit;
    b := user.lookup(nme); #find a bat

@@ -5,51 +5,31 @@ stdout of test 'tst251` in directory 'monetdb5/mal` itself:
 # 08:01:07 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst251.mal </dev/null
 # 08:01:07 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## The series tst2?? is a patched version of suite_00
-## The first and foremost BAT operations
-#
-## String iterator stuff
-#c:= new(:int,:str);
-#insert(c,1,"hello");
-#insert(c,2,"brave");
-#insert(c,3,"world");
-#insert(c,4,"");
-#x:= str(nil);
-#insert(c,5,x);
-#insert(c,6,"!");
-#print(c);
-#barrier (v,h,ts):= newIterator(c);
-#	printf("[%d,",h);
-#	printf("%s]\n",ts);
-#	redo (v,h,ts):= hasMoreElements(c);
-#exit v;
-#
-function user.main():void;
-# The series tst2?? is a patched version of suite_00 
-# The first and foremost BAT operations 
-# String iterator stuff 
-    c := bat.new(:oid,:str);
-    bat.append(c,"hello");
-    bat.append(c,"brave");
-    bat.append(c,"world");
-    bat.append(c,"");
-    x := calc.str(nil);
-    bat.append(c,x);
-    bat.append(c,"!");
-    io.print(c);
-barrier (h,ts) := iterator.new(c);
-    io.printf("[%d,",h);
-    io.printf("%s]\n",ts);
-    redo (h,ts) := iterator.next(c);
-exit (h,ts);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:38657/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6764/.s.monetdb.38657
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:04:25 >  
+# 15:04:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:25 >  
+
+#io.print(c);
 #--------------------------#
 # h	t  # name
 # void	str  # type
@@ -60,12 +40,13 @@ end user.main;
 [ 3@0,	  ""		  ]
 [ 4@0,	  nil		  ]
 [ 5@0,	  "!"		  ]
-[0,hello]
-[1,brave]
-[2,world]
-[3,]
-[4,nil]
-[5,!]
+#exit (h,ts);
+[ 0,	"hello"	]
+[ 1,	"brave"	]
+[ 2,	"world"	]
+[ 3	]
+[ 4,	nil	]
+[ 5,	"!"	]
 
 # 08:01:07 >  
 # 08:01:07 >  Done.
