@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 CREATE TABLE t1(
   a1 INTEGER,
   b1 INTEGER,
@@ -1130,7 +1132,7 @@ CREATE INDEX t4b4 ON t4(b4);
 CREATE INDEX t5c5 ON t5(c5);
 CREATE INDEX t6d6 ON t6(d6);
 CREATE INDEX t7e7 ON t7(e7);
-CREATE INDEX t8all ON t8(e8 DESC, d8 ASC, c8 DESC, b8 ASC, a8 DESC);
+-- CREATE INDEX t8all ON t8(e8 DESC, d8 ASC, c8 DESC, b8 ASC, a8 DESC);  -- disabled as it is not supported by MonetDB and cuases the transaction to become invalid and requering a ROLLback which we do not want to do.
 
 -- query IIIIIT rowsort all1
 SELECT * FROM t1
@@ -46259,3 +46261,5 @@ DROP TABLE t6;
 DROP TABLE t7;
 DROP TABLE t8;
 DROP TABLE t9;
+
+ROLLBACK;
