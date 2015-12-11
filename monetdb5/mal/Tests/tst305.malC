@@ -1,15 +1,14 @@
+
 # Exceptions can be explicitly raised in a function
 # which requires the exception identifier to be defined.
 
 function myException();
-raise	PermissionDeniedException :="new exception\n";
+raise	IllegalAccess:="new exception";
 	io.print("should have left function ");
 end myException;
 
+function foo();
 	user.myException();
 	io.print("should not come here");
-#exception block;
-catch	MALException:str;
-	io.printf("caught IllegalAccess\n");
-exit	MALException;
-	io.print("done");
+end foo;
+user.foo();
