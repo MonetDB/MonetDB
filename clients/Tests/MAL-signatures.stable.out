@@ -38651,7 +38651,7 @@ comment Create an iterator over a MAT
 
 pattern mat.new(b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATpack;
-comment Define a Merge Association Table (MAT). Faal back to the pack operationwhen this is called 
+comment Define a Merge Association Table (MAT). Fall back to the pack operationwhen this is called 
 
 pattern mat.project(map:bat[:oid,:bte],b:bat[:oid,:any_2]...):bat[:oid,:any_2] 
 address MATproject;

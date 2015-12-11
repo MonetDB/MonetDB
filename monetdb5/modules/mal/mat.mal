@@ -8,7 +8,7 @@ module mat;
 
 pattern new(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpack
-comment "Define a Merge Association Table (MAT). Faal back to the pack operation
+comment "Define a Merge Association Table (MAT). Fall back to the pack operation
 when this is called ";
 
 pattern pack(:any_2...):bat[:oid,:any_2]
