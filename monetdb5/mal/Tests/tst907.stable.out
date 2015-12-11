@@ -5,17 +5,22 @@ stdout of test 'tst907` in directory 'monetdb5/mal` itself:
 # 08:01:38 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst907.mal </dev/null
 # 08:01:38 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#function one(base:int):int;
-#	print(base);
-#	return base;
-#end one;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
 function user.one(base:int):int;
     io.print(base);
     return one := base;
@@ -34,6 +39,7 @@ end user.pow;
 #WARNING To speedup user.three a bulk operator implementation is needed
 #WARNING To speedup user.one a bulk operator implementation is needed
 #WARNING To speedup user.pow a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"pow":str,b:bat[:oid,:int],2:int);
 function user.main():void;
     k := user.one(1);
     l := user.three(1,2,3);
@@ -47,7 +53,7 @@ barrier (X_27,X_28) := iterator.new(b);
     bat.append(X_23,X_30);
     redo (X_27,X_28) := iterator.next(b);
 exit (X_27,X_28);
-    z:bat[:oid,:int]  := X_23;
+    z:bat[:oid,:int] := X_23;
     io.print("do multiplex one test");
     X_35 := bat.new(nil:oid,nil:int);
 barrier (X_37,X_38) := iterator.new(b);
@@ -55,7 +61,7 @@ barrier (X_37,X_38) := iterator.new(b);
     bat.append(X_35,X_40);
     redo (X_37,X_38) := iterator.next(b);
 exit (X_37,X_38);
-    z:bat[:oid,:int]  := X_35;
+    z:bat[:oid,:int] := X_35;
     io.print("do multiplex pow test");
     X_45 := bat.new(nil:oid,nil:int);
 barrier (X_47,X_48) := iterator.new(b);
@@ -63,7 +69,7 @@ barrier (X_47,X_48) := iterator.new(b);
     bat.append(X_45,X_50);
     redo (X_47,X_48) := iterator.next(b);
 exit (X_47,X_48);
-    z:bat[:oid,:int]  := X_45;
+    z:bat[:oid,:int] := X_45;
     io.print(z);
 end user.main;
 [ 1 ]

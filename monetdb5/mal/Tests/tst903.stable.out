@@ -17,9 +17,8 @@ stdout of test 'tst903` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-
-
-
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    x:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:lng],c:bat[:oid,:lng]);
 function user.main():void;
 # the multiplex code blocks. 
     t0 := alarm.usec();
@@ -150,25 +149,42 @@ exit (X_109,X_110);
     d0 := calc.-(t1,t0);
     io.printf("#mal.multiplex(+) %d\n",d0);
     t0 := alarm.usec();
-    x:bat[:oid,:lng]  := batcalc.+(b,c);
+    x:bat[:oid,:lng] := batcalc.+(b,c);
     t1 := alarm.usec();
     d0 := calc.-(t1,t0);
     io.printf("#batcalc.+() %d\n",d0);
 end user.main;
-#loop 1820795
-#copy 25467 count 1000000
-#select none 4776 count 0
-#select all 34358 count 1000000
-#select 0.05 9229 count 50004
-#select 0.1 12960 count 100016
-#select 0.2 20960 count 199929
-#select 0.4 37085 count 399791
-#select 0.6 51456 count 600237
-#select 0.8 64077 count 799837
-#select 1.0 75862 count 999999
-#head sort 172253 count 1000000
-#mal.multiplex(+) 2697369
-#batcalc.+() 30817
+#loop 5208541
+#copy 24287 count 1000000
+#select none 4803 count 0
+#select all 8581 count 1000000
+#select 0.05 6794 count 50004
+#select 0.1 9062 count 100016
+#select 0.2 14076 count 199929
+#select 0.4 23669 count 399791
+#select 0.6 30918 count 600237
+#select 0.8 35693 count 799837
+#select 1.0 41230 count 999999
+#head sort 171948 count 1000000
+#mal.multiplex(+) 6100332
+#batcalc.+() 29745
+
+
+#user.foo();
+#loop 5059436
+#copy 24256 count 1000000
+#select none 4725 count 0
+#select all 8517 count 1000000
+#select 0.05 6775 count 50004
+#select 0.1 9075 count 100016
+#select 0.2 13856 count 199929
+#select 0.4 23775 count 399791
+#select 0.6 30837 count 600237
+#select 0.8 35637 count 799837
+#select 1.0 41211 count 999999
+#head sort 171849 count 1000000
+#mal.multiplex(+) 6068119
+#batcalc.+() 29617
 
 # 08:19:33 >  
 # 08:19:33 >  Done.

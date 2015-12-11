@@ -1,5 +1,6 @@
 #testing the multiplex operations on simple groups
 
+function foo();
 b := bat.new(:oid,:oid);
 bat.append(b,0@0);
 bat.append(b,1@0);
@@ -36,3 +37,5 @@ io.print(i);
 
 h := aggr.max(b,g,e);
 io.print(h);
+end foo;
+user.foo();

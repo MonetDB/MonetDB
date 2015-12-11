@@ -8,7 +8,14 @@ stderr of test 'tst840` in directory 'monetdb5/mal` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
 
-# 13:50:41 >  
-# 13:50:41 >  Done.
-# 13:50:41 >  
+# 12:52:19 >  
+# 12:52:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13998" "--port=37997"
+# 12:52:19 >  
+
+InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+
+
+# 12:52:19 >  
+# 12:52:19 >  "Done."
+# 12:52:19 >  
 

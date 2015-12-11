@@ -17,7 +17,6 @@ stdout of test 'tst920` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-
 function user.main():void;
 #testing garbage collection of strings 
     t0 := alarm.usec();

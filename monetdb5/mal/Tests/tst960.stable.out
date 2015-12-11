@@ -5,52 +5,22 @@ stdout of test 'tst960` in directory 'monetdb5/mal` itself:
 # 23:37:05 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=40158 --set sql_port=57521 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst960.mal </dev/null
 # 23:37:05 >  
 
-# Monet Database Server V4.7.1
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## the chunk mechanism
-#
-#S:= new(:void,:str);
-#setSequenceBase(S,0:oid);
-#insert(S,nil,"hello");
-#insert(S,nil,"brave");
-#insert(S,nil,"new");
-#insert(S,nil,"world");
-#print(S);
-#
-#L:= batstr.length(S);
-#print(L);
-#L:= batstr.bytes(S);
-#print(L);
-#
-#B:= batstr.==(S,"hello");
-#print(B);
-#
-#B:= batstr.match(S,"hello");
-#print(B);
-#
-#U:= batstr.toUpper(S);
-#print(U);
-#
-#l:= batstr.toLower(U);
-#print(l);
-#
-#trim:= batstr.trim(S); 
-#print(trim);
-#ltrim:= batstr.ltrim(S); 
-#print(ltrim);
-#rtrim:= batstr.rtrim(S); 
-#print(rtrim);
-#
-#srch:= batstr.search(S,S); 
-#io.print(srch);
-#plus:= batcalc.+(S,S); 
-#io.print(plus);
-#
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
 function user.main():void;
 # the chunk mechanism 
     S := bat.new(:oid,:str);
@@ -166,8 +136,8 @@ end user.main;
 [ 2@0,	  "new"		  ]
 [ 3@0,	  "world"	  ]
 [ "Start searches" ]
-#-----------------#
-# h	tmp_21	  # name
+#--------------------------#
+# h	t  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]

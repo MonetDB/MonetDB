@@ -1,3 +1,4 @@
+function foo();
 b:= bat.new(:oid,:int);
 bat.append(b,1);
 bat.append(b,2);
@@ -14,3 +15,5 @@ slice1 := algebra.slice(b,0@0,4@0);
 io.print(slice1);
 slice2 := algebra.slice(b,5@0,nil:oid);
 io.print(slice2);
+end;
+user.foo();

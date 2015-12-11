@@ -4,6 +4,9 @@ function extralongfunctionsignature(p1:bat[:oid,:sht], p2:bat[:oid,:sht]):bat[:o
 return extralongfunctionsignature:= b;
 end extralongfunctionsignature;
 
+function foo();
 p1:= bat.new(:oid,:sht);
 p2:= bat.new(:oid,:sht);
 z:= extralongfunctionsignature(p1,p2);
+end foo;
+user.foo();

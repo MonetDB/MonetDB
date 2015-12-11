@@ -2,5 +2,8 @@
 function wrong.message():void;
 	io.print("shouldn't come here");
 end message;
-wrong.message();
-wrongTo.message();
+
+function foo();
+	wrong.message();
+	wrongTo.message();
+end foo;

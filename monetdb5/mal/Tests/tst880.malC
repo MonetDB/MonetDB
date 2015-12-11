@@ -1,5 +1,6 @@
 #min/max over two BATs
 
+function foo();
 b:= bat.new(:oid,:int);
 bat.append(b,-5);
 bat.append(b,0);
@@ -23,3 +24,5 @@ z:= batcalc.max(b,c);
 io.print(b,c,z);
 z:= batcalc.min(b,c);
 io.print(b,c,z);
+end;
+user.foo();

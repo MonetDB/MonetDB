@@ -1,6 +1,9 @@
 # raw IO may screw up the front-end
+function foo();
 s:= " \nline1\n\
 line2\n";
 io.printf("----\n");
 io.printf("%s",s);
 io.printf("----\n");
+end;
+user.foo();
