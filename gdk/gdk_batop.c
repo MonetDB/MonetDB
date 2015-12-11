@@ -1119,10 +1119,10 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 	return GDK_SUCCEED;
 }
 
-/* subsort the bat b according to both o and g.  The stable and
- * reverse parameters indicate whether the sort should be stable or
- * descending respectively.  The parameter b is required, o and g are
- * optional (i.e., they may be NULL).
+/* Sort the bat b according to both o and g.  The stable and reverse
+ * parameters indicate whether the sort should be stable or descending
+ * respectively.  The parameter b is required, o and g are optional
+ * (i.e., they may be NULL).
  *
  * A sorted copy is returned through the sorted parameter, the new
  * ordering is returned through the order parameter, group information
@@ -1148,9 +1148,16 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
  * the order and groups bat from the previous call.  In this case, the
  * sorted BATs are not of much use, so the sorted output parameter
  * does not need to be specified.
+ * Apart from error checking and maintaining reference counts, sorting
+ * three columns (col1, col2, col3) could look like this with the
+ * sorted results in (col1s, col2s, col3s):
+ *	BATsort(&col1s, &ord1, &grp1, col1, NULL, NULL, 0, 0);
+ *	BATsort(&col2s, &ord2, &grp2, col2, ord1, grp1, 0, 0);
+ *	BATsort(&col3s, NULL, NULL, col3, ord2, grp2, 0, 0);
+ * Note that the "reverse" parameter can be different for each call.
  */
 gdk_return
-BATsubsort(BAT **sorted, BAT **order, BAT **groups,
+BATsort(BAT **sorted, BAT **order, BAT **groups,
 	   BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn;
@@ -1158,7 +1165,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	BUN p, q, r;
 
 	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATsubsort: b must be dense-headed\n");
+		GDKerror("BATsort: b must be dense-headed\n");
 		return GDK_FAIL;
 	}
 	if (o != NULL &&
@@ -1168,7 +1175,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
 	      o->tseqbase == oid_nil))) {
-		GDKerror("BATsubsort: o must be [dense,oid] and same size as b\n");
+		GDKerror("BATsort: o must be [dense,oid] and same size as b\n");
 		return GDK_FAIL;
 	}
 	if (g != NULL &&
@@ -1179,7 +1186,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      g->tseqbase == oid_nil))) {
-		GDKerror("BATsubsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
+		GDKerror("BATsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
 		return GDK_FAIL;
 	}
 	assert(reverse == 0 || reverse == 1);

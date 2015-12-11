@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Dec 11 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Renamed BATsubsort to BATsort.
+
 * Thu Dec  3 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed "sub" from the names of the function BATsubselect,
   BATthetasubselect, BATsubcross, BATsubleftjoin, BATsubouterjoin,

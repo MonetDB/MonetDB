@@ -2313,7 +2313,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		BATappend(res, u, TRUE);
 		BBPunfix(u->batCacheid);
 
-		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED) {
 			BBPunfix(c->batCacheid);
@@ -2351,7 +2351,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 
-		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);

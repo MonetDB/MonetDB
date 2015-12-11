@@ -746,7 +746,7 @@ BATimprints(BAT *b)
 			return GDK_FAIL;
 		}
 		s->tkey = 1;	/* we know is unique on tail now */
-		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+		if (BATsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
 			BBPunfix(s->batCacheid);
 			GDKfree(imprints);
