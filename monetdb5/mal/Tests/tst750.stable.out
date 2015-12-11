@@ -21,16 +21,15 @@ stdout of test 'tst750` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.test(b:bat[:oid,:any_2],c:any_2):void;
-    k := calc.+(1,c);
-    io.print(k);
-end user.test;
-function user.main():void;
-# Polymorphic function tests 
-# Cloning two versions of a single function 
-    b := bat.new(:oid,:int);
-    user.test(b,2);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:24:51 >  
+# 09:24:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25070" "--port=35105"
+# 09:24:51 >  
+
+#user.test(b,2);
 [ 3 ]
 
 # 08:01:29 >  

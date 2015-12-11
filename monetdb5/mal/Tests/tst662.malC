@@ -1,16 +1,12 @@
 #Testing variable return lists
 
-pattern makeSchedule(i:int, l:lng...):bte...
-address MDBdummy;
+pattern makeSchedule(i:int, l:lng...):bte...  address MDBdummy;
 
-pattern makeScheduleB(i:int, l:lng...)(:int,:bte...)
-address MDBdummy;
+pattern makeScheduleB(i:int, l:lng...)(:int,:bte...) address MDBdummy;
 
-pattern makeScheduleC(i:int, l:lng...)(:any_1...)
-address MDBdummy;
+pattern makeScheduleC(i:int, l:lng...)(:any_1...) address MDBdummy;
 
-pattern makeScheduleD(i:int, l:lng...)(:any...)
-address MDBdummy;
+pattern makeScheduleD(i:int, l:lng...)(:any...) address MDBdummy;
 
 function tst();
 	X100:= -1:lng;

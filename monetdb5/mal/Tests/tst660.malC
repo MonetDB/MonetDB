@@ -1,9 +1,7 @@
 #Testing variable argument lists
 
-pattern fi(i:int...)
-address MDBdummy;
-pattern fs(i:int,s:str...)
-address MDBdummy;
+pattern fi(i:int...) address MDBdummy;
+pattern fs(i:int,s:str...) address MDBdummy;
 
 fi(1);
 fi(1,2);
