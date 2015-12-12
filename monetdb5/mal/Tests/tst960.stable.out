@@ -21,40 +21,15 @@ stdout of test 'tst960` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.main():void;
-# the chunk mechanism 
-    S := bat.new(:oid,:str);
-    bat.append(S,"hello");
-    bat.append(S,"brave");
-    bat.append(S,"new");
-    bat.append(S,"world");
-    io.print(S);
-    L := batstr.length(S);
-    io.print(L);
-    L := batstr.nbytes(S);
-    io.print(L);
-    B := batcalc.==(S,"hello");
-    io.print(B);
-    C := batalgebra.like(S,"hello");
-    io.print(C);
-    U := batstr.toUpper(S);
-    io.print(U);
-    l := batstr.toLower(U);
-    io.print(l);
-    trim := batstr.trim(S);
-    io.print(trim);
-    ltrim := batstr.ltrim(S);
-    io.print(ltrim);
-    rtrim := batstr.rtrim(S);
-    io.print(rtrim);
-    io.print("Start searches");
-    srch := batstr.search(S,"hello");
-    io.print(srch);
-    srch := batstr.search(S,S);
-    io.print(srch);
-    plus := batcalc.+(S,S);
-    io.print(plus);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:47 >  
+# 22:45:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:47 >  
+
+#user.foo();
 #--------------------------#
 # h	t  # name
 # void	str		  # type
@@ -135,7 +110,7 @@ end user.main;
 [ 1@0,	  "brave"	  ]
 [ 2@0,	  "new"		  ]
 [ 3@0,	  "world"	  ]
-[ "Start searches" ]
+[ Start searches	]
 #--------------------------#
 # h	t  # name
 # void	int	  # type

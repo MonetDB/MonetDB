@@ -21,28 +21,19 @@ stdout of test 'tst904` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    xz:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:any,c:any);
 #WARNING To speedup calc.+ a bulk operator implementation is needed
 #    xz:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:lng],c:int);
-function user.main():void;
-# the multiplex code blocks using CONSTANTS. 
-    clients.setListing(15);
-    b := bat.new(:oid,:lng);
-    i := -1:lng;
-barrier i := 0:lng;
-    bat.append(b,i);
-    redo i := iterator.next(1:lng,10:lng);
-exit i;
-    io.print(b);
-    c := 1;
-    X_20 := bat.new(nil:oid,nil:lng);
-barrier (X_24,X_25) := iterator.new(b);
-    X_27 := calc.+(X_25,c);
-    bat.append(X_20,X_27);
-    redo (X_24,X_25) := iterator.next(b);
-exit (X_24,X_25);
-    xz:bat[:oid,:lng] := X_20;
-    io.print(xz);
-end user.main;
+
+# 22:45:39 >  
+# 22:45:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:39 >  
+
+#user.foo();
 #--------------------------#
 # h	t  # name
 # void	lng  # type

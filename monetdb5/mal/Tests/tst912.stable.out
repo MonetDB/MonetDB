@@ -21,77 +21,17 @@ stdout of test 'tst912` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-factory user.getChunk(b:bat[:oid,:lng],size:lng) (bb:bit,c:bat[:oid,:lng]);
-    (chk,c) := iterator.new(b,size);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier allways := calc.>=(chk,0);
-    yield (bb,c) := (true,c);
-    (chk,c) := iterator.next(b,size);
-    redo allways := calc.>=(chk,0);
-exit allways;
-    mdb.setDebug(dbgmsk_restore);
-    io.print("#factory done\n");
-    return (bb,c) := (false,c);
-end user.getChunk;
-function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;
-    t0 := alarm.usec();
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier (tst,c) := user.getChunk(b,size);
-    t := algebra.subselect(c,256000:lng,266000:lng,true,true,false);
-    redo (tst,c) := user.getChunk(b,size);
-exit (tst,c);
-    mdb.setDebug(dbgmsk_restore);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    i := calc./(1000000:lng,size);
-    if := calc.flt(i);
-    df := calc.flt(d0);
-    f := calc./(df,if);
-    io.printf("#chopped at %d",size);
-    io.printf(" at %f usec\n",f);
-end user.choptest;
-function user.main():void;
-# analyse the overhead of chopping a table 
-# the multiplex code blocks. 
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    t0 := alarm.usec();
-barrier doit := true;
-    t := algebra.subselect(b,256000:lng,266000:lng,true,true,false);
-exit doit;
-    t1 := alarm.usec();
-    base := calc.-(t1,t0);
-    io.printf("#select direct %d usec\n",base);
-    user.choptest(b,100000:lng,base);
-    user.choptest(b,10000:lng,base);
-    user.choptest(b,1000:lng,base);
-    user.choptest(b,100:lng,base);
-    factories.shutdown("user","getChunk");
-end user.main;
-#select direct 4243 usec
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:43 >  
+# 22:45:43 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:43 >  
+
+#io.printf("#select direct %d usec\n",base);
+#select direct 4511 usec
+#user.choptest(b,100000:lng,base);
 [ "#factory done\n" ]
 #chopped at 100000 at 850.000000 usec
 [ "#factory done\n" ]

@@ -21,57 +21,21 @@ stdout of test 'tst907` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.one(base:int):int;
-    io.print(base);
-    return one := base;
-end user.one;
-function user.three(base:int,x:int,y:int):int;
-    io.print(base);
-    return three := base;
-end user.three;
-function user.pow(base:int,raise:int):int;
-    mg_a := calc.dbl(base);
-    ng_a := calc.dbl(raise);
-    og_a := calc.*(mg_a,ng_a);
-    pg_a := calc.int(og_a);
-    return pow := pg_a;
-end user.pow;
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup user.three a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"three":str,b:any,2:int,3:int);
 #WARNING To speedup user.three a bulk operator implementation is needed
 #WARNING To speedup user.one a bulk operator implementation is needed
 #WARNING To speedup user.pow a bulk operator implementation is needed
 #    z:bat[:oid,:int] := mal.multiplex("user":str,"pow":str,b:bat[:oid,:int],2:int);
-function user.main():void;
-    k := user.one(1);
-    l := user.three(1,2,3);
-    p := user.pow(1,2);
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    io.print("do multiplex three test");
-    X_23 := bat.new(nil:oid,nil:int);
-barrier (X_27,X_28) := iterator.new(b);
-    X_30 := user.three(X_28,2,3);
-    bat.append(X_23,X_30);
-    redo (X_27,X_28) := iterator.next(b);
-exit (X_27,X_28);
-    z:bat[:oid,:int] := X_23;
-    io.print("do multiplex one test");
-    X_35 := bat.new(nil:oid,nil:int);
-barrier (X_37,X_38) := iterator.new(b);
-    X_40 := user.one(X_38);
-    bat.append(X_35,X_40);
-    redo (X_37,X_38) := iterator.next(b);
-exit (X_37,X_38);
-    z:bat[:oid,:int] := X_35;
-    io.print("do multiplex pow test");
-    X_45 := bat.new(nil:oid,nil:int);
-barrier (X_47,X_48) := iterator.new(b);
-    X_50 := user.pow(X_48,2);
-    bat.append(X_45,X_50);
-    redo (X_47,X_48) := iterator.next(b);
-exit (X_47,X_48);
-    z:bat[:oid,:int] := X_45;
-    io.print(z);
-end user.main;
+
+# 22:45:40 >  
+# 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:40 >  
+
+#user.foo();
 [ 1 ]
 [ 1 ]
 [ "do multiplex three test" ]

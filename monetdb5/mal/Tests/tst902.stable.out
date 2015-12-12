@@ -21,27 +21,15 @@ stdout of test 'tst902` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.main():void;
-# what is the overhead of MAL in multiplex situations 
-# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
-    b := bat.new(:oid,:lng);
-barrier v := 0:lng;
-    bat.append(b,v);
-    redo v := iterator.next(1:lng,10:lng);
-exit v;
-    c := algebra.copy(b);
-    d := bat.new(:oid,:lng);
-barrier (h,t) := iterator.new(b);
-    B1 := algebra.fetch(b,h);
-    B2 := algebra.fetch(c,h);
-    t := calc.+(B1,B2);
-    bat.append(d,t);
-    redo (h,t) := iterator.next(b);
-catch GDKerror:str;
-exit GDKerror:str;
-exit (h,t);
-    io.print(d);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:32 >  
+# 22:45:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:32 >  
+
+#user.foo();
 #--------------------------#
 # h	t  # name
 # void	lng  # type

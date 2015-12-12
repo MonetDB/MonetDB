@@ -21,21 +21,15 @@ stdout of test 'tst908` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.perftst(b:bat[:oid,:any_2],div:any_2):void;
-    io.print("perftst");
-    io.print(div);
-    reduce := batcalc./(b,div);
-    io.print(reduce);
-end user.perftst;
-function user.main():void;
-# the multiplex code blocks. 
-    b := bat.new(:oid,:lng);
-barrier i := 0:lng;
-    bat.append(b,i);
-    redo i := iterator.next(1:lng,10:lng);
-exit i;
-    user.perftst(b,1:lng);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:40 >  
+# 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:40 >  
+
+#user.foo();
 [ "perftst" ]
 [ 1 ]
 #-----------------#

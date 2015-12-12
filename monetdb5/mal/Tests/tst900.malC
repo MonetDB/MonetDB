@@ -1,6 +1,9 @@
 # the multiplex code blocks. Testing syntax errors
 
+function foo();
 b:= bat.new(:lng,:lng);
 x:= multiplex.+(b,b);
 d:= [+](b,c) ;;# parser bug
 a:= b [+] b;
+end;
+user.foo();

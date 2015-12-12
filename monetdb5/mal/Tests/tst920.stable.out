@@ -17,17 +17,15 @@ stdout of test 'tst920` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#testing garbage collection of strings 
-    t0 := alarm.usec();
-    base := "hello  ";
-    s := str.insert(base,6,6,"world");
-    io.print(s);
-barrier i := 0:lng;
-    s := str.insert(base,6,6,"world");
-    redo i := iterator.next(1:lng,200:lng);
-exit i;
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:47 >  
+# 22:45:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:47 >  
+
+#user.foo();
 [ "hello world" ]
 
 # 14:38:30 >  

@@ -30,18 +30,19 @@ stderr of test 'tst804` in directory 'monetdb5/mal` itself:
 # 15:26:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30489" "--port=34680"
 # 15:26:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-30489/.s.monetdb.34680
+MAPI  = (monetdb) /var/tmp/mtest-12593/.s.monetdb.34923
 QUERY = function wrong.message():void;
-
+ERROR = !SyntaxException:parseError:function wrong.message():void;
         !SyntaxException:parseError:                      ^<module> name not defined
         !SyntaxException:parseError:
         !';' expected
-MAPI  = (monetdb) /var/tmp/mtest-30489/.s.monetdb.34680
+MAPI  = (monetdb) /var/tmp/mtest-12593/.s.monetdb.34923
 QUERY = end message;
-
+ERROR = !SyntaxException:parseError:end message;
         !SyntaxException:parseError:   ^non matching end label
-MAPI  = (monetdb) /var/tmp/mtest-30489/.s.monetdb.34680
+MAPI  = (monetdb) /var/tmp/mtest-12593/.s.monetdb.34923
 QUERY = end foo;
+ERROR = !TypeException:user.foo[1]:'wrong.message' undefined in:     wrong.message();
 
 
 # 15:26:53 >  

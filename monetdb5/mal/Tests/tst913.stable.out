@@ -21,20 +21,15 @@ stdout of test 'tst913` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.main():void;
-# The series tst2?? is a patched version of suite_00 
-# The first and foremost BAT operations 
-    b := bat.new(:oid,:str);
-    bat.append(b,"true");
-    bat.append(b,"TRUE");
-    bat.append(b,"FALSE");
-    bat.append(b,"false");
-    bat.append(b,"");
-    bat.append(b,nil:str);
-    io.print(b);
-    bc := batcalc.bit_noerror(b);
-    io.print(bc);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:46 >  
+# 22:45:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:46 >  
+
+#user.foo();
 #--------------------------#
 # h	t		  # name
 # int	str		  # type
