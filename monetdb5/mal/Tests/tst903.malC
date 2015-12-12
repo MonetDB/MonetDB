@@ -122,7 +122,7 @@ cnt:= aggr.count(z9);
 mdb.setDebug(dbgmsk_set);
 
 t0:= alarm.usec();
-x:bat[:oid,:lng]:= mal.multiplex("batcalc","+",b,c);
+x:bat[:oid,:lng]:= mal.multiplex("calc","+",b,c);
 t1:= alarm.usec();
 
 mdb.setDebug(dbgmsk_restore);
