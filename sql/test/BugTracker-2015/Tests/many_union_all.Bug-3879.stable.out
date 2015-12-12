@@ -1,4 +1,4 @@
-stdout of test 'many_union_all.Bug-3897` in directory 'sql/test/BugTracker-2015` itself:
+stdout of test 'many_union_all.Bug-3879` in directory 'sql/test/BugTracker-2015` itself:
 
 
 # 16:32:11 >  
@@ -147,10 +147,11 @@ Ready.
 % a # name
 % int # type
 % 1 # length
-[ 0	]
 [ 3	]
 [ 6	]
 [ 7	]
+[ 0	]
+#DROP TABLE foo;
 #ROLLBACK;
 
 # 16:32:11 >  
