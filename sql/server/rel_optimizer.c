@@ -4204,6 +4204,8 @@ rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel)
 		if (need_distinct)
 			set_distinct(rel);
 		(*changes)++;
+		rel->l = rel_merge_projects(changes, sql, rel->l);
+		rel->r = rel_merge_projects(changes, sql, rel->r);
 		return rel;
 	}
 	return rel;
@@ -7735,13 +7737,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_select] || gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
-	if (gp.cnt[op_project]) {
-		int lchanges = 0;
-		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &lchanges);
-		if (lchanges)
-			rel = rewrite(sql, rel, &rel_merge_projects, &lchanges);
-		changes += lchanges;
-	}
+	if (gp.cnt[op_project]) 
+		rel = rewrite_topdown(sql, rel, &rel_push_project_down_union, &changes);
 
 	/* Remove unused expressions */
 	if (level <= 0)
