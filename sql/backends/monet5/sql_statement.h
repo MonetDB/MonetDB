@@ -255,4 +255,6 @@ extern list *stmt_list_dependencies(sql_allocator *sa, stmt *s, int depend_type)
 
 extern stmt *const_column(sql_allocator *sa, stmt *val);
 
+extern int has_side_effect(stmt *val);
+
 #endif /* _SQL_STATEMENT_H_ */

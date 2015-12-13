@@ -633,7 +633,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 	return val;
 }
 
-static int
+int
 has_side_effect(stmt *val)
 {
 	int se = 0;
