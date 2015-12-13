@@ -400,6 +400,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 					return NULL;
 				if (es->nrcols > nrcols)
 					nrcols = es->nrcols;
+				if (es && es->nrcols <= 0 && left && has_side_effect(es)) 
+					es = stmt_const(sql->sa, bin_first_column(sql->sa, left), es);
 				list_append(l,es);
 			}
 			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
