@@ -17,50 +17,22 @@ stdout of test 'recycle01` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function sql.mvc():int;
-    return mvc := 1;
-end sql.mvc;
-function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
-    b := bat.new(:oid,:oid);
-barrier i := 0@0:oid;
-    bat.append(b,i);
-    redo i := iterator.next(1@0:oid,12@0:oid);
-exit i;
-    return tid := b;
-end sql.tid;
-function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,1);
-    bat.append(b,2);
-    bat.append(b,3);
-    bat.append(b,4);
-    bat.append(b,5);
-    bat.append(b,6);
-    bat.append(b,7);
-    bat.append(b,8);
-    bat.append(b,9);
-    bat.append(b,10);
-    bat.append(b,11);
-    return bind := b;
-end sql.bind;
-function sql.qry(low:int,hgh:int):void;
-    m := sql.mvc();
-    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
-    s := algebra.subselect(b,x,low,hgh,true,true,false);
-    io.print(s);
-end sql.qry;
-function user.main():void;
-#test the basics of the recycler 
-#reusing select results 
-    mdb.list("user","qry");
-    io.print("start");
-    user.qry(1,10);
-    io.print("reuse BAT");
-    user.qry(1,10);
-    recycle.dump();
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+#RECYCLE drop
+#RECYCLER CATALOG cached 4 instructions, MAL recycled = 4 total MAL executed = 91 memory= 144 total searchtime=27.25(usec) savings=2632082
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#0	2	657959	0	0	#    1 := sql.mvc();
+#1	2	658003	0	96	#    <tmp_36> := sql.tid(1,"sys","tbl");
+#2	2	658040	0	48	#    <tmp_316> := sql.bind(1,"sys","tbl","col",0);
+#3	2	658080	144	0	#    <tmp_440> := algebra.subselect(<tmp_316>,<tmp_36>,1,10,true,true,false);
+
+# 20:49:38 >  
+# 20:49:38 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22767" "--port=33890"
+# 20:49:38 >  
+
+#mdb.list("user","qry");
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
     x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");

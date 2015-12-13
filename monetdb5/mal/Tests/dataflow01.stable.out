@@ -9,57 +9,23 @@ stdout of test 'dataflow01` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39545/
-function user.load():bat[:oid,:lng];
-    b := bat.new(:oid,:lng);
-    k := 0;
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier i := 0:lng;
-    k := calc.+(k,1);
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    return load := b;
-end user.load;
-function user.qry(z:bat[:oid,:lng],low:int,hgh:int):wrd;
-    l := calc.lng(low);
-    h := calc.lng(hgh);
-    s := algebra.subselect(z,l,h,true,true,false);
-    c := aggr.count(s);
-    return qry := c;
-end user.qry;
-function user.main():void;
-# a simple dataflow test to check call methods. 
-    s := user.load();
-    t1 := 0:wrd;
-    t2 := 0:wrd;
-    t3 := 0:wrd;
-    t4 := 0:wrd;
-    c := 0:wrd;
-barrier go := language.dataflow();
-    t1 := user.qry(s,1,100);
-    t2 := user.qry(s,101,1000);
-    t3 := user.qry(s,1001,10000);
-    t4 := user.qry(s,10001,100000);
-    c1 := calc.+(t1,t3);
-    c2 := calc.+(t2,t4);
-    c := calc.+(c1,c2);
-exit go;
-    io.print(c);
-    io.print(t1);
-    io.print(t2);
-    io.print(t3);
-    io.print(t4);
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33890/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22767/.s.monetdb.33890
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:49:35 >  
+# 20:49:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22767" "--port=33890"
+# 20:49:35 >  
+
+#io.print(c);
 [ 100000 ]
 [ 100 ]
 [ 900 ]

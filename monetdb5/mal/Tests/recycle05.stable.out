@@ -1,40 +1,40 @@
 stdout of test 'recycle05` in directory 'monetdb5/mal` itself:
 
 
-function sql.mvc():int;
-    return mvc := 1;
-end sql.mvc;
-function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
-    b := bat.new(:oid,:oid);
-barrier i := 0@0:oid;
-    bat.append(b,i);
-    redo i := iterator.next(1@0:oid,1000@0:oid);
-exit i;
-    return tid := b;
-end sql.tid;
-function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
-    b := bat.new(:oid,:int);
-barrier i := 0:int;
-    bat.append(b,i);
-    redo i := iterator.next(1:int,1000:int);
-exit i;
-    return bind := b;
-end sql.bind;
-function sql.qry(low:int,hgh:int):void;
-    m := sql.mvc();
-    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
-    s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-end sql.qry;
-function user.main():void;
-# Test of LRU cache policy in limited memory (12 RU) 
-    recycle.setCache(4);
-    io.print("start");
-    user.qry(100,120);
-    user.qry(700,710);
-    recycle.dump();
-# The next query should evict the oldest leaves (#2 mark an #3 reverse) 
-    user.qry(400,700);
-    recycle.dump();
-end user.main;
+# 20:49:39 >  
+# 20:49:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33890" "--set" "mapi_usock=/var/tmp/mtest-22767/.s.monetdb.33890" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 20:49:39 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33890/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22767/.s.monetdb.33890
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#RECYCLE drop
+#RECYCLER CATALOG cached 4 instructions, MAL recycled = 8 total MAL executed = 4062 memory= 12000 total searchtime=54.67(usec) savings=2113680
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#0	3	352528	0	0	#    1 := sql.mvc();
+#1	3	352577	0	8000	#    <tmp_102> := sql.tid(1,"sys","tbl");
+#2	3	352602	0	4000	#    <tmp_375> := sql.bind(1,"sys","tbl","col",0);
+#3	1	61	12000	0	#    <tmp_704> := algebra.subselect(<tmp_375>,<tmp_102>,400,700,true,true,false);
+
+# 20:49:40 >  
+# 20:49:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22767" "--port=33890"
+# 20:49:40 >  
+
+#io.print("start");
 [ "start" ]
