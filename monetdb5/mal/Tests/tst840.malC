@@ -1,4 +1,4 @@
-# raw IO may screw up the front-end
+# old MAL parser can not deal with new lines
 function foo();
 s:= " \nline1\n\
 line2\n";

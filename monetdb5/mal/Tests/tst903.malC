@@ -136,4 +136,6 @@ d0:= t1-t0;
 io.printf("#batcalc.+() %d\n",d0);
 
 end;
+optimizer.multiplex("user","foo");
+mdb.list("user","foo");
 user.foo();

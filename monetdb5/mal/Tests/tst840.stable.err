@@ -12,7 +12,20 @@ stderr of test 'tst840` in directory 'monetdb5/mal` itself:
 # 12:52:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13998" "--port=37997"
 # 12:52:19 >  
 
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+MAPI  = (monetdb) /var/tmp/mtest-21232/.s.monetdb.32271
+QUERY = s:= " \nline1\n\
+ERROR = !SyntaxException:parseError:
+        !operator expected
+MAPI  = (monetdb) /var/tmp/mtest-21232/.s.monetdb.32271
+QUERY = line2\n";
+ERROR = !SyntaxException:parseError:line2\n";
+        !SyntaxException:parseError:    ^';' expected
+MAPI  = (monetdb) /var/tmp/mtest-21232/.s.monetdb.32271
+QUERY = end;
+ERROR = !TypeException:user.foo[2]:'s' may not be used before being initialized
+MAPI  = (monetdb) /var/tmp/mtest-21232/.s.monetdb.32271
+QUERY = user.foo();
+ERROR = !TypeException:user.main[1]:'user.foo' undefined in:     X_0:any := user.foo();
 
 
 # 12:52:19 >  
