@@ -9,33 +9,25 @@ stdout of test 'test_10` in directory 'monetdb5/tests/suite_01` itself:
 # Serving database 'mTests_tests_suite_01', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
-function user.main():void;
-# Monet Mil to Mal compiler 
-# Copyright (c) 2001-2004, CWI. All rights reserved. 
-#Predefined code segment 
-#The compiler can not guarantee an accurate compilation, 
-#because MIL unlike MAL is a dynamically typed language. 
-#A few guidelines to maximize usefullness. 
-#- make the type of variables explicit, in particular 'nil' 
-#- upon advice of M2m to remap identifiers, change it in your program directly 
-#use the "mil_schema" for additional support routines 
-#	io.print("setoid(oid(20000000));"); 
-    aa_a := calc.oid(20000000);
-    ba_a := calc.setoid(aa_a);
-#	io.print("# long string problems in the Monet parser\n"); 
-    a := "asdfdsfasdfadfadfa";
-#	io.print("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";"); 
-    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";
-#	io.print("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";"); 
-    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";
-#	io.print("c.print();"); 
-    ca_a := io.print(c);
-#	io.print("quit();"); 
-    da_a := clients.quit();
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30193/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30232/.s.monetdb.30193
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:28:20 >  
+# 21:28:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30232" "--port=30193"
+# 21:28:20 >  
+
+#	ca_a := io.print(c);
 [ "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789" ]
 #quit();
 
