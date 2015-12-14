@@ -2375,7 +2375,6 @@ AC_ARG_WITH(proj,
 	AS_HELP_STRING([--with-proj=DIR],
 		[proj library is installed in DIR]),
 	have_proj="$withval")
-echo "1 "${have_proj}
 if test "x$have_proj" != xno ; then
 	case "$have_proj" in
 	auto|yes)
@@ -2385,7 +2384,6 @@ if test "x$have_proj" != xno ; then
 		PROJ_LIBS="-L$have_proj/lib -lproj"
 		;;
 	esac
-	echo "2 "${have_proj}
 	save_CPPFLAGS="$CPPFLAGS"
 	save_LDFLAGS="$LDFLAGS"
 	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
@@ -2397,7 +2395,6 @@ if test "x$have_proj" != xno ; then
 			have_proj=no; why_have_proj="(proj library not found)" ], ),
 		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
 		have_proj=no; why_have_proj="(proj_api.h header not found)" ])
-echo "3 "${have_proj}
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
 	if test "x$have_proj" = "xyes" -o "x$have_proj" = "xauto"; then
