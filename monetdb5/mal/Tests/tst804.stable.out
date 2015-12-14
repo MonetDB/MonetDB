@@ -1,34 +1,36 @@
 stdout of test 'tst804` in directory 'monetdb5/mal` itself:
 
 
-# 22:02:45 >  
-# 22:02:45 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=35323 --set xrpc_port=49646 --set monet_prompt= --trace --dbname=mTests_src_mal  tst804.mal < /dev/null
-# 22:02:45 >  
+# 15:26:52 >  
+# 15:26:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34680" "--set" "mapi_usock=/var/tmp/mtest-30489/.s.monetdb.34680" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 15:26:52 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## test definiton of a function in a unknown module
-#function wrong.message():void;
-!SyntaxException:parseError:function wrong.message():void;
-!SyntaxException:parseError:                      ^<module> name not defined
-!SyntaxException:parseError:	io.print("shouldn't come here");
-!SyntaxException:parseError:^';' expected
-!SyntaxException:parseError:end message;
-!SyntaxException:parseError:   ^non matching end label
-function user.main():void;
-# test definiton of a function in a unknown module 
-end user.main;
-function user.main():void;
-# test definiton of a function in a unknown module 
-end user.main;
-    wrong.message();
-    wrongTo.message();
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:34680/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30489/.s.monetdb.34680
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 22:02:45 >  
-# 22:02:45 >  Done.
-# 22:02:45 >  
+Ready.
+
+# 15:26:53 >  
+# 15:26:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30489" "--port=34680"
+# 15:26:53 >  
+
+
+# 15:26:53 >  
+# 15:26:53 >  "Done."
+# 15:26:53 >  
 

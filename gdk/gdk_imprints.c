@@ -557,8 +557,8 @@ do {									\
  * a view and there are imprints on b's parent.
  *
  * Note that the b->T->imprints pointer can be NULL, meaning there are
- * no imprints; (Heap *) 1, meaning there are no imprints loaded, but
- * they may exist on disk; or a valid pointer to loaded imprints.
+ * no imprints; (Imprints *) 1, meaning there are no imprints loaded,
+ * but they may exist on disk; or a valid pointer to loaded imprints.
  * These values are maintained here, in the IMPSdestroy and IMPSfree
  * functions, and in BBPdiskscan during initialization. */
 int
@@ -746,7 +746,7 @@ BATimprints(BAT *b)
 			return GDK_FAIL;
 		}
 		s->tkey = 1;	/* we know is unique on tail now */
-		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+		if (BATsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
 			BBPunfix(s->batCacheid);
 			GDKfree(imprints);

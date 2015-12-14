@@ -17,14 +17,15 @@ stdout of test 'tst401` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# testing the simple iterators on builtin types 
-barrier i := 0:flt;
-    io.print(i);
-    v := "do something";
-    redo i := iterator.next(1.3:flt,2.5:flt);
-exit i;
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:00:04 >  
+# 09:00:04 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
+# 09:00:04 >  
+
+#user.foo();
 [ 0 ]
 [ 1.3 ]
 

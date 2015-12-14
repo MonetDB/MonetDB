@@ -411,7 +411,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1,	sys.t1,	sys.L1 # table_name
 % a,	L1,	e,	d,	sql_add_a # name
-% int,	hugeint,	int,	int,	hugeint # type
+% int,	hugeint,	int,	int,	bigint # type
 % 3,	4,	3,	3,	3 # length
 [ 191,	1918,	192,	190,	579	]
 [ 220,	2226,	221,	222,	666	]
@@ -427,7 +427,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1,	sys.t1,	sys.L2 # table_name
 % a,	L1,	e,	d,	L2 # name
-% int,	hugeint,	int,	int,	hugeint # type
+% int,	hugeint,	int,	int,	bigint # type
 % 3,	4,	3,	3,	3 # length
 [ 191,	1918,	192,	190,	579	]
 [ 220,	2226,	221,	222,	666	]
@@ -2065,7 +2065,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	sql_sub_b # name
-% bigint,	smallint,	hugeint,	hugeint,	bigint # type
+% bigint,	smallint,	bigint,	hugeint,	bigint # type
 % 2,	3,	3,	4,	2 # length
 [ -1,	333,	317,	1067,	-1	]
 [ -1,	333,	NULL,	NULL,	NULL	]
@@ -2089,7 +2089,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	smallint,	hugeint,	hugeint,	bigint # type
+% bigint,	smallint,	bigint,	hugeint,	bigint # type
 % 2,	3,	3,	4,	2 # length
 [ -1,	333,	NULL,	NULL,	NULL	]
 [ -1,	333,	317,	1067,	-1	]
@@ -3259,7 +3259,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.L5 # table_name
 % L1,	L3,	L4,	b,	L5,	sql_add_a # name
-% bigint,	bigint,	hugeint,	int,	bigint,	hugeint # type
+% bigint,	bigint,	hugeint,	int,	bigint,	bigint # type
 % 2,	4,	4,	3,	2,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	1,	NULL	]
 [ -1,	1050,	635,	105,	-2,	317	]
@@ -3302,7 +3302,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.L6 # table_name
 % L1,	L3,	L4,	b,	L5,	L6 # name
-% bigint,	bigint,	hugeint,	int,	bigint,	hugeint # type
+% bigint,	bigint,	hugeint,	int,	bigint,	bigint # type
 % 2,	4,	4,	3,	2,	3 # length
 [ NULL,	402,	NULL,	NULL,	-1,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	1,	NULL	]
@@ -3372,7 +3372,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 385	]
@@ -3400,7 +3400,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 385	]
@@ -3427,7 +3427,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 385	]
@@ -3455,7 +3455,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 385	]
@@ -3487,7 +3487,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1 # table_name
 % L1,	L2,	L3,	a,	L4,	b # name
-% smallint,	hugeint,	hugeint,	int,	bigint,	int # type
+% smallint,	hugeint,	bigint,	int,	bigint,	int # type
 % 3,	4,	3,	3,	1,	3 # length
 [ 555,	NULL,	NULL,	NULL,	4,	112	]
 [ 333,	1902,	385,	127,	2,	129	]
@@ -3513,7 +3513,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1 # table_name
 % L1,	L2,	L3,	a,	L4,	b # name
-% smallint,	hugeint,	hugeint,	int,	bigint,	int # type
+% smallint,	hugeint,	bigint,	int,	bigint,	int # type
 % 3,	4,	3,	3,	1,	3 # length
 [ 555,	NULL,	NULL,	NULL,	4,	112	]
 [ 333,	1902,	385,	127,	2,	129	]
@@ -4223,7 +4223,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1 # table_name
 % b,	L1,	a # name
-% int,	hugeint,	int # type
+% int,	bigint,	int # type
 % 3,	3,	3 # length
 [ 139,	416,	138	]
 [ 143,	428,	142	]
@@ -4238,7 +4238,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1 # table_name
 % b,	L1,	a # name
-% int,	hugeint,	int # type
+% int,	bigint,	int # type
 % 3,	3,	3 # length
 [ 139,	416,	138	]
 [ 143,	428,	142	]
@@ -4252,7 +4252,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1 # table_name
 % b,	L1,	a # name
-% int,	hugeint,	int # type
+% int,	bigint,	int # type
 % 3,	3,	3 # length
 [ 139,	416,	138	]
 [ 143,	428,	142	]
@@ -4267,7 +4267,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1 # table_name
 % b,	L1,	a # name
-% int,	hugeint,	int # type
+% int,	bigint,	int # type
 % 3,	3,	3 # length
 [ 139,	416,	138	]
 [ 143,	428,	142	]
@@ -4281,7 +4281,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1 # table_name
 % b,	L1,	a # name
-% int,	hugeint,	int # type
+% int,	bigint,	int # type
 % 3,	3,	3 # length
 [ 139,	416,	138	]
 [ 143,	428,	142	]
@@ -4296,7 +4296,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1 # table_name
 % b,	L1,	a # name
-% int,	hugeint,	int # type
+% int,	bigint,	int # type
 % 3,	3,	3 # length
 [ 139,	416,	138	]
 [ 143,	428,	142	]
@@ -4527,7 +4527,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	e,	L4,	sql_add_a # name
-% bigint,	hugeint,	bigint,	int,	smallint,	hugeint # type
+% bigint,	hugeint,	bigint,	int,	smallint,	bigint # type
 % 2,	4,	1,	3,	3,	3 # length
 [ -3,	1096,	3,	180,	333,	544	]
 [ 3,	1180,	3,	197,	555,	595	]
@@ -4546,7 +4546,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	e,	L4,	L5 # name
-% bigint,	hugeint,	bigint,	int,	smallint,	hugeint # type
+% bigint,	hugeint,	bigint,	int,	smallint,	bigint # type
 % 2,	4,	1,	3,	3,	3 # length
 [ -3,	1096,	3,	180,	333,	544	]
 [ 3,	1180,	3,	197,	555,	595	]
@@ -4564,7 +4564,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	e,	L4,	sql_add_a # name
-% bigint,	hugeint,	bigint,	int,	smallint,	hugeint # type
+% bigint,	hugeint,	bigint,	int,	smallint,	bigint # type
 % 2,	4,	1,	3,	3,	3 # length
 [ -3,	1096,	3,	180,	333,	544	]
 [ 3,	1180,	3,	197,	555,	595	]
@@ -4583,7 +4583,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	e,	L4,	L5 # name
-% bigint,	hugeint,	bigint,	int,	smallint,	hugeint # type
+% bigint,	hugeint,	bigint,	int,	smallint,	bigint # type
 % 2,	4,	1,	3,	3,	3 # length
 [ -3,	1096,	3,	180,	333,	544	]
 [ 3,	1180,	3,	197,	555,	595	]
@@ -5541,7 +5541,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L2 # table_name
 % L1,	L2,	c,	sql_add_sql_add_a # name
-% bigint,	hugeint,	int,	hugeint # type
+% bigint,	bigint,	int,	hugeint # type
 % 2,	3,	3,	4 # length
 [ NULL,	NULL,	102,	NULL	]
 [ -1,	317,	106,	1067	]
@@ -5582,7 +5582,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
 % L1,	L2,	c,	L3 # name
-% bigint,	hugeint,	int,	hugeint # type
+% bigint,	bigint,	int,	hugeint # type
 % 2,	3,	3,	4 # length
 [ NULL,	711,	NULL,	NULL	]
 [ NULL,	NULL,	102,	NULL	]
@@ -5625,7 +5625,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5641,7 +5641,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5656,7 +5656,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5672,7 +5672,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5687,7 +5687,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5703,7 +5703,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5718,7 +5718,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5734,7 +5734,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% smallint,	hugeint,	hugeint # type
+% smallint,	hugeint,	bigint # type
 % 3,	3,	3 # length
 [ 333,	132,	391	]
 [ 333,	182,	544	]
@@ -5862,7 +5862,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 1,	4,	3 # length
 [ 1,	2878,	579	]
 #SELECT b-c,
@@ -5876,7 +5876,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 1,	4,	3 # length
 [ 1,	2878,	579	]
 #SELECT b-c,
@@ -5889,7 +5889,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 1,	4,	3 # length
 [ 1,	2878,	579	]
 #SELECT b-c,
@@ -5903,7 +5903,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 1,	4,	3 # length
 [ 1,	2878,	579	]
 #SELECT b-c,
@@ -5916,7 +5916,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 1,	4,	3 # length
 [ 1,	2878,	579	]
 #SELECT b-c,
@@ -5930,7 +5930,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 1,	4,	3 # length
 [ 1,	2878,	579	]
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
@@ -6797,7 +6797,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	b # name
-% smallint,	bigint,	hugeint,	bigint,	int # type
+% smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	1,	3 # length
 [ 555,	NULL,	NULL,	4,	112	]
 [ 333,	-2,	385,	2,	129	]
@@ -6823,7 +6823,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	b # name
-% smallint,	bigint,	hugeint,	bigint,	int # type
+% smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	1,	3 # length
 [ 555,	NULL,	NULL,	4,	112	]
 [ 333,	-2,	385,	2,	129	]
@@ -6848,7 +6848,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	b,	L4,	abs_a # name
-% smallint,	smallint,	hugeint,	int,	hugeint,	int # type
+% smallint,	smallint,	bigint,	int,	hugeint,	int # type
 % 3,	3,	3,	3,	4,	3 # length
 [ 555,	444,	NULL,	NULL,	NULL,	104	]
 [ 333,	333,	317,	105,	1067,	107	]
@@ -6893,7 +6893,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
-% smallint,	smallint,	hugeint,	int,	hugeint,	int # type
+% smallint,	smallint,	bigint,	int,	hugeint,	int # type
 % 3,	3,	3,	3,	4,	3 # length
 [ 555,	444,	NULL,	112,	NULL,	NULL	]
 [ 555,	444,	NULL,	206,	NULL,	NULL	]
@@ -6975,7 +6975,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	e,	L3,	ifthenelse_isnull_>_c # name
-% hugeint,	int,	int,	hugeint,	bigint # type
+% bigint,	int,	int,	hugeint,	bigint # type
 % 3,	3,	3,	4,	4 # length
 [ NULL,	104,	NULL,	NULL,	NULL	]
 [ 317,	107,	109,	1067,	1050	]
@@ -7017,7 +7017,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L5 # table_name
 % L1,	L2,	e,	L3,	L5 # name
-% hugeint,	int,	int,	hugeint,	bigint # type
+% bigint,	int,	int,	hugeint,	bigint # type
 % 3,	3,	3,	4,	4 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	104,	NULL,	NULL,	NULL	]
@@ -7751,7 +7751,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % a,	L1,	L2,	L3,	L4,	abs_a # name
-% int,	hugeint,	smallint,	hugeint,	hugeint,	int # type
+% int,	hugeint,	smallint,	bigint,	hugeint,	int # type
 % 3,	4,	3,	3,	4,	3 # length
 [ 104,	NULL,	444,	NULL,	NULL,	104	]
 [ 107,	1067,	333,	317,	1612,	107	]
@@ -7795,7 +7795,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % a,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	smallint,	hugeint,	hugeint,	int # type
+% int,	hugeint,	smallint,	bigint,	hugeint,	int # type
 % 3,	4,	3,	3,	4,	3 # length
 [ NULL,	NULL,	444,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	444,	NULL,	NULL,	NULL	]
@@ -10714,7 +10714,7 @@ Ready.
 #;
 % sys.L1,	sys.t1 # table_name
 % L1,	b # name
-% hugeint,	int # type
+% bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ 317,	105	]
@@ -10753,7 +10753,7 @@ Ready.
 #;
 % sys.L1,	sys.t1 # table_name
 % L1,	b # name
-% hugeint,	int # type
+% bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -10948,7 +10948,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L5,	.L6,	.L6 # table_name
 % L1,	d,	L2,	L3,	L5,	L6,	isnull_=_sql_add_a # name
-% hugeint,	int,	bigint,	int,	wrd,	bigint,	smallint # type
+% bigint,	int,	bigint,	int,	wrd,	bigint,	smallint # type
 % 3,	3,	1,	3,	1,	2,	3 # length
 [ 317,	108,	1,	107,	0,	2,	333	]
 [ NULL,	116,	NULL,	115,	0,	NULL,	333	]
@@ -10976,7 +10976,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L5,	.L6,	.L7 # table_name
 % L1,	d,	L2,	L3,	L5,	L6,	L7 # name
-% hugeint,	int,	bigint,	int,	wrd,	bigint,	smallint # type
+% bigint,	int,	bigint,	int,	wrd,	bigint,	smallint # type
 % 3,	3,	1,	3,	1,	2,	3 # length
 [ NULL,	116,	NULL,	115,	0,	NULL,	333	]
 [ 743,	248,	2,	245,	0,	-4,	444	]
@@ -11002,7 +11002,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.t1,	sys.L5 # table_name
 % L2,	L3,	b,	L4,	L5,	a,	sql_add_sql_add_a # name
-% bigint,	hugeint,	int,	hugeint,	int,	int,	hugeint # type
+% bigint,	hugeint,	int,	bigint,	int,	int,	hugeint # type
 % 4,	4,	3,	3,	3,	3,	4 # length
 [ 1050,	1067,	105,	317,	107,	107,	635	]
 [ 1120,	NULL,	112,	NULL,	NULL,	NULL,	NULL	]
@@ -11039,7 +11039,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.t1,	sys.L6 # table_name
 % L2,	L3,	b,	L4,	L5,	a,	L6 # name
-% bigint,	hugeint,	int,	hugeint,	int,	int,	hugeint # type
+% bigint,	hugeint,	int,	bigint,	int,	int,	hugeint # type
 % 4,	4,	3,	3,	3,	3,	4 # length
 [ 358,	NULL,	175,	529,	179,	179,	1057	]
 [ 364,	1828,	181,	544,	182,	182,	1096	]
@@ -11075,7 +11075,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.t1,	sys.L5 # table_name
 % L2,	L3,	b,	L4,	L5,	a,	sql_add_sql_add_a # name
-% bigint,	hugeint,	int,	hugeint,	int,	int,	hugeint # type
+% bigint,	hugeint,	int,	bigint,	int,	int,	hugeint # type
 % 4,	4,	3,	3,	3,	3,	4 # length
 [ 1050,	1067,	105,	317,	107,	107,	635	]
 [ 1120,	NULL,	112,	NULL,	NULL,	NULL,	NULL	]
@@ -11112,7 +11112,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5,	sys.t1,	sys.L6 # table_name
 % L2,	L3,	b,	L4,	L5,	a,	L6 # name
-% bigint,	hugeint,	int,	hugeint,	int,	int,	hugeint # type
+% bigint,	hugeint,	int,	bigint,	int,	int,	hugeint # type
 % 4,	4,	3,	3,	3,	3,	4 # length
 [ 1120,	NULL,	112,	NULL,	NULL,	NULL,	NULL	]
 [ 1050,	1067,	105,	317,	107,	107,	635	]
@@ -11144,7 +11144,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % c,	L1,	abs_sql_sub_b # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 123,	369,	1	]
 [ 125,	385,	4	]
@@ -11171,7 +11171,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % c,	L1,	L2 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 123,	369,	1	]
 [ 125,	385,	4	]
@@ -11197,7 +11197,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % c,	L1,	abs_sql_sub_b # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 123,	369,	1	]
 [ 125,	385,	4	]
@@ -11224,7 +11224,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % c,	L1,	L2 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 123,	369,	1	]
 [ 125,	385,	4	]
@@ -12139,7 +12139,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_a # name
-% hugeint,	hugeint # type
+% hugeint,	bigint # type
 % 4,	3 # length
 [ 635,	317	]
 [ NULL,	NULL	]
@@ -12159,7 +12159,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	hugeint # type
+% hugeint,	bigint # type
 % 4,	3 # length
 [ NULL,	NULL	]
 [ 635,	317	]
@@ -12823,7 +12823,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	a,	e,	L3,	c,	L5 # name
-% hugeint,	hugeint,	int,	int,	hugeint,	int,	wrd # type
+% hugeint,	hugeint,	int,	int,	bigint,	int,	wrd # type
 % 3,	4,	3,	3,	3,	3,	1 # length
 [ 107,	1067,	107,	109,	317,	106,	0	]
 [ NULL,	NULL,	NULL,	110,	NULL,	113,	0	]
@@ -12858,7 +12858,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	a,	e,	L3,	c,	L5 # name
-% hugeint,	hugeint,	int,	int,	hugeint,	int,	wrd # type
+% hugeint,	hugeint,	int,	int,	bigint,	int,	wrd # type
 % 3,	4,	3,	3,	3,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	208,	0	]
 [ NULL,	NULL,	NULL,	110,	NULL,	113,	0	]
@@ -12892,7 +12892,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	a,	e,	L3,	c,	L5 # name
-% hugeint,	hugeint,	int,	int,	hugeint,	int,	wrd # type
+% hugeint,	hugeint,	int,	int,	bigint,	int,	wrd # type
 % 3,	4,	3,	3,	3,	3,	1 # length
 [ 107,	1067,	107,	109,	317,	106,	0	]
 [ NULL,	NULL,	NULL,	110,	NULL,	113,	0	]
@@ -12927,7 +12927,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	a,	e,	L3,	c,	L5 # name
-% hugeint,	hugeint,	int,	int,	hugeint,	int,	wrd # type
+% hugeint,	hugeint,	int,	int,	bigint,	int,	wrd # type
 % 3,	4,	3,	3,	3,	3,	1 # length
 [ NULL,	NULL,	NULL,	110,	NULL,	113,	0	]
 [ NULL,	NULL,	159,	157,	475,	155,	0	]
@@ -13108,7 +13108,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L4 # table_name
 % L1,	L2,	L4,	sql_add_a # name
-% bigint,	int,	wrd,	hugeint # type
+% bigint,	int,	wrd,	bigint # type
 % 1,	3,	1,	3 # length
 [ 1,	NULL,	0,	NULL	]
 [ 1,	121,	0,	369	]
@@ -13146,7 +13146,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5 # table_name
 % L1,	L2,	L4,	L5 # name
-% bigint,	int,	wrd,	hugeint # type
+% bigint,	int,	wrd,	bigint # type
 % 1,	3,	1,	3 # length
 [ NULL,	239,	0,	711	]
 [ 1,	NULL,	0,	NULL	]
@@ -14515,7 +14515,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % c,	L1,	L2,	L3,	L4,	L5,	sql_add_a # name
-% int,	bigint,	hugeint,	smallint,	bigint,	bigint,	hugeint # type
+% int,	bigint,	hugeint,	smallint,	bigint,	bigint,	bigint # type
 % 3,	1,	4,	3,	2,	2,	3 # length
 [ 106,	1,	1067,	333,	2,	-1,	317	]
 [ 113,	1,	NULL,	444,	NULL,	4,	NULL	]
@@ -14555,7 +14555,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % c,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	bigint,	hugeint,	smallint,	bigint,	bigint,	hugeint # type
+% int,	bigint,	hugeint,	smallint,	bigint,	bigint,	bigint # type
 % 3,	1,	4,	3,	2,	2,	3 # length
 [ 176,	1,	NULL,	444,	4,	NULL,	529	]
 [ 123,	1,	1226,	222,	-3,	NULL,	369	]
@@ -14592,7 +14592,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	c,	b # name
-% hugeint,	bigint,	bigint,	int,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	int,	bigint,	int,	int # type
 % 3,	2,	2,	3,	1,	3,	3 # length
 [ 317,	-2,	-1,	107,	2,	106,	105	]
 [ 391,	1,	1,	131,	1,	134,	130	]
@@ -14624,7 +14624,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	c,	b # name
-% hugeint,	bigint,	bigint,	int,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	int,	bigint,	int,	int # type
 % 3,	2,	2,	3,	1,	3,	3 # length
 [ 317,	-2,	-1,	107,	2,	106,	105	]
 [ 391,	1,	1,	131,	1,	134,	130	]
@@ -14657,7 +14657,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L4,	.L5,	.L6,	.L6 # table_name
 % L1,	c,	L2,	L4,	L5,	L6,	sql_sub_a # name
-% bigint,	int,	hugeint,	wrd,	bigint,	hugeint,	bigint # type
+% bigint,	int,	bigint,	wrd,	bigint,	hugeint,	bigint # type
 % 1,	3,	3,	1,	2,	4,	2 # length
 [ NULL,	102,	NULL,	0,	NULL,	NULL,	NULL	]
 [ 1,	106,	317,	0,	-1,	1612,	2	]
@@ -14700,7 +14700,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	c,	L2,	L4,	L5,	L6,	L7 # name
-% bigint,	int,	hugeint,	wrd,	bigint,	hugeint,	bigint # type
+% bigint,	int,	bigint,	wrd,	bigint,	hugeint,	bigint # type
 % 1,	3,	3,	1,	2,	4,	2 # length
 [ NULL,	NULL,	711,	0,	1,	NULL,	3	]
 [ NULL,	102,	NULL,	0,	NULL,	NULL,	NULL	]
@@ -14742,7 +14742,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L4,	.L5,	.L6,	.L6 # table_name
 % L1,	c,	L2,	L4,	L5,	L6,	sql_sub_a # name
-% bigint,	int,	hugeint,	wrd,	bigint,	hugeint,	bigint # type
+% bigint,	int,	bigint,	wrd,	bigint,	hugeint,	bigint # type
 % 1,	3,	3,	1,	2,	4,	2 # length
 [ NULL,	102,	NULL,	0,	NULL,	NULL,	NULL	]
 [ 1,	106,	317,	0,	-1,	1612,	2	]
@@ -14785,7 +14785,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	c,	L2,	L4,	L5,	L6,	L7 # name
-% bigint,	int,	hugeint,	wrd,	bigint,	hugeint,	bigint # type
+% bigint,	int,	bigint,	wrd,	bigint,	hugeint,	bigint # type
 % 1,	3,	3,	1,	2,	4,	2 # length
 [ NULL,	202,	NULL,	0,	-1,	NULL,	NULL	]
 [ NULL,	119,	NULL,	0,	-1,	NULL,	NULL	]
@@ -14826,7 +14826,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	e,	L2,	L3,	L4,	abs_sql_sub_b # name
-% bigint,	int,	hugeint,	hugeint,	int,	bigint # type
+% bigint,	int,	bigint,	hugeint,	int,	bigint # type
 % 2,	3,	3,	4,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	NULL	]
 [ -1,	109,	317,	1067,	107,	1	]
@@ -14870,7 +14870,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	e,	L2,	L3,	L4,	L5 # name
-% bigint,	int,	hugeint,	hugeint,	int,	bigint # type
+% bigint,	int,	bigint,	hugeint,	int,	bigint # type
 % 2,	3,	3,	4,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	NULL,	2	]
@@ -14913,7 +14913,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	e,	L2,	L3,	L4,	abs_sql_sub_b # name
-% bigint,	int,	hugeint,	hugeint,	int,	bigint # type
+% bigint,	int,	bigint,	hugeint,	int,	bigint # type
 % 2,	3,	3,	4,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	NULL	]
 [ -1,	109,	317,	1067,	107,	1	]
@@ -14957,7 +14957,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	e,	L2,	L3,	L4,	L5 # name
-% bigint,	int,	hugeint,	hugeint,	int,	bigint # type
+% bigint,	int,	bigint,	hugeint,	int,	bigint # type
 % 2,	3,	3,	4,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	2	]
 [ NULL,	NULL,	NULL,	NULL,	104,	NULL	]
@@ -15000,7 +15000,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	e,	L2,	L3,	L4,	abs_sql_sub_b # name
-% bigint,	int,	hugeint,	hugeint,	int,	bigint # type
+% bigint,	int,	bigint,	hugeint,	int,	bigint # type
 % 2,	3,	3,	4,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	NULL	]
 [ -1,	109,	317,	1067,	107,	1	]
@@ -15044,7 +15044,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	e,	L2,	L3,	L4,	L5 # name
-% bigint,	int,	hugeint,	hugeint,	int,	bigint # type
+% bigint,	int,	bigint,	hugeint,	int,	bigint # type
 % 2,	3,	3,	4,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	NULL	]
 [ -1,	204,	NULL,	NULL,	201,	NULL	]
@@ -16353,7 +16353,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L2 # table_name
 % L1,	e,	L2,	sql_sub_b # name
-% hugeint,	int,	hugeint,	bigint # type
+% hugeint,	int,	bigint,	bigint # type
 % 4,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL	]
 [ 635,	109,	317,	-1	]
@@ -16394,7 +16394,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3 # table_name
 % L1,	e,	L2,	L3 # name
-% hugeint,	int,	hugeint,	bigint # type
+% hugeint,	int,	bigint,	bigint # type
 % 4,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL	]
 [ 1455,	NULL,	723,	-4	]
@@ -16691,7 +16691,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.L5 # table_name
 % L1,	L3,	L4,	e,	L5,	c,	sql_sub_a # name
-% hugeint,	bigint,	hugeint,	int,	bigint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	4,	3,	3,	1,	3,	2 # length
 [ NULL,	1240,	369,	NULL,	1,	123,	-3	]
 [ 132,	1300,	391,	132,	4,	134,	1	]
@@ -16717,7 +16717,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.L6 # table_name
 % L1,	L3,	L4,	e,	L5,	c,	L6 # name
-% hugeint,	bigint,	hugeint,	int,	bigint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	4,	3,	3,	1,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	2,	208,	NULL	]
 [ 222,	440,	666,	221,	1,	224,	-3	]
@@ -16742,7 +16742,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.L5 # table_name
 % L1,	L3,	L4,	e,	L5,	c,	sql_sub_a # name
-% hugeint,	bigint,	hugeint,	int,	bigint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	4,	3,	3,	1,	3,	2 # length
 [ NULL,	1240,	369,	NULL,	1,	123,	-3	]
 [ 132,	1300,	391,	132,	4,	134,	1	]
@@ -16768,7 +16768,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.L6 # table_name
 % L1,	L3,	L4,	e,	L5,	c,	L6 # name
-% hugeint,	bigint,	hugeint,	int,	bigint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	4,	3,	3,	1,	3,	2 # length
 [ NULL,	1240,	369,	NULL,	1,	123,	-3	]
 [ NULL,	NULL,	NULL,	NULL,	2,	208,	NULL	]
@@ -16849,7 +16849,7 @@ Ready.
 #;
 % .L1,	.t1,	.L3,	.L4,	.L5,	.t1,	.L5 # table_name
 % L1,	c,	L3,	L4,	L5,	d,	isnull_=_sql_add_a # name
-% wrd,	int,	wrd,	hugeint,	hugeint,	int,	smallint # type
+% wrd,	int,	wrd,	hugeint,	bigint,	int,	smallint # type
 % 1,	3,	2,	4,	3,	3,	3 # length
 [ 0,	134,	4,	1985,	391,	133,	444	]
 [ 0,	137,	5,	2046,	416,	136,	111	]
@@ -16870,7 +16870,7 @@ Ready.
 #;
 % .L1,	.t1,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
 % L1,	c,	L3,	L4,	L5,	d,	L6 # name
-% wrd,	int,	wrd,	hugeint,	hugeint,	int,	smallint # type
+% wrd,	int,	wrd,	hugeint,	bigint,	int,	smallint # type
 % 1,	3,	2,	4,	3,	3,	3 # length
 [ 0,	134,	4,	1985,	391,	133,	444	]
 [ 0,	137,	5,	2046,	416,	136,	111	]
@@ -16991,7 +16991,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L6 # table_name
 % b,	L2,	L3,	L4,	L5,	L6,	sql_add_a # name
-% int,	wrd,	bigint,	smallint,	hugeint,	hugeint,	hugeint # type
+% int,	wrd,	bigint,	smallint,	hugeint,	hugeint,	bigint # type
 % 3,	2,	2,	3,	4,	3,	3 # length
 [ 160,	10,	3,	444,	1622,	162,	483	]
 [ 170,	12,	4,	444,	1714,	172,	514	]
@@ -17024,7 +17024,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % b,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% int,	wrd,	bigint,	smallint,	hugeint,	hugeint,	hugeint # type
+% int,	wrd,	bigint,	smallint,	hugeint,	hugeint,	bigint # type
 % 3,	2,	2,	3,	4,	3,	3 # length
 [ NULL,	0,	NULL,	444,	NULL,	NULL,	NULL	]
 [ NULL,	0,	NULL,	444,	NULL,	NULL,	NULL	]
@@ -17310,7 +17310,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	a # name
-% hugeint,	bigint,	bigint,	hugeint,	bigint,	hugeint,	int # type
+% hugeint,	bigint,	bigint,	hugeint,	bigint,	bigint,	int # type
 % 4,	2,	2,	3,	2,	3,	3 # length
 [ NULL,	-1,	4,	NULL,	-1,	NULL,	NULL	]
 [ 1226,	1,	NULL,	NULL,	1,	369,	121	]
@@ -17351,7 +17351,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	a # name
-% hugeint,	bigint,	bigint,	hugeint,	bigint,	hugeint,	int # type
+% hugeint,	bigint,	bigint,	hugeint,	bigint,	bigint,	int # type
 % 4,	2,	2,	3,	2,	3,	3 # length
 [ NULL,	-1,	4,	NULL,	-1,	NULL,	NULL	]
 [ NULL,	-2,	NULL,	NULL,	1,	NULL,	NULL	]
@@ -17388,7 +17388,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % b,	L1,	sql_add_a # name
-% int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint # type
 % 3,	4,	3 # length
 [ 105,	1067,	317	]
 [ 112,	NULL,	NULL	]
@@ -17416,7 +17416,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % b,	L1,	L2 # name
-% int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint # type
 % 3,	4,	3 # length
 [ 112,	NULL,	NULL	]
 [ 206,	NULL,	NULL	]
@@ -17443,7 +17443,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % b,	L1,	sql_add_a # name
-% int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint # type
 % 3,	4,	3 # length
 [ 105,	1067,	317	]
 [ 112,	NULL,	NULL	]
@@ -17471,7 +17471,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % b,	L1,	L2 # name
-% int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint # type
 % 3,	4,	3 # length
 [ 105,	1067,	317	]
 [ 112,	NULL,	NULL	]
@@ -18966,7 +18966,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L2 # table_name
 % L1,	L2,	c,	isnull_=_sql_add_a # name
-% hugeint,	bigint,	int,	smallint # type
+% bigint,	bigint,	int,	smallint # type
 % 3,	2,	3,	3 # length
 [ NULL,	-1,	113,	555	]
 [ 369,	1,	123,	333	]
@@ -19005,7 +19005,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
 % L1,	L2,	c,	L3 # name
-% hugeint,	bigint,	int,	smallint # type
+% bigint,	bigint,	int,	smallint # type
 % 3,	2,	3,	3 # length
 [ 711,	NULL,	NULL,	555	]
 [ 723,	-4,	244,	222	]
@@ -20018,7 +20018,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % c,	L1,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	smallint # type
+% int,	bigint,	smallint # type
 % 3,	3,	3 # length
 [ 106,	317,	333	]
 [ 119,	NULL,	444	]
@@ -20040,7 +20040,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % c,	L1,	L2 # name
-% int,	hugeint,	smallint # type
+% int,	bigint,	smallint # type
 % 3,	3,	3 # length
 [ 125,	385,	222	]
 [ 193,	579,	222	]
@@ -20634,7 +20634,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	d,	L3,	sql_sub_c # name
-% int,	bigint,	int,	hugeint,	bigint # type
+% int,	bigint,	int,	bigint,	bigint # type
 % 3,	2,	3,	3,	2 # length
 [ 107,	2,	108,	317,	-2	]
 [ NULL,	NULL,	114,	NULL,	-1	]
@@ -20668,7 +20668,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	d,	L3,	L4 # name
-% int,	bigint,	int,	hugeint,	bigint # type
+% int,	bigint,	int,	bigint,	bigint # type
 % 3,	2,	3,	3,	2 # length
 [ NULL,	NULL,	114,	NULL,	-1	]
 [ 107,	2,	108,	317,	-2	]
@@ -20911,7 +20911,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % b,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT b,
 #       a+b*2
@@ -20922,7 +20922,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % b,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT b,
 #       a+b*2
@@ -20932,7 +20932,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % b,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT b,
 #       a+b*2
@@ -20943,7 +20943,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % b,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT a+b*2+c*3,
 #       a+b*2+c*3+d*4+e*5,
@@ -21388,7 +21388,7 @@ Ready.
 #;
 % .t1,	.L2,	.L2 # table_name
 % b,	L2,	sql_add_a # name
-% int,	wrd,	hugeint # type
+% int,	wrd,	bigint # type
 % 3,	1,	3 # length
 [ 130,	0,	391	]
 [ 160,	0,	483	]
@@ -21406,7 +21406,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3 # table_name
 % b,	L2,	L3 # name
-% int,	wrd,	hugeint # type
+% int,	wrd,	bigint # type
 % 3,	1,	3 # length
 [ 130,	0,	391	]
 [ 160,	0,	483	]
@@ -21423,7 +21423,7 @@ Ready.
 #;
 % .t1,	.L2,	.L2 # table_name
 % b,	L2,	sql_add_a # name
-% int,	wrd,	hugeint # type
+% int,	wrd,	bigint # type
 % 3,	1,	3 # length
 [ 130,	0,	391	]
 [ 160,	0,	483	]
@@ -21441,7 +21441,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3 # table_name
 % b,	L2,	L3 # name
-% int,	wrd,	hugeint # type
+% int,	wrd,	bigint # type
 % 3,	1,	3 # length
 [ 130,	0,	391	]
 [ 160,	0,	483	]
@@ -21458,7 +21458,7 @@ Ready.
 #;
 % .t1,	.L2,	.L2 # table_name
 % b,	L2,	sql_add_a # name
-% int,	wrd,	hugeint # type
+% int,	wrd,	bigint # type
 % 3,	1,	3 # length
 [ 130,	0,	391	]
 [ 160,	0,	483	]
@@ -21476,7 +21476,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3 # table_name
 % b,	L2,	L3 # name
-% int,	wrd,	hugeint # type
+% int,	wrd,	bigint # type
 % 3,	1,	3 # length
 [ 130,	0,	391	]
 [ 160,	0,	483	]
@@ -21740,7 +21740,7 @@ Ready.
 #;
 % .L1,	.t1,	.t1,	.L1 # table_name
 % L1,	d,	b,	sql_add_a # name
-% wrd,	int,	int,	hugeint # type
+% wrd,	int,	int,	bigint # type
 % 1,	3,	3,	3 # length
 [ 0,	108,	105,	317	]
 [ 0,	114,	112,	NULL	]
@@ -21767,7 +21767,7 @@ Ready.
 #;
 % .L1,	.t1,	.t1,	.L2 # table_name
 % L1,	d,	b,	L2 # name
-% wrd,	int,	int,	hugeint # type
+% wrd,	int,	int,	bigint # type
 % 1,	3,	3,	3 # length
 [ 0,	108,	105,	317	]
 [ 0,	114,	112,	NULL	]
@@ -22307,7 +22307,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L2 # table_name
 % L1,	L2,	c,	sql_add_a # name
-% wrd,	hugeint,	int,	hugeint # type
+% wrd,	hugeint,	int,	bigint # type
 % 2,	4,	3,	3 # length
 [ 16,	2878,	193,	579	]
 [ 26,	3706,	247,	743	]
@@ -22322,7 +22322,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3 # table_name
 % L1,	L2,	c,	L3 # name
-% wrd,	hugeint,	int,	hugeint # type
+% wrd,	hugeint,	int,	bigint # type
 % 2,	4,	3,	3 # length
 [ 16,	2878,	193,	579	]
 [ 26,	3706,	247,	743	]
@@ -22337,7 +22337,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	L3,	e,	b # name
-% int,	hugeint,	hugeint,	int,	int # type
+% int,	hugeint,	bigint,	int,	int # type
 % 3,	4,	3,	3,	3 # length
 [ 107,	635,	317,	109,	105	]
 [ 163,	966,	483,	162,	160	]
@@ -22359,7 +22359,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	L3,	e,	b # name
-% int,	hugeint,	hugeint,	int,	int # type
+% int,	hugeint,	bigint,	int,	int # type
 % 3,	4,	3,	3,	3 # length
 [ 107,	635,	317,	109,	105	]
 [ 163,	966,	483,	162,	160	]
@@ -22482,7 +22482,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L4 # table_name
 % L1,	L2,	L4,	ifthenelse_isnull_<_a # name
-% hugeint,	bigint,	wrd,	smallint # type
+% bigint,	bigint,	wrd,	smallint # type
 % 3,	2,	1,	3 # length
 [ 317,	-1,	0,	333	]
 [ NULL,	4,	0,	444	]
@@ -22519,7 +22519,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5 # table_name
 % L1,	L2,	L4,	L5 # name
-% hugeint,	bigint,	wrd,	smallint # type
+% bigint,	bigint,	wrd,	smallint # type
 % 3,	2,	1,	3 # length
 [ NULL,	NULL,	0,	444	]
 [ NULL,	4,	0,	444	]
@@ -22555,7 +22555,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L4 # table_name
 % L1,	L2,	L4,	ifthenelse_isnull_<_a # name
-% hugeint,	bigint,	wrd,	smallint # type
+% bigint,	bigint,	wrd,	smallint # type
 % 3,	2,	1,	3 # length
 [ 317,	-1,	0,	333	]
 [ NULL,	4,	0,	444	]
@@ -22592,7 +22592,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5 # table_name
 % L1,	L2,	L4,	L5 # name
-% hugeint,	bigint,	wrd,	smallint # type
+% bigint,	bigint,	wrd,	smallint # type
 % 3,	2,	1,	3 # length
 [ 369,	NULL,	0,	222	]
 [ 502,	NULL,	0,	333	]
@@ -22954,7 +22954,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L2,	L3,	L4,	L5,	b # name
-% bigint,	smallint,	hugeint,	bigint,	int # type
+% bigint,	smallint,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	3 # length
 [ 1240,	222,	369,	1,	124	]
 [ 1300,	333,	391,	4,	130	]
@@ -22980,7 +22980,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L2,	L3,	L4,	L5,	b # name
-% bigint,	smallint,	hugeint,	bigint,	int # type
+% bigint,	smallint,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	3 # length
 [ 376,	333,	560,	1,	186	]
 [ 382,	222,	579,	1,	194	]
@@ -23005,7 +23005,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L2,	L3,	L4,	L5,	b # name
-% bigint,	smallint,	hugeint,	bigint,	int # type
+% bigint,	smallint,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	3 # length
 [ 1240,	222,	369,	1,	124	]
 [ 1300,	333,	391,	4,	130	]
@@ -23031,7 +23031,7 @@ Ready.
 #;
 % sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L2,	L3,	L4,	L5,	b # name
-% bigint,	smallint,	hugeint,	bigint,	int # type
+% bigint,	smallint,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	3 # length
 [ 1240,	222,	369,	1,	124	]
 [ 1300,	333,	391,	4,	130	]
@@ -23735,7 +23735,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23753,7 +23753,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23770,7 +23770,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23788,7 +23788,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23805,7 +23805,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23823,7 +23823,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23840,7 +23840,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT c,
@@ -23858,7 +23858,7 @@ Ready.
 #;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L6 # table_name
 % c,	L1,	e,	L2,	L3,	L4,	L6 # name
-% int,	hugeint,	int,	bigint,	hugeint,	bigint,	wrd # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint,	wrd # type
 % 3,	3,	3,	1,	3,	2,	1 # length
 [ 224,	222,	221,	1,	666,	-1,	0	]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -24548,7 +24548,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L2 # table_name
 % L1,	e,	L2,	sql_sub_d # name
-% smallint,	int,	hugeint,	bigint # type
+% smallint,	int,	bigint,	bigint # type
 % 3,	3,	3,	2 # length
 [ 444,	NULL,	NULL,	NULL	]
 [ 333,	109,	317,	-1	]
@@ -24590,7 +24590,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3 # table_name
 % L1,	e,	L2,	L3 # name
-% smallint,	int,	hugeint,	bigint # type
+% smallint,	int,	bigint,	bigint # type
 % 3,	3,	3,	2 # length
 [ 111,	246,	743,	2	]
 [ 222,	NULL,	369,	NULL	]
@@ -24718,7 +24718,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4,	.L4 # table_name
 % d,	L1,	L2,	L3,	b,	L4,	sql_add_a # name
-% int,	hugeint,	bigint,	bigint,	int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint,	bigint,	int,	hugeint,	bigint # type
 % 3,	3,	2,	2,	3,	4,	3 # length
 [ 114,	NULL,	4,	-1,	112,	NULL,	NULL	]
 [ 122,	NULL,	NULL,	1,	124,	NULL,	369	]
@@ -24762,7 +24762,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % d,	L1,	L2,	L3,	b,	L4,	L5 # name
-% int,	hugeint,	bigint,	bigint,	int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint,	bigint,	int,	hugeint,	bigint # type
 % 3,	3,	2,	2,	3,	4,	3 # length
 [ NULL,	NULL,	NULL,	-2,	145,	NULL,	439	]
 [ NULL,	NULL,	NULL,	1,	151,	NULL,	455	]
@@ -24805,7 +24805,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4,	.L4 # table_name
 % d,	L1,	L2,	L3,	b,	L4,	sql_add_a # name
-% int,	hugeint,	bigint,	bigint,	int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint,	bigint,	int,	hugeint,	bigint # type
 % 3,	3,	2,	2,	3,	4,	3 # length
 [ 101,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 116,	NULL,	-1,	NULL,	NULL,	NULL,	NULL	]
@@ -24849,7 +24849,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % d,	L1,	L2,	L3,	b,	L4,	L5 # name
-% int,	hugeint,	bigint,	bigint,	int,	hugeint,	hugeint # type
+% int,	hugeint,	bigint,	bigint,	int,	hugeint,	bigint # type
 % 3,	3,	2,	2,	3,	4,	3 # length
 [ 101,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 116,	NULL,	-1,	NULL,	NULL,	NULL,	NULL	]
@@ -24891,7 +24891,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L3 # table_name
 % L1,	b,	L2,	L3,	a,	sql_sub_c # name
-% hugeint,	int,	bigint,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 3,	3,	1,	2,	3,	2 # length
 [ 317,	105,	1,	-1,	107,	-2	]
 [ 385,	129,	4,	2,	127,	-3	]
@@ -24924,7 +24924,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
 % L1,	b,	L2,	L3,	a,	L4 # name
-% hugeint,	int,	bigint,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 3,	3,	1,	2,	3,	2 # length
 [ 317,	105,	1,	-1,	107,	-2	]
 [ 385,	129,	4,	2,	127,	-3	]
@@ -24956,7 +24956,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L3 # table_name
 % L1,	b,	L2,	L3,	a,	sql_sub_c # name
-% hugeint,	int,	bigint,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 3,	3,	1,	2,	3,	2 # length
 [ 317,	105,	1,	-1,	107,	-2	]
 [ 385,	129,	4,	2,	127,	-3	]
@@ -24989,7 +24989,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
 % L1,	b,	L2,	L3,	a,	L4 # name
-% hugeint,	int,	bigint,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 3,	3,	1,	2,	3,	2 # length
 [ 317,	105,	1,	-1,	107,	-2	]
 [ 385,	129,	4,	2,	127,	-3	]
@@ -27235,7 +27235,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L4 # table_name
 % L1,	d,	L2,	L3,	L4,	sql_add_a # name
-% wrd,	int,	smallint,	hugeint,	bigint,	hugeint # type
+% wrd,	int,	smallint,	hugeint,	bigint,	bigint # type
 % 1,	3,	3,	3,	2,	3 # length
 [ 0,	101,	444,	NULL,	NULL,	NULL	]
 [ 0,	116,	444,	NULL,	-1,	NULL	]
@@ -27263,7 +27263,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	d,	L2,	L3,	L4,	L5 # name
-% wrd,	int,	smallint,	hugeint,	bigint,	hugeint # type
+% wrd,	int,	smallint,	hugeint,	bigint,	bigint # type
 % 1,	3,	3,	3,	2,	3 # length
 [ 0,	101,	444,	NULL,	NULL,	NULL	]
 [ 0,	207,	444,	NULL,	NULL,	NULL	]
@@ -27455,7 +27455,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	c # name
-% bigint,	hugeint,	int # type
+% bigint,	bigint,	int # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	102	]
 [ 2,	317,	106	]
@@ -27495,7 +27495,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	c # name
-% bigint,	hugeint,	int # type
+% bigint,	bigint,	int # type
 % 2,	3,	3 # length
 [ 3,	711,	NULL	]
 [ NULL,	NULL,	102	]
@@ -27536,7 +27536,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 2,	3,	3 # length
 [ -1,	107,	317	]
 [ 1,	132,	391	]
@@ -27556,7 +27556,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint # type
 % 2,	3,	3 # length
 [ -1,	107,	317	]
 [ 1,	132,	391	]
@@ -29147,7 +29147,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ NULL	]
 [ 385	]
@@ -29167,7 +29167,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ NULL	]
 [ 385	]
@@ -29807,7 +29807,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % d,	L1,	L2,	L3,	isnull_=_sql_add_a # name
-% int,	smallint,	bigint,	hugeint,	smallint # type
+% int,	smallint,	bigint,	bigint,	smallint # type
 % 3,	3,	2,	3,	3 # length
 [ 190,	222,	-2,	579,	444	]
 [ 222,	222,	1,	666,	444	]
@@ -29825,7 +29825,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % d,	L1,	L2,	L3,	L4 # name
-% int,	smallint,	bigint,	hugeint,	smallint # type
+% int,	smallint,	bigint,	bigint,	smallint # type
 % 3,	3,	2,	3,	3 # length
 [ 190,	222,	-2,	579,	444	]
 [ 222,	222,	1,	666,	444	]
@@ -30702,7 +30702,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L6,	e # name
-% hugeint,	bigint,	int,	hugeint,	bigint,	int # type
+% bigint,	bigint,	int,	hugeint,	bigint,	int # type
 % 3,	1,	3,	4,	4,	3 # length
 [ NULL,	NULL,	104,	NULL,	NULL,	NULL	]
 [ 317,	1,	107,	1067,	1050,	109	]
@@ -30741,7 +30741,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L6,	e # name
-% hugeint,	bigint,	int,	hugeint,	bigint,	int # type
+% bigint,	bigint,	int,	hugeint,	bigint,	int # type
 % 3,	1,	3,	4,	4,	3 # length
 [ NULL,	NULL,	104,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	201,	NULL,	402,	204	]
@@ -32596,7 +32596,7 @@ Ready.
 #;
 % .t1,	.L1,	.L1 # table_name
 % b,	L1,	sql_add_a # name
-% int,	bigint,	hugeint # type
+% int,	bigint,	bigint # type
 % 3,	2,	3 # length
 [ 130,	1,	391	]
 [ 139,	-1,	416	]
@@ -32634,7 +32634,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2 # table_name
 % b,	L1,	L2 # name
-% int,	bigint,	hugeint # type
+% int,	bigint,	bigint # type
 % 3,	2,	3 # length
 [ 112,	NULL,	NULL	]
 [ 206,	NULL,	NULL	]
@@ -32671,7 +32671,7 @@ Ready.
 #;
 % .t1,	.L1,	.L1 # table_name
 % b,	L1,	sql_add_a # name
-% int,	bigint,	hugeint # type
+% int,	bigint,	bigint # type
 % 3,	2,	3 # length
 [ 112,	NULL,	NULL	]
 [ 124,	-3,	369	]
@@ -32709,7 +32709,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2 # table_name
 % b,	L1,	L2 # name
-% int,	bigint,	hugeint # type
+% int,	bigint,	bigint # type
 % 3,	2,	3 # length
 [ 112,	NULL,	NULL	]
 [ 206,	NULL,	NULL	]
@@ -33872,7 +33872,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L4,	.L4 # table_name
 % L1,	L2,	d,	L4,	abs_sql_sub_b # name
-% hugeint,	bigint,	int,	wrd,	bigint # type
+% bigint,	bigint,	int,	wrd,	bigint # type
 % 3,	2,	3,	1,	1 # length
 [ 317,	-1,	108,	0,	1	]
 [ 483,	-1,	164,	0,	1	]
@@ -33892,7 +33892,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	d,	L4,	L5 # name
-% hugeint,	bigint,	int,	wrd,	bigint # type
+% bigint,	bigint,	int,	wrd,	bigint # type
 % 3,	2,	3,	1,	1 # length
 [ 635,	-3,	212,	0,	3	]
 [ 317,	-1,	108,	0,	1	]
@@ -33988,7 +33988,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	c,	L3,	e,	b # name
-% hugeint,	hugeint,	int,	bigint,	int,	int # type
+% hugeint,	bigint,	int,	bigint,	int,	int # type
 % 4,	3,	3,	1,	3,	3 # length
 [ 827,	416,	137,	2,	135,	139	]
 [ 851,	428,	141,	2,	144,	143	]
@@ -34008,7 +34008,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	c,	L3,	e,	b # name
-% hugeint,	hugeint,	int,	bigint,	int,	int # type
+% hugeint,	bigint,	int,	bigint,	int,	int # type
 % 4,	3,	3,	1,	3,	3 # length
 [ 1391,	698,	231,	1,	230,	232	]
 [ 827,	416,	137,	2,	135,	139	]
@@ -34714,7 +34714,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L1 # table_name
 % L1,	a,	sql_add_a # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -1,	107,	317	]
 [ 4,	NULL,	NULL	]
@@ -34751,7 +34751,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2 # table_name
 % L1,	a,	L2 # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ NULL,	121,	369	]
@@ -34787,7 +34787,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L1 # table_name
 % L1,	a,	sql_add_a # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -1,	107,	317	]
 [ 4,	NULL,	NULL	]
@@ -34824,7 +34824,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2 # table_name
 % L1,	a,	L2 # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ 4,	NULL,	NULL	]
@@ -34860,7 +34860,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L1 # table_name
 % L1,	a,	sql_add_a # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -1,	107,	317	]
 [ 4,	NULL,	NULL	]
@@ -34897,7 +34897,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2 # table_name
 % L1,	a,	L2 # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ -1,	201,	NULL	]
@@ -34979,7 +34979,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5,	.L6,	.L6 # table_name
 % L1,	L2,	L4,	L5,	L6,	sql_sub_a # name
-% hugeint,	int,	wrd,	smallint,	smallint,	bigint # type
+% bigint,	int,	wrd,	smallint,	smallint,	bigint # type
 % 3,	3,	2,	3,	3,	2 # length
 [ 385,	127,	3,	333,	222,	-2	]
 [ 483,	163,	10,	333,	444,	3	]
@@ -35005,7 +35005,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L4,	L5,	L6,	L7 # name
-% hugeint,	int,	wrd,	smallint,	smallint,	bigint # type
+% bigint,	int,	wrd,	smallint,	smallint,	bigint # type
 % 3,	3,	2,	3,	3,	2 # length
 [ 317,	107,	0,	333,	333,	2	]
 [ NULL,	115,	0,	333,	444,	NULL	]
@@ -35175,7 +35175,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L2 # table_name
 % L1,	L2,	d,	abs_sql_sub_b # name
-% wrd,	hugeint,	int,	bigint # type
+% wrd,	bigint,	int,	bigint # type
 % 2,	3,	3,	1 # length
 [ 10,	483,	164,	1	]
 [ 12,	514,	171,	2	]
@@ -35202,7 +35202,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3 # table_name
 % L1,	L2,	d,	L3 # name
-% wrd,	hugeint,	int,	bigint # type
+% wrd,	bigint,	int,	bigint # type
 % 2,	3,	3,	1 # length
 [ 18,	NULL,	207,	2	]
 [ 10,	483,	164,	1	]
@@ -35228,7 +35228,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L2 # table_name
 % L1,	L2,	d,	abs_sql_sub_b # name
-% wrd,	hugeint,	int,	bigint # type
+% wrd,	bigint,	int,	bigint # type
 % 2,	3,	3,	1 # length
 [ 10,	483,	164,	1	]
 [ 12,	514,	171,	2	]
@@ -35255,7 +35255,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3 # table_name
 % L1,	L2,	d,	L3 # name
-% wrd,	hugeint,	int,	bigint # type
+% wrd,	bigint,	int,	bigint # type
 % 2,	3,	3,	1 # length
 [ 24,	711,	238,	NULL	]
 [ 10,	483,	164,	1	]
@@ -35281,7 +35281,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	sql_add_sql_add_a # name
-% hugeint,	bigint,	hugeint,	int,	hugeint # type
+% hugeint,	bigint,	bigint,	int,	hugeint # type
 % 4,	1,	3,	3,	4 # length
 [ NULL,	1,	NULL,	NULL,	NULL	]
 [ 738,	1,	369,	121,	NULL	]
@@ -35320,7 +35320,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	bigint,	hugeint,	int,	hugeint # type
+% hugeint,	bigint,	bigint,	int,	hugeint # type
 % 4,	1,	3,	3,	4 # length
 [ NULL,	1,	NULL,	NULL,	NULL	]
 [ NULL,	2,	NULL,	NULL,	NULL	]
@@ -36068,7 +36068,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L1 # table_name
 % a,	e,	L1,	sql_add_a # name
-% int,	int,	hugeint,	hugeint # type
+% int,	int,	hugeint,	bigint # type
 % 3,	3,	4,	3 # length
 [ 104,	NULL,	NULL,	NULL	]
 [ 107,	109,	635,	317	]
@@ -36109,7 +36109,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2 # table_name
 % a,	e,	L1,	L2 # name
-% int,	int,	hugeint,	hugeint # type
+% int,	int,	hugeint,	bigint # type
 % 3,	3,	4,	3 # length
 [ NULL,	NULL,	NULL,	NULL	]
 [ NULL,	110,	NULL,	NULL	]
@@ -36576,7 +36576,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 3,	385,	125,	4,	2,	-3,	1290	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
@@ -36617,7 +36617,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	L7 # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 0,	317,	106,	-1,	-1,	-2,	1050	]
@@ -36657,7 +36657,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 3,	385,	125,	4,	2,	-3,	1290	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
@@ -36698,7 +36698,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	L7 # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 13,	529,	176,	-1,	NULL,	NULL,	358	]
@@ -36738,7 +36738,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 3,	385,	125,	4,	2,	-3,	1290	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
@@ -36779,7 +36779,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	L7 # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 24,	711,	NULL,	NULL,	1,	NULL,	2360	]
 [ 0,	317,	106,	-1,	-1,	-2,	1050	]
@@ -36819,7 +36819,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 3,	385,	125,	4,	2,	-3,	1290	]
 [ 4,	391,	134,	-4,	1,	1,	1300	]
@@ -36860,7 +36860,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	L7 # name
-% wrd,	hugeint,	int,	bigint,	bigint,	bigint,	bigint # type
+% wrd,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 2,	3,	3,	2,	2,	2,	4 # length
 [ 0,	NULL,	119,	NULL,	-1,	3,	NULL	]
 [ 13,	529,	176,	-1,	NULL,	NULL,	358	]
@@ -36900,7 +36900,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
 % c,	a,	L1,	L2,	L3,	L4,	e # name
-% int,	int,	smallint,	hugeint,	hugeint,	hugeint,	int # type
+% int,	int,	smallint,	hugeint,	bigint,	hugeint,	int # type
 % 3,	3,	3,	4,	3,	3,	3 # length
 [ 193,	191,	222,	1918,	579,	192,	192	]
 [ 195,	199,	333,	1964,	595,	197,	197	]
@@ -36923,7 +36923,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
 % c,	a,	L1,	L2,	L3,	L4,	e # name
-% int,	int,	smallint,	hugeint,	hugeint,	hugeint,	int # type
+% int,	int,	smallint,	hugeint,	bigint,	hugeint,	int # type
 % 3,	3,	3,	4,	3,	3,	3 # length
 [ 193,	191,	222,	1918,	579,	192,	192	]
 [ 195,	199,	333,	1964,	595,	197,	197	]
@@ -36945,7 +36945,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
 % c,	a,	L1,	L2,	L3,	L4,	e # name
-% int,	int,	smallint,	hugeint,	hugeint,	hugeint,	int # type
+% int,	int,	smallint,	hugeint,	bigint,	hugeint,	int # type
 % 3,	3,	3,	4,	3,	3,	3 # length
 [ 193,	191,	222,	1918,	579,	192,	192	]
 [ 195,	199,	333,	1964,	595,	197,	197	]
@@ -36968,7 +36968,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1 # table_name
 % c,	a,	L1,	L2,	L3,	L4,	e # name
-% int,	int,	smallint,	hugeint,	hugeint,	hugeint,	int # type
+% int,	int,	smallint,	hugeint,	bigint,	hugeint,	int # type
 % 3,	3,	3,	4,	3,	3,	3 # length
 [ 193,	191,	222,	1918,	579,	192,	192	]
 [ 195,	199,	333,	1964,	595,	197,	197	]
@@ -37574,7 +37574,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	a # name
-% hugeint,	bigint,	smallint,	bigint,	hugeint,	int # type
+% hugeint,	bigint,	smallint,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2+c*3+d*4+e*5,
 #       c-d,
@@ -37590,7 +37590,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	a # name
-% hugeint,	bigint,	smallint,	bigint,	hugeint,	int # type
+% hugeint,	bigint,	smallint,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4+e*5,
@@ -37599,7 +37599,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	b # name
-% hugeint,	hugeint,	int # type
+% bigint,	hugeint,	int # type
 % 3,	4,	3 # length
 [ NULL,	NULL,	NULL	]
 [ 317,	1612,	105	]
@@ -37639,7 +37639,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	b # name
-% hugeint,	hugeint,	int # type
+% bigint,	hugeint,	int # type
 % 3,	4,	3 # length
 [ NULL,	NULL,	206	]
 [ NULL,	NULL,	NULL	]
@@ -38481,7 +38481,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % d,	c,	L1,	L2,	L3,	L4,	isnull_=_sql_add_a # name
-% int,	int,	hugeint,	bigint,	int,	bigint,	smallint # type
+% int,	int,	bigint,	bigint,	int,	bigint,	smallint # type
 % 3,	3,	3,	1,	3,	2,	3 # length
 [ 133,	134,	391,	4,	131,	1,	444	]
 [ 136,	137,	416,	2,	138,	1,	111	]
@@ -38505,7 +38505,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % d,	c,	L1,	L2,	L3,	L4,	L5 # name
-% int,	int,	hugeint,	bigint,	int,	bigint,	smallint # type
+% int,	int,	bigint,	bigint,	int,	bigint,	smallint # type
 % 3,	3,	3,	1,	3,	2,	3 # length
 [ NULL,	166,	502,	1,	168,	NULL,	555	]
 [ 136,	137,	416,	2,	138,	1,	111	]
@@ -38584,7 +38584,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	d # name
-% wrd,	smallint,	hugeint,	bigint,	int # type
+% wrd,	smallint,	bigint,	bigint,	int # type
 % 2,	3,	3,	2,	3 # length
 [ 2,	333,	369,	NULL,	122	]
 [ 3,	333,	385,	2,	128	]
@@ -38611,7 +38611,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	d # name
-% wrd,	smallint,	hugeint,	bigint,	int # type
+% wrd,	smallint,	bigint,	bigint,	int # type
 % 2,	3,	3,	2,	3 # length
 [ 2,	333,	369,	NULL,	122	]
 [ 8,	555,	455,	NULL,	NULL	]
@@ -39074,7 +39074,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.t1,	.L3 # table_name
 % c,	L2,	L3,	a,	sql_add_a # name
-% int,	wrd,	smallint,	int,	hugeint # type
+% int,	wrd,	smallint,	int,	bigint # type
 % 3,	2,	3,	3,	3 # length
 [ 113,	1,	555,	NULL,	NULL	]
 [ 123,	2,	333,	121,	369	]
@@ -39103,7 +39103,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.t1,	.L4 # table_name
 % c,	L2,	L3,	a,	L4 # name
-% int,	wrd,	smallint,	int,	hugeint # type
+% int,	wrd,	smallint,	int,	bigint # type
 % 3,	2,	3,	3,	3 # length
 [ 106,	0,	333,	107,	317	]
 [ 113,	1,	555,	NULL,	NULL	]
@@ -39184,7 +39184,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	e,	L5,	ifthenelse_isnull_>_c # name
-% bigint,	bigint,	hugeint,	bigint,	int,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint,	int,	bigint,	bigint # type
 % 1,	2,	4,	2,	3,	3,	4 # length
 [ 1,	-1,	635,	2,	109,	317,	1050	]
 [ 1,	-1,	NULL,	NULL,	110,	NULL,	1120	]
@@ -39221,7 +39221,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	e,	L5,	L7 # name
-% bigint,	bigint,	hugeint,	bigint,	int,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint,	int,	bigint,	bigint # type
 % 1,	2,	4,	2,	3,	3,	4 # length
 [ 1,	-1,	1057,	4,	177,	529,	358	]
 [ 3,	-3,	1096,	1,	180,	544,	364	]
@@ -39257,7 +39257,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	e,	L5,	ifthenelse_isnull_>_c # name
-% bigint,	bigint,	hugeint,	bigint,	int,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint,	int,	bigint,	bigint # type
 % 1,	2,	4,	2,	3,	3,	4 # length
 [ 1,	-1,	635,	2,	109,	317,	1050	]
 [ 1,	-1,	NULL,	NULL,	110,	NULL,	1120	]
@@ -39294,7 +39294,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	e,	L5,	L7 # name
-% bigint,	bigint,	hugeint,	bigint,	int,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint,	int,	bigint,	bigint # type
 % 1,	2,	4,	2,	3,	3,	4 # length
 [ 1,	-1,	1057,	4,	177,	529,	358	]
 [ 3,	-3,	1096,	1,	180,	544,	364	]
@@ -39325,7 +39325,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L1 # table_name
 % L1,	d,	e,	sql_add_a # name
-% hugeint,	int,	int,	hugeint # type
+% hugeint,	int,	int,	bigint # type
 % 3,	3,	3,	3 # length
 [ NULL,	101,	NULL,	NULL	]
 [ 107,	108,	109,	317	]
@@ -39366,7 +39366,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2 # table_name
 % L1,	d,	e,	L2 # name
-% hugeint,	int,	int,	hugeint # type
+% hugeint,	int,	int,	bigint # type
 % 3,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	723	]
 [ NULL,	NULL,	146,	439	]
@@ -39581,7 +39581,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	ifthenelse_isnull_>_c # name
-% int,	bigint,	int,	bigint,	hugeint,	bigint # type
+% int,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	2,	3,	4 # length
 [ 104,	NULL,	104,	NULL,	NULL,	NULL	]
 [ 107,	-1,	107,	-1,	317,	1050	]
@@ -39612,7 +39612,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L6 # table_name
 % L1,	L2,	a,	L3,	L4,	L6 # name
-% int,	bigint,	int,	bigint,	hugeint,	bigint # type
+% int,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	2,	3,	4 # length
 [ NULL,	-2,	NULL,	NULL,	NULL,	NULL	]
 [ 104,	NULL,	104,	NULL,	NULL,	NULL	]
@@ -40881,7 +40881,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_sql_add_a # name
-% hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 3,	4,	4 # length
 [ 317,	1067,	635	]
 [ 483,	1622,	966	]
@@ -40901,7 +40901,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 3,	4,	4 # length
 [ 317,	1067,	635	]
 [ 483,	1622,	966	]
@@ -40920,7 +40920,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_sql_add_a # name
-% hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 3,	4,	4 # length
 [ 317,	1067,	635	]
 [ 483,	1622,	966	]
@@ -40940,7 +40940,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 3,	4,	4 # length
 [ 317,	1067,	635	]
 [ 483,	1622,	966	]
@@ -40959,7 +40959,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_sql_add_a # name
-% hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 3,	4,	4 # length
 [ 317,	1067,	635	]
 [ 483,	1622,	966	]
@@ -40979,7 +40979,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 3,	4,	4 # length
 [ 317,	1067,	635	]
 [ 483,	1622,	966	]
@@ -41001,7 +41001,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	d,	L3,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	int,	smallint,	smallint # type
+% int,	bigint,	int,	smallint,	smallint # type
 % 3,	3,	3,	3,	3 # length
 [ 138,	416,	136,	111,	222	]
 [ 142,	428,	140,	111,	222	]
@@ -41023,7 +41023,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	d,	L3,	L4 # name
-% int,	hugeint,	int,	smallint,	smallint # type
+% int,	bigint,	int,	smallint,	smallint # type
 % 3,	3,	3,	3,	3 # length
 [ 138,	416,	136,	111,	222	]
 [ 142,	428,	140,	111,	222	]
@@ -41044,7 +41044,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	d,	L3,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	int,	smallint,	smallint # type
+% int,	bigint,	int,	smallint,	smallint # type
 % 3,	3,	3,	3,	3 # length
 [ 138,	416,	136,	111,	222	]
 [ 142,	428,	140,	111,	222	]
@@ -41066,7 +41066,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	d,	L3,	L4 # name
-% int,	hugeint,	int,	smallint,	smallint # type
+% int,	bigint,	int,	smallint,	smallint # type
 % 3,	3,	3,	3,	3 # length
 [ 138,	416,	136,	111,	222	]
 [ 142,	428,	140,	111,	222	]
@@ -41086,7 +41086,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L3 # table_name
 % L1,	L2,	b,	L3,	e,	sql_sub_b # name
-% hugeint,	bigint,	int,	bigint,	int,	bigint # type
+% bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	2,	3,	2,	3,	2 # length
 [ 579,	-3,	194,	3,	192,	1	]
 [ 666,	-3,	223,	2,	221,	-1	]
@@ -41127,7 +41127,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L4 # table_name
 % L1,	L2,	b,	L3,	e,	L4 # name
-% hugeint,	bigint,	int,	bigint,	int,	bigint # type
+% bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	2,	3,	2,	3,	2 # length
 [ NULL,	NULL,	206,	1,	NULL,	-2	]
 [ NULL,	NULL,	112,	-1,	110,	-1	]
@@ -41167,7 +41167,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L3 # table_name
 % L1,	L2,	b,	L3,	e,	sql_sub_b # name
-% hugeint,	bigint,	int,	bigint,	int,	bigint # type
+% bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	2,	3,	2,	3,	2 # length
 [ NULL,	NULL,	112,	-1,	110,	-1	]
 [ 369,	-3,	124,	1,	NULL,	1	]
@@ -41208,7 +41208,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L4 # table_name
 % L1,	L2,	b,	L3,	e,	L4 # name
-% hugeint,	bigint,	int,	bigint,	int,	bigint # type
+% bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 3,	2,	3,	2,	3,	2 # length
 [ NULL,	NULL,	112,	-1,	110,	-1	]
 [ 369,	-3,	124,	1,	NULL,	1	]
@@ -42328,7 +42328,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_sql_add_a # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ 317,	1067	]
 [ NULL,	NULL	]
@@ -42365,7 +42365,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -42401,7 +42401,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_sql_add_a # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ 317,	1067	]
 [ NULL,	NULL	]
@@ -42438,7 +42438,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -42474,7 +42474,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_sql_add_a # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ 317,	1067	]
 [ NULL,	NULL	]
@@ -42511,7 +42511,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -42551,7 +42551,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42568,7 +42568,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42584,7 +42584,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42601,7 +42601,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42617,7 +42617,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42634,7 +42634,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42650,7 +42650,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT d-e,
@@ -42667,7 +42667,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	e,	L5 # name
-% bigint,	hugeint,	smallint,	int,	wrd # type
+% bigint,	bigint,	smallint,	int,	wrd # type
 % 1,	3,	3,	3,	2 # length
 [ 2,	743,	111,	246,	26	]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -42936,7 +42936,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L4 # table_name
 % L1,	L2,	L3,	b,	L4,	sql_add_sql_add_a # name
-% hugeint,	hugeint,	smallint,	int,	bigint,	hugeint # type
+% bigint,	hugeint,	smallint,	int,	bigint,	hugeint # type
 % 3,	4,	3,	3,	2,	4 # length
 [ NULL,	NULL,	444,	112,	-1,	NULL	]
 [ 369,	1226,	222,	124,	1,	NULL	]
@@ -42980,7 +42980,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
-% hugeint,	hugeint,	smallint,	int,	bigint,	hugeint # type
+% bigint,	hugeint,	smallint,	int,	bigint,	hugeint # type
 % 3,	4,	3,	3,	2,	4 # length
 [ NULL,	NULL,	444,	NULL,	-1,	NULL	]
 [ 439,	NULL,	444,	145,	NULL,	NULL	]
@@ -43531,7 +43531,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	abs_a # name
-% hugeint,	hugeint,	hugeint,	bigint,	bigint,	hugeint,	int # type
+% bigint,	hugeint,	hugeint,	bigint,	bigint,	hugeint,	int # type
 % 3,	4,	4,	1,	2,	4,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	104	]
 [ 317,	1067,	635,	1,	-1,	1612,	107	]
@@ -43563,7 +43563,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% hugeint,	hugeint,	hugeint,	bigint,	bigint,	hugeint,	int # type
+% bigint,	hugeint,	hugeint,	bigint,	bigint,	hugeint,	int # type
 % 3,	4,	4,	1,	2,	4,	3 # length
 [ NULL,	NULL,	NULL,	2,	-2,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	104	]
@@ -43891,7 +43891,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -43907,7 +43907,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -43922,7 +43922,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -43938,7 +43938,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -43953,7 +43953,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -43969,7 +43969,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -43984,7 +43984,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a+b*2+c*3+d*4,
@@ -44000,7 +44000,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	d,	L4,	L5,	a # name
-% hugeint,	hugeint,	int,	bigint,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT a+b*2,
 #       a-b,
@@ -44015,7 +44015,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	L5,	e,	c # name
-% hugeint,	bigint,	bigint,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	2,	2,	4,	3,	3 # length
 [ NULL,	NULL,	-1,	1120,	110,	113	]
 [ 369,	-3,	1,	1240,	NULL,	123	]
@@ -44058,7 +44058,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	L5,	e,	c # name
-% hugeint,	bigint,	bigint,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	2,	2,	4,	3,	3 # length
 [ 439,	4,	NULL,	1450,	146,	147	]
 [ 455,	2,	NULL,	1510,	NULL,	150	]
@@ -44100,7 +44100,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	L5,	e,	c # name
-% hugeint,	bigint,	bigint,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	2,	2,	4,	3,	3 # length
 [ 317,	2,	-2,	1050,	109,	106	]
 [ 385,	-2,	-3,	1290,	126,	125	]
@@ -44143,7 +44143,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	L5,	e,	c # name
-% hugeint,	bigint,	bigint,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	2,	2,	4,	3,	3 # length
 [ NULL,	NULL,	1,	NULL,	NULL,	208	]
 [ NULL,	NULL,	-1,	1120,	110,	113	]
@@ -44185,7 +44185,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	L5,	e,	c # name
-% hugeint,	bigint,	bigint,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	2,	2,	4,	3,	3 # length
 [ 317,	2,	-2,	1050,	109,	106	]
 [ 385,	-2,	-3,	1290,	126,	125	]
@@ -44228,7 +44228,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	L5,	e,	c # name
-% hugeint,	bigint,	bigint,	bigint,	int,	int # type
+% bigint,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	2,	2,	4,	3,	3 # length
 [ 711,	3,	NULL,	2360,	237,	NULL	]
 [ 317,	2,	-2,	1050,	109,	106	]
@@ -44267,7 +44267,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	1,	NULL	]
 [ -1,	-1,	NULL	]
@@ -44299,7 +44299,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	1,	NULL	]
 [ NULL,	3,	NULL	]
@@ -44330,7 +44330,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	1,	NULL	]
 [ -1,	-1,	NULL	]
@@ -44362,7 +44362,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	NULL,	711	]
 [ -1,	-3,	483	]
@@ -44393,7 +44393,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	1,	NULL	]
 [ -1,	-1,	NULL	]
@@ -44425,7 +44425,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	NULL,	711	]
 [ NULL,	1,	NULL	]
@@ -44456,7 +44456,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	1,	NULL	]
 [ -1,	-1,	NULL	]
@@ -44488,7 +44488,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	2,	3 # length
 [ NULL,	NULL,	711	]
 [ -1,	-3,	483	]
@@ -44520,7 +44520,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.t1 # table_name
 % c,	L1,	a,	d,	L2,	b # name
-% int,	hugeint,	int,	int,	hugeint,	int # type
+% int,	hugeint,	int,	int,	bigint,	int # type
 % 3,	4,	3,	3,	3,	3 # length
 [ 106,	635,	107,	108,	317,	105	]
 [ 113,	NULL,	NULL,	114,	NULL,	112	]
@@ -44555,7 +44555,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.t1 # table_name
 % c,	L1,	a,	d,	L2,	b # name
-% int,	hugeint,	int,	int,	hugeint,	int # type
+% int,	hugeint,	int,	int,	bigint,	int # type
 % 3,	4,	3,	3,	3,	3 # length
 [ 113,	NULL,	NULL,	114,	NULL,	112	]
 [ 106,	635,	107,	108,	317,	105	]
@@ -44587,7 +44587,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.t1 # table_name
 % L1,	L3,	L4,	d,	a # name
-% bigint,	bigint,	hugeint,	int,	int # type
+% bigint,	bigint,	bigint,	int,	int # type
 % 2,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	101,	104	]
 [ -1,	1050,	317,	108,	107	]
@@ -44629,7 +44629,7 @@ Ready.
 #;
 % sys.L1,	sys.L3,	sys.L4,	sys.t1,	sys.t1 # table_name
 % L1,	L3,	L4,	d,	a # name
-% bigint,	bigint,	hugeint,	int,	int # type
+% bigint,	bigint,	bigint,	int,	int # type
 % 2,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	207,	NULL	]
 [ 4,	1120,	NULL,	114,	NULL	]
@@ -44970,7 +44970,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % d,	L1,	L2,	L3,	L4,	L5,	sql_add_a # name
-% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	hugeint # type
+% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	4,	3,	4,	2,	3 # length
 [ 108,	1612,	635,	333,	1067,	-2,	317	]
 [ 116,	NULL,	NULL,	444,	NULL,	3,	NULL	]
@@ -45011,7 +45011,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % d,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	hugeint # type
+% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	4,	3,	4,	2,	3 # length
 [ NULL,	NULL,	905,	333,	NULL,	NULL,	455	]
 [ NULL,	NULL,	940,	333,	NULL,	NULL,	475	]
@@ -45051,7 +45051,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % d,	L1,	L2,	L3,	L4,	L5,	sql_add_a # name
-% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	hugeint # type
+% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	4,	3,	4,	2,	3 # length
 [ 108,	1612,	635,	333,	1067,	-2,	317	]
 [ 116,	NULL,	NULL,	444,	NULL,	3,	NULL	]
@@ -45092,7 +45092,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % d,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	hugeint # type
+% int,	hugeint,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	4,	3,	4,	2,	3 # length
 [ NULL,	NULL,	880,	444,	NULL,	NULL,	439	]
 [ NULL,	NULL,	905,	333,	NULL,	NULL,	455	]
@@ -45131,7 +45131,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45150,7 +45150,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L7 # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 111,	-4,	2,	247,	743,	490	]
 [ 222,	-3,	-1,	222,	666,	440	]
@@ -45168,7 +45168,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45187,7 +45187,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L7 # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45205,7 +45205,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45224,7 +45224,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L7 # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45242,7 +45242,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	ifthenelse_isnull_>_c # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45261,7 +45261,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L7 # name
-% smallint,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
+% smallint,	bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	2,	3,	3,	3 # length
 [ 222,	-3,	-1,	222,	666,	440	]
 [ 111,	-4,	2,	247,	743,	490	]
@@ -45325,7 +45325,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4,	.L6,	.L7,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L6,	L7,	b # name
-% bigint,	hugeint,	smallint,	bigint,	wrd,	hugeint,	int # type
+% bigint,	hugeint,	smallint,	bigint,	wrd,	bigint,	int # type
 % 2,	3,	3,	1,	1,	3,	3 # length
 [ 1,	132,	444,	4,	0,	391,	130	]
 [ -1,	137,	111,	2,	0,	416,	139	]
@@ -45349,7 +45349,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4,	.L6,	.L7,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L6,	L7,	b # name
-% bigint,	hugeint,	smallint,	bigint,	wrd,	hugeint,	int # type
+% bigint,	hugeint,	smallint,	bigint,	wrd,	bigint,	int # type
 % 2,	3,	3,	1,	1,	3,	3 # length
 [ 1,	NULL,	555,	1,	0,	502,	167	]
 [ -1,	137,	111,	2,	0,	416,	139	]
@@ -45782,7 +45782,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% bigint,	hugeint,	int,	bigint,	smallint # type
+% bigint,	bigint,	int,	bigint,	smallint # type
 % 1,	3,	3,	2,	3 # length
 [ 1,	317,	107,	-1,	333	]
 [ NULL,	NULL,	115,	-1,	444	]
@@ -45824,7 +45824,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	hugeint,	int,	bigint,	smallint # type
+% bigint,	bigint,	int,	bigint,	smallint # type
 % 1,	3,	3,	2,	3 # length
 [ 1,	317,	107,	-1,	333	]
 [ NULL,	NULL,	115,	-1,	444	]
@@ -45865,7 +45865,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% bigint,	hugeint,	int,	bigint,	smallint # type
+% bigint,	bigint,	int,	bigint,	smallint # type
 % 1,	3,	3,	2,	3 # length
 [ 1,	317,	107,	-1,	333	]
 [ NULL,	NULL,	115,	-1,	444	]
@@ -45907,7 +45907,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	hugeint,	int,	bigint,	smallint # type
+% bigint,	bigint,	int,	bigint,	smallint # type
 % 1,	3,	3,	2,	3 # length
 [ NULL,	NULL,	115,	-1,	444	]
 [ NULL,	711,	239,	1,	444	]
@@ -45948,7 +45948,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% bigint,	hugeint,	int,	bigint,	smallint # type
+% bigint,	bigint,	int,	bigint,	smallint # type
 % 1,	3,	3,	2,	3 # length
 [ 1,	317,	107,	-1,	333	]
 [ NULL,	NULL,	115,	-1,	444	]
@@ -45990,7 +45990,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	hugeint,	int,	bigint,	smallint # type
+% bigint,	bigint,	int,	bigint,	smallint # type
 % 1,	3,	3,	2,	3 # length
 [ 1,	317,	107,	-1,	333	]
 [ NULL,	NULL,	115,	-1,	444	]
@@ -46027,7 +46027,7 @@ Ready.
 #;
 % .L1,	.L3,	.L5,	.L6,	.L6 # table_name
 % L1,	L3,	L5,	L6,	sql_add_sql_add_a # name
-% hugeint,	bigint,	wrd,	bigint,	hugeint # type
+% bigint,	bigint,	wrd,	bigint,	hugeint # type
 % 3,	4,	1,	2,	3 # length
 [ NULL,	NULL,	0,	NULL,	NULL	]
 [ 317,	1050,	0,	-1,	107	]
@@ -46069,7 +46069,7 @@ Ready.
 #;
 % .L1,	.L3,	.L5,	.L6,	.L7 # table_name
 % L1,	L3,	L5,	L6,	L7 # name
-% hugeint,	bigint,	wrd,	bigint,	hugeint # type
+% bigint,	bigint,	wrd,	bigint,	hugeint # type
 % 3,	4,	1,	2,	3 # length
 [ NULL,	NULL,	0,	NULL,	NULL	]
 [ NULL,	NULL,	0,	NULL,	NULL	]
@@ -46259,7 +46259,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	b # name
-% hugeint,	int,	smallint,	hugeint,	bigint,	int # type
+% bigint,	int,	smallint,	hugeint,	bigint,	int # type
 % 3,	3,	3,	4,	2,	3 # length
 [ NULL,	104,	444,	NULL,	NULL,	NULL	]
 [ 317,	107,	333,	1067,	-1,	105	]
@@ -46303,7 +46303,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	b # name
-% hugeint,	int,	smallint,	hugeint,	bigint,	int # type
+% bigint,	int,	smallint,	hugeint,	bigint,	int # type
 % 3,	3,	3,	4,	2,	3 # length
 [ NULL,	104,	444,	NULL,	NULL,	NULL	]
 [ NULL,	115,	444,	NULL,	NULL,	NULL	]
@@ -46350,7 +46350,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	a,	L3,	L4,	sql_sub_c # name
-% smallint,	hugeint,	int,	smallint,	hugeint,	bigint # type
+% smallint,	hugeint,	int,	smallint,	bigint,	bigint # type
 % 3,	4,	3,	3,	3,	2 # length
 [ 333,	1272,	127,	222,	385,	-3	]
 [ 333,	1622,	163,	444,	483,	-3	]
@@ -46373,7 +46373,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	L5 # name
-% smallint,	hugeint,	int,	smallint,	hugeint,	bigint # type
+% smallint,	hugeint,	int,	smallint,	bigint,	bigint # type
 % 3,	4,	3,	3,	3,	2 # length
 [ 333,	1272,	127,	222,	385,	-3	]
 [ 333,	1622,	163,	444,	483,	-3	]
@@ -46395,7 +46395,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	a,	L3,	L4,	sql_sub_c # name
-% smallint,	hugeint,	int,	smallint,	hugeint,	bigint # type
+% smallint,	hugeint,	int,	smallint,	bigint,	bigint # type
 % 3,	4,	3,	3,	3,	2 # length
 [ 333,	1272,	127,	222,	385,	-3	]
 [ 333,	1622,	163,	444,	483,	-3	]
@@ -46418,7 +46418,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	L5 # name
-% smallint,	hugeint,	int,	smallint,	hugeint,	bigint # type
+% smallint,	hugeint,	int,	smallint,	bigint,	bigint # type
 % 3,	4,	3,	3,	3,	2 # length
 [ 333,	1272,	127,	222,	385,	-3	]
 [ 444,	2226,	220,	222,	666,	2	]
@@ -46483,7 +46483,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5,	sql_sub_a # name
-% int,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
+% int,	bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	1,	4,	2 # length
 [ 121,	369,	1,	1,	738,	-3	]
 [ 127,	385,	-3,	4,	760,	-2	]
@@ -46510,7 +46510,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
+% int,	bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	1,	4,	2 # length
 [ 153,	455,	NULL,	1,	905,	2	]
 [ 159,	475,	NULL,	3,	940,	1	]
@@ -48650,7 +48650,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d,	e # name
-% wrd,	hugeint,	int,	int,	int # type
+% wrd,	bigint,	int,	int,	int # type
 % 1,	3,	3,	3,	3 # length
 [ 0,	698,	231,	233,	230	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -48666,7 +48666,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d,	e # name
-% wrd,	hugeint,	int,	int,	int # type
+% wrd,	bigint,	int,	int,	int # type
 % 1,	3,	3,	3,	3 # length
 [ 0,	698,	231,	233,	230	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -48681,7 +48681,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d,	e # name
-% wrd,	hugeint,	int,	int,	int # type
+% wrd,	bigint,	int,	int,	int # type
 % 1,	3,	3,	3,	3 # length
 [ 0,	698,	231,	233,	230	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -48697,7 +48697,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d,	e # name
-% wrd,	hugeint,	int,	int,	int # type
+% wrd,	bigint,	int,	int,	int # type
 % 1,	3,	3,	3,	3 # length
 [ 0,	698,	231,	233,	230	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -48712,7 +48712,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d,	e # name
-% wrd,	hugeint,	int,	int,	int # type
+% wrd,	bigint,	int,	int,	int # type
 % 1,	3,	3,	3,	3 # length
 [ 0,	698,	231,	233,	230	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -48728,7 +48728,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d,	e # name
-% wrd,	hugeint,	int,	int,	int # type
+% wrd,	bigint,	int,	int,	int # type
 % 1,	3,	3,	3,	3 # length
 [ 0,	698,	231,	233,	230	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -49692,7 +49692,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	e # name
-% hugeint,	smallint,	int # type
+% bigint,	smallint,	int # type
 % 1,	1,	1 # length
 #SELECT a+b*2,
 #       CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -49705,7 +49705,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	e # name
-% hugeint,	smallint,	int # type
+% bigint,	smallint,	int # type
 % 1,	1,	1 # length
 #SELECT c,
 #       CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -51331,7 +51331,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L3 # table_name
 % L1,	L2,	L3,	abs_sql_sub_b # name
-% wrd,	hugeint,	smallint,	bigint # type
+% wrd,	bigint,	smallint,	bigint # type
 % 2,	3,	3,	1 # length
 [ 4,	391,	444,	4	]
 [ 5,	416,	111,	2	]
@@ -51352,7 +51352,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% wrd,	hugeint,	smallint,	bigint # type
+% wrd,	bigint,	smallint,	bigint # type
 % 2,	3,	3,	1 # length
 [ 4,	391,	444,	4	]
 [ 5,	416,	111,	2	]
@@ -51458,7 +51458,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
 % b,	L1,	L2,	L4,	L5,	a,	c # name
-% int,	int,	hugeint,	bigint,	bigint,	int,	int # type
+% int,	int,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	3,	3,	4,	2,	3,	3 # length
 [ NULL,	104,	NULL,	NULL,	NULL,	104,	102	]
 [ 105,	107,	317,	1050,	-1,	107,	106	]
@@ -51495,7 +51495,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
 % b,	L1,	L2,	L4,	L5,	a,	c # name
-% int,	int,	hugeint,	bigint,	bigint,	int,	int # type
+% int,	int,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	3,	3,	4,	2,	3,	3 # length
 [ 206,	NULL,	NULL,	NULL,	NULL,	NULL,	208	]
 [ NULL,	104,	NULL,	NULL,	NULL,	104,	102	]
@@ -51531,7 +51531,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
 % b,	L1,	L2,	L4,	L5,	a,	c # name
-% int,	int,	hugeint,	bigint,	bigint,	int,	int # type
+% int,	int,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	3,	3,	4,	2,	3,	3 # length
 [ NULL,	104,	NULL,	NULL,	NULL,	104,	102	]
 [ 105,	107,	317,	1050,	-1,	107,	106	]
@@ -51568,7 +51568,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
 % b,	L1,	L2,	L4,	L5,	a,	c # name
-% int,	int,	hugeint,	bigint,	bigint,	int,	int # type
+% int,	int,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	3,	3,	4,	2,	3,	3 # length
 [ 206,	NULL,	NULL,	NULL,	NULL,	NULL,	208	]
 [ NULL,	104,	NULL,	NULL,	NULL,	104,	102	]
@@ -51678,7 +51678,7 @@ Ready.
 #;
 % .t1,	.L2,	.L4,	.L5,	.L6,	.t1,	.L6 # table_name
 % c,	L2,	L4,	L5,	L6,	a,	sql_add_sql_add_a # name
-% int,	wrd,	bigint,	bigint,	hugeint,	int,	hugeint # type
+% int,	wrd,	bigint,	bigint,	bigint,	int,	hugeint # type
 % 3,	2,	4,	1,	3,	3,	3 # length
 [ 123,	2,	1240,	1,	369,	121,	NULL	]
 [ 125,	3,	1290,	4,	385,	127,	127	]
@@ -51706,7 +51706,7 @@ Ready.
 #;
 % .t1,	.L2,	.L4,	.L5,	.L6,	.t1,	.L7 # table_name
 % c,	L2,	L4,	L5,	L6,	a,	L7 # name
-% int,	wrd,	bigint,	bigint,	hugeint,	int,	hugeint # type
+% int,	wrd,	bigint,	bigint,	bigint,	int,	hugeint # type
 % 3,	2,	4,	1,	3,	3,	3 # length
 [ 123,	2,	1240,	1,	369,	121,	NULL	]
 [ 125,	3,	1290,	4,	385,	127,	127	]
@@ -51928,7 +51928,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L3 # table_name
 % L1,	L2,	a,	L3,	sql_sub_c # name
-% wrd,	hugeint,	int,	smallint,	bigint # type
+% wrd,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ 1,	NULL,	NULL,	555,	-1	]
 [ 2,	369,	121,	333,	1	]
@@ -51966,7 +51966,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	a,	L3,	L4 # name
-% wrd,	hugeint,	int,	smallint,	bigint # type
+% wrd,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ 5,	416,	138,	111,	1	]
 [ 6,	428,	142,	111,	1	]
@@ -52003,7 +52003,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L3 # table_name
 % L1,	L2,	a,	L3,	sql_sub_c # name
-% wrd,	hugeint,	int,	smallint,	bigint # type
+% wrd,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ 1,	NULL,	NULL,	555,	-1	]
 [ 2,	369,	121,	333,	1	]
@@ -52041,7 +52041,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	a,	L3,	L4 # name
-% wrd,	hugeint,	int,	smallint,	bigint # type
+% wrd,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ 5,	416,	138,	111,	1	]
 [ 6,	428,	142,	111,	1	]
@@ -52243,7 +52243,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	d,	L4,	sql_sub_c # name
-% bigint,	hugeint,	int,	int,	hugeint,	bigint # type
+% bigint,	hugeint,	int,	int,	bigint,	bigint # type
 % 2,	4,	3,	3,	3,	2 # length
 [ -1,	1612,	107,	108,	317,	-2	]
 [ -1,	NULL,	NULL,	114,	NULL,	-1	]
@@ -52278,7 +52278,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	d,	L4,	L5 # name
-% bigint,	hugeint,	int,	int,	hugeint,	bigint # type
+% bigint,	hugeint,	int,	int,	bigint,	bigint # type
 % 2,	4,	3,	3,	3,	2 # length
 [ -1,	NULL,	179,	NULL,	529,	NULL	]
 [ 3,	NULL,	159,	NULL,	475,	NULL	]
@@ -52458,7 +52458,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L4 # table_name
 % c,	L2,	L3,	a,	d,	L4,	sql_add_a # name
-% int,	wrd,	smallint,	int,	int,	hugeint,	hugeint # type
+% int,	wrd,	smallint,	int,	int,	hugeint,	bigint # type
 % 3,	2,	3,	3,	3,	4,	3 # length
 [ 113,	1,	444,	NULL,	114,	NULL,	NULL	]
 [ 123,	2,	222,	121,	122,	1226,	369	]
@@ -52503,7 +52503,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L5 # table_name
 % c,	L2,	L3,	a,	d,	L4,	L5 # name
-% int,	wrd,	smallint,	int,	int,	hugeint,	hugeint # type
+% int,	wrd,	smallint,	int,	int,	hugeint,	bigint # type
 % 3,	2,	3,	3,	3,	4,	3 # length
 [ NULL,	24,	444,	239,	238,	NULL,	711	]
 [ 102,	0,	444,	104,	101,	NULL,	NULL	]
@@ -52545,7 +52545,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.L5 # table_name
 % L1,	L2,	L3,	L5,	isnull_=_sql_add_a # name
-% hugeint,	hugeint,	hugeint,	bigint,	smallint # type
+% hugeint,	hugeint,	bigint,	bigint,	smallint # type
 % 3,	4,	3,	4,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	555	]
 [ 107,	635,	317,	1050,	333	]
@@ -52588,7 +52588,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L5,	L6 # name
-% hugeint,	hugeint,	hugeint,	bigint,	smallint # type
+% hugeint,	hugeint,	bigint,	bigint,	smallint # type
 % 3,	4,	3,	4,	3 # length
 [ 137,	827,	416,	1390,	111	]
 [ 142,	851,	428,	1430,	111	]
@@ -52633,7 +52633,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	a # name
-% bigint,	smallint,	hugeint,	hugeint,	bigint,	smallint,	int # type
+% bigint,	smallint,	bigint,	hugeint,	bigint,	smallint,	int # type
 % 2,	3,	3,	3,	2,	3,	3 # length
 [ NULL,	555,	NULL,	NULL,	NULL,	444,	104	]
 [ -1,	333,	317,	107,	-1,	333,	107	]
@@ -52679,7 +52679,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	a # name
-% bigint,	smallint,	hugeint,	hugeint,	bigint,	smallint,	int # type
+% bigint,	smallint,	bigint,	hugeint,	bigint,	smallint,	int # type
 % 2,	3,	3,	3,	2,	3,	3 # length
 [ -4,	222,	723,	NULL,	NULL,	444,	243	]
 [ 1,	333,	369,	NULL,	NULL,	222,	121	]
@@ -53844,7 +53844,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	L3,	sql_add_sql_add_a # name
-% bigint,	hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint,	hugeint # type
 % 1,	4,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL	]
@@ -53869,7 +53869,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	hugeint,	hugeint,	hugeint # type
+% bigint,	hugeint,	bigint,	hugeint # type
 % 1,	4,	3,	3 # length
 [ NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL	]
@@ -54332,7 +54332,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L4,	.L5,	.t1 # table_name
 % L1,	a,	L2,	L4,	L5,	c # name
-% hugeint,	int,	smallint,	wrd,	hugeint,	int # type
+% hugeint,	int,	smallint,	wrd,	bigint,	int # type
 % 4,	3,	3,	2,	3,	3 # length
 [ 1902,	127,	333,	3,	385,	125	]
 [ 2432,	163,	333,	10,	483,	161	]
@@ -54357,7 +54357,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L4,	.L5,	.t1 # table_name
 % L1,	a,	L2,	L4,	L5,	c # name
-% hugeint,	int,	smallint,	wrd,	hugeint,	int # type
+% hugeint,	int,	smallint,	wrd,	bigint,	int # type
 % 4,	3,	3,	2,	3,	3 # length
 [ 1612,	107,	333,	0,	317,	106	]
 [ NULL,	115,	333,	0,	NULL,	119	]
@@ -54633,7 +54633,7 @@ Ready.
 #;
 % .L1,	.L3,	.t1,	.L4,	.L4 # table_name
 % L1,	L3,	e,	L4,	sql_sub_b # name
-% smallint,	wrd,	int,	hugeint,	bigint # type
+% smallint,	wrd,	int,	bigint,	bigint # type
 % 3,	1,	3,	3,	2 # length
 [ 555,	0,	NULL,	NULL,	NULL	]
 [ 333,	0,	109,	317,	-1	]
@@ -54676,7 +54676,7 @@ Ready.
 #;
 % .L1,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L3,	e,	L4,	L5 # name
-% smallint,	wrd,	int,	hugeint,	bigint # type
+% smallint,	wrd,	int,	bigint,	bigint # type
 % 3,	1,	3,	3,	2 # length
 [ 222,	0,	NULL,	723,	-4	]
 [ 333,	0,	NULL,	369,	1	]
@@ -55693,7 +55693,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	L3,	ifthenelse_isnull_<_a # name
-% smallint,	bigint,	hugeint,	smallint # type
+% smallint,	bigint,	bigint,	smallint # type
 % 3,	2,	3,	3 # length
 [ 555,	NULL,	NULL,	444	]
 [ 333,	-1,	317,	333	]
@@ -55736,7 +55736,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% smallint,	bigint,	hugeint,	smallint # type
+% smallint,	bigint,	bigint,	smallint # type
 % 3,	2,	3,	3 # length
 [ 333,	NULL,	369,	222	]
 [ 555,	NULL,	455,	333	]
@@ -56441,7 +56441,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1,	sys.L4 # table_name
 % L1,	L2,	L3,	b,	e,	ifthenelse_isnull_>_c # name
-% hugeint,	int,	hugeint,	int,	int,	bigint # type
+% hugeint,	int,	bigint,	int,	int,	bigint # type
 % 4,	3,	3,	3,	3,	4 # length
 [ NULL,	NULL,	NULL,	112,	110,	1120	]
 [ 738,	121,	369,	124,	NULL,	1240	]
@@ -56481,7 +56481,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	b,	e,	L5 # name
-% hugeint,	int,	hugeint,	int,	int,	bigint # type
+% hugeint,	int,	bigint,	int,	int,	bigint # type
 % 4,	3,	3,	3,	3,	4 # length
 [ NULL,	NULL,	NULL,	206,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	112,	110,	1120	]
@@ -56640,7 +56640,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	a # name
-% bigint,	hugeint,	int # type
+% bigint,	bigint,	int # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ -3,	369,	121	]
@@ -56672,7 +56672,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	a # name
-% bigint,	hugeint,	int # type
+% bigint,	bigint,	int # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ -3,	369,	121	]
@@ -56703,7 +56703,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	a # name
-% bigint,	hugeint,	int # type
+% bigint,	bigint,	int # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ -3,	369,	121	]
@@ -56735,7 +56735,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.t1 # table_name
 % L1,	L2,	a # name
-% bigint,	hugeint,	int # type
+% bigint,	bigint,	int # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	NULL	]
 [ -3,	369,	121	]
@@ -56769,7 +56769,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L4 # table_name
 % e,	b,	L1,	L2,	L4,	sql_add_sql_add_a # name
-% int,	int,	hugeint,	hugeint,	bigint,	hugeint # type
+% int,	int,	hugeint,	bigint,	bigint,	hugeint # type
 % 3,	3,	4,	3,	4,	3 # length
 [ NULL,	124,	738,	369,	1240,	NULL	]
 [ 132,	130,	793,	391,	1300,	132	]
@@ -56794,7 +56794,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5 # table_name
 % e,	b,	L1,	L2,	L4,	L5 # name
-% int,	int,	hugeint,	hugeint,	bigint,	hugeint # type
+% int,	int,	hugeint,	bigint,	bigint,	hugeint # type
 % 3,	3,	4,	3,	4,	3 # length
 [ NULL,	206,	NULL,	NULL,	NULL,	NULL	]
 [ 180,	181,	1096,	544,	364,	182	]
@@ -56818,7 +56818,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L4 # table_name
 % e,	b,	L1,	L2,	L4,	sql_add_sql_add_a # name
-% int,	int,	hugeint,	hugeint,	bigint,	hugeint # type
+% int,	int,	hugeint,	bigint,	bigint,	hugeint # type
 % 3,	3,	4,	3,	4,	3 # length
 [ NULL,	124,	738,	369,	1240,	NULL	]
 [ 132,	130,	793,	391,	1300,	132	]
@@ -56843,7 +56843,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L4,	sys.L5 # table_name
 % e,	b,	L1,	L2,	L4,	L5 # name
-% int,	int,	hugeint,	hugeint,	bigint,	hugeint # type
+% int,	int,	hugeint,	bigint,	bigint,	hugeint # type
 % 3,	3,	4,	3,	4,	3 # length
 [ NULL,	124,	738,	369,	1240,	NULL	]
 [ NULL,	206,	NULL,	NULL,	NULL,	NULL	]
@@ -57298,7 +57298,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % c,	L1,	L2,	L3,	L4,	sql_sub_d # name
-% int,	hugeint,	hugeint,	hugeint,	hugeint,	bigint # type
+% int,	hugeint,	hugeint,	hugeint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT c,
 #       a+b*2+c*3+d*4,
@@ -57314,7 +57314,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % c,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	hugeint,	hugeint,	hugeint,	bigint # type
+% int,	hugeint,	hugeint,	hugeint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT c,
 #       a+b*2+c*3+d*4,
@@ -57329,7 +57329,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % c,	L1,	L2,	L3,	L4,	sql_sub_d # name
-% int,	hugeint,	hugeint,	hugeint,	hugeint,	bigint # type
+% int,	hugeint,	hugeint,	hugeint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT c,
 #       a+b*2+c*3+d*4,
@@ -57345,7 +57345,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % c,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	hugeint,	hugeint,	hugeint,	bigint # type
+% int,	hugeint,	hugeint,	hugeint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
 #       c-d,
@@ -57478,7 +57478,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % d,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT d,
 #       a+b*2
@@ -57490,7 +57490,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % d,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT d,
 #       a+b*2
@@ -57501,7 +57501,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % d,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT d,
 #       a+b*2
@@ -57513,7 +57513,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % d,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT d,
 #       a+b*2
@@ -57524,7 +57524,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % d,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT d,
 #       a+b*2
@@ -57536,7 +57536,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % d,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 1,	1 # length
 #SELECT a+b*2+c*3+d*4,
 #       a
@@ -57682,7 +57682,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	abs_sql_sub_b # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ NULL,	NULL	]
 [ 317,	1	]
@@ -57721,7 +57721,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -58418,7 +58418,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L2 # table_name
 % L1,	d,	e,	L2,	sql_add_sql_add_a # name
-% hugeint,	int,	int,	hugeint,	hugeint # type
+% bigint,	int,	int,	hugeint,	hugeint # type
 % 3,	3,	3,	4,	4 # length
 [ 317,	108,	109,	1612,	1067	]
 [ NULL,	114,	110,	NULL,	NULL	]
@@ -58458,7 +58458,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L3 # table_name
 % L1,	d,	e,	L2,	L3 # name
-% hugeint,	int,	int,	hugeint,	hugeint # type
+% bigint,	int,	int,	hugeint,	hugeint # type
 % 3,	3,	3,	4,	4 # length
 [ 439,	NULL,	146,	NULL,	NULL	]
 [ 723,	NULL,	NULL,	NULL,	NULL	]
@@ -58497,7 +58497,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L2 # table_name
 % L1,	d,	e,	L2,	sql_add_sql_add_a # name
-% hugeint,	int,	int,	hugeint,	hugeint # type
+% bigint,	int,	int,	hugeint,	hugeint # type
 % 3,	3,	3,	4,	4 # length
 [ 317,	108,	109,	1612,	1067	]
 [ NULL,	114,	110,	NULL,	NULL	]
@@ -58537,7 +58537,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L3 # table_name
 % L1,	d,	e,	L2,	L3 # name
-% hugeint,	int,	int,	hugeint,	hugeint # type
+% bigint,	int,	int,	hugeint,	hugeint # type
 % 3,	3,	3,	4,	4 # length
 [ NULL,	114,	110,	NULL,	NULL	]
 [ NULL,	116,	117,	NULL,	NULL	]
@@ -58576,7 +58576,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L2 # table_name
 % L1,	d,	e,	L2,	sql_add_sql_add_a # name
-% hugeint,	int,	int,	hugeint,	hugeint # type
+% bigint,	int,	int,	hugeint,	hugeint # type
 % 3,	3,	3,	4,	4 # length
 [ 317,	108,	109,	1612,	1067	]
 [ NULL,	114,	110,	NULL,	NULL	]
@@ -58616,7 +58616,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.L3 # table_name
 % L1,	d,	e,	L2,	L3 # name
-% hugeint,	int,	int,	hugeint,	hugeint # type
+% bigint,	int,	int,	hugeint,	hugeint # type
 % 3,	3,	3,	4,	4 # length
 [ NULL,	114,	110,	NULL,	NULL	]
 [ NULL,	116,	117,	NULL,	NULL	]
@@ -59682,7 +59682,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59699,7 +59699,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1828,	544,	333,	14	]
 [ 1325,	391,	444,	4	]
@@ -59715,7 +59715,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59732,7 +59732,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59748,7 +59748,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59765,7 +59765,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59781,7 +59781,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59798,7 +59798,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	hugeint,	smallint,	wrd # type
+% hugeint,	bigint,	smallint,	wrd # type
 % 4,	3,	3,	2 # length
 [ 1325,	391,	444,	4	]
 [ 1828,	544,	333,	14	]
@@ -59917,7 +59917,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.L3 # table_name
 % e,	L1,	L2,	L3,	sql_add_a # name
-% int,	smallint,	bigint,	hugeint,	hugeint # type
+% int,	smallint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	3 # length
 [ 110,	444,	-1,	NULL,	NULL	]
 [ NULL,	222,	1,	NULL,	369	]
@@ -59960,7 +59960,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	L1,	L2,	L3,	L4 # name
-% int,	smallint,	bigint,	hugeint,	hugeint # type
+% int,	smallint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	3 # length
 [ NULL,	444,	-4,	NULL,	723	]
 [ NULL,	222,	1,	NULL,	369	]
@@ -60002,7 +60002,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.L3 # table_name
 % e,	L1,	L2,	L3,	sql_add_a # name
-% int,	smallint,	bigint,	hugeint,	hugeint # type
+% int,	smallint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	3 # length
 [ 109,	333,	-1,	107,	317	]
 [ 126,	222,	4,	127,	385	]
@@ -60045,7 +60045,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	L1,	L2,	L3,	L4 # name
-% int,	smallint,	bigint,	hugeint,	hugeint # type
+% int,	smallint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	3 # length
 [ NULL,	444,	-2,	NULL,	NULL	]
 [ 110,	444,	-1,	NULL,	NULL	]
@@ -60087,7 +60087,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.L3 # table_name
 % e,	L1,	L2,	L3,	sql_add_a # name
-% int,	smallint,	bigint,	hugeint,	hugeint # type
+% int,	smallint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	3 # length
 [ 110,	444,	-1,	NULL,	NULL	]
 [ NULL,	222,	1,	NULL,	369	]
@@ -60130,7 +60130,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	L1,	L2,	L3,	L4 # name
-% int,	smallint,	bigint,	hugeint,	hugeint # type
+% int,	smallint,	bigint,	hugeint,	bigint # type
 % 3,	3,	2,	3,	3 # length
 [ NULL,	444,	-2,	NULL,	NULL	]
 [ NULL,	222,	1,	NULL,	369	]
@@ -60550,7 +60550,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % c,	d,	L1,	L2,	L3,	sql_add_a # name
-% int,	int,	hugeint,	bigint,	bigint,	hugeint # type
+% int,	int,	hugeint,	bigint,	bigint,	bigint # type
 % 3,	3,	4,	2,	2,	3 # length
 [ 102,	101,	NULL,	NULL,	NULL,	NULL	]
 [ 106,	108,	1612,	-1,	-1,	317	]
@@ -60593,7 +60593,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % c,	d,	L1,	L2,	L3,	L4 # name
-% int,	int,	hugeint,	bigint,	bigint,	hugeint # type
+% int,	int,	hugeint,	bigint,	bigint,	bigint # type
 % 3,	3,	4,	2,	2,	3 # length
 [ 102,	101,	NULL,	NULL,	NULL,	NULL	]
 [ 202,	203,	NULL,	-1,	NULL,	NULL	]
@@ -60726,7 +60726,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	c,	sql_sub_c # name
-% hugeint,	hugeint,	hugeint,	hugeint,	int,	bigint # type
+% hugeint,	bigint,	hugeint,	hugeint,	int,	bigint # type
 % 4,	3,	3,	4,	3,	2 # length
 [ 1985,	391,	132,	1325,	134,	1	]
 [ 2046,	416,	137,	1371,	137,	1	]
@@ -60752,7 +60752,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	c,	L5 # name
-% hugeint,	hugeint,	hugeint,	hugeint,	int,	bigint # type
+% hugeint,	bigint,	hugeint,	hugeint,	int,	bigint # type
 % 4,	3,	3,	4,	3,	2 # length
 [ 1985,	391,	132,	1325,	134,	1	]
 [ 2046,	416,	137,	1371,	137,	1	]
@@ -60979,7 +60979,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	sql_sub_a # name
-% hugeint,	int,	bigint,	hugeint,	bigint # type
+% hugeint,	int,	bigint,	bigint,	bigint # type
 % 3,	3,	1,	3,	2 # length
 [ 132,	131,	4,	391,	1	]
 [ 137,	138,	2,	416,	-1	]
@@ -61000,7 +61000,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	int,	bigint,	hugeint,	bigint # type
+% hugeint,	int,	bigint,	bigint,	bigint # type
 % 3,	3,	1,	3,	2 # length
 [ NULL,	168,	1,	502,	1	]
 [ 137,	138,	2,	416,	-1	]
@@ -61091,7 +61091,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	abs_a # name
-% hugeint,	int # type
+% bigint,	int # type
 % 3,	3 # length
 [ NULL,	104	]
 [ 317,	107	]
@@ -61109,6 +61109,7 @@ Ready.
 [ 685,	229	]
 [ 698,	234	]
 [ 711,	239	]
+[ 723,	243	]
 [ 743,	245	]
 #SELECT a+b*2,
 #       abs(a)
@@ -61118,7 +61119,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	int # type
+% bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	104	]
@@ -61136,6 +61137,7 @@ Ready.
 [ 685,	229	]
 [ 698,	234	]
 [ 711,	239	]
+[ 723,	243	]
 [ 743,	245	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       a,
@@ -61250,7 +61252,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L3 # table_name
 % L1,	d,	L2,	L3,	e,	sql_sub_b # name
-% hugeint,	int,	hugeint,	bigint,	int,	bigint # type
+% hugeint,	int,	bigint,	bigint,	int,	bigint # type
 % 4,	3,	3,	2,	3,	2 # length
 [ NULL,	101,	NULL,	1,	NULL,	NULL	]
 [ 635,	108,	317,	-2,	109,	-1	]
@@ -61293,7 +61295,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
 % L1,	d,	L2,	L3,	e,	L4 # name
-% hugeint,	int,	hugeint,	bigint,	int,	bigint # type
+% hugeint,	int,	bigint,	bigint,	int,	bigint # type
 % 4,	3,	3,	2,	3,	2 # length
 [ 905,	NULL,	455,	NULL,	NULL,	1	]
 [ 1455,	NULL,	723,	NULL,	NULL,	-4	]
@@ -61633,7 +61635,7 @@ Ready.
 #;
 % .t1,	.L1,	.L3,	.L5,	.L5 # table_name
 % c,	L1,	L3,	L5,	abs_sql_sub_b # name
-% int,	hugeint,	wrd,	bigint,	bigint # type
+% int,	bigint,	wrd,	bigint,	bigint # type
 % 3,	3,	1,	4,	1 # length
 [ 106,	317,	0,	1050,	1	]
 [ 113,	NULL,	0,	1120,	1	]
@@ -61669,7 +61671,7 @@ Ready.
 #;
 % .t1,	.L1,	.L3,	.L5,	.L6 # table_name
 % c,	L1,	L3,	L5,	L6 # name
-% int,	hugeint,	wrd,	bigint,	bigint # type
+% int,	bigint,	wrd,	bigint,	bigint # type
 % 3,	3,	1,	4,	1 # length
 [ NULL,	711,	0,	2360,	NULL	]
 [ 106,	317,	0,	1050,	1	]
@@ -61704,7 +61706,7 @@ Ready.
 #;
 % .t1,	.L1,	.L3,	.L5,	.L5 # table_name
 % c,	L1,	L3,	L5,	abs_sql_sub_b # name
-% int,	hugeint,	wrd,	bigint,	bigint # type
+% int,	bigint,	wrd,	bigint,	bigint # type
 % 3,	3,	1,	4,	1 # length
 [ 106,	317,	0,	1050,	1	]
 [ 113,	NULL,	0,	1120,	1	]
@@ -61740,7 +61742,7 @@ Ready.
 #;
 % .t1,	.L1,	.L3,	.L5,	.L6 # table_name
 % c,	L1,	L3,	L5,	L6 # name
-% int,	hugeint,	wrd,	bigint,	bigint # type
+% int,	bigint,	wrd,	bigint,	bigint # type
 % 3,	3,	1,	4,	1 # length
 [ 176,	529,	0,	358,	1	]
 [ 184,	544,	0,	364,	3	]
@@ -61808,7 +61810,7 @@ Ready.
 #;
 % .L1,	.L1 # table_name
 % L1,	sql_add_a # name
-% wrd,	hugeint # type
+% wrd,	bigint # type
 % 1,	3 # length
 [ 0,	579	]
 [ 0,	743	]
@@ -61822,7 +61824,7 @@ Ready.
 #;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% wrd,	bigint # type
 % 1,	3 # length
 [ 0,	579	]
 [ 0,	743	]
@@ -61835,7 +61837,7 @@ Ready.
 #;
 % .L1,	.L1 # table_name
 % L1,	sql_add_a # name
-% wrd,	hugeint # type
+% wrd,	bigint # type
 % 1,	3 # length
 [ 0,	579	]
 [ 0,	743	]
@@ -61849,7 +61851,7 @@ Ready.
 #;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% wrd,	bigint # type
 % 1,	3 # length
 [ 0,	579	]
 [ 0,	743	]
@@ -61862,7 +61864,7 @@ Ready.
 #;
 % .L1,	.L1 # table_name
 % L1,	sql_add_a # name
-% wrd,	hugeint # type
+% wrd,	bigint # type
 % 1,	3 # length
 [ 0,	579	]
 [ 0,	743	]
@@ -61876,7 +61878,7 @@ Ready.
 #;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% wrd,	bigint # type
 % 1,	3 # length
 [ 0,	579	]
 [ 0,	743	]
@@ -62306,7 +62308,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ NULL	]
 [ 317	]
@@ -62344,7 +62346,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ NULL	]
 [ NULL	]
@@ -62737,7 +62739,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.t1,	.L5,	.L5 # table_name
 % L1,	L2,	L4,	a,	L5,	sql_add_a # name
-% hugeint,	int,	wrd,	int,	bigint,	hugeint # type
+% hugeint,	int,	wrd,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	3 # length
 [ NULL,	NULL,	0,	NULL,	-1,	NULL	]
 [ 127,	127,	0,	127,	-3,	385	]
@@ -62778,7 +62780,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.t1,	.L5,	.L6 # table_name
 % L1,	L2,	L4,	a,	L5,	L6 # name
-% hugeint,	int,	wrd,	int,	bigint,	hugeint # type
+% hugeint,	int,	wrd,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	3 # length
 [ NULL,	NULL,	0,	NULL,	1,	NULL	]
 [ NULL,	NULL,	0,	NULL,	-1,	NULL	]
@@ -62818,7 +62820,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.t1,	.L5,	.L5 # table_name
 % L1,	L2,	L4,	a,	L5,	sql_add_a # name
-% hugeint,	int,	wrd,	int,	bigint,	hugeint # type
+% hugeint,	int,	wrd,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	3 # length
 [ NULL,	NULL,	0,	NULL,	-1,	NULL	]
 [ NULL,	121,	0,	121,	1,	369	]
@@ -62859,7 +62861,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.t1,	.L5,	.L6 # table_name
 % L1,	L2,	L4,	a,	L5,	L6 # name
-% hugeint,	int,	wrd,	int,	bigint,	hugeint # type
+% hugeint,	int,	wrd,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	3 # length
 [ NULL,	NULL,	0,	NULL,	1,	NULL	]
 [ NULL,	NULL,	0,	NULL,	-1,	NULL	]
@@ -63521,6 +63523,7 @@ Ready.
 [ 1360,	555,	3399,	1,	0,	226	]
 [ 1391,	555,	3473,	2,	0,	233	]
 [ NULL,	555,	NULL,	3,	0,	238	]
+[ 1455,	222,	NULL,	3,	0,	NULL	]
 [ 1484,	444,	3706,	-4,	0,	248	]
 #SELECT a+b*2+c*3,
 #       CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -63554,6 +63557,7 @@ Ready.
 [ 1338,	444,	3331,	-3,	0,	222	]
 [ 1360,	555,	3399,	1,	0,	226	]
 [ 1391,	555,	3473,	2,	0,	233	]
+[ 1455,	222,	NULL,	3,	0,	NULL	]
 [ 1484,	444,	3706,	-4,	0,	248	]
 #SELECT a+b*2+c*3,
 #       CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -63586,6 +63590,7 @@ Ready.
 [ 1360,	555,	3399,	1,	0,	226	]
 [ 1391,	555,	3473,	2,	0,	233	]
 [ NULL,	555,	NULL,	3,	0,	238	]
+[ 1455,	222,	NULL,	3,	0,	NULL	]
 [ 1484,	444,	3706,	-4,	0,	248	]
 #SELECT a+b*2+c*3,
 #       CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -63603,6 +63608,7 @@ Ready.
 % L1,	L2,	L3,	L4,	L6,	d # name
 % hugeint,	smallint,	hugeint,	bigint,	wrd,	int # type
 % 4,	3,	4,	2,	1,	3 # length
+[ 1455,	222,	NULL,	3,	0,	NULL	]
 [ NULL,	555,	NULL,	NULL,	0,	101	]
 [ 635,	333,	1612,	2,	0,	108	]
 [ 966,	333,	2432,	3,	0,	164	]
@@ -63735,7 +63741,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	L3,	ifthenelse_isnull_>_c # name
-% hugeint,	bigint,	smallint,	bigint # type
+% bigint,	bigint,	smallint,	bigint # type
 % 3,	2,	3,	4 # length
 [ NULL,	1,	555,	NULL	]
 [ 317,	-2,	333,	1050	]
@@ -63777,7 +63783,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% hugeint,	bigint,	smallint,	bigint # type
+% bigint,	bigint,	smallint,	bigint # type
 % 3,	2,	3,	4 # length
 [ 723,	NULL,	222,	486	]
 [ 529,	NULL,	555,	358	]
@@ -63819,7 +63825,7 @@ Ready.
 #;
 % .L1,	.L3,	.L3 # table_name
 % L1,	L3,	sql_add_a # name
-% bigint,	wrd,	hugeint # type
+% bigint,	wrd,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -63832,7 +63838,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4 # table_name
 % L1,	L3,	L4 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	wrd,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -63844,7 +63850,7 @@ Ready.
 #;
 % .L1,	.L3,	.L3 # table_name
 % L1,	L3,	sql_add_a # name
-% bigint,	wrd,	hugeint # type
+% bigint,	wrd,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -63857,7 +63863,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4 # table_name
 % L1,	L3,	L4 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	wrd,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -63869,7 +63875,7 @@ Ready.
 #;
 % .L1,	.L3,	.L3 # table_name
 % L1,	L3,	sql_add_a # name
-% bigint,	wrd,	hugeint # type
+% bigint,	wrd,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
@@ -63882,7 +63888,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4 # table_name
 % L1,	L3,	L4 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	wrd,	bigint # type
 % 1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
 #       a,
@@ -64380,7 +64386,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % a,	L1,	L2,	L3,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	bigint,	hugeint,	smallint # type
+% int,	hugeint,	bigint,	bigint,	smallint # type
 % 3,	3,	2,	3,	3 # length
 [ 107,	107,	-1,	317,	333	]
 [ 131,	132,	-4,	391,	333	]
@@ -64411,7 +64417,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % a,	L1,	L2,	L3,	L4 # name
-% int,	hugeint,	bigint,	hugeint,	smallint # type
+% int,	hugeint,	bigint,	bigint,	smallint # type
 % 3,	3,	2,	3,	3 # length
 [ 107,	107,	-1,	317,	333	]
 [ 131,	132,	-4,	391,	333	]
@@ -64437,7 +64443,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 369	]
@@ -64471,7 +64477,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 369	]
@@ -64504,7 +64510,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 369	]
@@ -64538,7 +64544,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 317	]
 [ 369	]
@@ -64572,7 +64578,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	L3,	sql_sub_d # name
-% bigint,	hugeint,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint # type
 % 2,	3,	4,	2 # length
 [ NULL,	NULL,	NULL,	NULL	]
 [ -1,	317,	1067,	-1	]
@@ -64613,7 +64619,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	hugeint,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint # type
 % 2,	3,	4,	2 # length
 [ -4,	723,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL	]
@@ -65462,6 +65468,7 @@ Ready.
 [ 333,	3399,	229,	225	]
 [ 333,	3473,	234,	231	]
 [ 444,	NULL,	239,	NULL	]
+[ 444,	NULL,	243,	244	]
 [ 111,	3706,	245,	247	]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
 #        WHEN a<b+3 THEN 333 ELSE 444 END,
@@ -65484,6 +65491,7 @@ Ready.
 [ 444,	NULL,	179,	176	]
 [ 444,	NULL,	201,	202	]
 [ 444,	NULL,	NULL,	208	]
+[ 444,	NULL,	243,	244	]
 [ 333,	1612,	107,	106	]
 [ 222,	1902,	127,	125	]
 [ 333,	1985,	131,	134	]
@@ -65537,6 +65545,7 @@ Ready.
 [ 333,	3399,	229,	225	]
 [ 333,	3473,	234,	231	]
 [ 444,	NULL,	239,	NULL	]
+[ 444,	NULL,	243,	244	]
 [ 111,	3706,	245,	247	]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
 #        WHEN a<b+3 THEN 333 ELSE 444 END,
@@ -65576,6 +65585,7 @@ Ready.
 [ 444,	NULL,	179,	176	]
 [ 444,	NULL,	201,	202	]
 [ 444,	NULL,	NULL,	208	]
+[ 444,	NULL,	243,	244	]
 #SELECT (a+b+c+d+e)/5,
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
 #       CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -65834,7 +65844,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4,	.L6,	.t1,	.L6 # table_name
 % L1,	L3,	L4,	L6,	d,	sql_add_sql_add_a # name
-% smallint,	bigint,	hugeint,	wrd,	int,	hugeint # type
+% smallint,	bigint,	bigint,	wrd,	int,	hugeint # type
 % 3,	4,	3,	1,	3,	3 # length
 [ 333,	1600,	483,	0,	164,	162	]
 [ 222,	426,	635,	0,	212,	212	]
@@ -65855,7 +65865,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4,	.L6,	.t1,	.L7 # table_name
 % L1,	L3,	L4,	L6,	d,	L7 # name
-% smallint,	bigint,	hugeint,	wrd,	int,	hugeint # type
+% smallint,	bigint,	bigint,	wrd,	int,	hugeint # type
 % 3,	4,	3,	1,	3,	3 # length
 [ 333,	1600,	483,	0,	164,	162	]
 [ 222,	426,	635,	0,	212,	212	]
@@ -65875,7 +65885,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4,	.L6,	.t1,	.L6 # table_name
 % L1,	L3,	L4,	L6,	d,	sql_add_sql_add_a # name
-% smallint,	bigint,	hugeint,	wrd,	int,	hugeint # type
+% smallint,	bigint,	bigint,	wrd,	int,	hugeint # type
 % 3,	4,	3,	1,	3,	3 # length
 [ 333,	1600,	483,	0,	164,	162	]
 [ 222,	426,	635,	0,	212,	212	]
@@ -65896,7 +65906,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4,	.L6,	.t1,	.L7 # table_name
 % L1,	L3,	L4,	L6,	d,	L7 # name
-% smallint,	bigint,	hugeint,	wrd,	int,	hugeint # type
+% smallint,	bigint,	bigint,	wrd,	int,	hugeint # type
 % 3,	4,	3,	1,	3,	3 # length
 [ 333,	1600,	483,	0,	164,	162	]
 [ 222,	426,	635,	0,	212,	212	]
@@ -66073,7 +66083,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L3 # table_name
 % L1,	L2,	L3,	sql_add_sql_add_a # name
-% wrd,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	bigint,	hugeint # type
 % 1,	2,	3,	4 # length
 [ 0,	-1,	317,	635	]
 [ 0,	-1,	NULL,	NULL	]
@@ -66096,7 +66106,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% wrd,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	bigint,	hugeint # type
 % 1,	2,	3,	4 # length
 [ 0,	-1,	NULL,	NULL	]
 [ 0,	-1,	317,	635	]
@@ -66118,7 +66128,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L3 # table_name
 % L1,	L2,	L3,	sql_add_sql_add_a # name
-% wrd,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	bigint,	hugeint # type
 % 1,	2,	3,	4 # length
 [ 0,	-1,	317,	635	]
 [ 0,	-1,	NULL,	NULL	]
@@ -66141,7 +66151,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% wrd,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	bigint,	hugeint # type
 % 1,	2,	3,	4 # length
 [ 0,	-1,	NULL,	NULL	]
 [ 0,	-1,	317,	635	]
@@ -66268,6 +66278,7 @@ Ready.
 [ 2264	]
 [ 2323	]
 [ NULL	]
+[ NULL	]
 [ 2476	]
 #SELECT a+b*2+c*3+d*4
 #  FROM t1
@@ -66280,6 +66291,7 @@ Ready.
 % L1 # name
 % hugeint # type
 % 4 # length
+[ NULL	]
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -66343,6 +66355,7 @@ Ready.
 [ 2264	]
 [ 2323	]
 [ NULL	]
+[ NULL	]
 [ 2476	]
 #SELECT a+b*2+c*3+d*4
 #  FROM t1
@@ -66355,6 +66368,7 @@ Ready.
 % L1 # name
 % hugeint # type
 % 4 # length
+[ NULL	]
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -66418,6 +66432,7 @@ Ready.
 [ 2264	]
 [ 2323	]
 [ NULL	]
+[ NULL	]
 [ 2476	]
 #SELECT a+b*2+c*3+d*4
 #  FROM t1
@@ -66430,6 +66445,7 @@ Ready.
 % L1 # name
 % hugeint # type
 % 4 # length
+[ NULL	]
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -66465,7 +66481,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % a,	L1,	abs_sql_sub_b # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ NULL,	NULL,	1	]
 [ 121,	369,	1	]
@@ -66502,7 +66518,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % a,	L1,	L2 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ NULL,	NULL,	1	]
 [ NULL,	NULL,	2	]
@@ -66540,7 +66556,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.L3 # table_name
 % L1,	L2,	d,	a,	L3,	sql_sub_c # name
-% wrd,	hugeint,	int,	int,	hugeint,	bigint # type
+% wrd,	bigint,	int,	int,	hugeint,	bigint # type
 % 2,	3,	3,	3,	4,	2 # length
 [ 1,	NULL,	114,	NULL,	NULL,	-1	]
 [ 2,	369,	122,	121,	1226,	1	]
@@ -66583,7 +66599,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	d,	a,	L3,	L4 # name
-% wrd,	hugeint,	int,	int,	hugeint,	bigint # type
+% wrd,	bigint,	int,	int,	hugeint,	bigint # type
 % 2,	3,	3,	3,	4,	2 # length
 [ 7,	439,	NULL,	149,	NULL,	NULL	]
 [ 8,	455,	NULL,	153,	NULL,	NULL	]
@@ -66819,7 +66835,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
 % L1,	L2,	L3,	a # name
-% bigint,	hugeint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ -1,	483,	162,	163	]
 [ -2,	514,	172,	174	]
@@ -66830,6 +66846,7 @@ Ready.
 [ 3,	685,	227,	229	]
 [ 1,	698,	232,	234	]
 [ NULL,	711,	NULL,	239	]
+[ -4,	723,	NULL,	243	]
 #SELECT b-c,
 #       a+b*2,
 #       (a+b+c+d+e)/5,
@@ -66842,9 +66859,10 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
 % L1,	L2,	L3,	a # name
-% bigint,	hugeint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ NULL,	711,	NULL,	239	]
+[ -4,	723,	NULL,	243	]
 [ -3,	544,	182,	182	]
 [ -3,	635,	212,	213	]
 [ -2,	514,	172,	174	]
@@ -66864,7 +66882,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
 % L1,	L2,	L3,	a # name
-% bigint,	hugeint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ -1,	483,	162,	163	]
 [ -2,	514,	172,	174	]
@@ -66875,6 +66893,7 @@ Ready.
 [ 3,	685,	227,	229	]
 [ 1,	698,	232,	234	]
 [ NULL,	711,	NULL,	239	]
+[ -4,	723,	NULL,	243	]
 #SELECT b-c,
 #       a+b*2,
 #       (a+b+c+d+e)/5,
@@ -66887,7 +66906,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
 % L1,	L2,	L3,	a # name
-% bigint,	hugeint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ -1,	483,	162,	163	]
 [ -2,	514,	172,	174	]
@@ -66898,6 +66917,7 @@ Ready.
 [ 3,	685,	227,	229	]
 [ 1,	698,	232,	234	]
 [ NULL,	711,	NULL,	239	]
+[ -4,	723,	NULL,	243	]
 #SELECT b-c,
 #       a+b*2,
 #       (a+b+c+d+e)/5,
@@ -66909,7 +66929,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
 % L1,	L2,	L3,	a # name
-% bigint,	hugeint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ -1,	483,	162,	163	]
 [ -2,	514,	172,	174	]
@@ -66920,6 +66940,7 @@ Ready.
 [ 3,	685,	227,	229	]
 [ 1,	698,	232,	234	]
 [ NULL,	711,	NULL,	239	]
+[ -4,	723,	NULL,	243	]
 #SELECT b-c,
 #       a+b*2,
 #       (a+b+c+d+e)/5,
@@ -66932,7 +66953,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
 % L1,	L2,	L3,	a # name
-% bigint,	hugeint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	3,	3,	3 # length
 [ -1,	483,	162,	163	]
 [ -2,	514,	172,	174	]
@@ -66943,6 +66964,7 @@ Ready.
 [ 3,	685,	227,	229	]
 [ 1,	698,	232,	234	]
 [ NULL,	711,	NULL,	239	]
+[ -4,	723,	NULL,	243	]
 #SELECT b
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
@@ -66982,7 +67004,7 @@ Ready.
 #;
 % sys.L1,	sys.t1 # table_name
 % L1,	e # name
-% hugeint,	int # type
+% bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ 317,	109	]
@@ -67021,7 +67043,7 @@ Ready.
 #;
 % sys.L1,	sys.t1 # table_name
 % L1,	e # name
-% hugeint,	int # type
+% bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -67533,7 +67555,7 @@ Ready.
 #;
 % .L1,	.L3,	.L5,	.L6,	.L7,	.L11 # table_name
 % L1,	L3,	L5,	L6,	L7,	L11 # name
-% hugeint,	bigint,	wrd,	smallint,	bigint,	wrd # type
+% bigint,	bigint,	wrd,	smallint,	bigint,	wrd # type
 % 3,	4,	2,	3,	2,	1 # length
 [ NULL,	1120,	1,	444,	-1,	0	]
 [ 369,	1240,	2,	222,	1,	0	]
@@ -67577,7 +67599,7 @@ Ready.
 #;
 % .L1,	.L3,	.L5,	.L6,	.L7,	.L11 # table_name
 % L1,	L3,	L5,	L6,	L7,	L11 # name
-% hugeint,	bigint,	wrd,	smallint,	bigint,	wrd # type
+% bigint,	bigint,	wrd,	smallint,	bigint,	wrd # type
 % 3,	4,	2,	3,	2,	1 # length
 [ NULL,	402,	0,	444,	-1,	0	]
 [ NULL,	1120,	1,	444,	-1,	0	]
@@ -67841,7 +67863,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1,	sys.L4,	sys.L4 # table_name
 % L1,	L2,	L3,	b,	e,	L4,	sql_sub_b # name
-% hugeint,	smallint,	int,	int,	int,	hugeint,	bigint # type
+% hugeint,	smallint,	int,	int,	int,	bigint,	bigint # type
 % 4,	3,	3,	3,	3,	3,	2 # length
 [ 1158,	444,	191,	194,	192,	579,	1	]
 [ 1338,	444,	220,	223,	221,	666,	-1	]
@@ -67860,7 +67882,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1,	sys.L4,	sys.L5 # table_name
 % L1,	L2,	L3,	b,	e,	L4,	L5 # name
-% hugeint,	smallint,	int,	int,	int,	hugeint,	bigint # type
+% hugeint,	smallint,	int,	int,	int,	bigint,	bigint # type
 % 4,	3,	3,	3,	3,	3,	2 # length
 [ 1338,	444,	220,	223,	221,	666,	-1	]
 [ 1158,	444,	191,	194,	192,	579,	1	]
@@ -67951,7 +67973,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L2 # table_name
 % e,	b,	L1,	L2,	sql_add_a # name
-% int,	int,	smallint,	hugeint,	hugeint # type
+% int,	int,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	3 # length
 [ 109,	105,	333,	107,	317	]
 [ 110,	112,	555,	NULL,	NULL	]
@@ -67990,7 +68012,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
 % e,	b,	L1,	L2,	L3 # name
-% int,	int,	smallint,	hugeint,	hugeint # type
+% int,	int,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	3 # length
 [ 135,	139,	111,	137,	416	]
 [ 144,	143,	111,	142,	428	]
@@ -68028,7 +68050,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L2 # table_name
 % e,	b,	L1,	L2,	sql_add_a # name
-% int,	int,	smallint,	hugeint,	hugeint # type
+% int,	int,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	3 # length
 [ 109,	105,	333,	107,	317	]
 [ 110,	112,	555,	NULL,	NULL	]
@@ -68067,7 +68089,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
 % e,	b,	L1,	L2,	L3 # name
-% int,	int,	smallint,	hugeint,	hugeint # type
+% int,	int,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	3 # length
 [ 135,	139,	111,	137,	416	]
 [ 144,	143,	111,	142,	428	]
@@ -68105,7 +68127,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L2 # table_name
 % e,	b,	L1,	L2,	sql_add_a # name
-% int,	int,	smallint,	hugeint,	hugeint # type
+% int,	int,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	3 # length
 [ 109,	105,	333,	107,	317	]
 [ 110,	112,	555,	NULL,	NULL	]
@@ -68144,7 +68166,7 @@ Ready.
 #;
 % sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
 % e,	b,	L1,	L2,	L3 # name
-% int,	int,	smallint,	hugeint,	hugeint # type
+% int,	int,	smallint,	hugeint,	bigint # type
 % 3,	3,	3,	3,	3 # length
 [ 110,	112,	555,	NULL,	NULL	]
 [ 146,	145,	555,	NULL,	439	]
@@ -68183,7 +68205,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L6 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	sql_sub_a # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68203,7 +68225,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	L7 # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68222,7 +68244,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L6 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	sql_sub_a # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68242,7 +68264,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	L7 # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68261,7 +68283,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L6 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	sql_sub_a # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68281,7 +68303,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	L7 # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68300,7 +68322,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L6 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	sql_sub_a # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 3,	217,	3260,	217,	652,	0,	-2	]
@@ -68320,7 +68342,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	d,	L2,	L3,	L4,	L6,	L7 # name
-% bigint,	int,	hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	wrd,	bigint # type
 % 1,	3,	4,	3,	3,	1,	2 # length
 [ 1,	190,	2878,	192,	579,	0,	-3	]
 [ 1,	233,	3473,	232,	698,	0,	2	]
@@ -68379,7 +68401,7 @@ Ready.
 #;
 % sys.L # table_name
 % sql_add_a # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ NULL	]
 [ 317	]
@@ -68417,7 +68439,7 @@ Ready.
 #;
 % sys.L1 # table_name
 % L1 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ NULL	]
 [ NULL	]
@@ -69057,7 +69079,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % d,	L1,	sql_add_a # name
-% int,	bigint,	hugeint # type
+% int,	bigint,	bigint # type
 % 3,	1,	3 # length
 [ 108,	1,	317	]
 [ 114,	1,	NULL	]
@@ -69089,7 +69111,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % d,	L1,	L2 # name
-% int,	bigint,	hugeint # type
+% int,	bigint,	bigint # type
 % 3,	1,	3 # length
 [ 114,	1,	NULL	]
 [ 203,	NULL,	NULL	]
@@ -70032,6 +70054,7 @@ Ready.
 [ 333,	-1,	3,	226,	3399,	22,	227	]
 [ 333,	3,	1,	233,	3473,	23,	232	]
 [ 444,	1,	NULL,	238,	NULL,	24,	NULL	]
+[ 444,	NULL,	-4,	NULL,	NULL,	25,	NULL	]
 [ 111,	2,	2,	248,	3706,	26,	247	]
 [ 444,	NULL,	NULL,	101,	NULL,	0,	NULL	]
 [ 333,	-1,	-1,	108,	1612,	0,	107	]
@@ -70056,6 +70079,7 @@ Ready.
 [ 444,	NULL,	NULL,	101,	NULL,	0,	NULL	]
 [ 444,	-1,	NULL,	203,	NULL,	0,	NULL	]
 [ 444,	1,	NULL,	238,	NULL,	24,	NULL	]
+[ 444,	NULL,	-4,	NULL,	NULL,	25,	NULL	]
 [ 333,	3,	-3,	183,	2728,	14,	182	]
 [ 333,	2,	-3,	212,	3175,	19,	212	]
 [ 444,	-2,	-2,	171,	2579,	12,	172	]
@@ -70101,6 +70125,7 @@ Ready.
 [ 333,	-1,	3,	226,	3399,	22,	227	]
 [ 333,	3,	1,	233,	3473,	23,	232	]
 [ 444,	1,	NULL,	238,	NULL,	24,	NULL	]
+[ 444,	NULL,	-4,	NULL,	NULL,	25,	NULL	]
 [ 111,	2,	2,	248,	3706,	26,	247	]
 [ 444,	NULL,	NULL,	101,	NULL,	0,	NULL	]
 [ 333,	-1,	-1,	108,	1612,	0,	107	]
@@ -70126,6 +70151,7 @@ Ready.
 [ 444,	-1,	NULL,	203,	NULL,	0,	NULL	]
 [ 444,	NULL,	-2,	207,	NULL,	18,	NULL	]
 [ 444,	1,	NULL,	238,	NULL,	24,	NULL	]
+[ 444,	NULL,	-4,	NULL,	NULL,	25,	NULL	]
 [ 333,	-1,	-1,	108,	1612,	0,	107	]
 [ 222,	2,	4,	128,	1902,	3,	127	]
 [ 444,	2,	-1,	164,	2432,	10,	162	]
@@ -70288,7 +70314,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	d # name
-% bigint,	bigint,	smallint,	smallint,	bigint,	hugeint,	int # type
+% bigint,	bigint,	smallint,	smallint,	bigint,	bigint,	int # type
 % 1,	2,	3,	3,	2,	3,	3 # length
 [ 1,	NULL,	333,	222,	1,	369,	122	]
 [ 4,	2,	333,	222,	-3,	385,	128	]
@@ -70318,7 +70344,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	d # name
-% bigint,	bigint,	smallint,	smallint,	bigint,	hugeint,	int # type
+% bigint,	bigint,	smallint,	smallint,	bigint,	bigint,	int # type
 % 1,	2,	3,	3,	2,	3,	3 # length
 [ 2,	2,	444,	111,	-1,	743,	248	]
 [ 4,	2,	333,	222,	-3,	385,	128	]
@@ -70495,7 +70521,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.t1 # table_name
 % L1,	d,	L2,	e # name
-% hugeint,	int,	hugeint,	int # type
+% bigint,	int,	hugeint,	int # type
 % 3,	3,	4,	3 # length
 [ 317,	108,	1612,	109	]
 [ NULL,	114,	NULL,	110	]
@@ -70535,7 +70561,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.t1 # table_name
 % L1,	d,	L2,	e # name
-% hugeint,	int,	hugeint,	int # type
+% bigint,	int,	hugeint,	int # type
 % 3,	3,	4,	3 # length
 [ 439,	NULL,	NULL,	146	]
 [ 529,	NULL,	NULL,	177	]
@@ -70937,7 +70963,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % L1,	b,	L2,	L3,	L4,	sql_add_a # name
-% hugeint,	int,	bigint,	int,	hugeint,	hugeint # type
+% hugeint,	int,	bigint,	int,	hugeint,	bigint # type
 % 4,	3,	1,	3,	4,	3 # length
 [ NULL,	124,	1,	121,	1226,	369	]
 [ 1902,	129,	4,	127,	1272,	385	]
@@ -70964,7 +70990,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % L1,	b,	L2,	L3,	L4,	L5 # name
-% hugeint,	int,	bigint,	int,	hugeint,	hugeint # type
+% hugeint,	int,	bigint,	int,	hugeint,	bigint # type
 % 4,	3,	1,	3,	4,	3 # length
 [ NULL,	124,	1,	121,	1226,	369	]
 [ 1902,	129,	4,	127,	1272,	385	]
@@ -71409,7 +71435,7 @@ Ready.
 #;
 % .L1,	.t1,	.t1,	.L2,	.L3,	.L5,	.L5 # table_name
 % L1,	a,	d,	L2,	L3,	L5,	sql_add_sql_add_a # name
-% hugeint,	int,	int,	hugeint,	int,	wrd,	hugeint # type
+% hugeint,	int,	int,	bigint,	int,	wrd,	hugeint # type
 % 4,	3,	3,	3,	3,	2,	3 # length
 [ NULL,	NULL,	114,	NULL,	NULL,	1,	NULL	]
 [ 738,	121,	122,	369,	121,	2,	NULL	]
@@ -71453,7 +71479,7 @@ Ready.
 #;
 % .L1,	.t1,	.t1,	.L2,	.L3,	.L5,	.L6 # table_name
 % L1,	a,	d,	L2,	L3,	L5,	L6 # name
-% hugeint,	int,	int,	hugeint,	int,	wrd,	hugeint # type
+% hugeint,	int,	int,	bigint,	int,	wrd,	hugeint # type
 % 4,	3,	3,	3,	3,	2,	3 # length
 [ NULL,	NULL,	114,	NULL,	NULL,	1,	NULL	]
 [ NULL,	NULL,	207,	NULL,	NULL,	18,	NULL	]
@@ -71512,6 +71538,7 @@ Ready.
 [ 333,	458,	3	]
 [ 333,	468,	1	]
 [ 444,	2360,	NULL	]
+[ 444,	486,	4	]
 [ 111,	490,	2	]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
 #        WHEN a<b+3 THEN 333 ELSE 444 END,
@@ -71537,6 +71564,7 @@ Ready.
 [ 222,	440,	1	]
 [ 333,	458,	3	]
 [ 333,	468,	1	]
+[ 444,	486,	4	]
 [ 111,	490,	2	]
 [ 333,	1050,	1	]
 [ 444,	1600,	1	]
@@ -71554,7 +71582,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L6 # table_name
 % c,	L2,	L3,	L4,	L5,	L6,	sql_add_a # name
-% int,	wrd,	bigint,	bigint,	int,	smallint,	hugeint # type
+% int,	wrd,	bigint,	bigint,	int,	smallint,	bigint # type
 % 3,	2,	2,	1,	3,	3,	3 # length
 [ 113,	1,	-1,	1,	NULL,	555,	NULL	]
 [ 123,	2,	1,	1,	121,	333,	369	]
@@ -71599,7 +71627,7 @@ Ready.
 #;
 % .t1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % c,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% int,	wrd,	bigint,	bigint,	int,	smallint,	hugeint # type
+% int,	wrd,	bigint,	bigint,	int,	smallint,	bigint # type
 % 3,	2,	2,	1,	3,	3,	3 # length
 [ 202,	0,	NULL,	NULL,	201,	222,	NULL	]
 [ 119,	0,	NULL,	NULL,	115,	333,	NULL	]
@@ -72019,6 +72047,7 @@ Ready.
 [ 228,	3399,	229,	458,	1	]
 [ 232,	3473,	234,	468,	2	]
 [ 236,	NULL,	239,	2360,	3	]
+[ 240,	NULL,	243,	486,	3	]
 [ 249,	3706,	245,	490,	-4	]
 [ 112,	NULL,	NULL,	1120,	NULL	]
 [ 124,	NULL,	121,	1240,	-3	]
@@ -72031,7 +72060,6 @@ Ready.
 [ 158,	NULL,	159,	1580,	1	]
 [ 167,	NULL,	168,	1670,	1	]
 [ 175,	NULL,	179,	358,	4	]
-[ 240,	NULL,	243,	486,	3	]
 #SELECT b,
 #       a+b*2+c*3+d*4+e*5,
 #       a,
@@ -72382,7 +72410,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5,	sql_sub_a # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72398,7 +72426,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72413,7 +72441,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5,	sql_sub_a # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72429,7 +72457,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72444,7 +72472,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5,	sql_sub_a # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72460,7 +72488,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72475,7 +72503,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	L5,	sql_sub_a # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
 #       a+b*2+c*3,
@@ -72491,7 +72519,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	hugeint,	bigint,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b,
 #       abs(a),
@@ -72651,7 +72679,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % b,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ 105,	317	]
@@ -72678,6 +72706,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72689,7 +72718,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % b,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -72716,6 +72745,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72726,7 +72756,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % b,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ 105,	317	]
@@ -72753,6 +72783,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72764,7 +72795,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % b,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -72791,6 +72822,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72801,7 +72833,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % b,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ 105,	317	]
@@ -72828,6 +72860,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72839,7 +72872,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % b,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -72866,6 +72899,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72876,7 +72910,7 @@ Ready.
 #;
 % sys.t1,	sys.L # table_name
 % b,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ 105,	317	]
@@ -72903,6 +72937,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT b,
 #       a+b*2
@@ -72914,7 +72949,7 @@ Ready.
 #;
 % sys.t1,	sys.L1 # table_name
 % b,	L1 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -72941,6 +72976,7 @@ Ready.
 [ 228,	685	]
 [ 232,	698	]
 [ 236,	711	]
+[ 240,	723	]
 [ 249,	743	]
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
 #       c-d,
@@ -73952,6 +73988,7 @@ Ready.
 [ 229,	-1,	1360,	3,	228	]
 [ 234,	3,	1391,	1,	232	]
 [ 239,	1,	NULL,	NULL,	236	]
+[ 243,	NULL,	1455,	4,	240	]
 [ 245,	2,	1484,	2,	249	]
 #SELECT abs(a),
 #       d-e,
@@ -73992,6 +74029,7 @@ Ready.
 [ 229,	-1,	1360,	3,	228	]
 [ 127,	2,	760,	4,	129	]
 [ 131,	1,	793,	4,	130	]
+[ 243,	NULL,	1455,	4,	240	]
 #SELECT abs(a),
 #       d-e,
 #       a+b*2+c*3,
@@ -74029,6 +74067,7 @@ Ready.
 [ 229,	-1,	1360,	3,	228	]
 [ 234,	3,	1391,	1,	232	]
 [ 239,	1,	NULL,	NULL,	236	]
+[ 243,	NULL,	1455,	4,	240	]
 [ 245,	2,	1484,	2,	249	]
 #SELECT abs(a),
 #       d-e,
@@ -74068,6 +74107,7 @@ Ready.
 [ 229,	-1,	1360,	3,	228	]
 [ 234,	3,	1391,	1,	232	]
 [ 239,	1,	NULL,	NULL,	236	]
+[ 243,	NULL,	1455,	4,	240	]
 [ 245,	2,	1484,	2,	249	]
 #SELECT abs(a),
 #       d-e,
@@ -74106,6 +74146,7 @@ Ready.
 [ 229,	-1,	1360,	3,	228	]
 [ 234,	3,	1391,	1,	232	]
 [ 239,	1,	NULL,	NULL,	236	]
+[ 243,	NULL,	1455,	4,	240	]
 [ 245,	2,	1484,	2,	249	]
 #SELECT abs(a),
 #       d-e,
@@ -74145,6 +74186,7 @@ Ready.
 [ 229,	-1,	1360,	3,	228	]
 [ 234,	3,	1391,	1,	232	]
 [ 239,	1,	NULL,	NULL,	236	]
+[ 243,	NULL,	1455,	4,	240	]
 [ 245,	2,	1484,	2,	249	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       c,
@@ -74668,7 +74710,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L3 # table_name
 % L1,	a,	L3,	e,	sql_sub_c # name
-% hugeint,	int,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	4,	3,	2 # length
 [ NULL,	104,	NULL,	NULL,	1	]
 [ 317,	107,	1050,	109,	-2	]
@@ -74693,6 +74735,7 @@ Ready.
 [ 685,	229,	458,	227,	-1	]
 [ 698,	234,	468,	230,	-2	]
 [ 711,	239,	2360,	237,	NULL	]
+[ 723,	243,	486,	NULL,	NULL	]
 [ 743,	245,	490,	246,	-1	]
 #SELECT a+b*2,
 #       a,
@@ -74707,8 +74750,9 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L4 # table_name
 % L1,	a,	L3,	e,	L4 # name
-% hugeint,	int,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	4,	3,	2 # length
+[ 723,	243,	486,	NULL,	NULL	]
 [ NULL,	104,	NULL,	NULL,	1	]
 [ 369,	121,	1240,	NULL,	1	]
 [ NULL,	NULL,	NULL,	NULL,	1	]
@@ -74745,7 +74789,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L3 # table_name
 % L1,	a,	L3,	e,	sql_sub_c # name
-% hugeint,	int,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	4,	3,	2 # length
 [ NULL,	104,	NULL,	NULL,	1	]
 [ 317,	107,	1050,	109,	-2	]
@@ -74770,6 +74814,7 @@ Ready.
 [ 685,	229,	458,	227,	-1	]
 [ 698,	234,	468,	230,	-2	]
 [ 711,	239,	2360,	237,	NULL	]
+[ 723,	243,	486,	NULL,	NULL	]
 [ 743,	245,	490,	246,	-1	]
 #SELECT a+b*2,
 #       a,
@@ -74784,11 +74829,12 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L4 # table_name
 % L1,	a,	L3,	e,	L4 # name
-% hugeint,	int,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	4,	3,	2 # length
 [ 475,	159,	1580,	157,	NULL	]
 [ 502,	168,	1670,	165,	NULL	]
 [ 711,	239,	2360,	237,	NULL	]
+[ 723,	243,	486,	NULL,	NULL	]
 [ 483,	163,	1600,	162,	-3	]
 [ 317,	107,	1050,	109,	-2	]
 [ 652,	216,	432,	219,	-2	]
@@ -74822,7 +74868,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L3 # table_name
 % L1,	a,	L3,	e,	sql_sub_c # name
-% hugeint,	int,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	4,	3,	2 # length
 [ NULL,	104,	NULL,	NULL,	1	]
 [ 317,	107,	1050,	109,	-2	]
@@ -74847,6 +74893,7 @@ Ready.
 [ 685,	229,	458,	227,	-1	]
 [ 698,	234,	468,	230,	-2	]
 [ 711,	239,	2360,	237,	NULL	]
+[ 723,	243,	486,	NULL,	NULL	]
 [ 743,	245,	490,	246,	-1	]
 #SELECT a+b*2,
 #       a,
@@ -74861,7 +74908,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L3,	sys.t1,	sys.L4 # table_name
 % L1,	a,	L3,	e,	L4 # name
-% hugeint,	int,	bigint,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	4,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	1	]
 [ NULL,	104,	NULL,	NULL,	1	]
@@ -74886,6 +74933,7 @@ Ready.
 [ 685,	229,	458,	227,	-1	]
 [ 698,	234,	468,	230,	-2	]
 [ 711,	239,	2360,	237,	NULL	]
+[ 723,	243,	486,	NULL,	NULL	]
 [ 743,	245,	490,	246,	-1	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       (a+b+c+d+e)/5,
@@ -75176,7 +75224,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L5 # table_name
 % b,	L1,	L2,	L3,	L4,	L5,	sql_sub_a # name
-% int,	hugeint,	bigint,	smallint,	hugeint,	hugeint,	bigint # type
+% int,	hugeint,	bigint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	2,	3,	3,	3,	2 # length
 [ 105,	1067,	-1,	333,	107,	317,	2	]
 [ 112,	NULL,	4,	555,	NULL,	NULL,	NULL	]
@@ -75207,7 +75255,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
 % b,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	hugeint,	bigint,	smallint,	hugeint,	hugeint,	bigint # type
+% int,	hugeint,	bigint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	2,	3,	3,	3,	2 # length
 [ 112,	NULL,	4,	555,	NULL,	NULL,	NULL	]
 [ 206,	NULL,	NULL,	555,	NULL,	NULL,	NULL	]
@@ -75301,7 +75349,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.t1,	sys.L4 # table_name
 % L1,	L2,	L3,	L4,	c,	d,	sql_sub_c # name
-% int,	hugeint,	hugeint,	hugeint,	int,	int,	bigint # type
+% int,	bigint,	hugeint,	hugeint,	int,	int,	bigint # type
 % 3,	3,	4,	3,	3,	3,	2 # length
 [ 107,	317,	635,	107,	106,	108,	-2	]
 [ NULL,	NULL,	NULL,	NULL,	113,	114,	-1	]
@@ -75331,7 +75379,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	L4,	c,	d,	L5 # name
-% int,	hugeint,	hugeint,	hugeint,	int,	int,	bigint # type
+% int,	bigint,	hugeint,	hugeint,	int,	int,	bigint # type
 % 3,	3,	4,	3,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	113,	114,	-1	]
 [ NULL,	NULL,	NULL,	NULL,	208,	207,	1	]
@@ -75461,7 +75509,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ 159,	475	]
 [ 168,	502	]
@@ -75477,7 +75525,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ 159,	475	]
 [ 168,	502	]
@@ -75492,7 +75540,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ 159,	475	]
 [ 168,	502	]
@@ -75508,7 +75556,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ 159,	475	]
 [ 168,	502	]
@@ -75523,7 +75571,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_a # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ 159,	475	]
 [ 168,	502	]
@@ -75539,7 +75587,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% int,	hugeint # type
+% int,	bigint # type
 % 3,	3 # length
 [ 159,	475	]
 [ 168,	502	]
@@ -76066,6 +76114,7 @@ Ready.
 [ 22,	458,	228,	-1,	3,	226	]
 [ 23,	468,	232,	3,	1,	233	]
 [ 24,	2360,	236,	1,	NULL,	238	]
+[ 25,	486,	240,	NULL,	4,	NULL	]
 [ 26,	490,	249,	2,	2,	248	]
 [ 0,	NULL,	NULL,	NULL,	NULL,	101	]
 [ 0,	1050,	105,	-1,	1,	108	]
@@ -76106,6 +76155,7 @@ Ready.
 [ 22,	458,	228,	-1,	3,	226	]
 [ 23,	468,	232,	3,	1,	233	]
 [ 24,	2360,	236,	1,	NULL,	238	]
+[ 25,	486,	240,	NULL,	4,	NULL	]
 [ 26,	490,	249,	2,	2,	248	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
@@ -76139,6 +76189,7 @@ Ready.
 [ 22,	458,	228,	-1,	3,	226	]
 [ 23,	468,	232,	3,	1,	233	]
 [ 24,	2360,	236,	1,	NULL,	238	]
+[ 25,	486,	240,	NULL,	4,	NULL	]
 [ 26,	490,	249,	2,	2,	248	]
 [ 0,	NULL,	NULL,	NULL,	NULL,	101	]
 [ 0,	1050,	105,	-1,	1,	108	]
@@ -76158,6 +76209,7 @@ Ready.
 % L1,	L3,	b,	L4,	L5,	d # name
 % wrd,	bigint,	int,	bigint,	bigint,	int # type
 % 2,	4,	3,	2,	1,	3 # length
+[ 25,	486,	240,	NULL,	4,	NULL	]
 [ 0,	NULL,	NULL,	NULL,	NULL,	101	]
 [ 0,	1050,	105,	-1,	1,	108	]
 [ 1,	1120,	112,	4,	1,	114	]
@@ -76537,7 +76589,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % e,	L1,	L2,	L3,	L4,	abs_sql_sub_b # name
-% int,	hugeint,	smallint,	bigint,	smallint,	bigint # type
+% int,	bigint,	smallint,	bigint,	smallint,	bigint # type
 % 3,	3,	3,	2,	3,	1 # length
 [ NULL,	NULL,	444,	NULL,	555,	NULL	]
 [ 109,	317,	333,	2,	333,	1	]
@@ -76582,7 +76634,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % e,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	smallint,	bigint,	smallint,	bigint # type
+% int,	bigint,	smallint,	bigint,	smallint,	bigint # type
 % 3,	3,	3,	2,	3,	1 # length
 [ NULL,	369,	222,	-3,	333,	1	]
 [ NULL,	455,	333,	2,	555,	1	]
@@ -76739,7 +76791,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_sub_b # name
-% hugeint,	hugeint,	bigint # type
+% hugeint,	bigint,	bigint # type
 % 4,	3,	2 # length
 [ 793,	391,	-4	]
 [ 827,	416,	2	]
@@ -76758,7 +76810,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	hugeint,	bigint # type
+% hugeint,	bigint,	bigint # type
 % 4,	3,	2 # length
 [ 793,	391,	-4	]
 [ 827,	416,	2	]
@@ -76781,7 +76833,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.t1 # table_name
 % L1,	d,	L2,	L3,	L4,	b,	e # name
-% bigint,	int,	hugeint,	hugeint,	smallint,	int,	int # type
+% bigint,	int,	bigint,	hugeint,	smallint,	int,	int # type
 % 2,	3,	3,	4,	3,	3,	3 # length
 [ -1,	108,	317,	635,	333,	105,	109	]
 [ 1,	133,	391,	793,	333,	130,	132	]
@@ -76814,7 +76866,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.t1,	sys.t1 # table_name
 % L1,	d,	L2,	L3,	L4,	b,	e # name
-% bigint,	int,	hugeint,	hugeint,	smallint,	int,	int # type
+% bigint,	int,	bigint,	hugeint,	smallint,	int,	int # type
 % 2,	3,	3,	4,	3,	3,	3 # length
 [ NULL,	NULL,	455,	905,	333,	151,	NULL	]
 [ NULL,	NULL,	475,	940,	333,	158,	157	]
@@ -76859,6 +76911,7 @@ Ready.
 [ 229,	-1,	227	]
 [ 234,	3,	230	]
 [ 239,	1,	237	]
+[ 243,	NULL,	NULL	]
 [ 245,	2,	246	]
 #SELECT a,
 #       d-e,
@@ -76873,6 +76926,7 @@ Ready.
 % 3,	2,	3 # length
 [ NULL,	NULL,	NULL	]
 [ 104,	NULL,	NULL	]
+[ 243,	NULL,	NULL	]
 [ 188,	-4,	189	]
 [ 174,	-2,	173	]
 [ 191,	-2,	192	]
@@ -77029,7 +77083,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % d,	L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 108,	317,	107,	1,	2,	333	]
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
@@ -77059,7 +77113,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % d,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
 [ 108,	317,	107,	1,	2,	333	]
@@ -77088,7 +77142,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % d,	L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 108,	317,	107,	1,	2,	333	]
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
@@ -77118,7 +77172,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % d,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
 [ 248,	743,	245,	2,	-4,	111	]
@@ -77147,7 +77201,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % d,	L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 108,	317,	107,	1,	2,	333	]
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
@@ -77177,7 +77231,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % d,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
 [ 108,	317,	107,	1,	2,	333	]
@@ -77206,7 +77260,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L4 # table_name
 % d,	L1,	L2,	L3,	L4,	ifthenelse_isnull_<_a # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 108,	317,	107,	1,	2,	333	]
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
@@ -77236,7 +77290,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
 % d,	L1,	L2,	L3,	L4,	L5 # name
-% int,	hugeint,	int,	bigint,	bigint,	smallint # type
+% int,	bigint,	int,	bigint,	bigint,	smallint # type
 % 3,	3,	3,	1,	2,	3 # length
 [ 114,	NULL,	NULL,	1,	NULL,	444	]
 [ 108,	317,	107,	1,	2,	333	]
@@ -77425,7 +77479,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	e # name
-% bigint,	hugeint,	bigint,	hugeint,	hugeint,	int # type
+% bigint,	hugeint,	bigint,	hugeint,	bigint,	int # type
 % 2,	4,	2,	4,	3,	3 # length
 [ 1,	2878,	-2,	1158,	579,	192	]
 [ -1,	3331,	1,	1338,	666,	221	]
@@ -77443,7 +77497,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	e # name
-% bigint,	hugeint,	bigint,	hugeint,	hugeint,	int # type
+% bigint,	hugeint,	bigint,	hugeint,	bigint,	int # type
 % 2,	4,	2,	4,	3,	3 # length
 [ -1,	3331,	1,	1338,	666,	221	]
 [ 1,	2878,	-2,	1158,	579,	192	]
@@ -77460,7 +77514,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	e # name
-% bigint,	hugeint,	bigint,	hugeint,	hugeint,	int # type
+% bigint,	hugeint,	bigint,	hugeint,	bigint,	int # type
 % 2,	4,	2,	4,	3,	3 # length
 [ 1,	2878,	-2,	1158,	579,	192	]
 [ -1,	3331,	1,	1338,	666,	221	]
@@ -77478,7 +77532,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	e # name
-% bigint,	hugeint,	bigint,	hugeint,	hugeint,	int # type
+% bigint,	hugeint,	bigint,	hugeint,	bigint,	int # type
 % 2,	4,	2,	4,	3,	3 # length
 [ 1,	2878,	-2,	1158,	579,	192	]
 [ -1,	3331,	1,	1338,	666,	221	]
@@ -78025,7 +78079,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % a,	L1,	L2,	L3,	L4,	L5,	b # name
-% int,	hugeint,	bigint,	bigint,	int,	hugeint,	int # type
+% int,	hugeint,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	4,	2,	2,	3,	3,	3 # length
 [ 104,	NULL,	NULL,	NULL,	104,	NULL,	NULL	]
 [ 107,	1612,	-1,	-1,	107,	317,	105	]
@@ -78069,7 +78123,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
 % a,	L1,	L2,	L3,	L4,	L5,	b # name
-% int,	hugeint,	bigint,	bigint,	int,	hugeint,	int # type
+% int,	hugeint,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	4,	2,	2,	3,	3,	3 # length
 [ 104,	NULL,	NULL,	NULL,	104,	NULL,	NULL	]
 [ 115,	NULL,	-1,	NULL,	115,	NULL,	NULL	]
@@ -78217,6 +78271,7 @@ Ready.
 [ 1,	227,	225,	2264	]
 [ 2,	230,	231,	2323	]
 [ 3,	237,	NULL,	NULL	]
+[ 3,	NULL,	244,	NULL	]
 [ -4,	246,	247,	2476	]
 #SELECT a-b,
 #       e,
@@ -78234,6 +78289,7 @@ Ready.
 % 2,	3,	3,	4 # length
 [ NULL,	NULL,	102,	NULL	]
 [ NULL,	NULL,	208,	NULL	]
+[ 3,	NULL,	244,	NULL	]
 [ 2,	109,	106,	1067	]
 [ NULL,	117,	119,	NULL	]
 [ -2,	126,	125,	1272	]
@@ -78282,6 +78338,7 @@ Ready.
 [ 1,	227,	225,	2264	]
 [ 2,	230,	231,	2323	]
 [ 3,	237,	NULL,	NULL	]
+[ 3,	NULL,	244,	NULL	]
 [ -4,	246,	247,	2476	]
 #SELECT a-b,
 #       e,
@@ -78299,8 +78356,9 @@ Ready.
 % 2,	3,	3,	4 # length
 [ NULL,	NULL,	208,	NULL	]
 [ NULL,	204,	202,	NULL	]
-[ NULL,	NULL,	102,	NULL	]
 [ NULL,	117,	119,	NULL	]
+[ NULL,	NULL,	102,	NULL	]
+[ 3,	NULL,	244,	NULL	]
 [ 3,	237,	NULL,	NULL	]
 [ 2,	109,	106,	1067	]
 [ -2,	126,	125,	1272	]
@@ -78347,6 +78405,7 @@ Ready.
 [ 1,	227,	225,	2264	]
 [ 2,	230,	231,	2323	]
 [ 3,	237,	NULL,	NULL	]
+[ 3,	NULL,	244,	NULL	]
 [ -4,	246,	247,	2476	]
 #SELECT a-b,
 #       e,
@@ -78367,6 +78426,7 @@ Ready.
 [ NULL,	117,	119,	NULL	]
 [ NULL,	204,	202,	NULL	]
 [ NULL,	NULL,	208,	NULL	]
+[ 3,	NULL,	244,	NULL	]
 [ 2,	109,	106,	1067	]
 [ -2,	126,	125,	1272	]
 [ 3,	162,	161,	1622	]
@@ -78745,7 +78805,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5,	.L6,	.L6 # table_name
 % L1,	L2,	L4,	L5,	L6,	isnull_=_sql_add_a # name
-% wrd,	hugeint,	wrd,	bigint,	hugeint,	smallint # type
+% wrd,	bigint,	wrd,	bigint,	hugeint,	smallint # type
 % 2,	3,	1,	2,	4,	3 # length
 [ 16,	579,	0,	1,	2878,	444	]
 [ 21,	666,	0,	-1,	3331,	444	]
@@ -78763,7 +78823,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L4,	L5,	L6,	L7 # name
-% wrd,	hugeint,	wrd,	bigint,	hugeint,	smallint # type
+% wrd,	bigint,	wrd,	bigint,	hugeint,	smallint # type
 % 2,	3,	1,	2,	4,	3 # length
 [ 16,	579,	0,	1,	2878,	444	]
 [ 21,	666,	0,	-1,	3331,	444	]
@@ -78998,6 +79058,7 @@ Ready.
 [ 228,	226,	3,	555,	458	]
 [ 232,	233,	1,	555,	468	]
 [ 236,	238,	NULL,	555,	2360	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 249,	248,	2,	444,	490	]
 #SELECT b,
 #       d,
@@ -79018,6 +79079,7 @@ Ready.
 [ 139,	136,	2,	111,	1390	]
 [ NULL,	203,	NULL,	222,	402	]
 [ 211,	212,	-3,	222,	426	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 105,	108,	-1,	333,	1050	]
 [ 129,	128,	4,	333,	1290	]
 [ 160,	164,	-1,	333,	1600	]
@@ -79071,6 +79133,7 @@ Ready.
 [ 228,	226,	3,	555,	458	]
 [ 232,	233,	1,	555,	468	]
 [ 236,	238,	NULL,	555,	2360	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 249,	248,	2,	444,	490	]
 #SELECT b,
 #       d,
@@ -79090,21 +79153,22 @@ Ready.
 % 3,	3,	2,	3,	4 # length
 [ 139,	136,	2,	111,	1390	]
 [ NULL,	203,	NULL,	222,	402	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 211,	212,	-3,	222,	426	]
 [ 181,	183,	-3,	333,	364	]
-[ 105,	108,	-1,	333,	1050	]
 [ 160,	164,	-1,	333,	1600	]
+[ 105,	108,	-1,	333,	1050	]
 [ 218,	217,	3,	333,	432	]
 [ 129,	128,	4,	333,	1290	]
 [ 130,	133,	-4,	444,	1300	]
-[ 223,	222,	-1,	444,	440	]
 [ 186,	185,	-1,	444,	376	]
+[ 223,	222,	-1,	444,	440	]
 [ 194,	190,	1,	444,	382	]
 [ 249,	248,	2,	444,	490	]
 [ NULL,	101,	NULL,	555,	NULL	]
 [ 236,	238,	NULL,	555,	2360	]
-[ 170,	171,	-2,	555,	1700	]
 [ 206,	207,	-2,	555,	NULL	]
+[ 170,	171,	-2,	555,	1700	]
 [ 112,	114,	-1,	555,	1120	]
 [ 232,	233,	1,	555,	468	]
 [ 228,	226,	3,	555,	458	]
@@ -79144,6 +79208,7 @@ Ready.
 [ 228,	226,	3,	555,	458	]
 [ 232,	233,	1,	555,	468	]
 [ 236,	238,	NULL,	555,	2360	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 249,	248,	2,	444,	490	]
 #SELECT b,
 #       d,
@@ -79163,6 +79228,7 @@ Ready.
 % 3,	3,	2,	3,	4 # length
 [ 139,	136,	2,	111,	1390	]
 [ NULL,	203,	NULL,	222,	402	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 211,	212,	-3,	222,	426	]
 [ 181,	183,	-3,	333,	364	]
 [ 105,	108,	-1,	333,	1050	]
@@ -79217,6 +79283,7 @@ Ready.
 [ 228,	226,	3,	555,	458	]
 [ 232,	233,	1,	555,	468	]
 [ 236,	238,	NULL,	555,	2360	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 249,	248,	2,	444,	490	]
 #SELECT b,
 #       d,
@@ -79237,6 +79304,7 @@ Ready.
 [ NULL,	203,	NULL,	222,	402	]
 [ NULL,	101,	NULL,	555,	NULL	]
 [ 236,	238,	NULL,	555,	2360	]
+[ 240,	NULL,	-4,	222,	486	]
 [ 130,	133,	-4,	444,	1300	]
 [ 211,	212,	-3,	222,	426	]
 [ 181,	183,	-3,	333,	364	]
@@ -79455,6 +79523,7 @@ Ready.
 [ 458,	22	]
 [ 468,	23	]
 [ 2360,	24	]
+[ 486,	25	]
 [ 490,	26	]
 [ NULL,	0	]
 [ 1050,	0	]
@@ -79493,6 +79562,7 @@ Ready.
 [ 458,	22	]
 [ 468,	23	]
 [ 2360,	24	]
+[ 486,	25	]
 [ 490,	26	]
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
@@ -79524,6 +79594,7 @@ Ready.
 [ 458,	22	]
 [ 468,	23	]
 [ 2360,	24	]
+[ 486,	25	]
 [ 490,	26	]
 [ NULL,	0	]
 [ 1050,	0	]
@@ -79562,6 +79633,7 @@ Ready.
 [ 458,	22	]
 [ 468,	23	]
 [ 2360,	24	]
+[ 486,	25	]
 [ 490,	26	]
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
@@ -79593,6 +79665,7 @@ Ready.
 [ 458,	22	]
 [ 468,	23	]
 [ 2360,	24	]
+[ 486,	25	]
 [ 490,	26	]
 [ NULL,	0	]
 [ 1050,	0	]
@@ -79621,6 +79694,7 @@ Ready.
 [ 440,	21	]
 [ 458,	22	]
 [ 468,	23	]
+[ 486,	25	]
 [ 490,	26	]
 [ 1050,	0	]
 [ 1120,	1	]
@@ -79647,7 +79721,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	L5,	sql_add_sql_add_a # name
-% wrd,	bigint,	int,	smallint,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       d-e,
@@ -79665,7 +79739,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	a,	L3,	L4,	L5,	L6 # name
-% wrd,	bigint,	int,	smallint,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       d-e,
@@ -79682,7 +79756,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	L5,	sql_add_sql_add_a # name
-% wrd,	bigint,	int,	smallint,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       d-e,
@@ -79700,7 +79774,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	a,	L3,	L4,	L5,	L6 # name
-% wrd,	bigint,	int,	smallint,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       d-e,
@@ -79717,7 +79791,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	L5,	sql_add_sql_add_a # name
-% wrd,	bigint,	int,	smallint,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
 #       d-e,
@@ -79735,7 +79809,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	a,	L3,	L4,	L5,	L6 # name
-% wrd,	bigint,	int,	smallint,	bigint,	hugeint,	hugeint # type
+% wrd,	bigint,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT b,
 #       a+b*2+c*3+d*4
@@ -79762,6 +79836,7 @@ Ready.
 [ 228,	2264	]
 [ 232,	2323	]
 [ 236,	NULL	]
+[ 240,	NULL	]
 [ 249,	2476	]
 #SELECT b,
 #       a+b*2+c*3+d*4
@@ -79777,6 +79852,7 @@ Ready.
 [ NULL,	NULL	]
 [ 206,	NULL	]
 [ 236,	NULL	]
+[ 240,	NULL	]
 [ 105,	1067	]
 [ 160,	1622	]
 [ 170,	1714	]
@@ -80966,7 +81042,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_add_a # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	1,	3 # length
 [ NULL,	NULL,	NULL	]
 [ -1,	1,	317	]
@@ -81006,7 +81082,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint # type
 % 2,	1,	3 # length
 [ NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL	]
@@ -81352,7 +81428,7 @@ Ready.
 #;
 % .L1,	.L3,	.t1,	.L4,	.L5,	.L5 # table_name
 % L1,	L3,	d,	L4,	L5,	sql_add_a # name
-% hugeint,	bigint,	int,	bigint,	bigint,	hugeint # type
+% hugeint,	bigint,	int,	bigint,	bigint,	bigint # type
 % 4,	4,	3,	1,	2,	3 # length
 [ 1067,	1050,	108,	1,	-2,	317	]
 [ NULL,	1120,	114,	1,	-1,	NULL	]
@@ -81395,7 +81471,7 @@ Ready.
 #;
 % .L1,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
 % L1,	L3,	d,	L4,	L5,	L6 # name
-% hugeint,	bigint,	int,	bigint,	bigint,	hugeint # type
+% hugeint,	bigint,	int,	bigint,	bigint,	bigint # type
 % 4,	4,	3,	1,	2,	3 # length
 [ NULL,	358,	NULL,	1,	NULL,	529	]
 [ NULL,	1510,	NULL,	1,	NULL,	455	]
@@ -81440,7 +81516,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1,	sys.L4 # table_name
 % L1,	L2,	L3,	d,	L4,	c,	sql_sub_a # name
-% hugeint,	bigint,	hugeint,	int,	smallint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	smallint,	int,	bigint # type
 % 3,	1,	3,	3,	3,	3,	2 # length
 [ 192,	3,	579,	190,	222,	193,	-3	]
 [ 222,	2,	666,	222,	222,	224,	-3	]
@@ -81460,7 +81536,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	d,	L4,	c,	L5 # name
-% hugeint,	bigint,	hugeint,	int,	smallint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	smallint,	int,	bigint # type
 % 3,	1,	3,	3,	3,	3,	2 # length
 [ 222,	2,	666,	222,	222,	224,	-3	]
 [ 192,	3,	579,	190,	222,	193,	-3	]
@@ -81479,7 +81555,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1,	sys.L4 # table_name
 % L1,	L2,	L3,	d,	L4,	c,	sql_sub_a # name
-% hugeint,	bigint,	hugeint,	int,	smallint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	smallint,	int,	bigint # type
 % 3,	1,	3,	3,	3,	3,	2 # length
 [ 192,	3,	579,	190,	222,	193,	-3	]
 [ 222,	2,	666,	222,	222,	224,	-3	]
@@ -81499,7 +81575,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	d,	L4,	c,	L5 # name
-% hugeint,	bigint,	hugeint,	int,	smallint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	smallint,	int,	bigint # type
 % 3,	1,	3,	3,	3,	3,	2 # length
 [ 222,	2,	666,	222,	222,	224,	-3	]
 [ 192,	3,	579,	190,	222,	193,	-3	]
@@ -81518,7 +81594,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1,	sys.L4 # table_name
 % L1,	L2,	L3,	d,	L4,	c,	sql_sub_a # name
-% hugeint,	bigint,	hugeint,	int,	smallint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	smallint,	int,	bigint # type
 % 3,	1,	3,	3,	3,	3,	2 # length
 [ 192,	3,	579,	190,	222,	193,	-3	]
 [ 222,	2,	666,	222,	222,	224,	-3	]
@@ -81538,7 +81614,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	d,	L4,	c,	L5 # name
-% hugeint,	bigint,	hugeint,	int,	smallint,	int,	bigint # type
+% hugeint,	bigint,	bigint,	int,	smallint,	int,	bigint # type
 % 3,	1,	3,	3,	3,	3,	2 # length
 [ 192,	3,	579,	190,	222,	193,	-3	]
 [ 222,	2,	666,	222,	222,	224,	-3	]
@@ -81911,7 +81987,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_a # name
-% bigint,	hugeint # type
+% bigint,	bigint # type
 % 2,	3 # length
 [ -3,	666	]
 [ -4,	743	]
@@ -81924,7 +82000,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% bigint,	hugeint # type
+% bigint,	bigint # type
 % 2,	3 # length
 [ -3,	666	]
 [ -4,	743	]
@@ -81936,7 +82012,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_a # name
-% bigint,	hugeint # type
+% bigint,	bigint # type
 % 2,	3 # length
 [ -3,	666	]
 [ -4,	743	]
@@ -81949,7 +82025,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% bigint,	hugeint # type
+% bigint,	bigint # type
 % 2,	3 # length
 [ -3,	666	]
 [ -4,	743	]
@@ -82039,7 +82115,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5,	.L7,	.L7 # table_name
 % L1,	L2,	L4,	L5,	L7,	sql_add_sql_add_a # name
-% hugeint,	hugeint,	wrd,	smallint,	bigint,	hugeint # type
+% hugeint,	bigint,	wrd,	smallint,	bigint,	hugeint # type
 % 4,	3,	2,	3,	4,	4 # length
 [ NULL,	NULL,	1,	555,	1120,	NULL	]
 [ 1226,	369,	2,	333,	1240,	NULL	]
@@ -82083,7 +82159,7 @@ Ready.
 #;
 % .L1,	.L2,	.L4,	.L5,	.L7,	.L10 # table_name
 % L1,	L2,	L4,	L5,	L7,	L10 # name
-% hugeint,	hugeint,	wrd,	smallint,	bigint,	hugeint # type
+% hugeint,	bigint,	wrd,	smallint,	bigint,	hugeint # type
 % 4,	3,	2,	3,	4,	4 # length
 [ NULL,	NULL,	0,	222,	402,	NULL	]
 [ NULL,	NULL,	0,	333,	NULL,	NULL	]
@@ -82936,7 +83012,7 @@ Ready.
 #;
 % .t1,	.L2,	.t1,	.t1,	.L2 # table_name
 % c,	L2,	b,	a,	sql_add_a # name
-% int,	wrd,	int,	int,	hugeint # type
+% int,	wrd,	int,	int,	bigint # type
 % 3,	1,	3,	3,	3 # length
 [ 125,	3,	129,	127,	385	]
 [ 106,	0,	105,	107,	317	]
@@ -82951,7 +83027,7 @@ Ready.
 #;
 % .t1,	.L2,	.t1,	.t1,	.L3 # table_name
 % c,	L2,	b,	a,	L3 # name
-% int,	wrd,	int,	int,	hugeint # type
+% int,	wrd,	int,	int,	bigint # type
 % 3,	1,	3,	3,	3 # length
 [ 106,	0,	105,	107,	317	]
 [ 125,	3,	129,	127,	385	]
@@ -83850,7 +83926,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	sql_add_sql_add_a # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ 317,	1067	]
 [ NULL,	NULL	]
@@ -83875,7 +83951,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	hugeint # type
+% bigint,	hugeint # type
 % 3,	4 # length
 [ NULL,	NULL	]
 [ NULL,	NULL	]
@@ -84327,7 +84403,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L4 # table_name
 % b,	L1,	L2,	e,	L3,	L4,	abs_sql_sub_b # name
-% int,	bigint,	bigint,	int,	bigint,	hugeint,	bigint # type
+% int,	bigint,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	3,	1,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	1,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	117,	3,	NULL,	NULL	]
@@ -84355,7 +84431,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
 % b,	L1,	L2,	e,	L3,	L4,	L5 # name
-% int,	bigint,	bigint,	int,	bigint,	hugeint,	bigint # type
+% int,	bigint,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	3,	1,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	1,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	117,	3,	NULL,	NULL	]
@@ -84488,7 +84564,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	L3,	b,	a # name
-% bigint,	hugeint,	hugeint,	int,	int # type
+% bigint,	hugeint,	bigint,	int,	int # type
 % 2,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	112,	NULL	]
 [ -3,	1226,	369,	124,	121	]
@@ -84527,7 +84603,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.t1 # table_name
 % L1,	L2,	L3,	b,	a # name
-% bigint,	hugeint,	hugeint,	int,	int # type
+% bigint,	hugeint,	bigint,	int,	int # type
 % 2,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	112,	NULL	]
 [ NULL,	NULL,	NULL,	206,	NULL	]
@@ -84631,7 +84707,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	abs_sql_sub_b # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 579,	1	]
 [ 666,	1	]
@@ -84645,7 +84721,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 579,	1	]
 [ 666,	1	]
@@ -84658,7 +84734,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	abs_sql_sub_b # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 579,	1	]
 [ 666,	1	]
@@ -84672,7 +84748,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 579,	1	]
 [ 666,	1	]
@@ -84685,7 +84761,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	abs_sql_sub_b # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 579,	1	]
 [ 666,	1	]
@@ -84699,7 +84775,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	bigint # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 579,	1	]
 [ 666,	1	]
@@ -84908,7 +84984,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	isnull_=_sql_add_a # name
-% hugeint,	smallint # type
+% bigint,	smallint # type
 % 3,	3 # length
 [ NULL,	555	]
 [ 317,	333	]
@@ -84941,7 +85017,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	smallint # type
+% bigint,	smallint # type
 % 3,	3 # length
 [ NULL,	333	]
 [ NULL,	555	]
@@ -84973,7 +85049,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	isnull_=_sql_add_a # name
-% hugeint,	smallint # type
+% bigint,	smallint # type
 % 3,	3 # length
 [ NULL,	555	]
 [ 317,	333	]
@@ -85006,7 +85082,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	smallint # type
+% bigint,	smallint # type
 % 3,	3 # length
 [ 416,	111	]
 [ 428,	111	]
@@ -85038,7 +85114,7 @@ Ready.
 #;
 % sys.L1,	sys.L1 # table_name
 % L1,	isnull_=_sql_add_a # name
-% hugeint,	smallint # type
+% bigint,	smallint # type
 % 3,	3 # length
 [ NULL,	555	]
 [ 317,	333	]
@@ -85071,7 +85147,7 @@ Ready.
 #;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% hugeint,	smallint # type
+% bigint,	smallint # type
 % 3,	3 # length
 [ NULL,	333	]
 [ NULL,	555	]
@@ -85318,7 +85394,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L1 # table_name
 % L1,	c,	sql_add_a # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -2,	125,	385	]
 [ -1,	137,	416	]
@@ -85340,7 +85416,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2 # table_name
 % L1,	c,	L2 # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -4,	247,	743	]
 [ -2,	125,	385	]
@@ -85361,7 +85437,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L1 # table_name
 % L1,	c,	sql_add_a # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -2,	125,	385	]
 [ -1,	137,	416	]
@@ -85383,7 +85459,7 @@ Ready.
 #;
 % sys.L1,	sys.t1,	sys.L2 # table_name
 % L1,	c,	L2 # name
-% bigint,	int,	hugeint # type
+% bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -2,	125,	385	]
 [ -1,	137,	416	]
@@ -85644,6 +85720,7 @@ Ready.
 [ 226,	3,	228,	3	]
 [ 233,	1,	232,	1	]
 [ 238,	NULL,	236,	NULL	]
+[ NULL,	4,	240,	-4	]
 [ 248,	2,	249,	2	]
 #SELECT d,
 #       abs(b-c),
@@ -85658,14 +85735,14 @@ Ready.
 % int,	bigint,	int,	bigint # type
 % 3,	1,	3,	2 # length
 [ 238,	NULL,	236,	NULL	]
-[ 203,	NULL,	NULL,	NULL	]
 [ 101,	NULL,	NULL,	NULL	]
-[ 185,	1,	186,	-1	]
-[ 222,	1,	223,	-1	]
+[ 203,	NULL,	NULL,	NULL	]
 [ 108,	1,	105,	-1	]
 [ 164,	1,	160,	-1	]
-[ 233,	1,	232,	1	]
+[ 185,	1,	186,	-1	]
+[ 222,	1,	223,	-1	]
 [ 190,	1,	194,	1	]
+[ 233,	1,	232,	1	]
 [ 207,	2,	206,	-2	]
 [ 171,	2,	170,	-2	]
 [ 248,	2,	249,	2	]
@@ -85674,6 +85751,7 @@ Ready.
 [ 217,	3,	218,	3	]
 [ 226,	3,	228,	3	]
 [ 196,	3,	198,	3	]
+[ NULL,	4,	240,	-4	]
 #SELECT b,
 #       a+b*2,
 #       a+b*2+c*3,
@@ -85686,7 +85764,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % b,	L1,	L2,	e,	L3,	L5 # name
-% int,	hugeint,	hugeint,	int,	hugeint,	wrd # type
+% int,	bigint,	hugeint,	int,	hugeint,	wrd # type
 % 3,	3,	4,	3,	4,	1 # length
 [ 112,	NULL,	NULL,	110,	NULL,	0	]
 [ 130,	391,	793,	132,	1325,	0	]
@@ -85710,7 +85788,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % b,	L1,	L2,	e,	L3,	L5 # name
-% int,	hugeint,	hugeint,	int,	hugeint,	wrd # type
+% int,	bigint,	hugeint,	int,	hugeint,	wrd # type
 % 3,	3,	4,	3,	4,	1 # length
 [ 112,	NULL,	NULL,	110,	NULL,	0	]
 [ 130,	391,	793,	132,	1325,	0	]
@@ -85733,7 +85811,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % b,	L1,	L2,	e,	L3,	L5 # name
-% int,	hugeint,	hugeint,	int,	hugeint,	wrd # type
+% int,	bigint,	hugeint,	int,	hugeint,	wrd # type
 % 3,	3,	4,	3,	4,	1 # length
 [ 112,	NULL,	NULL,	110,	NULL,	0	]
 [ 130,	391,	793,	132,	1325,	0	]
@@ -85757,7 +85835,7 @@ Ready.
 #;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % b,	L1,	L2,	e,	L3,	L5 # name
-% int,	hugeint,	hugeint,	int,	hugeint,	wrd # type
+% int,	bigint,	hugeint,	int,	hugeint,	wrd # type
 % 3,	3,	4,	3,	4,	1 # length
 [ 112,	NULL,	NULL,	110,	NULL,	0	]
 [ 130,	391,	793,	132,	1325,	0	]
@@ -85840,7 +85918,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_sub_a # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 131,	391,	1	]
 [ 159,	475,	1	]
@@ -85859,7 +85937,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 131,	391,	1	]
 [ 159,	475,	1	]
@@ -85877,7 +85955,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_sub_a # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 131,	391,	1	]
 [ 159,	475,	1	]
@@ -85896,7 +85974,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 131,	391,	1	]
 [ 159,	475,	1	]
@@ -85914,7 +85992,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L2 # table_name
 % L1,	L2,	sql_sub_a # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 131,	391,	1	]
 [ 159,	475,	1	]
@@ -85933,7 +86011,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	1 # length
 [ 131,	391,	1	]
 [ 159,	475,	1	]
@@ -85951,7 +86029,7 @@ Ready.
 #;
 % .t1,	.L2,	.t1,	.L2 # table_name
 % d,	L2,	e,	sql_add_a # name
-% int,	wrd,	int,	hugeint # type
+% int,	wrd,	int,	bigint # type
 % 3,	1,	3,	3 # length
 [ 101,	0,	NULL,	NULL	]
 [ 108,	0,	109,	317	]
@@ -85982,7 +86060,7 @@ Ready.
 #;
 % .t1,	.L2,	.t1,	.L3 # table_name
 % d,	L2,	e,	L3 # name
-% int,	wrd,	int,	hugeint # type
+% int,	wrd,	int,	bigint # type
 % 3,	1,	3,	3 # length
 [ 101,	0,	NULL,	NULL	]
 [ 114,	0,	110,	NULL	]
@@ -86012,7 +86090,7 @@ Ready.
 #;
 % .t1,	.L2,	.t1,	.L2 # table_name
 % d,	L2,	e,	sql_add_a # name
-% int,	wrd,	int,	hugeint # type
+% int,	wrd,	int,	bigint # type
 % 3,	1,	3,	3 # length
 [ 101,	0,	NULL,	NULL	]
 [ 108,	0,	109,	317	]
@@ -86043,7 +86121,7 @@ Ready.
 #;
 % .t1,	.L2,	.t1,	.L3 # table_name
 % d,	L2,	e,	L3 # name
-% int,	wrd,	int,	hugeint # type
+% int,	wrd,	int,	bigint # type
 % 3,	1,	3,	3 # length
 [ 207,	0,	NULL,	NULL	]
 [ 101,	0,	NULL,	NULL	]
@@ -86660,7 +86738,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L3 # table_name
 % L1,	L2,	a,	L3,	sql_sub_c # name
-% wrd,	hugeint,	int,	hugeint,	bigint # type
+% wrd,	hugeint,	int,	bigint,	bigint # type
 % 1,	4,	3,	3,	1 # length
 [ 0,	NULL,	121,	369,	1	]
 [ 0,	2046,	138,	416,	1	]
@@ -86678,7 +86756,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	a,	L3,	L4 # name
-% wrd,	hugeint,	int,	hugeint,	bigint # type
+% wrd,	hugeint,	int,	bigint,	bigint # type
 % 1,	4,	3,	3,	1 # length
 [ 0,	NULL,	121,	369,	1	]
 [ 0,	2046,	138,	416,	1	]
@@ -86695,7 +86773,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L3 # table_name
 % L1,	L2,	a,	L3,	sql_sub_c # name
-% wrd,	hugeint,	int,	hugeint,	bigint # type
+% wrd,	hugeint,	int,	bigint,	bigint # type
 % 1,	4,	3,	3,	1 # length
 [ 0,	NULL,	121,	369,	1	]
 [ 0,	2046,	138,	416,	1	]
@@ -86713,7 +86791,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	a,	L3,	L4 # name
-% wrd,	hugeint,	int,	hugeint,	bigint # type
+% wrd,	hugeint,	int,	bigint,	bigint # type
 % 1,	4,	3,	3,	1 # length
 [ 0,	NULL,	121,	369,	1	]
 [ 0,	2046,	138,	416,	1	]
@@ -87010,7 +87088,7 @@ Ready.
 #;
 % .L1,	.t1,	.L3,	.L4,	.L4 # table_name
 % L1,	d,	L3,	L4,	sql_add_a # name
-% smallint,	int,	wrd,	hugeint,	hugeint # type
+% smallint,	int,	wrd,	hugeint,	bigint # type
 % 3,	3,	1,	3,	3 # length
 [ 333,	122,	0,	NULL,	369	]
 [ 333,	128,	0,	127,	385	]
@@ -87037,7 +87115,7 @@ Ready.
 #;
 % .L1,	.t1,	.L3,	.L4,	.L5 # table_name
 % L1,	d,	L3,	L4,	L5 # name
-% smallint,	int,	wrd,	hugeint,	hugeint # type
+% smallint,	int,	wrd,	hugeint,	bigint # type
 % 3,	3,	1,	3,	3 # length
 [ 555,	NULL,	0,	NULL,	455	]
 [ 555,	NULL,	0,	NULL,	475	]
@@ -87065,7 +87143,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.L5,	.L5 # table_name
 % L1,	L2,	b,	d,	L3,	L5,	sql_add_sql_add_a # name
-% int,	hugeint,	int,	int,	bigint,	wrd,	hugeint # type
+% int,	bigint,	int,	int,	bigint,	wrd,	hugeint # type
 % 3,	3,	3,	3,	2,	1,	4 # length
 [ 107,	317,	105,	108,	2,	0,	635	]
 [ 131,	391,	130,	133,	1,	0,	793	]
@@ -87100,7 +87178,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.L5,	.L6 # table_name
 % L1,	L2,	b,	d,	L3,	L5,	L6 # name
-% int,	hugeint,	int,	int,	bigint,	wrd,	hugeint # type
+% int,	bigint,	int,	int,	bigint,	wrd,	hugeint # type
 % 3,	3,	3,	3,	2,	1,	4 # length
 [ 107,	317,	105,	108,	2,	0,	635	]
 [ 131,	391,	130,	133,	1,	0,	793	]
@@ -87349,7 +87427,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.t1,	sys.L5 # table_name
 % L1,	L2,	L3,	L5,	a,	sql_sub_a # name
-% smallint,	hugeint,	bigint,	bigint,	int,	bigint # type
+% smallint,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	3,	2,	4,	3,	2 # length
 [ 444,	NULL,	NULL,	NULL,	104,	NULL	]
 [ 333,	317,	-1,	1050,	107,	2	]
@@ -87393,7 +87471,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L5,	sys.t1,	sys.L6 # table_name
 % L1,	L2,	L3,	L5,	a,	L6 # name
-% smallint,	hugeint,	bigint,	bigint,	int,	bigint # type
+% smallint,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	3,	2,	4,	3,	2 # length
 [ 444,	NULL,	-2,	NULL,	NULL,	NULL	]
 [ 444,	NULL,	NULL,	NULL,	104,	NULL	]
@@ -87602,7 +87680,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % b,	L1,	sql_add_sql_add_a # name
-% int,	hugeint,	hugeint # type
+% int,	bigint,	hugeint # type
 % 3,	3,	4 # length
 [ 124,	369,	1226	]
 [ 139,	416,	1371	]
@@ -87618,7 +87696,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % b,	L1,	L2 # name
-% int,	hugeint,	hugeint # type
+% int,	bigint,	hugeint # type
 % 3,	3,	4 # length
 [ 124,	369,	1226	]
 [ 139,	416,	1371	]
@@ -87633,7 +87711,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % b,	L1,	sql_add_sql_add_a # name
-% int,	hugeint,	hugeint # type
+% int,	bigint,	hugeint # type
 % 3,	3,	4 # length
 [ 124,	369,	1226	]
 [ 139,	416,	1371	]
@@ -87649,7 +87727,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % b,	L1,	L2 # name
-% int,	hugeint,	hugeint # type
+% int,	bigint,	hugeint # type
 % 3,	3,	4 # length
 [ 124,	369,	1226	]
 [ 139,	416,	1371	]
@@ -87688,6 +87766,7 @@ Ready.
 [ 1,	229,	3,	228,	227	]
 [ 2,	234,	1,	232,	230	]
 [ 3,	239,	NULL,	236,	237	]
+[ 3,	243,	-4,	240,	NULL	]
 [ -4,	245,	2,	249,	246	]
 #SELECT a-b,
 #       a,
@@ -87724,6 +87803,7 @@ Ready.
 [ 1,	229,	3,	228,	227	]
 [ 2,	234,	1,	232,	230	]
 [ 3,	239,	NULL,	236,	237	]
+[ 3,	243,	-4,	240,	NULL	]
 [ -4,	245,	2,	249,	246	]
 #SELECT a-b,
 #       a,
@@ -87759,6 +87839,7 @@ Ready.
 [ 1,	229,	3,	228,	227	]
 [ 2,	234,	1,	232,	230	]
 [ 3,	239,	NULL,	236,	237	]
+[ 3,	243,	-4,	240,	NULL	]
 [ -4,	245,	2,	249,	246	]
 #SELECT a-b,
 #       a,
@@ -87795,6 +87876,7 @@ Ready.
 [ 2,	234,	1,	232,	230	]
 [ 3,	163,	-1,	160,	162	]
 [ 3,	239,	NULL,	236,	237	]
+[ 3,	243,	-4,	240,	NULL	]
 [ 4,	174,	-2,	170,	173	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
@@ -88298,6 +88380,7 @@ Ready.
 [ 0,	2264,	3399,	229,	555	]
 [ 0,	2323,	3473,	234,	555	]
 [ 0,	NULL,	NULL,	239,	555	]
+[ 0,	NULL,	NULL,	243,	222	]
 [ 0,	2476,	3706,	245,	444	]
 [ 0,	NULL,	NULL,	NULL,	555	]
 [ 0,	1226,	NULL,	121,	333	]
@@ -88310,7 +88393,6 @@ Ready.
 [ 0,	NULL,	NULL,	159,	555	]
 [ 0,	NULL,	NULL,	168,	555	]
 [ 0,	NULL,	NULL,	179,	555	]
-[ 0,	NULL,	NULL,	243,	222	]
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
 #       a+b*2+c*3+d*4,
 #       a+b*2+c*3+d*4+e*5,
@@ -89439,6 +89521,7 @@ Ready.
 [ 3,	225,	3,	22	]
 [ 1,	231,	1,	23	]
 [ NULL,	NULL,	NULL,	24	]
+[ 4,	244,	-4,	25	]
 [ 2,	247,	2,	26	]
 [ NULL,	102,	NULL,	0	]
 [ 1,	106,	-1,	0	]
@@ -89473,6 +89556,7 @@ Ready.
 [ 3,	225,	3,	22	]
 [ 1,	231,	1,	23	]
 [ NULL,	NULL,	NULL,	24	]
+[ 4,	244,	-4,	25	]
 [ 2,	247,	2,	26	]
 #SELECT a+b*2+c*3+d*4+e*5,
 #       CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
@@ -89864,6 +89948,7 @@ Ready.
 [ -1,	226,	333,	227,	3,	555	]
 [ -2,	233,	333,	232,	1,	555	]
 [ NULL,	238,	444,	NULL,	NULL,	555	]
+[ NULL,	NULL,	444,	NULL,	-4,	222	]
 [ -1,	248,	111,	247,	2,	444	]
 [ -1,	114,	444,	NULL,	-1,	555	]
 [ 1,	122,	222,	NULL,	1,	333	]
@@ -89876,7 +89961,6 @@ Ready.
 [ NULL,	NULL,	333,	NULL,	3,	555	]
 [ NULL,	NULL,	333,	NULL,	1,	555	]
 [ NULL,	NULL,	444,	NULL,	-1,	555	]
-[ NULL,	NULL,	444,	NULL,	-4,	222	]
 #SELECT c-d,
 #       d,
 #       CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -90084,7 +90168,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L3 # table_name
 % L1,	L2,	L3,	sql_add_a # name
-% int,	bigint,	hugeint,	hugeint # type
+% int,	bigint,	hugeint,	bigint # type
 % 3,	2,	4,	3 # length
 [ 191,	1,	1158,	579	]
 [ 220,	-1,	1338,	666	]
@@ -90099,7 +90183,7 @@ Ready.
 #;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% int,	bigint,	hugeint,	hugeint # type
+% int,	bigint,	hugeint,	bigint # type
 % 3,	2,	4,	3 # length
 [ 220,	-1,	1338,	666	]
 [ 191,	1,	1158,	579	]
@@ -91168,7 +91252,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L1 # table_name
 % c,	L1,	sql_sub_b # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	2 # length
 [ 102,	NULL,	NULL	]
 [ 106,	317,	-1	]
@@ -91208,7 +91292,7 @@ Ready.
 #;
 % sys.t1,	sys.L1,	sys.L2 # table_name
 % c,	L1,	L2 # name
-% int,	hugeint,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	3,	2 # length
 [ NULL,	711,	NULL	]
 [ 102,	NULL,	NULL	]

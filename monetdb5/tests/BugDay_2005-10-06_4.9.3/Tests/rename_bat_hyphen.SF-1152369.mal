@@ -1,5 +1,0 @@
-a:= bat.new(:oid,:int);
-bat.setName(a,"x_");
-io.print(a);
-
-#bat("x-").print();

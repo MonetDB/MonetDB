@@ -18,44 +18,13 @@ stdout of test 'tst273` in directory 'monetdb5/mal` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-function user.main():void;
-# the multiplex code blocks. 
-    r := mmath.srand(0);
-    t0 := alarm.usec();
-    b := bat.new(:oid,:lng);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,10000:lng);
-exit i;
-    profiler.setFilter(b);
-    profiler.start();
-    io.printf("#monitor \n");
-    mx := aggr.max(b);
-    (clk,rdbytes,wrbytes) := profiler.getEvent();
-    io.printf("# clk %d\n",clk);
-    io.printf("# rdbytes %d\n",rdbytes);
-    io.printf("# wrbytes %d\n",wrbytes);
-    io.printf("#max %d\n",mx);
-    algebra.select(b,nil:lng,mx);
-    (clk,rdbytes,wrbytes) := profiler.getEvent();
-    io.printf("# clk %d\n",clk);
-    io.printf("# rdbytes %d\n",rdbytes);
-    io.printf("# wrbytes %d\n",wrbytes);
-    algebra.select(b,mx,nil:lng);
-    (clk,rdbytes,wrbytes) := profiler.getEvent();
-    io.printf("# clk %d\n",clk);
-    io.printf("# rdbytes %d\n",rdbytes);
-    io.printf("# wrbytes %d\n",wrbytes);
-    d := mmath.sin(0.20000000298023224:dbl);
-    (clk,rdbytes,wrbytes) := profiler.getEvent();
-    io.printf("# clk %d\n",clk);
-    io.printf("# rdbytes %d\n",rdbytes);
-    io.printf("# wrbytes %d\n",wrbytes);
-    profiler.stop();
-end main;
-# Start performance profiling
+Ready.
+
+# 15:04:28 >  
+# 15:04:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:28 >  
+
+#io.printf("#monitor \n");
 #monitor 
 # clk 225
 # rdbytes 0

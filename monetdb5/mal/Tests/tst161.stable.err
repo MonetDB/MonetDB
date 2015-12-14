@@ -6,7 +6,24 @@ stderr of test 'tst161` in directory 'monetdb5/mal` itself:
 # 19:09:44 >  
 
 
-# 19:09:44 >  
-# 19:09:44 >  Done.
-# 19:09:44 >  
+# 14:57:21 >  
+# 14:57:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
+# 14:57:21 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY =     return l:= 0:mytype;
+ERROR = !SyntaxException:defConstant:constant coercion error from int to mytype
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = end l;
+ERROR = !SyntaxException:mytype.l[0]:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = z:= mytype.l();
+ERROR = !TypeException:user.main[1]:'mytype.l' undefined in:     z:any := mytype.l();
+MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
+QUERY = io.print(z);
+ERROR = !SyntaxException:user.main[0]:RETURN missing
+
+# 14:57:21 >  
+# 14:57:21 >  "Done."
+# 14:57:21 >  
 

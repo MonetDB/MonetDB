@@ -9,12 +9,17 @@ stdout of test 'tst830` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35798/
-function user.main():void;
-# a simple functional test for the access control table 
-# this should fail, the monetdb user is already there 
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37997/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13998/.s.monetdb.37997
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+function user.foo():void;
     pw := clients.backendsum("Pmonetdb");
     id := clients.addUser("monetdb",pw);
 catch MALException:str;
@@ -48,24 +53,29 @@ exit InvalidCredentialsException:str;
     clients.changePassword(mypw,pw);
 catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
+    InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
 # all should fail 
     clients.checkPermission("monetdb","Pmonetdb");
 catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
+    InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
     clients.checkPermission("monetdb","x");
 catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
+    InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
     clients.checkPermission("x","Pmonetdb");
 catch InvalidCredentialsException:str;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
+    InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
+end user.foo;
+function user.main():void;
+# a simple functional test for the access control table 
+# this should fail, the monetdb user is already there 
+    user.foo();
 end user.main;
 MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]

@@ -1,9 +1,0 @@
-# illustrate a short cut reference to the implementation
-
-function doit(s:str)
-address CMDcallString;
-    io.print("unexpected call to default");
-    mal.call(s);
-end doit;
-
-Admin.doit("print(1);");

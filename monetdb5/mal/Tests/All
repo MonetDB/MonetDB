@@ -100,9 +100,7 @@ tst1504
 tst1505
 tst1506
 tst161
-tst162
 tst163
-tst1602
 tst1604
 tst171
 tst200
@@ -130,11 +128,7 @@ tst255
 tst2550
 tst256
 tst2570
-# tst265 -- windowsum and slidingsum have been removed
-# opens /tmp/MonetEvents, i.e. not on Windows:
 tst272
-#tst273
-#tst274
 # opens /tmp/MonetEvents, i.e. not on Windows:
 NOT_WIN32?tst275
 tst280
@@ -176,8 +170,7 @@ tst802
 tst804
 tst810
 tst819
-tst820
-tst830
+#tst830
 tst840
 tst850
 tst866

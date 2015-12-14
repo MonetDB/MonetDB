@@ -715,7 +715,7 @@ ALGsubsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *o
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
 	}
-	if (BATsubsort(result ? &bn : NULL,
+	if (BATsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
 				   ngroup ? &gn : NULL,
 				   b, o, g, *reverse, *stable) != GDK_SUCCEED) {

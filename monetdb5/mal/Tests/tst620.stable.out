@@ -5,32 +5,36 @@ stdout of test 'tst620` in directory 'monetdb5/mal` itself:
 # 21:04:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33678 --set sql_port=45734 --set xquery_port=51153 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst620.mal < /dev/null
 # 21:04:56 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-##check the storage size
-#function tst():void;
-#	z:= inspect.getSize();
-#	io.printf("#size %d\n",z);
-#end tst;
-function user.tst():void;
-    z := inspect.getSize();
-    io.printf("#size %d\n",z);
-end user.tst;
-function user.main():void;
-#check the storage size 
-    user.tst();
-    l := inspect.getSize();
-    io.printf("#size %d\n",l);
-end user.main;
-#size 820
-#size 1228
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35105/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25070/.s.monetdb.35105
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 21:04:56 >  
-# 21:04:56 >  Done.
-# 21:04:56 >  
+Ready.
+
+# 09:24:48 >  
+# 09:24:48 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25070" "--port=35105"
+# 09:24:48 >  
+
+#user.tst();
+#size 948
+#io.printf("#size %d\n",l);
+#size 608
+
+# 09:24:48 >  
+# 09:24:48 >  "Done."
+# 09:24:48 >  
 

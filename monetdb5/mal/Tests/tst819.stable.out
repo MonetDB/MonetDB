@@ -16,16 +16,19 @@ stdout of test 'tst819` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39275/
 # MonetDB/SQL module loaded
 # MonetDB/GIS module loaded
-function user.extralongfunctionsignature(p1:bat[:oid,:sht],p2:bat[:oid,:sht]):bat[:oid,:sht];
-    b := bat.new(:oid,:sht);
-    return extralongfunctionsignature := b;
-end user.extralongfunctionsignature;
-function user.main():void;
-#extra long signature 
-    p1 := bat.new(:oid,:sht);
-    p2 := bat.new(:oid,:sht);
-    z := user.extralongfunctionsignature(p1,p2);
-end user.main;
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:38:22 >  
+# 10:38:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-864" "--port=33541"
+# 10:38:22 >  
+
 
 # 21:21:41 >  
 # 21:21:41 >  Done.

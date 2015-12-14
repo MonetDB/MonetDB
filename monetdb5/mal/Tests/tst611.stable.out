@@ -17,18 +17,16 @@ stdout of test 'tst611` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12850/.s.monetdb.31390
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-!TypeException:user.main[7]:'bat.setWriteMode' undefined in:     bat.setWriteMode(RKB:any);
-function user.main():void;
-# initialization of BATs on the stack 
-# caused a problem when executed in interactve mode 
-    RKA := bat.new(:oid,:int,1048576);
-    bat.append(RKA,360:int);
-    io.print(RKA);
-#the next one should fail 
-    bat.setWriteMode(RKB);
-end user.main;
+# MonetDB/R   module loaded
 
-# 08:01:26 >  
-# 08:01:26 >  Done.
-# 08:01:26 >  
+Ready.
+
+# 09:29:46 >  
+# 09:29:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
+# 09:29:46 >  
+
+
+# 09:29:46 >  
+# 09:29:46 >  "Done."
+# 09:29:46 >  
 

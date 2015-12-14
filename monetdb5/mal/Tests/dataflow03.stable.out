@@ -16,48 +16,20 @@ stdout of test 'dataflow03` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36857/
 # MonetDB/SQL module loaded
 # MonetDB/GIS module loaded
-function user.f(b:int):int;
-    return f := b;
-end user.f;
-function user.f(a:int,b:int):int;
-    return f := calc.+(a,b);
-end user.f;
-function user.sequential():void;
-    A0 := 1;
-    z := -1;
-    x0 := user.f(A0);
-    x1 := user.f(x0);
-    y := user.f(x1,x0);
-    w := user.f(1,x0);
-    a := user.f(x1,x1);
-#wakeup only once 
-    z := user.f(y,x0);
-    y := user.f(z);
-    z := user.f(y);
-    z := user.f(z);
-    io.print(z);
-end user.sequential;
-function user.qry():void;
-    A0 := 1;
-    z := -1;
-barrier x := language.dataflow();
-    x0 := user.f(A0);
-    x1 := user.f(x0);
-    y := user.f(x1,x0);
-    w := user.f(1,x0);
-    a := user.f(x1,x1);
-    z := user.f(y,x0);
-    y := user.f(z);
-    z := user.f(y);
-    z := user.f(z);
-exit x;
-    io.print(z);
-end user.qry;
-function user.main():void;
-# simple test for graph admin 
-    user.sequential();
-    user.qry();
-end user.main;
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:49:37 >  
+# 20:49:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22767" "--port=33890"
+# 20:49:37 >  
+
+#sequential();
 [ 3 ]
 [ 3 ]
 
