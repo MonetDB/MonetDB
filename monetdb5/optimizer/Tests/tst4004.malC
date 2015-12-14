@@ -1,5 +1,6 @@
 #dead code by forward analysis
 
+function foo();
 A :=23;
 D :=22;
 F := 1;
@@ -19,6 +20,10 @@ exit c;
 
 io.print(A);
 io.print(D);
+end foo;
 
-optimizer.deadcode();
+mdb.list("user","foo");
+optimizer.deadcode("user","foo");
+mdb.list("user","foo");
+user.foo();
 

@@ -1,8 +1,6 @@
 # testing the library for unsafe instructions
 # bat C can still be shared with B
-optimizer.setDebug();
-optimizer.commonTerms();
-optimizer.aliases();
+function foo();
 b:= bat.new(:oid,:int);
 c:= bat.new(:oid,:int);
 bat.append(b,1);
@@ -10,4 +8,9 @@ bat.append(b,1);
 # in this case D should be left alone
 d:= bat.new(:oid,:int);
 bat.append(d,2);
+end;
+
+optimizer.setDebug("user,","foo");
+optimizer.commonTerms("user,","foo");
+optimizer.aliases("user,","foo");
 

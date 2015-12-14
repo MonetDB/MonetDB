@@ -21,49 +21,53 @@ stdout of test 'inline04` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:int):int;
-    c := calc.+(a,b);
-    base := 1;
-barrier loop := true;
-    c := calc.*(c,c);
-    base := calc.+(base,1);
-    redo loop := calc.<(base,3);
-exit loop;
-    return foo := c;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-# the crucial part is to recognize valid inlines 
-# here the inlined function contains more then 
-# just multiplex callable functions. 
-    mdb.List("user","qry");
-end user.main;
-inline function user.qry():void;        	#[0]  0 
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup user.foo a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:any,b:any);
+#WARNING To speedup user.foo a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],b:bat[:oid,:int]);
+#WARNING To speedup user.foo a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],2:int);
+
+# 15:49:03 >  
+# 15:49:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29846" "--port=34870"
+# 15:49:03 >  
+
+#	mdb.List("user","qry");
+function user.qry():void;               	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_14:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	#[3] CMDbatADDsignal 14 <- 1 1 
-    X_15:int := 1:int;                  	#[4]  15 <- 5 
-barrier X_16:bit := true:bit;           	#[5]  16 <- 17 
-    X_14:bat[:oid,:int] := batcalc.*(X_14:bat[:oid,:int],X_14:bat[:oid,:int]);	#[6] CMDbatMULsignal 14 <- 14 14 
-    X_15:int := calc.+(X_15:int,1:int); 	#[7] CMDvarADDsignal 15 <- 15 5 
-    redo X_16:bit := calc.<(X_15:int,3:int);	#[8] CMDvarLT 16 <- 15 18 
-exit X_16:bit;                          	#[9]  16 
-    z:bat[:oid,:int] := X_14:bat[:oid,:int];	#[10]  6 <- 14 
-    X_22:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	#[11] CMDbatADDsignal 22 <- 1 10 
-    X_23:int := 1:int;                  	#[12]  23 <- 5 
-barrier X_24:bit := true:bit;           	#[13]  24 <- 17 
-    X_22:bat[:oid,:int] := batcalc.*(X_22:bat[:oid,:int],X_22:bat[:oid,:int]);	#[14] CMDbatMULsignal 22 <- 22 22 
-    X_23:int := calc.+(X_23:int,1:int); 	#[15] CMDvarADDsignal 23 <- 23 5 
-    redo X_24:bit := calc.<(X_23:int,3:int);	#[16] CMDvarLT 24 <- 23 18 
-exit X_24:bit;                          	#[17]  24 
-    z:bat[:oid,:int] := X_22:bat[:oid,:int];	#[18]  6 <- 22 
-end user.qry;                           	#[19]  
+    X_11:bat[:oid,:int] := bat.new(nil:oid,nil:int);	#[3] CMDBATnew 11 <- 12 13 
+barrier (X_15:oid,X_16:int) := iterator.new(b:bat[:oid,:int]);	#[4] ITRbunIterator 15 16 <- 1 
+    X_36:int := calc.+(X_16:int,X_16:int);	#[5] CMDvarADDsignal 36 <- 16 16 
+    X_37:int := 1:int;                  	#[6]  37 <- 38 
+barrier X_39:bit := true:bit;           	#[7]  39 <- 40 
+    X_36:int := calc.*(X_36:int,X_36:int);	#[8] CMDvarMULsignal 36 <- 36 36 
+    X_37:int := calc.+(X_37:int,1:int); 	#[9] CMDvarADDsignal 37 <- 37 38 
+    redo X_39:bit := calc.<(X_37:int,3:int);	#[10] CMDvarLT 39 <- 37 41 
+exit X_39:bit;                          	#[11]  39 
+    X_18:int := X_36:int;               	#[12]  18 <- 36 
+    bat.append(X_11:bat[:oid,:int],X_18:int);	#[13] BKCappend_val_wrap 19 <- 11 18 
+    redo (X_15:oid,X_16:int) := iterator.next(b:bat[:oid,:int]);	#[14] ITRbunNext 15 16 <- 1 
+exit (X_15:oid,X_16:int);               	#[15]  15 16 
+    z:bat[:oid,:int] := X_11:bat[:oid,:int];	#[16]  6 <- 11 
+    X_23:bat[:oid,:int] := bat.new(nil:oid,nil:int);	#[17] CMDBATnew 23 <- 12 13 
+barrier (X_25:oid,X_26:int) := iterator.new(b:bat[:oid,:int]);	#[18] ITRbunIterator 25 26 <- 1 
+    X_45:int := calc.+(X_26:int,2:int); 	#[19] CMDvarADDsignal 45 <- 26 10 
+    X_46:int := 1:int;                  	#[20]  46 <- 38 
+barrier X_47:bit := true:bit;           	#[21]  47 <- 40 
+    X_45:int := calc.*(X_45:int,X_45:int);	#[22] CMDvarMULsignal 45 <- 45 45 
+    X_46:int := calc.+(X_46:int,1:int); 	#[23] CMDvarADDsignal 46 <- 46 38 
+    redo X_47:bit := calc.<(X_46:int,3:int);	#[24] CMDvarLT 47 <- 46 41 
+exit X_47:bit;                          	#[25]  47 
+    X_28:int := X_45:int;               	#[26]  28 <- 45 
+    bat.append(X_23:bat[:oid,:int],X_28:int);	#[27] BKCappend_val_wrap 29 <- 23 28 
+    redo (X_25:oid,X_26:int) := iterator.next(b:bat[:oid,:int]);	#[28] ITRbunNext 25 26 <- 1 
+exit (X_25:oid,X_26:int);               	#[29]  25 26 
+    z:bat[:oid,:int] := X_23:bat[:oid,:int];	#[30]  6 <- 23 
+end user.qry;                           	#[31]  
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

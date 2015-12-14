@@ -20,24 +20,13 @@ stdout of test 'tst4030` in directory 'monetdb5/optimizer` itself:
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
 
-function user.main():void;
-# testing subsumption optimalisation 
-    r := bat.new(:oid,:int);
-    bat.append(r,1);
-    bat.append(r,2);
-    bat.append(r,3);
-    bat.append(r,4);
-    s := algebra.subselect(r,0,5,true,true,false);
-# equal to a copy 
-    r1 := algebra.projection(s,r);
-    io.print(r1);
-    t := algebra.subselect(r,0,3,true,true,false);
-#print(t); 
-# reuse t 
-    r1 := algebra.projection(t,r);
-    io.print(r1);
-    io.print("done");
-end user.main;
+Ready.
+
+# 21:55:31 >  
+# 21:55:31 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1801" "--port=39930"
+# 21:55:31 >  
+
+#io.print(r1);
 #--------------------------#
 # h	t  # name
 # void	int  # type

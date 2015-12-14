@@ -5,48 +5,31 @@ stdout of test 'tst4005` in directory 'monetdb5/optimizer` itself:
 # 19:53:37 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/sql_logs" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/xquery_logs" --set mapi_port=32409 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4005.mal < /dev/null
 # 19:53:37 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.getz(p:int):int;
-    x := nil:int;
-    V4 := p;
-    V6 := calc.sht(10);
-    V9 := calc.int(V6);
-    V11 := calc.>(V4,V9);
-barrier V12 := V11;
-    V13 := p;
-    V15 := calc.int(2);
-    V22 := calc.*(V13,V15);
-    V24 := calc.int(V22);
-    x := V24;
-exit V12;
-barrier V27 := calc.not(V11);
-    V28 := p;
-    x := V28;
-exit V27;
-    V30 := x;
-    return V31 := V30;
-end user.getz;
-function user.main():void;
-# bug discovered in SQL, alias removal does not handle arguments properly 
-#optimizer.costModel("user","getz"); 
-#optimizer.coercions("user","getz"); 
-#optimizer.emptySet("user","getz"); 
-#optimizer.modes("user","getz"); 
-#optimizer.commonTerms("user","getz"); 
-#optimizer.accumulators("user","getz"); 
-#optimizer.joinPath("user","getz"); 
-#optimizer.deadcode("user","getz"); 
-#optimizer.reduce("user","getz"); 
-#optimizer.garbageCollector("user","getz"); 
-    mdb.List("user","getz");
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:39930/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1801/.s.monetdb.39930
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:55:30 >  
+# 21:55:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1801" "--port=39930"
+# 21:55:30 >  
+
+#mdb.List("user","getz");
 function user.getz(p:int):int;          	#[0]  0 <- 1 
     x:int := nil:int;                   	#[1]  2 <- 3 
     V6:sht := calc.sht(10:int);         	#[2] CMDvarCONVERT 5 <- 6 

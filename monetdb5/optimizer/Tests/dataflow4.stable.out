@@ -18,6 +18,15 @@ stdout of test 'dataflow4` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:20:27 >  
+# 09:20:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26435" "--port=37267"
+# 09:20:27 >  
+
+#mdb.list("user","tst");
 function user.tst():void;
     i := 1;
     b := bat.new(:oid,:int);
@@ -32,30 +41,7 @@ function user.tst():void;
     io.print(a);
     io.print(d);
 end user.tst;
-function user.main():void;
-    mdb.list("user","tst");
-    mdb.list("user","tst");
-end user.main;
-function user.tst():void;
-barrier X_19 := language.dataflow();
-    i := 1;
-    b := bat.new(:oid,:int);
-    a := bat.new(:oid,:int);
-exit X_19;
-barrier X_22 := language.dataflow();
-    i := 2;
-    b := bat.new(:oid,:int);
-    c := bat.new(:oid,:int);
-    a := bat.new(:oid,:int);
-exit X_22;
-barrier X_25 := language.dataflow();
-    c := bat.new(:oid,:int);
-    a := bat.new(:oid,:int);
-    d := bat.new(:oid,:int);
-exit X_25;
-    io.print(a);
-    io.print(d);
-end user.tst;
+#mdb.list("user","tst");
 function user.tst():void;
 barrier X_19 := language.dataflow();
     i := 1;

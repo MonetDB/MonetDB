@@ -6,5 +6,7 @@ function test(s:str):wrd;
 	i:= aggr.count(z);
 	return test:=i;
 end test;
+mdb.List("user","test");
 optimizer.factorize("user","test");
+mdb.List("user","qry");
 mdb.List("user","test");

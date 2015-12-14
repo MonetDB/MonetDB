@@ -1,4 +1,5 @@
 # testing subsumption optimalisation
+function foo();
 r:= bat.new(:oid,:int);
 bat.append(r,1);
 bat.append(r,2);
@@ -13,5 +14,7 @@ u:= algebra.subselect(r,0,3,true,true,false);	# reuse t
 r1:=algebra.projection(u,r);
 io.print(r1);
 io.print("done");
-optimizer.commonTerms();
-optimizer.aliases();
+end;
+optimizer.commonTerms()"user","foo";
+optimizer.aliases("user","foo");
+mdb.list("user","foo");

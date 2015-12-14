@@ -1,3 +1,4 @@
+function foo();
     V7 := bat.new(:oid,:oid);
     V10 := bat.new(:oid,:oid);
     V16 := V7;
@@ -7,6 +8,8 @@
     V22 := bat.new(:oid,:oid);
     (V17,V17b) := algebra.subjoin(V16,V22,nil:bat[:oid,:oid],nil:bat[:oid,:oid],true, 0:lng);
 	io.print("done");
+end;
 
-optimizer.deadcode();
-mdb.List();
+mdb.List("user","foo");
+optimizer.deadcode("user","foo");
+mdb.List("user","foo");

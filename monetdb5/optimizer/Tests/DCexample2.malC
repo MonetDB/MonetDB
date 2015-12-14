@@ -1,10 +1,12 @@
-#Suggested by Nayden.
-
+function foo();
 b:= bat.new(:oid,:int);
 bat.append(b,2);
 bat.append(b,5);
 bat.append(b,3);
 b:= algebra.subsort(b,false,false);
+end;
+
 #should throw out the last statement
-optimizer.deadcode();
-mdb.List();
+mdb.List("user","foo");
+optimizer.deadcode("user","foo");
+mdb.List("user","foo");

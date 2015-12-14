@@ -21,29 +21,15 @@ stdout of test 'inline00` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.help():void;
-    b := bat.new(:oid,:int);
-    c := bat.new(:oid,:int);
-    bat.append(b,1);
-barrier (y,z) := iterator.new(b);
-    io.print(y);
-catch MALException:str;
-exit MALException:str;
-exit (y,z);
-barrier (x,z) := iterator.new(c);
-    io.print(x);
-    redo (x,z) := iterator.next(c);
-catch MALException:str;
-exit MALException:str;
-exit (x,z);
-end user.help;
-function user.qry():void;
-    user.help();
-end user.qry;
-function user.main():void;
-    mdb.List("user","help");
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:09:46 >  
+# 16:09:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32223" "--port=39816"
+# 16:09:46 >  
+
+#mdb.List("user","help");
 inline function user.help():void;       	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     c:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 4 <- 2 3 

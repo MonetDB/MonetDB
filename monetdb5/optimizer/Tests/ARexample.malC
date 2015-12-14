@@ -1,3 +1,4 @@
+function foo();
     i:=0;
 	b:= "done";
 barrier go:= true;
@@ -9,4 +10,7 @@ barrier go:= true;
 redo go:= i<2;
 exit go;
 	io.print(b);
-optimizer.aliases();
+end;
+mdb.list("user","foo");
+optimizer.aliases("user","foo");
+mdb.list("user","foo");

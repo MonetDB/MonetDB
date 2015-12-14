@@ -21,22 +21,15 @@ stdout of test 'tst4630` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.qry(a:bat[:oid,:any_2],b:bat[:oid,:any_3],c:bat[:oid,:any_4]):bat[:oid,:any_4];
-    a1 := a;
-    b1 := b;
-    c1 := c;
-    z := algebra.join(a,b);
-    zz := algebra.join(z,c);
-    ww := algebra.join(z,a1);
-    yy := algebra.join(ww,b1);
-    xx := algebra.join(yy,c1);
-    return qry := xx;
-end user.qry;
-function user.main():void;
-# testing join path optimizations 
-# the common part should not be replicated 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:55:32 >  
+# 21:55:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1801" "--port=39930"
+# 21:55:32 >  
+
+#mdb.List("user","qry");
 function user.qry(a:bat[:oid,:any_2],b:bat[:oid,:any_3],c:bat[:oid,:any_4]):bat[:oid,:any_4];	#[0]  0 <- 1 2 3 
     a1:bat[:oid,:any_2] := a:bat[:oid,:any_2];	#[1]  4 <- 1 
     b1:bat[:oid,:any_3] := b:bat[:oid,:any_3];	#[2]  5 <- 2 

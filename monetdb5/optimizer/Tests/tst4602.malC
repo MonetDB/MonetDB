@@ -14,5 +14,5 @@ end welcome;
 optimizer.macro("user","welcome");
 
 io.print("test expansion");
+mdb.List("user","welcome");
 a:= user.welcome(2);
-mdb.List();

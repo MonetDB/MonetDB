@@ -12,6 +12,7 @@ end my_case;
 function tst();
 	z:= my_case(1);
 end tst;
+
 optimizer.inline("user","tst");
 io.printf("#result of inline\n");
 mdb.list("user","tst");
@@ -19,3 +20,4 @@ optimizer.remap("user","tst");
 optimizer.costModel("user","tst");
 optimizer.coercions("user","tst");
 optimizer.evaluate("user","tst");
+mdb.list("user","tst");
