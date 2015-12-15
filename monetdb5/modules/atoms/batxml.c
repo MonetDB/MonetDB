@@ -1229,7 +1229,9 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (g && BATtdense(g)) {
 		/* singleton groups: return group ID's (g's tail) and original
 		 * values from b */
-		bn = VIEWcreate(BATmirror(g), b);
+		bn = VIEWcreate(b->hseqbase, b);
+		if (bn)
+			BATseqbase(bn, g->tseqbase);
 		goto out;
 	}
 

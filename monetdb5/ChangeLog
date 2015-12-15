@@ -6,6 +6,9 @@
   mat. newIterator, mat.project, mat.pack2, mat.sortReverse, mat.sort,
   and mat.slice.
 
+* Mon Dec 14 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed bat.delete with more than one argument.
+
 * Thu Dec 10 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed grouped aggregate functions from the aggr module in which the
   groups were indicated by the head column of the bat to be aggregated.

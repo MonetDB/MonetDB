@@ -204,12 +204,9 @@ BKCdensebat(bat *ret, const wrd *size)
 		sz = 0;
 	if (sz > (wrd) BUN_MAX)
 		sz = (wrd) BUN_MAX;
-	bn = BATnew(TYPE_void, TYPE_void, (BUN) sz, TRANSIENT);
+	bn = BATdense(0, 0, (BUN) sz);
 	if (bn == NULL)
 		throw(MAL, "bat.densebat", GDK_EXCEPTION);
-	BATsetcount(bn, (BUN) sz);
-	BATseqbase(bn, 0);
-	BATseqbase(BATmirror(bn), 0);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -223,7 +220,7 @@ BKCmirror(bat *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.mirror", RUNTIME_OBJECT_MISSING);
 	}
-	bn = VIEWcombine(b);
+	bn = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 	if (bn != NULL) {
 		if (b->batRestricted == BAT_WRITE) {
 			BAT *bn1;
@@ -244,96 +241,6 @@ BKCmirror(bat *ret, const bat *bid)
 }
 
 str
-BKCinsert_bat(bat *r, const bat *bid, const bat *sid)
-{
-	BAT *b, *s;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.insert", OPERATION_FAILED);
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	}
-	if (BATins(b, s, FALSE) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(s->batCacheid);
-		throw(MAL, "bat.insert", GDK_EXCEPTION);
-	}
-	BBPunfix(s->batCacheid);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force)
-{
-	BAT *b, *s;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.insert", OPERATION_FAILED);
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	}
-	if (BATins(b, s, *force) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(s->batCacheid);
-		throw(MAL, "bat.insert", GDK_EXCEPTION);
-	}
-	BBPunfix(s->batCacheid);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-char *
-BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void *t)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.delete_bun", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.delete_bun", OPERATION_FAILED);
-	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-		if (t == 0 || *(str*)t == 0)
-			t = (ptr) str_nil;
-		else
-			t = (ptr) *(str *)t;
-	}
-	if (BUNdel(b, h, t, FALSE) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.delete_bun", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-char *
-BKCdelete(bat *r, const bat *bid, const oid *h)
-{
-	BAT *b;
-	BUN ret=0;
-
-	(void) ret;
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.delete", OPERATION_FAILED);
-	if ( (ret=BUNdelete(b, *h, TRUE)) == BUN_NONE) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.delete", GDK_EXCEPTION);
-	}
-	if( b->batPersistence == PERSISTENT)
-		BATmsync(b);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCdelete_all(bat *r, const bat *bid)
 {
 	BAT *b;
@@ -343,32 +250,6 @@ BKCdelete_all(bat *r, const bat *bid)
 	if (BATclear(b, FALSE) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
-	}
-	if( b->batPersistence == PERSISTENT)
-		BATmsync(b);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid)
-{
-	BAT *b, *s;
-	gdk_return ret;
-
-	if (*bid == *sid)
-		return BKCdelete_all(r, bid);
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	ret = BATdel(b, s, FALSE);
-	BBPunfix(s->batCacheid);
-	if (ret != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		 throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
 	}
 	if( b->batPersistence == PERSISTENT)
 		BATmsync(b);

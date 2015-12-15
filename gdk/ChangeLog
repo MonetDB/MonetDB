@@ -1,7 +1,17 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Dec 14 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions BATins, BATdel, BUNdel and BUNdelete.
+
 * Fri Dec 11 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function VIEWcombine.  Use BATdense instead.
+- Removed "left" parameter from BUNinplace.  It wasn't used since the
+  BAT it works on is dense headed.
+- Created function BATdense to easily create a [void,void] BAT with
+  specified seqbases for head and tail and a count.
+- Removed function BATmark.  When all head columns are dense, BATmark
+  basically only created a new [void,void] BAT.
 - Renamed BATsubsort to BATsort.
 
 * Thu Dec  3 2015 Sjoerd Mullender <sjoerd@acm.org>

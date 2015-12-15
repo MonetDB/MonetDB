@@ -1195,13 +1195,6 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 
-		if (!BAThdense(strs)) {
-			/* legacy */
-			BAT *v = VIEWcreate(strs, r);
-
-			BBPunfix(r->batCacheid);
-			r = v;
-		}
 		BBPkeepref(*ret = r->batCacheid);
 		BBPunfix(strs->batCacheid);
 		GDKfree(ppat);

@@ -425,7 +425,7 @@ AUTHchangeUsername(Client cntxt, str *olduser, str *newuser)
 	/* ok, just do it! (with force, because sql makes view over it) */
 	id = p;
 	assert(id == p);
-	BUNinplace(user, p, &id, *newuser, TRUE);
+	BUNinplace(user, p, *newuser, TRUE);
 	AUTHcommit();
 	return(MAL_SUCCEED);
 }
@@ -476,7 +476,7 @@ AUTHchangePassword(Client cntxt, str *oldpass, str *passwd)
 
 	/* ok, just overwrite the password field for this user */
 	assert(id == p);
-	BUNinplace(pass, p, &id, hash, TRUE);
+	BUNinplace(pass, p, hash, TRUE);
 	GDKfree(hash);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -527,7 +527,7 @@ AUTHsetPassword(Client cntxt, str *username, str *passwd)
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
-	BUNinplace(pass, p, &id, hash, TRUE);
+	BUNinplace(pass, p, hash, TRUE);
 	GDKfree(hash);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -598,7 +598,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(cntxt));
 
-	*ret1 = VIEWcombine(user);
+	*ret1 = BATdense(user->hseqbase, user->hseqbase, BATcount(user));
 	if (BATcount(duser)) {
 		bn = BATdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);

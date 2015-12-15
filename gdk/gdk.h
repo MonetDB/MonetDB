@@ -1064,6 +1064,8 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
 
 gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity, int role)
 	__attribute__((warn_unused_result));
+gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
+	__attribute__((warn_unused_result));
 gdk_export gdk_return BATextend(BAT *b, BUN newcap);
 
 /* internal */
@@ -1073,19 +1075,11 @@ gdk_export bte ATOMelmshift(int sz);
  * @- BUN manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
- * @tab BATins (BAT *b, BAT *c, bit force)
- * @item BAT*
  * @tab BATappend (BAT *b, BAT *c, bit force)
- * @item BAT*
- * @tab BATdel (BAT *b, BAT *c, bit force)
- * @item BAT*
- * @tab BUNins (BAT *b, ptr left, ptr right, bit force)
  * @item BAT*
  * @tab BUNappend (BAT *b, ptr right, bit force)
  * @item BAT*
  * @tab BUNreplace (BAT *b, ptr left, ptr right, bit force)
- * @item int
- * @tab BUNdel (BAT *b, ptr left, ptr right, bit force)
  * @item int
  * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
@@ -1109,9 +1103,8 @@ gdk_export bte ATOMelmshift(int sz);
  * be aware of the evolving nature of the sequence, which may require
  * copying the BAT first.
  *
- * The update operations come in three flavors. Element-wise updates
- * can use BUNins, BUNappend, BUNreplace, and BUNdel.  The
- * batch update operations are BATins, BATappend and BATdel.
+ * The update operations come in two flavors: BUNappend and
+ * BUNreplace.  The batch version of BUNappend is BATappend.
  *
  * The routine BUNfnd provides fast access to a single BUN providing a
  * value for the tail of the binary association.
@@ -1263,14 +1256,10 @@ gdk_export bte ATOMelmshift(int sz);
 
 gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
-gdk_export gdk_return BATins(BAT *b, BAT *c, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
-gdk_export gdk_return BUNdel(BAT *b, const void *left, const void *right, bit force);
-gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
-gdk_export gdk_return BATdel(BAT *b, BAT *c, bit force);
 
 gdk_export gdk_return BUNreplace(BAT *b, const void *left, const void *right, bit force);
-gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
+gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bit force);
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
@@ -1463,10 +1452,6 @@ gdk_export int BATgetaccess(BAT *b);
  * @item BAT *
  * @tab COLcopy (BAT *b, int tt, int writeable, int role)
  * @item BAT *
- * @tab BATmark (BAT *b, oid base)
- * @item BAT *
- * @tab BATmark_grp (BAT *b, BAT *g, oid *s)
- * @item BAT *
  * @tab BATmirror (BAT *b)
  * @item BAT *
  * @end multitable
@@ -1474,10 +1459,7 @@ gdk_export int BATgetaccess(BAT *b);
  * The routine BATclear removes the binary associations, leading to an
  * empty, but (re-)initialized BAT. Its properties are retained.  A
  * temporary copy is obtained with Colcopy. The new BAT has an unique
- * name.  The routine BATmark creates a binary association that
- * introduces a new tail column of fresh densely ascending OIDs.  The
- * base OID can be given explicitly, or if oid_nil is passed, is
- * chosen as a new unique range by the system.
+ * name.
  *
  * The routine BATmirror returns the mirror image BAT (where tail is
  * head and head is tail) of that same BAT. This does not involve a
@@ -1486,8 +1468,6 @@ gdk_export int BATgetaccess(BAT *b);
  */
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
-gdk_export BAT *BATmark(BAT *b, oid base);
-gdk_export BAT *BATmark_grp(BAT *b, BAT *g, const oid *base);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
 
@@ -2703,17 +2683,13 @@ gdk_export BAT *BATprev(BAT *b);
  * @tab ALIGNsetH    ((BAT *dst, BAT *src)
  *
  * @item BAT*
- * @tab VIEWcreate   (BAT *h, BAT *t)
+ * @tab VIEWcreate   (oid seq, BAT *b)
  * @item int
  * @tab isVIEW   (BAT *b)
  * @item bat
  * @tab VIEWhparent   (BAT *b)
  * @item bat
  * @tab VIEWtparent   (BAT *b)
- * @item BAT*
- * @tab VIEWhead     (BAT *b)
- * @item BAT*
- * @tab VIEWcombine  (BAT *b)
  * @item BAT*
  * @tab VIEWreset    (BAT *b)
  * @item BAT*
@@ -2732,17 +2708,13 @@ gdk_export BAT *BATprev(BAT *b);
  * VIEW BATs are BATs that lend their storage from a parent BAT.  They
  * are just a descriptor that points to the data in this parent BAT. A
  * view is created with VIEWcreate. The cache id of the parent (if
- * any) is returned by VIEWhparent and VIEWtparent (otherwise it
- * returns 0).
+ * any) is returned by VIEWtparent (otherwise it returns 0).
  *
  * VIEW bats are read-only!!
  *
- * The VIEWcombine gives a view on a BAT that has two head columns of
- * the parent.  The VIEWhead constructs a BAT view that has the same
- * head column as the parent, but has a void column with seqbase=nil
- * in the tail. VIEWreset creates a normal BAT with the same contents
- * as its view parameter (it converts void columns with seqbase!=nil
- * to materialized oid columns).
+ * VIEWreset creates a normal BAT with the same contents as its view
+ * parameter (it converts void columns with seqbase!=nil to
+ * materialized oid columns).
  *
  * The BATmaterialize materializes a VIEW (TODO) or void bat inplace.
  * This is useful as materialization is usually needed for updates.
@@ -2757,9 +2729,8 @@ gdk_export void BATderiveHeadProps(BAT *b, int expensive);
 #define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */
 #define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
 
-gdk_export BAT *VIEWcreate(BAT *h, BAT *t);
-gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
-gdk_export BAT *VIEWcombine(BAT *b);
+gdk_export BAT *VIEWcreate(oid seq, BAT *b);
+gdk_export BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
@@ -2791,9 +2762,7 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 	} while (0)
 
 /* the parentid in a VIEW is correct for the normal view. We must
- * correct for the reversed view. A special case are the VIEWcombine
- * bats, these always refer to the same parent column (i.e. no
- * correction needed)
+ * correct for the reversed view.
  */
 #define isVIEW(x)							\
 	((x)->H->heap.parentid ||					\
@@ -2884,19 +2853,6 @@ gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
  */
 #define BATloop(r, p, q)					\
 	for (q = BUNlast(r), p = BUNfirst(r);p < q; p++)
-
-/*
- * @- batloop where the current element can be deleted/updated
- * Normally it is strictly forbidden to update the BAT over which is
- * being iterated, or delete the current element. This can only be
- * done with the specialized batloop below. When doing a delete, do
- * not forget to update the current pointer with a p = BUNdelete(b,p)
- * (the delete may modify the current pointer p).  After the
- * delete/update has taken place, the pointer p is in an inconsistent
- * state till the next iteration of the batloop starts.
- */
-#define BATloopDEL(r, p, q)						\
-	for (p = BUNfirst(r), q = BUNlast(r); p < q; q = MIN(q,BUNlast(r)), p++)
 
 /*
  * @- sequential scan over deleted BUNs
@@ -3069,72 +3025,5 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
  *
  */
 #define MAXPARAMS	32
-
-#ifndef NDEBUG
-#ifdef __GNUC__
-/* in debug builds, complain (warn) about usage of legacy functions */
-
-#define _COL_TYPE(c)	((c)->type == TYPE_void ?			\
-				(c)->seq == oid_nil ? "nil" : "void" :	\
-			 (c)->type == TYPE_oid ?			\
-				(c)->dense ? "dense" : "oid" :		\
-			 ATOMname((c)->type))
-
-#define BATins(b, n, force)						\
-	({								\
-		BAT *_b = (b), *_n = (n);				\
-		bit _force = (force);					\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATins([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",%d) %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			_COL_TYPE(_n->H), _COL_TYPE(_n->T), BATcount(_n), \
-			_force,						\
-			__func__, __FILE__, __LINE__);			\
-		BATins(_b, _n, _force);					\
-	})
-
-#define BATdel(b, n, force)						\
-	({								\
-		BAT *_b = (b), *_n = (n);				\
-		bit _force = (force);					\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BATdel([%s,%s]#"BUNFMT",[%s,%s]#"BUNFMT",%d) %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			_COL_TYPE(_n->H), _COL_TYPE(_n->T), BATcount(_n), \
-			_force,						\
-			__func__, __FILE__, __LINE__);			\
-		BATdel(_b, _n, _force);					\
-	})
-
-#define BUNdel(b, x, y, force)						\
-	({								\
-		BAT *_b = (b);						\
-		const void *_x = (x), *_y = (y);			\
-		bit _force = (force);					\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BUNdel([%s,%s]#"BUNFMT","PTRFMT","PTRFMT",%d) %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			PTRFMTCAST _x, PTRFMTCAST _y,			\
-			_force,						\
-			__func__, __FILE__, __LINE__);			\
-		BUNdel(_b, _x, _y, _force);				\
-	})
-
-#define BUNdelete(b, p, force)						\
-	({								\
-		BAT *_b = (b);						\
-		BUN _p = (p);						\
-		bit _force = (force);					\
-		HEADLESSDEBUG fprintf(stderr,				\
-			"#BUNdelete([%s,%s]#"BUNFMT","BUNFMT",%d) %s[%s:%d]\n", \
-			_COL_TYPE(_b->H), _COL_TYPE(_b->T), BATcount(_b), \
-			_p,						\
-			_force,						\
-			__func__, __FILE__, __LINE__);			\
-		BUNdelete(_b, _p, _force);				\
-	})
-
-#endif
-#endif
 
 #endif /* _GDK_H_ */

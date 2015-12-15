@@ -1619,14 +1619,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BUNappend(r, &l, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, r);
-		BBPunfix(r->batCacheid);
-		r = b2;
-	} else {
-		BATseqbase(r, b->hseqbase);
-	}
+	BATseqbase(r, b->hseqbase);
 	if (sb)
 		seqbulk_destroy(sb);
 	BBPunfix(b->batCacheid);
@@ -2449,7 +2442,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BBPunfix(u_id->batCacheid);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(o->batCacheid);
-		tres = VIEWcombine(res);
+		tres = BATdense(res->hseqbase, res->hseqbase, BATcount(res));
 		if (nu_id == NULL ||
 		    nu_val == NULL ||
 		    tres == NULL ||
@@ -3621,7 +3614,7 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "batcalc.identity", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATmark(b, *s);
+	bn = BATdense(b->hseqbase, *s, BATcount(b));
 	if (bn != NULL) {
 		*ns = *s + BATcount(b);
 		BBPunfix(b->batCacheid);
@@ -3830,14 +3823,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		}
 		BUNappend(bn, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b->hseqbase);
-	}
+	BATseqbase(bn, b->hseqbase);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3879,14 +3865,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		}
 		BUNappend(bn, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b->hseqbase);
-	}
+	BATseqbase(bn, b->hseqbase);
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5126,7 +5105,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s, s);
+		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
@@ -5182,7 +5161,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s, s);
+		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
@@ -5238,7 +5217,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s, s);
+		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", MAL_MALLOC_FAIL);

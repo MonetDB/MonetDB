@@ -68,7 +68,6 @@
 #define LOG_START	1
 #define LOG_END		2
 #define LOG_INSERT	3
-#define LOG_DELETE	4
 #define LOG_UPDATE	5
 #define LOG_CREATE	6
 #define LOG_DESTROY	7
@@ -281,7 +280,7 @@ log_read_seq(logger *lg, logformat *l)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
+		BUNinplace(lg->seqs_val, p, &val, FALSE);
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
@@ -302,7 +301,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	int ht = -1, tt = -1, hseq = 0, tseq = 0;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : l->flag == LOG_DELETE ? "delete" : "update", l->nr);
+		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
 
 	if (b) {
 		ht = b->htype;
@@ -331,7 +330,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		}
 	}
 	assert((ht == TYPE_void && l->flag == LOG_INSERT) ||
-	       (ht == TYPE_void && l->flag == LOG_DELETE) ||
 	       ((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE));
 	if (ht >= 0 && tt >= 0) {
 		BAT *uid = NULL;
@@ -362,27 +360,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			BATseqbase(BATmirror(r), 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
-			for (; l->nr > 0; l->nr--) {
-				void *t = rt(tv, lg->log, 1);
-
-				if (!t) {
-					res = LOG_ERR;
-					break;
-				}
-#if SIZEOF_OID == 8
-				if (tt == TYPE_oid && lg->read32bitoid) {
-					int vi = * (int *) t;
-					if (vi == int_nil)
-						* (oid *) t = oid_nil;
-					else
-						* (oid *) t = vi;
-				}
-#endif
-				BUNappend(r, t, TRUE);
-				if (t != tv)
-					GDKfree(t);
-			}
-		} else if (ht == TYPE_void && l->flag == LOG_DELETE) {
 			for (; l->nr > 0; l->nr--) {
 				void *t = rt(tv, lg->log, 1);
 
@@ -484,39 +461,32 @@ la_bat_updates(logger *lg, logaction *la)
 	if (b) {
 		if (b->htype == TYPE_void && la->type == LOG_INSERT) {
 			BATappend(b, la->b, TRUE);
-		} else {
-			if (la->type == LOG_INSERT)
-				BATins(b, la->b, TRUE);
-			else if (la->type == LOG_DELETE)
-				BATdel(b, la->b, TRUE);
-			else if (la->type == LOG_UPDATE) {
-				BATiter vi = bat_iterator(la->b);
-				BATiter ii = bat_iterator(la->uid);
-				BUN p, q;
+		} else if (la->type == LOG_UPDATE) {
+			BATiter vi = bat_iterator(la->b);
+			BATiter ii = bat_iterator(la->uid);
+			BUN p, q;
 
-				BATloop(la->b, p, q) {
-					const void *h = BUNtail(ii, p);
-					const void *t = BUNtail(vi, p);
+			BATloop(la->b, p, q) {
+				const void *h = BUNtail(ii, p);
+				const void *t = BUNtail(vi, p);
 
-					assert(b->htype == TYPE_void);
-					if (BUNfnd(BATmirror(b), h) == BUN_NONE) {
-						/* if value doesn't
-						 * exist, insert it if
-						 * b void headed,
-						 * maintain that by
-						 * inserting nils */
-						if (b->batCount == 0 && *(const oid *) h != oid_nil)
-							b->hseqbase = *(const oid *) h;
-						if (b->hseqbase != oid_nil && *(const oid *) h != oid_nil) {
-							const void *tv = ATOMnilptr(b->ttype);
+				assert(b->htype == TYPE_void);
+				if (BUNfnd(BATmirror(b), h) == BUN_NONE) {
+					/* if value doesn't exist,
+					 * insert it if b void headed,
+					 * maintain that by inserting
+					 * nils */
+					if (b->batCount == 0 && *(const oid *) h != oid_nil)
+						b->hseqbase = *(const oid *) h;
+					if (b->hseqbase != oid_nil && *(const oid *) h != oid_nil) {
+						const void *tv = ATOMnilptr(b->ttype);
 
-							while (b->hseqbase + b->batCount < *(const oid *) h)
-								BUNappend(b, tv, TRUE);
-						}
-						BUNappend(b, t, TRUE);
-					} else {
-						BUNreplace(b, h, t, TRUE);
+						while (b->hseqbase + b->batCount < *(const oid *) h)
+							BUNappend(b, tv, TRUE);
 					}
+					BUNappend(b, t, TRUE);
+				} else {
+					BUNreplace(b, h, t, TRUE);
 				}
 			}
 		}
@@ -672,7 +642,7 @@ la_bat_use(logger *lg, logaction *la)
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 	    p >= lg->snapshots_bid->batInserted) {
-		BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
+		BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE);
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
@@ -733,7 +703,6 @@ la_apply(logger *lg, logaction *c)
 {
 	switch (c->type) {
 	case LOG_INSERT:
-	case LOG_DELETE:
 	case LOG_UPDATE:
 		la_bat_updates(lg, c);
 		break;
@@ -1004,7 +973,6 @@ logger_readlog(logger *lg, char *filename)
 			err = (log_read_seq(lg, &l) != LOG_OK);
 			break;
 		case LOG_INSERT:
-		case LOG_DELETE:
 		case LOG_UPDATE:
 			if (name == NULL || tr == NULL)
 				err = 1;
@@ -1131,7 +1099,7 @@ logger_commit(logger *lg)
 
 	p = log_find(lg->seqs_id, lg->dseqs, id);
 	if (p >= lg->seqs_val->batInserted) {
-		BUNinplace(lg->seqs_val, p, NULL, &lg->id, FALSE);
+		BUNinplace(lg->seqs_val, p, &lg->id, FALSE);
 	} else {
 		oid pos = p;
 		BUNappend(lg->dseqs, &pos, FALSE);
@@ -2304,7 +2272,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
-			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
+			BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE);
 		} else {
 			if (p != BUN_NONE) {
 				oid pos = p;
@@ -2371,7 +2339,7 @@ log_bat_transient(logger *lg, const char *name)
 #endif
 		//	if (lg->tid == tid)
 		if (p >= lg->snapshots_tid->batInserted) {
-			BUNinplace(lg->snapshots_tid, p, NULL, &lg->tid, FALSE);
+			BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE);
 		} else {
 			oid pos = p;
 			BUNappend(lg->dsnapshots, &pos, FALSE);
@@ -2484,30 +2452,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	l.nr = (b->batFirst - b->batDeleted);
-	lg->changes += l.nr;
+	assert(b->batFirst == b->batDeleted);
 
-	if (l.nr && ok == GDK_SUCCEED) {
-		BATiter bi = bat_iterator(b);
-		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
-		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
-
-		l.flag = LOG_DELETE;
-		if (log_write_format(lg, &l) == LOG_ERR ||
-		    log_write_string(lg, name) == LOG_ERR)
-			return LOG_ERR;
-
-		for (p = b->batDeleted; p < b->batFirst && ok == GDK_SUCCEED; p++) {
-			const void *h = BUNhead(bi, p);
-			const void *t = BUNtail(bi, p);
-
-			ok = wh(h, lg->log, 1);
-			ok = (ok != GDK_SUCCEED) ? ok : wt(t, lg->log, 1);
-		}
-
-		if (lg->debug & 1)
-			fprintf(stderr, "#Logged %s " LLFMT " deletes\n", name, l.nr);
-	}
 	if (ok != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: log_bat: write failed\n");
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
@@ -2712,7 +2658,7 @@ log_sequence(logger *lg, int seq, lng val)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		BUNinplace(lg->seqs_val, p, NULL, &val, FALSE);
+		BUNinplace(lg->seqs_val, p, &val, FALSE);
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;

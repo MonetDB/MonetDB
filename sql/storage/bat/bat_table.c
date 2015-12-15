@@ -405,7 +405,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	bat_destroy(s);
 	rids = o;
 
-	assert(ids->ttype == TYPE_int && rids->ttype == TYPE_oid);
+	assert(ids->ttype == TYPE_int && ATOMtype(rids->ttype) == TYPE_oid);
 	r->id = 0;
 	r->pos = 0;
 	r->ids = ids;

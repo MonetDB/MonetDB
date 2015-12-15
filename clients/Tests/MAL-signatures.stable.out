@@ -30848,14 +30848,6 @@ command bat.delete(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address BKCdelete_all;
 comment Delete all entries.
 
-command bat.delete(b:bat[:oid,:any_1],h:oid):bat[:oid,:any_1] 
-address BKCdelete;
-comment Delete an entry with a certain head value.
-
-command bat.delete(b:bat[:oid,:any_1],src:bat[:oid,:any_1]):bat[:oid,:any_1] 
-address BKCdelete_bat_bun;
-comment Delete from the first BAT all BUNs with a corresponding BUN         in the second.
-
 command bat.getName(b:bat[:oid,:any_1]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
