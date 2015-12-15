@@ -11,7 +11,8 @@ l:= k1+k2;
 l2:= k1+k2;             # mapped to l
 l3:= l2+k1;             # replace the alias
 end;
-optimizer.setDebug("user","foo");
+optimizer.setDebug();
 optimizer.commonTerms("user","foo");
 optimizer.aliases("user","foo");
+mdb.List("user","foo");
 

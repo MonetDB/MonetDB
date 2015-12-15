@@ -8,5 +8,4 @@ function test(s:str):wrd;
 end test;
 mdb.List("user","test");
 optimizer.factorize("user","test");
-mdb.List("user","qry");
 mdb.List("user","test");

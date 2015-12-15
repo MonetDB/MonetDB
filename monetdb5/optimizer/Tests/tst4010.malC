@@ -10,7 +10,8 @@ d:= bat.new(:oid,:int);
 bat.append(d,2);
 end;
 
-optimizer.setDebug("user,","foo");
+optimizer.setDebug();
 optimizer.commonTerms("user,","foo");
 optimizer.aliases("user,","foo");
+mdb.List("user","foo");
 

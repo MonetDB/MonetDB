@@ -15,6 +15,7 @@ r1:=algebra.projection(u,r);
 io.print(r1);
 io.print("done");
 end;
-optimizer.commonTerms()"user","foo";
+optimizer.commonTerms("user","foo");
 optimizer.aliases("user","foo");
 mdb.list("user","foo");
+user.foo();

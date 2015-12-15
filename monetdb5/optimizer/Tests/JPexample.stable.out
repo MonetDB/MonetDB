@@ -5,38 +5,52 @@ stdout of test 'JPexample` in directory 'monetdb5/optimizer` itself:
 # 20:30:05 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib64/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=34010 --set monet_prompt= --trace --dbname=mTests_src_optimizer  JPexample.mal < /dev/null
 # 20:30:05 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.main():void;
-# test the joinpath expander 
-    a := bat.new(:oid,:oid);
-    b := bat.new(:oid,:oid);
-    c := bat.new(:oid,:str);
-    j1 := algebra.projection(a,b);
-    j2:bat[:oid,:str] := algebra.projectionPath(a,b,c);
-    j3 := algebra.projection(b,b);
-    j4:bat[:oid,:oid] := algebra.projectionPath(b,b,b);
-    mdb.List();
-end user.main;
-function user.main():void;              	#[0]  0 
-# test the joinpath expander            
-    a:bat[:oid,:oid] := bat.new(:oid,:oid);	#[2] CMDBATnew 2 <- 3 3 
-    b:bat[:oid,:oid] := bat.new(:oid,:oid);	#[3] CMDBATnew 4 <- 3 3 
-    c:bat[:oid,:str] := bat.new(:oid,:str);	#[4] CMDBATnew 5 <- 3 6 
-    j1:bat[:oid,:oid] := algebra.projection(a:bat[:oid,:oid],b:bat[:oid,:oid]);	#[5] ALGprojection 7 <- 2 4 
-    j2:bat[:oid,:str] := algebra.projectionPath(a:bat[:oid,:oid],b:bat[:oid,:oid],c:bat[:oid,:str]);	#[6] ALGjoinPath 8 <- 2 4 5 
-    j3:bat[:oid,:oid] := algebra.projection(b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[7] ALGprojection 9 <- 4 4 
-    j4:bat[:oid,:oid] := algebra.projectionPath(b:bat[:oid,:oid],b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[8] ALGjoinPath 10 <- 4 4 4 
-    mdb.List();                         	#[9] MDBlistDetail 12 
-end user.main;                          	#[10]  
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33343/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8837/.s.monetdb.33343
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 20:30:05 >  
-# 20:30:05 >  Done.
-# 20:30:05 >  
+Ready.
+
+# 06:41:06 >  
+# 06:41:06 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
+# 06:41:06 >  
+
+#mdb.List("user","foo");
+function user.foo():void;               	#[0]  0 
+    a:bat[:oid,:oid] := bat.new(:oid,:oid);	#[1] CMDBATnew 1 <- 2 2 
+    b:bat[:oid,:oid] := bat.new(:oid,:oid);	#[2] CMDBATnew 3 <- 2 2 
+    c:bat[:oid,:str] := bat.new(:oid,:str);	#[3] CMDBATnew 4 <- 2 5 
+    j1:bat[:oid,:oid] := algebra.projection(a:bat[:oid,:oid],b:bat[:oid,:oid]);	#[4] ALGprojection 6 <- 1 3 
+    j2:bat[:oid,:str] := algebra.projection(j1:bat[:oid,:oid],c:bat[:oid,:str]);	#[5] ALGprojection 7 <- 6 4 
+    j3:bat[:oid,:oid] := algebra.projection(b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[6] ALGprojection 8 <- 3 3 
+    j4:bat[:oid,:oid] := algebra.projection(b:bat[:oid,:oid],j3:bat[:oid,:oid]);	#[7] ALGprojection 9 <- 3 8 
+end user.foo;                           	#[8]  
+#mdb.List("user","foo");
+function user.foo():void;               	#[0]  0 
+    a:bat[:oid,:oid] := bat.new(:oid,:oid);	#[1] CMDBATnew 1 <- 2 2 
+    b:bat[:oid,:oid] := bat.new(:oid,:oid);	#[2] CMDBATnew 3 <- 2 2 
+    c:bat[:oid,:str] := bat.new(:oid,:str);	#[3] CMDBATnew 4 <- 2 5 
+    j1:bat[:oid,:oid] := algebra.projection(a:bat[:oid,:oid],b:bat[:oid,:oid]);	#[4] ALGprojection 6 <- 1 3 
+    j2:bat[:oid,:str] := algebra.projectionPath(a:bat[:oid,:oid],b:bat[:oid,:oid],c:bat[:oid,:str]);	#[5] ALGjoinPath 7 <- 1 3 4 
+    j3:bat[:oid,:oid] := algebra.projection(b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[6] ALGprojection 8 <- 3 3 
+    j4:bat[:oid,:oid] := algebra.projectionPath(b:bat[:oid,:oid],b:bat[:oid,:oid],b:bat[:oid,:oid]);	#[7] ALGjoinPath 9 <- 3 3 3 
+end user.foo;                           	#[8]  
+
+# 06:41:06 >  
+# 06:41:06 >  "Done."
+# 06:41:06 >  
 

@@ -21,26 +21,17 @@ stdout of test 'inline09` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:str):str;
-    return foo := a;
-end user.foo;
-inline function user.bar(a:str,b:str):str;
-    sa := user.foo(a);
-    sa := str.substring(sa,1,5);
-    sb := user.foo(b);
-    sb := str.substring(sb,1,3);
-    c := calc.+(sa,sb);
-    return bar := c;
-end user.bar;
-function user.qry():void;
-    b := bat.new(:oid,:str);
-    bat.append(b,"HELLO WORLD");
-    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup user.bar a bulk operator implementation is needed
+#    z:bat[:oid,:str] := mal.multiplex("user":str,"bar":str,b:any,b:any);
+
+# 06:41:01 >  
+# 06:41:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
+# 06:41:01 >  
+
+#	mdb.List("user","qry");
 inline function user.qry():void;        	#[0]  0 
     b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:oid,:str],"HELLO WORLD":str);	#[2] BKCappend_val_wrap 4 <- 1 5 

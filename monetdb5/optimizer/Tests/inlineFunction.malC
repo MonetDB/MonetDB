@@ -30,3 +30,4 @@ optimizer.remap("user","tst");
 optimizer.costModel("user","tst");
 optimizer.coercions("user","tst");
 optimizer.evaluate("user","tst");
+mdb.list("user","tst");
