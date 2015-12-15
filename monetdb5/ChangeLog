@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Dec 15 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions mat.hasMoreElements, mat.info, mat.mergepack,
+  mat. newIterator, mat.project, mat.pack2, mat.sortReverse, mat.sort,
+  and mat.slice.
+
 * Thu Dec 10 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed grouped aggregate functions from the aggr module in which the
   groups were indicated by the head column of the bat to be aggregated.
