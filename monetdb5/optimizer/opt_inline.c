@@ -33,6 +33,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i;
 	InstrPtr q,sig;
 	int actions = 0;
+	int inlineProp = 0;
 
 	(void) p;
 	(void)stk;
@@ -51,7 +52,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
 					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 				}
-				mb->inlineProp = 1;
+				inlineProp = 1;
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
@@ -70,7 +71,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/*
 			 * Check if the local call is tagged as being inlined.
 			 */
-			if ( q->blk->inlineProp ){
+			if (inlineProp || q->blk->inlineProp ){
 				inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
