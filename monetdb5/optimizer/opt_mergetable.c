@@ -831,7 +831,6 @@ static void
 mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 {
 	int tp = getArgType(mb,p,0), k;
-	int tail = getColumnType(tp);
 	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), r;
 	mat_t *mat = ml->v;
 
@@ -858,8 +857,6 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 	getArg(r,1) = mat[e].mv;
 	getArg(r,2) = getArg(ai1,0);
 	pushInstruction(mb,r);
-	if (tail == TYPE_oid)
-		mat_add_var(ml, ai1, r, getArg(r, 0), mat_ext,  -1, -1);
 }
 
 /* Per partition aggregates are merged and aggregated together. For 
