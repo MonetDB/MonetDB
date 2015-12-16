@@ -65,6 +65,7 @@ io.print(w);
 
 end qry;
 
+mdb.list("user","qry");
 optimizer.joinPath("user","qry");
 mdb.list("user","qry");
 qry();

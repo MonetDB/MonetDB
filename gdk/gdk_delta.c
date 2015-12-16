@@ -214,7 +214,7 @@ BATprev(BAT *b)
 
 	BATcheck(b, "BATprev", NULL);
 	if (b->batRestricted == BAT_READ) {
-		bn = VIEWcreate(b, b);
+		bn = VIEWcreate(b->hseqbase, b);
 		if (bn) {
 			bn->batCount = bn->batInserted - bn->batDeleted;
 			bn->batInserted = bn->batFirst = bn->batDeleted;
@@ -244,7 +244,7 @@ BATalpha(BAT *b)
 
 	BATcheck(b, "BATalpha", NULL);
 	if (b->batRestricted == BAT_READ) {
-		bn = VIEWcreate(b, b);
+		bn = VIEWcreate(b->hseqbase, b);
 		if (bn) {
 			bn->batCount -= (bn->batInserted - bn->batFirst);
 			bn->batDeleted = bn->batFirst = bn->batInserted;
@@ -274,7 +274,7 @@ BATdelta(BAT *b)
 
 	BATcheck(b, "BATdelta", NULL);
 	if (b->batRestricted == BAT_READ) {
-		bn = VIEWcreate(b, b);
+		bn = VIEWcreate(b->hseqbase, b);
 		if (bn) {
 			bn->batCount = bn->batFirst - bn->batDeleted;
 			bn->batFirst = bn->batInserted = bn->batDeleted;

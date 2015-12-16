@@ -15,6 +15,7 @@ barrier d:= calc.not(true);
 exit d;
 end tst;
 
+mdb.list("user","tst");
 optimizer.evaluate("user","tst");
 mdb.list("user","tst");
 tst();

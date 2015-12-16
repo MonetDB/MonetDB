@@ -10,8 +10,8 @@ exit j;
 end welcome;
 
 optimizer.macro("user","welcome");
+mdb.List("user","welcome");
 
 io.print("test expansion");
 a:=user.welcome(2);
 io.print(a);
-mdb.List();

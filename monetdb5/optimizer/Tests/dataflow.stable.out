@@ -16,33 +16,15 @@ stdout of test 'dataflow` in directory 'monetdb5/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32759/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# SQLException:mvc:SQL module not initialized
-function user.tst():void;
-    s := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000);
-    l := aggr.min(s);
-    h := l;
-#mdb.setTimer(true); 
-#mdb.setThread(true); 
-    z := nil:bat[:oid,:oid];
-    t1 := algebra.subselect(s,l,h,true,true,false);
-    t2 := algebra.subselect(s,l,h,true,true,false);
-    t3 := algebra.subselect(s,l,h,true,true,false);
-    t4 := algebra.subselect(s,l,h,true,true,false);
-    t5 := algebra.subselect(s,l,h,true,true,false);
-    t6 := algebra.subselect(s,l,h,true,true,false);
-    t7 := algebra.subselect(s,l,h,true,true,false);
-    t8 := algebra.subselect(s,l,h,true,true,false);
-    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);
-    mdb.var();
-    c := aggr.count(z);
-    io.print(c);
-    io.print("done");
-end user.tst;
-function user.main():void;
-# a simple dataflow test 
-    mdb.List("user","tst");
-    user.tst();
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:20:24 >  
+# 09:20:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26435" "--port=37267"
+# 09:20:24 >  
+
+#mdb.List("user","tst");
 function user.tst():void;               	#[0]  0 
     s:bat[:oid,:int] := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000:int);	#[1] MBMuniform 1 <- 2 3 4 
     l:int := aggr.min(s:bat[:oid,:int]);	#[2] ALGminany 5 <- 1 

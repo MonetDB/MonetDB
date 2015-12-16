@@ -21,5 +21,6 @@ barrier go:=true;
 exit go;
 end qry;
 
+mdb.List("user","qry");
 optimizer.garbageCollector("user","qry");
 mdb.List("user","qry");

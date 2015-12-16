@@ -835,7 +835,8 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.mark", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATmark(b, *base);
+	assert(BAThdense(b));
+	bn = BATdense(b->hseqbase, *base, BATcount(b));
 	if (bn != NULL) {
 		BBPunfix(b->batCacheid);
 		if (!(bn->batDirty&2)) BATsetaccess(bn, BAT_READ);

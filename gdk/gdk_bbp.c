@@ -2281,7 +2281,6 @@ decref(bat i, int logical, int releaseShare, int lock)
 	assert(i > 0);
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
-	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
 	if (releaseShare) {
 		--BBP_desc(i)->S.sharecnt;
 		if (lock)
@@ -2517,12 +2516,14 @@ getBBPdescriptor(bat i, int lock)
 	if (load) {
 		IODEBUG fprintf(stderr, "#load %s\n", BBPname(i));
 
-		b = BATload_intern(i, lock);
+		b = BATload_intern(j, lock);
 		BBPin++;
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(j, BBPLOADING, "BBPdescriptor");
 		CHECKDEBUG BATassertProps(b);
+		if (i < 0)
+			b = BATmirror(b);
 	}
 	return b;
 }
