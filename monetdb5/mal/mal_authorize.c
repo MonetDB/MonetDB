@@ -403,7 +403,6 @@ AUTHchangeUsername(Client cntxt, str *olduser, str *newuser)
 {
 	BUN p, q;
 	str tmp;
-	oid id;
 
 	rethrow("addUser", tmp, AUTHrequireAdminOrUser(cntxt, olduser));
 
@@ -423,8 +422,6 @@ AUTHchangeUsername(Client cntxt, str *olduser, str *newuser)
 		throw(MAL, "changeUsername", "user '%s' already exists", *newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	id = p;
-	assert(id == p);
 	BUNinplace(user, p, *newuser, TRUE);
 	AUTHcommit();
 	return(MAL_SUCCEED);
