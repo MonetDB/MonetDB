@@ -7420,7 +7420,7 @@ CREATE TABLE "sys"."privileges" (
 	"grantor"    INTEGER,
 	"grantable"  INTEGER
 );
-COPY 19 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 46 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"';
 2001	1	1	0	0
 2007	1	1	0	0
 2016	1	1	0	0

@@ -50951,6 +50951,10 @@ pattern sql.clear_table(sname:str,tname:str):wrd
 address mvc_clear_table_wrap;
 comment Clear table
 
+pattern sql.catalog(type:int,sname:str,tname:str,impl:str):void 
+address SQLcatalog;
+comment a create type catalog statement
+
 pattern sql.catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void 
 address SQLcatalog;
 comment a alter table add/del table catalog statement
@@ -50962,6 +50966,10 @@ comment a alter table access statement
 pattern sql.catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void 
 address SQLcatalog;
 comment a create index catalog statement
+
+pattern sql.catalog(type:int,sname:str,func:int,grantee:str,privs:int,grant:int,grantor:int):void 
+address SQLcatalog;
+comment a grant/revoke function privileges statement
 
 pattern sql.catalog(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void 
 address SQLcatalog;

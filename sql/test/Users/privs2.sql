@@ -68,3 +68,10 @@ GRANT INSERT on table version to my_user;
 GRANT UPDATE on table version to my_user;
 GRANT DELETE on table version to my_user;
 
+GRANT EXECUTE on function insertversion to my_user;
+GRANT EXECUTE on function updateversion to my_user;
+GRANT EXECUTE on function deleteversion to my_user;
+
+GRANT EXECUTE on function insertversion to my_user2;
+GRANT EXECUTE on function updateversion to my_user2;
+GRANT EXECUTE on function deleteversion to my_user2;

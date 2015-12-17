@@ -188,6 +188,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_RENAME_USER:
 
 	case SQL_CREATE_TYPE:
+	case SQL_DROP_TYPE:
 		return rel_schemas(sql, s);
 
 	case SQL_CREATE_SEQ:

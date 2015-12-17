@@ -17,6 +17,8 @@ extern char * sql_grant_global_privs( mvc *sql, char *grantee, int privs, int gr
 extern char * sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);
 extern char * sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor);
 extern char * sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor);
+extern char * sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, int func_id, int grant, int grantor);
+extern char * sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, int func_id, int grant, int grantor);
 
 extern int mvc_set_role(mvc *m, char *role);
 extern int mvc_set_schema(mvc *m, char *schema);
@@ -24,6 +26,8 @@ extern int mvc_set_schema(mvc *m, char *schema);
 extern int global_privs(mvc *m, int privs);
 extern int mvc_schema_privs(mvc *m, sql_schema *t);
 extern int table_privs(mvc *m, sql_table *t, int privs);
+
+extern int execute_priv(mvc *m, sql_func *f);
 
 extern int sql_privilege(mvc *m, int auth_id, int obj_id, int privs, int sub);
 extern int sql_grantable(mvc *m, int grantorid, int obj_id, int privs, int sub);
