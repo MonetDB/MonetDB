@@ -536,7 +536,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 #define FILL_HISTOGRAM(TYPE)						\
 do {									\
 	BUN k;								\
-	TYPE *restrict s = (TYPE *) Tloc(smp, smp->batFirst);		\
+	TYPE *restrict s = (TYPE *) Tloc(s4, s4->batFirst);		\
 	TYPE *restrict h = imprints->bins;				\
 	if (cnt < 64-1) {						\
 		TYPE max = GDK_##TYPE##_max;				\
@@ -644,7 +644,7 @@ BATcheckimprints(BAT *b)
 gdk_return
 BATimprints(BAT *b)
 {
-	BAT *o = NULL;
+	BAT *o = NULL, *s1 = NULL, *s2 = NULL, *s3 = NULL, *s4 = NULL;
 	Imprints *imprints;
 	lng t0 = 0, t1 = 0;
 
@@ -693,7 +693,6 @@ BATimprints(BAT *b)
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
 	t0 = GDKusec();
 	if (b->T->imprints == NULL) {
-		BAT *smp, *s;
 		BUN cnt;
 		str nme = BBP_physical(b->batCacheid);
 		size_t pages;
@@ -728,41 +727,43 @@ BATimprints(BAT *b)
 							   imprintsheap);
 
 #define SMP_SIZE 2048
-		s = BATsample(b, SMP_SIZE);
-		if (s == NULL) {
+		s1 = BATsample(b, SMP_SIZE);
+		if (s1 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		smp = BATsubunique(b, s);
-		BBPunfix(s->batCacheid);
-		if (smp == NULL) {
+		s2 = BATsubunique(b, s1);
+		if (s2 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
+			BBPunfix(s1->batCacheid);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		s = BATproject(smp, b);
-		BBPunfix(smp->batCacheid);
-		if (s == NULL) {
+		s3 = BATproject(s2, b);
+		if (s3 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
+			BBPunfix(s1->batCacheid);
+			BBPunfix(s2->batCacheid);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		s->tkey = 1;	/* we know is unique on tail now */
-		if (BATsubsort(&smp, NULL, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+		s3->tkey = 1;	/* we know is unique on tail now */
+		if (BATsubsort(&s4, NULL, NULL, s3, NULL, NULL, 0, 0) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
-			BBPunfix(s->batCacheid);
+			BBPunfix(s1->batCacheid);
+			BBPunfix(s2->batCacheid);
+			BBPunfix(s3->batCacheid);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		BBPunfix(s->batCacheid);
-		/* smp now is ordered and unique on tail */
-		assert(smp->tkey && smp->tsorted);
-		cnt = BATcount(smp);
+		/* s4 now is ordered and unique on tail */
+		assert(s4->tkey && s4->tsorted);
+		cnt = BATcount(s4);
 		imprints->bits = 64;
 		if (cnt < 32)
 			imprints->bits = 32;
@@ -794,6 +795,10 @@ BATimprints(BAT *b)
 			GDKerror("#BATimprints: memory allocation error");
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
+			BBPunfix(s1->batCacheid);
+			BBPunfix(s2->batCacheid);
+			BBPunfix(s3->batCacheid);
+			BBPunfix(s4->batCacheid);
 			return GDK_FAIL;
 		}
 		imprints->bins = imprints->imprints->base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;
@@ -830,8 +835,6 @@ BATimprints(BAT *b)
 			assert(0);
 		}
 
-		BBPunfix(smp->batCacheid);
-
 		if (!imprints_create(b,
 				     imprints->bins,
 				     imprints->stats,
@@ -846,6 +849,10 @@ BATimprints(BAT *b)
 			GDKfree(imprints);
 			MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)),
 				      "BATimprints");
+			BBPunfix(s1->batCacheid);
+			BBPunfix(s2->batCacheid);
+			BBPunfix(s3->batCacheid);
+			BBPunfix(s4->batCacheid);
 			return GDK_FAIL;
 		}
 		assert(imprints->impcnt <= pages);
@@ -885,7 +892,14 @@ BATimprints(BAT *b)
 	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)), "BATimprints");
-
+	/* BBPUnfix tries to get the imprints lock which might lead to a deadlock
+	 * if those were unfixed earlier */
+	if (s1) {
+		BBPunfix(s1->batCacheid);
+		BBPunfix(s2->batCacheid);
+		BBPunfix(s3->batCacheid);
+		BBPunfix(s4->batCacheid);
+	}
 	if (o != NULL) {
 		o->T->imprints = NULL;	/* views always keep null pointer and
 					   need to obtain the latest imprint
