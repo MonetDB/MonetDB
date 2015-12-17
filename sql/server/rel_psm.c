@@ -851,16 +851,11 @@ rel_drop_function(sql_allocator *sa, char *sname, char *name, int nr, int type, 
 	return rel;
 }
 
-static sql_rel* 
-rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
+sql_func *
+resolve_func( mvc *sql, sql_schema *s, char *name, dlist *typelist, int type, char *op) 
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
-	list * list_func = NULL, *type_list = NULL; 
-	sql_subfunc *sub_func = NULL;
 	sql_func *func = NULL;
-
+	list *list_func = NULL, *type_list = NULL;
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
@@ -868,41 +863,29 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
-
-	if (s == NULL) 
-		s =  cur_schema(sql);
-	
 	if (typelist) {	
+		sql_subfunc *sub_func;
+
 		type_list = create_type_list(sql, typelist, 0);
 		sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
 		if (!sub_func && type == F_FUNC) {
 			sub_func = sql_bind_func_(sql->sa, s, name, type_list, F_UNION);
 			type = sub_func?F_UNION:F_FUNC;
 		}
-		if (!sub_func && !sname) {
-			s = tmp_schema(sql);
-			sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
-			if (!sub_func && type == F_FUNC) {
-				sub_func = sql_bind_func_(sql->sa, s, name, type_list, F_UNION);
-				type = sub_func?F_UNION:F_FUNC;
-			}
-		}
 		if ( sub_func && sub_func->func->type == type)
 			func = sub_func->func;
 	} else {
-		list_func = schema_bind_func(sql,s,name, type);
+		list_func = schema_bind_func(sql, s, name, type);
 		if (!list_func && type == F_FUNC) 
 			list_func = schema_bind_func(sql,s,name, F_UNION);
 		if (list_func && list_func->cnt > 1) {
 			list_destroy(list_func);
-			return sql_error(sql, 02, "DROP %s%s: there are more than one %s%s called '%s', please use the full signature", KF, F, kf, f,name);
+			return sql_error(sql, 02, "%s %s%s: there are more than one %s%s called '%s', please use the full signature", op, KF, F, kf, f,name);
 		}
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
 	}
-	
+
 	if (!func) { 
 		if (typelist) {
 			char *arg_list = NULL;
@@ -921,25 +904,54 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 				}
 				list_destroy(list_func);
 				list_destroy(type_list);
-				return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' (%s)", KF, F, kf, f, name, arg_list);
+				return sql_error(sql, 02, "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);
-			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' ()", KF, F, kf, f, name);
+			return sql_error(sql, 02, "%s %s%s: no such %s%s '%s' ()", op, KF, F, kf, f, name);
 
 		} else {
-			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s'", KF, F, kf, f, name);
+			return sql_error(sql, 02, "%s %s%s: no such %s%s '%s'", op, KF, F, kf, f, name);
 		}
 	} else if (((is_func && type != F_FILT) && !func->res) || 
 		   (!is_func && func->res)) {
 		list_destroy(list_func);
 		list_destroy(type_list);
-		return sql_error(sql, 02, "DROP %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", name);
+		return sql_error(sql, 02, "%s %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", op, name);
 	}
 
 	list_destroy(list_func);
 	list_destroy(type_list);
-	return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
+	return func;
+}
+
+static sql_rel* 
+rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
+{
+	char *name = qname_table(qname);
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
+	sql_func *func = NULL;
+
+	char is_aggr = (type == F_AGGR);
+	char is_func = (type != F_PROC);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+
+	if (s == NULL) 
+		s =  cur_schema(sql);
+	
+	func = resolve_func(sql, s, name, typelist, type, "DROP");
+	if (!func && !sname) {
+		s = tmp_schema(sql);
+		func = resolve_func(sql, s, name, typelist, type, "DROP");
+	}
+	if (func)
+		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
+	return NULL;
 }
 
 static sql_rel* 
@@ -1191,17 +1203,19 @@ rel_psm(mvc *sql, symbol *s)
 	case SQL_DROP_FUNC:
 	{
 		dlist *l = s->data.lval;
-		int type = l->h->next->next->next->next->data.i_val;
+		dlist *qname = l->h->data.lval;
+		dlist *typelist = l->h->next->data.lval;
+		int type = l->h->next->next->data.i_val;
+		int all = l->h->next->next->next->data.i_val;
+		int drop_action = l->h->next->next->next->next->data.i_val;
 
 		if (STORE_READONLY) 
 			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
-		assert(l->h->next->type == type_int);
-		assert(l->h->next->next->next->type == type_int);
-		if (l->h->next->data.i_val) /*?l_val?*/
-			ret = rel_drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.i_val, type);
+		if (all)
+			ret = rel_drop_all_func(sql, qname, drop_action, type);
 		else
-			ret = rel_drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, type);
+			ret = rel_drop_func(sql, qname, typelist, drop_action, type);
 
 		sql->type = Q_SCHEMA;
 	}	break;

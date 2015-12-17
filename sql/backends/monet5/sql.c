@@ -855,11 +855,28 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		if (r)
 			r = rel_optimizer(sql, r);
 		if (r) {
+			node *n;
 			stmt *sb = rel_bin(sql, r);
 			list *id_col_l = stmt_list_dependencies(sql->sa, sb, COLUMN_DEPENDENCY);
 			list *id_func_l = stmt_list_dependencies(sql->sa, sb, FUNC_DEPENDENCY);
 			list *view_id_l = stmt_list_dependencies(sql->sa, sb, VIEW_DEPENDENCY);
 
+			if (!f->vararg && f->ops) {
+				for (n = f->ops->h; n; n = n->next) {
+					sql_arg *a = n->data;
+
+					if (a->type.type->s) 
+						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+				}
+			}
+			if (!f->varres && f->res) {
+				for (n = f->res->h; n; n = n->next) {
+					sql_arg *a = n->data;
+
+					if (a->type.type->s) 
+						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+				}
+			}
 			mvc_create_dependencies(sql, id_col_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 			mvc_create_dependencies(sql, id_func_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 			mvc_create_dependencies(sql, view_id_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
@@ -1246,13 +1263,30 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_CREATE_TYPE:{
-		char *impl = *getArgReference_str(stk, pci, 3);
-		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl))
+		char *name = *getArgReference_str(stk, pci, 3);
+		char *impl = *getArgReference_str(stk, pci, 4);
+		sql_schema *s = mvc_bind_schema(sql, sname);
+
+		if (!mvc_schema_privs(sql, sql->session->schema)) 
+			msg = sql_message("0D000!CREATE TYPE: not enough privileges to create type '%s'", sname);
+		if (!mvc_create_type(sql, s, name, 0, 0, 0, impl))
 			msg = sql_message("0D000!CREATE TYPE: unknown external type '%s'", impl);
 		break;
 	}
 	case DDL_DROP_TYPE:{
-		msg = sql_message("0A000!DROP TYPE: not implemented ('%s')", sname);
+		char *name = *getArgReference_str(stk, pci, 3);
+		int drop_action = *getArgReference_int(stk, pci, 4);
+		sql_schema *s = mvc_bind_schema(sql, sname);
+		sql_type *t = schema_bind_type( sql, s, name);
+
+		if (!t)
+			msg = sql_message("0D000!DROP TYPE: type '%s' does not exist", sname);
+		else if (!mvc_schema_privs(sql, sql->session->schema)) 
+			msg = sql_message("0D000!DROP TYPE: not enough privileges to drop type '%s'", sname);
+		else if (!drop_action && mvc_check_dependency(sql, t->base.id, TYPE_DEPENDENCY, NULL))
+			return sql_message("42000!DROP TYPE: unable to drop type %s (there are database objects which depend on it)\n", sname);
+		else if (!mvc_drop_type(sql, sql->session->schema, t, drop_action))
+			msg = sql_message("0D000!DROP TYPE: failed to drop type '%s'", sname);
 		break;
 	}
 	case DDL_GRANT_ROLES:{
@@ -1295,6 +1329,24 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
 		else
 			msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		break;
+	}
+	case DDL_GRANT_FUNC:{
+		int func_id = *getArgReference_int(stk, pci, 3);
+		char *grantee = *getArgReference_str(stk, pci, 4);
+		int privs = *getArgReference_int(stk, pci, 5);
+		int grant = *getArgReference_int(stk, pci, 6);
+		int grantor = *getArgReference_int(stk, pci, 7);
+		msg = sql_grant_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
+		break;
+	}
+	case DDL_REVOKE_FUNC:{
+		int func_id = *getArgReference_int(stk, pci, 3);
+		char *grantee = *getArgReference_str(stk, pci, 4);
+		int privs = *getArgReference_int(stk, pci, 5);
+		int grant = *getArgReference_int(stk, pci, 6);
+		int grantor = *getArgReference_int(stk, pci, 7);
+		msg = sql_revoke_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{

@@ -50,10 +50,11 @@
 #define OWNER_DEPENDENCY 9
 #define INDEX_DEPENDENCY 10
 #define FKEY_DEPENDENCY 11
-#define TYPE_DEPENDENCY 11
 #define SEQ_DEPENDENCY 12
 #define PROC_DEPENDENCY 13
 #define BEDROPPED_DEPENDENCY 14		/*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
+#define TYPE_DEPENDENCY 15
+
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
@@ -560,6 +561,7 @@ extern node *find_sql_schema_node(sql_trans *t, int id);
 
 extern sql_type *find_sql_type(sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
+extern node *find_sql_type_node(sql_schema *s, int id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
 extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);

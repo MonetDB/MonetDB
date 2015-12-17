@@ -1,5 +1,3 @@
-create type json external name json;
-
 create table jsonparse(j json);
 
 insert into jsonparse values('{}');

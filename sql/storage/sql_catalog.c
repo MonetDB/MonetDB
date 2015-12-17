@@ -231,6 +231,12 @@ find_sqlname(list *l, const char *name)
 	return NULL;
 }
 
+node *
+find_sql_type_node(sql_schema * s, int id)
+{
+	return cs_find_id(&s->types, id);
+}
+
 sql_type *
 find_sql_type(sql_schema * s, const char *tname)
 {

@@ -1737,6 +1737,8 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_topn && topn_save_exps(rel->exps)) {
 		sql_rel *rp = NULL;
 
+		if (r && r->op == op_project && need_distinct(r)) 
+			return rel;
 		/* duplicate topn + [ project-order ] under union */
 		if (r)
 			rp = r->l;

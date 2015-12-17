@@ -15,6 +15,8 @@ returns table(
 )
 external name sql.copy_rejects;
 
+grant execute on function rejects to public;
+
 create view sys.rejects as select * from sys.rejects();
 create procedure sys.clearrejects()
 external name sql.copy_rejects_clear;

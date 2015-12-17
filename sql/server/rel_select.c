@@ -1437,18 +1437,27 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 static sql_subfunc *
 bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, int type )
 {
+	sql_subfunc *sf = NULL;
+
 	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && 
-	    list_cmp(sql->forward->ops, ops, (fcmp)&arg_subtype_cmp) == 0) 
+	    list_cmp(sql->forward->ops, ops, (fcmp)&arg_subtype_cmp) == 0 &&
+	    execute_priv(sql, sql->forward)) 
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
-	return sql_bind_func_(sql->sa, s, fname, ops, type);
+	sf = sql_bind_func_(sql->sa, s, fname, ops, type);
+	if (sf && execute_priv(sql, sf->func))
+		return sf;
+	return NULL;
 }
 
 static sql_subfunc *
 bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, int type )
 {
+	sql_subfunc *sf = NULL;
+
 	assert(t1);
 	if (sql->forward) {
-		if (strcmp(fname, sql->forward->base.name) == 0 && 
+		if (execute_priv(sql, sql->forward) &&
+		    strcmp(fname, sql->forward->base.name) == 0 && 
 		   ((!t1 && list_length(sql->forward->ops) == 0) || 
 		    (!t2 && list_length(sql->forward->ops) == 1 && subtype_cmp(sql->forward->ops->h->data, t1) == 0) ||
 		    (list_length(sql->forward->ops) == 2 && 
@@ -1457,24 +1466,37 @@ bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2
 			return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
 		}
 	}
-	return sql_bind_func(sql->sa, s, fname, t1, t2, type);
+	sf = sql_bind_func(sql->sa, s, fname, t1, t2, type);
+	if (sf && execute_priv(sql, sf->func))
+		return sf;
+	return NULL;
 }
 
 static sql_subfunc *
 bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrargs, sql_subfunc *prev)
 {
+	sql_subfunc *sf = NULL;
+
 	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && 
-		list_length(sql->forward->ops) == nrargs && is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type)) 
+		list_length(sql->forward->ops) == nrargs && is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type) && execute_priv(sql, sql->forward)) 
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, t);
-	return sql_bind_member(sql->sa, s, fname, t, nrargs, prev);
+	sf = sql_bind_member(sql->sa, s, fname, t, nrargs, prev);
+	if (sf && execute_priv(sql, sf->func))
+		return sf;
+	return NULL;
 }
 
 static sql_subfunc *
 find_func(mvc *sql, sql_schema *s, char *fname, int len, int type, sql_subfunc *prev )
 {
-	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == len) 
+	sql_subfunc *sf = NULL;
+
+	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == len && execute_priv(sql, sql->forward)) 
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
-	return sql_find_func(sql->sa, s, fname, len, type, prev);
+	sf = sql_find_func(sql->sa, s, fname, len, type, prev);
+	if (sf && execute_priv(sql, sf->func))
+		return sf;
+	return NULL;
 }
 
 static sql_rel *
@@ -4227,7 +4249,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			}
 		}
 	}
-	if (a) {
+	if (a && execute_priv(sql,a->aggr)) {
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
 		if (*rel != groupby || f != sql_sel) /* selection */
@@ -4968,7 +4990,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* window operations are only allowed in the projection */
-	if (f != sql_sel || r->op != op_project || is_processed(r))
+	if (f != sql_sel || !r || r->op != op_project || is_processed(r))
 		return sql_error(sql, 02, "OVER: only possible within the selection");
 
 	p = r->l;

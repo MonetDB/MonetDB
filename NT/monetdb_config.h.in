@@ -935,16 +935,6 @@
 /* Needed to compile bison-generated code. */
 /* #undef YYLTYPE_IS_TRIVIAL */
 
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
-#define YYTEXT_POINTER 1
-
-/* tell compiler to use prototypes in flex-generated code */
-#define YY_USE_PROTOS
-
-/* tell compiler to use const in flex-generated code */
-#define YY_USE_CONST
-
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
 
