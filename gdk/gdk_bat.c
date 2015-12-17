@@ -1996,7 +1996,7 @@ BATmode(BAT *b, int mode)
 #endif
 
 static void
-BATassertHeadProps(BAT *b)
+BATassertTailProps(BAT *b)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
@@ -2006,109 +2006,109 @@ BATassertHeadProps(BAT *b)
 	int seennil = 0;
 
 	assert(b != NULL);
-	assert(b->htype >= TYPE_void);
-	assert(b->htype < GDKatomcnt);
-	assert(b->htype != TYPE_bat);
+	assert(b->ttype >= TYPE_void);
+	assert(b->ttype < GDKatomcnt);
+	assert(b->ttype != TYPE_bat);
 	/* if BOUND2BTRUE is set, then so must the low order bit */
-	assert(!(b->hkey & BOUND2BTRUE) || (b->hkey & 1)); /* hkey != 2 */
+	assert(!(b->tkey & BOUND2BTRUE) || (b->tkey & 1)); /* tkey != 2 */
 	assert(isVIEW(b) ||
-	       b->htype == TYPE_void ||
-	       BBPfarms[b->H->heap.farmid].roles & (1 << b->batRole));
+	       b->ttype == TYPE_void ||
+	       BBPfarms[b->T->heap.farmid].roles & (1 << b->batRole));
 	assert(isVIEW(b) ||
-	       b->H->vheap == NULL ||
-	       (BBPfarms[b->H->vheap->farmid].roles & (1 << b->batRole)));
+	       b->T->vheap == NULL ||
+	       (BBPfarms[b->T->vheap->farmid].roles & (1 << b->batRole)));
 
-	cmpf = ATOMcompare(b->htype);
-	nilp = ATOMnilptr(b->htype);
+	cmpf = ATOMcompare(b->ttype);
+	nilp = ATOMnilptr(b->ttype);
 	p = BUNfirst(b);
 	q = BUNlast(b);
 
-	assert(b->H->heap.free >= headsize(b, BUNlast(b)));
-	if (b->htype != TYPE_void) {
+	assert(b->T->heap.free >= tailsize(b, BUNlast(b)));
+	if (b->ttype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
-		assert(b->H->heap.size >= b->H->heap.free);
-		assert(b->H->heap.size >> b->H->shift >= b->batCapacity);
+		assert(b->T->heap.size >= b->T->heap.free);
+		assert(b->T->heap.size >> b->T->shift >= b->batCapacity);
 	}
 
 	/* void and str imply varsized */
-	if (b->htype == TYPE_void ||
-	    ATOMstorage(b->htype) == TYPE_str)
-		assert(b->hvarsized);
+	if (b->ttype == TYPE_void ||
+	    ATOMstorage(b->ttype) == TYPE_str)
+		assert(b->tvarsized);
 	/* other "known" types are not varsized */
-	if (ATOMstorage(b->htype) > TYPE_void &&
-	    ATOMstorage(b->htype) < TYPE_str)
-		assert(!b->hvarsized);
+	if (ATOMstorage(b->ttype) > TYPE_void &&
+	    ATOMstorage(b->ttype) < TYPE_str)
+		assert(!b->tvarsized);
 	/* shift and width have a particular relationship */
-	assert(b->H->shift >= 0);
-	if (b->hdense)
-		assert(b->htype == TYPE_oid || b->htype == TYPE_void);
+	assert(b->T->shift >= 0);
+	if (b->tdense)
+		assert(b->ttype == TYPE_oid || b->ttype == TYPE_void);
 	/* a column cannot both have and not have NILs */
-	assert(!b->H->nil || !b->H->nonil);
-	assert(b->hseqbase <= oid_nil);
-	if (b->htype == TYPE_void) {
-		assert(b->H->shift == 0);
-		assert(b->H->width == 0);
-		if (b->hseqbase == oid_nil) {
-			assert(BATcount(b) == 0 || !b->H->nonil);
-			assert(BATcount(b) <= 1 || !b->hkey);
-			/* assert(!b->hdense); */
-			assert(b->hsorted);
-			assert(b->hrevsorted);
+	assert(!b->T->nil || !b->T->nonil);
+	assert(b->tseqbase <= oid_nil);
+	if (b->ttype == TYPE_void) {
+		assert(b->T->shift == 0);
+		assert(b->T->width == 0);
+		if (b->tseqbase == oid_nil) {
+			assert(BATcount(b) == 0 || !b->T->nonil);
+			assert(BATcount(b) <= 1 || !b->tkey);
+			/* assert(!b->tdense); */
+			assert(b->tsorted);
+			assert(b->trevsorted);
 		} else {
-			assert(BATcount(b) == 0 || !b->H->nil);
-			assert(BATcount(b) <= 1 || !b->hrevsorted);
-			/* assert(b->hdense); */
-			assert(b->hkey);
-			assert(b->hsorted);
+			assert(BATcount(b) == 0 || !b->T->nil);
+			assert(BATcount(b) <= 1 || !b->trevsorted);
+			/* assert(b->tdense); */
+			assert(b->tkey);
+			assert(b->tsorted);
 		}
 		return;
 	}
-	if (ATOMstorage(b->htype) == TYPE_str)
-		assert(b->H->width >= 1 && b->H->width <= ATOMsize(b->htype));
+	if (ATOMstorage(b->ttype) == TYPE_str)
+		assert(b->T->width >= 1 && b->T->width <= ATOMsize(b->ttype));
 	else
-		assert(b->H->width == ATOMsize(b->htype));
-	assert(1 << b->H->shift == b->H->width);
-	if (b->htype == TYPE_oid && b->hdense) {
-		assert(b->hsorted);
-		assert(b->hseqbase != oid_nil);
+		assert(b->T->width == ATOMsize(b->ttype));
+	assert(1 << b->T->shift == b->T->width);
+	if (b->ttype == TYPE_oid && b->tdense) {
+		assert(b->tsorted);
+		assert(b->tseqbase != oid_nil);
 		if (b->batCount > 0) {
-			assert(b->hseqbase != oid_nil);
-			assert(* (oid *) BUNhead(bi, p) == b->hseqbase);
+			assert(b->tseqbase != oid_nil);
+			assert(* (oid *) BUNtail(bi, p) == b->tseqbase);
 		}
 	}
 	/* only linear atoms can be sorted */
-	assert(!b->hsorted || ATOMlinear(b->htype));
-	assert(!b->hrevsorted || ATOMlinear(b->htype));
+	assert(!b->tsorted || ATOMlinear(b->ttype));
+	assert(!b->trevsorted || ATOMlinear(b->ttype));
 	/* var heaps must have sane sizes */
-	assert(b->H->vheap == NULL || b->H->vheap->free <= b->H->vheap->size);
+	assert(b->T->vheap == NULL || b->T->vheap->free <= b->T->vheap->size);
 
-	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
-	    !b->H->nonil && !b->H->nil) {
+	if (!b->tkey && !b->tsorted && !b->trevsorted &&
+	    !b->T->nonil && !b->T->nil) {
 		/* nothing more to prove */
 		return;
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
-		if (b->hsorted || b->hrevsorted || !b->hkey) {
+		if (b->tsorted || b->trevsorted || !b->tkey) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
 			 * scan */
 			/* only call compare function if we have to */
-			int cmpprv = b->hsorted | b->hrevsorted | b->hkey;
-			int cmpnil = b->H->nonil | b->H->nil;
+			int cmpprv = b->tsorted | b->trevsorted | b->tkey;
+			int cmpnil = b->T->nonil | b->T->nil;
 
 			BATloop(b, p, q) {
-				valp = BUNhead(bi, p);
+				valp = BUNtail(bi, p);
 				if (prev && cmpprv) {
 					cmp = cmpf(prev, valp);
-					assert(!b->hsorted || cmp <= 0);
-					assert(!b->hrevsorted || cmp >= 0);
-					assert(!b->hkey || cmp != 0);
-					assert(!b->hdense || * (oid *) prev + 1 == * (oid *) valp);
+					assert(!b->tsorted || cmp <= 0);
+					assert(!b->trevsorted || cmp >= 0);
+					assert(!b->tkey || cmp != 0);
+					assert(!b->tdense || * (oid *) prev + 1 == * (oid *) valp);
 				}
 				if (cmpnil) {
 					cmp = cmpf(valp, nilp);
-					assert(!b->H->nonil || cmp != 0);
+					assert(!b->T->nonil || cmp != 0);
 					if (cmp == 0) {
 						/* we found a nil:
 						 * we're done checking
@@ -2129,7 +2129,7 @@ BATassertHeadProps(BAT *b)
 				}
 				prev = valp;
 			}
-		} else {	/* b->hkey && !b->hsorted && !b->hrevsorted */
+		} else {	/* b->tkey && !b->tsorted && !b->trevsorted */
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
@@ -2151,15 +2151,15 @@ BATassertHeadProps(BAT *b)
 			snprintf(hp->filename, nmelen + 30,
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
-			if (ATOMsize(b->htype) == 1)
+			if (ATOMsize(b->ttype) == 1)
 				mask = 1 << 8;
-			else if (ATOMsize(b->htype) == 2)
+			else if (ATOMsize(b->ttype) == 2)
 				mask = 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->htype,
+			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->ttype,
 							hashheap)) < 0 ||
-			    (hs = HASHnew(hp, b->htype, BUNlast(b),
+			    (hs = HASHnew(hp, b->ttype, BUNlast(b),
 					  mask, BUN_NONE)) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
@@ -2172,17 +2172,17 @@ BATassertHeadProps(BAT *b)
 			BATloop(b, p, q) {
 				BUN hb;
 				BUN prb;
-				valp = BUNhead(bi, p);
+				valp = BUNtail(bi, p);
 				prb = HASHprobe(hs, valp);
 				for (hb = HASHget(hs,prb);
 				     hb != HASHnil(hs);
 				     hb = HASHgetlink(hs,hb))
-					if (cmpf(valp, BUNhead(bi, hb)) == 0)
-						assert(!b->hkey);
+					if (cmpf(valp, BUNtail(bi, hb)) == 0)
+						assert(!b->tkey);
 				HASHputlink(hs,p, HASHget(hs,prb));
 				HASHput(hs,prb,p);
 				cmp = cmpf(valp, nilp);
-				assert(!b->H->nonil || cmp != 0);
+				assert(!b->T->nonil || cmp != 0);
 				if (cmp == 0)
 					seennil = 1;
 			}
@@ -2192,7 +2192,7 @@ BATassertHeadProps(BAT *b)
 			GDKfree(ext);
 		}
 	  abort_check:
-		assert(!b->H->nil || seennil);
+		assert(!b->T->nil || seennil);
 	}
 }
 
@@ -2236,6 +2236,9 @@ BATassertProps(BAT *b)
 
 	/* general BAT sanity */
 	assert(b != NULL);
+	assert(b->batCacheid > 0);
+	assert(VIEWhparent(b) == 0);
+	assert(VIEWvhparent(b) == 0);
 	bm = BATmirror(b);
 	assert(bm != NULL);
 	assert(b->H == bm->T);
@@ -2257,9 +2260,9 @@ BATassertProps(BAT *b)
 	       ((bbpstatus & BBPEXISTING) != 0) +
 	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
-	BATassertHeadProps(b);
+	BATassertTailProps(b);
 	if (b->H != bm->H)
-		BATassertHeadProps(bm);
+		BATassertTailProps(bm);
 }
 
 /* derive properties that can be derived with a simple scan: sorted,
@@ -2270,7 +2273,7 @@ BATassertProps(BAT *b)
  * nonil.
  */
 void
-BATderiveHeadProps(BAT *b, int expensive)
+BATderiveTailProps(BAT *b, int expensive)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
@@ -2290,97 +2293,97 @@ BATderiveHeadProps(BAT *b, int expensive)
 		assert(0);
 		return;
 	}
-	assert((b->hkey & BOUND2BTRUE) == 0);
-	COLsettrivprop(b, b->H);
-	cmpf = ATOMcompare(b->htype);
-	nilp = ATOMnilptr(b->htype);
+	assert((b->tkey & BOUND2BTRUE) == 0);
+	COLsettrivprop(b, b->T);
+	cmpf = ATOMcompare(b->ttype);
+	nilp = ATOMnilptr(b->ttype);
 	b->batDirtydesc = 1;	/* we will be changing things */
-	if (b->htype == TYPE_void || b->batCount <= 1) {
+	if (b->ttype == TYPE_void || b->batCount <= 1) {
 		/* COLsettrivprop has already taken care of all
 		 * properties except for (no)nil if count == 1 */
 		if (b->batCount == 1) {
-			valp = BUNhead(bi, BUNfirst(b));
+			valp = BUNtail(bi, BUNfirst(b));
 			if (cmpf(valp, nilp) == 0) {
-				b->H->nil = 1;
-				b->H->nonil = 0;
+				b->T->nil = 1;
+				b->T->nonil = 0;
 			} else {
-				b->H->nil = 0;
-				b->H->nonil = 1;
+				b->T->nil = 0;
+				b->T->nonil = 1;
 			}
 		}
 		return;
 	}
 	/* tentatively set until proven otherwise */
 	key = 1;
-	sorted = revsorted = (ATOMlinear(b->htype) != 0);
-	dense = (b->htype == TYPE_oid);
+	sorted = revsorted = (ATOMlinear(b->ttype) != 0);
+	dense = (b->ttype == TYPE_oid);
 	/* if no* props already set correctly, we can maybe speed
 	 * things up, if not set correctly, reset them now and set
 	 * them later */
-	if (!b->hkey &&
-	    b->H->nokey[0] >= b->batFirst &&
-	    b->H->nokey[0] < b->batFirst + b->batCount &&
-	    b->H->nokey[1] >= b->batFirst &&
-	    b->H->nokey[1] < b->batFirst + b->batCount &&
-	    b->H->nokey[0] != b->H->nokey[1] &&
-	    cmpf(BUNhead(bi, b->H->nokey[0]),
-		 BUNhead(bi, b->H->nokey[1])) == 0) {
+	if (!b->tkey &&
+	    b->T->nokey[0] >= b->batFirst &&
+	    b->T->nokey[0] < b->batFirst + b->batCount &&
+	    b->T->nokey[1] >= b->batFirst &&
+	    b->T->nokey[1] < b->batFirst + b->batCount &&
+	    b->T->nokey[0] != b->T->nokey[1] &&
+	    cmpf(BUNtail(bi, b->T->nokey[0]),
+		 BUNtail(bi, b->T->nokey[1])) == 0) {
 		/* we found proof that the column doesn't deserve the
 		 * key property, no need to check the hard way */
 		expensive = 0;
 		key = 0;
 	} else {
-		b->H->nokey[0] = 0;
-		b->H->nokey[1] = 0;
+		b->T->nokey[0] = 0;
+		b->T->nokey[1] = 0;
 	}
-	if (!b->hsorted &&
-	    b->H->nosorted > b->batFirst &&
-	    b->H->nosorted < b->batFirst + b->batCount &&
-	    cmpf(BUNhead(bi, b->H->nosorted - 1),
-		 BUNhead(bi, b->H->nosorted)) > 0) {
+	if (!b->tsorted &&
+	    b->T->nosorted > b->batFirst &&
+	    b->T->nosorted < b->batFirst + b->batCount &&
+	    cmpf(BUNtail(bi, b->T->nosorted - 1),
+		 BUNtail(bi, b->T->nosorted)) > 0) {
 		sorted = 0;
 		dense = 0;
 	} else {
-		b->H->nosorted = 0;
+		b->T->nosorted = 0;
 	}
-	if (!b->hrevsorted &&
-	    b->H->norevsorted > b->batFirst &&
-	    b->H->norevsorted < b->batFirst + b->batCount &&
-	    cmpf(BUNhead(bi, b->H->norevsorted - 1),
-		 BUNhead(bi, b->H->norevsorted)) < 0) {
+	if (!b->trevsorted &&
+	    b->T->norevsorted > b->batFirst &&
+	    b->T->norevsorted < b->batFirst + b->batCount &&
+	    cmpf(BUNtail(bi, b->T->norevsorted - 1),
+		 BUNtail(bi, b->T->norevsorted)) < 0) {
 		revsorted = 0;
 	} else {
-		b->H->norevsorted = 0;
+		b->T->norevsorted = 0;
 	}
 	if (dense &&
-	    !b->hdense &&
-	    b->H->nodense >= b->batFirst &&
-	    b->H->nodense < b->batFirst + b->batCount &&
-	    (b->H->nodense == b->batFirst ?
-	     * (oid *) BUNhead(bi, b->H->nodense) == oid_nil :
-	     * (oid *) BUNhead(bi, b->H->nodense - 1) + 1 != * (oid *) BUNhead(bi, b->H->nodense))) {
+	    !b->tdense &&
+	    b->T->nodense >= b->batFirst &&
+	    b->T->nodense < b->batFirst + b->batCount &&
+	    (b->T->nodense == b->batFirst ?
+	     * (oid *) BUNtail(bi, b->T->nodense) == oid_nil :
+	     * (oid *) BUNtail(bi, b->T->nodense - 1) + 1 != * (oid *) BUNtail(bi, b->T->nodense))) {
 		dense = 0;
 	} else {
-		b->H->nodense = 0;
+		b->T->nodense = 0;
 	}
 	if (expensive) {
 		BUN mask;
 
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
-		if (ATOMsize(b->htype) == 1)
+		if (ATOMsize(b->ttype) == 1)
 			mask = 1 << 8;
-		else if (ATOMsize(b->htype) == 2)
+		else if (ATOMsize(b->ttype) == 2)
 			mask = 1 << 16;
 		else
 			mask = HASHmask(b->batCount);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    (hp->farmid = BBPselectfarm(TRANSIENT, b->htype, hashheap)) < 0 ||
+		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    snprintf(hp->filename, nmelen + 30,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->htype, BUNlast(b), mask, BUN_NONE)) == NULL) {
+		    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);
@@ -2398,41 +2401,41 @@ BATderiveHeadProps(BAT *b, int expensive)
 	for (q = BUNlast(b), p = BUNfirst(b);
 	     p < q && (sorted || revsorted || (key && hs));
 	     p++) {
-		valp = BUNhead(bi, p);
+		valp = BUNtail(bi, p);
 		if (prev) {
 			cmp = cmpf(prev, valp);
 			if (cmp < 0) {
 				revsorted = 0;
-				if (b->H->norevsorted == 0)
-					b->H->norevsorted = p;
+				if (b->T->norevsorted == 0)
+					b->T->norevsorted = p;
 				if (dense &&
 				    * (oid *) prev + 1 != * (oid *) valp) {
 					dense = 0;
-					if (b->H->nodense == 0)
-						b->H->nodense = p;
+					if (b->T->nodense == 0)
+						b->T->nodense = p;
 				}
 			} else {
 				if (cmp > 0) {
 					sorted = 0;
-					if (b->H->nosorted == 0)
-						b->H->nosorted = p;
+					if (b->T->nosorted == 0)
+						b->T->nosorted = p;
 				} else {
 					key = 0;
-					if (b->H->nokey[0] == 0 &&
-					    b->H->nokey[1] == 0) {
-						b->H->nokey[0] = p - 1;
-						b->H->nokey[1] = p;
+					if (b->T->nokey[0] == 0 &&
+					    b->T->nokey[1] == 0) {
+						b->T->nokey[0] = p - 1;
+						b->T->nokey[1] = p;
 					}
 				}
 				if (dense) {
 					dense = 0;
-					if (b->H->nodense == 0)
-						b->H->nodense = p;
+					if (b->T->nodense == 0)
+						b->T->nodense = p;
 				}
 			}
 		} else if (dense && (sqbs = * (oid *) valp) == oid_nil) {
 			dense = 0;
-			b->H->nodense = p;
+			b->T->nodense = p;
 		}
 		prev = valp;
 		if (key && hs) {
@@ -2440,10 +2443,10 @@ BATderiveHeadProps(BAT *b, int expensive)
 			for (hb = HASHget(hs,prb);
 			     hb != HASHnil(hs);
 			     hb = HASHgetlink(hs,hb)) {
-				if (cmpf(valp, BUNhead(bi, hb)) == 0) {
+				if (cmpf(valp, BUNtail(bi, hb)) == 0) {
 					key = 0;
-					b->H->nokey[0] = hb;
-					b->H->nokey[1] = p;
+					b->T->nokey[0] = hb;
+					b->T->nokey[1] = p;
 					break;
 				}
 			}
@@ -2457,32 +2460,32 @@ BATderiveHeadProps(BAT *b, int expensive)
 		GDKfree(hs);
 		GDKfree(ext);
 	}
-	b->hsorted = sorted;
-	b->hrevsorted = revsorted;
-	b->hdense = dense;
+	b->tsorted = sorted;
+	b->trevsorted = revsorted;
+	b->tdense = dense;
 	if (dense)
-		b->hseqbase = sqbs;
+		b->tseqbase = sqbs;
 	if (hs) {
-		b->hkey = key;
+		b->tkey = key;
 	} else {
 		/* we can only say something about keyness if the
 		 * column is sorted */
-		b->hkey = key & (sorted | revsorted);
+		b->tkey = key & (sorted | revsorted);
 	}
 	if (sorted || revsorted) {
 		/* if sorted, we only need to check the extremes to
 		 * know whether there are any nils */
-		if (cmpf(BUNhead(bi, BUNfirst(b)), nilp) != 0 &&
-		    cmpf(BUNhead(bi, BUNlast(b) - 1), nilp) != 0) {
-			b->H->nonil = 1;
-			b->H->nil = 0;
+		if (cmpf(BUNtail(bi, BUNfirst(b)), nilp) != 0 &&
+		    cmpf(BUNtail(bi, BUNlast(b) - 1), nilp) != 0) {
+			b->T->nonil = 1;
+			b->T->nil = 0;
 		} else {
-			b->H->nonil = 0;
-			b->H->nil = 1;
+			b->T->nonil = 0;
+			b->T->nil = 1;
 		}
 	}
 #ifndef NDEBUG
-	BATassertHeadProps(b);
+	BATassertTailProps(b);
 #endif
 }
 
@@ -2493,7 +2496,7 @@ BATderiveProps(BAT *b, int expensive)
 		assert(0);
 		return;
 	}
-	BATderiveHeadProps(b, expensive);
+	BATderiveTailProps(b, expensive);
 	if (b->H != b->T)
-		BATderiveHeadProps(BATmirror(b), expensive);
+		BATderiveTailProps(BATmirror(b), expensive);
 }

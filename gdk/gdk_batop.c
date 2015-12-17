@@ -722,7 +722,7 @@ int
 BATordered(BAT *b)
 {
 	if (!b->tsorted)
-		BATderiveHeadProps(BATmirror(b), 0);
+		BATderiveTailProps(b, 0);
 	return b->tsorted;
 }
 
@@ -730,7 +730,7 @@ int
 BATordered_rev(BAT *b)
 {
 	if (!b->trevsorted)
-		BATderiveHeadProps(BATmirror(b), 0);
+		BATderiveTailProps(b, 0);
 	return b->trevsorted;
 }
 

@@ -2,6 +2,8 @@
 # This file is updated with Maddlog
 
 * Thu Dec 17 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Changed BATderiveHeadProps to BATderiveTailProps (and it now works on
+  the tail column).
 - Removed unused functions BATalpha, BATdelta, and BATprev.
 
 * Mon Dec 14 2015 Sjoerd Mullender <sjoerd@acm.org>
