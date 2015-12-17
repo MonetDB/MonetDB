@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Dec 17 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed unused functions BATalpha, BATdelta, and BATprev.
+
 * Mon Dec 14 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed functions BATins, BATdel, BUNdel and BUNdelete.
 

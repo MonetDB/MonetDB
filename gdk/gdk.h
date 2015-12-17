@@ -2621,12 +2621,6 @@ gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
  * @tab BATfakeCommit (BAT *b)
  * @item BAT *
  * @tab BATundo (BAT *b)
- * @item BAT *
- * @tab BATprev (BAT *b)
- * @item BAT *
- * @tab BATalpha (BAT *b)
- * @item BAT *
- * @tab BATdelta (BAT *b)
  * @end multitable
  *
  * The BAT keeps track of updates with respect to a 'previous state'.
@@ -2653,22 +2647,10 @@ gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
  * BUG: after a failed TMcommit, TMabort does not do anything because
  * TMcommit does the BATcommits @emph{before} attempting to sync to
  * disk instead of @sc{after} doing this.
- *
- * The previous state can also be queried. BATprev is a view on the
- * current BAT as it was in the previous state.  BATalpha shows only
- * the BUNs inserted since the previous state, and BATdelta the
- * deleted buns.
- *
- * CAVEAT: BATprev, BATalpha and BATdelta only return views if the
- * underlying BATs are read-only (often not the case when BATs are
- * being updated).  Otherwise, copies must be made anyway.
  */
 gdk_export void BATcommit(BAT *b);
 gdk_export void BATfakeCommit(BAT *b);
 gdk_export void BATundo(BAT *b);
-gdk_export BAT *BATalpha(BAT *b);
-gdk_export BAT *BATdelta(BAT *b);
-gdk_export BAT *BATprev(BAT *b);
 
 /*
  * @+ BAT Alignment and BAT views
