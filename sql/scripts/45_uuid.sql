@@ -5,7 +5,7 @@
 -- Copyright 2008-2015 MonetDB B.V.
 
 -- (co) Martin Kersten
--- The JSON type comes with a few operators.
+-- The UUID type comes with a few operators.
 
 create type uuid external name uuid;
 
