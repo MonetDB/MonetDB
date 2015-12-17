@@ -100,3 +100,5 @@ foreignkey_over_schemas.Bug-3855
 mserver-crashes-under-specific-combination-of-JOIN-and-WHERE-conditions.Bug-3872
 schema-trigger.Bug-3710
 many_union_all.Bug-3879
+sys_tracelog.Bug-3887
+
