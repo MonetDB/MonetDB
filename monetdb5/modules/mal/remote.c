@@ -1083,6 +1083,8 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
+	int len;
+	lng lv, *lvp;
 
 	BAT *b;
 
@@ -1114,35 +1116,60 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 							"illegal input, JSON value missing");
 				*hdr = '\0';
 
+				lvp = &lv;
+				len = (int) sizeof(lv);
+				/* all values should be non-negative, so we check that
+				 * here as well */
+				if (lngFromStr(val, &len, &lvp) == 0 ||
+					lv < 0 /* includes lng_nil */)
+					throw(MAL, "remote.bincopyfrom",
+						  "bad %s value: %s", nme, val);
+
 				/* deal with nme and val */
 				if (strcmp(nme, "version") == 0) {
-					if (strcmp(val, "1") != 0)
+					if (lv != 1)
 						throw(MAL, "remote.bincopyfrom",
 								"unsupported version: %s", val);
 				} else if (strcmp(nme, "hseqbase") == 0) {
-					bb.Hseqbase = (oid)atol(val);
+#if SIZEOF_OID < SIZEOF_LNG
+					if (lv > GDK_oid_max)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+#endif
+					bb.Hseqbase = (oid)lv;
 				} else if (strcmp(nme, "ttype") == 0) {
-					bb.Ttype = atoi(val);
+					if (lv >= GDKatomcnt)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+					bb.Ttype = (int) lv;
 				} else if (strcmp(nme, "tseqbase") == 0) {
-					bb.Tseqbase = (oid)atol(val);
+#if SIZEOF_OID < SIZEOF_LNG
+					if (lv > GDK_oid_max)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+#endif
+					bb.Tseqbase = (oid) lv;
 				} else if (strcmp(nme, "tsorted") == 0) {
-					bb.Tsorted = *val != '0';
+					bb.Tsorted = lv != 0;
 				} else if (strcmp(nme, "trevsorted") == 0) {
-					bb.Trevsorted = *val != '0';
+					bb.Trevsorted = lv != 0;
 				} else if (strcmp(nme, "hkey") == 0) {
-					bb.Hkey = *val != '0';
+					bb.Hkey = lv != 0;
 				} else if (strcmp(nme, "tkey") == 0) {
-					bb.Tkey = *val != '0';
+					bb.Tkey = lv != 0;
 				} else if (strcmp(nme, "tnonil") == 0) {
-					bb.Tnonil = *val != '0';
+					bb.Tnonil = lv != 0;
 				} else if (strcmp(nme, "tdense") == 0) {
-					bb.Tdense = *val != '0';
+					bb.Tdense = lv != 0;
 				} else if (strcmp(nme, "size") == 0) {
-					bb.size = (BUN)atol(val);
+					if (lv > (lng) BUN_MAX)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+					bb.size = (BUN) lv;
 				} else if (strcmp(nme, "tailsize") == 0) {
-					bb.tailsize = atol(val);
+					bb.tailsize = (size_t) lv;
 				} else if (strcmp(nme, "theapsize") == 0) {
-					bb.theapsize = atol(val);
+					bb.theapsize = (size_t) lv;
 				} else {
 					throw(MAL, "remote.bincopyfrom",
 							"unknown element: %s", nme);
