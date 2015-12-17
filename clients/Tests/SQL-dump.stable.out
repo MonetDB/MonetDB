@@ -1220,11 +1220,11 @@ external name sql.sysmon_stop;
 -- This script gives the database administrator insight in the actual
 -- footprint of the persistent tables and the maximum playground used
 -- when indices are introduced upon them.
--- By chancing the storagemodelinput table directly, the footprint for
+-- By changing the storagemodelinput table directly, the footprint for
 -- yet to be loaded databases can be assessed.
 
 -- The actual storage footprint of an existing database can be
--- obtained by the table procuding function storage()
+-- obtained by the table producing function storage()
 -- It represents the actual state of affairs, i.e. storage on disk
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.
@@ -5708,13 +5708,42 @@ CREATE TABLE "sys"."dependencies" (
 	"depend_id"   INTEGER,
 	"depend_type" SMALLINT
 );
-COPY 236 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 325 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n','"';
 368	5272	7
 367	5272	7
 870	5272	7
 368	5276	7
 367	5276	7
 870	5276	7
+5281	5283	15
+5281	5287	15
+5281	5291	15
+5281	5295	15
+5281	5299	15
+5281	5303	15
+5281	5307	15
+5281	5311	15
+5281	5315	15
+5281	5319	15
+5281	5323	15
+5281	5327	15
+5281	5331	15
+5281	5335	15
+5281	5339	15
+5281	5346	15
+5381	5383	15
+5381	5387	15
+5381	5391	15
+5381	5395	15
+5381	5400	15
+5381	5404	15
+5381	5408	15
+5381	5412	15
+5381	5416	15
+5381	5420	15
+5381	5425	15
+5381	5430	15
+5381	5435	15
 5440	5469	5
 5450	5480	5
 5440	5498	5
@@ -5868,6 +5897,66 @@ COPY 236 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 5752	5758	5
 5784	5802	5
 5822	5832	5
+6139	6143	15
+6141	6143	15
+6141	6147	15
+6139	6152	15
+6129	6157	15
+6131	6162	15
+6133	6167	15
+6134	6172	15
+6136	6177	15
+6138	6182	15
+6138	6187	15
+6133	6192	15
+6139	6197	15
+6139	6201	15
+6139	6205	15
+6129	6209	15
+6139	6214	15
+6139	6218	15
+6139	6222	15
+6139	6226	15
+6139	6230	15
+6139	6234	15
+6139	6238	15
+6139	6242	15
+6139	6247	15
+6139	6252	15
+6139	6257	15
+6139	6262	15
+6139	6267	15
+6139	6272	15
+6139	6277	15
+6139	6283	15
+6139	6288	15
+6139	6294	15
+6139	6298	15
+6139	6302	15
+6139	6307	15
+6139	6312	15
+6139	6316	15
+6139	6321	15
+6139	6326	15
+6139	6331	15
+6336	6338	15
+6336	6343	15
+6336	6348	15
+6336	6353	15
+6336	6358	15
+6336	6363	15
+6336	6367	15
+6336	6383	15
+6336	6387	15
+6336	6391	15
+6336	6395	15
+6336	6399	15
+6336	6403	15
+6336	6407	15
+6336	6419	15
+6434	6436	15
+6434	6439	15
+6434	6443	15
 6467	6469	10
 6467	6468	4
 6472	6474	10
@@ -7291,7 +7380,7 @@ COPY 1369 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6497	"listdirpat"	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;"	"fits"	1	2	true	false	false	2000
 6533	"netcdf_attach"	"-- gr_name is ""GLOBAL"" or ""ROOT"" for classic NetCDF files\n-- used for groups in HDF5 files\n-- global attributes have obj_name=""""\n\n-- create function netcdfvar (fname varchar(256)) \n--\treturns int external name netcdf.test;\n\ncreate procedure netcdf_attach(fname varchar(256))\n    external name netcdf.attach;"	"netcdf"	1	2	true	false	false	2000
 6536	"netcdf_importvar"	"create procedure netcdf_importvar(fid integer, varnname varchar(256))\n    external name netcdf.importvariable;"	"netcdf"	1	2	true	false	false	2000
-6540	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By chancing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table procuding function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
+6540	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By changing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table producing function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
 6584	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	2	2	true	false	false	2000
 6586	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int' then return 4 * i;\n\twhen nme = 'bigint' then return 8 * i;\n\twhen nme = 'hugeint' then return 16 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	2	1	false	false	false	2000
 6592	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	2	1	false	false	false	2000
@@ -7439,6 +7528,33 @@ COPY 46 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"
 5240	1	1	0	0
 5243	1	1	0	0
 5247	1	1	0	0
+5254	1	16	3	0
+5259	1	16	3	0
+5264	1	16	3	0
+5268	1	16	3	0
+5272	1	16	3	0
+5276	1	16	3	0
+5280	1	16	3	0
+5352	1	16	3	0
+5357	1	16	3	0
+5362	1	16	3	0
+5367	1	16	3	0
+5372	1	16	3	0
+5377	1	16	3	0
+5539	1	16	3	0
+5543	1	16	3	0
+5547	1	16	3	0
+5551	1	16	3	0
+5689	1	16	3	0
+5696	1	16	3	0
+5701	1	16	3	0
+5707	1	16	3	0
+5713	1	16	3	0
+5718	1	16	3	0
+5723	1	16	3	0
+5727	1	16	3	0
+5822	1	16	3	0
+6431	1	16	3	0
 6879	1	1	3	0
 COMMIT;
 START TRANSACTION;
