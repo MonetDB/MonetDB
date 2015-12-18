@@ -110,7 +110,7 @@ Ready.
 [ 1@0,	  "brave"	  ]
 [ 2@0,	  "new"		  ]
 [ 3@0,	  "world"	  ]
-[ Start searches	]
+[ "Start searches"	]
 #--------------------------#
 # h	t  # name
 # void	int	  # type

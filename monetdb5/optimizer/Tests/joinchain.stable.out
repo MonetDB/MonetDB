@@ -173,7 +173,7 @@ end user.qry;
 #--------------------------#
 [ 0@0,	"The"  ]
 [ 1@0,	"jumps"  ]
-[ empty sequences	]
+[ "empty sequences"	]
 #--------------------------#
 # h	t  # name
 # void	str  # type
