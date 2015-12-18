@@ -240,6 +240,45 @@ BKCmirror(bat *ret, const bat *bid)
 	throw(MAL, "bat.mirror", GDK_EXCEPTION);
 }
 
+char *
+BKCdelete(bat *r, const bat *bid, const oid *h)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.delete", OPERATION_FAILED);
+	if (BUNdelete(b, *h) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.delete", GDK_EXCEPTION);
+	}
+	BBPkeepref(*r = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
+{
+	BAT *b, *s;
+	gdk_return ret;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
+	if ((s = BATdescriptor(*sid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
+	}
+	ret = BATdel(b, s);
+	BBPunfix(s->batCacheid);
+	if (ret != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.delete", GDK_EXCEPTION);
+	}
+	BBPkeepref(*r = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 str
 BKCdelete_all(bat *r, const bat *bid)
 {
@@ -383,7 +422,6 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 {
 	BAT *b;
 
-	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if (void_inplace(b, *id, t, FALSE) != GDK_SUCCEED) {
@@ -399,7 +437,6 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 {
 	BAT *b;
 
-	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if (void_inplace(b, *id, t, *force) != GDK_SUCCEED) {

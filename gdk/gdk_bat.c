@@ -1035,6 +1035,50 @@ BUNappend(BAT *b, const void *t, bit force)
 	return GDK_FAIL;
 }
 
+gdk_return
+BUNdelete(BAT *b, oid o)
+{
+	BUN p;
+	BATiter bi = bat_iterator(b);
+
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase != oid_nil || BATcount(b) == 0);
+	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
+		/* value already not there */
+		return GDK_SUCCEED;
+	}
+	assert(BATcount(b) > 0); /* follows from "if" above */
+	p = o - b->hseqbase + BUNfirst(b);
+	if (p < b->batInserted) {
+		GDKerror("BUNdelete: cannot delete committed value\n");
+		return GDK_FAIL;
+	}
+	b->batDirty = 1;
+	ATOMunfix(b->ttype, BUNtail(bi, p));
+	ATOMdel(b->ttype, b->T->vheap, (var_t *) BUNtloc(bi, p));
+	if (p != BUNlast(b) - 1 &&
+	    (b->ttype != TYPE_void || b->tseqbase != oid_nil)) {
+		/* replace to-be-delete BUN with last BUN; materialize
+		 * void column before doing so */
+		if (b->ttype == TYPE_void &&
+		    BATmaterialize(b) != GDK_SUCCEED)
+			return GDK_FAIL;
+		memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
+		/* no longer sorted */
+		b->tsorted = b->trevsorted = 0;
+	}
+	b->batCount--;
+	if (b->batCount <= 1) {
+		/* some trivial properties */
+		b->tkey |= 1;
+		b->tsorted = b->trevsorted = 1;
+		if (b->batCount == 0) {
+			b->T->nil = 0;
+			b->T->nonil = 1;
+		}
+	}
+	return GDK_SUCCEED;
+}
 
 /* @-  BUN replace
  * The last operation in this context is BUN replace. It assumes that
@@ -1062,7 +1106,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 
 	/* uncommitted BUN elements */
 
-	ALIGNinp(b, "BUNreplace", force, GDK_FAIL);	/* zap alignment info */
+	ALIGNinp(b, "BUNinplace", force, GDK_FAIL);	/* zap alignment info */
 	if (b->T->nil &&
 	    atom_CMP(BUNtail(bi, p), ATOMnilptr(b->ttype), b->ttype) == 0 &&
 	    atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0) {
@@ -1122,57 +1166,47 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	return GDK_FAIL;
 }
 
+/* very much like void_inplace, except this materializes a void tail
+ * column if necessarry */
 gdk_return
-BUNreplace(BAT *b, const void *h, const void *t, bit force)
+BUNreplace(BAT *b, oid id, const void *t, bit force)
 {
-	BUN p;
-
 	BATcheck(b, "BUNreplace", GDK_FAIL);
-	BATcheck(h, "BUNreplace: head value is nil", GDK_FAIL);
 	BATcheck(t, "BUNreplace: tail value is nil", GDK_FAIL);
 
-	if ((p = BUNfnd(BATmirror(b), h)) == BUN_NONE)
+	if (id < b->hseqbase || id >= b->hseqbase + BATcount(b))
 		return GDK_SUCCEED;
 
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
 	if (b->ttype == TYPE_void) {
-		BUN i;
-
 		/* no need to materialize if value doesn't change */
-		if (b->tseqbase == oid_nil || (b->hseqbase + p) == *(oid *) t)
+		if (b->tseqbase == oid_nil ||
+		    b->tseqbase + id - b->hseqbase == *(const oid *) t)
 			return GDK_SUCCEED;
-		i = p;
 		if (BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
-		p = i;
 	}
 
-	return BUNinplace(b, p, t, force);
+	return BUNinplace(b, id - b->hseqbase + BUNfirst(b), t, force);
 }
 
+/* very much like BUNreplace, but this doesn't make any changes if the
+ * tail column is void */
 gdk_return
 void_inplace(BAT *b, oid id, const void *val, bit force)
 {
-	gdk_return res = GDK_SUCCEED;
-	BUN p = BUN_NONE;
-	BUN oldInserted = b->batInserted;
-	BAT *bm = BATmirror(b);
-
-	assert(b->htype == TYPE_void);
-	assert(b->hseqbase != oid_nil);
-	assert(b->batCount > (id - b->hseqbase));
-
-	b->batInserted = 0;
-	p = BUNfndVOID(bm, &id);
-
-	assert(force || p >= b->batInserted);	/* we don't want delete/ins */
-	assert(force || !b->batRestricted);
-	res = BUNinplace(b, p, val, force);
-
-	b->batInserted = oldInserted;
-	return res;
+	assert(id >= b->hseqbase && id < b->hseqbase + BATcount(b));
+	if (id < b->hseqbase || id >= b->hseqbase + BATcount(b)) {
+		GDKerror("void_inplace: id out of range\n");
+		return GDK_FAIL;
+	}
+	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, val) != BUN_NONE)
+		return GDK_SUCCEED;
+	if (b->ttype == TYPE_void)
+		return GDK_SUCCEED;
+	return BUNinplace(b, id - b->hseqbase + BUNfirst(b), val, force);
 }
 
 BUN
