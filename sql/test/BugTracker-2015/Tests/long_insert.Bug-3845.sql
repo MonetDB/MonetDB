@@ -1,4 +1,5 @@
 -- this works
+select debug(0); -- disable debug;
 
 START TRANSACTION;
 

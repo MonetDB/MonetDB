@@ -233,6 +233,8 @@ Ready.
 [ "sys",	"date_to_str",	1,	"date",	""	]
 [ "sys",	"date_to_str",	2,	"clob",	""	]
 [ "sys",	"db_users",	0,	"varchar",	"CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;"	]
+[ "sys",	"debug",	0,	"int",	"create function sys.debug(debug int) returns integer\n\texternal name mdb.\"setDebug\";"	]
+[ "sys",	"debug",	1,	"int",	""	]
 [ "sys",	"degrees",	0,	"double",	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function degrees(r double)\nreturns double\n\treturn r*180/pi();"	]
 [ "sys",	"degrees",	1,	"double",	""	]
 [ "sys",	"dependencies_columns_on_functions",	0,	"varchar",	"--Column c has a dependency on function f\ncreate function dependencies_columns_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);"	]

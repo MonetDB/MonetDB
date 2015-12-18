@@ -126,6 +126,7 @@ SYSTEM FUNCTION  sys.corr
 SYSTEM FUNCTION  sys.crosses
 SYSTEM FUNCTION  sys.date_to_str
 SYSTEM FUNCTION  sys.db_users
+SYSTEM FUNCTION  sys.debug
 SYSTEM FUNCTION  sys.degrees
 SYSTEM FUNCTION  sys.dependencies_columns_on_functions
 SYSTEM FUNCTION  sys.dependencies_columns_on_indexes
