@@ -30,8 +30,57 @@ stderr of test 'schemadiff.Bug-3778` in directory 'sql/test/BugTracker-2015` its
 # 15:29:05 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"
 # 15:29:05 >  
 
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25081/.s.monetdb.33961
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	mapi_port = 37355
+# cmdline opt 	gdk_dbpath = /tmp/tmpou_du0/master/master
+# cmdline opt 	gdk_debug = 536870922
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25081/.s.monetdb.33961
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	mapi_port = 48845
+# cmdline opt 	gdk_dbpath = /tmp/tmpou_du0/worker_0/worker_0
+# cmdline opt 	gdk_debug = 536870922
+Traceback (most recent call last):
+  File "schemadiff.Bug-3778.SQL.py", line 85, in <module>
+    c.execute("select * from " + shardtable + workers[0]['tpf'] )
+  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/sql/cursors.py", line 158, in execute
+    block = self.connection.execute(query)
+  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/sql/connections.py", line 127, in execute
+    return self.command('s' + query + '\n;')
+  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/sql/connections.py", line 132, in command
+    return self.mapi.cmd(command)
+  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/mapi.py", line 178, in cmd
+    raise OperationalError(response[1:])
+monetdb.exceptions.OperationalError: (mapi:monetdb://monetdb@localhost/worker_0) 'user.l1' undefined in:     rmt5_X_1_bat_oid_int:bat[:oid,:int] := user.l1();
 
-# 15:29:06 >  
-# 15:29:06 >  "Done."
-# 15:29:06 >  
+!failed to open file: No such file or directory (/tmp/tmpou_du0/worker_0/worker_0/.uplog)!failed to open file: No such file or directory (/tmp/tmpou_du0/master/master/.uplog)
+# 12:53:25 >  
+# 12:53:25 >  "Done."
+# 12:53:25 >  
 
