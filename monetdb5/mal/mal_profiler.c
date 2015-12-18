@@ -560,12 +560,11 @@ static BAT *TRACE_id_majflt = 0;
 static BAT *TRACE_id_nvcsw = 0;
 static BAT *TRACE_id_stmt = 0;
 
-
-void
+int
 TRACEtable(BAT **r)
 {
 	if (TRACE_init == 0)
-		return ;       /* not initialized */
+		return -1;       /* not initialized */
 	MT_lock_set(&mal_profileLock);
 	r[0] = COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
 	r[1] = COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
@@ -581,6 +580,7 @@ TRACEtable(BAT **r)
 	r[11] = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
 	r[12] = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
+	return 13;
 }
 
 BAT *

@@ -39,7 +39,7 @@ mal_export void MPresetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
 mal_export void clearTrace(void);
-mal_export void TRACEtable(BAT **r);
+mal_export int TRACEtable(BAT **r);
 mal_export int initTrace(void);
 mal_export str cleanupTraces(void);
 mal_export BAT *getTrace(const char *ev);

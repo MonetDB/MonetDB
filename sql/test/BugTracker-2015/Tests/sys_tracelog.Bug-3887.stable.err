@@ -27,7 +27,11 @@ stderr of test 'sys_tracelog.Bug-3887` in directory 'sql/test/BugTracker-2015` i
 # cmdline opt 	gdk_debug = 536870922
 
 
-# 14:11:11 >  
-# 14:11:11 >  "Done."
-# 14:11:11 >  
+MAPI  = (monetdb) /var/tmp/mtest-25081/.s.monetdb.33961
+QUERY = select count(*) from "sys"."tracelog";
+ERROR = !Profiler not started
+
+# 12:53:39 >  
+# 12:53:39 >  "Done."
+# 12:53:39 >  
 

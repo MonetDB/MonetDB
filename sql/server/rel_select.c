@@ -4951,7 +4951,7 @@ rel_frame(mvc *sql, symbol *frame, list *exps)
  * aa = project (a) [ x, y, r = rank_op(diff(x) (marks a new partition), rediff(diff(x), y) (marks diff value with in partition)), z, w, v ]
  * project(aa) [ aa.x, aa.y, aa.r ] -- only keep current output list 
  * bb = project (b) [ x, y, a = aggr_op(z, diff(y), rediff(diff(y), x)), z, w, v ]
- * project(j) [ bb.x, bb.y, bb.a ]  -- only keep current output list
+ * project(bb) [ bb.x, bb.y, bb.a ]  -- only keep current output list
  */
 static sql_exp *
 rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
@@ -4967,7 +4967,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
 	sql_schema *s = sql->session->schema;
-	int distinct = 0;
+	int distinct = 0, project_added = 0;
 	
 	if (window_function->token == SQL_RANK) {
 		aname = qname_fname(window_function->data.lval);
@@ -4990,6 +4990,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* window operations are only allowed in the projection */
+	if (r && r->op != op_project) {
+		*rel = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+		project_added = 1;
+	}
 	if (f != sql_sel || !r || r->op != op_project || is_processed(r))
 		return sql_error(sql, 02, "OVER: only possible within the selection");
 
@@ -5110,6 +5114,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	set_processed(p);
 	append(p->exps, e);
 	e = rel_lastexp(sql, p);
+	if (project_added) {
+		append(r->exps, e);
+		e = rel_lastexp(sql, r);
+	}
 	return e;
 }
 
