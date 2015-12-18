@@ -16,10 +16,12 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	int i;
 	(void)cntxt;
 
-	if ( !( p->token == ASSIGNsymbol ||
-			getModuleId(p) == calcRef ||
+	if ( !(p->token == ASSIGNsymbol ||
+		   getModuleId(p) == calcRef ||
 		   getModuleId(p) == strRef ||
-		   getModuleId(p) == mmathRef ))
+		   getModuleId(p) == mmathRef))
+		return FALSE;
+	if (getModuleId(p) == mmathRef && strcmp(getFunctionId(p), "rand") == 0)
 		return FALSE;
 
 	for (i = p->retc; i < p->argc; i++)

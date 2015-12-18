@@ -292,7 +292,7 @@ MALoptimizer(Client c)
 		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
-		OPTmultiplexSimple(c);
+		OPTmultiplexSimple(c, c->curprg->def);
 	return msg;
 }
 
