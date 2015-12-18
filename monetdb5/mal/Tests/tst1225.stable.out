@@ -54,8 +54,8 @@ Ready.
 # h	timezone		  # name
 # void	timezone	  # type
 #--------------------------#
-[ 0@0,	GMT-23:36  ]
-[ 1@0,	GMT  ]
+[ 0@0,	"GMT-23:36"	]
+[ 1@0,	"GMT"	]
 
 # 23:39:02 >  
 # 23:39:02 >  Done.
