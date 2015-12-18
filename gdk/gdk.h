@@ -1079,7 +1079,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @item BAT*
  * @tab BUNappend (BAT *b, ptr right, bit force)
  * @item BAT*
- * @tab BUNreplace (BAT *b, ptr left, ptr right, bit force)
+ * @tab BUNreplace (BAT *b, oid left, ptr right, bit force)
  * @item int
  * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
@@ -1258,7 +1258,6 @@ gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int may
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
 
-gdk_export gdk_return BUNreplace(BAT *b, const void *left, const void *right, bit force);
 gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bit force);
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 

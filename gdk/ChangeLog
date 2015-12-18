@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Dec 18 2015 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BUNreplace from list of exported functions.  It wasn't used,
+  and there is still BUNinplace and void_inplace that do more-or-less
+  the same thing.
+
 * Thu Dec 17 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Changed BATderiveHeadProps to BATderiveTailProps (and it now works on
   the tail column).

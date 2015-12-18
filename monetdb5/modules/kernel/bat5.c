@@ -383,7 +383,6 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 {
 	BAT *b;
 
-	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if (void_inplace(b, *id, t, FALSE) != GDK_SUCCEED) {
@@ -399,7 +398,6 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 {
 	BAT *b;
 
-	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	if (void_inplace(b, *id, t, *force) != GDK_SUCCEED) {

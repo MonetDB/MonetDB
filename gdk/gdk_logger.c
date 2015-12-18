@@ -467,21 +467,21 @@ la_bat_updates(logger *lg, logaction *la)
 			BUN p, q;
 
 			BATloop(la->b, p, q) {
-				const void *h = BUNtail(ii, p);
+				oid h = * (const oid *) BUNtail(ii, p);
 				const void *t = BUNtail(vi, p);
 
 				assert(b->htype == TYPE_void);
-				if (BUNfnd(BATmirror(b), h) == BUN_NONE) {
+				if (h < b->hseqbase || h >= b->hseqbase + BATcount(b)) {
 					/* if value doesn't exist,
-					 * insert it if b void headed,
+					 * insert it; if b void headed,
 					 * maintain that by inserting
 					 * nils */
-					if (b->batCount == 0 && *(const oid *) h != oid_nil)
-						b->hseqbase = *(const oid *) h;
-					if (b->hseqbase != oid_nil && *(const oid *) h != oid_nil) {
+					if (b->batCount == 0 && h != oid_nil)
+						b->hseqbase = h;
+					if (b->hseqbase != oid_nil && h != oid_nil) {
 						const void *tv = ATOMnilptr(b->ttype);
 
-						while (b->hseqbase + b->batCount < *(const oid *) h)
+						while (b->hseqbase + b->batCount < h)
 							BUNappend(b, tv, TRUE);
 					}
 					BUNappend(b, t, TRUE);
@@ -2369,7 +2369,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 	logformat l;
 	BUN p;
 
-	assert(uid->ttype == TYPE_oid || !uid->ttype);
+	assert(uid->ttype == TYPE_oid || uid->ttype == TYPE_void);
 	if (lg->debug & 128) {
 		/* logging is switched off */
 		return LOG_OK;

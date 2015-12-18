@@ -583,7 +583,6 @@ BATappend(BAT *b, BAT *n, bit force)
  * The last in this series is a BATreplace, which replaces all the
  * buns mentioned.
  */
-#define BUNreplace_force(a,b,c) BUNreplace(a,b,c,force)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bit force)
 {
