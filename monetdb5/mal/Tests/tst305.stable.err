@@ -30,8 +30,21 @@ stderr of test 'tst305` in directory 'monetdb5/mal` itself:
 # 09:16:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24715" "--port=38956"
 # 09:16:50 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24715/.s.monetdb.38956
-QUERY = user.foo();
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = 
+        # Exceptions can be explicitly raised in a function
+        # which requires the exception identifier to be defined.
+        
+        function myException();
+        raise	IllegalAccess:="new exception";
+        	io.print("should have left function ");
+        end myException;
+        
+        function foo();
+        	user.myException();
+        	io.print("should not come here");
+        end foo;
+        user.foo();
 ERROR = !MALException:user.myException[1]:new exception
         !MALException:user.myException[3]:Exception not caught
 

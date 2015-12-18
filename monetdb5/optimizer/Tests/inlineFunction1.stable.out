@@ -30,14 +30,8 @@ Ready.
 #result of inline
 #mdb.list("user","tst");
 function user.tst():void;
-    X_5 := calc.==(1,1);
-barrier X_6 := X_5;
-    calc.int(100);
-exit X_6;
-barrier X_9 := calc.not(X_5);
-    calc.==(1,2);
-exit X_9;
-    z := 0;
+    X_5 := true:bit;
+    z := 0:int;
 end user.tst;
 #mdb.list("user","tst");
 function user.tst():void;

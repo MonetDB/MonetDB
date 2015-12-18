@@ -26,24 +26,41 @@ stderr of test 'tst050` in directory 'monetdb5/mal` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 12:43:25 >  
-# 12:43:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19653" "--port=35231"
-# 12:43:25 >  
+# 13:48:37 >  
+# 13:48:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
+# 13:48:37 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19653/.s.monetdb.35231
-QUERY = j:sht := 1:lng;
-ERROR = !TypeException:user.main[1]:type mismatch sht := lng
-MAPI  = (monetdb) /var/tmp/mtest-19653/.s.monetdb.35231
-QUERY = k:lng := 1:sht;
-ERROR = !TypeException:user.main[1]:type mismatch lng := sht
-MAPI  = (monetdb) /var/tmp/mtest-19653/.s.monetdb.35231
-QUERY = y:bat[:oid,:str]:= bat.new(:oid,:int);
-ERROR = !TypeException:user.main[1]:'bat.new' undefined in:     y:bat[:oid,:str] := bat.new(:oid,:int);
-MAPI  = (monetdb) /var/tmp/mtest-19653/.s.monetdb.35231
-QUERY = f:flt := "wrong";
-ERROR = !TypeException:user.main[1]:type mismatch flt := str
+MAPI  = (monetdb) /var/tmp/mtest-24529/.s.monetdb.30912
+QUERY = # Variables names may be tagged with a type upfront.
+        # They may be initialized with a lexical constant using
+        # either their stored type syntax or with a string literal
+        
+        function f();
+        s:str := "hello";
+        i:sht := 1:sht;
+        b:bit   := true;
+        z:bat[:oid,:int]:= bat.new(:oid,:int);
+        end f;
+        
+        # type resolver should complain on the rest
+        function f();
+        j:sht := 1:lng;
+        end f;
+        function f();
+        k:lng := 1:sht;
+        end f;
+        function f();
+        y:bat[:oid,:str]:= bat.new(:oid,:int);
+        end f;
+        function f();
+        f:flt := "wrong";
+        end f;
+ERROR = !TypeException:user.f[1]:type mismatch sht := lng
+        !TypeException:user.f[1]:type mismatch lng := sht
+        !TypeException:user.f[1]:'bat.new' undefined in:     y:bat[:oid,:str] := bat.new(:oid,:int);
+        !TypeException:user.f[1]:type mismatch flt := str
 
-# 12:43:25 >  
-# 12:43:25 >  "Done."
-# 12:43:25 >  
+# 13:48:37 >  
+# 13:48:37 >  "Done."
+# 13:48:37 >  
 

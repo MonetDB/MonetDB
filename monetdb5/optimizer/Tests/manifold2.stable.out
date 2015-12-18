@@ -29,19 +29,19 @@ Ready.
 
 #mdb.List("user","tst");
 function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
-barrier X_23:bit := language.dataflow();	#[1] MALstartDataflow 23 
+barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
     c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
     c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
-    X_8:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[4] CMDBATnew 8 <- 9 10 
-exit X_23:bit;                          	#[5]  23 
-barrier (X_12:oid,X_13:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 12 13 <- 1 
-    X_15:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_12:oid);	#[7] ALGfetchoid 15 <- 2 12 
-    X_17:dbl := calc.max(X_13:dbl,X_15:dbl);	#[8] CALCmax 17 <- 13 15 
-    bat.append(X_8:bat[:oid,:dbl],X_17:dbl);	#[9] BKCappend_val_wrap 18 <- 8 17 
-    redo (X_12:oid,X_13:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 12 13 <- 1 
-exit (X_12:oid,X_13:dbl);               	#[11]  12 13 
-    z:bat[:oid,:dbl] := X_8:bat[:oid,:dbl];	#[12]  5 <- 8 
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 22 <- 5 1 2 
+exit X_9:bit;                           	#[4]  9 
+    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
+    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
+    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	#[8] CALCmax 21 <- 17 19 
+    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 16 17 <- 1 
+exit (X_16:oid,X_17:dbl);               	#[11]  16 17 
+    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	#[12]  5 <- 12 
+    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 8 <- 5 1 2 
 end user.tst;                           	#[14]  
 #[1]     b =  :bat[:oid,:dbl]  
 #[2]    b2 =  :bat[:oid,:dbl]  
@@ -57,19 +57,19 @@ end user.tst;                           	#[14]
 #[19]   _19 =  :dbl  
 #[21]   _21 =  :dbl  
 function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
-barrier X_23:bit := language.dataflow();	#[1] MALstartDataflow 23 
+barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
     c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
     c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
-    X_8:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[4] CMDBATnew 8 <- 9 10 
-exit X_23:bit;                          	#[5]  23 
-barrier (X_12:oid,X_13:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 12 13 <- 1 
-    X_15:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_12:oid);	#[7] ALGfetchoid 15 <- 2 12 
-    X_17:dbl := calc.max(X_13:dbl,X_15:dbl);	#[8] CALCmax 17 <- 13 15 
-    bat.append(X_8:bat[:oid,:dbl],X_17:dbl);	#[9] BKCappend_val_wrap 18 <- 8 17 
-    redo (X_12:oid,X_13:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 12 13 <- 1 
-exit (X_12:oid,X_13:dbl);               	#[11]  12 13 
-    z:bat[:oid,:dbl] := X_8:bat[:oid,:dbl];	#[12]  5 <- 8 
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 22 <- 5 1 2 
+exit X_9:bit;                           	#[4]  9 
+    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
+    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
+    X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	#[8] CALCmax 21 <- 17 19 
+    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 16 17 <- 1 
+exit (X_16:oid,X_17:dbl);               	#[11]  16 17 
+    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	#[12]  5 <- 12 
+    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 8 <- 5 1 2 
 end user.tst;                           	#[14]  
 
 # 09:02:36 >  

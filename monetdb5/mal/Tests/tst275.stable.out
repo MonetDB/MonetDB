@@ -1,9 +1,9 @@
 stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 
 
-# 15:25:18 >  
-# 15:25:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30762" "--set" "mapi_usock=/var/tmp/mtest-12458/.s.monetdb.30762" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
-# 15:25:18 >  
+# 13:20:46 >  
+# 13:20:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37961" "--set" "mapi_usock=/var/tmp/mtest-18020/.s.monetdb.37961" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:20:46 >  
 
 # MonetDB 5 server v11.22.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30762/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12458/.s.monetdb.30762
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37961/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18020/.s.monetdb.37961
 # MonetDB/GIS module loaded
 # Start processing logs sql/sql_logs version 52200
 # Start reading the write-ahead log 'sql_logs/sql/log.4'
@@ -25,19 +25,17 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 
 Ready.
 
-# 15:25:18 >  
-# 15:25:18 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12458" "--port=30762"
-# 15:25:18 >  
+# 13:20:46 >  
+# 13:20:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:46 >  
 
-#io.printf("#~BeginVariableOutput~#\n"); 
 #~BeginVariableOutput~#
-#io.print(bk,bv); 
 #--------------------------#
 # t	t	t  # name
 # void	str	str  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_66"	]
-[ 1@0,	"batCacheid",	"54"	]
+[ 0@0,	"batId",	"tmp_24"	]
+[ 1@0,	"batCacheid",	"20"	]
 [ 2@0,	"hparentid",	"0"	]
 [ 3@0,	"tparentid",	"0"	]
 [ 4@0,	"batSharecnt",	"0"	]
@@ -56,7 +54,7 @@ Ready.
 [ 17@0,	"hseqbase",	"0@0"	]
 [ 18@0,	"hkey",	"1"	]
 [ 19@0,	"hvarsized",	"1"	]
-[ 20@0,	"halign",	"0"	]
+[ 20@0,	"halign",	"20000000"	]
 [ 21@0,	"hnosorted",	"0"	]
 [ 22@0,	"hnorevsorted",	"0"	]
 [ 23@0,	"hnodense",	"0"	]
@@ -100,12 +98,10 @@ Ready.
 [ 61@0,	"tail.size",	"1024"	]
 [ 62@0,	"tail.storage",	"malloced"	]
 [ 63@0,	"tail.newstorage",	"malloced"	]
-[ 64@0,	"tail.filename",	"66.tail"	]
+[ 64@0,	"tail.filename",	"24.tail"	]
 [ 65@0,	"H->vheap->dirty",	"clean"	]
 [ 66@0,	"T->vheap->dirty",	"clean"	]
-#io.printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
-#io.print(b);
 #--------------------------#
 # h	t  # name
 # void	int  # type
@@ -121,7 +117,6 @@ Ready.
 [ 8@0,	nil	]
 [ 9@0,	nil	]
 [ 10@0,	81	]
-#io.print(b,b,b);
 #--------------------------#
 # t	t	t	t  # name
 # void	int	int	int  # type
@@ -138,7 +133,7 @@ Ready.
 [ 9@0,	nil,	nil,	nil	]
 [ 10@0,	81,	81,	81	]
 
-# 15:25:18 >  
-# 15:25:18 >  "Done."
-# 15:25:18 >  
+# 13:20:46 >  
+# 13:20:46 >  "Done."
+# 13:20:46 >  
 

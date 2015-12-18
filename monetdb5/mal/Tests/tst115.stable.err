@@ -26,15 +26,37 @@ stderr of test 'tst115` in directory 'monetdb5/mal` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 14:57:19 >  
-# 14:57:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
-# 14:57:19 >  
+# 13:20:26 >  
+# 13:20:26 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:26 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-5138/.s.monetdb.37326
-QUERY = d:= user.doitTwice("wrong");
-ERROR = !TypeException:user.main[1]:'user.doitTwice' undefined in:     d:int := user.doitTwice("wrong":str);
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # the next step is to trace the call of a mal function call
+        
+        command + (L:any_1,R:any_1):any_1 address addIntInt; 
+        
+        function doitOnce():int;
+        	z:= 12;
+        	return z;
+        end doitOnce;
+        
+        function doitTwice(i:int):int;
+        	j:= 2;
+        	k:= 11111;
+        	i:= j+k;
+        	return i;
+        end doitTwice;
+        
+        
+        a:=1;
+        b:= user.doitOnce();
+        c:= 2;
+        d:= user.doitTwice(3);
+        c:= 3;
+        d:= user.doitTwice("wrong");
+ERROR = !TypeException:user.main[7]:'user.doitTwice' undefined in:     d:int := user.doitTwice("wrong":str);
 
-# 14:57:19 >  
-# 14:57:19 >  "Done."
-# 14:57:19 >  
+# 13:20:26 >  
+# 13:20:26 >  "Done."
+# 13:20:26 >  
 

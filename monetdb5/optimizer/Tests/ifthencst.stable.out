@@ -29,18 +29,8 @@ Ready.
 
 #mdb.list("user","tst");
 function user.tst():void;
-barrier a := false;
-    io.print("never executed");
-exit a;
-barrier b := calc.not(false);
     io.print("always executed");
-exit b;
-barrier c := true;
     io.print("always executed");
-exit c;
-barrier d := calc.not(true);
-    io.print("never executed");
-exit d;
 end user.tst;
 #mdb.list("user","tst");
 function user.tst():void;

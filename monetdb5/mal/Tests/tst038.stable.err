@@ -10,11 +10,19 @@ stderr of test 'tst038` in directory 'monetdb5/mal` itself:
 # 11:43:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14232" "--port=35042"
 # 11:43:41 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14232/.s.monetdb.35042
-QUERY = user.tst2(b);
+MAPI  = (monetdb) /var/tmp/mtest-24529/.s.monetdb.30912
+QUERY = #test the capability to deal with unspecified bats.
+        function tst2(b:bat[:oid,:any_1]);
+        	bat.append(b,"hello");
+        end tst2;
+        
+        b:= bat.new(:oid,:int);
+        
+        #The call to tst2 fails at runtime
+        user.tst2(b);
 ERROR = !TypeException:user.tst2[1]:'bat.append' undefined in:     bat.append(b:bat[:oid,:int],"hello":str);
         !MALException:user.tst2[0]:Error in cloned function
-        !TypeException:user.main[1]:'user.tst2' undefined in:     user.tst2(b:bat[:oid,:int]);
+        !TypeException:user.main[4]:'user.tst2' undefined in:     user.tst2(b:bat[:oid,:int]);
 
 # 11:43:41 >  
 # 11:43:41 >  "Done."

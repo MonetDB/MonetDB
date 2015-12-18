@@ -35,13 +35,13 @@ catch MALException:str;
 	io.print(MALException);
 exit  MALException;
 
-	o := algebra.find(b,"fox");
-	v29:= bat.delete(b,o);
-	o := algebra.find(b,"the");
-	v30:= bat.delete(b,o);
-	o := algebra.find(b,".");
-	v31:= bat.delete(b,o);
-	v32:= io.print(b);
+#	o := algebra.find(b,"fox");
+#	v29:= bat.delete(b,o);
+#	o := algebra.find(b,"the");
+#	v30:= bat.delete(b,o);
+#	o := algebra.find(b,".");
+#	v31:= bat.delete(b,o);
+#	v32:= io.print(b);
 
 
 	v33:= bat.append(b,"fox");

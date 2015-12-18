@@ -30,13 +30,14 @@ stderr of test 'tst008` in directory 'monetdb5/mal` itself:
 # 10:46:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7848" "--port=36068"
 # 10:46:01 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
-QUERY = io.printi;
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = function foo();
+        i:=32;
+        io.printi;
+        io.print(i);
+        end foo;
 ERROR = !SyntaxException:parseError:io.printi;
         !SyntaxException:parseError:        ^'(' expected
-MAPI  = (monetdb) /var/tmp/mtest-9433/.s.monetdb.39876
-QUERY = end foo;
-ERROR = !TypeException:user.foo[1]:'i' may not be used before being initialized
 
 
 # 10:46:01 >  

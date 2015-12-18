@@ -30,8 +30,19 @@ stderr of test 'tst303` in directory 'monetdb5/mal` itself:
 # 09:00:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
 # 09:00:01 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23106/.s.monetdb.30527
-QUERY = user.foo();
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # recursively raise an exception passed upward
+        function foo();
+        raise	IllegalAccess := "an exception";
+        	io.print("should not come here\n");
+        catch	IllegalAccess;
+        	io.printf("caught %s\n",IllegalAccess);
+        raise	IllegalAccess:= "a second exception raised";
+        	io.print("should not come here either\n");
+        exit	IllegalAccess;
+        	io.print("should not be done");
+        end;
+        user.foo();
 ERROR = !MALException:user.foo[5]:a second exception raised
         !MALException:user.foo[9]:Exception not caught
 

@@ -12,4 +12,5 @@ c:= 1;
 xz:bat[:oid,:lng]:= mal.multiplex("calc","+",b,c);
 io.print(xz);
 end;
+optimizer.multiplex("user","foo");
 user.foo();

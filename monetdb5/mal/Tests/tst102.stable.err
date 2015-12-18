@@ -30,11 +30,15 @@ stderr of test 'tst102` in directory 'monetdb5/mal` itself:
 # 13:25:17 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26037" "--port=30954"
 # 13:25:17 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26037/.s.monetdb.30954
-QUERY = a:=1+"hello";
-ERROR = !TypeException:user.main[1]:'calc.+' undefined in:     a:any := calc.+(1:int,"hello":str);
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # the calls are wrong, they violate the type constraint
+        command + (L:any_1, R:any_1):any_1 address addIntInt comment "unknown function";
 
-# 13:25:17 >  
-# 13:25:17 >  "Done."
-# 13:25:17 >  
+        a:=1+"hello";
+        b:=3.5+1;
+ERROR = !TypeException:user.main[2]:'calc.+' undefined in:     a:any := calc.+(1:int,"hello":str);
+
+# 13:20:23 >  
+# 13:20:23 >  "Done."
+# 13:20:23 >  
 

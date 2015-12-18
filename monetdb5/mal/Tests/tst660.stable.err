@@ -12,23 +12,44 @@ stderr of test 'tst660` in directory 'monetdb5/mal` itself:
 # 10:30:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32486" "--port=30121"
 # 10:30:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-32486/.s.monetdb.30121
-QUERY = fi(1);
-ERROR = !MALException:mdb.dummy:operation failed
-MAPI  = (monetdb) /var/tmp/mtest-32486/.s.monetdb.30121
-QUERY = fi(1,2);
-ERROR = !MALException:mdb.dummy:operation failed
-MAPI  = (monetdb) /var/tmp/mtest-32486/.s.monetdb.30121
-QUERY = fi(1,2,3);
-ERROR = !MALException:mdb.dummy:operation failed
-MAPI  = (monetdb) /var/tmp/mtest-32486/.s.monetdb.30121
-QUERY = fs(1,"a");
-ERROR = !MALException:mdb.dummy:operation failed
-MAPI  = (monetdb) /var/tmp/mtest-32486/.s.monetdb.30121
-QUERY = fs(1,"a","b");
-ERROR = !MALException:mdb.dummy:operation failed
-MAPI  = (monetdb) /var/tmp/mtest-32486/.s.monetdb.30121
-QUERY = fs(1,"a","b","c");
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37961
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18020/.s.monetdb.37961
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:20:54 >  
+# 13:20:54 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:54 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = #Testing variable argument lists
+        
+        pattern fi(i:int...) address MDBdummy;
+        pattern fs(i:int,s:str...) address MDBdummy;
+        
+        fi(1);
+        fi(1,2);
+        fi(1,2,3);
+        
+        fs(1,"a");
+        fs(1,"a","b");
+        fs(1,"a","b","c");
 ERROR = !MALException:mdb.dummy:operation failed
 
 # 10:30:20 >  

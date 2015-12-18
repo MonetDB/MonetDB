@@ -66,8 +66,9 @@ stderr of test 'pithole` in directory 'monetdb5/mal` itself:
 # 21:00:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23746" "--port=32905"
 # 21:00:41 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23746/.s.monetdb.32905
-QUERY = user.main();
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = #challenge the runtime stack protection
+        user.main();
 ERROR = !MALException:mal.interpreter:Recursive call limit reached.
 
 # 21:00:41 >  

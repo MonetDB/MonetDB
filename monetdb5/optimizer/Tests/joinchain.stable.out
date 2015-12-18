@@ -64,7 +64,7 @@ function user.qry():void;
     bat.append(k,8);
     bat.append(k,9);
     e := algebra.projection(a,b);
-    f := algebra.projection(e,c);
+    f:bat[:oid,:oid] := algebra.projectionPath(a,b,c);
     g := algebra.projection(f,d);
     l := algebra.projection(f,k);
     io.print(g);

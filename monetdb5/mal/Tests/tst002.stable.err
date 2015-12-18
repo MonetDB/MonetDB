@@ -30,13 +30,17 @@ stderr of test 'tst002` in directory 'monetdb5/mal` itself:
 # 22:10:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23963" "--port=30853"
 # 22:10:35 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-10100/.s.monetdb.34120
-QUERY = 	true:= 23;
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # reserved names may not be used as target variables
+        	true:= 23;
+        	false:= 24;
+        barrier barrier:= true;
+        	b:= true;
+        	b:= false;
+        exit barrier;
 ERROR = !SyntaxException:parseError:	true:= 23;
         !SyntaxException:parseError:^<identifier> expected
-MAPI  = (monetdb) /var/tmp/mtest-10100/.s.monetdb.34120
-QUERY = 	false:= 24;
-ERROR = !SyntaxException:parseError:	false:= 24;
+        !SyntaxException:parseError:	false:= 24;
         !SyntaxException:parseError:^<identifier> expected
 
 # 22:10:35 >  

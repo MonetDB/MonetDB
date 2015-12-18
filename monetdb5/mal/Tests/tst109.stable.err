@@ -30,13 +30,25 @@ stderr of test 'tst109` in directory 'monetdb5/mal` itself:
 # 13:25:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26037" "--port=30954"
 # 13:25:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26037/.s.monetdb.30954
-QUERY = exit	t;
-ERROR = !SyntaxException:user.main[6]:exit-label 'v' doesnot match 't'
-        !SyntaxException:user.main[7]:label 't' not in guarded block
-        !SyntaxException:user.main[8]:exit-label 't' without begin-label
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # Error, illegal block weaveing 
+        # analyse the basic interpreter loop
 
-# 13:25:20 >  
-# 13:25:20 >  "Done."
-# 13:25:20 >  
+        	i:=0;
+        barrier	v:=1;
+        	leave v;
+        	i:= 1;
+        barrier t:= i<3;
+        	i:=i+1;
+        exit	v;
+        	redo t;
+        exit	t;
+        	i:= 0;
+ERROR = !SyntaxException:user.main[9]:exit-label 'v' doesnot match 't'
+        !SyntaxException:user.main[10]:label 't' not in guarded block
+        !SyntaxException:user.main[11]:exit-label 't' without begin-label
+
+# 13:20:26 >  
+# 13:20:26 >  "Done."
+# 13:20:26 >  
 

@@ -30,8 +30,13 @@ stderr of test 'tst070` in directory 'monetdb5/mal` itself:
 # 13:02:34 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23427" "--port=34822"
 # 13:02:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23427/.s.monetdb.34822
-QUERY = end foo;
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # parsing operations with multi-assignments
+        
+        function foo();
+        (x,y):= user.point(1);
+        (initial:str,surname:str):= user.getName();
+        end foo;
 ERROR = !TypeException:user.foo[1]:'user.point' undefined in:     (x:any,y:any) := user.point(1:int);
 
 # 13:02:34 >  

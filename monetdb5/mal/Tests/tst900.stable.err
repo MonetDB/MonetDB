@@ -30,14 +30,21 @@ stderr of test 'tst900` in directory 'monetdb5/mal` itself:
 # 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
 # 12:36:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11334/.s.monetdb.30001
-QUERY = d:= [+](b,c) ;;# parser bug
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # the multiplex code blocks. Testing syntax errors
+        
+        function foo();
+        b:= bat.new(:lng,:lng);
+        x:= multiplex.+(b,b);
+        d:= [+](b,c) ;;# parser bug
+        a:= b [+] b;
+        end;
+        user.foo();
 ERROR = !SyntaxException:parseError:d:= [+](b,c) ;;# parser bug
         !SyntaxException:parseError:   ^operator expected
-MAPI  = (monetdb) /var/tmp/mtest-11334/.s.monetdb.30001
-QUERY = a:= b [+] b;
-ERROR = !SyntaxException:parseError:a:= b [+] b;
+        !SyntaxException:parseError:a:= b [+] b;
         !SyntaxException:parseError:     ^operator expected
+        !TypeException:user.main[2]:'user.foo' undefined in:     user.foo();
 
 # 12:36:20 >  
 # 12:36:20 >  "Done."

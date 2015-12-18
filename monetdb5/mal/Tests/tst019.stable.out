@@ -1,9 +1,9 @@
 stdout of test 'tst019` in directory 'monetdb5/mal` itself:
 
 
-# 07:58:38 >  
-# 07:58:38 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst019.mal </dev/null
-# 07:58:38 >  
+# 13:48:26 >  
+# 13:48:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30912" "--set" "mapi_usock=/var/tmp/mtest-24529/.s.monetdb.30912" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:48:26 >  
 
 # MonetDB 5 server v11.22.0
 # This is an unreleased version
@@ -13,24 +13,24 @@ stdout of test 'tst019` in directory 'monetdb5/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31044/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12237/.s.monetdb.31044
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30912/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24529/.s.monetdb.30912
 # MonetDB/GIS module loaded
 # Start processing logs sql/sql_logs version 52200
-# Start reading the write-ahead log 'sql_logs/sql/log.3'
-# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
 Ready.
 
-# 11:22:44 >  
-# 11:22:44 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12237" "--port=31044"
-# 11:22:44 >  
+# 13:48:26 >  
+# 13:48:26 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
+# 13:48:26 >  
 
 
-# 11:22:45 >  
-# 11:22:45 >  "Done."
-# 11:22:45 >  
+# 13:48:26 >  
+# 13:48:26 >  "Done."
+# 13:48:26 >  
 

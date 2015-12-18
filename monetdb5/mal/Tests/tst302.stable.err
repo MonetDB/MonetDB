@@ -26,12 +26,18 @@ stderr of test 'tst302` in directory 'monetdb5/mal` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 09:00:01 >  
-# 09:00:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
-# 09:00:01 >  
+# 13:20:49 >  
+# 13:20:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23106/.s.monetdb.30527
-QUERY = user.foo();
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = #propagate INT exception
+        # (you should be able to pass it upwards though)
+        function foo();
+        raise	PermissionDeniedException := 1234;
+        	io.print("should not come here\n");
+        end;
+        user.foo();
 ERROR = !MALException:user.foo[3]:Exception not caught
 
 

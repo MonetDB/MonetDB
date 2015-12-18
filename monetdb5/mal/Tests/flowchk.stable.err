@@ -69,8 +69,15 @@ stderr of test 'flowchk` in directory 'monetdb5/mal` itself:
 # 07:33:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15547" "--port=37088"
 # 07:33:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-15547/.s.monetdb.37088
-QUERY = end tst;
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = function tst();
+        barrier go:=true;
+        	a:=bat.new(:oid,:int);
+        	io.print(a);
+        exit go;
+        	c:=a;
+        end tst;
+ERROR = !TypeException:user.tst[5]:'a' may not be used before being initialized
 
 
 # 07:33:12 >  

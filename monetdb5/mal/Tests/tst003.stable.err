@@ -30,8 +30,13 @@ stderr of test 'tst003` in directory 'monetdb5/mal` itself:
 # 22:10:36 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23963" "--port=30853"
 # 22:10:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-10100/.s.monetdb.34120
-QUERY = end foo;
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # test illegal variable use
+        
+        function foo();
+        a:=b;	#b not yet defined
+        b:=c;	#c undefined
+        end foo;
 ERROR = !TypeException:user.foo[1]:'b' may not be used before being initialized
         !TypeException:user.foo[3]:'c' may not be used before being initialized
 

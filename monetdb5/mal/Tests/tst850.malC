@@ -9,4 +9,5 @@ function foo();
 	b:bat[:oid,:bit]:= mal.multiplex("str","startsWith",t,"#");
 	io.print(b);
 end;
+optimizer.multiplex("user","foo");
 user.foo();

@@ -29,8 +29,6 @@ Ready.
 # 15:19:56 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9433" "--port=39876"
 # 15:19:56 >  
 
-#io.print(i);
-[ 1	]
 
 # 15:19:56 >  
 # 15:19:56 >  "Done."

@@ -26,16 +26,21 @@ stderr of test 'tst105a` in directory 'monetdb5/mal` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 15:56:09 >  
-# 15:56:09 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21504" "--port=34844"
-# 15:56:09 >  
+# 13:20:24 >  
+# 13:20:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:24 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21504/.s.monetdb.34844
-QUERY = b:= bbp.new(:int);
-ERROR = !TypeException:user.main[1]:object code for command bbp.new missing
-        !TypeException:user.main[1]:'bbp.new' undefined in:     b:bat[:oid,:int] := bbp.new(:int);
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = # check classification of functions in the proper module
+        
+        module bbp;
+        command new(t:any_2):bat[:oid,:any_2] address GDKbatnew;
+        
+        b:= bbp.new(:int);
+ERROR = !TypeException:user.main[2]:object code for command bbp.new missing
+        !TypeException:user.main[2]:'bbp.new' undefined in:     b:bat[:oid,:int] := bbp.new(:int);
 
-# 15:56:09 >  
-# 15:56:09 >  "Done."
-# 15:56:09 >  
+# 13:20:24 >  
+# 13:20:24 >  "Done."
+# 13:20:24 >  
 

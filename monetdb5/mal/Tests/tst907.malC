@@ -31,4 +31,5 @@ io.print("do multiplex pow test");
 z:bat[:oid,:int]:=mal.multiplex("user","pow",b,2);
 io.print(z);
 end;
+optimizer.multiplex("user","foo");
 user.foo();

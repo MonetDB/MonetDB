@@ -19,11 +19,11 @@ end bar;
 
 function qry();
 	b:= bat.new(:oid,:str);
-	bat.append(b,1);
+	bat.append(b,"1");
 	z:bat[:oid,:str]:= mal.multiplex("user","bar",b,b);
 end qry;
 
 	optimizer.inline("user","bar");
 	optimizer.inline("user","qry");
-	optimizer.remap("user","qry");
+	optimizer.multiplex("user","qry");
 	mdb.List("user","qry");

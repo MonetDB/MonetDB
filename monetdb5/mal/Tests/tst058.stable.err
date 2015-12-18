@@ -71,18 +71,16 @@ stderr of test 'tst058` in directory 'monetdb5/mal` itself:
 # 12:52:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
 # 12:52:41 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21399/.s.monetdb.32539
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
 QUERY = -- some typos
+        i:= 1 + 1 + 1;
+        j:= 1 + + 1;
 ERROR = !SyntaxException:convertConstant:integer parse error
         !SyntaxException:parseError:-- some typos
         !SyntaxException:parseError:^<identifier> expected
-MAPI  = (monetdb) /var/tmp/mtest-21399/.s.monetdb.32539
-QUERY = i:= 1 + 1 + 1;
-ERROR = !SyntaxException:parseError:i:= 1 + 1 + 1;
+        !SyntaxException:parseError:i:= 1 + 1 + 1;
         !SyntaxException:parseError:         ^';' expected
-MAPI  = (monetdb) /var/tmp/mtest-21399/.s.monetdb.32539
-QUERY = j:= 1 + + 1;
-ERROR = !SyntaxException:parseError:j:= 1 + + 1;
+        !SyntaxException:parseError:j:= 1 + + 1;
         !SyntaxException:parseError:       ^<term> expected
 
 # 20:18:21 >  

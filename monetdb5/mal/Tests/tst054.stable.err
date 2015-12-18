@@ -70,16 +70,15 @@ stderr of test 'tst054` in directory 'monetdb5/mal` itself:
 # 12:52:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
 # 12:52:40 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21399/.s.monetdb.32539
-QUERY = return (1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0);
+MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+QUERY = function z()( :int,:int,:int,:int,:int,:int,:int,:int,:int,:int, :int,:int,:int,:int,:int,:int,:int,:int,:int,:int, :int,:int,:int,:int,:int,:int,:int,:int,:int,:int);
+        io.print("hello");
+        return (1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0);
+        end z;
+        z();
 ERROR = !SyntaxException:parseError:return (1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0);
         !SyntaxException:parseError:       ^<identifier> expected
-MAPI  = (monetdb) /var/tmp/mtest-21399/.s.monetdb.32539
-QUERY = end z;
-ERROR = !SyntaxException:user.z[0]:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-21399/.s.monetdb.32539
-QUERY = z();
-ERROR = !TypeException:user.main[1]:'user.z' undefined in:     X_0:any := user.z();
+        !TypeException:user.main[1]:'user.z' undefined in:     user.z();
 
 # 11:11:08 >  
 # 11:11:08 >  Done.

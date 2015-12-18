@@ -20,5 +20,5 @@ function qry();
 end qry;
 
 	optimizer.inline("user","qry");
-	optimizer.remap("user","qry");
+	optimizer.multiplex("user","qry");
 	mdb.List("user","qry");

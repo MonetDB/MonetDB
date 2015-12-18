@@ -10,4 +10,5 @@ c:= algebra.copy(b);
 x:bat[:oid,:lng]:= mal.multiplex("calc","+",b,c);
 io.print(x);
 end;
+optimizer.multiplex("user","foo");
 user.foo();

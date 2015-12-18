@@ -59,11 +59,11 @@ end sql.qry;
 [ 7@0,	8@0  ]
 [ 8@0,	9@0  ]
 [ 9@0,	10@0  ]
-[ "reuse BAT" ]
-#REUSED  [  0]       m := sql.mvc();
-#REUSED  [  1]       x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-#REUSED  [  2]       b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
-#REUSED  [  3]       s := algebra.subselect(b,x,low,hgh,true,true,false);
+[ reuse BAT	]
+#REUSED  [  0]  476858 (usec) #    1 := sql.mvc();
+#REUSED  [  1]  476875 (usec) #    <tmp_76> := sql.tid(1,"sys","tbl");
+#REUSED  [  2]  476892 (usec) #    <tmp_371> := sql.bind(1,"sys","tbl","col",0);
+#REUSED  [  3]  476912 (usec) #    <tmp_471> := algebra.subselect(<tmp_371>,<tmp_76>,1,10,true,true,false);
 #--------------------------#
 # t	h  # name
 # void	oid  # type

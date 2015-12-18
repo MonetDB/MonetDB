@@ -39,6 +39,16 @@ function user.qry(i:dbl):dbl;
     return qry := z;
 end user.qry;
 function user.main():void;
+#tesing the optimizers 
+#setDebug(); 
+    t0 := alarm.usec();
+    t1 := alarm.usec();
+    t2 := calc.-(t1,t0);
+    io.print("execute");
+    z := user.qry(0:dbl);
+    io.print(z);
+    io.print("done");
+    mdb.list("user","qry");
     mdb.list();
 end user.main;
 
