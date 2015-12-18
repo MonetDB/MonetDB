@@ -1136,7 +1136,9 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 		set_rule(dst_start, z->dst_start);
 		set_rule(dst_end, z->dst_end);
 
-		strcpy(*buf, "GMT");
+		if (z->dst)
+			*s++ = '"';
+		strcpy(s, "GMT");
 		s += 3;
 		if (mins > 0) {
 			sprintf(s, "+%02d:%02d", mins / 60, mins % 60);
@@ -1152,6 +1154,7 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 			*s++ = ',';
 			s += rule_tostr(&s, len, &dst_end);
 			*s++ = ']';
+			*s++ = '"';
 			*s = 0;
 		}
 	}
