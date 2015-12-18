@@ -12,8 +12,7 @@ Ready.
 # 15:35:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
 # 15:35:45 >  
 
-#io.print(c);
-[ nil	]
+MALException:bbp.bind:Object not found
 
 # 15:35:45 >  
 # 15:35:45 >  "Done."

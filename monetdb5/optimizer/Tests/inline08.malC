@@ -25,5 +25,5 @@ end qry;
 
 	optimizer.inline("user","bar");
 	optimizer.inline("user","qry");
-	optimizer.multiplex("user","qry");
+	optimizer.remap("user","qry");
 	mdb.List("user","qry");

@@ -42,7 +42,7 @@ Ready.
 [ 5@0,	2	]
 [ 6@0,	3	]
 [ 7@0,	3	]
-[ g1 becomes	]
+[ "g1 becomes"	]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -55,7 +55,7 @@ Ready.
 [ 5@0,	1@0	]
 [ 6@0,	2@0	]
 [ 7@0,	2@0	]
-[ e1 becomes	]
+[ "e1 becomes"	]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
@@ -63,7 +63,7 @@ Ready.
 [ 0@0,	0@0	]
 [ 1@0,	2@0	]
 [ 2@0,	6@0	]
-[ h1 becomes	]
+[ "h1 becomes"	]
 #--------------------------#
 # h	t  # name
 # void	wrd  # type

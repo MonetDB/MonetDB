@@ -1,3 +1,9 @@
+function foo();
 io.print("go");
+end foo;
+user.foo();
 clients.quit();
+function foo();
 io.print("gone");
+end foo;
+user.foo();
