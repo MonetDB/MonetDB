@@ -569,6 +569,115 @@ BATappend(BAT *b, BAT *n, bit force)
 	return GDK_FAIL;
 }
 
+gdk_return
+BATdel(BAT *b, BAT *d)
+{
+	int (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
+	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
+	BATiter bi = bat_iterator(b);
+
+	assert(BAThdense(b));
+	assert(BAThdense(d));
+	assert(ATOMtype(d->ttype) == TYPE_oid);
+	assert(d->tsorted);
+	assert(d->tkey & 1);
+	if (BATcount(d) == 0)
+		return GDK_SUCCEED;
+	if (BATtdense(d)) {
+		oid o = d->tseqbase;
+		BUN c = BATcount(d);
+
+		if (o + c <= b->hseqbase)
+			return GDK_SUCCEED;
+		if (o < b->hseqbase) {
+			c -= b->hseqbase - o;
+			o = b->hseqbase;
+		}
+		if (o - b->hseqbase + BUNfirst(b) < b->batInserted) {
+			GDKerror("BATdelete: cannot delete committed values\n");
+			return GDK_FAIL;
+		}
+		if (o + c > b->hseqbase + BATcount(b))
+			c = b->hseqbase + BATcount(b) - o;
+		if (c == 0)
+			return GDK_SUCCEED;
+		if (unfix || atmdel) {
+			BUN p = o - b->hseqbase + BUNfirst(b);
+			BUN q = p + c;
+			while (p < q) {
+				if (unfix)
+					(*unfix)(BUNtail(bi, p));
+				if (atmdel)
+					(*atmdel)(b->T->vheap, (var_t *) BUNtloc(bi, p));
+				p++;
+			}
+		}
+		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (o + c < b->hseqbase + BATcount(b)) {
+			memmove(Tloc(b, o - b->hseqbase + BUNfirst(b)),
+				Tloc(b, o + c - b->hseqbase + BUNfirst(b)),
+				Tsize(b) * (BATcount(b) - (o + c - b->hseqbase)));
+		}
+		b->batCount -= c;
+	} else {
+		const oid *o = (const oid *) Tloc(d, BUNfirst(d));
+		const oid *s;
+		BUN c = BATcount(d);
+		BUN nd = 0;
+		char *p;
+
+		if (o[c - 1] <= b->hseqbase)
+			return GDK_SUCCEED;
+		while (*o < b->hseqbase) {
+			o++;
+			c--;
+		}
+		if (*o - b->hseqbase + BUNfirst(b) < b->batInserted) {
+			GDKerror("BATdelete: cannot delete committed values\n");
+			return GDK_FAIL;
+		}
+		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
+			return GDK_FAIL;
+		s = o;
+		p = Tloc(b, *o - b->hseqbase + BUNfirst(b));
+		while (c > 0 && *o < b->hseqbase + BATcount(b)) {
+			size_t n;
+			if (unfix)
+				(*unfix)(BUNtail(bi, *o - b->hseqbase + BUNfirst(b)));
+			if (atmdel)
+				(*atmdel)(b->T->vheap, (var_t *) BUNtloc(bi, *o - b->hseqbase + BUNfirst(b)));
+			o++;
+			c--;
+			nd++;
+			if (c == 0 || *o - b->hseqbase >= BATcount(b))
+				n = b->hseqbase + BATcount(b) - o[-1] - 1;
+			else if ((oid) (o - s) > *o - *s)
+				n = o[0] - o[-1] - 1;
+			else
+				n = 0;
+			if (n > 0) {
+				n *= Tsize(b);
+				memmove(p,
+					Tloc(b, o[-1] + 1 - b->hseqbase + BUNfirst(b)),
+					n);
+				p += n;
+				s = o;
+			}
+		}
+		b->batCount -= nd;
+	}
+	if (b->batCount <= 1) {
+		/* some trivial properties */
+		b->tkey |= 1;
+		b->tsorted = b->trevsorted = 1;
+		if (b->batCount == 0) {
+			b->T->nil = 0;
+			b->T->nonil = 1;
+		}
+	}
+	return GDK_SUCCEED;
+}
 
 #define TYPEcheck(t1,t2,func)						\
 	do {								\

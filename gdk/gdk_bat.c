@@ -1035,6 +1035,50 @@ BUNappend(BAT *b, const void *t, bit force)
 	return GDK_FAIL;
 }
 
+gdk_return
+BUNdelete(BAT *b, oid o)
+{
+	BUN p;
+	BATiter bi = bat_iterator(b);
+
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase != oid_nil || BATcount(b) == 0);
+	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
+		/* value already not there */
+		return GDK_SUCCEED;
+	}
+	assert(BATcount(b) > 0); /* follows from "if" above */
+	p = o - b->hseqbase + BUNfirst(b);
+	if (p < b->batInserted) {
+		GDKerror("BUNdelete: cannot delete committed value\n");
+		return GDK_FAIL;
+	}
+	b->batDirty = 1;
+	ATOMunfix(b->ttype, BUNtail(bi, p));
+	ATOMdel(b->ttype, b->T->vheap, (var_t *) BUNtloc(bi, p));
+	if (p != BUNlast(b) - 1 &&
+	    (b->ttype != TYPE_void || b->tseqbase != oid_nil)) {
+		/* replace to-be-delete BUN with last BUN; materialize
+		 * void column before doing so */
+		if (b->ttype == TYPE_void &&
+		    BATmaterialize(b) != GDK_SUCCEED)
+			return GDK_FAIL;
+		memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
+		/* no longer sorted */
+		b->tsorted = b->trevsorted = 0;
+	}
+	b->batCount--;
+	if (b->batCount <= 1) {
+		/* some trivial properties */
+		b->tkey |= 1;
+		b->tsorted = b->trevsorted = 1;
+		if (b->batCount == 0) {
+			b->T->nil = 0;
+			b->T->nonil = 1;
+		}
+	}
+	return GDK_SUCCEED;
+}
 
 /* @-  BUN replace
  * The last operation in this context is BUN replace. It assumes that

@@ -2,6 +2,12 @@
 # This file is updated with Maddlog
 
 * Fri Dec 18 2015 Sjoerd Mullender <sjoerd@acm.org>
+- BUNdelete and BATdel don't accept a foce argument and only allow
+  deleting values that have not yet been committed.  BUNdelete exchanges
+  the deleted value with the last value (if the deleted value isn't the
+  last value).  BATdel compacts the BAT by shifting values after the
+  deleted values up.  The list of to-be-deleted values in BATdel must
+  be sorted and unique.
 - Removed BUNreplace from list of exported functions.  It wasn't used,
   and there is still BUNinplace and void_inplace that do more-or-less
   the same thing.
@@ -10,9 +16,6 @@
 - Changed BATderiveHeadProps to BATderiveTailProps (and it now works on
   the tail column).
 - Removed unused functions BATalpha, BATdelta, and BATprev.
-
-* Mon Dec 14 2015 Sjoerd Mullender <sjoerd@acm.org>
-- Removed functions BATins, BATdel, BUNdel and BUNdelete.
 
 * Fri Dec 11 2015 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function VIEWcombine.  Use BATdense instead.
