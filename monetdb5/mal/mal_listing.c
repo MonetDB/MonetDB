@@ -235,14 +235,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	if ( s == NULL)
 		return s;
 	if (flg) {
-		if( p->token<0){
-			s[0] = '#';
-			s[1] = 0;
-			t = s+1;
-		}else{
-			s[0] = 0;
-			t = s;
-		}
+		s[0] = 0;
+		t = s;
 	} else {
 		s[0] = '#';
 		if (p->typechk == TYPE_UNKNOWN) {
