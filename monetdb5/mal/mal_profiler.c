@@ -995,6 +995,12 @@ void setHeartbeat(int delay)
 	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
 }
 
+void initProfiler(void)
+{
+	if( mal_trace)
+		openProfilerStream(mal_clients[0].fdout,0);
+}
+
 void initHeartbeat(void)
 {
 #ifdef NEED_MT_LOCK_INIT
