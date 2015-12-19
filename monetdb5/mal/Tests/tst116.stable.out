@@ -1,0 +1,36 @@
+stdout of test 'tst116` in directory 'monetdb5/mal` itself:
+
+
+# 08:01:53 >  
+# 08:01:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37013" "--set" "mapi_usock=/var/tmp/mtest-22110/.s.monetdb.37013" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 08:01:53 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37013/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22110/.s.monetdb.37013
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 08:01:53 >  
+# 08:01:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-22110" "--port=37013"
+# 08:01:53 >  
+
+
+# 08:01:53 >  
+# 08:01:53 >  "Done."
+# 08:01:53 >  
+
