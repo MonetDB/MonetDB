@@ -38,17 +38,19 @@ function user.qry():void;               	#[0]  0
 barrier (x:oid,z:int) := iterator.new(b:bat[:oid,:int]);	#[5] ITRbunIterator 8 9 <- 1 
     io.print(x:oid);                    	#[6] IOprint_val 10 <- 8 
 exit (x:oid,z:int);                     	#[7]  8 9 
-barrier (x:oid,z:int) := iterator.new(c:bat[:oid,:int]);	#[8] ITRbunIterator 8 9 <- 4 
-    io.print(x:oid);                    	#[9] IOprint_val 11 <- 8 
-    redo (x:oid,z:int) := iterator.next(c:bat[:oid,:int]);	#[10] ITRbunNext 8 9 <- 4 
-exit (x:oid,z:int);                     	#[11]  8 9 
+    b:bat[:oid,:int] := nil:bat[:oid,:int];	#[8]  1 <- 17 
+barrier (x:oid,z:int) := iterator.new(c:bat[:oid,:int]);	#[9] ITRbunIterator 8 9 <- 4 
+    io.print(x:oid);                    	#[10] IOprint_val 11 <- 8 
+    redo (x:oid,z:int) := iterator.next(c:bat[:oid,:int]);	#[11] ITRbunNext 8 9 <- 4 
+exit (x:oid,z:int);                     	#[12]  8 9 
+    c:bat[:oid,:int] := nil:bat[:oid,:int];	#[13]  4 <- 19 
 # do not close d, it may be reused 
-barrier go:bit := true:bit;             	#[13]  13 <- 14 
-    io.print(d:bat[:oid,:int]);         	#[14] IOprint_val 15 <- 5 
-    redo go:bit := true:bit;            	#[15]  13 <- 14 
-exit go:bit;                            	#[16]  13 
-end user.qry;                           	#[17]  
-#mdb.List("user","qry");
+barrier go:bit := true:bit;             	#[15]  13 <- 14 
+    io.print(d:bat[:oid,:int]);         	#[16] IOprint_val 15 <- 5 
+    redo go:bit := true:bit;            	#[17]  13 <- 14 
+exit go:bit;                            	#[18]  13 
+    d:bat[:oid,:int] := nil:bat[:oid,:int];	#[19]  5 <- 21 
+end user.qry;                           	#[20]  
 function user.qry():void;               	#[0]  0 
     b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
     c:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 4 <- 2 3 

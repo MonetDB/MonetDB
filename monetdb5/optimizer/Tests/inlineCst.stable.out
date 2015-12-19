@@ -21,22 +21,14 @@ stdout of test 'inlineCst` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(b:int):int;
-    i := 213;
-    return foo := i;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    bat.append(b,10);
-    bat.append(b,20);
-    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);
-    io.print(r);
-end user.qry;
-function user.main():void;
-    user.qry();
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:00 >  
+# 10:05:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-7509" "--port=36310"
+# 10:05:00 >  
+
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

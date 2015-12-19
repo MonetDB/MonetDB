@@ -2118,6 +2118,7 @@ void initLibraries(void);
 void initMALstack(MalBlkPtr mb, MalStkPtr stk);
 void initNamespace(void);
 void initParser(void);
+void initProfiler(void);
 int initQlog(void);
 int initTrace(void);
 int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
