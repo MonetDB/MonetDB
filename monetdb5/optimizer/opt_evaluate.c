@@ -38,77 +38,72 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 
 static int OPTsimpleflow(MalBlkPtr mb, int pc)
 {
-	int i, block =0, simple= TRUE;
-	InstrPtr p;
+    int i, block =0, simple= TRUE;
+    InstrPtr p;
 
-	for ( i= pc; i< mb->stop; i++){
-		p =getInstrPtr(mb,i);
-		if (blockStart(p))
-			block++;
-		if ( blockExit(p))
-			block--;
-		if ( blockCntrl(p))
-			simple= FALSE;
-		if ( block == 0){
-			return simple;
-		}
-	}
-	return FALSE;
+    for ( i= pc; i< mb->stop; i++){
+        p =getInstrPtr(mb,i);
+        if (blockStart(p))
+            block++;
+        if ( blockExit(p))
+            block--;
+        if ( blockCntrl(p))
+            simple= FALSE;
+        if ( block == 0){
+            return simple;
+        }
+    }
+    return FALSE;
 }
+
 /* barrier blocks can only be dropped when they are fully excluded.  */
 static int
 OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 {
 	/* catch and remove constant bounded blocks */
-	int i, j = 0, action = 0, block = 0, skip = 0, top =0, skiplist[10];
+	int i, j = 0, action = 0, block = -1, skip = 0, multipass = 1;
 	InstrPtr p;
 
-	for (i = 0; i < mb->stop; i++) {
-		p = mb->stmt[i];
-		if (blockStart(p)) {
-			block++;
-			if (p->argc == 2 && isVarConstant(mb, getArg(p, 1)) &&
-					getArgType(mb, p, 1) == TYPE_bit &&
-					getVarConstant(mb, getArg(p, 1)).val.btval == 0)
-			{
-				if (skip == 0)
-					skip = block;
-				action++;
+	while(multipass--){
+		block = -1;
+		skip = 0;
+		j = 0;
+		for (i = 0; i < mb->stop; i++) {
+			p = mb->stmt[i];
+			if (blockExit(p) && block == getArg(p,0) ){
+					block = -1;
+					skip = 0;
+					freeInstruction(p);
+					continue;
 			}
-			// Try to remove the barrier statement itself (when true).
-			if (p->argc == 2 && isVarConstant(mb, getArg(p, 1)) &&
-					getArgType(mb, p, 1) == TYPE_bit &&
-					getVarConstant(mb, getArg(p, 1)).val.btval == 1 && 
-					top <10 && OPTsimpleflow(mb,i))
-			{
-				skiplist[top++]= getArg(p,0);
-				freeInstruction(p);
-				continue;
-			}
-		}
-		if (blockExit(p)) {
-			if (top > 0 && skiplist[top-1] == getArg(p,0) ){
-				top--;
-				freeInstruction(p);
-				continue;
-			}
+			if (p->argc == 2 && blockStart(p) && block < 0 && isVarConstant(mb, getArg(p, 1)) && getArgType(mb, p, 1) == TYPE_bit ){
+				if( getVarConstant(mb, getArg(p, 1)).val.btval == 0)
+				{
+					block = getArg(p,0);
+					skip ++;
+					action++;
+				}
+				// Try to remove the barrier statement itself (when true).
+				if ( getVarConstant(mb, getArg(p, 1)).val.btval == 1  && OPTsimpleflow(mb,i))
+				{
+					block = getArg(p,0);
+					skip = 0;
+					action++;
+					freeInstruction(p);
+					continue;
+				}
+			} else 
+			if( p->argc == 2 &&  blockStart(p) && block >= 0 && skip == 0 && isVarConstant(mb, getArg(p, 1)) && getArgType(mb, p, 1) == TYPE_bit && multipass == 0)
+				multipass++;
 			if (skip)
 				freeInstruction(p);
 			else
 				mb->stmt[j++] = p;
-			if (skip == block)
-				skip = 0;
-			block--;
-			if (block == 0)
-				skip = 0;
-		} else if (skip)
-			freeInstruction(p);
-		else
-			mb->stmt[j++] = p;
+		}
+		mb->stop = j;
+		for (; j < i; j++)
+			mb->stmt[j] = NULL;
 	}
-	mb->stop = j;
-	for (; j < i; j++)
-		mb->stmt[j] = NULL;
 	if (action) {
 		chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
 		return mb->errors ? 0 : action;
@@ -223,9 +218,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				mb->errors = 0;
 			}
 		}
-		//constantblock += p->barrier > 0 && OPTallConstant(cntxt, mb, p);	/* Feb2013 */
 		constantblock +=  blockStart(p) && OPTallConstant(cntxt, mb, p);	/* default */
 	}
+	// produces errors in SQL when enabled
 	if ( constantblock)
 		actions += OPTremoveUnusedBlocks(cntxt, mb);
 	GDKfree(assigned);
