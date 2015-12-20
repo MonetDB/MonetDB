@@ -423,7 +423,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
 
-	if( sqlProfiling)
+	if( sqlProfiling && !start )
 		cachedProfilerEvent(mb, stk, pci);
 		
 	if( eventstream) {
