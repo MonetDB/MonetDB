@@ -18,101 +18,15 @@ stdout of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# let connect figure out itself how to connect to the running db 
-    uri := sabaoth.getLocalConnectionURI();
-    conn:str  := remote.connect(uri,"monetdb","monetdb");
-# this is invalid, as io.print is an invalid module, and bla will be 
-# taken as function 
-    res:str  := remote.put(conn,:void);
-    res:str  := remote.exec(conn,"io.print","bla");
-catch SyntaxException:str;
-    io.print("Received first error from the remote site");
-    io.printf("!%s\n",SyntaxException);
-exit SyntaxException:str;
-# now do it with a function that returns something (a BAT in this case) 
-    bn := bat.new(:oid,:str);
-    b := remote.put(conn,bn);
-catch MALException:str;
-    io.print("Received second init error from the remote site");
-    io.printf("!%s\n",MALException);
-exit MALException:str;
-    io.print(b);
-    b := remote.exec(conn,"inspect","getAtomNames");
-catch MALException:str;
-    io.print("Received second error from the remote site");
-    io.printf("!%s\n",MALException);
-exit MALException:str;
-    io.print(b);
-    c:bat[:oid,:str]  := remote.get(conn,b);
-    io.print(c);
-catch MALException:str;
-    io.print("Received third error from the remote site");
-    io.printf("!%s\n",MALException);
-exit MALException:str;
-# io.print only outputs things, but returns nothing 
-    ah:str  := remote.put(conn,:void);
-    io.print(ah);
-    ah:str  := remote.exec(conn,"io","print",b);
-catch MALException:str;
-    io.print("Received fourth error from the remote site");
-    io.printf("!%s\n",MALException);
-exit MALException:str;
-    d:void  := remote.get(conn,ah);
-    io.print(d);
-catch MALException:str;
-    io.print("Received fifth error from the remote site");
-    io.printf("!%s\n",MALException);
-exit MALException:str;
-# help testweb a bit, since currently no cleanup is done on server 
-# shutdown 
-    remote.disconnect(conn);
-end user.main;
-[ "Received first error from the remote site" ]
-!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_9_void := io.print.bla();
-SyntaxException:parseError:                       ^'(' expected
+# MonetDB/R   module loaded
 
-[ "rmt1_bn_bat_oid_str" ]
-[ "rmt1_bn_bat_oid_str" ]
-#--------------------------#
-# h	t  # name
-# void	str  # type
-#--------------------------#
-[ 0@0,	"void"  ]
-[ 1@0,	"bit"  ]
-[ 2@0,	"bte"  ]
-[ 3@0,	"sht"  ]
-[ 4@0,	"BAT"  ]
-[ 5@0,	"int"  ]
-[ 6@0,	"oid"  ]
-[ 7@0,	"wrd"  ]
-[ 8@0,	"ptr"  ]
-[ 9@0,	"flt"  ]
-[ 10@0,	"dbl"  ]
-[ 11@0,	"lng"  ]
-[ 12@0,	"hge"  ]
-[ 13@0,	"str"  ]
-[ 14@0,	"streams"  ]
-[ 15@0,	"bstream"  ]
-[ 16@0,	"blob"  ]
-[ 17@0,	"sqlblob"  ]
-[ 18@0,	"color"  ]
-[ 19@0,	"url"  ]
-[ 20@0,	"uuid"  ]
-[ 21@0,	"json"  ]
-[ 22@0,	"date"  ]
-[ 23@0,	"daytime"  ]
-[ 24@0,	"timestamp"  ]
-[ 25@0,	"timezone"  ]
-[ 26@0,	"zrule"  ]
-[ 27@0,	"inet"  ]
-[ 28@0,	"identifier"  ]
-[ 29@0,	"xml"  ]
-[ 30@0,	"pcre"  ]
-[ 31@0,	"mbr"  ]
-[ 32@0,	"wkb"  ]
-[ "rmt2_X_9_void" ]
-[ nil ]
+Ready.
+
+# 23:12:08 >  
+# 23:12:08 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23626" "--port=30565"
+# 23:12:08 >  
+
+[ "Received first error from the remote site"	]
 
 # 22:17:31 >  
 # 22:17:31 >  "Done."
