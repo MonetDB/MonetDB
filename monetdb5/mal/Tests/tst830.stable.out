@@ -23,7 +23,7 @@ function user.foo():void;
     pw := clients.backendsum("Pmonetdb");
     id := clients.addUser("monetdb",pw);
 catch MALException:str;
-    io.printf("%s\n",MALException);
+    io.printf("0: %s\n",MALException);
 exit MALException:str;
 # should print 1@0 or something 
     id := clients.addUser("test",pw);
@@ -44,31 +44,22 @@ exit MALException:str;
 # now try to set the password for ourself, should fail 
     clients.setPassword("monetdb",pw);
 catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-exit InvalidCredentialsException:str;
-# change our own password 
-    mypw := clients.backendsum("monetdb");
-    clients.changePassword(mypw,pw);
-# try it again, should fail... 
-    clients.changePassword(mypw,pw);
-catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str := nil:str;
+    io.printf("1: %s\n",InvalidCredentialsException);
 exit InvalidCredentialsException:str;
 # all should fail 
     clients.checkPermission("monetdb","Pmonetdb");
 catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
+    io.printf("3: %s\n",InvalidCredentialsException);
     InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
     clients.checkPermission("monetdb","x");
 catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
+    io.printf("4: %s\n",InvalidCredentialsException);
     InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
     clients.checkPermission("x","Pmonetdb");
 catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
+    io.printf("5: %s\n",InvalidCredentialsException);
     InvalidCredentialsException:str := nil:str;
 exit InvalidCredentialsException:str;
 end user.foo;
@@ -77,7 +68,7 @@ function user.main():void;
 # this should fail, the monetdb user is already there 
     user.foo();
 end user.main;
-MALException:addUser:user 'monetdb' already exists
+0: MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]
 [ 2@0 ]
 #--------------------------#
@@ -93,11 +84,10 @@ MALException:addUser:user 'monetdb' already exists
 #--------------------------#
 [ 0@0,	0@0,	"monetdb"  ]
 [ 1@0,	1@0,	"test"  ]
-InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
-InvalidCredentialsException:changePassword:Access denied
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'x'
+1: InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
+3: InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+4: InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+5: InvalidCredentialsException:checkCredentials:invalid credentials for user 'x'
 
 # 08:49:53 >  
 # 08:49:53 >  Done.
