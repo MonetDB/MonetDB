@@ -1,8 +1,0 @@
-# old fashioned MAL, ignore until needed again
-#(v1h,v1t):=status.memUsage(1000000:lng);
-#v2:=algebra.like(v1h,"_tot/");
-#v3:=algebra.kdifference(v1t,v2);
-#v4:=bat.reverse(v2);
-#v5:=algebra.join(v4,v3);
-#io.print(v5);
-#v5:= nil:bat;

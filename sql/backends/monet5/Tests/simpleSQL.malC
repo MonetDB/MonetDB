@@ -1,4 +1,5 @@
 #execute simple SQL queries from MAL 
+function foo();
 sql.init();
 sql.eval("select 1;",true);
 
@@ -11,3 +12,6 @@ sql.eval("drop table simpleT;");
 
 #cause an error
 sql.eval("select 1;",false);
+end foo;
+mdb.list("user","foo");
+user.foo();

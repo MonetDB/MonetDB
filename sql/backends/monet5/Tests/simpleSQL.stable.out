@@ -17,8 +17,15 @@ stdout of test 'simpleSQL` in directory 'sql/backends/monet5` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28801/.s.monetdb.30175
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#execute simple SQL queries from MAL  
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:03:24 >  
+# 13:03:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-21282" "--port=38130"
+# 13:03:24 >  
+
+function user.foo():void;
     sql.init();
     sql.eval("select 1;",true);
     sql.eval("create table simpleT(i integer);");
@@ -28,28 +35,23 @@ function user.main():void;
     sql.eval("drop table simpleT;");
 #cause an error 
     sql.eval("select 1;",false);
-end user.main;
-&1 0 1 1 1
+end user.foo;
 % .L # table_name
 % single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
-&2 1 -1
-&1 0 1 1 1
+[ 1	]
 % sys.simplet # table_name
 % i # name
 % int # type
 % 3 # length
 [ 123	]
-&1 0 1 1 1
 % sys.simplet # table_name
 % i # name
 % int # type
 % 3 # length
 [ 123	]
-!SQLException:sql.exportValue:failed
-
 
 # 23:37:35 >  
 # 23:37:35 >  "Done."
