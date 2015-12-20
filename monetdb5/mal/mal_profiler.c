@@ -999,7 +999,6 @@ void initProfiler(void)
 {
 	if( mal_trace)
 		openProfilerStream(mal_clients[0].fdout,0);
-	initTrace();
 }
 
 void initHeartbeat(void)
