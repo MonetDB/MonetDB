@@ -30,7 +30,7 @@ stderr of test 'tst755` in directory 'monetdb5/mal` itself:
 # 09:29:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
 # 09:29:50 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # Polymorphic function tests
         # Catching a pervasive error a.s.a.p.
         # The function may not be cloned and a secondary error is generated

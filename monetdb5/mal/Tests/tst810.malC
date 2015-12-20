@@ -16,4 +16,5 @@ io.print(slice1);
 slice2 := algebra.slice(b,5@0,nil:oid);
 io.print(slice2);
 end;
+mdb.List("user","foo");
 user.foo();

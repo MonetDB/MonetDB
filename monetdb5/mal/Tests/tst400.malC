@@ -10,4 +10,5 @@ barrier i:= 0;
 	redo i:= iterator.next(2,5);
 exit	i;
 end foo;
+mdb.List("user","foo");
 user.foo();

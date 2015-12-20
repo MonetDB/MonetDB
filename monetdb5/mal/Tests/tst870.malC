@@ -38,4 +38,5 @@ io.print(i);
 h := aggr.max(b,g,e);
 io.print(h);
 end foo;
+mdb.List("user","foo");
 user.foo();

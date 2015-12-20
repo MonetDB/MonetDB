@@ -29,6 +29,11 @@ Ready.
 # 10:38:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-864" "--port=33541"
 # 10:38:22 >  
 
+function user.foo():void;               	#[0]  0 
+    p1:bat[:oid,:sht] := bat.new(:oid,:sht);	#[1] CMDBATnew 1 <- 2 3 
+    p2:bat[:oid,:sht] := bat.new(:oid,:sht);	#[2] CMDBATnew 4 <- 2 3 
+    z:bat[:oid,:sht] := user.extralongfunctionsignature(p1:bat[:oid,:sht],p2:bat[:oid,:sht]);	#[3]  5 <- 1 4 
+end user.foo;                           	#[4]  
 
 # 21:21:41 >  
 # 21:21:41 >  Done.

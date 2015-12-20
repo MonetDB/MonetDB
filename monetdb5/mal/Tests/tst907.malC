@@ -32,4 +32,5 @@ z:bat[:oid,:int]:=mal.multiplex("user","pow",b,2);
 io.print(z);
 end;
 optimizer.multiplex("user","foo");
+mdb.List("user","foo");
 user.foo();

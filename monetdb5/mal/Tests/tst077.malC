@@ -14,5 +14,6 @@ io.print(x);
 io.print(y);
 end foo;
 
+mdb.List("user","foo");
 user.foo();
 

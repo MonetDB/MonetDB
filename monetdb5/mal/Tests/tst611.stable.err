@@ -30,7 +30,7 @@ stderr of test 'tst611` in directory 'monetdb5/mal` itself:
 # 09:29:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
 # 09:29:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # initialization of BATs on the stack
         # caused a problem when executed in interactve mode
         function foo();

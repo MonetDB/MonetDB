@@ -25,4 +25,5 @@ io.print(b,c,z);
 z:= batcalc.min(b,c);
 io.print(b,c,z);
 end;
+mdb.List("user","foo");
 user.foo();

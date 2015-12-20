@@ -29,7 +29,18 @@ Ready.
 # 22:45:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:46 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:oid,:str],"true":str);	#[2] BKCappend_val_wrap 4 <- 1 5 
+    bat.append(b:bat[:oid,:str],"TRUE":str);	#[3] BKCappend_val_wrap 6 <- 1 7 
+    bat.append(b:bat[:oid,:str],"FALSE":str);	#[4] BKCappend_val_wrap 8 <- 1 9 
+    bat.append(b:bat[:oid,:str],"false":str);	#[5] BKCappend_val_wrap 10 <- 1 11 
+    bat.append(b:bat[:oid,:str],"":str);	#[6] BKCappend_val_wrap 12 <- 1 13 
+    bat.append(b:bat[:oid,:str],nil:str);	#[7] BKCappend_val_wrap 14 <- 1 15 
+    io.print(b:bat[:oid,:str]);         	#[8] IOprint_val 16 <- 1 
+    bc:bat[:oid,:bit] := batcalc.bit_noerror(b:bat[:oid,:str]);	#[9] CMDconvert_bit 17 <- 1 
+    io.print(bc:bat[:oid,:bit]);        	#[10] IOprint_val 18 <- 17 
+end user.foo;                           	#[11]  
 #--------------------------#
 # h	t		  # name
 # int	str		  # type

@@ -11,4 +11,5 @@ function foo();
 	user.myException();
 	io.print("should not come here");
 end foo;
+mdb.List("user","foo");
 user.foo();

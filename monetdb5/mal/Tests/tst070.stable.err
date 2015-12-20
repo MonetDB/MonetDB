@@ -30,7 +30,7 @@ stderr of test 'tst070` in directory 'monetdb5/mal` itself:
 # 13:02:34 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23427" "--port=34822"
 # 13:02:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # parsing operations with multi-assignments
         
         function foo();

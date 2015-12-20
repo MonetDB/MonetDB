@@ -50,4 +50,5 @@ io.printf("#make %d ",d1);
 io.printf("#multiplex %d\n",d2);
 io.printf("#compiled multiplex %d\n",d3);
 end foo;
+mdb.List("user","foo");
 user.foo();

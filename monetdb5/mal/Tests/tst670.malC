@@ -6,4 +6,5 @@ clients.quit();
 function foo();
 io.print("gone");
 end foo;
+mdb.List("user","foo");
 user.foo();

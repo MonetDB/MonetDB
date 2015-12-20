@@ -35,7 +35,38 @@ Ready.
 # 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:40 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    k:int := user.one(1:int);           	#[1]  1 <- 2 
+    l:int := user.three(1:int,2:int,3:int);	#[2]  3 <- 2 4 5 
+    p:int := user.pow(1:int,2:int);     	#[3]  6 <- 2 4 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[4] CMDBATnew 7 <- 8 9 
+    bat.append(b:bat[:oid,:int],1:int); 	#[5] BKCappend_val_wrap 10 <- 7 2 
+    io.print("do multiplex three test":str);	#[6] IOprint_val 11 <- 12 
+    X_23:bat[:oid,:int] := bat.new(nil:oid,nil:int);	#[7] CMDBATnew 23 <- 24 25 
+barrier (X_27:oid,X_28:int) := iterator.new(b:bat[:oid,:int]);	#[8] ITRbunIterator 27 28 <- 7 
+    X_30:int := user.three(X_28:int,2:int,3:int);	#[9]  30 <- 28 4 5 
+    bat.append(X_23:bat[:oid,:int],X_30:int);	#[10] BKCappend_val_wrap 31 <- 23 30 
+    redo (X_27:oid,X_28:int) := iterator.next(b:bat[:oid,:int]);	#[11] ITRbunNext 27 28 <- 7 
+exit (X_27:oid,X_28:int);               	#[12]  27 28 
+    z:bat[:oid,:int] := X_23:bat[:oid,:int];	#[13]  13 <- 23 
+    io.print("do multiplex one test":str);	#[14] IOprint_val 16 <- 17 
+    X_35:bat[:oid,:int] := bat.new(nil:oid,nil:int);	#[15] CMDBATnew 35 <- 24 25 
+barrier (X_37:oid,X_38:int) := iterator.new(b:bat[:oid,:int]);	#[16] ITRbunIterator 37 38 <- 7 
+    X_40:int := user.one(X_38:int);     	#[17]  40 <- 38 
+    bat.append(X_35:bat[:oid,:int],X_40:int);	#[18] BKCappend_val_wrap 41 <- 35 40 
+    redo (X_37:oid,X_38:int) := iterator.next(b:bat[:oid,:int]);	#[19] ITRbunNext 37 38 <- 7 
+exit (X_37:oid,X_38:int);               	#[20]  37 38 
+    z:bat[:oid,:int] := X_35:bat[:oid,:int];	#[21]  13 <- 35 
+    io.print("do multiplex pow test":str);	#[22] IOprint_val 19 <- 20 
+    X_45:bat[:oid,:int] := bat.new(nil:oid,nil:int);	#[23] CMDBATnew 45 <- 24 25 
+barrier (X_47:oid,X_48:int) := iterator.new(b:bat[:oid,:int]);	#[24] ITRbunIterator 47 48 <- 7 
+    X_50:int := user.pow(X_48:int,2:int);	#[25]  50 <- 48 4 
+    bat.append(X_45:bat[:oid,:int],X_50:int);	#[26] BKCappend_val_wrap 51 <- 45 50 
+    redo (X_47:oid,X_48:int) := iterator.next(b:bat[:oid,:int]);	#[27] ITRbunNext 47 48 <- 7 
+exit (X_47:oid,X_48:int);               	#[28]  47 48 
+    z:bat[:oid,:int] := X_45:bat[:oid,:int];	#[29]  13 <- 45 
+    io.print(z:bat[:oid,:int]);         	#[30] IOprint_val 22 <- 13 
+end user.foo;                           	#[31]  
 [ 1 ]
 [ 1 ]
 [ "do multiplex three test" ]

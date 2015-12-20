@@ -18,55 +18,15 @@ stdout of test 'manifold` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-#WARNING To speedup mmath.sin a bulk operator implementation is needed
-function user.main():void;
-# the multiplex code blocks. 
-    t0 := alarm.usec();
-    b := bat.new(:oid,:dbl);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.dbl(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    mdb.setDebug(dbgmsk_set);
-    t0 := alarm.usec();
-    z:bat[:oid,:dbl]  := mal.manifold("mmath","sin",b);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#mal.manifold(sin) %d\n",d0);
-    s := aggr.sum(z);
-    io.printf("#sum %f\n",s);
-    t0 := alarm.usec();
-    x := bat.new(:oid,:dbl);
-barrier j := 0@0;
-    ii := algebra.fetch(b,j);
-    d := mmath.sin(ii);
-    bat.append(x,d);
-    redo j := iterator.next(1@0,1000000@0);
-exit j;
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#mal.multiplex(sin) %d\n",d0);
-    s := aggr.sum(x);
-    io.printf("#sum %f\n",s);
-    t0 := alarm.usec();
-    x := batmmath.sin(b);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#mmath.sin() %d\n",d0);
-    s := aggr.sum(x);
-    io.printf("#sum %f\n",s);
-end user.main;
-#mal.manifold(sin) 177972
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:33 >  
+# 09:46:33 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:33 >  
+
+#mal.manifold(sin) 171977
 #sum 546.410417
 #mal.multiplex(sin) 2354385
 #sum 546.410417

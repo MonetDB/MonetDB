@@ -30,7 +30,7 @@ stderr of test 'tst900` in directory 'monetdb5/mal` itself:
 # 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
 # 12:36:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # the multiplex code blocks. Testing syntax errors
         
         function foo();
@@ -39,12 +39,13 @@ QUERY = # the multiplex code blocks. Testing syntax errors
         d:= [+](b,c) ;;# parser bug
         a:= b [+] b;
         end;
+        mdb.List("user","foo");
         user.foo();
 ERROR = !SyntaxException:parseError:d:= [+](b,c) ;;# parser bug
         !SyntaxException:parseError:   ^operator expected
         !SyntaxException:parseError:a:= b [+] b;
         !SyntaxException:parseError:     ^operator expected
-        !TypeException:user.main[2]:'user.foo' undefined in:     user.foo();
+        !TypeException:user.main[3]:'user.foo' undefined in:     user.foo();
 
 # 12:36:20 >  
 # 12:36:20 >  "Done."

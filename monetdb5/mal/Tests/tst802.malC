@@ -11,4 +11,5 @@ b:= z;
 c:= tst(b);
 io.print(c);
 end;
+mdb.List("user","foo");
 user.foo();

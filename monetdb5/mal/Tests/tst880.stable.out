@@ -25,7 +25,28 @@ Ready.
 # 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
 # 12:36:19 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:oid,:int],-5:int);	#[2] BKCappend_val_wrap 4 <- 1 5 
+    bat.append(b:bat[:oid,:int],0:int); 	#[3] BKCappend_val_wrap 6 <- 1 7 
+    bat.append(b:bat[:oid,:int],5:int); 	#[4] BKCappend_val_wrap 8 <- 1 9 
+    bat.append(b:bat[:oid,:int],nil:int);	#[5] BKCappend_val_wrap 10 <- 1 11 
+    bat.append(b:bat[:oid,:int],nil:int);	#[6] BKCappend_val_wrap 12 <- 1 11 
+    bat.append(b:bat[:oid,:int],7:int); 	#[7] BKCappend_val_wrap 13 <- 1 14 
+    bat.append(b:bat[:oid,:int],8:int); 	#[8] BKCappend_val_wrap 15 <- 1 16 
+    c:bat[:oid,:int] := bat.new(:oid,:int);	#[9] CMDBATnew 17 <- 2 3 
+    bat.append(c:bat[:oid,:int],-5:int);	#[10] BKCappend_val_wrap 18 <- 17 5 
+    bat.append(c:bat[:oid,:int],1:int); 	#[11] BKCappend_val_wrap 19 <- 17 20 
+    bat.append(c:bat[:oid,:int],5:int); 	#[12] BKCappend_val_wrap 21 <- 17 9 
+    bat.append(c:bat[:oid,:int],nil:int);	#[13] BKCappend_val_wrap 22 <- 17 11 
+    bat.append(c:bat[:oid,:int],4:int); 	#[14] BKCappend_val_wrap 23 <- 17 24 
+    bat.append(c:bat[:oid,:int],9:int); 	#[15] BKCappend_val_wrap 25 <- 17 26 
+    bat.append(c:bat[:oid,:int],nil:int);	#[16] BKCappend_val_wrap 27 <- 17 11 
+    z:bat[:oid,:int] := batcalc.max(b:bat[:oid,:int],c:bat[:oid,:int]);	#[17] CMDbatMAX 28 <- 1 17 
+    io.print(b:bat[:oid,:int],c:bat[:oid,:int],z:bat[:oid,:int]);	#[18] IOtable 29 <- 1 17 28 
+    z:bat[:oid,:int] := batcalc.min(b:bat[:oid,:int],c:bat[:oid,:int]);	#[19] CMDbatMIN 28 <- 1 17 
+    io.print(b:bat[:oid,:int],c:bat[:oid,:int],z:bat[:oid,:int]);	#[20] IOtable 30 <- 1 17 28 
+end user.foo;                           	#[21]  
 #--------------------------#
 # h	t	t	t  # name
 # void	int	int	int  # type

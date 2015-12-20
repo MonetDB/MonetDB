@@ -4,4 +4,5 @@ function foo();
 raise	PermissionDeniedException := 1234;
 	io.print("should not come here\n");
 end;
+mdb.List("user","foo");
 user.foo();

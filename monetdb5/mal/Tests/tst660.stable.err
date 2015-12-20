@@ -37,7 +37,7 @@ stderr of test 'tst660` in directory 'monetdb5/mal` itself:
 # 13:20:54 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:20:54 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = #Testing variable argument lists
         
         pattern fi(i:int...) address MDBdummy;

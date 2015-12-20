@@ -33,7 +33,25 @@ Ready.
 # 22:45:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:39 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    clients.setListing(15:int);         	#[1] CLTsetListing 1 <- 2 
+    b:bat[:oid,:lng] := bat.new(:oid,:lng);	#[2] CMDBATnew 3 <- 4 5 
+    i:lng := -1:lng;                    	#[3]  6 <- 7 
+barrier i:lng := 0:lng;                 	#[4]  6 <- 8 
+    bat.append(b:bat[:oid,:lng],i:lng); 	#[5] BKCappend_val_wrap 9 <- 3 6 
+    redo i:lng := iterator.next(1:lng,10:lng);	#[6] ITRnext_lng 6 <- 10 11 
+exit i:lng;                             	#[7]  6 
+    io.print(b:bat[:oid,:lng]);         	#[8] IOprint_val 12 <- 3 
+    c:int := 1:int;                     	#[9]  13 <- 14 
+    X_19:bat[:oid,:lng] := bat.new(nil:oid,nil:lng);	#[10] CMDBATnew 19 <- 20 21 
+barrier (X_23:oid,X_24:lng) := iterator.new(b:bat[:oid,:lng]);	#[11] ITRbunIterator 23 24 <- 3 
+    X_26:lng := calc.+(X_24:lng,c:int); 	#[12] CMDvarADDsignal 26 <- 24 13 
+    bat.append(X_19:bat[:oid,:lng],X_26:lng);	#[13] BKCappend_val_wrap 27 <- 19 26 
+    redo (X_23:oid,X_24:lng) := iterator.next(b:bat[:oid,:lng]);	#[14] ITRbunNext 23 24 <- 3 
+exit (X_23:oid,X_24:lng);               	#[15]  23 24 
+    xz:bat[:oid,:lng] := X_19:bat[:oid,:lng];	#[16]  15 <- 19 
+    io.print(xz:bat[:oid,:lng]);        	#[17] IOprint_val 18 <- 15 
+end user.foo;                           	#[18]  
 #--------------------------#
 # h	t  # name
 # void	lng  # type

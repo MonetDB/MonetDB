@@ -29,14 +29,49 @@ Ready.
 # 16:02:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22533" "--port=37080"
 # 16:02:00 >  
 
-#io.printf("#cnt %d ",cnt);
-#cnt 1000000 
-#io.printf("#make %d ",d1);
-#make 4339933 
-#io.printf("#multiplex %d\n",d2);
-#multiplex 7131303
-#io.printf("#compiled multiplex %d\n",d3);
-#compiled multiplex 701
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:lng] := bat.new(:oid,:lng);	#[1] CMDBATnew 1 <- 2 3 
+    INT_MAX:int := 2147483647:int;      	#[2]  4 <- 5 
+    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 6 
+    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 7 <- 8 9 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 10 <- 4 7 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 11 <- 6 10 
+    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 12 <- 11 
+    t0:lng := alarm.usec();             	#[8] ALARMusec 13 
+barrier i:lng := 0:lng;                 	#[9]  14 <- 15 
+    bat.append(b:bat[:oid,:lng],i:lng); 	#[10] BKCappend_val_wrap 16 <- 1 14 
+    redo i:lng := iterator.next(1:lng,1000000:lng);	#[11] ITRnext_lng 14 <- 17 18 
+exit i:lng;                             	#[12]  14 
+    t1:lng := alarm.usec();             	#[13] ALARMusec 19 
+    mdb.setDebug(dbgmsk_restore:int);   	#[14] MDBsetDebug 20 <- 6 
+    c:bat[:oid,:lng] := algebra.copy(b:bat[:oid,:lng]);	#[15] ALGcopy 21 <- 1 
+    mdb.setDebug(dbgmsk_set:int);       	#[16] MDBsetDebug 22 <- 11 
+    t2:lng := alarm.usec();             	#[17] ALARMusec 23 
+    d:bat[:oid,:lng] := bat.new(:oid,:lng);	#[18] CMDBATnew 24 <- 2 3 
+barrier (h:oid,t:lng) := iterator.new(b:bat[:oid,:lng]);	#[19] ITRbunIterator 25 26 <- 1 
+    zz:lng := algebra.fetch(b:bat[:oid,:lng],h:oid);	#[20] ALGfetchoid 27 <- 1 25 
+    z:lng := algebra.fetch(c:bat[:oid,:lng],h:oid);	#[21] ALGfetchoid 28 <- 21 25 
+    cr:lng := calc.+(zz:lng,z:lng);     	#[22] CMDvarADDsignal 29 <- 27 28 
+    bat.append(d:bat[:oid,:lng],cr:lng);	#[23] BKCappend_val_wrap 30 <- 24 29 
+catch GDKerror:str;                     	#[24]  31 
+    leave h:oid;                        	#[25]  25 
+exit GDKerror:str;                      	#[26]  31 
+    redo (h:oid,t:lng) := iterator.next(b:bat[:oid,:lng]);	#[27] ITRbunNext 25 26 <- 1 
+exit (h:oid,t:lng);                     	#[28]  25 26 
+    t3:lng := alarm.usec();             	#[29] ALARMusec 32 
+    mdb.setDebug(dbgmsk_restore:int);   	#[30] MDBsetDebug 33 <- 6 
+    t4:lng := alarm.usec();             	#[31] ALARMusec 34 
+    d1:lng := calc.-(t1:lng,t0:lng);    	#[32] CMDvarSUBsignal 35 <- 19 13 
+    d2:lng := calc.-(t3:lng,t2:lng);    	#[33] CMDvarSUBsignal 36 <- 32 23 
+    d3:lng := calc.-(t4:lng,t3:lng);    	#[34] CMDvarSUBsignal 37 <- 34 32 
+    cnt:wrd := aggr.count(d:bat[:oid,:lng]);	#[35] ALGcount_bat 38 <- 24 
+    io.printf("#cnt %d ":str,cnt:wrd);  	#[36] IOprintf 39 <- 40 38 
+    io.printf("#make %d ":str,d1:lng);  	#[37] IOprintf 41 <- 42 35 
+    io.printf("#multiplex %d\n":str,d2:lng);	#[38] IOprintf 43 <- 44 36 
+    io.printf("#compiled multiplex %d\n":str,d3:lng);	#[39] IOprintf 45 <- 46 37 
+end user.foo;                           	#[40]  
+#cnt 1000000 #make 1417564 #multiplex 3766101
+#compiled multiplex 1
 
 # 16:02:12 >  
 # 16:02:12 >  "Done."

@@ -30,7 +30,7 @@ stderr of test 'tst002` in directory 'monetdb5/mal` itself:
 # 22:10:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23963" "--port=30853"
 # 22:10:35 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # reserved names may not be used as target variables
         	true:= 23;
         	false:= 24;

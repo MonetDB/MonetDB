@@ -29,4 +29,5 @@ io.printf("#count %d\n",xc);
 io.printf("#make %d \n",d1);
 io.printf("#multiplex %d\n",d2);
 end foo;
+mdb.List("user","foo");
 user.foo();

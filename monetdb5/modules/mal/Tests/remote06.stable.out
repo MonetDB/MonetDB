@@ -9,34 +9,24 @@ stdout of test 'remote06` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 1 thread
 # Compiled for x86_64-pc-solaris2.11/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus:36372/
-function user.main():void;
-# let connect figure out itself how to connect to the running db 
-    uri := sabaoth.getLocalConnectionURI();
-# create a persistent connecton to ourself 
-    conn1:str  := remote.connect(uri,"monetdb","monetdb");
-# do it again ... 
-    conn2:str  := remote.connect(uri,"monetdb","monetdb");
-# ... and check they are not the same 
-barrier if := calc.==(conn1,conn2);
-    io.printf("!oops: %s == %s\n",conn1,conn2);
-exit if;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    rb1 := remote.put(conn1,b);
-    bat.append(b,3);
-    rb2 := remote.put(conn2,b);
-    lb1:bat[:oid,:int]  := remote.get(conn1,rb1);
-    lb2:bat[:oid,:int]  := remote.get(conn2,rb2);
-    io.print(lb1);
-    io.print(lb2);
-# help testweb a bit, since currently no cleanup is done on server 
-# shutdown 
-    remote.disconnect(conn1);
-    remote.disconnect(conn2);
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:22 >  
+# 09:46:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:22 >  
+
 #--------------------------#
 # h	t	  # name
 # int	int	  # type

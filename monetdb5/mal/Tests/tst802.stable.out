@@ -29,6 +29,18 @@ Ready.
 # 10:38:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-864" "--port=33541"
 # 10:38:21 >  
 
+function user.foo():void;               	#[0]  0 
+    z:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+    b:bat[:oid,:int] := nil:bat[:oid,:int];	#[2]  4 <- 5 
+    b:bat[:oid,:int] := z:bat[:oid,:int];	#[3]  4 <- 1 
+#io.print(b);                           
+    c:bat[:oid,:int] := user.tst(b:bat[:oid,:int]);	#[5]  7 <- 4 
+    io.print(c:bat[:oid,:int]);         	#[6] IOprint_val 8 <- 7 
+end user.foo;                           	#[7]  
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
 
 # 10:38:21 >  
 # 10:38:21 >  "Done."

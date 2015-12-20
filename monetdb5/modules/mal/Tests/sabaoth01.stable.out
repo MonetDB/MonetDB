@@ -11,18 +11,25 @@ stdout of test 'sabaoth01` in directory 'monetdb5/modules/mal` itself:
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:38787/
-# MonetDB/SQL module v2.38.1 loaded
-# MonetDB/GIS module v0.18.0 loaded
-function user.main():void;
-    u := sabaoth.getLocalConnectionURI();
-# if all is well, we can make a connection to ourself 
-    c := remote.connect(u,"monetdb","monetdb");
-    remote.disconnect(c);
-end user.main;
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 14:37:48 >  
-# 14:37:48 >  Done.
-# 14:37:48 >  
+Ready.
+
+# 09:46:29 >  
+# 09:46:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:29 >  
+
+
+# 09:46:29 >  
+# 09:46:29 >  "Done."
+# 09:46:29 >  
 

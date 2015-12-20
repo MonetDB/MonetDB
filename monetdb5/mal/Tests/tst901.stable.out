@@ -29,7 +29,27 @@ Ready.
 # 22:45:31 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:31 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+barrier i:int := 0:int;                 	#[2]  4 <- 5 
+    bat.append(b:bat[:oid,:int],i:int); 	#[3] BKCappend_val_wrap 6 <- 1 4 
+    redo i:int := iterator.next(1:int,10:int);	#[4] ITRnext_int 4 <- 7 8 
+exit i:int;                             	#[5]  4 
+    c:bat[:oid,:int] := algebra.copy(b:bat[:oid,:int]);	#[6] ALGcopy 9 <- 1 
+    io.print(c:bat[:oid,:int]);         	#[7] IOprint_val 10 <- 9 
+    x:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],c:bat[:oid,:int]);	#[8] CMDbatADDsignal 11 <- 1 9 
+    io.print(x:bat[:oid,:int]);         	#[9] IOprint_val 12 <- 11 
+    x:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],1:int);	#[10] CMDbatADDsignal 11 <- 1 7 
+    io.print(x:bat[:oid,:int]);         	#[11] IOprint_val 13 <- 11 
+    x:bat[:oid,:int] := batcalc.*(b:bat[:oid,:int],c:bat[:oid,:int]);	#[12] CMDbatMULsignal 11 <- 1 9 
+    io.print(x:bat[:oid,:int]);         	#[13] IOprint_val 14 <- 11 
+    y:bat[:oid,:bit] := batcalc.==(b:bat[:oid,:int],b:bat[:oid,:int]);	#[14] CMDbatEQ 15 <- 1 1 
+    io.print(y:bat[:oid,:bit]);         	#[15] IOprint_val 16 <- 15 
+    y:bat[:oid,:bit] := batcalc.==(b:bat[:oid,:int],x:bat[:oid,:int]);	#[16] CMDbatEQ 15 <- 1 11 
+    io.print(y:bat[:oid,:bit]);         	#[17] IOprint_val 17 <- 15 
+    z:bat[:oid,:bit] := batcalc.not(y:bat[:oid,:bit]);	#[18] CMDbatNOT 18 <- 15 
+    io.print(z:bat[:oid,:bit]);         	#[19] IOprint_val 19 <- 18 
+end user.foo;                           	#[20]  
 #--------------------------#
 # h	t	  # name
 # oid	int	  # type

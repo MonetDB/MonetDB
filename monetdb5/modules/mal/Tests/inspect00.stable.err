@@ -6,7 +6,30 @@ stderr of test 'inspect00` in directory 'monetdb5/modules/mal` itself:
 # 00:03:55 >  
 
 
-# 00:03:55 >  
-# 00:03:55 >  Done.
-# 00:03:55 >  
+# 09:46:12 >  
+# 09:46:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:12 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-26774/.s.monetdb.35410
+QUERY = # test analysis of stack frames
+        
+        function tst():void;
+        	i:= mdb.getStackDepth();
+        	io.printf("stack depth %d\n",i);
+        	(h,t):= mdb.getStackTrace();
+        	io.print(h,t);
+        	(b0,b1):= mdb.getStackFrame(0);
+        	io.print(b0,b1);
+        	(c0,c1):= mdb.getStackFrame(1);
+        	io.print(c0,c1);
+        	# next one is illegal
+        	(d0,d1):= mdb.getStackFrame(2);
+        end tst;
+        
+        user.tst();
+ERROR = !MALException:mdb.getStackFrame:Illegal argument Illegal depth.
+
+# 09:46:12 >  
+# 09:46:12 >  "Done."
+# 09:46:12 >  
 

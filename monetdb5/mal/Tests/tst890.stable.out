@@ -29,7 +29,19 @@ Ready.
 # 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
 # 12:36:19 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+    bat.setName(b:bat[:oid,:int],"b":str);	#[2] BKCsetName 4 <- 1 5 
+    bat.append(b:bat[:oid,:int],1:int); 	#[3] BKCappend_val_wrap 6 <- 1 7 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	#[4] CMDbatADDsignal 8 <- 1 9 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],3:int);	#[5] CMDbatADDsignal 8 <- 1 10 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],4:int);	#[6] CMDbatADDsignal 8 <- 1 11 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],5:int);	#[7] CMDbatADDsignal 8 <- 1 12 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],6:int);	#[8] CMDbatADDsignal 8 <- 1 13 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],7:int);	#[9] CMDbatADDsignal 8 <- 1 14 
+    c:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],8:int);	#[10] CMDbatADDsignal 8 <- 1 15 
+    io.print(c:bat[:oid,:int]);         	#[11] IOprint_val 16 <- 8 
+end user.foo;                           	#[12]  
 #--------------------------#
 # h	t  # name
 # void	int  # type

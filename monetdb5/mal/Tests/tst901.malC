@@ -21,4 +21,5 @@ io.print(y);
 z:= batcalc.not(y);
 io.print(z);
 end;
+mdb.List("user","foo");
 user.foo();

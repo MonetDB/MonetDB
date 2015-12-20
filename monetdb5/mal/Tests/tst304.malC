@@ -15,4 +15,5 @@ function foo();
 	exit	MALException;
 	io.print("done");
 end;
+mdb.List("user","foo");
 user.foo();

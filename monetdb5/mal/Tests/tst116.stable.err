@@ -30,7 +30,7 @@ stderr of test 'tst116` in directory 'monetdb5/mal` itself:
 # 08:01:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-22110" "--port=37013"
 # 08:01:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-22110/.s.monetdb.37013
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # illustrate a short cut reference to the implementation
         
         function doit(s:str) address CMDcallString;

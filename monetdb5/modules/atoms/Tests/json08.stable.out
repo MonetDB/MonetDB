@@ -18,40 +18,14 @@ stdout of test 'json08` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#validity tests 
-    j := bat.new(:oid,:json);
-    b := json.new("{}");
-    bat.append(j,b);
-    b := json.new("{\"f1\":1}");
-    bat.append(j,b);
-    b := json.new("{\"f1\":1,\"f2\":2}");
-    bat.append(j,b);
-    b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
-    bat.append(j,b);
-    b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
-    bat.append(j,b);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1");
-    io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f2");
-    io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"f1[0]");
-    io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",j,"..f12");
-    io.print(f);
-    io.printf("#next batch\n");
-    i := bat.new(:oid,:json);
-    b := json.new("[1,\"f2\", 2]");
-    bat.append(i,b);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",i,0);
-    io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",i,1);
-    io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",i,2);
-    io.print(f);
-    f:bat[:oid,:json]  := mal.manifold("json","filter",i,3);
-    io.print(f);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:37 >  
+# 10:05:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:37 >  
+
 #--------------------------#
 # h	t  # name
 # void	json  # type

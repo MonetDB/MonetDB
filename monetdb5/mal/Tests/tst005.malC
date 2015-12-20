@@ -20,4 +20,5 @@ barrier (v,w):=(i,j);
 exit 	(v,w);
 	io.print("finished");
 end foo;
+mdb.List("user","foo");
 user.foo();

@@ -9,4 +9,5 @@ p1:= bat.new(:oid,:sht);
 p2:= bat.new(:oid,:sht);
 z:= extralongfunctionsignature(p1,p2);
 end foo;
+mdb.List("user","foo");
 user.foo();

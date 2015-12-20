@@ -18,96 +18,69 @@ stdout of test 'json13` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# taken from http://goessner.net/articles/JsonPath/ 
-    js := json.new("{ \"store\": { \"book\": [ { \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 } ], \"bicycle\": { \"color\": \"red\", \"price\": 19.95 } } }");
-    json.dump(js);
-    p := json.filter(js,".store.book[*]..author");
-    io.print(p);
-    p := json.filter(js,".store.book..author");
-    io.print(p);
-    p := json.filter(js,"..author");
-    io.print(p);
-    p := json.filter(js,".store");
-    io.print(p);
-    p := json.filter(js,"$.store");
-    io.print(p);
-    p := json.filter(js,".store.*");
-    io.print(p);
-    p := json.filter(js,".store..price");
-    io.print(p);
-    p := json.filter(js,"..book.[1]");
-    io.print(p);
-    p := json.filter(js,"store.book.[1].author");
-    io.print(p);
-    p := json.filter(js,"store.book[1]..author");
-    io.print(p);
-    p := json.filter(js,"$");
-    io.print(p);
-#p:= json.filter(js,"..book[-1:]"); 
-#io.print(p); 
-#p:= json.filter(js,"..book[0,1]"); 
-#io.print(p); 
-#p:= json.filter(js,"..book[:2]"); 
-#io.print(p); 
-#p:= json.filter(js,"..*"); 
-#io.print(p); 
-end user.main;
-[0] object child 0 list 1 { "store": { "book": [ { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 } ], "bicycle": { "color": "red", "price": 19.95 } } }
-[1] element child 2 list store
-[2] object child 0 list 3 49 { "book": [ { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 } ], "bicycle": { "color": "red", "price": 19.95 } }
-[3] element child 4 list 49 book
-[4] array child 0 list 14 24 36 48 [ { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 } ]
-[5] object child 0 list 6 8 10 12 { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }
-[6] element child 7 list 8 10 12 category
-[7] string child 0 list "reference"
-[8] element child 9 list 10 12 author
-[9] string child 0 list "Nigel Rees"
-[10] element child 11 list 12 title
-[11] string child 0 list "Sayings of the Century"
-[12] element child 13 list price
-[13] number child 0 list 8.95
-[14] value child 5 list 24 36 48 
-[15] object child 0 list 16 18 20 22 { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }
-[16] element child 17 list 18 20 22 category
-[17] string child 0 list "fiction"
-[18] element child 19 list 20 22 author
-[19] string child 0 list "Evelyn Waugh"
-[20] element child 21 list 22 title
-[21] string child 0 list "Sword of Honour"
-[22] element child 23 list price
-[23] number child 0 list 12.99
-[24] value child 15 list 36 48 
-[25] object child 0 list 26 28 30 32 34 { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }
-[26] element child 27 list 28 30 32 34 category
-[27] string child 0 list "fiction"
-[28] element child 29 list 30 32 34 author
-[29] string child 0 list "Herman Melville"
-[30] element child 31 list 32 34 title
-[31] string child 0 list "Moby Dick"
-[32] element child 33 list 34 isbn
-[33] string child 0 list "0-553-21311-3"
-[34] element child 35 list price
-[35] number child 0 list 8.99
-[36] value child 25 list 48 
-[37] object child 0 list 38 40 42 44 46 { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }
-[38] element child 39 list 40 42 44 46 category
-[39] string child 0 list "fiction"
-[40] element child 41 list 42 44 46 author
-[41] string child 0 list "J. R. R. Tolkien"
-[42] element child 43 list 44 46 title
-[43] string child 0 list "The Lord of the Rings"
-[44] element child 45 list 46 isbn
-[45] string child 0 list "0-395-19395-8"
-[46] element child 47 list price
-[47] number child 0 list 22.99
-[48] value child 37 list 
-[49] element child 50 list bicycle
-[50] object child 0 list 51 53 { "color": "red", "price": 19.95 }
-[51] element child 52 list 53 color
-[52] string child 0 list "red"
-[53] element child 54 list price
-[54] number child 0 list 19.95
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:39 >  
+# 10:05:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:39 >  
+
+[ 0	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 19	]
+[ 20	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 24	]
+[ 25	]
+[ 26	]
+[ 27	]
+[ 28	]
+[ 29	]
+[ 30	]
+[ 31	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
+[ 39	]
+[ 40	]
+[ 41	]
+[ 42	]
+[ 43	]
+[ 44	]
+[ 45	]
+[ 46	]
+[ 47	]
+[ 48	]
+[ 49	]
+[ 50	]
+[ 51	]
+[ 52	]
+[ 53	]
+[ 54	]
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]" ]
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]" ]
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]" ]

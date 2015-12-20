@@ -30,7 +30,7 @@ stderr of test 'tst003` in directory 'monetdb5/mal` itself:
 # 22:10:36 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23963" "--port=30853"
 # 22:10:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # test illegal variable use
         
         function foo();

@@ -10,4 +10,5 @@ function foo();
 	io.print(b);
 end;
 optimizer.multiplex("user","foo");
+mdb.List("user","foo");
 user.foo();

@@ -21,4 +21,5 @@ exit	GDKerror;
 exit (h,t);
 io.print(d);
 end;
+mdb.List("user","foo");
 user.foo();

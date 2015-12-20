@@ -24,4 +24,5 @@ so:= bat.reuseMap(b,d);
 io.print(so);
 
 end foo;
+mdb.List("user","foo");
 user.foo();

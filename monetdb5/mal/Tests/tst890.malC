@@ -12,4 +12,5 @@ function foo();
 	c:=batcalc.+(b,8);
 	io.print(c);
 end;
+mdb.List("user","foo");
 user.foo();

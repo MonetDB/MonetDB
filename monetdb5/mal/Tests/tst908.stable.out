@@ -29,7 +29,14 @@ Ready.
 # 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:40 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:lng] := bat.new(:oid,:lng);	#[1] CMDBATnew 1 <- 2 3 
+barrier i:lng := 0:lng;                 	#[2]  4 <- 5 
+    bat.append(b:bat[:oid,:lng],i:lng); 	#[3] BKCappend_val_wrap 6 <- 1 4 
+    redo i:lng := iterator.next(1:lng,10:lng);	#[4] ITRnext_lng 4 <- 7 8 
+exit i:lng;                             	#[5]  4 
+    user.perftst(b:bat[:oid,:lng],1:lng);	#[6]  9 <- 1 7 
+end user.foo;                           	#[7]  
 [ "perftst" ]
 [ 1 ]
 #-----------------#

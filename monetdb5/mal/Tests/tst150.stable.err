@@ -30,7 +30,7 @@ stderr of test 'tst150` in directory 'monetdb5/mal` itself:
 # 15:19:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9433" "--port=39876"
 # 15:19:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = command lookup(nme:str):bat[:oid,:str] address CMDlookup; 
         
         function sample(nme:str, val:any_1):bit;

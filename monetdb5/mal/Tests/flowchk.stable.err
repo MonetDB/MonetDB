@@ -69,7 +69,7 @@ stderr of test 'flowchk` in directory 'monetdb5/mal` itself:
 # 07:33:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15547" "--port=37088"
 # 07:33:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18020/.s.monetdb.37961
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = function tst();
         barrier go:=true;
         	a:=bat.new(:oid,:int);

@@ -40,4 +40,5 @@ io.print(srch);
 plus:= batcalc.+(S,S); 
 io.print(plus);
 end;
+mdb.List("user","foo");
 user.foo();

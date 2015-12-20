@@ -9,48 +9,30 @@ stdout of test 'inet01` in directory 'monetdb5/modules/atoms` itself:
 # Serving database 'mTests_src_modules_atoms', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-    i1 := inet.new("127.0.0.1");
-    io.print(i1);
-    i2 := inet.new("192.168.0.0/24");
-    io.print(i2);
-    i3 := inet.new("192.168/16");
-    io.print(i3);
-    i4 := inet.new("192.168.0.3/24");
-    io.print(i4);
-    i5 := inet.new("/0");
-catch ParseException:str;
-    io.printf("Caught parse exception\n");
-exit ParseException:str;
-    io.print(i5);
-    i6 := inet.new("127/32");
-    io.print(i6);
-    i7 := inet.new("127.0.0.0");
-    io.print(i7);
-    e := inet.<(i2,i3);
-    io.print(e);
-    e := inet.>(i2,i3);
-    io.print(e);
-    e := inet.=(i6,i1);
-    io.print(e);
-    e := inet.=(i6,i7);
-    io.print(e);
-    e := inet.<<(i4,i3);
-    io.print(e);
-    e := inet.>>=(i6,i7);
-    io.print(e);
-end user.main;
-[ 127.0.0.1 ]
-[ 192.168.0.0/24 ]
-[ 192.168.0.0/16 ]
-[ 192.168.0.3/24 ]
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:28 >  
+# 10:05:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:28 >  
+
+[ "127.0.0.1"	]
+[ "192.168.0.0/24"	]
+[ "192.168.0.0/16"	]
+[ "192.168.0.3/24"	]
 Caught parse exception
-[ (nil) ]
-[ 127.0.0.0 ]
-[ 127.0.0.0 ]
+[ "(nil)"	]
+[ "127.0.0.0"	]
+[ "127.0.0.0"	]
 [ false ]
 [ true ]
 [ false ]

@@ -1,50 +1,34 @@
 stdout of test 'memo02` in directory 'monetdb5/scheduler` itself:
 
 
-# 22:34:44 >  
-# 22:34:44 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=32539 --set xrpc_port=46725 --set monet_prompt= --trace --dbname=mTests_src_scheduler  memo02.mal < /dev/null
-# 22:34:44 >  
+# 11:27:21 >  
+# 11:27:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31436" "--set" "mapi_usock=/var/tmp/mtest-11496/.s.monetdb.31436" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_scheduler" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 11:27:21 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_scheduler
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-# The first memo driven execution 
-# use a generic cost function 
-    A := bat.new(:oid,:oid);
-    bat.append(A,1@0);
-    B := algebra.copy(A);
-    bat.setAccess(B,"w");
-    bat.append(B,2@0);
-    C := algebra.copy(B);
-    bat.setAccess(C,"w");
-    bat.append(C,3@0);
-    D := algebra.copy(C);
-    bat.setAccess(D,"w");
-    bat.append(D,3@0);
-    scheduler.choice();
-    T1 := algebra.projection(A,B);
-    T2 := algebra.projection(B,C);
-    T3 := algebra.projection(C,D);
-    scheduler.choice("getVolume",T1,T2,T3);
-    T4 := algebra.projection(T1,C);
-    T5 := algebra.projection(A,T2);
-    T6 := algebra.projection(T2,D);
-    T7 := algebra.projection(B,T3);
-    T8 := algebra.projection(C,D);
-    scheduler.choice("getVolume",T4,T5,T6,T7,T8);
-    T9 := algebra.projection(T4,D);
-    T10 := algebra.projection(T5,D);
-    T11 := algebra.projection(A,T6);
-    T12 := algebra.projection(A,T7);
-    T13 := algebra.projection(T1,T8);
-    scheduler.choice("getVolume",T9,T10,T11,T12,T13);
-    answer := scheduler.pick(T9,T10,T11,T12,T13);
-    io.print(answer);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_scheduler', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31436/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11496/.s.monetdb.31436
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:27:21 >  
+# 11:27:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-11496" "--port=31436"
+# 11:27:21 >  
+
 #--------------------------#
 # h	t	  # name
 # int	int	  # type

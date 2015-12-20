@@ -34,7 +34,7 @@ exit MALException;
 catch InvalidCredentialsException:str;
 	io.printf("1: %s\n", InvalidCredentialsException);
 exit InvalidCredentialsException;
-oldpw := clients.getPassword("monetdb");
+
 #
 #	# change our own password, 
 #	mypw := clients.backendsum("monetdb");
@@ -63,4 +63,5 @@ catch InvalidCredentialsException:str;
 	InvalidCredentialsException:= nil:str;
 exit InvalidCredentialsException;
 end;
+mdb.List("user","foo");
 user.foo();

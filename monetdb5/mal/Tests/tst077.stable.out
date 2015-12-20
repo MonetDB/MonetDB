@@ -25,7 +25,15 @@ Ready.
 # 13:14:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24111" "--port=37355"
 # 13:14:25 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    X:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(X:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
+    Y:bat[:oid,:int] := bat.new(:oid,:int);	#[3] CMDBATnew 6 <- 2 3 
+    bat.append(Y:bat[:oid,:int],2:int); 	#[4] BKCappend_val_wrap 7 <- 6 8 
+    (x:str,y:bat[:oid,:int]) := user.swap(X:bat[:oid,:int],Y:bat[:oid,:int]);	#[5]  9 10 <- 1 6 
+    io.print(x:str);                    	#[6] IOprint_val 11 <- 9 
+    io.print(y:bat[:oid,:int]);         	#[7] IOprint_val 12 <- 10 
+end user.foo;                           	#[8]  
 [ "done" ]
 #-----------------#
 # h	t	  # name

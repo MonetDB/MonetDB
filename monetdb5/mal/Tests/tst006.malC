@@ -8,4 +8,5 @@ barrier	l:= r < 1;
 	redo l;
 exit	l;
 end foo;
+mdb.List("user","foo");
 user.foo();

@@ -17,23 +17,14 @@ stdout of test 'inspect05` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#Illustrate the modules loaded after start 
-    m := inspect.getModule();
-    m0 := algebra.subselect(m,nil:bat[:oid,:oid],"bat","bat",true,true,false);
-# limit the list 
-    m1 := algebra.projection(m0,m);
-    k := inspect.getKind();
-    k0 := algebra.projection(m0,k);
-    f := inspect.getFunction();
-    f0 := algebra.projection(m0,f);
-    s := inspect.getSignatures();
-    s0 := algebra.projection(m0,s);
-    a := inspect.getAddresses();
-    a0 := algebra.projection(m0,a);
-    (fv,forder) := algebra.subsort(f0,false,true);
-    io.print(fv,k0,m1,s0,a0);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:13 >  
+# 09:46:13 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:13 >  
+
 #--------------------------#
 # t	t	t	t	t  # name
 # str	str	str	str	str  # type

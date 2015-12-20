@@ -29,7 +29,29 @@ Ready.
 # 22:45:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:39 >  
 
-#user.foo();
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid,:lng] := bat.new(:oid,:lng);	#[1] CMDBATnew 1 <- 2 3 
+barrier i:lng := 0:lng;                 	#[2]  4 <- 5 
+    bat.append(b:bat[:oid,:lng],i:lng); 	#[3] BKCappend_val_wrap 6 <- 1 4 
+    redo i:lng := iterator.next(1:lng,10:lng);	#[4] ITRnext_lng 4 <- 7 8 
+exit i:lng;                             	#[5]  4 
+    c:bat[:oid,:lng] := algebra.copy(b:bat[:oid,:lng]);	#[6] ALGcopy 9 <- 1 
+    io.print(c:bat[:oid,:lng]);         	#[7] IOprint_val 10 <- 9 
+    x:bat[:oid,:lng] := batcalc.+(b:bat[:oid,:lng],c:bat[:oid,:lng]);	#[8] CMDbatADDsignal 11 <- 1 9 
+    io.print(x:bat[:oid,:lng]);         	#[9] IOprint_val 12 <- 11 
+    x:bat[:oid,:lng] := batcalc.+(b:bat[:oid,:lng],1:lng);	#[10] CMDbatADDsignal 11 <- 1 7 
+    io.print(x:bat[:oid,:lng]);         	#[11] IOprint_val 13 <- 11 
+    x:bat[:oid,:lng] := batcalc./(b:bat[:oid,:lng],1:lng);	#[12] CMDbatDIVsignal 11 <- 1 7 
+    io.print(x:bat[:oid,:lng]);         	#[13] IOprint_val 14 <- 11 
+    x:bat[:oid,:lng] := batcalc.*(b:bat[:oid,:lng],c:bat[:oid,:lng]);	#[14] CMDbatMULsignal 11 <- 1 9 
+    io.print(x:bat[:oid,:lng]);         	#[15] IOprint_val 15 <- 11 
+    y:bat[:oid,:bit] := batcalc.==(b:bat[:oid,:lng],b:bat[:oid,:lng]);	#[16] CMDbatEQ 16 <- 1 1 
+    io.print(y:bat[:oid,:bit]);         	#[17] IOprint_val 17 <- 16 
+    y:bat[:oid,:bit] := batcalc.==(b:bat[:oid,:lng],x:bat[:oid,:lng]);	#[18] CMDbatEQ 16 <- 1 11 
+    io.print(y:bat[:oid,:bit]);         	#[19] IOprint_val 18 <- 16 
+    z:bat[:oid,:bit] := batcalc.not(y:bat[:oid,:bit]);	#[20] CMDbatNOT 19 <- 16 
+    io.print(z:bat[:oid,:bit]);         	#[21] IOprint_val 20 <- 19 
+end user.foo;                           	#[22]  
 #--------------------------#
 # h	t	  # name
 # lng	lng	  # type

@@ -18,31 +18,14 @@ stdout of test 'batpartition` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:lng);
-    bat.append(b,0:lng);
-    bat.append(b,1:lng);
-    bat.append(b,2:lng);
-    bat.append(b,3:lng);
-    bat.append(b,4:lng);
-    bat.append(b,5:lng);
-    bat.append(b,6:lng);
-    bat.append(b,7:lng);
-    bat.append(b,8:lng);
-    bat.append(b,9:lng);
-    b1 := bat.partition(b,2,0);
-    io.print(b1);
-    b2 := bat.partition(b,2,1);
-    io.print(b2);
-    c1 := bat.partition(b1,2,0);
-    io.print(c1);
-    c2 := bat.partition(b1,2,1);
-    io.print(c2);
-    d1 := bat.partition(b2,2,0);
-    io.print(d1);
-    d2 := bat.partition(b2,2,1);
-    io.print(d2);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:30 >  
+# 09:46:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:30 >  
+
 #--------------------------#
 # h	t	  # name
 # void	lng	  # type

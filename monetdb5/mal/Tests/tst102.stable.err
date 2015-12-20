@@ -30,7 +30,7 @@ stderr of test 'tst102` in directory 'monetdb5/mal` itself:
 # 20:43:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23471" "--port=34866"
 # 20:43:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23471/.s.monetdb.34866
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
 QUERY = # the calls are wrong, they violate the type constraint
         command + (L:any_1, R:any_1):any_1 address addIntInt comment "unknown function";
         

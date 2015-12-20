@@ -15,28 +15,14 @@ stdout of test 'remote08` in directory 'monetdb5/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:38415/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# let connect figure out itself how to connect to the running db 
-    uri := sabaoth.getLocalConnectionURI();
-# create a persistent connecton to ourself 
-    conn1:str  := remote.connect(uri,"monetdb","monetdb");
-    b := bat.new(:oid,:int);
-    b := bat.append(b,2);
-    b := bat.append(b,4);
-    b := bat.append(b,6);
-    rb2 := remote.put(conn1,b);
-    lb2:bat[:oid,:int]  := remote.get(conn1,rb2);
-    io.print(lb2);
-    b := bat.append(b,8);
-    b := bat.append(b,10);
-    b := algebra.slice(b,1,2);
-    rb2 := remote.put(conn1,b);
-    lb2:bat[:oid,:int]  := remote.get(conn1,rb2);
-    io.print(lb2);
-# help testweb a bit, since currently no cleanup is done on server 
-# shutdown 
-    remote.disconnect(conn1);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:23 >  
+# 09:46:23 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:23 >  
+
 #--------------------------#
 # h	t	  # name
 # void	int	  # type
