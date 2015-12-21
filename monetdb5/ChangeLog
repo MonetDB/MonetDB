@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Dec 22 2015 Martin Kersten <mk@cwi.nl>
+- The :bat[:oid,:any] type descriptor has been turned into its columnar
+  version :bat[:any]
+
 * Mon Dec 21 2015 Martin Kersten <mk@cwi.nl>
 - Converted the *.mal scripts into *.malC versions to prepare for removal
   of the mserver console.
