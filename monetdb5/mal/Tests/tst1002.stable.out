@@ -13,8 +13,8 @@ Ready.
 # 15:35:45 >  
 
 function user.foo():void;               	#[0]  0 
-    c:bat[:oid,:int] := bbp.bind("myfirstbat":str);	#[1] CMDbbpbind 1 <- 2 
-    io.print(c:bat[:oid,:int]);         	#[2] IOprint_val 3 <- 1 
+    c:bat[:int] := bbp.bind("myfirstbat":str);	#[1] CMDbbpbind 1 <- 2 
+    io.print(c:bat[:int]);              	#[2] IOprint_val 3 <- 1 
 catch MALException:str;                 	#[3]  4 
     io.printf("%s\n":str,MALException:str);	#[4] IOprintf 5 <- 6 4 
 exit MALException:str;                  	#[5]  4 

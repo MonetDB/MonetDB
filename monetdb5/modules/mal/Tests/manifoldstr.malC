@@ -1,7 +1,7 @@
 # the multiplex code blocks.
 
 t0:= alarm.usec();
-b:= bat.new(:oid,:str);
+b:= bat.new(:str);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -21,16 +21,16 @@ mdb.setDebug(dbgmsk_set);
 
 #io.print(b);
 t0:= alarm.usec();
-z:bat[:oid,:str]:= mal.manifold("str","toUpper",b);
+z:bat[:str]:= mal.manifold("str","toUpper",b);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#mal.manifold(str,toUpper) %d\n",d0);
 #io.print(z);
 
 
-# x:bat[:oid,:str]:= mal.multiplex("str","toUpper",b);
+# x:bat[:str]:= mal.multiplex("str","toUpper",b);
 t0:= alarm.usec();
-x:= bat.new(:oid,:str);
+x:= bat.new(:str);
 barrier j:= 0@0;
 	ii:= algebra.fetch(b,j);
 	d:= str.toUpper(ii);

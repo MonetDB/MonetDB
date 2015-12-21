@@ -30,7 +30,7 @@ stderr of test 'tst302` in directory 'monetdb5/mal` itself:
 # 13:20:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:20:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = #propagate INT exception
         # (you should be able to pass it upwards though)
         function foo();

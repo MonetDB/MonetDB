@@ -33,14 +33,14 @@ Ready.
 
 #	mdb.List("user","qry");
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:str],"HELLO WORLD":str);	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_12:bat[:oid,:str] := b:bat[:oid,:str];	#[3]  12 <- 1 
-    X_12:bat[:oid,:str] := batstr.substring(X_12:bat[:oid,:str],1:int,5:int);	#[4] STRbatsubstringcst 12 <- 12 13 14 
-    X_15:bat[:oid,:str] := b:bat[:oid,:str];	#[5]  15 <- 1 
-    X_15:bat[:oid,:str] := batstr.substring(X_15:bat[:oid,:str],1:int,3:int);	#[6] STRbatsubstringcst 15 <- 15 13 16 
-    X_17:bat[:oid,:str] := batcalc.+(X_12:bat[:oid,:str],X_15:bat[:oid,:str]);	#[7] CMDbatADD 17 <- 12 15 
-    z:bat[:oid,:str] := X_17:bat[:oid,:str];	#[8]  6 <- 17 
+    b:bat[:str] := bat.new(:oid,:str);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:str],"HELLO WORLD":str);	#[2] BKCappend_val_wrap 4 <- 1 5 
+    X_12:bat[:str] := b:bat[:str];      	#[3]  12 <- 1 
+    X_12:bat[:str] := batstr.substring(X_12:bat[:str],1:int,5:int);	#[4] STRbatsubstringcst 12 <- 12 13 14 
+    X_15:bat[:str] := b:bat[:str];      	#[5]  15 <- 1 
+    X_15:bat[:str] := batstr.substring(X_15:bat[:str],1:int,3:int);	#[6] STRbatsubstringcst 15 <- 15 13 16 
+    X_17:bat[:str] := batcalc.+(X_12:bat[:str],X_15:bat[:str]);	#[7] CMDbatADD 17 <- 12 15 
+    z:bat[:str] := X_17:bat[:str];      	#[8]  6 <- 17 
 end user.qry;                           	#[9]  
 
 # 11:53:00 >  

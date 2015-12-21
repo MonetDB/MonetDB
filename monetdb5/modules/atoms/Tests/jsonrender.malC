@@ -1,14 +1,14 @@
-idx := bat.new(:oid,:int);
+idx := bat.new(:int);
 bat.append(idx,1);
 bat.append(idx,2);
 bat.append(idx,3);
 
-wrd:= bat.new(:oid,:str);
+wrd:= bat.new(:str);
 bat.append(wrd,"hello");
 bat.append(wrd,"brave");
 bat.append(wrd,"world");
 
-ans:= bat.new(:oid,:bit);
+ans:= bat.new(:bit);
 bat.append(ans,true);
 bat.append(ans,false);
 bat.append(ans,nil:bit);

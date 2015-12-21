@@ -1,4 +1,4 @@
-b := bat.new(:oid,:lng,10000001);
+b := bat.new(:lng,10000001);
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
 dbgmsk_unset := 8+8388608;

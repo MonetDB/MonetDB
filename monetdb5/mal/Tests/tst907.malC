@@ -20,15 +20,15 @@ k:= user.one(1);
 l:= user.three(1,2,3);
 p:= user.pow(1,2);
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,1);
 
 io.print("do multiplex three test");
-z:bat[:oid,:int]:=mal.multiplex("user","three",b,2,3);
+z:bat[:int]:=mal.multiplex("user","three",b,2,3);
 io.print("do multiplex one test");
-z:bat[:oid,:int]:=mal.multiplex("user","one",b);
+z:bat[:int]:=mal.multiplex("user","one",b);
 io.print("do multiplex pow test");
-z:bat[:oid,:int]:=mal.multiplex("user","pow",b,2);
+z:bat[:int]:=mal.multiplex("user","pow",b,2);
 io.print(z);
 end;
 optimizer.multiplex("user","foo");

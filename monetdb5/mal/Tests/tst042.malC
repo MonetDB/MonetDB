@@ -4,7 +4,7 @@ f := 3.14;
 b:= true;
 w:= 1:wrd;
 B:= 2:bte;
-bb:= bat.new(:oid,:str);
+bb:= bat.new(:str);
 
 st:= inspect.getType(s); io.printf("%s\n",st);
 it:= inspect.getType(i); io.printf("%s\n",it);

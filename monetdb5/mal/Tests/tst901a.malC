@@ -1,6 +1,6 @@
 # what is the overhead of MAL in multiplex situations
 function foo();
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();

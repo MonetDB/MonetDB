@@ -73,7 +73,7 @@ stderr of test 'tst036` in directory 'monetdb5/mal` itself:
 # 11:38:05 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13830" "--port=32718"
 # 11:38:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # test for proper use of list assignments
         (z0,z1):= (1,"help");
         io.print(z0);

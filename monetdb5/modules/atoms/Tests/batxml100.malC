@@ -1,8 +1,8 @@
-b:= bat.new(:oid,:str);
+b:= bat.new(:str);
 bat.insert(b,0@0,"Mary Ann Walker");
 bat.insert(b,0@1,"Annie Chapman");
 
-c:= bat.new(:oid,:str);
+c:= bat.new(:str);
 bat.insert(c,0@0,"brown");
 bat.insert(c,0@1,"curly dark brown");
 

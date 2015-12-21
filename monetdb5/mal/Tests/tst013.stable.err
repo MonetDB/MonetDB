@@ -30,7 +30,7 @@ stderr of test 'tst013` in directory 'monetdb5/mal` itself:
 # 13:20:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:20:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # incomplete barrier blocks. Resolve them when unambigous
         
         barrier z:= true;

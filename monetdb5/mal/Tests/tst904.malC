@@ -1,7 +1,7 @@
 # the multiplex code blocks using CONSTANTS.
 function foo();
 clients.setListing(15);
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 i:= -1:lng;
 barrier i:= 0:lng;
 	bat.append(b,i);
@@ -9,7 +9,7 @@ barrier i:= 0:lng;
 exit i;
 io.print(b);
 c:= 1;
-xz:bat[:oid,:lng]:= mal.multiplex("calc","+",b,c);
+xz:bat[:lng]:= mal.multiplex("calc","+",b,c);
 io.print(xz);
 end;
 optimizer.multiplex("user","foo");

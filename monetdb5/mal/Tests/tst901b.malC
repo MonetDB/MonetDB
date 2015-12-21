@@ -2,7 +2,7 @@
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
 
 function foo();
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -25,7 +25,7 @@ c:= algebra.copy(b);
 mdb.setDebug(dbgmsk_set);
 
 t2:= alarm.usec();
-d:= bat.new(:oid,:lng);
+d:= bat.new(:lng);
 barrier (h,t):= iterator.new(b);
         zz:= algebra.fetch(b,h);
         z:= algebra.fetch(c,h);

@@ -1,4 +1,4 @@
-	x := bat.new(:oid,:bte);
+	x := bat.new(:bte);
 	bat.append(x,1:bte);
 	bat.append(x,1:bte);
 	bat.append(x,2:bte);
@@ -8,7 +8,7 @@
 	bat.append(x,3:bte);
 	bat.append(x,3:bte);
 
-	y := bat.new(:oid,:dbl);
+	y := bat.new(:dbl);
 	le_a := calc.dbl(1.0);
 	bat.append(y,le_a);
 	ne_a := calc.dbl(2.0);
@@ -26,7 +26,7 @@
 	af_a := calc.dbl(1.0);
 	bat.append(y,af_a);
 
-	z := bat.new(:oid,:str);
+	z := bat.new(:str);
 	bat.append(z,"c");
 	bat.append(z,"a");
 	bat.append(z,"b");

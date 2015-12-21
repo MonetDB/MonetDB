@@ -1,7 +1,7 @@
 #dealing with wrd BATs
 # -1 + 2^n
 
-b:= bat.new(:oid,:wrd);
+b:= bat.new(:wrd);
 
 bat.append(b,1:wrd);
 bat.append(b,127:wrd);

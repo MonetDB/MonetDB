@@ -10,7 +10,7 @@ barrier if := conn1 == conn2;
 	io.printf("!oops: %s == %s\n", conn1, conn2);
 exit if;
 
-b := bat.new(:oid,:int);
+b := bat.new(:int);
 
 bat.append(b, 1);
 rb1 := remote.put(conn1, b);
@@ -18,8 +18,8 @@ rb1 := remote.put(conn1, b);
 bat.append(b, 3);
 rb2 := remote.put(conn2, b);
 
-lb1:bat[:oid,:int] := remote.get(conn1, rb1);
-lb2:bat[:oid,:int] := remote.get(conn2, rb2);
+lb1:bat[:int] := remote.get(conn1, rb1);
+lb2:bat[:int] := remote.get(conn2, rb2);
 
 io.print(lb1);
 io.print(lb2);

@@ -23,7 +23,7 @@ io.print(o,l,w);
 jsm:= json.fold(o,l,w);
 io.print(jsm);
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,1);
 bat.append(b,22);
 bat.append(b,333);
@@ -38,14 +38,14 @@ bat.append(b,2);
 bat.append(b,3);
 bat.append(b,4);
 
-n:= bat.new(:oid,:str);
+n:= bat.new(:str);
 bat.append(n,"a");
 bat.append(n,"b");
 bat.append(n,"c");
 bat.append(n,"a");
 bat.append(n,"c");
 bat.append(n,"b");
-i:= bat.new(:oid,:oid);
+i:= bat.new(:oid);
 bat.append(i,0@0);
 bat.append(i,0@0);
 bat.append(i,0@0);

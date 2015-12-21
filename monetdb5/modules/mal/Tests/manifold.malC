@@ -1,7 +1,7 @@
 # the multiplex code blocks.
 
 t0:= alarm.usec();
-b:= bat.new(:oid,:dbl);
+b:= bat.new(:dbl);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -22,7 +22,7 @@ mdb.setDebug(dbgmsk_restore);
 mdb.setDebug(dbgmsk_set);
 
 t0:= alarm.usec();
-z:bat[:oid,:dbl]:= mal.manifold("mmath","sin",b);
+z:bat[:dbl]:= mal.manifold("mmath","sin",b);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#mal.manifold(sin) %d\n",d0);
@@ -30,9 +30,9 @@ s:= aggr.sum(z);
 io.printf("#sum %f\n",s);
 
 
-#x:bat[:oid,:dbl]:= mal.multiplex("mmath","sin",b);
+#x:bat[:dbl]:= mal.multiplex("mmath","sin",b);
 t0:= alarm.usec();
-x:= bat.new(:oid,:dbl);
+x:= bat.new(:dbl);
 barrier j:= 0@0;
 	ii:= algebra.fetch(b,j);
 	d:= mmath.sin(ii);

@@ -12,7 +12,7 @@ stderr of test 'tst163` in directory 'monetdb5/mal` itself:
 # 15:19:56 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9433" "--port=39876"
 # 15:19:56 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = #multiple atomary types
         atom myint:int;
         atom myint:int;

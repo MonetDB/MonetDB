@@ -30,7 +30,7 @@ stderr of test 'tst804` in directory 'monetdb5/mal` itself:
 # 15:26:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30489" "--port=34680"
 # 15:26:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # test definiton of a function in a unknown module
         function wrong.message():void;
         	io.print("shouldn't come here");

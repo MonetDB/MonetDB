@@ -5,7 +5,7 @@ conn:str := remote.connect(uri, "monetdb", "monetdb");
 a:str := "Fabian!";
 b:flt := 4.3;
 c:int := 12;
-d:bat[:oid,:str] := bat.new(:oid,:str);
+d:bat[:str] := bat.new(:str);
 
 bat.append(d, "bla");
 bat.append(d, nil:str);
@@ -21,7 +21,7 @@ l:str := remote.put(conn, d);
 r:str := remote.get(conn, i);
 s:flt := remote.get(conn, j);
 t:int := remote.get(conn, k);
-u:bat[:oid,:str] := remote.get(conn, l);
+u:bat[:str] := remote.get(conn, l);
 
 # see if it really is here
 io.print(r);

@@ -30,7 +30,7 @@ stderr of test 'tst900` in directory 'monetdb5/mal` itself:
 # 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
 # 12:36:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # the multiplex code blocks. Testing syntax errors
         
         function foo();

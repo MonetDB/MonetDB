@@ -6,7 +6,7 @@ function f();
 s:str := "hello";
 i:sht := 1:sht;
 b:bit   := true;
-z:bat[:oid,:int]:= bat.new(:oid,:int);
+z:bat[:int]:= bat.new(:int);
 end f;
 
 # type resolver should complain on the rest
@@ -17,7 +17,7 @@ function f();
 k:lng := 1:sht;
 end f;
 function f();
-y:bat[:oid,:str]:= bat.new(:oid,:int);
+y:bat[:str]:= bat.new(:int);
 end f;
 function f();
 f:flt := "wrong";

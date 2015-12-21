@@ -14,7 +14,7 @@ command epilogue():void
 address RMTepilogue
 comment "release the resources held by the remote module";
 
-command resolve(pattern:str):bat[:oid,:str]
+command resolve(pattern:str):bat[:str]
 address RMTresolve
 comment "resolve a pattern against Merovingian and return the URIs";
 
@@ -57,14 +57,14 @@ command isalive(conn:str):int
 address RMTisalive
 comment "check if conn is still valid and connected";
 
-pattern batload(tt:any_1, size:int):bat[:oid,:any_1]
+pattern batload(tt:any_1, size:int):bat[:any_1]
 address RMTbatload
 comment "create a BAT of the given type and size, and load values from the input stream";
 
-pattern batbincopy(b:bat[:oid,:any]):void
+pattern batbincopy(b:bat[:any]):void
 address RMTbincopyto
 comment "dump BAT b in binary form to the stream";
-pattern batbincopy():bat[:oid,:any]
+pattern batbincopy():bat[:any]
 address RMTbincopyfrom
 comment "store the binary BAT data in the BBP and return as BAT";
 

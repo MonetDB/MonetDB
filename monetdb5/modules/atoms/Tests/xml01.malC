@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:str);
+b:= bat.new(:str);
 bat.append(b,"Mary Ann Walker");
 bat.append(b,"Annie Chapman");
 

@@ -27,10 +27,10 @@ Ready.
 
 #mdb.List("user","foo");
 function user.foo():void;               	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 4 <- 2 3 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
 # identical until insert takes place 
-    d:bat[:oid,:oid] := algebra.subselect(b:bat[:oid,:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
 # mapped onto one instruction 
     l:int := calc.+(24:int,27:int);     	#[6] CMDvarADDsignal 18 <- 15 17 
 # mapped to l 

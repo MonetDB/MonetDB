@@ -30,7 +30,7 @@ stderr of test 'tst305` in directory 'monetdb5/mal` itself:
 # 09:16:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24715" "--port=38956"
 # 09:16:50 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = 
         # Exceptions can be explicitly raised in a function
         # which requires the exception identifier to be defined.

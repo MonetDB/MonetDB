@@ -29,26 +29,26 @@ Ready.
 # 12:36:18 >  
 
 function user.foo():void;               	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    bat.append(b:bat[:oid,:int],2:int); 	#[3] BKCappend_val_wrap 6 <- 1 7 
-    bat.append(b:bat[:oid,:int],3:int); 	#[4] BKCappend_val_wrap 8 <- 1 9 
-    bat.append(b:bat[:oid,:int],4:int); 	#[5] BKCappend_val_wrap 10 <- 1 11 
-    bat.append(b:bat[:oid,:int],5:int); 	#[6] BKCappend_val_wrap 12 <- 1 13 
-    bat.append(b:bat[:oid,:int],6:int); 	#[7] BKCappend_val_wrap 14 <- 1 15 
-    bat.append(b:bat[:oid,:int],7:int); 	#[8] BKCappend_val_wrap 16 <- 1 17 
-    bat.append(b:bat[:oid,:int],8:int); 	#[9] BKCappend_val_wrap 18 <- 1 19 
-    bat.append(b:bat[:oid,:int],9:int); 	#[10] BKCappend_val_wrap 20 <- 1 21 
-    io.print(b:bat[:oid,:int]);         	#[11] IOprint_val 22 <- 1 
-    d:bat[:oid,:oid] := bat.new(:oid,:oid);	#[12] CMDBATnew 23 <- 2 2 
-    bat.append(d:bat[:oid,:oid],1@0:oid);	#[13] BKCappend_val_wrap 24 <- 23 25 
-    bat.append(d:bat[:oid,:oid],2@0:oid);	#[14] BKCappend_val_wrap 26 <- 23 27 
-    bat.append(d:bat[:oid,:oid],7@0:oid);	#[15] BKCappend_val_wrap 28 <- 23 29 
-    io.print(d:bat[:oid,:oid]);         	#[16] IOprint_val 30 <- 23 
-    s:bat[:oid,:int] := bat.reuse(b:bat[:oid,:int],d:bat[:oid,:oid]);	#[17] BKCreuseBAT 31 <- 1 23 
-    io.print(s:bat[:oid,:int]);         	#[18] IOprint_val 32 <- 31 
-    so:bat[:oid,:oid] := bat.reuseMap(b:bat[:oid,:int],d:bat[:oid,:oid]);	#[19] BKCreuseBATmap 33 <- 1 23 
-    io.print(so:bat[:oid,:oid]);        	#[20] IOprint_val 34 <- 33 
+    b:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:int],2:int);      	#[3] BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:int],3:int);      	#[4] BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:int],4:int);      	#[5] BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:int],5:int);      	#[6] BKCappend_val_wrap 11 <- 1 12 
+    bat.append(b:bat[:int],6:int);      	#[7] BKCappend_val_wrap 13 <- 1 14 
+    bat.append(b:bat[:int],7:int);      	#[8] BKCappend_val_wrap 15 <- 1 16 
+    bat.append(b:bat[:int],8:int);      	#[9] BKCappend_val_wrap 17 <- 1 18 
+    bat.append(b:bat[:int],9:int);      	#[10] BKCappend_val_wrap 19 <- 1 20 
+    io.print(b:bat[:int]);              	#[11] IOprint_val 21 <- 1 
+    d:bat[:oid] := bat.new(:oid);       	#[12] CMDBATnewColumn 22 <- 23 
+    bat.append(d:bat[:oid],1@0:oid);    	#[13] BKCappend_val_wrap 24 <- 22 25 
+    bat.append(d:bat[:oid],2@0:oid);    	#[14] BKCappend_val_wrap 26 <- 22 27 
+    bat.append(d:bat[:oid],7@0:oid);    	#[15] BKCappend_val_wrap 28 <- 22 29 
+    io.print(d:bat[:oid]);              	#[16] IOprint_val 30 <- 22 
+    s:bat[:int] := bat.reuse(b:bat[:int],d:bat[:oid]);	#[17] BKCreuseBAT 31 <- 1 22 
+    io.print(s:bat[:int]);              	#[18] IOprint_val 32 <- 31 
+    so:bat[:oid] := bat.reuseMap(b:bat[:int],d:bat[:oid]);	#[19] BKCreuseBATmap 33 <- 1 22 
+    io.print(so:bat[:oid]);             	#[20] IOprint_val 34 <- 33 
 end user.foo;                           	#[21]  
 #--------------------------#
 # h	t	  # name

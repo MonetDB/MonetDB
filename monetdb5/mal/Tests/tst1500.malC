@@ -1,4 +1,4 @@
-	x := bat.new(:oid,:bte);
+	x := bat.new(:bte);
 	de_a := bat.append(x,1:bte);
 	ee_a := bat.append(x,1:bte);
 	fe_a := bat.append(x,2:bte);

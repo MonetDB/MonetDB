@@ -30,7 +30,7 @@ y := zorder.decode_y(z3); io.print(x, y);
 x := zorder.decode_x(z4);
 y := zorder.decode_y(z4); io.print(x, y);
 
-bx:= bat.new(:oid,:int);
+bx:= bat.new(:int);
 bat.append(bx,0);
 bat.append(bx,1);
 bat.append(bx,0);
@@ -48,7 +48,7 @@ bat.append(bx,3);
 bat.append(bx,2);
 bat.append(bx,3);
 
-by:= bat.new(:oid,:int);
+by:= bat.new(:int);
 bat.append(by,0);
 bat.append(by,0);
 bat.append(by,1);

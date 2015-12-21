@@ -1,7 +1,7 @@
 # analyse the overhead of chopping a table
 # the multiplex code blocks.
 
-function choptest(b:bat[:oid,:lng], size:lng, base:lng);
+function choptest(b:bat[:lng], size:lng, base:lng);
     t0:= alarm.usec();
 
     INT_MAX := 2147483647;
@@ -32,7 +32,7 @@ function choptest(b:bat[:oid,:lng], size:lng, base:lng);
 end choptest;
 
 function foo();
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();

@@ -1,5 +1,5 @@
 # Test bulk delete behavior 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 
 bat.append(b, 5140046);
 bat.append(b, 5442033);

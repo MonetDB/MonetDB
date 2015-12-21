@@ -1,4 +1,4 @@
-b := bat.new(:oid,:lng);
+b := bat.new(:lng);
 bat.append(b,0:lng);
 bat.append(b,1:lng);
 bat.append(b,2:lng);

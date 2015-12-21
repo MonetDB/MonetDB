@@ -1,6 +1,6 @@
 # shrink operations.
 function foo();
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,1);
 bat.append(b,2);
 bat.append(b,3);
@@ -11,7 +11,7 @@ bat.append(b,7);
 bat.append(b,8);
 bat.append(b,9);
 io.print(b);
-d:= bat.new(:oid,:oid);
+d:= bat.new(:oid);
 bat.append(d,1@0);
 bat.append(d,2@0);
 bat.append(d,7@0);

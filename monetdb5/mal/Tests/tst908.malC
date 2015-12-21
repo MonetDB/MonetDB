@@ -1,13 +1,13 @@
 # the multiplex code blocks.
 
-function perftst( b:bat[:oid,:any_2],div:any_2):void;
+function perftst( b:bat[:any_2],div:any_2):void;
 	io.print("perftst"); io.print(div);
 	reduce:= batcalc./(b,div);
 	io.print(reduce);
 end perftst;
 
 function foo();
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 barrier i:= 0:lng;
         bat.append(b,i);
         redo i:= iterator.next(1:lng,10:lng);

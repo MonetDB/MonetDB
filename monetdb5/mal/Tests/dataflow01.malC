@@ -1,7 +1,7 @@
 # a simple dataflow test to check call methods.
 
-function load():bat[:oid,:lng];
-b:= bat.new(:oid,:lng);
+function load():bat[:lng];
+b:= bat.new(:lng);
 k:=0;
 
 INT_MAX := 2147483647;
@@ -23,7 +23,7 @@ mdb.setDebug(dbgmsk_restore);
 	return b;
 end load;
 
-function qry(z:bat[:oid,:lng],low:int,hgh:int):wrd;
+function qry(z:bat[:lng],low:int,hgh:int):wrd;
 	l:= calc.lng(low);
 	h:= calc.lng(hgh);
 	s:= algebra.subselect(z,l,h,true,true,false);

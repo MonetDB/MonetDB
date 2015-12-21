@@ -13,5 +13,5 @@ address MANIFOLDremapMultiplex;
 pattern batmal.multiplex(mod:str,fcn:str,a:any...):any...
 address MANIFOLDremapMultiplex;
 
-pattern mal.manifold(mod:str,fcn:str, a:any...):bat[:oid,:any]
+pattern mal.manifold(mod:str,fcn:str, a:any...):bat[:any]
 address MANIFOLDevaluate;

@@ -15,7 +15,7 @@ comment "Reverse a string";
 # BAT MAL signatures
 module batudf;
 
-command reverse(b:bat[:oid,:str]):bat[:oid,:str]
+command reverse(b:bat[:str]):bat[:str]
 address UDFBATreverse
 comment "Reverse a BAT of strings";
 
@@ -40,14 +40,14 @@ comment "fuse two (4-byte) int values into one (8-byte) lng value";
 # BAT MAL signatures
 module batudf;
 
-command fuse(one:bat[:oid,:bte],two:bat[:oid,:bte]):bat[:oid,:sht]
+command fuse(one:bat[:bte],two:bat[:bte]):bat[:sht]
 address UDFBATfuse
 comment "fuse two (1-byte) bte values into one (2-byte) sht value";
 
-command fuse(one:bat[:oid,:sht],two:bat[:oid,:sht]):bat[:oid,:int]
+command fuse(one:bat[:sht],two:bat[:sht]):bat[:int]
 address UDFBATfuse
 comment "fuse two (2-byte) sht values into one (4-byte) int value";
 
-command fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng]
+command fuse(one:bat[:int],two:bat[:int]):bat[:lng]
 address UDFBATfuse
 comment "fuse two (4-byte) int values into one (8-byte) lng value";

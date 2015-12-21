@@ -1,6 +1,6 @@
 # simple renaming of a bat;
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,1);
 io.print(b);
 bat.setName(b,"myhome");

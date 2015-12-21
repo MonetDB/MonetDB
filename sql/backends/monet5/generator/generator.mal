@@ -6,221 +6,221 @@
 
 module generator;
 
-pattern series(first:bte,last:bte):bat[:oid,:bte]
+pattern series(first:bte,last:bte):bat[:bte]
 address VLTgenerator_table;
 
-pattern series(first:sht,last:sht):bat[:oid,:sht]
+pattern series(first:sht,last:sht):bat[:sht]
 address VLTgenerator_table;
 
-pattern series(first:int,last:int):bat[:oid,:int]
+pattern series(first:int,last:int):bat[:int]
 address VLTgenerator_table;
 
-pattern series(first:lng,last:lng):bat[:oid,:lng]
+pattern series(first:lng,last:lng):bat[:lng]
 address VLTgenerator_table;
 
-pattern series(first:flt,last:flt):bat[:oid,:flt]
+pattern series(first:flt,last:flt):bat[:flt]
 address VLTgenerator_table;
 
-pattern series(first:dbl,last:dbl):bat[:oid,:dbl]
+pattern series(first:dbl,last:dbl):bat[:dbl]
 address VLTgenerator_table;
 
-pattern series(first:bte,last:bte,step:bte):bat[:oid,:bte]
+pattern series(first:bte,last:bte,step:bte):bat[:bte]
 address VLTgenerator_table;
 
-pattern series(first:sht,last:sht,step:sht):bat[:oid,:sht]
+pattern series(first:sht,last:sht,step:sht):bat[:sht]
 address VLTgenerator_table;
 
-pattern series(first:int,last:int,step:int):bat[:oid,:int]
+pattern series(first:int,last:int,step:int):bat[:int]
 address VLTgenerator_table;
 
-pattern series(first:lng,last:lng,step:lng):bat[:oid,:lng]
+pattern series(first:lng,last:lng,step:lng):bat[:lng]
 address VLTgenerator_table;
 
-pattern series(first:flt,last:flt,step:flt):bat[:oid,:flt]
+pattern series(first:flt,last:flt,step:flt):bat[:flt]
 address VLTgenerator_table;
 
-pattern series(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
+pattern series(first:dbl,last:dbl,step:dbl):bat[:dbl]
 address VLTgenerator_table
 comment "Create and materialize a generator table";
 
-pattern series(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp]
+pattern series(first:timestamp,last:timestamp,step:lng):bat[:timestamp]
 address VLTgenerator_table;
 
-pattern parameters(first:bte,last:bte,step:bte):bat[:oid,:bte]
+pattern parameters(first:bte,last:bte,step:bte):bat[:bte]
 address VLTgenerator_noop;
 
-pattern parameters(first:sht,last:sht,step:sht):bat[:oid,:sht]
+pattern parameters(first:sht,last:sht,step:sht):bat[:sht]
 address VLTgenerator_noop;
 
-pattern parameters(first:int,last:int,step:int):bat[:oid,:int]
+pattern parameters(first:int,last:int,step:int):bat[:int]
 address VLTgenerator_noop;
 
-pattern parameters(first:lng,last:lng,step:lng):bat[:oid,:lng]
+pattern parameters(first:lng,last:lng,step:lng):bat[:lng]
 address VLTgenerator_noop;
 
-pattern parameters(first:flt,last:flt,step:flt):bat[:oid,:flt]
+pattern parameters(first:flt,last:flt,step:flt):bat[:flt]
 address VLTgenerator_noop;
 
-pattern parameters(first:dbl,last:dbl,step:dbl):bat[:oid,:dbl]
+pattern parameters(first:dbl,last:dbl,step:dbl):bat[:dbl]
 address VLTgenerator_noop;
 
-pattern parameters(first:timestamp,last:timestamp,step:lng):bat[:oid,:timestamp]
+pattern parameters(first:timestamp,last:timestamp,step:lng):bat[:timestamp]
 address VLTgenerator_noop
 comment "Retain the table definition, but don't materialize";
 
-pattern parameters(first:bte,last:bte):bat[:oid,:bte]
+pattern parameters(first:bte,last:bte):bat[:bte]
 address VLTgenerator_noop;
 
-pattern parameters(first:sht,last:sht):bat[:oid,:sht]
+pattern parameters(first:sht,last:sht):bat[:sht]
 address VLTgenerator_noop;
 
-pattern parameters(first:int,last:int):bat[:oid,:int]
+pattern parameters(first:int,last:int):bat[:int]
 address VLTgenerator_noop;
 
-pattern parameters(first:lng,last:lng):bat[:oid,:lng]
+pattern parameters(first:lng,last:lng):bat[:lng]
 address VLTgenerator_noop;
 
-pattern parameters(first:flt,last:flt):bat[:oid,:flt]
+pattern parameters(first:flt,last:flt):bat[:flt]
 address VLTgenerator_noop;
 
-pattern parameters(first:dbl,last:dbl):bat[:oid,:dbl]
+pattern parameters(first:dbl,last:dbl):bat[:dbl]
 address VLTgenerator_noop;
 
-pattern thetasubselect(b:bat[:oid,:bte], low:bte, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:bte], low:bte, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:sht], low:sht, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:sht], low:sht, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:int], low:int, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:int], low:int, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:lng], low:lng, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:lng], low:lng, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:flt], low:flt, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:flt], low:flt, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:dbl], low:dbl, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:dbl], low:dbl, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:timestamp], low:timestamp, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:timestamp], low:timestamp, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern thetasubselect(b:bat[:oid,:bte], cnd:bat[:oid,:oid], low:bte, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:bte], cnd:bat[:oid], low:bte, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:sht], cnd:bat[:oid,:oid], low:sht, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:sht], cnd:bat[:oid], low:sht, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:int], cnd:bat[:oid,:oid], low:int, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:int], cnd:bat[:oid], low:int, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:lng], cnd:bat[:oid,:oid], low:lng, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:lng], cnd:bat[:oid], low:lng, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:flt], cnd:bat[:oid,:oid], low:flt, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:flt], cnd:bat[:oid], low:flt, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:dbl], cnd:bat[:oid,:oid], low:dbl, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:dbl], cnd:bat[:oid], low:dbl, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:oid,:timestamp], cnd:bat[:oid,:oid], low:timestamp, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:timestamp], cnd:bat[:oid], low:timestamp, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:oid,:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:oid,:bte], cand:bat[:oid,:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:bte], cand:bat[:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:sht], cand:bat[:oid,:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:sht], cand:bat[:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:int], cand:bat[:oid,:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:int], cand:bat[:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:lng], cand:bat[:oid,:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:lng], cand:bat[:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:flt], cand:bat[:oid,:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:dbl], cand:bat[:oid,:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:oid,:timestamp], cand:bat[:oid,:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:bte]) :bat[:oid,:bte]
+pattern projection(b:bat[:oid], cand:bat[:bte]) :bat[:bte]
 address VLTgenerator_projection;
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:sht]) :bat[:oid,:sht]
+pattern projection(b:bat[:oid], cand:bat[:sht]) :bat[:sht]
 address VLTgenerator_projection;
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:int]) :bat[:oid,:int]
+pattern projection(b:bat[:oid], cand:bat[:int]) :bat[:int]
 address VLTgenerator_projection;
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:lng]) :bat[:oid,:lng]
+pattern projection(b:bat[:oid], cand:bat[:lng]) :bat[:lng]
 address VLTgenerator_projection;
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:flt]) :bat[:oid,:flt]
+pattern projection(b:bat[:oid], cand:bat[:flt]) :bat[:flt]
 address VLTgenerator_projection;
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:dbl]) :bat[:oid,:dbl]
+pattern projection(b:bat[:oid], cand:bat[:dbl]) :bat[:dbl]
 address VLTgenerator_projection;
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:timestamp]) :bat[:oid,:timestamp]
+pattern projection(b:bat[:oid], cand:bat[:timestamp]) :bat[:timestamp]
 address VLTgenerator_projection
 comment "Overloaded projection operation";
 
-pattern join(b:bat[:oid,:bte], gen:bat[:oid,:bte]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:bte], gen:bat[:bte]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join;
-pattern join(b:bat[:oid,:sht], gen:bat[:oid,:sht]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:sht], gen:bat[:sht]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join;
-pattern join(b:bat[:oid,:int], gen:bat[:oid,:int]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:int], gen:bat[:int]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join;
-pattern join(b:bat[:oid,:lng], gen:bat[:oid,:lng]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:lng], gen:bat[:lng]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join;
-pattern join(b:bat[:oid,:flt], gen:bat[:oid,:flt]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:flt], gen:bat[:flt]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join;
-pattern join(b:bat[:oid,:dbl], gen:bat[:oid,:dbl]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:dbl], gen:bat[:dbl]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join
 comment "Overloaded join operation";
 
-pattern join(gen:bat[:oid,:bte], low:bat[:oid,:bte], hgh:bat[:oid,:bte], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(gen:bat[:bte], low:bat[:bte], hgh:bat[:bte], li:bit, ri:bit) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_rangejoin;
-pattern join(gen:bat[:oid,:sht], low:bat[:oid,:sht], hgh:bat[:oid,:sht], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(gen:bat[:sht], low:bat[:sht], hgh:bat[:sht], li:bit, ri:bit) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_rangejoin;
-pattern join(gen:bat[:oid,:int], low:bat[:oid,:int], hgh:bat[:oid,:int], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(gen:bat[:int], low:bat[:int], hgh:bat[:int], li:bit, ri:bit) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_rangejoin;
-pattern join(gen:bat[:oid,:lng], low:bat[:oid,:lng], hgh:bat[:oid,:lng], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(gen:bat[:lng], low:bat[:lng], hgh:bat[:lng], li:bit, ri:bit) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_rangejoin;
-pattern join(gen:bat[:oid,:flt], low:bat[:oid,:flt], hgh:bat[:oid,:flt], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(gen:bat[:flt], low:bat[:flt], hgh:bat[:flt], li:bit, ri:bit) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_rangejoin;
-pattern join(gen:bat[:oid,:dbl], low:bat[:oid,:dbl], hgh:bat[:oid,:dbl], li:bit, ri:bit) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(gen:bat[:dbl], low:bat[:dbl], hgh:bat[:dbl], li:bit, ri:bit) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_rangejoin
 comment "Overloaded range join operation";
 

@@ -7,13 +7,13 @@ M:= 10000:int;
 S:= 1000:int;
 
 t0:= alarm.usec();
-lbase:= bat.new(:oid,:int);
+lbase:= bat.new(:int);
 barrier (go,i):= language.newRange(0:int);
 	k:= mmath.rand();
 	bat.append(lbase,k);
 	redo (go,i):= language.nextElement(1:int,M);
 exit (go,i);
-rbase:= bat.new(:oid,:int);
+rbase:= bat.new(:int);
 barrier (go,i):= language.newRange(0:int);
 	k:= mmath.rand();
 	bat.append(rbase,k);

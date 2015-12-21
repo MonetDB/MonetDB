@@ -4,7 +4,7 @@ uri := sabaoth.getLocalConnectionURI();
 # create a persistent connecton to ourself
 conn1:str := remote.connect(uri, "monetdb", "monetdb");
 
-b := bat.new(:oid, :str);
+b := bat.new( :str);
 
 b := bat.append(b, "maandag");
 b := bat.append(b, "dinsdag");
@@ -31,7 +31,7 @@ b := bat.append(b, "licht");
 b := bat.append(b, "duisternis");
 
 rb2 := remote.put(conn1, b);
-lb2:bat[:oid,:str] := remote.get(conn1, rb2);
+lb2:bat[:str] := remote.get(conn1, rb2);
 
 io.print(lb2);
 

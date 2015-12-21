@@ -30,15 +30,15 @@ stderr of test 'tst105a` in directory 'monetdb5/mal` itself:
 # 13:20:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:20:24 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # check classification of functions in the proper module
         
         module bbp;
-        command new(t:any_2):bat[:oid,:any_2] address GDKbatnew;
+        command new(t:any_2):bat[:any_2] address GDKbatnew;
         
         b:= bbp.new(:int);
 ERROR = !TypeException:user.main[2]:object code for command bbp.new missing
-        !TypeException:user.main[2]:'bbp.new' undefined in:     b:bat[:oid,:int] := bbp.new(:int);
+        !TypeException:user.main[2]:'bbp.new' undefined in:     b:bat[:int] := bbp.new(:int);
 
 # 13:20:24 >  
 # 13:20:24 >  "Done."

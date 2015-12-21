@@ -30,30 +30,30 @@ Ready.
 # 16:01:55 >  
 
 function user.foo():void;               	#[0]  0 
-    b:bat[:oid,:lng] := bat.new(:oid,:lng);	#[1] CMDBATnew 1 <- 2 3 
-    INT_MAX:int := 2147483647:int;      	#[2]  4 <- 5 
-    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 6 
-    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 7 <- 8 9 
-    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 10 <- 4 7 
-    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 11 <- 6 10 
-    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 12 <- 11 
-    t0:lng := alarm.usec();             	#[8] ALARMusec 13 
-barrier i:lng := 0:lng;                 	#[9]  14 <- 15 
-    bat.append(b:bat[:oid,:lng],i:lng); 	#[10] BKCappend_val_wrap 16 <- 1 14 
-    redo i:lng := iterator.next(1:lng,1000000:lng);	#[11] ITRnext_lng 14 <- 17 18 
-exit i:lng;                             	#[12]  14 
-    t1:lng := alarm.usec();             	#[13] ALARMusec 19 
-    mdb.setDebug(dbgmsk_restore:int);   	#[14] MDBsetDebug 20 <- 6 
-    c:bat[:oid,:lng] := algebra.copy(b:bat[:oid,:lng]);	#[15] ALGcopy 21 <- 1 
-    t2:lng := alarm.usec();             	#[16] ALARMusec 22 
-    x:bat[:oid,:lng] := batcalc.+(b:bat[:oid,:lng],c:bat[:oid,:lng]);	#[17] CMDbatADDsignal 23 <- 1 21 
-    t3:lng := alarm.usec();             	#[18] ALARMusec 24 
-    d1:lng := calc.-(t1:lng,t0:lng);    	#[19] CMDvarSUBsignal 25 <- 19 13 
-    d2:lng := calc.-(t3:lng,t2:lng);    	#[20] CMDvarSUBsignal 26 <- 24 22 
-    xc:wrd := aggr.count(b:bat[:oid,:lng]);	#[21] ALGcount_bat 27 <- 1 
-    io.printf("#count %d\n":str,xc:wrd);	#[22] IOprintf 28 <- 29 27 
-    io.printf("#make %d \n":str,d1:lng);	#[23] IOprintf 30 <- 31 25 
-    io.printf("#multiplex %d\n":str,d2:lng);	#[24] IOprintf 32 <- 33 26 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+    INT_MAX:int := 2147483647:int;      	#[2]  3 <- 4 
+    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 5 
+    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 6 <- 7 8 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 9 <- 3 6 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 10 <- 5 9 
+    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 11 <- 10 
+    t0:lng := alarm.usec();             	#[8] ALARMusec 12 
+barrier i:lng := 0:lng;                 	#[9]  13 <- 14 
+    bat.append(b:bat[:lng],i:lng);      	#[10] BKCappend_val_wrap 15 <- 1 13 
+    redo i:lng := iterator.next(1:lng,1000000:lng);	#[11] ITRnext_lng 13 <- 16 17 
+exit i:lng;                             	#[12]  13 
+    t1:lng := alarm.usec();             	#[13] ALARMusec 18 
+    mdb.setDebug(dbgmsk_restore:int);   	#[14] MDBsetDebug 19 <- 5 
+    c:bat[:lng] := algebra.copy(b:bat[:lng]);	#[15] ALGcopy 20 <- 1 
+    t2:lng := alarm.usec();             	#[16] ALARMusec 21 
+    x:bat[:lng] := batcalc.+(b:bat[:lng],c:bat[:lng]);	#[17] CMDbatADDsignal 22 <- 1 20 
+    t3:lng := alarm.usec();             	#[18] ALARMusec 23 
+    d1:lng := calc.-(t1:lng,t0:lng);    	#[19] CMDvarSUBsignal 24 <- 18 12 
+    d2:lng := calc.-(t3:lng,t2:lng);    	#[20] CMDvarSUBsignal 25 <- 23 21 
+    xc:wrd := aggr.count(b:bat[:lng]);  	#[21] ALGcount_bat 26 <- 1 
+    io.printf("#count %d\n":str,xc:wrd);	#[22] IOprintf 27 <- 28 26 
+    io.printf("#make %d \n":str,d1:lng);	#[23] IOprintf 29 <- 30 24 
+    io.printf("#multiplex %d\n":str,d2:lng);	#[24] IOprintf 31 <- 32 25 
 end user.foo;                           	#[25]  
 #count 1000000
 #make 788950 

@@ -1,5 +1,5 @@
 # a test checking BAT reference counting under various situations
-function steal(bb:bat[:oid,:any_2]) :bat[:oid,:any_2];
+function steal(bb:bat[:any_2]) :bat[:any_2];
 	i:= bbp.getLRefCount(bb);
 	io.printf("enter function refcount =%d[2,3]\n",i);
 
@@ -10,12 +10,12 @@ function steal(bb:bat[:oid,:any_2]) :bat[:oid,:any_2];
 	return bb;
 end steal; 
 
-function createone():bat[:oid,:str];
-	b:= bat.new(:oid,:str);
+function createone():bat[:str];
+	b:= bat.new(:str);
 	return b;
 end createone;
 
-	b:= bat.new(:oid,:str);
+	b:= bat.new(:str);
 	i:= bbp.getLRefCount(b);
 	io.printf("refcount =%d[1]\n",i);	
 

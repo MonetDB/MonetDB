@@ -1,9 +1,9 @@
 #testing the group_by minimalistics
 # this is the backward compatibility sequence
 
-b1:= bat.new(:oid,:int);
-b2:= bat.new(:oid,:int);
-b3:= bat.new(:oid,:int);
+b1:= bat.new(:int);
+b2:= bat.new(:int);
+b3:= bat.new(:int);
 
 bat.append(b1,1);
 bat.append(b1,1);

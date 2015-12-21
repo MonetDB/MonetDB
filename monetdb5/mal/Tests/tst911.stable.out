@@ -30,32 +30,32 @@ Ready.
 # 22:45:41 >  
 
 function user.foo():void;               	#[0]  0 
-    b:bat[:oid,:lng] := bat.new(:oid,:lng);	#[1] CMDBATnew 1 <- 2 3 
-    INT_MAX:int := 2147483647:int;      	#[2]  4 <- 5 
-    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 6 
-    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 7 <- 8 9 
-    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 10 <- 4 7 
-    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 11 <- 6 10 
-    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 12 <- 11 
-    r:void := mmath.srand(0:int);       	#[8] MATHsrandint 13 <- 14 
-barrier i:lng := 0:lng;                 	#[9]  15 <- 16 
-    k:int := mmath.rand();              	#[10] MATHrandint 17 
-    l:lng := calc.lng(k:int);           	#[11] CMDvarCONVERT 18 <- 17 
-    bat.append(b:bat[:oid,:lng],l:lng); 	#[12] BKCappend_val_wrap 19 <- 1 18 
-    redo i:lng := iterator.next(1:lng,1000000:lng);	#[13] ITRnext_lng 15 <- 20 21 
-exit i:lng;                             	#[14]  15 
-    mdb.setDebug(dbgmsk_restore:int);   	#[15] MDBsetDebug 22 <- 6 
-    t0:lng := alarm.usec();             	#[16] ALARMusec 23 
-barrier doit:bit := true:bit;           	#[17]  24 <- 25 
-    t:bat[:oid,:oid] := algebra.subselect(b:bat[:oid,:lng],256000:lng,266000:lng,true:bit,true:bit,false:bit);	#[18] ALGsubselect1 26 <- 1 27 28 25 25 29 
-exit doit:bit;                          	#[19]  24 
-    t1:lng := alarm.usec();             	#[20] ALARMusec 30 
-    base:lng := calc.-(t1:lng,t0:lng);  	#[21] CMDvarSUBsignal 31 <- 30 23 
-    io.printf("#select direct %d usec\n":str,base:lng);	#[22] IOprintf 32 <- 33 31 
-    user.choptest(b:bat[:oid,:lng],100000:lng,base:lng);	#[23]  34 <- 1 35 31 
-    user.choptest(b:bat[:oid,:lng],10000:lng,base:lng);	#[24]  36 <- 1 37 31 
-    user.choptest(b:bat[:oid,:lng],1000:lng,base:lng);	#[25]  38 <- 1 39 31 
-    user.choptest(b:bat[:oid,:lng],100:lng,base:lng);	#[26]  40 <- 1 41 31 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+    INT_MAX:int := 2147483647:int;      	#[2]  3 <- 4 
+    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 5 
+    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 6 <- 7 8 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 9 <- 3 6 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 10 <- 5 9 
+    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 11 <- 10 
+    r:void := mmath.srand(0:int);       	#[8] MATHsrandint 12 <- 13 
+barrier i:lng := 0:lng;                 	#[9]  14 <- 15 
+    k:int := mmath.rand();              	#[10] MATHrandint 16 
+    l:lng := calc.lng(k:int);           	#[11] CMDvarCONVERT 17 <- 16 
+    bat.append(b:bat[:lng],l:lng);      	#[12] BKCappend_val_wrap 18 <- 1 17 
+    redo i:lng := iterator.next(1:lng,1000000:lng);	#[13] ITRnext_lng 14 <- 19 20 
+exit i:lng;                             	#[14]  14 
+    mdb.setDebug(dbgmsk_restore:int);   	#[15] MDBsetDebug 21 <- 5 
+    t0:lng := alarm.usec();             	#[16] ALARMusec 22 
+barrier doit:bit := true:bit;           	#[17]  23 <- 24 
+    t:bat[:oid] := algebra.subselect(b:bat[:lng],256000:lng,266000:lng,true:bit,true:bit,false:bit);	#[18] ALGsubselect1 25 <- 1 26 27 24 24 28 
+exit doit:bit;                          	#[19]  23 
+    t1:lng := alarm.usec();             	#[20] ALARMusec 29 
+    base:lng := calc.-(t1:lng,t0:lng);  	#[21] CMDvarSUBsignal 30 <- 29 22 
+    io.printf("#select direct %d usec\n":str,base:lng);	#[22] IOprintf 31 <- 32 30 
+    user.choptest(b:bat[:lng],100000:lng,base:lng);	#[23]  33 <- 1 34 30 
+    user.choptest(b:bat[:lng],10000:lng,base:lng);	#[24]  35 <- 1 36 30 
+    user.choptest(b:bat[:lng],1000:lng,base:lng);	#[25]  37 <- 1 38 30 
+    user.choptest(b:bat[:lng],100:lng,base:lng);	#[26]  39 <- 1 40 30 
 end user.foo;                           	#[27]  
 #select direct 4350 usec
 #chopped at 100000 5124 774  at 77.400002 usec

@@ -149,7 +149,7 @@ command fetch_field(hdl:int,fnr:int):bte
 address SERVERfetch_field_bte
 comment "Retrieve a single bte field.";
 
-command fetch_field_array(hdl:int):bat[:oid,:str]
+command fetch_field_array(hdl:int):bat[:str]
 address SERVERfetch_field_bat
 comment "Retrieve all fields for a row.";
 
@@ -189,22 +189,22 @@ pattern rpc(key:int,qry:str...):any
 address SERVERmapi_rpc_single_row
 comment "Send a simple query for execution and fetch result.";
 
-pattern rpc(key:int,qry:str):bat[:oid,:any_2]
+pattern rpc(key:int,qry:str):bat[:any_2]
 address SERVERmapi_rpc_bat;
 
 command rpc(key:int,qry:str):int
 address SERVERquery
 comment "Send a simple query for execution.";
 
-pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:oid,:any_2]
+pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
 
-pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:oid,:any_2]
+pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
 
-pattern bind(key:int,remoteName:str):bat[:oid,:any_2]
+pattern bind(key:int,remoteName:str):bat[:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
 

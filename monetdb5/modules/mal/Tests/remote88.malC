@@ -4,21 +4,21 @@
 
 module octopus;
 
-function octopus.bind(v:int):bat[:oid,:int];
-	b:= bat.new(:oid,:int);
+function octopus.bind(v:int):bat[:int];
+	b:= bat.new(:int);
 	bat.append(b,v);
 	return b;
 end bind;
 
-function octopus.bind(conn:str,v:int):bat[:oid,:int];
+function octopus.bind(conn:str,v:int):bat[:int];
 	vh:= remote.put(conn,v);
-	b:= remote.put(conn,nil:bat[:oid,:int]);
+	b:= remote.put(conn,nil:bat[:int]);
 	b:= remote.exec(conn,"octopus","bind",vh);
-	bv:bat[:oid,:int]:= remote.get(conn,b);
+	bv:bat[:int]:= remote.get(conn,b);
 	return bv;
 end bind;
 
-function octopus.tentacle(v:int, uri:str):bat[:oid,:int];
+function octopus.tentacle(v:int, uri:str):bat[:int];
 	conn:str := remote.connect(uri, "monetdb", "monetdb", "msql");
 	b:= octopus.bind(conn,v);
 catch RMTexception:str;
@@ -28,14 +28,14 @@ exit RMTexception;
 	return tentacle:=b;
 end tentacle;
 
-function octopus.exec(uri:str, query:str, version:int):bat[:oid,:int];
+function octopus.exec(uri:str, query:str, version:int):bat[:int];
 	conn:str := remote.connect(uri, "monetdb", "monetdb", "msql");
 	m:= remote.put(conn,version);
-	v:= remote.put(conn,nil:bat[:oid,:int]);
+	v:= remote.put(conn,nil:bat[:int]);
 	u:= remote.put(conn,uri);
 	# this works with uri, because head and tentacle are the same */
 	v:= remote.exec(conn,"octopus", query, m, u);
-	res:bat[:oid,:int]:= remote.get(conn,v);
+	res:bat[:int]:= remote.get(conn,v);
 	io.print(res);
 	remote.disconnect(conn);
 	return exec:=res;
@@ -46,10 +46,10 @@ uri := sabaoth.getLocalConnectionURI();
 barrier v:= 0:int;
 	io.print(v);
 barrier go:= language.dataflow();
-	v1:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
-	v2:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
-	v3:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
-	v4:bat[:oid,:int] :=octopus.exec(uri, "tentacle", v);
+	v1:bat[:int] :=octopus.exec(uri, "tentacle", v);
+	v2:bat[:int] :=octopus.exec(uri, "tentacle", v);
+	v3:bat[:int] :=octopus.exec(uri, "tentacle", v);
+	v4:bat[:int] :=octopus.exec(uri, "tentacle", v);
 	res:= mat.pack(v1,v2,v3,v4);
 	language.pass(uri);
 	language.pass(v);

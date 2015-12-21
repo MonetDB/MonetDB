@@ -1,12 +1,12 @@
 #extra long signature
-function extralongfunctionsignature(p1:bat[:oid,:sht], p2:bat[:oid,:sht]):bat[:oid,:sht];
- b:= bat.new(:oid,:sht);
+function extralongfunctionsignature(p1:bat[:sht], p2:bat[:sht]):bat[:sht];
+ b:= bat.new(:sht);
 return extralongfunctionsignature:= b;
 end extralongfunctionsignature;
 
 function foo();
-p1:= bat.new(:oid,:sht);
-p2:= bat.new(:oid,:sht);
+p1:= bat.new(:sht);
+p2:= bat.new(:sht);
 z:= extralongfunctionsignature(p1,p2);
 end foo;
 mdb.List("user","foo");

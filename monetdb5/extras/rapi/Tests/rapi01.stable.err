@@ -30,7 +30,7 @@ stderr of test 'rapi01` in directory 'monetdb5/extras/rapi` itself:
 # 11:17:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13991" "--port=31221"
 # 11:17:47 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23471/.s.monetdb.34866
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # Error handling tests
         b:= bat.new(:oid,:int);
         bat.append(b,1804289383);

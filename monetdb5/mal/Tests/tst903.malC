@@ -2,7 +2,7 @@
 
 function foo();
 t0:= alarm.usec();
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -122,7 +122,7 @@ cnt:= aggr.count(z9);
 mdb.setDebug(dbgmsk_set);
 
 t0:= alarm.usec();
-x:bat[:oid,:lng]:= mal.multiplex("calc","+",b,c);
+x:bat[:lng]:= mal.multiplex("calc","+",b,c);
 t1:= alarm.usec();
 
 mdb.setDebug(dbgmsk_restore);

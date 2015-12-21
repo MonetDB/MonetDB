@@ -17,7 +17,7 @@ io.print(f);
 f:= calc.min(date_08,date_08);
 io.print(f);
 
-b:= bat.new(:oid,:date);
+b:= bat.new(:date);
 bat.append(b,date_01);
 bat.append(b,date_02);
 bat.append(b,date_03);

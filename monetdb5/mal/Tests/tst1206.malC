@@ -38,7 +38,7 @@ mtime.timezone_local(lzone);
 	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
 #var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
 # 
-	rule_bat:= bat.new(:oid,:zrule,10);
+	rule_bat:= bat.new(:zrule,10);
 	bat.append(rule_bat,rule_jan);
 	bat.append(rule_bat,rule_feb);
 	bat.append(rule_bat,rule_mar);
@@ -94,7 +94,7 @@ mtime.timezone_local(lzone);
 #var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
 #
 #
-	tzone_bat:= bat.new(:oid,:timezone);
+	tzone_bat:= bat.new(:timezone);
 	bat.append(tzone_bat,tzone_00);
 	bat.append(tzone_bat,tzone_01);
 	bat.append(tzone_bat,tzone_02);
@@ -178,7 +178,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	daytime_19:= mtime.daytime("nil");
 #var daytime_19 := mtime.daytime("nil");
 #
-	daytime_bat:= bat.new(:oid,:daytime);
+	daytime_bat:= bat.new(:daytime);
 	bat.append(daytime_bat,daytime_00);
 	bat.append(daytime_bat,daytime_01);
 	bat.append(daytime_bat,daytime_02);
@@ -205,10 +205,10 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 ## test the timestamp operations
 	bat.setColumn(timestamp_bat,"timestamp");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
-	mh_a:bat[:oid,:date] := mal.multiplex("mtime","date",timestamp_bat,tzone_bat);
+	mh_a:bat[:date] := mal.multiplex("mtime","date",timestamp_bat,tzone_bat);
 	bat.setColumn(mh_a,"date");
 #      [date](timestamp_bat,tzone_bat).bat.setColumn("date"),
-	oh_a:bat[:oid,:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,tzone_bat);
+	oh_a:bat[:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,tzone_bat);
 	bat.setColumn(oh_a,"daytime");
 	io.print("print(timestamp_bat,mh_a,oh_a)");
 	io.print(timestamp_bat,mh_a,oh_a);
@@ -220,18 +220,18 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	io.print("print(timezones)");
 	io.print(timezones);
 	sh_a:timezone := algebra.find(timezones,"Wake Island");
-	th_a:bat[:oid,:date] := mal.multiplex("mtime","date",timestamp_bat,sh_a);
+	th_a:bat[:date] := mal.multiplex("mtime","date",timestamp_bat,sh_a);
 	bat.setColumn(th_a,"Wake Island");
 #      [date](timestamp_bat,algebra.find(timezones,"Wake Island")).bat.setColumn("Wake Island"),
 	vh_a:timezone := algebra.find(timezones,"Wake Island");
-	wh_a:bat[:oid,:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,vh_a);
+	wh_a:bat[:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,vh_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"Wake Island")),
 	xh_a:timezone := algebra.find(timezones,"American Samoa");
-	yh_a:bat[:oid,:date] := mal.multiplex("mtime","date",timestamp_bat,xh_a);
+	yh_a:bat[:date] := mal.multiplex("mtime","date",timestamp_bat,xh_a);
 	ai_a := bat.setColumn(yh_a,"American Samoa");
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).bat.setColumn("American Samoa"),
 	bi_a:timezone := algebra.find(timezones,"American Samoa");
-	ci_a:bat[:oid,:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,bi_a);
+	ci_a:bat[:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,bi_a);
 	io.print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");
 	di_a := io.print(timestamp_bat,th_a,wh_a,yh_a,ci_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"American Samoa")));
@@ -240,11 +240,11 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	fi_a := calc.*(60,ei_a);
 	gi_a := calc.*(23,fi_a);
 	hi_a := calc.lng(gi_a);
-	timestamp_plus:bat[:oid,:timestamp] := mal.multiplex("mtime","add",timestamp_bat,hi_a);
+	timestamp_plus:bat[:timestamp] := mal.multiplex("mtime","add",timestamp_bat,hi_a);
 #var timestamp_plus := [add](timestamp_bat, calc.lng(23*60*60*1000));
 	ii_a := calc.*(-60,1000);
 	ji_a := calc.lng(ii_a);
-	timestamp_minus:bat[:oid,:timestamp] := mal.multiplex("mtime","add",timestamp_bat,ji_a);
+	timestamp_minus:bat[:timestamp] := mal.multiplex("mtime","add",timestamp_bat,ji_a);
 #var timestamp_minus := [add](timestamp_bat, calc.lng(-60*1000));
 #
 	ki_a := bat.setColumn(timestamp_bat,"timestamp");
@@ -253,7 +253,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #	timestamp_plus.bat.setColumn("plus23"),
 	mi_a := bat.setColumn(timestamp_minus,"min1");
 #	timestamp_minus.bat.setColumn("min1"),
-	ni_a:bat[:oid,:lng] := mal.multiplex("mtime","diff",timestamp_plus,timestamp_minus);
+	ni_a:bat[:lng] := mal.multiplex("mtime","diff",timestamp_plus,timestamp_minus);
 	oi_a := calc.*(60,1000);
 	pi_a := calc.*(60,oi_a);
 	qi_a := calc.lng(pi_a);

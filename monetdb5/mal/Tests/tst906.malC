@@ -2,7 +2,7 @@
 # check detection of the underlying fast implementations
 
 function foo();
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 barrier i:= 0:lng;
 	bat.append(b,i);
 	redo i:= iterator.next(1:lng,10:lng);

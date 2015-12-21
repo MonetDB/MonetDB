@@ -4,7 +4,7 @@
 # delete it in the tst1021
 
 bbp.open();
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,2);
 bat.setPersistent(b);
 bbp.deposit("keepit",b);
@@ -13,6 +13,6 @@ io.print(c);
 bbp.close();
 #remains in store.
 bbp.open();
-v:bat[:oid,:int]:= bbp.take("keepit");
+v:bat[:int]:= bbp.take("keepit");
 io.print(v);
 bbp.close();

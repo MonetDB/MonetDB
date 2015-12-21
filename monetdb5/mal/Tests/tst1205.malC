@@ -82,7 +82,7 @@ mtime.timezone_local(lzone);
 #var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
 #
 #
-	tzone_bat:= bat.new(:oid,:timezone);
+	tzone_bat:= bat.new(:timezone);
 	bat.append(tzone_bat,tzone_00);
 	bat.append(tzone_bat,tzone_01);
 	bat.append(tzone_bat,tzone_02);
@@ -106,7 +106,7 @@ mtime.timezone_local(lzone);
 	bat.append(tzone_bat,tzone_13);
 #
 ## test dayofweek and weeknumber using more than two years as consecutive days
-    date_seq:= bat.new(:oid,:date);
+    date_seq:= bat.new(:date);
     date_00:= mtime.date(2000,01,01);
 #var date_seq := bat.new(int, date);
     i:= -375;
@@ -127,19 +127,19 @@ exit    lf_a;
 #
 	rf_a := bat.setColumn(date_seq,"date");
 #io.print(date_seq.bat.setColumn("date"),
-	sf_a:bat[:oid,:int] := mal.multiplex("mtime","weekofyear",date_seq);
+	sf_a:bat[:int] := mal.multiplex("mtime","weekofyear",date_seq);
 	tf_a := bat.setColumn(sf_a,"weekofyear");
 #      [weekofyear](date_seq).bat.setColumn("weekofyear"),
-	uf_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",date_seq);
-	vf_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",uf_a);
+	uf_a:bat[:int] := mal.multiplex("mtime","dayofweek",date_seq);
+	vf_a:bat[:str] := mal.multiplex("mtime","dayname",uf_a);
 	wf_a := bat.setColumn(vf_a,"dayofweek");
 #      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"),
-	xf_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",date_seq);
-	yf_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",xf_a);
-	ag_a:bat[:oid,:int] := mal.multiplex("mtime","daynum",yf_a);
+	xf_a:bat[:int] := mal.multiplex("mtime","dayofweek",date_seq);
+	yf_a:bat[:str] := mal.multiplex("mtime","dayname",xf_a);
+	ag_a:bat[:int] := mal.multiplex("mtime","daynum",yf_a);
 	bg_a := bat.setColumn(ag_a,"num");
 #      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"),
-	cg_a:bat[:oid,:int] := mal.multiplex("mtime","dayofyear",date_seq);
+	cg_a:bat[:int] := mal.multiplex("mtime","dayofyear",date_seq);
 	dg_a := bat.setColumn(cg_a,"dayofyear");
 io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);
@@ -192,7 +192,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #var daytime_19 := mtime.daytime("nil");
 #
 	daytime_20:= mtime.daytime("nil");
-	daytime_bat:= bat.new(:oid,:daytime);
+	daytime_bat:= bat.new(:daytime);
 	bat.append(daytime_bat,daytime_00);
 	bat.append(daytime_bat,daytime_01);
 	bat.append(daytime_bat,daytime_02);
@@ -217,16 +217,16 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #
 	bat.setColumn(daytime_bat,"daytime");
 #io.print(daytime_bat.bat.setColumn("daytime"),
-	bh_a:bat[:oid,:int] := mal.multiplex("mtime","hours",daytime_bat);
+	bh_a:bat[:int] := mal.multiplex("mtime","hours",daytime_bat);
 	bat.setColumn(bh_a,"hours");
 #      [hours](daytime_bat).bat.setColumn("hours"),
-	dh_a:bat[:oid,:int] := mal.multiplex("mtime","minutes",daytime_bat);
+	dh_a:bat[:int] := mal.multiplex("mtime","minutes",daytime_bat);
 	bat.setColumn(dh_a,"minutes");
 #      [minutes](daytime_bat).bat.setColumn("minutes"),
-	fh_a:bat[:oid,:int] := mal.multiplex("mtime","seconds",daytime_bat);
+	fh_a:bat[:int] := mal.multiplex("mtime","seconds",daytime_bat);
 	bat.setColumn(fh_a,"seconds");
 #      [seconds](daytime_bat).bat.setColumn("seconds"),
-	hh_a:bat[:oid,:int] := mal.multiplex("mtime","milliseconds",daytime_bat);
+	hh_a:bat[:int] := mal.multiplex("mtime","milliseconds",daytime_bat);
 	bat.setColumn(hh_a,"milliseconds");
 io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);
@@ -276,7 +276,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #var date_19 := date("nil");
 	date_20:= mtime.date("1999-sept-31");
 #var date_20 := date("1999-sept-31");
-	date_bat:= bat.new(:oid,:date);
+	date_bat:= bat.new(:date);
 	bat.append(date_bat,date_00);
 	bat.append(date_bat,date_01);
 	bat.append(date_bat,date_02);
@@ -305,6 +305,6 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 ##line 719 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
 ## create timestamps in bulk from the above bats with dates, daytimes and tzones
 # Skipped due to coercion implication
-	kh_a:bat[:oid,:timestamp] := mal.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
+	kh_a:bat[:timestamp] := mal.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
 	timestamp_bat:=kh_a; bat.setAccess(kh_a,"w");
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);

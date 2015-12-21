@@ -40,13 +40,13 @@ exit MALException:str;                  	#[5]  5
     id:oid := clients.addUser("checkpoint":str,pw:str);	#[10] CLTaddUser 3 <- 12 1 
     io.print(id:oid);                   	#[11] IOprint_val 13 <- 3 
 # do a simple listing of users known 
-    (u:bat[:oid,:oid],n:bat[:oid,:str]) := clients.getUsers();	#[13] CLTgetUsers 15 16 
-    io.print(u:bat[:oid,:oid],n:bat[:oid,:str]);	#[14] IOtable 17 <- 15 16 
+    (u:bat[:oid],n:bat[:str]) := clients.getUsers();	#[13] CLTgetUsers 15 16 
+    io.print(u:bat[:oid],n:bat[:str]);  	#[14] IOtable 17 <- 15 16 
 # should work, we're the admin here 
     clients.removeUser("checkpoint":str);	#[16] CLTremoveUser 19 <- 12 
 # do a simple listing of users known 
-    (u:bat[:oid,:oid],n:bat[:oid,:str]) := clients.getUsers();	#[18] CLTgetUsers 15 16 
-    io.print(u:bat[:oid,:oid],n:bat[:oid,:str]);	#[19] IOtable 21 <- 15 16 
+    (u:bat[:oid],n:bat[:str]) := clients.getUsers();	#[18] CLTgetUsers 15 16 
+    io.print(u:bat[:oid],n:bat[:str]);  	#[19] IOtable 21 <- 15 16 
 # forcefully set the password of the user test 
     clients.setPassword("test":str,pw:str);	#[21] CLTsetPassword 23 <- 9 1 
 # now try to set the password for ourself, should fail 

@@ -2,7 +2,7 @@
 # The first and foremost BAT operations
 
 # String iterator stuff
-c:= bat.new(:oid,:str);
+c:= bat.new(:str);
 bat.append(c,"hello");
 bat.append(c,"brave");
 bat.append(c,"world");

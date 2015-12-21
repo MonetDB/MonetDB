@@ -12,7 +12,7 @@ stderr of test 'X_crash.SF-1971632` in directory 'geom/BugTracker` itself:
 # 11:50:18 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30029 
 # 11:50:18 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-17297/.s.monetdb.35706
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = select X(g) from geoms;
 ERROR = !GEOSGeom_getCoordSeq failed
         !Geometry must be a Point or LineString

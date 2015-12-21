@@ -30,15 +30,15 @@ io.printf("field 0 %d\n",fi);
 s:str:= mapi.fetch_field(mid,1);
 io.printf("field 1 %s\n",s);
 
-mapi.query(mid,"r:= bat.new(:oid,:int);");
+mapi.query(mid,"r:= bat.new(:int);");
 io.printf("shipped first query\n");
 mapi.query(mid,"bat.append(r,311);");
 mapi.query(mid,"bat.append(r,433);");
-b:bat[:oid,:int]:= mapi.rpc(mid,"io.print(r);");
+b:bat[:int]:= mapi.rpc(mid,"io.print(r);");
 io.print(b);
 
 # use the BAT fetch operation
-#b:bat[:oid,:int]:= mapi.receive(mid,"remotename");
+#b:bat[:int]:= mapi.receive(mid,"remotename");
 
 msg:str := mapi.rpc(mid,"io.print(\"hello world\");");
 io.print(msg);

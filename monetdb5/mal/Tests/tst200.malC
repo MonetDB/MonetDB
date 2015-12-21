@@ -6,7 +6,7 @@ calc.setoid(o);
 #test basic functionality of the BAT library.
 #focussed on integers
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 io.printf("#~BeginVariableOutput~#\n"); 
 #binfo:= info(b);
 #err:= print(binfo); 

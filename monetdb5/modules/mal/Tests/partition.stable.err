@@ -74,9 +74,9 @@ stderr of test 'partition` in directory 'monetdb5/modules/mal` itself:
 # 09:46:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
 # 09:46:29 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26774/.s.monetdb.35410
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = function tst();
-        b:= bat.new(:oid,:int);
+        b:= bat.new(:int);
         bat.append(b,1);
         bat.append(b,2);
         bat.append(b,3);

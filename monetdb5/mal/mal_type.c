@@ -41,7 +41,7 @@ getTypeName(malType tpe)
 	if (tpe == TYPE_any)
 		return GDKstrdup("any");
 	if (isaBatType(tpe)) {
-		snprintf(buf, l, "bat[:oid,");
+		snprintf(buf, l, "bat[");
 		l -= strlen(buf);
 		s = buf + strlen(buf);
 		k = getColumnIndex(tpe);

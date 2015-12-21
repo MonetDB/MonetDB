@@ -1,4 +1,4 @@
-	int_1M:= bat.new(:oid,:lng,1000000);
+	int_1M:= bat.new(:lng,1000000);
 	i:= 1000000:lng;
 
 INT_MAX := 2147483647;
@@ -54,7 +54,7 @@ mdb.setDebug(dbgmsk_restore);
         yg_a := calc.-(x,t);
         ah_a := io.printf("%d ms\n",yg_a);
 
-	M2:= bat.new(:oid,:lng,1000000);
+	M2:= bat.new(:lng,1000000);
 	i:= 1000000:lng;
 
 mdb.setDebug(dbgmsk_set);

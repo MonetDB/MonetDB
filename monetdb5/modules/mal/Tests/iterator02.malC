@@ -1,4 +1,4 @@
-	t:= bat.new(:oid, :url);
+	t:= bat.new( :url);
 	cb_a := url.url("http://www.cwi.nl");
 	db_a := bat.append(t,cb_a);
 	eb_a := url.url("http://www.cwi.nl/~monet");
@@ -13,7 +13,7 @@
 	nb_a := bat.append(t,mb_a);
 	qb_a := io.print("build a table finished");
 	io.print(t);
-	rb:= bat.new(:oid,:url);
+	rb:= bat.new(:url);
 	io.print("start loop");
 barrier (h:oid,B2:url) := iterator.new(t);        
 	io.print(B2);

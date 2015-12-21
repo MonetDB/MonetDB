@@ -41,8 +41,8 @@ Ready.
 
 function sql.qry(low:int,hgh:int):void;
     m := sql.mvc();
-    x:bat[:oid,:oid] := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int] := sql.bind(m,"sys","tbl","col",0);
+    x:bat[:oid] := sql.tid(m,"sys","tbl");
+    b:bat[:int] := sql.bind(m,"sys","tbl","col",0);
     s := algebra.subselect(b,x,low,hgh,true,true,false);
     io.print(s);
 end sql.qry;

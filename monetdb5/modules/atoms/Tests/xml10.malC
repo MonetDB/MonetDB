@@ -11,11 +11,11 @@
 #</books>
 
 # the intermediate tabular result produced by SQL
-a:= bat.new(:oid,:str);
+a:= bat.new(:str);
 bat.append(a,"john");
 bat.append(a,"john");
 bat.append(a,"marie");
-t:= bat.new(:oid,:str);
+t:= bat.new(:str);
 bat.append(t,"spring");
 bat.append(t,"summer");
 bat.append(t,"autum");
@@ -30,11 +30,11 @@ bat.append(t,"autum");
 ax:= batxml.xml(a);
 tx:= batxml.xml(t);
 te:= batxml.element("title",tx);
-g:= bat.new(:oid,:oid);
+g:= bat.new(:oid);
 bat.append(g,0@0);
 bat.append(g,0@0);
 bat.append(g,1@0);
-e:=bat.new(:oid,:int);
+e:=bat.new(:int);
 bat.append(e,0);
 bat.append(e,0);
 

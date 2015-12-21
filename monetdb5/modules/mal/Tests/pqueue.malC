@@ -1,5 +1,5 @@
 # enqueue something 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 
 bat.append(b,1);
 bat.append(b,0);

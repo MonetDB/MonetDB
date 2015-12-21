@@ -30,7 +30,7 @@ stderr of test 'tst010` in directory 'monetdb5/mal` itself:
 # 13:19:59 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:19:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # syntax analysis test for guarded blocks, redo's and leave's
         # forcefully end the block, because the parser counts barrier/exit pairs
         # function foo();

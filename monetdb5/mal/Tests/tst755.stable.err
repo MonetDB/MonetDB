@@ -30,20 +30,20 @@ stderr of test 'tst755` in directory 'monetdb5/mal` itself:
 # 09:29:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
 # 09:29:50 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # Polymorphic function tests
         # Catching a pervasive error a.s.a.p.
         # The function may not be cloned and a secondary error is generated
-        function test(b:bat[:oid,:any_2],c:any_2):void;
+        function test(b:bat[:any_2],c:any_2):void;
         	k:= 1+"wrong";
         	io.print(k);
         end test;
         
-        c:= bat.new(:oid,:str);
+        c:= bat.new(:str);
         user.test(c,"hello");
 ERROR = !TypeException:user.test[1]:'calc.+' undefined in:     k:any := calc.+(1:int,"wrong":str);
         !MALException:user.test[0]:Error in cloned function
-        !TypeException:user.main[5]:'user.test' undefined in:     user.test(c:bat[:oid,:str],"hello":str);
+        !TypeException:user.main[5]:'user.test' undefined in:     user.test(c:bat[:str],"hello":str);
 
 # 09:29:50 >  
 # 09:29:50 >  "Done."

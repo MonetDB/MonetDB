@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:str);
+b:= bat.new(:str);
 bat.append(b,"Hello");
 bat.append(b,"world");
 io.print(b);

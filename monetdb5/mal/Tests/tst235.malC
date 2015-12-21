@@ -9,8 +9,8 @@ function dir():void;
 	io.print(ds,d,dl);
 end dir;
 
-function createBAT(name:str):bat[:oid,:int];
-    res:= bat.new(:oid,:int);
+function createBAT(name:str):bat[:int];
+    res:= bat.new(:int);
     bat.setName(res,name);
 	z:= bbp.getLRefCount(res);
 	io.print(z);

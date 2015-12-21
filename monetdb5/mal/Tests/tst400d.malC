@@ -1,6 +1,6 @@
 # simple iterator loop test
 
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();

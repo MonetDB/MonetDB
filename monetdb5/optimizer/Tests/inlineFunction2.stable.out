@@ -39,7 +39,7 @@ barrier (X_12,X_13) := iterator.new(b);
     bat.append(X_8,X_15);
     redo (X_12,X_13) := iterator.next(b);
 exit (X_12,X_13);
-    z:bat[:oid,:int]  := X_8;
+    z:bat[:int] := X_8;
 end user.tst;
 
 # 23:12:13 >  

@@ -30,10 +30,10 @@ stderr of test 'tst007` in directory 'monetdb5/mal` itself:
 # 13:48:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
 # 13:48:22 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = # A collection of forloops, which should not execute
         function foo();
-        	b:= bat.new(:oid,:int);
+        	b:= bat.new(:int);
         barrier	H := true;
         	T:= 1;
         	#body

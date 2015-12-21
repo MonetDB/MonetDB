@@ -1,7 +1,7 @@
 ## test dayofweek and weeknumber using more than two years as consecutive days
     date_00:= mtime.date(2000,01,01);
 
-	date_seq:= bat.new(:oid,:date);
+	date_seq:= bat.new(:date);
 	i:= -375;
 barrier	lf_a:= true;
 	i:= i+1;

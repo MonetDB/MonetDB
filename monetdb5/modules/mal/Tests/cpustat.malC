@@ -1,7 +1,7 @@
 (user,nice,sys,idle,iowait) := profiler.cpustats();
 io.print(user, nice, sys, idle, iowait);
 
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 r:= mmath.srand(0);
 barrier i:= 0:lng;
     k:= mmath.rand();

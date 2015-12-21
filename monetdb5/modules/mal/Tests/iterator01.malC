@@ -1,4 +1,4 @@
-	t:= bat.new(:oid, :url);
+	t:= bat.new( :url);
 	cb_a := url.url("http://www.cwi.nl");
 	db_a := bat.append(t,cb_a);
 	eb_a := url.url("http://www.cwi.nl/~monet");

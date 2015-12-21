@@ -71,7 +71,7 @@ stderr of test 'tst058` in directory 'monetdb5/mal` itself:
 # 12:52:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
 # 12:52:41 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = -- some typos
         i:= 1 + 1 + 1;
         j:= 1 + + 1;

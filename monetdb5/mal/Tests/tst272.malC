@@ -2,7 +2,7 @@
 
 o:= calc.oid(20000000);
 calc.setoid(o);
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 #test basic functionality of the BAT library.
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.

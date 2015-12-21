@@ -1,7 +1,7 @@
 # the multiplex code blocks.
 
 function foo();
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 barrier i:= 0:int;
 	bat.append(b,i);
 	redo i:= iterator.next(1:int,10:int);

@@ -1,5 +1,5 @@
-function user.qry(version:int):bat[:oid,:int];
-	b:= bat.new(:oid,:int);
+function user.qry(version:int):bat[:int];
+	b:= bat.new(:int);
 	bat.append(b,23);
 	return qry:= b;
 end user.qry;

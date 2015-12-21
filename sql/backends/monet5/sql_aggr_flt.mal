@@ -4,8 +4,8 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-function aggr.covar(e1:bat[:oid,:flt], e2:bat[:oid,:flt]):flt;
-	e0:bat[:oid,:flt] := batcalc.*(e1,e2);
+function aggr.covar(e1:bat[:flt], e2:bat[:flt]):flt;
+	e0:bat[:flt] := batcalc.*(e1,e2);
 	s0:flt := aggr.sum(e0);
 	s1:flt := aggr.sum(e1);
 	s2:flt := aggr.sum(e2);
@@ -18,7 +18,7 @@ function aggr.covar(e1:bat[:oid,:flt], e2:bat[:oid,:flt]):flt;
 	return v;
 end aggr.covar;
 
-function aggr.corr(e1:bat[:oid,:flt], e2:bat[:oid,:flt]):flt;
+function aggr.corr(e1:bat[:flt], e2:bat[:flt]):flt;
 	cv:flt := aggr.covar(e1,e2);
 	sd1 := aggr.stdev(e1);
 	sd2 := aggr.stdev(e2);
@@ -28,22 +28,22 @@ function aggr.corr(e1:bat[:oid,:flt], e2:bat[:oid,:flt]):flt;
 	return res;
 end aggr.corr;
 
-function aggr.covar(e1:bat[:oid,:flt], e2:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:flt];
-	e0:bat[:oid,:flt] := batcalc.*(e1,e2);
-	s0:bat[:oid,:flt] := aggr.sum(e0,g,e);
-	s1:bat[:oid,:flt] := aggr.sum(e1,g,e);
-	s2:bat[:oid,:flt] := aggr.sum(e2,g,e);
-	v2:bat[:oid,:flt] := batcalc.*(s1,s2);
+function aggr.covar(e1:bat[:flt], e2:bat[:flt], g:bat[:oid], e:bat[:any_2]):bat[:flt];
+	e0:bat[:flt] := batcalc.*(e1,e2);
+	s0:bat[:flt] := aggr.sum(e0,g,e);
+	s1:bat[:flt] := aggr.sum(e1,g,e);
+	s2:bat[:flt] := aggr.sum(e2,g,e);
+	v2:bat[:flt] := batcalc.*(s1,s2);
 	c := aggr.count(e1,g,e);
-	n:bat[:oid,:flt] := batcalc.flt(c);
-	v3:bat[:oid,:flt] := batcalc./(v2,n);
-	v1:bat[:oid,:flt] := batcalc.-(s0,v3);
-	v:bat[:oid,:flt] := batcalc./(v1,n);
+	n:bat[:flt] := batcalc.flt(c);
+	v3:bat[:flt] := batcalc./(v2,n);
+	v1:bat[:flt] := batcalc.-(s0,v3);
+	v:bat[:flt] := batcalc./(v1,n);
 	return v;
 end aggr.covar;
 
-function aggr.corr(e1:bat[:oid,:flt], e2:bat[:oid,:flt], g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:flt];
-	cv:bat[:oid,:flt] := aggr.covar(e1,e2,g,e);
+function aggr.corr(e1:bat[:flt], e2:bat[:flt], g:bat[:oid],e:bat[:any_2]):bat[:flt];
+	cv:bat[:flt] := aggr.covar(e1,e2,g,e);
 	sd1 := aggr.stdevp(e1,g,e);
 	sd2 := aggr.stdevp(e2,g,e);
 	sd := batcalc.*(sd1,sd2);

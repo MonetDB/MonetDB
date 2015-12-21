@@ -10,7 +10,7 @@ command calc.bte( v:flt, digits:int, scale:int ) :bte
 address flt_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:flt], digits:int, scale:int ) :bat[:bte]
 address batflt_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -18,7 +18,7 @@ command calc.bte( v:dbl, digits:int, scale:int ) :bte
 address dbl_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:dbl], digits:int, scale:int ) :bat[:bte]
 address batdbl_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -26,7 +26,7 @@ command calc.sht( v:flt, digits:int, scale:int ) :sht
 address flt_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:flt], digits:int, scale:int ) :bat[:sht]
 address batflt_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -34,7 +34,7 @@ command calc.sht( v:dbl, digits:int, scale:int ) :sht
 address dbl_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:dbl], digits:int, scale:int ) :bat[:sht]
 address batdbl_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -42,7 +42,7 @@ command calc.int( v:flt, digits:int, scale:int ) :int
 address flt_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:flt], digits:int, scale:int ) :bat[:int]
 address batflt_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -50,7 +50,7 @@ command calc.int( v:dbl, digits:int, scale:int ) :int
 address dbl_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:dbl], digits:int, scale:int ) :bat[:int]
 address batdbl_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -58,7 +58,7 @@ command calc.wrd( v:flt, digits:int, scale:int ) :wrd
 address flt_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:flt], digits:int, scale:int ) :bat[:wrd]
 address batflt_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -66,7 +66,7 @@ command calc.wrd( v:dbl, digits:int, scale:int ) :wrd
 address dbl_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:dbl], digits:int, scale:int ) :bat[:wrd]
 address batdbl_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -74,7 +74,7 @@ command calc.lng( v:flt, digits:int, scale:int ) :lng
 address flt_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:flt], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:flt], digits:int, scale:int ) :bat[:lng]
 address batflt_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -82,7 +82,7 @@ command calc.lng( v:dbl, digits:int, scale:int ) :lng
 address dbl_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:dbl], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:dbl], digits:int, scale:int ) :bat[:lng]
 address batdbl_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -90,7 +90,7 @@ command calc.bte( v:bte, digits:int, scale:int ) :bte
 address bte_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:bte], digits:int, scale:int ) :bat[:bte]
 address batbte_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -101,10 +101,10 @@ command calc.bte( s1:int, v:bte, d2:int, s2:int ) :bte
 address bte_dec2dec_bte
 comment "cast decimal(bte) to decimal(bte) and check for overflow";
 
-command batcalc.bte( s1:int, v:bat[:oid,:bte]) :bat[:oid,:bte]
+command batcalc.bte( s1:int, v:bat[:bte]) :bat[:bte]
 address batbte_dec2_bte
 comment "cast decimal(bte) to bte and check for overflow";
-command batcalc.bte( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:bte] 
+command batcalc.bte( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:bte] 
 address batbte_dec2dec_bte
 comment "cast decimal(bte) to decimal(bte) and check for overflow";
 
@@ -112,7 +112,7 @@ command calc.bte( v:sht, digits:int, scale:int ) :bte
 address sht_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:sht], digits:int, scale:int ) :bat[:bte]
 address batsht_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -123,10 +123,10 @@ command calc.bte( s1:int, v:sht, d2:int, s2:int ) :bte
 address sht_dec2dec_bte
 comment "cast decimal(sht) to decimal(bte) and check for overflow";
 
-command batcalc.bte( s1:int, v:bat[:oid,:sht]) :bat[:oid,:bte]
+command batcalc.bte( s1:int, v:bat[:sht]) :bat[:bte]
 address batsht_dec2_bte
 comment "cast decimal(sht) to bte and check for overflow";
-command batcalc.bte( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:bte] 
+command batcalc.bte( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:bte] 
 address batsht_dec2dec_bte
 comment "cast decimal(sht) to decimal(bte) and check for overflow";
 
@@ -134,7 +134,7 @@ command calc.bte( v:int, digits:int, scale:int ) :bte
 address int_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:int], digits:int, scale:int ) :bat[:bte]
 address batint_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -145,10 +145,10 @@ command calc.bte( s1:int, v:int, d2:int, s2:int ) :bte
 address int_dec2dec_bte
 comment "cast decimal(int) to decimal(bte) and check for overflow";
 
-command batcalc.bte( s1:int, v:bat[:oid,:int]) :bat[:oid,:bte]
+command batcalc.bte( s1:int, v:bat[:int]) :bat[:bte]
 address batint_dec2_bte
 comment "cast decimal(int) to bte and check for overflow";
-command batcalc.bte( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:bte] 
+command batcalc.bte( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:bte] 
 address batint_dec2dec_bte
 comment "cast decimal(int) to decimal(bte) and check for overflow";
 
@@ -156,7 +156,7 @@ command calc.bte( v:wrd, digits:int, scale:int ) :bte
 address wrd_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:wrd], digits:int, scale:int ) :bat[:bte]
 address batwrd_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -167,10 +167,10 @@ command calc.bte( s1:int, v:wrd, d2:int, s2:int ) :bte
 address wrd_dec2dec_bte
 comment "cast decimal(wrd) to decimal(bte) and check for overflow";
 
-command batcalc.bte( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:bte]
+command batcalc.bte( s1:int, v:bat[:wrd]) :bat[:bte]
 address batwrd_dec2_bte
 comment "cast decimal(wrd) to bte and check for overflow";
-command batcalc.bte( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:bte] 
+command batcalc.bte( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:bte] 
 address batwrd_dec2dec_bte
 comment "cast decimal(wrd) to decimal(bte) and check for overflow";
 
@@ -178,7 +178,7 @@ command calc.bte( v:lng, digits:int, scale:int ) :bte
 address lng_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
-command batcalc.bte( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:bte]
+command batcalc.bte( v:bat[:lng], digits:int, scale:int ) :bat[:bte]
 address batlng_num2dec_bte
 comment "cast number to decimal(bte) and check for overflow";
 
@@ -189,10 +189,10 @@ command calc.bte( s1:int, v:lng, d2:int, s2:int ) :bte
 address lng_dec2dec_bte
 comment "cast decimal(lng) to decimal(bte) and check for overflow";
 
-command batcalc.bte( s1:int, v:bat[:oid,:lng]) :bat[:oid,:bte]
+command batcalc.bte( s1:int, v:bat[:lng]) :bat[:bte]
 address batlng_dec2_bte
 comment "cast decimal(lng) to bte and check for overflow";
-command batcalc.bte( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:bte] 
+command batcalc.bte( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:bte] 
 address batlng_dec2dec_bte
 comment "cast decimal(lng) to decimal(bte) and check for overflow";
 
@@ -200,7 +200,7 @@ command calc.sht( v:bte, digits:int, scale:int ) :sht
 address bte_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:bte], digits:int, scale:int ) :bat[:sht]
 address batbte_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -211,10 +211,10 @@ command calc.sht( s1:int, v:bte, d2:int, s2:int ) :sht
 address bte_dec2dec_sht
 comment "cast decimal(bte) to decimal(sht) and check for overflow";
 
-command batcalc.sht( s1:int, v:bat[:oid,:bte]) :bat[:oid,:sht]
+command batcalc.sht( s1:int, v:bat[:bte]) :bat[:sht]
 address batbte_dec2_sht
 comment "cast decimal(bte) to sht and check for overflow";
-command batcalc.sht( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:sht] 
+command batcalc.sht( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:sht] 
 address batbte_dec2dec_sht
 comment "cast decimal(bte) to decimal(sht) and check for overflow";
 
@@ -222,7 +222,7 @@ command calc.sht( v:sht, digits:int, scale:int ) :sht
 address sht_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:sht], digits:int, scale:int ) :bat[:sht]
 address batsht_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -233,10 +233,10 @@ command calc.sht( s1:int, v:sht, d2:int, s2:int ) :sht
 address sht_dec2dec_sht
 comment "cast decimal(sht) to decimal(sht) and check for overflow";
 
-command batcalc.sht( s1:int, v:bat[:oid,:sht]) :bat[:oid,:sht]
+command batcalc.sht( s1:int, v:bat[:sht]) :bat[:sht]
 address batsht_dec2_sht
 comment "cast decimal(sht) to sht and check for overflow";
-command batcalc.sht( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:sht] 
+command batcalc.sht( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:sht] 
 address batsht_dec2dec_sht
 comment "cast decimal(sht) to decimal(sht) and check for overflow";
 
@@ -244,7 +244,7 @@ command calc.sht( v:int, digits:int, scale:int ) :sht
 address int_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:int], digits:int, scale:int ) :bat[:sht]
 address batint_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -255,10 +255,10 @@ command calc.sht( s1:int, v:int, d2:int, s2:int ) :sht
 address int_dec2dec_sht
 comment "cast decimal(int) to decimal(sht) and check for overflow";
 
-command batcalc.sht( s1:int, v:bat[:oid,:int]) :bat[:oid,:sht]
+command batcalc.sht( s1:int, v:bat[:int]) :bat[:sht]
 address batint_dec2_sht
 comment "cast decimal(int) to sht and check for overflow";
-command batcalc.sht( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:sht] 
+command batcalc.sht( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:sht] 
 address batint_dec2dec_sht
 comment "cast decimal(int) to decimal(sht) and check for overflow";
 
@@ -266,7 +266,7 @@ command calc.sht( v:wrd, digits:int, scale:int ) :sht
 address wrd_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:wrd], digits:int, scale:int ) :bat[:sht]
 address batwrd_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -277,10 +277,10 @@ command calc.sht( s1:int, v:wrd, d2:int, s2:int ) :sht
 address wrd_dec2dec_sht
 comment "cast decimal(wrd) to decimal(sht) and check for overflow";
 
-command batcalc.sht( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:sht]
+command batcalc.sht( s1:int, v:bat[:wrd]) :bat[:sht]
 address batwrd_dec2_sht
 comment "cast decimal(wrd) to sht and check for overflow";
-command batcalc.sht( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:sht] 
+command batcalc.sht( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:sht] 
 address batwrd_dec2dec_sht
 comment "cast decimal(wrd) to decimal(sht) and check for overflow";
 
@@ -288,7 +288,7 @@ command calc.sht( v:lng, digits:int, scale:int ) :sht
 address lng_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
-command batcalc.sht( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:sht]
+command batcalc.sht( v:bat[:lng], digits:int, scale:int ) :bat[:sht]
 address batlng_num2dec_sht
 comment "cast number to decimal(sht) and check for overflow";
 
@@ -299,10 +299,10 @@ command calc.sht( s1:int, v:lng, d2:int, s2:int ) :sht
 address lng_dec2dec_sht
 comment "cast decimal(lng) to decimal(sht) and check for overflow";
 
-command batcalc.sht( s1:int, v:bat[:oid,:lng]) :bat[:oid,:sht]
+command batcalc.sht( s1:int, v:bat[:lng]) :bat[:sht]
 address batlng_dec2_sht
 comment "cast decimal(lng) to sht and check for overflow";
-command batcalc.sht( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:sht] 
+command batcalc.sht( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:sht] 
 address batlng_dec2dec_sht
 comment "cast decimal(lng) to decimal(sht) and check for overflow";
 
@@ -310,7 +310,7 @@ command calc.int( v:bte, digits:int, scale:int ) :int
 address bte_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:bte], digits:int, scale:int ) :bat[:int]
 address batbte_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -321,10 +321,10 @@ command calc.int( s1:int, v:bte, d2:int, s2:int ) :int
 address bte_dec2dec_int
 comment "cast decimal(bte) to decimal(int) and check for overflow";
 
-command batcalc.int( s1:int, v:bat[:oid,:bte]) :bat[:oid,:int]
+command batcalc.int( s1:int, v:bat[:bte]) :bat[:int]
 address batbte_dec2_int
 comment "cast decimal(bte) to int and check for overflow";
-command batcalc.int( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:int] 
+command batcalc.int( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:int] 
 address batbte_dec2dec_int
 comment "cast decimal(bte) to decimal(int) and check for overflow";
 
@@ -332,7 +332,7 @@ command calc.int( v:sht, digits:int, scale:int ) :int
 address sht_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:sht], digits:int, scale:int ) :bat[:int]
 address batsht_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -343,10 +343,10 @@ command calc.int( s1:int, v:sht, d2:int, s2:int ) :int
 address sht_dec2dec_int
 comment "cast decimal(sht) to decimal(int) and check for overflow";
 
-command batcalc.int( s1:int, v:bat[:oid,:sht]) :bat[:oid,:int]
+command batcalc.int( s1:int, v:bat[:sht]) :bat[:int]
 address batsht_dec2_int
 comment "cast decimal(sht) to int and check for overflow";
-command batcalc.int( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:int] 
+command batcalc.int( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:int] 
 address batsht_dec2dec_int
 comment "cast decimal(sht) to decimal(int) and check for overflow";
 
@@ -354,7 +354,7 @@ command calc.int( v:int, digits:int, scale:int ) :int
 address int_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:int], digits:int, scale:int ) :bat[:int]
 address batint_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -365,10 +365,10 @@ command calc.int( s1:int, v:int, d2:int, s2:int ) :int
 address int_dec2dec_int
 comment "cast decimal(int) to decimal(int) and check for overflow";
 
-command batcalc.int( s1:int, v:bat[:oid,:int]) :bat[:oid,:int]
+command batcalc.int( s1:int, v:bat[:int]) :bat[:int]
 address batint_dec2_int
 comment "cast decimal(int) to int and check for overflow";
-command batcalc.int( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:int] 
+command batcalc.int( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:int] 
 address batint_dec2dec_int
 comment "cast decimal(int) to decimal(int) and check for overflow";
 
@@ -376,7 +376,7 @@ command calc.int( v:wrd, digits:int, scale:int ) :int
 address wrd_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:wrd], digits:int, scale:int ) :bat[:int]
 address batwrd_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -387,10 +387,10 @@ command calc.int( s1:int, v:wrd, d2:int, s2:int ) :int
 address wrd_dec2dec_int
 comment "cast decimal(wrd) to decimal(int) and check for overflow";
 
-command batcalc.int( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:int]
+command batcalc.int( s1:int, v:bat[:wrd]) :bat[:int]
 address batwrd_dec2_int
 comment "cast decimal(wrd) to int and check for overflow";
-command batcalc.int( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:int] 
+command batcalc.int( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:int] 
 address batwrd_dec2dec_int
 comment "cast decimal(wrd) to decimal(int) and check for overflow";
 
@@ -398,7 +398,7 @@ command calc.int( v:lng, digits:int, scale:int ) :int
 address lng_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
-command batcalc.int( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:int]
+command batcalc.int( v:bat[:lng], digits:int, scale:int ) :bat[:int]
 address batlng_num2dec_int
 comment "cast number to decimal(int) and check for overflow";
 
@@ -409,10 +409,10 @@ command calc.int( s1:int, v:lng, d2:int, s2:int ) :int
 address lng_dec2dec_int
 comment "cast decimal(lng) to decimal(int) and check for overflow";
 
-command batcalc.int( s1:int, v:bat[:oid,:lng]) :bat[:oid,:int]
+command batcalc.int( s1:int, v:bat[:lng]) :bat[:int]
 address batlng_dec2_int
 comment "cast decimal(lng) to int and check for overflow";
-command batcalc.int( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:int] 
+command batcalc.int( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:int] 
 address batlng_dec2dec_int
 comment "cast decimal(lng) to decimal(int) and check for overflow";
 
@@ -420,7 +420,7 @@ command calc.wrd( v:bte, digits:int, scale:int ) :wrd
 address bte_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:bte], digits:int, scale:int ) :bat[:wrd]
 address batbte_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -431,10 +431,10 @@ command calc.wrd( s1:int, v:bte, d2:int, s2:int ) :wrd
 address bte_dec2dec_wrd
 comment "cast decimal(bte) to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( s1:int, v:bat[:oid,:bte]) :bat[:oid,:wrd]
+command batcalc.wrd( s1:int, v:bat[:bte]) :bat[:wrd]
 address batbte_dec2_wrd
 comment "cast decimal(bte) to wrd and check for overflow";
-command batcalc.wrd( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:wrd] 
 address batbte_dec2dec_wrd
 comment "cast decimal(bte) to decimal(wrd) and check for overflow";
 
@@ -442,7 +442,7 @@ command calc.wrd( v:sht, digits:int, scale:int ) :wrd
 address sht_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:sht], digits:int, scale:int ) :bat[:wrd]
 address batsht_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -453,10 +453,10 @@ command calc.wrd( s1:int, v:sht, d2:int, s2:int ) :wrd
 address sht_dec2dec_wrd
 comment "cast decimal(sht) to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( s1:int, v:bat[:oid,:sht]) :bat[:oid,:wrd]
+command batcalc.wrd( s1:int, v:bat[:sht]) :bat[:wrd]
 address batsht_dec2_wrd
 comment "cast decimal(sht) to wrd and check for overflow";
-command batcalc.wrd( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:wrd] 
 address batsht_dec2dec_wrd
 comment "cast decimal(sht) to decimal(wrd) and check for overflow";
 
@@ -464,7 +464,7 @@ command calc.wrd( v:int, digits:int, scale:int ) :wrd
 address int_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:int], digits:int, scale:int ) :bat[:wrd]
 address batint_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -475,10 +475,10 @@ command calc.wrd( s1:int, v:int, d2:int, s2:int ) :wrd
 address int_dec2dec_wrd
 comment "cast decimal(int) to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( s1:int, v:bat[:oid,:int]) :bat[:oid,:wrd]
+command batcalc.wrd( s1:int, v:bat[:int]) :bat[:wrd]
 address batint_dec2_wrd
 comment "cast decimal(int) to wrd and check for overflow";
-command batcalc.wrd( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:wrd] 
 address batint_dec2dec_wrd
 comment "cast decimal(int) to decimal(wrd) and check for overflow";
 
@@ -486,7 +486,7 @@ command calc.wrd( v:wrd, digits:int, scale:int ) :wrd
 address wrd_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:wrd], digits:int, scale:int ) :bat[:wrd]
 address batwrd_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -497,10 +497,10 @@ command calc.wrd( s1:int, v:wrd, d2:int, s2:int ) :wrd
 address wrd_dec2dec_wrd
 comment "cast decimal(wrd) to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:wrd]
+command batcalc.wrd( s1:int, v:bat[:wrd]) :bat[:wrd]
 address batwrd_dec2_wrd
 comment "cast decimal(wrd) to wrd and check for overflow";
-command batcalc.wrd( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:wrd] 
 address batwrd_dec2dec_wrd
 comment "cast decimal(wrd) to decimal(wrd) and check for overflow";
 
@@ -508,7 +508,7 @@ command calc.wrd( v:lng, digits:int, scale:int ) :wrd
 address lng_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:wrd]
+command batcalc.wrd( v:bat[:lng], digits:int, scale:int ) :bat[:wrd]
 address batlng_num2dec_wrd
 comment "cast number to decimal(wrd) and check for overflow";
 
@@ -519,10 +519,10 @@ command calc.wrd( s1:int, v:lng, d2:int, s2:int ) :wrd
 address lng_dec2dec_wrd
 comment "cast decimal(lng) to decimal(wrd) and check for overflow";
 
-command batcalc.wrd( s1:int, v:bat[:oid,:lng]) :bat[:oid,:wrd]
+command batcalc.wrd( s1:int, v:bat[:lng]) :bat[:wrd]
 address batlng_dec2_wrd
 comment "cast decimal(lng) to wrd and check for overflow";
-command batcalc.wrd( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:wrd] 
 address batlng_dec2dec_wrd
 comment "cast decimal(lng) to decimal(wrd) and check for overflow";
 
@@ -530,7 +530,7 @@ command calc.lng( v:bte, digits:int, scale:int ) :lng
 address bte_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:bte], digits:int, scale:int ) :bat[:lng]
 address batbte_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -541,10 +541,10 @@ command calc.lng( s1:int, v:bte, d2:int, s2:int ) :lng
 address bte_dec2dec_lng
 comment "cast decimal(bte) to decimal(lng) and check for overflow";
 
-command batcalc.lng( s1:int, v:bat[:oid,:bte]) :bat[:oid,:lng]
+command batcalc.lng( s1:int, v:bat[:bte]) :bat[:lng]
 address batbte_dec2_lng
 comment "cast decimal(bte) to lng and check for overflow";
-command batcalc.lng( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:lng] 
+command batcalc.lng( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:lng] 
 address batbte_dec2dec_lng
 comment "cast decimal(bte) to decimal(lng) and check for overflow";
 
@@ -552,7 +552,7 @@ command calc.lng( v:sht, digits:int, scale:int ) :lng
 address sht_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:sht], digits:int, scale:int ) :bat[:lng]
 address batsht_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -563,10 +563,10 @@ command calc.lng( s1:int, v:sht, d2:int, s2:int ) :lng
 address sht_dec2dec_lng
 comment "cast decimal(sht) to decimal(lng) and check for overflow";
 
-command batcalc.lng( s1:int, v:bat[:oid,:sht]) :bat[:oid,:lng]
+command batcalc.lng( s1:int, v:bat[:sht]) :bat[:lng]
 address batsht_dec2_lng
 comment "cast decimal(sht) to lng and check for overflow";
-command batcalc.lng( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:lng] 
+command batcalc.lng( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:lng] 
 address batsht_dec2dec_lng
 comment "cast decimal(sht) to decimal(lng) and check for overflow";
 
@@ -574,7 +574,7 @@ command calc.lng( v:int, digits:int, scale:int ) :lng
 address int_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:int], digits:int, scale:int ) :bat[:lng]
 address batint_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -585,10 +585,10 @@ command calc.lng( s1:int, v:int, d2:int, s2:int ) :lng
 address int_dec2dec_lng
 comment "cast decimal(int) to decimal(lng) and check for overflow";
 
-command batcalc.lng( s1:int, v:bat[:oid,:int]) :bat[:oid,:lng]
+command batcalc.lng( s1:int, v:bat[:int]) :bat[:lng]
 address batint_dec2_lng
 comment "cast decimal(int) to lng and check for overflow";
-command batcalc.lng( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:lng] 
+command batcalc.lng( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:lng] 
 address batint_dec2dec_lng
 comment "cast decimal(int) to decimal(lng) and check for overflow";
 
@@ -596,7 +596,7 @@ command calc.lng( v:wrd, digits:int, scale:int ) :lng
 address wrd_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:wrd], digits:int, scale:int ) :bat[:lng]
 address batwrd_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -607,10 +607,10 @@ command calc.lng( s1:int, v:wrd, d2:int, s2:int ) :lng
 address wrd_dec2dec_lng
 comment "cast decimal(wrd) to decimal(lng) and check for overflow";
 
-command batcalc.lng( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:lng]
+command batcalc.lng( s1:int, v:bat[:wrd]) :bat[:lng]
 address batwrd_dec2_lng
 comment "cast decimal(wrd) to lng and check for overflow";
-command batcalc.lng( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:lng] 
+command batcalc.lng( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:lng] 
 address batwrd_dec2dec_lng
 comment "cast decimal(wrd) to decimal(lng) and check for overflow";
 
@@ -618,7 +618,7 @@ command calc.lng( v:lng, digits:int, scale:int ) :lng
 address lng_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
-command batcalc.lng( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:lng]
+command batcalc.lng( v:bat[:lng], digits:int, scale:int ) :bat[:lng]
 address batlng_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 
@@ -629,10 +629,10 @@ command calc.lng( s1:int, v:lng, d2:int, s2:int ) :lng
 address lng_dec2dec_lng
 comment "cast decimal(lng) to decimal(lng) and check for overflow";
 
-command batcalc.lng( s1:int, v:bat[:oid,:lng]) :bat[:oid,:lng]
+command batcalc.lng( s1:int, v:bat[:lng]) :bat[:lng]
 address batlng_dec2_lng
 comment "cast decimal(lng) to lng and check for overflow";
-command batcalc.lng( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:lng] 
+command batcalc.lng( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:lng] 
 address batlng_dec2dec_lng
 comment "cast decimal(lng) to decimal(lng) and check for overflow";
 
@@ -640,7 +640,7 @@ command calc.flt( v:bte, digits:int, scale:int ) :flt
 address bte_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
-command batcalc.flt( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:flt]
+command batcalc.flt( v:bat[:bte], digits:int, scale:int ) :bat[:flt]
 address batbte_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
@@ -651,10 +651,10 @@ command calc.flt( s1:int, v:bte, d2:int, s2:int ) :flt
 address bte_dec2dec_flt
 comment "cast decimal(bte) to decimal(flt) and check for overflow";
 
-command batcalc.flt( s1:int, v:bat[:oid,:bte]) :bat[:oid,:flt]
+command batcalc.flt( s1:int, v:bat[:bte]) :bat[:flt]
 address batbte_dec2_flt
 comment "cast decimal(bte) to flt and check for overflow";
-command batcalc.flt( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:flt] 
+command batcalc.flt( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:flt] 
 address batbte_dec2dec_flt
 comment "cast decimal(bte) to decimal(flt) and check for overflow";
 
@@ -662,7 +662,7 @@ command calc.flt( v:sht, digits:int, scale:int ) :flt
 address sht_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
-command batcalc.flt( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:flt]
+command batcalc.flt( v:bat[:sht], digits:int, scale:int ) :bat[:flt]
 address batsht_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
@@ -673,10 +673,10 @@ command calc.flt( s1:int, v:sht, d2:int, s2:int ) :flt
 address sht_dec2dec_flt
 comment "cast decimal(sht) to decimal(flt) and check for overflow";
 
-command batcalc.flt( s1:int, v:bat[:oid,:sht]) :bat[:oid,:flt]
+command batcalc.flt( s1:int, v:bat[:sht]) :bat[:flt]
 address batsht_dec2_flt
 comment "cast decimal(sht) to flt and check for overflow";
-command batcalc.flt( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:flt] 
+command batcalc.flt( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:flt] 
 address batsht_dec2dec_flt
 comment "cast decimal(sht) to decimal(flt) and check for overflow";
 
@@ -684,7 +684,7 @@ command calc.flt( v:int, digits:int, scale:int ) :flt
 address int_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
-command batcalc.flt( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:flt]
+command batcalc.flt( v:bat[:int], digits:int, scale:int ) :bat[:flt]
 address batint_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
@@ -695,10 +695,10 @@ command calc.flt( s1:int, v:int, d2:int, s2:int ) :flt
 address int_dec2dec_flt
 comment "cast decimal(int) to decimal(flt) and check for overflow";
 
-command batcalc.flt( s1:int, v:bat[:oid,:int]) :bat[:oid,:flt]
+command batcalc.flt( s1:int, v:bat[:int]) :bat[:flt]
 address batint_dec2_flt
 comment "cast decimal(int) to flt and check for overflow";
-command batcalc.flt( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:flt] 
+command batcalc.flt( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:flt] 
 address batint_dec2dec_flt
 comment "cast decimal(int) to decimal(flt) and check for overflow";
 
@@ -706,7 +706,7 @@ command calc.flt( v:wrd, digits:int, scale:int ) :flt
 address wrd_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
-command batcalc.flt( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:flt]
+command batcalc.flt( v:bat[:wrd], digits:int, scale:int ) :bat[:flt]
 address batwrd_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
@@ -717,10 +717,10 @@ command calc.flt( s1:int, v:wrd, d2:int, s2:int ) :flt
 address wrd_dec2dec_flt
 comment "cast decimal(wrd) to decimal(flt) and check for overflow";
 
-command batcalc.flt( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:flt]
+command batcalc.flt( s1:int, v:bat[:wrd]) :bat[:flt]
 address batwrd_dec2_flt
 comment "cast decimal(wrd) to flt and check for overflow";
-command batcalc.flt( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:flt] 
+command batcalc.flt( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:flt] 
 address batwrd_dec2dec_flt
 comment "cast decimal(wrd) to decimal(flt) and check for overflow";
 
@@ -728,7 +728,7 @@ command calc.flt( v:lng, digits:int, scale:int ) :flt
 address lng_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
-command batcalc.flt( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:flt]
+command batcalc.flt( v:bat[:lng], digits:int, scale:int ) :bat[:flt]
 address batlng_num2dec_flt
 comment "cast number to decimal(flt) and check for overflow";
 
@@ -739,10 +739,10 @@ command calc.flt( s1:int, v:lng, d2:int, s2:int ) :flt
 address lng_dec2dec_flt
 comment "cast decimal(lng) to decimal(flt) and check for overflow";
 
-command batcalc.flt( s1:int, v:bat[:oid,:lng]) :bat[:oid,:flt]
+command batcalc.flt( s1:int, v:bat[:lng]) :bat[:flt]
 address batlng_dec2_flt
 comment "cast decimal(lng) to flt and check for overflow";
-command batcalc.flt( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:flt] 
+command batcalc.flt( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:flt] 
 address batlng_dec2dec_flt
 comment "cast decimal(lng) to decimal(flt) and check for overflow";
 
@@ -750,7 +750,7 @@ command calc.dbl( v:bte, digits:int, scale:int ) :dbl
 address bte_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( v:bat[:oid,:bte], digits:int, scale:int ) :bat[:oid,:dbl]
+command batcalc.dbl( v:bat[:bte], digits:int, scale:int ) :bat[:dbl]
 address batbte_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
@@ -761,10 +761,10 @@ command calc.dbl( s1:int, v:bte, d2:int, s2:int ) :dbl
 address bte_dec2dec_dbl
 comment "cast decimal(bte) to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( s1:int, v:bat[:oid,:bte]) :bat[:oid,:dbl]
+command batcalc.dbl( s1:int, v:bat[:bte]) :bat[:dbl]
 address batbte_dec2_dbl
 comment "cast decimal(bte) to dbl and check for overflow";
-command batcalc.dbl( s1:int, v:bat[:oid,:bte], d2:int, s2:int ) :bat[:oid,:dbl] 
+command batcalc.dbl( s1:int, v:bat[:bte], d2:int, s2:int ) :bat[:dbl] 
 address batbte_dec2dec_dbl
 comment "cast decimal(bte) to decimal(dbl) and check for overflow";
 
@@ -772,7 +772,7 @@ command calc.dbl( v:sht, digits:int, scale:int ) :dbl
 address sht_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( v:bat[:oid,:sht], digits:int, scale:int ) :bat[:oid,:dbl]
+command batcalc.dbl( v:bat[:sht], digits:int, scale:int ) :bat[:dbl]
 address batsht_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
@@ -783,10 +783,10 @@ command calc.dbl( s1:int, v:sht, d2:int, s2:int ) :dbl
 address sht_dec2dec_dbl
 comment "cast decimal(sht) to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( s1:int, v:bat[:oid,:sht]) :bat[:oid,:dbl]
+command batcalc.dbl( s1:int, v:bat[:sht]) :bat[:dbl]
 address batsht_dec2_dbl
 comment "cast decimal(sht) to dbl and check for overflow";
-command batcalc.dbl( s1:int, v:bat[:oid,:sht], d2:int, s2:int ) :bat[:oid,:dbl] 
+command batcalc.dbl( s1:int, v:bat[:sht], d2:int, s2:int ) :bat[:dbl] 
 address batsht_dec2dec_dbl
 comment "cast decimal(sht) to decimal(dbl) and check for overflow";
 
@@ -794,7 +794,7 @@ command calc.dbl( v:int, digits:int, scale:int ) :dbl
 address int_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( v:bat[:oid,:int], digits:int, scale:int ) :bat[:oid,:dbl]
+command batcalc.dbl( v:bat[:int], digits:int, scale:int ) :bat[:dbl]
 address batint_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
@@ -805,10 +805,10 @@ command calc.dbl( s1:int, v:int, d2:int, s2:int ) :dbl
 address int_dec2dec_dbl
 comment "cast decimal(int) to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( s1:int, v:bat[:oid,:int]) :bat[:oid,:dbl]
+command batcalc.dbl( s1:int, v:bat[:int]) :bat[:dbl]
 address batint_dec2_dbl
 comment "cast decimal(int) to dbl and check for overflow";
-command batcalc.dbl( s1:int, v:bat[:oid,:int], d2:int, s2:int ) :bat[:oid,:dbl] 
+command batcalc.dbl( s1:int, v:bat[:int], d2:int, s2:int ) :bat[:dbl] 
 address batint_dec2dec_dbl
 comment "cast decimal(int) to decimal(dbl) and check for overflow";
 
@@ -816,7 +816,7 @@ command calc.dbl( v:wrd, digits:int, scale:int ) :dbl
 address wrd_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( v:bat[:oid,:wrd], digits:int, scale:int ) :bat[:oid,:dbl]
+command batcalc.dbl( v:bat[:wrd], digits:int, scale:int ) :bat[:dbl]
 address batwrd_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
@@ -827,10 +827,10 @@ command calc.dbl( s1:int, v:wrd, d2:int, s2:int ) :dbl
 address wrd_dec2dec_dbl
 comment "cast decimal(wrd) to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( s1:int, v:bat[:oid,:wrd]) :bat[:oid,:dbl]
+command batcalc.dbl( s1:int, v:bat[:wrd]) :bat[:dbl]
 address batwrd_dec2_dbl
 comment "cast decimal(wrd) to dbl and check for overflow";
-command batcalc.dbl( s1:int, v:bat[:oid,:wrd], d2:int, s2:int ) :bat[:oid,:dbl] 
+command batcalc.dbl( s1:int, v:bat[:wrd], d2:int, s2:int ) :bat[:dbl] 
 address batwrd_dec2dec_dbl
 comment "cast decimal(wrd) to decimal(dbl) and check for overflow";
 
@@ -838,7 +838,7 @@ command calc.dbl( v:lng, digits:int, scale:int ) :dbl
 address lng_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( v:bat[:oid,:lng], digits:int, scale:int ) :bat[:oid,:dbl]
+command batcalc.dbl( v:bat[:lng], digits:int, scale:int ) :bat[:dbl]
 address batlng_num2dec_dbl
 comment "cast number to decimal(dbl) and check for overflow";
 
@@ -849,10 +849,10 @@ command calc.dbl( s1:int, v:lng, d2:int, s2:int ) :dbl
 address lng_dec2dec_dbl
 comment "cast decimal(lng) to decimal(dbl) and check for overflow";
 
-command batcalc.dbl( s1:int, v:bat[:oid,:lng]) :bat[:oid,:dbl]
+command batcalc.dbl( s1:int, v:bat[:lng]) :bat[:dbl]
 address batlng_dec2_dbl
 comment "cast decimal(lng) to dbl and check for overflow";
-command batcalc.dbl( s1:int, v:bat[:oid,:lng], d2:int, s2:int ) :bat[:oid,:dbl] 
+command batcalc.dbl( s1:int, v:bat[:lng], d2:int, s2:int ) :bat[:dbl] 
 address batlng_dec2dec_dbl
 comment "cast decimal(lng) to decimal(dbl) and check for overflow";
 

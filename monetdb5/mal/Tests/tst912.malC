@@ -1,7 +1,7 @@
 # analyse the overhead of chopping a table
 # the multiplex code blocks.
 
-factory getChunk(b:bat[:oid,:lng], size:lng)(bb:bit,c:bat[:oid,:lng]);
+factory getChunk(b:bat[:lng], size:lng)(bb:bit,c:bat[:lng]);
     (chk,c):= iterator.new(b,size);
 
 INT_MAX := 2147483647;
@@ -23,7 +23,7 @@ mdb.setDebug(dbgmsk_restore);
     return (bb,c):= (false,c);
 end getChunk;
 
-function choptest(b:bat[:oid,:lng], size:lng, base:lng);
+function choptest(b:bat[:lng], size:lng, base:lng);
     t0:= alarm.usec();
 
     INT_MAX := 2147483647;
@@ -50,7 +50,7 @@ function choptest(b:bat[:oid,:lng], size:lng, base:lng);
     io.printf(" at %f usec\n",f);
 end choptest;
 
-b:= bat.new(:oid,:lng);
+b:= bat.new(:lng);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
