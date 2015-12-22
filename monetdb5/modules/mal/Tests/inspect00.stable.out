@@ -9,31 +9,30 @@ stdout of test 'inspect00` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.tst():void;
-    i := mdb.getStackDepth();
-    io.printf("stack depth %d\n",i);
-    (h,t) := mdb.getStackTrace();
-    io.print(h,t);
-    (b0,b1) := mdb.getStackFrame(0);
-    io.print(b0,b1);
-    (c0,c1) := mdb.getStackFrame(1);
-    io.print(c0,c1);
-# next one is illegal 
-    (d0,d1) := mdb.getStackFrame(2);
-end user.tst;
-function user.main():void;
-# test analysis of stack frames 
-    user.tst();
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:12 >  
+# 09:46:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:12 >  
+
 stack depth 2
 #-------------------------------------------------------------------------#
 # view	stk	stk							  # name
 # void	int	str							  # type
 #--------------------------#
-[ 0@0,	0,	"    (h=nil:bat[:oid,:int],t=nil:bat[:oid,:str]) := mdb.getStackTrace(); at user.tst[3]"  ]
+[ 0@0,	0,	"    (h=nil:bat[:int],t=nil:bat[:str]) := mdb.getStackTrace(); at user.tst[3]"	]
 [ 1@0,	  1,	  "    user.tst(); at user.main[2]"			  ]
 #-------------------------------------------------#
 # view	stk	stk				  # name
@@ -65,9 +64,6 @@ stack depth 2
 [ 0@0,	  "tst",  "0@0"	  ]
 [ 1@0,	  "i",	  "nil"	  ]
 [ 2@0,	"X_2",	"0@0"  ]
-!MALException:mdb.getStackFrame:Illegal argument Illegal depth.
-
-
 
 # 09:13:25 >  
 # 09:13:25 >  Done.

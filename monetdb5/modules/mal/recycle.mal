@@ -14,7 +14,7 @@ pattern setCache(clines:int):void
 address RECYCLEsetCache
 comment "Set recycler cache line parameter";
 
-pattern reset(bid:bat[:oid,:any]):void
+pattern reset(bid:bat[:any]):void
 address RECYCLEresetBATwrap
 comment "Reset a recycled bat variable";
 

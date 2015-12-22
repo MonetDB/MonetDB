@@ -4,9 +4,9 @@
 #
 # Copyright 2008-2015 MonetDB B.V.
 
-command bat.imprints(b:bat[:oid,:hge])
+command bat.imprints(b:bat[:hge])
 address CMDBATimprints;
 
-command bat.imprintsize(b:bat[:oid,:hge]):lng
+command bat.imprintsize(b:bat[:hge]):lng
 address CMDBATimprintsize;
 

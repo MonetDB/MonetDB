@@ -16,19 +16,9 @@ stdout of test 'remote12` in directory 'monetdb5/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33456/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#causing a sigfault  
-    uri := sabaoth.getLocalConnectionURI();
-    conn:str  := remote.connect(uri,"monetdb","monetdb");
-    e := nil:bat[:oid,:int];
-    m:str := remote.put(conn,e);
-    io.print(m);
-    v:bat[:oid,:int] := remote.get(conn,m);
-    io.print(v);
-    mdb.var();
-end user.main;
-!MALException:remote.put:Object not found
+# MonetDB/R   module loaded
 
+Ready.
 
 
 

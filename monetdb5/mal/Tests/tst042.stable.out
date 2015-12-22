@@ -36,7 +36,7 @@ flt
 bit
 wrd
 bte
-bat  head bat[:oid,:str]
+bat  head bat[:str]
 
 # 07:58:44 >  
 # 07:58:44 >  Done.

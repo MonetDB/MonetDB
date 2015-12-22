@@ -9,4 +9,5 @@ raise	IllegalAccess:= "a second exception raised";
 exit	IllegalAccess;
 	io.print("should not be done");
 end;
+mdb.List("user","foo");
 user.foo();

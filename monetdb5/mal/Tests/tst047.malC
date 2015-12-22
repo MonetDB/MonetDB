@@ -1,7 +1,7 @@
 #testing copying and counting reversals
 #to test reversal handling
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,1);
 bat.append(b,4);
 bat.append(b,9);

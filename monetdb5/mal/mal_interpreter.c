@@ -1239,30 +1239,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	return ret;
 }
 
-/* Safeguarding
- * The physical stack for each thread is an operating system parameter.
- * We do not want recursive programs crashing the server, so once in
- * a while we check whether we are running dangerously low on available
- * stack space.
- *
- * This situation can be detected by calling upon the GDK functionality
- * of by limiting the depth of a function calls.
- * Expensive? 70 msec for 1M calls. Use with care.
- */
-str
-safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int depth = *getArgReference_int(stk, pci, 1);
-	(void)cntxt;
-	if (stk->stkdepth > depth * mb->vtop && THRhighwater()) {
-		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-	}
-	if (stk->calldepth > 256)
-		throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
-	return MAL_SUCCEED;
-}
-
-
 
 /*
  * MAL API
@@ -1479,30 +1455,4 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 #else
 	(void)cntxt;
 #endif
-}
-
-/*
- * Sometimes it helps to release a BAT when it won't be used anymore.
- * In this case, we have to assure that all references are cleared
- * as well. The routine below performs this action in the local
- * stack frame and its parents only.
- */
-void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
-{
-	int k;
-
-	if( stk == 0)
-		return;
-	do {
-		for (k = 0; k < mb->vtop; k++)
-			if (stk->stk[k].vtype == TYPE_bat && abs(stk->stk[k].val.bval) == bid) {
-				stk->stk[k].val.ival = 0;
-				BBPdecref(bid, TRUE);
-			}
-		if (stk->up) {
-			stk = stk->up;
-			mb = stk->blk;
-		} else
-			break;
-	} while (stk);
 }

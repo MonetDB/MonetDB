@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:str);
+b:= bat.new(:str);
 bat.append(b,"");
 bat.append(b,"t");
 bat.append(b,"ts");

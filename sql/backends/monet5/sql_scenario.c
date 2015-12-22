@@ -861,6 +861,7 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 	(void) be;
 	if (onoff) {
 		(void) newStmt(mb, "profiler", "start");
+		initTrace();
 	} else {
 		(void) newStmt(mb, "profiler", "stop");
 		/* cook a new resultSet instruction */

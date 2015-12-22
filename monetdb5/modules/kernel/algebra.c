@@ -924,19 +924,29 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 str
 ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
 {
-	lng s = *start;
-	lng e = (*end == wrd_nil ? lng_nil : *end);
-	bat slc;
-	str msg;
+	BAT *b, *bn;
+	BUN s, e;
 
-	if ((msg = ALGslice(&slc, bid, &s, &e)) == MAL_SUCCEED) {
-		if ((msg = ALGtmark_default(ret, &slc)) == MAL_SUCCEED) {
-			BBPdecref(slc, TRUE);
-			*ret = -*ret; /* ugly reverse */
-			return MAL_SUCCEED;
-		}
-	}
-	return msg;
+	if (*start < 0 || *start > (wrd) BUN_MAX ||
+		(*end < 0 && *end != wrd_nil) || *end >= (wrd) BUN_MAX)
+		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.subslice", RUNTIME_OBJECT_MISSING);
+	s = (BUN) *start;
+	if (s > BATcount(b))
+		s = BATcount(b);
+	e = *end == wrd_nil ? BATcount(b) : (BUN) *end + 1;
+	if (e > BATcount(b))
+		e = BATcount(b);
+	if (e < s)
+		e = s;
+	bn = BATdense(0, b->hseqbase + s, e - s);
+	BBPunfix(*bid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subslice", MAL_MALLOC_FAIL);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
 }
 
 /*

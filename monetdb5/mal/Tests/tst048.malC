@@ -1,11 +1,11 @@
-a := bat.new(:oid,:int);
+a := bat.new(:int);
 bat.append(a, 0);
 bat.append(a, 1);
 bat.append(a, 2);
 
 io.print(a);
 
-b := bat.new(:oid,:flt);
+b := bat.new(:flt);
 bat.append(b, 0.3);
 bat.append(b, 1.4);
 bat.append(b, 2.5);

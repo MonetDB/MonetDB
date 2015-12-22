@@ -5,7 +5,7 @@ calc.setoid(o);
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 io.printf("#~BeginVariableOutput~#\n"); 
 (bk,bv):= bat.info(b);
 io.print(bk,bv); 

@@ -25,7 +25,6 @@ function tst();
 end tst;
 optimizer.inline("user","tst");
 io.printf("#result of inline\n");
-mdb.list("user","tst");
 optimizer.remap("user","tst");
 optimizer.costModel("user","tst");
 optimizer.coercions("user","tst");

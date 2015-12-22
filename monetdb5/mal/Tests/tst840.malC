@@ -6,4 +6,5 @@ io.printf("----\n");
 io.printf("%s",s);
 io.printf("----\n");
 end;
+mdb.List("user","foo");
 user.foo();

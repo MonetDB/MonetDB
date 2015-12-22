@@ -1,0 +1,5 @@
+function foo();
+s:= vault.getdirectory();
+io.print(s);
+end foo;
+user.foo();

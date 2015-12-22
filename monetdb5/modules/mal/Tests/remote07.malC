@@ -2,7 +2,7 @@
 uri := sabaoth.getLocalConnectionURI();
 conn:str := remote.connect(uri, "monetdb", "monetdb");
 
-d:bat[:oid,:str] := bat.new(:oid,:str);
+d:bat[:str] := bat.new(:str);
 bat.append(d, "bla");
 bat.append(d, nil:str);
 bat.append(d, "boe");
@@ -26,7 +26,7 @@ io.printf("# put: %d\n", t3);
 
 # retrieve the values
 t1 := alarm.time();
-u:bat[:oid,:str] := remote.get(conn, l);
+u:bat[:str] := remote.get(conn, l);
 t2 := alarm.time();
 t3 := t2 - t1;
 io.printf("# get: %d\n", t3);

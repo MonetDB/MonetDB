@@ -1,0 +1,108 @@
+stdout of test 'missed-error.Bug-3842` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 17:48:00 >  
+# 17:48:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31631" "--set" "mapi_usock=/var/tmp/mtest-18246/.s.monetdb.31631" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:48:00 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31631/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18246/.s.monetdb.31631
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.54'
+# Finished reading the write-ahead log 'sql_logs/sql/log.54'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup calc.>= a bulk operator implementation is needed
+#    X_116:bat[:oid,:bit] := mal.multiplex("calc":str,">=":str,X_19:timestamp,X_115:bat[:oid,:timestamp]);
+#WARNING To speedup calc.<= a bulk operator implementation is needed
+#    X_141:bat[:oid,:bit] := mal.multiplex("calc":str,"<=":str,X_132:timestamp,X_140:bat[:oid,:timestamp]);
+#WARNING To speedup calc.and a bulk operator implementation is needed
+#    X_143:bat[:oid,:bit] := mal.multiplex("calc":str,"and":str,X_116:bat[:oid,:bit],X_141:bat[:oid,:bit]);
+#WARNING To speedup user.get_r a bulk operator implementation is needed
+#    X_67:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_63:bat[:oid,:str],A0:str,X_16:timestamp);
+#WARNING To speedup user.get_r a bulk operator implementation is needed
+#    X_68:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_64:bat[:oid,:str],A0:str,X_16:timestamp);
+#WARNING To speedup user.get_r a bulk operator implementation is needed
+#    X_69:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_65:bat[:oid,:str],A0:str,X_16:timestamp);
+#WARNING To speedup user.get_r a bulk operator implementation is needed
+#    X_70:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_66:bat[:oid,:str],A0:str,X_16:timestamp);
+
+# 17:48:00 >  
+# 17:48:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18246" "--port=31631"
+# 17:48:00 >  
+
+#CREATE TABLE "sys"."test_fn" (
+#	"c1" CHARACTER LARGE OBJECT
+#);
+#CREATE TABLE "sys"."chg" (
+#	"pk_chg_rate"        CHARACTER LARGE OBJECT NOT NULL,
+#	"c_crt_cde"          CHARACTER LARGE OBJECT NOT NULL DEFAULT 'USER ',
+#	"t_crt_tm"           TIMESTAMP     DEFAULT current_timestamp(),
+#	"c_upd_cde"          CHARACTER LARGE OBJECT NOT NULL DEFAULT 'USER ',
+#	"t_upd_tm"           TIMESTAMP     DEFAULT current_timestamp(),
+#	"c_cur_no_1"         CHARACTER LARGE OBJECT NOT NULL,
+#	"c_cur_no_2"         CHARACTER LARGE OBJECT NOT NULL,
+#	"t_effc_tm"          TIMESTAMP     NOT NULL,
+#	"n_chg_rte"          DECIMAL(13,6) NOT NULL,
+#copy 4 records into sys.chg from stdin;
+#"1"|"admin"|2004-05-27 21:55:03.000000|"admin"|2004-05-27 21:55:03.000000|"01"|"02"|2004-01-01 00:00:00.000000|0.938350|2004-12-31 23:59:59.000000|2004-05-27 21:55:03.000000|9999-12-31 00:00:00.000000|2010-10-18 12:39:39.000000|9999-12-31 00:00:00.000000|"1"
+#"2"|"admin"|2004-05-27 21:57:14.000000|"admin"|2004-05-27 21:57:14.000000|"02"|"01"|2004-01-01 00:00:00.000000|1.065700|2004-12-31 23:59:59.000000|2004-05-27 21:57:14.000000|9999-12-31 00:00:00.000000|2010-10-18 12:39:39.000000|9999-12-31 00:00:00.000000|"1"
+[ 4	]
+#copy 4 records into sys.test_fn from stdin;
+#"01"
+#"01"
+#"01"
+#"01"
+[ 4	]
+#CREATE INDEX "chg_c_cur_no_1" ON "sys"."chg" ("c_cur_no_1");
+#CREATE INDEX "chg_c_cur_no_2" ON "sys"."chg" ("c_cur_no_2");
+#CREATE INDEX "chg_record_end_date" ON "sys"."chg" ("record_end_date");
+#CREATE INDEX "chg_t_expd_tm" ON "sys"."chg" ("t_expd_tm");
+#CREATE FUNCTION Get_r(in_cur_1 text, in_cur_2 text, in_chg_date timestamp)
+#RETURNS NUMERIC(13,6) 
+#
+#--  v_chg_date  timestamp;
+#
+#--  case when in_chg_date is not null then now() else in_chg_date end
+#
+#--  case when in_cur_1 is not null then '1' else 'xx' end
+#
+#--  case when in_cur_2 is null then '01' else 'xx' end
+#
+#  RETURN
+#  (
+#    SELECT (case when MAX(n_chg_rte) is not null then MAX(n_chg_rte) else 0 end)
+#  FROM chg
+#--    WHERE BUSINESS_END_DATE='99991231';
+#      WHERE c_cur_no_1 = (case when in_cur_1 is not null then '01' else 'xx' end)
+#select count(*) from test_fn where get_r(c1, '01', '2015-08-31 23:59:59')>1.0;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 0	]
+#alter table sys.chg drop constraint chg_pk_chg_rate_pkey;
+#drop index "chg_c_cur_no_1";
+#drop index "chg_c_cur_no_2";
+#drop index "chg_record_end_date";
+#drop index "chg_t_expd_tm";
+#drop function get_r;
+#drop table sys.test_fn;
+#drop table sys.chg;
+
+# 17:48:01 >  
+# 17:48:01 >  "Done."
+# 17:48:01 >  
+

@@ -21,34 +21,25 @@ stdout of test 'inline03` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:int):int;
-    base := 1;
-    c := calc.+(a,b);
-    c := calc.*(c,base);
-    return foo := c;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-# the crucial part is to recognize valid inlines 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:45:30 >  
+# 20:45:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23471" "--port=34866"
+# 20:45:30 >  
+
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_14:int := 1:int;                  	#[3]  14 <- 5 
-    X_15:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	#[4] CMDbatADDsignal 15 <- 1 1 
-    X_15:bat[:oid,:int] := batcalc.*(X_15:bat[:oid,:int],X_14:int);	#[5] CMDbatMULsignal 15 <- 15 14 
-    z:bat[:oid,:int] := X_15:bat[:oid,:int];	#[6]  6 <- 15 
+    X_15:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[4] CMDbatADDsignal 15 <- 1 1 
+    X_15:bat[:int] := batcalc.*(X_15:bat[:int],X_14:int);	#[5] CMDbatMULsignal 15 <- 15 14 
+    z:bat[:int] := X_15:bat[:int];      	#[6]  6 <- 15 
     X_19:int := 1:int;                  	#[7]  19 <- 5 
-    X_20:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	#[8] CMDbatADDsignal 20 <- 1 10 
-    X_20:bat[:oid,:int] := batcalc.*(X_20:bat[:oid,:int],X_19:int);	#[9] CMDbatMULsignal 20 <- 20 19 
-    z:bat[:oid,:int] := X_20:bat[:oid,:int];	#[10]  6 <- 20 
+    X_20:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] CMDbatADDsignal 20 <- 1 10 
+    X_20:bat[:int] := batcalc.*(X_20:bat[:int],X_19:int);	#[9] CMDbatMULsignal 20 <- 20 19 
+    z:bat[:int] := X_20:bat[:int];      	#[10]  6 <- 20 
 end user.qry;                           	#[11]  
 
 # 18:00:43 >  

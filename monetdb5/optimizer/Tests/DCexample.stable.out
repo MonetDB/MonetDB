@@ -29,16 +29,8 @@ Ready.
 
 #mdb.List("user","foo");
 function user.foo():void;               	#[0]  0 
-    V7:bat[:oid,:oid] := bat.new(:oid,:oid);	#[1] CMDBATnew 1 <- 2 2 
-    V10:bat[:oid,:oid] := bat.new(:oid,:oid);	#[2] CMDBATnew 3 <- 2 2 
-    V16:bat[:oid,:oid] := V7:bat[:oid,:oid];	#[3]  4 <- 1 
-    (V17:bat[:oid,:oid],V17b:bat[:oid,:oid]) := algebra.subjoin(V16:bat[:oid,:oid],V7:bat[:oid,:oid],nil:bat[:oid,:oid],nil:bat[:oid,:oid],true:bit,0:lng);	#[4] ALGsubjoin 5 6 <- 4 1 7 8 9 10 
-    V19:bat[:oid,:oid] := bat.new(:oid,:oid);	#[5] CMDBATnew 11 <- 2 2 
-    V22:bat[:oid,:oid] := bat.new(:oid,:oid);	#[6] CMDBATnew 12 <- 2 2 
-    (V17:bat[:oid,:oid],V17b:bat[:oid,:oid]) := algebra.subjoin(V16:bat[:oid,:oid],V22:bat[:oid,:oid],nil:bat[:oid,:oid],nil:bat[:oid,:oid],true:bit,0:lng);	#[7] ALGsubjoin 5 6 <- 4 12 13 14 9 10 
-    io.print("done":str);               	#[8] IOprint_val 15 <- 16 
-end user.foo;                           	#[9]  
-#mdb.List("user","foo");
+    io.print("done":str);               	#[1] IOprint_val 15 <- 16 
+end user.foo;                           	#[2]  
 function user.foo():void;               	#[0]  0 
     io.print("done":str);               	#[1] IOprint_val 15 <- 16 
 end user.foo;                           	#[2]  

@@ -41,7 +41,7 @@ getTypeName(malType tpe)
 	if (tpe == TYPE_any)
 		return GDKstrdup("any");
 	if (isaBatType(tpe)) {
-		snprintf(buf, l, "bat[:oid,");
+		snprintf(buf, l, "bat[");
 		l -= strlen(buf);
 		s = buf + strlen(buf);
 		k = getColumnIndex(tpe);
@@ -176,25 +176,7 @@ getTypeIndex(str nme, int len, int deftype)
 		i = deftype;
 	return i;
 }
-/*
- * Literal constants are not necessarily type specific, e.g.
- * the value '0' could represent bte,sht,wrd,int,lng,hge.
- * If the value is potentially ambiguous, it should
- * be made type specific in listings
- */
-int
-isAmbiguousType(int type){
-	switch(type){
-		case TYPE_bte: case TYPE_sht: case TYPE_wrd: case TYPE_int: case TYPE_lng:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-#endif
-		return type != TYPE_int;
-		case TYPE_flt: case TYPE_dbl:
-		return type != TYPE_flt;
-	}
-	return 0;
-}
+
 inline int
 findGDKtype(int type)
 {
@@ -205,27 +187,10 @@ findGDKtype(int type)
 	return ATOMtype(type);
 }
 
-str
-newTmpName(char tag, int i)
-{
-	char buf[PATHLENGTH];
-
-	snprintf(buf, PATHLENGTH, "%c%d", tag, i);
-	return GDKstrdup(buf);
-}
-
 inline int
 isTmpName(const char *n)
 {
 	return n && *n == TMPMARKER ;
-}
-
-int
-isTypeName(str n)
-{
-	int i = ATOMindex(n);
-
-	return i >= 0;
 }
 
 int

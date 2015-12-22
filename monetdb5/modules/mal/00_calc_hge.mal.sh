@@ -306,16 +306,16 @@ for func in sum:sum prod:product; do
 	    esac
 	    if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 		cat <<EOF
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}]) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],nil_if_empty:bit) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],s:bat[:oid,:oid]) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],s:bat[:oid,:oid],nil_if_empty:bit) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
 

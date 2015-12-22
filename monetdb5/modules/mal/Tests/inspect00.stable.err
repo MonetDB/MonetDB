@@ -5,8 +5,26 @@ stderr of test 'inspect00` in directory 'monetdb5/modules/mal` itself:
 # 00:03:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect00.mal </dev/null
 # 00:03:55 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # test analysis of stack frames
+        
+        function tst():void;
+        	i:= mdb.getStackDepth();
+        	io.printf("stack depth %d\n",i);
+        	(h,t):= mdb.getStackTrace();
+        	io.print(h,t);
+        	(b0,b1):= mdb.getStackFrame(0);
+        	io.print(b0,b1);
+        	(c0,c1):= mdb.getStackFrame(1);
+        	io.print(c0,c1);
+        	# next one is illegal
+        	(d0,d1):= mdb.getStackFrame(2);
+        end tst;
+        
+        user.tst();
+ERROR = !MALException:mdb.getStackFrame:Illegal argument Illegal depth.
 
-# 00:03:55 >  
-# 00:03:55 >  Done.
-# 00:03:55 >  
+# 09:46:12 >  
+# 09:46:12 >  "Done."
+# 09:46:12 >  
 

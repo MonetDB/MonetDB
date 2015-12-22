@@ -29,10 +29,10 @@ Ready.
 
 #mdb.List("user","foo");
 function user.foo():void;               	#[0]  0 
-    b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:oid,:str] := bat.new(:oid,:str);	#[2] CMDBATnew 4 <- 2 3 
+    b:bat[:str] := bat.new(:oid,:str);  	#[1] CMDBATnew 1 <- 2 3 
+    c:bat[:str] := bat.new(:oid,:str);  	#[2] CMDBATnew 4 <- 2 3 
 # identical until insert takes place 
-    d:bat[:oid,:oid] := algebra.subselect(b:bat[:oid,:str],"hello":str,"world":str,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
+    d:bat[:oid] := algebra.subselect(b:bat[:str],"hello":str,"world":str,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
 # mapped onto one instruction 
 end user.foo;                           	#[6]  
 #commonTerms          actions= 1 time=13 usec 

@@ -1,52 +1,58 @@
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:demo
-# Visit http://monetdb.cwi.nl for further information.
-## test proper exists
-#	i:= 1;
-#	j:= 2;
-#barrier v:=i;
-#	print("entered");
-#	print(v);
-#	redo v:= v -1;
-#exit 	v;
-#	print("doubles");
-#barrier (v,w):=(i,j);
-#	print("entered");
-#	print(v);
-#	v:= v-1;
-#	redo (v,w):= (v,w);
-#exit 	(v,w);
-#
-#	print("finished");
-#
-function Admin.main():int;	# 0  (main:int)
-    i := 1;	# 1  (i:int)<-($2:int)
-    j := 2;	# 2  (j:int)<-($4:int)
-barrier v := i;	# 3  (v:int)<-(i:int) jump 7
-    io.print("entered");	# 4 IOprint_val ($6:int)<-($7:str)
-    io.print(v);	# 5 IOprint_val ($8:int)<-(v:int)
-    redo v := calc.-(v,1);	# 6 CALCbinarySUBintint (v:int)<-(v:int)($2:int) jump 4
-exit v;	# 7  (v:int)
-    io.print("doubles");	# 8 IOprint_val ($9:int)<-($10:str)
-barrier (v,w):= (i,j);	# 9  (v:int)(w:int)<-(i:int)(j:int) jump 14
-    io.print("entered");	# 10 IOprint_val ($12:int)<-($7:str)
-    io.print(v);	# 11 IOprint_val ($13:int)<-(v:int)
-    v := calc.-(v,1);	# 12 CALCbinarySUBintint (v:int)<-(v:int)($2:int)
-    redo (v,w):= (v,w);	# 13  (v:int)(w:int)<-(v:int)(w:int) jump 10
-exit (v,w);	# 14  (v:int)(w:int)
-    io.print("finished");	# 15 IOprint_val ($14:int)<-($15:str)
-end main;	# 16  
+stdout of test 'tst005` in directory 'monetdb5/mal` itself:
+
+
+# 08:15:16 >  
+# 08:15:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32746" "--set" "mapi_usock=/var/tmp/mtest-26338/.s.monetdb.32746" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 08:15:16 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32746/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26338/.s.monetdb.32746
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 08:15:16 >  
+# 08:15:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26338" "--port=32746"
+# 08:15:16 >  
+
+function user.foo():void;               	#[0]  0 
+    i:int := 1:int;                     	#[1]  1 <- 2 
+    j:int := 2:int;                     	#[2]  3 <- 4 
+barrier v:int := i:int;                 	#[3]  5 <- 1 
+    io.print("entered":str);            	#[4] IOprint_val 6 <- 7 
+    io.print(v:int);                    	#[5] IOprint_val 8 <- 5 
+    redo v:int := iterator.next(-1:int,0:int);	#[6] ITRnext_int 5 <- 9 10 
+exit v:int;                             	#[7]  5 
+    io.print("doubles":str);            	#[8] IOprint_val 11 <- 12 
+    i:int := 1:int;                     	#[9]  1 <- 2 
+barrier (v:int,w:int) := (i:int,j:int); 	#[10]  5 13 <- 1 3 
+    io.print("entered2":str);           	#[11] IOprint_val 14 <- 15 
+    io.print(v:int);                    	#[12] IOprint_val 16 <- 5 
+    v:int := calc.-(v:int,1:int);       	#[13] CMDvarSUBsignal 5 <- 5 2 
+barrier b:bit := calc.==(v:int,0:int);  	#[14] CMDvarEQ 17 <- 5 10 
+    leave (v:int,w:int);                	#[15]  5 13 
+exit b:bit;                             	#[16]  17 
+    redo (v:int,w:int) := (v:int,w:int);	#[17]  5 13 <- 5 13 
+exit (v:int,w:int);                     	#[18]  5 13 
+    io.print("finished":str);           	#[19] IOprint_val 18 <- 19 
+end user.foo;                           	#[20]  
 [ "entered" ]
 [ 1 ]
-[ "entered" ]
-[ 0 ]
 [ "doubles" ]
-[ "entered" ]
+[ "entered2"	]
 [ 1 ]
-[ "entered" ]
-[ 0 ]
 [ "finished" ]

@@ -5,48 +5,32 @@ stdout of test 'time00` in directory 'monetdb5/modules/atoms` itself:
 # 23:38:23 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=37547 --set xrpc_port=46482 --set monet_prompt= --trace --dbname=mTests_src_modules_atoms  time00.mal
 # 23:38:23 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_modules_atoms
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-# temporal stuff. 
-    date_01 := mtime.date("5000-JAN-01");
-    date_02 := mtime.date("1968-FEBR-29");
-    date_03 := mtime.date("1-MARCH-01");
-    date_04 := mtime.date("-5867411-JAN-1");
-    date_05 := mtime.date("-768/octobe/01");
-    date_06 := mtime.date("5000\\novembe\\01");
-    date_07 := mtime.date("-1999/jun/01");
-    date_08 := mtime.date(nil);
-    f := calc.min(date_01,date_02);
-    io.print(f);
-    f := calc.min(date_02,date_01);
-    io.print(f);
-    f := calc.min(date_02,date_08);
-    io.print(f);
-    f := calc.min(date_08,date_08);
-    io.print(f);
-    b := bat.new(:oid,:date);
-    bat.append(b,date_01);
-    bat.append(b,date_02);
-    bat.append(b,date_03);
-    bat.append(b,date_04);
-    bat.append(b,date_05);
-    bat.append(b,date_06);
-    bat.append(b,date_07);
-    io.print(b);
-    zy := batmtime.year(b);
-    io.print(zy);
-    zm := batmtime.month(b);
-    io.print(zm);
-    zd := batmtime.day(b);
-    io.print(zd);
-end user.main;
-[ 1968-02-29 ]
-[ 1968-02-29 ]
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:30 >  
+# 10:05:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:30 >  
+
+[ "1968-02-29"	]
+[ "1968-02-29"	]
 [ nil ]
 [ nil ]
 #-------------------------#

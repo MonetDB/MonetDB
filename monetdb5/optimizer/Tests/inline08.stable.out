@@ -21,35 +21,18 @@ stdout of test 'inline08` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:str):str;
-    a := str.replace(a,"A","");
-    a := str.replace(a,"E","");
-    a := str.replace(a,"I","");
-    a := str.replace(a,"O","");
-    a := str.replace(a,"U","");
-    a := str.replace(a," ","");
-    return foo := a;
-end user.foo;
-inline function user.bar(a:str,b:str):str;
-    sa := user.foo(a);
-    sb := user.foo(b);
-    c := calc.+(sa,sb);
-    return bar := c;
-end user.bar;
-!TypeException:user.qry[2]:'bat.append' undefined in:     bat.append(b:bat[:oid,:str],1:int);
-function user.qry():void;
-    b := bat.new(:oid,:str);
-    bat.append(b,1);
-    z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-    mdb.List("user","qry");
-end user.main;
-function user.qry():void;               	#[0]  0 
-    b:bat[:oid,:str] := bat.new(:oid,:str);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:str],1:int); 	#[2]  4 <- 1 5 
-    z:bat[:oid,:str] := mal.multiplex("user":str,"bar":str,b:bat[:oid,:str],b:bat[:oid,:str]);	#[3]  6 <- 7 8 1 1 
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:07:20 >  
+# 10:07:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-8365" "--port=32444"
+# 10:07:20 >  
+
+inline function user.qry():void;        	#[0]  0 
+    b:bat[:str] := bat.new(:oid,:str);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:str],"1":str);    	#[2] BKCappend_val_wrap 4 <- 1 5 
+    z:bat[:str] := mal.multiplex("user":str,"bar":str,b:bat[:str],b:bat[:str]);	#[3] MANIFOLDremapMultiplex 6 <- 7 8 1 1 
 end user.qry;                           	#[4]  
 
 # 20:02:17 >  

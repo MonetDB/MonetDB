@@ -1,0 +1,19 @@
+#execute simple SQL queries from MAL 
+function foo();
+sql.init();
+
+sql.prepare("myqry","select 2;");
+sql.execute("myqry");
+sql.execute("myqry");
+
+
+sql.prepare("myqry2(i int)","select i;");
+sql.execute("myqry2",123");
+
+select * from sys.prepared();
+
+sql.deallocate("myqry");
+sql.deallocate("myqry2");
+end foo;
+mdb.list("user","foo");
+user.foo();

@@ -18,37 +18,14 @@ stdout of test 'imprints` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    t0 := alarm.usec();
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    io.printf("#imprint tuples 1000000\n");
-    sz := calc.*(1000000,8);
-    t0 := alarm.usec();
-    bat.imprints(b);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#imprint create %d\n",d0);
-    l := bat.imprintsize(b);
-    lf := calc.flt(l);
-    io.printf("#imprint size %d\n",l);
-    f := calc./(sz,100);
-    f := calc./(lf,f);
-    io.printf("#imprint percentage overhead %4.2f\n",f);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:15 >  
+# 09:46:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:15 >  
+
 #imprint tuples 1000000
 #imprint create 60295
 #imprint size 500004

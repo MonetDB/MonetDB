@@ -183,21 +183,21 @@ Ready.
 [ "tzone_bat" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t													  # name
-# oid	timezone												  # type
-#-----------------------------------------------------------------------------------------------------------------#
-[ 0@0,	  GMT													  ]
-[ 1@0,	  GMT+01:00												  ]
-[ 2@0,	  GMT+01:00												  ]
-[ 3@0,	GMT+01:00-DST[october 31@01:15,	"first wednesday on or after march 26@01:15"	]
-[ 4@0,	GMT-DST[17th monday from start of january@01:15,	"31th sunday from start of august@01:15"	]
-[ 5@0,	GMT-01:37-DST[october 31@01:15,	"first thursday on or after april 31@01:15"	]
-[ 6@0,	GMT-01:37-DST[may 26@01:15,	"22th tuesday from start of september@01:15"	]
-[ 7@0,	GMT+23:00-DST[first thursday on or after april 31@01:15,	"first wednesday on or after november 22@01:15"	]
-[ 8@0,	  GMT-23:36	  ]
-[ 9@0,	  GMT		  ]
-[ 10@0,	  GMT-01:00												  ]
-[ 11@0,	  GMT+23:59												  ]
-[ 12@0,	  GMT+01:00												  ]
+# void	timezone  # type
+#--------------------------#
+[ 0@0,	"GMT"	]
+[ 1@0,	"GMT+01:00"	]
+[ 2@0,	"GMT+01:00"	]
+[ 3@0,	"GMT+01:00-DST[october 31@01:15,first wednesday on or after march 26@01:15]"	]
+[ 4@0,	"GMT-DST[17th monday from start of january@01:15,31th sunday from start of august@01:15]"	]
+[ 5@0,	"GMT-01:37-DST[october 31@01:15,first thursday on or after april 31@01:15]"	]
+[ 6@0,	"GMT-01:37-DST[may 26@01:15,22th tuesday from start of september@01:15]"	]
+[ 7@0,	"GMT+23:00-DST[first thursday on or after april 31@01:15,first wednesday on or after november 22@01:15]"	]
+[ 8@0,	"GMT-23:36"	]
+[ 9@0,	"GMT"	]
+[ 10@0,	"GMT-01:00"	]
+[ 11@0,	"GMT+23:59"	]
+[ 12@0,	"GMT+01:00"	]
 [ 13@0,	  nil													  ]
 [ 14@0,	nil  ]
 [ "print(kd_a,md_a,od_a)" ]

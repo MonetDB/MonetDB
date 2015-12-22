@@ -15,20 +15,14 @@ stdout of test 'batstr` in directory 'monetdb5/modules/kernel` itself:
 # Listening for connection requests on mapi:monetdb://Phoebe.lan:32843/
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    t := bat.new(:oid,:str);
-    t := bat.append(t,"0123456789");
-    x1 := batstr.string(t,0);
-    x2 := batstr.string(t,3);
-    x3 := batstr.string(t,9);
-    x4 := batstr.string(t,12);
-    x5 := batstr.string(t,-6);
-    io.print(x1);
-    io.print(x2);
-    io.print(x3);
-    io.print(x4);
-    io.print(x5);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:01:43 >  
+# 10:01:43 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-30877" "--port=36122"
+# 10:01:43 >  
+
 #--------------------------#
 # h	t		  # name
 # void	str		  # type

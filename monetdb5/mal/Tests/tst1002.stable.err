@@ -30,9 +30,6 @@ stderr of test 'tst1002` in directory 'monetdb5/mal` itself:
 # 15:35:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
 # 15:35:45 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16148/.s.monetdb.33827
-QUERY = c:bat[:oid,:int]:= bbp.bind("myfirstbat");
-ERROR = !MALException:bbp.bind:Object not found
 
 # 15:35:45 >  
 # 15:35:45 >  "Done."

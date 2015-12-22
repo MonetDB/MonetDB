@@ -9,7 +9,36 @@ stderr of test 'remote01` in directory 'monetdb5/modules/mal` itself:
 #(see /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf)
 
 
-# 09:35:17 >  
-# 09:35:17 >  Done.
-# 09:35:17 >  
+MAPI  = (monetdb) /var/tmp/mtest-28552/.s.monetdb.35023
+QUERY = # for testweb, we need to ask the server itself how it is available, use
+        # sabaoth for that
+        include sabaoth;
+        
+        # create a connecton to ourself
+        uri := sabaoth.getLocalConnectionURI();
+        conn := remote.connect(uri, "monetdb", "monetdb");
+        io.print(conn);
+        
+        # retrieve a value (that for sure won't exist)
+        x:str := remote.get(conn, "b1_str");
+        # bit weird that a "may not be used before being initialised" error is a
+        # TypeException
+        catch TypeException:str;
+        	io.printf("!%s\n", TypeException);
+        exit TypeException;
+        
+        # help testweb a bit, since currently no cleanup is done on server
+        # shutdown
+        remote.disconnect(conn);
+        
+        # this should fail now
+        remote.disconnect(conn);
+        catch MALException:str;
+        	io.printf("!%s\n",MALException);
+        exit MALException;
+ERROR = !TypeException:remote.get:(mapi:monetdb://monetdb@vienna.da.cwi.nl/mTests_monetdb5_modules_mal) 'b1_str' may not be used before being initialized
+
+# 09:58:28 >  
+# 09:58:28 >  "Done."
+# 09:58:28 >  
 

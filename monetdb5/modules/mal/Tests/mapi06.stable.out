@@ -9,22 +9,19 @@ stdout of test 'mapi06` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32356/
-function user.main():void;
-# Checking correctness of mapi library 
-# we expect an exception from this query 
-    fs := inspect.getEnvironment("mapi_port");
-    port := calc.int(fs);
-    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
-#mapi.trace(mid,1); 
-    mapi.rpc(mid,"io.print(d);");
-    io.print("done");
-    mapi.disconnect(mid);
-end user.main;
-!MALException:mapi.query:operation failed: remote error: TypeException:user.main[1]:'d' may not be used before being initialized
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
+Ready.
 
 # 09:12:08 >  
 # 09:12:08 >  Done.

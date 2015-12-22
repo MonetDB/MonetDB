@@ -21,28 +21,19 @@ stdout of test 'inline05` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:int):int;
-    c := calc.+(a,b);
-    io.print(c);
-# this has a memory-less side effect 
-    return foo := 1;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);
-    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,2);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-# the crucial part is to recognize valid inlines 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:12:44 >  
+# 10:12:44 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-10076" "--port=33029"
+# 10:12:44 >  
+
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    z:bat[:oid,:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],b:bat[:oid,:int]);	#[3] MANIFOLDremapMultiplex 6 <- 7 8 1 1 
-    z:bat[:oid,:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],2:int);	#[4] MANIFOLDremapMultiplex 6 <- 7 9 1 10 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
+    z:bat[:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:int],b:bat[:int]);	#[3] MANIFOLDremapMultiplex 6 <- 7 8 1 1 
+    z:bat[:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:int],2:int);	#[4] MANIFOLDremapMultiplex 6 <- 7 9 1 10 
 end user.qry;                           	#[5]  
 
 # 18:00:44 >  

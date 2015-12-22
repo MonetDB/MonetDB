@@ -1,4 +1,4 @@
-	y := bat.new(:oid,:dbl);
+	y := bat.new(:dbl);
 	le_a := calc.dbl(1.0);
 	y:= bat.append(y,le_a);
 	ne_a := calc.dbl(2.0);
@@ -23,13 +23,13 @@ c:= aggr.count(z);
 io.print("count");
 io.print(c);
 
-	x:= bat.new(:oid,:bit);
+	x:= bat.new(:bit);
 	x:= bat.append(x,true);
 	x:= bat.append(x,false);
 	x:= bat.append(x,true);
 	x:= bat.append(x,false);
 	io.print(x);
-	A:= bat.new(:oid,:bit);
+	A:= bat.new(:bit);
 	A:= bat.append(A,true);
 	A:= bat.append(A,true);
 	A:= bat.append(A,false);

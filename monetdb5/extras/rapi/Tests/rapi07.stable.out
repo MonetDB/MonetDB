@@ -1,35 +1,37 @@
 stdout of test 'rapi07` in directory 'monetdb5/extras/rapi` itself:
 
 
-# 20:20:45 >  
-# 20:20:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38117" "--set" "mapi_usock=/var/tmp/mtest-2827/.s.monetdb.38117" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Oct2014/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_monetdb5_extras_rapi" "--set" "mal_listing=2" "--set" "embedded_r=yes"
-# 20:20:45 >  
+# 13:48:18 >  
+# 13:48:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30912" "--set" "mapi_usock=/var/tmp/mtest-24529/.s.monetdb.30912" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_extras_rapi" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:48:18 >  
 
-# MonetDB 5 server v11.19.0
+# MonetDB 5 server v11.22.0
 # This is an unreleased version
 # Serving database 'mTests_monetdb5_extras_rapi', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.591 GiB available main-memory.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:38117/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2827/.s.monetdb.38117
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30912/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24529/.s.monetdb.30912
 # MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
 Ready.
 
-# 12:48:51 >  
-# 12:48:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8117" "--port=30681"
-# 12:48:51 >  
+# 13:48:19 >  
+# 13:48:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
+# 13:48:19 >  
 
-#io.printf("#~BeginVariableOutput~#\n");
 #~BeginVariableOutput~#
-#io.print(x,y);
 #--------------------------#
-# h	t	t  # name
+# t	t	t  # name
 # void	dbl	dbl  # type
 #--------------------------#
 [ 0@0,	-10,	2.970300062e-11	]
@@ -232,10 +234,9 @@ Ready.
 [ 197@0,	9.700000294,	0.1323175171	]
 [ 198@0,	9.800000295,	0.1326855763	]
 [ 199@0,	9.900000297,	0.1329069029	]
-#io.printf("#~EndVariableOutput~#\n");
 #~EndVariableOutput~#
 
-# 12:48:51 >  
-# 12:48:51 >  "Done."
-# 12:48:51 >  
+# 13:48:19 >  
+# 13:48:19 >  "Done."
+# 13:48:19 >  
 

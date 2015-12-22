@@ -1,6 +1,6 @@
 	v0:= calc.oid(20000000);
 	v1:= calc.setoid(v0);
-	v2:= bat.new(:oid,:str);
+	v2:= bat.new(:str);
 	b := v2;
 
 	v3:= bat.append(b,"the");
@@ -35,13 +35,13 @@ catch MALException:str;
 	io.print(MALException);
 exit  MALException;
 
-	o := algebra.find(b,"fox");
-	v29:= bat.delete(b,o);
-	o := algebra.find(b,"the");
-	v30:= bat.delete(b,o);
-	o := algebra.find(b,".");
-	v31:= bat.delete(b,o);
-	v32:= io.print(b);
+#	o := algebra.find(b,"fox");
+#	v29:= bat.delete(b,o);
+#	o := algebra.find(b,"the");
+#	v30:= bat.delete(b,o);
+#	o := algebra.find(b,".");
+#	v31:= bat.delete(b,o);
+#	v32:= io.print(b);
 
 
 	v33:= bat.append(b,"fox");

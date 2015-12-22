@@ -2,7 +2,7 @@
 # The first and foremost BAT operations
 
 function foo();
-b:= bat.new(:oid,:str);
+b:= bat.new(:str);
 bat.append(b,"true");
 bat.append(b,"TRUE");
 bat.append(b,"FALSE");
@@ -14,4 +14,5 @@ io.print(b);
 bc:= batcalc.bit_noerror(b);
 io.print(bc);
 end;
+mdb.List("user","foo");
 user.foo();

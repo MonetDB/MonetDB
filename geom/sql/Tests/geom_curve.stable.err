@@ -81,28 +81,28 @@ stderr of test 'geom_curve` in directory 'geom/sql` itself:
 # 20:50:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=30183 
 # 20:50:33 >  
 
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('POINT(10 10)');
 ERROR = !Geometry type 'Line' not found
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))');
 ERROR = !Geometry type 'Line' not found
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))');
 ERROR = !Geometry type 'Line' not found
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('LINESTRING(10 10)');
 ERROR = !IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('LINESTRING(10)');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('LINESTRING()');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('LINESTRING');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO curves values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
 

@@ -81,7 +81,7 @@ mtime.timezone_local(lzone);
 #var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
 #
 #
-	tzone_bat:= bat.new(:oid,:timezone);
+	tzone_bat:= bat.new(:timezone);
 	bat.append(tzone_bat,tzone_00);
 	bat.append(tzone_bat,tzone_01);
 	bat.append(tzone_bat,tzone_02);
@@ -111,13 +111,13 @@ mtime.timezone_local(lzone);
 io.print("tzone_bat");
 	io.print(tzone_bat);
 #io.print(tzone_bat.bat.setColumn("tzone"));
-	kd_a:bat[:oid,:int] := mal.multiplex("mtime","minutes",tzone_bat);
+	kd_a:bat[:int] := mal.multiplex("mtime","minutes",tzone_bat);
 	bat.setColumn(kd_a,"minutes");
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"),
-	md_a:bat[:oid,:zrule] := mal.multiplex("mtime","start_dst",tzone_bat);
+	md_a:bat[:zrule] := mal.multiplex("mtime","start_dst",tzone_bat);
 	bat.setColumn(md_a,"start_dst");
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"),
-	od_a:bat[:oid,:zrule] := mal.multiplex("mtime","end_dst",tzone_bat);
+	od_a:bat[:zrule] := mal.multiplex("mtime","end_dst",tzone_bat);
 	bat.setColumn(od_a,"end_dst");
 io.print("print(kd_a,md_a,od_a)");
 	qd_a := io.print(kd_a,md_a,od_a);

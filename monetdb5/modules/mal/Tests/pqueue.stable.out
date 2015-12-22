@@ -18,54 +18,14 @@ stdout of test 'pqueue` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# enqueue something  
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    bat.append(b,0);
-    bat.append(b,2);
-    bat.append(b,2);
-    bat.append(b,5);
-    bat.append(b,5);
-    bat.append(b,3);
-    io.print(b);
-    bp := algebra.firstn(b,0:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,1:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,2:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,3:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,4:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,5:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,6:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,7:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,8:wrd,false,false);
-    io.print(bp);
-    bp := algebra.firstn(b,0:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,1:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,2:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,3:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,4:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,5:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,6:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,7:wrd,true,false);
-    io.print(bp);
-    bp := algebra.firstn(b,8:wrd,true,false);
-    io.print(bp);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:41 >  
+# 09:46:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:41 >  
+
 #--------------------------#
 # h	t  # name
 # void	int  # type

@@ -30,7 +30,7 @@ command noop():void
 address CMDnoopProfiler
 comment "Fetch any pending performance events";
 
-command getTrace(e:str):bat[:oid,:any_1]
+command getTrace(e:str):bat[:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 

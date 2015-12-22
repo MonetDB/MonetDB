@@ -1,22 +1,22 @@
-	x:= bat.new(:oid,:bit);
+	x:= bat.new(:bit);
 	x:= bat.append(x,true);
 	x:= bat.append(x,false);
 	x:= bat.append(x,nil:bit);
 	io.print(x);
 
-	Ai:= bat.new(:oid,:int);
+	Ai:= bat.new(:int);
 	bat.append(Ai,1);
 	bat.append(Ai,2);
 	bat.append(Ai,3);
-	Air:= bat.new(:oid,:int);
+	Air:= bat.new(:int);
 	bat.append(Air,-1);
 	bat.append(Air,-2);
 	bat.append(Air,-3);
-	As:= bat.new(:oid,:str);
+	As:= bat.new(:str);
 	bat.append(As,"hello");
 	bat.append(As,"new");
 	bat.append(As,"world");
-	Asr:= bat.new(:oid,:str);
+	Asr:= bat.new(:str);
 	bat.append(Asr,"HELLO");
 	bat.append(Asr,"NEW");
 	bat.append(Asr,"WORLD");

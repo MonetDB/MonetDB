@@ -1,6 +1,6 @@
 #test reference counting of batcalc
 function foo();
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 	bat.setName(b,"b");
 	bat.append(b,1);
 	c:=batcalc.+(b,2);
@@ -12,4 +12,5 @@ function foo();
 	c:=batcalc.+(b,8);
 	io.print(c);
 end;
+mdb.List("user","foo");
 user.foo();

@@ -612,7 +612,7 @@ handleInts:
  * @item scalarType
  * @tab :  ':' @sc{ identifier}
  * @item collectionType
- * @tab :  ':' @sc{ bat} ['[' ':' oid ',' col ']']
+ * @tab :  ':' @sc{ bat} ['['  col ']']
  * @item anyType
  * @tab :  ':' @sc{ any} [typeAlias]
  * @item col
@@ -676,24 +676,35 @@ simpleTypeId(Client cntxt)
 static int
 parseTypeId(Client cntxt, int defaultType)
 {
-	int i = TYPE_any, ht, tt, kh = 0, kt = 0;
+	int i = TYPE_any, tt, kt = 0;
 	char *s = CURRENT(cntxt);
 
 	if (s[0] == ':' && s[1] == 'b' && s[2] == 'a' && s[3] == 't' && s[4] == '[') {
 		/* parse :bat[:oid,:type] */
 		advance(cntxt, 5);
 		if (currChar(cntxt) == ':') {
-			ht = simpleTypeId(cntxt);
-			if( ht != TYPE_oid){
-				parseError(cntxt, "':oid' expected\n");
-				return i;
-			}
-		} 
+			tt = simpleTypeId(cntxt);
+			kt = typeAlias(cntxt, tt);
+		} else{
+			parseError(cntxt, "':bat[:any]' expected\n");
+			return TYPE_bat;
+		}
 
-		if (currChar(cntxt) != ',') {
-			parseError(cntxt, "',' expected\n");
+		if (currChar(cntxt) == ']') {
+			i = newBatType(TYPE_void, tt);
+			if (kt > 0)
+				setAnyColumnIndex(i, kt);
+			nextChar(cntxt); /* skip ] */
+			skipSpace(cntxt);
 			return i;
 		}
+		/* Backward compatibility parsing of :bat[:oid,:type] */
+		if( tt != TYPE_oid){
+			parseError(cntxt, "':oid' expected\n");
+			return i;
+		}
+		if (currChar(cntxt) != ',')
+				parseError(cntxt, "',' expected\n");
 		nextChar(cntxt); /* skip , */
 		skipSpace(cntxt);
 		if (currChar(cntxt) == ':') {
@@ -703,8 +714,6 @@ parseTypeId(Client cntxt, int defaultType)
 			tt = TYPE_any;
 
 		i = newBatType(TYPE_void, tt);
-		if (kh > 0)
-			setAnyHeadIndex(i, kh);
 		if (kt > 0)
 			setAnyColumnIndex(i, kt);
 
@@ -723,20 +732,12 @@ parseTypeId(Client cntxt, int defaultType)
 		//parseError(cntxt, "':bat[:oid,:any]' expected\n");
 		return TYPE_bat;
 	}
-	// Headless definition of a column
-	if (s[0] == ':' && s[1] == 'c' && s[2] == 'o' && s[3] == 'l' && s[4] == '[') {
-		/* parse default for :col[:any] */
-		advance(cntxt, 5);
-		skipSpace(cntxt);
-		tt = simpleTypeId(cntxt);
-		return newColumnType(tt);
-	}
 	if (currChar(cntxt) == ':') {
-		ht = simpleTypeId(cntxt);
-		kt = typeAlias(cntxt, ht);
+		tt = simpleTypeId(cntxt);
+		kt = typeAlias(cntxt, tt);
 		if (kt > 0)
-			setAnyColumnIndex(ht, kt);
-		return ht;
+			setAnyColumnIndex(tt, kt);
+		return tt;
 	}
 	parseError(cntxt, "<type identifier> expected\n");
 	return defaultType;
