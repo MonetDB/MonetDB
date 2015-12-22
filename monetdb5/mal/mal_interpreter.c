@@ -1239,30 +1239,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	return ret;
 }
 
-/* Safeguarding
- * The physical stack for each thread is an operating system parameter.
- * We do not want recursive programs crashing the server, so once in
- * a while we check whether we are running dangerously low on available
- * stack space.
- *
- * This situation can be detected by calling upon the GDK functionality
- * of by limiting the depth of a function calls.
- * Expensive? 70 msec for 1M calls. Use with care.
- */
-str
-safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int depth = *getArgReference_int(stk, pci, 1);
-	(void)cntxt;
-	if (stk->stkdepth > depth * mb->vtop && THRhighwater()) {
-		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
-	}
-	if (stk->calldepth > 256)
-		throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
-	return MAL_SUCCEED;
-}
-
-
 
 /*
  * MAL API
