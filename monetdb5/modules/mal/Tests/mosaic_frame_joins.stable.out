@@ -21,47 +21,15 @@ stdout of test 'mosaic_frame_joins` in directory 'monetdb5/modules/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:timestamp);
-    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:01:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:02:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
-    b := bat.append(b,b);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"frame");
-#mosaic.dump(x); 
-    z := mosaic.decompress(x);
-    io.print(z);
-    c := bat.new(:oid,:oid);
-    bat.append(c,0@0);
-    bat.append(c,2@0);
-    bat.append(c,4@0);
-    io.print(c);
-#mosaic.dump(x); 
-    s := algebra.projection(c,base);
-    io.print(s);
-    xs := mosaic.projection(c,x);
-    io.print(xs);
-    d := bat.new(:oid,:timestamp);
-    bat.append(d,"2014-08-14 12:01:00.000":timestamp);
-    bat.append(d,"2014-08-14 12:02:00.000":timestamp);
-    bat.append(d,nil:timestamp);
-    (jl,jr) := algebra.join(base,d);
-    io.print(jl,jr);
-    (ml,mr) := mosaic.join(x,d);
-    io.print(ml,mr);
-    (jl,jr) := algebra.join(d,base);
-    io.print(jl);
-    io.print(jr);
-    io.print(jl,jr);
-    (ml,mr) := mosaic.join(d,x);
-    io.print(ml);
-    io.print(mr);
-    io.print(ml,mr);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:40 >  
+# 15:01:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:40 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type

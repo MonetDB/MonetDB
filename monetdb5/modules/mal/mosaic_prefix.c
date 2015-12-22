@@ -89,7 +89,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			bte val = *dst++;
 			bits = val & (~mask);
 			// be aware that we use longs as bit vectors
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			output =  wordaligned(bytes,bte); 
 		}
 		break;
@@ -98,7 +98,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			sht mask = *dst++;
 			sht val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			output = wordaligned(bytes,sht); 
 		}
 		break;
@@ -107,7 +107,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			int mask = *dst++;
 			int val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			output = wordaligned(bytes, int); 
 		}
 		break;
@@ -116,7 +116,7 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 			lng mask = *dst++;
 			lng val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			output = wordaligned(bytes, lng); 
 		}
 	}
@@ -144,7 +144,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			bte val = *dst++;
 			bits = val & (~mask);
 			// be aware that we use longs as bit vectors
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -154,7 +154,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			sht mask = *dst++;
 			sht val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes,lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -164,7 +164,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			int mask = *dst++;
 			int val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -174,7 +174,7 @@ MOSadvance_prefix(Client cntxt, MOStask task)
 			lng mask = *dst++;
 			lng val = *dst++;
 			bits = val & (~mask);
-			bytes = sizeof(unsigned long) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
+			bytes = sizeof(ulng) * ((MOSgetCnt(task->blk) * bits)/64 + (((MOSgetCnt(task->blk) * bits) %64) != 0));
 			task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 			//mnstr_printf(cntxt->fdout,"advance mask width %d bytes %d %d \n",bits,bytes,(int)wordaligned(bytes,int));
 		}
@@ -382,11 +382,11 @@ MOSestimate_prefix(Client cntxt, MOStask task)
 	cid = (I * Bits)/64;\
 	lshift= 63 -((I * Bits) % 64) ;\
 	if ( lshift >= Bits){\
-		Vector[cid]= Vector[cid] | (((unsigned long)Value) << (lshift-Bits));\
+		Vector[cid]= Vector[cid] | (((ulng)Value) << (lshift-Bits));\
 	}else{ \
 		rshift= 63 -  ((I+1) * Bits) % 64;\
-		Vector[cid]= Vector[cid] | (((unsigned long)Value) >> (Bits-lshift));\
-		Vector[cid+1]= 0 | (((unsigned long)Value)  << rshift);\
+		Vector[cid]= Vector[cid] | (((ulng)Value) >> (Bits-lshift));\
+		Vector[cid+1]= 0 | (((ulng)Value)  << rshift);\
 	}\
 }
 
@@ -410,7 +410,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		{	bte *v = ((bte*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			bte *dst = (bte*)  (((char*) blk) + MosaicBlkSize);
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-			unsigned long *base;
+			ulng *base;
 			int bits, rbits; 
 			// search first non-identical value
 			for(i = 0;i < limit;i++, w++)
@@ -425,7 +425,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			*dst = *v & mask;
 			*dst = *dst | rbits; // bits outside mask
 			dst++;
-			base  = (unsigned long*) dst; // start of bit vector
+			base  = (ulng*) dst; // start of bit vector
 			*base = 0;
 			
 			val = *v & mask;	//reference value
@@ -433,7 +433,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
-				m = (unsigned long)( *w & (~mask)); // residu
+				m = (ulng)( *w & (~mask)); // residu
 				compress(base,j,rbits,m);
 				hdr->checksum.sumbte += val;
 			}
@@ -444,7 +444,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		{	sht *v = ((sht*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			sht *dst = (sht*)  (((char*) blk) + MosaicBlkSize);
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-			unsigned long *base;
+			ulng *base;
 			int bits, rbits;
 
 			// search first non-identical value
@@ -460,7 +460,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			*dst = *v & mask;
 			*dst = *dst | rbits; // bits outside mask
 			dst++;
-			base  = (unsigned long*) dst; // start of bit vector
+			base  = (ulng*) dst; // start of bit vector
 			*base = 0;
 			
 			val = *v & mask;	//reference value
@@ -479,7 +479,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		{	int *v = ((int*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask,m;
 			int *dst = (int*)  (((char*) blk) + MosaicBlkSize);
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-			unsigned long *base;
+			ulng *base;
 			int bits, rbits;
 
 			// search first non-identical value
@@ -495,7 +495,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			*dst = *v & mask;
 			*dst = *dst | rbits; // bits outside mask
 			dst++;
-			base  = (unsigned long*) dst; // start of bit vector
+			base  = (ulng*) dst; // start of bit vector
 			*base = 0;
 			
 			val = *v & mask;	//reference value
@@ -504,7 +504,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			for(j=0, w = v, i = 0; i < limit; w++, i++, j++){
 				if ( val  != (*w & mask) )
 					break;
-				m =(unsigned long) (*w & (~mask)); // residu
+				m =(ulng) (*w & (~mask)); // residu
 				compress(base,j,rbits,m);
 				hdr->checksum.sumint += val;
 			}
@@ -515,7 +515,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 		{	lng *v = ((lng*) task->src) + task->start, *w= v+1, val = *v, val2 = *w, mask, m;
 			lng *dst = (lng*)  (((char*) blk) + MosaicBlkSize);
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-			unsigned long *base;
+			ulng *base;
 			int bits, rbits; 
 
 			// search first non-identical value
@@ -531,7 +531,7 @@ MOScompress_prefix(Client cntxt, MOStask task)
 			*dst = *v & mask;
 			*dst = *dst | rbits; // bits outside mask
 			dst++;
-			base  = (unsigned long*) dst; // start of bit vector
+			base  = (ulng*) dst; // start of bit vector
 			*base = 0;
 			
 			val = *v & mask;	//reference value
@@ -556,11 +556,11 @@ MOScompress_prefix(Client cntxt, MOStask task)
 {	int cell = (I * rbits)/64, lshift,rshift;\
 	lshift= 63 -((I * rbits) % 64) ;\
 	if ( lshift >= (int)rbits){\
-		m1 = (Vector[cell]>> (lshift-rbits)) & ((unsigned long) m);\
+		m1 = (Vector[cell]>> (lshift-rbits)) & ((ulng) m);\
 		v = val  | m1;\
 	  }else{ \
 		rshift= 63 -  ((I+1) * rbits) % 64;\
-		m1 =(Vector[cell] & (((unsigned long)m) >> (rbits-lshift)));\
+		m1 =(Vector[cell] & (((ulng)m) >> (rbits-lshift)));\
 		m2 = Vector[cell+1] >>rshift;\
 		v= val | (m1 <<(rbits-lshift)) | m2;\
 	  }\
@@ -585,13 +585,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			bte *w = ((bte*) task->src) + task->start;
 			bte m,m1,m2;
 			BUN lim= MOSgetCnt(blk);
-			unsigned long *base;
+			ulng *base;
 			int rbits;
 
 			m = ~mask;
 			rbits = val & m;
 			val = val & mask;
-			base = (unsigned long*) dst;
+			base = (ulng*) dst;
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
@@ -606,13 +606,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			sht *w = ((sht*) task->src) + task->start;
 			sht m,m1,m2;
 			BUN lim= MOSgetCnt(blk);
-			unsigned long *base;
+			ulng *base;
 			int rbits;
 
 			m = ~mask;
 			rbits = val & m;
 			val = val & mask;
-			base = (unsigned long*) dst;
+			base = (ulng*) dst;
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
@@ -627,24 +627,24 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			unsigned int *w = ((unsigned int*) task->src) + task->start;
 			unsigned int m1,m2;
 			BUN lim= MOSgetCnt(blk);
-			unsigned long *base,m;
+			ulng *base,m;
 			int rbits, cell, lshift, rshift;
 
 			m = ~mask;
 			rbits = val & m;
 			val = val & mask;
-			base = (unsigned long*) dst;
+			base = (ulng*) dst;
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				cell = (i * rbits)/64;
 				lshift= 63 -((i * rbits) % 64) ;
 				if ( lshift >= rbits){
-					m1 = (base[cell]>> (lshift-rbits)) & ((unsigned long)m);
+					m1 = (base[cell]>> (lshift-rbits)) & ((ulng)m);
 					//mnstr_printf(cntxt->fdout,"[%d]cell %o lshift %d m %d\n", cell,  base[cell],lshift,m1);
 					v = val  | m1;
 				  }else{ 
 					rshift= 63 -  ((i+1) * rbits) % 64;
-					m1 =(base[cell] & ( ((unsigned long)m) >> (rbits-lshift)));
+					m1 =(base[cell] & ( ((ulng)m) >> (rbits-lshift)));
 					m2 = base[cell+1] >>rshift;
 					v= val | (m1 <<(rbits-lshift)) | m2;
 					//mnstr_printf(cntxt->fdout,"[%d] shift %d %d cell %o %o val %o %o\n", cell, lshift, rshift,base[cell],base[cell+1], m1,  m2);
@@ -660,13 +660,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			lng *w = ((lng*) task->src) + task->start;
 			lng m,m1,m2;
 			BUN lim= MOSgetCnt(blk);
-			unsigned long *base;
+			ulng *base;
 			int rbits;
 
 			m = ~mask;
 			rbits = val & m;
 			val = val & mask;
-			base = (unsigned long*) dst;
+			base = (ulng*) dst;
 			//mnstr_printf(cntxt->fdout,"decompress rbits %d mask %o val %d\n",rbits,m,val);
 			for(i = 0; i < lim; i++){
 				decompress(base,i);
@@ -788,10 +788,10 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	case TYPE_bit: subselect_prefix(bit,unsigned int, 8); break;
 	case TYPE_bte: subselect_prefix(bte,unsigned int, 8); break;
 	case TYPE_sht: subselect_prefix(sht,unsigned int, 16); break;
-	case TYPE_lng: subselect_prefix(lng,unsigned long, 64); break;
-	case TYPE_oid: subselect_prefix(oid,unsigned long, 64); break;
+	case TYPE_lng: subselect_prefix(lng,ulng, 64); break;
+	case TYPE_oid: subselect_prefix(oid,ulng, 64); break;
 	case TYPE_flt: subselect_prefix(flt,unsigned int,  32); break;
-	case TYPE_dbl: subselect_prefix(dbl,unsigned long, 64); break;
+	case TYPE_dbl: subselect_prefix(dbl,ulng, 64); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: subselect_prefix(hge,unsigned long long,128); break;
 #endif
@@ -802,13 +802,13 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 		unsigned int mask = *dst++;
 		int  val  =  (int) *dst++,v;
 		unsigned int m,m1,m2;
-		unsigned long *base;
+		ulng *base;
 		int rbits;
 
 		m = ~mask;
 		rbits = val & m;
 		val = val & mask;
-		base = (unsigned long*) dst;
+		base = (ulng*) dst;
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
 				for( ; first < last; first++){
@@ -893,7 +893,7 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 		if( task->type == TYPE_daytime)
 			subselect_prefix(daytime,int,32); 
 		if( task->type == TYPE_timestamp)
-			subselect_prefix(lng,long,64); 
+			subselect_prefix(lng,long long,64); 
 	}
 	MOSadvance_prefix(cntxt,task);
 	task->lb = o;
@@ -906,13 +906,13 @@ MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
     TPE2 mask = *dst++;\
     TPE2  val  =  (TPE) *dst++,v;\
     TPE2 m,m1,m2;\
-    unsigned long *base;\
+    ulng *base;\
     TPE2 rbits;\
     TPE value;\
 	m = ~mask;\
 	rbits = val & m;\
 	val = val & mask;\
-	base = (unsigned long*) dst;\
+	base = (ulng*) dst;\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) input;\
@@ -976,10 +976,10 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 	case TYPE_bit: thetasubselect_prefix(bit, unsigned int, 8); break;
 	case TYPE_bte: thetasubselect_prefix(bte, unsigned int, 8); break;
 	case TYPE_sht: thetasubselect_prefix(sht, unsigned int, 16); break;
-	case TYPE_lng: thetasubselect_prefix(lng, unsigned long, 16); break;
-	case TYPE_oid: thetasubselect_prefix(oid, unsigned long, 64); break;
+	case TYPE_lng: thetasubselect_prefix(lng, ulng, 16); break;
+	case TYPE_oid: thetasubselect_prefix(oid, ulng, 64); break;
 	case TYPE_flt: thetasubselect_prefix(flt, unsigned int, 32); break;
-	case TYPE_dbl: thetasubselect_prefix(dbl, unsigned long, 64); break;
+	case TYPE_dbl: thetasubselect_prefix(dbl, ulng, 64); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: thetasubselect_prefix(hge, unsigned long long,128); break;
 #endif
@@ -989,14 +989,14 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
 			unsigned int mask = *dst++;
 			unsigned int  val  =  (unsigned int) *dst++,v;
 			unsigned int m,m1,m2;
-			unsigned long *base;
+			ulng *base;
 			int rbits;
 			int value;
 
 			m = ~mask;
 			rbits = val & m;
 			val = val & mask;
-			base = (unsigned long*) dst;
+			base = (ulng*) dst;
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) input;
@@ -1060,13 +1060,13 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
     TPE2 mask = *dst++;\
     TPE2  val  =  (TPE) *dst++,v;\
     TPE2 m,m1,m2;\
-    unsigned long *base;\
+    ulng *base;\
     int rbits;\
     TPE value;\
 	m = ~mask;\
 	rbits = val & m;\
 	val = val & mask;\
-	base = (unsigned long*) dst;\
+	base = (ulng*) dst;\
 	r= (TPE*) task->src;\
 	for(; first < last; first++,i++){\
 		MOSskipit();\
@@ -1094,10 +1094,10 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 		case TYPE_bit: projection_prefix(bit, unsigned char); break;
 		case TYPE_bte: projection_prefix(bte, unsigned char); break;
 		case TYPE_sht: projection_prefix(sht, unsigned short); break;
-		case TYPE_lng: projection_prefix(lng, unsigned long); break;
-		case TYPE_oid: projection_prefix(oid, unsigned long); break;
+		case TYPE_lng: projection_prefix(lng, ulng); break;
+		case TYPE_oid: projection_prefix(oid, ulng); break;
 		case TYPE_flt: projection_prefix(flt, unsigned int); break;
-		case TYPE_dbl: projection_prefix(dbl, unsigned long); break;
+		case TYPE_dbl: projection_prefix(dbl, ulng); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_prefix(hge, unsigned long long); break;
 #endif
@@ -1107,13 +1107,13 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 			unsigned int mask = *dst++;
 			unsigned int  val  =  (unsigned int) *dst++,v;
 			unsigned int m,m1,m2;
-			unsigned long *base;
+			ulng *base;
 			int rbits;
 			int value;
 			m = ~mask;
 			rbits = val & m;
 			val = val & mask;
-			base = (unsigned long*) dst;
+			base = (ulng*) dst;
 			r= (int*) task->src;
 			for(; first < last; first++,i++){
 				MOSskipit();
@@ -1132,7 +1132,7 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 		case 1: projection_prefix(bte, unsigned char); break;
 		case 2: projection_prefix(sht, unsigned short); break;
 		case 4: projection_prefix(int, unsigned int); break;
-		case 8: projection_prefix(lng, unsigned long); break;
+		case 8: projection_prefix(lng, ulng); break;
 		}
 		break;
 	}
@@ -1146,13 +1146,13 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 	TPE2 mask = *dst++;\
 	TPE2  val  =  (TPE2) *dst++,v;\
 	TPE2 m,m1,m2;\
-	unsigned long *base;\
+	ulng *base;\
 	int rbits;\
 	TPE value;\
 	m = ~mask;\
 	rbits = val & m;\
 	val = val & mask;\
-	base = (unsigned long*) dst;\
+	base = (ulng*) dst;\
 	w = (TPE*) task->src;\
 	for(n = task->elm, o = 0; n -- > 0; w++,o++){\
 		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){\
@@ -1182,10 +1182,10 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 		case TYPE_bit: join_prefix(bit,unsigned char); break;
 		case TYPE_bte: join_prefix(bte,unsigned char); break;
 		case TYPE_sht: join_prefix(sht,unsigned short); break;
-		case TYPE_lng: join_prefix(lng,unsigned long); break;
-		case TYPE_oid: join_prefix(oid,unsigned long); break;
+		case TYPE_lng: join_prefix(lng,ulng); break;
+		case TYPE_oid: join_prefix(oid,ulng); break;
 		case TYPE_flt: join_prefix(flt,unsigned int); break;
-		case TYPE_dbl: join_prefix(dbl,unsigned long); break;
+		case TYPE_dbl: join_prefix(dbl,ulng); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: join_prefix(hge,unsigned long long); break;
 #endif
@@ -1195,13 +1195,13 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
             unsigned int mask = *dst++;
             unsigned int  val  =  (unsigned int) *dst++,v;
             unsigned int m,m1,m2;
-            unsigned long *base;
+            ulng *base;
             int rbits;
             int value;
             m = ~mask;
             rbits = val & m;
             val = val & mask;
-            base = (unsigned long*) dst;
+            base = (ulng*) dst;
 
 			w = (int*) task->src;
 			for(n = task->elm, o = 0; n -- > 0; w++,o++){
@@ -1222,7 +1222,7 @@ MOSjoin_prefix(Client cntxt,  MOStask task)
 		case 1: join_prefix(bte, unsigned char); break;
 		case 2: join_prefix(sht, unsigned short); break;
 		case 4: join_prefix(int, unsigned int); break;
-		case 8: join_prefix(lng, unsigned long); break;
+		case 8: join_prefix(lng, ulng); break;
 		}
 	}
 	MOSskip_prefix(cntxt,task);

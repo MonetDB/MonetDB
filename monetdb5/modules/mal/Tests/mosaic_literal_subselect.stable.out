@@ -17,98 +17,15 @@ stdout of test 'mosaic_literal_subselect` in directory 'monetdb5/modules/mal` it
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18512/.s.monetdb.39615
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# Compression of noncompressable column 
-    b := bat.new(:oid,:int);
-    bat.append(b,50);
-    bat.append(b,19531015);
-    bat.append(b,9);
-    b := bat.append(b,b);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"literal");
-#mosaic.dump(x); 
-    s := algebra.subselect(base,0,50,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,50,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,0,50,false,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,50,false,true,false);
-    io.print(xs);
-    s := algebra.subselect(base,0,50,true,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,50,true,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,0,50,true,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,50,true,true,false);
-    io.print(xs);
-    s := algebra.subselect(base,nil:int,50,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,50,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,50,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,50,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,nil:int,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,nil:int,nil:int,false,false,true);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
-    io.print(xs);
-# using candidatelists 
-    io.print("candidate stuff");
-    c := bat.new(:oid,:oid);
-    bat.append(c,2@0);
-    bat.append(c,5@0);
-    s := algebra.subselect(base,c,0,50,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,0,50,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,0,50,false,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,0,50,false,true,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,0,50,true,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,0,50,true,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,0,50,true,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,0,50,true,true,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,nil:int,50,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,nil:int,50,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,50,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,50,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,nil:int,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,c,nil:int,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,c,nil:int,nil:int,false,false,true);
-    io.print(s);
-    xs := mosaic.subselect(x,c,nil:int,nil:int,false,false,true);
-    io.print(xs);
-    io.print("string stuff");
-    bstr := bat.new(:oid,:str);
-    bat.append(bstr,"the");
-    bat.append(bstr,"big");
-    bat.append(bstr,"brown");
-    bat.append(bstr,"fox");
-    ystr := mosaic.compress(bstr,"literal");
-    tstr := algebra.subselect(bstr,"big","fox",true,true,false);
-    io.print(tstr);
-    tstr := mosaic.subselect(ystr,"big","fox",true,true,false);
-    io.print(tstr);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:29 >  
+# 15:01:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:29 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	int  # type

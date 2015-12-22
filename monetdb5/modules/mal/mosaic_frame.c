@@ -47,7 +47,7 @@ MOSadvance_frame(Client cntxt, MOStask task)
 	assert(cnt > 0);
 	task->start += (oid) cnt;
 	//task->stop = task->elm;
-	bytes =  (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(unsigned long);
+	bytes =  (cnt * task->hdr->framebits)/8 + (((cnt * task->hdr->framebits) %8) != 0) + sizeof(ulng);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, lng)); 
 }
 
@@ -336,11 +336,11 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	cid = (I * Bits)/64;\
 	lshift= 63 -((I * Bits) % 64) ;\
 	if ( lshift >= Bits){\
-		Vector[cid]= Vector[cid] | (((unsigned long) Value) << (lshift- Bits));\
+		Vector[cid]= Vector[cid] | (((ulng) Value) << (lshift- Bits));\
 	}else{ \
 		rshift= 63 -  ((I+1) * Bits) % 64;\
-		Vector[cid]= Vector[cid] | (((unsigned long) Value) >> (Bits-lshift));\
-		Vector[cid+1]= 0 | (((unsigned long) Value)  << rshift);\
+		Vector[cid]= Vector[cid] | (((ulng) Value) >> (Bits-lshift));\
+		Vector[cid+1]= 0 | (((ulng) Value)  << rshift);\
 }}
 
 #define FRAMEcompress(TPE)\
@@ -350,7 +350,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	task->dst = ((char*) task->blk)+ MosaicBlkSize;\
     *(TPE*) task->dst = frame;\
 	task->dst += sizeof(TPE);\
-	base = (unsigned long*) (((char*) task->blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
+	base = (ulng*) (((char*) task->blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	base[0]=0;\
 	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
@@ -374,7 +374,7 @@ MOScompress_frame(Client cntxt, MOStask task)
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
 	int cid, lshift, rshift;
-	unsigned long *base;
+	ulng *base;
 
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_FRAME);
@@ -398,7 +398,7 @@ MOScompress_frame(Client cntxt, MOStask task)
 			task->dst = ((char*) task->blk)+ MosaicBlkSize;
 			*(int*) task->dst = frame;	// keep the frame reference value
 			task->dst += sizeof(int);
-			base = (unsigned long*) (((char*) task->blk) + MosaicBlkSize +  wordaligned(sizeof(int),lng)); // start of bit vector
+			base = (ulng*) (((char*) task->blk) + MosaicBlkSize +  wordaligned(sizeof(int),lng)); // start of bit vector
 			base[0]=0;
 			for(i =0; i<limit; i++, val++){
 				delta = *val - frame;
@@ -413,12 +413,12 @@ MOScompress_frame(Client cntxt, MOStask task)
 					cid = i * hdr->framebits/64;
 					lshift= 63 -((i * hdr->framebits) % 64) ;
 					if ( lshift >= hdr->framebits){
-						base[cid]= base[cid] | (((unsigned long)j) << (lshift-hdr->framebits));
+						base[cid]= base[cid] | (((ulng)j) << (lshift-hdr->framebits));
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d \n",cid, lshift, hdr->framebits);
 					}else{ 
 						rshift= 63 -  ((i+1) * hdr->framebits) % 64;
-						base[cid]= base[cid] | (((unsigned long)j) >> (hdr->framebits-lshift));
-						base[cid+1]= 0 | (((unsigned long)j)  << rshift);
+						base[cid]= base[cid] | (((ulng)j) >> (hdr->framebits-lshift));
+						base[cid+1]= 0 | (((ulng)j)  << rshift);
 						//mnstr_printf(cntxt->fdout,"[%d] shift %d %d val %o %o\n", cid, lshift, rshift,
 							//(j >> (hdr->framebits-lshift)),  (j <<rshift));
 					}
@@ -435,10 +435,10 @@ MOScompress_frame(Client cntxt, MOStask task)
 cid = (int) (I * hdr->framebits)/64;\
 lshift= 63 -((I * hdr->framebits) % 64) ;\
 if ( lshift >= hdr->framebits){\
-	j = (unsigned int)( (base[cid]>> (lshift-hdr->framebits)) & ((unsigned long)hdr->mask));\
+	j = (unsigned int)( (base[cid]>> (lshift-hdr->framebits)) & ((ulng)hdr->mask));\
   }else{ \
 	rshift= 63 -  ((I+1) * hdr->framebits) % 64;\
-	m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->framebits-lshift)));\
+	m1 = (base[cid] & ( ((ulng)hdr->mask) >> (hdr->framebits-lshift)));\
 	m2 = base[cid+1] >>rshift;\
 	j= (unsigned int) ( ((m1 <<(hdr->framebits-lshift)) | m2) & 0377);\
   }
@@ -447,7 +447,7 @@ if ( lshift >= hdr->framebits){\
 {	TPE *dict =(TPE*)((char*)hdr->frame), frame;\
 	BUN lim = MOSgetCnt(blk);\
 	frame = *(TPE*)(((char*)blk) +  MosaicBlkSize);\
-	base = (unsigned long*) (((char*) blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
+	base = (ulng*) (((char*) blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	for(i = 0; i < lim; i++){\
 		framedecompress(i);\
 		((TPE*)task->src)[i] = frame + dict[j];\
@@ -465,7 +465,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 	unsigned int j;
 	unsigned int  m1, m2;
 	int cid, lshift, rshift;
-	unsigned long *base;
+	ulng *base;
 	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
@@ -482,18 +482,18 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 		{	lng *dict =(lng*)hdr->frame;
 			BUN lim = MOSgetCnt(blk);
 			lng frame = *(lng*)(((char*)blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) blk) +  MosaicBlkSize + sizeof(lng));
+			base = (ulng*) (((char*) blk) +  MosaicBlkSize + sizeof(lng));
 
 			for(i = 0; i < lim; i++){
 				//mnstr_printf(cntxt->fdout,"decompress ["BUNFMT"] val "LLFMT" framebits %d\n",i, frame,hdr->framebits);
 				cid = (int)(i * hdr->framebits)/64;
 				lshift= 63 -((i * hdr->framebits) % 64) ;
 				if ( lshift >= hdr->framebits){
-					j =(unsigned int)( (base[cid]>> (lshift-hdr->framebits)) & ((unsigned long)hdr->mask));
+					j =(unsigned int)( (base[cid]>> (lshift-hdr->framebits)) & ((ulng)hdr->mask));
 					//mnstr_printf(cntxt->fdout,"decompress [%d] lshift %d m %d\n", cid,  lshift,j);
 				  }else{ 
 					rshift= 63 -  ((i+1) * hdr->framebits) % 64;
-					m1 = (base[cid] & ( ((unsigned long)hdr->mask) >> (hdr->framebits-lshift)));
+					m1 = (base[cid] & ( ((ulng)hdr->mask) >> (hdr->framebits-lshift)));
 					m2 = (base[cid+1] >>rshift);
 					j= (unsigned int) ( ((m1 <<(hdr->framebits-lshift)) | m2) & 0377);
 					//mnstr_printf(cntxt->fdout,"decompress [%d] shift %d %d val "LLFMT"cid %lo %lo idx %d\n", cid, lshift, rshift,frame,base[cid],base[cid+1], j);
@@ -512,7 +512,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 #define subselect_frame(TPE) {\
  	TPE *dict= (TPE*) hdr->frame, frame;\
 	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
-	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 			for( ; first < last; first++){\
@@ -590,7 +590,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	int cmp;
 	bte j,m1,m2;
 	int cid, lshift, rshift;
-	unsigned long *base;
+	ulng *base;
 	(void) cntxt;
 
 	// set the oid range covered and advance scan range
@@ -616,7 +616,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	// Expanded MOSselect_frame for debugging
  	{ int *dict= (int*) hdr->frame, frame;
 		frame = *(int*)(((char*)task->blk) +  MosaicBlkSize);
-		base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+		base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);
 
 		if( !*anti){
 			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
@@ -696,7 +696,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 			int lownil = timestamp_isnil(*(timestamp*)low);
 			int hghnil = timestamp_isnil(*(timestamp*)hgh);
 			frame = *(lng*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+			base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);
 
 			if( !*anti){
 				if( lownil && hghnil){
@@ -775,7 +775,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 { 	TPE low,hgh;\
  	TPE *dict= (TPE*) hdr->frame, frame;\
 	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
-	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -821,7 +821,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	MosaicHdr hdr = task->hdr;
 	bte j,m1,m2;
 	int cid, lshift, rshift;
-	unsigned long *base;
+	ulng *base;
 	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
@@ -847,7 +847,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 		{ 	int low,hgh;
 			int *dict= (int*) hdr->frame, frame;
 			frame = *(int*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+			base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *(int*) val;
@@ -889,7 +889,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 		{ 	lng low,hgh;
 			lng *dict= (lng*) hdr->frame, frame;
 			frame = *(lng*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+			base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);
 
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
@@ -936,7 +936,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 {	TPE *v;\
 	TPE *dict= (TPE*) hdr->frame, frame;\
 	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
-	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++){\
 		MOSskipit();\
@@ -955,7 +955,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 	unsigned short j;
 	bte m1,m2;
 	int cid, lshift, rshift;
-	unsigned long *base;
+	ulng *base;
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -974,7 +974,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 		{	int *v;
 			int *dict= (int*) hdr->frame, frame;
 			frame = *(int*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+			base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);
 			v= (int*) task->src;
 			for(i=0 ; first < last; first++, i++){
 				MOSskipit();
@@ -993,7 +993,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 {	TPE *w;\
 	TPE *dict= (TPE*) hdr->frame, frame;\
 	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
-	base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
@@ -1016,7 +1016,7 @@ MOSjoin_frame(Client cntxt,  MOStask task)
 	unsigned short j;
 	bte m1,m2;
 	int cid, lshift, rshift;
-	unsigned long *base;
+	ulng *base;
 	(void) cntxt;
 
 	// set the oid range covered and advance scan range
@@ -1033,7 +1033,7 @@ MOSjoin_frame(Client cntxt,  MOStask task)
 		{	int  *w;
 			int *dict= (int*) hdr->frame, frame;
 			frame = *(int*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (unsigned long*) (((char*) task->blk) +  2 * MosaicBlkSize);
+			base = (ulng*) (((char*) task->blk) +  2 * MosaicBlkSize);
 			w = (int*) task->src;
 			limit= MOSgetCnt(task->blk);
 			for( o=0, n= task->elm; n-- > 0; o++,w++ ){

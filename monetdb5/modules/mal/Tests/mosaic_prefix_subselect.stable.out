@@ -17,52 +17,17 @@ stdout of test 'mosaic_prefix_subselect` in directory 'monetdb5/modules/mal` its
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25823/.s.monetdb.33381
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,50);
-    bat.append(b,51);
-    bat.append(b,51);
-    bat.append(b,51);
-    bat.append(b,51);
-    bat.append(b,51);
-    bat.append(b,51);
-    bat.append(b,60);
-    bat.append(b,67);
-    bat.append(b,67);
-    bat.append(b,67);
-    bat.append(b,67);
-    bat.append(b,67);
-    bat.append(b,67);
-    bat.append(b,67);
-    bat.append(b,255);
-    bat.append(b,256);
-    bat.append(b,256);
-    bat.append(b,256);
-    bat.append(b,256);
-    bat.append(b,256);
-    bat.append(b,255);
-    bat.append(b,255);
-    bat.append(b,255);
-    bat.append(b,255);
-    bat.append(b,255);
-    x := mosaic.compress(b,"prefix");
-    s := algebra.subselect(b,60,68,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,60,68,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(b,51,62,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,51,62,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(b,60,68,true,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,60,68,true,true,false);
-    io.print(xs);
-    s := algebra.subselect(b,51,62,true,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,51,62,true,true,false);
-    io.print(xs);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:32 >  
+# 15:01:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:32 >  
+
+#x:= mosaic.compress(b,"prefix");
+#bits 3[0] 50 [1] 51 [2] 60 [3] 67 [4] 255 [5] 256 
+#io.print(s);
 #--------------------------#
 # h	t  # name
 # void	void  # type

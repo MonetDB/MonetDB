@@ -17,60 +17,15 @@ stdout of test 'mosaic_linear_subselect` in directory 'monetdb5/modules/mal` its
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12899/.s.monetdb.39740
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# Linear range compressions 
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,2);
-    bat.append(b,4);
-    bat.append(b,6);
-    bat.append(b,8);
-    bat.append(b,10);
-    bat.append(b,1);
-    bat.append(b,4);
-    bat.append(b,7);
-    bat.append(b,10);
-    bat.append(b,13);
-    bat.append(b,16);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"linear");
-#mosaic.dump(x); 
-    z := mosaic.decompress(x);
-    io.print(z);
-    s := algebra.subselect(base,0,4,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,4,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,0,4,false,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,4,false,true,false);
-    io.print(xs);
-    s := algebra.subselect(base,0,4,true,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,4,true,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,0,4,true,true,false);
-    io.print(s);
-    xs := mosaic.subselect(x,0,4,true,true,false);
-    io.print(xs);
-    s := algebra.subselect(base,nil:int,4,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,4,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,4,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,4,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,nil:int,nil:int,false,false,false);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,false);
-    io.print(xs);
-    s := algebra.subselect(base,nil:int,nil:int,false,false,true);
-    io.print(s);
-    xs := mosaic.subselect(x,nil:int,nil:int,false,false,true);
-    io.print(xs);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:32 >  
+# 15:01:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:32 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	int  # type

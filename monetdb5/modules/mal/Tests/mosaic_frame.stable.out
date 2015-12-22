@@ -17,137 +17,17 @@ stdout of test 'mosaic_frame` in directory 'monetdb5/modules/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1108/.s.monetdb.30639
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:timestamp);
-    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:01:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:02:00.000":timestamp);
-    bat.append(b,"2014-08-14 12:00:00.000":timestamp);
-    b := bat.append(b,b);
-    base := algebra.copy(b);
-    x := mosaic.compress(b,"frame");
-#mosaic.dump(x); 
-    z := mosaic.decompress(x);
-    io.print(base,z);
-    d := bat.new(:oid,:date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-15":date);
-    d := bat.append(d,d);
-    xd := mosaic.compress(d,"frame");
-#mosaic.dump(xd); 
-    zd := mosaic.decompress(xd);
-    io.print(d,zd);
-    e := bat.new(:oid,:date);
-    bat.append(e,"1996-03-13":date);
-    bat.append(e,"1996-04-12":date);
-    bat.append(e,"1996-01-29":date);
-    bat.append(e,"1996-04-21":date);
-    bat.append(e,"1996-03-30":date);
-    bat.append(e,"1996-01-30":date);
-    bat.append(e,"1997-01-28":date);
-    bat.append(e,"1994-02-02":date);
-    bat.append(e,"1993-11-09":date);
-    bat.append(e,"1994-01-16":date);
-    bat.append(e,"1993-12-04":date);
-    bat.append(e,"1993-12-14":date);
-    bat.append(e,"1993-10-29":date);
-    bat.append(e,"1996-01-10":date);
-    bat.append(e,"1994-10-31":date);
-    bat.append(e,"1994-10-16":date);
-    bat.append(e,"1994-08-08":date);
-    bat.append(e,"1992-04-27":date);
-    bat.append(e,"1996-05-07":date);
-    bat.append(e,"1996-02-01":date);
-    bat.append(e,"1996-01-15":date);
-    bat.append(e,"1996-03-21":date);
-    bat.append(e,"1996-02-11":date);
-    bat.append(e,"1996-01-16":date);
-    bat.append(e,"1996-02-10":date);
-    bat.append(e,"1995-10-23":date);
-    bat.append(e,"1995-08-14":date);
-    bat.append(e,"1995-08-07":date);
-    bat.append(e,"1995-08-04":date);
-    bat.append(e,"1995-08-28":date);
-    bat.append(e,"1995-07-21":date);
-    bat.append(e,"1993-10-29":date);
-    bat.append(e,"1993-12-09":date);
-    bat.append(e,"1993-12-09":date);
-    bat.append(e,"1993-11-09":date);
-    bat.append(e,"1998-10-23":date);
-    bat.append(e,"1998-10-09":date);
-    bat.append(e,"1998-10-30":date);
-    bat.append(e,"1996-02-21":date);
-    bat.append(e,"1996-01-22":date);
-    bat.append(e,"1996-01-19":date);
-    bat.append(e,"1995-11-26":date);
-    bat.append(e,"1995-11-08":date);
-    bat.append(e,"1996-02-01":date);
-    bat.append(e,"1996-02-03":date);
-    bat.append(e,"1992-07-21":date);
-    bat.append(e,"1992-07-02":date);
-    bat.append(e,"1992-07-10":date);
-    bat.append(e,"1996-09-29":date);
-    bat.append(e,"1996-11-14":date);
-    bat.append(e,"1996-11-04":date);
-    bat.append(e,"1996-09-26":date);
-    bat.append(e,"1996-10-02":date);
-    bat.append(e,"1996-10-17":date);
-    bat.append(e,"1996-12-08":date);
-    bat.append(e,"1994-09-30":date);
-    bat.append(e,"1995-04-20":date);
-    bat.append(e,"1995-07-17":date);
-    bat.append(e,"1995-07-06":date);
-    bat.append(e,"1994-02-19":date);
-    bat.append(e,"1994-02-21":date);
-    bat.append(e,"1997-04-17":date);
-    bat.append(e,"1997-01-27":date);
-    bat.append(e,"1997-02-20":date);
-    bat.append(e,"1997-03-18":date);
-    bat.append(e,"1997-04-19":date);
-    bat.append(e,"1997-01-25":date);
-    bat.append(e,"1998-07-04":date);
-    bat.append(e,"1998-06-26":date);
-    bat.append(e,"1998-08-13":date);
-    bat.append(e,"1998-06-27":date);
-    bat.append(e,"1998-06-19":date);
-    bat.append(e,"1998-08-11":date);
-    bat.append(e,"1998-06-24":date);
-    bat.append(e,"1994-08-17":date);
-    bat.append(e,"1994-08-24":date);
-    bat.append(e,"1994-07-02":date);
-    bat.append(e,"1994-06-06":date);
-    bat.append(e,"1994-07-31":date);
-    bat.append(e,"1994-10-03":date);
-    bat.append(e,"1994-01-12":date);
-    bat.append(e,"1994-03-03":date);
-    bat.append(e,"1994-01-26":date);
-    bat.append(e,"1994-03-17":date);
-    bat.append(e,"1994-02-13":date);
-    bat.append(e,"1994-01-26":date);
-    bat.append(e,"1998-04-10":date);
-    bat.append(e,"1998-05-23":date);
-    bat.append(e,"1998-02-23":date);
-    bat.append(e,"1998-04-12":date);
-    bat.append(e,"1998-01-29":date);
-    bat.append(e,"1998-03-05":date);
-    bat.append(e,"1994-07-19":date);
-    bat.append(e,"1994-06-03":date);
-    bat.append(e,"1993-04-01":date);
-    bat.append(e,"1993-04-13":date);
-    bat.append(e,"1993-05-14":date);
-    bat.append(e,"1994-12-24":date);
-    bat.append(e,"1994-12-01":date);
-    bat.append(e,"1994-12-30":date);
-    xe := mosaic.compress(e,"frame");
-    mosaic.dump(xe);
-    zd := mosaic.decompress(xe);
-    io.print(e,zd);
-#mosaic.analyse("frame prefix"); 
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:28 >  
+# 15:01:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:28 >  
+
+#x:= mosaic.compress(b,"frame");
+#bits 2[0] 3160340058811904 [1] 3160340058871904 [2] 3160340058931904 
+#io.print(base,z);
 #--------------------------#
 # h	t  # name
 # void	timestamp  # type

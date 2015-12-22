@@ -80,8 +80,8 @@ typedef struct MOSAICHEADER{
 	// both dictionary and framebased compression require a global dictionary of frequent values
 	// Their size is purposely topped 
 	bte mask, bits, framebits;	// global compression type properties
-	int dictsize;		// used by dictionary compression
-	int framesize;		// used by frame compression
+	int dictsize;		// used by dictionary compression, it is a small table
+	int framesize;		// used by frame compression, it is a small table
 #ifdef HAVE_HGE
 	hge dict[256];
 	hge frame[256];
@@ -101,7 +101,7 @@ typedef struct MOSAICHEADER{
 #define MOSAICMAXCNT (1<<23)
 
 typedef struct MOSAICBLK{
-	unsigned int tag:8, cnt:24;//, free:32;
+	unsigned int tag:8, cnt:24;
 } MosaicBlkRec, *MosaicBlk;
 
 #define MOSgetTag(Blk) (Blk->tag)
@@ -116,7 +116,8 @@ typedef struct MOSAICBLK{
 #define wordaligned(SZ,TYPE) \
 	 ((SZ) +  ((SZ) % sizeof(TYPE)? sizeof(TYPE) - ((SZ)%sizeof(TYPE)) : 0))
 
-#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),lng)
+// alignment is focused on mosaichdr size
+#define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),sizeof(struct MOSAICBLK))
 #define MosaicBlkSize  sizeof(MosaicBlk *)
 
 

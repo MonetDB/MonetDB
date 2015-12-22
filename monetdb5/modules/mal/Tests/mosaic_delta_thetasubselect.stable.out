@@ -17,75 +17,15 @@ stdout of test 'mosaic_delta_thetasubselect` in directory 'monetdb5/modules/mal`
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25433/.s.monetdb.37405
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# Delta compression 
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,1);
-    bat.append(b,4);
-    bat.append(b,-1);
-    bat.append(b,-3);
-    bat.append(b,1000);
-    bat.append(b,1001);
-    bat.append(b,1004);
-    bat.append(b,999);
-    bat.append(b,977);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"delta");
-    s := algebra.thetasubselect(base,4,"<");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,4,"<");
-    io.print(xs);
-    s := algebra.thetasubselect(base,4,"<=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,4,"<=");
-    io.print(xs);
-    s := algebra.thetasubselect(base,4,">");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,4,">");
-    io.print(xs);
-    s := algebra.thetasubselect(base,4,">=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,4,">=");
-    io.print(xs);
-    s := algebra.thetasubselect(base,4,"==");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,4,"==");
-    io.print(xs);
-    s := algebra.thetasubselect(base,4,"!=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,4,"!=");
-    io.print(xs);
-    c := bat.new(:oid,:oid);
-    bat.append(c,0@0);
-    bat.append(c,2@0);
-    io.print(c);
-    s := algebra.thetasubselect(base,c,4,"<");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,4,"<");
-    io.print(xs);
-    s := algebra.thetasubselect(base,c,4,"<=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,4,"<=");
-    io.print(xs);
-    s := algebra.thetasubselect(base,c,4,">");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,4,">");
-    io.print(xs);
-    s := algebra.thetasubselect(base,c,4,">=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,4,">=");
-    io.print(xs);
-    s := algebra.thetasubselect(base,c,4,"==");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,4,"==");
-    io.print(xs);
-    s := algebra.thetasubselect(base,c,4,"!=");
-    io.print(s);
-    xs := mosaic.thetasubselect(x,c,4,"!=");
-    io.print(xs);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:35 >  
+# 15:01:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:35 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	int  # type

@@ -17,54 +17,15 @@ stdout of test 'mosaic_linear` in directory 'monetdb5/modules/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15971/.s.monetdb.32601
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# Range compressions 
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,2);
-    bat.append(b,4);
-    bat.append(b,6);
-    bat.append(b,8);
-    bat.append(b,10);
-    bat.append(b,1);
-    bat.append(b,4);
-    bat.append(b,7);
-    bat.append(b,10);
-    bat.append(b,13);
-    bat.append(b,16);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"linear");
-#mosaic.dump(x); 
-    z := mosaic.decompress(x);
-    io.print(z);
-    bs := bat.new(:oid,:timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:01:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:02:00.000":timestamp);
-    bs := bat.append(bs,bs);
-    io.print(bs);
-    xs := mosaic.compress(bs,"linear");
-#mosaic.dump(x); 
-    zs := mosaic.decompress(xs);
-    io.print(zs);
-    d := bat.new(:oid,:date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-15":date);
-    d := bat.append(d,d);
-    io.print(d);
-    xd := mosaic.compress(d,"linear");
-#mosaic.dump(xd); 
-    zd := mosaic.decompress(xd);
-    io.print(zd);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:28 >  
+# 15:01:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:28 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	int  # type

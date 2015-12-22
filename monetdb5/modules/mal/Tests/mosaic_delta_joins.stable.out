@@ -17,49 +17,15 @@ stdout of test 'mosaic_delta_joins` in directory 'monetdb5/modules/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26536/.s.monetdb.30180
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-# Delta compression 
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,1);
-    bat.append(b,4);
-    bat.append(b,-1);
-    bat.append(b,-3);
-    bat.append(b,1000);
-    bat.append(b,1001);
-    bat.append(b,1004);
-    bat.append(b,999);
-    bat.append(b,977);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"delta");
-    c := bat.new(:oid,:oid);
-    bat.append(c,0@0);
-    bat.append(c,2@0);
-    bat.append(c,5@0);
-    io.print(c);
-#mosaic.dump(x); 
-    s := algebra.projection(c,base);
-    io.print(s);
-    xs := mosaic.projection(c,x);
-    io.print(xs);
-    d := bat.new(:oid,:int);
-    bat.append(d,4);
-    bat.append(d,-1);
-    bat.append(d,nil:int);
-    (jl,jr) := algebra.join(base,d);
-    io.print(jl,jr);
-    (ml,mr) := mosaic.join(x,d);
-    io.print(ml,mr);
-    (kl,kr) := algebra.join(d,base);
-    io.print(kl);
-    io.print(kr);
-    io.print(kl,kr);
-    (nl,nr) := mosaic.join(d,x);
-    io.print(nl);
-    io.print(nr);
-    io.print(nl,nr);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:39 >  
+# 15:01:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:39 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	int  # type

@@ -23,6 +23,6 @@ d:= bat.append(d,d);
 
 io.print(d);
 xd:= mosaic.compress(d,"dictionary");
-#mosaic.dump(xd);
+mosaic.dump(xd);
 zd:= mosaic.decompress(xd);
 io.print(zd);

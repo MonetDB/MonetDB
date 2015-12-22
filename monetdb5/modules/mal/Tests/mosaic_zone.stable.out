@@ -17,46 +17,15 @@ stdout of test 'mosaic_zone` in directory 'monetdb5/modules/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18516/.s.monetdb.33832
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#zone compression 
-    b := bat.new(:oid,:int);
-    bat.append(b,50);
-    bat.append(b,19531015);
-    bat.append(b,9);
-    b := bat.append(b,b);
-    base := algebra.copy(b);
-    io.print(base);
-    x := mosaic.compress(b,"zone");
-    mosaic.dump(x);
-    z := mosaic.decompress(x);
-    io.print(z);
-    bs := bat.new(:oid,:timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:00:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:01:00.000":timestamp);
-    bat.append(bs,"2014-08-14 12:02:00.000":timestamp);
-    bs := bat.append(bs,bs);
-    io.print(bs);
-    xs := mosaic.compress(bs,"zone");
-#mosaic.dump(x); 
-    zs := mosaic.decompress(xs);
-    io.print(zs);
-    d := bat.new(:oid,:date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-14":date);
-    bat.append(d,"2014-08-15":date);
-    d := bat.append(d,d);
-    io.print(d);
-    xd := mosaic.compress(d,"zone");
-#mosaic.dump(xd); 
-    zd := mosaic.decompress(xd);
-    io.print(zd);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:27 >  
+# 15:01:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:27 >  
+
+#io.print(base);
 #--------------------------#
 # h	t  # name
 # void	int  # type

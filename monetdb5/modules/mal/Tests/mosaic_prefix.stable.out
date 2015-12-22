@@ -17,72 +17,15 @@ stdout of test 'mosaic_prefix` in directory 'monetdb5/modules/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6218/.s.monetdb.32744
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,50:int);
-    bat.append(b,51:int);
-    bat.append(b,51:int);
-    bat.append(b,51:int);
-    bat.append(b,51:int);
-    bat.append(b,51:int);
-    bat.append(b,51:int);
-    bat.append(b,60:int);
-    bat.append(b,67:int);
-    bat.append(b,67:int);
-    bat.append(b,67:int);
-    bat.append(b,67:int);
-    bat.append(b,67:int);
-    bat.append(b,67:int);
-    bat.append(b,67:int);
-    bat.append(b,255:int);
-    bat.append(b,256:int);
-    bat.append(b,256:int);
-    bat.append(b,256:int);
-    bat.append(b,256:int);
-    bat.append(b,256:int);
-    bat.append(b,255:int);
-    bat.append(b,255:int);
-    bat.append(b,255:int);
-    bat.append(b,255:int);
-    bat.append(b,255:int);
-    io.print(b);
-    x := mosaic.compress(b,"prefix");
-#mosaic.dump(x); 
-    z := mosaic.decompress(x);
-    io.print(z);
-    c := bat.new(:oid,:sht);
-    bat.append(c,50:sht);
-    bat.append(c,51:sht);
-    bat.append(c,51:sht);
-    bat.append(c,51:sht);
-    bat.append(c,51:sht);
-    bat.append(c,51:sht);
-    bat.append(c,51:sht);
-    bat.append(c,60:sht);
-    bat.append(c,67:sht);
-    bat.append(c,67:sht);
-    bat.append(c,67:sht);
-    bat.append(c,67:sht);
-    bat.append(c,67:sht);
-    bat.append(c,67:sht);
-    bat.append(c,67:sht);
-    bat.append(c,255:sht);
-    bat.append(c,256:sht);
-    bat.append(c,256:sht);
-    bat.append(c,256:sht);
-    bat.append(c,256:sht);
-    bat.append(c,256:sht);
-    bat.append(c,255:sht);
-    bat.append(c,255:sht);
-    bat.append(c,255:sht);
-    bat.append(c,255:sht);
-    bat.append(c,255:sht);
-    io.print(c);
-    xc := mosaic.compress(c,"prefix");
-#mosaic.dump(xc); 
-    zc := mosaic.decompress(xc);
-    io.print(zc);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:01:29 >  
+# 15:01:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15809" "--port=37660"
+# 15:01:29 >  
+
+#io.print(b);
 #--------------------------#
 # h	t  # name
 # void	int  # type
