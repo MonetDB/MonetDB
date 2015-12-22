@@ -76,14 +76,7 @@ gsl_bat_chisqprob_cst(bat * retval, bat chi2, dbl datapoints)
 		r = gsl_cdf_chisq_Q(d, datapoints);
 		BUNappend(bn, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b->hseqbase);
-	}
+	BATseqbase(bn, b->hseqbase);
 	*retval = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -122,14 +115,7 @@ gsl_cst_chisqprob_bat(bat * retval, dbl chi2, bat datapoints)
 		r = gsl_cdf_chisq_Q(chi2, datapoints);
 		BUNappend(bn, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b->hseqbase);
-	}
+	BATseqbase(bn, b->hseqbase);
 	BBPkeepref( *retval = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

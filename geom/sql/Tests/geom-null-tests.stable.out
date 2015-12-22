@@ -33,326 +33,326 @@ Ready.
 #INSERT INTO geom VALUES(3, NULL);
 [ 1	]
 #SELECT id, Area(g) FROM geom WHERE id < 3; 
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	area_g # name
 % int,	double # type
 % 1,	24 # length
 [ 1,	0	]
 [ 2,	0	]
 #SELECT id, Area(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	area_g # name
 % int,	double # type
 % 1,	24 # length
 [ 3,	NULL	]
 #SELECT id, Length(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	length_g # name
 % int,	double # type
 % 1,	24 # length
 [ 1,	0	]
 [ 2,	0	]
 #SELECT id, Length(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	length_g # name
 % int,	double # type
 % 1,	24 # length
 [ 3,	NULL	]
 #SELECT Distance(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % distance_g # name
 % double # type
 % 24 # length
 [ 1.414213562	]
 #SELECT Distance(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % distance_g # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT id, Buffer(g, 10) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	buffer_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 1,	"POLYGON ((11 1, 10.8078528 -0.9509032202, 10.23879533 -2.826834324, 9.314696123 -4.55570233, 8.071067812 -6.071067812, 6.55570233 -7.314696123, 4.826834324 -8.238795325, 2.95090322 -8.807852804, 1 -9, -0.9509032202 -8.807852804, -2.826834324 -8.238795325, -4.55570233 -7.314696123, -6.071067812 -6.071067812, -7.314696123 -4.55570233, -8.238795325 -2.826834324, -8.807852804 -0.9509032202, -9 1, -8.807852804 2.95090322, -8.238795325 4.826834324, -7.314696123 6.55570233, -6.071067812 8.071067812, -4.55570233 9.314696123, -2.826834324 10.23879533, -0.9509032202 10.8078528, 1 11, 2.95090322 10.8078528, 4.826834324 10.23879533, 6.55570233 9.314696123, 8.071067812 8.071067812, 9.314696123 6.55570233, 10.23879533 4.826834324, 10.8078528 2.95090322, 11 1))"	]
 [ 2,	"POLYGON ((12 2, 11.8078528 0.04909677984, 11.23879533 -1.826834324, 10.31469612 -3.55570233, 9.071067812 -5.071067812, 7.55570233 -6.314696123, 5.826834324 -7.238795325, 3.95090322 -7.807852804, 2 -8, 0.04909677984 -7.807852804, -1.826834324 -7.238795325, -3.55570233 -6.314696123, -5.071067812 -5.071067812, -6.314696123 -3.55570233, -7.238795325 -1.826834324, -7.807852804 0.04909677984, -8 2, -7.807852804 3.95090322, -7.238795325 5.826834324, -6.314696123 7.55570233, -5.071067812 9.071067812, -3.55570233 10.31469612, -1.826834324 11.23879533, 0.04909677984 11.8078528, 2 12, 3.95090322 11.8078528, 5.826834324 11.23879533, 7.55570233 10.31469612, 9.071067812 9.071067812, 10.31469612 7.55570233, 11.23879533 5.826834324, 11.8078528 3.95090322, 12 2))"	]
 #SELECT id, Buffer(g, 10) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	buffer_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 3,	NULL	]
 #SELECT id, ConvexHull(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	convexhull_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 1,	"POINT (1 1)"	]
 [ 2,	"POINT (2 2)"	]
 #SELECT id, ConvexHull(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	convexhull_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 3,	NULL	]
 #SELECT Intersection(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % intersection_g # name
 % geometry # type
 % 0 # length
 [ "GEOMETRYCOLLECTION EMPTY"	]
 #SELECT Intersection(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % intersection_g # name
 % geometry # type
 % 0 # length
 [ NULL	]
 #SELECT "Union"(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % Union_g # name
 % geometry # type
 % 0 # length
 [ "MULTIPOINT (1 1, 2 2)"	]
 #SELECT "Union"(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % Union_g # name
 % geometry # type
 % 0 # length
 [ NULL	]
 #SELECT Difference(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % difference_g # name
 % geometry # type
 % 0 # length
 [ "POINT (1 1)"	]
 #SELECT Difference(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % difference_g # name
 % geometry # type
 % 0 # length
 [ NULL	]
 #SELECT SymDifference(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % symdifference_g # name
 % geometry # type
 % 0 # length
 [ "MULTIPOINT (1 1, 2 2)"	]
 #SELECT SymDifference(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % symdifference_g # name
 % geometry # type
 % 0 # length
 [ NULL	]
-#SELECT id, Dimension(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+#SELECT id, CASE WHEN Dimension(g) IN (0,1,2) THEN 3 ELSE Dimension(g) END FROM geom WHERE id < 3;
+% sys.geom,	sys.L2 # table_name
 % id,	or_or_=_dimension_g # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	3	]
 [ 2,	3	]
 #SELECT id, Dimension(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	dimension_g # name
 % int,	int # type
 % 1,	1 # length
 [ 3,	NULL	]
 #SELECT id, GeometryTypeId(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	geometrytypeid_g # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	0	]
 [ 2,	0	]
 #SELECT id, GeometryTypeId(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	geometrytypeid_g # name
 % int,	int # type
 % 1,	1 # length
 [ 3,	NULL	]
 #SELECT id, SRID(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	srid_g # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	0	]
 [ 2,	0	]
 #SELECT id, SRID(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	srid_g # name
 % int,	int # type
 % 1,	1 # length
 [ 3,	NULL	]
 #SELECT id, Envelope(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	envelope_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 1,	"POINT (1 1)"	]
 [ 2,	"POINT (2 2)"	]
 #SELECT id, Envelope(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	envelope_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 3,	NULL	]
 #SELECT id, IsEmpty(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	isempty_g # name
 % int,	boolean # type
 % 1,	5 # length
 [ 1,	false	]
 [ 2,	false	]
 #SELECT id, IsEmpty(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	isempty_g # name
 % int,	boolean # type
 % 1,	5 # length
 [ 3,	NULL	]
 #SELECT id, IsSimple(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	issimple_g # name
 % int,	boolean # type
 % 1,	5 # length
 [ 1,	true	]
 [ 2,	true	]
 #SELECT id, IsSimple(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	issimple_g # name
 % int,	boolean # type
 % 1,	5 # length
 [ 3,	NULL	]
 #SELECT id, Boundary(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	boundary_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 1,	"GEOMETRYCOLLECTION EMPTY"	]
 [ 2,	"GEOMETRYCOLLECTION EMPTY"	]
 #SELECT id, Boundary(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	boundary_g # name
 % int,	geometry # type
 % 1,	0 # length
 [ 3,	NULL	]
 #SELECT Equals(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % equals_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT Equals(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % equals_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT Disjoint(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % disjoint_g # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT Disjoint(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % disjoint_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT "Intersect"(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % Intersect_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT "Intersect"(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % Intersect_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT Touches(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % touches_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT Touches(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % touches_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT Crosses(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % crosses_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT Crosses(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % crosses_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT Within(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % within_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT Within(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % within_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT Contains(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % contains_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT Contains(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % contains_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT Overlaps(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 1 AND g2.id = 2;
-% sys. # table_name
+% sys.L # table_name
 % overlaps_g # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT Overlaps(g1.g, g2.g) FROM geom g1, geom g2 WHERE g1.id = 2 AND g2.id = 3; -- null argument, throws exception
-% sys. # table_name
+% sys.L # table_name
 % overlaps_g # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT id, X(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	x_g # name
 % int,	double # type
 % 1,	24 # length
 [ 1,	1	]
 [ 2,	2	]
 #SELECT id, X(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	x_g # name
 % int,	double # type
 % 1,	24 # length
 [ 3,	NULL	]
 #SELECT id, Y(g) FROM geom WHERE id < 3;
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	y_g # name
 % int,	double # type
 % 1,	24 # length
 [ 1,	1	]
 [ 2,	2	]
 #SELECT id, Y(g) FROM geom WHERE id = 3; -- null argument, throws exception
-% sys.geom,	sys. # table_name
+% sys.geom,	sys.L # table_name
 % id,	y_g # name
 % int,	double # type
 % 1,	24 # length

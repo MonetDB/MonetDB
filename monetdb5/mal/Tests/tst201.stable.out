@@ -1,68 +1,35 @@
 stdout of test 'tst201` in directory 'monetdb5/mal` itself:
 
 
-function user.main():void;
-    v0 := calc.oid(20000000);
-    v1 := calc.setoid(v0);
-    v2 := bat.new(:oid,:str);
-    b := v2;
-    v3 := bat.append(b,"the");
-    v4 := bat.append(b,"quick");
-    v5 := bat.append(b,"brown");
-    v6 := bat.append(b,"fox");
-    v7 := bat.append(b,"jumps");
-    v8 := bat.append(b,"over");
-    v9 := bat.append(b,"lazy");
-    v10 := bat.append(b,"dog");
-    v11 := calc.str(nil);
-    v12 := bat.append(b,v11);
-    v13 := bat.append(b,".");
-    v15 := bat.append(b,"");
-    v16 := calc.str(nil);
-    v18 := bat.append(b,v16);
-    v19 := io.print(b);
-    v20 := algebra.find(b,"the");
-    v21 := io.print(v20);
-    v22 := algebra.find(b,"fox");
-    v23 := io.print(v22);
-    v24 := calc.str(nil);
-    v25 := algebra.find(b,v24);
-    v26 := io.print(v25);
-    v27 := algebra.find(b,"cat");
-    v28 := io.print(v27);
-catch MALException:str;
-    io.print(MALException);
-exit MALException:str;
-    o := algebra.find(b,"fox");
-    v29 := bat.delete(b,o);
-    o := algebra.find(b,"the");
-    v30 := bat.delete(b,o);
-    o := algebra.find(b,".");
-    v31 := bat.delete(b,o);
-    v32 := io.print(b);
-    v33 := bat.append(b,"fox");
-    v34 := bat.append(b,"the");
-    v35 := bat.append(b,".");
-    v36 := aggr.count(b);
-    v37 := io.print(v36);
-    v38 := algebra.slice(b,2@0,4@0);
-    v39 := io.print(v38);
-    v40 := calc.oid(nil);
-    v41 := algebra.slice(b,7@0,v40);
-    v42 := io.print(v41);
-    v43 := calc.oid(nil);
-    v44 := calc.oid(nil);
-    v45 := algebra.slice(b,v43,v44);
-    v46 := io.print(v45);
-    v75 := algebra.likesubselect(b,nil:BAT,"ox",nil:str,false,false);
-    v76 := io.print(v75);
-    v78 := algebra.likesubselect(b,nil:BAT,"fo",nil:str,false,false);
-    v79 := io.print(v78);
-    v81 := algebra.likesubselect(b,nil:BAT,"fox",nil:str,false,false);
-    v82 := io.print(v81);
-    v84 := algebra.likesubselect(b,nil:BAT," fox",nil:str,false,false);
-    v85 := io.print(v84);
-end user.main;
+# 15:04:20 >  
+# 15:04:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38657" "--set" "mapi_usock=/var/tmp/mtest-6764/.s.monetdb.38657" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 15:04:20 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:38657/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6764/.s.monetdb.38657
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:04:21 >  
+# 15:04:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:21 >  
+
+#	v19:= io.print(b);
 #--------------------------#
 # h		t	  # name
 # str		oid	  # type
@@ -83,26 +50,13 @@ end user.main;
 [ 3@0 ]
 [ 11@0 ]
 [ nil ]
+[ 15	]
 #--------------------------#
 # h	t  # name
-# oid	str  # type
-#--------------------------#
-[ 0@0,	""  ]
-[ 1@0,	"quick"  ]
-[ 2@0,	"brown"  ]
-[ 3@0,	nil  ]
-[ 4@0,	"jumps"  ]
-[ 5@0,	"over"  ]
-[ 6@0,	"lazy"  ]
-[ 7@0,	"dog"  ]
-[ 8@0,	nil  ]
-[ 12 ]
-#--------------------------#
-# t	h  # name
 # void	str  # type
 #--------------------------#
 [ 2@0,	"brown"  ]
-[ 3@0,	nil  ]
+[ 3@0,	"fox"	]
 [ 4@0,	"jumps"  ]
 #--------------------------#
 # t	h  # name
@@ -110,25 +64,31 @@ end user.main;
 #--------------------------#
 [ 7@0,	"dog"  ]
 [ 8@0,	nil  ]
-[ 9@0,	"fox"  ]
-[ 10@0,	"the"  ]
-[ 11@0,	"."  ]
+[ 9@0,	"."	]
+[ 10@0,	""	]
+[ 11@0,	nil	]
+[ 12@0,	"fox"	]
+[ 13@0,	"the"	]
+[ 14@0,	"."	]
 #--------------------------#
 # t	t  # name
 # void	str  # type
 #--------------------------#
-[ 0@0,	""  ]
+[ 0@0,	"the"	]
 [ 1@0,	  "quick"	  ]
 [ 2@0,	  "brown"	  ]
-[ 3@0,	nil  ]
+[ 3@0,	"fox"	]
 [ 4@0,	  "jumps"	  ]
 [ 5@0,	  "over"	  ]
 [ 6@0,	  "lazy"	  ]
 [ 7@0,	  "dog"		  ]
 [ 8@0,	  nil		  ]
-[ 9@0,	"fox"  ]
-[ 10@0,	"the"  ]
-[ 11@0,	"."  ]
+[ 9@0,	"."	]
+[ 10@0,	""	]
+[ 11@0,	nil	]
+[ 12@0,	"fox"	]
+[ 13@0,	"the"	]
+[ 14@0,	"."	]
 #--------------------------#
 # t	t  # name
 # void	str  # type
@@ -141,7 +101,8 @@ end user.main;
 # h	t		  # name
 # oid	str		  # type
 #--------------------------#
-[ 0@0,	9@0  ]
+[ 0@0,	3@0	]
+[ 1@0,	12@0	]
 #--------------------------#
 # h	t  # name
 # oid	str  # type

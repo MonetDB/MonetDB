@@ -5,32 +5,38 @@ stdout of test 'tst006` in directory 'monetdb5/mal` itself:
 # 07:58:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst006.mal </dev/null
 # 07:58:33 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#	r:=0;
-#barrier	l:= r < 1;
-#	print(l);
-#	print(r);
-#	r:= r+1;
-#	l:= false;
-#	redo l;
-#exit	l;
-#
-function user.main():void;
-    r := 0;
-barrier l := calc.<(r,1);
-    io.print(l);
-    io.print(r);
-    r := calc.+(r,1);
-    l := false;
-    redo l;
-exit l;
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37178/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6574/.s.monetdb.37178
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:37:23 >  
+# 10:37:23 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6574" "--port=37178"
+# 10:37:23 >  
+
+function user.foo():void;               	#[0]  0 
+    r:int := 0:int;                     	#[1]  1 <- 2 
+barrier l:bit := calc.<(r:int,1:int);   	#[2] CMDvarLT 3 <- 1 4 
+    io.print(l:bit);                    	#[3] IOprint_val 5 <- 3 
+    io.print(r:int);                    	#[4] IOprint_val 6 <- 1 
+    r:int := calc.+(r:int,1:int);       	#[5] CMDvarADDsignal 1 <- 1 4 
+    l:bit := false:bit;                 	#[6]  3 <- 7 
+    redo l:bit;                         	#[7]  3 
+exit l:bit;                             	#[8]  3 
+end user.foo;                           	#[9]  
 [ true ]
 [ 0 ]
 

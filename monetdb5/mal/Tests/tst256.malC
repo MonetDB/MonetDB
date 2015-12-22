@@ -1,0 +1,19 @@
+# The series tst2?? is a patched version of suite_00
+# The first and foremost BAT operations
+
+b:= bat.new(:int);
+err := bat.append(b,15);
+err := bat.append(b,4);
+err := bat.append(b,16);
+err := bat.append(b,25);
+err := bat.append(b,36);
+err := bat.append(b,49);
+err := bat.append(b,64);
+err := bat.append(b,81);
+io.print(b);
+mx:= aggr.max(b); 
+io.print(mx);
+mi:= aggr.min(b);
+io.print(mi);
+cr:= aggr.cardinality(b);
+io.print(cr);

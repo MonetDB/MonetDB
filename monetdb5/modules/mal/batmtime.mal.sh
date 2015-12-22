@@ -18,22 +18,22 @@ for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     func=${func#*:}
     for tp in date daytime timestamp; do
 	cat <<EOF
-pattern $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:bit]
+pattern $op(b1:bat[:$tp],b2:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2";
-pattern $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern $op(b1:bat[:$tp],b2:bat[:$tp],s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2 with candidates list";
-pattern $op(b:bat[:oid,:$tp],v:$tp) :bat[:oid,:bit]
+pattern $op(b:bat[:$tp],v:$tp) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V";
-pattern $op(b:bat[:oid,:$tp],v:$tp,s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
-pattern $op(v:$tp,b:bat[:oid,:$tp]) :bat[:oid,:bit]
+pattern $op(v:$tp,b:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
-pattern $op(v:$tp,b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
@@ -50,7 +50,7 @@ for tp in date:int timestamp:lng; do
     rtp=${tp#*:}
     tp=${tp%:*}
     cat <<EOF
-command diff(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:$rtp]
+command diff(b1:bat[:$tp],b2:bat[:$tp]) :bat[:$rtp]
 address MTIME${tp}_diff_bulk
 comment "Difference of two sets of $tp.";
 

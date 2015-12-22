@@ -3952,7 +3952,7 @@ def main(argv) :
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
             exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
-            exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
+            exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])

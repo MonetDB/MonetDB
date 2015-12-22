@@ -41,7 +41,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	lhs = &stk->stk[pci->argv[0]];
 	name = *getArgReference_str(stk, pci, 1);
-	if (isIdentifier(name) < 0)
+	if (name == NULL || isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", IDENTIFIER_EXPECTED);
 	i = BBPindex(name);
 	if (i == 0)

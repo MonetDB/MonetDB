@@ -1214,7 +1214,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BAT *bn;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	oid vwl = 0, vwh = 0;
-	int use_orderidx = 0 , use_imprints = 0;
+	int use_orderidx = 0;
 	union {
 		bte v_bte;
 		sht v_sht;
@@ -1389,7 +1389,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (s) {
 			return COLcopy(s, s->ttype, 0, TRANSIENT);
 		} else {
-			return BATmirror(BATmark(b, 0));
+			return BATdense(0, b->hseqbase, BATcount(b));
 		}
 	}
 
@@ -1821,6 +1821,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		bn = BAT_hashselect(b, s, bn, tl, maximum);
 	} else {
+		int use_imprints = 0;
 		if (!equi &&
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||

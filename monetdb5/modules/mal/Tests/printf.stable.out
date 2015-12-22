@@ -9,25 +9,24 @@ stdout of test 'printf` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-#some tests for the printf support 
-    i := 1;
-    in := nil:int;
-    io.printf("int %d %d\n",i,in);
-    io.printf("int %d %d %d %d\n",i,in,i,in);
-    f := 3.14;
-    if := nil:flt;
-    io.printf("float mix %f %d\n",f,if);
-    l := 1:lng;
-    il := nil:lng;
-    io.printf("long mix %d %d\n",l,il);
-    b := true;
-    ib := nil:bit;
-    io.printf("bit mix %d %d\n",b,ib);
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:30 >  
+# 09:46:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:30 >  
+
 int 1 nil
 int 1 nil 1 nil
 float mix 3.140000 nil

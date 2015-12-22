@@ -1,0 +1,26 @@
+# dealing with BAT references in functions
+
+function dir():void;
+	d:= bbp.getRefCount();
+	dl:=bbp.getLRefCount();
+	dn:= bbp.getNames();
+	ds:= algebra.subsort(dn,false,false);
+	io.print(ds,d,dl);
+end dir;
+
+
+function tmp1(b:bat[:any_2]):bat[:any_2];
+	tmp1:= algebra.copy(b);
+	io.print("inside tmp1");
+	i:= bbp.getLRefCount(b);
+	io.print(i);
+	return tmp1;
+end tmp1;
+
+b:= bat.new(:int);
+d:= user.tmp1(b);
+i:= bbp.getLRefCount(d);
+io.print(i);
+d:= user.tmp1(d);
+i:= bbp.getLRefCount(d);
+io.print(i);

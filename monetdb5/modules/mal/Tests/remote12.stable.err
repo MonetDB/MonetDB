@@ -23,7 +23,26 @@ stderr of test 'remote12` in directory 'monetdb5/modules/mal` itself:
 # cmdline opt 	mapi_port = 33456
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_modules_mal
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 09:46:27 >  
+# 09:46:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-26774/.s.monetdb.35410
+QUERY = #causing a segfault 
+        uri := sabaoth.getLocalConnectionURI();
+        conn:str := remote.connect(uri, "monetdb", "monetdb");
+        e := nil:bat[:oid,:int];
+        m:str := remote.put(conn, e);
+        io.print(m);
+        v:bat[:oid,:int] := remote.get(conn,m);
+        io.print(v);
+        mdb.var();
+ERROR = !MALException:remote.put:Object not found
 
 # 20:06:20 >  
 # 20:06:20 >  Done.

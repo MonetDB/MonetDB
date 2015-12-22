@@ -1,0 +1,107 @@
+	int_1M:= bat.new(:lng,1000000);
+	i:= 1000000:lng;
+
+INT_MAX := 2147483647;
+dbgmsk_restore := mdb.getDebug();
+dbgmsk_unset := 8+8388608;
+dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+mdb.setDebug(dbgmsk_set);
+
+barrier	sj_a:= true;
+	i:= i-1;
+	uj_a := i;
+	vj_a := calc.>=(uj_a,0);
+barrier	tj_a:= vj_a;
+	xj_a := bat.append(int_1M,i);
+redo	sj_a;
+exit	tj_a;
+exit	sj_a;
+
+mdb.setDebug(dbgmsk_restore);
+
+        t := alarm.time();
+        (vg_a,xg_b) := algebra.subjoin(int_1M,int_1M,nil:bat,nil:bat,false,nil:lng);
+        wg_a := aggr.count(vg_a);
+        xg_a := io.printf("#count %d = ",wg_a);
+        x:= alarm.time();
+        yg_a := calc.-(x,t);
+	   ah_a := io.printf("%d ms\n",yg_a);
+
+
+        t := alarm.time();
+        (vg_a,xg_b) := algebra.subjoin(int_1M,int_1M,nil:bat,nil:bat,false,nil:lng);
+        wg_a := aggr.count(vg_a);
+        xg_a := io.printf("#count %d = ",wg_a);
+        x:= alarm.time();
+        yg_a := calc.-(x,t);
+		ah_a := io.printf("%d ms\n",yg_a);
+
+        t := alarm.time();
+        (vg_a,xg_b) := algebra.subjoin(int_1M,int_1M,nil:bat,nil:bat,false,nil:lng);
+        wg_a := aggr.count(vg_a);
+        xg_a := io.printf("#count %d = ",wg_a);
+        x:= alarm.time();
+        yg_a := calc.-(x,t);
+        ah_a := io.printf("%d ms\n",yg_a);
+
+
+        t := alarm.time();
+        (vg_a,xg_b) := algebra.subjoin(int_1M,int_1M,nil:bat,nil:bat,false,nil:lng);
+        wg_a := aggr.count(vg_a);
+        xg_a := io.printf("#count %d = ",wg_a);
+        x:= alarm.time();
+        yg_a := calc.-(x,t);
+        ah_a := io.printf("%d ms\n",yg_a);
+
+	M2:= bat.new(:lng,1000000);
+	i:= 1000000:lng;
+
+mdb.setDebug(dbgmsk_set);
+
+barrier	sj_b:= true;
+	i:= i-1;
+	uj_b := i;
+	vj_b := calc.>=(uj_b,0);
+barrier	tj_b:= vj_b;
+	xj_b := bat.append(M2,i);
+redo	sj_b;
+exit	tj_b;
+exit	sj_b;
+
+mdb.setDebug(dbgmsk_restore);
+
+        t := alarm.time();
+        (vg_b,z) := algebra.subjoin(M2,M2,nil:bat,nil:bat,false,nil:lng);
+        wg_b := aggr.count(vg_b);
+        xxx := io.printf("#count %d = ",wg_b);
+        x:= alarm.time();
+        zzz := calc.-(x,t);
+       ah_b := io.printf("%d ms\n",zzz);
+
+
+        t := alarm.time();
+        (vg_b,z) := algebra.subjoin(M2,M2,nil:bat,nil:bat,false,nil:lng);
+        wg_b := aggr.count(vg_b);
+        xxx := io.printf("#count %d = ",wg_b);
+        x:= alarm.time();
+        zzz := calc.-(x,t);
+       ah_b := io.printf("%d ms\n",zzz);
+
+        t := alarm.time();
+        (vg_b,z) := algebra.subjoin(M2,M2,nil:bat,nil:bat,false,nil:lng);
+        wg_b := aggr.count(vg_b);
+        xxx := io.printf("#count %d = ",wg_b);
+        x:= alarm.time();
+        zzz := calc.-(x,t);
+       ah_b := io.printf("%d ms\n",zzz);
+
+
+        t := alarm.time();
+        (vg_b,z) := algebra.subjoin(M2,M2,nil:bat,nil:bat,false,nil:lng);
+        wg_b := aggr.count(vg_b);
+        xxx := io.printf("#count %d = ",wg_b);
+        x:= alarm.time();
+        zzz := calc.-(x,t);
+      ah_b := io.printf("%d ms\n",zzz);
+

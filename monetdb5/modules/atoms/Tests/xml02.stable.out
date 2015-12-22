@@ -26,25 +26,14 @@ stdout of test 'xml02` in directory 'monetdb5/modules/atoms` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5893/.s.monetdb.39685
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-function user.main():void;
-    b := bat.new(:oid,:str);
-    bat.append(b,"Mary Ann Walker");
-    bat.append(b,"Annie Chapman");
-    h := bat.new(:oid,:str);
-    bat.append(h,"brown");
-    bat.append(h,"curly dark brown");
-    io.print(b);
-    bc := batxml.attribute("name",b);
-    hc := batxml.attribute("hair",h);
-    bj := batxml.str(bc);
-    hj := batxml.str(hc);
-    io.print(bj);
-    io.print(hj);
-    aa := batxml.concat(bc,hc);
-    as := batxml.str(aa);
-    io.print(as);
-end user.main;
+Ready.
+
+# 10:05:32 >  
+# 10:05:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:32 >  
+
 #--------------------------#
 # h	t  # name
 # void	str  # type

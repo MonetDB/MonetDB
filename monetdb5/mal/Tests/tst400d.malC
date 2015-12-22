@@ -1,0 +1,20 @@
+# simple iterator loop test
+
+	b:= bat.new(:int);
+
+INT_MAX := 2147483647;
+dbgmsk_restore := mdb.getDebug();
+dbgmsk_unset := 8+8388608;
+dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+mdb.setDebug(dbgmsk_set);
+
+barrier i:= 0:lng;
+	z:= bat.append(b,1);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit	i;
+
+mdb.setDebug(dbgmsk_restore);
+
+	c:= aggr.count(b);
+	io.print(c);

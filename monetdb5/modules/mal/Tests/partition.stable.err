@@ -64,11 +64,45 @@ stderr of test 'partition` in directory 'monetdb5/modules/mal` itself:
 # cmdline opt 	mapi_port = 34622
 # cmdline opt 	xrpc_port = 40864
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_modules_mal
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/monet5//Linux/etc/monetdb5.conf)
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 16:35:42 >  
-# 16:35:42 >  Done.
-# 16:35:42 >  
+# 09:46:29 >  
+# 09:46:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:29 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = function tst();
+        b:= bat.new(:int);
+        bat.append(b,1);
+        bat.append(b,2);
+        bat.append(b,3);
+        bat.append(b,4);
+        bat.append(b,5);
+        
+        c:= bat.partition(b,2,0);
+        io.print(c);
+        d:= bat.partition(b,2,1);
+        io.print(d);
+        
+        (b1,b2):= bat.partition(b);
+        io.print(b1);
+        io.print(b2);
+        b3:= bat.partition(b);
+        io.print(b3);
+        
+        # an error should be produced
+        e:= bat.partition(b,2,-1);
+        io.print(e);
+        end tst;
+        mdb.List("user","tst");
+        tst();
+ERROR = !MALException:bat.partition:Illegal argument Illegal piece index
+
+# 09:46:29 >  
+# 09:46:29 >  "Done."
+# 09:46:29 >  
 

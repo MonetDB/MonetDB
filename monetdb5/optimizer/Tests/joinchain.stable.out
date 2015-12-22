@@ -17,6 +17,15 @@ stdout of test 'joinchain` in directory 'monetdb5/optimizer` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29121/.s.monetdb.34830
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 06:41:03 >  
+# 06:41:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
+# 06:41:03 >  
+
+#mdb.list("user","qry");
 function user.qry():void;
     empty := bat.new(:oid,:oid);
     a := bat.new(:oid,:oid);
@@ -55,7 +64,7 @@ function user.qry():void;
     bat.append(k,8);
     bat.append(k,9);
     e := algebra.projection(a,b);
-    f := algebra.projection(e,c);
+    f:bat[:oid] := algebra.projectionPath(a,b,c);
     g := algebra.projection(f,d);
     l := algebra.projection(f,k);
     io.print(g);
@@ -72,10 +81,7 @@ function user.qry():void;
     w := algebra.projectionPath(c,empty,d);
     io.print(w);
 end user.qry;
-function user.main():void;
-    mdb.list("user","qry");
-    user.qry();
-end user.main;
+#mdb.list("user","qry");
 function user.qry():void;
     empty := bat.new(:oid,:oid);
     a := bat.new(:oid,:oid);
@@ -114,7 +120,7 @@ function user.qry():void;
     bat.append(k,8);
     bat.append(k,9);
     e := algebra.projection(a,b);
-    f:bat[:oid,:oid] := algebra.projectionPath(a,b,c);
+    f:bat[:oid] := algebra.projectionPath(a,b,c);
     g := algebra.projection(f,d);
     l := algebra.projection(f,k);
     io.print(g);
@@ -167,7 +173,7 @@ end user.qry;
 #--------------------------#
 [ 0@0,	"The"  ]
 [ 1@0,	"jumps"  ]
-[ "empty sequences" ]
+[ "empty sequences"	]
 #--------------------------#
 # h	t  # name
 # void	str  # type

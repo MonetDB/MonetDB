@@ -6,37 +6,22 @@ stdout of test 'tst1002` in directory 'monetdb5/mal` itself:
 # 07:58:52 >  
 
 
+Ready.
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
-# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## the first of a series of BBP test cases
-## the temporary bat produced in tst1000 should not exist anymore
-#
-#bbp.open();
-#c:= bbp.take("myfirstbat");
-#print(c);
-#bbp.close();
-#catch MALException;
-#	print(MALException);
-#exit MALException;
-#
-function user.main():void;
-# the first of a series of BBP test cases 
-# the temporary bat produced in tst1000 should not exist anymore 
-    c:bat[:oid,:int]  := bbp.bind("myfirstbat");
-    io.print(c);
-catch MALException:str;
-    io.printf("%s\n",MALException);
-exit MALException:str;
-end user.main;
+# 15:35:45 >  
+# 15:35:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
+# 15:35:45 >  
+
+function user.foo():void;               	#[0]  0 
+    c:bat[:int] := bbp.bind("myfirstbat":str);	#[1] CMDbbpbind 1 <- 2 
+    io.print(c:bat[:int]);              	#[2] IOprint_val 3 <- 1 
+catch MALException:str;                 	#[3]  4 
+    io.printf("%s\n":str,MALException:str);	#[4] IOprintf 5 <- 6 4 
+exit MALException:str;                  	#[5]  4 
+end user.foo;                           	#[6]  
 MALException:bbp.bind:Object not found
 
-# 07:58:52 >  
-# 07:58:52 >  Done.
-# 07:58:52 >  
+# 15:35:45 >  
+# 15:35:45 >  "Done."
+# 15:35:45 >  
 

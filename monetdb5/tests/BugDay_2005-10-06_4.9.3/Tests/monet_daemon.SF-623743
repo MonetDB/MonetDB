@@ -1,7 +1,0 @@
-#!/bin/sh
-
-NAME="$1"
-
-Mlog   "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB --set monet_daemon=yes"
-eval   "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB --set monet_daemon=yes"
-

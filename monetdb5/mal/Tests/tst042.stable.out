@@ -5,67 +5,38 @@ stdout of test 'tst042` in directory 'monetdb5/mal` itself:
 # 07:58:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst042.mal </dev/null
 # 07:58:44 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#s := "hello";
-#i := 1;
-#f := 3.14;
-#c := 'a';
-#b:= true;
-#bb:= new(:void,:str);
-#
-#st:= getType(s); printf("string %d\n",st);
-#it:= getType(i); printf("int %d\n",it);
-#ft:= getType(f); printf("flt %d\n",ft);
-#ct:= getType(c); printf("chr %d\n",ct);
-#bt:= getType(b); printf("bit %d\n",bt);
-#bbt:= getType(bb); printf("bat %d\n",bbt);
-#
-## get them as strings
-#v:= "";
-#v:= getTypeName(st); printf("string %s\n",v);
-#v:= getTypeName(it); printf("int %s\n",v);
-#v:= getTypeName(ft); printf("flt %s\n",v);
-#v:= getTypeName(ct); printf("chr %s\n",v);
-#v:= getTypeName(bt); printf("bit %s\n",v);
-#v:= getTypeName(bbt); printf("bat %s\n",v);
-#
-#
-function user.main():void;
-    s := "hello";
-    i := 1;
-    f := 3.14;
-    b := true;
-    w := 1:wrd;
-    B := 2:bte;
-    bb := bat.new(:oid,:str);
-    st := inspect.getType(s);
-    io.printf("%s\n",st);
-    it := inspect.getType(i);
-    io.printf("%s\n",it);
-    ft := inspect.getType(f);
-    io.printf("%s\n",ft);
-    bt := inspect.getType(b);
-    io.printf("%s\n",bt);
-    wt := inspect.getType(w);
-    io.printf("%s\n",wt);
-    Bt := inspect.getType(B);
-    io.printf("%s\n",Bt);
-    tt := inspect.getType(bb);
-    io.printf("bat  head %s\n",tt);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:34313/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19070/.s.monetdb.34313
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:35:43 >  
+# 12:35:43 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19070" "--port=34313"
+# 12:35:43 >  
+
+#st:= inspect.getType(s); io.printf("%s\n",st);
 str
 int
 flt
 bit
 wrd
 bte
-bat  head bat[:oid,:str]
+bat  head bat[:str]
 
 # 07:58:44 >  
 # 07:58:44 >  Done.

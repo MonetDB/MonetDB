@@ -5,68 +5,63 @@ stdout of test 'tst870` in directory 'monetdb5/mal` itself:
 # 08:11:08 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=37241 --set monet_prompt= --trace --dbname=mTests_src_mal  tst870.mal < /dev/null
 # 08:11:08 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-##testing the multiplex operations on simple groups
-#
-#b := bat.new(:oid,:oid);
-#bat.insert(b,0@0, 0@0);
-#bat.insert(b,1@0, 1@0);
-#bat.insert(b,1@0, 2@0);
-#bat.insert(b,1@0, 3@0);
-#bat.insert(b,2@0, 2@0);
-#bat.insert(b,2@0, 0@0);
-#bat.insert(b,2@0, 3@0);
-#bat.insert(b,3@0, nil:oid);
-#bat.insert(b,3@0, 1@0);
-#
-#io.print(b);
-#
-#g:= group.min(b);
-#io.print(g);
-#
-#h:= group.max(b);
-#io.print(h);
-#
-function user.main():void;
-#testing the multiplex operations on simple groups 
-    b := bat.new(:oid,:oid);
-    bat.append(b,0@0);
-    bat.append(b,1@0);
-    bat.append(b,2@0);
-    bat.append(b,3@0);
-    bat.append(b,2@0);
-    bat.append(b,0@0);
-    bat.append(b,3@0);
-    bat.append(b,nil:oid);
-    bat.append(b,1@0);
-    g := bat.new(:oid,:oid);
-    bat.append(g,0@0);
-    bat.append(g,1@0);
-    bat.append(g,1@0);
-    bat.append(g,1@0);
-    bat.append(g,2@0);
-    bat.append(g,2@0);
-    bat.append(g,2@0);
-    bat.append(g,3@0);
-    bat.append(g,3@0);
-    io.print(g,b);
-# only head is used 
-    e := bat.new(:oid,:oid);
-    bat.append(e,0@0);
-    bat.append(e,1@0);
-    bat.append(e,2@0);
-    bat.append(e,3@0);
-    i := aggr.min(b,g,e);
-    io.print(i);
-    h := aggr.max(b,g,e);
-    io.print(h);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:36:18 >  
+# 12:36:18 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
+# 12:36:18 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:oid] := bat.new(:oid);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:oid],0@0:oid);    	#[2] BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:oid],1@0:oid);    	#[3] BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:oid],2@0:oid);    	#[4] BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:oid],3@0:oid);    	#[5] BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:oid],2@0:oid);    	#[6] BKCappend_val_wrap 11 <- 1 8 
+    bat.append(b:bat[:oid],0@0:oid);    	#[7] BKCappend_val_wrap 12 <- 1 4 
+    bat.append(b:bat[:oid],3@0:oid);    	#[8] BKCappend_val_wrap 13 <- 1 10 
+    bat.append(b:bat[:oid],nil:oid);    	#[9] BKCappend_val_wrap 14 <- 1 15 
+    bat.append(b:bat[:oid],1@0:oid);    	#[10] BKCappend_val_wrap 16 <- 1 6 
+    g:bat[:oid] := bat.new(:oid);       	#[11] CMDBATnewColumn 17 <- 2 
+    bat.append(g:bat[:oid],0@0:oid);    	#[12] BKCappend_val_wrap 18 <- 17 4 
+    bat.append(g:bat[:oid],1@0:oid);    	#[13] BKCappend_val_wrap 19 <- 17 6 
+    bat.append(g:bat[:oid],1@0:oid);    	#[14] BKCappend_val_wrap 20 <- 17 6 
+    bat.append(g:bat[:oid],1@0:oid);    	#[15] BKCappend_val_wrap 21 <- 17 6 
+    bat.append(g:bat[:oid],2@0:oid);    	#[16] BKCappend_val_wrap 22 <- 17 8 
+    bat.append(g:bat[:oid],2@0:oid);    	#[17] BKCappend_val_wrap 23 <- 17 8 
+    bat.append(g:bat[:oid],2@0:oid);    	#[18] BKCappend_val_wrap 24 <- 17 8 
+    bat.append(g:bat[:oid],3@0:oid);    	#[19] BKCappend_val_wrap 25 <- 17 10 
+    bat.append(g:bat[:oid],3@0:oid);    	#[20] BKCappend_val_wrap 26 <- 17 10 
+    io.print(g:bat[:oid],b:bat[:oid]);  	#[21] IOtable 27 <- 17 1 
+# only head is used                     
+    e:bat[:oid] := bat.new(:oid);       	#[23] CMDBATnewColumn 29 <- 2 
+    bat.append(e:bat[:oid],0@0:oid);    	#[24] BKCappend_val_wrap 30 <- 29 4 
+    bat.append(e:bat[:oid],1@0:oid);    	#[25] BKCappend_val_wrap 31 <- 29 6 
+    bat.append(e:bat[:oid],2@0:oid);    	#[26] BKCappend_val_wrap 32 <- 29 8 
+    bat.append(e:bat[:oid],3@0:oid);    	#[27] BKCappend_val_wrap 33 <- 29 10 
+    i:bat[:oid] := aggr.min(b:bat[:oid],g:bat[:oid],e:bat[:oid]);	#[28] AGGRmin3 34 <- 1 17 29 
+    io.print(i:bat[:oid]);              	#[29] IOprint_val 35 <- 34 
+    h:bat[:oid] := aggr.max(b:bat[:oid],g:bat[:oid],e:bat[:oid]);	#[30] AGGRmax3 36 <- 1 17 29 
+    io.print(h:bat[:oid]);              	#[31] IOprint_val 37 <- 36 
+end user.foo;                           	#[32]  
 #--------------------------#
 # h	t		t			  # name
 # void	oid	oid	  # type

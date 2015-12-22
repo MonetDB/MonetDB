@@ -1,0 +1,22 @@
+# BAT references are seens as BAT's and should be subject to the
+# same reference scheme.
+
+function dir():void;
+	d:= bbp.getRefCount();
+	dl:=bbp.getLRefCount();
+	dn:= bbp.getNames();
+	ds:= algebra.subsort(dn,false,false);
+	io.print(ds,d,dl);
+end dir;
+
+function createBAT(name:str):bat[:int];
+    res:= bat.new(:int);
+    bat.setName(res,name);
+	z:= bbp.getLRefCount(res);
+	io.print(z);
+    return res;
+end createBAT;
+
+d:= user.createBAT("one");
+i:= bbp.getLRefCount(d);
+io.print(i); # bat d should have 1 lref

@@ -1,1 +1,88 @@
 stderr of test 'tst010` in directory 'monetdb5/mal` itself:
+
+
+# 10:57:16 >  
+# 10:57:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35088" "--set" "mapi_usock=/var/tmp/mtest-8357/.s.monetdb.35088" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 10:57:16 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35088
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8357/.s.monetdb.35088
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:19:59 >  
+# 13:19:59 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:19:59 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # syntax analysis test for guarded blocks, redo's and leave's
+        # forcefully end the block, because the parser counts barrier/exit pairs
+        # function foo();
+        barrier	L:= 1;
+        	#do it
+        	leave Z;	# not known in block
+        	redo L;
+        exit 	L;
+        	redo L;		# outside block
+        	leave X;	# outside block
+        	redo A;		# outside block
+        barrier X:=1;
+        	leave L;	# outside block
+        	leave X;
+        	redo L;		# outside block
+        exit	X;
+        barrier A:=1;
+        	barrier B:= 1;
+        		redo A;
+        	exit	B;
+        	barrier C:=1;
+        		leave A;
+        	exit 	C;
+        
+        	exit	B;	# out of order
+        	exit	F;	# unknown
+        
+        	barrier D:=1;
+        		leave D;
+        		redo  D;  # dead code
+        	exit	D;
+        	barrier D:=2;		# duplicate block
+        	exit	D;
+        exit	A;
+        barrier  unfinished:= 1;
+        	f:=1;
+        end;
+        end foo;
+ERROR = !SyntaxException:user.main[6]:label 'Z' not in guarded block
+        !SyntaxException:user.main[10]:label 'L' not in guarded block
+        !SyntaxException:user.main[12]:label 'X' not in guarded block
+        !SyntaxException:user.main[14]:label 'A' not in guarded block
+        !SyntaxException:user.main[17]:label 'L' not in guarded block
+        !SyntaxException:user.main[20]:label 'L' not in guarded block
+        !SyntaxException:user.main[30]:exit-label 'B' doesnot match 'A'
+        !SyntaxException:user.main[32]:exit-label 'F' without begin-label
+        !SyntaxException:user.main[42]:exit-label 'A' without begin-label
+        !SyntaxException:user.main[45]:barrier 'unfinished' without exit in main[46]
+        !SyntaxException:parseError:end foo;
+        !SyntaxException:parseError:   ^non matching end label
+
+# 10:57:17 >  
+# 10:57:17 >  "Done."
+# 10:57:17 >  
+

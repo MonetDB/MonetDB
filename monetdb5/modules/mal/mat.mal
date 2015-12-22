@@ -6,70 +6,23 @@
 
 module mat;
 
-pattern new(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
+pattern new(b:bat[:any_2]...):bat[:any_2]
 address MATpack
-comment "Define a Merge Association Table (MAT). Faal back to the pack operation
+comment "Define a Merge Association Table (MAT). Fall back to the pack operation
 when this is called ";
 
-pattern pack(:any_2...):bat[:oid,:any_2]
+pattern pack(:any_2...):bat[:any_2]
 address MATpackValues
 comment "Materialize the MAT (of values) into a BAT";
 
-pattern pack(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
+pattern pack(b:bat[:any_2]...):bat[:any_2]
 address MATpack
 comment "Materialize the MAT into a BAT";
 
-pattern mergepack(b:bat[:oid,:oid]...):bat[:oid,:oid]
-address MATmergepack
-comment "Merge multiple candidate lists ";
-
-pattern pack2(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATpack2
-comment "Materialize the MAT into a BAT (by an append all)";
-
-pattern packIncrement(b:bat[:oid,:any_2],pieces:int):bat[:oid,:any_2]
+pattern packIncrement(b:bat[:any_2],pieces:int):bat[:any_2]
 address MATpackIncrement
 comment "Prepare incremental mat pack";
 
-pattern packIncrement(b:bat[:oid,:any_2],c:bat[:oid,:any_2]):bat[:oid,:any_2]
+pattern packIncrement(b:bat[:any_2],c:bat[:any_2]):bat[:any_2]
 address MATpackIncrement
 comment "Prepare incremental mat pack";
-
-pattern slice(first:wrd, last:wrd, b:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATpackSlice
-comment "Materialize a sliced MAT into a BAT";
-
-pattern slice(first:int, last:int, b:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATpackSlice
-comment "Materialize a sliced MAT into a BAT";
-
-pattern slice(first:lng, last:lng, b:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATpackSlice
-comment "Materialize a sliced MAT into a BAT";
-
-pattern project(map:bat[:oid,:bte], b:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATproject
-comment "project using the map bat (contains which bat to use in scan order)";
-
-pattern sort(b:bat[:oid,:any_2]...)
-	(sorted:bat[:oid,:any_2], map:bat[:oid,:bte]) 
-address MATsort
-comment "Returns a BAT copy sorted on the tail column.";
-
-pattern sortReverse(b:bat[:oid,:any_2]...)
-	(sorted:bat[:oid,:any_2], map:bat[:oid,:bte]) 
-address MATsortReverse
-comment "Returns a BAT copy sorted on the tail column.";
-
-pattern newIterator(grp:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MATnewIterator
-comment "Create an iterator over a MAT";
-
-pattern hasMoreElements(grp:bat[:oid,:any_2]...):bat[:oid,:any_2]
-address MAThasMoreElements
-comment "Find the next element in the merge table";
-
-command info(g:str, e:str):bat[:oid,:any_2]
-address MATinfo
-comment "retrieve the definition from the partition catalogue";
-

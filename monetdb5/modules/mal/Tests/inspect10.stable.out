@@ -1,30 +1,34 @@
 stdout of test 'inspect10` in directory 'monetdb5/modules/mal` itself:
 
 
-# 00:03:56 >  
-# 00:03:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect10.mal </dev/null
-# 00:03:56 >  
+# 09:46:13 >  
+# 09:46:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35410" "--set" "mapi_usock=/var/tmp/mtest-26774/.s.monetdb.35410" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 09:46:13 >  
 
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_modules_mal', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.dummy(i:int):void;
-    io.print(i);
-    b := mdb.getDefinition();
-    io.print(b);
-    mdb.list();
-end user.dummy;
-function user.main():void;
-#self inspection of the code base 
-    user.dummy(1);
-    io.printf("get function properties\n");
-    l := inspect.getSignature("user","dummy");
-    io.print(l);
-    mdb.list("user","dummy");
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:13 >  
+# 09:46:13 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:13 >  
+
 [ 1 ]
 #-------------------------------------------------#
 # view	fcn					  # name

@@ -21,22 +21,14 @@ stdout of test 'inlineCst` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(b:int):int;
-    i := 213;
-    return foo := i;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    bat.append(b,10);
-    bat.append(b,20);
-    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);
-    io.print(r);
-end user.qry;
-function user.main():void;
-    user.qry();
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:00 >  
+# 10:05:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-7509" "--port=36310"
+# 10:05:00 >  
+
 #--------------------------#
 # h	t	  # name
 # void	int	  # type
@@ -45,13 +37,13 @@ end user.main;
 [ 1@0,	  213	  ]
 [ 2@0,	  213	  ]
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    bat.append(b:bat[:oid,:int],10:int);	#[3] BKCappend_val_wrap 6 <- 1 7 
-    bat.append(b:bat[:oid,:int],20:int);	#[4] BKCappend_val_wrap 8 <- 1 9 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
+    bat.append(b:bat[:int],10:int);     	#[3] BKCappend_val_wrap 6 <- 1 7 
+    bat.append(b:bat[:int],20:int);     	#[4] BKCappend_val_wrap 8 <- 1 9 
     X_16:int := 213:int;                	#[5]  16 <- 17 
-    r:bat[:oid,:int] := algebra.project(b:bat[:oid,:int],X_16:int);	#[6] ALGprojecttail 10 <- 1 16 
-    io.print(r:bat[:oid,:int]);         	#[7] IOprint_val 13 <- 10 
+    r:bat[:int] := algebra.project(b:bat[:int],X_16:int);	#[6] ALGprojecttail 10 <- 1 16 
+    io.print(r:bat[:int]);              	#[7] IOprint_val 13 <- 10 
 end user.qry;                           	#[8]  
 
 # 20:07:33 >  

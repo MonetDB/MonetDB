@@ -64,9 +64,25 @@ stderr of test 'tst036` in directory 'monetdb5/mal` itself:
 # cmdline opt 	xrpc_port = 45263
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_src_mal
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/Jun2010//Linux/etc/monetdb5.conf)
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:38:05 >  
+# 11:38:05 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13830" "--port=32718"
+# 11:38:05 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # test for proper use of list assignments
+        (z0,z1):= (1,"help");
+        io.print(z0);
+        io.print(z1);
+        # all three are wrong
+         l1:= (1,2);
+        (l2,l3):= 3;
+        (l4,l5) := (4,5,6);
+ERROR = !TypeException:user.main[6]:Multiple assignment mismatch
 
 # 17:28:20 >  
 # 17:28:20 >  Done.

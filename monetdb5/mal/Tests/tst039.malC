@@ -1,0 +1,11 @@
+# complex analysis
+
+function sample(nme:str, val:any_1):bit;
+   c := 2*3;
+   b:bat[:int] := bbp.bind(nme);  #find a BAT
+   h := algebra.select(b,val,val);
+   t := aggr.count(h);
+   x := io.print(t);
+   y := io.print(val);
+   return sample:=true;
+end sample;

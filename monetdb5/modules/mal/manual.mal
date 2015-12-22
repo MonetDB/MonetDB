@@ -13,6 +13,6 @@ comment "Produces a list of all <module>.<function> that match
 and <function>. Using the '(' asks for signature information and
 using ')' asks for the complete help record.";
 
-pattern functions() (sig:bat[:oid,:str], adr:bat[:oid,:str], com:bat[:oid,:str])
+pattern functions() (sig:bat[:str], adr:bat[:str], com:bat[:str])
 address MANUALcreateOverview
 comment "Produces a table with all MAL functions known";

@@ -19,7 +19,7 @@ stdout of test 'orderidx00` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/SQL module loaded
 function user.main():void;
 # create sorted oid arrangement  
-    bv := bat.new(:oid,:int);
+    bv := bat.new(:int);
     bat.append(bv,959217167);
     bat.append(bv,1920220901);
     bat.append(bv,1303856962);

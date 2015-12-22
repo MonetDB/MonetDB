@@ -14,7 +14,6 @@
 #include "mal.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#include "mal_atom.h"		/* for showAtoms() */
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
@@ -381,7 +380,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int m = 1;
 	char *b, *c, lastcmd = 0;
 	stream *out = cntxt->fdout;
-	/* int listing = cntxt->listing;*/
 	char *oldprompt = cntxt->prompt;
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
@@ -442,10 +440,6 @@ retryRead:
 		switch (*b) {
 		case 0:
 			m = 0;
-			break;
-		case 'a':
-			if (strncmp("atom", b, 1) == 0)
-				showAtoms(out);
 			break;
 		case 'c':
 			if (strncmp("catch", b, 3) == 0) {
@@ -1211,7 +1205,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 			if (bs[1] == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				bs[0] = BATmark(bs[1],0);
+				bs[0] = BATdense(bs[1]->hseqbase, 0, BATcount(bs[1]));
 				if( bs[0] == NULL){
 					mnstr_printf(f, "Failed to take chunk index\n");
 				} else {

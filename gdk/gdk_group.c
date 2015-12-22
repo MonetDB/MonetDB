@@ -42,7 +42,7 @@
  * sorted), we produce a single group or copy the input group.
  *
  * If the input bats b and g are sorted, or if the subsorted flag is
- * set (only used by BATsubsort), we only need to compare consecutive
+ * set (only used by BATsort), we only need to compare consecutive
  * values.
  *
  * If the input bat b is sorted, but g is not, we can compare
@@ -854,7 +854,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
-		 * BATassertHeadProps and BATderiveHeadProps for
+		 * BATassertTailProps and BATderiveTailProps for
 		 * similar code;
 		 * we also exploit if g is clustered */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","

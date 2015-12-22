@@ -21,37 +21,27 @@ stdout of test 'inline06` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:int):int;
-    c := calc.+(a,b);
-    base := mmath.rand();
-# this has a memory-side effect 
-    c := calc.*(c,base);
-    return foo := c;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-# the crucial part is to recognize valid inlines 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:12:44 >  
+# 10:12:44 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-10076" "--port=33029"
+# 10:12:44 >  
+
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_14:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	#[3] CMDbatADDsignal 14 <- 1 1 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
+    X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] CMDbatADDsignal 14 <- 1 1 
     X_15:int := mmath.rand();           	#[4] MATHrandint 15 
 #                                       
-    X_14:bat[:oid,:int] := batcalc.*(X_14:bat[:oid,:int],X_15:int);	#[6] CMDbatMULsignal 14 <- 14 15 
-    z:bat[:oid,:int] := X_14:bat[:oid,:int];	#[7]  6 <- 14 
-    X_20:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	#[8] CMDbatADDsignal 20 <- 1 10 
+    X_14:bat[:int] := batcalc.*(X_14:bat[:int],X_15:int);	#[6] CMDbatMULsignal 14 <- 14 15 
+    z:bat[:int] := X_14:bat[:int];      	#[7]  6 <- 14 
+    X_20:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] CMDbatADDsignal 20 <- 1 10 
     X_21:int := mmath.rand();           	#[9] MATHrandint 21 
 #                                       
-    X_20:bat[:oid,:int] := batcalc.*(X_20:bat[:oid,:int],X_21:int);	#[11] CMDbatMULsignal 20 <- 20 21 
-    z:bat[:oid,:int] := X_20:bat[:oid,:int];	#[12]  6 <- 20 
+    X_20:bat[:int] := batcalc.*(X_20:bat[:int],X_21:int);	#[11] CMDbatMULsignal 20 <- 20 21 
+    z:bat[:int] := X_20:bat[:int];      	#[12]  6 <- 20 
 end user.qry;                           	#[13]  
 
 # 18:00:44 >  

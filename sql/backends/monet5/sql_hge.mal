@@ -9,19 +9,19 @@ module sql;
 
 
 pattern calc.hash( v:hge ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:hge] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:hge] ) :bat[:wrd] address MKEYbathash;
 
 command sql.dec_round( v:hge, r:hge ) :hge 
 address hge_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:oid,:hge], r:hge ) :bat[:oid,:hge] 
+command batsql.dec_round( v:bat[:hge], r:hge ) :bat[:hge] 
 address hge_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:hge, d:int, s:int, r:bte) :hge
 address hge_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:oid,:hge], d:int, s:int, r:bte) :bat[:oid,:hge]
+command batsql.round( v:bat[:hge], d:int, s:int, r:bte) :bat[:hge]
 address hge_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -36,10 +36,10 @@ comment "cast to hge and check for overflow";
 command calc.hge( v:void, digits:int, scale:int ) :hge 
 address nil_2dec_hge
 comment "cast to dec(hge) and check for overflow";
-command batcalc.hge( v:bat[:oid,:void], digits:int ) :bat[:oid,:hge] 
+command batcalc.hge( v:bat[:void], digits:int ) :bat[:hge] 
 address batnil_2num_hge
 comment "cast to hge and check for overflow";
-command batcalc.hge( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:hge] 
+command batcalc.hge( v:bat[:void], digits:int, scale:int ) :bat[:hge] 
 address batnil_2dec_hge
 comment "cast to dec(hge) and check for overflow";
 
@@ -49,10 +49,10 @@ comment "cast to hge and check for overflow";
 command calc.hge( v:str, digits:int, scale:int ) :hge 
 address str_2dec_hge
 comment "cast to dec(hge) and check for overflow";
-command batcalc.hge( v:bat[:oid,:str], digits:int ) :bat[:oid,:hge] 
+command batcalc.hge( v:bat[:str], digits:int ) :bat[:hge] 
 address batstr_2num_hge
 comment "cast to hge and check for overflow";
-command batcalc.hge( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:hge] 
+command batcalc.hge( v:bat[:str], digits:int, scale:int ) :bat[:hge] 
 address batstr_2dec_hge
 comment "cast to dec(hge) and check for overflow";
 

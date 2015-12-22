@@ -18,34 +18,16 @@ stdout of test 'json11` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#validity tests 
-    b := json.new("{}");
-    f := json.text(b,",");
-    io.print(f);
-    b := json.new("{\"f1\":1}");
-    f := json.text(b,",");
-    io.print(f);
-    b := json.new("{\"f1\":true, \"f2\":2}");
-    f := json.text(b,",");
-    io.print(f);
-    b := json.new("{\"f1\":1,\"f2\":2}");
-    f := json.text(b,",");
-    io.print(f);
-    b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
-    f := json.text(b,",");
-    io.print(f);
-    b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4], \"f3\":true}");
-    f := json.text(b,",");
-    io.print(f);
-    f := json.text(b,",");
-    io.print(f);
-    b := json.new("[1,\"hello\", 2]");
-    f := json.text(b,",");
-    io.print(f);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:38 >  
+# 10:05:38 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:38 >  
+
 [ "" ]
-[ "1" ]
+[ 1	]
 [ "true,2" ]
 [ "1,2" ]
 [ "1,2,3" ]

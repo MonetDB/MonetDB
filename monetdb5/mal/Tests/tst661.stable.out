@@ -16,20 +16,15 @@ stdout of test 'tst661` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1317/.s.monetdb.37646
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-pattern user.fi(i:int):int... address MDBdummy;
-pattern user.fs(i:int):str... address MDBdummy;
-function user.tst():void;
-    a := user.fi(1);
-    (a,b) := user.fi(1);
-    (a,b,c) := user.fi(1);
-    z := user.fs(1);
-    (y,z) := user.fs(1);
-end user.tst;
-function user.main():void;
-#Testing variable return lists 
-    mdb.list("user","tst");
-    mdb.List("user","tst");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:45:04 >  
+# 09:45:04 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26824" "--port=32749"
+# 09:45:04 >  
+
+#mdb.list("user","tst");
 function user.tst():void;
     a := user.fi(1);
     (a,b) := user.fi(1);

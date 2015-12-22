@@ -1,9 +1,33 @@
 stdout of test 'tst130` in directory 'monetdb5/mal` itself:
 
 
-# 22:38:31 >  
-# 22:38:31 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=31072 --set xrpc_port=47187 --set monet_prompt= --trace --dbname=mTests_src_mal  tst130.mal
-# 22:38:31 >  
+# 13:35:21 >  
+# 13:35:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31077" "--set" "mapi_usock=/var/tmp/mtest-28113/.s.monetdb.31077" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:35:21 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31077/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28113/.s.monetdb.31077
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:35:21 >  
+# 13:35:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28113" "--port=31077"
+# 13:35:21 >  
 
 # MonetDB Server v5.0.0_beta2_1
 # Copyright (c) 1993-2007 CWI, all rights reserved
@@ -17,74 +41,6 @@ stdout of test 'tst130` in directory 'monetdb5/mal` itself:
 #bat.insert(bi,1,nil:int);
 #zi:= batcalc.isnil(bi);
 #io.print(zi);
-#
-#bb:= bat.new(:int,:bit);
-#bat.insert(bb,2,true);
-#bat.insert(bb,2,nil:bit);
-#bat.insert(bb,2,false);
-#zb:= batcalc.isnil(bb);
-#io.print(zb);
-#
-#bf:= bat.new(:int,:flt);
-#bat.insert(bf,3,2.0);
-#bat.insert(bf,3,nil:flt);
-#fi:= batcalc.isnil(bf);
-#io.print(fi);
-#
-#bs:= bat.new(:int,:str);
-#bat.insert(bs,4,"hello");
-#bat.insert(bs,4,nil:str);
-#bat.insert(bs,4,"");
-#zs:= batcalc.isnil(bs);
-#io.print(zs);
-#
-#bo:= bat.new(:int,:oid);
-#bat.insert(bo,5,0@0);
-#bat.insert(bo,5,nil:oid);
-#fo:= batcalc.isnil(bo);
-#io.print(fo);
-#
-#bc:= bat.new(:int,:chr);
-#bat.insert(bc,6,'a');
-#bat.insert(bc,6,nil:chr);
-#fc:= batcalc.isnil(bc);
-#io.print(fc);
-#
-function user.main():void;
-# testing batcalc isnull versions 
-    bi := bat.new(:oid,:int);
-    bat.append(bi,2);
-    bat.append(bi,nil:int);
-    zi := batcalc.isnil(bi);
-    io.print(zi);
-    bb := bat.new(:oid,:bit);
-    bat.append(bb,true);
-    bat.append(bb,nil:bit);
-    bat.append(bb,false);
-    zb := batcalc.isnil(bb);
-    io.print(zb);
-    bf := bat.new(:oid,:flt);
-    bat.append(bf,2);
-    bat.append(bf,nil:flt);
-    fi := batcalc.isnil(bf);
-    io.print(fi);
-    bs := bat.new(:oid,:str);
-    bat.append(bs,"hello");
-    bat.append(bs,nil:str);
-    bat.append(bs,"");
-    zs := batcalc.isnil(bs);
-    io.print(zs);
-    bo := bat.new(:oid,:oid);
-    bat.append(bo,0@0);
-    bat.append(bo,nil:oid);
-    fo := batcalc.isnil(bo);
-    io.print(fo);
-    bc := bat.new(:oid,:bte);
-    bat.append(bc,2:bte);
-    bat.append(bc,nil:bte);
-    fc := batcalc.isnil(bc);
-    io.print(fc);
-end user.main;
 #--------------------------#
 # h	t	  # name
 # int	bit	  # type

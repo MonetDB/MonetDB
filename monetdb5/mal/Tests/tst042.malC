@@ -1,0 +1,18 @@
+s := "hello";
+i := 1;
+f := 3.14;
+b:= true;
+w:= 1:wrd;
+B:= 2:bte;
+bb:= bat.new(:str);
+
+st:= inspect.getType(s); io.printf("%s\n",st);
+it:= inspect.getType(i); io.printf("%s\n",it);
+ft:= inspect.getType(f); io.printf("%s\n",ft);
+bt:= inspect.getType(b); io.printf("%s\n",bt);
+wt:= inspect.getType(w); io.printf("%s\n",wt);
+Bt:= inspect.getType(B); io.printf("%s\n",Bt);
+tt:= inspect.getType(bb); 
+io.printf("bat  head %s\n",tt);
+
+

@@ -9,7 +9,7 @@
 
 module json;
 
-command resultSet(u:bat[:oid,:uuid],rev:bat[:oid,:lng],js:bat[:oid,:json]):json
+command resultSet(u:bat[:uuid],rev:bat[:lng],js:bat[:json]):json
 address JSONresultSet
 comment "Converts the json store into a single json string:";
 

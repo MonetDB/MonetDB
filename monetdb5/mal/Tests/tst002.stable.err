@@ -1,1 +1,49 @@
 stderr of test 'tst002` in directory 'monetdb5/mal` itself:
+
+
+# 22:10:35 >  
+# 22:10:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30853" "--set" "mapi_usock=/var/tmp/mtest-23963/.s.monetdb.30853" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 22:10:35 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30853
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23963/.s.monetdb.30853
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 22:10:35 >  
+# 22:10:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23963" "--port=30853"
+# 22:10:35 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # reserved names may not be used as target variables
+        	true:= 23;
+        	false:= 24;
+        barrier barrier:= true;
+        	b:= true;
+        	b:= false;
+        exit barrier;
+ERROR = !SyntaxException:parseError:	true:= 23;
+        !SyntaxException:parseError:^<identifier> expected
+        !SyntaxException:parseError:	false:= 24;
+        !SyntaxException:parseError:^<identifier> expected
+
+# 22:10:35 >  
+# 22:10:35 >  "Done."
+# 22:10:35 >  
+

@@ -21,17 +21,16 @@ stdout of test 'tst770` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.test(b:bat[:oid,:any_2],c:any_2):void;
-    reduce := batcalc./(b,c);
-end user.test;
-function user.test(b:bat[:oid,:any_2],c:any_1):void;
-    reduce := batcalc./(b,c);
-end user.test;
-function user.test(b:bat[:oid,:any_2]):void;
-    reduce := batcalc./(b,1);
-end user.test;
+# MonetDB/R   module loaded
 
-# 08:01:31 >  
-# 08:01:31 >  Done.
-# 08:01:31 >  
+Ready.
+
+# 09:24:52 >  
+# 09:24:52 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25070" "--port=35105"
+# 09:24:52 >  
+
+
+# 09:24:52 >  
+# 09:24:52 >  "Done."
+# 09:24:52 >  
 

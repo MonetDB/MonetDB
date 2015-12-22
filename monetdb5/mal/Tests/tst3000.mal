@@ -1,7 +1,0 @@
-# testing simple property assignments
-i{constant=true}:= 1;
-j{blah=2} := "kk";
-k{blah=4,freeze=1} := "whatever";
-n{cost=12}:= bat.new(:oid,:int);
-j{blah=3} :="ll";	# second one overwrites first
-z{sorted} := bat.new(:oid,:int);

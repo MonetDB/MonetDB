@@ -9,23 +9,27 @@ stdout of test 'clients01` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-# inspect the clients population 
-    d := clients.getId();
-    io.print(d);
-    (a,b) := clients.getInfo();
-#io.print(i); 
-#u:= clients.getUsers(); 
-#io.print(u); 
-#(u,l):= clients.getLogins(); 
-#io.print(u,l); 
-end user.main;
-[ 0 ]
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:36836/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17929/.s.monetdb.36836
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 00:03:53 >  
-# 00:03:53 >  Done.
-# 00:03:53 >  
+Ready.
+
+# 11:44:18 >  
+# 11:44:18 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-17929" "--port=36836"
+# 11:44:18 >  
+
+[ 1	]
+
+# 11:44:19 >  
+# 11:44:19 >  "Done."
+# 11:44:19 >  
 

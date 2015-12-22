@@ -1,1 +1,46 @@
 stderr of test 'tst105a` in directory 'monetdb5/mal` itself:
+
+
+# 15:56:09 >  
+# 15:56:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34844" "--set" "mapi_usock=/var/tmp/mtest-21504/.s.monetdb.34844" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 15:56:09 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34844
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21504/.s.monetdb.34844
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:20:24 >  
+# 13:20:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:24 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # check classification of functions in the proper module
+        
+        module bbp;
+        command new(t:any_2):bat[:any_2] address GDKbatnew;
+        
+        b:= bbp.new(:int);
+ERROR = !TypeException:user.main[2]:object code for command bbp.new missing
+        !TypeException:user.main[2]:'bbp.new' undefined in:     b:bat[:int] := bbp.new(:int);
+
+# 13:20:24 >  
+# 13:20:24 >  "Done."
+# 13:20:24 >  
+

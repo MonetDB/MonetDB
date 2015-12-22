@@ -11,7 +11,7 @@
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };
-size_t monet_memory;
+size_t monet_memory = 0;
 char 	monet_characteristics[PATHLENGTH];
 int mal_trace;		/* enable profile events on console */
 #ifdef HAVE_HGE
@@ -86,8 +86,7 @@ int mal_init(void){
 	MCinit();
 	if (mdbInit()) 
 		return -1;
-	if (monet_memory == 0)
-		monet_memory = MT_npages() * MT_pagesize();
+	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
 	initHeartbeat();
@@ -96,9 +95,7 @@ int mal_init(void){
 	if( malBootstrap() == 0)
 		return -1;
 	/* set up the profiler if needed, output sent to console */
-	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace ) 
-		openProfilerStream(mal_clients[0].fdout,0);
+	initProfiler();
 	return 0;
 }
 /*

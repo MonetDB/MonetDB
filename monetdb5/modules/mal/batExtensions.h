@@ -24,10 +24,10 @@
 #define be_export extern
 #endif
 
+be_export str CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBATderivedByName(bat *ret, str *nme);
 be_export str CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

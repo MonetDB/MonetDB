@@ -5048,6 +5048,21 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 			      result->fieldcnt, ']');
 		free(p);
 	}
+	if (i != result->fieldcnt) {
+		int j;
+		for (j = 0; j < result->fieldcnt; j++) {
+			if (result->fields[j].columnname)
+				free(result->fields[j].columnname);
+			result->fields[j].columnname = NULL;
+			if (result->fields[j].columntype)
+				free(result->fields[j].columntype);
+			result->fields[j].columntype = NULL;
+			if (result->fields[j].tablename)
+				free(result->fields[j].tablename);
+			result->fields[j].tablename = NULL;
+			result->fields[j].columnlength = 0;
+		}
+	}
 	if (i > result->fieldcnt) {
 		result->fieldcnt = i;
 		if (i > result->maxfields) {

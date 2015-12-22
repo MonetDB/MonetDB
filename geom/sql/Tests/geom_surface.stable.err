@@ -81,28 +81,28 @@ stderr of test 'geom_surface` in directory 'geom/sql` itself:
 # 20:49:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=38689 
 # 20:49:34 >  
 
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('LINESTRING(10 10, 20 20)');
 ERROR = !Geometry type 'Polygon' not found
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('LINESTRING(10 10, 20 20, 30 40)');
 ERROR = !Geometry type 'Polygon' not found
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('POINT(10 10)');
 ERROR = !Geometry type 'Polygon' not found
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('POLYGON(10 10)');
 ERROR = !ParseException: Expected word but encountered number: '10'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('POLYGON(10)');
 ERROR = !ParseException: Expected word but encountered number: '10'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('POLYGON()');
 ERROR = !ParseException: Expected 'Z', 'M', 'ZM', 'EMPTY' or '(' but encountered : ')'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('POLYGON');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO surfaces values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
 

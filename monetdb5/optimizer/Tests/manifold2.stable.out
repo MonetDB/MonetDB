@@ -17,35 +17,30 @@ stdout of test 'manifold2` in directory 'monetdb5/optimizer` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28130/.s.monetdb.33759
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;
-    c := aggr.count(b);
-    c2 := aggr.count(b2);
-    z:bat[:oid,:dbl]  := mal.multiplex("calc","max",b,b2);
-    io.print(z,b,b2);
-end user.tst;
+# MonetDB/R   module loaded
+
+Ready.
 #WARNING To speedup calc.max a bulk operator implementation is needed
-function user.main():void;
-# the manifold code blocks  
-    b := bat.new(:oid,:dbl);
-    b2 := bat.new(:oid,:dbl);
-    mdb.List("user","tst");
-    mdb.var("user","tst");
-    mdb.List("user","tst");
-end user.main;
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
+#    z:bat[:oid,:dbl] := mal.multiplex("calc":str,"max":str,b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);
+
+# 15:36:15 >  
+# 15:36:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
+# 15:36:15 >  
+
+function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
 barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
-    c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
+    c:wrd := aggr.count(b:bat[:dbl]);   	#[2] ALGcount_bat 3 <- 1 
+    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[3] ALGcount_bat 4 <- 2 
 exit X_9:bit;                           	#[4]  9 
-    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
-barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
-    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
+    X_12:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
+    X_19:dbl := algebra.fetch(b2:bat[:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
     X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	#[8] CALCmax 21 <- 17 19 
-    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
-    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 16 17 <- 1 
+    bat.append(X_12:bat[:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:dbl]);	#[10] ITRbunNext 16 17 <- 1 
 exit (X_16:oid,X_17:dbl);               	#[11]  16 17 
-    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	#[12]  5 <- 12 
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 8 <- 5 1 2 
+    z:bat[:dbl] := X_12:bat[:dbl];      	#[12]  5 <- 12 
+    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[13] IOtable 8 <- 5 1 2 
 end user.tst;                           	#[14]  
 #[1]     b =  :bat[:oid,:dbl]  
 #[2]    b2 =  :bat[:oid,:dbl]  
@@ -60,20 +55,20 @@ end user.tst;                           	#[14]
 #[17]   _17 =  :dbl  
 #[19]   _19 =  :dbl  
 #[21]   _21 =  :dbl  
-function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;	#[0]  0 <- 1 2 
+function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
 barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
-    c:wrd := aggr.count(b:bat[:oid,:dbl]);	#[2] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:oid,:dbl]);	#[3] ALGcount_bat 4 <- 2 
+    c:wrd := aggr.count(b:bat[:dbl]);   	#[2] ALGcount_bat 3 <- 1 
+    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[3] ALGcount_bat 4 <- 2 
 exit X_9:bit;                           	#[4]  9 
-    X_12:bat[:oid,:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
-barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:oid,:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
-    X_19:dbl := algebra.fetch(b2:bat[:oid,:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
+    X_12:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
+barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
+    X_19:dbl := algebra.fetch(b2:bat[:dbl],X_16:oid);	#[7] ALGfetchoid 19 <- 2 16 
     X_21:dbl := calc.max(X_17:dbl,X_19:dbl);	#[8] CALCmax 21 <- 17 19 
-    bat.append(X_12:bat[:oid,:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
-    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:oid,:dbl]);	#[10] ITRbunNext 16 17 <- 1 
+    bat.append(X_12:bat[:dbl],X_21:dbl);	#[9] BKCappend_val_wrap 22 <- 12 21 
+    redo (X_16:oid,X_17:dbl) := iterator.next(b:bat[:dbl]);	#[10] ITRbunNext 16 17 <- 1 
 exit (X_16:oid,X_17:dbl);               	#[11]  16 17 
-    z:bat[:oid,:dbl] := X_12:bat[:oid,:dbl];	#[12]  5 <- 12 
-    io.print(z:bat[:oid,:dbl],b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);	#[13] IOtable 8 <- 5 1 2 
+    z:bat[:dbl] := X_12:bat[:dbl];      	#[12]  5 <- 12 
+    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[13] IOtable 8 <- 5 1 2 
 end user.tst;                           	#[14]  
 
 # 09:02:36 >  

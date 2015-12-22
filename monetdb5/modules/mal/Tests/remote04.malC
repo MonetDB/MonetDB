@@ -1,0 +1,32 @@
+# let connect figure out itself how to connect to the running db
+uri := sabaoth.getLocalConnectionURI();
+conn:str := remote.connect(uri, "monetdb", "monetdb");
+io.print(conn);
+
+b := bat.new(:str);
+bat.append(b, "bla");
+bat.append(b, "boe");
+bat.append(b, "foo");
+bat.append(b, "bar");
+bat.append(b, "baz");
+
+bo:= bat.new(:oid);
+bok := remote.put(conn, bo);
+k := remote.put(conn, b);
+io.print(k);
+l := remote.put(conn, "bar");
+io.print(l);
+m := remote.put(conn, "boe");
+io.print(m);
+
+tt:= remote.put(conn,true:bit);
+tf:= remote.put(conn,false:bit);
+
+# perform a selection remote, and get the result back
+bok := remote.exec(conn, "algebra", "subselect", k, l, m, tt,tt,tf);
+j:bat[:oid] := remote.get(conn, bok);
+io.print(j);
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.disconnect(conn);

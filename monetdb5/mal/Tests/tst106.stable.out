@@ -19,16 +19,16 @@ stdout of test 'tst106` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-command user.f(b:any_2,c:any_1):bat[:oid,:any_2] address f;
-!TypeException:user.main[2]:object code for command user.f missing
-!TypeException:user.main[2]:'user.f' undefined in:     b:bat[:oid,:int] := user.f(2:int,"help":str);
-function user.main():void;
-# check in-compatible polmorphic types 
-    b := user.f(2,"help");
-    a := user.f(2,1);
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:58:57 >  
-# 07:58:57 >  Done.
-# 07:58:57 >  
+Ready.
+
+# 13:30:22 >  
+# 13:30:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27202" "--port=33836"
+# 13:30:22 >  
+
+
+# 13:30:22 >  
+# 13:30:22 >  "Done."
+# 13:30:22 >  
 

@@ -1,9 +1,33 @@
 stdout of test 'tst048` in directory 'monetdb5/mal` itself:
 
 
-# 16:38:21 >  
-# 16:38:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33878 --set sql_port=44403 --set xquery_port=50458 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst048.mal </dev/null
-# 16:38:21 >  
+# 12:35:45 >  
+# 12:35:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34313" "--set" "mapi_usock=/var/tmp/mtest-19070/.s.monetdb.34313" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 12:35:45 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:34313/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19070/.s.monetdb.34313
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:35:46 >  
+# 12:35:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19070" "--port=34313"
+# 12:35:46 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -18,42 +42,6 @@ stdout of test 'tst048` in directory 'monetdb5/mal` itself:
 #bat.insert(a, 2@0, 2);
 #
 #io.print(a);
-#
-#b := bbp.new(:oid,:flt);
-#bat.insert(b, 0@0, 0.3);
-#bat.insert(b, 1@0, 1.4);
-#bat.insert(b, 2@0, 2.5);
-#
-#io.print(b);
-#
-### c should be of type [:oid, :flt], but it was printed as [:oid, :int]
-#c := batcalc.init(a, 2.1);
-#io.print(c);
-#
-#e:= batcalc.init(b,2.5);
-#io.print(e);
-#d:= batcalc.init(a,3);
-#io.print(d);
-#
-function user.main():void;
-    a := bat.new(:oid,:int);
-    bat.append(a,0);
-    bat.append(a,1);
-    bat.append(a,2);
-    io.print(a);
-    b := bat.new(:oid,:flt);
-    bat.append(b,0.3);
-    bat.append(b,1.4);
-    bat.append(b,2.5);
-    io.print(b);
-# c should be of type [:oid, :flt], but it was printed as [:oid, :int] 
-    c := algebra.project(a,2.1);
-    io.print(c);
-    e := algebra.project(b,2.5);
-    io.print(e);
-    d := algebra.project(a,3);
-    io.print(d);
-end user.main;
 #--------------------------#
 # h	t	  # name
 # oid	int	  # type

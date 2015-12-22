@@ -9,23 +9,26 @@ stdout of test 'tst560` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38059/
-function user.f():void;
-    a := "hello";
-    b := "the quick brown fox";
-end user.f;
-function user.main():void;
-#possible leak in constant string handling 
-#confirmed feb 2009 
-barrier i := 0:lng;
-    user.f();
-    redo i := iterator.next(1:lng,1000:lng);
-exit i;
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33523/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20953/.s.monetdb.33523
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 07:49:22 >  
-# 07:49:22 >  Done.
-# 07:49:22 >  
+Ready.
+
+# 08:50:59 >  
+# 08:50:59 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20953" "--port=33523"
+# 08:50:59 >  
+
+
+# 08:50:59 >  
+# 08:50:59 >  "Done."
+# 08:50:59 >  
 

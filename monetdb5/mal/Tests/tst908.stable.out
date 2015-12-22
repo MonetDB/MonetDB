@@ -21,21 +21,22 @@ stdout of test 'tst908` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.perftst(b:bat[:oid,:any_2],div:any_2):void;
-    io.print("perftst");
-    io.print(div);
-    reduce := batcalc./(b,div);
-    io.print(reduce);
-end user.perftst;
-function user.main():void;
-# the multiplex code blocks. 
-    b := bat.new(:oid,:lng);
-barrier i := 0:lng;
-    bat.append(b,i);
-    redo i := iterator.next(1:lng,10:lng);
-exit i;
-    user.perftst(b,1:lng);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:40 >  
+# 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:40 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+barrier i:lng := 0:lng;                 	#[2]  3 <- 4 
+    bat.append(b:bat[:lng],i:lng);      	#[3] BKCappend_val_wrap 5 <- 1 3 
+    redo i:lng := iterator.next(1:lng,10:lng);	#[4] ITRnext_lng 3 <- 6 7 
+exit i:lng;                             	#[5]  3 
+    user.perftst(b:bat[:lng],1:lng);    	#[6]  8 <- 1 6 
+end user.foo;                           	#[7]  
 [ "perftst" ]
 [ 1 ]
 #-----------------#

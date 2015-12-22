@@ -9,7 +9,6 @@ incomplete.SF.2536893
 subquery_returns_table_crash.SF-2513620
 distinct.SF-2546483
 caselessthen
-union_leak.SF-2540169
 select_from_history.SF-2556566
 COPY_INTO_char_NULL.SF-2560780
 LE_vs_GE_in_CASE.SF-2562264

@@ -1,6 +1,0 @@
-# testing the simple iterators on builtin types
-barrier i := 0.0:flt;
-	io.print(i);
-	v:= "do something";
-	redo i :=iterator.next(1.3:flt,2.5:flt);
-exit	i;

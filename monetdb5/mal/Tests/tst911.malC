@@ -1,0 +1,68 @@
+# analyse the overhead of chopping a table
+# the multiplex code blocks.
+
+function choptest(b:bat[:lng], size:lng, base:lng);
+    t0:= alarm.usec();
+
+    INT_MAX := 2147483647;
+    dbgmsk_restore := mdb.getDebug();
+    dbgmsk_unset := 8+8388608;
+    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+    mdb.setDebug(dbgmsk_set);
+
+    barrier (chk,c):= iterator.new(b,size);
+        t:= algebra.subselect(c, 256000:lng,266000:lng,true,true,false);
+        redo (chk,c):= iterator.next(b,size);
+    exit (chk,c);
+
+    mdb.setDebug(dbgmsk_restore);
+
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#chopped at %d",size);
+    io.printf(" %d",d0);
+    d0:= d0-base;
+    io.printf(" %d ",d0);
+    i:= 1000000:lng/size;
+    if:= calc.flt(i);
+    df:= calc.flt(d0);
+    f:= df/if;
+    io.printf(" at %f usec\n",f);
+end choptest;
+
+function foo();
+b:= bat.new(:lng);
+
+INT_MAX := 2147483647;
+dbgmsk_restore := mdb.getDebug();
+dbgmsk_unset := 8+8388608;
+dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+mdb.setDebug(dbgmsk_set);
+
+r:= mmath.srand(0);
+barrier i:= 0:lng;
+	k:= mmath.rand();
+	l:= calc.lng(k);
+	bat.append(b,l);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
+
+mdb.setDebug(dbgmsk_restore);
+
+t0:= alarm.usec();
+barrier doit:= true;
+    t:= algebra.subselect(b, 256000:lng,266000:lng,true,true,false);
+exit doit;
+t1:= alarm.usec();
+base:= t1-t0;
+io.printf("#select direct %d usec\n",base);
+
+user.choptest(b,100000:lng,base);
+user.choptest(b,10000:lng,base);
+user.choptest(b,1000:lng,base);
+user.choptest(b,100:lng,base);
+end;
+mdb.List("user","foo");
+user.foo();

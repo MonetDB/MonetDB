@@ -21,45 +21,28 @@ stdout of test 'inline01` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.help():void;
-    b := bat.new(:oid,:int);
-    c := bat.new(:oid,:int);
-    z:int  := 1;
-    bat.append(b,1);
-barrier (x,z:int) := iterator.new(b);
-    io.print(x);
-catch MALException:str;
-exit MALException:str;
-exit (x,z:int);
-barrier (x,z:int) := iterator.new(c);
-    io.print(x);
-    redo (x,z:int) := iterator.next(c);
-catch MALException:str;
-exit MALException:str;
-exit (x,y,z:int);
-end user.help;
-inline function user.qry1():void;
-    user.help();
-end user.qry1;
-function user.qry():void;
-    user.qry1();
-end user.qry;
-function user.main():void;
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:09:46 >  
+# 16:09:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32223" "--port=39816"
+# 16:09:46 >  
+
+#mdb.List("user","qry");
 function user.qry():void;               	#[0]  0 
-    X_5:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 5 <- 6 7 
-    X_8:bat[:oid,:int] := bat.new(:oid,:int);	#[2] CMDBATnew 8 <- 6 7 
+    X_5:bat[:int] := bat.new(:oid,:int);	#[1] CMDBATnew 5 <- 6 7 
+    X_8:bat[:int] := bat.new(:oid,:int);	#[2] CMDBATnew 8 <- 6 7 
     X_9:int := 1:int;                   	#[3]  9 <- 10 
-    bat.append(X_5:bat[:oid,:int],1:int);	#[4] BKCappend_val_wrap 11 <- 5 10 
-barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:oid,:int]);	#[5] ITRbunIterator 12 9 <- 5 
+    bat.append(X_5:bat[:int],1:int);    	#[4] BKCappend_val_wrap 11 <- 5 10 
+barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:int]);	#[5] ITRbunIterator 12 9 <- 5 
     io.print(X_12:oid);                 	#[6] IOprint_val 13 <- 12 
 catch MALException:str;                 	#[7]  14 
 exit MALException:str;                  	#[8]  14 
 exit (X_12:oid,X_9:int);                	#[9]  12 9 
-barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:oid,:int]);	#[10] ITRbunIterator 12 9 <- 8 
+barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:int]);	#[10] ITRbunIterator 12 9 <- 8 
     io.print(X_12:oid);                 	#[11] IOprint_val 15 <- 12 
-    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:oid,:int]);	#[12] ITRbunNext 12 9 <- 8 
+    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:int]);	#[12] ITRbunNext 12 9 <- 8 
 catch MALException:str;                 	#[13]  14 
 exit MALException:str;                  	#[14]  14 
 exit (X_12:oid,X_16:any,X_9:int);       	#[15]  12 16 9 

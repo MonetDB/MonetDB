@@ -5,35 +5,30 @@ stdout of test 'xml04` in directory 'monetdb5/modules/atoms` itself:
 # 23:16:03 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35136 --set xrpc_port=41906 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  xml04.mal
 # 23:16:03 >  
 
-# MonetDB server v5.1.0, based on kernel v1.19.0
-# Serving database 'mTests_src_modules_mal'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34949/
-# MonetDB/SQL module v2.39.0 loaded
-# MonetDB/GIS module v0.19.0 loaded
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-function user.main():void;
-    b := bat.new(:oid,:str);
-    bat.append(b,"Mary Ann Walker");
-    bat.append(b,"Annie Chapman");
-    h := bat.new(:oid,:str);
-    bat.append(h,"brown");
-    bat.append(h,"curly dark brown");
-    io.print(b);
-    bs := batxml.xml(b);
-    bc := batxml.element("name",bs);
-    bj := batxml.str(bc);
-    io.print(bj);
-    hs := batxml.xml(h);
-    hc := batxml.element("hair",hs);
-    hj := batxml.str(hc);
-    io.print(hj);
-    aa := batxml.forest(bc,hc);
-    as := batxml.str(aa);
-    io.print(as);
-end user.main;
+Ready.
+
+# 10:05:32 >  
+# 10:05:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:32 >  
+
 #--------------------------#
 # h	t			  # name
 # void	str			  # type

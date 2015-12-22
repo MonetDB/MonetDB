@@ -18,18 +18,14 @@ stdout of test 'uuid00` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := uuid.new();
-#io.print(b); 
-    s:str  := uuid.str(b);
-#io.print(s); 
-    x := uuid.isaUUID(s);
-    io.print(x);
-    z:uuid  := uuid.uuid(s);
-#io.print(z); 
-    t := calc.==(z,b);
-    io.print(t);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:41 >  
+# 10:05:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:41 >  
+
 [ true ]
 [ true ]
 

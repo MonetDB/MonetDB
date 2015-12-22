@@ -16,19 +16,19 @@ stdout of test 'inlineFunction2` in directory 'monetdb5/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35482/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-inline function user.my(A:int,B:int):int;
-    X3 := calc.+(A,B);
-    return my := X3;
-end user.my;
-function user.tst():void;
-    b := bat.new(:oid,:int);
-    z:bat[:oid,:int]  := mal.multiplex("user","my",b,1);
-end user.tst;
+# MonetDB/R   module loaded
+
+Ready.
 #WARNING To speedup user.my a bulk operator implementation is needed
-function user.main():void;
-    io.printf("#result of inline\n");
-    mdb.list("user","tst");
-end user.main;
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"my":str,b:any,1:int);
+#WARNING To speedup user.my a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"my":str,b:bat[:oid,:int],1:int);
+
+# 16:09:45 >  
+# 16:09:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32223" "--port=39816"
+# 16:09:45 >  
+
+#io.printf("#result of inline\n");
 #result of inline
 function user.tst():void;
     b := bat.new(:oid,:int);
@@ -39,7 +39,7 @@ barrier (X_12,X_13) := iterator.new(b);
     bat.append(X_8,X_15);
     redo (X_12,X_13) := iterator.next(b);
 exit (X_12,X_13);
-    z:bat[:oid,:int]  := X_8;
+    z:bat[:int] := X_8;
 end user.tst;
 
 # 23:12:13 >  

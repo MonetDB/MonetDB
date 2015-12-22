@@ -1,14 +1,96 @@
 stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 
 
-# 15:28:56 >  
-# 15:28:56 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=34439 --set xrpc_port=43409 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote03.mal
-# 15:28:56 >  
+# 23:12:08 >  
+# 23:12:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30565" "--set" "mapi_usock=/var/tmp/mtest-23626/.s.monetdb.30565" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 23:12:08 >  
 
-#warning: please don't forget to set your vault key!
-#(see /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf)
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30565
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23626/.s.monetdb.30565
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 15:28:56 >  
-# 15:28:56 >  Done.
-# 15:28:56 >  
+# 23:12:08 >  
+# 23:12:08 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23626" "--port=30565"
+# 23:12:08 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23626/.s.monetdb.30565
+QUERY = # let connect figure out itself how to connect to the running db
+        uri := sabaoth.getLocalConnectionURI();
+        conn:str := remote.connect(uri, "monetdb", "monetdb");
+        
+        # this is invalid, as io.print is an invalid module, and bla will be
+        # taken as function
+        res:str := remote.put(conn,:void);
+        res := remote.exec(conn, "io.print", "bla");
+        catch SyntaxException:str;
+        	io.print("Received first error from the remote site");
+        	io.printf("!%s\n", SyntaxException);
+        exit SyntaxException;
+        
+        # now do it with a function that returns something (a BAT in this case)
+        bn:= bat.new(:oid,:str);
+        b := remote.put(conn,bn);
+        catch MALException:str;
+        	io.print("Received second init error from the remote site");
+        	io.printf("!%s\n", MALException);
+        exit MALException;
+        io.print(b);
+        b := remote.exec(conn, "inspect", "getAtomNames");
+        catch MALException:str;
+        	io.print("Received second error from the remote site");
+        	io.printf("!%s\n", MALException);
+        exit MALException;
+        io.print(b);
+        
+        c:bat[:oid,:str] := remote.get(conn, b);
+        io.print(c);
+        catch MALException:str;
+        	io.print("Received third error from the remote site");
+        	io.printf("!%s\n", MALException);
+        exit MALException;
+        
+        # io.print only outputs things, but returns nothing
+        ah:str := remote.put(conn,:void);
+        io.print(ah);
+        ah:str := remote.exec(conn, "io", "print", b);
+        catch MALException:str;
+        	io.print("Received fourth error from the remote site");
+        	io.printf("!%s\n", MALException);
+        exit MALException;
+        
+        d:void := remote.get(conn, ah);
+        io.print(d);
+        catch MALException:str;
+        	io.print("Received fifth error from the remote site");
+        	io.printf("!%s\n", MALException);
+        exit MALException;
+        
+        # help testweb a bit, since currently no cleanup is done on server
+        # shutdown
+        remote.disconnect(conn);
+ERROR = !SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_9_void := io.print.bla();
+
+
+
+
+# 23:12:09 >  
+# 23:12:09 >  "Done."
+# 23:12:09 >  
 

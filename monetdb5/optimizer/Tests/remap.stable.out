@@ -1,51 +1,43 @@
 stdout of test 'remap` in directory 'monetdb5/optimizer` itself:
 
 
-# 22:31:17 >  
-# 22:31:17 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=34030 --set xrpc_port=44388 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remap.mal < /dev/null
-# 22:31:17 >  
+# 11:30:41 >  
+# 11:30:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37417" "--set" "mapi_usock=/var/tmp/mtest-24656/.s.monetdb.37417" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_optimizer" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 11:30:41 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38900/
-function user.tst():void;
-    b := bat.new(:oid,:int);
-# a correct call 
-    z:bat[:oid,:int]  := mal.multiplex("calc","+",b,1);
-    f:bat[:oid,:bit]  := mal.multiplex("calc","<",b,3);
-    f:bat[:oid,:bit]  := mal.multiplex("calc","<",3,b);
-    d := bat.new(:oid,:str);
-    a:bat[:oid,:bit]  := mal.multiplex("calc","isnil",d);
-# demonstrate an error 
-    y:bat[:oid,:str] := mal.multiplex("calc","+",b,1);
-end user.tst;
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    y:bat[:oid,:str] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);
-!TypeException:user.tst[12]:'bat.append' undefined in:     bat.append(X_19:bat[:oid,:str],X_26:int);
-function user.main():void;
-# it will be ignored by the optimizer 
-    mdb.List("user","tst");
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37417/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24656/.s.monetdb.37417
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:30:41 >  
+# 11:30:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24656" "--port=37417"
+# 11:30:41 >  
+
 function user.tst():void;               	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-# a correct call                        	#[2]  4 <- 
-    z:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],1:int);	#[3] CMDbatADDsignal 5 <- 1 8 
-    f:bat[:oid,:bit] := batcalc.<(b:bat[:oid,:int],3:int);	#[4] CMDbatLT 9 <- 1 11 
-    f:bat[:oid,:bit] := batcalc.<(3:int,b:bat[:oid,:int]);	#[5] CMDbatLT 9 <- 12 1 
-    d:bat[:oid,:str] := bat.new(:oid,:str);	#[6] CMDBATnew 13 <- 2 14 
-    a:bat[:oid,:bit] := batcalc.isnil(d:bat[:oid,:str]);	#[7] CMDbatISNIL 15 <- 13 
-# demonstrate an error                  
-    X_19:bat[:oid,:str] := bat.new(nil:oid,nil:str);	#[9] CMDBATnew 19 <- 20 21 
-barrier (X_23:oid,X_24:int) := iterator.new(b:bat[:oid,:int]);	#[10] ITRbunIterator 23 24 <- 1 
-    X_26:int := calc.+(X_24:int,1:int); 	#[11] CMDvarADDsignal 26 <- 24 8 
-    bat.append(X_19:bat[:oid,:str],X_26:int);	#[12]  27 <- 19 26 
-    redo (X_23:oid,X_24:int) := iterator.next(b:bat[:oid,:int]);	#[13]  23 24 <- 1 
-exit (X_23:oid,X_24:int);               	#[14]  23 24 
-    y:bat[:oid,:str] := X_19:bat[:oid,:str];	#[15]  18 <- 19 
-end user.tst;                           	#[16]  
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+# a correct call                        
+    z:bat[:int] := batcalc.+(b:bat[:int],1:int);	#[3] CMDbatADDsignal 5 <- 1 8 
+    f:bat[:bit] := batcalc.<(b:bat[:int],3:int);	#[4] CMDbatLT 9 <- 1 11 
+    f:bat[:bit] := batcalc.<(3:int,b:bat[:int]);	#[5] CMDbatLT 9 <- 12 1 
+    d:bat[:str] := bat.new(:oid,:str);  	#[6] CMDBATnew 13 <- 2 14 
+    a:bat[:bit] := batcalc.isnil(d:bat[:str]);	#[7] CMDbatISNIL 15 <- 13 
+end user.tst;                           	#[8]  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

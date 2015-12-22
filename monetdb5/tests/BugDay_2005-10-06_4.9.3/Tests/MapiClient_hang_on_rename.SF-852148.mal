@@ -1,3 +1,0 @@
-a:= bat.new(:oid,:int); bat.setName(a,"a");
-b:= bat.new(:oid,:int); bat.setName(b,"a");
-

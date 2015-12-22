@@ -17,24 +17,14 @@ stdout of test 'bigsum` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:lng,10000001);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    bat.append(b,10000000000000000:lng);
-barrier i := 0:lng;
-    bat.append(b,1:lng);
-    redo i := iterator.next(1:lng,10000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    s:dbl  := aggr.sum(b);
-# should be 10000000010000000, not 10000000000000000 
-    io.print(s);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:45:57 >  
+# 09:45:57 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:45:57 >  
+
 [ 1.000000001e+16 ]
 
 # 16:05:54 >  

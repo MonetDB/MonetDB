@@ -1,0 +1,32 @@
+#Same as tst270, but includes testing of the profiler trace
+
+o:= calc.oid(20000000);
+calc.setoid(o);
+b:= bat.new(:int);
+#test basic functionality of the BAT library.
+#focussed on integers
+#it includes insertions,deletions,selections, and joins.
+
+profiler.start();
+err := bat.append(b,15);
+err := bat.append(b,4);
+n0  := calc.int(nil);
+err := bat.append(b,n0);
+err := bat.append(b,16);
+err := bat.append(b,25);
+err := bat.append(b,36);
+err := bat.append(b,49);
+err := bat.append(b,64);
+err := bat.append(b,n0);
+err := bat.append(b,n0);
+err := bat.append(b,81);
+io.print(b);
+io.print(b,b,b);
+profiler.stop();
+io.printf("#~BeginVariableOutput~#\n");
+#t:= profiler.getTrace("ticks");
+#io.print(t);
+#s:= profiler.getTrace("stmt");
+#io.print(s);
+#io.print(t,s);
+io.printf("#~EndVariableOutput~#\n");

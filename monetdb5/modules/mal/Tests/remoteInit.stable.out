@@ -19,40 +19,14 @@ stdout of test 'remoteInit` in directory 'monetdb5/modules/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.remote_internal_servegetbat(type:str,o:bat[:oid,:any_2]):void;
-    t := inspect.getType(o);
-barrier ifpart := calc.==(type,t);
-    len := aggr.count(o);
-    io.print(len);
-    io.print(o);
-exit ifpart;
-barrier ifpart := calc.isnil(type);
-    io.printf("!MALException:user.serveget:nil type doesn't match anything\n");
-exit ifpart;
-barrier ifpart := calc.!=(type,t);
-    io.printf("!MALException:user.serveget:object type (%s) ",t);
-    io.printf("does not match required type (%s)\n",type);
-exit ifpart;
-end user.remote_internal_servegetbat;
-function user.remote_internal_serveget(type:str,o:any):void;
-    t := inspect.getType(o);
-barrier ifpart := calc.==(type,t);
-    io.print(o);
-exit ifpart;
-barrier ifpart := calc.isnil(type);
-    io.printf("!MALException:user.serveget:nil type doesn't match anything\n");
-exit ifpart;
-barrier ifpart := calc.!=(type,t);
-    io.printf("!MALException:user.serveget:object type (%s) ",t);
-    io.printf("does not match required type (%s)\n",type);
-exit ifpart;
-end user.remote_internal_serveget;
-function user.main():void;
-#test basic interaction scheme 
-    remote_test_id_0 := bat.new(:oid,:str,33);
-    bat.append(remote_test_id_0,"oid":str);
-    user.remote_internal_servegetbat("bat[:oid,:str]",remote_test_id_0);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:58:28 >  
+# 09:58:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-28552" "--port=35023"
+# 09:58:28 >  
+
 [ 1 ]
 #-----------------#
 # h	t	  # name

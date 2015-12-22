@@ -1,0 +1,36 @@
+# First test of the remoteQueries optimizer
+# we create a remote bat and fake a bind operation.
+
+fs:= inspect.getEnvironment("mapi_port");
+port := calc.int(fs);
+#io.printf("port %d\n",port);
+
+mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
+mapi.rpc(mid,"rb:= bat.new(:int); bat.setName(rb,\"rbat\");");
+mapi.rpc(mid,"bat.append(rb,1);");
+mapi.rpc(mid,"bat.append(rb,3);");
+mapi.rpc(mid,"bat.append(rb,5);");
+mapi.rpc(mid,"bat.append(rb,6);");
+mapi.rpc(mid,"bat.append(rb,7);");
+mapi.rpc(mid,"c1:=algebra.subselect(rb,0,12,true,true,false);c:=algebra.projection(c1,rb);");
+c:bat[:int]:= mapi.rpc(mid, "io.print(c);");
+io.print(c);
+mapi.rpc(mid,"c1:=algebra.subselect(rb,0,4,true,true,false);");
+c:bat[:int]:= mapi.rpc(mid, "io.print(c1);");
+io.print(c);
+
+b:bat[:int]:= mapi.bind(mid,"rbat");
+io.print(b);
+
+# see if we can do some remote selections.
+mapi.rpc(mid,"d:=algebra.subselect(b,5,10,true,true,false);");
+low:= 5+1;
+mapi.put(mid,"low",low);
+mapi.rpc(mid,"e:=algebra.subselect(b,d,low,7,true,true,false);");
+mapi.rpc(mid,"i:=aggr.count(e);");
+i:lng:= mapi.rpc(mid,"io.print(i);");
+io.printf(" count %d\n",i);
+d:bat[:int]:= mapi.rpc(mid,"e1:=algebra.projection(e,b);io.print(e1);");
+io.print(d);
+mapi.disconnect(mid);
+#optimizer.remoteQueries();

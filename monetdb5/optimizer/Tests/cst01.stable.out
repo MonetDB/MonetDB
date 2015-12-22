@@ -18,18 +18,15 @@ stdout of test 'cst01` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.tst():void;
-    X2 := calc.dbl(1);
-    X14 := calc.dbl(180);
-    X15 := calc.*(X2,X14);
-    X16 := mmath.pi();
-    X17 := calc./(X15,X16);
-    io.print(X17);
-end user.tst;
-function user.main():void;
-# test constant expressions 
-    mdb.List("user","tst");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:36:07 >  
+# 15:36:07 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
+# 15:36:07 >  
+
+#mdb.List("user","tst");
 function user.tst():void;               	#[0]  0 
     io.print(57.29577951308232:dbl);    	#[1] IOprint_val 8 <- 13 
 end user.tst;                           	#[2]  

@@ -17,20 +17,23 @@ stdout of test 'tst077` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.swap(x:bat[:oid,:int],y:bat[:oid,:int]) (a:str,b:bat[:oid,:int]);
-    a := "done";
-    return (a,b) := (a,x);
-end user.swap;
-function user.main():void;
-# parsing operations with multi-assignments 
-    X := bat.new(:oid,:int);
-    bat.append(X,1);
-    Y := bat.new(:oid,:int);
-    bat.append(Y,2);
-    (x,y) := user.swap(X,Y);
-    io.print(x);
-    io.print(y);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:14:25 >  
+# 13:14:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24111" "--port=37355"
+# 13:14:25 >  
+
+function user.foo():void;               	#[0]  0 
+    X:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(X:bat[:int],1:int);      	#[2] BKCappend_val_wrap 3 <- 1 4 
+    Y:bat[:int] := bat.new(:int);       	#[3] CMDBATnewColumn 5 <- 2 
+    bat.append(Y:bat[:int],2:int);      	#[4] BKCappend_val_wrap 6 <- 5 7 
+    (x:str,y:bat[:int]) := user.swap(X:bat[:int],Y:bat[:int]);	#[5]  8 9 <- 1 5 
+    io.print(x:str);                    	#[6] IOprint_val 10 <- 8 
+    io.print(y:bat[:int]);              	#[7] IOprint_val 11 <- 9 
+end user.foo;                           	#[8]  
 [ "done" ]
 #-----------------#
 # h	t	  # name

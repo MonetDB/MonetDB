@@ -1,5 +1,0 @@
-	b:= bat.new(:oid,:int);
-	bat.append(b,1);
-	c:bat[:oid,:int]:=mal.multiplex("calc","+",b,1);
-	optimizer.multiplex();
-	mdb.List();

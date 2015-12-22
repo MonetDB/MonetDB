@@ -385,6 +385,7 @@ int yydebug=1;
 	XML_value_expression_list
 	window_frame_extent
 	window_frame_between
+	routine_designator
 
 %type <i_val>
 	any_all_some
@@ -925,7 +926,7 @@ global_privilege:
 object_name:
      TABLE qname		{ $$ = _symbol_create_list(SQL_TABLE, $2); }
  |   qname			{ $$ = _symbol_create_list(SQL_NAME, $1); }
-
+ |   routine_designator 	{ $$ = _symbol_create_list(SQL_FUNC, $1); }
 /* | DOMAIN domain_name
    | CHARACTER SET char_set_name
    | COLLATION collation_name
@@ -1690,9 +1691,9 @@ column_commalist_parens:
  ;
 
 type_def:
-    create TYPE ident EXTERNAL sqlNAME ident
+    create TYPE qname EXTERNAL sqlNAME ident
 			{ dlist *l = L();
-				append_string(l, $3);
+				append_list(l, $3);
 				append_string(l, $6);
 			  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
  ;
@@ -2230,81 +2231,86 @@ triggered_statement:
     END 			{ $$ = $3; }
  ;
 
+routine_designator:
+	FUNCTION qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $2 );	
+	  append_list(l, $3 );
+	  append_int(l, F_FUNC );
+	  $$ = l; }
+ |	FILTER FUNCTION qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );	
+	  append_list(l, $4 );
+	  append_int(l, F_FILT );
+	  $$ = l; }
+ |	AGGREGATE qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $2 );	
+	  append_list(l, $3 );
+	  append_int(l, F_AGGR );
+	  $$ = l; }
+ |	PROCEDURE qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $2 );	
+	  append_list(l, $3 );
+	  append_int(l, F_PROC );
+	  $$ = l; }
+ ;
+
 drop_statement:
    drop TABLE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | drop FUNCTION qname opt_typelist drop_action
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, 0 );
-	  append_list(l, $4 );
-	  append_int(l, $5 );
-	  append_int(l, F_FUNC );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop FILTER FUNCTION qname opt_typelist drop_action
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_int(l, 0 );
-	  append_list(l, $5 );
-	  append_int(l, $6 );
-	  append_int(l, F_FILT );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop AGGREGATE qname opt_typelist drop_action
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, 0 );
-	  append_list(l, $4 );
-	  append_int(l, $5 );
-	  append_int(l, F_AGGR );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop PROCEDURE qname opt_typelist drop_action
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, 0 );
-	  append_list(l, $4 );
-	  append_int(l, $5 );
-	  append_int(l, F_PROC );
+ | drop routine_designator drop_action
+	{ dlist *l = $2;
+	  append_int(l, 0 ); /* not all */
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | drop ALL FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
-	  append_int(l, 1 );
 	  append_list(l, NULL );
-	  append_int(l, $5 );
 	  append_int(l, F_FUNC );
+	  append_int(l, 1 );
+	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | drop ALL FILTER FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $5 );
-	  append_int(l, 1 );
 	  append_list(l, NULL );
-	  append_int(l, $6 );
 	  append_int(l, F_FILT );
+	  append_int(l, 1 );
+	  append_int(l, $6 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | drop ALL AGGREGATE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
-	  append_int(l, 1 );
 	  append_list(l, NULL );
-	  append_int(l, $5 );
 	  append_int(l, F_AGGR );
+	  append_int(l, 1 );
+	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  | drop ALL PROCEDURE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
-	  append_int(l, 1 );
 	  append_list(l, NULL );
-	  append_int(l, $5 );
 	  append_int(l, F_PROC );
+	  append_int(l, 1 );
+	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  |  drop VIEW qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
+ |  drop TYPE qname drop_action	 
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_DROP_TYPE, l ); }
  |  drop ROLE ident	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
  |  drop USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  drop INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }

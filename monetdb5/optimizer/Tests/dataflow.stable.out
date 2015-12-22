@@ -16,54 +16,36 @@ stdout of test 'dataflow` in directory 'monetdb5/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32759/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# SQLException:mvc:SQL module not initialized
-function user.tst():void;
-    s := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000);
-    l := aggr.min(s);
-    h := l;
-#mdb.setTimer(true); 
-#mdb.setThread(true); 
-    z := nil:bat[:oid,:oid];
-    t1 := algebra.subselect(s,l,h,true,true,false);
-    t2 := algebra.subselect(s,l,h,true,true,false);
-    t3 := algebra.subselect(s,l,h,true,true,false);
-    t4 := algebra.subselect(s,l,h,true,true,false);
-    t5 := algebra.subselect(s,l,h,true,true,false);
-    t6 := algebra.subselect(s,l,h,true,true,false);
-    t7 := algebra.subselect(s,l,h,true,true,false);
-    t8 := algebra.subselect(s,l,h,true,true,false);
-    z := mat.pack(t1,t2,t3,t4,t5,t6,t7,t8);
-    mdb.var();
-    c := aggr.count(z);
-    io.print(c);
-    io.print("done");
-end user.tst;
-function user.main():void;
-# a simple dataflow test 
-    mdb.List("user","tst");
-    user.tst();
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:20:24 >  
+# 09:20:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26435" "--port=37267"
+# 09:20:24 >  
+
+#mdb.List("user","tst");
 function user.tst():void;               	#[0]  0 
-    s:bat[:oid,:int] := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000:int);	#[1] MBMuniform 1 <- 2 3 4 
-    l:int := aggr.min(s:bat[:oid,:int]);	#[2] ALGminany 5 <- 1 
+    s:bat[:int] := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000:int);	#[1] MBMuniform 1 <- 2 3 4 
+    l:int := aggr.min(s:bat[:int]);     	#[2] ALGminany 5 <- 1 
     h:int := l:int;                     	#[3]  6 <- 5 
 #mdb.setTimer(true);                    
 #mdb.setThread(true);                   
 barrier X_28:bit := language.dataflow();	#[6] MALstartDataflow 28 
-    z:bat[:oid,:oid] := nil:bat[:oid,:oid];	#[7]  9 <- 10 
-    t1:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[8] ALGsubselect1 11 <- 1 5 6 12 13 14 
-    t2:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[9] ALGsubselect1 15 <- 1 5 6 12 12 14 
-    t3:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[10] ALGsubselect1 16 <- 1 5 6 12 12 14 
-    t4:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[11] ALGsubselect1 17 <- 1 5 6 12 12 14 
-    t5:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[12] ALGsubselect1 18 <- 1 5 6 12 12 14 
-    t6:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[13] ALGsubselect1 19 <- 1 5 6 12 12 14 
-    t7:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[14] ALGsubselect1 20 <- 1 5 6 12 12 14 
-    t8:bat[:oid,:oid] := algebra.subselect(s:bat[:oid,:int],l:int,h:int,true:bit,true:bit,false:bit);	#[15] ALGsubselect1 21 <- 1 5 6 12 12 14 
-    language.pass(s:bat[:oid,:int]);    	#[16] MALpass 27 <- 1 
+    z:bat[:oid] := nil:bat[:oid];       	#[7]  9 <- 10 
+    t1:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[8] ALGsubselect1 11 <- 1 5 6 12 13 14 
+    t2:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[9] ALGsubselect1 15 <- 1 5 6 12 12 14 
+    t3:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[10] ALGsubselect1 16 <- 1 5 6 12 12 14 
+    t4:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[11] ALGsubselect1 17 <- 1 5 6 12 12 14 
+    t5:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[12] ALGsubselect1 18 <- 1 5 6 12 12 14 
+    t6:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[13] ALGsubselect1 19 <- 1 5 6 12 12 14 
+    t7:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[14] ALGsubselect1 20 <- 1 5 6 12 12 14 
+    t8:bat[:oid] := algebra.subselect(s:bat[:int],l:int,h:int,true:bit,true:bit,false:bit);	#[15] ALGsubselect1 21 <- 1 5 6 12 12 14 
+    language.pass(s:bat[:int]);         	#[16] MALpass 27 <- 1 
 exit X_28:bit;                          	#[17]  28 
-    z:bat[:oid,:oid] := mat.pack(t1:bat[:oid,:oid],t2:bat[:oid,:oid],t3:bat[:oid,:oid],t4:bat[:oid,:oid],t5:bat[:oid,:oid],t6:bat[:oid,:oid],t7:bat[:oid,:oid],t8:bat[:oid,:oid]);	#[18] MATpack 9 <- 11 15 16 17 18 19 20 21 
+    z:bat[:oid] := mat.pack(t1:bat[:oid],t2:bat[:oid],t3:bat[:oid],t4:bat[:oid],t5:bat[:oid],t6:bat[:oid],t7:bat[:oid],t8:bat[:oid]);	#[18] MATpack 9 <- 11 15 16 17 18 19 20 21 
     mdb.var();                          	#[19] MDBvar 22 
-    c:wrd := aggr.count(z:bat[:oid,:oid]);	#[20] ALGcount_bat 23 <- 9 
+    c:wrd := aggr.count(z:bat[:oid]);   	#[20] ALGcount_bat 23 <- 9 
     io.print(c:wrd);                    	#[21] IOprint_val 24 <- 23 
     io.print("done":str);               	#[22] IOprint_val 25 <- 26 
 end user.tst;                           	#[23]  

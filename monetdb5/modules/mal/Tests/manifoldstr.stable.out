@@ -18,55 +18,18 @@ stdout of test 'manifoldstr` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-#WARNING To speedup str.toUpper a bulk operator implementation is needed
-function user.main():void;
-# the multiplex code blocks. 
-    t0 := alarm.usec();
-    b := bat.new(:oid,:str);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    bat.append(b,"The quick brown fox");
-    redo i := iterator.next(1:lng,100000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    mdb.setDebug(dbgmsk_set);
-#io.print(b); 
-    t0 := alarm.usec();
-    z:bat[:oid,:str]  := mal.manifold("str","toUpper",b);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#mal.manifold(str,toUpper) %d\n",d0);
-#io.print(z); 
-# x:bat[:oid,:str]:= mal.multiplex("str","toUpper",b); 
-    t0 := alarm.usec();
-    x := bat.new(:oid,:str);
-barrier j := 0@0;
-    ii := algebra.fetch(b,j);
-    d := str.toUpper(ii);
-    bat.append(x,d);
-    redo j := iterator.next(1@0,100000@0);
-exit j;
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#mal.multiplex(str,toUpper) %d\n",d0);
-#io.print(x); 
-# No column version available 
-#t0:= alarm.usec(); 
-#x:= str.toUpper(b); 
-#t1:= alarm.usec(); 
-#d0:= t1-t0; 
-#io.printf("#str.toupper() %d\n",d0); 
-end user.main;
-#mal.manifold(str,toUpper) 67394
-#mal.multiplex(str,toUpper) 325867
+# MonetDB/R   module loaded
 
-# 10:40:30 >  
-# 10:40:30 >  "Done."
-# 10:40:30 >  
+Ready.
+
+# 09:46:39 >  
+# 09:46:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:39 >  
+
+#mal.manifold(str,toUpper) 231612
+#mal.multiplex(str,toUpper) 520175
+
+# 09:46:40 >  
+# 09:46:40 >  "Done."
+# 09:46:40 >  
 
