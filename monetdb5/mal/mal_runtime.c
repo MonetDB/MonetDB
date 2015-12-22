@@ -29,21 +29,6 @@ static int qtop, qsize;
 static int qtag= 1;
 static int calltag =0; // to identify each invocation
 
-
-static void 
-formatVolume(str buf, int len, lng vol){
-	if( vol <1024)
-		snprintf(buf,len,LLFMT,vol);
-	else
-	if( vol <1024*1024)
-		snprintf(buf,len,LLFMT "K",vol/1024);
-	else
-	if( vol <1024* 1024*1024)
-		snprintf(buf,len, LLFMT "M",vol/1024/1024);
-	else
-		snprintf(buf,len, "%6.1fG",vol/1024.0/1024/1024);
-}
-
 static str isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
@@ -245,41 +230,4 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 		}
 	}
 	return vol;
-}
-
-void displayVolume(Client cntxt, lng vol)
-{
-	char buf[32];
-	formatVolume(buf, (int) sizeof(buf), vol);
-	mnstr_printf(cntxt->fdout, "%s", buf);
-}
-/*
- * The footprint maintained in the stack is the total size all non-persistent objects in MB.
- * It gives an impression of the total extra memory needed during query evaluation.
- * Note, it does imply that all that space is claimed at the same time.
- */
-
-void
-updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid)
-{
-    BAT *b;
-	BUN cnt;
-    lng total = 0;
-	bat bid;
-
-	if ( !mb || !stk)
-		return ;
-	if ( isaBatType(getVarType(mb,varid)) && (bid = stk->stk[varid].val.bval) != bat_nil){
-
-		b = BATdescriptor(bid);
-        if (b == NULL || isVIEW(b) || b->batPersistence == PERSISTENT)
-            return;
-		cnt = BATcount(b);
-		total += heapinfo(&b->T->heap);
-		total += heapinfo(b->T->vheap);
-		total += hashinfo(b->T->hash);
-		BBPunfix(b->batCacheid);
-		// no concurrency protection (yet)
-		stk->tmpspace += total/1024/1024; // keep it in MBs
-    }
 }
