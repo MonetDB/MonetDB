@@ -416,7 +416,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 
 static int
-_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call)
+_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -479,7 +479,8 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		return -1;
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	curBlk->inlineProp =1;
+	if (inline_func)
+		curBlk->inlineProp =1;
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -510,7 +511,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	/* dirty hack, rename (change first char of name) L->l, local
 	 * functions name start with 'l'         */
 	name[0] = 'l';
-	if (_create_relational_function(m, mod, name, rel, call) < 0)
+	if (_create_relational_function(m, mod, name, rel, call, 0) < 0)
 		return -1;
 
 	/* create stub */
@@ -571,7 +572,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
 #else
-	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan"); */
+	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, ASSIGNsymbol);
 	setModuleId(p, remoteRef);
 	setFunctionId(p, execRef);
@@ -689,14 +690,14 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 }
 
 int
-monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call)
+monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func)
 {
 	prop *p = NULL;
 
 	if (rel && (p = find_prop(rel->p, PROP_REMOTE)) != NULL)
 		return _create_relational_remote(m, mod, name, rel, call, p);
 	else
-		return _create_relational_function(m, mod, name, rel, call);
+		return _create_relational_function(m, mod, name, rel, call, inline_func);
 }
 
 /*
@@ -2095,7 +2096,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* dump args */
 			if (s->op1 && _dumpstmt(sql, mb, s->op1) < 0)
 				return -1;
-			if (monet5_create_relational_function(sql->mvc, mod, fimp, rel, s) < 0)
+			if (monet5_create_relational_function(sql->mvc, mod, fimp, rel, s, 1) < 0)
 				 return -1;
 
 			q = newStmt(mb, mod, fimp);
