@@ -2368,7 +2368,6 @@ str recycleRef;
 str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
 str refineRef;
 str registerRef;
-void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 str remapRef;
 str remoteRef;
 void removeDataflow(MalBlkPtr mb);
@@ -2400,7 +2399,6 @@ void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 void runtimeProfileFinish(Client cntxt, MalBlkPtr mb);
 void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
-str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int safetyBarrier(InstrPtr p, InstrPtr q);
 str schedulerRef;
 str selectNotNilRef;
