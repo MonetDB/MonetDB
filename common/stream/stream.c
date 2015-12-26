@@ -1492,18 +1492,22 @@ stream_xzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 
 	size = 0;
 	while (xz->strm.avail_in) {
-		size_t sz = 0;
+		size_t sz = 0, isz = xz->strm.avail_in;
+
 		lzma_ret ret = lzma_code(&xz->strm, action);
-		
 		if (xz->strm.avail_out == 0 || ret != LZMA_OK) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
-		if ((sz = fwrite(xz->buf, 1, xz->strm.avail_out, xz->fp)) != xz->strm.avail_out) {
+		sz = XZBUFSIZ - xz->strm.avail_out;
+		if (fwrite(xz->buf, 1, sz, xz->fp) != sz) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
-		size += sz;
+		assert(xz->strm.avail_in == 0);
+		size += isz;
+		xz->strm.next_out = xz->buf;
+		xz->strm.avail_out = XZBUFSIZ;
 	}
 	if (size) 
 		return (ssize_t) (size / elmsize);
@@ -1516,6 +1520,16 @@ stream_xzclose(stream *s)
 	xz_stream *xz = s->stream_data.p;
 
 	if (xz) {
+		if (s->access == ST_WRITE) {
+			lzma_ret ret = lzma_code(&xz->strm, LZMA_FINISH);
+
+			if (xz->strm.avail_out && ret == LZMA_STREAM_END) {
+				size_t sz = XZBUFSIZ - xz->strm.avail_out;
+				if (fwrite(xz->buf, 1, sz, xz->fp) != sz) 
+					s->errnr = MNSTR_WRITE_ERROR;
+			}
+		}
+		fflush(xz->fp);
 		fclose(xz->fp);
 		lzma_end(&xz->strm);
 		free(xz);
@@ -1530,7 +1544,7 @@ stream_xzflush(stream *s)
 
 	if (xz == NULL)
 		return -1;
-	if (s->access == ST_WRITE && fflush(xz->fp))
+	if (s->access == ST_WRITE && fflush(xz->fp)) 
 		return -1;
 	return 0;
 }
