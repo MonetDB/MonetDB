@@ -1305,7 +1305,9 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- /* mapi:monetdb://host:port/database (assumed monetdb/monetdb) */
+ /* mapi:monetdb://host:port/database[/schema[/table]] 
+    This also allows access via monetdbd. 
+    We assume the monetdb user with default password */
  |  REMOTE TABLE qname table_content_source ON STRING
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();

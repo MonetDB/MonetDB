@@ -12,6 +12,7 @@
 #include "rel_updates.h"
 #include "rel_exp.h"
 #include "rel_schema.h"
+#include "rel_remote.h"
 #include "rel_psm.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
@@ -899,11 +900,19 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		sql_table *t = (tt == tt_remote)?
-			mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc):
-			mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
+		sql_table *t;
+	       
+		if (tt == tt_remote) {
+			if (!mapiuri_valid(loc))
+				return sql_error(sql, 02, "42000!CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
+			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
+		} else {
+			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+		}
+		if (!t)
+			return NULL;
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;

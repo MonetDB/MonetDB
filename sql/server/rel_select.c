@@ -18,6 +18,7 @@
 #include "rel_prop.h"
 #include "rel_psm.h"
 #include "rel_schema.h"
+#include "rel_remote.h"
 #include "rel_sequence.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
@@ -458,7 +459,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	node *cn;
 	sql_allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
-	char *tname = t->base.name;
+	const char *tname = t->base.name;
 
 	assert(atname);
 	rel->l = t;
@@ -466,6 +467,8 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	rel->op = op_basetable;
 	rel->exps = new_exp_list(sa);
 
+	if (isRemote(t)) 
+		tname = mapiuri_table(t->query, sql->sa, tname);
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);

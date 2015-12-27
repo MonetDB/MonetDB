@@ -42,6 +42,7 @@
 #include <rel_exp.h>
 #include <rel_bin.h>
 #include <rel_dump.h>
+#include <rel_remote.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
@@ -495,7 +496,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	char *uri = prp->value;
+	const char *uri = mapiuri_uri(prp->value, m->sa);
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
