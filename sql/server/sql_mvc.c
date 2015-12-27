@@ -1354,7 +1354,7 @@ stack_pop_until(mvc *sql, int top)
 	while(sql->topvars > top) {
 		sql_var *v = &sql->vars[--sql->topvars];
 
-		_DELETE(v->name);
+		c_delete(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
 	}
@@ -1366,7 +1366,7 @@ stack_pop_frame(mvc *sql)
 	while(!sql->vars[--sql->topvars].frame) {
 		sql_var *v = &sql->vars[sql->topvars];
 
-		_DELETE(v->name);
+		c_delete(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
 		if (v->t && v->view) 
@@ -1375,7 +1375,7 @@ stack_pop_frame(mvc *sql)
 			rel_destroy(v->rel);
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
-		_DELETE(sql->vars[sql->topvars].name);
+		c_delete(sql->vars[sql->topvars].name);
 	sql->frame--;
 }
 

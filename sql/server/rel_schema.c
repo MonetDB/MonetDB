@@ -35,7 +35,7 @@ _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 }
 
 static sql_rel *
-rel_table(mvc *sql, int cat_type, char *sname, sql_table *t, int nr)
+rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -159,7 +159,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 
 		for (m = r->exps->h; m; m = m->next) {
 			sql_exp *e = m->data;
-			char *cname = exp_name(e);
+			const char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
 
 			if (!cname)
@@ -175,7 +175,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 }
 
 sql_table *
-mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action )
+mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action )
 {
 	int tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_STREAM)?tt_stream:
@@ -859,7 +859,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *table_elements_or_subquery, int commit_action, char *loc)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc)
 {
 	sql_schema *s = NULL;
 

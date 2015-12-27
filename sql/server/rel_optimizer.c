@@ -434,7 +434,7 @@ table_colexp(sql_exp *e, sql_rel *r)
 	sql_table *t = r->l;
 
 	if (e->type == e_column) {
-		char *name = e->name;
+		const char *name = e->name;
 		node *cn;
 
 		if (r->exps) { /* use alias */
@@ -607,7 +607,7 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 }
 
 static sql_exp *
-rel_find_column( sql_allocator *sa, sql_rel *rel, char *tname, char *cname )
+rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname )
 {
 	if (!rel)
 		return NULL;
@@ -1597,7 +1597,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *cp;			/* Cross Product */
 		sql_subfunc *mult;
 		list *args;
-		char *rname = NULL, *name = NULL;
+		const char *rname = NULL, *name = NULL;
 		sql_rel *srel;
 
 		oce = rel->exps->h->data;
@@ -1717,7 +1717,7 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e1 = n->data;
 		sql_exp *e2 = m->data;
-		char *rname = e1->rname;
+		const char *rname = e1->rname;
 
 		if (!rname && e1->type == e_column && e1->l && e2->rname && 
 		    strcmp(e1->l, e2->rname) == 0)
@@ -3003,8 +3003,8 @@ static sql_exp *
 exp_uses_exp( list *exps, sql_exp *e)
 {
 	node *n;
-	char *rname = exp_relname(e);
-	char *name = exp_name(e);
+	const char *rname = exp_relname(e);
+	const char *name = exp_name(e);
 
 	if (!exps)
 		return NULL;
@@ -3245,13 +3245,13 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 				}
 
 				/* change alias pe, ie project out the index  */
-				pe->l = exp_relname(ne); 
-				pe->r = exp_name(ne);
+				pe->l = (void*)exp_relname(ne); 
+				pe->r = (void*)exp_name(ne);
 				exp_setname(sql->sa, pe, exp_relname(ne), exp_name(ne));
 
 				/* change alias ge */
-				ge->l = exp_relname(pe); 
-				ge->r = exp_name(pe);
+				ge->l = (void*)exp_relname(pe); 
+				ge->r = (void*)exp_name(pe);
 				exp_setname(sql->sa, ge, exp_relname(pe), exp_name(pe));
 
 				/* zap both project and groupby name hash tables (as we changed names above) */
@@ -3654,7 +3654,7 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 			for(n = gbes->h; n; n = n->next) {
 				sql_exp *gbe = n->data;
 				int fnd = 0;
-				char *rname = NULL, *name = NULL;
+				const char *rname = NULL, *name = NULL;
 
 				/* project in between, ie find alias */
 				/* first find expression in expression list */
@@ -6496,7 +6496,7 @@ rel_rewrite_types(int *changes, mvc *sql, sql_rel *rel)
 }
 
 static sql_exp *
-exp_indexcol(mvc *sql, sql_exp *e, char *tname, char *cname, int de, bit unique)
+exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de, bit unique)
 {
 	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
 	sql_exp *u = exp_atom_bool(sql->sa, unique);
@@ -6508,7 +6508,7 @@ exp_indexcol(mvc *sql, sql_exp *e, char *tname, char *cname, int de, bit unique)
 }
 
 static sql_exp *
-exp_stringscol(mvc *sql, sql_exp *e, char *tname, char *cname)
+exp_stringscol(mvc *sql, sql_exp *e, const char *tname, const char *cname)
 {
 	sql_subfunc *f = sql_bind_func(sql->sa, mvc_bind_schema(sql,"sys"), "strings", exp_subtype(e), NULL, F_FUNC);
 
@@ -6518,7 +6518,7 @@ exp_stringscol(mvc *sql, sql_exp *e, char *tname, char *cname)
 }
 
 static sql_rel *
-rel_dicttable(mvc *sql, sql_column *c, char *tname, int de)
+rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	sql_exp *e, *ie;
@@ -6560,8 +6560,8 @@ rel_add_dicts(int *changes, mvc *sql, sql_rel *rel)
 
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne = NULL;
-			char *rname = e->rname?e->rname:e->l;
-			char *oname = e->r;
+			const char *rname = e->rname?e->rname:e->l;
+			const char *oname = e->r;
 			int de;
 
 			if (!is_func(e->type) && oname[0] != '%') { 
@@ -6597,8 +6597,8 @@ rel_add_dicts(int *changes, mvc *sql, sql_rel *rel)
 				sql_rel *vt = n->data;
 				sql_exp *ic = n->next->data, *vti = NULL, *vtv;
 				sql_exp *c = n->next->next->data, *cmp;
-				char *rname = c->rname?c->rname:c->l;
-				char *oname = c->r;
+				const char *rname = c->rname?c->rname:c->l;
+				const char *oname = c->r;
 	
 				rel = rel_crossproduct(sql->sa, rel, vt, op_join);
 				vti = vt->exps->h->data;

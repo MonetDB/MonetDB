@@ -168,14 +168,14 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		char *tname = table_name(sql->sa, c);
-		char *sname = schema_name(sql->sa, c);
-		char *_empty = "";
-		char *tn = (tname) ? tname : _empty;
-		char *sn = (sname) ? sname : _empty;
-		char *cn = column_name(sql->sa, c);
-		char *ntn = sql_escape_ident(tn);
-		char *nsn = sql_escape_ident(sn);
+		const char *tname = table_name(sql->sa, c);
+		const char *sname = schema_name(sql->sa, c);
+		const char *_empty = "";
+		const char *tn = (tname) ? tname : _empty;
+		const char *sn = (sname) ? sname : _empty;
+		const char *cn = column_name(sql->sa, c);
+		const char *ntn = sql_escape_ident(tn);
+		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl;
 		char *fqtn;
 
@@ -192,8 +192,8 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			_DELETE(fqtn);
 		} else
 			q = NULL;
-		_DELETE(ntn);
-		_DELETE(nsn);
+		c_delete(ntn);
+		c_delete(nsn);
 		if (q == NULL)
 			return -1;
 	}
@@ -240,14 +240,14 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, str format, str se
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		char *tname = table_name(sql->sa, c);
-		char *sname = schema_name(sql->sa, c);
-		char *_empty = "";
-		char *tn = (tname) ? tname : _empty;
-		char *sn = (sname) ? sname : _empty;
-		char *cn = column_name(sql->sa, c);
-		char *ntn = sql_escape_ident(tn);
-		char *nsn = sql_escape_ident(sn);
+		const char *tname = table_name(sql->sa, c);
+		const char *sname = schema_name(sql->sa, c);
+		const char *_empty = "";
+		const char *tn = (tname) ? tname : _empty;
+		const char *sn = (sname) ? sname : _empty;
+		const char *cn = column_name(sql->sa, c);
+		const char *ntn = sql_escape_ident(tn);
+		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl;
 		char *fqtn;
 
@@ -264,8 +264,8 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, str format, str se
 			_DELETE(fqtn);
 		} else
 			q = NULL;
-		_DELETE(ntn);
-		_DELETE(nsn);
+		c_delete(ntn);
+		c_delete(nsn);
 		if (q == NULL)
 			return -1;
 	}
@@ -293,9 +293,9 @@ dump_table(MalBlkPtr mb, sql_table *t)
 		return -1;
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		char *tname = c->t->base.name;
-		char *tn = sql_escape_ident(tname);
-		char *cn = c->base.name;
+		const char *tname = c->t->base.name;
+		const char *tn = sql_escape_ident(tname);
+		const char *cn = c->base.name;
 		InstrPtr q;
 
 		if (tn == NULL)
@@ -307,7 +307,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 		q = pushStr(mb, q, c->type.type->localtype == TYPE_void ? "char" : c->type.type->sqlname);
 		q = pushInt(mb, q, c->type.digits);
 		q = pushInt(mb, q, c->type.scale);
-		_DELETE(tn);
+		c_delete(tn);
 		if (q == NULL)
 			return -1;
 	}
@@ -465,7 +465,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -534,7 +534,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -613,7 +613,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 		for (n = call->op1->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
-			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
@@ -2420,14 +2420,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (cnt == 1 && first->nrcols <= 0 ){
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
-					char *tname = table_name(sql->mvc->sa, c);
-					char *sname = schema_name(sql->mvc->sa, c);
-					char *_empty = "";
-					char *tn = (tname) ? tname : _empty;
-					char *sn = (sname) ? sname : _empty;
-					char *cn = column_name(sql->mvc->sa, c);
-					char *ntn = sql_escape_ident(tn);
-					char *nsn = sql_escape_ident(sn);
+					const char *tname = table_name(sql->mvc->sa, c);
+					const char *sname = schema_name(sql->mvc->sa, c);
+					const char *_empty = "";
+					const char *tn = (tname) ? tname : _empty;
+					const char *sn = (sname) ? sname : _empty;
+					const char *cn = column_name(sql->mvc->sa, c);
+					const char *ntn = sql_escape_ident(tn);
+					const char *nsn = sql_escape_ident(sn);
 					size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
 					char *fqtn = NEW_ARRAY(char, fqtnl);
 
@@ -2445,8 +2445,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = pushArgument(mb, q, c->nr);
 					}
 
-					_DELETE(ntn);
-					_DELETE(nsn);
+					c_delete(ntn);
+					c_delete(nsn);
 					_DELETE(fqtn);
 					if (q == NULL)
 						return -1;

@@ -52,7 +52,7 @@
 #define mod_locked 	16 
 
 typedef struct sql_var {
-	char *name;
+	const char *name;
 	ValRecord value;
 	sql_subtype type;
 	sql_table *t;

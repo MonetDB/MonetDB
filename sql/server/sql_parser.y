@@ -336,6 +336,7 @@ int yydebug=1;
 	table_exp
 	table_ref_commalist
 	table_element_list
+	table_opt_storage
 	as_subquery_clause
 	column_exp_commalist
 	column_option_list
@@ -1257,8 +1258,13 @@ opt_encrypted:
  |  ENCRYPTED		{ $$ = SQL_PW_ENCRYPTED; }
  ;
 
+table_opt_storage:
+    /* empty */		 { $$ = NULL; }
+ |  STORAGE ident STRING { $$ = append_string(append_string(L(), $2), $3); } 
+ ;
+
 table_def:
-    TABLE qname table_content_source 
+    TABLE qname table_content_source  table_opt_storage
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
@@ -1267,6 +1273,7 @@ table_def:
 	  append_symbol(l, $3);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
@@ -3269,7 +3276,7 @@ like_exp:
 	  append_symbol(l, $1);
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |  scalar_exp ESCAPE string
- 	{ char *s = sql2str($3);
+ 	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
 		char *msg = sql_message("\b22025!ESCAPE must be one character");
 		yyerror(m, msg);
@@ -4049,7 +4056,7 @@ user:
  ;
 
 literal:
-    string 	{ char *s = sql2str($1);
+    string 	{ const char *s = sql2str($1);
 		  int len = _strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );

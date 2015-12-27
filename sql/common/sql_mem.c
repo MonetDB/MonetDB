@@ -169,3 +169,11 @@ size_t sa_size( sql_allocator *sa )
 {
 	return sa->usedmem;
 }
+
+void
+c_delete( const void *p ) 
+{
+	void *xp = (void*)p;
+
+	GDKfree(xp);
+}

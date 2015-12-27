@@ -110,7 +110,7 @@ rel_issubquery(sql_rel*r)
 
    we should clean up (remove) this function.
  */
-char *
+const char *
 rel_name( sql_rel *r )
 {
 	if (!is_project(r->op) && !is_base(r->op) && r->l)
@@ -165,7 +165,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 }
 
 static sql_exp *
-exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old)
+exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
 {
 	sql_exp *ne = NULL;
 
@@ -341,7 +341,7 @@ rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 }
 
 list *
-rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
+rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
 	int label = sql->label;
 	list *rexps, *exps ;
@@ -452,7 +452,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 }
 
 sql_rel *
-rel_basetable(mvc *sql, sql_table *t, char *atname)
+rel_basetable(mvc *sql, sql_table *t, const char *atname)
 {
 	prop *p = NULL;
 	node *cn;
@@ -981,7 +981,7 @@ rel_sample(sql_allocator *sa, sql_rel *l, list *exps )
 	return rel;
 }
 
-static char * 
+static const char * 
 rel_get_name( sql_rel *rel )
 {
 	switch(rel->op) {
@@ -1320,7 +1320,7 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 }
 
 static sql_rel *
-rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
+rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
@@ -1384,7 +1384,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 }
 
 sql_exp *
-rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
+rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
 	sql_rel *p = NULL;
 
@@ -1403,7 +1403,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 }
 
 sql_exp *
-rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
+rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f )
 {
 	(void)f;
 
@@ -5434,7 +5434,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
-		char *nm = le->name;
+		const char *nm = le->name;
 		sql_exp *re = exps_bind_column(r_exps, nm, NULL);
 
 		if (re) {
@@ -5996,7 +5996,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		}
 		exps = rel_projections(sql, t1, NULL, 1, 1);
 		for (m = exps->h; m; m = m->next) {
-			char *nm = exp_name(m->data);
+			const char *nm = exp_name(m->data);
 			int fnd = 0;
 
 			for (n = js->data.lval->h; n; n = n->next) {
@@ -6014,7 +6014,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		}
 		exps = rel_projections(sql, t2, NULL, 1, 1);
 		for (m = exps->h; m; m = m->next) {
-			char *nm = exp_name(m->data);
+			const char *nm = exp_name(m->data);
 			int fnd = 0;
 
 			for (n = js->data.lval->h; n; n = n->next) {

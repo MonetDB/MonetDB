@@ -102,12 +102,12 @@ dnode_create(sql_allocator *sa )
 }
 
 static dnode *
-dnode_create_string(sql_allocator *sa, char *data)
+dnode_create_string(sql_allocator *sa, const char *data)
 {
 	dnode *n = dnode_create(sa);
 
 	if (n) {
-		n->data.sval = data;
+		n->data.sval = (char*)data;
 		n->type = type_string;
 	}
 	return n;
@@ -204,7 +204,7 @@ dlist_append_default(dlist *l, dnode *n)
 }
 
 dlist *
-dlist_append_string(sql_allocator *sa, dlist *l, char *data)
+dlist_append_string(sql_allocator *sa, dlist *l, const char *data)
 {
 	dnode *n = dnode_create_string(sa, data);
 	
