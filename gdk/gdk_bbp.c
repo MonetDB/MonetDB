@@ -1230,7 +1230,6 @@ heap_entry(FILE *fp, COLrec *col)
 			   ((unsigned short) col->dense << 9) |
 			   ((unsigned short) col->nonil << 10) |
 			   ((unsigned short) col->nil << 11),
-			   ((unsigned short) col->heap.compressed << 12),
 		       col->nokey[0],
 		       col->nokey[1],
 		       col->nosorted,
