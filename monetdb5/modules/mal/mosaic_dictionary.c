@@ -233,7 +233,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 					if( dict[j] == *val) break;
 				if ( j == hdr->dictsize){
 					if ( hdr->dictsize == 256){
-						lng min = 0;
+						int min = 0;
 						// select low frequent candidate
 						for(j=1;j<256;j++)
 							if( cnt[min] <cnt[j]) min = j;
@@ -275,7 +275,7 @@ MOScreatedictionary(Client cntxt, MOStask task)
 flt
 MOSestimate_dictionary(Client cntxt, MOStask task)
 {	
-	BUN i;
+	BUN i = 0;
 	int j;
 	flt factor= 0.0;
 	MosaicHdr hdr = task->hdr;
@@ -456,7 +456,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	MosaicHdr hdr = task->hdr;
 	BUN i;
 	int j;
-	ulng m1,m2;
+	ulng m1=0,m2;
 	int cid, lshift, rshift;
 	ulng *base;
 	(void) cntxt;
@@ -477,7 +477,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 			base  = (ulng*)(((char*)blk) + MosaicBlkSize);
 
 			for(i = 0; i < lim; i++){
-				cid = (i * hdr->bits)/64;
+				cid = (int)((i * hdr->bits)/64);
 				lshift= 63 -((i * hdr->bits) % 64) ;
 				if ( lshift >= hdr->bits){
 					j = (base[cid]>> (lshift-hdr->bits)) & ((ulng)hdr->mask);

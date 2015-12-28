@@ -810,7 +810,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
  *           Imprints *timprints;     // column imprints index on tail
- *           Heap   *mosaic;		  // compressed representation
+ *           Heap   *mosaic;	      // compressed representation
  *  } BAT;
  * @end verbatim
  *
@@ -890,7 +890,7 @@ typedef struct {
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
-	Heap *mosaic;	/* compressed representation */
+	Heap *mosaic;		/* compressed representation */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
