@@ -208,7 +208,7 @@ static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
 {
 	FlowEvent r = NULL, s = NULL;
-	int i;
+	//int i;
 
 	assert(q);
 	MT_sema_down(&q->s);
@@ -253,6 +253,7 @@ q_dequeue(Queue *q, Client cntxt)
 	if (q->last > 0) {
 		/* LIFO favors garbage collection */
 		r = q->data[--q->last];
+/*  Line coverage test shows it is an expensive loop that is hardly ever leads to adjustment
 		for(i= q->last-1; r &&  i>=0; i--){
 			s= q->data[i];
 			if( s && s->flow && s->flow->stk &&
@@ -262,6 +263,7 @@ q_dequeue(Queue *q, Client cntxt)
 				r = s;
 			}
 		}
+*/
 		q->data[q->last] = 0;
 	}
 	/* else: terminating */
