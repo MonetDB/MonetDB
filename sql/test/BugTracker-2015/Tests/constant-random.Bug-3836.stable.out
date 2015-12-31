@@ -32,13 +32,13 @@ Ready.
 #create table tr(a int);
 #insert into tr values (1), (1);
 [ 2	]
-#select a + rand() from tr;
-% sys.L # table_name
-% sql_add_a # name
-% bigint # type
-% 10 # length
-[ 2024039433	]
-[ 61050385	]
+#select count(*) from (select a + rand() as arand from tr) as ntr group by arand;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
 #create table trand (a int, b int default rand());
 #insert into trand(a) values (1);
 [ 1	]
@@ -48,34 +48,42 @@ Ready.
 [ 1	]
 #alter table trand add column c int default rand();
 #alter table trand add column d int default null;
-#select * from trand;
-% sys.trand,	sys.trand,	sys.trand,	sys.trand # table_name
-% a,	b,	c,	d # name
-% int,	int,	int,	int # type
-% 1,	10,	10,	1 # length
-[ 1,	1608666431,	2022107617,	NULL	]
-[ 2,	1889558987,	237295360,	NULL	]
-[ 3,	1447033435,	1523830920,	NULL	]
+#select count(*) from trand group by b;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#select count(*) from trand group by c;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
 #update trand set d = rand(); -- works as expected
 [ 3	]
-#select * from trand;
-% sys.trand,	sys.trand,	sys.trand,	sys.trand # table_name
-% a,	b,	c,	d # name
-% int,	int,	int,	int # type
-% 1,	10,	10,	10 # length
-[ 1,	1608666431,	2022107617,	1108247742	]
-[ 2,	1889558987,	237295360,	1862761145	]
-[ 3,	1447033435,	1523830920,	799790232	]
+#select count(*) from trand group by d;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
 #update trand set a = a + rand(); -- does not work as expected/supposed to
 [ 3	]
-#select * from trand;
-% sys.trand,	sys.trand,	sys.trand,	sys.trand # table_name
-% a,	b,	c,	d # name
-% int,	int,	int,	int # type
-% 10,	10,	10,	10 # length
-[ 1357419369,	1608666431,	2022107617,	1108247742	]
-[ 1405847588,	1889558987,	237295360,	1862761145	]
-[ 181962418,	1447033435,	1523830920,	799790232	]
+#select count(*) from trand group by a;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
 #drop table tr;
 #drop table trand;
 

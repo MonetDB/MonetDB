@@ -288,13 +288,13 @@ exp_atom_dbl(sql_allocator *sa, dbl f)
 }
 
 sql_exp *
-exp_atom_str(sql_allocator *sa, str s, sql_subtype *st) 
+exp_atom_str(sql_allocator *sa, const char *s, sql_subtype *st) 
 {
 	return exp_atom(sa, atom_string(sa, st, s?sa_strdup(sa, s):NULL));
 }
 
 sql_exp *
-exp_atom_clob(sql_allocator *sa, str s) 
+exp_atom_clob(sql_allocator *sa, const char *s) 
 {
 	sql_subtype clob;
 
@@ -336,10 +336,10 @@ exp_value(sql_exp *e, atom **args, int maxarg)
 }
 
 sql_exp * 
-exp_param(sql_allocator *sa, char *name, sql_subtype *tpe, int frame) 
+exp_param(sql_allocator *sa, const char *name, sql_subtype *tpe, int frame) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
-	e->r = name;
+	e->r = (char*)name;
 	e->card = CARD_ATOM;
 	e->flag = frame;
 	if (tpe)
@@ -381,7 +381,7 @@ have_nil(list *exps)
 }
 
 sql_exp * 
-exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
@@ -389,8 +389,8 @@ exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *
 	e->card = card;
 	e->rname = (arname)?arname:org_rname;
 	e->name = acname;
-	e->l = org_rname;
-	e->r = org_cname;
+	e->l = (char*)org_rname;
+	e->r = (char*)org_cname;
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -401,7 +401,7 @@ exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *
 }
 
 sql_exp * 
-exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
@@ -409,8 +409,8 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 	e->card = card;
 	e->name = cname;
 	e->rname = rname;
-	e->r = e->name;
-	e->l = e->rname;
+	e->r = (char*)e->name;
+	e->l = (char*)e->rname;
 	if (t)
 		e->tpe = *t;
 	if (!has_nils)
@@ -421,7 +421,7 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 }
 
 sql_exp *
-exp_set(sql_allocator *sa, char *name, sql_exp *val, int level)
+exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
@@ -432,7 +432,7 @@ exp_set(sql_allocator *sa, char *name, sql_exp *val, int level)
 }
 
 sql_exp * 
-exp_var(sql_allocator *sa, char *name, sql_subtype *type, int level)
+exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
@@ -443,7 +443,7 @@ exp_var(sql_allocator *sa, char *name, sql_subtype *type, int level)
 }
 
 sql_exp * 
-exp_table(sql_allocator *sa, char *name, sql_table *t, int level)
+exp_table(sql_allocator *sa, const char *name, sql_table *t, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
@@ -502,7 +502,7 @@ exp_rel(mvc *sql, sql_rel *rel)
    to this expression by this simple name.
  */
 void 
-exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
+exp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name )
 {
 	if (name) 
 		e->name = sa_strdup(sa, name);
@@ -510,7 +510,7 @@ exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
 }
 
 void 
-noninternexp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name )
+noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rname, const char *name )
 {
 	if (!is_intern(e))
 		exp_setname(sa, e, rname, name);
@@ -598,7 +598,7 @@ exp_subtype( sql_exp *e )
 	return NULL;
 }
 
-char *
+const char *
 exp_name( sql_exp *e )
 {
 	if (e->name)
@@ -608,7 +608,7 @@ exp_name( sql_exp *e )
 	return NULL;
 }
 
-char *
+const char *
 exp_relname( sql_exp *e )
 {
 	if (e->rname)
@@ -618,7 +618,7 @@ exp_relname( sql_exp *e )
 	return NULL;
 }
 
-char *
+const char *
 exp_find_rel_name(sql_exp *e)
 {
 	if (e->rname)
@@ -642,7 +642,7 @@ exp_card( sql_exp *e )
 	return e->card;
 }
 
-char *
+const char *
 exp_func_name( sql_exp *e )
 {
 	if (e->type == e_func && e->f) {
@@ -949,9 +949,9 @@ complex_select(sql_exp *e)
 }
 
 static int
-distinct_rel(sql_exp *e, char **rname)
+distinct_rel(sql_exp *e, const char **rname)
 {
-	char *e_rname = NULL;
+	const char *e_rname = NULL;
 
 	switch(e->type) {
 	case e_column:
@@ -1041,7 +1041,7 @@ exp_is_rangejoin(sql_exp *e, list *rels)
 	/* assume e is a e_cmp with 3 args 
 	 * Need to check e->r and e->f only touch one table.
 	 */
-	char *rname = 0;
+	const char *rname = 0;
 
 	if (distinct_rel(e->r, &rname) && distinct_rel(e->f, &rname))
 		return 0;
@@ -1305,7 +1305,7 @@ exp_key( sql_exp *e )
 }
 
 sql_exp *
-exps_bind_column( list *exps, char *cname, int *ambiguous ) 
+exps_bind_column( list *exps, const char *cname, int *ambiguous ) 
 {
 	sql_exp *e = NULL;
 
@@ -1364,7 +1364,7 @@ exps_bind_column( list *exps, char *cname, int *ambiguous )
 }
 
 sql_exp *
-exps_bind_column2( list *exps, char *rname, char *cname ) 
+exps_bind_column2( list *exps, const char *rname, const char *cname ) 
 {
 	if (exps) {
 		node *en;
@@ -1415,7 +1415,7 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 
 /* find an column based on the original name, not the alias it got */
 sql_exp *
-exps_bind_alias( list *exps, char *rname, char *cname ) 
+exps_bind_alias( list *exps, const char *rname, const char *cname ) 
 {
 	if (exps) {
 		node *en;

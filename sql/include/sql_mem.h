@@ -45,6 +45,8 @@
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
+extern void c_delete( const void *p );
+
 typedef struct sql_ref {
 	int refcnt;
 } sql_ref;

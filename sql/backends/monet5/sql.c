@@ -5084,7 +5084,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!rel)
 		throw(SQL, "sql.register", "Cannot register %s", buf);
 	if (rel) {
-		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops));
+		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops), 0);
 		rel_destroy(rel);
 	}
 	sqlcleanup(m, 0);

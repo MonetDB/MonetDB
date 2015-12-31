@@ -48,7 +48,7 @@ static sql_exp *
 psm_set_exp(mvc *sql, dnode *n)
 {
 	exp_kind ek = {type_value, card_value, FALSE};
-	char *name = n->data.sval;
+	const char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
 	sql_exp *e = NULL;
 	int level = 0, is_last = 0;
@@ -116,7 +116,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
 		sql_subtype *ctype = &n->data.sym->data.lval->h->next->data.typeval;
 		while(ids) {
-			char *name = ids->data.sval;
+			const char *name = ids->data.sval;
 			sql_exp *r = NULL;
 
 			/* check if we overwrite a scope local variable declare x; declare x; */
@@ -142,8 +142,8 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 {
 	sql_rel *rel = NULL;
 	dlist *qname = n->next->data.lval;
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *name = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_table *t;
 
 	if (sname)  /* not allowed here */
@@ -393,7 +393,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;
 			sql_arg *ce = m->data;
-			char *cname = exp_name(e);
+			const char *cname = exp_name(e);
 			char name[16];
 
 			if (!cname)
@@ -414,7 +414,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		list *exps = sa_list(sql->sa);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
-		char *tname = t->base.name;
+		const char *tname = t->base.name;
 
 		if (cs_size(&t->columns) != list_length(restypelist))
 			return sql_error(sql, 02, "RETURN: number of columns do not match");
@@ -650,7 +650,7 @@ create_type_list(mvc *sql, dlist *params, int param)
 }
 
 static sql_rel*
-rel_create_function(sql_allocator *sa, char *sname, sql_func *f)
+rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -670,8 +670,8 @@ rel_create_function(sql_allocator *sa, char *sname, sql_func *f)
 static sql_rel *
 rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang)
 {
-	char *fname = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *fname = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *f = NULL;
 	sql_subfunc *sf;
@@ -831,7 +831,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, char *sname, char *name, int nr, int type, int action)
+rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, int type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -852,7 +852,7 @@ rel_drop_function(sql_allocator *sa, char *sname, char *name, int nr, int type, 
 }
 
 sql_func *
-resolve_func( mvc *sql, sql_schema *s, char *name, dlist *typelist, int type, char *op) 
+resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op) 
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
@@ -928,8 +928,8 @@ resolve_func( mvc *sql, sql_schema *s, char *name, dlist *typelist, int type, ch
 static sql_rel* 
 rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *name = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *func = NULL;
 
@@ -957,8 +957,8 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 static sql_rel* 
 rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *name = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	list * list_func = NULL; 
 
@@ -983,7 +983,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 }
 
 static sql_rel *
-rel_create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
+rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *triggername, int time, int orientation, int event, const char *old_name, const char *new_name, const char *condition, const char *query)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1009,7 +1009,7 @@ rel_create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int ti
 }
 
 static void
-_stack_push_table(mvc *sql, char *tname, sql_table *t)
+_stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
 		
@@ -1019,7 +1019,7 @@ _stack_push_table(mvc *sql, char *tname, sql_table *t)
 static sql_rel *
 create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
-	char *tname = qname_table(qname);
+	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate);
@@ -1028,7 +1028,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 	sql_rel *r = NULL;
 
 	dlist *columns = trigger_event->data.lval;
-	char *old_name = NULL, *new_name = NULL; 
+	const char *old_name = NULL, *new_name = NULL; 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	
 	if (opt_ref) {
@@ -1081,7 +1081,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 }
 
 static sql_rel *
-rel_drop_trigger(mvc *sql, char *sname, char *tname)
+rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1101,7 +1101,7 @@ rel_drop_trigger(mvc *sql, char *sname, char *tname)
 static sql_rel *
 drop_trigger(mvc *sql, dlist *qname)
 {
-	char *tname = qname_table(qname);
+	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 
 	if (!mvc_schema_privs(sql, ss)) 
@@ -1114,7 +1114,7 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 {
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
-	char *sname = NULL, *tname = NULL;
+	const char *sname = NULL, *tname = NULL;
 	list *tl = sa_list(sql->sa);
 	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
@@ -1172,7 +1172,7 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 		if (!f)
 			return sql_error(sql, 01, "Analyze procedure missing");
 		for( n = columns->h; n; n = n->next) {
-			char *cname = n->data.sval;
+			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
 			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
 

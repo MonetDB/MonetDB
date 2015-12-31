@@ -9,7 +9,7 @@
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
-char *TID = "%TID%";
+const char *TID = "%TID%";
 
 static void *
 _list_find_name(list *l, const char *name)

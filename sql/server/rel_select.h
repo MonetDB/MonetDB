@@ -26,7 +26,7 @@ extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int 
 extern sql_rel * rel_project(sql_allocator *sa, sql_rel *l, list *e);
 extern sql_rel * rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
-extern list * rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname , int intern);
+extern list * rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 extern sql_rel * rel_label( mvc *sql, sql_rel *r, int all);
 extern sql_exp *rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f);
 
@@ -35,12 +35,12 @@ extern void rel_add_intern(mvc *sql, sql_rel *rel);
 extern void rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
-extern sql_rel *rel_basetable(mvc *sql, sql_table *t, char *tname);
+extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
 
-extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f );
-extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f );
+extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f );
+extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f );
 
 extern sql_exp * rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek);
 extern sql_exp * rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
@@ -66,7 +66,7 @@ extern void rel_destroy(sql_rel *rel);
 #define new_rel_list(sa) sa_list(sa)
 
 /* TODO shouldn't be needed (isn't save) ! */
-extern char * rel_name( sql_rel *r );
+extern const char * rel_name( sql_rel *r );
 
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
