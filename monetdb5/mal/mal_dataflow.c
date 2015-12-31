@@ -440,7 +440,7 @@ DFLOWworker(void *T)
 		MT_lock_unset(&flow->flowlock);
 
 		q_enqueue(flow->done, fe);
-		if ( fnxt == 0) {
+		if ( fnxt == 0 && malProfileMode) {
 			int last;
 			MT_lock_set(&todo->l);
 			last = todo->last;
