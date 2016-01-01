@@ -268,12 +268,6 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
 		}\
 	} 
 
-void 
-initMALstack(MalBlkPtr mb, MalStkPtr stk){
-	int i;
-	ValPtr lhs, rhs;
-	initStack(getInstrPtr(mb,0)->argc);
-}
 int
 isNotUsedIn(InstrPtr p, int start, int a)
 {
@@ -309,11 +303,6 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	ValPtr lhs, rhs;
 	str ret;
 	(void) mbcaller;
-
-	if (mb->errors) {
-		if (cntxt->itrace == 0) /* permit debugger analysis */
-			throw( MAL, "mal.interpreter", "Syntax error in script");
-	}
 
 	/* Prepare a new interpreter call. This involves two steps, (1)
 	 * allocate the minimum amount of stack space needed, some slack
