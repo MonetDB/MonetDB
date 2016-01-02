@@ -126,7 +126,7 @@ void mal_exit(void){
 {
 	int reruns=0, go_on;
 	do{
-		if ( (go_on = MCactiveClients()) )
+		if ( (go_on = MCactiveClients() -1) )
 			MT_sleep_ms(1000);
 		mnstr_printf(mal_clients->fdout,"#MALexit: %d clients still active\n", go_on);
 	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);

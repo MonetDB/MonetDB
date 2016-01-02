@@ -447,7 +447,7 @@ MCactiveClients(void)
 		running += (cntxt->mode == RUNCLIENT);
 		blocked += (cntxt->mode == BLOCKCLIENT);
 	}
-	return finishing+running;
+	return finishing+running +1 /* the admin */;
 }
 
 void
