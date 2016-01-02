@@ -336,9 +336,9 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   } 
   env <- NULL
   if (getOption("monetdb.debug.query", F)) message("QQ: '", statement, "'")
-
+  startt <- Sys.time()
   resp <- MonetDBLite::monetdb_embedded_query(conn@connenv$conn, statement, notreally)
-
+  takent <- round(as.numeric(Sys.time() - startt), 2)
   env <- new.env(parent=emptyenv())
   if (resp$type == Q_TABLE) {
     meta <- new.env(parent=emptyenv())
@@ -388,6 +388,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
       stop("Unable to execute statement '", statement, "'.\nServer says '", env$message, "'.")
     }
   }
+  if (getOption("monetdb.debug.query", F)) message("II: Finished in ", takent, "s")
 
   invisible(new("MonetDBEmbeddedResult", env=env))
   })

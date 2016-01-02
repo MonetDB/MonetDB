@@ -6,14 +6,14 @@ if (basedir != "") {
 }
 library(MonetDB.R)
 library(testthat)
-
+dbdir <- tempdir()
 tname <- "monetdbtest"
 data(iris)
 tsize <- function(conn, tname) 
 	as.integer(dbGetQuery(conn, paste0("SELECT COUNT(*) FROM ",tname))[[1]])
 
 test_that("db starts up and accepts queries", {
-	con <<- dbConnect(MonetDBLite(), tempdir())
+	con <<- dbConnect(MonetDBLite(), dbdir)
 	expect_is(con, "MonetDBEmbeddedConnection")
 	expect_true(dbIsValid(con))
 	res <- dbGetQuery(con, "SELECT 42")
@@ -258,9 +258,12 @@ test_that("dis/re-connect", {
 	dbDisconnect(con)
 	expect_false(dbIsValid(con))
 	expect_error(dbSendQuery(con, "SELECT 1"))
-	# this throws a warning because we cannot re-initialize embedded monetdb
-	expect_warning(con <- dbConnect(MonetDB.R::MonetDB.R(), embedded="/tmp"))
+	# we can restart in same dir
+	con <- dbConnect(MonetDB.R::MonetDB.R(), embedded=dbdir)
+	expect_true(dbIsValid(con))
 	res <- dbSendQuery(con, "SELECT 1")
 	expect_true(dbIsValid(res))
+	# but not in a different one
+	expect_error(con <- dbConnect(MonetDBLite(), "/tmp"))
 })
 
