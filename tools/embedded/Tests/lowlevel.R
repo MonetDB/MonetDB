@@ -124,4 +124,11 @@ test_that("the logger does not misbehave", {
 	monetdb_embedded_disconnect(con)
 })
 
+test_that("the garbage collector closes connections", {
+	# there are 64 connections max. if gc() does not close them, the last line will provoke a crash
+	conns <- lapply(1:60, function(x) monetdb_embedded_connect())
+	rm(conns)
+	gc()
+	conns <- lapply(1:60, function(x) monetdb_embedded_connect())
+})
 
