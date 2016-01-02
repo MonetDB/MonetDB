@@ -46,7 +46,7 @@ typedef struct dlist {
 extern dlist *dlist_create(sql_allocator *sa);
 extern int dlist_length(dlist *l);
 
-extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);
+extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, const char *data);
 extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
 extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, int data);
 extern dlist *dlist_append_lng(sql_allocator *sa, dlist *l, lng data);

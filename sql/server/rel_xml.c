@@ -20,7 +20,7 @@ static sql_exp *
 rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
-	char *tag = d->data.sval; 
+	const char *tag = d->data.sval; 
 	dlist *ns_attrs_elms = d->next->data.lval; 
 	sql_exp *ns_st = NULL, *attr_st = NULL, *res = NULL;
 
@@ -106,7 +106,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		for (e = elms->h; e; e = e->next) {
 			dnode *cc = e->data.lval->h;
 			symbol *c = cc->data.sym;
-			str tag = cc->next->data.sval;
+			const char *tag = cc->next->data.sval;
 
 			sql_exp *c_st = rel_value_exp(sql, rel, c, f, knd);
 			sql_subtype *st;
@@ -157,7 +157,7 @@ static sql_exp *
 rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
-	char *attr_name = d->data.sval;
+	const char *attr_name = d->data.sval;
 	symbol *attr = d->next->data.sym;
 	sql_exp *attr_st, *attr_name_st = NULL;
 

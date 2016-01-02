@@ -523,10 +523,7 @@ retryRead:
 				for (i = 0; i < MAXSCOPE; i++) {
 					fs = fsym->subscope[i];
 					while (fs != NULL) {
-						if (fcnname == NULL)
-							printSignature(out, fs, 0);
-						else if (fs->def && strcmp(fcnname, getFcnName(fs->def)) == 0)
-							printSignature(out, fs, 0);
+						printSignature(out, fs, 0);
 						fs = fs->peer;
 					}
 				}

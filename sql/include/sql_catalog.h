@@ -108,7 +108,7 @@
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
 
-extern char *TID;
+extern const char *TID;
 
 typedef enum temp_t { 
 	SQL_PERSIST = 0,

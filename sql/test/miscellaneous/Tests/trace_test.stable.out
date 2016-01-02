@@ -1,0 +1,162 @@
+stdout of test 'trace_test` in directory 'sql/test/miscellaneous` itself:
+
+
+# 08:41:05 >  
+# 08:41:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34061" "--set" "mapi_usock=/var/tmp/mtest-1541/.s.monetdb.34061" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 08:41:05 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_miscellaneous', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34061/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1541/.s.monetdb.34061
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 08:41:05 >  
+# 08:41:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1541" "--port=34061"
+# 08:41:05 >  
+
+#select '#~BeginVariableOutput~#';
+% .L # table_name
+% single_value # name
+% char # type
+% 22 # length
+[ "~BeginProfilingOutput~"	]
+#trace select count(*) from tables;
+% .L3 # table_name
+% L3 # name
+% wrd # type
+% 2 # length
+[ 54	]
+#trace select count(*) from tables;
+% .trace,	.trace # table_name
+% usec,	statement # name
+% bigint,	clob # type
+% 4,	191 # length
+[ 1,	"X_32=0@0:void := querylog.define(\"trace select count(*) from tables;\":str,\"default_pipe\":str,67:int);"	]
+[ 27,	"X_2=<tmp_702>[0]:bat[:wrd] := bat.new(nil:oid,nil:wrd);"	]
+[ 3,	"language.pass(nil:bat[:oid]);"	]
+[ 4,	"X_1=0:int := sql.mvc();"	]
+[ 24,	"X_50=<tmp_343>[13]:bat[:sht] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,0:int,0:int,4:int);"	]
+[ 28,	"(X_68=<tmp_16>[0]:bat[:oid],X_69=<tmp_15>[0]:bat[:int]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,2:int,1:int,4:int);"	]
+[ 20,	"X_45=<tmp_1073>[13]:bat[:oid] := sql.tid(X_1=0:int,\"sys\":str,\"_tables\":str,0:int,4:int);"	]
+[ 13,	"C_19=<tmp_716>[0]:bat[:oid] := sql.tid(X_1=0:int,\"tmp\":str,\"_tables\":str);"	]
+[ 12,	"X_21=<tmp_235>[0]:bat[:int] := sql.bind(X_1=0:int,\"tmp\":str,\"_tables\":str,\"id\":str,0:int);"	]
+[ 38,	"X_74=<tmp_1070>[13]:bat[:oid] := algebra.subselect(X_50=<tmp_343>[13]:bat[:sht],X_45=<tmp_1073>[13]:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 9,	"X_15=<tmp_15>[0]:bat[:int] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,1:int);"	]
+[ 19,	"X_22=<tmp_715>[0]:bat[:int] := algebra.projection(C_19=<tmp_716>[0]:bat[:oid],X_21=<tmp_235>[0]:bat[:int]);"	]
+[ 15,	"(X_72=<tmp_16>[0]:bat[:oid],X_73=<tmp_15>[0]:bat[:int]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,2:int,3:int,4:int);"	]
+[ 25,	"(X_54=<tmp_16>[0]:bat[:oid],X_55=<tmp_14>[0]:bat[:sht]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,2:int,0:int,4:int);"	]
+[ 5,	"X_23=0:wrd := aggr.count(X_22=<tmp_715>[0]:bat[:int]);"	]
+[ 14,	"X_65=<tmp_1103>[15]:bat[:int] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,0:int,3:int,4:int);"	]
+[ 10,	"X_10=<tmp_14>[0]:bat[:sht] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,1:int);"	]
+[ 14,	"X_78=<tmp_343>[0]:bat[:oid] := algebra.subselect(X_55=<tmp_14>[0]:bat[:sht],nil:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 15,	"(X_60=<tmp_16>[0]:bat[:oid],X_61=<tmp_14>[0]:bat[:sht]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,2:int,3:int,4:int);"	]
+[ 13,	"X_49=<tmp_715>[15]:bat[:oid] := sql.tid(X_1=0:int,\"sys\":str,\"_tables\":str,3:int,4:int);"	]
+[ 5,	"X_82=<tmp_1070>[13]:bat[:oid] := sql.subdelta(X_74=<tmp_1070>[13]:bat[:oid],X_45=<tmp_1073>[13]:bat[:oid],X_54=<tmp_16>[0]:bat[:oid],X_78=<tmp_343>[0]:bat[:oid]);"	]
+[ 10,	"X_81=<tmp_700>[0]:bat[:oid] := algebra.subselect(X_61=<tmp_14>[0]:bat[:sht],nil:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 4,	"language.pass(X_45=<tmp_1073>[13]:bat[:oid]);"	]
+[ 12,	"X_53=<tmp_1066>[15]:bat[:sht] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,0:int,3:int,4:int);"	]
+[ 14,	"C_43=<tmp_716>[0]:bat[:oid] := algebra.subselect(X_10=<tmp_14>[0]:bat[:sht],X_49=<tmp_715>[15]:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 21,	"X_77=<tmp_1065>[15]:bat[:oid] := algebra.subselect(X_53=<tmp_1066>[15]:bat[:sht],X_49=<tmp_715>[15]:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 18,	"X_62=<tmp_1073>[13]:bat[:int] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,0:int,0:int,4:int);"	]
+[ 20,	"(X_70=<tmp_16>[0]:bat[:oid],X_71=<tmp_15>[0]:bat[:int]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,2:int,2:int,4:int);"	]
+[ 4,	"X_85=<tmp_1065>[15]:bat[:oid] := sql.subdelta(X_77=<tmp_1065>[15]:bat[:oid],X_49=<tmp_715>[15]:bat[:oid],X_60=<tmp_16>[0]:bat[:oid],X_81=<tmp_700>[0]:bat[:oid],C_43=<tmp_716>[0]:bat[:oid]);"	]
+[ 4,	"language.pass(X_49=<tmp_715>[15]:bat[:oid]);"	]
+[ 21,	"(X_66=<tmp_16>[0]:bat[:oid],X_67=<tmp_15>[0]:bat[:int]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,2:int,0:int,4:int);"	]
+[ 17,	"X_64=<tmp_1111>[13]:bat[:int] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,0:int,2:int,4:int);"	]
+[ 15,	"X_89=<tmp_715>[15]:bat[:int] := sql.projectdelta(X_85=<tmp_1065>[15]:bat[:oid],X_65=<tmp_1103>[15]:bat[:int],X_72=<tmp_16>[0]:bat[:oid],X_73=<tmp_15>[0]:bat[:int],X_15=<tmp_15>[0]:bat[:int]);"	]
+[ 16,	"X_51=<tmp_343>[13]:bat[:sht] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,0:int,1:int,4:int);"	]
+[ 16,	"X_86=<tmp_1076>[13]:bat[:int] := sql.projectdelta(X_82=<tmp_1070>[13]:bat[:oid],X_62=<tmp_1073>[13]:bat[:int],X_66=<tmp_16>[0]:bat[:oid],X_67=<tmp_15>[0]:bat[:int]);"	]
+[ 5,	"X_94=15:wrd := aggr.count(X_89=<tmp_715>[15]:bat[:int]);"	]
+[ 6,	"X_91=13:wrd := aggr.count(X_86=<tmp_1076>[13]:bat[:int]);"	]
+[ 16,	"(X_58=<tmp_16>[0]:bat[:oid],X_59=<tmp_14>[0]:bat[:sht]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,2:int,2:int,4:int);"	]
+[ 14,	"X_46=<tmp_1104>[13]:bat[:oid] := sql.tid(X_1=0:int,\"sys\":str,\"_tables\":str,1:int,4:int);"	]
+[ 9,	"X_80=<tmp_715>[0]:bat[:oid] := algebra.subselect(X_59=<tmp_14>[0]:bat[:sht],nil:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 14,	"X_47=<tmp_1076>[13]:bat[:oid] := sql.tid(X_1=0:int,\"sys\":str,\"_tables\":str,2:int,4:int);"	]
+[ 27,	"X_75=<tmp_1100>[13]:bat[:oid] := algebra.subselect(X_51=<tmp_343>[13]:bat[:sht],X_46=<tmp_1104>[13]:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 17,	"X_52=<tmp_1103>[13]:bat[:sht] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,0:int,2:int,4:int);"	]
+[ 18,	"X_63=<tmp_1073>[13]:bat[:int] := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"id\":str,0:int,1:int,4:int);"	]
+[ 20,	"(X_56=<tmp_16>[0]:bat[:oid],X_57=<tmp_14>[0]:bat[:sht]) := sql.bind(X_1=0:int,\"sys\":str,\"_tables\":str,\"type\":str,2:int,1:int,4:int);"	]
+[ 23,	"X_76=<tmp_343>[13]:bat[:oid] := algebra.subselect(X_52=<tmp_1103>[13]:bat[:sht],X_47=<tmp_1076>[13]:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 11,	"X_79=<tmp_1072>[0]:bat[:oid] := algebra.subselect(X_57=<tmp_14>[0]:bat[:sht],nil:bat[:oid],2:sht,2:sht,true:bit,true:bit,true:bit);"	]
+[ 3,	"X_84=<tmp_343>[13]:bat[:oid] := sql.subdelta(X_76=<tmp_343>[13]:bat[:oid],X_47=<tmp_1076>[13]:bat[:oid],X_58=<tmp_16>[0]:bat[:oid],X_80=<tmp_715>[0]:bat[:oid]);"	]
+[ 5,	"X_83=<tmp_1100>[13]:bat[:oid] := sql.subdelta(X_75=<tmp_1100>[13]:bat[:oid],X_46=<tmp_1104>[13]:bat[:oid],X_56=<tmp_16>[0]:bat[:oid],X_79=<tmp_1072>[0]:bat[:oid]);"	]
+[ 2,	"language.pass(X_47=<tmp_1076>[13]:bat[:oid]);"	]
+[ 3,	"language.pass(X_46=<tmp_1104>[13]:bat[:oid]);"	]
+[ 20,	"X_87=<tmp_1070>[13]:bat[:int] := sql.projectdelta(X_83=<tmp_1100>[13]:bat[:oid],X_63=<tmp_1073>[13]:bat[:int],X_68=<tmp_16>[0]:bat[:oid],X_69=<tmp_15>[0]:bat[:int]);"	]
+[ 26,	"X_88=<tmp_1076>[13]:bat[:int] := sql.projectdelta(X_84=<tmp_343>[13]:bat[:oid],X_64=<tmp_1111>[13]:bat[:int],X_70=<tmp_16>[0]:bat[:oid],X_71=<tmp_15>[0]:bat[:int]);"	]
+[ 6,	"X_92=13:wrd := aggr.count(X_87=<tmp_1070>[13]:bat[:int]);"	]
+[ 5,	"X_93=13:wrd := aggr.count(X_88=<tmp_1076>[13]:bat[:int]);"	]
+[ 12,	"X_90=<tmp_1076>[4]:bat[:wrd] := mat.pack(X_91=13:wrd,X_92=13:wrd,X_93=13:wrd,X_94=15:wrd);"	]
+[ 4,	"X_95=<tmp_1076>[4]:bat[:wrd] := algebra.selectNotNil(X_90=<tmp_1076>[4]:bat[:wrd]);"	]
+[ 6,	"X_16=54:wrd := aggr.sum(X_95=<tmp_1076>[4]:bat[:wrd]);"	]
+[ 6,	"X_17=<tmp_1076>[1]:bat[:wrd] := sql.single(X_16=54:wrd);"	]
+[ 8,	"X_18=<tmp_702>[1]:bat[:wrd] := bat.append(X_2=<tmp_702>[1]:bat[:wrd],X_17=<tmp_1076>[1]:bat[:wrd],true:bit);"	]
+[ 4,	"X_24=<tmp_702>[2]:bat[:wrd] := bat.append(X_18=<tmp_702>[2]:bat[:wrd],X_23=0:wrd,true:bit);"	]
+[ 4,	"X_25=54:wrd := aggr.sum(X_24=<tmp_702>[2]:bat[:wrd]);"	]
+[ 3954,	"barrier X_101=false:bit := language.dataflow();"	]
+[ 10,	"sql.resultSet(\".L3\":str,\"L3\":str,\"wrd\":str,64:int,0:int,7:int,X_25=54:wrd);"	]
+[ 1,	"end user.s2_1;"	]
+[ 4665,	"function user.s2_1():void;"	]
+[ 4714,	"X_2=0@0:void := user.s2_1();"	]
+#select '~EndProfilingOutput~';
+% .L # table_name
+% single_value # name
+% char # type
+% 22 # length
+[ "~EndProfilingOutput~"	]
+
+# 08:41:06 >  
+# 08:41:06 >  "Done."
+# 08:41:06 >  
+

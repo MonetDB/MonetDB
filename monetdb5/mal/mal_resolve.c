@@ -704,41 +704,6 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 }
 
 /*
- * Function binder
- * In some cases the front-end may already assure type correctness
- * of the MAL instruction generated (e.g. the SQL front-end)
- * In that case we merely have to locate the function address and
- * finalize the code for execution. Beware that we should be able to
- * distinguish the function by module name, function name, and
- * number of arguments only. Whether this is sufficient remains
- * to be seen.
- */
-int
-fcnBinder(stream *out, Module scope, MalBlkPtr mb, InstrPtr p)
-{
-	Module m = 0;
-	Symbol s;
-	int silent = FALSE;
-
-	if (p->token != ASSIGNsymbol)
-		return 0;
-	if (getModuleId(p) == NULL || getFunctionId(p) == NULL)
-		return 0;
-	for (m = findModule(scope, getModuleId(p)); m; m = m->outer)
-		if (m->name == getModuleId(p)) {
-			s = m->subscope[(int) (getSubScope(getFunctionId(p)))];
-			for (; s; s = s->peer)
-				if (getFunctionId(p) == s->name &&
-					p->argc == getSignature(s)->argc) {
-					/* found it */
-					bindFunction(s, p, mb, out);
-				}
-		}
-  wrapup:
-	return 0;
-}
-
-/*
  * After the parser finishes, we have to look for semantic errors,
  * such as flow of control problems and possible typeing conflicts.
  * The nesting of BARRIER and CATCH statements with their associated
@@ -762,8 +727,7 @@ chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (p == NULL)
-			continue;
+		assert (p != NULL);
 		typeChecker(out, s, mb, p, silent);
 		if (mb->errors)
 			return;

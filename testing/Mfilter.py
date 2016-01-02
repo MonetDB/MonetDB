@@ -140,7 +140,7 @@ def mFilter (FILE, IGNORE) :
         # even if zero)
         iline = re.sub(r'(\d+(?:\.\d*)?e[-+]?)0*(\d+)', r'\1\2', iline)
         oline = xline = ""
-        if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
+        if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n" or iline == "[ \"~BeginVariableOutput~\"\t]\n"  or  iline == "[ \"~BeginProfilingOutput~\"\t]\n":
             ig = 1
             n = 0
         if ig  and  ( len(iline) == 0  or  iline[0] != "!"  or  iline[:9] != "ERROR = !" ):
@@ -184,10 +184,10 @@ def mFilter (FILE, IGNORE) :
             xline = iline.replace('%','#',1)
         else:
             oline = iline
-        if iline == "#~EndVariableOutput~#\n":
+        if iline == "#~EndVariableOutput~#\n" or iline == "[ \"~EndVariableOutput~\"\t]\n":
             ig = 0
             xline = "~ " + str(n) + " ~\n"
-        if iline == "#~EndProfilingOutput~#\n":
+        if iline == "#~EndProfilingOutput~#\n" or iline == "[ \"~EndProfilingOutput~\"\t]\n":
             ig = 0
         for ln in oline, xline:
             if len(ln):

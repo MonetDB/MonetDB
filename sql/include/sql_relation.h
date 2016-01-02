@@ -30,8 +30,8 @@ typedef enum expression_type {
 
 typedef struct expression {
 	expression_type  type;	/* atom, cmp, func/aggr */
-	char *name;
-	char *rname;
+	const char *name;
+	const char *rname;
 	void *l;
 	void *r;
 	void *f; 	/* func's and aggr's */
