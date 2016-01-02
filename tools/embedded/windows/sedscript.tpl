@@ -288,3 +288,6 @@ s|@YACC@||
 s|@YFLAGS@||
 s|@zlib_CFLAGS@||
 s|@zlib_LIBS@||
+s|@liblzma_CFLAGS@||
+s|@liblzma_LIBS@||
+
