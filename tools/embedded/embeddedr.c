@@ -143,7 +143,7 @@ SEXP monetdb_connect_R() {
 SEXP monetdb_disconnect_R(SEXP connsexp) {
 	void* addr = R_ExternalPtrAddr(connsexp);
 	if (addr != NULL) {
-		monetdb_disconnect(R_ExternalPtrAddr(connsexp));
+		monetdb_disconnect(addr);
 		R_ClearExternalPtr(connsexp);
 	}
 	return R_NilValue;
