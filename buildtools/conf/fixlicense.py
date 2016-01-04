@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 import os, sys, getopt, stat
 
@@ -30,7 +30,7 @@ license = [
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
     'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
     '',
-    'Copyright 2008-2015 MonetDB B.V.',
+    'Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.',
     ]
 
 def main():
@@ -128,6 +128,8 @@ suffixrules = {
     'Makefile': ('', '', '# ', ''),
     '.merovingian_properties.in': ('', '', '# ', ''),
     'configure.ag': ('', '', 'dnl ', ''),
+    'copyright': ('', '', '', ''),
+    'license.txt': ('', '', '', ''),
     }
 
 def getcomments(file, pre = None, post = None, start = None, end = None):
