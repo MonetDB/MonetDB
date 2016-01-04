@@ -21,6 +21,10 @@
 #include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
 
+#ifdef HAVE_EMBEDDED
+#include "mal_init_inline.h"
+#endif
+
 /*
  * The MonetDB server uses a startup script to boot the system.
  * This script is an ordinary MAL program, but will mostly

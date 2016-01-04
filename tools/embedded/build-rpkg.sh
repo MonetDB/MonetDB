@@ -21,18 +21,21 @@ sed -i -e "/^SUBDIRS = .*$/d" sql/backends/monet5/Makefile.ag
 cd ..
 mv sourcetree/tools/embedded/rpackage .
 rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpackage/src
-
-# binarize all MAL/SQL scripts
-R --slave -f rpackage/src/tools/embedded/encode.R --args rpackage/src/ rpackage/src/tools/embedded/include_files.h
-
-# generate sql_parser.tab.c/h to remove our dependency on bison.
-cd sourcetree
-./configure
-cd sql/server/
-make sql_parser.tab.h
-make sql_parser.tab.c
-cd ../../../
+ 
+# generate mal/sql scripts and sql_parser.tab.c/h to remove our dependency on bison.
+ln -s sourcetree src
+export R_INCLUDE_DIR=`R CMD config --cppflags | sed s/^-I//`
+export R_PACKAGE_DIR=$STAGEDIR/dummytarget
+mkdir $R_PACKAGE_DIR
+# install a build in the dummytarget dir to collect mal/sql scripts
+# need these two files so the dummy build goes through, they are generated later
+touch sourcetree/monetdb5/mal/mal_init_inline.h sourcetree/sql/backends/monet5/createdb_inline.h
+# run dummy build
+./rpackage/configure
+# steal the sql parser files
 cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/sql/server/
+# inline mal/sql scripts, we need R with the stringr package for that
+R --slave -f sourcetree/tools/embedded/encode.R --args dummytarget/libs/monetdb5/ rpackage/src/
 
 # bundle pcre for windows
 wget http://dev.monetdb.org/Assets/R/misc/pcre-8.37.zip
@@ -43,7 +46,6 @@ mv msvcr100.dll rpackage/src/tools/embedded/windows/
 
 mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
-# rm "rpackage/src/buildtools/conf/lt~obsolete.m4"
 
 R CMD build rpackage
 
