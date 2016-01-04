@@ -561,7 +561,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL,"mal.shutdown", "Administrator rights required");
 	MCstopClients(cntxt);
 	do{
-		if ( (leftover = MCactiveClients()) )
+		if ( (leftover = MCactiveClients()-1) )
 			MT_sleep_ms(1000);
 		delay --;
 	} while (delay > 0 && leftover > 1);

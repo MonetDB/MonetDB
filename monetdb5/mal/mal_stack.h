@@ -16,7 +16,6 @@
 
 
 mal_export MalStkPtr newGlobalStack(int size);
-mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
 mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 mal_export void clearStack(MalStkPtr s);

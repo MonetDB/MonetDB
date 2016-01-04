@@ -72,11 +72,8 @@ mal_export int getTypeIndex(str nme, int len, int deftpe);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
 #define idcmp(n, m)	strcmp(n, m)
-mal_export str newTmpName(char tag, int i);
 mal_export int isTmpName(const char *n);
-mal_export int isTypeName(str n);
 mal_export int isIdentifier(str s);
 mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
-mal_export int isAmbiguousType(int type);
 
 #endif /* MAL_TYPE_H */

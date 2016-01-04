@@ -326,44 +326,6 @@ findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci){
 }
 
 /*
- * Summarize the type resolution table for debugging purposes.
- */
-
-static void showModuleStat(stream *f, Module v,int cnt[256]){
-	int sigs=0,i,max=0,m;
-	Symbol s;
-	int c[256];
-	for(i=0;i<256;i++) c[i]=0;
-	for(i=0;i<256;i++){
-		m=0;
-		s= v->subscope[i];
-		while(s!=NULL){
-			m++;
-			sigs++;
-			cnt[i]++;
-			c[i]++;
-			s= s->peer;
-		}
-		if(m>max)max=m;
-	}
-	m=0;
-	for(i=0;i<256;i++)
-	if(v->subscope[i]){
-		mnstr_printf(f,"%20s",(m++ ==0?v->name:""));
-		mnstr_printf(f,"[%c] %5d %5d\n",i,c[i],(cnt[i]-c[i]/2));
-	}
-	if(v->outer) showModuleStat(f,v->outer,cnt);
-}
-
-void showModuleStatistics(stream *f,Module s){
-	int i,cnt[256];
-
-	mnstr_printf(f,"%20s%5s%5s\n","module","#sig","avg chk");
-	for(i=0;i<256;i++) cnt[i]=0;
-	showModuleStat(f,s,cnt);
-}
-
-/*
  * Some primitives to aid online help and completions.
  * Note that pattern matching is on string prefix.
  */

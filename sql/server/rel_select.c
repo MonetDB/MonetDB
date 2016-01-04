@@ -18,6 +18,7 @@
 #include "rel_prop.h"
 #include "rel_psm.h"
 #include "rel_schema.h"
+#include "rel_remote.h"
 #include "rel_sequence.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
@@ -110,7 +111,7 @@ rel_issubquery(sql_rel*r)
 
    we should clean up (remove) this function.
  */
-char *
+const char *
 rel_name( sql_rel *r )
 {
 	if (!is_project(r->op) && !is_base(r->op) && r->l)
@@ -165,7 +166,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 }
 
 static sql_exp *
-exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old)
+exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
 {
 	sql_exp *ne = NULL;
 
@@ -341,7 +342,7 @@ rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 }
 
 list *
-rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
+rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
 	int label = sql->label;
 	list *rexps, *exps ;
@@ -452,13 +453,13 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 }
 
 sql_rel *
-rel_basetable(mvc *sql, sql_table *t, char *atname)
+rel_basetable(mvc *sql, sql_table *t, const char *atname)
 {
 	prop *p = NULL;
 	node *cn;
 	sql_allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
-	char *tname = t->base.name;
+	const char *tname = t->base.name;
 
 	assert(atname);
 	rel->l = t;
@@ -466,6 +467,8 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 	rel->op = op_basetable;
 	rel->exps = new_exp_list(sa);
 
+	if (isRemote(t)) 
+		tname = mapiuri_table(t->query, sql->sa, tname);
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
@@ -981,7 +984,7 @@ rel_sample(sql_allocator *sa, sql_rel *l, list *exps )
 	return rel;
 }
 
-static char * 
+static const char * 
 rel_get_name( sql_rel *rel )
 {
 	switch(rel->op) {
@@ -1320,7 +1323,7 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 }
 
 static sql_rel *
-rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
+rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
@@ -1384,7 +1387,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 }
 
 sql_exp *
-rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
+rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
 	sql_rel *p = NULL;
 
@@ -1403,7 +1406,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 }
 
 sql_exp *
-rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
+rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f )
 {
 	(void)f;
 
@@ -5434,7 +5437,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
-		char *nm = le->name;
+		const char *nm = le->name;
 		sql_exp *re = exps_bind_column(r_exps, nm, NULL);
 
 		if (re) {
@@ -5996,7 +5999,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		}
 		exps = rel_projections(sql, t1, NULL, 1, 1);
 		for (m = exps->h; m; m = m->next) {
-			char *nm = exp_name(m->data);
+			const char *nm = exp_name(m->data);
 			int fnd = 0;
 
 			for (n = js->data.lval->h; n; n = n->next) {
@@ -6014,7 +6017,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		}
 		exps = rel_projections(sql, t2, NULL, 1, 1);
 		for (m = exps->h; m; m = m->next) {
-			char *nm = exp_name(m->data);
+			const char *nm = exp_name(m->data);
 			int fnd = 0;
 
 			for (n = js->data.lval->h; n; n = n->next) {

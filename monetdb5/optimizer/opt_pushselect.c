@@ -217,10 +217,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							tid = getArg(q, 1);
 					}
 					break;
-				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
+				} else if (isMapOp(q) && q->retc == 1 && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
 					int i1 = getArg(q, 1);
 					q = old[vars[i1]];
-				} else if (isMapOp(q) && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
+				} else if (isMapOp(q) && q->retc == 1 && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
 					int i2 = getArg(q, 2);
 					q = old[vars[i2]];
 				} else {

@@ -18,7 +18,6 @@
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
 #include "mal_function.h"
-#include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
@@ -495,10 +494,6 @@ retryRead:
 			} else if (strncmp("scenario", b, 3) == 0) {
 				showScenarioByName(out, cntxt->scenario);
 				continue;
-			} else if (strncmp("scope", b, 3) == 0) {
-				/* used to inspect the identifier distribution */
-				showModuleStatistics(out, cntxt->nspace);
-				continue;
 			} 
 			stk->cmd = *b;
 			m = 0;
@@ -528,10 +523,7 @@ retryRead:
 				for (i = 0; i < MAXSCOPE; i++) {
 					fs = fsym->subscope[i];
 					while (fs != NULL) {
-						if (fcnname == NULL)
-							printSignature(out, fs, 0);
-						else if (fs->def && strcmp(fcnname, getFcnName(fs->def)) == 0)
-							printSignature(out, fs, 0);
+						printSignature(out, fs, 0);
 						fs = fs->peer;
 					}
 				}
