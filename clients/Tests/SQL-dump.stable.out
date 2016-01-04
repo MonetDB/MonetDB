@@ -502,7 +502,7 @@ create function buffer(a geometry, distance float) returns geometry external nam
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- (co) Arjen de Rijke, Bart Scheers
 -- Use statistical functions from gsl library
@@ -563,7 +563,7 @@ CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create function degrees(r double) 
 returns double
@@ -608,7 +608,7 @@ return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a whe
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 --Schema s has a dependency on user u
 create function dependencies_schemas_on_users()
@@ -664,7 +664,7 @@ create function sys.environment()
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- assume milliseconds when converted to TIMESTAMP
 create function sys."epoch"(sec bigint) returns timestamp
@@ -694,7 +694,7 @@ returns bigint external name udf.fuse;
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- (c) Author M.Kersten
 
@@ -826,7 +826,7 @@ create function length(g geometry) returns float external name geom."Length";
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
@@ -847,7 +847,7 @@ create function mbroverlaps(a mbr, b mbr) returns boolean external name geom."mb
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- (co) Arjen de Rijke
 
@@ -895,7 +895,7 @@ end;
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))
 returns varchar(32)
@@ -943,7 +943,7 @@ create function newurl(protocol string, hostname string, file string)
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- show the optimizer statistics maintained by the SQL frontend
 create function sys.optimizer_stats () 
@@ -959,7 +959,7 @@ create function overlaps(a geometry, b geometry) returns boolean external name g
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create function sys.password_hash (username string) 
 	returns string 
@@ -1036,7 +1036,7 @@ external name sql.querylog_calls;
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- QUERY HISTORY
 -- The query history mechanism of MonetDB/SQL relies on a few hooks.
@@ -1069,7 +1069,7 @@ external name sql.querylog_enable_threshold;
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- System monitoring
 
@@ -1093,7 +1093,7 @@ returns double
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- COPY into reject management
 
@@ -1116,7 +1116,7 @@ create procedure reuse(sys string, tab string)
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- add function signatures to SQL catalog
 
@@ -1144,7 +1144,7 @@ create procedure sys.settimeout("query" bigint, "session" bigint)
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- Vacuum a relational table should be done with care.
 -- For, the oid's are used in join-indices.
@@ -1184,7 +1184,7 @@ create aggregate stddev_pop(val timestamp) returns double
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create aggregate stddev_samp(val tinyint) returns double
 	external name "aggr"."stdev";
@@ -1214,8 +1214,7 @@ external name sql.sysmon_stop;
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
-
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
@@ -1300,7 +1299,7 @@ end;
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create function str_to_date(s string, format string) returns date
 	external name mtime."str_to_date";
@@ -1317,7 +1316,7 @@ create function time_to_str(d time, format string) returns string
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- Provide a simple equivalent for the UNIX times command
 -- times 0 ms user 0 ms system 0 ms 0 reads 0 writes
@@ -1331,7 +1330,7 @@ create function touches(a geometry, b geometry) returns boolean external name ge
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- make the offline tracing table available for inspection
 create function sys.tracelog() 
@@ -1408,7 +1407,7 @@ create function zorder_decode_y(z oid) returns integer
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create function zorder_encode(x integer, y integer) returns oid
     external name zorder.encode;
@@ -7129,13 +7128,13 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5225	"env"	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;"	"sql"	2	5	false	false	false	2000
 5228	"var"	"CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;"	"sql"	2	5	false	false	false	2000
 5234	"db_users"	"CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;"	"sql"	2	5	false	false	false	2000
-5254	"like"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate filter function ""like""(val string, pat string, esc string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
+5254	"like"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate filter function ""like""(val string, pat string, esc string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
 5259	"ilike"	"create filter function ""ilike""(val string, pat string, esc string) external name algebra.""ilike"";"	"algebra"	1	4	true	false	false	2000
 5264	"like"	"create filter function ""like""(val string, pat string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
 5268	"ilike"	"create filter function ""ilike""(val string, pat string) external name algebra.""ilike"";"	"algebra"	1	4	true	false	false	2000
-5272	"degrees"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function degrees(r double)\nreturns double\n\treturn r*180/pi();"	"user"	2	1	false	false	false	2000
+5272	"degrees"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function degrees(r double)\nreturns double\n\treturn r*180/pi();"	"user"	2	1	false	false	false	2000
 5276	"radians"	"create function radians(d double)\nreturns double\n\treturn d*pi()/180;"	"user"	2	1	false	false	false	2000
-5280	"times"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	1	2	true	false	false	2000
+5280	"times"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	1	2	true	false	false	2000
 5283	"getanchor"	"create function getanchor( theurl url ) returns string\n\texternal name url.""getAnchor"";"	"url"	1	1	false	false	false	2000
 5287	"getbasename"	"create function getbasename(theurl url) returns string\n\texternal name url.""getBasename"";"	"url"	1	1	false	false	false	2000
 5291	"getcontent"	"create function getcontent(theurl url)   returns string\n\texternal name url.""getContent"";"	"url"	1	1	false	false	false	2000
@@ -7152,7 +7151,7 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5335	"isaurl"	"create function isaurl(theurl url) returns bool\n\texternal name url.""isaURL"";"	"url"	1	1	false	false	false	2000
 5339	"newurl"	"create function newurl(protocol string, hostname string, ""port"" int, file string)\n\treturns url\n\texternal name url.""new"";"	"url"	1	1	false	false	false	2000
 5346	"newurl"	"create function newurl(protocol string, hostname string, file string)\n\treturns url\n\texternal name url.""new"";"	"url"	1	1	false	false	false	2000
-5352	"str_to_date"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.""str_to_date"";"	"mtime"	1	1	false	false	false	2000
+5352	"str_to_date"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.""str_to_date"";"	"mtime"	1	1	false	false	false	2000
 5357	"date_to_str"	"create function date_to_str(d date, format string) returns string\n\texternal name mtime.""date_to_str"";"	"mtime"	1	1	false	false	false	2000
 5362	"str_to_time"	"create function str_to_time(s string, format string) returns time\n\texternal name mtime.""str_to_time"";"	"mtime"	1	1	false	false	false	2000
 5367	"time_to_str"	"create function time_to_str(d time, format string) returns string\n\texternal name mtime.""time_to_str"";"	"mtime"	1	1	false	false	false	2000
@@ -7171,21 +7170,21 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5425	"right_shift"	"create function ""right_shift""(i1 inet, i2 inet) returns boolean\n\texternal name inet."">>"";"	"inet"	1	1	false	false	false	2000
 5430	"left_shift_assign"	"create function ""left_shift_assign""(i1 inet, i2 inet) returns boolean\n\texternal name inet.""<<="";"	"inet"	1	1	false	false	false	2000
 5435	"right_shift_assign"	"create function ""right_shift_assign""(i1 inet, i2 inet) returns boolean\n\texternal name inet."">>="";"	"inet"	1	1	false	false	false	2000
-5440	"querylog_catalog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions.\n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\t""plan"" string,\t\t-- Name of MAL plan\n\tmal int,\t\t-- size of MAL plan\n\toptimize bigint\t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	1	5	false	false	false	2000
+5440	"querylog_catalog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions.\n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\t""plan"" string,\t\t-- Name of MAL plan\n\tmal int,\t\t-- size of MAL plan\n\toptimize bigint\t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	1	5	false	false	false	2000
 5450	"querylog_calls"	"-- Each query call is stored in the table calls\n-- At regular intervals the query history table should be cleaned.\n-- This can be done manually on the SQL console, or be integrated\n-- in the keepQuery and keepCall upon need.\n-- The parameters are geared at understanding the resource claims\n-- They reflect the effect of the total workload mix during execution.\n-- The 'cpu' gives the average cpu load percentage over all cores on the\n-- server during execution phase.\n-- increasing cpu load indicates better use of multi-cores.\n-- The 'io' indicate IOs during complete query run.\n-- The 'space' is the total amount of intermediates created in MB.\n-- Reducing the space component improves performance/\n-- All timing in usec and all storage in bytes.\n\ncreate function sys.querylog_calls()\nreturns table(\n\tid oid,\t\t -- references query plan\n\t""start"" timestamp,\t-- time the statement was started\n\t""stop"" timestamp,\t-- time the statement was completely finished\n\targuments string,\t-- actual call structure\n\ttuples wrd,\t\t-- number of tuples in the result set\n\trun bigint,\t\t-- time spent (in usec)  until the result export\n\tship bigint,\t\t-- time spent (in usec)  to ship the result set\n\tcpu int,\t\t-- average cpu load percentage during execution\n\tio int\t\t\t-- percentage time waiting for IO to finish\n)\nexternal name sql.querylog_calls;"	"sql"	1	5	false	false	false	2000
 5500	"querylog_empty"	"-- reset history for a particular user\ncreate procedure sys.querylog_empty()\nexternal name sql.querylog_empty;"	"sql"	1	2	true	false	false	2000
 5502	"querylog_enable"	"-- manipulate the query logger\ncreate procedure sys.querylog_enable()\nexternal name sql.querylog_enable;"	"sql"	1	2	true	false	false	2000
 5504	"querylog_enable"	"create procedure sys.querylog_enable(threshold smallint)\nexternal name sql.querylog_enable_threshold;"	"sql"	1	2	true	false	false	2000
 5507	"querylog_disable"	"create procedure sys.querylog_disable()\nexternal name sql.querylog_disable;"	"sql"	1	2	true	false	false	2000
-5509	"tracelog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog()\n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20),\t-- wallclock, no mtime in kernel\n\t\tpc varchar(50),\t-- module.function[nr]\n\t\tthread int,\t\t-- thread identifier\n\t\tticks bigint,\t\t-- time in microseconds\n\t\trrsmb bigint,\t\t-- resident memory in MB\n\t\tvmmb bigint,\t\t-- virtual size in MB\n\t\treads bigint,\t\t-- number of blocks read\n\t\twrites bigint,\t\t-- number of blocks written\n\t\tminflt bigint,\t\t-- minor page faults\n\t\tmajflt bigint,\t\t-- major page faults\n\t\tnvcsw bigint,\t\t-- non-volantary conext switch\n\t\tstmt string\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
-5539	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function sys.""epoch""(sec bigint) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+5509	"tracelog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog()\n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20),\t-- wallclock, no mtime in kernel\n\t\tpc varchar(50),\t-- module.function[nr]\n\t\tthread int,\t\t-- thread identifier\n\t\tticks bigint,\t\t-- time in microseconds\n\t\trrsmb bigint,\t\t-- resident memory in MB\n\t\tvmmb bigint,\t\t-- virtual size in MB\n\t\treads bigint,\t\t-- number of blocks read\n\t\twrites bigint,\t\t-- number of blocks written\n\t\tminflt bigint,\t\t-- minor page faults\n\t\tmajflt bigint,\t\t-- major page faults\n\t\tnvcsw bigint,\t\t-- non-volantary conext switch\n\t\tstmt string\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
+5539	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function sys.""epoch""(sec bigint) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 5543	"epoch"	"create function sys.""epoch""(sec int) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 5547	"epoch"	"create function sys.""epoch""(ts timestamp) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 5551	"epoch"	"create function sys.""epoch""(ts timestamp with time zone) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
-5555	"shrink"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	1	2	true	false	false	2000
+5555	"shrink"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	1	2	true	false	false	2000
 5559	"reuse"	"create procedure reuse(sys string, tab string)\n\texternal name sql.reuse;"	"sql"	1	2	true	false	false	2000
 5563	"vacuum"	"create procedure vacuum(sys string, tab string)\n\texternal name sql.vacuum;"	"sql"	1	2	true	false	false	2000
-5567	"dependencies_schemas_on_users"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	2	5	false	false	false	2000
+5567	"dependencies_schemas_on_users"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	2	5	false	false	false	2000
 5572	"dependencies_owners_on_schemas"	"--User (owner) has a dependency in schema s\ncreate function dependencies_owners_on_schemas()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);"	"user"	2	5	false	false	false	2000
 5577	"dependencies_tables_on_views"	"--Table t has a dependency on view v\ncreate function dependencies_tables_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	2	5	false	false	false	2000
 5582	"dependencies_tables_on_indexes"	"--Table t has a dependency on index  i\ncreate function dependencies_tables_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);"	"user"	2	5	false	false	false	2000
@@ -7202,22 +7201,22 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5637	"dependencies_functions_on_functions"	"--Function f1 has a dependency on function f2\ncreate function dependencies_functions_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);"	"user"	2	5	false	false	false	2000
 5642	"dependencies_functions_os_triggers"	"--Function f1 has a dependency on trigger tri\ncreate function dependencies_functions_os_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	2	5	false	false	false	2000
 5647	"dependencies_keys_on_foreignkeys"	"--Key k has a dependency on foreign key fk\ncreate function dependencies_keys_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);"	"user"	2	5	false	false	false	2000
-5652	"password_hash"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function sys.password_hash (username string)\n\treturns string\n\texternal name sql.password;"	"sql"	1	1	false	false	false	2000
+5652	"password_hash"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function sys.password_hash (username string)\n\treturns string\n\texternal name sql.password;"	"sql"	1	1	false	false	false	2000
 5656	"sessions"	"create function sys.sessions()\nreturns table(""user"" string, ""login"" timestamp, ""sessiontimeout"" bigint, ""lastcommand"" timestamp, ""querytimeout"" bigint, ""active"" bool)\nexternal name sql.sessions;"	"sql"	1	5	false	false	false	2000
 5672	"shutdown"	"create procedure sys.shutdown(delay tinyint)\nexternal name sql.shutdown;"	"sql"	1	2	true	false	false	2000
 5675	"shutdown"	"create procedure sys.shutdown(delay tinyint, force bool)\nexternal name sql.shutdown;"	"sql"	1	2	true	false	false	2000
 5679	"settimeout"	"-- control the query and session time out\ncreate procedure sys.settimeout(""query"" bigint)\n\texternal name sql.settimeout;"	"sql"	1	2	true	false	false	2000
 5682	"settimeout"	"create procedure sys.settimeout(""query"" bigint, ""session"" bigint)\n\texternal name sql.settimeout;"	"sql"	1	2	true	false	false	2000
 5686	"setsession"	"create procedure sys.setsession(""timeout"" bigint)\n\texternal name sql.setsession;"	"sql"	1	2	true	false	false	2000
-5689	"ms_stuff"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	2	1	false	false	false	2000
+5689	"ms_stuff"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	2	1	false	false	false	2000
 5696	"ms_trunc"	"create function ms_trunc(num double, prc int)\nreturns double\nexternal name sql.ms_trunc;"	"sql"	1	1	false	false	false	2000
 5701	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n\tif (truncat = 0)\n\t\tthen return round(num, prc);\n\t\telse return ms_trunc(num, prc);\n\tend if;\nend;"	"user"	2	1	false	false	false	2000
 5707	"ms_str"	"create function ms_str(num float, prc int, truncat int)\nreturns string\nbegin\n        return cast(num as string);\nend;"	"user"	2	1	false	false	false	2000
 5713	"alpha"	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	"sql"	1	1	false	false	false	2000
-5718	"zorder_encode"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	1	1	false	false	false	2000
+5718	"zorder_encode"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	1	1	false	false	false	2000
 5723	"zorder_decode_x"	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	"zorder"	1	1	false	false	false	2000
 5727	"zorder_decode_y"	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	"zorder"	1	1	false	false	false	2000
-5731	"optimizer_stats"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats ()\n\treturns table (rewrite string, count int)\n\texternal name sql.dump_opt_stats;"	"sql"	1	5	false	false	false	2000
+5731	"optimizer_stats"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats ()\n\treturns table (rewrite string, count int)\n\texternal name sql.dump_opt_stats;"	"sql"	1	5	false	false	false	2000
 5735	"querycache"	"-- SQL QUERY CACHE\n-- The SQL query cache returns a table with the query plans kept\n\ncreate function sys.querycache()\n\treturns table (query string, count int)\n\texternal name sql.dump_cache;"	"sql"	1	5	false	false	false	2000
 5739	"querylog"	"-- Trace the SQL input\ncreate procedure sys.querylog(filename string)\n\texternal name sql.logfile;"	"sql"	1	2	true	false	false	2000
 5742	"optimizers"	"-- MONETDB KERNEL SECTION\n-- optimizer pipe catalog\ncreate function sys.optimizers ()\n\treturns table (name string, def string, status string)\n\texternal name sql.optimizers;"	"sql"	1	5	false	false	false	2000
@@ -7227,16 +7226,16 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5778	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n\texternal name sql.""evalAlgebra"";"	"sql"	1	2	true	false	false	2000
 5782	"flush_log"	"-- enqueue a flush log, ie as soon as no transactions are active \n-- flush the log and cleanup the used storage\ncreate procedure sys.flush_log ()\n\texternal name sql.""flush_log"";"	"sql"	1	2	true	false	false	2000
 5784	"debug"	"create function sys.debug(debug int) returns integer\n\texternal name mdb.""setDebug"";"	"mdb"	1	1	false	false	false	2000
-5788	"queue"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t""user"" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	1	5	false	false	false	2000
+5788	"queue"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t""user"" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	1	5	false	false	false	2000
 5808	"pause"	"-- operations to manipulate the state of havoc queries\ncreate procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
 5811	"resume"	"create procedure sys.resume(tag int)\nexternal name sql.sysmon_resume;"	"sql"	1	2	true	false	false	2000
 5814	"stop"	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	"sql"	1	2	true	false	false	2000
 5817	"pause"	"create procedure sys.pause(tag bigint)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
 5820	"resume"	"create procedure sys.resume(tag bigint)\nexternal name sql.sysmon_resume;"	"sql"	1	2	true	false	false	2000
 5823	"stop"	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	"sql"	1	2	true	false	false	2000
-5826	"rejects"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- COPY into reject management\n\ncreate function sys.rejects()\nreturns table(\n\trowid bigint,\n\tfldid int,\n\t""message"" string,\n\t""input"" string\n)\nexternal name sql.copy_rejects;"	"sql"	1	5	false	false	false	2000
+5826	"rejects"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- COPY into reject management\n\ncreate function sys.rejects()\nreturns table(\n\trowid bigint,\n\tfldid int,\n\t""message"" string,\n\t""input"" string\n)\nexternal name sql.copy_rejects;"	"sql"	1	5	false	false	false	2000
 5838	"clearrejects"	"create procedure sys.clearrejects()\nexternal name sql.copy_rejects_clear;"	"sql"	1	2	true	false	false	2000
-5840	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate aggregate stddev_samp(val tinyint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5840	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate aggregate stddev_samp(val tinyint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 5844	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 5848	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 5852	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
@@ -7368,11 +7367,11 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6423	"output"	"-- The remainder awaits the implementation\n\ncreate aggregate json.output(js json)\nreturns string external name json.output;"	"json"	1	3	false	false	false	6339
 6427	"tojsonarray"	"-- create function json.object(*) returns json external name json.objectrender;\n\n-- create function json.array(*) returns json external name json.arrayrender;\n\n-- unnesting the JSON structure\n\n-- create function json.unnest(js json)\n-- returns table( id integer, k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( v string) external name json.unnest;\n\n-- create function json.nest table( id integer, k string, v string)\n-- returns json external name json.nest;\n\ncreate aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	6339
 6431	"tojsonarray"	"create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	6339
-6435	"md5"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	1	1	false	false	false	2000
+6435	"md5"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	1	1	false	false	false	2000
 6440	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.""new"";"	"uuid"	1	1	false	false	false	2000
 6443	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	1	1	false	false	false	2000
 6447	"isauuid"	"create function sys.isauuid(u string)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	1	1	false	false	false	2000
-6451	"chi2prob"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke, Bart Scheers\n-- Use statistical functions from gsl library\n\n-- Calculate Chi squared probability\ncreate function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.""chi2prob"";"	"gsl"	1	1	false	false	false	2000
+6451	"chi2prob"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Arjen de Rijke, Bart Scheers\n-- Use statistical functions from gsl library\n\n-- Calculate Chi squared probability\ncreate function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.""chi2prob"";"	"gsl"	1	1	false	false	false	2000
 6457	"start"	"create procedure profiler.start() external name profiler.""start"";"	"profiler"	1	2	true	false	false	6455
 6459	"stop"	"create procedure profiler.stop() external name profiler.stop;"	"profiler"	1	2	true	false	false	6455
 6461	"setheartbeat"	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"	"profiler"	1	2	true	false	false	6455
@@ -7384,7 +7383,7 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6501	"listdirpat"	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;"	"fits"	1	2	true	false	false	2000
 6537	"netcdf_attach"	"-- gr_name is ""GLOBAL"" or ""ROOT"" for classic NetCDF files\n-- used for groups in HDF5 files\n-- global attributes have obj_name=""""\n\n-- create function netcdfvar (fname varchar(256)) \n--\treturns int external name netcdf.test;\n\ncreate procedure netcdf_attach(fname varchar(256))\n    external name netcdf.attach;"	"netcdf"	1	2	true	false	false	2000
 6540	"netcdf_importvar"	"create procedure netcdf_importvar(fid integer, varnname varchar(256))\n    external name netcdf.importvariable;"	"netcdf"	1	2	true	false	false	2000
-6544	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By changing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table producing function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
+6544	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By changing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table producing function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
 6588	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	2	2	true	false	false	2000
 6590	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int' then return 4 * i;\n\twhen nme = 'bigint' then return 8 * i;\n\twhen nme = 'hugeint' then return 16 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	2	1	false	false	false	2000
 6596	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	2	1	false	false	false	2000
@@ -7395,7 +7394,7 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6663	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
 6668	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
 6674	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
-6681	"reverse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	1	1	false	false	false	2000
+6681	"reverse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	1	1	false	false	false	2000
 6685	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
 6690	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	1	1	false	false	false	2000
 6695	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
@@ -7410,7 +7409,7 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6734	"seq_char"	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string)\nreturns char(1) external name bam.seq_char;"	"bam"	1	1	false	false	false	6699
 6741	"sam_export"	"create procedure bam.sam_export(output_path string)\nexternal name bam.sam_export;"	"bam"	1	2	true	false	false	6699
 6744	"bam_export"	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	"bam"	1	2	true	false	false	6699
-6814	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+6814	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 6819	"generate_series"	"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 6825	"generate_series"	"create function sys.generate_series(first smallint, last smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 6830	"generate_series"	"create function sys.generate_series(first smallint, last smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
