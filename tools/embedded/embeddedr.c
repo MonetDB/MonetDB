@@ -135,7 +135,7 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 SEXP monetdb_connect_R() {
 	SEXP conn = PROTECT(R_MakeExternalPtr(
 			monetdb_connect(), R_NilValue, R_NilValue));
-	R_RegisterCFinalizer(conn, monetdb_disconnect_R);
+	R_RegisterCFinalizer(conn, (void (*)(SEXP)) monetdb_disconnect_R);
 	UNPROTECT(1);
 	return conn;
 }

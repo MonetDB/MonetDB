@@ -22,6 +22,9 @@ cd ..
 mv sourcetree/tools/embedded/rpackage .
 rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpackage/src
 
+# binarize all MAL/SQL scripts
+R --slave -f rpackage/src/tools/embedded/encode.R --args rpackage/src/ rpackage/src/tools/embedded/include_files.h
+
 # generate sql_parser.tab.c/h to remove our dependency on bison.
 cd sourcetree
 ./configure
