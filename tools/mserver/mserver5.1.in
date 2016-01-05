@@ -202,25 +202,6 @@ MonetDB 5 contains an extensive optimiser framework to transform MAL
 plans into more optimal or functional (e.g.  distributed) plans.
 These parameters control behaviour on the MAL level.
 .TP
-.B mal_listing
-You can enable the server listing the parsed MAL program for any
-script parsed on the command line.
-The value of mal_listing is an integer that have the following
-possible values:
-.EX
-   0 = Disable
-   1 = List the original input
-   2 = List the MAL instruction
-   4 = List the MAL type information
-   8 = List the MAL UDF type
-  16 = List the MAL properties
-  32 = List the hidden details
-  64 = List the bat tuple count
-.EE
-
-Default:
-.BR 0 .
-.TP
 .B monet_vault_key
 The authorisation tables inside
 .I mserver5

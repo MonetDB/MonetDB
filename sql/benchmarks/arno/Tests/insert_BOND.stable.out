@@ -5,21 +5,23 @@ stdout of test 'insert_BOND` in directory 'sql/benchmarks/arno` itself:
 # 12:30:52 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_arno" --dbinit="module(sql_server); sql_server_start();" insert_BOND.prologue ; echo ; echo Over..
 # 12:30:52 >  
 
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_benchmarks_arno', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31295/
-# MonetDB/SQL module v2.37.0 loaded
-function user.main():void;
-    INT_MAX := 2147483647;
-    dbgmsk := mdb.getDebug();
-    unset := calc.+(8,8388608);
-    keep := calc.xor(INT_MAX,unset);
-    set := calc.and(dbgmsk,keep);
-    mdb.setDebug(set);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_arno', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35352/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5703/.s.monetdb.35352
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.5'
+# Finished reading the write-ahead log 'sql_logs/sql/log.5'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
 #function user.main():void;
