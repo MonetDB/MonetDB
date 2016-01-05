@@ -91,7 +91,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -970,6 +970,45 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Jan 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.13-20160105
+- Rebuilt.
+- BZ#2014: 'null' from copy into gets wrong
+- BZ#3817: opt_pushselect stuck with multi-table UDF
+- BZ#3835: windows does not release ram after operations
+- BZ#3836: rand() only gets evaluated once when used as an expression
+- BZ#3838: Update column with or without parenthesis produce different
+  results
+- BZ#3840: savepoints may crash the database
+- BZ#3841: mclient fails with response "Challenge string is not valid"
+- BZ#3842: SQL execution fails to finish and reports bogus error messages
+- BZ#3845: Too many VALUES in INSERT freeze mserver5
+- BZ#3847: Wrong SQL results for a certain combination of GROUP BY /
+  ORDER BY / LIMIT
+- BZ#3848: mserver segfault during bulk loading/updating
+- BZ#3849: HUGEINT incorrect value
+- BZ#3850: DEL character not escaped
+- BZ#3851: expression that should evaluate to FALSE evaluates to TRUE
+  in SELECT query
+- BZ#3852: CASE statement produces GDK error on multithreaded database:
+  BATproject does not match always
+- BZ#3854: Complex expression with comparison evaluates incorrectly in
+  WHERE clause
+- BZ#3855: Foreign key referencing table in a different schema -
+  not allowed.
+- BZ#3857: Large LIMIT in SELECT may abort the query
+- BZ#3861: Using window functions cause a crash
+- BZ#3864: Error in bulk import for chinese character
+- BZ#3871: NOT x LIKE triggers "too many nested operators"
+- BZ#3872: mserver crashes under specific combination of JOIN and WHERE
+  conditions
+- BZ#3873: mserver5: gdk_bat.c:1015: setcolprops: Assertion `x !=
+  ((void *)0) || col->type == 0' failed.
+- BZ#3879: Database crashes when querying with several UNION ALLs.
+- BZ#3887: Querying "sys"."tracelog" causes assertion violation and
+  crash of mserver5 process
+- BZ#3889: read only does not protect empty tables
+- BZ#3895: read only does not protect this table
+
 * Fri Oct 30 2015 Sjoerd Mullender <sjoerd@acm.org> - 11.21.11-20151030
 - Rebuilt.
 - BZ#3828: Schema corruption after several ALTER TABLE statements and
