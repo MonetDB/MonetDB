@@ -1181,8 +1181,10 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lid = getArgReference_bat(stk,pci,2);
 	rid = getArgReference_bat(stk,pci,3);
 
-	if( !isCompressed(*lid) && !isCompressed(*rid))
-		return ALGjoin2(ret,ret2,lid,rid);
+	if( !isCompressed(*lid) && !isCompressed(*rid)) {
+		bit nil_matches = 0;
+		return ALGsubjoin(ret,ret2,lid,rid,NULL,NULL,&nil_matches,NULL);
+	}
 
 	bl = BATdescriptor(*lid);
 	if( bl == NULL)
