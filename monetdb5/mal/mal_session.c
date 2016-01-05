@@ -22,7 +22,8 @@
 #include <gdk.h>	/* for opendir and friends */
 
 #ifdef HAVE_EMBEDDED
-#include "mal_init_inline.h"
+// FIXME:
+//#include "mal_init_inline.h"
 #endif
 
 /*

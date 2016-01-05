@@ -2,7 +2,7 @@
 cd src
 
 CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/iprefix --libdir=$R_PACKAGE_DIR/libs \
---enable-embedded --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
+--enable-embedded --enable-embedded-r --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \

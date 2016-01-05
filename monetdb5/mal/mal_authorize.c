@@ -834,6 +834,7 @@ AUTHverifyPassword(str *passwd)
 					"representation of an MD5 password hash?");
 	} else
 #endif
+	len++; // required in case all the checks above are false
 	{
 		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 				MONETDB5_PASSWDHASH);

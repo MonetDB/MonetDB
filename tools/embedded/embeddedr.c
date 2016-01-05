@@ -1,6 +1,7 @@
-#include "embeddedr.h"
-
 #include "monetdb_config.h"
+
+#ifdef HAVE_EMBEDDED_R
+#include "embeddedr.h"
 #include "monet_options.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -153,3 +154,4 @@ SEXP monetdb_shutdown_R() {
 	monetdb_shutdown();
 	return R_NilValue;
 }
+#endif

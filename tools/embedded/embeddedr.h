@@ -19,8 +19,8 @@
 SEXP monetdb_query_R(SEXP connsexp, SEXP querysexp, SEXP notreally);
 SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp);
 SEXP monetdb_append_R(SEXP connsexp, SEXP schemaname, SEXP tablename, SEXP tabledata);
-SEXP monetdb_connect_R();
+SEXP monetdb_connect_R(void);
 SEXP monetdb_disconnect_R(SEXP connsexp);
-SEXP monetdb_shutdown_R();
+SEXP monetdb_shutdown_R(void);
 
 #endif

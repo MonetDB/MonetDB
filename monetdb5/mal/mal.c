@@ -176,7 +176,8 @@ void mal_exit(void){
 	//freeModuleList(mal_clients->nspace);
 	freeModuleList(NULL);
 	finishNamespace();
-	MTIMEreset();
+	// FIXME: this required?
+	// MTIMEreset();
 
 #endif
 	GDKexit(0); 	/* properly end GDK */

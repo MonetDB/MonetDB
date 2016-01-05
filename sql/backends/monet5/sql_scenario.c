@@ -404,7 +404,6 @@ str
 SQLinitClient(Client c)
 {
 	mvc *m;
-	str schema;
 	str msg = MAL_SUCCEED;
 	backend *be;
 	bstream *bfd = NULL;
@@ -449,7 +448,7 @@ SQLinitClient(Client c)
 #ifndef HAVE_EMBEDDED
 	/* pass through credentials of the user if not console */
 	if (c->user != 0) {
-		schema = monet5_user_get_def_schema(m, c->user);
+		str schema = monet5_user_get_def_schema(m, c->user);
 		if (!schema) {
 			_DELETE(schema);
 			throw(PERMD, "SQLinitClient", "08004!schema authorization error");

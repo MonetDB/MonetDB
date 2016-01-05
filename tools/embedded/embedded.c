@@ -65,6 +65,7 @@ void* monetdb_connect() {
 		return NULL;
 	}
 	((backend *) c->sqlcontext)->mvc->session->auto_commit = 1;
+	// TODO: keep track of pointers returned
 	return c;
 }
 
@@ -166,6 +167,7 @@ cleanup:
 }
 
 char* monetdb_query(void* conn, char* query, void** result) {
+	// TODO: check client pointer
 	str res = MAL_SUCCEED;
 	Client c = (Client) conn;
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
@@ -292,6 +294,8 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 	return msg;
 }
 
+
+// TODO: fix this, it is not working correctly
 void monetdb_shutdown() {
 	MT_lock_set(&monetdb_embedded_lock);
 	// kill SQL

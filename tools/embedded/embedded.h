@@ -20,13 +20,13 @@ typedef struct append_data {
 
 extern int monetdb_embedded_initialized;
 
-void* monetdb_connect();
+void* monetdb_connect(void);
 void  monetdb_disconnect(void* conn);
 char* monetdb_startup(char* libdir, char* dbdir, char silent);
 char* monetdb_query(void* conn, char* query, void** result);
 char* monetdb_append(void* conn, const char* schema, const char* table, append_data *data, int ncols);
 void  monetdb_cleanup_result(void* conn, void* output);
 char* monetdb_get_columns(void* conn, const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types);
-void  monetdb_shutdown();
+void  monetdb_shutdown(void);
 
 #endif
