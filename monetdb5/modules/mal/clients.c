@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -561,7 +561,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL,"mal.shutdown", "Administrator rights required");
 	MCstopClients(cntxt);
 	do{
-		if ( (leftover = MCactiveClients()) )
+		if ( (leftover = MCactiveClients()-1) )
 			MT_sleep_ms(1000);
 		delay --;
 	} while (delay > 0 && leftover > 1);

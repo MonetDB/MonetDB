@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -217,10 +217,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							tid = getArg(q, 1);
 					}
 					break;
-				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
+				} else if (isMapOp(q) && q->retc == 1 && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
 					int i1 = getArg(q, 1);
 					q = old[vars[i1]];
-				} else if (isMapOp(q) && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
+				} else if (isMapOp(q) && q->retc == 1 && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
 					int i2 = getArg(q, 2);
 					q = old[vars[i2]];
 				} else {

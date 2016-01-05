@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -129,7 +129,7 @@ void mal_exit(void){
 {
 	int reruns=0, go_on;
 	do{
-		if ( (go_on = MCactiveClients()) )
+		if ( (go_on = MCactiveClients() -1) )
 			MT_sleep_ms(1000);
 		mnstr_printf(mal_clients->fdout,"#MALexit: %d clients still active\n", go_on);
 	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);
