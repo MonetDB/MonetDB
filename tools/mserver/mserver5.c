@@ -653,9 +653,6 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	if (GDKgetenv("mal_listing"))
-		sscanf(GDKgetenv("mal_listing"), "%d", &listing);
-
 	MSinitClientPrg(mal_clients, "user", "main");
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
