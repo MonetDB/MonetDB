@@ -161,10 +161,11 @@ void freeModule(Module m)
 }
 
 void freeModuleList(Module s){
+	Module t = NULL;
 	if (s == NULL) {
 		s = mal_scope;
 	}
-	Module t=s;
+	t=s;
 	while(s){
 		t= s->outer;
 		s->outer= NULL;

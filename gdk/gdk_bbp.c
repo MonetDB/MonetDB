@@ -1049,7 +1049,7 @@ BBPaddfarm(const char *dirname, int rolemask)
 	GDKfatal("BBPaddfarm: too many farms\n");
 }
 
-gdk_export void BBPresetfarms() {
+gdk_export void BBPresetfarms(void) {
 	BBPexit();
 	BBPunlock("BBPexit");
 	BBPsize = 0;
