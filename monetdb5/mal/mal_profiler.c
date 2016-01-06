@@ -63,30 +63,16 @@ static struct{
 // The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer)
 {	
-	char buf[BUFSIZ], *s;
-	size_t len, lenhdr;
+	size_t len;
 
-	s = strchr(logbuffer,(int) ':');
-	if( s == NULL){
-		return;
-	}
 	len = strlen(logbuffer);
 
 	MT_lock_set(&mal_profileLock);
-	snprintf(buf,BUFSIZ,"%d",eventcounter);
-	strncpy(s+1, buf,strlen(buf));
-
 	if (eventstream) {
 	// upon request the log record is sent over the profile stream
-		if( eventcounter == 0){
-			snprintf(buf,BUFSIZ,"%s\n",monet_characteristics);
-			lenhdr = strlen(buf);
-			(void) mnstr_write(eventstream, buf, 1, lenhdr);
-		}
 		(void) mnstr_write(eventstream, logbuffer, 1, len);
 		(void) mnstr_flush(eventstream);
 	}
-	eventcounter++;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -131,7 +117,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	/* make profile event tuple  */
 	lognew();
-	logadd("{%s\"event\":         ,%s",prettify,prettify); // fill in later with the event counter
+	logadd("{%s",prettify); // fill in later with the event counter
 
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
@@ -355,7 +341,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 	// identify core processing
 	len += snprintf(cpuload, BUFSIZ, "[ ");
 	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
+		len +=snprintf(cpuload + len, BUFSIZ - len, "%c %.2f", (cpu?',':' '), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
 	return 0;
@@ -382,7 +368,7 @@ profilerHeartbeatEvent(char *alter)
 	clk = clock.tv_sec;
 	
 	lognew();
-	logadd("{\n\"event\":         ,%s",prettify); // fill in later with the event counter
+	logadd("{%s",prettify); // fill in later with the event counter
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
@@ -393,7 +379,8 @@ profilerHeartbeatEvent(char *alter)
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"time\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"user\":\"heartbeat\",%s", prettify);
+	logadd("\"ctime\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -456,6 +443,7 @@ openProfilerStream(stream *fd, int mode)
 	if (myname == 0){
 		myname = putName("profiler", 8);
 		eventcounter = 0;
+		logjsonInternal(monet_characteristics);
 	}
 	if( eventstream)
 		closeProfilerStream();
@@ -504,6 +492,7 @@ startProfiler(void)
 	malProfileMode = 1;
 	sqlProfiling = TRUE;
 	MT_lock_unset(&mal_profileLock);
+	logjsonInternal(monet_characteristics);
 
 	return MAL_SUCCEED;
 }

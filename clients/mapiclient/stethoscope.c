@@ -70,7 +70,7 @@
 static stream *conn = NULL;
 static char hostname[128];
 static char *filename = NULL;
-static int beat = 50;
+static int beat = 0;
 static int json = 0;
 static Mapi dbh;
 static MapiHdl hdl = NULL;

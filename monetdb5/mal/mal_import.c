@@ -154,6 +154,10 @@ malLoadScript(Client c, str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
 
+
+#ifdef HAVE_EMBEDDED
+#include "mal_init_inline.h"
+#endif
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
@@ -181,9 +185,25 @@ malInclude(Client c, str name, int listing)
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
-
 	c->fdin = NULL;
 
+#ifdef HAVE_EMBEDDED
+	{
+		size_t mal_init_len = strlen(mal_init_inline);
+		buffer* mal_init_buf = buffer_create(mal_init_len);
+		stream* mal_init_stream = buffer_rastream(mal_init_buf, name);
+		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
+		c->srcFile = name;
+		c->yycur = 0;
+		c->bak = NULL;
+		c->fdin = bstream_create(mal_init_stream, mal_init_len);
+		bstream_next(c->fdin);
+		parseMAL(c, c->curprg, 1);
+		free(mal_init_buf);
+		free(mal_init_stream);
+		c->fdin = NULL;
+	}
+#else
 	if ((filename = malResolveFile(name)) != NULL) {
 		name = filename;
 		do {
@@ -206,7 +226,7 @@ malInclude(Client c, str name, int listing)
 		GDKfree(name);
 		c->fdin = NULL;
 	}
-
+#endif
 	restoreClient;
 	return s;
 }

@@ -20,6 +20,7 @@ char *malvalues[MAXMALARGS];
 int malsize;
 int debug=0;
 char *currentquery=0;
+int eventcounter = 0;
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
@@ -182,6 +183,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 		resetEventRecord(ev);
 		memset(malvariables, 0, sizeof(malvariables));
 		memset(malvalues, 0, sizeof(malvalues));
+		ev->eventnr= eventcounter++;
 		return 0;
 	}
 	if( *c == '}'){
@@ -202,7 +204,6 @@ keyvalueparser(char *txt, EventRecord *ev)
 		*c = 0;
 	} else val =c;
 
-	if( strstr(key,"event")) { ev->eventnr= atol(val); return 0;}
 	if( strstr(key,"clk")){
 		ev->clk = atol(val); 
 		return 0;

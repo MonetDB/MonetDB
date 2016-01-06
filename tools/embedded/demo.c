@@ -3,6 +3,7 @@
 #include "sql_scenario.h"
 #include "mal.h"
 #include "embedded.h"
+#include <locale.h>
 
 /*
  configure & install MonetDB as follows:
@@ -13,7 +14,7 @@
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
 --enable-debug --enable-silent-rules --disable-assert --disable-strict
-make -j install
+make -j clean install
 
 then build this file as follows:
 
@@ -29,6 +30,10 @@ int main() {
 	void* conn = NULL;
 	res_table* result = NULL;
 
+	if (setlocale(LC_CTYPE, "") == NULL) {
+		fprintf(stderr, "Can't set locale. Boo.");
+		return -1;
+	}
 	// we want to get rid of first argument, this is why we want to inline mal/sql scripts and have fat library
 	err = monetdb_startup("/tmp/embedded-install/lib", "/tmp/embedded-dbfarm", 1);
 	if (err != NULL) {

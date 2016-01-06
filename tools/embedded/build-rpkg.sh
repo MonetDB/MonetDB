@@ -29,13 +29,13 @@ export R_PACKAGE_DIR=$STAGEDIR/dummytarget
 mkdir $R_PACKAGE_DIR
 # install a build in the dummytarget dir to collect mal/sql scripts
 # need these two files so the dummy build goes through, they are generated later
-touch sourcetree/monetdb5/mal/mal_init_inline.h sourcetree/sql/backends/monet5/createdb_inline.h
+touch sourcetree/monetdb5/mal/mal_init_inline.h # sourcetree/sql/backends/monet5/createdb_inline.h
 # run dummy build
 ./rpackage/configure
 # steal the sql parser files
 cp sourcetree/sql/server/sql_parser.tab.* rpackage/src/sql/server/
 # inline mal/sql scripts, we need R with the stringr package for that
-R --slave -f sourcetree/tools/embedded/encode.R --args dummytarget/libs/monetdb5/ rpackage/src/
+python sourcetree/tools/embedded/inline.py --args dummytarget/libs/monetdb5/ rpackage/src/monetdb5/mal/mal_init_inline.h
 
 # bundle pcre for windows
 wget http://dev.monetdb.org/Assets/R/misc/pcre-8.37.zip
