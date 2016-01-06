@@ -2533,13 +2533,13 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATtdense(g)) {
 			/* singleton groups, so calculating quantile is
 			 * easy */
-			bn = BATcopy(b, TYPE_void, b->ttype, 0, TRANSIENT);
+			bn = COLcopy(b, b->ttype, 0, TRANSIENT);
 			BATseqbase(bn, g->tseqbase);
 			if (freeg)
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
+		BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
@@ -2547,7 +2547,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	} else {
 		t2 = NULL;
 	}
-	BATsubsort(&t1, NULL, NULL, b, t2, g, 0, 0);
+	BATsort(&t1, NULL, NULL, b, t2, g, 0, 0);
 	if (freeb)
 		BBPunfix(b->batCacheid);
 	b = t1;

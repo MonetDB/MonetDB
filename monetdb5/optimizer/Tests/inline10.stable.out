@@ -21,36 +21,27 @@ stdout of test 'inline10` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:int):int;
-    c := calc.+(a,b);
-    return foo := c;
-end user.foo;
-inline function user.bar(a:int,b:int):int;
-    z := user.foo(a,b);
-    return bar := z;
-end user.bar;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    zz := user.bar(1,2);
-# base line test for inlining 
-    z:bat[:oid,:int]  := mal.multiplex("user","bar",b,b);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-# recursive inlining 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup user.bar a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"bar":str,b:any,b:any);
+
+# 06:41:01 >  
+# 06:41:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
+# 06:41:01 >  
+
+#	mdb.List("user","qry");
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_19:int := calc.+(1:int,2:int);    	#[3] CMDvarADDsignal 19 <- 5 7 
     X_15:int := X_19:int;               	#[4]  15 <- 19 
     zz:int := X_15:int;                 	#[5]  6 <- 15 
-# base line test for inlining           	#[6]  8 <- 
-    X_27:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	#[7] CMDbatADDsignal 27 <- 1 1 
-    X_23:bat[:oid,:int] := X_27:bat[:oid,:int];	#[8]  23 <- 27 
-    z:bat[:oid,:int] := X_23:bat[:oid,:int];	#[9]  9 <- 23 
+# base line test for inlining           
+    X_27:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[7] CMDbatADDsignal 27 <- 1 1 
+    X_23:bat[:int] := X_27:bat[:int];   	#[8]  23 <- 27 
+    z:bat[:int] := X_23:bat[:int];      	#[9]  9 <- 23 
 end user.qry;                           	#[10]  
 
 # 11:53:01 >  

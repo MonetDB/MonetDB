@@ -81,25 +81,6 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	return s;
 }
 
-/* dark code, we need quite some lux to shed a little light on this */
-MalStkPtr
-reallocStack(MalStkPtr s, int cnt)
-{
-	int k;
-	MalStkPtr old = s;
-
-	if (s->stksize > cnt)
-		return s;
-	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = (MalStkPtr) GDKzalloc(stackSize(k));
-	if (s == NULL)
-		GDKfatal("reallocStack: can not obtain memory\n");
-	memcpy(s, old, stackSize(old->stksize));
-	s->stksize = k;
-	GDKfree(old);
-	return s;
-}
-
 /*
  * When you add a value to the stack, you should ensure that
  * there is space left. It should only be used for global

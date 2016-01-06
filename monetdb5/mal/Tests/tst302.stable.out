@@ -1,34 +1,40 @@
 stdout of test 'tst302` in directory 'monetdb5/mal` itself:
 
 
-# 08:01:15 >  
-# 08:01:15 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst302.mal </dev/null
-# 08:01:15 >  
+# 09:00:01 >  
+# 09:00:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30157" "--set" "mapi_usock=/var/tmp/mtest-21311/.s.monetdb.30157" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 09:00:01 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-##propagate INT exception
-## (you should be able to pass it upwards though)
-#raise	IllegalAccess := 1234;
-#	print("should not come here\n");
-#
-function user.main():void;
-#propagate INT exception 
-# (you should be able to pass it upwards though) 
-    raise PermissionDeniedException := 1234;
-    io.print("should not come here\n");
-end user.main;
-!MALException:user.main[5]:Exception not caught
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30157/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21311/.s.monetdb.30157
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
+Ready.
 
+# 09:00:01 >  
+# 09:00:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
+# 09:00:01 >  
 
+function user.foo():void;               	#[0]  0 
+    raise PermissionDeniedException:int := 1234:int;	#[1]  1 <- 2 
+    io.print("should not come here\n":str);	#[2] IOprint_val 3 <- 4 
+end user.foo;                           	#[3]  
 
-
-
-# 17:45:29 >  
-# 17:45:29 >  Done.
-# 17:45:29 >  
+# 09:00:01 >  
+# 09:00:01 >  "Done."
+# 09:00:01 >  
 

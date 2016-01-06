@@ -5,25 +5,32 @@ stdout of test 'tst163` in directory 'monetdb5/mal` itself:
 # 20:46:32 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//dbfarm" --set "sql_logdir=/ufs/mk/monet5//dblogs/logs/sql" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=39710 --set xrpc_port=45580 --set monet_prompt= --trace --dbname=mTests_src_mal  tst163.mal
 # 20:46:32 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-##multiple atomary types
-#atom myint:int;
-#atom myint:int;
-!TypeException:atomDefinition:Redefinition of atom 'myint'
-!TypeException:user.main[3]:'calc.+' undefined in:     j:any := calc.+(i:myint,3:int);
-function user.main():void;
-#multiple atomary types 
-    i := "1":myint;
-    j := calc.+(i,3);
-    io.print(i);
-    io.print(j);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:39876/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9433/.s.monetdb.39876
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 20:46:32 >  
-# 20:46:32 >  Done.
-# 20:46:32 >  
+Ready.
+
+# 15:19:56 >  
+# 15:19:56 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9433" "--port=39876"
+# 15:19:56 >  
+
+
+# 15:19:56 >  
+# 15:19:56 >  "Done."
+# 15:19:56 >  
 

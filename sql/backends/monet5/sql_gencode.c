@@ -42,6 +42,7 @@
 #include <rel_exp.h>
 #include <rel_bin.h>
 #include <rel_dump.h>
+#include <rel_remote.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
@@ -168,14 +169,14 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		char *tname = table_name(sql->sa, c);
-		char *sname = schema_name(sql->sa, c);
-		char *_empty = "";
-		char *tn = (tname) ? tname : _empty;
-		char *sn = (sname) ? sname : _empty;
-		char *cn = column_name(sql->sa, c);
-		char *ntn = sql_escape_ident(tn);
-		char *nsn = sql_escape_ident(sn);
+		const char *tname = table_name(sql->sa, c);
+		const char *sname = schema_name(sql->sa, c);
+		const char *_empty = "";
+		const char *tn = (tname) ? tname : _empty;
+		const char *sn = (sname) ? sname : _empty;
+		const char *cn = column_name(sql->sa, c);
+		const char *ntn = sql_escape_ident(tn);
+		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl;
 		char *fqtn;
 
@@ -192,8 +193,8 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 			_DELETE(fqtn);
 		} else
 			q = NULL;
-		_DELETE(ntn);
-		_DELETE(nsn);
+		c_delete(ntn);
+		c_delete(nsn);
 		if (q == NULL)
 			return -1;
 	}
@@ -240,14 +241,14 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, str format, str se
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		char *tname = table_name(sql->sa, c);
-		char *sname = schema_name(sql->sa, c);
-		char *_empty = "";
-		char *tn = (tname) ? tname : _empty;
-		char *sn = (sname) ? sname : _empty;
-		char *cn = column_name(sql->sa, c);
-		char *ntn = sql_escape_ident(tn);
-		char *nsn = sql_escape_ident(sn);
+		const char *tname = table_name(sql->sa, c);
+		const char *sname = schema_name(sql->sa, c);
+		const char *_empty = "";
+		const char *tn = (tname) ? tname : _empty;
+		const char *sn = (sname) ? sname : _empty;
+		const char *cn = column_name(sql->sa, c);
+		const char *ntn = sql_escape_ident(tn);
+		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl;
 		char *fqtn;
 
@@ -264,8 +265,8 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, str format, str se
 			_DELETE(fqtn);
 		} else
 			q = NULL;
-		_DELETE(ntn);
-		_DELETE(nsn);
+		c_delete(ntn);
+		c_delete(nsn);
 		if (q == NULL)
 			return -1;
 	}
@@ -293,9 +294,9 @@ dump_table(MalBlkPtr mb, sql_table *t)
 		return -1;
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		char *tname = c->t->base.name;
-		char *tn = sql_escape_ident(tname);
-		char *cn = c->base.name;
+		const char *tname = c->t->base.name;
+		const char *tn = sql_escape_ident(tname);
+		const char *cn = c->base.name;
 		InstrPtr q;
 
 		if (tn == NULL)
@@ -307,7 +308,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 		q = pushStr(mb, q, c->type.type->localtype == TYPE_void ? "char" : c->type.type->sqlname);
 		q = pushInt(mb, q, c->type.digits);
 		q = pushInt(mb, q, c->type.scale);
-		_DELETE(tn);
+		c_delete(tn);
 		if (q == NULL)
 			return -1;
 	}
@@ -416,7 +417,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 
 static int
-_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call)
+_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -465,7 +466,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -479,7 +480,8 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		return -1;
 	be->mvc->argc = old_argc;
 	/* SQL function definitions meant for inlineing should not be optimized before */
-	curBlk->inlineProp =1;
+	if (inline_func)
+		curBlk->inlineProp =1;
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -494,7 +496,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	char *uri = prp->value;
+	const char *uri = mapiuri_uri(prp->value, m->sa);
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
@@ -510,7 +512,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	/* dirty hack, rename (change first char of name) L->l, local
 	 * functions name start with 'l'         */
 	name[0] = 'l';
-	if (_create_relational_function(m, mod, name, rel, call) < 0)
+	if (_create_relational_function(m, mod, name, rel, call, 0) < 0)
 		return -1;
 
 	/* create stub */
@@ -533,7 +535,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
 			int varid = 0;
-			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			varid = newVariable(curBlk, _STRDUP(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -571,7 +573,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
 #else
-	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan"); */
+	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
 	p = newInstruction(curBlk, ASSIGNsymbol);
 	setModuleId(p, remoteRef);
 	setFunctionId(p, execRef);
@@ -612,7 +614,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 		for (n = call->op1->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
-			char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
+			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
@@ -689,14 +691,14 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 }
 
 int
-monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call)
+monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func)
 {
 	prop *p = NULL;
 
 	if (rel && (p = find_prop(rel->p, PROP_REMOTE)) != NULL)
 		return _create_relational_remote(m, mod, name, rel, call, p);
 	else
-		return _create_relational_function(m, mod, name, rel, call);
+		return _create_relational_function(m, mod, name, rel, call, inline_func);
 }
 
 /*
@@ -2117,7 +2119,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* dump args */
 			if (s->op1 && _dumpstmt(sql, mb, s->op1) < 0)
 				return -1;
-			if (monet5_create_relational_function(sql->mvc, mod, fimp, rel, s) < 0)
+			if (monet5_create_relational_function(sql->mvc, mod, fimp, rel, s, 1) < 0)
 				 return -1;
 
 			q = newStmt(mb, mod, fimp);
@@ -2441,14 +2443,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (cnt == 1 && first->nrcols <= 0 ){
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
-					char *tname = table_name(sql->mvc->sa, c);
-					char *sname = schema_name(sql->mvc->sa, c);
-					char *_empty = "";
-					char *tn = (tname) ? tname : _empty;
-					char *sn = (sname) ? sname : _empty;
-					char *cn = column_name(sql->mvc->sa, c);
-					char *ntn = sql_escape_ident(tn);
-					char *nsn = sql_escape_ident(sn);
+					const char *tname = table_name(sql->mvc->sa, c);
+					const char *sname = schema_name(sql->mvc->sa, c);
+					const char *_empty = "";
+					const char *tn = (tname) ? tname : _empty;
+					const char *sn = (sname) ? sname : _empty;
+					const char *cn = column_name(sql->mvc->sa, c);
+					const char *ntn = sql_escape_ident(tn);
+					const char *nsn = sql_escape_ident(sn);
 					size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
 					char *fqtn = NEW_ARRAY(char, fqtnl);
 
@@ -2466,8 +2468,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = pushArgument(mb, q, c->nr);
 					}
 
-					_DELETE(ntn);
-					_DELETE(nsn);
+					c_delete(ntn);
+					c_delete(nsn);
 					_DELETE(fqtn);
 					if (q == NULL)
 						return -1;

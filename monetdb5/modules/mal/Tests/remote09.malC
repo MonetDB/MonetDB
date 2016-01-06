@@ -1,0 +1,40 @@
+# let connect figure out itself how to connect to the running db
+uri := sabaoth.getLocalConnectionURI();
+
+# create a persistent connecton to ourself
+conn1:str := remote.connect(uri, "monetdb", "monetdb");
+
+b := bat.new( :str);
+
+b := bat.append(b, "maandag");
+b := bat.append(b, "dinsdag");
+b := bat.append(b, "woensdag");
+b := bat.append(b, "donderdag");
+b := bat.append(b, "vrijdag");
+b := bat.append(b, "januari");
+b := bat.append(b, "februari");
+b := bat.append(b, "maart");
+b := bat.append(b, "april");
+b := bat.append(b, "mei");
+b := bat.append(b, "juni");
+b := bat.append(b, "juli");
+b := bat.append(b, "augustus");
+b := bat.append(b, "september");
+b := bat.append(b, "oktober");
+b := bat.append(b, "november");
+b := bat.append(b, "december");
+b := bat.append(b, "morgen");
+b := bat.append(b, "middag");
+b := bat.append(b, "avond");
+b := bat.append(b, "nacht");
+b := bat.append(b, "licht");
+b := bat.append(b, "duisternis");
+
+rb2 := remote.put(conn1, b);
+lb2:bat[:str] := remote.get(conn1, rb2);
+
+io.print(lb2);
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.disconnect(conn1);

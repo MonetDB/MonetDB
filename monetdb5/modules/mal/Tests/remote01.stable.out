@@ -1,52 +1,35 @@
 stdout of test 'remote01` in directory 'monetdb5/modules/mal` itself:
 
 
-# 09:35:17 >  
-# 09:35:17 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=37413 --set xrpc_port=46951 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote01.mal
-# 09:35:17 >  
+# 09:58:28 >  
+# 09:58:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35023" "--set" "mapi_usock=/var/tmp/mtest-28552/.s.monetdb.35023" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 09:58:28 >  
 
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35023/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28552/.s.monetdb.35023
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
+Ready.
 
+# 09:58:28 >  
+# 09:58:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-28552" "--port=35023"
+# 09:58:28 >  
 
-
-
-
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_modules_mal'
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked using 2 threads
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-# for testweb, we need to ask the server itself how it is available, use 
-# sabaoth for that 
-#sabaoth.prelude(); 
-# create a connecton to ourself 
-    uri := sabaoth.getLocalConnectionURI();
-    conn := remote.connect(uri,"monetdb","monetdb");
-    io.print(conn);
-# retrieve a value (that for sure won't exist) 
-    x:str  := remote.get(conn,"b1_str");
-# bit weird that a "may not be used before being initialised" error is a 
-# TypeException 
-catch TypeException:str;
-    io.printf("!%s\n",TypeException);
-exit TypeException:str;
-# help testweb a bit, since currently no cleanup is done on server 
-# shutdown 
-    remote.disconnect(conn);
-# this should fail now 
-    remote.disconnect(conn);
-catch MALException:str;
-    io.printf("!%s\n",MALException);
-exit MALException:str;
-end user.main;
 [ "mTests_monetdb5_modules_mal_monetdb_0" ]
-!TypeException:remote.get:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_monetdb5_modules_mal) 'b1_str' may not be used before being initialized
-
-!MALException:remote.disconnect:no such connection: mTests_monetdb5_modules_mal_monetdb_0
-
-
 
 # 10:57:19 >  
 # 10:57:19 >  Done.

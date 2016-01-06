@@ -20,8 +20,14 @@ stdout of test 'tst4030` in directory 'monetdb5/optimizer` itself:
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
 
-function user.main():void;
-# testing subsumption optimalisation 
+Ready.
+
+# 21:55:31 >  
+# 21:55:31 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1801" "--port=39930"
+# 21:55:31 >  
+
+#mdb.list("user","foo");
+function user.foo():void;
     r := bat.new(:oid,:int);
     bat.append(r,1);
     bat.append(r,2);
@@ -37,7 +43,8 @@ function user.main():void;
     r1 := algebra.projection(t,r);
     io.print(r1);
     io.print("done");
-end user.main;
+end user.foo;
+#user.foo();
 #--------------------------#
 # h	t  # name
 # void	int  # type
@@ -53,7 +60,7 @@ end user.main;
 [ 0@0,	1  ]
 [ 1@0,	2  ]
 [ 2@0,	3  ]
-[ "done" ]
+[ "done"	]
 
 # 23:52:52 >  
 # 23:52:52 >  Done.

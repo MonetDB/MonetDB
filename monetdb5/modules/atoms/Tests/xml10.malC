@@ -1,0 +1,59 @@
+# produce a more complex structure
+# such as 
+#<books>
+#  <author> john
+#  <title> spring</title>
+#  <title> summer</title>
+#  </author>
+#  <author> mary
+#  <title> autum</title>
+#  </author>
+#</books>
+
+# the intermediate tabular result produced by SQL
+a:= bat.new(:str);
+bat.append(a,"john");
+bat.append(a,"john");
+bat.append(a,"marie");
+t:= bat.new(:str);
+bat.append(t,"spring");
+bat.append(t,"summer");
+bat.append(t,"autum");
+
+# SQL rendering request
+#xmlelement('books',
+#	xmlelement('author',a,
+#			xmlagg(xmlelement('title',t))
+#   ) )
+# every nesting implies a groupby
+
+ax:= batxml.xml(a);
+tx:= batxml.xml(t);
+te:= batxml.element("title",tx);
+g:= bat.new(:oid);
+bat.append(g,0@0);
+bat.append(g,0@0);
+bat.append(g,1@0);
+e:=bat.new(:int);
+bat.append(e,0);
+bat.append(e,0);
+
+k:= algebra.projection(g,te);
+io.print(k);
+l:= algebra.subsort(k,false,false);
+io.print(l);
+
+ag:= xml.subaggr(te,g,e,true);
+io.print(ag);
+
+cc:= batxml.concat(ax,te);
+io.print(cc);
+io.print("author construction");
+ae:= batxml.element("author",cc);
+io.print(ae);
+
+io.print("book construction");
+be:= xml.aggr(ae);
+io.print(be);
+doc:= xml.element("books",be);
+io.print(doc);

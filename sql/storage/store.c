@@ -2186,9 +2186,12 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	if (isTable(t))
 		if (store_funcs.create_col(tr, col) == LOG_ERR)
 			return NULL;
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+		if (c->type.type->s) /* column depends on type */
+			sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY);
+	}
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return col;
@@ -3532,6 +3535,9 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 				case FUNC_DEPENDENCY :
 							sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
 							break;
+				case TYPE_DEPENDENCY :
+							sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
+							break;
 				case USER_DEPENDENCY :  /*TODO schema and users dependencies*/
 							break;
 			}
@@ -3722,8 +3728,10 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if (isGlobal(col->t)) 
 		tr->schema_updates ++;
 
-	if (drop_action)
+	if (drop_action) 
 		sql_trans_drop_all_dependencies(tr, col->t->s, col->base.id, COLUMN_DEPENDENCY);
+	if (col->type.type->s) 
+		sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY);
 }
 
 static void
@@ -3938,6 +3946,20 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int di
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
+}
+
+int
+sql_trans_drop_type(sql_trans *tr, sql_schema *s, int id, int drop_action)
+{
+	node *n = find_sql_type_node(s, id);
+	sql_type *t = n->data;
+
+	sys_drop_type(tr, t, drop_action);
+
+	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+	tr->schema_updates ++;
+	cs_del(&s->types, n, t->base.flag);
+	return 1;
 }
 
 sql_func *
@@ -4413,6 +4435,8 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr, (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	if (tpe->type->s) /* column depends on type */
+		sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY);
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return col;

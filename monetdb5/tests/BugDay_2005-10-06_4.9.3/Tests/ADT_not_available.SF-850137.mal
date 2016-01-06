@@ -1,1 +1,0 @@
-u := url.new(:oid,:url);

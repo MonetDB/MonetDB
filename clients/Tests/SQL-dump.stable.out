@@ -120,6 +120,7 @@ SYSTEM FUNCTION  sys.contains
 SYSTEM FUNCTION  sys.corr
 SYSTEM FUNCTION  sys.date_to_str
 SYSTEM FUNCTION  sys.db_users
+SYSTEM FUNCTION  sys.debug
 SYSTEM FUNCTION  sys.degrees
 SYSTEM FUNCTION  sys.dependencies_columns_on_functions
 SYSTEM FUNCTION  sys.dependencies_columns_on_indexes
@@ -176,8 +177,6 @@ SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
 SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
-SYSTEM FUNCTION  sys.lidarattach
-SYSTEM FUNCTION  sys.lidarload
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
@@ -1291,11 +1290,11 @@ external name sql.sysmon_stop;
 -- This script gives the database administrator insight in the actual
 -- footprint of the persistent tables and the maximum playground used
 -- when indices are introduced upon them.
--- By chancing the storagemodelinput table directly, the footprint for
+-- By changing the storagemodelinput table directly, the footprint for
 -- yet to be loaded databases can be assessed.
 
 -- The actual storage footprint of an existing database can be
--- obtained by the table procuding function storage()
+-- obtained by the table producing function storage()
 -- It represents the actual state of affairs, i.e. storage on disk
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.
@@ -8472,7 +8471,7 @@ CREATE TABLE "sys"."privileges" (
 	"grantor"    INTEGER,
 	"grantable"  INTEGER
 );
-COPY 19 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 46 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"';
 2001	1	1	0	0
 2007	1	1	0	0
 2016	1	1	0	0

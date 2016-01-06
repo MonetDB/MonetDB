@@ -19,24 +19,16 @@ stdout of test 'tst150` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-command user.lookup(nme:str):bat[:oid,:str] address CMDlookup;
-!TypeException:user.sample[1]:object code for command user.lookup missing
-function user.sample(nme:str,val:any_1):bit;
-    b := user.lookup(nme);
-#find a bat 
-    h := algebra.select(b,val,val);
-    t := aggr.count(h);
-    x := io.print(t);
-    y := io.print(val);
-    return sample := true;
-end user.sample;
-!TypeException:user.main[1]:'user.sample' undefined in:     user.sample("hello":str,"world":str);
-function user.main():void;
-    user.sample("hello","world");
-    user.sample("hello",1);
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:59:05 >  
-# 07:59:05 >  Done.
-# 07:59:05 >  
+Ready.
+
+# 15:19:53 >  
+# 15:19:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9433" "--port=39876"
+# 15:19:53 >  
+
+
+# 15:19:53 >  
+# 15:19:53 >  "Done."
+# 15:19:53 >  
 

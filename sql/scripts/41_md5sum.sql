@@ -8,3 +8,5 @@
 
 create function sys.md5(v string)
 returns string external name clients.md5sum;
+
+grant execute on function md5 to public;

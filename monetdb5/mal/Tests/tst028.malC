@@ -1,0 +1,13 @@
+function f(a:bat[:any]):void;
+	io.print(a);
+end f;
+function h(a:bat[:str]):void;
+	io.print(a);
+end h;
+function g(b:any):void;
+end g;
+
+z:= bat.new(:str);
+f(z);
+g(z);
+h(z);

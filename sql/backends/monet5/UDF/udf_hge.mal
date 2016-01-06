@@ -15,6 +15,6 @@ comment "fuse two (8-byte) lng values into one (16-byte) hge value";
 # BAT MAL signatures
 module batudf;
 
-command fuse(one:bat[:oid,:lng],two:bat[:oid,:lng]):bat[:oid,:hge]
+command fuse(one:bat[:lng],two:bat[:lng]):bat[:hge]
 address UDFBATfuse
 comment "fuse two (8-byte) lng values into one (16-byte) hge value";

@@ -11,31 +11,25 @@ stdout of test 'tst120` in directory 'monetdb5/mal` itself:
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37254/
-# MonetDB/SQL module v2.39.0 loaded
-# MonetDB/GIS module v0.19.0 loaded
-!TypeException:user.main[4]:'bottom.second' undefined in: a:any := bottom.second(_5:str)
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37326/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5138/.s.monetdb.37326
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-!TypeException:user.main[5]:'top.first' undefined in: b:any := top.first(_7:int)
+Ready.
 
-!TypeException:user.main[6]:'top.first' undefined in: c:any := top.first(_9:sht)
+# 14:57:20 >  
+# 14:57:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
+# 14:57:20 >  
 
-!TypeException:user.main[7]:'bottom.first' undefined in: d:any := bottom.first(_11:str)
 
-!TypeException:user.main[8]:'top.first' undefined in: e:any := top.first(_13:sht)
-function user.main():void;
-#define 2 modules and check location of routines 
-# lookup DBHOME/mal/tst120a.mal 
-# does not do anything 
-    a := bottom.second("hh");
-    b := top.first(1);
-    c := top.first(1:sht);
-    d := bottom.first("hello world");
-    e := top.first(2:sht);
-end main;
-
-# 19:43:08 >  
-# 19:43:08 >  Done.
-# 19:43:08 >  
+# 14:57:20 >  
+# 14:57:20 >  "Done."
+# 14:57:20 >  
 

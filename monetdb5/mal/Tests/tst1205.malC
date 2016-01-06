@@ -1,0 +1,310 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+#
+##line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+#module(monettime,alarm);
+#
+#
+#
+lzone:= mtime.timezone("GMT+01:00");
+mtime.timezone_local(lzone);
+##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+## test the various ways to create rules
+	rule_jan:= mtime.rule("1st MON from start of JAN@01:15");
+#var rule_jan := mtime.rule("1st MON from start of JAN@01:15");
+	rule_mar:= mtime.rule("first WEDNE on or after march 10@01:15");
+#var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");
+	rule_apr:= mtime.rule("last THU on or before aPr 1@01:15");
+#var rule_apr := mtime.rule("last THU on or before aPr 1@01:15");
+	rule_may:= mtime.rule("MAY 26@01:15");
+#var rule_may := mtime.rule("MAY 26@01:15");
+	rule_jun:= mtime.rule("2nd TUE from end of june@01:15");
+#var rule_jun := mtime.rule("2nd TUE from end of june@01:15");
+	rule_jul:= mtime.rule(7,1,7,75);
+#var rule_jul := mtime.rule(7,1,7,75);
+	rule_aug:= mtime.rule(8,-1,7,75);
+#var rule_aug := mtime.rule(8,-1,7,75);
+	rule_sep:= mtime.rule(9,-10,2,75);
+#var rule_sep := mtime.rule(9,-10,2,75);
+	rule_oct:= mtime.rule(10,31,0,75);
+#var rule_oct := mtime.rule(10,31,0,75);
+	rule_nov:= mtime.rule(11,-10,-3,75);
+#var rule_nov := mtime.rule(11,-10,-3,75);
+## nil rules
+	rule_dec:= mtime.rule(12,-31,0,75);
+#var rule_dec := mtime.rule(12,-31,0,75);
+	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
+#var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
+# 
+#
+#
+##line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+## test the various ways to create timezones, using some of the above created rules
+	tzone_00:= mtime.timezone("GMT");
+#var tzone_00 := mtime.timezone("GMT");
+	tzone_01:= mtime.timezone("GMT+01:00");
+#var tzone_01 := mtime.timezone("GMT+01:00");
+	tzone_02:= mtime.timezone("GMT+0100");
+#var tzone_02 := mtime.timezone("GMT+0100");
+	tzone_03:= mtime.timezone(60,rule_oct,rule_mar);
+#var tzone_03 := mtime.timezone(60, rule_oct, rule_mar);
+	tzone_04:= mtime.timezone(0,rule_jan,rule_aug);
+#var tzone_04 := mtime.timezone(0, rule_jan, rule_aug);
+	tzone_05:= mtime.timezone(-97,rule_oct,rule_apr);
+#var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr);
+	tzone_06:= mtime.timezone(-97,rule_may,rule_sep);
+#var tzone_06 := mtime.timezone(-97, rule_may, rule_sep);
+	mc_a := calc.*(23,60);
+	tzone_07:= mtime.timezone(mc_a,rule_apr,rule_nov);
+#var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov);
+	nc_a := calc.*(-23,59);
+	oc_a := calc.-(nc_a,59);
+	tzone_08:= mtime.timezone(oc_a);
+#var tzone_08 := mtime.timezone((-23*59) - 59);
+	tzone_09:= mtime.timezone(0);
+#var tzone_09 := mtime.timezone(0);
+	tzone_10:= mtime.timezone(-60);
+#var tzone_10 := mtime.timezone(-60);
+	pc_a := calc.*(23,60);
+	qc_a := calc.+(pc_a,59);
+	tzone_11:= mtime.timezone(qc_a);
+#var tzone_11 := mtime.timezone((23*60)+59);
+	tzone_12:= mtime.timezone(60);
+#var tzone_12 := mtime.timezone(60);
+## nil tzones
+	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
+#var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
+	rc_a := calc.*(24,60);
+	tzone_14:= mtime.timezone(rc_a,rule_apr,rule_nov); # to complete it
+	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
+#var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
+#
+#
+	tzone_bat:= bat.new(:timezone);
+	bat.append(tzone_bat,tzone_00);
+	bat.append(tzone_bat,tzone_01);
+	bat.append(tzone_bat,tzone_02);
+	bat.append(tzone_bat,tzone_03);
+	bat.append(tzone_bat,tzone_04);
+	bat.append(tzone_bat,tzone_05);
+	bat.append(tzone_bat,tzone_06);
+	bat.append(tzone_bat,tzone_07);
+	bat.append(tzone_bat,tzone_08);
+	bat.append(tzone_bat,tzone_09);
+	bat.append(tzone_bat,tzone_10);
+	bat.append(tzone_bat,tzone_11);
+	bat.append(tzone_bat,tzone_12);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_15);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_13);
+#
+## test dayofweek and weeknumber using more than two years as consecutive days
+    date_seq:= bat.new(:date);
+    date_00:= mtime.date(2000,01,01);
+#var date_seq := bat.new(int, date);
+    i:= -375;
+#var i := -375;
+barrier lf_a:= true;
+    i:= i+1;
+    of_a := calc.<(i,375);
+barrier mf_a:= of_a;
+#while ((i :+= 1) < 375) {
+    pf_a := mtime.adddays(date_00,i);
+    bat.append(date_seq,pf_a);
+redo    lf_a;
+exit    mf_a;
+exit    lf_a;
+#}
+    rf_a := bat.setColumn(date_seq,"date");
+
+#
+	rf_a := bat.setColumn(date_seq,"date");
+#io.print(date_seq.bat.setColumn("date"),
+	sf_a:bat[:int] := mal.multiplex("mtime","weekofyear",date_seq);
+	tf_a := bat.setColumn(sf_a,"weekofyear");
+#      [weekofyear](date_seq).bat.setColumn("weekofyear"),
+	uf_a:bat[:int] := mal.multiplex("mtime","dayofweek",date_seq);
+	vf_a:bat[:str] := mal.multiplex("mtime","dayname",uf_a);
+	wf_a := bat.setColumn(vf_a,"dayofweek");
+#      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"),
+	xf_a:bat[:int] := mal.multiplex("mtime","dayofweek",date_seq);
+	yf_a:bat[:str] := mal.multiplex("mtime","dayname",xf_a);
+	ag_a:bat[:int] := mal.multiplex("mtime","daynum",yf_a);
+	bg_a := bat.setColumn(ag_a,"num");
+#      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"),
+	cg_a:bat[:int] := mal.multiplex("mtime","dayofyear",date_seq);
+	dg_a := bat.setColumn(cg_a,"dayofyear");
+io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
+	eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);
+#      [dayofyear](date_seq).bat.setColumn("dayofyear"));
+#
+#
+#
+##line 679 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+## test the various ways top create daytimes
+	daytime_00:= mtime.daytime(23,59,59,999);
+#var daytime_00 := mtime.daytime(23,59,59,999);
+	daytime_01:= mtime.daytime("23:59");
+#var daytime_01 := mtime.daytime("23:59");
+	daytime_02:= mtime.daytime("00:00");
+#var daytime_02 := mtime.daytime("00:00");
+	daytime_03:= mtime.daytime("23:59:59");
+#var daytime_03 := mtime.daytime("23:59:59");
+	daytime_04:= mtime.daytime("00:00:00.000");
+#var daytime_04 := mtime.daytime("00:00:00.000");
+	daytime_05:= mtime.daytime("00:00:00");
+#var daytime_05 := mtime.daytime("00:00:00");
+	daytime_06:= mtime.daytime("00:00:00:001");
+#var daytime_06 := mtime.daytime("00:00:00:001");
+	daytime_07:= mtime.daytime("03:49:02.999");
+#var daytime_07 := mtime.daytime("03:49:02.999");
+	daytime_08:= mtime.daytime("20:48:42:999");
+#var daytime_08 := mtime.daytime("20:48:42:999");
+	daytime_09:= mtime.daytime("17:53:38:999");
+#var daytime_09 := mtime.daytime("17:53:38:999");
+	daytime_10:= mtime.daytime("13:15:34:999");
+#var daytime_10 := mtime.daytime("13:15:34:999");
+	daytime_11:= mtime.daytime("07:34:27.999");
+#var daytime_11 := mtime.daytime("07:34:27.999");
+	daytime_12:= mtime.daytime("23:59:59:999");
+#var daytime_12 := mtime.daytime("23:59:59:999");
+	daytime_13:= mtime.daytime("01:00:03.999");
+#var daytime_13 := mtime.daytime("01:00:03.999");
+	daytime_14:= mtime.daytime("23:59:59.999");
+#var daytime_14 := mtime.daytime("23:59:59.999");
+## nil daytimes
+	daytime_15:= mtime.daytime(24,59,59,999);
+#var daytime_15 := mtime.daytime(24,59,59,999);
+	daytime_16:= mtime.daytime(23,60,59,999);
+#var daytime_16 := mtime.daytime(23,60,59,999);
+	daytime_17:= mtime.daytime(23,59,60,999);
+#var daytime_17 := mtime.daytime(23,59,60,999);
+	daytime_18:= mtime.daytime(23,59,60,1000);
+#var daytime_18 := mtime.daytime(23,59,60,1000);
+	daytime_19:= mtime.daytime("nil");
+#var daytime_19 := mtime.daytime("nil");
+#
+	daytime_20:= mtime.daytime("nil");
+	daytime_bat:= bat.new(:daytime);
+	bat.append(daytime_bat,daytime_00);
+	bat.append(daytime_bat,daytime_01);
+	bat.append(daytime_bat,daytime_02);
+	bat.append(daytime_bat,daytime_03);
+	bat.append(daytime_bat,daytime_04);
+	bat.append(daytime_bat,daytime_05);
+	bat.append(daytime_bat,daytime_06);
+	bat.append(daytime_bat,daytime_07);
+	bat.append(daytime_bat,daytime_08);
+	bat.append(daytime_bat,daytime_09);
+	bat.append(daytime_bat,daytime_10);
+	bat.append(daytime_bat,daytime_11);
+	bat.append(daytime_bat,daytime_12);
+	bat.append(daytime_bat,daytime_13);
+	bat.append(daytime_bat,daytime_14);
+	bat.append(daytime_bat,daytime_15);
+	bat.append(daytime_bat,daytime_16);
+	bat.append(daytime_bat,daytime_17);
+	bat.append(daytime_bat,daytime_18);
+	bat.append(daytime_bat,daytime_19);
+	bat.append(daytime_bat,daytime_19);
+#
+	bat.setColumn(daytime_bat,"daytime");
+#io.print(daytime_bat.bat.setColumn("daytime"),
+	bh_a:bat[:int] := mal.multiplex("mtime","hours",daytime_bat);
+	bat.setColumn(bh_a,"hours");
+#      [hours](daytime_bat).bat.setColumn("hours"),
+	dh_a:bat[:int] := mal.multiplex("mtime","minutes",daytime_bat);
+	bat.setColumn(dh_a,"minutes");
+#      [minutes](daytime_bat).bat.setColumn("minutes"),
+	fh_a:bat[:int] := mal.multiplex("mtime","seconds",daytime_bat);
+	bat.setColumn(fh_a,"seconds");
+#      [seconds](daytime_bat).bat.setColumn("seconds"),
+	hh_a:bat[:int] := mal.multiplex("mtime","milliseconds",daytime_bat);
+	bat.setColumn(hh_a,"milliseconds");
+io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
+	jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);
+#      [milliseconds](daytime_bat).bat.setColumn("milliseconds"));
+#
+#
+	date_00:= mtime.date(2000,01,01);
+#var date_00 := date(2000,01,01);
+	date_01:= mtime.date("5000-JAN-01");
+#var date_01 := date("5000-JAN-01");
+	date_02:= mtime.date("1968-FEBR-29");
+#var date_02 := date("1968-FEBR-29");
+	date_03:= mtime.date("1-MARCH-01");
+#var date_03 := date("1-MARCH-01");
+	date_04:= mtime.date("-5867411-JAN-1");
+#var date_04 := date("-5867411-JAN-1");
+	date_05:= mtime.date("-768/octobe/01");
+#var date_05 := date("-768/octobe/01");
+	date_06:= mtime.date("5000\\novembe\\01");
+#var date_06 := date("5000\\novembe\\01");
+	date_07:= mtime.date("-1999/jun/01");
+#var date_07 := date("-1999/jun/01");
+	date_08:= mtime.date("2000-jul-14");
+#var date_08 := date("2000-jul-14");
+	date_09:= mtime.date("1999-sept-01");
+#var date_09 := date("1999-sept-01");
+	date_10:= mtime.date("1998-decemBeR-01");
+#var date_10 := date("1998-decemBeR-01");
+	date_11:= mtime.date("1953 may                01");
+#var date_11 := date("1953 may                01");
+	date_12:= mtime.date("5867411-DEC-31");
+#var date_12 := date("5867411-DEC-31");
+## nil dates
+	date_13:= mtime.date(1996,13,1);
+#var date_13 := date(1996,13,1);
+	date_14:= mtime.date("999999999999999999999-01-01");
+#var date_14 := date("999999999999999999999-01-01");
+	date_15:= mtime.date("1999-JANUARI-01");
+#var date_15 := date("1999-JANUARI-01");
+	date_16:= mtime.date("1999-FEBR-29");
+#var date_16 := date("1999-FEBR-29");
+	date_17:= mtime.date("-1-DECEMBER-0");
+#var date_17 := date("-1-DECEMBER-0");
+	date_18:= mtime.date("5000\novembe\31");
+#var date_18 := date("5000\novembe\31");
+	date_19:= mtime.date("nil");
+#var date_19 := date("nil");
+	date_20:= mtime.date("1999-sept-31");
+#var date_20 := date("1999-sept-31");
+	date_bat:= bat.new(:date);
+	bat.append(date_bat,date_00);
+	bat.append(date_bat,date_01);
+	bat.append(date_bat,date_02);
+	bat.append(date_bat,date_03);
+	bat.append(date_bat,date_04);
+	bat.append(date_bat,date_05);
+	bat.append(date_bat,date_06);
+	bat.append(date_bat,date_07);
+	bat.append(date_bat,date_08);
+	bat.append(date_bat,date_09);
+	bat.append(date_bat,date_10);
+	bat.append(date_bat,date_11);
+	bat.append(date_bat,date_12);
+	bat.append(date_bat,date_13);
+	bat.append(date_bat,date_14);
+	bat.append(date_bat,date_15);
+	bat.append(date_bat,date_16);
+	bat.append(date_bat,date_17);
+	bat.append(date_bat,date_18);
+	bat.append(date_bat,date_19);
+	bat.append(date_bat,date_20);
+#
+## test the operations on dates
+	ne_a := bat.setColumn(date_bat,"date");
+#
+##line 719 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+## create timestamps in bulk from the above bats with dates, daytimes and tzones
+# Skipped due to coercion implication
+	kh_a:bat[:timestamp] := mal.multiplex("mtime","timestamp",date_bat,daytime_bat,tzone_bat);
+	timestamp_bat:=kh_a; bat.setAccess(kh_a,"w");
+#var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE);

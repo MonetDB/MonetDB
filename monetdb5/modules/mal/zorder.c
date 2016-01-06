@@ -182,13 +182,6 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	bz->H->nonil = 1;
 	bz->T->nonil = bx->T->nonil && by->T->nonil;
 
-	if (!BAThdense(bx)) {
-		/* legacy */
-		BAT *r = VIEWcreate(bx,bz);
-		BBPunfix(bz->batCacheid);
-		bz = r;
-	}
-
 	BBPkeepref(*zbid = bz->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -241,13 +234,6 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	bx->H->nonil = 1;
 	bx->T->nonil = bz->T->nonil;
 
-	if (!BAThdense(bz)) {
-		/* legacy */
-		BAT *r = VIEWcreate(bz,bx);
-		BBPunfix(bx->batCacheid);
-		bx = r;
-	}
-
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
@@ -258,13 +244,6 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	by->trevsorted = 0;
 	by->H->nonil = 1;
 	by->T->nonil = bz->T->nonil;
-
-	if (!BAThdense(bz)) {
-		/* legacy */
-		BAT *r = VIEWcreate(bz,by);
-		BBPunfix(by->batCacheid);
-		by = r;
-	}
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*xbid = bx->batCacheid);
@@ -315,13 +294,6 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	bx->H->nonil = 1;
 	bx->T->nonil = bz->T->nonil;
 
-	if (!BAThdense(bz)) {
-		/* legacy */
-		BAT *r = VIEWcreate(bz,bx);
-		BBPunfix(bx->batCacheid);
-		bx = r;
-	}
-
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*xbid = bx->batCacheid);
 	return MAL_SUCCEED;
@@ -369,13 +341,6 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	by->trevsorted = 0;
 	by->H->nonil = 1;
 	by->T->nonil = bz->T->nonil;
-
-	if (!BAThdense(bz)) {
-		/* legacy */
-		BAT *r = VIEWcreate(bz,by);
-		BBPunfix(by->batCacheid);
-		by = r;
-	}
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*ybid = by->batCacheid);

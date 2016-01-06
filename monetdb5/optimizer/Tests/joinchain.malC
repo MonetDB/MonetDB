@@ -1,0 +1,71 @@
+function qry();
+empty:= bat.new(:oid,:oid);
+a:= bat.new(:oid,:oid);
+b:= bat.new(:oid,:oid);
+c:= bat.new(:oid,:oid);
+d:= bat.new(:oid,:str);
+k:= bat.new(:oid,:int);
+
+bat.append(a,0@0);
+bat.append(a,3@0);
+
+bat.append(b,0@0);
+bat.append(b,1@0);
+bat.append(b,2@0);
+bat.append(b,3@0);
+bat.append(b,4@0);
+
+bat.append(c,0@0);
+bat.append(c,1@0);
+bat.append(c,2@0);
+bat.append(c,4@0);
+bat.append(c,5@0);
+
+bat.append(d,"The");
+bat.append(d,"quick");
+bat.append(d,"brown");
+bat.append(d,"fox");
+bat.append(d,"jumps");
+bat.append(d,"over");
+bat.append(d,"the");
+bat.append(d,"lazy");
+bat.append(d,"dog");
+
+bat.append(k,1);
+bat.append(k,2);
+bat.append(k,3);
+bat.append(k,4);
+bat.append(k,5);
+bat.append(k,6);
+bat.append(k,7);
+bat.append(k,8);
+bat.append(k,9);
+
+e := algebra.projection(a,b);
+f := algebra.projection(e,c);
+g := algebra.projection(f,d);
+l := algebra.projection(f,k);
+io.print(g);
+io.print(l);
+
+h := algebra.projectionPath(c,d);
+io.print(h);
+
+i := algebra.projectionPath(b,c,d);
+io.print(i);
+
+j := algebra.projectionPath(a,b,c,d);
+io.print(j);
+
+io.print("empty sequences");
+w :=algebra.projectionPath(empty,c,d);
+io.print(w);
+w :=algebra.projectionPath(c,empty,d);
+io.print(w);
+
+end qry;
+
+mdb.list("user","qry");
+optimizer.joinPath("user","qry");
+mdb.list("user","qry");
+qry();

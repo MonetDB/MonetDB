@@ -1,0 +1,29 @@
+#dead code by forward analysis
+
+function foo();
+A :=23;
+D :=22;
+F := 1;
+
+B:= true;
+barrier c:= B;
+	A:=1;
+	D:= 3;	# may not be removed
+	E:= 5;
+	F:=6;	# may be removed
+exit c;
+
+barrier c:= calc.not(B);
+	A:=2;
+	F:=7;	# may be removed
+exit c;
+
+io.print(A);
+io.print(D);
+end foo;
+
+mdb.list("user","foo");
+optimizer.deadcode("user","foo");
+mdb.list("user","foo");
+user.foo();
+

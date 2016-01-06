@@ -17,85 +17,9 @@ stdout of test 'recycle12` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function sql.mvc():int;
-    return mvc := 1;
-end sql.mvc;
-function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
-    b := bat.new(:oid,:oid);
-barrier i := 0@0:oid;
-    bat.append(b,i);
-    redo i := iterator.next(1@0:oid,11@0:oid);
-exit i;
-    return tid := b;
-end sql.tid;
-function sql.bind(mvc:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,1);
-    bat.append(b,2);
-    bat.append(b,3);
-    bat.append(b,4);
-    bat.append(b,5);
-    bat.append(b,6);
-    bat.append(b,7);
-    bat.append(b,8);
-    bat.append(b,9);
-    bat.append(b,10);
-    bat.append(b,11);
-    return bind := b;
-end sql.bind;
-function sql.qry(low:int,hgh:int):void;
-    m := sql.mvc();
-    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
-    s := algebra.subselect(b,x,low,hgh,true,true,false);
-    l1 := calc.+(low,1);
-    h1 := calc.-(hgh,1);
-    s2 := algebra.subselect(b,l1,h1,true,true,false);
-end sql.qry;
-function sql.qry1(val:int):void;
-    m := sql.mvc();
-    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
-    s := algebra.subselect(b,x,val,val,true,true,false);
-end sql.qry1;
-function user.main():void;
-#test the basics of the recycler 
-# testing query categories statistics 
-#intra-query commonality 
-#inter-query commonality 
-    recycle.setCache(10);
-    user.qry(2,8);
-    user.qry1(10);
-    user.qry1(10);
-    recycle.dump();
-#recycle.dump(); 
-end user.main;
-#RECYCLE [  0] cost 8 mem 0 srch  -nan     X_0:int  := sql.mvc();
-#RECYCLE [  1] cost 111 mem 88 srch 44.00     X_3:BAT  := sql.tid(X_0=1,X_2="sys",X_1="tbl");
-#RECYCLE [  2] cost 83 mem 48 srch 76.00     X_6:BAT  := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
-#RECYCLE [  3] cost 22 mem 0 srch 66.67     X_11:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_10=2,X_9=8,X_8=true,X_8=true,X_7=false);
-#RECYCLE [  4] cost 23 mem 0 srch 63.25     X_12:int  := calc.+(X_10=2,X_0=1);
-#RECYCLE [  5] cost 16 mem 0 srch 57.60     X_13:int  := calc.-(X_9=8,X_0=1);
-#RECYCLE [  6] cost 16 mem 0 srch 53.50     X_14:BAT  := algebra.subselect(X_6=<tmp_1044>,X_12=3,X_13=7,X_8=true,X_8=true,X_7=false);
-#REUSED  [  0]  378638 (usec)     X_0:int  := sql.mvc();
-#REUSED  [  1]  378666 (usec)     X_3:BAT  := sql.tid(X_0=1,X_2="sys",X_1="tbl");
-#REUSED  [  2]  378696 (usec)     X_6:BAT  := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
-#RECYCLE [  7] cost 22 mem 0 srch 52.00     X_16:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_15=10,X_15=10,X_8=true,X_8=true,X_7=false);
-#REUSED  [  0]  378822 (usec)     X_0:int  := sql.mvc();
-#REUSED  [  1]  378834 (usec)     X_3:BAT  := sql.tid(X_0=1,X_2="sys",X_1="tbl");
-#REUSED  [  2]  378847 (usec)     X_6:BAT  := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
-#REUSED  [  7]  378861 (usec)     X_16:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_15=10,X_15=10,X_8=true,X_8=true,X_7=false);
-#RECYCLER CATALOG cached 8 instructions, MAL recycled = 7 total MAL executed = 84 memory= 136 total searchtime=51.62(usec) savings=2651364
-# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
-#0	3	378822	0	0	    X_0:int  := sql.mvc();
-#1	3	378834	0	88	    X_3:BAT  := sql.tid(X_0=1,X_2="sys",X_1="tbl");
-#2	3	378847	0	48	    X_6:BAT  := sql.bind(X_0=1,X_2="sys",X_1="tbl",X_5="col",X_4=0);
-#3	1	22	136	0	    X_11:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_10=2,X_9=8,X_8=true,X_8=true,X_7=false);
-#4	1	23	0	0	    X_12:int  := calc.+(X_10=2,X_0=1);
-#5	1	16	0	0	    X_13:int  := calc.-(X_9=8,X_0=1);
-#6	1	16	48	0	    X_14:BAT  := algebra.subselect(X_6=<tmp_1044>,X_12=3,X_13=7,X_8=true,X_8=true,X_7=false);
-#7	2	378861	136	0	    X_16:BAT  := algebra.subselect(X_6=<tmp_1044>,X_3=<tmp_1031>,X_15=10,X_15=10,X_8=true,X_8=true,X_7=false);
+# MonetDB/R   module loaded
+
+Ready.
 #RECYCLE drop
 #RECYCLER CATALOG cached 8 instructions, MAL recycled = 7 total MAL executed = 86 memory= 136 total searchtime=51.62(usec) savings=2651364
 # CL	   lru		cnt	 ticks	 rd	 wr	 Instr

@@ -21,33 +21,24 @@ stdout of test 'inline02` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:int):int;
-    c := calc.+(a,b);
-    return foo := c;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    zz := user.foo(1,2);
-# base line test for inlining 
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-# inspired by SQL module 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 20:45:30 >  
+# 20:45:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23471" "--port=34866"
+# 20:45:30 >  
+
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_16:int := calc.+(1:int,2:int);    	#[3] CMDvarADDsignal 16 <- 5 7 
     zz:int := X_16:int;                 	#[4]  6 <- 16 
 # base line test for inlining           
-    X_20:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],b:bat[:oid,:int]);	#[6] CMDbatADDsignal 20 <- 1 1 
-    z:bat[:oid,:int] := X_20:bat[:oid,:int];	#[7]  9 <- 20 
-    X_24:bat[:oid,:int] := batcalc.+(b:bat[:oid,:int],2:int);	#[8] CMDbatADDsignal 24 <- 1 7 
-    z:bat[:oid,:int] := X_24:bat[:oid,:int];	#[9]  9 <- 24 
+    X_20:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[6] CMDbatADDsignal 20 <- 1 1 
+    z:bat[:int] := X_20:bat[:int];      	#[7]  9 <- 20 
+    X_24:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] CMDbatADDsignal 24 <- 1 7 
+    z:bat[:int] := X_24:bat[:int];      	#[9]  9 <- 24 
 end user.qry;                           	#[10]  
 
 # 18:00:43 >  

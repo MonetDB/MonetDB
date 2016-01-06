@@ -9,66 +9,24 @@ stdout of test 'color` in directory 'monetdb5/modules/atoms` itself:
 # Serving database 'mTests_src_modules_atoms', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.testcolor():void;
-    c := color.rgb(100,101,102);
-    cs := color.str(c);
-    io.print(cs);
-    V38 := color.red(c);
-    io.print(V38);
-    V41 := color.green(c);
-    io.print(V41);
-    V44 := color.blue(c);
-    io.print(V44);
-    V47 := color.hsv(90,0.5,1);
-    c := V47;
-    cs := color.str(c);
-    io.print(cs);
-# don't print hue, saturation, and value: architectural differences can 	 
-# cause differences in the output produced.  instead, use them to produce 	 
-# a new color which should be the same as the original color 	 
-#    print(hue(c)); 	 
-#    print(saturation(c)); 	 
-#    print(value(c)); 	 
-    V62 := color.hue(c);
-    V63 := color.saturation(c);
-    V64 := color.value(c);
-    V61 := color.hsv(V62,V63,V64);
-    S61 := color.str(V61);
-    io.print(S61);
-    V66 := color.ycc(200,100,50);
-    c := V66;
-    cs := color.str(c);
-    io.print(cs);
-    V73 := color.luminance(c);
-    io.print(V73);
-    V76 := color.cr(c);
-    io.print(V76);
-    V79 := color.cb(c);
-    io.print(V79);
-    V82 := color.color("0x0012ABcd");
-    c := V82;
-    cs := color.str(c);
-    io.print(cs);
-    V88 := color.red(c);
-    io.print(V88);
-    V91 := color.green(c);
-    io.print(V91);
-    V94 := color.blue(c);
-    io.print(V94);
-    bc := bat.new(:oid,:color);
-    bat.append(bc,"0x00000000":color);
-    bat.append(bc,"0x0033FF44":color);
-    bat.append(bc,"0x00003F44":color);
-    io.print(bc);
-    z := batcolor.red(bc);
-    io.print(z);
-end user.testcolor;
-function user.main():void;
-    user.testcolor();
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:30 >  
+# 10:05:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:30 >  
+
 [ "0x00646566" ]
 [ 100 ]
 [ 101 ]

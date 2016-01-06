@@ -1,37 +1,38 @@
 stdout of test 'xml100` in directory 'monetdb5/modules/atoms` itself:
 
 
-# 20:59:49 >  
-# 20:59:49 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30810 --set xrpc_port=49438 --set monet_prompt= --trace --dbname=mTests_src_modules_atoms  xml100.mal
-# 20:59:49 >  
+# 10:05:33 >  
+# 10:05:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32149" "--set" "mapi_usock=/var/tmp/mtest-31201/.s.monetdb.32149" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 10:05:33 >  
 
-# MonetDB server v5.1.0, based on kernel v1.19.0
-# Serving database 'mTests_src_modules_atoms'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-    b := "Mary Ann Walker";
-    c := "brown";
-    n := nil:xml;
-    io.print(n);
-    ns := xml.str(n);
-    io.print(ns);
-    bx := xml.xml(b);
-    cx := xml.xml(c);
-    xp := xml.element("person",bx);
-    io.print(xp);
-    xh := xml.element("hair",nil:xml,nil:xml,cx);
-    io.print(xh);
-    xx := xml.forest(xp,xh);
-    xs := xml.str(xx);
-    io.print(xs);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:34 >  
+# 10:05:34 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:34 >  
+
 [ nil ]
 [ nil ]
-[ <person>Mary Ann Walker</person> ]
-[ <hair>brown</hair> ]
+[ "<person>Mary Ann Walker</person>"	]
+[ "<hair>brown</hair>"	]
 [ "<person>Mary Ann Walker</person><hair>brown</hair>" ]
 
 # 20:59:49 >  

@@ -9,13 +9,24 @@ stdout of test 'mat` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34613/
-function user.main():void;
-    i := mat.pack(1,2,3);
-    io.print(i);
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:19 >  
+# 09:46:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:19 >  
+
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

@@ -1385,9 +1385,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
 		if (s) {
-			return BATcopy(s, TYPE_void, s->ttype, 0, TRANSIENT);
+			return COLcopy(s, s->ttype, 0, TRANSIENT);
 		} else {
-			return BATmirror(BATmark(b, 0));
+			return BATdense(0, b->hseqbase, BATcount(b));
 		}
 	}
 
@@ -1551,9 +1551,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				bn = doubleslice(s, 0, 0, low, high);
 			} else {
-				bn = doublerange(0, 0,
-						 low + b->hseqbase,
-						 high + b->hseqbase);
+				bn = BATdense(0, low + b->hseqbase, high - low);
 			}
 		}
 		bn->hseqbase = 0;

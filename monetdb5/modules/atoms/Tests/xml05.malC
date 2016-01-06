@@ -1,0 +1,15 @@
+b:= bat.new(:str);
+bat.append(b,"Mary Ann Walker");
+bat.append(b,"Annie Chapman");
+h:= bat.new(:str);
+bat.append(h,"brown");
+bat.append(h,"curly dark brown");
+
+io.print(b);
+
+bs:= batxml.xml(b);
+bc:= batxml.element("name",bs);
+
+aa:= batxml.root(bc,"1.0","no");
+as:= batxml.str(aa);
+io.print(as);

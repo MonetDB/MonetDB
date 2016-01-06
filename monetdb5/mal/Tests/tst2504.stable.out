@@ -16,29 +16,15 @@ stdout of test 'tst2504` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-factory user.random(seed:int):int;
-    random := seed;
-    i := seed;
-    i := calc.*(125,i);
-    i := calc.%(i,32767);
-    yield random := i;
-    i := calc.*(125,i);
-    i := calc.%(i,32767);
-    yield random := i;
-    return random := 0;
-end user.random;
-function user.main():void;
-# The prototypical factory construct 
-# test factory return and restart 
-    r1 := user.random(1);
-    io.print(r1);
-    r2 := user.random(1);
-    io.print(r2);
-    r2 := user.random(1);
-    io.print(r2);
-    r2 := user.random(1);
-    io.print(r2);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:12:26 >  
+# 16:12:26 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23788" "--port=36897"
+# 16:12:26 >  
+
+#io.print(r1);
 [ 125 ]
 [ 15625 ]
 [ 0 ]

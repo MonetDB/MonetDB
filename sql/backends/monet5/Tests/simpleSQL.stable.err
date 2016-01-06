@@ -24,7 +24,31 @@ stderr of test 'simpleSQL` in directory 'sql/backends/monet5` itself:
 # cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_backends_monet5
 # cmdline opt 	gdk_debug = 536870922
 
-# 23:37:35 >  
-# 23:37:35 >  "Done."
-# 23:37:35 >  
+# 13:03:24 >  
+# 13:03:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-21282" "--port=38130"
+# 13:03:24 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-21282/.s.monetdb.38130
+QUERY = #execute simple SQL queries from MAL 
+        function foo();
+        sql.init();
+        sql.eval("select 1;",true);
+        
+        sql.eval("create table simpleT(i integer);");
+        sql.eval("insert into simpleT values(123);");
+        
+        sql.eval("select * from simpleT;");
+        sql.eval("select * from simpleT;",false);
+        sql.eval("drop table simpleT;");
+        
+        #cause an error
+        sql.eval("select 1;",false);
+        end foo;
+        mdb.list("user","foo");
+        user.foo();
+ERROR = !SQLException:sql.exportValue:failed
+
+# 13:03:24 >  
+# 13:03:24 >  "Done."
+# 13:03:24 >  
 

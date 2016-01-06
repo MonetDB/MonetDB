@@ -1,0 +1,93 @@
+stdout of test 'constant-random.Bug-3836` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 17:48:01 >  
+# 17:48:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31631" "--set" "mapi_usock=/var/tmp/mtest-18246/.s.monetdb.31631" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2015" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:48:01 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.333 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31631/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18246/.s.monetdb.31631
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.55'
+# Finished reading the write-ahead log 'sql_logs/sql/log.55'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 17:48:01 >  
+# 17:48:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18246" "--port=31631"
+# 17:48:01 >  
+
+#create table tr(a int);
+#insert into tr values (1), (1);
+[ 2	]
+#select count(*) from (select a + rand() as arand from tr) as ntr group by arand;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+#create table trand (a int, b int default rand());
+#insert into trand(a) values (1);
+[ 1	]
+#insert into trand(a) values (2);
+[ 1	]
+#insert into trand(a) values (3);
+[ 1	]
+#alter table trand add column c int default rand();
+#alter table trand add column d int default null;
+#select count(*) from trand group by b;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#select count(*) from trand group by c;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#update trand set d = rand(); -- works as expected
+[ 3	]
+#select count(*) from trand group by d;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#update trand set a = a + rand(); -- does not work as expected/supposed to
+[ 3	]
+#select count(*) from trand group by a;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+#drop table tr;
+#drop table trand;
+
+# 17:48:01 >  
+# 17:48:01 >  "Done."
+# 17:48:01 >  
+

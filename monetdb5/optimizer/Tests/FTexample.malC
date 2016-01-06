@@ -1,0 +1,11 @@
+#Code factorization
+function test(s:str):wrd;
+	b:= bat.new(:oid,:str);
+	bat.append(b,"hello");
+	z:= algebra.subselect(b,s,s,true,true,false);
+	i:= aggr.count(z);
+	return test:=i;
+end test;
+mdb.List("user","test");
+optimizer.factorize("user","test");
+mdb.List("user","test");

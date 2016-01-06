@@ -5,67 +5,68 @@ stdout of test 'tst907` in directory 'monetdb5/mal` itself:
 # 08:01:38 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst907.mal </dev/null
 # 08:01:38 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#function one(base:int):int;
-#	print(base);
-#	return base;
-#end one;
-function user.one(base:int):int;
-    io.print(base);
-    return one := base;
-end user.one;
-function user.three(base:int,x:int,y:int):int;
-    io.print(base);
-    return three := base;
-end user.three;
-function user.pow(base:int,raise:int):int;
-    mg_a := calc.dbl(base);
-    ng_a := calc.dbl(raise);
-    og_a := calc.*(mg_a,ng_a);
-    pg_a := calc.int(og_a);
-    return pow := pg_a;
-end user.pow;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup user.three a bulk operator implementation is needed
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"three":str,b:any,2:int,3:int);
 #WARNING To speedup user.three a bulk operator implementation is needed
 #WARNING To speedup user.one a bulk operator implementation is needed
 #WARNING To speedup user.pow a bulk operator implementation is needed
-function user.main():void;
-    k := user.one(1);
-    l := user.three(1,2,3);
-    p := user.pow(1,2);
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    io.print("do multiplex three test");
-    X_23 := bat.new(nil:oid,nil:int);
-barrier (X_27,X_28) := iterator.new(b);
-    X_30 := user.three(X_28,2,3);
-    bat.append(X_23,X_30);
-    redo (X_27,X_28) := iterator.next(b);
-exit (X_27,X_28);
-    z:bat[:oid,:int]  := X_23;
-    io.print("do multiplex one test");
-    X_35 := bat.new(nil:oid,nil:int);
-barrier (X_37,X_38) := iterator.new(b);
-    X_40 := user.one(X_38);
-    bat.append(X_35,X_40);
-    redo (X_37,X_38) := iterator.next(b);
-exit (X_37,X_38);
-    z:bat[:oid,:int]  := X_35;
-    io.print("do multiplex pow test");
-    X_45 := bat.new(nil:oid,nil:int);
-barrier (X_47,X_48) := iterator.new(b);
-    X_50 := user.pow(X_48,2);
-    bat.append(X_45,X_50);
-    redo (X_47,X_48) := iterator.next(b);
-exit (X_47,X_48);
-    z:bat[:oid,:int]  := X_45;
-    io.print(z);
-end user.main;
+#    z:bat[:oid,:int] := mal.multiplex("user":str,"pow":str,b:bat[:oid,:int],2:int);
+
+# 22:45:40 >  
+# 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:40 >  
+
+function user.foo():void;               	#[0]  0 
+    k:int := user.one(1:int);           	#[1]  1 <- 2 
+    l:int := user.three(1:int,2:int,3:int);	#[2]  3 <- 2 4 5 
+    p:int := user.pow(1:int,2:int);     	#[3]  6 <- 2 4 
+    b:bat[:int] := bat.new(:int);       	#[4] CMDBATnewColumn 7 <- 8 
+    bat.append(b:bat[:int],1:int);      	#[5] BKCappend_val_wrap 9 <- 7 2 
+    io.print("do multiplex three test":str);	#[6] IOprint_val 10 <- 11 
+    X_22:bat[:int] := bat.new(nil:oid,nil:int);	#[7] CMDBATnew 22 <- 23 24 
+barrier (X_26:oid,X_27:int) := iterator.new(b:bat[:int]);	#[8] ITRbunIterator 26 27 <- 7 
+    X_29:int := user.three(X_27:int,2:int,3:int);	#[9]  29 <- 27 4 5 
+    bat.append(X_22:bat[:int],X_29:int);	#[10] BKCappend_val_wrap 30 <- 22 29 
+    redo (X_26:oid,X_27:int) := iterator.next(b:bat[:int]);	#[11] ITRbunNext 26 27 <- 7 
+exit (X_26:oid,X_27:int);               	#[12]  26 27 
+    z:bat[:int] := X_22:bat[:int];      	#[13]  12 <- 22 
+    io.print("do multiplex one test":str);	#[14] IOprint_val 15 <- 16 
+    X_34:bat[:int] := bat.new(nil:oid,nil:int);	#[15] CMDBATnew 34 <- 23 24 
+barrier (X_36:oid,X_37:int) := iterator.new(b:bat[:int]);	#[16] ITRbunIterator 36 37 <- 7 
+    X_39:int := user.one(X_37:int);     	#[17]  39 <- 37 
+    bat.append(X_34:bat[:int],X_39:int);	#[18] BKCappend_val_wrap 40 <- 34 39 
+    redo (X_36:oid,X_37:int) := iterator.next(b:bat[:int]);	#[19] ITRbunNext 36 37 <- 7 
+exit (X_36:oid,X_37:int);               	#[20]  36 37 
+    z:bat[:int] := X_34:bat[:int];      	#[21]  12 <- 34 
+    io.print("do multiplex pow test":str);	#[22] IOprint_val 18 <- 19 
+    X_44:bat[:int] := bat.new(nil:oid,nil:int);	#[23] CMDBATnew 44 <- 23 24 
+barrier (X_46:oid,X_47:int) := iterator.new(b:bat[:int]);	#[24] ITRbunIterator 46 47 <- 7 
+    X_49:int := user.pow(X_47:int,2:int);	#[25]  49 <- 47 4 
+    bat.append(X_44:bat[:int],X_49:int);	#[26] BKCappend_val_wrap 50 <- 44 49 
+    redo (X_46:oid,X_47:int) := iterator.next(b:bat[:int]);	#[27] ITRbunNext 46 47 <- 7 
+exit (X_46:oid,X_47:int);               	#[28]  46 47 
+    z:bat[:int] := X_44:bat[:int];      	#[29]  12 <- 44 
+    io.print(z:bat[:int]);              	#[30] IOprint_val 21 <- 12 
+end user.foo;                           	#[31]  
 [ 1 ]
 [ 1 ]
 [ "do multiplex three test" ]

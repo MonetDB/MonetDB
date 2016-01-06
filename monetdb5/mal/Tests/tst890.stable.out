@@ -5,45 +5,43 @@ stdout of test 'tst890` in directory 'monetdb5/mal` itself:
 # 08:01:32 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst890.mal </dev/null
 # 08:01:32 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-##test reference counting of batcalc
-#b:= new(:int,:int);
-#setName(b,"b");
-#insert(b,1,1);
-#c:=multiplex.tactics("+",b,2);
-#c:=multiplex.tactics("+",b,3);
-#c:=multiplex.tactics("+",b,4);
-#c:=multiplex.tactics("+",b,5);
-#c:=multiplex.tactics("+",b,6);
-#c:=multiplex.tactics("+",b,7);
-#c:=multiplex.tactics("+",b,8);
-#print(c);
-#d:= bbp.getRefCount();
-#dl:=bbp.getLRefCount();
-#dn:= bbp.getNames();
-#print(dn,d,dl);
-#
-#
-function user.main():void;
-#test reference counting of batcalc 
-    b := bat.new(:oid,:int);
-    bat.setName(b,"b");
-    bat.append(b,1);
-    c := batcalc.+(b,2);
-    c := batcalc.+(b,3);
-    c := batcalc.+(b,4);
-    c := batcalc.+(b,5);
-    c := batcalc.+(b,6);
-    c := batcalc.+(b,7);
-    c := batcalc.+(b,8);
-    io.print(c);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:36:19 >  
+# 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
+# 12:36:19 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.setName(b:bat[:int],"b":str);   	#[2] BKCsetName 3 <- 1 4 
+    bat.append(b:bat[:int],1:int);      	#[3] BKCappend_val_wrap 5 <- 1 6 
+    c:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[4] CMDbatADDsignal 7 <- 1 8 
+    c:bat[:int] := batcalc.+(b:bat[:int],3:int);	#[5] CMDbatADDsignal 7 <- 1 9 
+    c:bat[:int] := batcalc.+(b:bat[:int],4:int);	#[6] CMDbatADDsignal 7 <- 1 10 
+    c:bat[:int] := batcalc.+(b:bat[:int],5:int);	#[7] CMDbatADDsignal 7 <- 1 11 
+    c:bat[:int] := batcalc.+(b:bat[:int],6:int);	#[8] CMDbatADDsignal 7 <- 1 12 
+    c:bat[:int] := batcalc.+(b:bat[:int],7:int);	#[9] CMDbatADDsignal 7 <- 1 13 
+    c:bat[:int] := batcalc.+(b:bat[:int],8:int);	#[10] CMDbatADDsignal 7 <- 1 14 
+    io.print(c:bat[:int]);              	#[11] IOprint_val 15 <- 7 
+end user.foo;                           	#[12]  
 #--------------------------#
 # h	t  # name
 # void	int  # type

@@ -6,23 +6,22 @@
 
 module iterator;
 
-command new(b:bat[:oid,:any_2], size:lng) (:lng,:bat[:oid,:any_2])
+command new(b:bat[:any_2], size:lng) (:lng,:bat[:any_2])
 address ITRnewChunk
 comment "Create an iterator with fixed granule size.
 	  The result is a view.";
 
-command next(b:bat[:oid,:any_2], size:lng) (:lng, :bat[:oid,:any_2])
+command next(b:bat[:any_2], size:lng) (:lng, :bat[:any_2])
 address ITRnextChunk
 comment "Produce the next chunk for processing.";
 
-pattern new(b:bat[:oid,:any_2]) (h:oid, t:any_2)
+pattern new(b:bat[:any_2]) (h:oid, t:any_2)
 address ITRbunIterator
 comment "Process the buns one by one extracted from a void table.";
 
-pattern next(b:bat[:oid,:any_2]) (h:oid, t:any_2)
+pattern next(b:bat[:any_2]) (h:oid, t:any_2)
 address ITRbunNext
 comment "Produce the next bun for processing.";
-
 
 command next(step:oid,last:oid):oid
 address ITRnext_oid; 

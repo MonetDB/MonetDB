@@ -2188,6 +2188,15 @@ if test x"$have_zlib" = x"yes" ; then
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
+PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma="yes"], [have_liblzma="no"; why_have_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+if test x"$have_liblzma" = x"yes" ; then
+	AC_SUBST(PKG_LIBLZMA, liblzma)
+fi
+if test x"$have_liblzma" = x"yes" ; then
+	AC_DEFINE(HAVE_LIBLZMA, 1, [Define if you have the lzma library])
+fi
+AM_CONDITIONAL(HAVE_LIBLZMA, test x"$have_liblzma" != xno)
+
 org_have_valgrind=no
 have_valgrind=$org_have_valgrind
 AC_ARG_WITH(valgrind,

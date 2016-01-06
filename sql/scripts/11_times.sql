@@ -9,3 +9,5 @@
 
 create procedure times()
 external name sql.times;
+
+grant execute on procedure times to public;

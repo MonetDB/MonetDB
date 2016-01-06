@@ -79,7 +79,8 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		b = i;
 	} else {
 		if (BATcount(i)) {
-			r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
+			assert(b->htype == TYPE_void);
+			r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 			bat_destroy(b); 
 			b = r;
 			BATappend(b, i, TRUE); 
@@ -92,7 +93,8 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 		uv = temp_descriptor(bat->uvbid);
 		if (BATcount(ui)) {
 			if (needcopy) {
-				r = BATcopy(b, b->htype, b->ttype, 1, TRANSIENT); 
+				assert(b->htype == TYPE_void);
+				r = COLcopy(b, b->ttype, 1, TRANSIENT); 
 				bat_destroy(b); 
 				b = r;
 			}
@@ -147,7 +149,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	va_start(va, value);
 	b = full_column(tr, c);
 	if ((n = va_arg(va, sql_column *)) == NULL) {
-		if (b->T->hash || BAThash(b, 0) == GDK_SUCCEED) {
+		if (BAThash(b, 0) == GDK_SUCCEED) {
 			BATiter cni = bat_iterator(b);
 			BUN p;
 
@@ -271,8 +273,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	if (key_value_low) {
-		if (!b->T->hash)
-			BAThash(b, 0);
+		BAThash(b, 0);
 		r = BATselect(b, s, kvl, kvh, 1, hi, 0);
 		bat_destroy(s);
 		s = r;
@@ -311,7 +312,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	b = full_column(tr, orderby_col);
 	s = BATproject(r->data, b);
 	full_destroy(orderby_col, b);
-	BATsubsort(NULL, &o, NULL, s, NULL, NULL, 0, 0);
+	BATsort(NULL, &o, NULL, s, NULL, NULL, 0, 0);
 	bat_destroy(s);
 	s = BATproject(o, r->data);
 	bat_destroy(r->data);
@@ -390,11 +391,11 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 
 	/* need id, obc */
 	ids = o = g = NULL;
-	BATsubsort(&ids, &o, &g, lcb, NULL, NULL, 0, 0);
+	BATsort(&ids, &o, &g, lcb, NULL, NULL, 0, 0);
 	bat_destroy(lcb);
 
 	s = NULL;
-	BATsubsort(NULL, &s, NULL, obb, o, g, 0, 0);
+	BATsort(NULL, &s, NULL, obb, o, g, 0, 0);
 	bat_destroy(obb);
 	bat_destroy(o);
 	bat_destroy(g);
@@ -404,7 +405,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	bat_destroy(s);
 	rids = o;
 
-	assert(ids->ttype == TYPE_int && rids->ttype == TYPE_oid);
+	assert(ids->ttype == TYPE_int && ATOMtype(rids->ttype) == TYPE_oid);
 	r->id = 0;
 	r->pos = 0;
 	r->ids = ids;

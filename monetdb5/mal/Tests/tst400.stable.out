@@ -5,37 +5,42 @@ stdout of test 'tst400` in directory 'monetdb5/mal` itself:
 # 08:01:19 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst400.mal </dev/null
 # 08:01:19 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#barrier (v1,i):= newRange(0);
-#	print("do something");
-#	redo (v1,i):= nextElement(1,2);
-#exit	(v1,i);
-#
-#	printf("left first loop with %s\n",v1);
-#	print("next iteration");
-#barrier (v2,i):= newRange(0);
-#	print("do something else");
-#	redo (v2,i):= nextElement(2,5);
-#exit	(v2,i);
-#
-function user.main():void;
-barrier i := 0;
-    io.print("do something");
-    redo i := iterator.next(1,2);
-exit i;
-    io.printf("left first loop with %d\n",i);
-    io.print("next iteration");
-barrier i := 0;
-    io.print("do something else");
-    redo i := iterator.next(2,5);
-exit i;
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30157/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21311/.s.monetdb.30157
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:00:03 >  
+# 09:00:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
+# 09:00:03 >  
+
+function user.foo():void;               	#[0]  0 
+barrier i:int := 0:int;                 	#[1]  1 <- 2 
+    io.print("do something":str);       	#[2] IOprint_val 3 <- 4 
+    redo i:int := iterator.next(1:int,2:int);	#[3] ITRnext_int 1 <- 5 6 
+exit i:int;                             	#[4]  1 
+    io.printf("left first loop with %d\n":str,i:int);	#[5] IOprintf 7 <- 8 1 
+    io.print("next iteration":str);     	#[6] IOprint_val 9 <- 10 
+barrier i:int := 0:int;                 	#[7]  1 <- 2 
+    io.print("do something else":str);  	#[8] IOprint_val 11 <- 12 
+    redo i:int := iterator.next(2:int,5:int);	#[9] ITRnext_int 1 <- 6 13 
+exit i:int;                             	#[10]  1 
+end user.foo;                           	#[11]  
 [ "do something" ]
 [ "do something" ]
 left first loop with nil

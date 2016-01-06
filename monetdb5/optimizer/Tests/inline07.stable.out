@@ -21,26 +21,23 @@ stdout of test 'inline07` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(a:int,b:bat[:oid,:int]):dbl;
-    s := aggr.sum(b);
-    c := calc.+(a,s);
-    return foo := c;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);
-end user.qry;
-function user.main():void;
-# remapping inline functions 
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup user.foo a bulk operator implementation is needed
+#    z:bat[:oid,:dbl] := mal.multiplex("user":str,"foo":str,b:any,b:any);
+
+# 06:41:00 >  
+# 06:41:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
+# 06:41:00 >  
+
+#	mdb.List("user","qry");
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_12:dbl := aggr.sum(b:bat[:oid,:int]);	#[3] CMDBATsum 12 <- 1 
-    X_13:bat[:oid,:dbl] := batcalc.+(b:bat[:oid,:int],X_12:dbl);	#[4] CMDbatADDsignal 13 <- 1 12 
-    z:bat[:oid,:dbl] := X_13:bat[:oid,:dbl];	#[5]  6 <- 13 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
+    X_12:dbl := aggr.sum(b:bat[:int]);  	#[3] CMDBATsum 12 <- 1 
+    X_13:bat[:dbl] := batcalc.+(b:bat[:int],X_12:dbl);	#[4] CMDbatADDsignal 13 <- 1 12 
+    z:bat[:dbl] := X_13:bat[:dbl];      	#[5]  6 <- 13 
 end user.qry;                           	#[6]  
 
 # 18:00:44 >  

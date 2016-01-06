@@ -24,7 +24,7 @@ pattern inspect(mod:str,fcn:str):void
 address MDBinspect
 comment "Run the debugger on a specific function";
 
-command modules():bat[:oid,:str] 
+command modules():bat[:str] 
 address CMDmodules
 comment "List available modules";
 

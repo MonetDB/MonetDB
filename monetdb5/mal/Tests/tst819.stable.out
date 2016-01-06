@@ -16,16 +16,24 @@ stdout of test 'tst819` in directory 'monetdb5/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39275/
 # MonetDB/SQL module loaded
 # MonetDB/GIS module loaded
-function user.extralongfunctionsignature(p1:bat[:oid,:sht],p2:bat[:oid,:sht]):bat[:oid,:sht];
-    b := bat.new(:oid,:sht);
-    return extralongfunctionsignature := b;
-end user.extralongfunctionsignature;
-function user.main():void;
-#extra long signature 
-    p1 := bat.new(:oid,:sht);
-    p2 := bat.new(:oid,:sht);
-    z := user.extralongfunctionsignature(p1,p2);
-end user.main;
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:38:22 >  
+# 10:38:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-864" "--port=33541"
+# 10:38:22 >  
+
+function user.foo():void;               	#[0]  0 
+    p1:bat[:sht] := bat.new(:sht);      	#[1] CMDBATnewColumn 1 <- 2 
+    p2:bat[:sht] := bat.new(:sht);      	#[2] CMDBATnewColumn 3 <- 2 
+    z:bat[:sht] := user.extralongfunctionsignature(p1:bat[:sht],p2:bat[:sht]);	#[3]  4 <- 1 3 
+end user.foo;                           	#[4]  
 
 # 21:21:41 >  
 # 21:21:41 >  Done.

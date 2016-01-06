@@ -56,14 +56,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 		}
 		BUNappend(dst, &u.r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -108,14 +101,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		}
 		BUNappend(dst, &u.r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -153,14 +139,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		}
 		BUNappend(dst, &u.r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -198,14 +177,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 		}
 		BUNappend(dst, &u.r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -250,14 +222,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 		}
 		BUNappend(dst, &u.r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -295,14 +260,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 		}
 		BUNappend(dst, &u.r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

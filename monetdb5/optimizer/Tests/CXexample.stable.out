@@ -9,31 +9,41 @@ stdout of test 'CXexample` in directory 'monetdb5/optimizer` itself:
 # Serving database 'mTests_src_optimizer', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.main():void;
-# The 4000 series deals with strategic optimizer constructs 
-# common subexpression evaluation 
-    b := bat.new(:oid,:int);
-    c := bat.new(:oid,:int);
-    d := algebra.subselect(b,0,100,true,true,false);
-    l := calc.+(24,27);
-    l3 := calc.+(l,24);
-    mdb.List();
-end user.main;
-function user.main():void;              	#[0]  0 
-# The 4000 series deals with strategic optimizer constructs 
-# common subexpression evaluation       
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[3] CMDBATnew 5 <- 6 7 
-    c:bat[:oid,:int] := bat.new(:oid,:int);	#[4] CMDBATnew 8 <- 6 7 
-    d:bat[:oid,:oid] := algebra.subselect(b:bat[:oid,:int],0:int,100:int,true:bit,true:bit,false:bit);	#[5] ALGsubselect1 9 <- 5 10 11 12 13 14 
-    l:int := calc.+(24:int,27:int);     	#[6] CMDvarADDsignal 20 <- 17 19 
-    l3:int := calc.+(l:int,24:int);     	#[7] CMDvarADDsignal 22 <- 20 17 
-    mdb.List();                         	#[8] MDBlistDetail 23 
-end user.main;                          	#[9]  
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37175/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27236/.s.monetdb.37175
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 23:53:03 >  
-# 23:53:03 >  Done.
-# 23:53:03 >  
+Ready.
+
+# 15:36:19 >  
+# 15:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
+# 15:36:19 >  
+
+#mdb.List("user","foo");
+function user.foo():void;               	#[0]  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] ALGsubselect1 5 <- 1 6 7 8 9 10 
+    l:int := calc.+(24:int,27:int);     	#[4] CMDvarADDsignal 16 <- 13 15 
+    l3:int := calc.+(l:int,24:int);     	#[5] CMDvarADDsignal 18 <- 16 13 
+end user.foo;                           	#[6]  
+function user.foo():void;               	#[0]  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] ALGsubselect1 5 <- 1 6 7 8 9 10 
+    l:int := calc.+(24:int,27:int);     	#[4] CMDvarADDsignal 16 <- 13 15 
+    l3:int := calc.+(l:int,24:int);     	#[5] CMDvarADDsignal 18 <- 16 13 
+end user.foo;                           	#[6]  
+
+# 15:36:19 >  
+# 15:36:19 >  "Done."
+# 15:36:19 >  
 

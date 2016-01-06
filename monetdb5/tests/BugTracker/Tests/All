@@ -1,9 +1,0 @@
-# tests related to bug reports:
-
-assertion_on_return.SF-1727339
-batcast.SF-1730987
-empty_line_crash.SF-1806638
-parser.SF-2051309
-mal_var_persistent_over_sessions.SF-2581675
-algebra_project.Bug-3045
-stdev.Bug-3178

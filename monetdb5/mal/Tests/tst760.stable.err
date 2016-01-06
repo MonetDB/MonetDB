@@ -1,1 +1,50 @@
 stderr of test 'tst760` in directory 'monetdb5/mal` itself:
+
+
+# 09:29:50 >  
+# 09:29:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39422" "--set" "mapi_usock=/var/tmp/mtest-25470/.s.monetdb.39422" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 09:29:50 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39422
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25470/.s.monetdb.39422
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 09:29:51 >  
+# 09:29:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
+# 09:29:51 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # Polymorphic function tests
+        # Catching a dynamic error
+        function test(b:bat[:any_2],c:any_2);
+        	k:= 1+c;
+        	io.print(k);
+        end test;
+        
+        c:= bat.new(:str);
+        user.test(c,"hello");
+ERROR = !TypeException:user.test[1]:'calc.+' undefined in:     k:any := calc.+(1:int,c:str);
+        !MALException:user.test[0]:Error in cloned function
+        !TypeException:user.main[4]:'user.test' undefined in:     user.test(c:bat[:str],"hello":str);
+
+# 09:29:51 >  
+# 09:29:51 >  "Done."
+# 09:29:51 >  
+

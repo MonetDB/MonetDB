@@ -33,14 +33,14 @@ Ready.
 #insert into geom_bug2814 values(3, null);
 [ 1	]
 #select id, mbr(g) from geom_bug2814 where id=1 or id=2;
-% sys.geom_bug2814,	sys. # table_name
+% sys.geom_bug2814,	sys.L # table_name
 % id,	mbr_g # name
 % int,	mbr # type
 % 1,	0 # length
 [ 1,	"BOX (4 5, 4 5)"	]
 [ 2,	"BOX (0 0, 10 10)"	]
 #select id, mbr(g) from geom_bug2814 where id=3;
-% sys.geom_bug2814,	sys. # table_name
+% sys.geom_bug2814,	sys.L # table_name
 % id,	mbr_g # name
 % int,	mbr # type
 % 1,	0 # length

@@ -17,33 +17,15 @@ stdout of test 'tst059` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11633/.s.monetdb.32986
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.threevaluedlogic(B:bit):int;
-    threevaluedlogic:int  := nil:int;
-barrier X_2 := B;
-    return threevaluedlogic:int  := 1:int;
-exit X_2;
-barrier X_8 := calc.isnil(B);
-    return threevaluedlogic:int  := nil:int;
-exit X_8;
-barrier X_6 := calc.not(B);
-    return threevaluedlogic:int  := 0:int;
-exit X_6;
-    return threevaluedlogic:int  := threevaluedlogic;
-end user.threevaluedlogic;
-function user.main():void;
-# three valued logic, using a sequential plan 
-# for use in parallel blocks check for the nil in both branches 
-# F b1 THEN RETURN 1; 
-# ELSEIF NOT(b1) THEN RETURN 0; 
-#  ELSE RETURN NULL; 
-# END IF; 
-    z1 := user.threevaluedlogic(true);
-    io.print(z1);
-    z2 := user.threevaluedlogic(false);
-    io.print(z2);
-    z3 := user.threevaluedlogic(nil:bit);
-    io.print(z3);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:52:42 >  
+# 12:52:42 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
+# 12:52:42 >  
+
+#io.print(z1);
 [ 1 ]
 [ 0 ]
 [ nil ]

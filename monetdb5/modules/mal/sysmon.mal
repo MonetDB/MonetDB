@@ -30,5 +30,5 @@ pattern stop(id:lng)
 address SYSMONstop
 comment "Stop a single query a.s.a.p.";
 
-pattern queue()(tag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], qrytag:bat[:oid,:oid],query:bat[:oid,:str])
+pattern queue()(tag:bat[:lng], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], qrytag:bat[:oid],query:bat[:str])
 address SYSMONqueue;

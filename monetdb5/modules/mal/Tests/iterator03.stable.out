@@ -9,64 +9,53 @@ stdout of test 'iterator03` in directory 'monetdb5/modules/mal` itself:
 # Serving database 'mTests_src_modules_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-    t := bat.new(:oid,:url);
-    cb_a := url.url("http://www.cwi.nl");
-    db_a := bat.append(t,cb_a);
-    eb_a := url.url("http://www.cwi.nl/~monet");
-    fb_a := bat.append(t,eb_a);
-    gb_a := url.url("http://www.cwi.nl/~mk/Acoi/doc/features.html");
-    hb_a := bat.append(t,gb_a);
-    ib_a := url.url("http://www.educ.uva.nl/schoolweb/rocloka.htm");
-    jb_a := bat.append(t,ib_a);
-    kb_a := url.url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
-    lb_a := bat.append(t,kb_a);
-    mb_a := url.url("http://www.edgeonline.com/");
-    nb_a := bat.append(t,mb_a);
-    ob_a := url.url("http://robotics.stanford.edu/icons/ ");
-    pb_a := bat.append(t,ob_a);
-    qb_a := io.print("build a table finished");
-    io.print(t);
-    io.print("start loop");
-    c := 3:lng;
-barrier (mloop,chunk) := iterator.new(t,c);
-    io.print("next chunk");
-    io.print(chunk);
-    redo (mloop,chunk) := iterator.next(t,3:lng);
-exit mloop;
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:45:57 >  
+# 09:45:57 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:45:57 >  
+
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
 # h	t								  # name
-# int	url								  # type
-#-------------------------------------------------------------------------#
-[ 0@0,	  "http://www.cwi.nl"						  ]
-[ 1@0,	  "http://www.cwi.nl/~monet"					  ]
-[ 2@0,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"		  ]
-[ 3@0,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
-[ 4@0,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
-[ 5@0,	  "http://www.edgeonline.com/"					  ]
+# void	url  # type
+#--------------------------#
+[ 0@0,	http://www.cwi.nl	]
+[ 1@0,	http://www.cwi.nl/~monet	]
+[ 2@0,	http://www.cwi.nl/~mk/Acoi/doc/features.html	]
+[ 3@0,	http://www.educ.uva.nl/schoolweb/rocloka.htm	]
+[ 4@0,	http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium	]
+[ 5@0,	http://www.edgeonline.com/	]
 [ 6@0,	  "http://robotics.stanford.edu/icons/ "			  ]
 [ "start loop" ]
 [ "next chunk" ]
 #---------------------------------------------------------#
 # h	t						  # name
 # void			url						  # type
-#---------------------------------------------------------#
-[ 0@0,	  "http://www.cwi.nl"				  ]
-[ 1@0,	  "http://www.cwi.nl/~monet"			  ]
-[ 2@0,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"  ]
+#--------------------------#
+[ 0@0,	http://www.cwi.nl	]
+[ 1@0,	http://www.cwi.nl/~monet	]
+[ 2@0,	http://www.cwi.nl/~mk/Acoi/doc/features.html	]
 [ "next chunk" ]
 #--------------------------#
 # t	t  # name
 # void	url  # type
 #--------------------------#
-[ 3@0,	"http://www.educ.uva.nl/schoolweb/rocloka.htm"  ]
-[ 4@0,	"http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"  ]
-[ 5@0,	"http://www.edgeonline.com/"  ]
+[ 3@0,	http://www.educ.uva.nl/schoolweb/rocloka.htm	]
+[ 4@0,	http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium	]
+[ 5@0,	http://www.edgeonline.com/	]
 [ "next chunk" ]
 #--------------------------#
 # t	t  # name

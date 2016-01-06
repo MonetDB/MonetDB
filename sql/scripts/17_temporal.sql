@@ -16,3 +16,8 @@ create function sys."epoch"(ts TIMESTAMP) returns INT
 
 create function sys."epoch"(ts TIMESTAMP WITH TIME ZONE) returns INT
 	external name timestamp."epoch";
+
+grant execute on function sys."epoch" (BIGINT) to public;
+grant execute on function sys."epoch" (INT) to public;
+grant execute on function sys."epoch" (TIMESTAMP) to public;
+grant execute on function sys."epoch" (TIMESTAMP WITH TIME ZONE) to public;

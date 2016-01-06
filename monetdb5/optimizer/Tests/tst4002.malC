@@ -1,0 +1,9 @@
+#testing some optimizer constructions
+
+function foo();
+z:= "nil";
+d:= mtime.date(z);
+end foo;
+
+optimizer.aliases("user","foo");
+mdb.list("user","foo");

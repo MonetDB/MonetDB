@@ -21,21 +21,16 @@ stdout of test 'tst760` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.test(b:bat[:oid,:any_2],c:any_2):void;
-    k := calc.+(1,c);
-    io.print(k);
-end user.test;
-!TypeException:user.test[1]:'calc.+' undefined in:     k:any := calc.+(1:int,c:str);
-!MALException:user.test[0]:Error in cloned function
-!TypeException:user.main[4]:'user.test' undefined in:     user.test(c:bat[:oid,:str],"hello":str);
-function user.main():void;
-# Polymorphic function tests 
-# Catching a dynamic error 
-    c := bat.new(:oid,:str);
-    user.test(c,"hello");
-end user.main;
+# MonetDB/R   module loaded
 
-# 08:01:30 >  
-# 08:01:30 >  Done.
-# 08:01:30 >  
+Ready.
+
+# 09:29:51 >  
+# 09:29:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
+# 09:29:51 >  
+
+
+# 09:29:51 >  
+# 09:29:51 >  "Done."
+# 09:29:51 >  
 

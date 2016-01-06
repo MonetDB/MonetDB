@@ -5,84 +5,31 @@ stdout of test 'tst171` in directory 'monetdb5/mal` itself:
 # 07:59:13 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst171.mal </dev/null
 # 07:59:13 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## Testing for nil values.
-#    tv:= true;
-#    print(tv);
-#    fv:= false;
-#    print(fv);
-#    print("strings");
-#    z := str("nil");
-#    x := calc.isnil(z);
-#    print(x);
-#    y := calc.isnil("something");
-#    print(y);
-#    a := str(nil);
-#    x := calc.isnil(a);
-#    print(x);
-#
-#    print("integers");
-#    i := int("nil");
-#    x := calc.isnil(i);
-#    print(x);
-#    y := calc.isnil(0);
-#    print(y);
-#
-#    print("floats");
-#    f := flt(nil);
-#    x := calc.isnil(f);
-#    print(x);
-#    x := calc.isnil(3.14);
-#    print(x);
-#
-#    print("nil");
-#    g:= nil;
-#    x:= calc.isnil(g);
-#    print(x);
-#    x:= calc.isnotnil(g);
-#    print(x);
-#
-function user.main():void;
-# Testing for nil values. 
-    tv := true;
-    io.print(tv);
-    fv := false;
-    io.print(fv);
-    io.print("strings");
-    z := calc.str("nil");
-    x := calc.isnil(z);
-    io.print(x);
-    y := calc.isnil("something");
-    io.print(y);
-    a := calc.str(nil);
-    x := calc.isnil(a);
-    io.print(x);
-    io.print("integers");
-# interference with sql overloading 
-#    i := calc.int("nil"); 
-#    x := calc.isnil(i); 
-#    io.print(x); 
-    y := calc.isnil(0);
-    io.print(y);
-    io.print("floats");
-    f := calc.flt(nil);
-    x := calc.isnil(f);
-    io.print(x);
-    x := calc.isnil(3.14);
-    io.print(x);
-    io.print("nil");
-    g := nil;
-    x := calc.isnil(g);
-    io.print(x);
-    x := calc.isnotnil(g);
-    io.print(x);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37326/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5138/.s.monetdb.37326
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:57:23 >  
+# 14:57:23 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
+# 14:57:23 >  
+
+#    io.print(tv);
 [ true ]
 [ false ]
 [ "strings" ]

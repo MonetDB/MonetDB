@@ -8,7 +8,20 @@ stderr of test 'parseErrors` in directory 'monetdb5/mal` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
 
-# 09:50:19 >  
-# 09:50:19 >  Done.
-# 09:50:19 >  
+# 21:00:37 >  
+# 21:00:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23746" "--port=32905"
+# 21:00:37 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+QUERY = K := :=
+        io.print(1);
+        io.print(2);
+ERROR = !SyntaxException:parseError:K := :=
+        !SyntaxException:parseError:     ^Type identifier expected
+        !SyntaxException:parseError:K := :=
+        !SyntaxException:parseError:     ^';' expected
+
+# 21:00:37 >  
+# 21:00:37 >  "Done."
+# 21:00:37 >  
 

@@ -62,9 +62,26 @@ stderr of test 'tst058` in directory 'monetdb5/mal` itself:
 # cmdline opt 	xrpc_port = 41340
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_src_mal
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/Oct2010//Linux/etc/monetdb5.conf)
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:52:41 >  
+# 12:52:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21399" "--port=32539"
+# 12:52:41 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = -- some typos
+        i:= 1 + 1 + 1;
+        j:= 1 + + 1;
+ERROR = !SyntaxException:convertConstant:integer parse error
+        !SyntaxException:parseError:-- some typos
+        !SyntaxException:parseError:^<identifier> expected
+        !SyntaxException:parseError:i:= 1 + 1 + 1;
+        !SyntaxException:parseError:         ^';' expected
+        !SyntaxException:parseError:j:= 1 + + 1;
+        !SyntaxException:parseError:       ^<term> expected
 
 # 20:18:21 >  
 # 20:18:21 >  Done.

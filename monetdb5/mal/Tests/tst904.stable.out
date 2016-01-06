@@ -5,47 +5,53 @@ stdout of test 'tst904` in directory 'monetdb5/mal` itself:
 # 08:01:36 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst904.mal </dev/null
 # 08:01:36 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## the multiplex code blocks using CONSTANTS.
-#setListing(15);
-#b:= new(:lng,:lng);
-#i:= -1:lng;
-#barrier (v,i):= newRange(0:lng);
-#	insert(b,i,i);
-#	redo (v,i):= nextElement(1:lng,10:lng);
-#exit (v,i);
-#
-#print(b);
-#c:= 1;
-#xz:= multiplex.script("+",b,c);
-#print(xz);
-#
-function user.main():void;
-# the multiplex code blocks using CONSTANTS. 
-    clients.setListing(15);
-    b := bat.new(:oid,:lng);
-    i := -1:lng;
-barrier i := 0:lng;
-    bat.append(b,i);
-    redo i := iterator.next(1:lng,10:lng);
-exit i;
-    io.print(b);
-    c := 1;
-    X_20 := bat.new(nil:oid,nil:lng);
-barrier (X_24,X_25) := iterator.new(b);
-    X_27 := calc.+(X_25,c);
-    bat.append(X_20,X_27);
-    redo (X_24,X_25) := iterator.next(b);
-exit (X_24,X_25);
-    xz:bat[:oid,:lng]  := X_20;
-    io.print(xz);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    xz:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:any,c:any);
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    xz:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:lng],c:int);
+
+# 22:45:39 >  
+# 22:45:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:39 >  
+
+function user.foo():void;               	#[0]  0 
+    clients.setListing(15:int);         	#[1] CLTsetListing 1 <- 2 
+    b:bat[:lng] := bat.new(:lng);       	#[2] CMDBATnewColumn 3 <- 4 
+    i:lng := -1:lng;                    	#[3]  5 <- 6 
+barrier i:lng := 0:lng;                 	#[4]  5 <- 7 
+    bat.append(b:bat[:lng],i:lng);      	#[5] BKCappend_val_wrap 8 <- 3 5 
+    redo i:lng := iterator.next(1:lng,10:lng);	#[6] ITRnext_lng 5 <- 9 10 
+exit i:lng;                             	#[7]  5 
+    io.print(b:bat[:lng]);              	#[8] IOprint_val 11 <- 3 
+    c:int := 1:int;                     	#[9]  12 <- 13 
+    X_18:bat[:lng] := bat.new(nil:oid,nil:lng);	#[10] CMDBATnew 18 <- 19 20 
+barrier (X_22:oid,X_23:lng) := iterator.new(b:bat[:lng]);	#[11] ITRbunIterator 22 23 <- 3 
+    X_25:lng := calc.+(X_23:lng,c:int); 	#[12] CMDvarADDsignal 25 <- 23 12 
+    bat.append(X_18:bat[:lng],X_25:lng);	#[13] BKCappend_val_wrap 26 <- 18 25 
+    redo (X_22:oid,X_23:lng) := iterator.next(b:bat[:lng]);	#[14] ITRbunNext 22 23 <- 3 
+exit (X_22:oid,X_23:lng);               	#[15]  22 23 
+    xz:bat[:lng] := X_18:bat[:lng];     	#[16]  14 <- 18 
+    io.print(xz:bat[:lng]);             	#[17] IOprint_val 17 <- 14 
+end user.foo;                           	#[18]  
 #--------------------------#
 # h	t  # name
 # void	lng  # type

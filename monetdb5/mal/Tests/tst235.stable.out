@@ -19,28 +19,13 @@ stdout of test 'tst235` in directory 'monetdb5/mal` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-function user.dir():void;
-    d := bbp.getRefCount();
-    dl := bbp.getLRefCount();
-    dn := bbp.getNames();
-    ds := algebra.subsort(dn,false,false);
-    io.print(ds,d,dl);
-end user.dir;
-function user.createBAT(name:str):bat[:oid,:int];
-    res := bat.new(:oid,:int);
-    bat.setName(res,name);
-    z := bbp.getLRefCount(res);
-    io.print(z);
-    return createBAT := res;
-end user.createBAT;
-function user.main():void;
-# BAT references are seens as BAT's and should be subject to the 
-# same reference scheme. 
-    d := user.createBAT("one");
-    i := bbp.getLRefCount(d);
-    io.print(i);
-# bat d should have 1 lref 
-end user.main;
+Ready.
+
+# 15:04:24 >  
+# 15:04:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6764" "--port=38657"
+# 15:04:24 >  
+
+#d:= user.createBAT("one");
 [ 1 ]
 [ 1 ]
 

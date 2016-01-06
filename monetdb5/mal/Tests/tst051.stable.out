@@ -1,9 +1,33 @@
 stdout of test 'tst051` in directory 'monetdb5/mal` itself:
 
 
-# 22:29:41 >  
-# 22:29:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34113 --set sql_port=49714 --set xquery_port=50869 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst051.mal < /dev/null
-# 22:29:41 >  
+# 12:43:25 >  
+# 12:43:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35231" "--set" "mapi_usock=/var/tmp/mtest-19653/.s.monetdb.35231" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 12:43:25 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35231/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19653/.s.monetdb.35231
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:43:25 >  
+# 12:43:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19653" "--port=35231"
+# 12:43:25 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -16,85 +40,6 @@ stdout of test 'tst051` in directory 'monetdb5/mal` itself:
 #s:= "hello world";
 #
 #t:= str.string(s,0,2);	io.print(t);
-#t:= str.string(s,-4,2);	io.print(t);
-#t:= str.string(s,0,15);	io.print(t);
-#t:= str.string(nil:str,0,15);	io.print(t);
-#
-#t:= str.string(s,5);	io.print(t);
-#t:= str.prefix(s,4);	io.print(t);
-#t:= str.suffix(s,4);	io.print(t);
-#
-#i:= str.locate(s,"hello"); io.print(i);
-#i:= str.locate(s,"xyz"); io.print(i);
-#i:= str.locate(s,nil:str); io.print(i);
-#i:= str.locate(nil:str,"hello"); io.print(i);
-#i:= str.locate(nil:str,"xyz"); io.print(i);
-#i:= str.locate(nil:str,nil:str); io.print(i);
-#
-#t:= str.repeat("abc",3);	io.print(t);
-#t:= str.repeat(nil:str,3);	io.print(t);
-#
-#t:= str.insert("hello world",5,1,"brave new "); io.print(t);
-#t:= str.insert("",5,1,"brave new "); io.print(t);
-#t:= str.insert(nil:str,5,1,"brave new "); io.print(t);
-#t:= str.insert("",5,1,"brave new "); io.print(t);
-#t:= str.insert("",0,1,"brave new "); io.print(t);
-#t:= str.insert("hello world",5,1,""); io.print(t);
-#t:= str.insert("hello world",5,1,nil:str); io.print(t);
-#
-#t:= str.replace("hello world","world","brave new world"); io.print(t);
-#
-#
-function user.main():void;
-# testing string stuff 
-    s := "hello world";
-    t := str.string(s,0,2);
-    io.print(t);
-    t := str.string(s,-4,2);
-    io.print(t);
-    t := str.string(s,0,15);
-    io.print(t);
-    t := str.string(nil:str,0,15);
-    io.print(t);
-    t := str.string(s,5);
-    io.print(t);
-    t := str.prefix(s,4);
-    io.print(t);
-    t := str.suffix(s,4);
-    io.print(t);
-    i := str.locate(s,"hello");
-    io.print(i);
-    i := str.locate(s,"xyz");
-    io.print(i);
-    i := str.locate(s,nil:str);
-    io.print(i);
-    i := str.locate(nil:str,"hello");
-    io.print(i);
-    i := str.locate(nil:str,"xyz");
-    io.print(i);
-    i := str.locate(nil:str,nil:str);
-    io.print(i);
-    t := str.repeat("abc",3);
-    io.print(t);
-    t := str.repeat(nil:str,3);
-    io.print(t);
-    t := str.insert("hello world",5,1,"brave new ");
-    io.print(t);
-    t := str.insert("",5,1,"brave new ");
-    io.print(t);
-    t := str.insert(nil:str,5,1,"brave new ");
-    io.print(t);
-    t := str.insert("",5,1,"brave new ");
-    io.print(t);
-    t := str.insert("",0,1,"brave new ");
-    io.print(t);
-    t := str.insert("hello world",5,1,"");
-    io.print(t);
-    t := str.insert("hello world",5,1,nil:str);
-    io.print(t);
-    t := str.replace("hello world","world","brave new world");
-    io.print(t);
-end user.main;
 [ "he" ]
 [ "or" ]
 [ "hello world" ]

@@ -70,7 +70,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/*
 			 * Check if the local call is tagged as being inlined.
 			 */
-			if ( q->blk->inlineProp ){
+			if (q->blk->inlineProp ){
 				inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;

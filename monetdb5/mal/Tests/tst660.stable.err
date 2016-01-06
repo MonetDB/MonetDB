@@ -8,7 +8,51 @@ stderr of test 'tst660` in directory 'monetdb5/mal` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
 
-# 23:13:31 >  
-# 23:13:31 >  Done.
-# 23:13:31 >  
+# 10:30:20 >  
+# 10:30:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32486" "--port=30121"
+# 10:30:20 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37961
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18020/.s.monetdb.37961
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:20:54 >  
+# 13:20:54 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:54 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = #Testing variable argument lists
+        
+        pattern fi(i:int...) address MDBdummy;
+        pattern fs(i:int,s:str...) address MDBdummy;
+        
+        fi(1);
+        fi(1,2);
+        fi(1,2,3);
+        
+        fs(1,"a");
+        fs(1,"a","b");
+        fs(1,"a","b","c");
+ERROR = !MALException:mdb.dummy:operation failed
+
+# 10:30:20 >  
+# 10:30:20 >  "Done."
+# 10:30:20 >  
 

@@ -11,6 +11,11 @@
 
 #include "rel_semantic.h"
 
+extern int mapiuri_valid( char *uri);
+extern char *mapiuri_database(char *uri, char *fallback);
+extern char *mapiuri_schema(char *uri, char *fallback);
+extern char *mapiuri_table(char *uri, char *fallback);
+
 extern sql_rel * rel_distribute(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_DISTRIBUTE_H_*/

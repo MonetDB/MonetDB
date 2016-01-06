@@ -1,0 +1,21 @@
+# testing subsumption optimalisation
+function foo();
+r:= bat.new(:oid,:int);
+bat.append(r,1);
+bat.append(r,2);
+bat.append(r,3);
+bat.append(r,4);
+s:= algebra.subselect(r,0,5,true,true,false);	# equal to a copy
+r1:=algebra.projection(s,r);
+io.print(r1);
+t:= algebra.subselect(r,0,3,true,true,false);
+#print(t);
+u:= algebra.subselect(r,0,3,true,true,false);	# reuse t
+r1:=algebra.projection(u,r);
+io.print(r1);
+io.print("done");
+end;
+optimizer.commonTerms("user","foo");
+optimizer.aliases("user","foo");
+mdb.list("user","foo");
+user.foo();

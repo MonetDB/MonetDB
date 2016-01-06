@@ -9,28 +9,30 @@ stdout of test 'ifthencst` in directory 'monetdb5/optimizer` itself:
 # Serving database 'mTests_src_optimizer', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39977/
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37175/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27236/.s.monetdb.37175
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:36:16 >  
+# 15:36:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
+# 15:36:16 >  
+
+#mdb.list("user","tst");
 function user.tst():void;
-barrier a := false;
-    io.print("never executed");
-exit a;
-barrier b := calc.not(false);
     io.print("always executed");
-exit b;
-barrier c := true;
     io.print("always executed");
-exit c;
-barrier d := calc.not(true);
-    io.print("never executed");
-exit d;
 end user.tst;
-function user.main():void;
-# some frontend generates the following code 
-    mdb.list("user","tst");
-    user.tst();
-end user.main;
+#mdb.list("user","tst");
 function user.tst():void;
     io.print("always executed");
     io.print("always executed");

@@ -5,53 +5,45 @@ stdout of test 'tst4601` in directory 'monetdb5/optimizer` itself:
 # 19:36:04 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=31892 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4601.mal < /dev/null
 # 19:36:04 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.welcome(lim:int):int;
-    i := 0;
-barrier j := calc.<(i,lim);
-    io.print("Welcome");
-    i := calc.+(i,1);
-    redo j := calc.<(i,lim);
-exit j;
-    return welcome := i;
-end user.welcome;
-function user.main():void;
-# the first test for macro expansions and inversions 
-    io.print("test expansion");
-    X_13 := 0;
-barrier X_15 := calc.<(X_13,2);
-    io.print("Welcome");
-    X_13 := calc.+(X_13,1);
-    redo X_15 := calc.<(X_13,2);
-exit X_15;
-    a := X_13;
-    io.print(a);
-    mdb.List();
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30372/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4792/.s.monetdb.30372
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 06:13:00 >  
+# 06:13:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4792" "--port=30372"
+# 06:13:00 >  
+
+#mdb.List("user","welcome");
+function user.welcome(lim:int):int;     	#[0]  0 <- 1 
+    i:int := 0:int;                     	#[1]  2 <- 3 
+barrier j:bit := calc.<(i:int,lim:int); 	#[2] CMDvarLT 4 <- 2 1 
+    io.print("Welcome":str);            	#[3] IOprint_val 5 <- 6 
+    i:int := calc.+(i:int,1:int);       	#[4] CMDvarADDsignal 2 <- 2 7 
+    redo j:bit := calc.<(i:int,lim:int);	#[5] CMDvarLT 4 <- 2 1 
+exit j:bit;                             	#[6]  4 
+    return welcome:int := i:int;        	#[7]  0 <- 2 
+end user.welcome;                       	#[8]  
+#io.print("test expansion");
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
 [ 2 ]
-function user.main():void;              	#[0]  0 
-# the first test for macro expansions and inversions 
-    io.print("test expansion":str);     	#[2] IOprint_val 5 <- 6 
-    X_13:int := 0:int;                  	#[3]  13 <- 14 
-barrier X_15:bit := calc.<(X_13:int,2:int);	#[4] CMDvarLT 15 <- 13 8 
-    io.print("Welcome":str);            	#[5] IOprint_val 16 <- 17 
-    X_13:int := calc.+(X_13:int,1:int); 	#[6] CMDvarADDsignal 13 <- 13 18 
-    redo X_15:bit := calc.<(X_13:int,2:int);	#[7] CMDvarLT 15 <- 13 8 
-exit X_15:bit;                          	#[8]  15 
-    a:int := X_13:int;                  	#[9]  7 <- 13 
-    io.print(a:int);                    	#[10] IOprint_val 9 <- 7 
-    mdb.List();                         	#[11] MDBlistDetail 10 
-end user.main;                          	#[12]  
 
 # 19:36:05 >  
 # 19:36:05 >  Done.

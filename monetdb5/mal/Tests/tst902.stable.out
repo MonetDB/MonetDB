@@ -5,57 +5,49 @@ stdout of test 'tst902` in directory 'monetdb5/mal` itself:
 # 08:01:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst902.mal </dev/null
 # 08:01:33 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## what is the overhead of MAL in multiplex situations
-## using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
-#b:= new(:lng,:lng);
-#barrier (k,v):= newRange(0:lng);
-#	insert(b,v,v);
-#	redo (k,v):= nextElement(1:lng,10:lng);
-#exit (k,v);
-#
-#
-#c:= copy(b);
-#
-#d:= new(:lng,:lng);
-#barrier (w,h,t):= newIterator(b);
-#	B1:= find(b,h);
-#	B2:= find(c,h);
-#	t:= B1+B2;
-#	insert(d,h,t);
-#	redo (w,h,t):= hasMoreElements(b);
-#catch 	GDKerror;
-#exit	GDKerror;
-#exit w;
-#print(d);
-#
-function user.main():void;
-# what is the overhead of MAL in multiplex situations 
-# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
-    b := bat.new(:oid,:lng);
-barrier v := 0:lng;
-    bat.append(b,v);
-    redo v := iterator.next(1:lng,10:lng);
-exit v;
-    c := algebra.copy(b);
-    d := bat.new(:oid,:lng);
-barrier (h,t) := iterator.new(b);
-    B1 := algebra.fetch(b,h);
-    B2 := algebra.fetch(c,h);
-    t := calc.+(B1,B2);
-    bat.append(d,t);
-    redo (h,t) := iterator.next(b);
-catch GDKerror:str;
-exit GDKerror:str;
-exit (h,t);
-    io.print(d);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:32 >  
+# 22:45:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:32 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+barrier v:lng := 0:lng;                 	#[2]  3 <- 4 
+    bat.append(b:bat[:lng],v:lng);      	#[3] BKCappend_val_wrap 5 <- 1 3 
+    redo v:lng := iterator.next(1:lng,10:lng);	#[4] ITRnext_lng 3 <- 6 7 
+exit v:lng;                             	#[5]  3 
+    c:bat[:lng] := algebra.copy(b:bat[:lng]);	#[6] ALGcopy 8 <- 1 
+    d:bat[:lng] := bat.new(:lng);       	#[7] CMDBATnewColumn 9 <- 2 
+barrier (h:oid,t:lng) := iterator.new(b:bat[:lng]);	#[8] ITRbunIterator 10 11 <- 1 
+    B1:lng := algebra.fetch(b:bat[:lng],h:oid);	#[9] ALGfetchoid 12 <- 1 10 
+    B2:lng := algebra.fetch(c:bat[:lng],h:oid);	#[10] ALGfetchoid 13 <- 8 10 
+    t:lng := calc.+(B1:lng,B2:lng);     	#[11] CMDvarADDsignal 11 <- 12 13 
+    bat.append(d:bat[:lng],t:lng);      	#[12] BKCappend_val_wrap 14 <- 9 11 
+    redo (h:oid,t:lng) := iterator.next(b:bat[:lng]);	#[13] ITRbunNext 10 11 <- 1 
+catch GDKerror:str;                     	#[14]  15 
+exit GDKerror:str;                      	#[15]  15 
+exit (h:oid,t:lng);                     	#[16]  10 11 
+    io.print(d:bat[:lng]);              	#[17] IOprint_val 16 <- 9 
+end user.foo;                           	#[18]  
 #--------------------------#
 # h	t  # name
 # void	lng  # type

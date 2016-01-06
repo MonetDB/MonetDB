@@ -18,55 +18,14 @@ stdout of test 'json02` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#validity tests 
-    b := json.new("{\"f1\":1}");
-    f := json.keys(b);
-    io.print(f);
-    ff := json.values(b);
-    io.print(ff);
-    b := json.new("{\"f1\":1,\"f2\":2}");
-    f := json.keys(b);
-    io.print(f);
-    ff := json.values(b);
-    io.print(ff);
-    b := json.new("{\"f1\":1,\"f2\":2,\"f1\":3}");
-    f := json.keys(b);
-    io.print(f);
-    ff := json.values(b);
-    io.print(ff);
-    b := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
-    f := json.keys(b);
-    io.print(f);
-    ff := json.values(b);
-    io.print(ff);
-    i := json.length(b);
-    io.print(i);
-    b := json.new("[]");
-    z := json.isarray(b);
-    io.print(z);
-    ff := json.values(b);
-    io.print(ff);
-    i := json.length(b);
-    io.print(i);
-    b := json.new("[1,\"f2\", 2]");
-    z := json.isarray(b);
-    io.print(z);
-    ff := json.values(b);
-    io.print(ff);
-    b := json.new("[1,2,null,true,false ]");
-    z := json.isarray(b);
-    io.print(z);
-    ff := json.values(b);
-    io.print(ff);
-    i := json.length(b);
-    io.print(i);
-    b := json.new("[\"\\/\" , 2 ]");
-    z := json.isarray(b);
-    io.print(z);
-    ff := json.values(b);
-    io.print(ff);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:35 >  
+# 10:05:35 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:35 >  
+
 #--------------------------#
 # h	t	  # name
 # void	str	  # type

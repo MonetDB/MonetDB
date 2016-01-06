@@ -1,0 +1,6 @@
+# check in-compatible polmorphic types
+
+command f(b:any_2, c:any_1) :bat[ :any_2] address f;
+
+b:= user.f(2,"help");
+a:= user.f(2,1);

@@ -1,0 +1,78 @@
+b:= bat.new(:str);
+bat.append(b,"");
+bat.append(b,"t");
+bat.append(b,"ts");
+bat.append(b,"tsz");
+bat.append(b,"a math assignment");
+bat.append(b,"pathfined is fun!");
+bat.append(b,"123123123");
+bat.append(b,"123123456123");
+bat.append(b,"199993456123");
+bat.append(b,"123456123456");
+bat.append(b,"123454321");
+io.print(b);
+
+i:= str.like("hello","hello");
+io.print(i);
+i:= str.like("hello","hell");
+io.print(i);
+i:= str.like("hello","h_llo");
+io.print(i);
+i:= str.like("hello","%llo");
+io.print(i);
+i:= str.like("hello","%___");
+io.print(i);
+i:= str.like("hello","hxllo");
+io.print(i);
+
+i:= str.like("tr","t_");
+io.print(i);
+i:= str.like("trx","t_");
+io.print(i);
+
+z:= batalgebra.like(b,"t_");
+io.print(z);
+z:= mal.manifold("str","like",b,"%math%");
+io.print(z);
+z:= mal.manifold("str","like",b,"%m_th_a%t");
+io.print(z);
+z:= mal.manifold("str","like",b,"%at%_!");
+io.print(z);
+
+z:= mal.manifold("str","like",b,"1%");
+io.print(z);
+z:= mal.manifold("str","like",b,"3%");
+io.print(z);
+z:= mal.manifold("str","like",b,"%1");
+io.print(z);
+z:= mal.manifold("str","like",b,"%3");
+io.print(z);
+
+z:= mal.manifold("str","like",b,"%1%");
+io.print(z);
+z:= mal.manifold("str","like",b,"%12%");
+io.print(z);
+z:= mal.manifold("str","like",b,"%13%");
+io.print(z);
+z:= mal.manifold("str","like",b,"%454%");
+io.print(z);
+
+z:= mal.manifold("str","like",b,"%2%2%");
+io.print(z);
+z:= mal.manifold("str","like",b,"_2_3%123");
+io.print(z);
+z:= mal.manifold("str","like",b,"_123%3");
+io.print(z);
+z:= mal.manifold("str","like",b,"%1_3456%");
+io.print(z);
+z:= mal.manifold("str","like",b,"_3456%");
+io.print(z);
+z:= mal.manifold("str","like",b,"%23");
+io.print(z);
+z:= mal.manifold("str","like",b,"%","?");
+io.print(z);
+z:= mal.manifold("str","like",b,"?%","?");
+io.print(z);
+z:= mal.manifold("str","like",b,".%",".");
+io.print(z);
+

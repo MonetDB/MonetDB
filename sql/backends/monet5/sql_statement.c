@@ -42,7 +42,7 @@ dup_subaggr(sql_allocator *sa, sql_subaggr *f)
 int
 stmt_key(stmt *s)
 {
-	char *nme = column_name(NULL, s);
+	const char *nme = column_name(NULL, s);
 
 	return hash_key(nme);
 }
@@ -127,9 +127,9 @@ st_type2string(st_type type)
 
 /* #TODO make proper traversal operations */
 stmt *
-stmt_atom_string(sql_allocator *sa, char *S)
+stmt_atom_string(sql_allocator *sa, const char *S)
 {
-	char *s = sql2str(S);
+	const char *s = sql2str(sa_strdup(sa, S));
 	sql_subtype t;
 
 	sql_find_subtype(&t, "varchar", _strlen(s), 0);
@@ -415,7 +415,7 @@ stmt_none(sql_allocator *sa)
 }
 
 stmt *
-stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int declare, int level)
+stmt_var(sql_allocator *sa, const char *varname, sql_subtype *t, int declare, int level)
 {
 	stmt *s = stmt_create(sa, st_var);
 
@@ -430,7 +430,7 @@ stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int declare, int leve
 }
 
 stmt *
-stmt_vars(sql_allocator *sa, char *varname, sql_table *t, int declare, int level)
+stmt_vars(sql_allocator *sa, const char *varname, sql_table *t, int declare, int level)
 {
 	stmt *s = stmt_create(sa, st_var);
 
@@ -620,7 +620,7 @@ push_project(sql_allocator *sa, stmt *rows, stmt *val)
 	return val;
 }
 
-static int
+int
 has_side_effect(stmt *val)
 {
 	int se = 0;
@@ -943,17 +943,17 @@ stmt_rs_column(sql_allocator *sa, stmt *rs, int i, sql_subtype *tpe)
 }
 
 stmt *
-stmt_export(sql_allocator *sa, stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file)
+stmt_export(sql_allocator *sa, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file)
 {
 	stmt *s = stmt_create(sa, st_export);
 
 	s->op1 = t;
 	s->op2 = file;
 	s->op4.lval = sa_list(sa);
-	list_append(s->op4.lval, sep);
-	list_append(s->op4.lval, rsep);
-	list_append(s->op4.lval, ssep);
-	list_append(s->op4.lval, null_string);
+	list_append(s->op4.lval, (char*)sep);
+	list_append(s->op4.lval, (char*)rsep);
+	list_append(s->op4.lval, (char*)ssep);
+	list_append(s->op4.lval, (char*)null_string);
 	return s;
 }
 
@@ -1129,7 +1129,7 @@ stmt_Nop(sql_allocator *sa, stmt *ops, sql_subfunc *op)
 }
 
 stmt *
-stmt_func(sql_allocator *sa, stmt *ops, char *name, sql_rel *rel)
+stmt_func(sql_allocator *sa, stmt *ops, const char *name, sql_rel *rel)
 {
 	node *n;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
@@ -1179,7 +1179,7 @@ stmt_aggr(sql_allocator *sa, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, i
 }
 
 stmt *
-stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
+stmt_alias(sql_allocator *sa, stmt *op1, const char *tname, const char *alias)
 {
 	stmt *s = stmt_create(sa, st_alias);
 
@@ -1298,8 +1298,8 @@ stmt_has_null(stmt *s)
 	}
 }
 
-static char *
-func_name(sql_allocator *sa, char *n1, char *n2)
+static const char *
+func_name(sql_allocator *sa, const char *n1, const char *n2)
 {
 	int l1 = _strlen(n1), l2;
 
@@ -1328,9 +1328,9 @@ func_name(sql_allocator *sa, char *n1, char *n2)
 	}
 }
 
-char *_column_name(sql_allocator *sa, stmt *st);
+const char *_column_name(sql_allocator *sa, stmt *st);
 
-char *
+const char *
 column_name(sql_allocator *sa, stmt *st)
 {
 	if (!st->cname)
@@ -1338,7 +1338,7 @@ column_name(sql_allocator *sa, stmt *st)
 	return st->cname;
 }
 
-char *
+const char *
 _column_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
@@ -1368,12 +1368,12 @@ _column_name(sql_allocator *sa, stmt *st)
 		return column_name(sa, st->op1);
 	case st_Nop:
 	{
-		char *cn = column_name(sa, st->op1);
+		const char *cn = column_name(sa, st->op1);
 		return func_name(sa, st->op4.funcval->func->base.name, cn);
 	}
 	case st_aggr:
 	{
-		char *cn = column_name(sa, st->op1);
+		const char *cn = column_name(sa, st->op1);
 		return func_name(sa, st->op4.aggrval->aggr->base.name, cn);
 	}
 	case st_alias:
@@ -1403,9 +1403,9 @@ _column_name(sql_allocator *sa, stmt *st)
 	}
 }
 
-char *_table_name(sql_allocator *sa, stmt *st);
+const char *_table_name(sql_allocator *sa, stmt *st);
 
-char *
+const char *
 table_name(sql_allocator *sa, stmt *st)
 {
 	if (!st->tname)
@@ -1413,7 +1413,7 @@ table_name(sql_allocator *sa, stmt *st)
 	return st->tname;
 }
 
-char *
+const char *
 _table_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
@@ -1468,7 +1468,7 @@ _table_name(sql_allocator *sa, stmt *st)
 	}
 }
 
-char *
+const char *
 schema_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
@@ -1586,7 +1586,7 @@ stmt_return(sql_allocator *sa, stmt *val, int nr_declared_tables)
 }
 
 stmt *
-stmt_assign(sql_allocator *sa, char *varname, stmt *val, int level)
+stmt_assign(sql_allocator *sa, const char *varname, stmt *val, int level)
 {
 	stmt *s = stmt_create(sa, st_assign);
 

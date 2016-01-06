@@ -3,6 +3,7 @@ tst001
 tst002
 tst003
 tst004
+tst005
 tst006
 tst007
 tst008
@@ -18,15 +19,16 @@ tst018
 tst019
 tst020
 tst021
+tst022
 tst024
-tst025
+#tst025
 tst026
 tst027
 tst028
 tst029
 tst030
-tst031
-tst032
+#tst031
+#tst032
 tst033
 tst034
 tst035
@@ -34,7 +36,6 @@ tst036
 tst037
 tst038
 tst039
-tst040
 tst041
 tst042
 tst043
@@ -79,6 +80,7 @@ tst108
 tst109
 tst110
 tst115
+tst116
 tst1150
 #tst120	files are not located in module and paths are runtime dependent
 tst1200
@@ -99,9 +101,7 @@ tst1504
 tst1505
 tst1506
 tst161
-tst162
 tst163
-tst1602
 tst1604
 tst171
 tst200
@@ -115,6 +115,7 @@ tst232
 tst233
 tst234
 tst235
+tst237
 tst250
 tst2500
 tst2501
@@ -129,11 +130,7 @@ tst255
 tst2550
 tst256
 tst2570
-# tst265 -- windowsum and slidingsum have been removed
-# opens /tmp/MonetEvents, i.e. not on Windows:
 tst272
-#tst273
-#tst274
 # opens /tmp/MonetEvents, i.e. not on Windows:
 NOT_WIN32?tst275
 tst280
@@ -175,7 +172,6 @@ tst802
 tst804
 tst810
 tst819
-tst820
 tst830
 tst840
 tst850

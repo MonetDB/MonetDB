@@ -17,16 +17,16 @@ stdout of test 'tst070` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12850/.s.monetdb.31390
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-!TypeException:user.foo[1]:'user.point' undefined in:     (x:any,y:any) := user.point(1:int);
-function user.foo():void;
-    (x,y) := user.point(1);
-    (initial:str,surname:str) := user.getName();
-end user.foo;
-function user.main():void;
-# parsing operations with multi-assignments 
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:58:49 >  
-# 07:58:49 >  Done.
-# 07:58:49 >  
+Ready.
+
+# 13:02:34 >  
+# 13:02:34 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23427" "--port=34822"
+# 13:02:34 >  
+
+
+# 13:02:34 >  
+# 13:02:34 >  "Done."
+# 13:02:34 >  
 

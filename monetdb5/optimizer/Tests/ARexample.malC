@@ -1,0 +1,16 @@
+function foo();
+    i:=0;
+	b:= "done";
+barrier go:= true;
+    c:=i+1;
+    d:="step";
+    v:=d;
+	io.print(v);
+    i:=c;
+redo go:= i<2;
+exit go;
+	io.print(b);
+end;
+mdb.list("user","foo");
+optimizer.aliases("user","foo");
+mdb.list("user","foo");

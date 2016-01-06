@@ -6,40 +6,40 @@
 
 module generator;
 
-pattern series(first:hge,last:hge):bat[:oid,:hge]
+pattern series(first:hge,last:hge):bat[:hge]
 address VLTgenerator_table;
 
-pattern series(first:hge,last:hge,step:hge):bat[:oid,:hge]
+pattern series(first:hge,last:hge,step:hge):bat[:hge]
 address VLTgenerator_table
 comment "Create and materialize a generator table";
 
-pattern parameters(first:hge,last:hge,step:hge):bat[:oid,:hge]
+pattern parameters(first:hge,last:hge,step:hge):bat[:hge]
 address VLTgenerator_noop
 comment "Retain the table definition, but don't materialize";
 
-pattern parameters(first:hge,last:hge):bat[:oid,:hge]
+pattern parameters(first:hge,last:hge):bat[:hge]
 address VLTgenerator_noop;
 
-pattern thetasubselect(b:bat[:oid,:hge], low:hge, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:hge], low:hge, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern thetasubselect(b:bat[:oid,:hge], cnd:bat[:oid,:oid], low:hge, oper:str) :bat[:oid,:oid]
+pattern thetasubselect(b:bat[:hge], cnd:bat[:oid], low:hge, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:oid,:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:oid,:hge], cand:bat[:oid,:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+pattern subselect(b:bat[:hge], cand:bat[:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern projection(b:bat[:oid,:oid], cand:bat[:oid,:hge]) :bat[:oid,:hge]
+pattern projection(b:bat[:oid], cand:bat[:hge]) :bat[:hge]
 address VLTgenerator_projection
 comment "Overloaded projection operation";
 
-pattern join(b:bat[:oid,:hge], gen:bat[:oid,:hge]) (l:bat[:oid,:oid],r:bat[:oid,:oid])
+pattern join(b:bat[:hge], gen:bat[:hge]) (l:bat[:oid],r:bat[:oid])
 address VLTgenerator_join
 comment "Overloaded join operation";

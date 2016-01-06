@@ -23,6 +23,6 @@ sql5_export void backend_call(backend *be, Client c, cq *q);
 sql5_export void initSQLreferences(void);
 sql5_export int monet5_resolve_function(ptr M, sql_func *f);
 sql5_export int backend_create_func(backend *be, sql_func *f, list *restypes, list *ops);
-sql5_export int monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call);
+sql5_export int monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *call, int inline_func);
 
 #endif /* _SQL2MAL_H */
