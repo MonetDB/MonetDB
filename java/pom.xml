@@ -6,7 +6,7 @@
 
 	<groupId>monetdb</groupId>
 	<artifactId>monetdb-jdbc</artifactId>
-	<version>2.18</version>
+	<version>2.19</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>MonetDB JDBC driver</description>
 	<url>https://www.monetdb.org</url>
