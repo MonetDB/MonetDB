@@ -173,6 +173,8 @@ SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
 SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
+SYSTEM FUNCTION  sys.lidarattach
+SYSTEM FUNCTION  sys.lidarload
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
@@ -1807,103 +1809,103 @@ COPY 373 RECORDS INTO "sys"."_columns" FROM stdin USING DELIMITERS '\t','\n','"'
 7954	"value"	"clob"	0	0	7957	NULL	true	3	NULL
 7955	"file_id"	"int"	32	0	7957	NULL	true	4	NULL
 7956	"gr_name"	"varchar"	256	0	7957	NULL	true	5	NULL
-7982	"schema"	"clob"	0	0	7996	NULL	true	0	NULL
-7983	"table"	"clob"	0	0	7996	NULL	true	1	NULL
-7984	"column"	"clob"	0	0	7996	NULL	true	2	NULL
-7985	"type"	"clob"	0	0	7996	NULL	true	3	NULL
-7986	"mode"	"clob"	0	0	7996	NULL	true	4	NULL
-7987	"location"	"clob"	0	0	7996	NULL	true	5	NULL
-7988	"count"	"bigint"	64	0	7996	NULL	true	6	NULL
-7989	"typewidth"	"int"	32	0	7996	NULL	true	7	NULL
-7990	"columnsize"	"bigint"	64	0	7996	NULL	true	8	NULL
-7991	"heapsize"	"bigint"	64	0	7996	NULL	true	9	NULL
-7992	"hashes"	"bigint"	64	0	7996	NULL	true	10	NULL
-7993	"phash"	"boolean"	1	0	7996	NULL	true	11	NULL
-7994	"imprints"	"bigint"	64	0	7996	NULL	true	12	NULL
-7995	"sorted"	"boolean"	1	0	7996	NULL	true	13	NULL
-7998	"schema"	"clob"	0	0	8008	NULL	true	0	NULL
-7999	"table"	"clob"	0	0	8008	NULL	true	1	NULL
-8000	"column"	"clob"	0	0	8008	NULL	true	2	NULL
-8001	"type"	"clob"	0	0	8008	NULL	true	3	NULL
-8002	"typewidth"	"int"	32	0	8008	NULL	true	4	NULL
-8003	"count"	"bigint"	64	0	8008	NULL	true	5	NULL
-8004	"distinct"	"bigint"	64	0	8008	NULL	true	6	NULL
-8005	"atomwidth"	"int"	32	0	8008	NULL	true	7	NULL
-8006	"reference"	"boolean"	1	0	8008	NULL	true	8	NULL
-8007	"sorted"	"boolean"	1	0	8008	NULL	true	9	NULL
-8046	"schema"	"clob"	0	0	8056	NULL	true	0	NULL
-8047	"table"	"clob"	0	0	8056	NULL	true	1	NULL
-8048	"column"	"clob"	0	0	8056	NULL	true	2	NULL
-8049	"type"	"clob"	0	0	8056	NULL	true	3	NULL
-8050	"count"	"bigint"	64	0	8056	NULL	true	4	NULL
-8051	"columnsize"	"bigint"	64	0	8056	NULL	true	5	NULL
-8052	"heapsize"	"bigint"	64	0	8056	NULL	true	6	NULL
-8053	"hashes"	"bigint"	64	0	8056	NULL	true	7	NULL
-8054	"imprints"	"bigint"	64	0	8056	NULL	true	8	NULL
-8055	"sorted"	"boolean"	1	0	8056	NULL	true	9	NULL
-8058	"schema"	"clob"	0	0	8066	NULL	true	0	NULL
-8059	"table"	"clob"	0	0	8066	NULL	true	1	NULL
-8060	"count"	"bigint"	64	0	8066	NULL	true	2	NULL
-8061	"columnsize"	"hugeint"	128	0	8066	NULL	true	3	NULL
-8062	"heapsize"	"hugeint"	128	0	8066	NULL	true	4	NULL
-8063	"hashes"	"hugeint"	128	0	8066	NULL	true	5	NULL
-8064	"imprints"	"hugeint"	128	0	8066	NULL	true	6	NULL
-8065	"auxiliary"	"hugeint"	128	0	8066	NULL	true	7	NULL
-8068	"column_id"	"int"	32	0	8079	NULL	true	0	NULL
-8069	"type"	"clob"	0	0	8079	NULL	true	1	NULL
-8070	"width"	"int"	32	0	8079	NULL	true	2	NULL
-8071	"stamp"	"timestamp"	7	0	8079	NULL	true	3	NULL
-8072	"sample"	"bigint"	64	0	8079	NULL	true	4	NULL
-8073	"count"	"bigint"	64	0	8079	NULL	true	5	NULL
-8074	"unique"	"bigint"	64	0	8079	NULL	true	6	NULL
-8075	"nils"	"bigint"	64	0	8079	NULL	true	7	NULL
-8076	"minval"	"clob"	0	0	8079	NULL	true	8	NULL
-8077	"maxval"	"clob"	0	0	8079	NULL	true	9	NULL
-8078	"sorted"	"boolean"	1	0	8079	NULL	true	10	NULL
-8174	"file_id"	"bigint"	64	0	8182	NULL	false	0	NULL
-8175	"file_location"	"clob"	0	0	8182	NULL	false	1	NULL
-8176	"dbschema"	"smallint"	16	0	8182	NULL	false	2	NULL
-8177	"format_version"	"varchar"	7	0	8182	NULL	true	3	NULL
-8178	"sorting_order"	"varchar"	10	0	8182	NULL	true	4	NULL
-8179	"comments"	"clob"	0	0	8182	NULL	true	5	NULL
-8184	"sn"	"clob"	0	0	8195	NULL	false	0	NULL
-8185	"file_id"	"bigint"	64	0	8195	NULL	false	1	NULL
-8186	"ln"	"int"	32	0	8195	NULL	true	2	NULL
-8187	"as"	"int"	32	0	8195	NULL	true	3	NULL
-8188	"m5"	"clob"	0	0	8195	NULL	true	4	NULL
-8189	"sp"	"clob"	0	0	8195	NULL	true	5	NULL
-8190	"ur"	"clob"	0	0	8195	NULL	true	6	NULL
-8197	"id"	"clob"	0	0	8214	NULL	false	0	NULL
-8198	"file_id"	"bigint"	64	0	8214	NULL	false	1	NULL
-8199	"cn"	"clob"	0	0	8214	NULL	true	2	NULL
-8200	"ds"	"clob"	0	0	8214	NULL	true	3	NULL
-8201	"dt"	"timestamp"	7	0	8214	NULL	true	4	NULL
-8202	"fo"	"clob"	0	0	8214	NULL	true	5	NULL
-8203	"ks"	"clob"	0	0	8214	NULL	true	6	NULL
-8204	"lb"	"clob"	0	0	8214	NULL	true	7	NULL
-8205	"pg"	"clob"	0	0	8214	NULL	true	8	NULL
-8206	"pi"	"int"	32	0	8214	NULL	true	9	NULL
-8207	"pl"	"clob"	0	0	8214	NULL	true	10	NULL
-8208	"pu"	"clob"	0	0	8214	NULL	true	11	NULL
-8209	"sm"	"clob"	0	0	8214	NULL	true	12	NULL
-8216	"id"	"clob"	0	0	8226	NULL	false	0	NULL
-8217	"file_id"	"bigint"	64	0	8226	NULL	false	1	NULL
-8218	"pn"	"clob"	0	0	8226	NULL	true	2	NULL
-8219	"cl"	"clob"	0	0	8226	NULL	true	3	NULL
-8220	"pp"	"clob"	0	0	8226	NULL	true	4	NULL
-8221	"vn"	"clob"	0	0	8226	NULL	true	5	NULL
-8228	"qname"	"clob"	0	0	8239	NULL	false	0	NULL
-8229	"flag"	"smallint"	16	0	8239	NULL	false	1	NULL
-8230	"rname"	"clob"	0	0	8239	NULL	false	2	NULL
-8231	"pos"	"int"	32	0	8239	NULL	false	3	NULL
-8232	"mapq"	"smallint"	16	0	8239	NULL	false	4	NULL
-8233	"cigar"	"clob"	0	0	8239	NULL	false	5	NULL
-8234	"rnext"	"clob"	0	0	8239	NULL	false	6	NULL
-8235	"pnext"	"int"	32	0	8239	NULL	false	7	NULL
-8236	"tlen"	"int"	32	0	8239	NULL	false	8	NULL
-8237	"seq"	"clob"	0	0	8239	NULL	false	9	NULL
-8238	"qual"	"clob"	0	0	8239	NULL	false	10	NULL
-8320	"function_id"	"int"	32	0	8321	NULL	true	0	NULL
+7988	"schema"	"clob"	0	0	8002	NULL	true	0	NULL
+7989	"table"	"clob"	0	0	8002	NULL	true	1	NULL
+7990	"column"	"clob"	0	0	8002	NULL	true	2	NULL
+7991	"type"	"clob"	0	0	8002	NULL	true	3	NULL
+7992	"mode"	"clob"	0	0	8002	NULL	true	4	NULL
+7993	"location"	"clob"	0	0	8002	NULL	true	5	NULL
+7994	"count"	"bigint"	64	0	8002	NULL	true	6	NULL
+7995	"typewidth"	"int"	32	0	8002	NULL	true	7	NULL
+7996	"columnsize"	"bigint"	64	0	8002	NULL	true	8	NULL
+7997	"heapsize"	"bigint"	64	0	8002	NULL	true	9	NULL
+7998	"hashes"	"bigint"	64	0	8002	NULL	true	10	NULL
+7999	"phash"	"boolean"	1	0	8002	NULL	true	11	NULL
+8000	"imprints"	"bigint"	64	0	8002	NULL	true	12	NULL
+8001	"sorted"	"boolean"	1	0	8002	NULL	true	13	NULL
+8004	"schema"	"clob"	0	0	8014	NULL	true	0	NULL
+8005	"table"	"clob"	0	0	8014	NULL	true	1	NULL
+8006	"column"	"clob"	0	0	8014	NULL	true	2	NULL
+8007	"type"	"clob"	0	0	8014	NULL	true	3	NULL
+8008	"typewidth"	"int"	32	0	8014	NULL	true	4	NULL
+8009	"count"	"bigint"	64	0	8014	NULL	true	5	NULL
+8010	"distinct"	"bigint"	64	0	8014	NULL	true	6	NULL
+8011	"atomwidth"	"int"	32	0	8014	NULL	true	7	NULL
+8012	"reference"	"boolean"	1	0	8014	NULL	true	8	NULL
+8013	"sorted"	"boolean"	1	0	8014	NULL	true	9	NULL
+8052	"schema"	"clob"	0	0	8062	NULL	true	0	NULL
+8053	"table"	"clob"	0	0	8062	NULL	true	1	NULL
+8054	"column"	"clob"	0	0	8062	NULL	true	2	NULL
+8055	"type"	"clob"	0	0	8062	NULL	true	3	NULL
+8056	"count"	"bigint"	64	0	8062	NULL	true	4	NULL
+8057	"columnsize"	"bigint"	64	0	8062	NULL	true	5	NULL
+8058	"heapsize"	"bigint"	64	0	8062	NULL	true	6	NULL
+8059	"hashes"	"bigint"	64	0	8062	NULL	true	7	NULL
+8060	"imprints"	"bigint"	64	0	8062	NULL	true	8	NULL
+8061	"sorted"	"boolean"	1	0	8062	NULL	true	9	NULL
+8064	"schema"	"clob"	0	0	8072	NULL	true	0	NULL
+8065	"table"	"clob"	0	0	8072	NULL	true	1	NULL
+8066	"count"	"bigint"	64	0	8072	NULL	true	2	NULL
+8067	"columnsize"	"hugeint"	128	0	8072	NULL	true	3	NULL
+8068	"heapsize"	"hugeint"	128	0	8072	NULL	true	4	NULL
+8069	"hashes"	"hugeint"	128	0	8072	NULL	true	5	NULL
+8070	"imprints"	"hugeint"	128	0	8072	NULL	true	6	NULL
+8071	"auxiliary"	"hugeint"	128	0	8072	NULL	true	7	NULL
+8074	"column_id"	"int"	32	0	8085	NULL	true	0	NULL
+8075	"type"	"clob"	0	0	8085	NULL	true	1	NULL
+8076	"width"	"int"	32	0	8085	NULL	true	2	NULL
+8077	"stamp"	"timestamp"	7	0	8085	NULL	true	3	NULL
+8078	"sample"	"bigint"	64	0	8085	NULL	true	4	NULL
+8079	"count"	"bigint"	64	0	8085	NULL	true	5	NULL
+8080	"unique"	"bigint"	64	0	8085	NULL	true	6	NULL
+8081	"nils"	"bigint"	64	0	8085	NULL	true	7	NULL
+8082	"minval"	"clob"	0	0	8085	NULL	true	8	NULL
+8083	"maxval"	"clob"	0	0	8085	NULL	true	9	NULL
+8084	"sorted"	"boolean"	1	0	8085	NULL	true	10	NULL
+8180	"file_id"	"bigint"	64	0	8188	NULL	false	0	NULL
+8181	"file_location"	"clob"	0	0	8188	NULL	false	1	NULL
+8182	"dbschema"	"smallint"	16	0	8188	NULL	false	2	NULL
+8183	"format_version"	"varchar"	7	0	8188	NULL	true	3	NULL
+8184	"sorting_order"	"varchar"	10	0	8188	NULL	true	4	NULL
+8185	"comments"	"clob"	0	0	8188	NULL	true	5	NULL
+8190	"sn"	"clob"	0	0	8201	NULL	false	0	NULL
+8191	"file_id"	"bigint"	64	0	8201	NULL	false	1	NULL
+8192	"ln"	"int"	32	0	8201	NULL	true	2	NULL
+8193	"as"	"int"	32	0	8201	NULL	true	3	NULL
+8194	"m5"	"clob"	0	0	8201	NULL	true	4	NULL
+8195	"sp"	"clob"	0	0	8201	NULL	true	5	NULL
+8196	"ur"	"clob"	0	0	8201	NULL	true	6	NULL
+8203	"id"	"clob"	0	0	8220	NULL	false	0	NULL
+8204	"file_id"	"bigint"	64	0	8220	NULL	false	1	NULL
+8205	"cn"	"clob"	0	0	8220	NULL	true	2	NULL
+8206	"ds"	"clob"	0	0	8220	NULL	true	3	NULL
+8207	"dt"	"timestamp"	7	0	8220	NULL	true	4	NULL
+8208	"fo"	"clob"	0	0	8220	NULL	true	5	NULL
+8209	"ks"	"clob"	0	0	8220	NULL	true	6	NULL
+8210	"lb"	"clob"	0	0	8220	NULL	true	7	NULL
+8211	"pg"	"clob"	0	0	8220	NULL	true	8	NULL
+8212	"pi"	"int"	32	0	8220	NULL	true	9	NULL
+8213	"pl"	"clob"	0	0	8220	NULL	true	10	NULL
+8214	"pu"	"clob"	0	0	8220	NULL	true	11	NULL
+8215	"sm"	"clob"	0	0	8220	NULL	true	12	NULL
+8222	"id"	"clob"	0	0	8232	NULL	false	0	NULL
+8223	"file_id"	"bigint"	64	0	8232	NULL	false	1	NULL
+8224	"pn"	"clob"	0	0	8232	NULL	true	2	NULL
+8225	"cl"	"clob"	0	0	8232	NULL	true	3	NULL
+8226	"pp"	"clob"	0	0	8232	NULL	true	4	NULL
+8227	"vn"	"clob"	0	0	8232	NULL	true	5	NULL
+8234	"qname"	"clob"	0	0	8245	NULL	false	0	NULL
+8235	"flag"	"smallint"	16	0	8245	NULL	false	1	NULL
+8236	"rname"	"clob"	0	0	8245	NULL	false	2	NULL
+8237	"pos"	"int"	32	0	8245	NULL	false	3	NULL
+8238	"mapq"	"smallint"	16	0	8245	NULL	false	4	NULL
+8239	"cigar"	"clob"	0	0	8245	NULL	false	5	NULL
+8240	"rnext"	"clob"	0	0	8245	NULL	false	6	NULL
+8241	"pnext"	"int"	32	0	8245	NULL	false	7	NULL
+8242	"tlen"	"int"	32	0	8245	NULL	false	8	NULL
+8243	"seq"	"clob"	0	0	8245	NULL	false	9	NULL
+8244	"qual"	"clob"	0	0	8245	NULL	false	10	NULL
+8326	"function_id"	"int"	32	0	8327	NULL	true	0	NULL
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."_tables" (
@@ -1962,17 +1964,17 @@ COPY 56 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 7943	"netcdf_vars"	2000	NULL	0	true	0	0
 7949	"netcdf_vardim"	2000	NULL	0	true	0	0
 7957	"netcdf_attrs"	2000	NULL	0	true	0	0
-7996	"storage"	2000	"create view sys.""storage"" as select * from sys.""storage""();"	1	true	0	0
-8008	"storagemodelinput"	2000	NULL	0	true	0	0
-8056	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	0
-8066	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	0
-8079	"statistics"	2000	NULL	0	true	0	0
-8182	"files"	8126	NULL	0	true	0	0
-8195	"sq"	8126	NULL	0	true	0	0
-8214	"rg"	8126	NULL	0	true	0	0
-8226	"pg"	8126	NULL	0	true	0	0
-8239	"export"	8126	NULL	0	true	0	0
-8321	"systemfunctions"	2000	NULL	0	true	0	0
+8002	"storage"	2000	"create view sys.""storage"" as select * from sys.""storage""();"	1	true	0	0
+8014	"storagemodelinput"	2000	NULL	0	true	0	0
+8062	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	0
+8072	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	0
+8085	"statistics"	2000	NULL	0	true	0	0
+8188	"files"	8132	NULL	0	true	0	0
+8201	"sq"	8132	NULL	0	true	0	0
+8220	"rg"	8132	NULL	0	true	0	0
+8232	"pg"	8132	NULL	0	true	0	0
+8245	"export"	8132	NULL	0	true	0	0
+8327	"systemfunctions"	2000	NULL	0	true	0	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."args" (
@@ -1985,7 +1987,7 @@ CREATE TABLE "sys"."args" (
 	"inout"       TINYINT,
 	"number"      INTEGER
 );
-COPY 5047 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 5049 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 2155	32	"res_0"	"boolean"	1	0	0	0
 2156	32	"arg_1"	"geometry"	0	0	1	1
 2157	32	"arg_2"	"geometry"	0	0	1	2
@@ -6892,147 +6894,149 @@ COPY 5047 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 7960	7959	"fname"	"varchar"	256	0	1	0
 7963	7962	"fid"	"int"	32	0	1	0
 7964	7962	"varnname"	"varchar"	256	0	1	1
-7967	7966	"schema"	"clob"	0	0	0	0
-7968	7966	"table"	"clob"	0	0	0	1
-7969	7966	"column"	"clob"	0	0	0	2
-7970	7966	"type"	"clob"	0	0	0	3
-7971	7966	"mode"	"clob"	0	0	0	4
-7972	7966	"location"	"clob"	0	0	0	5
-7973	7966	"count"	"bigint"	64	0	0	6
-7974	7966	"typewidth"	"int"	32	0	0	7
-7975	7966	"columnsize"	"bigint"	64	0	0	8
-7976	7966	"heapsize"	"bigint"	64	0	0	9
-7977	7966	"hashes"	"bigint"	64	0	0	10
-7978	7966	"phash"	"boolean"	1	0	0	11
-7979	7966	"imprints"	"bigint"	64	0	0	12
-7980	7966	"sorted"	"boolean"	1	0	0	13
-8013	8012	"result"	"bigint"	64	0	0	0
-8014	8012	"nme"	"clob"	0	0	1	1
-8015	8012	"i"	"bigint"	64	0	1	2
-8016	8012	"d"	"bigint"	64	0	1	3
+7967	7966	"fname"	"clob"	0	0	1	0
+7970	7969	"tname"	"clob"	0	0	1	0
+7973	7972	"schema"	"clob"	0	0	0	0
+7974	7972	"table"	"clob"	0	0	0	1
+7975	7972	"column"	"clob"	0	0	0	2
+7976	7972	"type"	"clob"	0	0	0	3
+7977	7972	"mode"	"clob"	0	0	0	4
+7978	7972	"location"	"clob"	0	0	0	5
+7979	7972	"count"	"bigint"	64	0	0	6
+7980	7972	"typewidth"	"int"	32	0	0	7
+7981	7972	"columnsize"	"bigint"	64	0	0	8
+7982	7972	"heapsize"	"bigint"	64	0	0	9
+7983	7972	"hashes"	"bigint"	64	0	0	10
+7984	7972	"phash"	"boolean"	1	0	0	11
+7985	7972	"imprints"	"bigint"	64	0	0	12
+7986	7972	"sorted"	"boolean"	1	0	0	13
 8019	8018	"result"	"bigint"	64	0	0	0
-8020	8018	"tpe"	"clob"	0	0	1	1
+8020	8018	"nme"	"clob"	0	0	1	1
 8021	8018	"i"	"bigint"	64	0	1	2
-8022	8018	"w"	"int"	32	0	1	3
+8022	8018	"d"	"bigint"	64	0	1	3
 8025	8024	"result"	"bigint"	64	0	0	0
-8026	8024	"b"	"boolean"	1	0	1	1
+8026	8024	"tpe"	"clob"	0	0	1	1
 8027	8024	"i"	"bigint"	64	0	1	2
-8030	8029	"result"	"bigint"	64	0	0	0
-8031	8029	"i"	"bigint"	64	0	1	1
-8032	8029	"nme"	"clob"	0	0	1	2
-8035	8034	"schema"	"clob"	0	0	0	0
-8036	8034	"table"	"clob"	0	0	0	1
-8037	8034	"column"	"clob"	0	0	0	2
-8038	8034	"type"	"clob"	0	0	0	3
-8039	8034	"count"	"bigint"	64	0	0	4
-8040	8034	"columnsize"	"bigint"	64	0	0	5
-8041	8034	"heapsize"	"bigint"	64	0	0	6
-8042	8034	"hashes"	"bigint"	64	0	0	7
-8043	8034	"imprints"	"bigint"	64	0	0	8
-8044	8034	"sorted"	"boolean"	1	0	0	9
-8082	8081	"MinMax"	"int"	32	0	1	0
-8083	8081	"sample"	"bigint"	64	0	1	1
-8086	8085	"MinMax"	"int"	32	0	1	0
-8087	8085	"sample"	"bigint"	64	0	1	1
-8088	8085	"sch"	"clob"	0	0	1	2
-8091	8090	"MinMax"	"int"	32	0	1	0
-8092	8090	"sample"	"bigint"	64	0	1	1
-8093	8090	"sch"	"clob"	0	0	1	2
-8094	8090	"tbl"	"clob"	0	0	1	3
+8028	8024	"w"	"int"	32	0	1	3
+8031	8030	"result"	"bigint"	64	0	0	0
+8032	8030	"b"	"boolean"	1	0	1	1
+8033	8030	"i"	"bigint"	64	0	1	2
+8036	8035	"result"	"bigint"	64	0	0	0
+8037	8035	"i"	"bigint"	64	0	1	1
+8038	8035	"nme"	"clob"	0	0	1	2
+8041	8040	"schema"	"clob"	0	0	0	0
+8042	8040	"table"	"clob"	0	0	0	1
+8043	8040	"column"	"clob"	0	0	0	2
+8044	8040	"type"	"clob"	0	0	0	3
+8045	8040	"count"	"bigint"	64	0	0	4
+8046	8040	"columnsize"	"bigint"	64	0	0	5
+8047	8040	"heapsize"	"bigint"	64	0	0	6
+8048	8040	"hashes"	"bigint"	64	0	0	7
+8049	8040	"imprints"	"bigint"	64	0	0	8
+8050	8040	"sorted"	"boolean"	1	0	0	9
+8088	8087	"MinMax"	"int"	32	0	1	0
+8089	8087	"sample"	"bigint"	64	0	1	1
+8092	8091	"MinMax"	"int"	32	0	1	0
+8093	8091	"sample"	"bigint"	64	0	1	1
+8094	8091	"sch"	"clob"	0	0	1	2
 8097	8096	"MinMax"	"int"	32	0	1	0
 8098	8096	"sample"	"bigint"	64	0	1	1
 8099	8096	"sch"	"clob"	0	0	1	2
 8100	8096	"tbl"	"clob"	0	0	1	3
-8101	8096	"col"	"clob"	0	0	1	4
-8104	8103	"result"	"clob"	0	0	0	0
-8105	8103	"src"	"clob"	0	0	1	1
-8108	8107	"result"	"smallint"	16	0	0	0
-8109	8107	"one"	"tinyint"	8	0	1	1
-8110	8107	"two"	"tinyint"	8	0	1	2
-8113	8112	"result"	"int"	32	0	0	0
-8114	8112	"one"	"smallint"	16	0	1	1
-8115	8112	"two"	"smallint"	16	0	1	2
-8118	8117	"result"	"bigint"	64	0	0	0
-8119	8117	"one"	"int"	32	0	1	1
-8120	8117	"two"	"int"	32	0	1	2
-8123	8122	"result"	"hugeint"	128	0	0	0
-8124	8122	"one"	"bigint"	64	0	1	1
-8125	8122	"two"	"bigint"	64	0	1	2
-8129	8128	"bam_repos"	"clob"	0	0	1	0
-8130	8128	"dbschema"	"smallint"	16	0	1	1
-8133	8132	"bam_files"	"clob"	0	0	1	0
-8134	8132	"dbschema"	"smallint"	16	0	1	1
-8137	8136	"bam_file"	"clob"	0	0	1	0
-8138	8136	"dbschema"	"smallint"	16	0	1	1
-8141	8140	"file_id"	"bigint"	64	0	1	0
-8142	8140	"dbschema"	"smallint"	16	0	1	1
-8145	8144	"result"	"boolean"	1	0	0	0
-8146	8144	"flag"	"smallint"	16	0	1	1
-8147	8144	"name"	"clob"	0	0	1	2
-8150	8149	"result"	"clob"	0	0	0	0
-8151	8149	"seq"	"clob"	0	0	1	1
-8154	8153	"result"	"clob"	0	0	0	0
-8155	8153	"qual"	"clob"	0	0	1	1
-8158	8157	"result"	"int"	32	0	0	0
-8159	8157	"cigar"	"clob"	0	0	1	1
-8162	8161	"result"	"char"	1	0	0	0
-8163	8161	"ref_pos"	"int"	32	0	1	1
-8164	8161	"alg_seq"	"clob"	0	0	1	2
-8165	8161	"alg_pos"	"int"	32	0	1	3
-8166	8161	"alg_cigar"	"clob"	0	0	1	4
-8169	8168	"output_path"	"clob"	0	0	1	0
-8172	8171	"output_path"	"clob"	0	0	1	0
-8242	8241	"value"	"tinyint"	8	0	0	0
-8243	8241	"first"	"tinyint"	8	0	1	1
-8244	8241	"last"	"tinyint"	8	0	1	2
-8247	8246	"value"	"tinyint"	8	0	0	0
-8248	8246	"first"	"tinyint"	8	0	1	1
-8249	8246	"last"	"tinyint"	8	0	1	2
-8250	8246	"stepsize"	"tinyint"	8	0	1	3
-8253	8252	"value"	"smallint"	16	0	0	0
-8254	8252	"first"	"smallint"	16	0	1	1
-8255	8252	"last"	"smallint"	16	0	1	2
-8258	8257	"value"	"smallint"	16	0	0	0
-8259	8257	"first"	"smallint"	16	0	1	1
-8260	8257	"last"	"smallint"	16	0	1	2
-8261	8257	"stepsize"	"smallint"	16	0	1	3
-8264	8263	"value"	"int"	32	0	0	0
-8265	8263	"first"	"int"	32	0	1	1
-8266	8263	"last"	"int"	32	0	1	2
-8269	8268	"value"	"int"	32	0	0	0
-8270	8268	"first"	"int"	32	0	1	1
-8271	8268	"last"	"int"	32	0	1	2
-8272	8268	"stepsize"	"int"	32	0	1	3
-8275	8274	"value"	"bigint"	64	0	0	0
-8276	8274	"first"	"bigint"	64	0	1	1
-8277	8274	"last"	"bigint"	64	0	1	2
-8280	8279	"value"	"bigint"	64	0	0	0
-8281	8279	"first"	"bigint"	64	0	1	1
-8282	8279	"last"	"bigint"	64	0	1	2
-8283	8279	"stepsize"	"bigint"	64	0	1	3
-8286	8285	"value"	"real"	24	0	0	0
-8287	8285	"first"	"real"	24	0	1	1
-8288	8285	"last"	"real"	24	0	1	2
-8289	8285	"stepsize"	"real"	24	0	1	3
-8292	8291	"value"	"double"	53	0	0	0
-8293	8291	"first"	"double"	53	0	1	1
-8294	8291	"last"	"double"	53	0	1	2
-8295	8291	"stepsize"	"double"	53	0	1	3
-8298	8297	"value"	"decimal"	10	2	0	0
-8299	8297	"first"	"decimal"	10	2	1	1
-8300	8297	"last"	"decimal"	10	2	1	2
-8301	8297	"stepsize"	"decimal"	10	2	1	3
-8304	8303	"value"	"timestamp"	7	0	0	0
-8305	8303	"first"	"timestamp"	7	0	1	1
-8306	8303	"last"	"timestamp"	7	0	1	2
-8307	8303	"stepsize"	"sec_interval"	13	0	1	3
-8310	8309	"value"	"hugeint"	128	0	0	0
-8311	8309	"first"	"hugeint"	128	0	1	1
-8312	8309	"last"	"hugeint"	128	0	1	2
-8315	8314	"value"	"hugeint"	128	0	0	0
-8316	8314	"first"	"hugeint"	128	0	1	1
-8317	8314	"last"	"hugeint"	128	0	1	2
-8318	8314	"stepsize"	"hugeint"	128	0	1	3
+8103	8102	"MinMax"	"int"	32	0	1	0
+8104	8102	"sample"	"bigint"	64	0	1	1
+8105	8102	"sch"	"clob"	0	0	1	2
+8106	8102	"tbl"	"clob"	0	0	1	3
+8107	8102	"col"	"clob"	0	0	1	4
+8110	8109	"result"	"clob"	0	0	0	0
+8111	8109	"src"	"clob"	0	0	1	1
+8114	8113	"result"	"smallint"	16	0	0	0
+8115	8113	"one"	"tinyint"	8	0	1	1
+8116	8113	"two"	"tinyint"	8	0	1	2
+8119	8118	"result"	"int"	32	0	0	0
+8120	8118	"one"	"smallint"	16	0	1	1
+8121	8118	"two"	"smallint"	16	0	1	2
+8124	8123	"result"	"bigint"	64	0	0	0
+8125	8123	"one"	"int"	32	0	1	1
+8126	8123	"two"	"int"	32	0	1	2
+8129	8128	"result"	"hugeint"	128	0	0	0
+8130	8128	"one"	"bigint"	64	0	1	1
+8131	8128	"two"	"bigint"	64	0	1	2
+8135	8134	"bam_repos"	"clob"	0	0	1	0
+8136	8134	"dbschema"	"smallint"	16	0	1	1
+8139	8138	"bam_files"	"clob"	0	0	1	0
+8140	8138	"dbschema"	"smallint"	16	0	1	1
+8143	8142	"bam_file"	"clob"	0	0	1	0
+8144	8142	"dbschema"	"smallint"	16	0	1	1
+8147	8146	"file_id"	"bigint"	64	0	1	0
+8148	8146	"dbschema"	"smallint"	16	0	1	1
+8151	8150	"result"	"boolean"	1	0	0	0
+8152	8150	"flag"	"smallint"	16	0	1	1
+8153	8150	"name"	"clob"	0	0	1	2
+8156	8155	"result"	"clob"	0	0	0	0
+8157	8155	"seq"	"clob"	0	0	1	1
+8160	8159	"result"	"clob"	0	0	0	0
+8161	8159	"qual"	"clob"	0	0	1	1
+8164	8163	"result"	"int"	32	0	0	0
+8165	8163	"cigar"	"clob"	0	0	1	1
+8168	8167	"result"	"char"	1	0	0	0
+8169	8167	"ref_pos"	"int"	32	0	1	1
+8170	8167	"alg_seq"	"clob"	0	0	1	2
+8171	8167	"alg_pos"	"int"	32	0	1	3
+8172	8167	"alg_cigar"	"clob"	0	0	1	4
+8175	8174	"output_path"	"clob"	0	0	1	0
+8178	8177	"output_path"	"clob"	0	0	1	0
+8248	8247	"value"	"tinyint"	8	0	0	0
+8249	8247	"first"	"tinyint"	8	0	1	1
+8250	8247	"last"	"tinyint"	8	0	1	2
+8253	8252	"value"	"tinyint"	8	0	0	0
+8254	8252	"first"	"tinyint"	8	0	1	1
+8255	8252	"last"	"tinyint"	8	0	1	2
+8256	8252	"stepsize"	"tinyint"	8	0	1	3
+8259	8258	"value"	"smallint"	16	0	0	0
+8260	8258	"first"	"smallint"	16	0	1	1
+8261	8258	"last"	"smallint"	16	0	1	2
+8264	8263	"value"	"smallint"	16	0	0	0
+8265	8263	"first"	"smallint"	16	0	1	1
+8266	8263	"last"	"smallint"	16	0	1	2
+8267	8263	"stepsize"	"smallint"	16	0	1	3
+8270	8269	"value"	"int"	32	0	0	0
+8271	8269	"first"	"int"	32	0	1	1
+8272	8269	"last"	"int"	32	0	1	2
+8275	8274	"value"	"int"	32	0	0	0
+8276	8274	"first"	"int"	32	0	1	1
+8277	8274	"last"	"int"	32	0	1	2
+8278	8274	"stepsize"	"int"	32	0	1	3
+8281	8280	"value"	"bigint"	64	0	0	0
+8282	8280	"first"	"bigint"	64	0	1	1
+8283	8280	"last"	"bigint"	64	0	1	2
+8286	8285	"value"	"bigint"	64	0	0	0
+8287	8285	"first"	"bigint"	64	0	1	1
+8288	8285	"last"	"bigint"	64	0	1	2
+8289	8285	"stepsize"	"bigint"	64	0	1	3
+8292	8291	"value"	"real"	24	0	0	0
+8293	8291	"first"	"real"	24	0	1	1
+8294	8291	"last"	"real"	24	0	1	2
+8295	8291	"stepsize"	"real"	24	0	1	3
+8298	8297	"value"	"double"	53	0	0	0
+8299	8297	"first"	"double"	53	0	1	1
+8300	8297	"last"	"double"	53	0	1	2
+8301	8297	"stepsize"	"double"	53	0	1	3
+8304	8303	"value"	"decimal"	10	2	0	0
+8305	8303	"first"	"decimal"	10	2	1	1
+8306	8303	"last"	"decimal"	10	2	1	2
+8307	8303	"stepsize"	"decimal"	10	2	1	3
+8310	8309	"value"	"timestamp"	7	0	0	0
+8311	8309	"first"	"timestamp"	7	0	1	1
+8312	8309	"last"	"timestamp"	7	0	1	2
+8313	8309	"stepsize"	"sec_interval"	13	0	1	3
+8316	8315	"value"	"hugeint"	128	0	0	0
+8317	8315	"first"	"hugeint"	128	0	1	1
+8318	8315	"last"	"hugeint"	128	0	1	2
+8321	8320	"value"	"hugeint"	128	0	0	0
+8322	8320	"first"	"hugeint"	128	0	1	1
+8323	8320	"last"	"hugeint"	128	0	1	2
+8324	8320	"stepsize"	"hugeint"	128	0	1	3
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."auths" (
@@ -7317,76 +7321,76 @@ COPY 314 RECORDS INTO "sys"."dependencies" FROM stdin USING DELIMITERS '\t','\n'
 7906	7908	10
 7909	7911	10
 7906	7907	4
-7966	7996	5
-7998	8010	13
-8008	8010	13
-7999	8010	13
-8000	8010	13
-8001	8010	13
-8002	8010	13
-8003	8010	13
-8004	8010	13
-8005	8010	13
-8006	8010	13
-8007	8010	13
-67	8012	7
-145	8012	7
-269	8012	7
-135	8018	7
-68	8018	7
-308	8018	7
-149	8018	7
-67	8024	7
-145	8024	7
-136	8029	7
-67	8029	7
-424	8029	7
-7998	8034	7
-8008	8034	7
-7999	8034	7
-8000	8034	7
-8001	8034	7
-8003	8034	7
-8004	8034	7
-8005	8034	7
-8006	8034	7
-8007	8034	7
-8012	8034	7
-8018	8034	7
-8024	8034	7
-8029	8034	7
-8034	8056	5
-8034	8066	5
-82	8066	5
-89	8066	5
-90	8066	5
-85	8066	5
-69	8066	5
-67	8066	5
-145	8066	5
-8174	8181	10
-8174	8180	4
-8184	8192	10
-8185	8192	10
-8185	8194	10
-8184	8191	4
-8185	8191	4
-8180	8193	11
-8185	8193	11
-8197	8211	10
-8198	8211	10
-8198	8213	10
-8197	8210	4
-8198	8210	4
-8180	8212	11
-8198	8212	11
-8216	8223	10
-8217	8223	10
-8217	8225	10
-8216	8222	4
-8217	8222	4
-8180	8224	11
-8217	8224	11
+7972	8002	5
+8004	8016	13
+8014	8016	13
+8005	8016	13
+8006	8016	13
+8007	8016	13
+8008	8016	13
+8009	8016	13
+8010	8016	13
+8011	8016	13
+8012	8016	13
+8013	8016	13
+67	8018	7
+145	8018	7
+269	8018	7
+135	8024	7
+68	8024	7
+308	8024	7
+149	8024	7
+67	8030	7
+145	8030	7
+136	8035	7
+67	8035	7
+424	8035	7
+8004	8040	7
+8014	8040	7
+8005	8040	7
+8006	8040	7
+8007	8040	7
+8009	8040	7
+8010	8040	7
+8011	8040	7
+8012	8040	7
+8013	8040	7
+8018	8040	7
+8024	8040	7
+8030	8040	7
+8035	8040	7
+8040	8062	5
+8040	8072	5
+82	8072	5
+89	8072	5
+90	8072	5
+85	8072	5
+69	8072	5
+67	8072	5
+145	8072	5
+8180	8187	10
+8180	8186	4
+8190	8198	10
+8191	8198	10
+8191	8200	10
+8190	8197	4
+8191	8197	4
+8186	8199	11
+8191	8199	11
+8203	8217	10
+8204	8217	10
+8204	8219	10
+8203	8216	4
+8204	8216	4
+8186	8218	11
+8204	8218	11
+8222	8229	10
+8223	8229	10
+8223	8231	10
+8222	8228	4
+8223	8228	4
+8186	8230	11
+8223	8230	11
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."functions" (
@@ -7401,7 +7405,7 @@ CREATE TABLE "sys"."functions" (
 	"vararg"      BOOLEAN,
 	"schema_id"   INTEGER
 );
-COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1803 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
 32	"mbr_overlap"	"mbrOverlaps"	"geom"	0	1	false	false	false	0
 33	"mbr_overlap"	"mbrOverlaps"	"geom"	0	1	false	false	false	0
 34	"mbr_above"	"mbrAbove"	"geom"	0	1	false	false	false	0
@@ -8815,13 +8819,13 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6221	"env"	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;"	"sql"	2	5	false	false	false	2000
 6224	"var"	"CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;"	"sql"	2	5	false	false	false	2000
 6230	"db_users"	"CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;"	"sql"	2	5	false	false	false	2000
-6250	"like"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate filter function ""like""(val string, pat string, esc string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
+6250	"like"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate filter function ""like""(val string, pat string, esc string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
 6255	"ilike"	"create filter function ""ilike""(val string, pat string, esc string) external name algebra.""ilike"";"	"algebra"	1	4	true	false	false	2000
 6260	"like"	"create filter function ""like""(val string, pat string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
 6264	"ilike"	"create filter function ""ilike""(val string, pat string) external name algebra.""ilike"";"	"algebra"	1	4	true	false	false	2000
-6268	"degrees"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function degrees(r double)\nreturns double\n\treturn r*180/pi();"	"user"	2	1	false	false	false	2000
+6268	"degrees"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function degrees(r double)\nreturns double\n\treturn r*180/pi();"	"user"	2	1	false	false	false	2000
 6272	"radians"	"create function radians(d double)\nreturns double\n\treturn d*pi()/180;"	"user"	2	1	false	false	false	2000
-6276	"times"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	1	2	true	false	false	2000
+6276	"times"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	1	2	true	false	false	2000
 6279	"getanchor"	"create function getanchor( theurl url ) returns string\n\texternal name url.""getAnchor"";"	"url"	1	1	false	false	false	2000
 6283	"getbasename"	"create function getbasename(theurl url) returns string\n\texternal name url.""getBasename"";"	"url"	1	1	false	false	false	2000
 6287	"getcontent"	"create function getcontent(theurl url)   returns string\n\texternal name url.""getContent"";"	"url"	1	1	false	false	false	2000
@@ -8838,7 +8842,7 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6331	"isaurl"	"create function isaurl(theurl url) returns bool\n\texternal name url.""isaURL"";"	"url"	1	1	false	false	false	2000
 6335	"newurl"	"create function newurl(protocol string, hostname string, ""port"" int, file string)\n\treturns url\n\texternal name url.""new"";"	"url"	1	1	false	false	false	2000
 6342	"newurl"	"create function newurl(protocol string, hostname string, file string)\n\treturns url\n\texternal name url.""new"";"	"url"	1	1	false	false	false	2000
-6348	"str_to_date"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.""str_to_date"";"	"mtime"	1	1	false	false	false	2000
+6348	"str_to_date"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.""str_to_date"";"	"mtime"	1	1	false	false	false	2000
 6353	"date_to_str"	"create function date_to_str(d date, format string) returns string\n\texternal name mtime.""date_to_str"";"	"mtime"	1	1	false	false	false	2000
 6358	"str_to_time"	"create function str_to_time(s string, format string) returns time\n\texternal name mtime.""str_to_time"";"	"mtime"	1	1	false	false	false	2000
 6363	"time_to_str"	"create function time_to_str(d time, format string) returns string\n\texternal name mtime.""time_to_str"";"	"mtime"	1	1	false	false	false	2000
@@ -8857,21 +8861,21 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6421	"right_shift"	"create function ""right_shift""(i1 inet, i2 inet) returns boolean\n\texternal name inet."">>"";"	"inet"	1	1	false	false	false	2000
 6426	"left_shift_assign"	"create function ""left_shift_assign""(i1 inet, i2 inet) returns boolean\n\texternal name inet.""<<="";"	"inet"	1	1	false	false	false	2000
 6431	"right_shift_assign"	"create function ""right_shift_assign""(i1 inet, i2 inet) returns boolean\n\texternal name inet."">>="";"	"inet"	1	1	false	false	false	2000
-6436	"querylog_catalog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions.\n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\t""plan"" string,\t\t-- Name of MAL plan\n\tmal int,\t\t-- size of MAL plan\n\toptimize bigint\t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	1	5	false	false	false	2000
+6436	"querylog_catalog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions.\n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\t""plan"" string,\t\t-- Name of MAL plan\n\tmal int,\t\t-- size of MAL plan\n\toptimize bigint\t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	1	5	false	false	false	2000
 6446	"querylog_calls"	"-- Each query call is stored in the table calls\n-- At regular intervals the query history table should be cleaned.\n-- This can be done manually on the SQL console, or be integrated\n-- in the keepQuery and keepCall upon need.\n-- The parameters are geared at understanding the resource claims\n-- They reflect the effect of the total workload mix during execution.\n-- The 'cpu' gives the average cpu load percentage over all cores on the\n-- server during execution phase.\n-- increasing cpu load indicates better use of multi-cores.\n-- The 'io' indicate IOs during complete query run.\n-- The 'space' is the total amount of intermediates created in MB.\n-- Reducing the space component improves performance/\n-- All timing in usec and all storage in bytes.\n\ncreate function sys.querylog_calls()\nreturns table(\n\tid oid,\t\t -- references query plan\n\t""start"" timestamp,\t-- time the statement was started\n\t""stop"" timestamp,\t-- time the statement was completely finished\n\targuments string,\t-- actual call structure\n\ttuples wrd,\t\t-- number of tuples in the result set\n\trun bigint,\t\t-- time spent (in usec)  until the result export\n\tship bigint,\t\t-- time spent (in usec)  to ship the result set\n\tcpu int,\t\t-- average cpu load percentage during execution\n\tio int\t\t\t-- percentage time waiting for IO to finish\n)\nexternal name sql.querylog_calls;"	"sql"	1	5	false	false	false	2000
 6496	"querylog_empty"	"-- reset history for a particular user\ncreate procedure sys.querylog_empty()\nexternal name sql.querylog_empty;"	"sql"	1	2	true	false	false	2000
 6498	"querylog_enable"	"-- manipulate the query logger\ncreate procedure sys.querylog_enable()\nexternal name sql.querylog_enable;"	"sql"	1	2	true	false	false	2000
 6500	"querylog_enable"	"create procedure sys.querylog_enable(threshold smallint)\nexternal name sql.querylog_enable_threshold;"	"sql"	1	2	true	false	false	2000
 6503	"querylog_disable"	"create procedure sys.querylog_disable()\nexternal name sql.querylog_disable;"	"sql"	1	2	true	false	false	2000
-6505	"tracelog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog()\n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20),\t-- wallclock, no mtime in kernel\n\t\tpc varchar(50),\t-- module.function[nr]\n\t\tthread int,\t\t-- thread identifier\n\t\tticks bigint,\t\t-- time in microseconds\n\t\trrsmb bigint,\t\t-- resident memory in MB\n\t\tvmmb bigint,\t\t-- virtual size in MB\n\t\treads bigint,\t\t-- number of blocks read\n\t\twrites bigint,\t\t-- number of blocks written\n\t\tminflt bigint,\t\t-- minor page faults\n\t\tmajflt bigint,\t\t-- major page faults\n\t\tnvcsw bigint,\t\t-- non-volantary conext switch\n\t\tstmt string\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
-6535	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function sys.""epoch""(sec bigint) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+6505	"tracelog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog()\n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20),\t-- wallclock, no mtime in kernel\n\t\tpc varchar(50),\t-- module.function[nr]\n\t\tthread int,\t\t-- thread identifier\n\t\tticks bigint,\t\t-- time in microseconds\n\t\trrsmb bigint,\t\t-- resident memory in MB\n\t\tvmmb bigint,\t\t-- virtual size in MB\n\t\treads bigint,\t\t-- number of blocks read\n\t\twrites bigint,\t\t-- number of blocks written\n\t\tminflt bigint,\t\t-- minor page faults\n\t\tmajflt bigint,\t\t-- major page faults\n\t\tnvcsw bigint,\t\t-- non-volantary conext switch\n\t\tstmt string\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
+6535	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function sys.""epoch""(sec bigint) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 6539	"epoch"	"create function sys.""epoch""(sec int) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 6543	"epoch"	"create function sys.""epoch""(ts timestamp) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
 6547	"epoch"	"create function sys.""epoch""(ts timestamp with time zone) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
-6551	"shrink"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	1	2	true	false	false	2000
+6551	"shrink"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	1	2	true	false	false	2000
 6555	"reuse"	"create procedure reuse(sys string, tab string)\n\texternal name sql.reuse;"	"sql"	1	2	true	false	false	2000
 6559	"vacuum"	"create procedure vacuum(sys string, tab string)\n\texternal name sql.vacuum;"	"sql"	1	2	true	false	false	2000
-6563	"dependencies_schemas_on_users"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	2	5	false	false	false	2000
+6563	"dependencies_schemas_on_users"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	2	5	false	false	false	2000
 6568	"dependencies_owners_on_schemas"	"--User (owner) has a dependency in schema s\ncreate function dependencies_owners_on_schemas()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);"	"user"	2	5	false	false	false	2000
 6573	"dependencies_tables_on_views"	"--Table t has a dependency on view v\ncreate function dependencies_tables_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	2	5	false	false	false	2000
 6578	"dependencies_tables_on_indexes"	"--Table t has a dependency on index  i\ncreate function dependencies_tables_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);"	"user"	2	5	false	false	false	2000
@@ -8888,22 +8892,22 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6633	"dependencies_functions_on_functions"	"--Function f1 has a dependency on function f2\ncreate function dependencies_functions_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);"	"user"	2	5	false	false	false	2000
 6638	"dependencies_functions_os_triggers"	"--Function f1 has a dependency on trigger tri\ncreate function dependencies_functions_os_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	2	5	false	false	false	2000
 6643	"dependencies_keys_on_foreignkeys"	"--Key k has a dependency on foreign key fk\ncreate function dependencies_keys_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);"	"user"	2	5	false	false	false	2000
-6648	"password_hash"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function sys.password_hash (username string)\n\treturns string\n\texternal name sql.password;"	"sql"	1	1	false	false	false	2000
+6648	"password_hash"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function sys.password_hash (username string)\n\treturns string\n\texternal name sql.password;"	"sql"	1	1	false	false	false	2000
 6652	"sessions"	"create function sys.sessions()\nreturns table(""user"" string, ""login"" timestamp, ""sessiontimeout"" bigint, ""lastcommand"" timestamp, ""querytimeout"" bigint, ""active"" bool)\nexternal name sql.sessions;"	"sql"	1	5	false	false	false	2000
 6668	"shutdown"	"create procedure sys.shutdown(delay tinyint)\nexternal name sql.shutdown;"	"sql"	1	2	true	false	false	2000
 6671	"shutdown"	"create procedure sys.shutdown(delay tinyint, force bool)\nexternal name sql.shutdown;"	"sql"	1	2	true	false	false	2000
 6675	"settimeout"	"-- control the query and session time out\ncreate procedure sys.settimeout(""query"" bigint)\n\texternal name sql.settimeout;"	"sql"	1	2	true	false	false	2000
 6678	"settimeout"	"create procedure sys.settimeout(""query"" bigint, ""session"" bigint)\n\texternal name sql.settimeout;"	"sql"	1	2	true	false	false	2000
 6682	"setsession"	"create procedure sys.setsession(""timeout"" bigint)\n\texternal name sql.setsession;"	"sql"	1	2	true	false	false	2000
-6685	"ms_stuff"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	2	1	false	false	false	2000
+6685	"ms_stuff"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	2	1	false	false	false	2000
 6692	"ms_trunc"	"create function ms_trunc(num double, prc int)\nreturns double\nexternal name sql.ms_trunc;"	"sql"	1	1	false	false	false	2000
 6697	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n\tif (truncat = 0)\n\t\tthen return round(num, prc);\n\t\telse return ms_trunc(num, prc);\n\tend if;\nend;"	"user"	2	1	false	false	false	2000
 6703	"ms_str"	"create function ms_str(num float, prc int, truncat int)\nreturns string\nbegin\n        return cast(num as string);\nend;"	"user"	2	1	false	false	false	2000
 6709	"alpha"	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	"sql"	1	1	false	false	false	2000
-6714	"zorder_encode"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	1	1	false	false	false	2000
+6714	"zorder_encode"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	1	1	false	false	false	2000
 6719	"zorder_decode_x"	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	"zorder"	1	1	false	false	false	2000
 6723	"zorder_decode_y"	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	"zorder"	1	1	false	false	false	2000
-6727	"optimizer_stats"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats ()\n\treturns table (rewrite string, count int)\n\texternal name sql.dump_opt_stats;"	"sql"	1	5	false	false	false	2000
+6727	"optimizer_stats"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats ()\n\treturns table (rewrite string, count int)\n\texternal name sql.dump_opt_stats;"	"sql"	1	5	false	false	false	2000
 6731	"querycache"	"-- SQL QUERY CACHE\n-- The SQL query cache returns a table with the query plans kept\n\ncreate function sys.querycache()\n\treturns table (query string, count int)\n\texternal name sql.dump_cache;"	"sql"	1	5	false	false	false	2000
 6735	"querylog"	"-- Trace the SQL input\ncreate procedure sys.querylog(filename string)\n\texternal name sql.logfile;"	"sql"	1	2	true	false	false	2000
 6738	"optimizers"	"-- MONETDB KERNEL SECTION\n-- optimizer pipe catalog\ncreate function sys.optimizers ()\n\treturns table (name string, def string, status string)\n\texternal name sql.optimizers;"	"sql"	1	5	false	false	false	2000
@@ -8913,16 +8917,16 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6774	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n\texternal name sql.""evalAlgebra"";"	"sql"	1	2	true	false	false	2000
 6778	"flush_log"	"-- enqueue a flush log, ie as soon as no transactions are active \n-- flush the log and cleanup the used storage\ncreate procedure sys.flush_log ()\n\texternal name sql.""flush_log"";"	"sql"	1	2	true	false	false	2000
 6780	"debug"	"create function sys.debug(debug int) returns integer\n\texternal name mdb.""setDebug"";"	"mdb"	1	1	false	false	false	2000
-6784	"queue"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t""user"" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	1	5	false	false	false	2000
+6784	"queue"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t""user"" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	1	5	false	false	false	2000
 6804	"pause"	"-- operations to manipulate the state of havoc queries\ncreate procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
 6807	"resume"	"create procedure sys.resume(tag int)\nexternal name sql.sysmon_resume;"	"sql"	1	2	true	false	false	2000
 6810	"stop"	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	"sql"	1	2	true	false	false	2000
 6813	"pause"	"create procedure sys.pause(tag bigint)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
 6816	"resume"	"create procedure sys.resume(tag bigint)\nexternal name sql.sysmon_resume;"	"sql"	1	2	true	false	false	2000
 6819	"stop"	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	"sql"	1	2	true	false	false	2000
-6822	"rejects"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- COPY into reject management\n\ncreate function sys.rejects()\nreturns table(\n\trowid bigint,\n\tfldid int,\n\t""message"" string,\n\t""input"" string\n)\nexternal name sql.copy_rejects;"	"sql"	1	5	false	false	false	2000
+6822	"rejects"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- COPY into reject management\n\ncreate function sys.rejects()\nreturns table(\n\trowid bigint,\n\tfldid int,\n\t""message"" string,\n\t""input"" string\n)\nexternal name sql.copy_rejects;"	"sql"	1	5	false	false	false	2000
 6834	"clearrejects"	"create procedure sys.clearrejects()\nexternal name sql.copy_rejects_clear;"	"sql"	1	2	true	false	false	2000
-6836	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate aggregate stddev_samp(val tinyint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+6836	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate aggregate stddev_samp(val tinyint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 6840	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 6844	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 6848	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
@@ -8991,14 +8995,14 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 7115	"corr"	"create aggregate corr(e1 bigint, e2 bigint) returns bigint\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
 7120	"corr"	"create aggregate corr(e1 real, e2 real) returns real\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
 7125	"corr"	"create aggregate corr(e1 double, e2 double) returns double\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-7130	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\ncreate aggregate stddev_samp(val hugeint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+7130	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate aggregate stddev_samp(val hugeint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
 7134	"stddev_pop"	"create aggregate stddev_pop(val hugeint) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
 7138	"var_samp"	"create aggregate var_samp(val hugeint) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
 7142	"var_pop"	"create aggregate var_pop(val hugeint) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
 7146	"median"	"create aggregate median(val hugeint) returns hugeint\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
 7150	"quantile"	"create aggregate quantile(val hugeint, q double) returns hugeint\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
 7155	"corr"	"create aggregate corr(e1 hugeint, e2 hugeint) returns hugeint\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-7160	"has_z"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- make sure you load the geom module before loading this sql module\n-- create spatial_ref_sys metadata table\n\ncreate function has_z(info integer) returns integer external name geom.""hasZ"";"	"geom"	1	1	false	false	false	2000
+7160	"has_z"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- make sure you load the geom module before loading this sql module\n-- create spatial_ref_sys metadata table\n\ncreate function has_z(info integer) returns integer external name geom.""hasZ"";"	"geom"	1	1	false	false	false	2000
 7164	"has_m"	"create function has_m(info integer) returns integer external name geom.""hasM"";"	"geom"	1	1	false	false	false	2000
 7168	"get_type"	"create function get_type(info integer, format integer) returns string external name geom.""getType"";"	"geom"	1	1	false	false	false	2000
 7192	"mbr"	"-- currently we only use mbr instead of\n-- Envelope():Geometry\n-- as that returns Geometry objects, and we prefer the explicit mbr's\n-- minimum bounding rectangle (mbr)\ncreate function mbr(geom geometry) returns mbr external name geom.""mbr"";"	"geom"	1	1	false	false	false	2000
@@ -9145,12 +9149,12 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 7840	"output"	"-- The remainder awaits the implementation\n\ncreate aggregate json.output(js json)\nreturns string external name json.output;"	"json"	1	3	false	false	false	7756
 7844	"tojsonarray"	"-- create function json.object(*) returns json external name json.objectrender;\n\n-- create function json.array(*) returns json external name json.arrayrender;\n\n-- unnesting the JSON structure\n\n-- create function json.unnest(js json)\n-- returns table( id integer, k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( v string) external name json.unnest;\n\n-- create function json.nest table( id integer, k string, v string)\n-- returns json external name json.nest;\n\ncreate aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	7756
 7848	"tojsonarray"	"create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	7756
-7852	"filter"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Martin Kersten\n-- The JSON type comes with a few operators.\n\ncreate function json.filter(js json, name hugeint)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	7756
-7857	"md5"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	1	1	false	false	false	2000
+7852	"filter"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Martin Kersten\n-- The JSON type comes with a few operators.\n\ncreate function json.filter(js json, name hugeint)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	7756
+7857	"md5"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	1	1	false	false	false	2000
 7862	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.""new"";"	"uuid"	1	1	false	false	false	2000
 7865	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	1	1	false	false	false	2000
 7869	"isauuid"	"create function sys.isauuid(u string)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	1	1	false	false	false	2000
-7873	"chi2prob"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (co) Arjen de Rijke, Bart Scheers\n-- Use statistical functions from gsl library\n\n-- Calculate Chi squared probability\ncreate function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.""chi2prob"";"	"gsl"	1	1	false	false	false	2000
+7873	"chi2prob"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Arjen de Rijke, Bart Scheers\n-- Use statistical functions from gsl library\n\n-- Calculate Chi squared probability\ncreate function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.""chi2prob"";"	"gsl"	1	1	false	false	false	2000
 7879	"start"	"create procedure profiler.start() external name profiler.""start"";"	"profiler"	1	2	true	false	false	7877
 7881	"stop"	"create procedure profiler.stop() external name profiler.stop;"	"profiler"	1	2	true	false	false	7877
 7883	"setheartbeat"	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"	"profiler"	1	2	true	false	false	7877
@@ -9162,47 +9166,49 @@ COPY 1801 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 7923	"listdirpat"	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;"	"fits"	1	2	true	false	false	2000
 7959	"netcdf_attach"	"-- gr_name is ""GLOBAL"" or ""ROOT"" for classic NetCDF files\n-- used for groups in HDF5 files\n-- global attributes have obj_name=""""\n\n-- create function netcdfvar (fname varchar(256)) \n--\treturns int external name netcdf.test;\n\ncreate procedure netcdf_attach(fname varchar(256))\n    external name netcdf.attach;"	"netcdf"	1	2	true	false	false	2000
 7962	"netcdf_importvar"	"create procedure netcdf_importvar(fid integer, varnname varchar(256))\n    external name netcdf.importvariable;"	"netcdf"	1	2	true	false	false	2000
-7966	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By changing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table producing function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
-8010	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	2	2	true	false	false	2000
-8012	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int' then return 4 * i;\n\twhen nme = 'bigint' then return 8 * i;\n\twhen nme = 'hugeint' then return 16 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	2	1	false	false	false	2000
-8018	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	2	1	false	false	false	2000
-8024	"hashsize"	"create function sys.hashsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	2	1	false	false	false	2000
-8029	"imprintsize"	"create function sys.imprintsize(i bigint, nme string)\nreturns bigint\nbegin\n\tif nme = 'boolean'\n\t\tor nme = 'tinyint'\n\t\tor nme = 'smallint'\n\t\tor nme = 'int'\n\t\tor nme = 'bigint'\n\t\tor nme = 'hugeint'\n\t\tor nme = 'decimal'\n\t\tor nme = 'date'\n\t\tor nme = 'timestamp'\n\t\tor nme = 'real'\n\t\tor nme = 'double'\n\tthen\n\t\treturn cast( i * 0.12 as bigint);\n\tend if ;\n\treturn 0;\nend;"	"user"	2	1	false	false	false	2000
-8034	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""count"" bigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\timprints bigint,\n\tsorted boolean)\nbegin\n\treturn select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n\tcolumnsize(i.""type"", i.count, i.""distinct""),\n\theapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n\thashsize(i.""reference"", i.""count""),\n\timprintsize(i.""count"",i.""type""),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	2	5	false	false	false	2000
-8081	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
-8085	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
-8090	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
-8096	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
-8103	"reverse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	1	1	false	false	false	2000
-8107	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
-8112	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	1	1	false	false	false	2000
-8117	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
-8122	"fuse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- fuse two (8-byte) integer values into one (16-byte) bigint value\ncreate function fuse(one bigint, two bigint)\nreturns hugeint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
-8128	"bam_loader_repos"	"create procedure bam.bam_loader_repos(bam_repos string, dbschema smallint)\nexternal name bam.bam_loader_repos;"	"bam"	1	2	true	false	false	8126
-8132	"bam_loader_files"	"create procedure bam.bam_loader_files(bam_files string, dbschema smallint)\nexternal name bam.bam_loader_files;"	"bam"	1	2	true	false	false	8126
-8136	"bam_loader_file"	"create procedure bam.bam_loader_file(bam_file string, dbschema smallint)\nexternal name bam.bam_loader_file;"	"bam"	1	2	true	false	false	8126
-8140	"bam_drop_file"	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint)\nexternal name bam.bam_drop_file;"	"bam"	1	2	true	false	false	8126
-8144	"bam_flag"	"create function bam.bam_flag(flag smallint, name string)\nreturns boolean external name bam.bam_flag;"	"bam"	1	1	false	false	false	8126
-8149	"reverse_seq"	"create function bam.reverse_seq(seq string)\nreturns string external name bam.reverse_seq;"	"bam"	1	1	false	false	false	8126
-8153	"reverse_qual"	"create function bam.reverse_qual(qual string)\nreturns string external name bam.reverse_qual;"	"bam"	1	1	false	false	false	8126
-8157	"seq_length"	"create function bam.seq_length(cigar string)\nreturns int external name bam.seq_length;"	"bam"	1	1	false	false	false	8126
-8161	"seq_char"	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string)\nreturns char(1) external name bam.seq_char;"	"bam"	1	1	false	false	false	8126
-8168	"sam_export"	"create procedure bam.sam_export(output_path string)\nexternal name bam.sam_export;"	"bam"	1	2	true	false	false	8126
-8171	"bam_export"	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	"bam"	1	2	true	false	false	8126
-8241	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8246	"generate_series"	"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8252	"generate_series"	"create function sys.generate_series(first smallint, last smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8257	"generate_series"	"create function sys.generate_series(first smallint, last smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8263	"generate_series"	"create function sys.generate_series(first int, last int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8268	"generate_series"	"create function sys.generate_series(first int, last int, stepsize int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8274	"generate_series"	"create function sys.generate_series(first bigint, last bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8279	"generate_series"	"create function sys.generate_series(first bigint, last bigint, stepsize bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8285	"generate_series"	"create function sys.generate_series(first real, last real, stepsize real)\nreturns table (value real)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8291	"generate_series"	"create function sys.generate_series(first double, last double, stepsize double)\nreturns table (value double)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8297	"generate_series"	"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))\nreturns table (value decimal(10,2))\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8303	"generate_series"	"create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)\nreturns table (value timestamp)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8309	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 2008-2015 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first hugeint, last hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
-8314	"generate_series"	"create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+7966	"lidarattach"	"create procedure lidarattach(fname string) external name lidar.attach;"	"lidar"	1	2	true	false	false	2000
+7969	"lidarload"	"create procedure lidarload(tname string) external name lidar.load;"	"lidar"	1	2	true	false	false	2000
+7972	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By changing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table producing function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
+8016	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	2	2	true	false	false	2000
+8018	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int' then return 4 * i;\n\twhen nme = 'bigint' then return 8 * i;\n\twhen nme = 'hugeint' then return 16 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	2	1	false	false	false	2000
+8024	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	2	1	false	false	false	2000
+8030	"hashsize"	"create function sys.hashsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	2	1	false	false	false	2000
+8035	"imprintsize"	"create function sys.imprintsize(i bigint, nme string)\nreturns bigint\nbegin\n\tif nme = 'boolean'\n\t\tor nme = 'tinyint'\n\t\tor nme = 'smallint'\n\t\tor nme = 'int'\n\t\tor nme = 'bigint'\n\t\tor nme = 'hugeint'\n\t\tor nme = 'decimal'\n\t\tor nme = 'date'\n\t\tor nme = 'timestamp'\n\t\tor nme = 'real'\n\t\tor nme = 'double'\n\tthen\n\t\treturn cast( i * 0.12 as bigint);\n\tend if ;\n\treturn 0;\nend;"	"user"	2	1	false	false	false	2000
+8040	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""count"" bigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\timprints bigint,\n\tsorted boolean)\nbegin\n\treturn select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n\tcolumnsize(i.""type"", i.count, i.""distinct""),\n\theapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n\thashsize(i.""reference"", i.""count""),\n\timprintsize(i.""count"",i.""type""),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	2	5	false	false	false	2000
+8087	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
+8091	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
+8096	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
+8102	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
+8109	"reverse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	1	1	false	false	false	2000
+8113	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+8118	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+8123	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+8128	"fuse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- fuse two (8-byte) integer values into one (16-byte) bigint value\ncreate function fuse(one bigint, two bigint)\nreturns hugeint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+8134	"bam_loader_repos"	"create procedure bam.bam_loader_repos(bam_repos string, dbschema smallint)\nexternal name bam.bam_loader_repos;"	"bam"	1	2	true	false	false	8132
+8138	"bam_loader_files"	"create procedure bam.bam_loader_files(bam_files string, dbschema smallint)\nexternal name bam.bam_loader_files;"	"bam"	1	2	true	false	false	8132
+8142	"bam_loader_file"	"create procedure bam.bam_loader_file(bam_file string, dbschema smallint)\nexternal name bam.bam_loader_file;"	"bam"	1	2	true	false	false	8132
+8146	"bam_drop_file"	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint)\nexternal name bam.bam_drop_file;"	"bam"	1	2	true	false	false	8132
+8150	"bam_flag"	"create function bam.bam_flag(flag smallint, name string)\nreturns boolean external name bam.bam_flag;"	"bam"	1	1	false	false	false	8132
+8155	"reverse_seq"	"create function bam.reverse_seq(seq string)\nreturns string external name bam.reverse_seq;"	"bam"	1	1	false	false	false	8132
+8159	"reverse_qual"	"create function bam.reverse_qual(qual string)\nreturns string external name bam.reverse_qual;"	"bam"	1	1	false	false	false	8132
+8163	"seq_length"	"create function bam.seq_length(cigar string)\nreturns int external name bam.seq_length;"	"bam"	1	1	false	false	false	8132
+8167	"seq_char"	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string)\nreturns char(1) external name bam.seq_char;"	"bam"	1	1	false	false	false	8132
+8174	"sam_export"	"create procedure bam.sam_export(output_path string)\nexternal name bam.sam_export;"	"bam"	1	2	true	false	false	8132
+8177	"bam_export"	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	"bam"	1	2	true	false	false	8132
+8247	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8252	"generate_series"	"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8258	"generate_series"	"create function sys.generate_series(first smallint, last smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8263	"generate_series"	"create function sys.generate_series(first smallint, last smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8269	"generate_series"	"create function sys.generate_series(first int, last int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8274	"generate_series"	"create function sys.generate_series(first int, last int, stepsize int)\nreturns table (value int)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8280	"generate_series"	"create function sys.generate_series(first bigint, last bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8285	"generate_series"	"create function sys.generate_series(first bigint, last bigint, stepsize bigint)\nreturns table (value bigint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8291	"generate_series"	"create function sys.generate_series(first real, last real, stepsize real)\nreturns table (value real)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8297	"generate_series"	"create function sys.generate_series(first double, last double, stepsize double)\nreturns table (value double)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8303	"generate_series"	"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))\nreturns table (value decimal(10,2))\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8309	"generate_series"	"create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)\nreturns table (value timestamp)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8315	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first hugeint, last hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+8320	"generate_series"	"create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."idxs" (
@@ -9218,13 +9224,13 @@ COPY 13 RECORDS INTO "sys"."idxs" FROM stdin USING DELIMITERS '\t','\n','"';
 7903	7904	0	"table_types_table_type_name_unique"
 7908	7912	0	"dependency_types_dependency_type_id_pkey"
 7911	7912	0	"dependency_types_dependency_type_name_unique"
-8181	8182	0	"files_pkey_file_id"
-8192	8195	0	"sq_pkey_sn_file_id"
-8194	8195	1	"sq_fkey_file_id"
-8211	8214	0	"rg_pkey_id_file_id"
-8213	8214	1	"rg_fkey_file_id"
-8223	8226	0	"pg_pkey_id_file_id"
-8225	8226	1	"pg_fkey_file_id"
+8187	8188	0	"files_pkey_file_id"
+8198	8201	0	"sq_pkey_sn_file_id"
+8200	8201	1	"sq_fkey_file_id"
+8217	8220	0	"rg_pkey_id_file_id"
+8219	8220	1	"rg_fkey_file_id"
+8229	8232	0	"pg_pkey_id_file_id"
+8231	8232	1	"pg_fkey_file_id"
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."keys" (
@@ -9242,13 +9248,13 @@ COPY 13 RECORDS INTO "sys"."keys" FROM stdin USING DELIMITERS '\t','\n','"';
 7902	7904	1	"table_types_table_type_name_unique"	-1	-1
 7907	7912	0	"dependency_types_dependency_type_id_pkey"	-1	-1
 7910	7912	1	"dependency_types_dependency_type_name_unique"	-1	-1
-8180	8182	0	"files_pkey_file_id"	-1	-1
-8191	8195	0	"sq_pkey_sn_file_id"	-1	-1
-8193	8195	2	"sq_fkey_file_id"	8180	514
-8210	8214	0	"rg_pkey_id_file_id"	-1	-1
-8212	8214	2	"rg_fkey_file_id"	8180	514
-8222	8226	0	"pg_pkey_id_file_id"	-1	-1
-8224	8226	2	"pg_fkey_file_id"	8180	514
+8186	8188	0	"files_pkey_file_id"	-1	-1
+8197	8201	0	"sq_pkey_sn_file_id"	-1	-1
+8199	8201	2	"sq_fkey_file_id"	8186	514
+8216	8220	0	"rg_pkey_id_file_id"	-1	-1
+8218	8220	2	"rg_fkey_file_id"	8186	514
+8228	8232	0	"pg_pkey_id_file_id"	-1	-1
+8230	8232	2	"pg_fkey_file_id"	8186	514
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."objects" (
@@ -9269,26 +9275,26 @@ COPY 32 RECORDS INTO "sys"."objects" FROM stdin USING DELIMITERS '\t','\n','"';
 7911	"dependency_type_name"	0
 7907	"dependency_type_id"	0
 7910	"dependency_type_name"	0
-8181	"file_id"	0
-8180	"file_id"	0
-8192	"sn"	0
-8192	"file_id"	1
-8194	"file_id"	0
-8191	"sn"	0
-8191	"file_id"	1
-8193	"file_id"	0
-8211	"id"	0
-8211	"file_id"	1
-8213	"file_id"	0
-8210	"id"	0
-8210	"file_id"	1
-8212	"file_id"	0
-8223	"id"	0
-8223	"file_id"	1
-8225	"file_id"	0
-8222	"id"	0
-8222	"file_id"	1
-8224	"file_id"	0
+8187	"file_id"	0
+8186	"file_id"	0
+8198	"sn"	0
+8198	"file_id"	1
+8200	"file_id"	0
+8197	"sn"	0
+8197	"file_id"	1
+8199	"file_id"	0
+8217	"id"	0
+8217	"file_id"	1
+8219	"file_id"	0
+8216	"id"	0
+8216	"file_id"	1
+8218	"file_id"	0
+8229	"id"	0
+8229	"file_id"	1
+8231	"file_id"	0
+8228	"id"	0
+8228	"file_id"	1
+8230	"file_id"	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."privileges" (
@@ -9344,7 +9350,7 @@ COPY 46 RECORDS INTO "sys"."privileges" FROM stdin USING DELIMITERS '\t','\n','"
 6723	1	16	3	0
 6822	1	16	3	0
 7857	1	16	3	0
-8321	1	1	3	0
+8327	1	1	3	0
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."schemas" (
@@ -9359,7 +9365,7 @@ COPY 5 RECORDS INTO "sys"."schemas" FROM stdin USING DELIMITERS '\t','\n','"';
 2106	"tmp"	2	3	true
 7756	"json"	3	3	true
 7877	"profiler"	3	3	true
-8126	"bam"	3	3	true
+8132	"bam"	3	3	true
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."sequences" (
@@ -9407,7 +9413,7 @@ START TRANSACTION;
 CREATE TABLE "sys"."systemfunctions" (
 	"function_id" INTEGER
 );
-COPY 1801 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1803 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t','\n','"';
 32
 33
 34
@@ -11169,46 +11175,48 @@ COPY 1801 RECORDS INTO "sys"."systemfunctions" FROM stdin USING DELIMITERS '\t',
 7959
 7962
 7966
-8010
-8012
+7969
+7972
+8016
 8018
 8024
-8029
-8034
-8081
-8085
-8090
+8030
+8035
+8040
+8087
+8091
 8096
-8103
-8107
-8112
-8117
-8122
+8102
+8109
+8113
+8118
+8123
 8128
-8132
-8136
-8140
-8144
-8149
-8153
-8157
-8161
-8168
-8171
-8241
-8246
+8134
+8138
+8142
+8146
+8150
+8155
+8159
+8163
+8167
+8174
+8177
+8247
 8252
-8257
+8258
 8263
-8268
+8269
 8274
-8279
+8280
 8285
 8291
 8297
 8303
 8309
-8314
+8315
+8320
 COMMIT;
 START TRANSACTION;
 CREATE TABLE "sys"."triggers" (
