@@ -223,7 +223,7 @@ HASHcollisions(BAT *b, Hash *h)
 				max = cnt;
 			total += cnt;
 		}
-	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total / entries);
+	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, entries == 0 ? 0 : total / entries);
 }
 
 /* Return TRUE if we have a hash on the tail, even if we need to read
@@ -296,7 +296,7 @@ BATcheckhash(BAT *b)
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
 					b->T->hash = h;
-					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %d\n", b->batCacheid);
+					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
 					return 1;
 				}
@@ -311,7 +311,7 @@ BATcheckhash(BAT *b)
 	}
 	ret = b->T->hash != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATcheckhash");
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d, waited " LLFMT " usec\n", b->batCacheid, t);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
 
@@ -343,7 +343,7 @@ BAThash(BAT *b, BUN masksize)
 		int fd;
 #endif
 
-		ALGODEBUG fprintf(stderr, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
+		ALGODEBUG fprintf(stderr, "#BAThash: create hash(%s#" BUNFMT ");\n", BATgetId(b), BATcount(b));
 		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(strlen(nme) + 12)) == NULL) {
