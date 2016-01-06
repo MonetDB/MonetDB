@@ -52,3 +52,4 @@ winredist/*.cpl
 /testing/
 /geom/
 /NT/
+*.mal
