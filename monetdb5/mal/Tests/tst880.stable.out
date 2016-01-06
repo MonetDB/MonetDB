@@ -17,29 +17,36 @@ stdout of test 'tst880` in directory 'monetdb5/mal` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7711/.s.monetdb.39006
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#min/max over two BATs 
-    b := bat.new(:oid,:int);
-    bat.append(b,-5);
-    bat.append(b,0);
-    bat.append(b,5);
-    bat.append(b,nil:int);
-    bat.append(b,nil:int);
-    bat.append(b,7);
-    bat.append(b,8);
-    c := bat.new(:oid,:int);
-    bat.append(c,-5);
-    bat.append(c,1);
-    bat.append(c,5);
-    bat.append(c,nil:int);
-    bat.append(c,4);
-    bat.append(c,9);
-    bat.append(c,nil:int);
-    z := batcalc.max(b,c);
-    io.print(b,c,z);
-    z := batcalc.min(b,c);
-    io.print(b,c,z);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:36:19 >  
+# 12:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
+# 12:36:19 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:int],-5:int);     	#[2] BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:int],0:int);      	#[3] BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:int],5:int);      	#[4] BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:int],nil:int);    	#[5] BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:int],nil:int);    	#[6] BKCappend_val_wrap 11 <- 1 10 
+    bat.append(b:bat[:int],7:int);      	#[7] BKCappend_val_wrap 12 <- 1 13 
+    bat.append(b:bat[:int],8:int);      	#[8] BKCappend_val_wrap 14 <- 1 15 
+    c:bat[:int] := bat.new(:int);       	#[9] CMDBATnewColumn 16 <- 2 
+    bat.append(c:bat[:int],-5:int);     	#[10] BKCappend_val_wrap 17 <- 16 4 
+    bat.append(c:bat[:int],1:int);      	#[11] BKCappend_val_wrap 18 <- 16 19 
+    bat.append(c:bat[:int],5:int);      	#[12] BKCappend_val_wrap 20 <- 16 8 
+    bat.append(c:bat[:int],nil:int);    	#[13] BKCappend_val_wrap 21 <- 16 10 
+    bat.append(c:bat[:int],4:int);      	#[14] BKCappend_val_wrap 22 <- 16 23 
+    bat.append(c:bat[:int],9:int);      	#[15] BKCappend_val_wrap 24 <- 16 25 
+    bat.append(c:bat[:int],nil:int);    	#[16] BKCappend_val_wrap 26 <- 16 10 
+    z:bat[:int] := batcalc.max(b:bat[:int],c:bat[:int]);	#[17] CMDbatMAX 27 <- 1 16 
+    io.print(b:bat[:int],c:bat[:int],z:bat[:int]);	#[18] IOtable 28 <- 1 16 27 
+    z:bat[:int] := batcalc.min(b:bat[:int],c:bat[:int]);	#[19] CMDbatMIN 27 <- 1 16 
+    io.print(b:bat[:int],c:bat[:int],z:bat[:int]);	#[20] IOtable 29 <- 1 16 27 
+end user.foo;                           	#[21]  
 #--------------------------#
 # h	t	t	t  # name
 # void	int	int	int  # type

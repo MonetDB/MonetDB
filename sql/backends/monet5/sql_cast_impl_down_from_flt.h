@@ -91,14 +91,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

@@ -56,7 +56,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	}
 	cnt = BATcount(b);
 	first = BUNfirst(b);
-	view = VIEWcreate_(b, b, TRUE);
+	view = VIEWcreate_(b->hseqbase, b, TRUE);
 
 	/*  printf("set bat chunk bound to " LLFMT " " BUNFMT " - " BUNFMT "\n",
 	 *granule, first, MIN(cnt,(BUN) *granule)); */

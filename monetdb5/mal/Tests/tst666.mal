@@ -1,8 +1,0 @@
-# small example to activate the debugger on a function
-
-function tst(i:int):int;
-	io.print("hello");
-	i:=23;
-	return i;
-end tst;
-mdb.inspect("user","tst");

@@ -5,33 +5,32 @@ stdout of test 'tst308` in directory 'monetdb5/mal` itself:
 # 09:52:07 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=34443 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst308.mal < /dev/null
 # 09:52:07 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## exception variables are implicitly defined
-## by the catch statement.
-#
-#catch NotDefinedException;
-#	io.print("Shouldn't do this");
-#	io.print(NotDefineException);
-#exit NotDefinedException;
-#end foo;
-function user.foo():void;
-catch NotDefinedException:str;
-    io.print("Shouldn't do this");
-    io.print(NotDefinedException);
-exit NotDefinedException:str;
-end user.foo;
-function user.main():void;
-# exception variables are implicitly defined 
-# by the catch statement. 
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30157/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21311/.s.monetdb.30157
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 09:52:07 >  
-# 09:52:07 >  Done.
-# 09:52:07 >  
+Ready.
+
+# 09:00:03 >  
+# 09:00:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
+# 09:00:03 >  
+
+
+# 09:00:03 >  
+# 09:00:03 >  "Done."
+# 09:00:03 >  
 

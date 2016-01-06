@@ -29,7 +29,7 @@
  * The tail values of s refer to the head of b and g.  Only entries at
  * the specified ids are taken into account for the grouped
  * aggregates.  All other values are ignored.  s is compatible with
- * the result of BATsubselect().
+ * the result of BATselect().
  *
  * If e is not specified, we need to do an extra scan over g to find
  * out the range of the group ids that are used.  e is defined in such
@@ -2533,13 +2533,13 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATtdense(g)) {
 			/* singleton groups, so calculating quantile is
 			 * easy */
-			bn = BATcopy(b, TYPE_void, b->ttype, 0, TRANSIENT);
+			bn = COLcopy(b, b->ttype, 0, TRANSIENT);
 			BATseqbase(bn, g->tseqbase);
 			if (freeg)
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
+		BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
@@ -2547,7 +2547,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	} else {
 		t2 = NULL;
 	}
-	BATsubsort(&t1, NULL, NULL, b, t2, g, 0, 0);
+	BATsort(&t1, NULL, NULL, b, t2, g, 0, 0);
 	if (freeb)
 		BBPunfix(b->batCacheid);
 	b = t1;

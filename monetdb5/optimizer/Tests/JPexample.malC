@@ -1,0 +1,14 @@
+# test the joinpath expander
+function foo();
+    a:= bat.new(:oid,:oid);
+    b:= bat.new(:oid,:oid);
+    c:= bat.new(:oid,:str);
+    j1:= algebra.projection(a,b);
+    j2:= algebra.projection(j1,c);
+    j3:= algebra.projection(b,b);
+    j4:= algebra.projection(b,j3);
+end;
+
+mdb.List("user","foo");
+optimizer.joinPath("user","foo");
+mdb.List("user","foo");

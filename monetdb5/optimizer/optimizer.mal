@@ -44,6 +44,13 @@ pattern optimizer.constants(mod:str, fcn:str):str
 address OPTwrapper
 comment "Duplicate constant removal optimizer";
 
+#opt_profiler
+pattern optimizer.profiler():str
+address OPTwrapper;
+pattern optimizer.profiler(mod:str, fcn:str):str 
+address OPTwrapper
+comment "Collect properties for the profiler";
+
 #opt_costModel.mal
 
 pattern optimizer.costModel():str

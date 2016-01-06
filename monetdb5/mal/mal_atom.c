@@ -207,13 +207,3 @@ int malAtomSize(int size, int align, char *name)
 	BATatoms[i].align = align;
 	return i;
 }
-
-void showAtoms(stream *fd)
-{
-	int i;
-	for (i = 0; i< GDKatomcnt && BATatoms[i].name[0]; i++) {
-		mnstr_printf(fd, "%s", BATatoms[i].name);
-		if (BATatoms[i + 1].name[0]) mnstr_printf(fd, ",");
-	}
-	mnstr_printf(fd, "\n");
-}

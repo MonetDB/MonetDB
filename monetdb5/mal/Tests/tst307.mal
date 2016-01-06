@@ -1,8 +1,0 @@
-#testing exceptions raised in the kernel
-
-b:= bat.new(:oid,:int);
-bat.append(b,0);
-z:= algebra.find(b,0);
-io.print(z);
-zz:= algebra.find(b,nil:int);
-io.print(zz);

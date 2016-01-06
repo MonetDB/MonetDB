@@ -15,7 +15,7 @@ comment "Global commit on all BATs";
 command abort():bit
 address TRNglobal_abort
 comment "Global abort on all BATs";
-command subcommit(b:bat[:oid,:str]):bit
+command subcommit(b:bat[:str]):bit
 address TRNsubcommit
 comment "commit only a set of BATnames, passed in the tail
 (to which you must have exclusive access!)";

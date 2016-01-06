@@ -5,98 +5,33 @@ stdout of test 'tst912` in directory 'monetdb5/mal` itself:
 # 08:01:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst912.mal </dev/null
 # 08:01:41 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## analyse the overhead of chopping a table
-## the multiplex code blocks.
-#
-#factory getChunk(b:bat[:void,:lng], size:lng)(bb:bit,c:bat[:void,:lng]);
-#    (chk,c):= newChunkIterator(b,size);
-#    bf:= true; # change in bb to crash
-#barrier allways:= chk>0;
-#    yield (bb,c):= (true,c);
-#    (chk,c):= hasMoreChunks(b,size);
-#    redo allways:= chk>0;
-#exit allways;
-#    printf("#factory done\n");
-#    return (bb,c):= (false,c);
-#end getChunk;
-factory user.getChunk(b:bat[:oid,:lng],size:lng) (bb:bit,c:bat[:oid,:lng]);
-    (chk,c) := iterator.new(b,size);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier allways := calc.>=(chk,0);
-    yield (bb,c) := (true,c);
-    (chk,c) := iterator.next(b,size);
-    redo allways := calc.>=(chk,0);
-exit allways;
-    mdb.setDebug(dbgmsk_restore);
-    io.print("#factory done\n");
-    return (bb,c) := (false,c);
-end user.getChunk;
-function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;
-    t0 := alarm.usec();
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier (tst,c) := user.getChunk(b,size);
-    t := algebra.subselect(c,256000:lng,266000:lng,true,true,false);
-    redo (tst,c) := user.getChunk(b,size);
-exit (tst,c);
-    mdb.setDebug(dbgmsk_restore);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    i := calc./(1000000:lng,size);
-    if := calc.flt(i);
-    df := calc.flt(d0);
-    f := calc./(df,if);
-    io.printf("#chopped at %d",size);
-    io.printf(" at %f usec\n",f);
-end user.choptest;
-function user.main():void;
-# analyse the overhead of chopping a table 
-# the multiplex code blocks. 
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    t0 := alarm.usec();
-barrier doit := true;
-    t := algebra.subselect(b,256000:lng,266000:lng,true,true,false);
-exit doit;
-    t1 := alarm.usec();
-    base := calc.-(t1,t0);
-    io.printf("#select direct %d usec\n",base);
-    user.choptest(b,100000:lng,base);
-    user.choptest(b,10000:lng,base);
-    user.choptest(b,1000:lng,base);
-    user.choptest(b,100:lng,base);
-    factories.shutdown("user","getChunk");
-end user.main;
-#select direct 13701 usec
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:43 >  
+# 22:45:43 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:43 >  
+
+#io.printf("#select direct %d usec\n",base);
+#select direct 4511 usec
+#user.choptest(b,100000:lng,base);
 [ "#factory done\n" ]
 #chopped at 100000 at 850.000000 usec
 [ "#factory done\n" ]

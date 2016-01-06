@@ -15,6 +15,7 @@
 #include "monetdb_config.h"
 #include "opt_remap.h"
 #include "opt_macro.h"
+#include "opt_multiplex.h"
 
 static int
 OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
@@ -264,6 +265,10 @@ terminateMX:
 		}
 		freeMalBlk(mq);
 		GDKfree(upgrade);
+
+		/* ugh ugh, fallback to non inline, but optimized code */
+		OPTmultiplexSimple(cntxt, s->def);
+		s->def->inlineProp = 0;
 		return 0;
 	}
 	/*

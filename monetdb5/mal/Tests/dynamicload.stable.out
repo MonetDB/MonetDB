@@ -9,19 +9,28 @@ stdout of test 'dynamicload` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
-command user.wrong():void address UNKOWNaddress;
-!TypeException:user.main[2]:object code for command user.wrong missing
-!TypeException:user.main[2]:'user.wrong' undefined in: user.wrong();
-function user.main():void;
-# examples of non-bindable instructions 
-    user.wrong();
-#load unknown library 
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32905/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23746/.s.monetdb.32905
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 20:04:03 >  
-# 20:04:03 >  Done.
-# 20:04:03 >  
+Ready.
+
+# 21:00:40 >  
+# 21:00:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23746" "--port=32905"
+# 21:00:40 >  
+
+#library UNKNOWlib;
+#WARNING: LoaderException:loadLibrary:Loading error could not locate library UNKNOWlib (from within file 'UNKNOWlib')
+
+# 21:00:41 >  
+# 21:00:41 >  "Done."
+# 21:00:41 >  
 

@@ -18,47 +18,14 @@ stdout of test 'json00` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#validity tests 
-    b := json.isvalid("{}");
-    io.print(b);
-    b := json.isvalid("{}  ");
-    io.print(b);
-    b := json.isvalid("{");
-    io.print(b);
-    b := json.isvalid("}");
-    io.print(b);
-    b := json.isvalid("{}  }");
-    io.print(b);
-    b := json.isvalid("{}  }[1]");
-    io.print(b);
-    b := json.isvalid("{\"null\": null}");
-    io.print(b);
-    b := json.isvalid("{[}]");
-    io.print(b);
-    b := json.isvalid("{:1}");
-    io.print(b);
-    b := json.isvalid("{\"k\"}");
-    io.print(b);
-    b := json.isvalid("{\"k\" :}");
-    io.print(b);
-    b := json.isvalid("{\"f1\"::1");
-    io.print(b);
-    b := json.isvalid("{\"f1\":1,\"f2\":2} ");
-    io.print(b);
-    b := json.isvalid("{\"f1\":1,\"f2\":2");
-    io.print(b);
-    b := json.isvalid("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
-    io.print(b);
-    b := json.isvalid("[ ]");
-    io.print(b);
-    b := json.isvalid("[1,\"f2\", 2]");
-    io.print(b);
-    b := json.isvalid("[1 , 2 ]");
-    io.print(b);
-    b := json.isvalid("[\"\\/\" , 2 ]");
-    io.print(b);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:34 >  
+# 10:05:34 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:34 >  
+
 [ true ]
 [ true ]
 [ false ]

@@ -184,9 +184,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * and interpretation overhead.
  */
 str
-OPTmultiplexSimple(Client cntxt)
+OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 {
-	MalBlkPtr mb= cntxt->curprg->def;
+	//MalBlkPtr mb= cntxt->curprg->def;
 	int i, doit=0;
 	InstrPtr p;
 	if(mb)

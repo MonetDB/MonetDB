@@ -9,7 +9,7 @@
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
-char *TID = "%TID%";
+const char *TID = "%TID%";
 
 static void *
 _list_find_name(list *l, const char *name)
@@ -229,6 +229,12 @@ find_sqlname(list *l, const char *name)
 		} 
 	}
 	return NULL;
+}
+
+node *
+find_sql_type_node(sql_schema * s, int id)
+{
+	return cs_find_id(&s->types, id);
 }
 
 sql_type *

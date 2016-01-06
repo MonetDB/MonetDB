@@ -18,6 +18,15 @@ stdout of test 'dataflow5` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:28:33 >  
+# 09:28:33 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27472" "--port=35651"
+# 09:28:33 >  
+
+#mdb.list("user","tst");
 function user.tst():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);
@@ -25,18 +34,7 @@ function user.tst():void;
     bat.append(b,3);
     io.print(b);
 end user.tst;
-function user.main():void;
-# updates on BATs may not run in parallel 
-    mdb.list("user","tst");
-    mdb.list("user","tst");
-end user.main;
-function user.tst():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    bat.append(b,2);
-    bat.append(b,3);
-    io.print(b);
-end user.tst;
+#mdb.list("user","tst");
 function user.tst():void;
     b := bat.new(:oid,:int);
     bat.append(b,1);

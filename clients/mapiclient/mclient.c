@@ -1080,6 +1080,8 @@ TESTrenderer(MapiHdl hdl)
 				 /* start or end with white space? */
 				 my_isspace(*s) ||
 				 my_isspace(s[l - 1]) ||
+				 /* timezone can have embedded comma */
+				 strcmp(tp, "timezone") == 0 ||
 				 /* a bunch of geom types */
 				 strcmp(tp, "curve") == 0 ||
 				 strcmp(tp, "geometry") == 0 ||

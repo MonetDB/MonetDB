@@ -6,54 +6,36 @@
 
 module profiler;
 
-pattern tomograph(b:int)
-address CMDtomograph
-comment "Start tomograph profiler with heart beat";
-
-pattern stethoscope(b:int)
-address CMDstethoscope
-comment "Start stethoscope profiling with heart beat";
+pattern start()
+address CMDstartProfiler
+comment "Start offline performance profiling";
 
 pattern stop():void
 address CMDstopProfiler
-comment "Stop performance tracing";
+comment "Stop offline performance profiling";
 
-command setHeartbeat(b:int):void
+command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";
 
-pattern openStream():void
+pattern openstream(mode:int):void
 address CMDopenProfilerStream
-comment "Send the events to output stream";
-pattern openStream(fnme:str):void
-address CMDsetProfilerFile
-comment "Send the log events to a file, stdout or console";
-pattern openStream(host:str, port:int):void
-address CMDsetProfilerStream
-comment "Send the log events to a stream ";
+comment "Start profiling the events, sent to output stream";
 
-command closeStream():void
+command closestream():void
 address CMDcloseProfilerStream
-comment "Stop sending the event records";
+comment "Stop offline proviling";
 
 command noop():void
 address CMDnoopProfiler
 comment "Fetch any pending performance events";
 
-command reset():void
-address CMDclearTrace
-comment "Clear the profiler traces";
-
-command dumpTrace():void
-address CMDdumpTrace
-comment "List the events collected";
-
-command getTrace(e:str):bat[:oid,:any_1]
+command getTrace(e:str):bat[:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 
 command cleanup():void
-address CMDcleanup
+address CMDcleanupTraces
 comment "Remove the temporary tables for profiling";
 
 command getDiskReads():lng

@@ -13,3 +13,7 @@ create function zorder_decode_x(z oid) returns integer
 create function zorder_decode_y(z oid) returns integer
     external name zorder.decode_y;
 
+grant execute on function zorder_encode to public;
+grant execute on function zorder_decode_x to public;
+grant execute on function zorder_decode_y to public;
+

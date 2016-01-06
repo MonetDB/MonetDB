@@ -27,6 +27,7 @@
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
 
+extern sql_func *resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op);
 extern sql_rel *rel_psm(mvc *sql, symbol *sym);
 extern sql_rel *rel_select_with_into( mvc *sql, symbol *sq);
 

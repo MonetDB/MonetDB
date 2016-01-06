@@ -6,6 +6,6 @@
 
 module group;
 
-pattern group.multicolumn(b:bat[:oid,:any]...)(ref:bat[:oid,:oid], grp:bat[:oid,:oid], hist:bat[:oid,:any])
+pattern group.multicolumn(b:bat[:any]...)(ref:bat[:oid], grp:bat[:oid], hist:bat[:any])
 address GROUPmulticolumngroup
 comment "Derivation of a group index over multiple columns.";

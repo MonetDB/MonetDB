@@ -18,26 +18,14 @@ stdout of test 'json07` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    js := json.new("{\"myList\":23,\"yours\":[\"a\",\"b\"]}");
-    j1 := json.keyarray(js);
-    io.print(j1);
-    a1 := json.valuearray(js);
-    io.print(a1);
-    n1 := json.keys(js);
-    io.print(n1);
-    v1 := json.values(js);
-    io.print(v1);
-    js := json.new("{\"myBoolean\":true,\"myList\":[\"a\",\"b\"],\"myMap\":{\"c\":\"d\",\"a\":\"b\"},\"myObject\":\"myClass\",\"myJsonObject\":{\"myString\":\"myStringValue\"}}");
-    j1 := json.keyarray(js);
-    io.print(j1);
-    a1 := json.valuearray(js);
-    io.print(a1);
-    n1 := json.keys(js);
-    io.print(n1);
-    v1 := json.values(js);
-    io.print(v1);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:37 >  
+# 10:05:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:37 >  
+
 [ "[\"myList\",\"yours\"]" ]
 [ "[23,[\"a\",\"b\"]]" ]
 #--------------------------#

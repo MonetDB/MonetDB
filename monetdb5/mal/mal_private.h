@@ -53,8 +53,6 @@ __hidden void malAtomDefinition(stream *out, str name,int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
-__hidden void showAtoms(stream *fd)		/* used in src/mal/mal_debugger.c */
-	__attribute__((__visibility__("hidden")));
 
 __hidden extern MT_Lock mal_namespaceLock;
 

@@ -23,59 +23,28 @@ typedef struct rusage Rusage;
 typedef struct tms Tms;
 typedef struct Mallinfo Mallinfo;
 
-#define PROFevent   0
-#define PROFtime    1
-#define PROFthread  2
-#define PROFpc      3
-#define PROFfunc    4
-#define PROFticks   5
-#define PROFcpu     6
-#define PROFmemory  7
-#define PROFreads   8
-#define PROFwrites  9
-#define PROFrbytes  10
-#define PROFwbytes  11
-#define PROFstmt    12
-#define PROFaggr    13
-#define PROFprocess 14
-#define PROFuser    15
-#define PROFstart   16
-#define PROFtype    17
-#define PROFdot     18
-#define PROFflow   19
-#define PROFping   20	/* heartbeat ping messages */
-#define PROFfootprint 21
-#define PROFnuma 22
-
-mal_export int getProfileCounter(int idx);
-mal_export str openProfilerStream(stream *fd);
+mal_export void initProfiler(void);
+mal_export str openProfilerStream(stream *fd, int mode);
 mal_export str closeProfilerStream(void);
 
-mal_export void profilerEvent(oid usr, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
-mal_export void profilerHeartbeatEvent(char *msg);
-mal_export str setLogFile(stream *fd, Module cntxt, const char *fname);
-mal_export str setLogStream(Module cntxt, const char *host, int port);
-mal_export str setLogStreamStream(Module cntxt, stream *s);
-mal_export str setStartPoint(Module cntxt, const char *mod, const char *fcn);
-mal_export str setEndPoint(Module cntxt, const char *mod, const char *fcn);
+mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname);
 
-mal_export str startProfiler(oid user, int mode, int beat);
+mal_export str startProfiler(void);
 mal_export str stopProfiler(void);
 mal_export void setHeartbeat(int delay);
-mal_export str cleanupProfiler(void);
+mal_export str setprofilerpoolsize(int size);
 mal_export void initHeartbeat(void);
-mal_export double HeartbeatCPUload(void);
-
-mal_export stream *getProfilerStream(void);
+mal_export void profilerHeartbeatEvent(char *alter);
 
 mal_export void MPresetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
-
 mal_export void clearTrace(void);
+mal_export int TRACEtable(BAT **r);
+mal_export int initTrace(void);
+mal_export str cleanupTraces(void);
 mal_export BAT *getTrace(const char *ev);
-mal_export int getTraceType(const char *nme);
-mal_export void TRACEtable(BAT **r);
+
 
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
@@ -83,6 +52,4 @@ mal_export lng getDiskWrites(void);
 mal_export lng getUserTime(void);
 mal_export lng getSystemTime(void);
 mal_export void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
-mal_export void _initTrace(void);
-
 #endif

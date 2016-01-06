@@ -14,12 +14,10 @@
 #include "mal.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#include "mal_atom.h"		/* for showAtoms() */
 #include "mal_interpreter.h"	/* for getArgReference() */
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_listing.h"
 #include "mal_function.h"
-#include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
@@ -312,10 +310,8 @@ printBATproperties(stream *f, BAT *b)
 		mnstr_printf(f, " refs=%d ", BBP_refs(abs(b->batCacheid)));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->H->heap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->H->heap.parentid));
 	if (b->T->heap.parentid)
-		mnstr_printf(f, "tail view on %s ", BBPname(b->T->heap.parentid));
+		mnstr_printf(f, "view on %s ", BBPname(b->T->heap.parentid));
 }
 /* MAL debugger parser
  * The debugger structure is inherited from GDB.
@@ -383,7 +379,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int m = 1;
 	char *b, *c, lastcmd = 0;
 	stream *out = cntxt->fdout;
-	/* int listing = cntxt->listing;*/
 	char *oldprompt = cntxt->prompt;
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
@@ -445,10 +440,6 @@ retryRead:
 		case 0:
 			m = 0;
 			break;
-		case 'a':
-			if (strncmp("atom", b, 1) == 0)
-				showAtoms(out);
-			break;
 		case 'c':
 			if (strncmp("catch", b, 3) == 0) {
 				/* catch the next exception */
@@ -503,10 +494,6 @@ retryRead:
 			} else if (strncmp("scenario", b, 3) == 0) {
 				showScenarioByName(out, cntxt->scenario);
 				continue;
-			} else if (strncmp("scope", b, 3) == 0) {
-				/* used to inspect the identifier distribution */
-				showModuleStatistics(out, cntxt->nspace);
-				continue;
 			} 
 			stk->cmd = *b;
 			m = 0;
@@ -536,10 +523,7 @@ retryRead:
 				for (i = 0; i < MAXSCOPE; i++) {
 					fs = fsym->subscope[i];
 					while (fs != NULL) {
-						if (fcnname == NULL)
-							printSignature(out, fs, 0);
-						else if (fs->def && strcmp(fcnname, getFcnName(fs->def)) == 0)
-							printSignature(out, fs, 0);
+						printSignature(out, fs, 0);
 						fs = fs->peer;
 					}
 				}
@@ -1213,7 +1197,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 			if (bs[1] == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				bs[0] = BATmark(bs[1],0);
+				bs[0] = BATdense(bs[1]->hseqbase, 0, BATcount(bs[1]));
 				if( bs[0] == NULL){
 					mnstr_printf(f, "Failed to take chunk index\n");
 				} else {

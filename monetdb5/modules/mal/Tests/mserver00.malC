@@ -1,0 +1,77 @@
+# Attempt to establish a client connection to yourself.
+
+fs:= inspect.getEnvironment("mapi_port");
+port:= calc.int(fs);
+#hs:= algebra.find(z,"host");
+hs:= "localhost";
+
+# hardcoded, as access control currently works, and client.getInfo # doesn't
+#u:= clients.getInfo();
+#usr:= algebra.find(u,"user");
+#pwd:= algebra.find(u,"password");
+#lang:= algebra.find(u,"scenario");
+usr := "monetdb";
+pwd := "monetdb";
+lang := "mal";
+
+# setup the session
+mid:= mapi.connect(hs,port,usr,pwd,lang);
+io.print(mid);
+# retrieve data from the 'remote' site
+# testing t:=1+3;
+mapi.query(mid, "t:= 1+3; io.print(t,\"hello\");");
+i:= mapi.get_row_count(mid);
+io.printf("rowcount %d\n",i);
+mapi.fetch_row(mid);
+fcnt:= mapi.get_field_count(mid);
+io.printf("fieldcount %d\n",fcnt);
+fi:int:= mapi.fetch_field(mid,0);
+io.printf("field 0 %d\n",fi);
+s:str:= mapi.fetch_field(mid,1);
+io.printf("field 1 %s\n",s);
+
+mapi.query(mid,"r:= bat.new(:int);");
+io.printf("shipped first query\n");
+mapi.query(mid,"bat.append(r,311);");
+mapi.query(mid,"bat.append(r,433);");
+b:bat[:int]:= mapi.rpc(mid,"io.print(r);");
+io.print(b);
+
+# use the BAT fetch operation
+#b:bat[:int]:= mapi.receive(mid,"remotename");
+
+msg:str := mapi.rpc(mid,"io.print(\"hello world\");");
+io.print(msg);
+o:oid := mapi.rpc(mid,"io.print(34@0);");
+io.print(o);
+o:oid := mapi.rpc(mid,"io.print(nil:oid);");
+io.print(o);
+
+#needs type checks
+#(k:int,s:str):= mapi.rpc(mid,"io.print(nil:int,\"done\");");
+#io.print(k,s);
+
+# what is the relationship between local/remote namespace
+# mapi.send(key,"a",a);
+# c:= mapi.join(key,a,b);
+# mapi.rpc(key,"z:=algebra.join(a,b);");
+# c:= mapi.receive(key,"c")
+
+#patterns
+#pat:= "a:= algebra.select(b,?,?);");
+#qry:=  str.replace(pat,"?",i,j);
+#mapi.query(key,pat,i,j);
+
+#how to ship a routine
+#fcn:= manual.definition(manual,help);
+
+# how to remote MAL execution
+# remotedb:= mapi.connect(...)
+# algebra.join@remotedb(a,b) using remote objects
+# c:= mapi.rpc(remotedb,algebra,join,a,b)
+
+# the remainder should be tested 
+catch MapiException:str;
+	io.printf("foutje:%s\n",MapiException);
+exit MapiException;
+mapi.disconnect(mid);

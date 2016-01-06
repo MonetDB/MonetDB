@@ -9,20 +9,34 @@ stdout of test 'tst4003` in directory 'monetdb5/optimizer` itself:
 # Serving database 'mTests_src_optimizer', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.main():void;
-# The 4000 series deals with strategic optimizer constructs 
-# common subexpression evaluation 
-    b := bat.new(:oid,:str);
-    c := bat.new(:oid,:str);
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33343/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8837/.s.monetdb.33343
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 06:40:51 >  
+# 06:40:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
+# 06:40:51 >  
+
+#mdb.List("user","foo");
+function user.foo():void;               	#[0]  0 
+    b:bat[:str] := bat.new(:oid,:str);  	#[1] CMDBATnew 1 <- 2 3 
+    c:bat[:str] := bat.new(:oid,:str);  	#[2] CMDBATnew 4 <- 2 3 
 # identical until insert takes place 
-    d := algebra.subselect(b,"hello","world",true,true,false);
+    d:bat[:oid] := algebra.subselect(b:bat[:str],"hello":str,"world":str,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
 # mapped onto one instruction 
-end user.main;
-#commonTerms          actions= 1 time=14 usec 
-#aliases              actions= 1 time=12 usec 
+end user.foo;                           	#[6]  
+#commonTerms          actions= 1 time=13 usec 
+#aliases              actions= 1 time=6 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

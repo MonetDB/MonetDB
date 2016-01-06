@@ -9,44 +9,28 @@ stdout of test 'inet02` in directory 'monetdb5/modules/atoms` itself:
 # Serving database 'mTests_src_modules_atoms', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-# these tests are from the PostgreSQL documentation examples 
-    i1 := inet.new("192.168.1.5");
-    io.print(i1);
-    i2 := inet.new("192.168.1.6");
-    io.print(i2);
-    i3 := inet.new("192.168.1/24");
-    io.print(i3);
-    i4 := inet.new("192.168.1.4");
-    io.print(i4);
-    e := inet.<(i1,i2);
-    io.print(e);
-    e := inet.<=(i1,i1);
-    io.print(e);
-    e := inet.=(i1,i1);
-    io.print(e);
-    e := inet.>=(i1,i1);
-    io.print(e);
-    e := inet.>(i1,i4);
-    io.print(e);
-    e := inet.!=(i1,i4);
-    io.print(e);
-    e := inet.<<(i1,i3);
-    io.print(e);
-    e := inet.<<=(i3,i3);
-    io.print(e);
-    e := inet.>>(i3,i1);
-    io.print(e);
-    e := inet.>>=(i3,i3);
-    io.print(e);
-end user.main;
-[ 192.168.1.5 ]
-[ 192.168.1.6 ]
-[ 192.168.1.0/24 ]
-[ 192.168.1.4 ]
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:29 >  
+# 10:05:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:29 >  
+
+[ "192.168.1.5"	]
+[ "192.168.1.6"	]
+[ "192.168.1.0/24"	]
+[ "192.168.1.4"	]
 [ true ]
 [ true ]
 [ true ]

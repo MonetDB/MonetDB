@@ -101,7 +101,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && check[getArg(p,2)])
                 /* ok */;
 		else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)]))
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == subjoinRef && (check[getArg(p,2)] || check[getArg(p,1)]))
                 /* ok */;
 		else
 		if ( p->token == ASSIGNsymbol)
@@ -138,7 +138,7 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && check[getArg(p,2)] != 0)
                 setModuleId(p, mosaicRef);
 		 else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0))
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == subjoinRef && (check[getArg(p,2)] || check[getArg(p,1)] != 0))
                 setModuleId(p, mosaicRef);
 		if( p )
 			pushInstruction(mb,p);

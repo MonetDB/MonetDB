@@ -30,26 +30,37 @@ stderr of test 'rapi01` in directory 'monetdb5/extras/rapi` itself:
 # 11:17:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13991" "--port=31221"
 # 11:17:47 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13991/.s.monetdb.31221
-QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # Error handling tests
+        b:= bat.new(:oid,:int);
+        bat.append(b,1804289383);
+        bat.append(b,846930886);
+        bat.append(b,1681692777);
+        bat.append(b,1714636915);
+        bat.append(b,1957747793);
+        bat.append(b,424238335);
+        bat.append(b,719885386);
+        bat.append(b,1649760492);
+        bat.append(b,596516649);
+        bat.append(b,1189641421);
+        
+        io.print(b);
+        
+        # illegal variables being used
+        
+        r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
+        r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
+        r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
+        r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
+        r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
+        
+        # illegal R expressions
+        r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
+        
+        io.print(r);
 ERROR = !MALException:rapi.eval:Error running R expression: Error in fft(somevalue) : object 'somevalue' not found Calls: as.data.frame -> <Anonymous> -> fft 
-MAPI  = (monetdb) /var/tmp/mtest-13991/.s.monetdb.31221
-QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
-ERROR = !MALException:rapi.eval:Error running R expression: Error in fft(arg2) : object 'arg2' not found Calls: as.data.frame -> <Anonymous> -> fft 
-MAPI  = (monetdb) /var/tmp/mtest-13991/.s.monetdb.31221
-QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
-ERROR = !MALException:rapi.eval:Error running R expression: Error in fft(somevalue) : object 'somevalue' not found Calls: as.data.frame -> <Anonymous> -> fft 
-MAPI  = (monetdb) /var/tmp/mtest-13991/.s.monetdb.31221
-QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
-ERROR = !MALException:rapi.eval:Error running R expression: Error in fft(arg2) : object 'arg2' not found Calls: as.data.frame -> <Anonymous> -> fft 
-MAPI  = (monetdb) /var/tmp/mtest-13991/.s.monetdb.31221
-QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
-ERROR = !MALException:rapi.eval:Error running R expression: Error in fft(arg5) : object 'arg5' not found Calls: as.data.frame -> <Anonymous> -> fft 
-MAPI  = (monetdb) /var/tmp/mtest-13991/.s.monetdb.31221
-QUERY = r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
-ERROR = !MALException:rapi.eval:Error parsing R expression 'ret0 <- Re(fft(arg2)  )  );'. 
 
-# 11:17:47 >  
-# 11:17:47 >  "Done."
-# 11:17:47 >  
+# 20:42:39 >  
+# 20:42:39 >  "Done."
+# 20:42:39 >  
 

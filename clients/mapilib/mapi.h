@@ -50,6 +50,7 @@ typedef int MapiMsg;
 
 #define LANG_MAL	0
 #define LANG_SQL	2
+#define LANG_PROFILER	3
 
 /* prompts for MAPI protocol */
 #define PROMPTBEG	'\001'	/* start prompt bracket */

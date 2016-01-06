@@ -1,0 +1,17 @@
+#execute simple SQL queries from MAL 
+function foo();
+sql.init();
+sql.eval("select 1;",true);
+
+sql.eval("create table simpleT(i integer);");
+sql.eval("insert into simpleT values(123);");
+
+sql.eval("select * from simpleT;");
+sql.eval("select * from simpleT;",false);
+sql.eval("drop table simpleT;");
+
+#cause an error
+sql.eval("select 1;",false);
+end foo;
+mdb.list("user","foo");
+user.foo();

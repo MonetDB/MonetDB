@@ -5,86 +5,63 @@ stdout of test 'tst960` in directory 'monetdb5/mal` itself:
 # 23:37:05 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=40158 --set sql_port=57521 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst960.mal </dev/null
 # 23:37:05 >  
 
-# Monet Database Server V4.7.1
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## the chunk mechanism
-#
-#S:= new(:void,:str);
-#setSequenceBase(S,0:oid);
-#insert(S,nil,"hello");
-#insert(S,nil,"brave");
-#insert(S,nil,"new");
-#insert(S,nil,"world");
-#print(S);
-#
-#L:= batstr.length(S);
-#print(L);
-#L:= batstr.bytes(S);
-#print(L);
-#
-#B:= batstr.==(S,"hello");
-#print(B);
-#
-#B:= batstr.match(S,"hello");
-#print(B);
-#
-#U:= batstr.toUpper(S);
-#print(U);
-#
-#l:= batstr.toLower(U);
-#print(l);
-#
-#trim:= batstr.trim(S); 
-#print(trim);
-#ltrim:= batstr.ltrim(S); 
-#print(ltrim);
-#rtrim:= batstr.rtrim(S); 
-#print(rtrim);
-#
-#srch:= batstr.search(S,S); 
-#io.print(srch);
-#plus:= batcalc.+(S,S); 
-#io.print(plus);
-#
-function user.main():void;
-# the chunk mechanism 
-    S := bat.new(:oid,:str);
-    bat.append(S,"hello");
-    bat.append(S,"brave");
-    bat.append(S,"new");
-    bat.append(S,"world");
-    io.print(S);
-    L := batstr.length(S);
-    io.print(L);
-    L := batstr.nbytes(S);
-    io.print(L);
-    B := batcalc.==(S,"hello");
-    io.print(B);
-    C := batalgebra.like(S,"hello");
-    io.print(C);
-    U := batstr.toUpper(S);
-    io.print(U);
-    l := batstr.toLower(U);
-    io.print(l);
-    trim := batstr.trim(S);
-    io.print(trim);
-    ltrim := batstr.ltrim(S);
-    io.print(ltrim);
-    rtrim := batstr.rtrim(S);
-    io.print(rtrim);
-    io.print("Start searches");
-    srch := batstr.search(S,"hello");
-    io.print(srch);
-    srch := batstr.search(S,S);
-    io.print(srch);
-    plus := batcalc.+(S,S);
-    io.print(plus);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:47 >  
+# 22:45:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:47 >  
+
+function user.foo():void;               	#[0]  0 
+    S:bat[:str] := bat.new(:str);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(S:bat[:str],"hello":str);	#[2] BKCappend_val_wrap 3 <- 1 4 
+    bat.append(S:bat[:str],"brave":str);	#[3] BKCappend_val_wrap 5 <- 1 6 
+    bat.append(S:bat[:str],"new":str);  	#[4] BKCappend_val_wrap 7 <- 1 8 
+    bat.append(S:bat[:str],"world":str);	#[5] BKCappend_val_wrap 9 <- 1 10 
+    io.print(S:bat[:str]);              	#[6] IOprint_val 11 <- 1 
+    L:bat[:int] := batstr.length(S:bat[:str]);	#[7] STRbatLength 12 <- 1 
+    io.print(L:bat[:int]);              	#[8] IOprint_val 13 <- 12 
+    L:bat[:int] := batstr.nbytes(S:bat[:str]);	#[9] STRbatBytes 12 <- 1 
+    io.print(L:bat[:int]);              	#[10] IOprint_val 14 <- 12 
+    B:bat[:bit] := batcalc.==(S:bat[:str],"hello":str);	#[11] CMDbatEQ 15 <- 1 4 
+    io.print(B:bat[:bit]);              	#[12] IOprint_val 16 <- 15 
+    C:bat[:bit] := batalgebra.like(S:bat[:str],"hello":str);	#[13] BATPCRElike2 17 <- 1 4 
+    io.print(C:bat[:bit]);              	#[14] IOprint_val 18 <- 17 
+    U:bat[:str] := batstr.toUpper(S:bat[:str]);	#[15] STRbatUpper 19 <- 1 
+    io.print(U:bat[:str]);              	#[16] IOprint_val 20 <- 19 
+    l:bat[:str] := batstr.toLower(U:bat[:str]);	#[17] STRbatLower 21 <- 19 
+    io.print(l:bat[:str]);              	#[18] IOprint_val 22 <- 21 
+    trim:bat[:str] := batstr.trim(S:bat[:str]);	#[19] STRbatStrip 23 <- 1 
+    io.print(trim:bat[:str]);           	#[20] IOprint_val 24 <- 23 
+    ltrim:bat[:str] := batstr.ltrim(S:bat[:str]);	#[21] STRbatLtrim 25 <- 1 
+    io.print(ltrim:bat[:str]);          	#[22] IOprint_val 26 <- 25 
+    rtrim:bat[:str] := batstr.rtrim(S:bat[:str]);	#[23] STRbatRtrim 27 <- 1 
+    io.print(rtrim:bat[:str]);          	#[24] IOprint_val 28 <- 27 
+    io.print("Start searches":str);     	#[25] IOprint_val 29 <- 30 
+    srch:bat[:int] := batstr.search(S:bat[:str],"hello":str);	#[26] STRbatstrSearchcst 31 <- 1 4 
+    io.print(srch:bat[:int]);           	#[27] IOprint_val 32 <- 31 
+    srch:bat[:int] := batstr.search(S:bat[:str],S:bat[:str]);	#[28] STRbatstrSearch 31 <- 1 1 
+    io.print(srch:bat[:int]);           	#[29] IOprint_val 33 <- 31 
+    plus:bat[:str] := batcalc.+(S:bat[:str],S:bat[:str]);	#[30] CMDbatADD 34 <- 1 1 
+    io.print(plus:bat[:str]);           	#[31] IOprint_val 35 <- 34 
+end user.foo;                           	#[32]  
 #--------------------------#
 # h	t  # name
 # void	str		  # type
@@ -165,9 +142,9 @@ end user.main;
 [ 1@0,	  "brave"	  ]
 [ 2@0,	  "new"		  ]
 [ 3@0,	  "world"	  ]
-[ "Start searches" ]
-#-----------------#
-# h	tmp_21	  # name
+[ "Start searches"	]
+#--------------------------#
+# h	t  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]

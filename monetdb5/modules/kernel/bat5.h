@@ -23,16 +23,13 @@
 #endif
 
 bat5_export char *BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname);
-bat5_export char *BKCdelete(bat *r, const bat *bid, const oid *h);
-bat5_export char *BKCdelete_bun(bat *r, const bat *bid, const oid *h, const void *t);
 bat5_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
 bat5_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 bat5_export str BKCdensebat(bat *ret, const wrd *size);
 bat5_export str BKCmirror(bat *ret, const bat *bid);
-bat5_export str BKCinsert_bat(bat *r, const bat *bid, const bat *sid);
-bat5_export str BKCinsert_bat_force(bat *r, const bat *bid, const bat *sid, const bit *force);
+bat5_export str BKCdelete(bat *r, const bat *bid, const oid *h);
+bat5_export str BKCdelete_multi(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCdelete_all(bat *r, const bat *bid);
-bat5_export str BKCdelete_bat_bun(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCappend_wrap(bat *r, const bat *bid, const bat *uid);
 bat5_export str BKCappend_val_wrap(bat *r, const bat *bid, const void *u);
 bat5_export str BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u);

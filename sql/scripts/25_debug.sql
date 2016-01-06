@@ -53,3 +53,6 @@ create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 -- flush the log and cleanup the used storage
 create procedure sys.flush_log ()
 	external name sql."flush_log";
+
+create function sys.debug(debug int) returns integer
+	external name mdb."setDebug";

@@ -10,7 +10,7 @@ command encode(x:int,y:int):oid
 address ZORDencode_int_oid
 comment "Derive the z-order index from a value pair";
 
-command encode(x:bat[:oid,:int],y:bat[:oid,:int]):bat[:oid,:oid]
+command encode(x:bat[:int],y:bat[:int]):bat[:oid]
 address ZORDbatencode_int_oid
 comment "Derive the z-order index from a value pair";
 
@@ -18,7 +18,7 @@ command decode(z:oid)(x:int,y:int)
 address ZORDdecode_int_oid
 comment "Derive the z-order pair";
 
-command decode(z:bat[:oid,:oid])(:bat[:oid,:int],:bat[:oid,:int])
+command decode(z:bat[:oid])(:bat[:int],:bat[:int])
 address ZORDbatdecode_int_oid
 comment "Derive the z-order pair";
 
@@ -26,7 +26,7 @@ command decode_x(z:oid)(x:int)
 address ZORDdecode_int_oid_x
 comment "Derive the z-order x-coordinate";
 
-command decode_x(z:bat[:oid,:oid]):bat[:oid,:int]
+command decode_x(z:bat[:oid]):bat[:int]
 address ZORDbatdecode_int_oid_x
 comment "Derive the z-order x-coordinate";
 
@@ -34,10 +34,10 @@ command decode_y(z:oid)(y:int)
 address ZORDdecode_int_oid_y
 comment "Derive the z-order y-coordinate";
 
-command decode_y(z:bat[:oid,:oid]):bat[:oid,:int]
+command decode_y(z:bat[:oid]):bat[:int]
 address ZORDbatdecode_int_oid_y
 comment "Derive the z-order y-coordinate";
 
-command slice(xb:int, yb:int, xt:int, yt:int ):bat[:oid,:oid]
+command slice(xb:int, yb:int, xt:int, yt:int ):bat[:oid]
 address ZORDslice_int
 comment "Extract the Z-order indices between two points";

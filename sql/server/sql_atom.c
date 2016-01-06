@@ -178,7 +178,7 @@ atom_dec(sql_allocator *sa, sql_subtype *tpe,
 }
 
 atom *
-atom_string(sql_allocator *sa, sql_subtype *tpe, char *val)
+atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a = atom_create(sa);
 
@@ -189,7 +189,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, char *val)
 	a->data.len = 0;
 	if (val) {
 		a->isnull = 0;
-		a->data.val.sval = val;
+		a->data.val.sval = (char*)val;
 		a->data.len = (int)strlen(a->data.val.sval);
 	}
 
@@ -219,7 +219,7 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 }
 
 atom *
-atom_general(sql_allocator *sa, sql_subtype *tpe, char *val)
+atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a;
 	ptr p = NULL;
@@ -243,7 +243,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, char *val)
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str) {
 			a->isnull = 0;
-			a->data.val.sval = sql2str(sa_strdup(sa, val));
+			a->data.val.sval = (char*)sql2str(sa_strdup(sa, val));
 			a->data.len = (int)strlen(a->data.val.sval);
 		} else { 
 			int res = ATOMfromstr(type, &p, &a->data.len, val);
@@ -1158,11 +1158,13 @@ atom_neg( atom *a )
 		break;
 	case TYPE_dbl:
 		a->data.val.dval = -a->data.val.dval;
+		if (a->data.val.dval == dbl_nil)
+			return -1;
 		break;
 	default:
 		return -1;
 	}
-	if (a->d != dbl_nil)
+	if (a->d != dbl_nil && a->tpe.type->localtype != TYPE_dbl)
 		a->d = -a->d;
 	return 0;
 }

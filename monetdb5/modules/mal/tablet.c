@@ -989,9 +989,11 @@ SQLload_parse_line(READERtask *task, int idx)
 
 	if (task->quote || task->seplen != 1) {
 		for (i = 0; i < as->nr_attrs; i++) {
+			int quote = 0;
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
 			if (*line && *line == task->quote) {
+				quote = 1;
 #ifdef _DEBUG_TABLET_
 				mnstr_printf(GDKout, "before #1 %s\n", s = line);
 #endif
@@ -1038,7 +1040,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		  endoffieldcheck:
 			;
 			/* check for user defined NULL string */
-			if (!fmt->skip && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
+			if (!fmt->skip && (!quote || !fmt->null_length) && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
 				task->fields[i][idx] = 0;
 		}
 		goto endofline;
@@ -1956,8 +1958,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mnstr_printf(GDKout, "#leftover input:%.63s\n",
 				 task->b->buf + task->b->pos);
 #endif
-	for (i = 0; i < as->nr_attrs; i++)
+	for (i = 0; i < as->nr_attrs; i++) {
+		BAT *b = task->as->format[i].c;
+		BATsettrivprop(b);
 		GDKfree(task->fields[i]);
+	}
 	GDKfree(task->fields);
 	GDKfree(task->cols);
 	GDKfree(task->time);
@@ -2037,9 +2042,9 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cntxt->error_row) {
 		MT_lock_set(&errorlock);
 		BATclear(cntxt->error_row, TRUE);
-		BATclear(cntxt->error_fld, TRUE);
-		BATclear(cntxt->error_msg, TRUE);
-		BATclear(cntxt->error_input, TRUE);
+		if(cntxt->error_fld) BATclear(cntxt->error_fld, TRUE);
+		if(cntxt->error_msg) BATclear(cntxt->error_msg, TRUE);
+		if(cntxt->error_input) BATclear(cntxt->error_input, TRUE);
 		MT_lock_unset(&errorlock);
 	}
 	(void) mb;

@@ -42,7 +42,7 @@ AUTHfindUser(const char *username)
 	BATiter cni = bat_iterator(user);
 	BUN p;
 
-	if (user->T->hash || BAThash(user, 0) == GDK_SUCCEED) {
+	if (BAThash(user, 0) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->T->hash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE)
@@ -151,7 +151,11 @@ AUTHinitTables(str *passwd) {
 		BBPrename(BBPcacheid(user), "M5system_auth_user");
 		BATmode(user, PERSISTENT);
 	} else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		user = BATdescriptor(bid);
+		GDKdebug = dbg;
 		isNew = 0;
 	}
 	assert(user);
@@ -167,10 +171,46 @@ AUTHinitTables(str *passwd) {
 		BBPrename(BBPcacheid(pass), "M5system_auth_passwd_v2");
 		BATmode(pass, PERSISTENT);
 	} else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		pass = BATdescriptor(bid);
+		GDKdebug = dbg;
 		isNew = 0;
 	}
 	assert(pass);
+
+	/* convert an old authorization table */
+	if (user->htype == TYPE_oid) {
+		BAT *b;
+		char name[10];
+		bat blist[5];
+		assert(pass->htype == TYPE_oid);
+		blist[0] = 0;
+		b = COLcopy(user, user->ttype, 1, PERSISTENT);
+		BATseqbase(b, 0);
+		BATmode(b, PERSISTENT);
+		BATmode(user, TRANSIENT);
+		snprintf(name, sizeof(name), "tmp_%o", user->batCacheid);
+		BBPrename(user->batCacheid, name);
+		BBPrename(b->batCacheid, "M5system_auth_user");
+		blist[1] = user->batCacheid;
+		blist[2] = b->batCacheid;
+		BBPunfix(user->batCacheid);
+		user = b;
+		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
+		BATseqbase(b, 0);
+		BATmode(b, PERSISTENT);
+		BATmode(pass, TRANSIENT);
+		snprintf(name, sizeof(name), "tmp_%o", pass->batCacheid);
+		BBPrename(pass->batCacheid, name);
+		BBPrename(b->batCacheid, "M5system_auth_passwd_v2");
+		blist[3] = pass->batCacheid;
+		blist[4] = b->batCacheid;
+		BBPunfix(pass->batCacheid);
+		pass = b;
+		TMsubcommit_list(blist, 5);
+	}
 
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_deleted");
@@ -182,7 +222,7 @@ AUTHinitTables(str *passwd) {
 
 		BBPrename(BBPcacheid(duser), "M5system_auth_deleted");
 		BATmode(duser, PERSISTENT);
-		if (!isNew) 
+		if (!isNew)
 			AUTHcommit();
 	} else {
 		duser = BATdescriptor(bid);
@@ -363,7 +403,6 @@ AUTHchangeUsername(Client cntxt, str *olduser, str *newuser)
 {
 	BUN p, q;
 	str tmp;
-	oid id;
 
 	rethrow("addUser", tmp, AUTHrequireAdminOrUser(cntxt, olduser));
 
@@ -383,9 +422,7 @@ AUTHchangeUsername(Client cntxt, str *olduser, str *newuser)
 		throw(MAL, "changeUsername", "user '%s' already exists", *newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	id = p;
-	assert(id == p);
-	BUNinplace(user, p, &id, *newuser, TRUE);
+	BUNinplace(user, p, *newuser, TRUE);
 	AUTHcommit();
 	return(MAL_SUCCEED);
 }
@@ -436,7 +473,7 @@ AUTHchangePassword(Client cntxt, str *oldpass, str *passwd)
 
 	/* ok, just overwrite the password field for this user */
 	assert(id == p);
-	BUNinplace(pass, p, &id, hash, TRUE);
+	BUNinplace(pass, p, hash, TRUE);
 	GDKfree(hash);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -487,7 +524,7 @@ AUTHsetPassword(Client cntxt, str *username, str *passwd)
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
-	BUNinplace(pass, p, &id, hash, TRUE);
+	BUNinplace(pass, p, hash, TRUE);
 	GDKfree(hash);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -558,14 +595,14 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 
 	rethrow("getUsers", tmp, AUTHrequireAdmin(cntxt));
 
-	*ret1 = VIEWcombine(user);
+	*ret1 = BATdense(user->hseqbase, user->hseqbase, BATcount(user));
 	if (BATcount(duser)) {
-		bn = BATsubdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
+		bn = BATdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = BATcopy(user, TYPE_void, user->ttype, FALSE, TRANSIENT);
+		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
 	}
 	return(NULL);
 }

@@ -1,0 +1,18 @@
+# the multiplex code blocks.
+
+function perftst( b:bat[:any_2],div:any_2):void;
+	io.print("perftst"); io.print(div);
+	reduce:= batcalc./(b,div);
+	io.print(reduce);
+end perftst;
+
+function foo();
+b:= bat.new(:lng);
+barrier i:= 0:lng;
+        bat.append(b,i);
+        redo i:= iterator.next(1:lng,10:lng);
+exit i;
+user.perftst(b,1:lng);
+end;
+mdb.List("user","foo");
+user.foo();

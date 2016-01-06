@@ -11,7 +11,7 @@
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };
-size_t monet_memory;
+size_t monet_memory = 0;
 char 	monet_characteristics[PATHLENGTH];
 int mal_trace;		/* enable profile events on console */
 #ifdef HAVE_HGE
@@ -37,6 +37,7 @@ MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
 MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
+MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -78,14 +79,14 @@ int mal_init(void){
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
+	MT_lock_init( &mal_beatLock, "mal_beatLock");
 #endif
 
 	tstAligned();
 	MCinit();
 	if (mdbInit()) 
 		return -1;
-	if (monet_memory == 0)
-		monet_memory = MT_npages() * MT_pagesize();
+	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
 	initHeartbeat();
@@ -94,11 +95,7 @@ int mal_init(void){
 	if( malBootstrap() == 0)
 		return -1;
 	/* set up the profiler if needed, output sent to console */
-	/* Use the same shortcuts as stethoscope */
-	if ( mal_trace ) {
-		openProfilerStream(mal_clients[0].fdout);
-		startProfiler(mal_clients[0].user,1,0);
-	} 
+	initProfiler();
 	return 0;
 }
 /*
@@ -129,7 +126,7 @@ void mal_exit(void){
 {
 	int reruns=0, go_on;
 	do{
-		if ( (go_on = MCactiveClients()) )
+		if ( (go_on = MCactiveClients() -1) )
 			MT_sleep_ms(1000);
 		mnstr_printf(mal_clients->fdout,"#MALexit: %d clients still active\n", go_on);
 	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);

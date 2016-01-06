@@ -5,8 +5,46 @@ stderr of test 'tst038` in directory 'monetdb5/mal` itself:
 # 18:26:03 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB/log" --set mapi_port=49025 --set sql_port=56914 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst038.mal </dev/null
 # 18:26:03 >  
 
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38226
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7831/.s.monetdb.38226
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 18:26:04 >  
-# 18:26:04 >  Done.
-# 18:26:04 >  
+# 19:25:47 >  
+# 19:25:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-7831" "--port=38226"
+# 19:25:47 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = #test the capability to deal with unspecified bats.
+        function tst2(b:bat[:any_1]);
+        	bat.append(b,"hello");
+        end tst2;
+        
+        b:= bat.new(:int);
+        
+        #The call to tst2 fails at runtime
+        user.tst2(b);
+ERROR = !TypeException:user.tst2[1]:'bat.append' undefined in:     bat.append(b:bat[:int],"hello":str);
+        !MALException:user.tst2[0]:Error in cloned function
+        !TypeException:user.main[4]:'user.tst2' undefined in:     user.tst2(b:bat[:int]);
+
+# 11:43:41 >  
+# 11:43:41 >  "Done."
+# 11:43:41 >  
 

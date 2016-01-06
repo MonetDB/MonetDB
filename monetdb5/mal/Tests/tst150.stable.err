@@ -1,1 +1,52 @@
 stderr of test 'tst150` in directory 'monetdb5/mal` itself:
+
+
+# 15:19:53 >  
+# 15:19:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39876" "--set" "mapi_usock=/var/tmp/mtest-9433/.s.monetdb.39876" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 15:19:53 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39876
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9433/.s.monetdb.39876
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:19:53 >  
+# 15:19:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9433" "--port=39876"
+# 15:19:53 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = command lookup(nme:str):bat[:str] address CMDlookup; 
+        
+        function sample(nme:str, val:any_1):bit;
+           b := user.lookup(nme); #find a bat
+           h := algebra.select(b,val,val);
+           t := aggr.count(h);
+           x := io.print(t);
+           y := io.print(val);
+           return sample:=true;
+        end sample;
+        user.sample("hello","world");
+        user.sample("hello",1);
+ERROR = !TypeException:user.sample[1]:object code for command user.lookup missing
+        !TypeException:user.main[1]:'user.sample' undefined in:     user.sample("hello":str,"world":str);
+
+# 15:19:53 >  
+# 15:19:53 >  "Done."
+# 15:19:53 >  
+

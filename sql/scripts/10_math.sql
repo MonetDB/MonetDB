@@ -12,3 +12,5 @@ CREATE FUNCTION radians(d double)
 RETURNS double
 	RETURN d*pi()/180;
 
+grant execute on function degrees to public;
+grant execute on function radians to public;

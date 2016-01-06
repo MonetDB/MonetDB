@@ -1,1 +1,55 @@
 stderr of test 'tst013` in directory 'monetdb5/mal` itself:
+
+
+# 11:10:24 >  
+# 11:10:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37868" "--set" "mapi_usock=/var/tmp/mtest-10484/.s.monetdb.37868" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 11:10:24 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37868
+# cmdline opt 	mapi_usock = /var/tmp/mtest-10484/.s.monetdb.37868
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:20:00 >  
+# 13:20:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:00 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # incomplete barrier blocks. Resolve them when unambigous
+        
+        barrier z:= true;
+        	leave;
+        exit;
+        
+        barrier i:= 1;
+        	i:= i+1;
+        	io.print(i);
+        	barrier t:=calc.>(i,3);	# new envelop
+        		io.print("leave loop");
+        		leave i; # leave outer envelop
+        	exit t;
+        	redo;
+        exit;
+ERROR = !SyntaxException:user.main[3]:label 'X_4' not in guarded block
+        !SyntaxException:user.main[14]:label 't' not in guarded block
+
+# 13:20:00 >  
+# 13:20:00 >  "Done."
+# 13:20:00 >  
+

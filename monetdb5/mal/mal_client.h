@@ -55,6 +55,7 @@ typedef struct CURRENT_INSTR{
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
+	str username;	/* for event processor */
 	/*
 	 * The actions for a client is separated into several stages:
 	 * parsing, strategic optimization, tactical optimization, and
@@ -198,4 +199,6 @@ mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, 
 mal_export str MCstartMaintenance(Client cntxt, lng timeout, int abort);
 mal_export str MCexitMaintenance(Client cntxt);
 
+mal_export str PROFinitClient(Client c);
+mal_export str PROFexitClient(Client c);
 #endif /* _MAL_CLIENT_H_ */

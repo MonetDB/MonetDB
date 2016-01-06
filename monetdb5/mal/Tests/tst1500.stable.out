@@ -1,96 +1,78 @@
 stdout of test 'tst1500` in directory 'monetdb5/mal` itself:
 
 
-# 07:59:06 >  
-# 07:59:06 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst1500.mal </dev/null
-# 07:59:06 >  
+# 13:20:32 >  
+# 13:20:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37961" "--set" "mapi_usock=/var/tmp/mtest-18020/.s.monetdb.37961" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:20:32 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#	x := new(:oid,:chr);
-#	de_a := insert(x,1@0,'a');
-#	ee_a := insert(x,2@0,'a');
-#	fe_a := insert(x,3@0,'b');
-#	ge_a := insert(x,4@0,'b');
-#	he_a := insert(x,5@0,'b');
-#	ie_a := insert(x,6@0,'b');
-#	je_a := insert(x,7@0,'c');
-#	ke_a := insert(x,8@0,'c');
-#print("group x");print(x);
-#	#b1 := group(x);
-#	(hb1,b1) := group(x);
-#print("b1 becomes"); print(b1);
-#print("hb1 becomes"); print(hb1);
-#
-function user.main():void;
-    x := bat.new(:oid,:bte);
-    de_a := bat.append(x,1:bte);
-    ee_a := bat.append(x,1:bte);
-    fe_a := bat.append(x,2:bte);
-    ge_a := bat.append(x,2:bte);
-    he_a := bat.append(x,2:bte);
-    ie_a := bat.append(x,2:bte);
-    je_a := bat.append(x,3:bte);
-    ke_a := bat.append(x,3:bte);
-    io.print("group x");
-    io.print(x);
-    (g1,e1,h1) := group.subgroup(x);
-    io.print("g1 becomes");
-    io.print(g1);
-    io.print("e1 becomes");
-    io.print(e1);
-    io.print("h1 becomes");
-    io.print(h1);
-end user.main;
-[ "group x" ]
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37961/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18020/.s.monetdb.37961
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:20:32 >  
+# 13:20:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:32 >  
+
+[ "group x"	]
 #--------------------------#
 # h	t  # name
 # void	bte  # type
 #--------------------------#
-[ 0@0,	1  ]
-[ 1@0,	  1	  ]
-[ 2@0,	2  ]
-[ 3@0,	  2	  ]
-[ 4@0,	  2	  ]
-[ 5@0,	  2	  ]
-[ 6@0,	3  ]
-[ 7@0,	  3	  ]
-[ "g1 becomes" ]
+[ 0@0,	1	]
+[ 1@0,	1	]
+[ 2@0,	2	]
+[ 3@0,	2	]
+[ 4@0,	2	]
+[ 5@0,	2	]
+[ 6@0,	3	]
+[ 7@0,	3	]
+[ "g1 becomes"	]
 #--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	  0@0	  ]
-[ 2@0,	1@0  ]
-[ 3@0,	  1@0	  ]
-[ 4@0,	  1@0	  ]
-[ 5@0,	  1@0	  ]
-[ 6@0,	2@0  ]
-[ 7@0,	  2@0	  ]
-[ "e1 becomes" ]
-#-----------------#
-# h	t	  # name
-# void	oid	  # type
+[ 0@0,	0@0	]
+[ 1@0,	0@0	]
+[ 2@0,	1@0	]
+[ 3@0,	1@0	]
+[ 4@0,	1@0	]
+[ 5@0,	1@0	]
+[ 6@0,	2@0	]
+[ 7@0,	2@0	]
+[ "e1 becomes"	]
 #--------------------------#
-[ 0@0,	0@0  ]
-[ 1@0,	2@0  ]
-[ 2@0,	6@0  ]
-[ "h1 becomes" ]
-#-----------------#
-# h	t	  # name
-# void	wrd	  # type
-#-----------------#
-[ 0@0,	  2	  ]
-[ 1@0,	  4	  ]
-[ 2@0,	  2	  ]
+# h	t  # name
+# void	oid  # type
+#--------------------------#
+[ 0@0,	0@0	]
+[ 1@0,	2@0	]
+[ 2@0,	6@0	]
+[ "h1 becomes"	]
+#--------------------------#
+# h	t  # name
+# void	wrd  # type
+#--------------------------#
+[ 0@0,	2	]
+[ 1@0,	4	]
+[ 2@0,	2	]
 
-# 07:59:06 >  
-# 07:59:06 >  Done.
-# 07:59:06 >  
+# 13:20:32 >  
+# 13:20:32 >  "Done."
+# 13:20:32 >  
 

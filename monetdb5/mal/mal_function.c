@@ -296,7 +296,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			    tx= 0;
 			    tail = t;
 			}
-			y= newBatType(TYPE_oid,tail);
+			y= newBatType(TYPE_void,tail);
 			setAnyColumnIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN
@@ -956,9 +956,6 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		bufstr = buffer_create(8096);
 		f = buffer_wastream(bufstr, "bufstr_write");
 		mapimode = 1;
-	} else if (idcmp(fname, "stethoscope") == 0) {
-		f = getProfilerStream();
-		stethoscope =1;
 	} else {
 		f = open_wastream(fname);
 	}

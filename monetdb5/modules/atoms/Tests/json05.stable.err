@@ -21,7 +21,58 @@ stderr of test 'json05` in directory 'monetdb5/modules/atoms` itself:
 # cmdline opt 	mapi_usock = /var/tmp/mtest-2321/.s.monetdb.35138
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_modules_atoms
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_atoms
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 10:05:36 >  
+# 10:05:36 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:36 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-31201/.s.monetdb.32149
+QUERY = js:= calc.json("[{\"book\":{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, \"book\":{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, \"book\":{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, \"book\":{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }}, {\"pencil\":{ \"color\": \"red\", \"price\": 19.95 }}]");
+        
+        io.print(js);
+        
+        p:= json.filter(js,"[0].book");
+        io.print(p);
+        p:= json.filter(js,"[1].pencil");
+        io.print(p);
+        p:= json.filter(js,"..author");
+        io.print(p);
+        p:= json.filter(js,"..category");
+        io.print(p);
+        
+        p:= json.filter(js,"[0].book[0]");
+        io.print(p);
+        p:= json.filter(js,"[0].book[1]");
+        io.print(p);
+        p:= json.filter(js,"[0].book[2]");
+        io.print(p);
+        p:= json.filter(js,"[0].book[3]");
+        io.print(p);
+        p:= json.filter(js,"[0].book..category");
+        io.print(p);
+        
+        js := calc.json("[[{\"name\":\"john\"}], {\"name\":\"mary\"}]");
+        p := json.filter(js,"..name");
+        io.print(p);
+        p := json.filter(js,".name");
+        io.print(p);
+        
+        #empty lists
+        p:= json.filter(js,".book[-1]");
+        io.print(p);
+        p:= json.filter(js,".book[4]");
+        io.print(p);
+        p:= json.filter(js,"$$$");
+        io.print(p);
+        p:= json.filter(js,"...");
+        io.print(p);
+        p:= json.filter(js,"[[2]]");
+        io.print(p);
+ERROR = !MALException:json.path:'*' or digit expected
 
 # 19:57:09 >  
 # 19:57:09 >  "Done."

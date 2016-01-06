@@ -14,7 +14,7 @@
 #include "rel_optimizer.h"
 
 typedef struct memoitem {
-	char *name;
+	const char *name;
 	list *rels;
 	list *exps;
 	list *joins;
@@ -46,7 +46,7 @@ memoitem_key( memoitem *mi )
 }
 
 static memoitem*
-memo_find(list *memo, char *name)
+memo_find(list *memo, const char *name)
 {
 	int key = hash_key(name);
 	sql_hash_e *he;
@@ -66,12 +66,12 @@ memo_find(list *memo, char *name)
 }
 
 static char *
-merge_names( sql_allocator *sa, char *lname, char *rname)
+merge_names( sql_allocator *sa, const char *lname, const char *rname)
 {
 	size_t llen = strlen(lname);
 	size_t rlen = strlen(rname);
 	char *n = SA_NEW_ARRAY(sa, char, llen+rlen+2), *p = n;
-	char *c = lname;
+	const char *c = lname;
 
 	while (*c) {
 		int i = 0;
@@ -98,9 +98,9 @@ merge_names( sql_allocator *sa, char *lname, char *rname)
 }
 
 static memoitem *
-memoitem_create( list *memo, sql_allocator *sa, char *lname, char *rname, int level)
+memoitem_create( list *memo, sql_allocator *sa, const char *lname, const char *rname, int level)
 {
-	char *name = lname;
+	const char *name = lname;
 	memoitem *mi;
 
 	if (level > 1) 
@@ -499,7 +499,7 @@ memo_add_exps(list *memo, mvc *sql, list *rels, list *jes)
 }
 
 static int
-memoitem_has( memoitem *mi, char *name)
+memoitem_has( memoitem *mi, const char *name)
 {
 	if (mi->level > 1) {
 		memojoin *mj = mi->joins->h->data; 

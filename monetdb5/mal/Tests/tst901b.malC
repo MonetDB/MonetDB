@@ -1,0 +1,54 @@
+# what is the overhead of MAL in multiplex situations
+# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
+
+function foo();
+b:= bat.new(:lng);
+
+INT_MAX := 2147483647;
+dbgmsk_restore := mdb.getDebug();
+dbgmsk_unset := 8+8388608;
+dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+mdb.setDebug(dbgmsk_set);
+
+t0:= alarm.usec();
+barrier i:= 0:lng;
+	bat.append(b,i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
+t1:= alarm.usec();
+
+mdb.setDebug(dbgmsk_restore);
+
+c:= algebra.copy(b);
+
+mdb.setDebug(dbgmsk_set);
+
+t2:= alarm.usec();
+d:= bat.new(:lng);
+barrier (h,t):= iterator.new(b);
+        zz:= algebra.fetch(b,h);
+        z:= algebra.fetch(c,h);
+	cr:= zz+z;
+	bat.append(d,cr);
+catch GDKerror:str;
+	leave h;
+exit GDKerror;
+	redo (h,t):= iterator.next(b);
+exit (h,t);
+t3:= alarm.usec();
+
+mdb.setDebug(dbgmsk_restore);
+
+t4:= alarm.usec();
+d1:= t1-t0;
+d2:= t3-t2;
+d3:= t4-t3;
+cnt:= aggr.count(d);
+io.printf("#cnt %d ",cnt);
+io.printf("#make %d ",d1);
+io.printf("#multiplex %d\n",d2);
+io.printf("#compiled multiplex %d\n",d3);
+end foo;
+mdb.List("user","foo");
+user.foo();

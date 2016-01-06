@@ -8,11 +8,11 @@
 -- This script gives the database administrator insight in the actual
 -- footprint of the persistent tables and the maximum playground used
 -- when indices are introduced upon them.
--- By chancing the storagemodelinput table directly, the footprint for
+-- By changing the storagemodelinput table directly, the footprint for
 -- yet to be loaded databases can be assessed.
 
 -- The actual storage footprint of an existing database can be
--- obtained by the table procuding function storage()
+-- obtained by the table producing function storage()
 -- It represents the actual state of affairs, i.e. storage on disk
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.

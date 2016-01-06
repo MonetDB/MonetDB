@@ -5,114 +5,31 @@ stdout of test 'tst1505` in directory 'monetdb5/mal` itself:
 # 07:59:08 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst1505.mal </dev/null
 # 07:59:08 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-#	y := new(:oid,:dbl);
-#	le_a := dbl(1.0);
-#	me_a := insert(y,1@0,le_a);
-#	ne_a := dbl(2.0);
-#	oe_a := insert(y,2@0,ne_a);
-#	pe_a := dbl(2.0);
-#	qe_a := insert(y,3@0,pe_a);
-#	re_a := dbl(2.0);
-#	se_a := insert(y,4@0,re_a);
-#	te_a := dbl(2.0);
-#	ue_a := insert(y,5@0,te_a);
-#	ve_a := dbl(3.0);
-#	we_a := insert(y,6@0,ve_a);
-#	xe_a := dbl(1.0);
-#	ye_a := insert(y,7@0,xe_a);
-#	af_a := dbl(1.0);
-#	bf_a := insert(y,8@0,af_a);
-#
-#z:= <(y,2.0:dbl);
-#print(z);
-#c:= count(z);
-#print("count");print(c);
-#
-#	x:= new(:oid,:bit);
-#	insert(x,1@0,true);
-#	insert(x,2@0,false);
-#	insert(x,3@0,true);
-#	insert(x,4@0,false);
-#	print(x);
-#	A:= new(:oid,:bit);
-#	insert(A,1@0,true);
-#	insert(A,2@0,true);
-#	insert(A,3@0,false);
-#	insert(A,4@0,false);
-#	print(A);
-#	xn:= not(x); print(x,xn);
-#	xandx:= and(x,A); print(x,xandx);
-#	xorx:= or(x,A); print(x,xorx);
-#print("ifthen group");
-#	xif0:= ifthen(x,x);print(x,xif0);
-#	xif1:= ifthen(x,false);print(x,xif1);
-#	xif2:= ifthenelse(x,x,xn);print(x,x,xn,xif2);
-#	xif3:= ifthenelse(x,x,true);print(x,x,xif3);
-#	xif4:= ifthenelse(x,1,2);print(x,xif4);
-#print("accumulators");
-#	x2:= not(x,x); print(x,x2);
-#	x3:= and(x,A); print(x,A,x3);
-#	x4:= or(x,A); print(x,A,x4);
-#
-function user.main():void;
-    y := bat.new(:oid,:dbl);
-    le_a := calc.dbl(1);
-    y := bat.append(y,le_a);
-    ne_a := calc.dbl(2);
-    y := bat.append(y,ne_a);
-    pe_a := calc.dbl(2);
-    y := bat.append(y,pe_a);
-    re_a := calc.dbl(2);
-    y := bat.append(y,re_a);
-    te_a := calc.dbl(2);
-    y := bat.append(y,te_a);
-    ve_a := calc.dbl(3);
-    y := bat.append(y,ve_a);
-    xe_a := calc.dbl(1);
-    y := bat.append(y,xe_a);
-    af_a := calc.dbl(1);
-    y := bat.append(y,af_a);
-    io.print(y);
-    z := batcalc.<(y,2:dbl);
-    io.print(z);
-    c := aggr.count(z);
-    io.print("count");
-    io.print(c);
-    x := bat.new(:oid,:bit);
-    x := bat.append(x,true);
-    x := bat.append(x,false);
-    x := bat.append(x,true);
-    x := bat.append(x,false);
-    io.print(x);
-    A := bat.new(:oid,:bit);
-    A := bat.append(A,true);
-    A := bat.append(A,true);
-    A := bat.append(A,false);
-    A := bat.append(A,false);
-    io.print(A);
-    xn := batcalc.not(x);
-    io.print(x,xn);
-    xandx := batcalc.and(x,A);
-    io.print(x,xandx);
-    xorx := batcalc.or(x,A);
-    io.print(x,xorx);
-    io.print("ifthen group");
-#	xif0:= batcalc.ifthen(x,x);io.print(x,xif0); 
-#	xif1:= batcalc.ifthen(x,false);io.print(x,xif1); 
-    xif2 := batcalc.ifthenelse(x,x,xn);
-    io.print(x,x,xn,xif2);
-    xif3 := batcalc.ifthenelse(x,x,true);
-    io.print(x,x,xif3);
-    xif4 := batcalc.ifthenelse(x,1,2);
-    io.print(x,xif4);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33827/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16148/.s.monetdb.33827
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:36:16 >  
+# 15:36:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
+# 15:36:16 >  
+
+#io.print(y);
 #--------------------------#
 # h	t	  # name
 # oid	dbl	  # type

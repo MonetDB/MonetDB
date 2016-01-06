@@ -1,0 +1,10 @@
+namebat := bat.new( :str);
+bat.append(namebat,"tmpdocs");
+bat.append(namebat,"tmpterms");
+
+io.printf("#source:%s\n","namebat");
+io.export(namebat, "namebat");
+
+z:= bat.new(:str);
+io.import(z,"namebat");
+io.print(z);

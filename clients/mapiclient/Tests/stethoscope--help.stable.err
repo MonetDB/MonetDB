@@ -1,25 +1,27 @@
 stderr of test 'stethoscope--help` in directory 'clients/mapiclient` itself:
 
 
-# 11:43:47 >  
-# 11:43:47 >  Mtimeout -timeout 120 ./stethoscope--help stethoscope--help 
-# 11:43:47 >  
+# 17:08:24 >  
+# 17:08:24 >  "./stethoscope--help" "stethoscope--help"
+# 17:08:24 >  
 
 
-# 10:36:09 >  
-# 10:36:09 >  Mtimeout -timeout 60 stethoscope --help
-# 10:36:09 >  
+# 17:08:24 >  
+# 17:08:24 >  Mtimeout -timeout 60 stethoscope --help
+# 17:08:24 >  
 
 stethoscope [options] 
   -d | --dbname=<database_name>
   -u | --user=<user>
+  -P | --password=<password>
   -p | --port=<portnr>
   -h | --host=<hostname>
+  -j | --json
   -o | --output=<file>
   -b | --beat=<delay> in milliseconds (default 50)
+  -D | --debug
   -? | --help
 
-
-# 19:24:05 >  
-# 19:24:05 >  "Done."
-
+# 17:08:24 >  
+# 17:08:24 >  "Done."
+# 17:08:24 >  

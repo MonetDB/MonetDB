@@ -31,11 +31,11 @@ Ready.
 % .ftf # table_name
 % sch # name
 % varchar # type
-% 6 # length
+% 8 # length
 [ "sys"	]
 [ "tmp"	]
 [ "json"	]
-[ "mosaic"	]
+[ "profiler"	]
 [ "bam"	]
 [ "ft"	]
 

@@ -5,42 +5,42 @@ stdout of test 'tst913` in directory 'monetdb5/mal` itself:
 # 18:25:43 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30562 --set monet_prompt= --trace --dbname=mTests_src_mal  tst913.mal < /dev/null
 # 18:25:43 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## The series tst2?? is a patched version of suite_00
-## The first and foremost BAT operations
-#
-#b:= bat.new(:int,:str);
-#bat.insert(b,1,"true");
-#bat.insert(b,2,"TRUE");
-#bat.insert(b,3,"FALSE");
-#bat.insert(b,4,"false");
-#bat.insert(b,5,"");
-#bat.insert(b,6,nil:str);
-#io.print(b);
-#
-#bc:= batcalc.bit(b);
-#io.print(bc);
-#
-function user.main():void;
-# The series tst2?? is a patched version of suite_00 
-# The first and foremost BAT operations 
-    b := bat.new(:oid,:str);
-    bat.append(b,"true");
-    bat.append(b,"TRUE");
-    bat.append(b,"FALSE");
-    bat.append(b,"false");
-    bat.append(b,"");
-    bat.append(b,nil:str);
-    io.print(b);
-    bc := batcalc.bit_noerror(b);
-    io.print(bc);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:45:46 >  
+# 22:45:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:46 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:str] := bat.new(:str);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:str],"true":str); 	#[2] BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:str],"TRUE":str); 	#[3] BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:str],"FALSE":str);	#[4] BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:str],"false":str);	#[5] BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:str],"":str);     	#[6] BKCappend_val_wrap 11 <- 1 12 
+    bat.append(b:bat[:str],nil:str);    	#[7] BKCappend_val_wrap 13 <- 1 14 
+    io.print(b:bat[:str]);              	#[8] IOprint_val 15 <- 1 
+    bc:bat[:bit] := batcalc.bit_noerror(b:bat[:str]);	#[9] CMDconvert_bit 16 <- 1 
+    io.print(bc:bat[:bit]);             	#[10] IOprint_val 17 <- 16 
+end user.foo;                           	#[11]  
 #--------------------------#
 # h	t		  # name
 # int	str		  # type

@@ -1,116 +1,68 @@
 stdout of test 'tst1602` in directory 'monetdb5/mal` itself:
 
 
-# 07:59:09 >  
-# 07:59:09 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst1602.mal </dev/null
-# 07:59:09 >  
+# 16:12:05 >  
+# 16:12:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36897" "--set" "mapi_usock=/var/tmp/mtest-23788/.s.monetdb.36897" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 16:12:05 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-function user.main():void;
-    int_1M := bat.new(:oid,:lng,1000000);
-    i := 1000000:lng;
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier sj_a := true;
-    i := calc.-(i,1);
-    uj_a := i;
-    vj_a := calc.>=(uj_a,0);
-barrier tj_a := vj_a;
-    xj_a := bat.append(int_1M,i);
-    redo sj_a;
-exit tj_a;
-exit sj_a;
-    mdb.setDebug(dbgmsk_restore);
-    t := alarm.time();
-    (vg_a,xg_b) := algebra.join(int_1M,int_1M);
-    wg_a := aggr.count(vg_a);
-    xg_a := io.printf("#count %d = ",wg_a);
-    x := alarm.time();
-    yg_a := calc.-(x,t);
-    ah_a := io.printf("%d ms\n",yg_a);
-    t := alarm.time();
-    (vg_a,xg_b) := algebra.join(int_1M,int_1M);
-    wg_a := aggr.count(vg_a);
-    xg_a := io.printf("#count %d = ",wg_a);
-    x := alarm.time();
-    yg_a := calc.-(x,t);
-    ah_a := io.printf("%d ms\n",yg_a);
-    t := alarm.time();
-    (vg_a,xg_b) := algebra.join(int_1M,int_1M);
-    wg_a := aggr.count(vg_a);
-    xg_a := io.printf("#count %d = ",wg_a);
-    x := alarm.time();
-    yg_a := calc.-(x,t);
-    ah_a := io.printf("%d ms\n",yg_a);
-    t := alarm.time();
-    (vg_a,xg_b) := algebra.join(int_1M,int_1M);
-    wg_a := aggr.count(vg_a);
-    xg_a := io.printf("#count %d = ",wg_a);
-    x := alarm.time();
-    yg_a := calc.-(x,t);
-    ah_a := io.printf("%d ms\n",yg_a);
-    M2 := bat.new(:oid,:lng,1000000);
-    i := 1000000:lng;
-    mdb.setDebug(dbgmsk_set);
-barrier sj_b := true;
-    i := calc.-(i,1);
-    uj_b := i;
-    vj_b := calc.>=(uj_b,0);
-barrier tj_b := vj_b;
-    xj_b := bat.append(M2,i);
-    redo sj_b;
-exit tj_b;
-exit sj_b;
-    mdb.setDebug(dbgmsk_restore);
-    t := alarm.time();
-    (vg_b,z) := algebra.join(M2,M2);
-    wg_b := aggr.count(vg_b);
-    xxx := io.printf("#count %d = ",wg_b);
-    x := alarm.time();
-    zzz := calc.-(x,t);
-    ah_b := io.printf("%d ms\n",zzz);
-    t := alarm.time();
-    (vg_b,z) := algebra.join(M2,M2);
-    wg_b := aggr.count(vg_b);
-    xxx := io.printf("#count %d = ",wg_b);
-    x := alarm.time();
-    zzz := calc.-(x,t);
-    ah_b := io.printf("%d ms\n",zzz);
-    t := alarm.time();
-    (vg_b,z) := algebra.join(M2,M2);
-    wg_b := aggr.count(vg_b);
-    xxx := io.printf("#count %d = ",wg_b);
-    x := alarm.time();
-    zzz := calc.-(x,t);
-    ah_b := io.printf("%d ms\n",zzz);
-    t := alarm.time();
-    (vg_b,z) := algebra.join(M2,M2);
-    wg_b := aggr.count(vg_b);
-    xxx := io.printf("#count %d = ",wg_b);
-    x := alarm.time();
-    zzz := calc.-(x,t);
-    ah_b := io.printf("%d ms\n",zzz);
-end user.main;
-#count 1000000 = 137 ms
-#count 1000000 = 138 ms
-#count 1000000 = 139 ms
-#count 1000000 = 140 ms
-#count 1000000 = 137 ms
-#count 1000000 = 139 ms
-#count 1000000 = 139 ms
-#count 1000000 = 139 ms
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:36897/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23788/.s.monetdb.36897
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 07:59:13 >  
-# 07:59:13 >  Done.
-# 07:59:13 >  
+Ready.
+
+# 16:12:06 >  
+# 16:12:06 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23788" "--port=36897"
+# 16:12:06 >  
+
+#        xg_a := io.printf("#count %d = ",wg_a);
+#count 1000000 = 
+#	   ah_a := io.printf("%d ms\n",yg_a);
+133 ms
+#        xg_a := io.printf("#count %d = ",wg_a);
+#count 1000000 = 
+#		ah_a := io.printf("%d ms\n",yg_a);
+135 ms
+#        xg_a := io.printf("#count %d = ",wg_a);
+#count 1000000 = 
+#        ah_a := io.printf("%d ms\n",yg_a);
+138 ms
+#        xg_a := io.printf("#count %d = ",wg_a);
+#count 1000000 = 
+#        ah_a := io.printf("%d ms\n",yg_a);
+135 ms
+#        xxx := io.printf("#count %d = ",wg_b);
+#count 1000000 = 
+#       ah_b := io.printf("%d ms\n",zzz);
+131 ms
+#        xxx := io.printf("#count %d = ",wg_b);
+#count 1000000 = 
+#       ah_b := io.printf("%d ms\n",zzz);
+138 ms
+#        xxx := io.printf("#count %d = ",wg_b);
+#count 1000000 = 
+#       ah_b := io.printf("%d ms\n",zzz);
+136 ms
+#        xxx := io.printf("#count %d = ",wg_b);
+#count 1000000 = 
+#      ah_b := io.printf("%d ms\n",zzz);
+136 ms
+
+# 16:12:18 >  
+# 16:12:18 >  "Done."
+# 16:12:18 >  
 

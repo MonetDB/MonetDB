@@ -1,0 +1,55 @@
+# test octopus framework for a single server!!
+include sql;
+# The script mimicks the core produced by SQL
+#profiler.activate("statement");
+#profiler.setFilter("*","*");
+#profiler.openStream("console");
+#profiler.start();
+
+function octopus.bind(v:int):bat[:int];
+	b:= bat.new(:int);
+	bat.append(b,v);
+	return b;
+end bind;
+
+function octopus.bind(conn:str,v:int):bat[:int];
+	vh:= remote.put(conn,v);
+	b:= remote.put(conn,nil:bat[:int]);
+	b:= remote.exec(conn,"octopus","bind",vh);
+	bv:bat[:int]:= remote.get(conn,b);
+	return bv;
+end bind;
+
+function octopus.tentacle(v:int, uri:str):bat[:int];
+	conn:str := remote.connect(uri, "monetdb", "monetdb", "msql");
+	b:= octopus.bind(conn,v);
+catch RMTexception:str;
+	io.print(RMTexception);
+exit RMTexception;
+	remote.disconnect(conn);
+	return tentacle:=b;
+end tentacle;
+
+function octopus.exec(uri:str, query:str, version:int):bat[:int];
+	conn:str := remote.connect(uri, "monetdb", "monetdb", "msql");
+	m:= remote.put(conn,version);
+	v:= remote.put(conn,nil:bat[:int]);
+	u:= remote.put(conn,uri);
+	# this works with uri, because head and tentacle are the same */
+	v:= remote.exec(conn,"octopus", query, m, u);
+	res:bat[:int]:= remote.get(conn,v);
+	remote.disconnect(conn);
+	return exec:=res;
+end exec;
+
+uri := sabaoth.getLocalConnectionURI();
+res:= nil:bat;
+barrier (go,version):= scheduler.octopus(10);
+	v1:bat[:int] :=octopus.exec(uri, "tentacle", version);
+	v2:bat[:int] :=octopus.exec(uri, "tentacle", version);
+	v3:bat[:int] :=octopus.exec(uri, "tentacle", version);
+	v4:bat[:int] :=octopus.exec(uri, "tentacle", version);
+	res:= mat.pack(v1,v2,v3,v4);
+exit (go,version);
+io.print(res);
+io.print("done");

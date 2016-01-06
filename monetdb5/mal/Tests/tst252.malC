@@ -1,0 +1,13 @@
+#Testing a loop over string bats
+
+b:= bat.new(:str);
+bat.append(b,"one");
+bat.append(b,"two");
+io.print(b);
+barrier (h,t):= iterator.new(b);
+	io.print(h);
+	io.print(t);
+	redo (h,t):= iterator.next(b);
+exit (h,t);
+
+

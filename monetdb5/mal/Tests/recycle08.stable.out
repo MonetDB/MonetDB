@@ -17,46 +17,22 @@ stdout of test 'recycle08` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function sql.mvc():int;
-    return mvc := 1;
-end sql.mvc;
-function sql.tid(mvc:int,s:str,t:str):bat[:oid,:oid];
-    b := bat.new(:oid,:oid);
-barrier i := 0@0:oid;
-    bat.append(b,i);
-    redo i := iterator.next(1@0:oid,1000@0:oid);
-exit i;
-    return tid := b;
-end sql.tid;
-function sql.bind(m:int,s:str,t:str,c:str,i:int):bat[:oid,:int];
-    b := bat.new(:oid,:int);
-barrier i := 0:int;
-    bat.append(b,i);
-    redo i := iterator.next(1:int,1000:int);
-exit i;
-    return bind := b;
-end sql.bind;
-function sql.qry(low:int,hgh:int):void;
-    m := sql.mvc();
-    x:bat[:oid,:oid]  := sql.tid(m,"sys","tbl");
-    b:bat[:oid,:int]  := sql.bind(m,"sys","tbl","col",0);
-    s1 := algebra.subselect(b,x,low,hgh,true,true,false);
-end sql.qry;
-function user.main():void;
-# Test of CREDIT cache policy in limited memory (8 RU) 
-# Evicts the leaf instruction with smallest credit= cnt*(0.5*ticks + 0.5(wr+rd)) 
-    recycle.setCache(4);
-    io.print("start");
-    user.qry(100,150);
-    user.qry(200,240);
-    user.qry(700,720);
-    user.qry(800,900);
-    user.qry(700,720);
-    recycle.dump();
-# The next query should evict the cheapest 2 selects(#2 and #4).  
-    user.qry(300,800);
-    recycle.dump();
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+#RECYCLE drop
+#RECYCLER CATALOG cached 4 instructions, MAL recycled = 20 total MAL executed = 4085 memory= 12000 total searchtime=63.00(usec) savings=18405321
+# CL	   lru		cnt	 ticks	 rd	 wr	 Instr
+#0	6	1227570	0	0	#    1 := sql.mvc();
+#1	6	1227613	0	8000	#    <tmp_66> := sql.tid(1,"sys","tbl");
+#2	6	1227631	0	4000	#    <tmp_340> := sql.bind(1,"sys","tbl","col",0);
+#3	1	63	12000	0	#    <tmp_707> := algebra.subselect(<tmp_340>,<tmp_66>,300,800,true,true,false);
+
+# 20:49:41 >  
+# 20:49:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22767" "--port=33890"
+# 20:49:41 >  
+
+#io.print("start");
 [ "start" ]
 #Recycler  catalog
 #retain= 1 time =0 sze= 0 alpha= 0.500

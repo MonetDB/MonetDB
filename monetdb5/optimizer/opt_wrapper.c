@@ -46,6 +46,7 @@
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
+#include "opt_profiler.h"
 #include "opt_pushselect.h"
 #include "opt_qep.h"
 #include "opt_querylog.h"
@@ -81,6 +82,7 @@ struct{
 	{"mitosis", &OPTmitosisImplementation},
 	{"mosaic", &OPTmosaicImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
+	{"profiler", &OPTprofilerImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
 	{"recycler", &OPTrecyclerImplementation},

@@ -127,6 +127,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
 	 * i.e., (rowcnt > monet_memory/argsize = m) */
+	assert(threads > 0);
+	assert(activeClients > 0);
 	if (rowcnt > m && m / threads / activeClients > 0) {
 		/* create |pieces| > |threads| partitions such that
 		 * |threads| partitions at a time fit in memory,

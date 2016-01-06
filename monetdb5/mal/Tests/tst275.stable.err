@@ -1,13 +1,13 @@
 stderr of test 'tst275` in directory 'monetdb5/mal` itself:
 
 
-# 15:43:54 >  
-# 15:43:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31459" "--set" "mapi_usock=/var/tmp/mtest-30374/.s.monetdb.31459" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_mal" "tst275.mal"
-# 15:43:54 >  
+# 13:20:46 >  
+# 13:20:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37961" "--set" "mapi_usock=/var/tmp/mtest-18020/.s.monetdb.37961" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:20:46 >  
 
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/current//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_daemon = no
 # builtin opt 	mapi_port = 50000
@@ -17,13 +17,21 @@ stderr of test 'tst275` in directory 'monetdb5/mal` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 31459
-# cmdline opt 	mapi_usock = /var/tmp/mtest-30374/.s.monetdb.31459
+# cmdline opt 	mapi_port = 37961
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18020/.s.monetdb.37961
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/current//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 15:43:54 >  
-# 15:43:54 >  "Done."
-# 15:43:54 >  
+# 13:20:46 >  
+# 13:20:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:46 >  
+
+
+# 13:20:46 >  
+# 13:20:46 >  "Done."
+# 13:20:46 >  
 

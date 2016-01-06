@@ -892,11 +892,28 @@ create_func(mvc *sql, char *sname, sql_func *f)
 		if (r)
 			r = rel_optimizer(sql, r);
 		if (r) {
+			node *n;
 			stmt *sb = rel_bin(sql, r);
 			list *id_col_l = stmt_list_dependencies(sql->sa, sb, COLUMN_DEPENDENCY);
 			list *id_func_l = stmt_list_dependencies(sql->sa, sb, FUNC_DEPENDENCY);
 			list *view_id_l = stmt_list_dependencies(sql->sa, sb, VIEW_DEPENDENCY);
 
+			if (!f->vararg && f->ops) {
+				for (n = f->ops->h; n; n = n->next) {
+					sql_arg *a = n->data;
+
+					if (a->type.type->s) 
+						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+				}
+			}
+			if (!f->varres && f->res) {
+				for (n = f->res->h; n; n = n->next) {
+					sql_arg *a = n->data;
+
+					if (a->type.type->s) 
+						mvc_create_dependency(sql, a->type.type->base.id, nf->base.id, TYPE_DEPENDENCY);
+				}
+			}
 			mvc_create_dependencies(sql, id_col_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 			mvc_create_dependencies(sql, id_func_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
 			mvc_create_dependencies(sql, view_id_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
@@ -1283,13 +1300,30 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	}
 	case DDL_CREATE_TYPE:{
-		char *impl = *getArgReference_str(stk, pci, 3);
-		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl))
+		char *name = *getArgReference_str(stk, pci, 3);
+		char *impl = *getArgReference_str(stk, pci, 4);
+		sql_schema *s = mvc_bind_schema(sql, sname);
+
+		if (!mvc_schema_privs(sql, sql->session->schema)) 
+			msg = sql_message("0D000!CREATE TYPE: not enough privileges to create type '%s'", sname);
+		if (!mvc_create_type(sql, s, name, 0, 0, 0, impl))
 			msg = sql_message("0D000!CREATE TYPE: unknown external type '%s'", impl);
 		break;
 	}
 	case DDL_DROP_TYPE:{
-		msg = sql_message("0A000!DROP TYPE: not implemented ('%s')", sname);
+		char *name = *getArgReference_str(stk, pci, 3);
+		int drop_action = *getArgReference_int(stk, pci, 4);
+		sql_schema *s = mvc_bind_schema(sql, sname);
+		sql_type *t = schema_bind_type( sql, s, name);
+
+		if (!t)
+			msg = sql_message("0D000!DROP TYPE: type '%s' does not exist", sname);
+		else if (!mvc_schema_privs(sql, sql->session->schema)) 
+			msg = sql_message("0D000!DROP TYPE: not enough privileges to drop type '%s'", sname);
+		else if (!drop_action && mvc_check_dependency(sql, t->base.id, TYPE_DEPENDENCY, NULL))
+			return sql_message("42000!DROP TYPE: unable to drop type %s (there are database objects which depend on it)\n", sname);
+		else if (!mvc_drop_type(sql, sql->session->schema, t, drop_action))
+			msg = sql_message("0D000!DROP TYPE: failed to drop type '%s'", sname);
 		break;
 	}
 	case DDL_GRANT_ROLES:{
@@ -1332,6 +1366,24 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
 		else
 			msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
+		break;
+	}
+	case DDL_GRANT_FUNC:{
+		int func_id = *getArgReference_int(stk, pci, 3);
+		char *grantee = *getArgReference_str(stk, pci, 4);
+		int privs = *getArgReference_int(stk, pci, 5);
+		int grant = *getArgReference_int(stk, pci, 6);
+		int grantor = *getArgReference_int(stk, pci, 7);
+		msg = sql_grant_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
+		break;
+	}
+	case DDL_REVOKE_FUNC:{
+		int func_id = *getArgReference_int(stk, pci, 3);
+		char *grantee = *getArgReference_str(stk, pci, 4);
+		int privs = *getArgReference_int(stk, pci, 5);
+		int grant = *getArgReference_int(stk, pci, 6);
+		int grantor = *getArgReference_int(stk, pci, 7);
+		msg = sql_revoke_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
 		break;
 	}
 	case DDL_CREATE_USER:{
@@ -1656,14 +1708,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BUNappend(r, &l, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, r);
-		BBPunfix(r->batCacheid);
-		r = b2;
-	} else {
-		BATseqbase(r, b->hseqbase);
-	}
+	BATseqbase(r, b->hseqbase);
 	if (sb)
 		seqbulk_destroy(sb);
 	BBPunfix(b->batCacheid);
@@ -1851,7 +1896,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
+				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
 			}
 			BBPunfix(b->batCacheid);
@@ -1948,7 +1993,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATsubselect(b, NULL, &l, &h, 1, 1, 0);
+				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
 			}
 			BBPunfix(b->batCacheid);
@@ -2186,7 +2231,7 @@ setwritable(BAT *b)
 
 	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
-			bn = BATcopy(b, TYPE_void, b->ttype, TRUE, TRANSIENT);
+			bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, BAT_WRITE);
 		} else {
@@ -2243,7 +2288,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	c = BATdescriptor(*col);
 	if (c == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE, TRANSIENT)) == NULL) {
+	if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL) {
 		BBPunfix(c->batCacheid);
 		throw(MAL, "sql.delta", OPERATION_FAILED);
 	}
@@ -2301,7 +2346,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		u_id = BATdescriptor(*uid);
 		if (!u_id)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-		cminu = BATsubdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
+		cminu = BATdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", MAL_MALLOC_FAIL " intermediate");
@@ -2336,7 +2381,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 			}
-			rc = BATsubsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
+			rc = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (rc != GDK_SUCCEED) {
 				BBPunfix(u->batCacheid);
@@ -2350,7 +2395,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		BATappend(res, u, TRUE);
 		BBPunfix(u->batCacheid);
 
-		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED) {
 			BBPunfix(c->batCacheid);
@@ -2365,7 +2410,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		if (BATcount(u_id)) {
 			u_id = BATdescriptor(*uid);
-			cminu = BATsubdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
+			cminu = BATdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
 			if (!cminu)
 				throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2377,7 +2422,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			i = u_id;
 		}
 		if (isVIEW(res)) {
-			BAT *n = BATcopy(res, TYPE_void, res->ttype, TRUE, TRANSIENT);
+			BAT *n = COLcopy(res, res->ttype, TRUE, TRANSIENT);
 			BBPunfix(res->batCacheid);
 			res = n;
 			if (res == NULL) {
@@ -2388,7 +2433,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		BATappend(res, i, TRUE);
 		BBPunfix(i->batCacheid);
 
-		ret = BATsubsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -2437,7 +2482,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			res = i;
 			i = c;
 		} else {
-			if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE, TRANSIENT)) == NULL)
+			if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL)
 				throw(MAL, "sql.projectdelta", OPERATION_FAILED);
 			BATappend(res, i, FALSE);
 			BBPunfix(c->batCacheid);
@@ -2474,7 +2519,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		/* create subsets of u_id and u_val where the tail
 		 * values of u_id are also in s, and where those tail
 		 * values occur as head value in res */
-		if (BATsubsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		if (BATsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -2486,11 +2531,11 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BBPunfix(u_id->batCacheid);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(o->batCacheid);
-		tres = VIEWcombine(res);
+		tres = BATdense(res->hseqbase, res->hseqbase, BATcount(res));
 		if (nu_id == NULL ||
 		    nu_val == NULL ||
 		    tres == NULL ||
-		    BATsubsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		    BATsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPreclaim(nu_id);
@@ -2665,7 +2710,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( d == NULL)
 			throw(SQL,"sql.tid","Can not bind delete column");
 
-		diff = BATsubdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+		diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		BATseqbase(diff, sb);
@@ -3447,7 +3492,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (fname && s == NULL)
 		throw(IO, "bstreams.create", "Failed to create block stream");
 	if (b == NULL)
-		throw(SQL, "importTable", "Failed to import table %s", be->mvc->errstr);
+		throw(SQL, "importTable", "Failed to import table %s", be->mvc->errstr? be->mvc->errstr:"");
 	bat2return(stk, pci, b);
 	GDKfree(b);
 	return msg;
@@ -3658,7 +3703,7 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "batcalc.identity", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATmark(b, *s);
+	bn = BATdense(b->hseqbase, *s, BATcount(b));
 	if (bn != NULL) {
 		*ns = *s + BATcount(b);
 		BBPunfix(b->batCacheid);
@@ -3867,14 +3912,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		}
 		BUNappend(bn, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b->hseqbase);
-	}
+	BATseqbase(bn, b->hseqbase);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3916,14 +3954,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		}
 		BUNappend(bn, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = b2;
-	} else {
-		BATseqbase(bn, b->hseqbase);
-	}
+	BATseqbase(bn, b->hseqbase);
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4204,13 +4235,14 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[13];
+	bat id;
 
 	(void) cntxt;
 	(void) mb;
-	TRACEtable(t);
-	for (i = 0; i < 13; i++) {
-		bat id = t[i]->batCacheid;
-
+	if (TRACEtable(t) != 13)
+		throw(SQL, "sql.dump_trace", "3F000!Profiler not started");
+	for(i=0; i< 13; i++){
+		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
 	}
@@ -4867,8 +4899,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz += bn->H->vheap ? bn->H->vheap->size : 0;
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize(bn)
-								sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize(bn)
+								sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize(bn)
+								sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize(bn)
 								BUNappend(indices, &sz, FALSE);
 								bitval = 0; // HASHispersistent(bn);
 								BUNappend(phash, &bitval, FALSE);
@@ -4949,8 +4981,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash ? bn->T->hash->heap->size : 0; // HASHsize()
-									sz += bn->H->hash ? bn->H->hash->heap->size : 0; // HASHsize()
+									sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize()
+									sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize()
 									BUNappend(indices, &sz, FALSE);
 									bitval = 0; // HASHispersistent(bn);
 									BUNappend(phash, &bitval, FALSE);
@@ -5103,7 +5135,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!rel)
 		throw(SQL, "sql.register", "Cannot register %s", buf);
 	if (rel) {
-		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops));
+		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops), 0);
 		rel_destroy(rel);
 	}
 	sqlcleanup(m, 0);
@@ -5177,7 +5209,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s, s);
+		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
@@ -5233,7 +5265,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s, s);
+		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", MAL_MALLOC_FAIL);
@@ -5289,7 +5321,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s, s);
+		r = VIEWcreate(s->hseqbase, s);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", MAL_MALLOC_FAIL);

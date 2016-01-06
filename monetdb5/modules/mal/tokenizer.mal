@@ -32,18 +32,18 @@ command depositFile(fnme:str):void
 address TKNZRdepositFile
 comment "batch insertion from a file of strings to tokenize, each string is separated by a new line";
 
-command getLevel(i:int):bat[:oid,:str]
+command getLevel(i:int):bat[:str]
 address TKNZRgetLevel
 comment "administrative function that returns the bat on level i";
 
-command getIndex():bat[:oid,:oid]
+command getIndex():bat[:oid]
 address TKNZRgetIndex
 comment "administrative function that returns the INDEX bat";
 
-command getCount():bat[:oid,:wrd]
+command getCount():bat[:wrd]
 address TKNZRgetCount
 comment "debugging function that returns the size of the bats at each level";
 
-command getCardinality():bat[:oid,:wrd]
+command getCardinality():bat[:wrd]
 address TKNZRgetCardinality
 comment "debugging function that returns the unique tokens at each level";

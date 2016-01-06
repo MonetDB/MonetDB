@@ -10,9 +10,9 @@ stderr of test 'schema_change_grant_crash.SF-963620` in directory 'sql/test/BugD
 # 08:40:05 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47606  < schema_change_grant_crash.SF-963620.sql
 # 08:40:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
 QUERY = grant all on mine to monetdb;
-ERROR = !GRANT Table/Function name mine doesn't exist
+ERROR = !GRANT no such table 'mine'
 
 # 08:40:05 >  
 # 08:40:05 >  Done.

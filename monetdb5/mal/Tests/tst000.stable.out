@@ -9,16 +9,24 @@ stdout of test 'tst000` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33756/
-##empty test file, used to check startup problems
-#
-function user.main():void;
-#empty test file, used to check startup problems 
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31270/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9852/.s.monetdb.31270
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 10:56:51 >  
-# 10:56:51 >  Done.
-# 10:56:51 >  
+Ready.
+
+# 11:01:26 >  
+# 11:01:26 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9852" "--port=31270"
+# 11:01:26 >  
+
+
+# 11:01:26 >  
+# 11:01:26 >  "Done."
+# 11:01:26 >  
 

@@ -130,7 +130,7 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 {
 	InstrPtr q = newAssignment(mb);
 
-	if (q == NULL)
+	if (q == NULL || mod == NULL || fcn == NULL)
 		return NULL;
 	setModuleId(q, putName(mod, strlen(mod)));
 	setFunctionId(q, putName(fcn, strlen(fcn)));

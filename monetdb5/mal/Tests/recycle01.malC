@@ -1,0 +1,49 @@
+#test the basics of the recycler
+#reusing select results
+
+module sql;
+function sql.mvc():int;
+	return mvc:=1;
+end mvc;
+
+function sql.tid(mvc:int,s:str,t:str):bat[:oid];
+b:= bat.new(:oid);
+barrier i:= 0:oid;
+    bat.append(b,i);
+    redo i:= iterator.next(1:oid,12:oid);
+exit i;
+    return tid:= b;
+end tid;
+
+function sql.bind(mvc:int, s:str,t:str,c:str,i:int):bat[:int];
+	b:= bat.new(:int);
+	bat.append(b,0);
+	bat.append(b,1);
+	bat.append(b,2);
+	bat.append(b,3);
+	bat.append(b,4);
+	bat.append(b,5);
+	bat.append(b,6);
+	bat.append(b,7);
+	bat.append(b,8);
+	bat.append(b,9);
+	bat.append(b,10);
+	bat.append(b,11);
+	return bind:=b;
+end bind;
+
+function qry(low:int, hgh:int);
+	m:= sql.mvc();
+	x:bat[:oid]  := sql.tid(m,"sys","tbl");
+	b:bat[:int]:= sql.bind(m,"sys","tbl","col",0);
+	s:= algebra.subselect(b,x,low,hgh,true,true,false);
+	io.print(s);
+end qry;
+
+optimizer.recycler("user","qry");
+mdb.list("user","qry");
+io.print("start");
+qry(1,10);
+io.print("reuse BAT");
+qry(1,10);
+recycle.dump();

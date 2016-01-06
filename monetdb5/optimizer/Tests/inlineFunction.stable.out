@@ -19,39 +19,21 @@ stdout of test 'inlineFunction` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.my_case(Av:int):int;
-    X3 := calc.==(Av,1);
-    res:int  := 0;
-barrier X4 := X3;
-    X6 := calc.int(100);
-    res:int  := X6;
-exit X4;
-barrier X7 := calc.not(X3);
-    X9 := calc.==(Av,2);
-barrier X10 := X9;
-    X12 := calc.int(200:sht);
-    res:int  := X12;
-exit X10;
-barrier X13 := calc.not(X9);
-    X14 := calc.-(1);
-    X15 := calc.int(X14);
-    res:int  := X15;
-exit X13;
-exit X7;
-    return my_case:int  := res;
-end user.my_case;
-function user.tst():void;
-    z := user.my_case(1);
-end user.tst;
-function user.main():void;
-    io.printf("#result of inline\n");
-    mdb.list("user","tst");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:30:42 >  
+# 11:30:42 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24656" "--port=37417"
+# 11:30:42 >  
+
 #result of inline
 function user.tst():void;
     X_5 := true:bit;
     X_6:int  := 0;
     X_6:int  := 100;
+    z := X_6;
+end user.tst;
 
 # 01:05:28 >  
 # 01:05:28 >  Done.

@@ -9,65 +9,78 @@ stdout of test 'tst830` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35798/
-function user.main():void;
-# a simple functional test for the access control table 
-# this should fail, the monetdb user is already there 
-    pw := clients.backendsum("Pmonetdb");
-    id := clients.addUser("monetdb",pw);
-catch MALException:str;
-    io.printf("%s\n",MALException);
-exit MALException:str;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37997/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13998/.s.monetdb.37997
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:35:27 >  
+# 11:35:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-13954" "--port=38078"
+# 11:35:27 >  
+
+function user.foo():void;               	#[0]  0 
+    pw:str := clients.backendsum("Pmonetdb":str);	#[1] CLTbackendsum 1 <- 2 
+    id:oid := clients.addUser("monetdb":str,pw:str);	#[2] CLTaddUser 3 <- 4 1 
+catch MALException:str;                 	#[3]  5 
+    io.printf("0: %s\n":str,MALException:str);	#[4] IOprintf 6 <- 7 5 
+exit MALException:str;                  	#[5]  5 
 # should print 1@0 or something 
-    id := clients.addUser("test",pw);
-    io.print(id);
+    id:oid := clients.addUser("test":str,pw:str);	#[7] CLTaddUser 3 <- 9 1 
+    io.print(id:oid);                   	#[8] IOprint_val 10 <- 3 
 # this should work also 
-    id := clients.addUser("checkpoint",pw);
-    io.print(id);
+    id:oid := clients.addUser("checkpoint":str,pw:str);	#[10] CLTaddUser 3 <- 12 1 
+    io.print(id:oid);                   	#[11] IOprint_val 13 <- 3 
 # do a simple listing of users known 
-    (u,n) := clients.getUsers();
-    io.print(u,n);
+    (u:bat[:oid],n:bat[:str]) := clients.getUsers();	#[13] CLTgetUsers 15 16 
+    io.print(u:bat[:oid],n:bat[:str]);  	#[14] IOtable 17 <- 15 16 
 # should work, we're the admin here 
-    clients.removeUser("checkpoint");
+    clients.removeUser("checkpoint":str);	#[16] CLTremoveUser 19 <- 12 
 # do a simple listing of users known 
-    (u,n) := clients.getUsers();
-    io.print(u,n);
+    (u:bat[:oid],n:bat[:str]) := clients.getUsers();	#[18] CLTgetUsers 15 16 
+    io.print(u:bat[:oid],n:bat[:str]);  	#[19] IOtable 21 <- 15 16 
 # forcefully set the password of the user test 
-    clients.setPassword("test",pw);
+    clients.setPassword("test":str,pw:str);	#[21] CLTsetPassword 23 <- 9 1 
 # now try to set the password for ourself, should fail 
-    clients.setPassword("monetdb",pw);
-catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-exit InvalidCredentialsException:str;
-# change our own password 
-    mypw := clients.backendsum("monetdb");
-    clients.changePassword(mypw,pw);
-# try it again, should fail... 
-    clients.changePassword(mypw,pw);
-catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str;
+    clients.setPassword("monetdb":str,pw:str);	#[23] CLTsetPassword 25 <- 4 1 
+catch InvalidCredentialsException:str;  	#[24]  26 
+    io.printf("1: %s\n":str,InvalidCredentialsException:str);	#[25] IOprintf 27 <- 28 26 
+exit InvalidCredentialsException:str;   	#[26]  26 
+#	# change our own password,            
+#	mypw := clients.backendsum("monetdb"); 
+#	clients.changePassword(mypw, pw);     
+#	# try it again, should fail...        
+#	clients.changePassword(mypw, pw);     
+#catch InvalidCredentialsException:str; 
+#	io.printf("2: %s\n",InvalidCredentialsException); 
+#	InvalidCredentialsException:= nil:str; 
+#exit InvalidCredentialsException;      
 # all should fail 
-    clients.checkPermission("monetdb","Pmonetdb");
-catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str;
-    clients.checkPermission("monetdb","x");
-catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str;
-    clients.checkPermission("x","Pmonetdb");
-catch InvalidCredentialsException:str;
-    io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException:str  := nil:str;
-exit InvalidCredentialsException:str;
-end user.main;
-MALException:addUser:user 'monetdb' already exists
+    clients.checkPermission("monetdb":str,"Pmonetdb":str);	#[37] CLTcheckPermission 39 <- 40 41 
+catch InvalidCredentialsException:str;  	#[38]  26 
+    io.printf("3: %s\n":str,InvalidCredentialsException:str);	#[39] IOprintf 42 <- 43 26 
+    InvalidCredentialsException:str := nil:str;	#[40]  26 <- 44 
+exit InvalidCredentialsException:str;   	#[41]  26 
+    clients.checkPermission("monetdb":str,"x":str);	#[42] CLTcheckPermission 45 <- 40 46 
+catch InvalidCredentialsException:str;  	#[43]  26 
+    io.printf("4: %s\n":str,InvalidCredentialsException:str);	#[44] IOprintf 47 <- 48 26 
+    InvalidCredentialsException:str := nil:str;	#[45]  26 <- 44 
+exit InvalidCredentialsException:str;   	#[46]  26 
+    clients.checkPermission("x":str,"Pmonetdb":str);	#[47] CLTcheckPermission 49 <- 46 41 
+catch InvalidCredentialsException:str;  	#[48]  26 
+    io.printf("5: %s\n":str,InvalidCredentialsException:str);	#[49] IOprintf 50 <- 51 26 
+    InvalidCredentialsException:str := nil:str;	#[50]  26 <- 44 
+exit InvalidCredentialsException:str;   	#[51]  26 
+end user.foo;                           	#[52]  
+0: MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]
 [ 2@0 ]
 #--------------------------#
@@ -83,11 +96,10 @@ MALException:addUser:user 'monetdb' already exists
 #--------------------------#
 [ 0@0,	0@0,	"monetdb"  ]
 [ 1@0,	1@0,	"test"  ]
-InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
-InvalidCredentialsException:changePassword:Access denied
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:invalid credentials for user 'x'
+1: InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
+3: InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+4: InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+5: InvalidCredentialsException:checkCredentials:invalid credentials for user 'x'
 
 # 08:49:53 >  
 # 08:49:53 >  Done.

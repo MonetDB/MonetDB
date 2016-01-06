@@ -29,8 +29,8 @@ extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, hge val);
 extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, lng val);
 #endif
 extern atom *atom_float( sql_allocator *sa, sql_subtype *tpe, double val);
-extern atom *atom_string( sql_allocator *sa, sql_subtype *tpe, char *val);
-extern atom *atom_general( sql_allocator *sa, sql_subtype *tpe, char *val);
+extern atom *atom_string( sql_allocator *sa, sql_subtype *tpe, const char *val);
+extern atom *atom_general( sql_allocator *sa, sql_subtype *tpe, const char *val);
 #ifdef HAVE_HGE
 extern atom *atom_dec( sql_allocator *sa, sql_subtype *tpe, hge val, double dval);
 #else

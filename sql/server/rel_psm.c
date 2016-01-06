@@ -48,7 +48,7 @@ static sql_exp *
 psm_set_exp(mvc *sql, dnode *n)
 {
 	exp_kind ek = {type_value, card_value, FALSE};
-	char *name = n->data.sval;
+	const char *name = n->data.sval;
 	symbol *val = n->next->data.sym;
 	sql_exp *e = NULL;
 	int level = 0, is_last = 0;
@@ -116,7 +116,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
 		sql_subtype *ctype = &n->data.sym->data.lval->h->next->data.typeval;
 		while(ids) {
-			char *name = ids->data.sval;
+			const char *name = ids->data.sval;
 			sql_exp *r = NULL;
 
 			/* check if we overwrite a scope local variable declare x; declare x; */
@@ -142,8 +142,8 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 {
 	sql_rel *rel = NULL;
 	dlist *qname = n->next->data.lval;
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *name = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_table *t;
 
 	if (sname)  /* not allowed here */
@@ -393,7 +393,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;
 			sql_arg *ce = m->data;
-			char *cname = exp_name(e);
+			const char *cname = exp_name(e);
 			char name[16];
 
 			if (!cname)
@@ -414,7 +414,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		list *exps = sa_list(sql->sa);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
-		char *tname = t->base.name;
+		const char *tname = t->base.name;
 
 		if (cs_size(&t->columns) != list_length(restypelist))
 			return sql_error(sql, 02, "RETURN: number of columns do not match");
@@ -650,7 +650,7 @@ create_type_list(mvc *sql, dlist *params, int param)
 }
 
 static sql_rel*
-rel_create_function(sql_allocator *sa, char *sname, sql_func *f)
+rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -670,8 +670,8 @@ rel_create_function(sql_allocator *sa, char *sname, sql_func *f)
 static sql_rel *
 rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, int type, int lang)
 {
-	char *fname = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *fname = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *f = NULL;
 	sql_subfunc *sf;
@@ -831,7 +831,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 }
 
 static sql_rel*
-rel_drop_function(sql_allocator *sa, char *sname, char *name, int nr, int type, int action)
+rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr, int type, int action)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -851,16 +851,11 @@ rel_drop_function(sql_allocator *sa, char *sname, char *name, int nr, int type, 
 	return rel;
 }
 
-static sql_rel* 
-rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
+sql_func *
+resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op) 
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
-	list * list_func = NULL, *type_list = NULL; 
-	sql_subfunc *sub_func = NULL;
 	sql_func *func = NULL;
-
+	list *list_func = NULL, *type_list = NULL;
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
@@ -868,41 +863,29 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
-
-	if (s == NULL) 
-		s =  cur_schema(sql);
-	
 	if (typelist) {	
+		sql_subfunc *sub_func;
+
 		type_list = create_type_list(sql, typelist, 0);
 		sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
 		if (!sub_func && type == F_FUNC) {
 			sub_func = sql_bind_func_(sql->sa, s, name, type_list, F_UNION);
 			type = sub_func?F_UNION:F_FUNC;
 		}
-		if (!sub_func && !sname) {
-			s = tmp_schema(sql);
-			sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
-			if (!sub_func && type == F_FUNC) {
-				sub_func = sql_bind_func_(sql->sa, s, name, type_list, F_UNION);
-				type = sub_func?F_UNION:F_FUNC;
-			}
-		}
 		if ( sub_func && sub_func->func->type == type)
 			func = sub_func->func;
 	} else {
-		list_func = schema_bind_func(sql,s,name, type);
+		list_func = schema_bind_func(sql, s, name, type);
 		if (!list_func && type == F_FUNC) 
 			list_func = schema_bind_func(sql,s,name, F_UNION);
 		if (list_func && list_func->cnt > 1) {
 			list_destroy(list_func);
-			return sql_error(sql, 02, "DROP %s%s: there are more than one %s%s called '%s', please use the full signature", KF, F, kf, f,name);
+			return sql_error(sql, 02, "%s %s%s: there are more than one %s%s called '%s', please use the full signature", op, KF, F, kf, f,name);
 		}
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
 	}
-	
+
 	if (!func) { 
 		if (typelist) {
 			char *arg_list = NULL;
@@ -921,32 +904,61 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 				}
 				list_destroy(list_func);
 				list_destroy(type_list);
-				return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' (%s)", KF, F, kf, f, name, arg_list);
+				return sql_error(sql, 02, "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);
-			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' ()", KF, F, kf, f, name);
+			return sql_error(sql, 02, "%s %s%s: no such %s%s '%s' ()", op, KF, F, kf, f, name);
 
 		} else {
-			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s'", KF, F, kf, f, name);
+			return sql_error(sql, 02, "%s %s%s: no such %s%s '%s'", op, KF, F, kf, f, name);
 		}
 	} else if (((is_func && type != F_FILT) && !func->res) || 
 		   (!is_func && func->res)) {
 		list_destroy(list_func);
 		list_destroy(type_list);
-		return sql_error(sql, 02, "DROP %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", name);
+		return sql_error(sql, 02, "%s %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", op, name);
 	}
 
 	list_destroy(list_func);
 	list_destroy(type_list);
-	return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
+	return func;
+}
+
+static sql_rel* 
+rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
+{
+	const char *name = qname_table(qname);
+	const char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
+	sql_func *func = NULL;
+
+	char is_aggr = (type == F_AGGR);
+	char is_func = (type != F_PROC);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+
+	if (s == NULL) 
+		s =  cur_schema(sql);
+	
+	func = resolve_func(sql, s, name, typelist, type, "DROP");
+	if (!func && !sname) {
+		s = tmp_schema(sql);
+		func = resolve_func(sql, s, name, typelist, type, "DROP");
+	}
+	if (func)
+		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
+	return NULL;
 }
 
 static sql_rel* 
 rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
+	const char *name = qname_table(qname);
+	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	list * list_func = NULL; 
 
@@ -971,7 +983,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 }
 
 static sql_rel *
-rel_create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
+rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *triggername, int time, int orientation, int event, const char *old_name, const char *new_name, const char *condition, const char *query)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -997,7 +1009,7 @@ rel_create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int ti
 }
 
 static void
-_stack_push_table(mvc *sql, char *tname, sql_table *t)
+_stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
 		
@@ -1007,7 +1019,7 @@ _stack_push_table(mvc *sql, char *tname, sql_table *t)
 static sql_rel *
 create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
-	char *tname = qname_table(qname);
+	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate);
@@ -1016,7 +1028,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 	sql_rel *r = NULL;
 
 	dlist *columns = trigger_event->data.lval;
-	char *old_name = NULL, *new_name = NULL; 
+	const char *old_name = NULL, *new_name = NULL; 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	
 	if (opt_ref) {
@@ -1069,7 +1081,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 }
 
 static sql_rel *
-rel_drop_trigger(mvc *sql, char *sname, char *tname)
+rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1089,7 +1101,7 @@ rel_drop_trigger(mvc *sql, char *sname, char *tname)
 static sql_rel *
 drop_trigger(mvc *sql, dlist *qname)
 {
-	char *tname = qname_table(qname);
+	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 
 	if (!mvc_schema_privs(sql, ss)) 
@@ -1102,7 +1114,7 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 {
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
-	char *sname = NULL, *tname = NULL;
+	const char *sname = NULL, *tname = NULL;
 	list *tl = sa_list(sql->sa);
 	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
@@ -1160,7 +1172,7 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 		if (!f)
 			return sql_error(sql, 01, "Analyze procedure missing");
 		for( n = columns->h; n; n = n->next) {
-			char *cname = n->data.sval;
+			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
 			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
 
@@ -1191,17 +1203,19 @@ rel_psm(mvc *sql, symbol *s)
 	case SQL_DROP_FUNC:
 	{
 		dlist *l = s->data.lval;
-		int type = l->h->next->next->next->next->data.i_val;
+		dlist *qname = l->h->data.lval;
+		dlist *typelist = l->h->next->data.lval;
+		int type = l->h->next->next->data.i_val;
+		int all = l->h->next->next->next->data.i_val;
+		int drop_action = l->h->next->next->next->next->data.i_val;
 
 		if (STORE_READONLY) 
 			return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
-		assert(l->h->next->type == type_int);
-		assert(l->h->next->next->next->type == type_int);
-		if (l->h->next->data.i_val) /*?l_val?*/
-			ret = rel_drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.i_val, type);
+		if (all)
+			ret = rel_drop_all_func(sql, qname, drop_action, type);
 		else
-			ret = rel_drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, type);
+			ret = rel_drop_func(sql, qname, typelist, drop_action, type);
 
 		sql->type = Q_SCHEMA;
 	}	break;

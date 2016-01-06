@@ -93,7 +93,7 @@ strip_extra_zeros(char *s)
 	return res;
 }
 
-char *
+const char *
 sql2str(char *s)
 {
 	int escaped = 0;
@@ -175,8 +175,8 @@ sql_escape_str(char *s)
 	return res;
 }
 
-char *
-sql_escape_ident(char *s)
+const char *
+sql_escape_ident(const char *s)
 {
 	size_t l = strlen(s);
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);

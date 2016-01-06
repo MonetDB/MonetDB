@@ -1927,6 +1927,8 @@ parse_uri_query(Mapi mid, char *uri)
 					mid->languageId = LANG_MAL;
 				else if (strstr(val, "sql") == val)
 					mid->languageId = LANG_SQL;
+				else if (strstr(val, "profiler") == val)
+					mid->languageId = LANG_PROFILER;
 			} else if (strcmp("user", uri) == 0) {
 				/* until we figure out how this can be
 				   done safely wrt security, ignore */
@@ -2038,6 +2040,8 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
 
 	if (uri[0] == '/') {
 		host = uri;
@@ -2134,6 +2138,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "profiler") == lang)
+		mid->languageId = LANG_PROFILER;
 
 	return mid;
 }
@@ -5041,6 +5047,21 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 			      &result->cache.line[cr].lens,
 			      result->fieldcnt, ']');
 		free(p);
+	}
+	if (i != result->fieldcnt) {
+		int j;
+		for (j = 0; j < result->fieldcnt; j++) {
+			if (result->fields[j].columnname)
+				free(result->fields[j].columnname);
+			result->fields[j].columnname = NULL;
+			if (result->fields[j].columntype)
+				free(result->fields[j].columntype);
+			result->fields[j].columntype = NULL;
+			if (result->fields[j].tablename)
+				free(result->fields[j].tablename);
+			result->fields[j].tablename = NULL;
+			result->fields[j].columnlength = 0;
+		}
 	}
 	if (i > result->fieldcnt) {
 		result->fieldcnt = i;

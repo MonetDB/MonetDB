@@ -184,6 +184,41 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	return NULL;
 }
 
+char *
+sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, int func_id, int grant, int grantor)
+{
+	sql_trans *tr = sql->session->tr;
+	sql_schema *s = NULL;
+	sql_func *f = NULL;
+	int allowed, grantee_id;
+
+ 	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	if (s) {
+		node *n = find_sql_func_node(s, func_id);
+		if (n)
+			f = n->data;
+	}
+	assert(f);
+	allowed = schema_privs(grantor, f->s);
+
+	if (!allowed)
+		allowed = sql_grantable(sql, grantor, f->base.id, privs, 0);
+
+	if (!allowed) 
+		return sql_message("0L000!GRANT: grantor '%s' is not allowed to grant privileges for function '%s'", stack_get_string(sql,"current_user"), f->base.name);
+
+	grantee_id = sql_find_auth(sql, grantee);
+	if (grantee_id <= 0) 
+		return sql_message("42M32!GRANT: user/role '%s' unknown", grantee);
+	/* first check if privilege isn't already given */
+	if (sql_privilege(sql, grantee_id, f->base.id, privs, 0)) 
+		return sql_message("42M32!GRANT: user/role '%s' already has this privilege", grantee);
+	sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
+	tr->schema_updates++;
+	return NULL;
+}
+
 static void
 sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, int grantable)
 {
@@ -277,6 +312,36 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	} else {
 		sql_delete_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
 	}
+	sql->session->tr->schema_updates++;
+	return NULL;
+}
+
+char *
+sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, int func_id, int grant, int grantor)
+{
+	sql_schema *s = NULL;
+	sql_func *f = NULL;
+	int allowed, grantee_id;
+
+ 	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	if (s) {
+		node *n = find_sql_func_node(s, func_id);
+		if (n)
+			f = n->data;
+	}
+	assert(f);
+	allowed = schema_privs(grantor, f->s);
+	if (!allowed)
+		allowed = sql_grantable(sql, grantor, f->base.id, privs, 0);
+
+	if (!allowed) 
+		return sql_message("0L000!REVOKE: grantor '%s' is not allowed to revoke privileges for function '%s'", stack_get_string(sql,"current_user"), f->base.name);
+
+	grantee_id = sql_find_auth(sql, grantee);
+	if (grantee_id <= 0) 
+		return sql_message("42M32!REVOKE: user/role '%s' unknown", grantee);
+	sql_delete_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
 	sql->session->tr->schema_updates++;
 	return NULL;
 }
@@ -383,6 +448,21 @@ table_privs(mvc *m, sql_table *t, int priv)
 	return 0;
 }
 
+int
+execute_priv(mvc *m, sql_func *f)
+{
+	int priv = PRIV_EXECUTE;
+	
+	if (!f->s || admin_privs(m->user_id) || admin_privs(m->role_id))
+		return 1;
+	if (m->user_id == f->s->auth_id || m->role_id == f->s->auth_id)
+		return 1;
+	if (sql_privilege(m, m->user_id, f->base.id, priv, 0) == priv || 
+	    sql_privilege(m, m->role_id, f->base.id, priv, 0) == priv || 
+	    sql_privilege(m, ROLE_PUBLIC, f->base.id, priv, 0) == priv) 
+		return 1;
+	return 0;
+}
 
 static int
 role_granting_privs(mvc *m, oid role_rid, int role_id, int grantor_id)

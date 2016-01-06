@@ -808,12 +808,13 @@ vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
 	return n;
 }
 
-static void
+static int
 BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
 	BATstore *bs;
+	int needcommit = 0;
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -899,6 +900,21 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		nread += vheapinit(&bs->H, buf + nread, Hhashash, bid);
 		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
 
+		if (bs->S.count > 1) {
+			/* fix result of bug in BATappend not clearing
+			 * revsorted property */
+			if (bs->H.type == TYPE_void && bs->H.seq != oid_nil && bs->H.revsorted) {
+				bs->H.revsorted = 0;
+				bs->S.descdirty = 1;
+				needcommit = 1;
+			}
+			if (bs->T.type == TYPE_void && bs->T.seq != oid_nil && bs->T.revsorted) {
+				bs->T.revsorted = 0;
+				bs->S.descdirty = 1;
+				needcommit = 1;
+			}
+		}
+
 		if (buf[nread] != '\n' && buf[nread] != ' ')
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 		if (buf[nread] == ' ')
@@ -931,6 +947,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
+	return needcommit;
 }
 
 #ifdef HAVE_HGE
@@ -1042,6 +1059,7 @@ BBPinit(void)
 	int bbpversion;
 	int oidsize;
 	oid BBPoid;
+	int needcommit;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1093,7 +1111,7 @@ BBPinit(void)
 	BBPextend(0, FALSE);		/* allocate BBP records */
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
 
-	BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
+	needcommit = BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
 
 	/* normalize saved LRU stamps */
@@ -1122,7 +1140,7 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
-	if (bbpversion < GDKLIBRARY)
+	if (bbpversion < GDKLIBRARY || needcommit)
 		TMcommit();
 
 	return;
@@ -1542,14 +1560,14 @@ BBPdump(void)
 			HEAPvmsize(&b->H->heap),
 			HEAPmemsize(b->H->vheap),
 			HEAPvmsize(b->H->vheap),
-			b->H->hash && b->H->hash != (Hash *) -1 ? HEAPmemsize(b->H->hash->heap) : 0,
-			b->H->hash && b->H->hash != (Hash *) -1 ? HEAPvmsize(b->H->hash->heap) : 0,
+			b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1 ? HEAPmemsize(b->H->hash->heap) : 0,
+			b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1 ? HEAPvmsize(b->H->hash->heap) : 0,
 			HEAPmemsize(&b->T->heap),
 			HEAPvmsize(&b->T->heap),
 			HEAPmemsize(b->T->vheap),
 			HEAPvmsize(b->T->vheap),
-			b->T->hash && b->T->hash != (Hash *) -1 ? HEAPmemsize(b->T->hash->heap) : 0,
-			b->T->hash && b->T->hash != (Hash *) -1 ? HEAPvmsize(b->T->hash->heap) : 0);
+			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPmemsize(b->T->hash->heap) : 0,
+			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPvmsize(b->T->hash->heap) : 0);
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 			cmem += HEAPmemsize(&b->H->heap);
 			cvm += HEAPvmsize(&b->H->heap);
@@ -1568,7 +1586,7 @@ BBPdump(void)
 				vm += HEAPvmsize(b->H->vheap);
 			}
 		}
-		if (b->H->hash && b->H->hash != (Hash *) -1) {
+		if (b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->H->hash->heap);
 				cvm += HEAPvmsize(b->H->hash->heap);
@@ -1593,7 +1611,7 @@ BBPdump(void)
 				vm += HEAPvmsize(b->T->vheap);
 			}
 		}
-		if (b->T->hash && b->T->hash != (Hash *) -1) {
+		if (b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->T->hash->heap);
 				cvm += HEAPvmsize(b->T->hash->heap);
@@ -2242,7 +2260,6 @@ decref(bat i, int logical, int releaseShare, int lock)
 	assert(i > 0);
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
-	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
 	if (releaseShare) {
 		--BBP_desc(i)->S.sharecnt;
 		if (lock)
@@ -2300,8 +2317,11 @@ decref(bat i, int logical, int releaseShare, int lock)
 	}
 
 	/* we destroy transients asap and unload persistent bats only
-	 * if they have been made cold */
-	if (BBP_refs(i) > 0 || (BBP_lrefs(i) > 0 && BBP_lastused(i) != 0)) {
+	 * if they have been made cold or are not dirty */
+	if (BBP_refs(i) > 0 ||
+	    (BBP_lrefs(i) > 0 &&
+	     BBP_lastused(i) != 0 &&
+	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT)))) {
 		/* bat cannot be swapped out. renew its last usage
 		 * stamp for the BBP LRU policy */
 		int sec = BBPLASTUSED(BBPstamp());
@@ -2475,11 +2495,14 @@ getBBPdescriptor(bat i, int lock)
 	if (load) {
 		IODEBUG fprintf(stderr, "#load %s\n", BBPname(i));
 
-		b = BATload_intern(i, lock);
+		b = BATload_intern(j, lock);
 		BBPin++;
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(j, BBPLOADING, "BBPdescriptor");
+		CHECKDEBUG BATassertProps(b);
+		if (i < 0)
+			b = BATmirror(b);
 	}
 	return b;
 }
@@ -3858,21 +3881,41 @@ BBPdiskscan(const char *parent)
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hhash", 5) == 0) {
+#ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
-		} else if (strncmp(p + 1, "thash", 5) == 0) {
+			if (!delete)
+				b->H->hash = (Hash *) 1;
+#else
+			delete = TRUE;
+#endif
+		} else if (strncmp(p + 1, "hhash", 5) == 0 ||
+			   strncmp(p + 1, "thash", 5) == 0) {
+#ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
+			if (!delete)
+				b->T->hash = (Hash *) 1;
+#else
+			delete = TRUE;
+#endif
 		} else if (strncmp(p + 1, "himprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
+			if (!delete)
+				b->H->imprints = (Imprints *) 1;
 		} else if (strncmp(p + 1, "timprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
+			if (!delete)
+				b->T->imprints = (Imprints *) 1;
 		} else if (strncmp(p + 1, "mosaic", 6) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
-		} else if (strncmp(p + 1, "priv", 4) != 0 && strncmp(p + 1, "new", 3) != 0 && strncmp(p + 1, "head", 4) != 0 && strncmp(p + 1, "tail", 4) != 0) {
+		} else if (strncmp(p + 1, "priv", 4) != 0 &&
+			   strncmp(p + 1, "new", 3) != 0 &&
+			   strncmp(p + 1, "head", 4) != 0 &&
+			   strncmp(p + 1, "tail", 4) != 0) {
 			ok = FALSE;
 		}
 		if (!ok) {

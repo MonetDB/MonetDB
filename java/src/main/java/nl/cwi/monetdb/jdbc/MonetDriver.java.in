@@ -357,6 +357,14 @@ final public class MonetDriver implements Driver {
 		return "" + DRIVERMAJOR + "." + DRIVERMINOR + " (" + DRIVERVERSIONSUFFIX + ")";
 	}
 
+	public static int getDriverMajorVersion() {
+		return DRIVERMAJOR;
+	}
+
+	public static int getDriverMinorVersion() {
+		return DRIVERMINOR;
+	}
+
 	/**
 	 * Return the parent Logger of all the Loggers used by this data
 	 * source.  This should be the Logger farthest from the root Logger

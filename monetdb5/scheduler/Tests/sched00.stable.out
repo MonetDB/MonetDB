@@ -9,22 +9,22 @@ stdout of test 'sched00` in directory 'monetdb5/scheduler` itself:
 # Serving database 'mTests_src_scheduler', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.f():void;
-    i := 1;
-# just properties 
-    mdb.List();
-    io.print("start running\n");
-    scheduler.isolation();
-    io.print("done\n");
-    mdb.List();
-end user.f;
-function user.main():void;
-    user.f();
-#shows self-modification in action 
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:31436/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11496/.s.monetdb.31436
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:27:20 >  
+# 11:27:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-11496" "--port=31436"
+# 11:27:20 >  
+
 function user.f():void;                 	#[0]  0 
     i:int := 1:int;                     	#[1]  1 <- 2 
 # just properties                       

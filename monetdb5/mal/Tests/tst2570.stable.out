@@ -5,55 +5,31 @@ stdout of test 'tst2570` in directory 'monetdb5/mal` itself:
 # 02:38:10 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36766 --set xrpc_port=46537 --set monet_prompt= --trace  --dbname=mTests_src_mal  tst2570.mal
 # 02:38:10 >  
 
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_mal'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36766/
-##basic interaction of factories and restart
-#
-#factory step1():int;
-#	io.printf("start step 1\n");
-#	cnt := 0;
-#
-#barrier go:= true;
-#	cnt:= cnt+1;
-#	io.printf("step1 %d\n",cnt);
-#	yield step1:= cnt;
-#	redo go:= true;
-#exit go;
-#end step1;
-factory user.step1():int;
-    io.printf("start step 1\n");
-    cnt := 0;
-barrier go := true;
-    cnt := calc.+(cnt,1);
-    io.printf("step1 %d\n",cnt);
-    yield step1 := cnt;
-    redo go := true;
-exit go;
-    return step1 := 0;
-end user.step1;
-factory user.step2():int;
-    io.printf("start step 2\n");
-    cnt := 0;
-barrier go := true;
-    cnt := calc.+(cnt,1);
-    io.printf("step2 %d\n",cnt);
-    yield step2 := cnt;
-    redo go := true;
-exit go;
-    return step2 := 0;
-end user.step2;
-function user.main():void;
-#basic interaction of factories and restart 
-    i := user.step1();
-    j := user.step2();
-    k := user.step1();
-    m := user.step2();
-    factories.shutdown("user","step1");
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:36897/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23788/.s.monetdb.36897
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:12:29 >  
+# 16:12:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23788" "--port=36897"
+# 16:12:29 >  
+
+#i:= user.step1();
 start step 1
 step1 1
 start step 2

@@ -1,0 +1,24 @@
+# test proper exists
+function foo();
+	i:= 1;
+	j:= 2;
+barrier v:=i;
+	io.print("entered");
+	io.print(v);
+	redo v:= iterator.next(-1,0);
+exit 	v;
+	io.print("doubles");
+	i:= 1;
+barrier (v,w):=(i,j);
+	io.print("entered2");
+	io.print(v);
+	v:= v-1;
+	barrier b:= v == 0;
+		leave (v,w);
+	exit b;
+	redo (v,w):= (v,w);
+exit 	(v,w);
+	io.print("finished");
+end foo;
+mdb.List("user","foo");
+user.foo();

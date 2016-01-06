@@ -1,8 +1,0 @@
-b:= bat.new(:oid,:str);
-bat.append(b,"hello");
-bat.append(b,"goodbye");
-
-z0:= algebra.likesubselect(b,nil:bat[:oid,:oid],"%hel%",false);
-io.print(z0);
-
-

@@ -21,31 +21,21 @@ stdout of test 'inlineIfthen` in directory 'monetdb5/optimizer` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-inline function user.foo(b:int):int;
-    foo := 0;
-barrier go := calc.<(b,10);
-    foo := 1;
-exit go;
-    return foo := foo;
-end user.foo;
-function user.qry():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    bat.append(b,10);
-    bat.append(b,20);
-    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);
-    io.print(r);
-end user.qry;
-function user.main():void;
-    mdb.List("user","qry");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:52:28 >  
+# 21:52:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23787" "--port=32128"
+# 21:52:28 >  
+
 inline function user.qry():void;        	#[0]  0 
-    b:bat[:oid,:int] := bat.new(:oid,:int);	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:oid,:int],1:int); 	#[2] BKCappend_val_wrap 4 <- 1 5 
-    bat.append(b:bat[:oid,:int],10:int);	#[3] BKCappend_val_wrap 6 <- 1 7 
-    bat.append(b:bat[:oid,:int],20:int);	#[4] BKCappend_val_wrap 8 <- 1 9 
-    r:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int]);	#[5] MANIFOLDremapMultiplex 10 <- 11 12 1 
-    io.print(r:bat[:oid,:int]);         	#[6] IOprint_val 13 <- 10 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
+    bat.append(b:bat[:int],10:int);     	#[3] BKCappend_val_wrap 6 <- 1 7 
+    bat.append(b:bat[:int],20:int);     	#[4] BKCappend_val_wrap 8 <- 1 9 
+    r:bat[:int] := mal.multiplex("user":str,"foo":str,b:bat[:int]);	#[5] MANIFOLDremapMultiplex 10 <- 11 12 1 
+    io.print(r:bat[:int]);              	#[6] IOprint_val 13 <- 10 
 end user.qry;                           	#[7]  
 
 # 11:53:01 >  

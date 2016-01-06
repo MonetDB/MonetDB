@@ -1,120 +1,68 @@
 stdout of test 'tst272` in directory 'monetdb5/mal` itself:
 
 
-# 21:45:33 >  
-# 21:45:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=47702 --set sql_port=53059 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst272.mal </dev/null
-# 21:45:33 >  
+# 13:20:46 >  
+# 13:20:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37961" "--set" "mapi_usock=/var/tmp/mtest-18020/.s.monetdb.37961" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:20:46 >  
 
-# Monet Database Server V4.7.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-##Same as tst270, but includes testing of the profiler trace
-#
-#profiler.activate("ticks");
-##profiler.activate("pc");
-#profiler.activate("statement");
-#profiler.setFilter("*","insert");
-#
-#o:=oid(20000000);
-#setoid(o);
-##test basic functionality of the BAT library.
-##focussed on integers
-##it includes insertions,deletions,selections, and joins.
-#
-#b:= new(:int,:int);
-#profiler.startTrace();
-#err := insert(b,1,15);
-#err := insert(b,2,4);
-#n0  := int(nil);
-#err := insert(b,3,n0);
-#err := insert(b,4,16);
-#err := insert(b,5,25);
-#err := insert(b,6,36);
-#err := insert(b,7,49);
-#err := insert(b,8,64);
-#err := insert(b,9,n0);
-#err := insert(b,n0,n0);
-#err := insert(b,n0,81);
-#print(b);
-#print(b,b,b);
-#profiler.stopTrace();
-#t:= profiler.getTrace("ticks");
-#print(t);
-#s:= profiler.getTrace("statement");
-#print(s);
-#print(t,s);
-#
-function user.main():void;
-#Same as tst270, but includes testing of the profiler trace 
-    o := calc.oid(20000000);
-    calc.setoid(o);
-    b := bat.new(:oid,:int);
-#test basic functionality of the BAT library. 
-#focussed on integers 
-#it includes insertions,deletions,selections, and joins. 
-    profiler.stethoscope(0);
-    err := bat.append(b,15);
-    err := bat.append(b,4);
-    n0 := calc.int(nil);
-    err := bat.append(b,n0);
-    err := bat.append(b,16);
-    err := bat.append(b,25);
-    err := bat.append(b,36);
-    err := bat.append(b,49);
-    err := bat.append(b,64);
-    err := bat.append(b,n0);
-    err := bat.append(b,n0);
-    err := bat.append(b,81);
-    io.print(b);
-    io.print(b,b,b);
-    profiler.stop();
-    io.printf("#~BeginVariableOutput~#\n");
-    t := profiler.getTrace("ticks");
-#io.print(t); 
-    s := profiler.getTrace("stmt");
-#io.print(s); 
-#io.print(t,s); 
-    io.printf("#~EndVariableOutput~#\n");
-    profiler.cleanup();
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37961/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18020/.s.monetdb.37961
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:20:46 >  
+# 13:20:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:20:46 >  
+
 #--------------------------#
 # h	t  # name
 # void	int  # type
 #--------------------------#
-[ 0@0,	  15	  ]
-[ 1@0,	  4	  ]
-[ 2@0,	  nil	  ]
-[ 3@0,	  16	  ]
-[ 4@0,	  25	  ]
-[ 5@0,	  36	  ]
-[ 6@0,	  49	  ]
-[ 7@0,	  64	  ]
-[ 8@0,	  nil	  ]
-[ 9@0,	  nil	  ]
-[ 10@0,	  81	  ]
-#---------------------------------#
-# h	tmp_13	tmp_13	tmp_13	  # name
-# int	int	int	int	  # type
-#---------------------------------#
-[ 0@0,	  15,	  15,	  15	  ]
-[ 1@0,	  4,	  4,	  4	  ]
-[ 2@0,	  nil,	  nil,	  nil	  ]
-[ 3@0,	  16,	  16,	  16	  ]
-[ 4@0,	  25,	  25,	  25	  ]
-[ 5@0,	  36,	  36,	  36	  ]
-[ 6@0,	  49,	  49,	  49	  ]
-[ 7@0,	  64,	  64,	  64	  ]
-[ 8@0,	  nil,	  nil,	  nil	  ]
-[ 9@0,	  nil,	  nil,	  nil	  ]
-[ 10@0,	  81,	  81,	  81	  ]
+[ 0@0,	15	]
+[ 1@0,	4	]
+[ 2@0,	nil	]
+[ 3@0,	16	]
+[ 4@0,	25	]
+[ 5@0,	36	]
+[ 6@0,	49	]
+[ 7@0,	64	]
+[ 8@0,	nil	]
+[ 9@0,	nil	]
+[ 10@0,	81	]
+#--------------------------#
+# t	t	t	t  # name
+# void	int	int	int  # type
+#--------------------------#
+[ 0@0,	15,	15,	15	]
+[ 1@0,	4,	4,	4	]
+[ 2@0,	nil,	nil,	nil	]
+[ 3@0,	16,	16,	16	]
+[ 4@0,	25,	25,	25	]
+[ 5@0,	36,	36,	36	]
+[ 6@0,	49,	49,	49	]
+[ 7@0,	64,	64,	64	]
+[ 8@0,	nil,	nil,	nil	]
+[ 9@0,	nil,	nil,	nil	]
+[ 10@0,	81,	81,	81	]
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 
-# 21:45:33 >  
-# 21:45:33 >  Done.
-# 21:45:33 >  
+# 13:20:46 >  
+# 13:20:46 >  "Done."
+# 13:20:46 >  
 

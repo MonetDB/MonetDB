@@ -1229,7 +1229,9 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (g && BATtdense(g)) {
 		/* singleton groups: return group ID's (g's tail) and original
 		 * values from b */
-		bn = VIEWcreate(BATmirror(g), b);
+		bn = VIEWcreate(b->hseqbase, b);
+		if (bn)
+			BATseqbase(bn, g->tseqbase);
 		goto out;
 	}
 
@@ -1247,7 +1249,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bi = bat_iterator(b);
 	if (g) {
 		/* stable sort g */
-		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) != GDK_SUCCEED) {
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			bn = NULL;
 			err = "internal sort failed";

@@ -39,6 +39,7 @@ extern int store_nr_active;
 extern store_type active_store_type;
 extern int store_readonly;
 extern int store_singleuser;
+extern int store_initialized;
 
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
@@ -334,6 +335,7 @@ extern int sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int digits, int scale, int radix, const char *impl);
+extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, int id, int drop_action);
 
 extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
 
