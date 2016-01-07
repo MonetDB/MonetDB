@@ -914,11 +914,7 @@ RECYCLEdrop(Client cntxt){
 	recyclerMemoryUsed = 0;
 	recyclerSavings = 0;
 	recycled = 0;
-	statements = 0;
-#ifdef ATOMIC_LOCK
-	statementsLock MT_LOCK_INITIALIZER("statementsLock");
-#endif
-	statements = 0;
+	ATOMIC_SET(statements, 0, statementsLock);
 	recycleSearchTime =0;	/* cache search time in ms*/
 	recycleSearchCalls =0;	
 	bindRef = 0, bind_idxRef = 0, sqlRef = 0;
