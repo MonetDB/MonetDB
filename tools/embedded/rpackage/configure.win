@@ -12,24 +12,14 @@ sh src/tools/embedded/windows/pmc.sh
 
 cd src
 make 
-make install
-cd tools/embedded
-cp libembeddedr_la-embeddedr.lo libmonetdb5.o
-cp libembeddedr.la libembeddedr.a
-cp ../../sql/backends/monet5/lib_sql.la ../../sql/backends/monet5/libsql.a
+OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.lo" | tr "\n" " "`
 
-"${R_HOME}/bin/R.exe" CMD SHLIB -o libmonetdb5.dll libmonetdb5.o -L. -L../../sql/backends/monet5 -Wl,--whole-archive -lembeddedr -lsql -Wl,--no-whole-archive -lpthread -lpsapi -lws2_32 -static-libgcc -static-libstdc++ -Wl,--export-all-symbols -Wl,--allow-multiple-definition -Lwindows/pcre-8.37/libs/x64/ -lpcre
+rm libmonetdb5.dll
+gcc -shared -m64 -o libmonetdb5.dll $OFILES -lws2_32 -lpthread -lpsapi -Ltools/embedded/windows/pcre-8.37/libs/x64/ -lpcre `R CMD config --ldflags`
 
-cd ../../..
+cd ../
 mkdir -p $R_PACKAGE_DIR/libs/x64
-cp src/tools/embedded/libmonetdb5.dll  src/
 cp src/tools/embedded/windows/pcre-8.37/libs/x64/pcre.dll $R_PACKAGE_DIR/libs/x64/
 cp src/tools/embedded/windows/msvcr100.dll $R_PACKAGE_DIR/libs/x64/
-
-# we have all of those in our fat DLL, so delete
-find ${R_PACKAGE_DIR}/libs -name "*.la" -delete
-rm -r $R_PACKAGE_DIR/libs/include $R_PACKAGE_DIR/libs/share
-mv $R_PACKAGE_DIR/libs/lib/monetdb5 $R_PACKAGE_DIR/libs/
-rm -r $R_PACKAGE_DIR/libs/lib
 
 # When configure.win is run the environment variables R_HOME (which uses ‘/’ as the file separator), R_ARCH and Use R_ARCH_BIN will be set. Use R_ARCH to decide if this is a 64-bit build (its value there is ‘/x64’) and to install DLLs to the correct place (${R_HOME}/libs${R_ARCH}). Use R_ARCH_BIN to find the correct place under the bin directory, e.g. ${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe.

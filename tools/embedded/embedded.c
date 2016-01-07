@@ -21,6 +21,7 @@
 #include "msabaoth.h"
 #include "sql_scenario.h"
 #include "gdk_utils.h"
+#include <locale.h>
 
 typedef str (*SQLstatementIntern_ptr_tpe)(Client, str*, str, bit, bit, res_table**);
 SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
@@ -76,14 +77,19 @@ void monetdb_disconnect(void* conn) {
 	MCcloseClient((Client) conn);
 }
 
-char* monetdb_startup(char* libdir, char* dbdir, char silent) {
+char* monetdb_startup(char* dbdir, char silent) {
 	opt *set = NULL;
 	int setlen = 0;
 	str retval = MAL_SUCCEED;
 	char* sqres = NULL;
 	void* res = NULL;
 	void* c;
-	char mod_path[1000];
+
+	if (setlocale(LC_CTYPE, "") == NULL) {
+		retval = GDKstrdup("setlocale() failed");
+		goto cleanup;
+	}
+
 	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
 		retval = GDKfatalmsg;
@@ -105,8 +111,7 @@ char* monetdb_startup(char* libdir, char* dbdir, char silent) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
-	snprintf(mod_path, 1000, "%s/monetdb5", libdir);
-	GDKsetenv("monet_mod_path", mod_path);
+	GDKsetenv("monet_mod_path", "");
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("max_clients", "0");
 	GDKsetenv("sql_optimizer", "sequential_pipe");

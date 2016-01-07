@@ -3,10 +3,8 @@
 monetdb_embedded_env <- new.env(parent=emptyenv())
 monetdb_embedded_env$is_started <- FALSE
 monetdb_embedded_env$started_dir <- ""
-monetdb_embedded_env$install_dir <- ""
 
 .onLoad <- function(libname, pkgname){
-	monetdb_embedded_env$install_dir <- file.path(libname, pkgname, "libs")
 	library.dynam("libmonetdb5", pkgname, lib.loc=libname, now=T, local=F)
 }
 
@@ -26,7 +24,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	}
 	dir <- normalizePath(dir)
 	if (!monetdb_embedded_env$is_started) {
-		res <- .Call("monetdb_startup_R", monetdb_embedded_env$install_dir, dir, quiet, PACKAGE="libmonetdb5")
+		res <- .Call("monetdb_startup_R", dir, quiet, PACKAGE="libmonetdb5")
 	} else {
 		if (dir != monetdb_embedded_env$started_dir) {
 			stop("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ", restart R).")

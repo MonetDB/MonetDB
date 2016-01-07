@@ -13,7 +13,7 @@
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
---enable-debug --enable-silent-rules --disable-assert --disable-strict
+--enable-debug --enable-silent-rules --disable-assert --disable-strict --disable-int128
 make -j clean install
 
 then build this file as follows:
@@ -30,10 +30,6 @@ int main() {
 	void* conn = NULL;
 	res_table* result = NULL;
 
-	if (setlocale(LC_CTYPE, "") == NULL) {
-		fprintf(stderr, "Can't set locale. Boo.");
-		return -1;
-	}
 	// we want to get rid of first argument, this is why we want to inline mal/sql scripts and have fat library
 	err = monetdb_startup("/dev/null", "/tmp/embedded-dbfarm", 1);
 	if (err != NULL) {

@@ -51,8 +51,7 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 	return ScalarLogical(1);
 }
 
-SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp) {
-	const char* installdir = NULL;
+SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp) {
 	const char* dbdir=NULL;
 	char silent = 0;
 	char* res = NULL;
@@ -60,11 +59,10 @@ SEXP monetdb_startup_R(SEXP installdirsexp, SEXP dbdirsexp, SEXP silentsexp) {
 	if (monetdb_embedded_initialized) {
 		return ScalarLogical(0);
 	}
-	installdir = CHAR(STRING_ELT(installdirsexp, 0));
 	dbdir = CHAR(STRING_ELT(dbdirsexp, 0));
 	silent = LOGICAL(silentsexp)[0];
 
-	res = monetdb_startup((char*) installdir, (char*) dbdir, silent);
+	res = monetdb_startup((char*) dbdir, silent);
 
 	if (res == NULL) {
 		return ScalarLogical(1);

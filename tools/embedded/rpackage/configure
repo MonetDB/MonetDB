@@ -6,7 +6,7 @@ CFLAGS="-I$R_INCLUDE_DIR" ./configure --enable-embedded --enable-embedded-r \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
---enable-optimize --enable-silent-rules --disable-assert --disable-strict
+--enable-optimize --enable-silent-rules --disable-assert --disable-strict --disable-int128
 
 # Dirty hack, normally R would call make, but we need to also glue everything together. 
 # So we do it ourselves instead and then render the MonetDB makefile inert.
@@ -18,8 +18,13 @@ echo -e "dummytarget:\n\ttrue\n" > Makefile
 RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
 
 mkdir -p $R_PACKAGE_DIR/libs
-R CMD shlib --output $RDYNLIB -lbz2 -lcurl -lz -liconv -llzma -lpcre -Wl,-all_load `find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | xargs echo`
-
+OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | tr "\n" " "`
+gcc -v 2>&1 | grep LLVM
+if [ $? != 0 ]; then
+	R CMD SHLIB --output $RDYNLIB -Wl,--whole-archive $OFILES -Wl,--no-whole-archive -lbz2 -lcurl -lz -llzma -lpcre -luuid
+else # clang linker does not like --whole-archive
+	R CMD SHLIB --output $RDYNLIB -Wl,-all_load $OFILES -lbz2 -lcurl -lz -llzma -lpcre
+fi
 cd ..
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
