@@ -90,6 +90,7 @@ __declspec(noreturn) gdk_export void GDKexit(int status)
 	__attribute__((__noreturn__));
 gdk_export int GDKexiting(void);
 
+gdk_export void GDKreset(int status);
 gdk_export const char *GDKversion(void);
 
 #endif /* _GDK_UTILS_H_ */

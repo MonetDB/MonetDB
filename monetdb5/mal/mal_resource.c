@@ -19,6 +19,12 @@
 lng memorypool = 0;      /* memory claimed by concurrent threads */
 int memoryclaims = 0;    /* number of threads active with expensive operations */
 
+void
+mal_resource_reset(void)
+{
+	memorypool = 0;
+	memoryclaims = 0;
+}
 /*
  * Running all eligible instructions in parallel creates
  * resource contention. This means we should implement

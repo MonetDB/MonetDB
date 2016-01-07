@@ -99,7 +99,7 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 
 	adr = (MALfcn) dlsym(dl, fcnname);
 	dlclose(dl);
-	if( adr != NULL)
+	if(adr != NULL)
 		return adr; /* found it */
 
 	if (!silent)
@@ -241,17 +241,20 @@ loadLibrary(str filename, int flag)
  * because they may still be in use.
  */
 void
-unloadLibraries(void)
+mal_linker_reset(void)
 {
 	int i;
 
 	MT_lock_set(&mal_contextLock);
-	for (i = 0; i < lastfile; i++)
+	for (i = 0; i < lastfile; i++){
 		if (filesLoaded[i].fullname) {
 			/* dlclose(filesLoaded[i].handle);*/
 			GDKfree(filesLoaded[i].filename);
 			GDKfree(filesLoaded[i].fullname);
 		}
+		filesLoaded[i].filename = 0;
+		filesLoaded[i].fullname = 0;
+	}
 	lastfile = 0;
 	MT_lock_unset(&mal_contextLock);
 }

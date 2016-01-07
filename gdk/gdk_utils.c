@@ -24,6 +24,9 @@ static char GDKdbpathStr[PATHLENGTH] = { "dbpath" };
 
 BAT *GDKkey = NULL;
 BAT *GDKval = NULL;
+int GDKdebug = 0;
+
+static char THRprintbuf[BUFSIZ];
 
 #include <signal.h>
 
@@ -1237,48 +1240,49 @@ GDKexiting(void)
 
 /* coverity[+kill] */
 void
-GDKexit(int status)
+GDKreset(int status)
 {
-	if (GDKlockFile == NULL) {
-		/* no database lock, so no threads, so exit now */
-		exit(status);
+	MT_Id pid = MT_getpid();
+	Thread t, s;
+	int i;
+
+	if( GDKkey){
+		BBPunfix(GDKkey->batCacheid);
+		GDKkey = 0;
 	}
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) == 0) {
-		MT_Id pid = MT_getpid();
-		Thread t, s;
-		int i;
-
+	if( GDKval){
+		BBPunfix(GDKval->batCacheid);
+		GDKval = 0;
+	}
+	if (GDKvmtrim_id)
+		MT_join_thread(GDKvmtrim_id);
+	/* first give the other threads a chance to exit  properly*/
+	for (i = 0; i < 10 && GDKnrofthreads; i++) {
 		MT_lock_set(&GDKthreadLock);
-		GDKnrofthreads = 0;
-		MT_lock_unset(&GDKthreadLock);
-		if (GDKvmtrim_id)
-			MT_join_thread(GDKvmtrim_id);
-		/* first give the other threads a chance to exit */
-		for (i = 0; i < 10; i++) {
-			MT_lock_set(&GDKthreadLock);
-			for (t = GDKthreads, s = t + THREADS; t < s; t++)
-				if (t->pid && t->pid != pid)
-					break;
-			MT_lock_unset(&GDKthreadLock);
-			if (t == s) /* no other threads? */
+		for (t = GDKthreads, s = t + THREADS; t < s; t++)
+			if (t->pid && t->pid != pid)
 				break;
-			MT_sleep_ms(CATNAP);
-		}
-		if (status == 0) {
-			/* they had there chance, now kill them */
-			MT_lock_set(&GDKthreadLock);
-			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
-				if (t->pid) {
-					MT_Id victim = t->pid;
+		MT_lock_unset(&GDKthreadLock);
+		if (t == s) /* no other threads? */
+			break;
+		MT_sleep_ms(CATNAP);
+	}
 
-					if (t->pid != pid) {
-						fprintf(stderr, "#GDKexit: killing thread\n");
-						MT_kill_thread(victim);
-					}
+	if (status == 0) {
+		/* they had there chance, now kill them */
+		MT_lock_set(&GDKthreadLock);
+		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
+			if (t->pid) {
+				MT_Id victim = t->pid;
+
+				if (t->pid != pid) {
+					fprintf(stderr, "#GDKexit: killing thread %d\n", MT_kill_thread(victim));
 				}
+				GDKnrofthreads --;
 			}
-			MT_lock_unset(&GDKthreadLock);
 		}
+		assert(GDKnrofthreads == 0);
+		/* all threads ceased running, now we can clean up */
 #if 0
 		/* we can't clean up after killing threads */
 		BBPexit();
@@ -1288,6 +1292,49 @@ GDKexit(int status)
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
+		GDKdebug = 0;
+		strcpy(GDKdbpathStr,"dbpath");
+		GDK_mmap_minsize = (size_t) 1 << 18;
+		GDK_mmap_pagesize = (size_t) 1 << 16; 
+		GDK_mem_maxsize = GDK_VM_MAXSIZE;
+		GDK_vm_maxsize = GDK_VM_MAXSIZE;
+
+		GDK_vm_trim = 1;
+
+		GDK_mallocedbytes_estimate = 0;
+		GDK_vm_cursize = 0;
+		_MT_pagesize = 0;
+		_MT_npages = 0;
+#ifdef GDK_VM_KEEPHISTO
+		memset((char*)GDK_vm_nallocs[MAX_BIT], 0, sizeof(GDK_vm_nallocs));
+#endif
+#ifdef GDK_MEM_KEEPHISTO
+		memset((char*)GDK_nmallocs[MAX_BIT], 0, sizeof(GDK_nmallocs));
+#endif
+		GDKvmtrim_id =0;
+		GDKnr_threads = 0;
+		GDKnrofthreads = 0;
+		memset((char*) GDKbatLock,0, sizeof(GDKbatLock));
+		memset((char*) GDKbbpLock,0,sizeof(GDKbbpLock));
+
+		memset((char*) GDKthreads, 0, sizeof(GDKthreads));
+		memset((char*) THRdata, 0, sizeof(THRdata));
+		memset((char*) THRprintbuf,0, sizeof(THRprintbuf));
+		gdk_bbp_reset();
+		MT_lock_unset(&GDKthreadLock);
+		//gdk_system_reset(); CHECK OUT
+	}
+}
+
+void
+GDKexit(int status)
+{
+	if (GDKlockFile == NULL) {
+		/* no database lock, so no threads, so exit now */
+		exit(status);
+	}
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) == 0) {
+		GDKreset(status);
 		MT_global_exit(status);
 	}
 	MT_exit_thread(-1);
@@ -1297,7 +1344,6 @@ GDKexit(int status)
  * All semaphores used by the application should be mentioned here.
  * They are initialized during system initialization.
  */
-int GDKdebug = 0;
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
@@ -1817,8 +1863,6 @@ THRgettid(void)
 	MT_lock_unset(&GDKthreadLock);
 	return t;
 }
-
-static char THRprintbuf[BUFSIZ];
 
 int
 THRprintf(stream *s, const char *format, ...)

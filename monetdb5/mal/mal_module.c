@@ -18,6 +18,7 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_listing.h"
+#include "mal_private.h"
 
 Module mal_scope;    /* the root of the tree */
 Module scopeJump[256][256];  /* to speedup access to correct scope */
@@ -25,6 +26,14 @@ Module scopeJump[256][256];  /* to speedup access to correct scope */
 static void newSubScope(Module scope){
 	int len = (MAXSCOPE)*sizeof(Module);
 	scope->subscope = (Symbol *) GDKzalloc(len);
+}
+
+void
+mal_module_reset(void)
+{
+	freeModuleList(mal_scope);
+	mal_scope = NULL;
+	memset((char*) scopeJump, 0, 256 * 256);
 }
 /*
  * Definition of a new module scope may interfere with concurrent
@@ -161,7 +170,11 @@ void freeModule(Module m)
 }
 
 void freeModuleList(Module s){
-	Module t=s;
+	Module t;
+	if (s == NULL) {
+		s = mal_scope;
+	}
+	t=s;
 	while(s){
 		t= s->outer;
 		s->outer= NULL;

@@ -83,13 +83,25 @@ static struct worker {
 	Client cntxt;				/* client we do work for (NULL -> any) */
 	MT_Sema s;
 } workers[THREADS];
+
 static Queue *todo = 0;	/* pending instructions */
+
 #ifdef ATOMIC_LOCK
 static MT_Lock exitingLock MT_LOCK_INITIALIZER("exitingLock");
 #endif
 static volatile ATOMIC_TYPE exiting = 0;
-
 static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
+
+void
+mal_dataflow_reset(void)
+{
+	stopMALdataflow();
+	memset((char*) workers, 0,  sizeof(workers));
+	if( todo)
+		GDKfree(todo);
+	todo = 0;	/* pending instructions */
+	exiting = 0;
+}
 
 /*
  * Calculate the size of the dataflow dependency graph.

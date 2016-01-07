@@ -144,6 +144,11 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 static str fillScenario(Client c, Scenario scen);
 static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
 
+
+void
+mal_scenario_reset(void)
+{
+}
 /*
  * @-
  * Currently each user can define a new scenario, provided we have a free slot.

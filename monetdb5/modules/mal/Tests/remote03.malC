@@ -4,6 +4,7 @@ conn:str := remote.connect(uri, "monetdb", "monetdb");
 
 # this is invalid, as io.print is an invalid module, and bla will be
 # taken as function
+function tst(conn:str);
 res:str := remote.put(conn,:void);
 res := remote.exec(conn, "io.print", "bla");
 catch SyntaxException:str;
@@ -48,7 +49,17 @@ catch MALException:str;
 	io.print("Received fifth error from the remote site");
 	io.printf("!%s\n", MALException);
 exit MALException;
+end tst;
+tst(conn);
 
+catch SyntaxException:str;
+	io.print("Received an error from the remote site");
+	io.printf("!%s\n", SyntaxException);
+exit SyntaxException;
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
 remote.disconnect(conn);
+catch MALException:str;
+	io.print("Received an error from the remote site");
+exit MALException;
+
