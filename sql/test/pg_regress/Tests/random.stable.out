@@ -35,14 +35,16 @@ Ready.
 % wrd # type
 % 4 # length
 [ 1000	]
-#CREATE TEMPORARY TABLE random_tbl( random double);
+#CREATE TEMPORARY TABLE random_tbl( random double)
+# ON COMMIT PRESERVE ROWS;
 #INSERT INTO random_tbl SELECT count(*) AS random 
 #  FROM onek WHERE rand() < 1.0/10;
 [ 1	]
 #DROP TABLE random_tbl;
-#CREATE TEMPORARY TABLE random_tbl( random bigint);
+#CREATE TEMPORARY TABLE random_tbl( random bigint)
+# ON COMMIT PRESERVE ROWS;
 #INSERT INTO random_tbl SELECT count(*) AS random 
-#  FROM onek WHERE 1.0/rand() < 1.0/10;
+#  FROM onek WHERE rand() < 1.0/10;
 [ 1	]
 #INSERT INTO RANDOM_TBL (random)
 #  SELECT count(*)
@@ -65,12 +67,14 @@ Ready.
 % random,	L1 # name
 % bigint,	wrd # type
 % 1,	1 # length
+[ 0, 4       ]
 #SELECT AVG(random) FROM RANDOM_TBL
 #  HAVING AVG(random) NOT BETWEEN 80 AND 120;
 % .L1 # table_name
 % L1 # name
 % double # type
 % 24 # length
+[ 0  ]
 
 # 12:56:12 >  
 # 12:56:12 >  "Done."
