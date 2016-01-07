@@ -400,6 +400,10 @@ SQLtrans(mvc *m)
 		mvc_trans(m);
 }
 
+#ifdef HAVE_EMBEDDED
+#include "createdb_inline.h"
+#endif
+
 str
 SQLinitClient(Client c)
 {
@@ -476,11 +480,35 @@ SQLinitClient(Client c)
 			SQLnewcatalog = 1;
 	}
 	if (SQLnewcatalog > 0) {
+#ifdef HAVE_EMBEDDED
+		SQLnewcatalog = 0;
+		maybeupgrade = 0;
+		{
+			size_t createdb_len = strlen(createdb_inline);
+			buffer* createdb_buf = buffer_create(createdb_len);
+			stream* createdb_stream = buffer_rastream(createdb_buf, "createdb.sql");
+			bstream* createdb_bstream = bstream_create(createdb_stream, createdb_len);
+			buffer_init(createdb_buf, createdb_inline, createdb_len);
+			if (bstream_next(createdb_bstream) >= 0)
+				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
+			else
+				msg = createException(MAL, "createdb", "could not load inlined createdb script");
+
+			free(createdb_buf);
+			free(createdb_stream);
+			free(createdb_bstream);
+			if (m->sa)
+				sa_destroy(m->sa);
+			m->sa = NULL;
+		}
+
+#else
 		char path[PATHLENGTH];
 		str fullname;
 
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
+
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -524,6 +552,7 @@ SQLinitClient(Client c)
 			GDKfree(fullname);
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
+#endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();

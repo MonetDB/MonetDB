@@ -201,6 +201,7 @@ malInclude(Client c, str name, int listing)
 		parseMAL(c, c->curprg, 1);
 		free(mal_init_buf);
 		free(mal_init_stream);
+		free(c->fdin);
 		c->fdin = NULL;
 	}
 #else
