@@ -1,49 +1,26 @@
 #!/bin/sh
 cd src
 
-CFLAGS="-I$R_INCLUDE_DIR" ./configure --prefix=$R_PACKAGE_DIR/iprefix --libdir=$R_PACKAGE_DIR/libs \
---enable-embedded --enable-embedded-r --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
+CFLAGS="-I$R_INCLUDE_DIR" ./configure --enable-embedded --enable-embedded-r \
+--disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
 --enable-optimize --enable-silent-rules --disable-assert --disable-strict
 
-# Dirty hack, normally R would call make, but we need to also do a make install to get the libs in place. 
+# Dirty hack, normally R would call make, but we need to also glue everything together. 
 # So we do it ourselves instead and then render the MonetDB makefile inert.
-make -k -j install
+make -k -j
 
 echo -e "dummytarget:\n\ttrue\n" > Makefile
-cd ..
 
 # and finally put the embedded library where R expects it
 RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
-# TODO: this number should probably be pulled from automake and friends
-VER=1
 
-# OSX: patch loader paths so installed pkg can be moved around in FS
-if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.$VER.dylib" ]; then
-	mv $R_PACKAGE_DIR/libs/libembeddedr.$VER.dylib $RDYNLIB
-	for dylb in `find $R_PACKAGE_DIR/libs -type f -name "*.dylib" -o -name "*.so"` ; do
-		echo "Now checking dynamic library $dylb"
-		install_name_tool -id `basename $dylb` $dylb
-		dylbdir=`dirname $dylb`
-		for ref in `otool -L $dylb | \
-			tail -n +2 | grep MonetDBLite | sed -e "s/[[:blank:]]//g" -e "s/([^)]*)//g"` ; do
-			relpath=`realpath --relative-to $dylbdir $R_PACKAGE_DIR/libs`
-			relref=@loader_path/$relpath/`basename $ref`
-			echo "Found absolute linker reference to $ref, changing to $relref"
-			install_name_tool -change $ref $relref $dylb
-		done
-	done
-	find $R_PACKAGE_DIR/libs/ -type l -delete
-fi
-if [ -f "$R_PACKAGE_DIR/libs/libembeddedr.so.$VER" ]; then
-    mv $R_PACKAGE_DIR/libs/libembeddedr.so.$VER $RDYNLIB
-fi
-rm -r $R_PACKAGE_DIR/iprefix
-find $R_PACKAGE_DIR/libs/ -name "*.la" -delete
-rm -r $R_PACKAGE_DIR/libs/pkgconfig
+mkdir -p $R_PACKAGE_DIR/libs
+R CMD shlib --output $RDYNLIB -lbz2 -lcurl -lz -liconv -llzma -lpcre -Wl,-all_load `find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | xargs echo`
 
+cd ..
 if [ ! -f $RDYNLIB ]; then
 	echo "configure/build failure"
     exit -1

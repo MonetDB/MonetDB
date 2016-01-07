@@ -35,7 +35,7 @@ int main() {
 		return -1;
 	}
 	// we want to get rid of first argument, this is why we want to inline mal/sql scripts and have fat library
-	err = monetdb_startup("/tmp/embedded-install/lib", "/tmp/embedded-dbfarm", 1);
+	err = monetdb_startup("/dev/null", "/tmp/embedded-dbfarm", 1);
 	if (err != NULL) {
 		fprintf(stderr, "Init fail: %s\n", err);
 		return -1;

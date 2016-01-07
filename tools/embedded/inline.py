@@ -20,8 +20,8 @@ def mal_include(filename):
             if (match == None): break
             modname = match.groups(0)[0]
             incfile = mal_include(modname + ".mal" if os.path.isfile(modname + ".mal") else modname)
-            if (modname == 'sql'):
-                incfile = "library sql;\n" + incfile
+#            if (modname == 'sql'):
+#                incfile = "library sql;\n" + incfile
             content = content[:match.start()] + incfile + content[match.end():]
         return content
     else:
