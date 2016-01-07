@@ -1,3 +1,7 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Jan  7 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Fixed a memory leak in MonetDatabaseMetaData.java for a static cache
+  which kept references to closed Connection objects.
+
