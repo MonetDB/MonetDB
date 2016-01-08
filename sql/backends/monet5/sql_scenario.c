@@ -463,6 +463,7 @@ SQLinitClient(Client c)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
+#ifndef HAVE_EMBEDDED
 	/* pass through credentials of the user if not console */
 	schema = monet5_user_set_def_schema(m, c->user);
 	if (!schema) {
@@ -470,6 +471,7 @@ SQLinitClient(Client c)
 		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
 	_DELETE(schema);
+#endif
 
 	/*expect SQL text first */
 	be->language = 'S';
