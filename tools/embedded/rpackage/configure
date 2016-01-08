@@ -21,9 +21,9 @@ mkdir -p $R_PACKAGE_DIR/libs
 OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | tr "\n" " "`
 gcc -v 2>&1 | grep LLVM
 if [ $? != 0 ]; then
-	R CMD SHLIB --output $RDYNLIB -Wl,--whole-archive $OFILES -Wl,--no-whole-archive -lbz2 -lcurl -lz -llzma -lpcre -luuid
+	$R_HOME/bin/R CMD SHLIB --output $RDYNLIB -Wl,--whole-archive $OFILES -Wl,--no-whole-archive -lbz2 -lcurl -lz -llzma -lpcre -luuid
 else # clang linker does not like --whole-archive
-	R CMD SHLIB --output $RDYNLIB -Wl,-all_load $OFILES -lbz2 -lcurl -lz -llzma -lpcre
+	$R_HOME/bin/R CMD SHLIB --output $RDYNLIB -Wl,-all_load $OFILES -lbz2 -lcurl -lz -llzma -lpcre
 fi
 cd ..
 if [ ! -f $RDYNLIB ]; then
