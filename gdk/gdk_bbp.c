@@ -119,6 +119,7 @@ static gdk_return BBPdir(int cnt, bat *subcommit);
 static MT_Lock stampLock MT_LOCK_INITIALIZER("stampLock");
 #endif
 static volatile ATOMIC_TYPE stamp = 0;
+
 static inline int
 BBPstamp(void)
 {
@@ -3923,8 +3924,7 @@ BBPdiskscan(const char *parent)
 #else
 			delete = TRUE;
 #endif
-		} else if (strncmp(p + 1, "hhash", 5) == 0 ||
-			   strncmp(p + 1, "thash", 5) == 0) {
+		} else if (strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
@@ -4019,3 +4019,34 @@ BBPatom_load(int atom)
 }
 #endif
 
+void
+gdk_bbp_reset(void)
+{
+	memset((char*) BBP, 0, sizeof(BBP));
+	BBPlimit = 0;
+	BBPsize = 0;
+	memset((char*) BBPfarms, 0, sizeof(BBPfarms));
+	BBP_hash = 0;
+	BBP_mask = 0;
+	stamp = 0;
+
+	BBP_curstamp = 0;
+	BBP_notrim =  ~((MT_Id) 0);
+	BBP_dirty = 0;
+	BBPin = 0;
+	BBPout = 0;
+
+	locked_by = 0;
+	BBPunloadCnt = 0;
+	memset((char*) lastused, 0, sizeof(lastused));
+	memset((char*) bbptrim, 0, sizeof(bbptrim));
+	bbptrimfirst = BBPMAXTRIM;
+	bbptrimlast = 0;
+	bbptrimmax = BBPMAXTRIM;
+	bbpscanstart = 1;
+	bbpunloadtail = 0;
+	bbpunload = 0;
+	backup_files = 0;
+	backup_dir = 0;
+	backup_subdir = 0;
+}

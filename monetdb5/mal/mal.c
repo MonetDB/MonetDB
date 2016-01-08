@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+ * Copyright 2008-2015 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -20,7 +20,9 @@ int have_hge;
 
 #include "mal_stack.h"
 #include "mal_linker.h"
+#include "mal_authorize.h"
 #include "mal_session.h"
+#include "mal_scenario.h"
 #include "mal_parser.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
@@ -30,6 +32,8 @@ int have_hge;
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
 #include "mal_private.h"
+#include "mal_runtime.h"
+#include "mal_resource.h"
 
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
@@ -39,6 +43,7 @@ MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
 MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
 MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
 MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
+
 /*
  * Initialization of the MAL context
  * The compiler directive STRUCT_ALIGNED tells that the
@@ -104,8 +109,52 @@ int mal_init(void){
 /*
  * Upon exit we should attempt to remove all allocated memory explicitly.
  * This seemingly superflous action is necessary to simplify analyis of
- * memory leakage problems later on.
+ * memory leakage problems later ons and to allow an embedded server to
+ * restart the server properly.
+ * 
+ * It is the responsibility of the enclosing application to finish/cease all
+ * activity first.
+ * This function should be called after you have issued sql_reset();
  */
+void mserver_reset(void){
+	str err = 0;
+
+    MCstopClients(0);
+    setHeartbeat(-1);
+    stopProfiler();
+    RECYCLEdrop(mal_clients); 
+	AUTHreset(); 
+	if ((err = msab_wildRetreat()) != NULL) {
+		fprintf(stderr, "!%s", err);
+		free(err);
+	}
+	if ((err = msab_registerStop()) != NULL) {
+		fprintf(stderr, "!%s", err);
+		free(err);
+	}
+#ifdef HAVE_EMBEDDED
+	MTIMEreset();
+#endif
+	mal_factory_reset();
+	mal_dataflow_reset();
+	GDKreset(0);	// terminate all other threads
+	mal_client_reset();
+	mal_module_reset();
+	mal_module_reset();
+    mal_linker_reset();
+	mal_resource_reset();
+	mal_runtime_reset();
+	mal_scenario_reset();
+	
+	memset((char*)monet_cwd,0, sizeof(monet_cwd));
+	monet_memory = 0;
+	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
+	mal_trace = 0;		
+/* No need to clean up the namespace, it will simply be extended upon restart
+	mal_namespace_reset();
+*/
+}
+
 
 /* stopping clients should be done with care, as they may be in the mids of
  * transactions. One safe place is between MAL instructions, which would
@@ -118,67 +167,6 @@ int mal_init(void){
  */
 
 void mal_exit(void){
-	str err;
-
-	/*
-	 * Before continuing we should make sure that all clients
-	 * (except the console) have left the scene.
-	 */
-	MCstopClients(0);
-#if 0
-{
-	int reruns=0, go_on;
-	do{
-		if ( (go_on = MCactiveClients() -1) )
-			MT_sleep_ms(1000);
-		mnstr_printf(mal_clients->fdout,"#MALexit: %d clients still active\n", go_on);
-	} while (++reruns < SERVERSHUTDOWNDELAY && go_on > 1);
-}
-#endif
-	setHeartbeat(0);
-	stopMALdataflow();
-	stopProfiler();
-	RECYCLEdrop(mal_clients); /* remove any left over intermediates */
-	unloadLibraries();
-
-#if 0
-	/* skip this to solve random crashes, needs work */
-	freeModuleList(mal_clients->nspace);
-
-	finishNamespace();
-	if( mal_clients->prompt)
-		GDKfree(mal_clients->prompt);
-	if( mal_clients->errbuf)
-		GDKfree(mal_clients->errbuf);
-	if( mal_clients->bak)
-		GDKfree(mal_clients->bak);
-	if( mal_clients->fdin){
-		/* missing protection against closing stdin stream */
-		mnstr_close(mal_clients->fdin->s);
-		bstream_destroy(mal_clients->fdin);
-	}
-	if( mal_clients->fdout && mal_clients->fdout != GDKstdout) {
-		mnstr_close(mal_clients->fdout);
-		mnstr_destroy(mal_clients->fdout);
-	}
-#endif
-	/* deregister everything that was registered, ignore errors */
-	if ((err = msab_wildRetreat()) != NULL) {
-		fprintf(stderr, "!%s", err);
-		free(err);
-	}
-	/* the server will now be shut down */
-	if ((err = msab_registerStop()) != NULL) {
-		fprintf(stderr, "!%s", err);
-		free(err);
-	}
-#ifdef HAVE_EMBEDDED
-	//freeModuleList(mal_clients->nspace);
-	freeModuleList(NULL);
-	finishNamespace();
-	// FIXME: this required?
-	// MTIMEreset();
-
-#endif
+	mserver_reset();
 	GDKexit(0); 	/* properly end GDK */
 }

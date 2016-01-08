@@ -165,6 +165,12 @@ static struct winthread {
 static CRITICAL_SECTION winthread_cs;
 static int winthread_cs_init = 0;
 
+void
+gdk_system_reset(void)
+{
+	winthread_cs_init = 0;
+}
+
 static struct winthread *
 find_winthread(DWORD tid)
 {

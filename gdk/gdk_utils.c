@@ -24,6 +24,9 @@ static char GDKdbpathStr[PATHLENGTH] = { "dbpath" };
 
 BAT *GDKkey = NULL;
 BAT *GDKval = NULL;
+int GDKdebug = 0;
+
+static char THRprintbuf[BUFSIZ];
 
 #include <signal.h>
 
@@ -1239,46 +1242,49 @@ GDKexiting(void)
 
 /* coverity[+kill] */
 void
-GDKexit(int status)
+GDKreset(int status)
 {
-#ifndef HAVE_EMBEDDED
-	if (GDKlockFile == NULL) {
-		/* no database lock, so no threads, so exit now */
-		MT_global_exit(status);
-	}
-#endif
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) == 0) {
-		MT_Id pid = MT_getpid();
-		Thread t, s;
-		int i;
+	MT_Id pid = MT_getpid();
+	Thread t, s;
+	int i;
 
+	if( GDKkey){
+		BBPunfix(GDKkey->batCacheid);
+		GDKkey = 0;
+	}
+	if( GDKval){
+		BBPunfix(GDKval->batCacheid);
+		GDKval = 0;
+	}
+	if (GDKvmtrim_id)
+		MT_join_thread(GDKvmtrim_id);
+	/* first give the other threads a chance to exit  properly*/
+	for (i = 0; i < 10 && GDKnrofthreads; i++) {
 		MT_lock_set(&GDKthreadLock);
-		GDKnrofthreads = 0;
-		MT_lock_unset(&GDKthreadLock);
-		if (GDKvmtrim_id)
-			MT_join_thread(GDKvmtrim_id);
-		/* first give the other threads a chance to exit */
-		for (i = 0; i < 10; i++) {
-			MT_lock_set(&GDKthreadLock);
-			for (t = GDKthreads, s = t + THREADS; t < s; t++)
-				if (t->pid && t->pid != pid)
-					break;
-			MT_lock_unset(&GDKthreadLock);
-			if (t == s) /* no other threads? */
+		for (t = GDKthreads, s = t + THREADS; t < s; t++)
+			if (t->pid && t->pid != pid)
 				break;
-			MT_sleep_ms(CATNAP);
-		}
-		if (status == 0) {
-			/* they had their chance, now kill them */
-			MT_lock_set(&GDKthreadLock);
-			for (t = GDKthreads, s = t + THREADS; t < s; t++) {
-				if (t->pid && t->pid != pid) {
-					fprintf(stderr, "#GDKexit: killing thread\n");
-					MT_kill_thread(t->pid);
+		MT_lock_unset(&GDKthreadLock);
+		if (t == s) /* no other threads? */
+			break;
+		MT_sleep_ms(CATNAP);
+	}
+
+	if (status == 0) {
+		/* they had there chance, now kill them */
+		MT_lock_set(&GDKthreadLock);
+		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
+			if (t->pid) {
+				MT_Id victim = t->pid;
+
+				if (t->pid != pid) {
+					fprintf(stderr, "#GDKexit: killing thread %d\n", MT_kill_thread(victim));
 				}
+				GDKnrofthreads --;
 			}
-			MT_lock_unset(&GDKthreadLock);
 		}
+		assert(GDKnrofthreads == 0);
+		/* all threads ceased running, now we can clean up */
 #if 0
 		/* we can't clean up after killing threads */
 		BBPexit();
@@ -1288,14 +1294,51 @@ GDKexit(int status)
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
 		TEMDEBUG GDKlockstatistics(1);
 #endif
-#ifdef HAVE_EMBEDDED
-		GDKatomcnt = TYPE_str + 1;
-		return;
-#else
-		MT_global_exit(status);
+		GDKdebug = 0;
+		strcpy(GDKdbpathStr,"dbpath");
+		GDK_mmap_minsize = (size_t) 1 << 18;
+		GDK_mmap_pagesize = (size_t) 1 << 16; 
+		GDK_mem_maxsize = GDK_VM_MAXSIZE;
+		GDK_vm_maxsize = GDK_VM_MAXSIZE;
+
+		GDK_vm_trim = 1;
+
+		GDK_mallocedbytes_estimate = 0;
+		GDK_vm_cursize = 0;
+		_MT_pagesize = 0;
+		_MT_npages = 0;
+#ifdef GDK_VM_KEEPHISTO
+		memset((char*)GDK_vm_nallocs[MAX_BIT], 0, sizeof(GDK_vm_nallocs));
 #endif
+#ifdef GDK_MEM_KEEPHISTO
+		memset((char*)GDK_nmallocs[MAX_BIT], 0, sizeof(GDK_nmallocs));
+#endif
+		GDKvmtrim_id =0;
+		GDKnr_threads = 0;
+		GDKnrofthreads = 0;
+		memset((char*) GDKbatLock,0, sizeof(GDKbatLock));
+		memset((char*) GDKbbpLock,0,sizeof(GDKbbpLock));
+
+		memset((char*) GDKthreads, 0, sizeof(GDKthreads));
+		memset((char*) THRdata, 0, sizeof(THRdata));
+		memset((char*) THRprintbuf,0, sizeof(THRprintbuf));
+		gdk_bbp_reset();
+		MT_lock_unset(&GDKthreadLock);
+		//gdk_system_reset(); CHECK OUT
 	}
-	fprintf(stderr, "#GDKexit: killing thread -1\n");
+}
+
+void
+GDKexit(int status)
+{
+	if (GDKlockFile == NULL) {
+		/* no database lock, so no threads, so exit now */
+		exit(status);
+	}
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) == 0) {
+		GDKreset(status);
+		MT_global_exit(status);
+	}
 	MT_exit_thread(-1);
 }
 
@@ -1303,7 +1346,6 @@ GDKexit(int status)
  * All semaphores used by the application should be mentioned here.
  * They are initialized during system initialization.
  */
-int GDKdebug = 0;
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
@@ -1327,26 +1369,31 @@ MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
 static void
 GDKlockHome(void)
 {
-	int fd;
-	struct stat st;
-	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
-	char GDKdirStr[PATHLENGTH];
 
+	//str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
+	
 	assert(GDKlockFile == NULL);
-	assert(GDKdbpathStr != NULL);
-
-	snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
 	/*
-	 * Obtain the global database lock.
+	 * Go there and obtain the global database lock.
 	 */
-	if (stat(GDKdbpathStr, &st) < 0 && GDKcreatedir(GDKdirStr) != GDK_SUCCEED) {
-		GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
+	if (chdir(GDKdbpathStr) < 0) {
+		char GDKdirStr[PATHLENGTH];
+
+		/* The DIR_SEP at the end of the path is needed for a
+		 * successful call to GDKcreatedir */
+		snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
+		if (GDKcreatedir(GDKdirStr) != GDK_SUCCEED)
+			GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
+		if (chdir(GDKdbpathStr) < 0)
+			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
+		IODEBUG fprintf(stderr, "#GDKlockHome: created directory %s\n", GDKdbpathStr);
 	}
-	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
+	if ((fd = MT_lockf(GDKLOCK, F_TLOCK, 4, 1)) < 0) {
 		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
 	}
 
 	/* now we have the lock on the database */
+
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
 		GDKfatal("GDKlockHome: Could not open %s\n", GDKLOCK);
@@ -1365,19 +1412,16 @@ GDKlockHome(void)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
-	GDKfree(gdklockpath);
 }
 
 static void
 GDKunlockHome(void)
 {
-	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
 	if (GDKlockFile) {
-		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
+		MT_lockf(GDKLOCK, F_ULOCK, 4, 1);
 		fclose(GDKlockFile);
 		GDKlockFile = 0;
 	}
-	GDKfree(gdklockpath);
 }
 
 /*
@@ -1831,8 +1875,6 @@ THRgettid(void)
 	MT_lock_unset(&GDKthreadLock);
 	return t;
 }
-
-static char THRprintbuf[BUFSIZ];
 
 int
 THRprintf(stream *s, const char *format, ...)

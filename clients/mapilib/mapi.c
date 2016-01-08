@@ -1593,7 +1593,9 @@ close_result(MapiHdl hdl)
 	    hdl->active == result &&
 	    read_into_cache(hdl, -1) != MOK)
 		return MERROR;
-	assert(hdl->active != result);
+	if( hdl->active == result)
+		return MERROR;
+	//assert(hdl->active != result);
 	if (result->fields) {
 		for (i = 0; i < result->maxfields; i++) {
 			if (result->fields[i].tablename)

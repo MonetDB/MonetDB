@@ -1,34 +1,38 @@
 stdout of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'sql/test/bugs` itself:
 
 
-# 15:12:10 >  
-# 15:12:10 >  Mtimeout -timeout 300  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/sql/xquerylog" --set mapi_open=true --set mapi_port=30451 --set xrpc_port=40862 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit=' include sql;' ; echo ; echo Over..
-# 15:12:10 >  
+# 14:10:32 >  
+# 14:10:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36720" "--set" "mapi_usock=/var/tmp/mtest-4024/.s.monetdb.36720" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_bugs" "--set" "embedded_r=yes"
+# 14:10:32 >  
 
-
-
-# MonetDB server v5.1.0, based on kernel v1.19.0
-# Serving database 'mTests_src_test_bugs'
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:30451/
-# MonetDB/SQL module v2.19.0 loaded
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_bugs', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:36720/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4024/.s.monetdb.36720
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.25'
+# Finished reading the write-ahead log 'sql_logs/sql/log.25'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+
+# 14:10:32 >  
+# 14:10:32 >  "./unicode_varchar-bug-sf-1041324_JdbcClient.SQL.sh" "unicode_varchar-bug-sf-1041324_JdbcClient"
+# 14:10:32 >  
 
 
-# 12:55:12 >  
-# 12:55:12 >  Mtimeout -timeout 180 ./unicode_varchar-bug-sf-1041324_JdbcClient.SQL unicode_varchar-bug-sf-1041324_JdbcClient 
-# 12:55:12 >  
-
-
-# 12:55:12 >  
-# 12:55:12 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 45579 -f ../../../../../../../../../net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/src/test/bugs/Tests/../bug-sf-1041324_weird-char.sql
-# 12:55:12 >  
+# 14:10:32 >  
+# 14:10:32 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h madrid -p 36720 -d mTests_sql_test_bugs -f "../../../../../../../../scratch1/sjoerd/src/MonetDB/devel/sql/test/bugs/Tests/../unicode_varchar-bug-sf-1041324.sql"
+# 14:10:32 >  
 
 +----------------------------------------------------------------------------------------------------------------------------------+
 | single_value                                                                                                                     |
@@ -37,15 +41,15 @@ Ready.
 +----------------------------------------------------------------------------------------------------------------------------------+
 1 row
 
-+----------------------------------------------------------------------------------------------------------------------------------+
-| single_value                                                                                                                     |
-+==================================================================================================================================+
-| SAVE 25¢ ON ICE CREAM                                                                                                            |
-+----------------------------------------------------------------------------------------------------------------------------------+
++------------------------+
+| single_value           |
++========================+
+| SAVE 25¢ ON ICE CREAM  |
++------------------------+
 1 row
 
 
-# 12:55:12 >  
-# 12:55:12 >  Done.
-# 12:55:12 >  
+# 14:10:33 >  
+# 14:10:33 >  "Done."
+# 14:10:33 >  
 

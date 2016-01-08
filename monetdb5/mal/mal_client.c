@@ -63,7 +63,14 @@ static void freeClient(Client c);
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients;
-int MCdefault = 0;
+
+void 
+mal_client_reset(void)
+{
+	MAL_MAXCLIENTS = 0;
+	if ( mal_clients)
+		GDKfree(mal_clients);
+}
 
 void
 MCinit(void)
@@ -233,7 +240,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->stage = 0;
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler = 0;
-	c->flags = MCdefault;
+	c->flags = 0;
 	c->errbuf = 0;
 
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
