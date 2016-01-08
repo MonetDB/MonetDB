@@ -2269,7 +2269,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 	assert(i > 0);
 	if (lock)
 		MT_lock_set(&GDKswapLock(i), "BBPdecref");
-	assert(!BBP_cache(i) || BBP_cache(i)->batSharecnt >= releaseShare);
+	assert(BBP_desc(i)->S.sharecnt >= releaseShare);
 	if (releaseShare) {
 		--BBP_desc(i)->S.sharecnt;
 		if (lock)
