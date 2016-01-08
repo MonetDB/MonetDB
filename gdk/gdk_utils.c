@@ -1387,7 +1387,6 @@ GDKlockHome(void)
 	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
 		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
 	}
-
 	/* now we have the lock on the database */
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);

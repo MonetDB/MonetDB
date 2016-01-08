@@ -178,9 +178,10 @@ SQLprelude(void *ret)
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
 		return (tmp);
-	mnstr_printf(GDKout, "# MonetDB/SQL module loaded\n");
-	mnstr_flush(GDKout);	/* make merovingian see this *now* */
-
+#ifndef HAVE_EMBEDDED
+	fprintf(stdout, "# MonetDB/SQL module loaded\n");
+	fflush(stdout);		/* make merovingian see this *now* */
+#endif
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
 	tmp = msab_marchScenario(s->name);
@@ -202,6 +203,8 @@ SQLepilogue(void *ret)
 		mvc_exit();
 		SQLinitialized = FALSE;
 	}
+	/* this function is never called, but for the style of it, we clean
+	 * up our own mess */
 	res = msab_retreatScenario(m);
 	if (!res)
 		return msab_retreatScenario(s);
@@ -396,8 +399,18 @@ void
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (!m->session->active)
+	if (!m->session->active) {
+		sql_session *s;
+
 		mvc_trans(m);
+		s = m->session;
+		if (!s->schema) {
+			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
+			assert(s->schema_name);
+			s->schema = find_sql_schema(s->tr, s->schema_name);
+			assert(s->schema);
+		}
+	}
 }
 
 #ifdef HAVE_EMBEDDED
@@ -408,6 +421,7 @@ str
 SQLinitClient(Client c)
 {
 	mvc *m;
+	str schema;
 	str msg = MAL_SUCCEED;
 	backend *be;
 	bstream *bfd = NULL;
@@ -449,17 +463,14 @@ SQLinitClient(Client c)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
-#ifndef HAVE_EMBEDDED
 	/* pass through credentials of the user if not console */
-	if (c->user != 0) {
-		str schema = monet5_user_get_def_schema(m, c->user);
-		if (!schema) {
-			_DELETE(schema);
-			throw(PERMD, "SQLinitClient", "08004!schema authorization error");
-		}
+	schema = monet5_user_set_def_schema(m, c->user);
+	if (!schema) {
 		_DELETE(schema);
+		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
-#endif
+	_DELETE(schema);
+
 	/*expect SQL text first */
 	be->language = 'S';
 	/* Set state, this indicates an initialized client scenario */
@@ -508,14 +519,13 @@ SQLinitClient(Client c)
 
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
-
 		snprintf(path, PATHLENGTH, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
 			str filename = fullname;
 			str p, n;
-			mnstr_printf(GDKout, "# SQL catalog created, loading sql scripts once\n");
+			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				p = strchr(filename, PATH_SEP);
 				if (p)
@@ -525,7 +535,7 @@ SQLinitClient(Client c)
 				} else {
 					n++;
 				}
-				mnstr_printf(GDKout, "# loading sql script: %s\n", n);
+				fprintf(stdout, "# loading sql script: %s\n", n);
 				fd = open_rastream(filename);
 				if (p)
 					filename = p + 1;
@@ -710,7 +720,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * The SQLreader is called from two places: the SQL parser and
  * the MAL debugger.
  * The former only occurs during the parsing phase and the
- * second only during execution.
+ * second only during exection.
  * This means we can safely change the language setting for
  * the duration of these calls.
  */
