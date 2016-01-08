@@ -1067,16 +1067,23 @@ BUNdelete(BAT *b, oid o)
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = 0;
 	}
+	if (b->T->nosorted >= p)
+		b->T->nosorted = 0;
+	if (b->T->norevsorted >= p)
+		b->T->norevsorted = 0;
 	b->batCount--;
 	if (b->batCount <= 1) {
 		/* some trivial properties */
 		b->tkey |= 1;
 		b->tsorted = b->trevsorted = 1;
+		b->T->nosorted = b->T->norevsorted = 0;
 		if (b->batCount == 0) {
 			b->T->nil = 0;
 			b->T->nonil = 1;
 		}
 	}
+	IMPSdestroy(b);
+	HASHdestroy(b);
 	return GDK_SUCCEED;
 }
 
