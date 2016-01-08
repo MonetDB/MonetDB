@@ -69,12 +69,18 @@ temp_copy(log_bid b, int temp)
 	BAT *c;
 	log_bid r;
 
+	if (!o)
+		return BID_NIL;
 	if (!temp) {
 		c = BATcopy(o, o->htype, o->ttype, TRUE, PERSISTENT);
+		if (!c)
+			return BID_NIL;
 		bat_set_access(c, BAT_READ);
 		BATcommit(c);
 	} else {
 		c = bat_new(o->htype, o->ttype, COLSIZE, PERSISTENT);
+		if (!c)
+			return BID_NIL;
 	}
 	r = temp_create(c);
 	bat_destroy(c);
@@ -110,7 +116,6 @@ copy_inserted(BAT *b, BAT *i )
 }
 
 BAT *ebats[MAXATOMS] = { NULL };
-BAT *eubats[MAXATOMS] = { NULL };
 
 log_bid 
 ebat2real(log_bid b, oid ibase)
@@ -145,15 +150,6 @@ e_BAT(int type)
 }
 
 log_bid 
-e_ubat(int type)
-{
-	if (!eubats[type]) 
-		eubats[type] = bat_new(TYPE_oid, type, 0, TRANSIENT);
-	return temp_create(eubats[type]);
-}
-
-
-log_bid 
 ebat_copy(log_bid b, oid ibase, int temp)
 {
 	/* make a copy of b */
@@ -161,11 +157,15 @@ ebat_copy(log_bid b, oid ibase, int temp)
 	BAT *c;
 	log_bid r;
 
+	if (!o)
+		return BID_NIL;
 	if (!ebats[o->ttype]) 
 		ebats[o->ttype] = bat_new(TYPE_void, o->ttype, 0, TRANSIENT);
 
 	if (!temp && BATcount(o)) {
 		c = BATcopy(o, TYPE_void, o->ttype, TRUE, PERSISTENT);
+		if (!c)
+			return BID_NIL;
 		BATseqbase(c, ibase );
 		c->H->dense = 1;
 		BATcommit(c);
@@ -174,31 +174,8 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		bat_destroy(c);
 	} else {
 		c = ebats[o->ttype];
-		r = temp_create(c);
-	}
-	bat_destroy(o);
-	return r;
-}
-
-log_bid 
-eubat_copy(log_bid b, int temp)
-{
-	/* make a copy of b */
-	BAT *o = temp_descriptor(b);
-	BAT *c;
-	log_bid r;
-
-	if (!eubats[o->ttype]) 
-		eubats[o->ttype] = bat_new(TYPE_oid, o->ttype, 0, TRANSIENT);
-
-	if (!temp && BATcount(o)) {
-		c = BATcopy(o, TYPE_oid, o->ttype, TRUE, PERSISTENT);
-		BATcommit(c);
-		r = temp_create(c);
-		bat_set_access(c, BAT_READ);
-		bat_destroy(c);
-	} else {
-		c = eubats[o->ttype];
+		if (!c)
+			return BID_NIL;
 		r = temp_create(c);
 	}
 	bat_destroy(o);
@@ -212,9 +189,7 @@ bat_utils_init(void)
 
 	for (t=1; t<GDKatomcnt; t++) {
 		if (t != TYPE_bat && BATatoms[t].name[0]) {
-			eubats[t] = bat_new(TYPE_oid, t, 0, TRANSIENT);
 			ebats[t] = bat_new(TYPE_void, t, 0, TRANSIENT);
-			bat_set_access(eubats[t], BAT_READ);
 			bat_set_access(ebats[t], BAT_READ);
 		}
 	}
