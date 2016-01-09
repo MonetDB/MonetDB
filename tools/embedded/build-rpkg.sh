@@ -35,13 +35,6 @@ export R_INCLUDE_DIR=`R CMD config --cppflags | sed s/^-I//`
 # # inline mal/sql scripts, we need R with the stringr package for that
 # python sourcetree/tools/embedded/inline.py dummytarget/libs/monetdb5/ rpackage/src/monetdb5/mal/mal_init_inline.h
 
-# bundle pcre for windows
-wget http://dev.monetdb.org/Assets/R/misc/pcre-8.37.zip
-unzip pcre-8.37.zip
-mv pcre-8.37 rpackage/src/tools/embedded/windows/
-wget http://dev.monetdb.org/Assets/R/misc/msvcr100.dll
-mv msvcr100.dll rpackage/src/tools/embedded/windows/
-
 mkdir -p rpackage/src/monetdb5/extras/rapi
 touch rpackage/src/monetdb5/extras/rapi/placeholder
 

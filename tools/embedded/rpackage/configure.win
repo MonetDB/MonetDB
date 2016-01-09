@@ -10,6 +10,10 @@ cp src/tools/embedded/windows/monetdb_config.h.in src/
 # pmc stands for "poor man's configure", it does something similar using the sedscript
 sh src/tools/embedded/windows/pmc.sh
 
+# download/unpack some dependencies
+R --quiet -e "download.file('http://dev.monetdb.org/Assets/R/misc/msvcr100.dll', 'src/tools/embedded/windows/msvcr100.dll')"
+R --quiet -e "setwd('src/tools/embedded/windows/'); tf <- tempfile(); download.file('http://dev.monetdb.org/Assets/R/misc/pcre-8.37.zip', tf); unzip(tf)"
+
 cd src
 make 
 OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.lo" | tr "\n" " "`
