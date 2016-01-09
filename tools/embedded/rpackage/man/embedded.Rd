@@ -2,19 +2,23 @@
 \alias{monetdb_embedded_startup}
 \alias{monetdb_embedded_query}
 \alias{monetdb_embedded_append}
+\alias{monetdb_embedded_connect}
+\alias{monetdb_embedded_disconnect}
+\alias{monetdb_embedded_shutdown}
 
 \title{
   Control embedded MonetDB
 }
 \description{
-TODO
+This is a low-level API for MonetDBLite. A \code{DBI}/\code{dplyr} frontend for these functions is in the \code{MonetDB.R} package.
 }
 \usage{
 monetdb_embedded_startup(dir=tempdir(), quiet=TRUE)
+monetdb_embedded_connect()
 monetdb_embedded_query(conn, query, notreally=FALSE)
 monetdb_embedded_append(conn, table, tdata, schema="sys")
-monetdb_embedded_connect()
 monetdb_embedded_disconnect(conn)
+monetdb_embedded_shutdown()
 }
 \arguments{
   \item{dir}{Path to the directory where the database will be created. Must be writeable or createable.}
@@ -34,7 +38,10 @@ monetdb_embedded_disconnect(conn)
 
 \examples{
 monetdb_embedded_startup(tempdir())
-monetdb_embedded_query("SELECT * FROM tables;")
-monetdb_embedded_query("CREATE TABLE foo(i INTEGER, j INTEGER)")
-monetdb_embedded_append("foo", data.frame(i=1:10, j=21:30))
+conn <- monetdb_embedded_connect()
+monetdb_embedded_query(conn, "SELECT * FROM tables;")
+monetdb_embedded_query(conn, "CREATE TABLE foo(i INTEGER, j INTEGER)")
+monetdb_embedded_append(conn, "foo", data.frame(i=1:10, j=21:30))
+monetdb_embedded_disconnect(conn)
+monetdb_embedded_shutdown()
 }

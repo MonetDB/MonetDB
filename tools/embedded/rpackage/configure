@@ -15,7 +15,7 @@ make -k -j
 echo -e "dummytarget:\n\ttrue\n" > Makefile
 
 # and finally put the embedded library where R expects it
-RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
+RDYNLIB=$R_PACKAGE_DIR/libs/MonetDBLite.so
 
 mkdir -p $R_PACKAGE_DIR/libs
 OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | tr "\n" " "`

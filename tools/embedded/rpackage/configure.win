@@ -14,8 +14,8 @@ cd src
 make 
 OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.lo" | tr "\n" " "`
 
-rm libmonetdb5.dll
-gcc -shared -m64 -o libmonetdb5.dll $OFILES -lws2_32 -lpthread -lpsapi -Ltools/embedded/windows/pcre-8.37/libs/x64/ -lpcre `R CMD config --ldflags`
+rm MonetDBLite.dll
+gcc -shared -m64 -o MonetDBLite.dll $OFILES -lws2_32 -lpthread -lpsapi -Ltools/embedded/windows/pcre-8.37/libs/x64/ -lpcre `R CMD config --ldflags`
 
 cd ../
 mkdir -p $R_PACKAGE_DIR/libs/x64
