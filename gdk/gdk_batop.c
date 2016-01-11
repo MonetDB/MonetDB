@@ -1487,10 +1487,12 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	if (groups) {
 		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) != GDK_SUCCEED)
 			goto error;
-		if ((*groups)->tkey && (bn->tsorted || bn->trevsorted)) {
-			/* if new groups bat is key and the result bat
-			 * is (rev)sorted (single input group), we
-			 * know it is key */
+		if ((*groups)->tkey &&
+		    (g == NULL || (g->tsorted && g->trevsorted))) {
+			/* if new groups bat is key and the input
+			 * group bat has a single value (both sorted
+			 * and revsorted), we know the result bat is
+			 * key */
 			bn->tkey = 1;
 		}
 	}
