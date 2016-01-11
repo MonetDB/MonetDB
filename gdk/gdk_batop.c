@@ -968,10 +968,8 @@ BATslice(BAT *b, BUN l, BUN h)
 		return NULL;
 	}
 
-	/*
-	 * If the source BAT is readonly, then we can obtain a VIEW
-	 * that just reuses the memory of the source.
-	 */
+	/* If the source BAT is readonly, then we can obtain a VIEW
+	 * that just reuses the memory of the source. */
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
 		bn = VIEWcreate_(b, b, TRUE);
 		if (bn == NULL)
@@ -1097,10 +1095,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	return NULL;
 }
 
-/*
- *  BAT Sorting
- * BATsort returns a sorted copy. BATorder sorts the BAT itself.
- */
+/* Return whether the BAT is ordered or not.  */
 int
 BATordered(BAT *b)
 {
@@ -1109,6 +1104,7 @@ BATordered(BAT *b)
 	return b->hsorted;
 }
 
+/* Return whether the BAT is reverse ordered or not.  */
 int
 BATordered_rev(BAT *b)
 {
@@ -1220,36 +1216,45 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 #undef BATssort
 #undef BATssort_rev
 
+/* sort the BAT in place, using a potentially non-stable sort */
 gdk_return
 BATorder(BAT *b)
 {
 	return BATorder_internal(b, 0, 0, 0, "BATorder") ? GDK_SUCCEED : GDK_FAIL;
 }
 
+/* sort the BAT in place in reverse order, using a potentially
+ * non-stable sort */
 gdk_return
 BATorder_rev(BAT *b)
 {
 	return BATorder_internal(b, 0, 1, 0, "BATorder_rev") ? GDK_SUCCEED : GDK_FAIL;
 }
 
+/* return a sorted copy of the BAT, using a potentially non-stable
+ * sort */
 BAT *
 BATsort(BAT *b)
 {
 	return BATorder_internal(b, 0, 0, 1, "BATsort");
 }
 
+/* return a reverse sorted copy of the BAT, using a potentially
+ * non-stable sort */
 BAT *
 BATsort_rev(BAT *b)
 {
 	return BATorder_internal(b, 0, 1, 1, "BATsort_rev");
 }
 
+/* return a sorted copy of the BAT, using a stable sort */
 BAT *
 BATssort(BAT *b)
 {
 	return BATorder_internal(b, 1, 0, 1, "BATssort");
 }
 
+/* return a reverse sorted copy of the BAT, using a stable sort */
 BAT *
 BATssort_rev(BAT *b)
 {
@@ -1485,7 +1490,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 			    bn->ttype, reverse, stable) != GDK_SUCCEED)
 			goto error;
 		/* if single group (r==0) the result is (rev)sorted,
-		 * otherwise not */
+		 * otherwise (maybe) not */
 		bn->tsorted = r == 0 && !reverse;
 		bn->trevsorted = r == 0 && reverse;
 	} else {

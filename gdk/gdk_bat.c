@@ -1134,7 +1134,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 		}
 	} else if (col->type == TYPE_void) {
 		/* not the first value in a VOID column: we keep the
-		 * seqbase and x is not used, so only some properties
+		 * seqbase, and x is not used, so only some properties
 		 * are affected */
 		if (col->seq != oid_nil) {
 			if (col->revsorted) {
