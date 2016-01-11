@@ -589,6 +589,10 @@ BATclear(BAT *b, int force)
 	BATseqbase(BATmirror(b), 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
+	b->H->nosorted = b->H->norevsorted = b->H->nodense = 0;
+	b->H->nokey[0] = b->H->nokey[1] = 0;
+	b->T->nosorted = b->T->norevsorted = b->T->nodense = 0;
+	b->T->nokey[0] = b->T->nokey[1] = 0;
 	return GDK_SUCCEED;
 }
 
@@ -937,29 +941,75 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 		ALIGNsetH(bn, b);
 	} else if (ATOMstorage(ht) == ATOMstorage(b->htype) &&
 		   ATOMcompare(ht) == ATOMcompare(b->htype)) {
+		BUN l = BUNfirst(b), h = BUNlast(b);
 		bn->hsorted = b->hsorted;
 		bn->hrevsorted = b->hrevsorted;
 		bn->hdense = b->hdense && ATOMtype(bn->htype) == TYPE_oid;
 		if (b->hkey)
 			BATkey(bn, TRUE);
 		bn->H->nonil = b->H->nonil;
+		if (b->H->nosorted > l && b->H->nosorted < h)
+			bn->H->nosorted = b->H->nosorted - l + BUNfirst(bn);
+		else
+			bn->H->nosorted = 0;
+		if (b->H->norevsorted > l && b->H->norevsorted < h)
+			bn->H->norevsorted = b->H->norevsorted - l + BUNfirst(bn);
+		else
+			bn->H->norevsorted = 0;
+		if (b->H->nodense > l && b->H->nodense < h)
+			bn->H->nodense = b->H->nodense - l + BUNfirst(bn);
+		else
+			bn->H->nodense = 0;
+		if (b->H->nokey[0] >= l && b->H->nokey[0] < h &&
+		    b->H->nokey[1] >= l && b->H->nokey[1] < h &&
+		    b->H->nokey[0] != b->H->nokey[1]) {
+			bn->H->nokey[0] = b->H->nokey[0] - l + BUNfirst(bn);
+			bn->H->nokey[1] = b->H->nokey[1] - l + BUNfirst(bn);
+		} else {
+			bn->H->nokey[0] = bn->H->nokey[1] = 0;
+		}
 	} else {
 		bn->hsorted = bn->hrevsorted = 0; /* set based on count later */
 		bn->hdense = bn->H->nonil = 0;
+		bn->H->nosorted = bn->H->norevsorted = bn->H->nodense = 0;
+		bn->H->nokey[0] = bn->H->nokey[1] = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
+		BUN l = BUNfirst(b), h = BUNlast(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
+		if (b->T->nosorted > l && b->T->nosorted < h)
+			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
+		else
+			bn->T->nosorted = 0;
+		if (b->T->norevsorted > l && b->T->norevsorted < h)
+			bn->T->norevsorted = b->T->norevsorted - l + BUNfirst(bn);
+		else
+			bn->T->norevsorted = 0;
+		if (b->T->nodense > l && b->T->nodense < h)
+			bn->T->nodense = b->T->nodense - l + BUNfirst(bn);
+		else
+			bn->T->nodense = 0;
+		if (b->T->nokey[0] >= l && b->T->nokey[0] < h &&
+		    b->T->nokey[1] >= l && b->T->nokey[1] < h &&
+		    b->T->nokey[0] != b->T->nokey[1]) {
+			bn->T->nokey[0] = b->T->nokey[0] - l + BUNfirst(bn);
+			bn->T->nokey[1] = b->T->nokey[1] - l + BUNfirst(bn);
+		} else {
+			bn->T->nokey[0] = bn->T->nokey[1] = 0;
+		}
 	} else {
 		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
 		bn->tdense = bn->T->nonil = 0;
+		bn->T->nosorted = bn->T->norevsorted = bn->T->nodense = 0;
+		bn->T->nokey[0] = bn->T->nokey[1] = 0;
 	}
 	if (BATcount(bn) <= 1) {
 		bn->hsorted = ATOMlinear(b->htype);
@@ -1062,7 +1112,10 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	if (b->batCount == 0) {
 		/* first value */
 		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
+		col->nosorted = col->norevsorted = 0;
 		col->key |= 1;
+		col->nokey[0] = col->nokey[1] = 0;
+		col->nodense = 0;
 		if (col->type == TYPE_void) {
 			if (x) {
 				col->seq = * (const oid *) x;
@@ -1075,6 +1128,8 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 			if (col->type == TYPE_oid) {
 				col->dense = !isnil;
 				col->seq = * (const oid *) x;
+				if (isnil)
+					col->nodense = BUNlast(b);
 			}
 		}
 	} else if (col->type == TYPE_void) {
@@ -1082,11 +1137,18 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 		 * seqbase and x is not used, so only some properties
 		 * are affected */
 		if (col->seq != oid_nil) {
-			col->revsorted = 0;
+			if (col->revsorted) {
+				col->norevsorted = BUNlast(b);
+				col->revsorted = 0;
+			}
 			col->nil = 0;
 			col->nonil = 1;
 		} else {
-			col->key = 0;
+			if (col->key) {
+				col->nokey[0] = BUNfirst(b);
+				col->nokey[1] = BUNlast(b);
+				col->key = 0;
+			}
 			col->nil = 1;
 			col->nonil = 0;
 		}
@@ -1103,8 +1165,10 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 		       (col->revsorted && cmp < 0) ||
 		       (!col->sorted && !col->revsorted))))) {
 			col->key = 0;
-			col->nokey[0] = pos - 1;
-			col->nokey[1] = pos;
+			if (cmp == 0) {
+				col->nokey[0] = pos - 1;
+				col->nokey[1] = pos;
+			}
 		}
 		if (col->sorted && cmp > 0) {
 			/* out of order */
@@ -1366,7 +1430,6 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	BATiter bi = bat_iterator(b);
 	BAT *bm = BBP_cache(-b->batCacheid);
 	BUN l, last = BUNlast(b) - 1;
-	BUN idx1;
 
 	ALIGNdel(b, "BUNdelete", force, BUN_NONE);	/* zap alignment info */
 
@@ -1376,7 +1439,6 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	 */
 	HASHdestroy(b);
 	if (p < b->batInserted && !force) {
-		idx1 = p;
 		if (p == b->batFirst) {	/* first can simply be discarded */
 			if (BAThdense(b)) {
 				bm->tseqbase = ++b->hseqbase;
@@ -1384,35 +1446,46 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			if (BATtdense(b)) {
 				bm->hseqbase = ++b->tseqbase;
 			}
+			if (b->H->nosorted == b->batFirst)
+				b->H->nosorted = 0;
+			if (b->H->norevsorted == b->batFirst)
+				b->H->norevsorted = 0;
+			if (b->H->nodense == b->batFirst)
+				b->H->nodense = 0;
+			if (b->H->nokey[0] == b->batFirst ||
+			    b->H->nokey[1] == b->batFirst)
+				b->H->nokey[0] = b->H->nokey[1] = 0;
+			if (b->T->nosorted == b->batFirst)
+				b->T->nosorted = 0;
+			if (b->T->norevsorted == b->batFirst)
+				b->T->norevsorted = 0;
+			if (b->T->nodense == b->batFirst)
+				b->T->nodense = 0;
+			if (b->T->nokey[0] == b->batFirst ||
+			    b->T->nokey[1] == b->batFirst)
+				b->T->nokey[0] = b->T->nokey[1] = 0;
 		} else {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 
 			l = BUNfirst(b);
 			acc_move(l,p);
-			if (b->hsorted) {
-				b->hsorted = FALSE;
-				b->H->nosorted = idx1;
-			}
-			if (b->hrevsorted) {
-				b->hrevsorted = FALSE;
-				b->H->norevsorted = idx1;
-			}
-			if (b->hdense) {
-				b->hdense = FALSE;
-				b->H->nodense = idx1;
-			}
-			if (b->tsorted) {
-				b->tsorted = FALSE;
-				b->T->nosorted = idx1;
-			}
-			if (b->trevsorted) {
-				b->trevsorted = FALSE;
-				b->T->norevsorted = idx1;
-			}
-			if (b->tdense) {
-				b->tdense = FALSE;
-				b->T->nodense = idx1;
-			}
+			b->hsorted = FALSE;
+			b->hrevsorted = FALSE;
+			b->hdense = FALSE;
+			b->tsorted = FALSE;
+			b->trevsorted = FALSE;
+			b->tdense = FALSE;
+			/* zap no* values since we've shuffled values
+			 * and don't want to figure out what the new
+			 * values should be */
+			b->H->nosorted = 0;
+			b->H->norevsorted = 0;
+			b->H->nodense = 0;
+			b->T->nosorted = 0;
+			b->T->norevsorted = 0;
+			b->T->nodense = 0;
+			b->H->nokey[0] = b->H->nokey[1] = 0;
+			b->T->nokey[0] = b->T->nokey[1] = 0;
 		}
 		b->batFirst++;
 	} else {
@@ -1441,7 +1514,6 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			assert(b->T->width == sizeof(var_t));
 			(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
 		}
-		idx1 = p;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 			BATiter bi2 = bat_iterator(b);
@@ -1460,39 +1532,59 @@ BUNdelete_(BAT *b, BUN p, bit force)
 				if (p + 1 < last &&
 				    ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi2, p + 1)) > 0) {
 					b->hsorted = FALSE;
-					b->H->nosorted = idx1;
+					b->H->nosorted = p + 1;
 				}
 				if (b->hdense) {
 					b->hdense = FALSE;
-					b->H->nodense = idx1;
+					b->H->nodense = p;
 				}
-			}
+			} else if (b->H->nosorted >= p)
+				b->H->nosorted = 0;
 			if (b->hrevsorted) {
 				if (p + 1 < last &&
 				    ATOMcmp(b->htype, BUNhead(bi, p), BUNhead(bi2, p + 1)) < 0) {
 					b->hrevsorted = FALSE;
-					b->H->norevsorted = idx1;
+					b->H->norevsorted = p + 1;
 				}
-			}
+			} else if (b->H->norevsorted >= p)
+				b->H->norevsorted = 0;
 			if (b->tsorted) {
 				if (p + 1 < last &&
 				    ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi2, p + 1)) > 0) {
 					b->tsorted = FALSE;
-					b->H->nosorted = idx1;
+					b->H->nosorted = p + 1;
 				}
 				if (b->tdense) {
 					b->tdense = FALSE;
-					b->T->nodense = idx1;
+					b->T->nodense = p;
 				}
-			}
+			} else if (b->T->nosorted >= p)
+				b->T->nosorted = 0;
 			if (b->trevsorted) {
 				if (p + 1 < last &&
 				    ATOMcmp(b->ttype, BUNtail(bi, p), BUNtail(bi2, p + 1)) < 0) {
 					b->trevsorted = FALSE;
-					b->H->norevsorted = idx1;
+					b->H->norevsorted = p + 1;
 				}
-			}
+			} else if (b->T->norevsorted >= p)
+				b->T->norevsorted = 0;
 		}
+		if (b->H->nosorted == last)
+			b->H->nosorted = 0;
+		if (b->H->norevsorted == last)
+			b->H->norevsorted = 0;
+		if (b->H->nodense == last)
+			b->H->nodense = 0;
+		if (b->H->nokey[0] == last || b->H->nokey[1] == last)
+			b->H->nokey[0] = b->H->nokey[1] = 0;
+		if (b->T->nosorted == last)
+			b->T->nosorted = 0;
+		if (b->T->norevsorted == last)
+			b->T->norevsorted = 0;
+		if (b->T->nodense == last)
+			b->T->nodense = 0;
+		if (b->T->nokey[0] == last || b->T->nokey[1] == last)
+			b->T->nokey[0] = b->T->nokey[1] = 0;
 		b->H->heap.free -= Hsize(b);
 		b->T->heap.free -= Tsize(b);
 		p--;
@@ -1586,7 +1678,6 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 		/* uncommitted BUN elements */
 		BUN last = BUNlast(b) - 1;
 		BAT *bm = BBP_cache(-b->batCacheid);
-		BUN pit = p;
 		BATiter bi = bat_iterator(b);
 		int tt;
 		BUN prv, nxt;
@@ -1608,34 +1699,42 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 		nxt = p < last ? p + 1 : BUN_NONE;
 
 		if (BATtordered(b)) {
-			if ((prv != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) ||
-			    (nxt != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0)) {
+			if (prv != BUN_NONE &&
+			    ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) {
 				b->tsorted = FALSE;
-				b->T->nosorted = pit;
+				b->T->nosorted = p;
+			} else if (nxt != BUN_NONE &&
+				   ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0) {
+				b->tsorted = FALSE;
+				b->T->nosorted = nxt;
 			} else if (b->ttype != TYPE_void && b->tdense) {
-				if ((prv != BUN_NONE &&
-				     1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) ||
-				    (nxt != BUN_NONE &&
-				     * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t)) {
+				if (prv != BUN_NONE &&
+				    1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) {
 					b->tdense = FALSE;
-					b->T->nodense = pit;
+					b->T->nodense = p;
+				} else if (nxt != BUN_NONE &&
+					   * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t) {
+					b->tdense = FALSE;
+					b->T->nodense = nxt;
 				} else if (prv == BUN_NONE &&
 					   nxt == BUN_NONE) {
 					bm->hseqbase = b->tseqbase = * (oid *) t;
 				}
 			}
-		}
+		} else if (b->T->nosorted >= p)
+				b->T->nosorted = 0;
 		if (BATtrevordered(b)) {
-			if ((prv != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) ||
-			    (nxt != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0)) {
+			if (prv != BUN_NONE &&
+			    ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) {
 				b->trevsorted = FALSE;
-				b->T->norevsorted = pit;
+				b->T->norevsorted = p;
+			} else if (nxt != BUN_NONE &&
+				   ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0) {
+				b->trevsorted = FALSE;
+				b->T->norevsorted = nxt;
 			}
-		}
+		} else if (b->T->norevsorted >= p)
+				b->T->norevsorted = 0;
 		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 			BATkey(bm, FALSE);
 		}
@@ -2106,6 +2205,29 @@ BATsetcount(BAT *b, BUN cnt)
 	if (cnt <= 1) {
 		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
+		b->H->nosorted = b->H->norevsorted = 0;
+		b->T->nosorted = b->T->norevsorted = 0;
+	}
+	/* if the BAT was made smaller, we need to zap some values */
+	if (b->H->nosorted >= BUNlast(b))
+		b->H->nosorted = 0;
+	if (b->H->norevsorted >= BUNlast(b))
+		b->H->norevsorted = 0;
+	if (b->H->nodense >= BUNlast(b))
+		b->H->nodense = 0;
+	if (b->H->nokey[0] >= BUNlast(b) || b->H->nokey[1] >= BUNlast(b)) {
+		b->H->nokey[0] = 0;
+		b->H->nokey[1] = 0;
+	}
+	if (b->T->nosorted >= BUNlast(b))
+		b->T->nosorted = 0;
+	if (b->T->norevsorted >= BUNlast(b))
+		b->T->norevsorted = 0;
+	if (b->T->nodense >= BUNlast(b))
+		b->T->nodense = 0;
+	if (b->T->nokey[0] >= BUNlast(b) || b->T->nokey[1] >= BUNlast(b)) {
+		b->T->nokey[0] = 0;
+		b->T->nokey[1] = 0;
 	}
 	assert(b->batCapacity >= cnt);
 }
@@ -2197,8 +2319,10 @@ BATseqbase(BAT *b, oid o)
 				b->halign = 0;
 		}
 		b->hseqbase = o;
-		if (b->htype == TYPE_oid && o == oid_nil)
+		if (b->htype == TYPE_oid && o == oid_nil) {
 			b->hdense = 0;
+			b->H->nodense = BUNfirst(b);
+		}
 
 		/* adapt keyness */
 		if (BAThvoid(b)) {
@@ -2207,6 +2331,13 @@ BATseqbase(BAT *b, oid o)
 				b->H->nonil = b->batCount == 0;
 				b->H->nil = b->batCount > 0;
 				b->hsorted = b->hrevsorted = 1;
+				b->H->nosorted = b->H->norevsorted = 0;
+				if (!b->hkey) {
+					b->H->nokey[0] = BUNfirst(b);
+					b->H->nokey[1] = BUNfirst(b) + 1;
+				} else {
+					b->H->nokey[0] = b->H->nokey[1] = 0;
+				}
 			} else {
 				if (!b->hkey) {
 					b->hkey = TRUE;
@@ -2216,6 +2347,8 @@ BATseqbase(BAT *b, oid o)
 				b->H->nil = 0;
 				b->hsorted = 1;
 				b->hrevsorted = b->batCount <= 1;
+				if (!b->hrevsorted)
+					b->H->norevsorted = BUNfirst(b) + 1;
 			}
 		}
 	}

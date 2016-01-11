@@ -734,7 +734,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			int xx = ATOMcmp(b->ttype, BUNtail(ni, BUNfirst(n)), BUNtail(bi, last));
 			if (BATtordered(b) && (!BATtordered(n) || xx < 0)) {
 				b->tsorted = FALSE;
-				b->T->nosorted = r;
+				b->T->nosorted = 0;
 				if (b->tdense) {
 					b->tdense = FALSE;
 					b->T->nodense = r;
@@ -743,7 +743,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			if (BATtrevordered(b) &&
 			    (!BATtrevordered(n) || xx > 0)) {
 				b->trevsorted = FALSE;
-				b->T->norevsorted = r;
+				b->T->norevsorted = 0;
 			}
 			if (b->tkey &&
 			    (!(BATtordered(b) || BATtrevordered(b)) ||
@@ -973,20 +973,12 @@ BATslice(BAT *b, BUN l, BUN h)
 	 * that just reuses the memory of the source.
 	 */
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
-		BUN cnt = h - l;
-
 		bn = VIEWcreate_(b, b, TRUE);
-		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
-		bn->H->heap.base = (bn->htype) ? BUNhloc(bi, l) : NULL;
-		bn->T->heap.base = (bn->ttype) ? BUNtloc(bi, l) : NULL;
-		bn->H->heap.size = headsize(bn, cnt);
-		bn->T->heap.size = tailsize(bn, cnt);
-		BATsetcount(bn, cnt);
-		BATsetcapacity(bn, cnt);
-	/*
-	 * We have to do it: create a new BAT and put everything into it.
-	 */
+		if (bn == NULL)
+			return NULL;
+		VIEWbounds(b, bn, l - BUNfirst(b), h - BUNfirst(b));
 	} else {
+		/* create a new BAT and put everything into it */
 		BUN p = l;
 		BUN q = h;
 
@@ -1026,6 +1018,28 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		bn->tkey = b->tkey & 1;
 		bn->T->nonil = b->T->nonil;
+		bn->H->nosorted = bn->H->norevsorted = bn->H->nodense = 0;
+		bn->H->nokey[0] = bn->H->nokey[1] = 0;
+		if (b->T->nosorted > l && b->T->nosorted < h)
+			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
+		else
+			bn->T->nosorted = 0;
+		if (b->T->norevsorted > l && b->T->norevsorted < h)
+			bn->T->norevsorted = b->T->norevsorted - l + BUNfirst(bn);
+		else
+			bn->T->norevsorted = 0;
+		if (b->T->nodense > l && b->T->nodense < h)
+			bn->T->nodense = b->T->nodense - l + BUNfirst(bn);
+		else
+			bn->T->nodense = 0;
+		if (b->T->nokey[0] >= l && b->T->nokey[0] < h &&
+		    b->T->nokey[1] >= l && b->T->nokey[1] < h &&
+		    b->T->nokey[0] != b->T->nokey[1]) {
+			bn->T->nokey[0] = b->T->nokey[0] - l + BUNfirst(bn);
+			bn->T->nokey[1] = b->T->nokey[1] - l + BUNfirst(bn);
+		} else {
+			bn->T->nokey[0] = bn->T->nokey[1] = 0;
+		}
 	}
 	bni = bat_iterator(bn);
 	if (BAThdense(b)) {
@@ -1064,16 +1078,19 @@ BATslice(BAT *b, BUN l, BUN h)
 		BATkey(bn, 1);
 		BATkey(BATmirror(bn), 1);
 	} else {
-		bn->hsorted = BAThordered(b);
-		bn->tsorted = BATtordered(b);
-		bn->hrevsorted = BAThrevordered(b);
-		bn->trevsorted = BATtrevordered(b);
+		bn->hsorted = b->hsorted;
+		bn->tsorted = b->tsorted;
+		bn->hrevsorted = b->hrevsorted;
+		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BAThkey(b));
 		BATkey(BATmirror(bn), BATtkey(b));
 	}
 	bn->H->nonil = b->H->nonil || bn->batCount == 0;
 	bn->T->nonil = b->T->nonil || bn->batCount == 0;
 	bn->H->nil = bn->T->nil = 0;	/* we just don't know */
+	bn->T->nosorted = 0;
+	bn->T->nodense = 0;
+	bn->T->nokey[0] = bn->T->nokey[1] = 0;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -1402,6 +1419,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		BATseqbase(on, b->hseqbase);
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
+		on->T->nosorted = on->T->norevsorted = on->T->nodense = 0;
 		*order = on;
 	}
 	if (g) {
@@ -1420,6 +1438,10 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 					 * after all */
 					on->tsorted = o->tsorted;
 					on->trevsorted = o->trevsorted;
+					if (o->T->nosorted)
+						on->T->nosorted = o->T->nosorted - BUNfirst(o) + BUNfirst(on);
+					if (o->T->norevsorted)
+						on->T->norevsorted = o->T->norevsorted - BUNfirst(o) + BUNfirst(on);
 				} else {
 					/* we didn't rearrange, so
 					 * still sorted */
@@ -1484,6 +1506,8 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
 	}
+	bn->T->nosorted = 0;
+	bn->T->norevsorted = 0;
 	if (groups) {
 		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) != GDK_SUCCEED)
 			goto error;
