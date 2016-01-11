@@ -141,7 +141,7 @@ void mserver_reset(void){
 	mal_client_reset();
 	mal_module_reset();
 	mal_module_reset();
-    mal_linker_reset();
+   	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_scenario_reset();

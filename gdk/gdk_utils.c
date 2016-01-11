@@ -1244,8 +1244,9 @@ GDKreset(int status)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
-	int i;
 
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0) 
+		return ;
 	if( GDKkey){
 		BBPunfix(GDKkey->batCacheid);
 		GDKkey = 0;
@@ -1256,17 +1257,15 @@ GDKreset(int status)
 	}
 	if (GDKvmtrim_id)
 		MT_join_thread(GDKvmtrim_id);
-	/* first give the other threads a chance to exit  properly*/
-	for (i = 0; i < 10 && GDKnrofthreads; i++) {
-		MT_lock_set(&GDKthreadLock);
-		for (t = GDKthreads, s = t + THREADS; t < s; t++)
-			if (t->pid && t->pid != pid)
-				break;
-		MT_lock_unset(&GDKthreadLock);
-		if (t == s) /* no other threads? */
-			break;
-		MT_sleep_ms(CATNAP);
-	}
+
+	MT_lock_set(&GDKthreadLock);
+	for (t = GDKthreads, s = t + THREADS; t < s; t++)
+		if (t->pid && t->pid != pid && t->waitfor) {
+			MT_lock_unset(&GDKthreadLock);
+			MT_join_thread(t->pid);
+			MT_lock_set(&GDKthreadLock);
+		}
+	MT_lock_unset(&GDKthreadLock);
 
 	if (status == 0) {
 		/* they had there chance, now kill them */
@@ -1277,11 +1276,11 @@ GDKreset(int status)
 
 				if (t->pid != pid) {
 					fprintf(stderr, "#GDKexit: killing thread %d\n", MT_kill_thread(victim));
+					GDKnrofthreads --;
 				}
-				GDKnrofthreads --;
 			}
 		}
-		assert(GDKnrofthreads == 0);
+		assert(GDKnrofthreads <= 1);
 		/* all threads ceased running, now we can clean up */
 #if 0
 		/* we can't clean up after killing threads */
@@ -1324,6 +1323,7 @@ GDKreset(int status)
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
+	MT_global_exit(status);
 }
 
 void
@@ -1333,10 +1333,7 @@ GDKexit(int status)
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 	}
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) == 0) {
-		GDKreset(status);
-		MT_global_exit(status);
-	}
+	GDKreset(status);
 	MT_exit_thread(-1);
 }
 
