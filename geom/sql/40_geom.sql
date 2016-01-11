@@ -4419,4 +4419,44 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 -- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
 -- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
 
+-------------------------------------------------------------------------
+----------------------- Handle SRID information -------------------------
+-------------------------------------------------------------------------
+--CREATE FUNCTION UpdateGeometrySRID(catalogn_name varchar, schema_name varchar, table_name varchar, column_name varchar, new_srid_in integer) RETURNS text -- external name geom.updateGeometrySRID;
+--BEGIN
+--	
+--END;
+
+--CREATE FUNCTION UpdateGeometrySRID(schema_name varchar, table_name varchar, column_name varchar, new_srid_in integer) RETURNS text
+--BEGIN
+--	RETURN UpdateGeometrySRID('',schema_name, table_name, column_name, new_srid_in);
+--END;
+--CREATE FUNCTION UpdateGeometrySRID(table_name varchar, column_name varchar, new_srid_in integer) RETURNS text
+--BEGIN
+--	RETURN UpdateGeometrySRID('','', table_name, column_name, new_srid_in);
+--END;
+
+
+--DECLARE srid_src integer;
+--DECLARE proj4_src string;
+--DECLARE proj4_dest string;
+--
+--SELECT st_srid(geom) INTO srid_src;
+--SELECT getProj4(srid_src) INTO proj4_src;
+--SELECT getProj4(srid) INTO proj4_dest;
+--
+--IF proj4_src IS NULL THEN
+--	RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest);
+--ELSE
+--	IF proj4_dest IS NULL THEN
+--		RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null');
+--	ELSE
+--		RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);
+--	END IF;▸
+--END IF;
+
+
+-------------------------------------------------------------------------
+---------------------------- Miscellaneous ------------------------------
+-------------------------------------------------------------------------
 CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
