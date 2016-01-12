@@ -1,5 +1,7 @@
 #include <Rdefines.h>
 #include "mal.h"
+#include "group.h"
+#include "algebra.h"
 
 #define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy)\
 	do {													\
@@ -113,11 +115,75 @@ static SEXP bat_to_sexp(BAT* b) {
 			BAT_TO_REALSXP(b, lng, varvalue, 0);
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
+#ifndef CONVERT_OLDSCHOOL
+			BAT *grp, *ext, *ustrings, *uptrs, *allptrs;
+			BUN p, q;
+			BATiter li;
+			void* sptr;
+			BUN cnt, ucnt;
+			gdk_return r;
+			ptr *uptrs_p, *allptrs_p;
+			cnt = BATcount(b);
+			// we group on the passed string column to get unique strings, then only convert each string once
+			r = BATgroup(&grp, &ext, NULL, b, NULL, NULL, NULL);
+			if (r != GDK_SUCCEED || grp == NULL || ext == NULL) {
+				return NULL;
+			}
+			ustrings = BATproject(ext, b);
+			BBPunfix(ext->batCacheid);
+			if (ustrings == NULL) {
+				BBPunfix(grp->batCacheid);
+				return NULL;
+			}
+			ucnt = BATcount(ustrings);
+			uptrs = BATnew(TYPE_void, TYPE_ptr, ucnt, TRANSIENT);
+			if (uptrs == NULL) {
+				BBPunfix(grp->batCacheid);
+				BBPunfix(ustrings->batCacheid);
+				return NULL;
+			}
+			li = bat_iterator(ustrings);
+			uptrs_p = (ptr) Tloc(uptrs, BUNfirst(uptrs));
+			for(p = 0; p < ucnt; p++) {
+				const char *t = (const char *) BUNtail(li, p);
+				// TODO: check whether this check is better done outside loop
+				if (b->T->nil == 1 && ATOMcmp(TYPE_str, t, str_nil) == 0) {
+					sptr = NA_STRING;
+				} else {
+					sptr = mkCharCE(t, CE_UTF8);
+				}
+				uptrs_p[p] = sptr;
+			}
+			BBPunfix(ustrings->batCacheid);
+			BATsetcount(uptrs, ucnt);
+			BATsettrivprop(uptrs);
+			allptrs = BATproject(grp, uptrs);
+			assert(BATcount(allptrs) == BATcount(b));
+			BBPunfix(grp->batCacheid);
+			BBPunfix(uptrs->batCacheid);
+			if (allptrs == NULL) {
+				BBPunfix(ustrings->batCacheid);
+				return NULL;
+			}
+			li = bat_iterator(allptrs);
+			varvalue = PROTECT(NEW_STRING(cnt));
+			if (varvalue == NULL) {
+				BBPunfix(allptrs->batCacheid);
+				return NULL;
+			}
+			allptrs_p = (ptr) Tloc(allptrs, BUNfirst(allptrs));
+			for(p = 0; p < cnt; p++) {
+				SET_STRING_ELT(varvalue, p, (SEXP) allptrs_p[p]);
+			}
+			BBPunfix(allptrs->batCacheid);
+#else  /* old implementation */
 			BUN p = 0, q = 0, j = 0;
 			BATiter li;
 			li = bat_iterator(b);
 			varvalue = PROTECT(NEW_STRING(BATcount(b)));
-
+			if (varvalue == NULL) {
+				return NULL;
+			}
 			if (b->T->nonil && !b->T->nil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, mkCharCE(
@@ -135,6 +201,7 @@ static SEXP bat_to_sexp(BAT* b) {
 					j++;
 				}
 			}
+#endif
 		} 	break;
 	}
 	return varvalue;
