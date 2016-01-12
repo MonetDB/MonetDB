@@ -48403,8 +48403,6 @@ pattern fits.listdir(dirname:str):void
 address FITSdir;
 comment Attach all FITS files in the directory
 
-pattern gadget.attachall(str:any...):void 
-address SQLsession;
 pattern generator.join(b:bat[:hge],gen:bat[:hge]) (l:bat[:oid],r:bat[:oid]) 
 address VLTgenerator_join;
 comment Overloaded join operation
