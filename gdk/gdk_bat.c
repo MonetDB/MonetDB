@@ -1145,7 +1145,6 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 {
 	BUN last = BUNlast(b) - 1;
 	BAT *bm = BBP_cache(-b->batCacheid);
-	BUN pit = p;
 	BATiter bi = bat_iterator(b);
 	int tt;
 	BUN prv, nxt;
@@ -1171,34 +1170,42 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	nxt = p < last ? p + 1 : BUN_NONE;
 
 	if (BATtordered(b)) {
-		if ((prv != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) ||
-		    (nxt != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0)) {
+		if (prv != BUN_NONE &&
+		    ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) {
 			b->tsorted = FALSE;
-			b->T->nosorted = pit;
+			b->T->nosorted = p;
+		} else if (nxt != BUN_NONE &&
+			   ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0) {
+			b->tsorted = FALSE;
+			b->T->nosorted = nxt;
 		} else if (b->ttype != TYPE_void && b->tdense) {
-			if ((prv != BUN_NONE &&
-			     1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) ||
-			    (nxt != BUN_NONE &&
-			     * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t)) {
+			if (prv != BUN_NONE &&
+			    1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) {
 				b->tdense = FALSE;
-				b->T->nodense = pit;
+				b->T->nodense = p;
+			} else if (nxt != BUN_NONE &&
+				   * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t) {
+				b->tdense = FALSE;
+				b->T->nodense = nxt;
 			} else if (prv == BUN_NONE &&
 				   nxt == BUN_NONE) {
 				bm->hseqbase = b->tseqbase = * (oid *) t;
 			}
 		}
-	}
+	} else if (b->T->nosorted >= p)
+		b->T->nosorted = 0;
 	if (BATtrevordered(b)) {
-		if ((prv != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) ||
-		    (nxt != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0)) {
+		if (prv != BUN_NONE &&
+		    ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) {
 			b->trevsorted = FALSE;
-			b->T->norevsorted = pit;
+			b->T->norevsorted = p;
+		} else if (nxt != BUN_NONE &&
+			   ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0) {
+			b->trevsorted = FALSE;
+			b->T->norevsorted = nxt;
 		}
-	}
+	} else if (b->T->norevsorted >= p)
+		b->T->norevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 		BATkey(bm, FALSE);
 	}
