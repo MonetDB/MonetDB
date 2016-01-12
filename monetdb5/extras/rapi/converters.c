@@ -84,6 +84,7 @@
 		BATsettrivprop(b);												\
 	} while (0)
 
+#define CONVERT_OLDSCHOOL
 
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
@@ -162,7 +163,6 @@ static SEXP bat_to_sexp(BAT* b) {
 			BBPunfix(grp->batCacheid);
 			BBPunfix(uptrs->batCacheid);
 			if (allptrs == NULL) {
-				BBPunfix(ustrings->batCacheid);
 				return NULL;
 			}
 			li = bat_iterator(allptrs);
