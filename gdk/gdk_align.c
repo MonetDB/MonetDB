@@ -117,11 +117,15 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	b1->hrevsorted = BAThrevordered(b2);
 	b1->halign = b2->halign;
 	b1->batDirtydesc = TRUE;
-	b1->H->norevsorted = (BUN) (b2->H->norevsorted + diff);
-	b1->H->nokey[0] = (BUN) (b2->H->nokey[0] + diff);
-	b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
-	b1->H->nosorted = (BUN) (b2->H->nosorted + diff);
-	b1->H->nodense = (BUN) (b2->H->nodense + diff);
+	b1->H->norevsorted = b2->H->norevsorted ? (BUN) (b2->H->norevsorted + diff) : 0;
+	if (b2->H->nokey[0] != b2->H->nokey[1]) {
+		b1->H->nokey[0] = (BUN) (b2->H->nokey[0] + diff);
+		b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
+	} else {
+		b1->H->nokey[0] = b1->H->nokey[1] = 0;
+	}
+	b1->H->nosorted = b2->H->nosorted ? (BUN) (b2->H->nosorted + diff): 0;
+	b1->H->nodense = b2->H->nodense ? (BUN) (b2->H->nodense + diff) : 0;
 }
 
 /*
@@ -529,15 +533,37 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		h = BATcount(b);
 	if (h < l)
 		h = l;
+	cnt = h - l;
 	l += BUNfirst(b);
 	view->batFirst = view->batDeleted = view->batInserted = 0;
-	cnt = h - l;
 	view->H->heap.base = NULL;
 	view->H->heap.size = 0;
 	view->T->heap.base = view->ttype ? BUNtloc(bi, l) : NULL;
 	view->T->heap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);
 	BATsetcapacity(view, cnt);
+	view->H->nosorted = view->H->norevsorted = view->H->nodense = 0;
+	view->H->nokey[0] = view->H->nokey[1] = 0;
+	if (view->T->nosorted > l && view->T->nosorted < l + cnt)
+		view->T->nosorted -= l;
+	else
+		view->T->nosorted = 0;
+	if (view->T->norevsorted > l && view->T->norevsorted < l + cnt)
+		view->T->norevsorted -= l;
+	else
+		view->T->norevsorted = 0;
+	if (view->T->nodense > l && view->T->nodense < l + cnt)
+		view->T->nodense -= l;
+	else
+		view->T->nodense = 0;
+	if (view->T->nokey[0] >= l && view->T->nokey[0] < l + cnt &&
+	    view->T->nokey[1] >= l && view->T->nokey[1] < l + cnt &&
+	    view->T->nokey[0] != view->T->nokey[1]) {
+		view->T->nokey[0] -= l;
+		view->T->nokey[1] -= l;
+	} else {
+		view->T->nokey[0] = view->T->nokey[1] = 0;
+	}
 }
 
 /*

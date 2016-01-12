@@ -484,6 +484,10 @@ BATclear(BAT *b, int force)
 	BATseqbase(BATmirror(b), 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
+	b->H->nosorted = b->H->norevsorted = b->H->nodense = 0;
+	b->H->nokey[0] = b->H->nokey[1] = 0;
+	b->T->nosorted = b->T->norevsorted = b->T->nodense = 0;
+	b->T->nokey[0] = b->T->nokey[1] = 0;
 	return GDK_SUCCEED;
 }
 
@@ -796,15 +800,38 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		ALIGNsetT(bn, b);
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
+		BUN l = BUNfirst(b), h = BUNlast(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
+		if (b->T->nosorted > l && b->T->nosorted < h)
+			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
+		else
+			bn->T->nosorted = 0;
+		if (b->T->norevsorted > l && b->T->norevsorted < h)
+			bn->T->norevsorted = b->T->norevsorted - l + BUNfirst(bn);
+		else
+			bn->T->norevsorted = 0;
+		if (b->T->nodense > l && b->T->nodense < h)
+			bn->T->nodense = b->T->nodense - l + BUNfirst(bn);
+		else
+			bn->T->nodense = 0;
+		if (b->T->nokey[0] >= l && b->T->nokey[0] < h &&
+		    b->T->nokey[1] >= l && b->T->nokey[1] < h &&
+		    b->T->nokey[0] != b->T->nokey[1]) {
+			bn->T->nokey[0] = b->T->nokey[0] - l + BUNfirst(bn);
+			bn->T->nokey[1] = b->T->nokey[1] - l + BUNfirst(bn);
+		} else {
+			bn->T->nokey[0] = bn->T->nokey[1] = 0;
+		}
 	} else {
 		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
 		bn->tdense = bn->T->nonil = 0;
+		bn->T->nosorted = bn->T->norevsorted = bn->T->nodense = 0;
+		bn->T->nokey[0] = bn->T->nokey[1] = 0;
 	}
 	if (BATcount(bn) <= 1) {
 		bn->hsorted = ATOMlinear(b->htype);
@@ -879,7 +906,10 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	if (b->batCount == 0) {
 		/* first value */
 		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
+		col->nosorted = col->norevsorted = 0;
 		col->key |= 1;
+		col->nokey[0] = col->nokey[1] = 0;
+		col->nodense = 0;
 		if (col->type == TYPE_void) {
 			if (x) {
 				col->seq = * (const oid *) x;
@@ -892,18 +922,27 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 			if (col->type == TYPE_oid) {
 				col->dense = !isnil;
 				col->seq = * (const oid *) x;
+				if (isnil)
+					col->nodense = BUNlast(b);
 			}
 		}
 	} else if (col->type == TYPE_void) {
 		/* not the first value in a VOID column: we keep the
-		 * seqbase and x is not used, so only some properties
+		 * seqbase, and x is not used, so only some properties
 		 * are affected */
 		if (col->seq != oid_nil) {
-			col->revsorted = 0;
+			if (col->revsorted) {
+				col->norevsorted = BUNlast(b);
+				col->revsorted = 0;
+			}
 			col->nil = 0;
 			col->nonil = 1;
 		} else {
-			col->key = 0;
+			if (col->key) {
+				col->nokey[0] = BUNfirst(b);
+				col->nokey[1] = BUNlast(b);
+				col->key = 0;
+			}
 			col->nil = 1;
 			col->nonil = 0;
 		}
@@ -920,8 +959,10 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 		       (col->revsorted && cmp < 0) ||
 		       (!col->sorted && !col->revsorted))))) {
 			col->key = 0;
-			col->nokey[0] = pos - 1;
-			col->nokey[1] = pos;
+			if (cmp == 0) {
+				col->nokey[0] = pos - 1;
+				col->nokey[1] = pos;
+			}
 		}
 		if (col->sorted && cmp > 0) {
 			/* out of order */
@@ -1334,6 +1375,29 @@ BATsetcount(BAT *b, BUN cnt)
 	if (cnt <= 1) {
 		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
+		b->H->nosorted = b->H->norevsorted = 0;
+		b->T->nosorted = b->T->norevsorted = 0;
+	}
+	/* if the BAT was made smaller, we need to zap some values */
+	if (b->H->nosorted >= BUNlast(b))
+		b->H->nosorted = 0;
+	if (b->H->norevsorted >= BUNlast(b))
+		b->H->norevsorted = 0;
+	if (b->H->nodense >= BUNlast(b))
+		b->H->nodense = 0;
+	if (b->H->nokey[0] >= BUNlast(b) || b->H->nokey[1] >= BUNlast(b)) {
+		b->H->nokey[0] = 0;
+		b->H->nokey[1] = 0;
+	}
+	if (b->T->nosorted >= BUNlast(b))
+		b->T->nosorted = 0;
+	if (b->T->norevsorted >= BUNlast(b))
+		b->T->norevsorted = 0;
+	if (b->T->nodense >= BUNlast(b))
+		b->T->nodense = 0;
+	if (b->T->nokey[0] >= BUNlast(b) || b->T->nokey[1] >= BUNlast(b)) {
+		b->T->nokey[0] = 0;
+		b->T->nokey[1] = 0;
 	}
 	if (b->htype == TYPE_void) {
 		b->hsorted = 1;
@@ -1453,8 +1517,10 @@ BATseqbase(BAT *b, oid o)
 				b->halign = 0;
 		}
 		b->hseqbase = o;
-		if (b->htype == TYPE_oid && o == oid_nil)
+		if (b->htype == TYPE_oid && o == oid_nil) {
 			b->hdense = 0;
+			b->H->nodense = BUNfirst(b);
+		}
 
 		/* adapt keyness */
 		if (BAThvoid(b)) {
@@ -1463,6 +1529,13 @@ BATseqbase(BAT *b, oid o)
 				b->H->nonil = b->batCount == 0;
 				b->H->nil = b->batCount > 0;
 				b->hsorted = b->hrevsorted = 1;
+				b->H->nosorted = b->H->norevsorted = 0;
+				if (!b->hkey) {
+					b->H->nokey[0] = BUNfirst(b);
+					b->H->nokey[1] = BUNfirst(b) + 1;
+				} else {
+					b->H->nokey[0] = b->H->nokey[1] = 0;
+				}
 			} else {
 				if (!b->hkey) {
 					b->hkey = TRUE;
@@ -1472,6 +1545,8 @@ BATseqbase(BAT *b, oid o)
 				b->H->nil = 0;
 				b->hsorted = 1;
 				b->hrevsorted = b->batCount <= 1;
+				if (!b->hrevsorted)
+					b->H->norevsorted = BUNfirst(b) + 1;
 			}
 		}
 	}

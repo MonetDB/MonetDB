@@ -12,6 +12,9 @@
 #include "sql_storage.h"
 #include <gdk_logger.h>
 
+/* when returning a log_bid, errors are reported using BID_NIL */
+#define BID_NIL 0
+
 #define bat_set_access(b,access) b->batRestricted = access
 #define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b,TRUE);bat_set_access(b,BAT_READ)
 

@@ -13,6 +13,7 @@
 #endif
 
 #define DISABLE_PARENT_HASH 1
+/* #define PERSISTENTHASH 1 */
 
 #include "gdk_system_private.h"
 

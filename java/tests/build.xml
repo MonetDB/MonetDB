@@ -123,6 +123,7 @@ Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
     <antcall target="BugConcurrent_clients_SF_1504657" />
     <antcall target="BugConcurrent_sequences" />
     <antcall target="BugDatabaseMetaData_Bug_3356" />
+    <antcall target="BugDecimalRound_Bug_3561" />
   </target>
 
   <target name="test_class" depends="compile,jdbc">

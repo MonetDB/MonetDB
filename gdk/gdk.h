@@ -2459,6 +2459,7 @@ VALptr(const ValRecord *v)
 
 typedef struct threadStruct {
 	int tid;		/* logical ID by MonetDB; val == index into this array + 1 (0 is invalid) */
+	int waitfor;		/* waitfor on exit */
 	MT_Id pid;		/* physical thread id (pointer-sized) from the OS thread library */
 	str name;
 	ptr data[THREADDATA];

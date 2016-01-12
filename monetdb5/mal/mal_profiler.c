@@ -953,16 +953,16 @@ static void profilerHeartbeat(void *dummy)
 	int t;
 
 	(void) dummy;
-	while (ATOMIC_GET(hbrunning, mal_beatLock)) {
+	while (ATOMIC_GET(hbrunning, mal_beatLock) && !GDKexiting()) {
 		/* wait until you need this info */
 		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL) {
-			for (t = 1000; t > 0; t -= 25) {
+			for (t = 1000; t > 0 && ! GDKexiting(); t -= 25) {
 				MT_sleep_ms(25);
 				if (!ATOMIC_GET(hbrunning, mal_beatLock))
 					return;
 			}
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= 25) {
+		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0 && !GDKexiting(); t -= 25) {
 			MT_sleep_ms(t > 25 ? 25 : t);
 			if (!ATOMIC_GET(hbrunning, mal_beatLock))
 				return;
