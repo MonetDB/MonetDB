@@ -1125,8 +1125,3 @@ include sql_aggr_dbl;
 include sql_inspect;
 
 sql.prelude();
-
-module gadget;
-pattern gadget.attachall(str...):void
-address SQLsession;
-#address gadgetAttachAll;
