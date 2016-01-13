@@ -15,7 +15,8 @@ INCLUDES = .. ../../include ../../common \
 		   ../../../monetdb5/mal \
 		   ../../../monetdb5/modules/mal \
 		   ../../../monetdb5/optimizer \
-		   ../../../monetdb5/scheduler
+		   ../../../monetdb5/scheduler \
+		   ../../../geom/lib
 
 lib_batstore = {
 	NOINST

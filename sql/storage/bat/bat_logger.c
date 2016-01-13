@@ -10,6 +10,7 @@
 #include "bat_logger.h"
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
+#include "libgeom.h"
 
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
@@ -19,6 +20,7 @@ bl_preversion( int oldversion, int newversion)
 {
 #define CATALOG_OCT2014 52100
 #define CATALOG_OCT2014SP3 52101
+#define CATALOG_JUL2015 52200
 
 	(void)newversion;
 	if (oldversion == CATALOG_OCT2014SP3) {
@@ -29,6 +31,11 @@ bl_preversion( int oldversion, int newversion)
 		catalog_version = oldversion;
 		return 0;
 	}
+	if (oldversion == CATALOG_JUL2015) {
+		catalog_version = oldversion;
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -146,6 +153,87 @@ bl_postversion( void *lg)
 			else
 				s = NULL;
 		}
+	}
+	if (catalog_version <= CATALOG_JUL2015) {
+		/* Prexisting columns of type point, linestring, polygon etc 
+		 * have to converted to geometry(0), geometry(1) etc. */
+		BAT *ct, *cnt, *cd, *cnd, *cs, *cns;
+		BATiter cti, cdi, csi;
+		char *s = "sys", n[64];
+		BUN p,q;
+
+		ct = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+		cti = bat_iterator(ct);
+		cd = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
+		cdi = bat_iterator(cd);
+		cs = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
+		csi = bat_iterator(cs);
+
+		cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
+		cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
+		cns = BATnew(TYPE_void, TYPE_int, BATcount(cs), PERSISTENT);
+
+		if (!cnt || !cnd || !cns)
+			return;
+        	BATseqbase(cnt, ct->hseqbase);
+		BATseqbase(cnd, cd->hseqbase);
+		BATseqbase(cns, cs->hseqbase);
+
+		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
+			char *type = BUNtail(cti, p);
+			int digits = *(int*)BUNtail(cdi, p);
+			int scale = *(int*)BUNtail(csi, p);
+
+			if (strcmp(toLower(type), "point") == 0) {
+				type = "geometry";
+				digits = wkbPoint;
+				scale = 0; // in the past we did not save the srid
+			} else if (strcmp(toLower(type), "linestring") == 0) {
+				type = "geometry";
+				digits = wkbLineString;
+				scale = 0;
+			} else if (strcmp(toLower(type), "linearring") == 0) {
+				type = "geometry";
+				digits = wkbLinearRing;
+				scale = 0;
+			} else if (strcmp(toLower(type), "polygon") == 0) {
+				type = "geometry";
+				digits = wkbPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multipoint") == 0) {
+				type = "geometry";
+				digits = wkbMultiPoint;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multilinestring") == 0) {
+				type = "geometry";
+				digits = wkbMultiLineString;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multipolygon") == 0) {
+				type = "geometry";
+				digits = wkbMultiPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
+				type = "geometry";
+				digits = wkbGeometryCollection;
+				scale = 0;
+			}
+
+			BUNappend(cnt, type, TRUE);
+			BUNappend(cnd, &digits, TRUE);
+			BUNappend(cns, &scale, TRUE);
+		}
+
+		BATsetaccess(cnt, BAT_READ);
+		BATsetaccess(cnd, BAT_READ);
+		BATsetaccess(cns, BAT_READ);
+
+		logger_add_bat(lg, cnt, N(n, NULL, s, "_columns_type"));
+		logger_add_bat(lg, cnd, N(n, NULL, s, "_columns_type_digits"));
+		logger_add_bat(lg, cns, N(n, NULL, s, "_columns_type_scale"));
+
+		bat_destroy(ct);
+		bat_destroy(cd);
+		bat_destroy(cs);
 	}
 }
 
