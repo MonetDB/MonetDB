@@ -2,13 +2,14 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module clients;
 
 pattern setListing(flag:int):int
 address CLTsetListing
 comment "Turn on/off echo of MAL instructions:
+	1 - echo input,
 	2 - show mal instruction,
 	4 - show details of type resolutoin, 
 	8 - show binding information.";
@@ -21,7 +22,7 @@ pattern getId():int
 address CLTgetClientId
 comment "Return a number that uniquely represents the current client.";
 
-pattern getInfo( )(:bat[:oid,:str],:bat[:oid,:str])
+pattern getInfo( )(:bat[:str],:bat[:str])
 address CLTInfo
 comment "Pseudo bat with client attributes.";
 
@@ -41,23 +42,23 @@ address CLTquit
 comment "Terminate the session for a single client using a soft error.
 It is the privilige of the console user.";
 
-command getLogins( )(user:bat[:oid,:oid],start:bat[:oid,:str] )
+command getLogins( )(user:bat[:oid],start:bat[:str] )
 address CLTLogin
 comment "Pseudo bat of client id and login time.";
 
-command getLastCommand( ):bat[:oid,:str] 
+command getLastCommand( ):bat[:str] 
 address CLTLastCommand
 comment "Pseudo bat of client's last command time.";
 
-command getActions( ):bat[:oid,:int] 
+command getActions( ):bat[:int] 
 address CLTActions
 comment "Pseudo bat of client's command counts.";
 
-command getTime( ):bat[:oid,:lng] 
+command getTime( ):bat[:lng] 
 address CLTTime
 comment "Pseudo bat of client's total time usage(in usec).";
 
-command getUsers( ):bat[:oid,:str] 
+command getUsers( ):bat[:str] 
 address CLTusers
 comment "Pseudo bat of users id and name.";
 
@@ -153,6 +154,6 @@ pattern checkPermission(usr:str, pw:str):void
 address CLTcheckPermission
 comment "Check permission for a user, requires hashed password (backendsum)";
 
-pattern getUsers()(:bat[:oid,:oid],:bat[:oid,:str])
+pattern getUsers()(:bat[:oid],:bat[:str])
 address CLTgetUsers
 comment "return a BAT with user id and one with name available in the system";

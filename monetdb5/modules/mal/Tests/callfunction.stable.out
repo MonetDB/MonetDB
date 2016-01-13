@@ -18,26 +18,15 @@ stdout of test 'callfunction` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.f1():void;
-    io.print("hello");
-end user.f1;
-function user.f2():void;
-    io.print("world");
-end user.f2;
-function user.q():void;
-    language.call("user","f1");
-    language.call("user","f2");
-end user.q;
-function user.main():void;
-    user.q();
-end user.main;
-function user.main():void;
-    user.f1();
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:19 >  
+# 09:46:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:19 >  
+
 [ "hello" ]
-function user.main():void;
-    user.f2();
-end user.main;
 [ "world" ]
 
 # 09:25:34 >  

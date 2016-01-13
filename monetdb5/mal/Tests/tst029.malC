@@ -1,0 +1,7 @@
+b:= bat.new(:str);
+bat.append(b, "io.print(1);");
+bat.append(b, "io.print(\"hello\");");
+bat.append(b,"s:=\"goodbye\";io.print(s);");
+io.print(b);
+s:= algebra.fetch(b,2@0);
+io.printf("%s\n",s);

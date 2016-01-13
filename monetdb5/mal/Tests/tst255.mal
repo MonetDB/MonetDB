@@ -1,8 +1,0 @@
-# testing void to oid coercion
- z1:= bat.new(:oid,:int);
- bat.append(z1,0);
- bat.append(z1,1);
- bat.append(z1,2);
-io.print(z1);
-o:= batcalc.oid(z1);
-io.print(o);

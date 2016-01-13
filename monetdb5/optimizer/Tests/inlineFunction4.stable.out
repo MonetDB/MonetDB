@@ -18,34 +18,15 @@ stdout of test 'inlineFunction4` in directory 'monetdb5/optimizer` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-inline function user.my_case(Av:int):int;
-    X3 := calc.==(Av,1);
-    res:int  := 0;
-barrier X4 := X3;
-    X6 := calc.int(100);
-    res:int  := X6;
-exit X4;
-barrier X7 := calc.not(X3);
-    X9 := calc.==(Av,2);
-barrier X10 := X9;
-    X12 := calc.int(200:sht);
-    res:int  := X12;
-exit X10;
-barrier X13 := calc.not(X9);
-    X14 := calc.-(1);
-    X15 := calc.int(X14);
-    res:int  := X15;
-exit X13;
-exit X7;
-    return my_case:int  := res;
-end user.my_case;
-function user.tst():void;
-    z := user.my_case(0);
-end user.tst;
-function user.main():void;
-    io.printf("#result of inline\n");
-    mdb.list("user","tst");
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:09:45 >  
+# 16:09:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32223" "--port=39816"
+# 16:09:45 >  
+
+#io.printf("#result of inline\n");
 #result of inline
 function user.tst():void;
     X_5 := false:bit;

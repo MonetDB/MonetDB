@@ -5,97 +5,65 @@ stdout of test 'tst911` in directory 'monetdb5/mal` itself:
 # 08:01:40 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst911.mal </dev/null
 # 08:01:40 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## analyse the overhead of chopping a table
-## the multiplex code blocks.
-#
-#function choptest(b:bat[:void,:lng], size:lng, base:lng);
-#    t0:= alarm.usec();
-#    barrier (chk,c):= newChunkIterator(b,size);
-#        t:= select(c, 256000:lng,266000:lng);
-#        redo (chk,c):= hasMoreChunks(b,size);
-#    exit (chk,c);
-#
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    printf("#chopped at %d",size);
-#    printf(" %d",d0);
-#    d0:= d0-base;
-#    printf(" %d ",d0);
-#    i:= 1000000:lng/size;
-#    if:= flt(i);
-#    df:= flt(d0);
-#    f:= df/if;
-#    printf(" at %f usec\n",f);
-#end choptest;
-function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;
-    t0 := alarm.usec();
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-barrier (chk,c) := iterator.new(b,size);
-    t := algebra.subselect(c,256000:lng,266000:lng,true,true,false);
-    redo (chk,c) := iterator.next(b,size);
-exit (chk,c);
-    mdb.setDebug(dbgmsk_restore);
-    t1 := alarm.usec();
-    d0 := calc.-(t1,t0);
-    io.printf("#chopped at %d",size);
-    io.printf(" %d",d0);
-    d0 := calc.-(d0,base);
-    io.printf(" %d ",d0);
-    i := calc./(1000000:lng,size);
-    if := calc.flt(i);
-    df := calc.flt(d0);
-    f := calc./(df,if);
-    io.printf(" at %f usec\n",f);
-end user.choptest;
-function user.main():void;
-# analyse the overhead of chopping a table 
-# the multiplex code blocks. 
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    t0 := alarm.usec();
-barrier doit := true;
-    t := algebra.subselect(b,256000:lng,266000:lng,true,true,false);
-exit doit;
-    t1 := alarm.usec();
-    base := calc.-(t1,t0);
-    io.printf("#select direct %d usec\n",base);
-    user.choptest(b,100000:lng,base);
-    user.choptest(b,10000:lng,base);
-    user.choptest(b,1000:lng,base);
-    user.choptest(b,100:lng,base);
-end user.main;
-#select direct 13917 usec
-#chopped at 100000 15504 1587  at 158.699997 usec
-#chopped at 10000 9703 -4214  at -42.139999 usec
-#chopped at 1000 31944 18027  at 18.027000 usec
-#chopped at 100 256750 242833  at 24.283300 usec
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30001/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11334/.s.monetdb.30001
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 08:01:41 >  
-# 08:01:41 >  Done.
-# 08:01:41 >  
+Ready.
+
+# 22:45:41 >  
+# 22:45:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
+# 22:45:41 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+    INT_MAX:int := 2147483647:int;      	#[2]  3 <- 4 
+    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 5 
+    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 6 <- 7 8 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 9 <- 3 6 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 10 <- 5 9 
+    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 11 <- 10 
+    r:void := mmath.srand(0:int);       	#[8] MATHsrandint 12 <- 13 
+barrier i:lng := 0:lng;                 	#[9]  14 <- 15 
+    k:int := mmath.rand();              	#[10] MATHrandint 16 
+    l:lng := calc.lng(k:int);           	#[11] CMDvarCONVERT 17 <- 16 
+    bat.append(b:bat[:lng],l:lng);      	#[12] BKCappend_val_wrap 18 <- 1 17 
+    redo i:lng := iterator.next(1:lng,1000000:lng);	#[13] ITRnext_lng 14 <- 19 20 
+exit i:lng;                             	#[14]  14 
+    mdb.setDebug(dbgmsk_restore:int);   	#[15] MDBsetDebug 21 <- 5 
+    t0:lng := alarm.usec();             	#[16] ALARMusec 22 
+barrier doit:bit := true:bit;           	#[17]  23 <- 24 
+    t:bat[:oid] := algebra.subselect(b:bat[:lng],256000:lng,266000:lng,true:bit,true:bit,false:bit);	#[18] ALGsubselect1 25 <- 1 26 27 24 24 28 
+exit doit:bit;                          	#[19]  23 
+    t1:lng := alarm.usec();             	#[20] ALARMusec 29 
+    base:lng := calc.-(t1:lng,t0:lng);  	#[21] CMDvarSUBsignal 30 <- 29 22 
+    io.printf("#select direct %d usec\n":str,base:lng);	#[22] IOprintf 31 <- 32 30 
+    user.choptest(b:bat[:lng],100000:lng,base:lng);	#[23]  33 <- 1 34 30 
+    user.choptest(b:bat[:lng],10000:lng,base:lng);	#[24]  35 <- 1 36 30 
+    user.choptest(b:bat[:lng],1000:lng,base:lng);	#[25]  37 <- 1 38 30 
+    user.choptest(b:bat[:lng],100:lng,base:lng);	#[26]  39 <- 1 40 30 
+end user.foo;                           	#[27]  
+#select direct 4350 usec
+#chopped at 100000 5124 774  at 77.400002 usec
+#chopped at 10000 5815 1465  at 14.650000 usec
+#chopped at 1000 14624 10274  at 10.274000 usec
+#chopped at 100 102064 97714  at 9.771400 usec
+
+# 22:45:43 >  
+# 22:45:43 >  "Done."
+# 22:45:43 >  
 

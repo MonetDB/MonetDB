@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _SQL_MEM_H_
@@ -44,6 +44,8 @@
 #define NEWADT( size ) (adt*)GDKmalloc(size)
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
+
+extern void c_delete( const void *p );
 
 typedef struct sql_ref {
 	int refcnt;

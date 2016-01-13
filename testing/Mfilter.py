@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 import sys
 import os
@@ -143,7 +143,7 @@ def mFilter (FILE, IGNORE) :
         # even if zero)
         iline = re.sub(r'(\d+(?:\.\d*)?e[-+]?)0*(\d+)', r'\1\2', iline)
         oline = xline = ""
-        if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n":
+        if iline == "#~BeginVariableOutput~#\n"  or  iline == "#~BeginProfilingOutput~#\n" or iline == "[ \"~BeginVariableOutput~\"\t]\n"  or  iline == "[ \"~BeginProfilingOutput~\"\t]\n":
             ig = 1
             n = 0
         if ig  and  ( len(iline) == 0  or  iline[0] != "!"  or  iline[:9] != "ERROR = !" ):
@@ -187,10 +187,10 @@ def mFilter (FILE, IGNORE) :
             xline = iline.replace('%','#',1)
         else:
             oline = iline
-        if iline == "#~EndVariableOutput~#\n":
+        if iline == "#~EndVariableOutput~#\n" or iline == "[ \"~EndVariableOutput~\"\t]\n":
             ig = 0
             xline = "~ " + str(n) + " ~\n"
-        if iline == "#~EndProfilingOutput~#\n":
+        if iline == "#~EndProfilingOutput~#\n" or iline == "[ \"~EndProfilingOutput~\"\t]\n":
             ig = 0
         for ln in oline, xline:
             if len(ln):

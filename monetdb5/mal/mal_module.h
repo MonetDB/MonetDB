@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _MAL_SCOPE_H_
@@ -40,7 +40,6 @@ mal_export Symbol   findSymbolInModule(Module v, str fcn);
 mal_export int		findInstruction(Module scope, MalBlkPtr mb, InstrPtr pci);
 mal_export void 	dumpHelpTable(stream *f, Module s, str text, int flag);
 mal_export void 	dumpSearchTable(stream *f, str text);
-mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
 mal_export char **getHelp(Module m, str pat, int flag);
 mal_export char **getHelpMatch(char *pat);
 mal_export void showHelp(Module m, str txt,stream *fs);

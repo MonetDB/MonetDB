@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -235,14 +235,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	if ( s == NULL)
 		return s;
 	if (flg) {
-		if( p->token<0){
-			s[0] = '#';
-			s[1] = 0;
-			t = s+1;
-		}else{
-			s[0] = 0;
-			t = s;
-		}
+		s[0] = 0;
+		t = s;
 	} else {
 		s[0] = '#';
 		if (p->typechk == TYPE_UNKNOWN) {

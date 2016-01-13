@@ -1,50 +1,34 @@
 stdout of test 'remote02` in directory 'monetdb5/modules/mal` itself:
 
 
-# 13:17:33 >  
-# 13:17:33 >   mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set xrpc_open=true --set mapi_port=39413 --set xrpc_port=44388 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  remote02.mal
-# 13:17:33 >  
+# 09:46:20 >  
+# 09:46:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35410" "--set" "mapi_usock=/var/tmp/mtest-26774/.s.monetdb.35410" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 09:46:20 >  
 
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
+Ready.
 
+# 09:46:21 >  
+# 09:46:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:21 >  
 
-
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_modules_mal', using 2 threads
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-# let connect figure out itself how to connect to the running db 
-    uri := sabaoth.getLocalConnectionURI();
-    conn:str  := remote.connect(uri,"monetdb","monetdb");
-    a:str  := "Fabian!";
-    b:flt := 4.3;
-    c:int  := 12;
-    d:bat[:oid,:str]  := bat.new(:oid,:str);
-    bat.append(d,"bla");
-    bat.append(d,nil:str);
-    bat.append(d,"boe");
-# store the values 
-    i:str  := remote.put(conn,a);
-    j:str  := remote.put(conn,b);
-    k:str  := remote.put(conn,c);
-    l:str  := remote.put(conn,d);
-# retrieve the value 
-    r:str  := remote.get(conn,i);
-    s:flt  := remote.get(conn,j);
-    t:int  := remote.get(conn,k);
-    u:bat[:oid,:str]  := remote.get(conn,l);
-# see if it really is here 
-    io.print(r);
-    io.print(s);
-    io.print(t);
-    io.print(u);
-# help testweb a bit, since currently no cleanup is done on server 
-# shutdown 
-    remote.disconnect(conn);
-end user.main;
 [ "Fabian!" ]
 [ 4.3 ]
 [ 12 ]

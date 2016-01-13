@@ -2,26 +2,22 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module bat;
-
-#TO BE MADE HEADLESS PLAN
-
-command delete(b:bat[:oid, :any_1], src:bat[:oid,:any_1]) :bat[:oid,:any_1]
-address BKCdelete_bat_bun
-comment "Delete from the first BAT all BUNs with a corresponding BUN 
-        in the second.";
-# END TO BE MADE HEADLESS PLAN
 
 command mirror(b:bat[:oid,:any_2]) :bat[:oid,:oid] 
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
 
-command delete(b:bat[:oid, :any_1], h:oid) :bat[:oid,:any_1]
+command delete(b:bat[:oid, :any_1], h:oid) :bat[:oid, :any_1]
 address BKCdelete
-comment "Delete an entry with a certain head value.";
+comment "Delete BUN indicated by head value, exchanging with last BUN";
+
+command delete(b:bat[:oid, :any_1], d:bat[:oid, :oid]) :bat[:oid, :any_1]
+address BKCdelete_multi
+comment "Delete multiple BUN, shifting BUNs up";
 
 command delete(b:bat[:oid, :any_1]) :bat[:oid,:any_1]
 address BKCdelete_all

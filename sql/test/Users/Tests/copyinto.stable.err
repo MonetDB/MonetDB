@@ -1,0 +1,41 @@
+stderr of test 'copyinto` in directory 'sql/test/Users` itself:
+
+
+# 19:39:23 >  
+# 19:39:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30584" "--set" "mapi_usock=/var/tmp/mtest-23549/.s.monetdb.30584" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_Users" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 19:39:23 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30584
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23549/.s.monetdb.30584
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_Users
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 19:39:23 >  
+# 19:39:23 >  "/usr/bin/python2" "copyinto.SQL.py" "copyinto"
+# 19:39:23 >  
+
+MAPI  = (copyuser) /var/tmp/mtest-31068/.s.monetdb.38178
+QUERY = COPY 5 RECORDS INTO region from '/home/niels/data/MonetDB/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
+        ';select count(*) from region;
+ERROR = !COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "region" FROM STDIN' instead
+
+# 19:39:24 >  
+# 19:39:24 >  "Done."
+# 19:39:24 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _REL_PSM_H_
@@ -27,6 +27,7 @@
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
 
+extern sql_func *resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op);
 extern sql_rel *rel_psm(mvc *sql, symbol *sym);
 extern sql_rel *rel_select_with_into( mvc *sql, symbol *sq);
 

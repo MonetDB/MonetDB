@@ -2,27 +2,26 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module iterator;
 
-command new(b:bat[:oid,:any_2], size:lng) (:lng,:bat[:oid,:any_2])
+command new(b:bat[:any_2], size:lng) (:lng,:bat[:any_2])
 address ITRnewChunk
 comment "Create an iterator with fixed granule size.
 	  The result is a view.";
 
-command next(b:bat[:oid,:any_2], size:lng) (:lng, :bat[:oid,:any_2])
+command next(b:bat[:any_2], size:lng) (:lng, :bat[:any_2])
 address ITRnextChunk
 comment "Produce the next chunk for processing.";
 
-pattern new(b:bat[:oid,:any_2]) (h:oid, t:any_2)
+pattern new(b:bat[:any_2]) (h:oid, t:any_2)
 address ITRbunIterator
 comment "Process the buns one by one extracted from a void table.";
 
-pattern next(b:bat[:oid,:any_2]) (h:oid, t:any_2)
+pattern next(b:bat[:any_2]) (h:oid, t:any_2)
 address ITRbunNext
 comment "Produce the next bun for processing.";
-
 
 command next(step:oid,last:oid):oid
 address ITRnext_oid; 

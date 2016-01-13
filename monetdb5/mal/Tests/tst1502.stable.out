@@ -1,49 +1,35 @@
 stdout of test 'tst1502` in directory 'monetdb5/mal` itself:
 
 
-function user.main():void;
-    x := bat.new(:oid,:bte);
-    bat.append(x,1:bte);
-    bat.append(x,1:bte);
-    bat.append(x,2:bte);
-    bat.append(x,2:bte);
-    bat.append(x,2:bte);
-    bat.append(x,2:bte);
-    bat.append(x,3:bte);
-    bat.append(x,3:bte);
-    y := bat.new(:oid,:dbl);
-    le_a := calc.dbl(1);
-    bat.append(y,le_a);
-    ne_a := calc.dbl(2);
-    bat.append(y,ne_a);
-    pe_a := calc.dbl(2);
-    bat.append(y,pe_a);
-    re_a := calc.dbl(2);
-    bat.append(y,re_a);
-    te_a := calc.dbl(2);
-    bat.append(y,te_a);
-    ve_a := calc.dbl(3);
-    bat.append(y,ve_a);
-    xe_a := calc.dbl(1);
-    bat.append(y,xe_a);
-    af_a := calc.dbl(1);
-    bat.append(y,af_a);
-    z := bat.new(:oid,:str);
-    bat.append(z,"c");
-    bat.append(z,"a");
-    bat.append(z,"b");
-    bat.append(z,"c");
-    bat.append(z,"a");
-    hf_a := bat.append(z,"a");
-    bat.append(z,"c");
-    bat.append(z,"a");
-    io.print("sort x");
-    xs := algebra.subsort(x,false:bit,false:bit);
-    io.print(xs);
-    io.print("hsort xrev");
-    xrev := algebra.subsort(x,true:bit,false:bit);
-    io.print(xrev);
-end user.main;
+# 15:36:14 >  
+# 15:36:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33827" "--set" "mapi_usock=/var/tmp/mtest-16148/.s.monetdb.33827" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 15:36:14 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33827/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16148/.s.monetdb.33827
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 15:36:15 >  
+# 15:36:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
+# 15:36:15 >  
+
+#	io.print("sort x"); 
 [ "sort x" ]
 #--------------------------#
 # h	t  # name

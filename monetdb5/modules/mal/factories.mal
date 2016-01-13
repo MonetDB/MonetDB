@@ -2,11 +2,11 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module factories;
 
-command getPlants()(mod:bat[:oid,:str], fcn:bat[:oid,:str])
+command getPlants()(mod:bat[:str], fcn:bat[:str])
 address FCTgetPlants 
 comment "Retrieve the names for all active factories.";
 
@@ -14,15 +14,15 @@ command getCaller():int
 address FCTgetCaller
 comment "Retrieve the unique identity of the factory caller.";
 
-command getOwners():bat[:oid,:str]
+command getOwners():bat[:str]
 address FCTgetOwners
 comment "Retrieve the factory owners table.";
 
-command getArrival():bat[:oid,:timestamp]
+command getArrival():bat[:timestamp]
 address FCTgetArrival
 comment "Retrieve the time stamp the last call was made.";
 
-command getDeparture():bat[:oid,:timestamp]
+command getDeparture():bat[:timestamp]
 address FCTgetDeparture
 comment "Retrieve the time stamp the last answer was returned.";
 

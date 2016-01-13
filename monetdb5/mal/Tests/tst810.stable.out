@@ -17,23 +17,31 @@ stdout of test 'tst810` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    b := bat.new(:oid,:int);
-    bat.append(b,1);
-    bat.append(b,2);
-    bat.append(b,3);
-    bat.append(b,4);
-    bat.append(b,5);
-    bat.append(b,6);
-    bat.append(b,7);
-    bat.append(b,8);
-    bat.append(b,9);
-    io.print(b);
-    slice1 := algebra.slice(b,0@0,4@0);
-    io.print(slice1);
-    slice2 := algebra.slice(b,5@0,nil:oid);
-    io.print(slice2);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:38:22 >  
+# 10:38:22 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-864" "--port=33541"
+# 10:38:22 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:int],2:int);      	#[3] BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:int],3:int);      	#[4] BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:int],4:int);      	#[5] BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:int],5:int);      	#[6] BKCappend_val_wrap 11 <- 1 12 
+    bat.append(b:bat[:int],6:int);      	#[7] BKCappend_val_wrap 13 <- 1 14 
+    bat.append(b:bat[:int],7:int);      	#[8] BKCappend_val_wrap 15 <- 1 16 
+    bat.append(b:bat[:int],8:int);      	#[9] BKCappend_val_wrap 17 <- 1 18 
+    bat.append(b:bat[:int],9:int);      	#[10] BKCappend_val_wrap 19 <- 1 20 
+    io.print(b:bat[:int]);              	#[11] IOprint_val 21 <- 1 
+    slice1:bat[:int] := algebra.slice(b:bat[:int],0@0:oid,4@0:oid);	#[12] ALGslice_oid 22 <- 1 23 24 
+    io.print(slice1:bat[:int]);         	#[13] IOprint_val 25 <- 22 
+    slice2:bat[:int] := algebra.slice(b:bat[:int],5@0:oid,nil:oid);	#[14] ALGslice_oid 26 <- 1 27 28 
+    io.print(slice2:bat[:int]);         	#[15] IOprint_val 29 <- 26 
+end user.foo;                           	#[16]  
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

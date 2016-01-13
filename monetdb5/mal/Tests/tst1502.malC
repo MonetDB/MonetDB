@@ -1,0 +1,44 @@
+	x := bat.new(:bte);
+	bat.append(x,1:bte);
+	bat.append(x,1:bte);
+	bat.append(x,2:bte);
+	bat.append(x,2:bte);
+	bat.append(x,2:bte);
+	bat.append(x,2:bte);
+	bat.append(x,3:bte);
+	bat.append(x,3:bte);
+
+	y := bat.new(:dbl);
+	le_a := calc.dbl(1.0);
+	bat.append(y,le_a);
+	ne_a := calc.dbl(2.0);
+	bat.append(y,ne_a);
+	pe_a := calc.dbl(2.0);
+	bat.append(y,pe_a);
+	re_a := calc.dbl(2.0);
+	bat.append(y,re_a);
+	te_a := calc.dbl(2.0);
+	bat.append(y,te_a);
+	ve_a := calc.dbl(3.0);
+	bat.append(y,ve_a);
+	xe_a := calc.dbl(1.0);
+	bat.append(y,xe_a);
+	af_a := calc.dbl(1.0);
+	bat.append(y,af_a);
+
+	z := bat.new(:str);
+	bat.append(z,"c");
+	bat.append(z,"a");
+	bat.append(z,"b");
+	bat.append(z,"c");
+	bat.append(z,"a");
+	hf_a := bat.append(z,"a");
+	bat.append(z,"c");
+	bat.append(z,"a");
+	io.print("sort x"); 
+	xs:=algebra.subsort(x,false:bit,false:bit); 
+	io.print(xs);
+	io.print("hsort xrev"); 
+	xrev:=algebra.subsort(x,true:bit,false:bit);
+	io.print(xrev);
+

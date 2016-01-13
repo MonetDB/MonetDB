@@ -18,62 +18,19 @@ stdout of test 'mutation00` in directory 'monetdb5/scheduler` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function scheduler.mutation(m:str,f:str) (mn:str,fn:str);
-    mn := m;
-    fn := f;
-    return (mn,fn) := (mn,fn);
-end scheduler.mutation;
-function user.initialize():bat[:oid,:lng];
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    r := mmath.srand(0);
-barrier i := 0:lng;
-    k := mmath.rand();
-    l := calc.lng(k);
-    bat.append(b,l);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    mdb.setDebug(dbgmsk_restore);
-    return initialize := b;
-end user.initialize;
-function user.query():void;
-    t0 := alarm.usec();
-    b := user.initialize();
-    t1 := alarm.usec();
-    t := calc.-(t1,t0);
-    io.printf("#%d\n",t);
-    sum := aggr.sum(b);
-    t0 := alarm.usec();
-    t := calc.-(t0,t1);
-    io.printf("#%d\n",t);
-    cnt := aggr.count(b);
-    t1 := alarm.usec();
-    t := calc.-(t1,t0);
-    io.printf("#%d\n",t);
-end user.query;
-function user.evolution(mod:str,fcn:str):void;
-    (m,f) := scheduler.mutation(mod,fcn);
-    language.call(m,f);
-end user.evolution;
-function user.main():void;
-# example framework for a mutation based execution stack 
-# The mutation scheduler picks a plan from a specific pool 
-# possibly after performing introspection and plan mutation 
-    user.evolution("user","query");
-end user.main;
-function user.main():void;
-    user.query();
-end user.main;
-#2006524
-#6533
-#11
+# MonetDB/R   module loaded
 
-# 09:42:41 >  
-# 09:42:41 >  "Done."
-# 09:42:41 >  
+Ready.
+
+# 11:27:21 >  
+# 11:27:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-11496" "--port=31436"
+# 11:27:21 >  
+
+#2068844
+#6588
+#13
+
+# 11:27:24 >  
+# 11:27:24 >  "Done."
+# 11:27:24 >  
 

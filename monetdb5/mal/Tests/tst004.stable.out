@@ -5,38 +5,43 @@ stdout of test 'tst004` in directory 'monetdb5/mal` itself:
 # 07:58:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst004.mal </dev/null
 # 07:58:33 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## minimal barrier
-#barrier	l:=1;
-#	print(l);
-#exit	l:= 2;
-#	print(l);
-#barrier m:=3;
-#	leave m;
-#exit	m:= 4;
-#	io.print(m);
-#end foo;
-function user.foo():void;
-barrier l := 1;
-    io.print(l);
-exit l := 2;
-    io.print(l);
-barrier m := 3;
-    leave m;
-exit m := 4;
-    io.print(m);
-end user.foo;
-function user.main():void;
-# minimal barrier 
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:39815/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25410/.s.monetdb.39815
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 07:58:33 >  
-# 07:58:33 >  Done.
-# 07:58:33 >  
+Ready.
+
+# 22:18:45 >  
+# 22:18:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25410" "--port=39815"
+# 22:18:45 >  
+
+function user.foo():void;               	#[0]  0 
+barrier l:int := 1:int;                 	#[1]  1 <- 2 
+    io.print(l:int);                    	#[2] IOprint_val 3 <- 1 
+exit l:int := 2:int;                    	#[3]  1 <- 4 
+    io.print(l:int);                    	#[4] IOprint_val 5 <- 1 
+barrier m:int := 3:int;                 	#[5]  6 <- 7 
+    leave m:int;                        	#[6]  6 
+exit m:int := 4:int;                    	#[7]  6 <- 8 
+    io.print(m:int);                    	#[8] IOprint_val 9 <- 6 
+end user.foo;                           	#[9]  
+[ 1	]
+[ 2	]
+[ 4	]
+
+# 22:18:45 >  
+# 22:18:45 >  "Done."
+# 22:18:45 >  
 

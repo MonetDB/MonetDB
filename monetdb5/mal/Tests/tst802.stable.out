@@ -21,20 +21,28 @@ stdout of test 'tst802` in directory 'monetdb5/mal` itself:
 # Finished reading the write-ahead log 'sql_logs/sql/log.4'
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-function user.tst(b:bat[:oid,:any_2]):bat[:oid,:any_2];
-    return tst := b;
-end user.tst;
-function user.main():void;
-#testing simple stuff around type BAT 
-    z := bat.new(:oid,:int);
-    b := nil:bat[:oid,:int];
-    b := z;
-#io.print(b); 
-    c := user.tst(b);
-#io.print(c); 
-end user.main;
+# MonetDB/R   module loaded
 
-# 14:58:46 >  
-# 14:58:46 >  Done.
-# 14:58:46 >  
+Ready.
+
+# 10:38:21 >  
+# 10:38:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-864" "--port=33541"
+# 10:38:21 >  
+
+function user.foo():void;               	#[0]  0 
+    z:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
+    b:bat[:int] := nil:bat[:int];       	#[2]  3 <- 4 
+    b:bat[:int] := z:bat[:int];         	#[3]  3 <- 1 
+#io.print(b);                           
+    c:bat[:int] := user.tst(b:bat[:int]);	#[5]  6 <- 3 
+    io.print(c:bat[:int]);              	#[6] IOprint_val 7 <- 6 
+end user.foo;                           	#[7]  
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+
+# 10:38:21 >  
+# 10:38:21 >  "Done."
+# 10:38:21 >  
 

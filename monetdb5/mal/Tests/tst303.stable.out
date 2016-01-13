@@ -5,37 +5,41 @@ stdout of test 'tst303` in directory 'monetdb5/mal` itself:
 # 08:01:15 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst303.mal </dev/null
 # 08:01:15 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## recursively raise an exception passed upward
-#raise	IllegalAccess := "an exception";
-#	print("should not come here\n");
-#catch	IllegalAccess;
-#	printf("caught %s\n",IllegalAccess);
-#raise	IllegalAccess:= "a second exception raised\n";
-#	print("should not come here either\n");
-#exit	IllegalAccess;
-#	print("should not be done");
-#
-function user.main():void;
-# recursively raise an exception passed upward 
-    raise IllegalAccess := "an exception";
-    io.print("should not come here\n");
-catch IllegalAccess;
-    io.printf("caught %s\n",IllegalAccess);
-    raise IllegalAccess := "a second exception raised";
-    io.print("should not come here either\n");
-exit IllegalAccess;
-    io.print("should not be done");
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30157/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21311/.s.monetdb.30157
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:00:01 >  
+# 09:00:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
+# 09:00:01 >  
+
+function user.foo():void;               	#[0]  0 
+    raise IllegalAccess:str := "an exception":str;	#[1]  1 <- 2 
+    io.print("should not come here\n":str);	#[2] IOprint_val 3 <- 4 
+catch IllegalAccess:str;                	#[3]  1 
+    io.printf("caught %s\n":str,IllegalAccess:str);	#[4] IOprintf 5 <- 6 1 
+    raise IllegalAccess:str := "a second exception raised":str;	#[5]  1 <- 7 
+    io.print("should not come here either\n":str);	#[6] IOprint_val 8 <- 9 
+exit IllegalAccess:str;                 	#[7]  1 
+    io.print("should not be done":str); 	#[8] IOprint_val 10 <- 11 
+end user.foo;                           	#[9]  
 caught an exception
-!MALException:user.main[6]:a second exception raised
-!MALException:user.main[10]:Exception not caught
 
 # 17:45:29 >  
 # 17:45:29 >  Done.

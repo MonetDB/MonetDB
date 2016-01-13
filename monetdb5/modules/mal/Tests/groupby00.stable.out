@@ -18,58 +18,14 @@ stdout of test 'groupby00` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#testing the group_by minimalistics 
-    b1 := bat.new(:oid,:int);
-    b2 := bat.new(:oid,:int);
-    b3 := bat.new(:oid,:int);
-    bat.append(b1,1);
-    bat.append(b1,1);
-    bat.append(b1,1);
-    bat.append(b1,1);
-    bat.append(b1,2);
-    bat.append(b1,2);
-    bat.append(b1,2);
-    bat.append(b1,2);
-    bat.append(b2,3);
-    bat.append(b2,3);
-    bat.append(b2,4);
-    bat.append(b2,4);
-    bat.append(b2,3);
-    bat.append(b2,3);
-    bat.append(b2,4);
-    bat.append(b2,4);
-    bat.append(b3,5);
-    bat.append(b3,6);
-    bat.append(b3,5);
-    bat.append(b3,6);
-    bat.append(b3,5);
-    bat.append(b3,6);
-    bat.append(b3,5);
-    bat.append(b3,6);
-    io.print(b1,b2,b3);
-#single column groups 
-    (g1,grp,ext) := group.multicolumn(b1);
-    io.print(g1);
-    (g2,grp,ext) := group.multicolumn(b2);
-    io.print(g2);
-    (g3,grp,ext) := group.multicolumn(b3);
-    io.print(g3);
-    (g1_1,grp,ext) := group.multicolumn(b1,b1);
-    io.print(g1_1);
-    (g1_2,grp,ext) := group.multicolumn(b1,b2);
-    io.print(g1_2);
-    (g1_3,grp,ext) := group.multicolumn(b1,b3);
-    io.print(g1_3);
-    (g1_1_1,grp,ext) := group.multicolumn(b1,b1,b1);
-    io.print(g1_1_1);
-    (g1_2_2,grp,ext) := group.multicolumn(b1,b2,b2);
-    io.print(g1_2_2);
-    (g1_3_3,grp,ext) := group.multicolumn(b1,b3,b3);
-    io.print(g1_3_3);
-    (g1_2_3,grp,ext) := group.multicolumn(b1,b2,b3);
-    io.print(g1_2_3);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:15 >  
+# 09:46:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:15 >  
+
 #--------------------------#
 # h	t	t	t  # name
 # void	int	int	int  # type

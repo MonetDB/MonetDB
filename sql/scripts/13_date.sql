@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 create function str_to_date(s string, format string) returns date
 	external name mtime."str_to_date";
@@ -21,3 +21,10 @@ create function str_to_timestamp(s string, format string) returns timestamp
 
 create function timestamp_to_str(d timestamp, format string) returns string
 	external name mtime."timestamp_to_str";
+
+grant execute on function str_to_date to public;
+grant execute on function date_to_str to public;
+grant execute on function str_to_time to public;
+grant execute on function time_to_str to public;
+grant execute on function str_to_timestamp to public;
+grant execute on function timestamp_to_str to public;

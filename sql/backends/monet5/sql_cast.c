@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -76,14 +76,7 @@ batnil_2_timestamp(bat *res, const bat *bid)
 		timestamp r = *timestamp_nil;
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -118,14 +111,7 @@ batstr_2_timestamp(bat *res, const bat *bid)
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -181,14 +167,7 @@ batnil_2_daytime(bat *res, const bat *bid)
 		daytime r = daytime_nil;
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -223,14 +202,7 @@ batstr_2_daytime(bat *res, const bat *bid)
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -296,14 +268,7 @@ batnil_2_date(bat *res, const bat *bid)
 		date r = date_nil;
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -338,14 +303,7 @@ batstr_2_date(bat *res, const bat *bid)
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -413,14 +371,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 		}
 		BUNappend(dst, r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -528,14 +479,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(r);
 		r = NULL;
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

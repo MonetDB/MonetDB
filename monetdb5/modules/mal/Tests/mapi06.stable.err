@@ -74,7 +74,24 @@ stderr of test 'mapi06` in directory 'monetdb5/modules/mal` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/mk/monet5//Linux/etc/monetdb5.conf)
 
-# 09:17:53 >  
-# 09:17:53 >  Done.
-# 09:17:53 >  
+# 09:46:31 >  
+# 09:46:31 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:31 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-26774/.s.monetdb.35410
+QUERY = # Checking correctness of mapi library
+        # we expect an exception from this query
+        
+        fs:= inspect.getEnvironment("mapi_port");
+        port := calc.int(fs);
+        mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");
+        #mapi.trace(mid,1);
+        mapi.rpc(mid,"io.print(d);");
+        io.print("done");
+        mapi.disconnect(mid);
+ERROR = !MALException:mapi.query:operation failed: remote error: TypeException:user.main[1]:'d' may not be used before being initialized
+
+# 09:46:31 >  
+# 09:46:31 >  "Done."
+# 09:46:31 >  
 

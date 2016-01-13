@@ -1,0 +1,12 @@
+# the first of a series of BBP test cases
+# the temporary bat produced in tst1000 should not exist anymore
+
+function foo();
+c:bat[:int]:= bbp.bind("myfirstbat");
+io.print(c);
+catch MALException:str;
+	io.printf("%s\n",MALException);
+exit MALException;
+end foo;
+mdb.List("user","foo");
+user.foo();

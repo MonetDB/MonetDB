@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module io;
 pattern stdin():bstream
@@ -19,7 +19,7 @@ pattern print(val:any_1,lst:any...):void
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern print(b1:bat[:oid,:any]...):void 
+pattern print(b1:bat[:any]...):void 
 address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 
@@ -32,7 +32,7 @@ comment "BATs are printed with '#' for legend
 pattern print(val:any_1):void 
 address IOprint_val
 comment "Print a MAL value.";
-pattern print(val:bat[:oid,:any_1]):void 
+pattern print(val:bat[:any_1]):void 
 address IOprint_val
 comment "Print a MAL value column .";
 
@@ -50,12 +50,12 @@ pattern printf(filep:streams,fmt:str):void
 address IOprintfStream
 comment "Select default format ";
 
-command export(b:bat[:oid,:any_2], filepath:str)  
+command export(b:bat[:any_2], filepath:str)  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the $DBPATH directory. Success of failure is indicated.";
 
-command import(b:bat[:oid,:any_2], filepath:str)
+command import(b:bat[:any_2], filepath:str)
 address IOimport
 comment "Import a BAT from an ASCII dump. The tuples are appended to the
  first argument. Its signature must match the dump,

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -14151,8 +14151,10 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->T->type) == ATOMbasetype(tp))
-		return BATcopy(b, b->H->type, tp, 0, TRANSIENT);
+	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->T->type) == ATOMbasetype(tp)){
+		assert(b->H->type == TYPE_void);
+		return COLcopy(b, tp, 0, TRANSIENT);
+	}
 
 	bn = BATnew(TYPE_void, tp, b->batCount, TRANSIENT);
 	if (bn == NULL)

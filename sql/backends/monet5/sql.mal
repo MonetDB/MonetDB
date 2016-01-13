@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -95,6 +95,10 @@ pattern catalog(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,gra
 address SQLcatalog
 comment "a grant/revoke privileges statement";
 
+pattern catalog(type:int,sname:str,func:int,grantee:str,privs:int,grant:int,grantor:int):void
+address SQLcatalog
+comment "a grant/revoke function privileges statement";
+
 pattern catalog(type:int,iname:str,itype:int,sname:str,tname:str...):void
 address SQLcatalog
 comment "a create index catalog statement";
@@ -106,6 +110,10 @@ comment "a alter table access statement";
 pattern catalog(type:int,msname:str,mtname:str,psname:str,ptname:str,action:int):void
 address SQLcatalog
 comment "a alter table add/del table catalog statement";
+
+pattern catalog(type:int,sname:str,tname:str,impl:str):void
+address SQLcatalog
+comment "a create type catalog statement";
 
 pattern eval(cmd:str):void 
 address SQLstatement
@@ -159,7 +167,7 @@ pattern next_value( sname:str, sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
-pattern batsql.next_value( sname:bat[:oid,:str], sequence:str ) :bat[:oid,:lng]
+pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of the sequence";
 
@@ -171,88 +179,88 @@ unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
-pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:oid,:any_1]
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:oid,:any_1]
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1]
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:oid,:any_1]
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:oid,:any_1]
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int ):bat[:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT partition with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid],uval:bat[:any_1])
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
 
-command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
-		:bat[:oid,:any_3] 
+command delta ( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] )
+		:bat[:any_3] 
 address DELTAbat
 comment "Return column bat with delta's applied.";
 
-command projectdelta( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] ) :bat[:oid,:any_3] 
+command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3] ) :bat[:any_3] 
 address DELTAproject
 comment "Return column bat with delta's applied.";
 
-command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid], ins:bat[:oid,:oid] ) :bat[:oid,:oid]
+command subdelta ( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid], ins:bat[:oid] ) :bat[:oid]
 address DELTAsub
 comment "Return a single bat of subselected delta.";
 
-command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3]) :bat[:oid,:any_3] 
+command delta ( col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAbat2
 comment "Return column bat with delta's applied.";
 
-command projectdelta( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3]) :bat[:oid,:any_3] 
+command projectdelta( subselect:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]) :bat[:any_3] 
 address DELTAproject2
 comment "Return column bat with delta's applied.";
 
-command subdelta ( col:bat[:oid,:oid], cand:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid]) :bat[:oid,:oid]
+command subdelta ( col:bat[:oid], cand:bat[:oid], uid:bat[:oid], uval:bat[:oid]) :bat[:oid]
 address DELTAsub2
 comment "Return a single bat of subselected delta.";
 
-command project( col:bat[:oid,:oid], l:bat[:oid,:oid], r:bat[:oid,:oid]) :bat[:oid,:oid]
+command project( col:bat[:oid], l:bat[:oid], r:bat[:oid]) :bat[:oid]
 address BATleftproject
 comment "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)"
 
@@ -272,10 +280,10 @@ unsafe pattern clear_table(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
 comment "Clear table";
 
-pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:oid] 
+pattern tid( mvc:int, sname:str, tname:str):bat[:oid] 
 address SQLtid
 comment "Return the tables tid column.";
-pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:oid] 
+pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid] 
 address SQLtid
 comment "Return the tables tid column.";
 
@@ -287,18 +295,18 @@ unsafe pattern resultSet(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:
 address mvc_scalar_value_wrap
 comment "Prepare a table result set";
 
-unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
+unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int 
 address mvc_row_result_wrap
 comment "Prepare a table result set";
 
-unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
 address mvc_table_result_wrap
 comment "Prepare a table result set for the client in default CSV format";
 
-unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int 
+unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int 
 address mvc_export_row_wrap
 comment "Prepare a table result set for the COPY INTO stream";
-unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int 
+unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
 address mvc_export_table_wrap
 comment "Prepare a table result set for the COPY INTO stream";
 
@@ -354,27 +362,27 @@ address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
 unsafe pattern copy_from( t:ptr, 
-	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int) (:bat[:oid,:any]...)
+	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int) (:bat[:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
-#command copy_errors() (efile:bat[:oid,:str], erow:bat[:oid,:int], efld:bat[:oid,:int], emsg:bat[:oid,:str], einp:bat[:oid,:str])
+#command copy_errors() (efile:bat[:str], erow:bat[:int], efld:bat[:int], emsg:bat[:str], einp:bat[:str])
 #address mvc_import_errors
 #comment "Summary of the failed tuple imports";
 
-pattern single(x:any_2):bat[:oid,:any_2]
+pattern single(x:any_2):bat[:any_2]
 address CMDBATsingle;
 
-unsafe pattern importTable( sname:str, tname:str, fname:str... )(:bat[:oid,:any]...)
+unsafe pattern importTable( sname:str, tname:str, fname:str... )(:bat[:any]...)
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
-command zero_or_one( col:bat[:oid,:any_1]) :any_1
+command zero_or_one( col:bat[:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
 
-inline function sql.subzero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
+inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
 	(g,e,h) := group.subgroup(gp);
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
@@ -388,11 +396,11 @@ inline function sql.subzero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:b
 	return zero_or_one := b;
 end sql.subzero_or_one;
 
-command not_unique( b:bat[:oid,:oid]) :bit 
+command not_unique( b:bat[:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
 
-command optimizers()(:bat[:oid,:str],:bat[:oid,:str],:bat[:oid,:str])
+command optimizers()(:bat[:str],:bat[:str],:bat[:str])
 address getPipeCatalog;
 
 pattern optimizer_updates()
@@ -405,15 +413,15 @@ pattern argRecord(a:any...):str
 address SQLargRecord
 comment "Glue together the calling sequence";
 
-pattern sql_variables():bat[:oid,:str]
+pattern sql_variables():bat[:str]
 address sql_variables
 comment "return the table with session variables";
 
-pattern sessions() ( user:bat[:oid,:str], start:bat[:oid,:timestamp],stimeout:bat[:oid,:lng], lastcmd:bat[:oid,:timestamp], qtimeout:bat[:oid,:lng], idle:bat[:oid,:bit])
+pattern sessions() ( user:bat[:str], start:bat[:timestamp],stimeout:bat[:lng], lastcmd:bat[:timestamp], qtimeout:bat[:lng], idle:bat[:bit])
 address sql_sessions_wrap
 comment "SQL export table of active sessions, their timeouts and idle status";
 
-pattern db_users() :bat[:oid,:str]
+pattern db_users() :bat[:str]
 address db_users_wrap
 comment "return table of users with sql scenario";
 
@@ -429,28 +437,28 @@ pattern settimeout(s:lng,t:lng):void
 address CLTsetTimeout
 comment "Abort query after s and session after t seconds";
 
-pattern dump_cache()(query:bat[:oid,:str],count:bat[:oid,:int])
+pattern dump_cache()(query:bat[:str],count:bat[:int])
 address dump_cache
 comment "dump the content of the query cache";
 
-pattern dump_opt_stats()(rewrite:bat[:oid,:str],count:bat[:oid,:int])
+pattern dump_opt_stats()(rewrite:bat[:str],count:bat[:int])
 address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
 pattern dump_trace()(
-	event:bat[:oid,:int],
-	clk:bat[:oid,:str],
-	pc:bat[:oid,:str],
-	thread:bat[:oid,:int],
-	ticks:bat[:oid,:lng],
-	rssMB:bat[:oid,:lng],
-	vmMB:bat[:oid,:lng],
-	reads:bat[:oid,:lng],
-	writes:bat[:oid,:lng],
-	minflt:bat[:oid,:lng],
-	majflt:bat[:oid,:lng],
-	nvcsw:bat[:oid,:lng],
-	stmt:bat[:oid,:str])
+	event:bat[:int],
+	clk:bat[:str],
+	pc:bat[:str],
+	thread:bat[:int],
+	ticks:bat[:lng],
+	rssMB:bat[:lng],
+	vmMB:bat[:lng],
+	reads:bat[:lng],
+	writes:bat[:lng],
+	minflt:bat[:lng],
+	majflt:bat[:lng],
+	nvcsw:bat[:lng],
+	stmt:bat[:str])
 address dump_trace
 comment "dump the trace statistics";
 
@@ -465,20 +473,20 @@ address sql_analyze
 comment "Update the database statistics table";
 
 pattern storage()(
-	schema:bat[:oid,:str],
-	table:bat[:oid,:str],
-	column:bat[:oid,:str],
-	type:bat[:oid,:str],
-	mode:bat[:oid,:str],
-	location:bat[:oid,:str],
-	count:bat[:oid,:lng],
-	atomwidth:bat[:oid,:int],
-	columnsize:bat[:oid,:lng],
-	heap:bat[:oid,:lng],
-	hashes:bat[:oid,:lng],
-	phash:bat[:oid,:bit],
-	imprints:bat[:oid,:lng],
-	sorted:bat[:oid,:bit])
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit])
 address sql_storage
 comment "return a table with storage information ";
 
@@ -486,37 +494,37 @@ command calc.identity(:any_2) :oid
 address SQLidentity
 comment "Returns a unique row identitfier.";
 
-command batcalc.identity(b:bat[:oid,:any_2]) :bat[:oid,:oid] 
+command batcalc.identity(b:bat[:any_2]) :bat[:oid] 
 address BATSQLidentity
 comment "Returns the unique row identitfiers.";
 
-pattern batcalc.identity(b:bat[:oid,:any_2], s:oid ) (resb:bat[:oid,:oid],ns:oid)
+pattern batcalc.identity(b:bat[:any_2], s:oid ) (resb:bat[:oid],ns:oid)
 address PBATSQLidentity
 comment "Returns the unique row identitfiers.";
 
 pattern querylog_catalog()(
-	id:bat[:oid,:oid],
-	user:bat[:oid,:str],
-	defined:bat[:oid,:timestamp],
-	query:bat[:oid,:str],
-	pipe:bat[:oid,:str],
-	plan:bat[:oid,:str],
-	mal:bat[:oid,:int],
-	optimize:bat[:oid,:lng]
+	id:bat[:oid],
+	user:bat[:str],
+	defined:bat[:timestamp],
+	query:bat[:str],
+	pipe:bat[:str],
+	plan:bat[:str],
+	mal:bat[:int],
+	optimize:bat[:lng]
 )
 address sql_querylog_catalog
 comment "Obtain the query log catalog";
 
 pattern querylog_calls()(
-	id:bat[:oid,:oid],
-	start:bat[:oid,:timestamp],
-	stop:bat[:oid,:timestamp],
-	arguments:bat[:oid,:str],
-	tuples:bat[:oid,:wrd],
-	exec:bat[:oid,:lng],
-	result:bat[:oid,:lng],
-	cpuload:bat[:oid,:int],
-	iowait:bat[:oid,:int]
+	id:bat[:oid],
+	start:bat[:timestamp],
+	stop:bat[:timestamp],
+	arguments:bat[:str],
+	tuples:bat[:wrd],
+	exec:bat[:lng],
+	result:bat[:lng],
+	cpuload:bat[:int],
+	iowait:bat[:int]
 )
 address sql_querylog_calls
 comment "Obtain the query log calls";
@@ -532,7 +540,7 @@ command querylog_disable()
 address QLOGdisable;
 
 
-pattern sysmon_queue()(qtag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], tag:bat[:oid,:oid], query:bat[:oid,:str])
+pattern sysmon_queue()(qtag:bat[:lng], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str])
 address SYSMONqueue;
 
 pattern sysmon_pause(tag:sht)
@@ -556,43 +564,43 @@ address SYSMONstop;
 pattern sysmon_stop(tag:lng)
 address SYSMONstop;
 
-pattern copy_rejects() (rowid:bat[:oid,:lng], fldid:bat[:oid,:int], msg:bat[:oid,:str], inp:bat[:oid,:str])
+pattern copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str])
 address COPYrejects;
 pattern copy_rejects_clear()
 address COPYrejects_clear;
 
 pattern calc.hash( v:bte ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:bte] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:bte] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:sht ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:sht] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:sht] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:int ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:int] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:int] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:lng ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:lng] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:lng] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:oid ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:oid] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:oid] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:wrd ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:wrd] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:wrd] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:flt ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:flt] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:flt] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:dbl ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:dbl] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:dbl] ) :bat[:wrd] address MKEYbathash;
 pattern calc.hash( v:any ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd] address MKEYbathash;
+command batcalc.hash( b:bat[:any_1] ) :bat[:wrd] address MKEYbathash;
 pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
-command batcalc.rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
+command batcalc.rotate_xor_hash(h:bat[:wrd], nbits:int, b:bat[:any_1]) :bat[:int] address MKEYbulk_rotate_xor_hash;
 
 command sql.dec_round( v:bte, r:bte ) :bte 
 address bte_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:oid,:bte], r:bte ) :bat[:oid,:bte] 
+command batsql.dec_round( v:bat[:bte], r:bte ) :bat[:bte] 
 address bte_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:bte, d:int, s:int, r:bte) :bte
 address bte_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:oid,:bte], d:int, s:int, r:bte) :bat[:oid,:bte]
+command batsql.round( v:bat[:bte], d:int, s:int, r:bte) :bat[:bte]
 address bte_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -603,14 +611,14 @@ comment "cast bte decimal to a second_interval";
 command sql.dec_round( v:sht, r:sht ) :sht 
 address sht_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:oid,:sht], r:sht ) :bat[:oid,:sht] 
+command batsql.dec_round( v:bat[:sht], r:sht ) :bat[:sht] 
 address sht_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:sht, d:int, s:int, r:bte) :sht
 address sht_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:oid,:sht], d:int, s:int, r:bte) :bat[:oid,:sht]
+command batsql.round( v:bat[:sht], d:int, s:int, r:bte) :bat[:sht]
 address sht_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -621,14 +629,14 @@ comment "cast sht decimal to a second_interval";
 command sql.dec_round( v:int, r:int ) :int 
 address int_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:oid,:int], r:int ) :bat[:oid,:int] 
+command batsql.dec_round( v:bat[:int], r:int ) :bat[:int] 
 address int_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:int, d:int, s:int, r:bte) :int
 address int_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:oid,:int], d:int, s:int, r:bte) :bat[:oid,:int]
+command batsql.round( v:bat[:int], d:int, s:int, r:bte) :bat[:int]
 address int_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -639,14 +647,14 @@ comment "cast int decimal to a second_interval";
 command sql.dec_round( v:wrd, r:wrd ) :wrd 
 address wrd_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:oid,:wrd], r:wrd ) :bat[:oid,:wrd] 
+command batsql.dec_round( v:bat[:wrd], r:wrd ) :bat[:wrd] 
 address wrd_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:wrd, d:int, s:int, r:bte) :wrd
 address wrd_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:oid,:wrd], d:int, s:int, r:bte) :bat[:oid,:wrd]
+command batsql.round( v:bat[:wrd], d:int, s:int, r:bte) :bat[:wrd]
 address wrd_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -657,14 +665,14 @@ comment "cast wrd decimal to a second_interval";
 command sql.dec_round( v:lng, r:lng ) :lng 
 address lng_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:oid,:lng], r:lng ) :bat[:oid,:lng] 
+command batsql.dec_round( v:bat[:lng], r:lng ) :bat[:lng] 
 address lng_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 command sql.round( v:lng, d:int, s:int, r:bte) :lng
 address lng_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:oid,:lng], d:int, s:int, r:bte) :bat[:oid,:lng]
+command batsql.round( v:bat[:lng], d:int, s:int, r:bte) :bat[:lng]
 address lng_bat_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
 
@@ -676,7 +684,7 @@ command sql.dec_round( v:flt, r:flt ) :flt
 address flt_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
-command batsql.dec_round( v:bat[:oid,:flt], r:flt ) :bat[:oid,:flt] 
+command batsql.dec_round( v:bat[:flt], r:flt ) :bat[:flt] 
 address flt_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
@@ -684,7 +692,7 @@ command sql.round( v:flt, r:bte) :flt
 address flt_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
-command batsql.round( v:bat[:oid,:flt], r:bte) :bat[:oid,:flt]
+command batsql.round( v:bat[:flt], r:bte) :bat[:flt]
 address flt_bat_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
@@ -696,7 +704,7 @@ command sql.dec_round( v:dbl, r:dbl ) :dbl
 address dbl_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
-command batsql.dec_round( v:bat[:oid,:dbl], r:dbl ) :bat[:oid,:dbl] 
+command batsql.dec_round( v:bat[:dbl], r:dbl ) :bat[:dbl] 
 address dbl_bat_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
@@ -704,7 +712,7 @@ command sql.round( v:dbl, r:bte) :dbl
 address dbl_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
-command batsql.round( v:bat[:oid,:dbl], r:bte) :bat[:oid,:dbl]
+command batsql.round( v:bat[:dbl], r:bte) :bat[:dbl]
 address dbl_bat_round_wrap
 comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
 
@@ -716,11 +724,11 @@ command sql.alpha(dec:dbl, theta:dbl) :dbl
 address SQLcst_alpha_cst
 comment "Implementation of astronomy alpha function: expands the radius theta depending on the declination";
 
-command batsql.alpha(dec:bat[:oid,:dbl], theta:dbl) :bat[:oid,:dbl]
+command batsql.alpha(dec:bat[:dbl], theta:dbl) :bat[:dbl]
 address SQLbat_alpha_cst
 comment "BAT implementation of astronomy alpha function";
 
-command batsql.alpha(dec:dbl, theta:bat[:oid,:dbl]) :bat[:oid,:dbl]
+command batsql.alpha(dec:dbl, theta:bat[:dbl]) :bat[:dbl]
 address SQLcst_alpha_bat
 comment "BAT implementation of astronomy alpha function";
 
@@ -730,10 +738,10 @@ comment "cast to bte and check for overflow";
 command calc.bte( v:void, digits:int, scale:int ) :bte 
 address nil_2dec_bte
 comment "cast to dec(bte) and check for overflow";
-command batcalc.bte( v:bat[:oid,:oid], digits:int ) :bat[:oid,:bte] 
+command batcalc.bte( v:bat[:oid], digits:int ) :bat[:bte] 
 address batnil_2num_bte
 comment "cast to bte and check for overflow";
-command batcalc.bte( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:bte] 
+command batcalc.bte( v:bat[:oid], digits:int, scale:int ) :bat[:bte] 
 address batnil_2dec_bte
 comment "cast to dec(bte) and check for overflow";
 
@@ -743,10 +751,10 @@ comment "cast to bte and check for overflow";
 command calc.bte( v:str, digits:int, scale:int ) :bte 
 address str_2dec_bte
 comment "cast to dec(bte) and check for overflow";
-command batcalc.bte( v:bat[:oid,:str], digits:int ) :bat[:oid,:bte] 
+command batcalc.bte( v:bat[:str], digits:int ) :bat[:bte] 
 address batstr_2num_bte
 comment "cast to bte and check for overflow";
-command batcalc.bte( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:bte] 
+command batcalc.bte( v:bat[:str], digits:int, scale:int ) :bat[:bte] 
 address batstr_2dec_bte
 comment "cast to dec(bte) and check for overflow";
 
@@ -756,10 +764,10 @@ comment "cast to sht and check for overflow";
 command calc.sht( v:void, digits:int, scale:int ) :sht 
 address nil_2dec_sht
 comment "cast to dec(sht) and check for overflow";
-command batcalc.sht( v:bat[:oid,:oid], digits:int ) :bat[:oid,:sht] 
+command batcalc.sht( v:bat[:oid], digits:int ) :bat[:sht] 
 address batnil_2num_sht
 comment "cast to sht and check for overflow";
-command batcalc.sht( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:sht] 
+command batcalc.sht( v:bat[:oid], digits:int, scale:int ) :bat[:sht] 
 address batnil_2dec_sht
 comment "cast to dec(sht) and check for overflow";
 
@@ -769,10 +777,10 @@ comment "cast to sht and check for overflow";
 command calc.sht( v:str, digits:int, scale:int ) :sht 
 address str_2dec_sht
 comment "cast to dec(sht) and check for overflow";
-command batcalc.sht( v:bat[:oid,:str], digits:int ) :bat[:oid,:sht] 
+command batcalc.sht( v:bat[:str], digits:int ) :bat[:sht] 
 address batstr_2num_sht
 comment "cast to sht and check for overflow";
-command batcalc.sht( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:sht] 
+command batcalc.sht( v:bat[:str], digits:int, scale:int ) :bat[:sht] 
 address batstr_2dec_sht
 comment "cast to dec(sht) and check for overflow";
 
@@ -782,10 +790,10 @@ comment "cast to int and check for overflow";
 command calc.int( v:void, digits:int, scale:int ) :int 
 address nil_2dec_int
 comment "cast to dec(int) and check for overflow";
-command batcalc.int( v:bat[:oid,:oid], digits:int ) :bat[:oid,:int] 
+command batcalc.int( v:bat[:oid], digits:int ) :bat[:int] 
 address batnil_2num_int
 comment "cast to int and check for overflow";
-command batcalc.int( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:int] 
+command batcalc.int( v:bat[:oid], digits:int, scale:int ) :bat[:int] 
 address batnil_2dec_int
 comment "cast to dec(int) and check for overflow";
 
@@ -795,10 +803,10 @@ comment "cast to int and check for overflow";
 command calc.int( v:str, digits:int, scale:int ) :int 
 address str_2dec_int
 comment "cast to dec(int) and check for overflow";
-command batcalc.int( v:bat[:oid,:str], digits:int ) :bat[:oid,:int] 
+command batcalc.int( v:bat[:str], digits:int ) :bat[:int] 
 address batstr_2num_int
 comment "cast to int and check for overflow";
-command batcalc.int( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:int] 
+command batcalc.int( v:bat[:str], digits:int, scale:int ) :bat[:int] 
 address batstr_2dec_int
 comment "cast to dec(int) and check for overflow";
 
@@ -808,10 +816,10 @@ comment "cast to wrd and check for overflow";
 command calc.wrd( v:void, digits:int, scale:int ) :wrd 
 address nil_2dec_wrd
 comment "cast to dec(wrd) and check for overflow";
-command batcalc.wrd( v:bat[:oid,:oid], digits:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( v:bat[:oid], digits:int ) :bat[:wrd] 
 address batnil_2num_wrd
 comment "cast to wrd and check for overflow";
-command batcalc.wrd( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( v:bat[:oid], digits:int, scale:int ) :bat[:wrd] 
 address batnil_2dec_wrd
 comment "cast to dec(wrd) and check for overflow";
 
@@ -821,10 +829,10 @@ comment "cast to wrd and check for overflow";
 command calc.wrd( v:str, digits:int, scale:int ) :wrd 
 address str_2dec_wrd
 comment "cast to dec(wrd) and check for overflow";
-command batcalc.wrd( v:bat[:oid,:str], digits:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( v:bat[:str], digits:int ) :bat[:wrd] 
 address batstr_2num_wrd
 comment "cast to wrd and check for overflow";
-command batcalc.wrd( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:wrd] 
+command batcalc.wrd( v:bat[:str], digits:int, scale:int ) :bat[:wrd] 
 address batstr_2dec_wrd
 comment "cast to dec(wrd) and check for overflow";
 
@@ -834,10 +842,10 @@ comment "cast to lng and check for overflow";
 command calc.lng( v:void, digits:int, scale:int ) :lng 
 address nil_2dec_lng
 comment "cast to dec(lng) and check for overflow";
-command batcalc.lng( v:bat[:oid,:oid], digits:int ) :bat[:oid,:lng] 
+command batcalc.lng( v:bat[:oid], digits:int ) :bat[:lng] 
 address batnil_2num_lng
 comment "cast to lng and check for overflow";
-command batcalc.lng( v:bat[:oid,:oid], digits:int, scale:int ) :bat[:oid,:lng] 
+command batcalc.lng( v:bat[:oid], digits:int, scale:int ) :bat[:lng] 
 address batnil_2dec_lng
 comment "cast to dec(lng) and check for overflow";
 
@@ -847,10 +855,10 @@ comment "cast to lng and check for overflow";
 command calc.lng( v:str, digits:int, scale:int ) :lng 
 address str_2dec_lng
 comment "cast to dec(lng) and check for overflow";
-command batcalc.lng( v:bat[:oid,:str], digits:int ) :bat[:oid,:lng] 
+command batcalc.lng( v:bat[:str], digits:int ) :bat[:lng] 
 address batstr_2num_lng
 comment "cast to lng and check for overflow";
-command batcalc.lng( v:bat[:oid,:str], digits:int, scale:int ) :bat[:oid,:lng] 
+command batcalc.lng( v:bat[:str], digits:int, scale:int ) :bat[:lng] 
 address batstr_2dec_lng
 comment "cast to dec(lng) and check for overflow";
 
@@ -861,10 +869,10 @@ command calc.timestamp( v:void, digits:int ) :timestamp
 address nil_2time_timestamp
 comment "cast to timestamp and check for overflow";
 
-command batcalc.timestamp( v:bat[:oid,:oid] ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:oid] ) :bat[:timestamp] 
 address batnil_2_timestamp
 comment "Cast to timestamp";
-command batcalc.timestamp( v:bat[:oid,:oid], digits:int ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:oid], digits:int ) :bat[:timestamp] 
 address batnil_2time_timestamp
 comment "cast to timestamp and check for overflow";
 
@@ -881,16 +889,16 @@ command calc.timestamp( v:timestamp, digits:int ) :timestamp
 address timestamp_2time_timestamp
 comment "cast timestamp to timestamp and check for overflow";
 
-command batcalc.timestamp( v:bat[:oid,:str] ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:str] ) :bat[:timestamp] 
 address batstr_2_timestamp
 comment "Cast to timestamp";
-command batcalc.timestamp( v:bat[:oid,:str], digits:int ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:str], digits:int ) :bat[:timestamp] 
 address batstr_2time_timestamp
 comment "cast to timestamp and check for overflow";
-command batcalc.timestamp( v:bat[:oid,:str], digits:int, has_tz:int ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:str], digits:int, has_tz:int ) :bat[:timestamp] 
 address batstr_2time_timestamptz
 comment "cast to timestamp and check for overflow";
-command batcalc.timestamp( v:bat[:oid,:timestamp], digits:int ) :bat[:oid,:timestamp] 
+command batcalc.timestamp( v:bat[:timestamp], digits:int ) :bat[:timestamp] 
 address battimestamp_2time_timestamp
 comment "cast timestamp to timestamp and check for overflow";
 
@@ -901,10 +909,10 @@ command calc.daytime( v:void, digits:int ) :daytime
 address nil_2time_daytime
 comment "cast to daytime and check for overflow";
 
-command batcalc.daytime( v:bat[:oid,:oid] ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:oid] ) :bat[:daytime] 
 address batnil_2_daytime
 comment "Cast to daytime";
-command batcalc.daytime( v:bat[:oid,:oid], digits:int ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:oid], digits:int ) :bat[:daytime] 
 address batnil_2time_daytime
 comment "cast to daytime and check for overflow";
 
@@ -921,16 +929,16 @@ command calc.daytime( v:daytime, digits:int ) :daytime
 address daytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
 
-command batcalc.daytime( v:bat[:oid,:str] ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:str] ) :bat[:daytime] 
 address batstr_2_daytime
 comment "Cast to daytime";
-command batcalc.daytime( v:bat[:oid,:str], digits:int ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:str], digits:int ) :bat[:daytime] 
 address batstr_2time_daytime
 comment "cast to daytime and check for overflow";
-command batcalc.daytime( v:bat[:oid,:str], digits:int, has_tz:int ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:str], digits:int, has_tz:int ) :bat[:daytime] 
 address batstr_2time_daytimetz
 comment "cast to daytime and check for overflow";
-command batcalc.daytime( v:bat[:oid,:daytime], digits:int ) :bat[:oid,:daytime] 
+command batcalc.daytime( v:bat[:daytime], digits:int ) :bat[:daytime] 
 address batdaytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
 
@@ -945,14 +953,14 @@ comment "Get the clients current timestamp";
 command calc.date( v:void ) :date 
 address nil_2_date
 comment "cast to date";
-command batcalc.date( v:bat[:oid,:oid] ) :bat[:oid,:date] 
+command batcalc.date( v:bat[:oid] ) :bat[:date] 
 address batnil_2_date
 comment "cast to date";
 
 command calc.date( v:str ) :date 
 address str_2_date
 comment "cast to date";
-command batcalc.date( v:bat[:oid,:str] ) :bat[:oid,:date] 
+command batcalc.date( v:bat[:str] ) :bat[:date] 
 address batstr_2_date
 comment "cast to date";
 command calc.str( v:date ) :str 
@@ -962,7 +970,7 @@ comment "cast date to str";
 command calc.sqlblob( v:str ) :sqlblob 
 address str_2_sqlblob
 comment "cast to sqlblob";
-command batcalc.sqlblob( v:bat[:oid,:str] ) :bat[:oid,:sqlblob] 
+command batcalc.sqlblob( v:bat[:str] ) :bat[:sqlblob] 
 address batstr_2_sqlblob
 comment "cast to sqlblob";
 command calc.str( v:sqlblob ) :str 
@@ -973,7 +981,7 @@ pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) 
 address SQLstr_cast
 comment "cast to string and check for overflow";
 
-pattern batcalc.str( eclass:int, d1:int, s1:int, has_tz:int, v:bat[:oid,:any_1], digits:int ) :bat[:oid,:str] 
+pattern batcalc.str( eclass:int, d1:int, s1:int, has_tz:int, v:bat[:any_1], digits:int ) :bat[:str] 
 address SQLbatstr_cast
 comment "cast to string and check for overflow";
 
@@ -1076,7 +1084,7 @@ command calc.index(v:str, u:bit) :bte
 address STRindex_bte
 comment "Return the offsets as an index bat";
 
-command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:bte] 
+command batcalc.index(v:bat[:str], u:bit) :bat[:bte] 
 address BATSTRindex_bte
 comment "Return the offsets as an index bat";
 
@@ -1084,7 +1092,7 @@ command calc.index(v:str, u:bit) :sht
 address STRindex_sht
 comment "Return the offsets as an index bat";
 
-command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:sht] 
+command batcalc.index(v:bat[:str], u:bit) :bat[:sht] 
 address BATSTRindex_sht
 comment "Return the offsets as an index bat";
 
@@ -1092,7 +1100,7 @@ command calc.index(v:str, u:bit) :int
 address STRindex_int
 comment "Return the offsets as an index bat";
 
-command batcalc.index(v:bat[:oid,:str], u:bit) :bat[:oid,:int] 
+command batcalc.index(v:bat[:str], u:bit) :bat[:int] 
 address BATSTRindex_int
 comment "Return the offsets as an index bat";
 
@@ -1100,7 +1108,7 @@ command calc.strings(v:str) :str
 address STRstrings
 comment "Return the strings";
 
-command batcalc.strings(v:bat[:oid,:str]) :bat[:oid,:str] 
+command batcalc.strings(v:bat[:str]) :bat[:str] 
 address BATSTRstrings
 comment "Return the strings";
 

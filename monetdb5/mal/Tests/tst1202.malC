@@ -1,0 +1,127 @@
+# Mil compiler Version 1.0)
+# Copyright (c) 1993-2001, CWI. All rights reserved.
+
+# Predefined code segment
+#
+##line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+#module(monettime,alarm);
+#
+#
+#
+lzone:= mtime.timezone("GMT+01:00");
+mtime.timezone_local(lzone);
+##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+## test the various ways to create rules
+	rule_jan:= mtime.rule("1st MON from start of JAN@01:15");
+#var rule_jan := mtime.rule("1st MON from start of JAN@01:15");
+	rule_mar:= mtime.rule("first WEDNE on or after march 10@01:15");
+#var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");
+	rule_apr:= mtime.rule("last THU on or before aPr 1@01:15");
+#var rule_apr := mtime.rule("last THU on or before aPr 1@01:15");
+	rule_may:= mtime.rule("MAY 26@01:15");
+#var rule_may := mtime.rule("MAY 26@01:15");
+	rule_jun:= mtime.rule("2nd TUE from end of june@01:15");
+#var rule_jun := mtime.rule("2nd TUE from end of june@01:15");
+	rule_jul:= mtime.rule(7,1,7,75);
+#var rule_jul := mtime.rule(7,1,7,75);
+	rule_aug:= mtime.rule(8,-1,7,75);
+#var rule_aug := mtime.rule(8,-1,7,75);
+	rule_sep:= mtime.rule(9,-10,2,75);
+#var rule_sep := mtime.rule(9,-10,2,75);
+	rule_oct:= mtime.rule(10,31,0,75);
+#var rule_oct := mtime.rule(10,31,0,75);
+	rule_nov:= mtime.rule(11,-10,-3,75);
+#var rule_nov := mtime.rule(11,-10,-3,75);
+## nil rules
+	rule_dec:= mtime.rule(12,-31,0,75);
+#var rule_dec := mtime.rule(12,-31,0,75);
+	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
+#var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
+# 
+#
+#
+##line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+## test the various ways to create timezones, using some of the above created rules
+	tzone_00:= mtime.timezone("GMT");
+#var tzone_00 := mtime.timezone("GMT");
+	tzone_01:= mtime.timezone("GMT+01:00");
+#var tzone_01 := mtime.timezone("GMT+01:00");
+	tzone_02:= mtime.timezone("GMT+0100");
+#var tzone_02 := mtime.timezone("GMT+0100");
+	tzone_03:= mtime.timezone(60,rule_oct,rule_mar);
+#var tzone_03 := mtime.timezone(60, rule_oct, rule_mar);
+	tzone_04:= mtime.timezone(0,rule_jan,rule_aug);
+#var tzone_04 := mtime.timezone(0, rule_jan, rule_aug);
+	tzone_05:= mtime.timezone(-97,rule_oct,rule_apr);
+#var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr);
+	tzone_06:= mtime.timezone(-97,rule_may,rule_sep);
+#var tzone_06 := mtime.timezone(-97, rule_may, rule_sep);
+	mc_a := calc.*(23,60);
+	tzone_07:= mtime.timezone(mc_a,rule_apr,rule_nov);
+#var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov);
+	nc_a := calc.*(-23,59);
+	oc_a := calc.-(nc_a,59);
+	tzone_08:= mtime.timezone(oc_a);
+#var tzone_08 := mtime.timezone((-23*59) - 59);
+	tzone_09:= mtime.timezone(0);
+#var tzone_09 := mtime.timezone(0);
+	tzone_10:= mtime.timezone(-60);
+#var tzone_10 := mtime.timezone(-60);
+	pc_a := calc.*(23,60);
+	qc_a := calc.+(pc_a,59);
+	tzone_11:= mtime.timezone(qc_a);
+#var tzone_11 := mtime.timezone((23*60)+59);
+	tzone_12:= mtime.timezone(60);
+#var tzone_12 := mtime.timezone(60);
+## nil tzones
+	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
+#var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
+	rc_a := calc.*(24,60);
+	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
+#var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
+#
+#
+	tzone_bat:= bat.new(:timezone);
+	bat.append(tzone_bat,tzone_00);
+	bat.append(tzone_bat,tzone_01);
+	bat.append(tzone_bat,tzone_02);
+	bat.append(tzone_bat,tzone_03);
+	bat.append(tzone_bat,tzone_04);
+	bat.append(tzone_bat,tzone_05);
+	bat.append(tzone_bat,tzone_06);
+	bat.append(tzone_bat,tzone_07);
+	bat.append(tzone_bat,tzone_08);
+	bat.append(tzone_bat,tzone_09);
+	bat.append(tzone_bat,tzone_10);
+	bat.append(tzone_bat,tzone_11);
+	bat.append(tzone_bat,tzone_12);
+	bat.append(tzone_bat,tzone_13);
+	bat.append(tzone_bat,tzone_15);
+#
+## test the operations on tzones
+	bat.setName(tzone_bat,"timezone");
+#io.print(tzone_bat);
+#io.print("start error");
+	#x:= getRefCount(tzone_bat);
+#io.print(x);
+	#jd_a := io.print(tzone_bat);
+#io.print("end");
+#io.print(x);
+	#x:= getRefCount(tzone_bat);
+io.print("tzone_bat");
+	io.print(tzone_bat);
+#io.print(tzone_bat.bat.setColumn("tzone"));
+	kd_a:bat[:int] := mal.multiplex("mtime","minutes",tzone_bat);
+	bat.setColumn(kd_a,"minutes");
+#io.print([minutes](tzone_bat).bat.setColumn("minutes"),
+	md_a:bat[:zrule] := mal.multiplex("mtime","start_dst",tzone_bat);
+	bat.setColumn(md_a,"start_dst");
+#      [start_dst](tzone_bat).bat.setColumn("start_dst"),
+	od_a:bat[:zrule] := mal.multiplex("mtime","end_dst",tzone_bat);
+	bat.setColumn(od_a,"end_dst");
+io.print("print(kd_a,md_a,od_a)");
+	qd_a := io.print(kd_a,md_a,od_a);
+#      [end_dst](tzone_bat).bat.setColumn("end_dst"));
+#
+#
+#

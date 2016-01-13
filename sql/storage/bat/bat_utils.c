@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -70,7 +70,8 @@ temp_copy(log_bid b, int temp)
 	log_bid r;
 
 	if (!temp) {
-		c = BATcopy(o, o->htype, o->ttype, TRUE, PERSISTENT);
+		assert(o->htype == TYPE_void);
+		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
 		bat_set_access(c, BAT_READ);
 		BATcommit(c);
 	} else {
@@ -102,7 +103,7 @@ ebat2real(log_bid b, oid ibase)
 {
 	/* make a copy of b */
 	BAT *o = temp_descriptor(b);
-	BAT *c = BATcopy(o, TYPE_void, ATOMtype(o->ttype), TRUE, PERSISTENT);
+	BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
 	log_bid r;
 
 	BATseqbase(c, ibase );
@@ -141,7 +142,7 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		ebats[o->ttype] = bat_new(TYPE_void, o->ttype, 0, TRANSIENT);
 
 	if (!temp && BATcount(o)) {
-		c = BATcopy(o, TYPE_void, o->ttype, TRUE, PERSISTENT);
+		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
 		BATseqbase(c, ibase );
 		c->H->dense = 1;
 		BATcommit(c);

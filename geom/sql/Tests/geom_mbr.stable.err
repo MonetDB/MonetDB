@@ -71,16 +71,16 @@ stderr of test 'geom_mbr` in directory 'geom/sql` itself:
 # 18:34:07 >  mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32754 
 # 18:34:07 >  
 
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO mbrs values (mbr('POINT(10)'));
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO mbrs values (mbr('POINT()'));
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO mbrs values (mbr('POINT'));
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@madrid:30163
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = INSERT INTO mbrs values (mbr(''));
 ERROR = !ParseException: Expected word but encountered end of stream
 

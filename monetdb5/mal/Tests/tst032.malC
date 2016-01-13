@@ -1,0 +1,12 @@
+# testing the void semantics
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,2);
+io.print(b);
+k:= 1@0;
+bat.replace(b,k,3);
+io.print(b);
+bat.delete(b,k);
+io.print(b);
+

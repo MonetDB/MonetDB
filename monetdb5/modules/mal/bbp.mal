@@ -2,63 +2,63 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module bbp;
 
-pattern bind(name:str):bat[:oid,:any_2]
+pattern bind(name:str):bat[:any_2]
 address CMDbbpbind
 comment "Locate the BAT using its logical name";
 
-command getIndex(b:bat[:oid,:any_2]):int
+command getIndex(b:bat[:any_2]):int
 address CMDbbpgetIndex
 comment "Retrieve the index in the BBP";
 
-command getNames() :bat[:oid,:str] 	
+command getNames() :bat[:str] 	
 address CMDbbpNames
 comment "Map BAT into its bbp name";
 
-command get() (id:bat[:oid,:int], 
-			ns:bat[:oid,:str],
-	       tt:bat[:oid,:str],
-	       cnt:bat[:oid,:lng], refcnt:bat[:oid,:int],
-	       lrefcnt:bat[:oid,:int], location:bat[:oid,:str],
-	       heat:bat[:oid,:int], dirty:bat[:oid,:str],
-	       status:bat[:oid,:str], kind:bat[:oid,:str])
+command get() (id:bat[:int], 
+			ns:bat[:str],
+	       tt:bat[:str],
+	       cnt:bat[:lng], refcnt:bat[:int],
+	       lrefcnt:bat[:int], location:bat[:str],
+	       heat:bat[:int], dirty:bat[:str],
+	       status:bat[:str], kind:bat[:str])
 address CMDbbp
 comment "bpp";
 
-command getName( b:bat[:oid,:any_1]):str
+command getName( b:bat[:any_1]):str
 address CMDbbpName
 comment "Map a BAT into its internal name";
-command getCount() :bat[:oid,:lng] 	
+command getCount() :bat[:lng] 	
 address CMDbbpCount
 comment "Create a BAT with the cardinalities of all known BATs";
-command getRefCount() :bat[:oid,:int] 	
+command getRefCount() :bat[:int] 	
 address CMDbbpRefCount
 comment "Create a BAT with the (hard) reference counts";
-command getLRefCount() :bat[:oid,:int] 	
+command getLRefCount() :bat[:int] 	
 address CMDbbpLRefCount
 comment "Create a BAT with the logical reference counts";
-command getLocation() :bat[:oid,:str] 	
+command getLocation() :bat[:str] 	
 address CMDbbpLocation
 comment "Create a BAT with their disk locations";
-command getHeat() :bat[:oid,:int] 	
+command getHeat() :bat[:int] 	
 address CMDbbpHeat
 comment "Create a BAT with the heat values";
-command getDirty() :bat[:oid,:str] 	
+command getDirty() :bat[:str] 	
 address CMDbbpDirty
 comment "Create a BAT with the dirty/ diffs/clean status";
-command getStatus() :bat[:oid,:str] 	
+command getStatus() :bat[:str] 	
 address CMDbbpStatus
 comment "Create a BAT with the disk/load status";
-command getKind():bat[:oid,:str] 
+command getKind():bat[:str] 
 address CMDbbpKind
 comment "Create a BAT with the persistency status";
-command getRefCount(b:bat[:oid,:any_1]) :int
+command getRefCount(b:bat[:any_1]) :int
 address CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
-command getLRefCount(b:bat[:oid,:any_1]) :int
+command getLRefCount(b:bat[:any_1]) :int
 address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
 command getDiskSpace() :lng

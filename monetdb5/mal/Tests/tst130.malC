@@ -1,0 +1,39 @@
+# testing batcalc isnull versions
+
+bi:= bat.new(:int);
+bat.append(bi,2);
+bat.append(bi,nil:int);
+zi:= batcalc.isnil(bi);
+io.print(zi);
+
+bb:= bat.new(:bit);
+bat.append(bb,true);
+bat.append(bb,nil:bit);
+bat.append(bb,false);
+zb:= batcalc.isnil(bb);
+io.print(zb);
+
+bf:= bat.new(:flt);
+bat.append(bf,2.0);
+bat.append(bf,nil:flt);
+fi:= batcalc.isnil(bf);
+io.print(fi);
+
+bs:= bat.new(:str);
+bat.append(bs,"hello");
+bat.append(bs,nil:str);
+bat.append(bs,"");
+zs:= batcalc.isnil(bs);
+io.print(zs);
+
+bo:= bat.new(:oid);
+bat.append(bo,0@0);
+bat.append(bo,nil:oid);
+fo:= batcalc.isnil(bo);
+io.print(fo);
+
+bc:= bat.new(:bte);
+bat.append(bc,2:bte);
+bat.append(bc,nil:bte);
+fc:= batcalc.isnil(bc);
+io.print(fc);

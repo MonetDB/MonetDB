@@ -62,7 +62,16 @@ stderr of test 'pithole` in directory 'monetdb5/mal` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/mk/monet5stable//Linux/etc/monetdb5.conf)
 
-# 14:45:52 >  
-# 14:45:52 >  Done.
-# 14:45:52 >  
+# 21:00:41 >  
+# 21:00:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23746" "--port=32905"
+# 21:00:41 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+QUERY = #challenge the runtime stack protection
+        user.main();
+ERROR = !MALException:mal.interpreter:Recursive call limit reached.
+
+# 21:00:41 >  
+# 21:00:41 >  "Done."
+# 21:00:41 >  
 

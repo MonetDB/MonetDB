@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module sql;
 
@@ -10,7 +10,7 @@ pattern sql.diff(b:any_1) :bit
 address SQLdiff
 comment "return true if cur != prev row";
 
-pattern batsql.diff(b:bat[:oid,:any_1]) :bat[:oid,:bit]
+pattern batsql.diff(b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";
 
@@ -18,7 +18,7 @@ pattern sql.diff(p:bit, b:any_1) :bit
 address SQLdiff
 comment "return true if cur != prev row";
 
-pattern batsql.diff(p:bat[:oid,:bit], b:bat[:oid,:any_1]) :bat[:oid,:bit]
+pattern batsql.diff(p:bat[:bit], b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";
 
@@ -27,7 +27,7 @@ pattern sql.row_number(b:any_1, p:bit, o:bit) :int
 address SQLrow_number
 comment "return the row_numer-ed groups";
 
-pattern batsql.row_number(b:bat[:oid,:any_1], p:any_2, o:any_3) :bat[:oid,:int] 
+pattern batsql.row_number(b:bat[:any_1], p:any_2, o:any_3) :bat[:int] 
 address SQLrow_number
 comment "return the row_numer-ed groups";
 
@@ -35,7 +35,7 @@ pattern sql.rank(b:any_1, p:bit, o:bit) :int
 address SQLrank
 comment "return the ranked groups";
 
-pattern batsql.rank(b:bat[:oid,:any_1], p:any_2, o:any_3) :bat[:oid,:int] 
+pattern batsql.rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:int] 
 address SQLrank
 comment "return the ranked groups";
 
@@ -43,10 +43,10 @@ pattern sql.dense_rank(b:any_1, p:bit, o:bit) :int
 address SQLdense_rank
 comment "return the densely ranked groups";
 
-pattern batsql.dense_rank(b:bat[:oid,:any_1], p:any_2, o:any_3) :bat[:oid,:int] 
+pattern batsql.dense_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:int] 
 address SQLdense_rank
 comment "return the densely ranked groups";
 
-command aggr.exist(b:bat[:oid,:any_2], h:any_1):bit 
+command aggr.exist(b:bat[:any_2], h:any_1):bit 
 address ALGexist;
 

@@ -2,10 +2,10 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-function aggr.covar(e1:bat[:oid,:hge], e2:bat[:oid,:hge]):hge;
-	e0:bat[:oid,:hge] := batcalc.*(e1,e2);
+function aggr.covar(e1:bat[:hge], e2:bat[:hge]):hge;
+	e0:bat[:hge] := batcalc.*(e1,e2);
 	s0:hge := aggr.sum(e0);
 	s1:hge := aggr.sum(e1);
 	s2:hge := aggr.sum(e2);
@@ -18,7 +18,7 @@ function aggr.covar(e1:bat[:oid,:hge], e2:bat[:oid,:hge]):hge;
 	return v;
 end aggr.covar;
 
-function aggr.corr(e1:bat[:oid,:hge], e2:bat[:oid,:hge]):hge;
+function aggr.corr(e1:bat[:hge], e2:bat[:hge]):hge;
 	cv:hge := aggr.covar(e1,e2);
 	sd1 := aggr.stdev(e1);
 	sd2 := aggr.stdev(e2);
@@ -28,22 +28,22 @@ function aggr.corr(e1:bat[:oid,:hge], e2:bat[:oid,:hge]):hge;
 	return res;
 end aggr.corr;
 
-function aggr.covar(e1:bat[:oid,:hge], e2:bat[:oid,:hge], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:hge];
-	e0:bat[:oid,:hge] := batcalc.*(e1,e2);
-	s0:bat[:oid,:hge] := aggr.sum(e0,g,e);
-	s1:bat[:oid,:hge] := aggr.sum(e1,g,e);
-	s2:bat[:oid,:hge] := aggr.sum(e2,g,e);
-	v2:bat[:oid,:hge] := batcalc.*(s1,s2);
+function aggr.covar(e1:bat[:hge], e2:bat[:hge], g:bat[:oid], e:bat[:any_2]):bat[:hge];
+	e0:bat[:hge] := batcalc.*(e1,e2);
+	s0:bat[:hge] := aggr.sum(e0,g,e);
+	s1:bat[:hge] := aggr.sum(e1,g,e);
+	s2:bat[:hge] := aggr.sum(e2,g,e);
+	v2:bat[:hge] := batcalc.*(s1,s2);
 	c := aggr.count(e1,g,e);
-	n:bat[:oid,:hge] := batcalc.hge(c);
-	v3:bat[:oid,:hge] := batcalc./(v2,n);
-	v1:bat[:oid,:hge] := batcalc.-(s0,v3);
-	v:bat[:oid,:hge] := batcalc./(v1,n);
+	n:bat[:hge] := batcalc.hge(c);
+	v3:bat[:hge] := batcalc./(v2,n);
+	v1:bat[:hge] := batcalc.-(s0,v3);
+	v:bat[:hge] := batcalc./(v1,n);
 	return v;
 end aggr.covar;
 
-function aggr.corr(e1:bat[:oid,:hge], e2:bat[:oid,:hge], g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:hge];
-	cv:bat[:oid,:hge] := aggr.covar(e1,e2,g,e);
+function aggr.corr(e1:bat[:hge], e2:bat[:hge], g:bat[:oid],e:bat[:any_2]):bat[:hge];
+	cv:bat[:hge] := aggr.covar(e1,e2,g,e);
 	sd1 := aggr.stdevp(e1,g,e);
 	sd2 := aggr.stdevp(e2,g,e);
 	sd := batcalc.*(sd1,sd2);

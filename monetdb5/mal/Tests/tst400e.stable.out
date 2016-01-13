@@ -5,32 +5,31 @@ stdout of test 'tst400e` in directory 'monetdb5/mal` itself:
 # 07:48:32 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36666 --set xrpc_port=40130 --set monet_prompt= --trace --dbname=mTests_src_mal  tst400e.mal
 # 07:48:32 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## simple test of a function call 
-## performance evaluation, how expensive are 100k calls?
-#
-#function simple(z:lng):lng;
-#	z:= z+1:lng;
-#	return z;
-#end simple;
-function user.simple(z:lng):lng;
-    z := calc.+(z,1:lng);
-    return simple := z;
-end user.simple;
-function user.main():void;
-# simple test of a function call  
-# performance evaluation, how expensive are 100k calls? 
-    k := 0:lng;
-barrier v := calc.<(k,1000000:lng);
-    k := user.simple(k);
-    redo v := calc.<(k,1000000:lng);
-exit v;
-    io.print(k);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:39098/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27487/.s.monetdb.39098
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:15:39 >  
+# 22:15:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27487" "--port=39098"
+# 22:15:39 >  
+
+#io.print(k);
 [ 1000000 ]
 
 # 07:48:33 >  

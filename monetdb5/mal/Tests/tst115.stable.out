@@ -9,37 +9,26 @@ stdout of test 'tst115` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
-command user.+(L:any_1,R:any_1):any_1 address addIntInt;
-#
-#function doitOnce():int;
-#	z:= 12;
-#	return z;
-#end doitOnce;
-function user.doitOnce():int;
-    z := 12;
-    return doitOnce := z;
-end user.doitOnce;
-function user.doitTwice(i:int):int;
-    j := 2;
-    k := 11111;
-    i := calc.+(j,k);
-    return doitTwice := i;
-end user.doitTwice;
-!TypeException:user.main[7]:'user.doitTwice' undefined in:     d:int := user.doitTwice("wrong":str);
-function user.main():void;
-# the next step is to trace the call of a mal function call 
-    a := 1;
-    b := user.doitOnce();
-    c := 2;
-    d := user.doitTwice(3);
-    c := 3;
-    d := user.doitTwice("wrong");
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37326/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5138/.s.monetdb.37326
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 07:59:00 >  
-# 07:59:00 >  Done.
-# 07:59:00 >  
+Ready.
+
+# 14:57:19 >  
+# 14:57:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
+# 14:57:19 >  
+
+
+# 14:57:19 >  
+# 14:57:19 >  "Done."
+# 14:57:19 >  
 

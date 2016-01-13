@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -178,7 +178,7 @@ atom_dec(sql_allocator *sa, sql_subtype *tpe,
 }
 
 atom *
-atom_string(sql_allocator *sa, sql_subtype *tpe, char *val)
+atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a = atom_create(sa);
 
@@ -189,7 +189,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, char *val)
 	a->data.len = 0;
 	if (val) {
 		a->isnull = 0;
-		a->data.val.sval = val;
+		a->data.val.sval = (char*)val;
 		a->data.len = (int)strlen(a->data.val.sval);
 	}
 
@@ -219,7 +219,7 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 }
 
 atom *
-atom_general(sql_allocator *sa, sql_subtype *tpe, char *val)
+atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a;
 	ptr p = NULL;
@@ -243,7 +243,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, char *val)
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str) {
 			a->isnull = 0;
-			a->data.val.sval = sql2str(sa_strdup(sa, val));
+			a->data.val.sval = (char*)sql2str(sa_strdup(sa, val));
 			a->data.len = (int)strlen(a->data.val.sval);
 		} else { 
 			int res = ATOMfromstr(type, &p, &a->data.len, val);

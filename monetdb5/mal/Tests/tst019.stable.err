@@ -1,12 +1,87 @@
 stderr of test 'tst019` in directory 'monetdb5/mal` itself:
 
 
-# 10:58:00 >  
-# 10:58:00 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=40090 --set sql_port=55826 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst019.mal </dev/null
-# 10:58:00 >  
+# 13:48:26 >  
+# 13:48:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30912" "--set" "mapi_usock=/var/tmp/mtest-24529/.s.monetdb.30912" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:48:26 >  
 
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30912
+# cmdline opt 	mapi_usock = /var/tmp/mtest-24529/.s.monetdb.30912
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 10:58:00 >  
-# 10:58:00 >  Done.
-# 10:58:00 >  
+# 13:48:26 >  
+# 13:48:26 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
+# 13:48:26 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = function welcome(lim:int):void;
+            i:= 2;
+            w:="hello";
+            return w;   # should produce a type error
+        end welcome;
+        
+        function welcome0(lim:int):str;
+            i:= 2;
+            w:="hello";
+            return (w,i);   # should produce a type error
+        end welcome0;
+        
+        function welcome1(lim:int):str;
+            i:= 2;
+            return w:="hello"; 
+        end welcome1;
+        
+        function welcome2(lim:int):str;
+            i:= 2;
+            w:="hello"; 
+            return w;
+        end welcome2;
+        
+        function welcome3(lim:int)(w:str,i:int);
+            i:= 2;
+            return w:="hello"; #illegal return statement
+        end welcome3;
+        
+        function welcome4(lim:int)(w:str,i:int);
+            i:= 2;
+            return (w,i):="hello"; #illegal return statement
+        end welcome4;
+        
+        function welcome5(lim:int)(:str,:int);
+            i:= 2;
+            return (w,i):=("hello",2); 
+        end welcome5;
+        
+        y:= user.welcome1(1);
+        io.print(y);
+        y:= user.welcome2(1);
+        io.print(y);
+        
+        (x,y):= user.welcome2(1);
+ERROR = !TypeException:user.welcome[3]:type mismatch void := str
+        !TypeException:user.welcome0[3]:Multiple assignment mismatch
+        !SyntaxException:user.welcome3[2]:invalid return target!
+        !TypeException:user.welcome4[2]:Multiple assignment mismatch
+        !TypeException:user.main[5]:'user.welcome2' undefined in:     (x:any,y:str) := user.welcome2(1:int);
+
+# 13:48:26 >  
+# 13:48:26 >  "Done."
+# 13:48:26 >  
 

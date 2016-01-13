@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _MAL_RESOLVE_H
@@ -23,7 +23,6 @@ mal_export void chkProgram(stream *out, Module s, MalBlkPtr mb);
 mal_export int chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
 mal_export void chkTypes(stream *out, Module s, MalBlkPtr mb, int silent);
 mal_export void typeChecker(stream *out,  Module scope, MalBlkPtr mb, InstrPtr p, int silent);
-mal_export int fcnBinder(stream *out, Module scope, MalBlkPtr mb, InstrPtr p);
 
 extern str traceFcnName;
 mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);

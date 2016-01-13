@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module tokenizer
 comment "The tokenizer provides fast access to a large collection of strings
@@ -32,18 +32,18 @@ command depositFile(fnme:str):void
 address TKNZRdepositFile
 comment "batch insertion from a file of strings to tokenize, each string is separated by a new line";
 
-command getLevel(i:int):bat[:oid,:str]
+command getLevel(i:int):bat[:str]
 address TKNZRgetLevel
 comment "administrative function that returns the bat on level i";
 
-command getIndex():bat[:oid,:oid]
+command getIndex():bat[:oid]
 address TKNZRgetIndex
 comment "administrative function that returns the INDEX bat";
 
-command getCount():bat[:oid,:wrd]
+command getCount():bat[:wrd]
 address TKNZRgetCount
 comment "debugging function that returns the size of the bats at each level";
 
-command getCardinality():bat[:oid,:wrd]
+command getCardinality():bat[:wrd]
 address TKNZRgetCardinality
 comment "debugging function that returns the unique tokens at each level";

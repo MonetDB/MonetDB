@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -1899,7 +1899,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bi = bat_iterator(b);
 	if (g) {
 		/* stable sort g */
-		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) != GDK_SUCCEED) {
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			bn = NULL;
 			err = "internal sort failed";

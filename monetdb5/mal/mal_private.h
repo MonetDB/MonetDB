@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -52,8 +52,6 @@ __hidden void stopMALdataflow(void)
 __hidden void malAtomDefinition(stream *out, str name,int tpe)
 	__attribute__((__visibility__("hidden")));
 __hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
-__hidden void showAtoms(stream *fd)		/* used in src/mal/mal_debugger.c */
 	__attribute__((__visibility__("hidden")));
 
 __hidden extern MT_Lock mal_namespaceLock;

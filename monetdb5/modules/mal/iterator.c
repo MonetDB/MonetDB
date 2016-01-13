@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -56,7 +56,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	}
 	cnt = BATcount(b);
 	first = BUNfirst(b);
-	view = VIEWcreate_(b, b, TRUE);
+	view = VIEWcreate_(b->hseqbase, b, TRUE);
 
 	/*  printf("set bat chunk bound to " LLFMT " " BUNFMT " - " BUNFMT "\n",
 	 *granule, first, MIN(cnt,(BUN) *granule)); */

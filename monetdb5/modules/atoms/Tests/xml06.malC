@@ -1,0 +1,14 @@
+b:= bat.new(:str);
+bat.append(b,"Mary Ann Walker");
+bat.append(b,nil:str);
+bat.append(b,"Annie Chapman");
+
+io.print(b);
+bx:= xml.xml(b);
+
+bc:= xml.options("author","absent",bx);
+io.print(bc);
+bc:= xml.options("author","empty",bx);
+io.print(bc);
+bc:= xml.options("author","nil",bx);
+io.print(bc);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -24,7 +24,7 @@
 #include "batExtensions.h"
 
 /*
- * @+ BAT enhancements
+ * BAT enhancements
  * The code to enhance the kernel.
  */
 str
@@ -57,6 +57,38 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	}
 
 	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
+		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
+	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
+}
+
+str
+CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	int tt;
+	BUN cap = 0;
+	bat *res;
+
+	(void) cntxt;
+	res = getArgReference_bat(s, p, 0);
+	tt = getArgType(m, p, 1);
+	if (p->argc > 2) {
+		lng lcap;
+
+		if (getArgType(m, p, 2) == TYPE_lng)
+			lcap = *getArgReference_lng(s, p, 2);
+		else if (getArgType(m, p, 2) == TYPE_int)
+			lcap = (lng) *getArgReference_int(s, p, 2);
+		else if (getArgType(m, p, 2) == TYPE_wrd)
+			lcap = (lng) *getArgReference_wrd(s, p, 2);
+		else
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
+		if (lcap < 0)
+			throw(MAL, "bat.new", POSITIVE_EXPECTED);
+		if (lcap > (lng) BUN_MAX)
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
+		cap = (BUN) lcap;
+	}
+
+	if (tt == TYPE_any || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
 	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
 }
@@ -138,19 +170,6 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	return msg;
 }
 
-str
-CMDBATderivedByName(bat *ret, str *nme)
-{
-	BAT *bn;
-	int bid;
-
-	bid = BBPindex(*nme);
-	if (bid <= 0 || (bn = BATdescriptor(bid)) == 0)
-		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	BBPincref(*ret = bn->batCacheid, TRUE);
-	BBPunfix(bid);
-	return MAL_SUCCEED;
-}
 str
 CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

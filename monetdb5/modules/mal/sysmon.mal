@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module sysmon;
 
@@ -30,5 +30,5 @@ pattern stop(id:lng)
 address SYSMONstop
 comment "Stop a single query a.s.a.p.";
 
-pattern queue()(tag:bat[:oid,:lng], user:bat[:oid,:str],started:bat[:oid,:timestamp],estimate:bat[:oid,:timestamp],progress:bat[:oid,:int], status:bat[:oid,:str], qrytag:bat[:oid,:oid],query:bat[:oid,:str])
+pattern queue()(tag:bat[:lng], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], qrytag:bat[:oid],query:bat[:str])
 address SYSMONqueue;

@@ -18,42 +18,18 @@ stdout of test 'json15` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-#j1:= json.new("3.14"); 
-#json.dump(j1); 
-#d:= json.number(j1); 
-#io.print(d); 
-    j1 := json.new("[3.14]");
-#json.dump(j1); 
-    d := json.number(j1);
-    io.print(d);
-    j1 := json.new("{\"tag\":3.14}");
-    json.dump(j1);
-    d := json.number(j1);
-    io.print(d);
-    j1 := json.new("[3.14,2.1]");
-    d := json.number(j1);
-    io.print(d);
-#j1:= json.new("314"); 
-#json.dump(j1); 
-#i:= json.integer(j1); 
-#io.print(i); 
-    j1 := json.new("{\"tag\":314}");
-#json.dump(j1); 
-    i := json.integer(j1);
-    io.print(i);
-    j1 := json.new("[314]");
-#json.dump(j1); 
-    i := json.integer(j1);
-    io.print(i);
-    j1 := json.new("[314,2.1]");
-    i := json.integer(j1);
-    io.print(i);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:40 >  
+# 10:05:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:40 >  
+
 [ 3.14 ]
-[0] object child 0 list 1 {"tag":3.14}
-[1] element child 2 list tag
-[2] number child 0 list 3.14
+[ 0	]
+[ 1	]
+[ 2	]
 [ 3.14 ]
 [ nil ]
 [ 314 ]

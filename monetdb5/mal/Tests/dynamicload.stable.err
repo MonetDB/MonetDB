@@ -70,12 +70,31 @@ stderr of test 'dynamicload` in directory 'monetdb5/mal` itself:
 # cmdline opt 	mapi_port = 33388
 # cmdline opt 	xrpc_port = 43676
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_mal
-# cmdline opt 	gdk_debug = 10
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/monet5//Linux/etc/monetdb5.conf)
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 20:04:03 >  
-# 20:04:03 >  Done.
-# 20:04:03 >  
+# 13:21:38 >  
+# 13:21:38 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
+# 13:21:38 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-13954/.s.monetdb.38078
+QUERY = # examples of non-bindable instructions
+        
+        command wrong()
+        address UNKOWNaddress
+        comment "Should not be callable";
+        
+        wrong();
+        
+        #load unknown library
+        library UNKNOWlib;
+ERROR = !TypeException:user.main[2]:object code for command user.wrong missing
+        !TypeException:user.main[2]:'user.wrong' undefined in:     user.wrong();
+
+# 13:21:38 >  
+# 13:21:38 >  "Done."
+# 13:21:38 >  
 

@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
-char *TID = "%TID%";
+const char *TID = "%TID%";
 
 static void *
 _list_find_name(list *l, const char *name)
@@ -229,6 +229,12 @@ find_sqlname(list *l, const char *name)
 		} 
 	}
 	return NULL;
+}
+
+node *
+find_sql_type_node(sql_schema * s, int id)
+{
+	return cs_find_id(&s->types, id);
 }
 
 sql_type *

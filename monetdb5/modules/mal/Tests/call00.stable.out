@@ -1,42 +1,34 @@
 stdout of test 'call00` in directory 'monetdb5/modules/mal` itself:
 
 
-# 23:57:54 >  
-# 23:57:54 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=38791 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  call00.mal < /dev/null
-# 23:57:54 >  
+# 09:46:17 >  
+# 09:46:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35410" "--set" "mapi_usock=/var/tmp/mtest-26774/.s.monetdb.35410" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 09:46:17 >  
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.tst(i:int,s:str):bit;
-    j := calc.+(i,1);
-    io.print(j);
-# ignore comments 
-    format := "hello %s\n";
-    io.printf(format,s);
-    return tst := true;
-end user.tst;
-function user.main():void;
-# the base experiment to execute a string 
-# if we can convert a MAL function to a string 
-# it can be shipped for remote execution. 
-# there should be only one definition 
-    d := inspect.getSignature("user","tst");
-    io.print(d);
-    user.tst(1,"world");
-    m := inspect.getSource("user","tst");
-    io.print(m);
-#Call the string derived from definition 
-    language.call(m);
-# now we should have two definitions 
-    d := inspect.getSignature("user","tst");
-    io.print(d);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:18 >  
+# 09:46:18 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:18 >  
+
 #--------------------------#
 # view		input			  # name
 # void	str			  # type

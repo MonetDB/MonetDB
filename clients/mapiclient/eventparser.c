@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* (c) M Kersten */
@@ -20,6 +20,7 @@ char *malvalues[MAXMALARGS];
 int malsize;
 int debug=0;
 char *currentquery=0;
+int eventcounter = 0;
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
@@ -182,6 +183,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 		resetEventRecord(ev);
 		memset(malvariables, 0, sizeof(malvariables));
 		memset(malvalues, 0, sizeof(malvalues));
+		ev->eventnr= eventcounter++;
 		return 0;
 	}
 	if( *c == '}'){
@@ -202,7 +204,6 @@ keyvalueparser(char *txt, EventRecord *ev)
 		*c = 0;
 	} else val =c;
 
-	if( strstr(key,"event")) { ev->eventnr= atol(val); return 0;}
 	if( strstr(key,"clk")){
 		ev->clk = atol(val); 
 		return 0;

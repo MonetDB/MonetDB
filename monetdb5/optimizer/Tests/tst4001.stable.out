@@ -9,32 +9,29 @@ stdout of test 'tst4001` in directory 'monetdb5/optimizer` itself:
 # Serving database 'mTests_src_optimizer', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
-function user.qry(i:dbl):dbl;
-    i := 1:dbl;
-    z := mmath.sin(i);
-    j := 1:dbl;
-    k := mmath.sin(j);
-    l := calc.+(k,i);
-    return qry := z;
-end user.qry;
-function user.main():void;
-#tesing the optimizers 
-#setDebug(); 
-    t0 := alarm.usec();
-    t1 := alarm.usec();
-    t2 := calc.-(t1,t0);
-    io.print("execute");
-    z := user.qry(0:dbl);
-    io.print(z);
-    io.print("done");
-    mdb.list("user","qry");
-    mdb.list();
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:39930/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1801/.s.monetdb.39930
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:55:29 >  
+# 21:55:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1801" "--port=39930"
+# 21:55:29 >  
+
+#io.print("execute");
 [ "execute" ]
-[ 0.8414709848078965 ]
+#io.print(z);
+[ 0.8414709848	]
+#io.print("done");
 [ "done" ]
 function user.qry(i:dbl):dbl;
     z := mmath.sin(1:dbl);

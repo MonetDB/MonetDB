@@ -27,7 +27,6 @@ Ready.
 # 15:29:05 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"
 # 15:29:05 >  
 
-! Correct/expected stable output need to provided/approved !
 
 # 15:29:06 >  
 # 15:29:06 >  "Done."

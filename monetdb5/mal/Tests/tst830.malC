@@ -1,0 +1,67 @@
+# a simple functional test for the access control table
+
+	# this should fail, the monetdb user is already there
+function foo();
+	pw := clients.backendsum("Pmonetdb");
+	id := clients.addUser("monetdb", pw);
+catch MALException:str;
+	io.printf("0: %s\n",MALException);
+exit MALException;
+
+	# should print 1@0 or something
+	id := clients.addUser("test", pw);
+	io.print(id);
+
+	# this should work also
+	id := clients.addUser("checkpoint", pw);
+	io.print(id);
+
+	# do a simple listing of users known
+	(u,n) := clients.getUsers();
+	io.print(u,n);
+
+	# should work, we're the admin here
+	clients.removeUser("checkpoint");
+
+	# do a simple listing of users known
+	(u,n) := clients.getUsers();
+	io.print(u,n);
+
+	# forcefully set the password of the user test
+	clients.setPassword("test", pw);
+	# now try to set the password for ourself, should fail
+	clients.setPassword("monetdb", pw);
+catch InvalidCredentialsException:str;
+	io.printf("1: %s\n", InvalidCredentialsException);
+exit InvalidCredentialsException;
+
+#
+#	# change our own password, 
+#	mypw := clients.backendsum("monetdb");
+#	clients.changePassword(mypw, pw);
+#	# try it again, should fail...
+#	clients.changePassword(mypw, pw);
+#catch InvalidCredentialsException:str;
+#	io.printf("2: %s\n",InvalidCredentialsException);
+#	InvalidCredentialsException:= nil:str;
+#exit InvalidCredentialsException;
+
+	# all should fail
+	clients.checkPermission("monetdb","Pmonetdb");
+catch InvalidCredentialsException:str;
+	io.printf("3: %s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
+exit InvalidCredentialsException;
+	clients.checkPermission("monetdb","x");
+catch InvalidCredentialsException:str;
+	io.printf("4: %s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
+exit InvalidCredentialsException;
+	clients.checkPermission("x","Pmonetdb");
+catch InvalidCredentialsException:str;
+	io.printf("5: %s\n",InvalidCredentialsException);
+	InvalidCredentialsException:= nil:str;
+exit InvalidCredentialsException;
+end;
+mdb.List("user","foo");
+user.foo();

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -112,7 +112,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
-			b[0] = VIEWcombine(b[1]);
+			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
 			if( b[0]){
 				BATroles(b[0], NULL, b[1]->hident);
 				BATprintcolumns(cntxt->fdout, 2, b);
@@ -555,7 +555,7 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 		piv[i] = b;
 	}
 	/* add materialized void column */
-	piv[0] = BATmark(piv[1],0);
+	piv[0] = BATdense(piv[1]->hseqbase, 0, BATcount(piv[1]));
 	BATprintcolumns(f, pci->argc, piv);
 	for (k = 0; k < pci->argc; k++)
 		BBPunfix(piv[k]->batCacheid);

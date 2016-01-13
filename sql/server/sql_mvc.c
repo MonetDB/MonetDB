@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -793,6 +793,17 @@ mvc_create_type(mvc *sql, sql_schema * s, const char *name, int digits, int scal
 	return t;
 }
 
+int
+mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
+{
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_drop_type %s %s\n", s->base.name, t->base.name);
+
+	if (t)
+		return sql_trans_drop_type(m->session->tr, s, t->base.id, drop_action);
+	return 0;
+}
+
 sql_func *
 mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg)
 {
@@ -1343,7 +1354,7 @@ stack_pop_until(mvc *sql, int top)
 	while(sql->topvars > top) {
 		sql_var *v = &sql->vars[--sql->topvars];
 
-		_DELETE(v->name);
+		c_delete(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
 	}
@@ -1355,7 +1366,7 @@ stack_pop_frame(mvc *sql)
 	while(!sql->vars[--sql->topvars].frame) {
 		sql_var *v = &sql->vars[sql->topvars];
 
-		_DELETE(v->name);
+		c_delete(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
 		if (v->t && v->view) 
@@ -1364,7 +1375,7 @@ stack_pop_frame(mvc *sql)
 			rel_destroy(v->rel);
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
-		_DELETE(sql->vars[sql->topvars].name);
+		c_delete(sql->vars[sql->topvars].name);
 	sql->frame--;
 }
 

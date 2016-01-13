@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _MAL_RUNTIME_H
@@ -41,8 +41,6 @@ mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void finishSessionProfiler(Client cntxt);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-mal_export void displayVolume(Client cntxt, lng vol);
-mal_export void updateFootPrint(MalBlkPtr mb, MalStkPtr stk, int varid);
 
 mal_export QueryQueue QRYqueue;
 #endif

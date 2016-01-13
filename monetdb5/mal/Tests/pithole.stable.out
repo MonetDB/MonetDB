@@ -9,16 +9,26 @@ stdout of test 'pithole` in directory 'monetdb5/mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30041/
-function user.main():void;
-#challenge the runtime stack protection 
-    user.main();
-end user.main;
-!MALException:mal.interpreter:Recursive call limit reached.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32905/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23746/.s.monetdb.32905
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 14:45:52 >  
-# 14:45:52 >  Done.
-# 14:45:52 >  
+Ready.
+
+# 21:00:41 >  
+# 21:00:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23746" "--port=32905"
+# 21:00:41 >  
+
+
+# 21:00:41 >  
+# 21:00:41 >  "Done."
+# 21:00:41 >  
 

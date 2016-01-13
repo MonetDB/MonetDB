@@ -1,0 +1,7 @@
+#variable arguments are only allowed in patterns
+function test(s:str, b:bat[:any_1]...);
+	io.print(s);
+end test;
+b:= bat.new(:int);
+c:= bat.new(:int);
+user.test("hello",b,c);

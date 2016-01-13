@@ -1,1 +1,66 @@
 stderr of test 'tst050` in directory 'monetdb5/mal` itself:
+
+
+# 12:43:25 >  
+# 12:43:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35231" "--set" "mapi_usock=/var/tmp/mtest-19653/.s.monetdb.35231" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 12:43:25 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35231
+# cmdline opt 	mapi_usock = /var/tmp/mtest-19653/.s.monetdb.35231
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:48:37 >  
+# 13:48:37 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
+# 13:48:37 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # Variables names may be tagged with a type upfront.
+        # They may be initialized with a lexical constant using
+        # either their stored type syntax or with a string literal
+        
+        function f();
+        s:str := "hello";
+        i:sht := 1:sht;
+        b:bit   := true;
+        z:bat[:int]:= bat.new(:int);
+        end f;
+        
+        # type resolver should complain on the rest
+        function f();
+        j:sht := 1:lng;
+        end f;
+        function f();
+        k:lng := 1:sht;
+        end f;
+        function f();
+        y:bat[:str]:= bat.new(:int);
+        end f;
+        function f();
+        f:flt := "wrong";
+        end f;
+ERROR = !TypeException:user.f[1]:type mismatch sht := lng
+        !TypeException:user.f[1]:type mismatch lng := sht
+        !TypeException:user.f[1]:'bat.new' undefined in:     y:bat[:str] := bat.new(:int);
+        !TypeException:user.f[1]:type mismatch flt := str
+
+# 13:48:37 >  
+# 13:48:37 >  "Done."
+# 13:48:37 >  
+

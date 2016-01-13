@@ -1,37 +1,34 @@
 stdout of test 'strmax` in directory 'monetdb5/modules/atoms` itself:
 
 
-# 09:36:24 >  
-# 09:36:24 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36334 --set xrpc_port=45364 --set monet_prompt= --trace  --dbname=mTests_src_modules_atoms  strmax.mal
-# 09:36:24 >  
+# 10:05:30 >  
+# 10:05:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32149" "--set" "mapi_usock=/var/tmp/mtest-31201/.s.monetdb.32149" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_atoms" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 10:05:30 >  
 
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_modules_atoms', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
-function user.main():void;
-    s1 := "hello";
-    s2 := "world";
-    s3 := nil:str;
-    a1 := calc.max(s1,s2);
-    io.print(a1);
-    a2 := calc.max(s1,s3);
-    io.print(a2);
-    b1 := calc.min(s1,s2);
-    io.print(b1);
-    b2 := calc.min(s1,s3);
-    io.print(b2);
-    c1 := calc.max_no_nil(s1,s2);
-    io.print(c1);
-    c2 := calc.max_no_nil(s1,s3);
-    io.print(c2);
-    d1 := calc.min_no_nil(s1,s2);
-    io.print(d1);
-    d2 := calc.min_no_nil(s1,s3);
-    io.print(d2);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_atoms', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32149/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31201/.s.monetdb.32149
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:30 >  
+# 10:05:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:30 >  
+
 [ "world" ]
 [ nil ]
 [ "hello" ]

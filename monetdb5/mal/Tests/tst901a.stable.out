@@ -5,59 +5,56 @@ stdout of test 'tst901a` in directory 'monetdb5/mal` itself:
 # 07:48:33 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36666 --set xrpc_port=40130 --set monet_prompt= --trace --dbname=mTests_src_mal  tst901a.mal
 # 07:48:33 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## what is the overhead of MAL in multiplex situations
-#profiler.setFilter("*","*");
-#b:= bat.new(:oid,:lng);
-#t0:= alarm.usec();
-#barrier (v,i):= language.newRange(0:lng);
-#	o:= calc.oid(i);
-#	bat.insert(b,o,i);
-#	redo (v,i):= language.nextElement(1:lng,1000000:lng);
-#exit (v,i);
-#t1:= alarm.usec();
-#c:= algebra.copy(b);
-#t2:= alarm.usec();
-#x:= batcalc.+(b,b,c);
-#t3:= alarm.usec();
-#d1:= t1-t0;
-#d2:= t3-t2;
-#xc:= aggr.count(b);
-#io.printf("count %d\n",xc);
-#io.printf("make %d \n",d1);
-#io.printf("multiplex %d\n",d2);
-#
-function user.main():void;
-# what is the overhead of MAL in multiplex situations 
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    t0 := alarm.usec();
-barrier i := 0:lng;
-    bat.append(b,i);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    t1 := alarm.usec();
-    mdb.setDebug(dbgmsk_restore);
-    c := algebra.copy(b);
-    t2 := alarm.usec();
-    x := batcalc.+(b,c);
-    t3 := alarm.usec();
-    d1 := calc.-(t1,t0);
-    d2 := calc.-(t3,t2);
-    xc := aggr.count(b);
-    io.printf("#count %d\n",xc);
-    io.printf("#make %d \n",d1);
-    io.printf("#multiplex %d\n",d2);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37080/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22533/.s.monetdb.37080
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:01:55 >  
+# 16:01:55 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22533" "--port=37080"
+# 16:01:55 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+    INT_MAX:int := 2147483647:int;      	#[2]  3 <- 4 
+    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 5 
+    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 6 <- 7 8 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 9 <- 3 6 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 10 <- 5 9 
+    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 11 <- 10 
+    t0:lng := alarm.usec();             	#[8] ALARMusec 12 
+barrier i:lng := 0:lng;                 	#[9]  13 <- 14 
+    bat.append(b:bat[:lng],i:lng);      	#[10] BKCappend_val_wrap 15 <- 1 13 
+    redo i:lng := iterator.next(1:lng,1000000:lng);	#[11] ITRnext_lng 13 <- 16 17 
+exit i:lng;                             	#[12]  13 
+    t1:lng := alarm.usec();             	#[13] ALARMusec 18 
+    mdb.setDebug(dbgmsk_restore:int);   	#[14] MDBsetDebug 19 <- 5 
+    c:bat[:lng] := algebra.copy(b:bat[:lng]);	#[15] ALGcopy 20 <- 1 
+    t2:lng := alarm.usec();             	#[16] ALARMusec 21 
+    x:bat[:lng] := batcalc.+(b:bat[:lng],c:bat[:lng]);	#[17] CMDbatADDsignal 22 <- 1 20 
+    t3:lng := alarm.usec();             	#[18] ALARMusec 23 
+    d1:lng := calc.-(t1:lng,t0:lng);    	#[19] CMDvarSUBsignal 24 <- 18 12 
+    d2:lng := calc.-(t3:lng,t2:lng);    	#[20] CMDvarSUBsignal 25 <- 23 21 
+    xc:wrd := aggr.count(b:bat[:lng]);  	#[21] ALGcount_bat 26 <- 1 
+    io.printf("#count %d\n":str,xc:wrd);	#[22] IOprintf 27 <- 28 26 
+    io.printf("#make %d \n":str,d1:lng);	#[23] IOprintf 29 <- 30 24 
+    io.printf("#multiplex %d\n":str,d2:lng);	#[24] IOprintf 31 <- 32 25 
+end user.foo;                           	#[25]  
 #count 1000000
 #make 788950 
 #multiplex 18410

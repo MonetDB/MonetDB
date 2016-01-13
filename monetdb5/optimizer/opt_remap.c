@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -15,6 +15,7 @@
 #include "monetdb_config.h"
 #include "opt_remap.h"
 #include "opt_macro.h"
+#include "opt_multiplex.h"
 
 static int
 OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
@@ -264,6 +265,10 @@ terminateMX:
 		}
 		freeMalBlk(mq);
 		GDKfree(upgrade);
+
+		/* ugh ugh, fallback to non inline, but optimized code */
+		OPTmultiplexSimple(cntxt, s->def);
+		s->def->inlineProp = 0;
 		return 0;
 	}
 	/*

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 package nl.cwi.monetdb.jdbc;
@@ -20,12 +20,10 @@ import java.util.*;
  */
 public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaData {
 	private Connection con;
-	private Driver driver;
 	private static Map<Connection, Map<String,String>> envs = new HashMap<Connection, Map<String,String>>();
 
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
-		driver = new MonetDriver();
 	}
 
 	private synchronized Statement getStmt() throws SQLException {
@@ -238,7 +236,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public int getDriverMajorVersion() {
-		return driver.getMajorVersion();
+		return MonetDriver.getDriverMajorVersion();
 	}
 
 	/**
@@ -248,7 +246,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public int getDriverMinorVersion() {
-		return driver.getMinorVersion();
+		return MonetDriver.getDriverMinorVersion();
 	}
 
 	/**
@@ -3307,8 +3305,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Retrieves the major JDBC version number for this
-	 * driver.
+	 * Retrieves the major JDBC version number for this driver.
 	 *
 	 * @return JDBC version major number
 	 */
@@ -3318,8 +3315,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Retrieves the minor JDBC version number for this
-	 * driver.
+	 * Retrieves the minor JDBC version number for this driver.
 	 *
 	 * @return JDBC version minor number
 	 */

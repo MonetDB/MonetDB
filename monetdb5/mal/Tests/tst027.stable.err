@@ -1,1 +1,46 @@
 stderr of test 'tst027` in directory 'monetdb5/mal` itself:
+
+
+# 13:48:28 >  
+# 13:48:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30912" "--set" "mapi_usock=/var/tmp/mtest-24529/.s.monetdb.30912" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 13:48:28 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30912
+# cmdline opt 	mapi_usock = /var/tmp/mtest-24529/.s.monetdb.30912
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:48:28 >  
+# 13:48:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24529" "--port=30912"
+# 13:48:28 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = #variable arguments are only allowed in patterns
+        function test(s:str, b:bat[:any_1]...);
+        	io.print(s);
+        end test;
+        b:= bat.new(:int);
+        c:= bat.new(:int);
+        user.test("hello",b,c);
+ERROR = !TypeException:user.main[4]:'user.test' undefined in:     user.test("hello":str,b:bat[:int],c:bat[:int]);
+
+# 13:48:28 >  
+# 13:48:28 >  "Done."
+# 13:48:28 >  
+

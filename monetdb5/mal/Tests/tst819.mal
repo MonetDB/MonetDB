@@ -1,9 +1,0 @@
-#extra long signature
-function extralongfunctionsignature(p1:bat[:oid,:sht], p2:bat[:oid,:sht]):bat[:oid,:sht];
- b:= bat.new(:oid,:sht);
-return extralongfunctionsignature:= b;
-end extralongfunctionsignature;
-
-p1:= bat.new(:oid,:sht);
-p2:= bat.new(:oid,:sht);
-z:= extralongfunctionsignature(p1,p2);

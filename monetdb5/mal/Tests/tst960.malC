@@ -1,0 +1,44 @@
+# the chunk mechanism
+
+function foo();
+S:= bat.new(:str);
+bat.append(S,"hello");
+bat.append(S,"brave");
+bat.append(S,"new");
+bat.append(S,"world");
+io.print(S);
+
+L:= batstr.length(S);
+io.print(L);
+L:= batstr.nbytes(S);
+io.print(L);
+
+B:= batcalc.==(S,"hello");
+io.print(B);
+
+C:= batalgebra.like(S,"hello");
+io.print(C);
+
+U:= batstr.toUpper(S);
+io.print(U);
+
+l:= batstr.toLower(U);
+io.print(l);
+
+trim:= batstr.trim(S); 
+io.print(trim);
+ltrim:= batstr.ltrim(S); 
+io.print(ltrim);
+rtrim:= batstr.rtrim(S); 
+io.print(rtrim);
+
+io.print("Start searches");
+srch:= batstr.search(S,"hello"); 
+io.print(srch);
+srch:= batstr.search(S,S); 
+io.print(srch);
+plus:= batcalc.+(S,S); 
+io.print(plus);
+end;
+mdb.List("user","foo");
+user.foo();

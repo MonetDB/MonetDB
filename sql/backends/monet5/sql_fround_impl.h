@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #define dec_round_body_nonil	FUN(TYPE, dec_round_body_nonil)
@@ -99,7 +99,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with agument head */
+	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->T->nonil = nonil;
@@ -215,7 +215,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with agument head */
+	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->T->nonil = nonil;

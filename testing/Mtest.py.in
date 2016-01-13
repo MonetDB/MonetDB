@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 #TODO:
 #=====
@@ -2811,11 +2811,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
             if SERVER == "MAL":
                 lang="mal"
-                Srvr.extend(['--set', 'mal_listing=2'])
                 Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
-                Srvr.extend(['--set', 'mal_listing=0'])
                 Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
 
@@ -3948,12 +3946,12 @@ def main(argv) :
 
             exe = {}
             exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s --set mal_listing=2 %s' % \
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable
             exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
-            exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
+            exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])

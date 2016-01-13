@@ -1,0 +1,17 @@
+b:= bat.new(:str);
+bat.insert(b,0@0,"Mary Ann Walker");
+bat.insert(b,0@1,"Annie Chapman");
+
+c:= bat.new(:str);
+bat.insert(c,0@0,"brown");
+bat.insert(c,0@1,"curly dark brown");
+
+bx:= xml.xml(b);
+cx:= xml.xml(c);
+
+xp:= xml.element("person",nil:bat,nil:bat,bx);
+xh:= xml.element("hair",nil:bat,nil:bat,cx);
+
+xx:= xml.element("row",nil:bat,nil:bat,xp,xh);
+xs:= xml.str(xx);
+io.print(xs);

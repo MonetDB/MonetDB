@@ -1,7 +1,0 @@
-# test constant expressions with strong types
-    X2 := calc.dbl(nil);
-    X14 := X2 + 0.0;
-	io.print(X14);
-
-optimizer.evaluate();
-mdb.List();

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -2042,9 +2042,9 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cntxt->error_row) {
 		MT_lock_set(&errorlock);
 		BATclear(cntxt->error_row, TRUE);
-		BATclear(cntxt->error_fld, TRUE);
-		BATclear(cntxt->error_msg, TRUE);
-		BATclear(cntxt->error_input, TRUE);
+		if(cntxt->error_fld) BATclear(cntxt->error_fld, TRUE);
+		if(cntxt->error_msg) BATclear(cntxt->error_msg, TRUE);
+		if(cntxt->error_input) BATclear(cntxt->error_input, TRUE);
 		MT_lock_unset(&errorlock);
 	}
 	(void) mb;

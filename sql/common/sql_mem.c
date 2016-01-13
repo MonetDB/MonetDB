@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -168,4 +168,12 @@ char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
 size_t sa_size( sql_allocator *sa )
 {
 	return sa->usedmem;
+}
+
+void
+c_delete( const void *p ) 
+{
+	void *xp = (void*)p;
+
+	GDKfree(xp);
 }

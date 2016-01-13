@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -75,25 +75,6 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
 	s = newGlobalStack(k);
-	memcpy(s, old, stackSize(old->stksize));
-	s->stksize = k;
-	GDKfree(old);
-	return s;
-}
-
-/* dark code, we need quite some lux to shed a little light on this */
-MalStkPtr
-reallocStack(MalStkPtr s, int cnt)
-{
-	int k;
-	MalStkPtr old = s;
-
-	if (s->stksize > cnt)
-		return s;
-	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = (MalStkPtr) GDKzalloc(stackSize(k));
-	if (s == NULL)
-		GDKfatal("reallocStack: can not obtain memory\n");
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
 	GDKfree(old);

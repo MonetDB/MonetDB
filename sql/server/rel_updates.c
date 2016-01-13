@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -171,7 +171,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
-		char *ename = exp_name(_is);
+		const char *ename = exp_name(_is);
 
 		if (!ename)
 			exp_label(sql->sa, _is, ++sql->label);
@@ -864,7 +864,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		sql_rel *r = NULL;
 		list *exps;
 		dnode *n;
-		char *rname = NULL;
+		const char *rname = NULL;
 
 #if 0
 			dlist *selection = dlist_create(sql->sa);

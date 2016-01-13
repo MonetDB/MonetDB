@@ -7,10 +7,9 @@ tst4005
 tst4010
 tst4030
 tst4601
-tst4602
 tst4630
-tst4700
-tst4701
+#tst4700 no compiler
+#tst4701
 
 #qep00 deprecated optimizer
 #qep01 ,,
@@ -64,7 +63,7 @@ ifthencst
 ARexample
 DCexample
 DCexample2
-FTexample
+#FTexample
 GCexample01
 CXexample
 JPexample

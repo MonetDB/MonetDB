@@ -1,0 +1,8 @@
+#propagate INT exception
+# (you should be able to pass it upwards though)
+function foo();
+raise	PermissionDeniedException := 1234;
+	io.print("should not come here\n");
+end;
+mdb.List("user","foo");
+user.foo();

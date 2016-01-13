@@ -17,21 +17,16 @@ stdout of test 'tst038` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.tst2(b:bat[:oid,:any_1]):void;
-    bat.append(b,"hello");
-end user.tst2;
-!TypeException:user.tst2[1]:'bat.append' undefined in:     bat.append(b:bat[:oid,:int],"hello":str);
-!MALException:user.tst2[0]:Error in cloned function
-!TypeException:user.main[4]:'user.tst2' undefined in:     user.tst2(b:bat[:oid,:int]);
-function user.main():void;
-#test the capability to deal with unspecified bats. 
-    b := bat.new(:oid,:int);
-#The call to tst2 fails at runtime 
-    user.tst2(b);
-    io.print("shouldn't come here\n");
-end user.main;
+# MonetDB/R   module loaded
 
-# 07:58:43 >  
-# 07:58:43 >  Done.
-# 07:58:43 >  
+Ready.
+
+# 11:43:41 >  
+# 11:43:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14232" "--port=35042"
+# 11:43:41 >  
+
+
+# 11:43:41 >  
+# 11:43:41 >  "Done."
+# 11:43:41 >  
 

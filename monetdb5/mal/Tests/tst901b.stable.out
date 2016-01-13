@@ -5,100 +5,75 @@ stdout of test 'tst901b` in directory 'monetdb5/mal` itself:
 # 07:48:36 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=36666 --set xrpc_port=40130 --set monet_prompt= --trace --dbname=mTests_src_mal  tst901b.mal
 # 07:48:36 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## what is the overhead of MAL in multiplex situations
-## using a BATloop !! This is 40x slower as the V4.3 multiplex implementation
-##profiler.setAll();
-##profiler.setLogFile("/tmp/MonetProfile.xml");
-#b:= bat.new(:oid,:lng);
-#t0:= alarm.usec();
-#barrier (v,i):= language.newRange(0:lng);
-#	o:= calc.oid(i);
-#	bat.insert(b,o,i);
-#	redo (v,i):= language.nextElement(1:lng,1000000:lng);
-#exit (v,i);
-#t1:= alarm.usec();
-#c:= algebra.copy(b);
-#t2:= alarm.usec();
-#d:= bat.new(:oid,:lng);
-#barrier (mloop,h,t):= bat.newIterator(b);
-#        zz:= algebra.find(b,h);
-#        z:= algebra.find(c,h);
-#	cr:= zz+z;
-#	bat.insert(d,h,cr);
-#catch GDKerror:str;
-#	leave mloop;
-#exit GDKerror;
-#	redo (mloop,h,t):= bat.hasMoreElements(b);
-#exit (mloop,h,t);
-#t3:= alarm.usec();
-##CMD000(b,b);
-#t4:= alarm.usec();
-#d1:= t1-t0;
-#d2:= t3-t2;
-#d3:= t4-t3;
-#cnt:= aggr.count(d);
-#io.printf("cnt %d ",cnt);
-#io.printf("make %d ",d1);
-#io.printf("multiplex %d\n",d2);
-#io.printf("compiled multiplex %d\n",d3);
-##profiler.stop();
-#
-function user.main():void;
-# what is the overhead of MAL in multiplex situations 
-# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
-#profiler.setAll(); 
-#profiler.setLogFile("/tmp/MonetProfile.xml"); 
-    b := bat.new(:oid,:lng);
-    INT_MAX := 2147483647;
-    dbgmsk_restore := mdb.getDebug();
-    dbgmsk_unset := calc.+(8,8388608);
-    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
-    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
-    mdb.setDebug(dbgmsk_set);
-    t0 := alarm.usec();
-barrier i := 0:lng;
-    bat.append(b,i);
-    redo i := iterator.next(1:lng,1000000:lng);
-exit i;
-    t1 := alarm.usec();
-    mdb.setDebug(dbgmsk_restore);
-    c := algebra.copy(b);
-    mdb.setDebug(dbgmsk_set);
-    t2 := alarm.usec();
-    d := bat.new(:oid,:lng);
-barrier (h,t) := iterator.new(b);
-    zz := algebra.fetch(b,h);
-    z := algebra.fetch(c,h);
-    cr := calc.+(zz,z);
-    bat.append(d,cr);
-catch GDKerror:str;
-    leave h;
-exit GDKerror:str;
-    redo (h,t) := iterator.next(b);
-exit (h,t);
-    t3 := alarm.usec();
-    mdb.setDebug(dbgmsk_restore);
-#CMD000(b,b); 
-    t4 := alarm.usec();
-    d1 := calc.-(t1,t0);
-    d2 := calc.-(t3,t2);
-    d3 := calc.-(t4,t3);
-    cnt := aggr.count(d);
-    io.printf("#cnt %d ",cnt);
-    io.printf("#make %d ",d1);
-    io.printf("#multiplex %d\n",d2);
-    io.printf("#compiled multiplex %d\n",d3);
-#profiler.stop(); 
-end user.main;
-#cnt 1000000 #make 1737908 #multiplex 3465486
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37080/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22533/.s.monetdb.37080
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 16:02:00 >  
+# 16:02:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22533" "--port=37080"
+# 16:02:00 >  
+
+function user.foo():void;               	#[0]  0 
+    b:bat[:lng] := bat.new(:lng);       	#[1] CMDBATnewColumn 1 <- 2 
+    INT_MAX:int := 2147483647:int;      	#[2]  3 <- 4 
+    dbgmsk_restore:int := mdb.getDebug();	#[3] MDBgetDebug 5 
+    dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] CMDvarADDsignal 6 <- 7 8 
+    dbgmsk_keep:int := calc.xor(INT_MAX:int,dbgmsk_unset:int);	#[5] CMDvarXOR 9 <- 3 6 
+    dbgmsk_set:int := calc.and(dbgmsk_restore:int,dbgmsk_keep:int);	#[6] CMDvarAND 10 <- 5 9 
+    mdb.setDebug(dbgmsk_set:int);       	#[7] MDBsetDebug 11 <- 10 
+    t0:lng := alarm.usec();             	#[8] ALARMusec 12 
+barrier i:lng := 0:lng;                 	#[9]  13 <- 14 
+    bat.append(b:bat[:lng],i:lng);      	#[10] BKCappend_val_wrap 15 <- 1 13 
+    redo i:lng := iterator.next(1:lng,1000000:lng);	#[11] ITRnext_lng 13 <- 16 17 
+exit i:lng;                             	#[12]  13 
+    t1:lng := alarm.usec();             	#[13] ALARMusec 18 
+    mdb.setDebug(dbgmsk_restore:int);   	#[14] MDBsetDebug 19 <- 5 
+    c:bat[:lng] := algebra.copy(b:bat[:lng]);	#[15] ALGcopy 20 <- 1 
+    mdb.setDebug(dbgmsk_set:int);       	#[16] MDBsetDebug 21 <- 10 
+    t2:lng := alarm.usec();             	#[17] ALARMusec 22 
+    d:bat[:lng] := bat.new(:lng);       	#[18] CMDBATnewColumn 23 <- 2 
+barrier (h:oid,t:lng) := iterator.new(b:bat[:lng]);	#[19] ITRbunIterator 24 25 <- 1 
+    zz:lng := algebra.fetch(b:bat[:lng],h:oid);	#[20] ALGfetchoid 26 <- 1 24 
+    z:lng := algebra.fetch(c:bat[:lng],h:oid);	#[21] ALGfetchoid 27 <- 20 24 
+    cr:lng := calc.+(zz:lng,z:lng);     	#[22] CMDvarADDsignal 28 <- 26 27 
+    bat.append(d:bat[:lng],cr:lng);     	#[23] BKCappend_val_wrap 29 <- 23 28 
+catch GDKerror:str;                     	#[24]  30 
+    leave h:oid;                        	#[25]  24 
+exit GDKerror:str;                      	#[26]  30 
+    redo (h:oid,t:lng) := iterator.next(b:bat[:lng]);	#[27] ITRbunNext 24 25 <- 1 
+exit (h:oid,t:lng);                     	#[28]  24 25 
+    t3:lng := alarm.usec();             	#[29] ALARMusec 31 
+    mdb.setDebug(dbgmsk_restore:int);   	#[30] MDBsetDebug 32 <- 5 
+    t4:lng := alarm.usec();             	#[31] ALARMusec 33 
+    d1:lng := calc.-(t1:lng,t0:lng);    	#[32] CMDvarSUBsignal 34 <- 18 12 
+    d2:lng := calc.-(t3:lng,t2:lng);    	#[33] CMDvarSUBsignal 35 <- 31 22 
+    d3:lng := calc.-(t4:lng,t3:lng);    	#[34] CMDvarSUBsignal 36 <- 33 31 
+    cnt:wrd := aggr.count(d:bat[:lng]); 	#[35] ALGcount_bat 37 <- 23 
+    io.printf("#cnt %d ":str,cnt:wrd);  	#[36] IOprintf 38 <- 39 37 
+    io.printf("#make %d ":str,d1:lng);  	#[37] IOprintf 40 <- 41 34 
+    io.printf("#multiplex %d\n":str,d2:lng);	#[38] IOprintf 42 <- 43 35 
+    io.printf("#compiled multiplex %d\n":str,d3:lng);	#[39] IOprintf 44 <- 45 36 
+end user.foo;                           	#[40]  
+#cnt 1000000 #make 1417564 #multiplex 3766101
 #compiled multiplex 1
 
-# 07:48:39 >  
-# 07:48:39 >  Done.
-# 07:48:39 >  
+# 16:02:12 >  
+# 16:02:12 >  "Done."
+# 16:02:12 >  
 

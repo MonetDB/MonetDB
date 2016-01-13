@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module language;
 
@@ -11,7 +11,7 @@ address CMDcallString
 comment "Evaluate a MAL string program.";
 pattern call(m:str,f:str):void
 address CMDcallFunction;
-pattern call(s:bat[:oid,:str]):void
+pattern call(s:bat[:str]):void
 address CMDcallBAT
 comment "Evaluate a program stored in a BAT.";
 pattern source(f:str):void

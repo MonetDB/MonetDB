@@ -6,7 +6,23 @@ stderr of test 'tst080` in directory 'monetdb5/mal` itself:
 # 10:04:59 >  
 
 
-# 10:04:59 >  
-# 10:04:59 >  Done.
-# 10:04:59 >  
+# 13:15:57 >  
+# 13:15:57 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25262" "--port=33842"
+# 13:15:57 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-25262/.s.monetdb.33842
+QUERY = 	io.print(dummy); #error
+ERROR = !TypeException:user.main[1]:'dummy' may not be used before being initialized
+MAPI  = (monetdb) /var/tmp/mtest-25262/.s.monetdb.33842
+QUERY = exit two;
+ERROR = !TypeException:user.main[2]:'i' may not be used before being initialized
+        !TypeException:user.main[9]:'j' may not be used before being initialized
+        !TypeException:user.main[12]:'j' may not be used before being initialized
+MAPI  = (monetdb) /var/tmp/mtest-25262/.s.monetdb.33842
+QUERY = 	c:= z; #error
+ERROR = !TypeException:user.main[1]:'z' may not be used before being initialized
+
+# 13:15:57 >  
+# 13:15:57 >  "Done."
+# 13:15:57 >  
 

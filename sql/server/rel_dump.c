@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,6 +16,7 @@
 #include "rel_select.h"
 #include "rel_semantic.h"
 #include "rel_psm.h"
+#include "rel_remote.h"
 
 static void
 print_indent(mvc *sql, stream *fout, int depth, int decorate)
@@ -321,20 +322,32 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		sql_table *t = rel->l;
 		sql_column *c = rel->r;
 		print_indent(sql, fout, depth, decorate);
-		if (!t && c) 
+
+		if (!t && c) {
 			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
-		else if (t->s)
-			mnstr_printf(fout, "%s(%s.%s)", 
-				isStream(t)?"stream":
-				isRemote(t)&&decorate?"REMOTE":
-				isReplicaTable(t)?"REPLICA":"table",
-				t->s->base.name, t->base.name);
-		else
-			mnstr_printf(fout, "%s(%s)", 
-				isStream(t)?"stream":
-				isRemote(t)&&decorate?"REMOTE":
-				isReplicaTable(t)?"REPLICA":"table",
-				t->base.name);
+		} else {
+			const char *sname = t->s?t->s->base.name:NULL;
+			const char *tname = t->base.name;
+
+			if (isRemote(t)) {
+				const char *uri = t->query;
+
+				sname = mapiuri_schema( uri, sql->sa, sname);
+				tname = mapiuri_table( uri, sql->sa, tname);
+			}
+			if (sname)
+				mnstr_printf(fout, "%s(%s.%s)", 
+					isStream(t)?"stream":
+					isRemote(t)&&decorate?"REMOTE":
+					isReplicaTable(t)?"REPLICA":"table",
+					sname, tname);
+			else
+		  		mnstr_printf(fout, "%s(%s)", 
+					isStream(t)?"stream":
+					isRemote(t)&&decorate?"REMOTE":
+					isReplicaTable(t)?"REPLICA":"table",
+					tname);
+		}	
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);
 	} 	break;

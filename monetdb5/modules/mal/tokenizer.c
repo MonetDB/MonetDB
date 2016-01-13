@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -68,8 +68,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BATiter biidx = bat_iterator(bidx);
 
 	BUN p;
-	if (b->T->hash == NULL)
-		BAThash(b, 2 * BATcount(b));
+	BAThash(b, 2 * BATcount(b));
 	HASHloop_str(bi, b->T->hash, p, part)
 	{
 		if (*((oid *) BUNtail(biidx, p)) == *prv) {
@@ -346,6 +345,7 @@ TKNZRappend(oid *pos, str *s)
 					OPERATION_FAILED " could not append");
 		}
 		if (tokenBAT[i].val->T->hash == NULL ||
+			tokenBAT[i].val->T->hash == (Hash *) 1 ||
 			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->T->hash->mask) {
 			HASHdestroy(tokenBAT[i].val);
 			BAThash(tokenBAT[i].val, 2 * BATcount(tokenBAT[i].val));
@@ -364,6 +364,7 @@ TKNZRappend(oid *pos, str *s)
 	comp = COMP(prv, depth);
 	BUNappend(tokenBAT[INDEX].val, (ptr) & comp, TRUE);
 	if (tokenBAT[INDEX].val->T->hash == NULL ||
+		tokenBAT[INDEX].val->T->hash == (Hash *) 1 ||
 		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->T->hash->mask) {
 		HASHdestroy(tokenBAT[INDEX].val);
 		BAThash(tokenBAT[INDEX].val, 2 * BATcount(tokenBAT[INDEX].val));
@@ -577,7 +578,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	if (*level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
-	view = VIEWcreate(tokenBAT[*level].idx, tokenBAT[*level].val);
+	view = VIEWcreate(tokenBAT[*level].val->hseqbase, tokenBAT[*level].val);
 	*r = view->batCacheid;
 
 	BBPincref(*r, TRUE);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -210,6 +210,8 @@ OPTsetDebugStr(void *ret, str *nme)
 str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
+	if (cntxt->mode == FINISHCLIENT)
+		throw(MAL, name, "prematurely stopped client");
 	if( actions > 0){
 		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 		chkFlow(cntxt->fdout, mb);
@@ -290,7 +292,7 @@ MALoptimizer(Client c)
 		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
-		OPTmultiplexSimple(c);
+		OPTmultiplexSimple(c, c->curprg->def);
 	return msg;
 }
 

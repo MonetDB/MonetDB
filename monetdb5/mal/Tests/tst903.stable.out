@@ -17,13 +17,19 @@ stdout of test 'tst903` in directory 'monetdb5/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    x:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:any,c:any);
+#WARNING To speedup calc.+ a bulk operator implementation is needed
+#    x:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:lng],c:bat[:oid,:lng]);
 
 
-
-function user.main():void;
-# the multiplex code blocks. 
+#mdb.list("user","foo");
+function user.foo():void;
     t0 := alarm.usec();
-    b := bat.new(:oid,:lng);
+    b := bat.new(:lng);
     INT_MAX := 2147483647;
     dbgmsk_restore := mdb.getDebug();
     dbgmsk_unset := calc.+(8,8388608);
@@ -137,38 +143,39 @@ exit i;
     cnt := aggr.count(z9);
     mdb.setDebug(dbgmsk_set);
     t0 := alarm.usec();
-    X_105 := bat.new(nil:oid,nil:lng);
-barrier (X_109,X_110) := iterator.new(b);
-    X_112 := algebra.fetch(c,X_109);
-    X_114 := calc.+(X_110,X_112);
-    bat.append(X_105,X_114);
-    redo (X_109,X_110) := iterator.next(b);
-exit (X_109,X_110);
-    x:bat[:oid,:lng] := X_105;
+    X_103 := bat.new(nil:oid,nil:lng);
+barrier (X_107,X_108) := iterator.new(b);
+    X_110 := algebra.fetch(c,X_107);
+    X_112 := calc.+(X_108,X_110);
+    bat.append(X_103,X_112);
+    redo (X_107,X_108) := iterator.next(b);
+exit (X_107,X_108);
+    x:bat[:lng] := X_103;
     t1 := alarm.usec();
     mdb.setDebug(dbgmsk_restore);
     d0 := calc.-(t1,t0);
     io.printf("#mal.multiplex(+) %d\n",d0);
     t0 := alarm.usec();
-    x:bat[:oid,:lng]  := batcalc.+(b,c);
+    x:bat[:lng] := batcalc.+(b,c);
     t1 := alarm.usec();
     d0 := calc.-(t1,t0);
     io.printf("#batcalc.+() %d\n",d0);
-end user.main;
-#loop 1820795
-#copy 25467 count 1000000
-#select none 4776 count 0
-#select all 34358 count 1000000
-#select 0.05 9229 count 50004
-#select 0.1 12960 count 100016
-#select 0.2 20960 count 199929
-#select 0.4 37085 count 399791
-#select 0.6 51456 count 600237
-#select 0.8 64077 count 799837
-#select 1.0 75862 count 999999
-#head sort 172253 count 1000000
-#mal.multiplex(+) 2697369
-#batcalc.+() 30817
+end user.foo;
+#user.foo();
+#loop 5059436
+#copy 24256 count 1000000
+#select none 4725 count 0
+#select all 8517 count 1000000
+#select 0.05 6775 count 50004
+#select 0.1 9075 count 100016
+#select 0.2 13856 count 199929
+#select 0.4 23775 count 399791
+#select 0.6 30837 count 600237
+#select 0.8 35637 count 799837
+#select 1.0 41211 count 999999
+#head sort 171849 count 1000000
+#mal.multiplex(+) 6068119
+#batcalc.+() 29617
 
 # 08:19:33 >  
 # 08:19:33 >  Done.

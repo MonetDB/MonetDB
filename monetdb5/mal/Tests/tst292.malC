@@ -1,0 +1,5 @@
+# check coercion of bit coercions on big/little endian platforms
+b := bat.new(:bit);
+bat.append(b, 1:bit);
+bat.append(b, 0:bit);
+io.print(b);

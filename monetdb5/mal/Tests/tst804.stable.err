@@ -1,14 +1,54 @@
 stderr of test 'tst804` in directory 'monetdb5/mal` itself:
 
 
-# 22:02:45 >  
-# 22:02:45 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=35323 --set xrpc_port=49646 --set monet_prompt= --trace --dbname=mTests_src_mal  tst804.mal < /dev/null
-# 22:02:45 >  
+# 15:26:52 >  
+# 15:26:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34680" "--set" "mapi_usock=/var/tmp/mtest-30489/.s.monetdb.34680" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 15:26:52 >  
 
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34680
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30489/.s.monetdb.34680
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
 
-# 22:02:45 >  
-# 22:02:45 >  Done.
-# 22:02:45 >  
+# 15:26:53 >  
+# 15:26:53 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30489" "--port=34680"
+# 15:26:53 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+QUERY = # test definiton of a function in a unknown module
+        function wrong.message():void;
+        	io.print("shouldn't come here");
+        end message;
+        
+        function foo();
+        	wrong.message();
+        	wrongTo.message();
+        end foo;
+ERROR = !SyntaxException:parseError:function wrong.message():void;
+        !SyntaxException:parseError:                      ^<module> name not defined
+        !SyntaxException:parseError:	io.print("shouldn't come here");
+        !SyntaxException:parseError:^';' expected
+        !SyntaxException:parseError:end message;
+        !SyntaxException:parseError:   ^non matching end label
+        !TypeException:user.foo[1]:'wrong.message' undefined in:     wrong.message();
+
+# 15:26:53 >  
+# 15:26:53 >  "Done."
+# 15:26:53 >  
 

@@ -1,0 +1,11 @@
+#dealing with wrd BATs
+# -1 + 2^n
+
+b:= bat.new(:wrd);
+
+bat.append(b,1:wrd);
+bat.append(b,127:wrd);
+bat.append(b,32768:wrd);
+bat.append(b,2147483647:wrd);
+
+io.print(b);

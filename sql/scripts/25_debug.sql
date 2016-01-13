@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- show the optimizer statistics maintained by the SQL frontend
 create function sys.optimizer_stats ()
@@ -53,3 +53,6 @@ create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 -- flush the log and cleanup the used storage
 create procedure sys.flush_log ()
 	external name sql."flush_log";
+
+create function sys.debug(debug int) returns integer
+	external name mdb."setDebug";

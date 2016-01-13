@@ -1,0 +1,21 @@
+# some frontend generates the following code
+
+function tst();
+barrier a:= false;
+	io.print("never executed");
+exit a;
+barrier b:= calc.not(false);
+	io.print("always executed");
+exit b;
+barrier c:= true;
+	io.print("always executed");
+exit c;
+barrier d:= calc.not(true);
+	io.print("never executed");
+exit d;
+end tst;
+
+mdb.list("user","tst");
+optimizer.evaluate("user","tst");
+mdb.list("user","tst");
+tst();

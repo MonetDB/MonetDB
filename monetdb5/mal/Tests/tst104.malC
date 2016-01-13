@@ -1,0 +1,7 @@
+# check propagation of type variables over bats
+# can be checked after bat module has been added
+
+command f(a:any_1, b:bat[:any_2],c:any_2):any_2 address dummy;
+
+b:= bat.new(:str);
+a:= user.f(1@0,b,"hello");

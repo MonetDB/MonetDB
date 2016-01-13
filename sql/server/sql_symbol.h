@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef SQL_SYMBOL_H
@@ -46,7 +46,7 @@ typedef struct dlist {
 extern dlist *dlist_create(sql_allocator *sa);
 extern int dlist_length(dlist *l);
 
-extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);
+extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, const char *data);
 extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
 extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, int data);
 extern dlist *dlist_append_lng(sql_allocator *sa, dlist *l, lng data);

@@ -1,3 +1,9 @@
+"""
+Test if server doesn't crash when remote and local table definitions do not match
+
+Current result is an mal error (compilation failed)
+"""
+
 import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _MAL_PROFILER_H
@@ -23,6 +23,7 @@ typedef struct rusage Rusage;
 typedef struct tms Tms;
 typedef struct Mallinfo Mallinfo;
 
+mal_export void initProfiler(void);
 mal_export str openProfilerStream(stream *fd, int mode);
 mal_export str closeProfilerStream(void);
 
@@ -39,7 +40,7 @@ mal_export void MPresetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
 mal_export void clearTrace(void);
-mal_export void TRACEtable(BAT **r);
+mal_export int TRACEtable(BAT **r);
 mal_export int initTrace(void);
 mal_export str cleanupTraces(void);
 mal_export BAT *getTrace(const char *ev);

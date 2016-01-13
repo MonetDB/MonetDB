@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module manual;
 
@@ -13,6 +13,6 @@ comment "Produces a list of all <module>.<function> that match
 and <function>. Using the '(' asks for signature information and
 using ')' asks for the complete help record.";
 
-pattern functions() (sig:bat[:oid,:str], adr:bat[:oid,:str], com:bat[:oid,:str])
+pattern functions() (sig:bat[:str], adr:bat[:str], com:bat[:str])
 address MANUALcreateOverview
 comment "Produces a table with all MAL functions known";

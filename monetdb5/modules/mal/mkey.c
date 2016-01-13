@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -189,12 +189,6 @@ MKEYbathash(bat *res, const bat *bid)
 	dst->T->nonil = 0;
 	dst->T->nil = 0;
 
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *x = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = x;
-	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -368,12 +362,6 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	bn->T->nonil = 1;
 	bn->T->nil = 0;
 
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *x = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = x;
-	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(hb->batCacheid);
@@ -457,12 +445,6 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bn->T->nonil = 1;
 	bn->T->nil = 0;
 
-	if (!BAThdense(hb)) {
-		/* legacy */
-		BAT *x = VIEWcreate(hb, bn);
-		BBPunfix(bn->batCacheid);
-		bn = x;
-	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(hb->batCacheid);
 	return MAL_SUCCEED;
@@ -570,12 +552,6 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const wrd *h, const int *nbits, const ba
 	bn->T->nonil = 1;
 	bn->T->nil = 0;
 
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *x = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = x;
-	}
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

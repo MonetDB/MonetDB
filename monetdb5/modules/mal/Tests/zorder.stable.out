@@ -11,102 +11,23 @@ stdout of test 'zorder` in directory 'monetdb5/modules/mal` itself:
 # Found 7.751 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33081/
-function user.main():void;
-#testing the z-order library 
-    z := zorder.encode(0,0);
-    io.print(z);
-    z := zorder.encode(1,0);
-    io.print(z);
-    z := zorder.encode(0,1);
-    io.print(z);
-    z := zorder.encode(1,1);
-    io.print(z);
-    z := zorder.encode(2,0);
-    io.print(z);
-    z := zorder.encode(3,0);
-    io.print(z);
-    z := zorder.encode(2,1);
-    io.print(z);
-    z := zorder.encode(3,1);
-    io.print(z);
-    z1 := zorder.encode(0,2);
-    io.print(z1);
-    z2 := zorder.encode(1,2);
-    io.print(z2);
-    z3 := zorder.encode(0,3);
-    io.print(z3);
-    z4 := zorder.encode(1,3);
-    io.print(z4);
-    (x,y) := zorder.decode(z1);
-    io.print(x,y);
-    (x,y) := zorder.decode(z2);
-    io.print(x,y);
-    (x,y) := zorder.decode(z3);
-    io.print(x,y);
-    (x,y) := zorder.decode(z4);
-    io.print(x,y);
-    x := zorder.decode_x(z1);
-    y := zorder.decode_y(z1);
-    io.print(x,y);
-    x := zorder.decode_x(z2);
-    y := zorder.decode_y(z2);
-    io.print(x,y);
-    x := zorder.decode_x(z3);
-    y := zorder.decode_y(z3);
-    io.print(x,y);
-    x := zorder.decode_x(z4);
-    y := zorder.decode_y(z4);
-    io.print(x,y);
-    bx := bat.new(:oid,:int);
-    bat.append(bx,0);
-    bat.append(bx,1);
-    bat.append(bx,0);
-    bat.append(bx,1);
-    bat.append(bx,2);
-    bat.append(bx,3);
-    bat.append(bx,2);
-    bat.append(bx,3);
-    bat.append(bx,0);
-    bat.append(bx,1);
-    bat.append(bx,0);
-    bat.append(bx,1);
-    bat.append(bx,2);
-    bat.append(bx,3);
-    bat.append(bx,2);
-    bat.append(bx,3);
-    by := bat.new(:oid,:int);
-    bat.append(by,0);
-    bat.append(by,0);
-    bat.append(by,1);
-    bat.append(by,1);
-    bat.append(by,0);
-    bat.append(by,0);
-    bat.append(by,1);
-    bat.append(by,1);
-    bat.append(by,2);
-    bat.append(by,2);
-    bat.append(by,3);
-    bat.append(by,3);
-    bat.append(by,2);
-    bat.append(by,2);
-    bat.append(by,3);
-    bat.append(by,3);
-    io.print(bx,by);
-    bz := zorder.encode(bx,by);
-    io.print(bz);
-    (cx,cy) := zorder.decode(bz);
-    io.print(cx,cy);
-    dx := zorder.decode_x(bz);
-    dy := zorder.decode_y(bz);
-    io.print(dx,dy);
-# taking a slice 
-    bs := zorder.slice(1,1,3,3);
-    io.print(bs);
-    (dx,dy) := zorder.decode(bs);
-    io.print(dx,dy);
-end user.main;
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:33 >  
+# 09:46:33 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:33 >  
+
 [ 0@0 ]
 [ 1@0 ]
 [ 2@0 ]
@@ -119,16 +40,16 @@ end user.main;
 [ 9@0 ]
 [ 10@0 ]
 [ 11@0 ]
-[ 0, 2]
-[ 1, 2]
-[ 0, 3]
-[ 1, 3]
-[ 0, 2]
-[ 1, 2]
-[ 0, 3]
-[ 1, 3]
-#-------------------------#
-# h	t	t	  # name
+[ 0,	2	]
+[ 1,	2	]
+[ 0,	3	]
+[ 1,	3	]
+[ 0,	2	]
+[ 1,	2	]
+[ 0,	3	]
+[ 1,	3	]
+#--------------------------#
+# t	t	t  # name
 # void	int	int	  # type
 #-------------------------#
 [ 0@0,	  0,	  0	  ]

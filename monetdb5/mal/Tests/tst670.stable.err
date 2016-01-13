@@ -6,7 +6,12 @@ stderr of test 'tst670` in directory 'monetdb5/mal` itself:
 # 23:53:05 >  
 
 
-# 23:53:05 >  
-# 23:53:05 >  Done.
-# 23:53:05 >  
+# 09:29:49 >  
+# 09:29:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25470" "--port=39422"
+# 09:29:49 >  
+
+
+# 09:29:49 >  
+# 09:29:49 >  "Done."
+# 09:29:49 >  
 

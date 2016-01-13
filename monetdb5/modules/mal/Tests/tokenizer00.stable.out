@@ -10,47 +10,24 @@ stdout of test 'tokenizer00` in directory 'monetdb5/modules/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Detected 7.753 GiB (8324386816 bytes) main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://vili.ins.cwi.nl:31265/
-function user.main():void;
-#basic test for the tokenizer module 
-    tokenizer.open("test");
-    tokenizer.append("http://www.cwi.nl");
-    tokenizer.append("http://www.cwi.nl/");
-    tokenizer.append("http://www.cwi.nl/~lsidir");
-    tokenizer.append("http://www.cwi.nl/~mk");
-    tokenizer.append("http://www.cwi.nl/~mk");
-    tokenizer.append("http://www.ics.forth.gr");
-    tokenizer.append("http://www.ics.forth.gr/");
-    tokenizer.append("http://www.ics.forth.gr/~lsidir");
-    tokenizer.append("http://www.cook.gr/");
-    tokenizer.append("http://www.cook.gr/~lsidir");
-    tokenizer.append("http://www.cook.gr/~mk");
-    tokenizer.append("http://www.nocook.nl/~mk");
-    tokenizer.append("http://www.nocook.nl/");
-    tokenizer.append("ftp://thepiratebay.org");
-    id := 4@0:oid;
-    t := tokenizer.take(id);
-    io.print(t);
-    id := tokenizer.locate(t);
-    io.print(id);
-    d:bat[:oid,:oid]  := tokenizer.getIndex();
-    io.print(d);
-    level0:bat[:oid,:str]  := tokenizer.getLevel(0);
-    level1:bat[:oid,:str]  := tokenizer.getLevel(1);
-    level2:bat[:oid,:str]  := tokenizer.getLevel(2);
-    level3:bat[:oid,:str]  := tokenizer.getLevel(3);
-    io.print(level0);
-    io.print(level1);
-    io.print(level2);
-    io.print(level3);
-    cnt:bat[:oid,:wrd]  := tokenizer.getCount();
-    io.print(cnt);
-    cnt:bat[:oid,:wrd]  := tokenizer.getCardinality();
-    io.print(cnt);
-    tokenizer.close();
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35410/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26774/.s.monetdb.35410
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:46:32 >  
+# 09:46:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
+# 09:46:32 >  
+
 [ "http://www.ics.forth.gr/~lsidir/" ]
 [ 4@0 ]
 #-----------------#

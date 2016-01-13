@@ -1,0 +1,16 @@
+#testing flt/lng/int coercions
+
+b:= bat.new(:int);
+bat.append(b,1);
+bat.append(b,4);
+bat.append(b,9);
+io.print(b);
+
+f:= batcalc.flt(b);
+io.print(f);
+
+l:= batcalc.lng(b);
+io.print(l);
+
+i:= batcalc.int(f);
+io.print(i);

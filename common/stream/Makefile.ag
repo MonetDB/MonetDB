@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 ## Process this file with automake to produce Makefile.in
 
@@ -10,6 +10,7 @@ MTSAFE
 
 INCLUDES = $(zlib_CFLAGS) \
 		   $(BZ_CFLAGS) \
+		   $(liblzma_CFLAGS) \
 		   $(openssl_CFLAGS) \
 		   $(curl_CFLAGS)
 
@@ -19,6 +20,7 @@ lib_stream  =  {
 	LIBS = $(SOCKET_LIBS) \
 		   $(zlib_LIBS) \
 		   $(BZ_LIBS) \
+		   $(liblzma_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
 		   $(LTLIBICONV)

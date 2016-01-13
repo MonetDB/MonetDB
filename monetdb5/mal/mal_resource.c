@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten 
@@ -13,7 +13,7 @@
 #include "mal_private.h"
 
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if ((X) && (X)->mask) vol = (((X)->mask + cnt ) * (X)-> width); else vol = 0;
+#define hashinfo(X) if ((X) && (X) != (Hash *) 1 && (X)->mask) vol = (((X)->mask + cnt ) * (X)-> width); else vol = 0;
 
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */

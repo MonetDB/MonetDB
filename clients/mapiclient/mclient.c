@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -1080,6 +1080,8 @@ TESTrenderer(MapiHdl hdl)
 				 /* start or end with white space? */
 				 my_isspace(*s) ||
 				 my_isspace(s[l - 1]) ||
+				 /* timezone can have embedded comma */
+				 strcmp(tp, "timezone") == 0 ||
 				 /* a bunch of geom types */
 				 strcmp(tp, "curve") == 0 ||
 				 strcmp(tp, "geometry") == 0 ||

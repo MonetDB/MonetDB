@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -70,7 +70,7 @@
 static stream *conn = NULL;
 static char hostname[128];
 static char *filename = NULL;
-static int beat = 50;
+static int beat = 0;
 static int json = 0;
 static Mapi dbh;
 static MapiHdl hdl = NULL;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -41,7 +41,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	lhs = &stk->stk[pci->argv[0]];
 	name = *getArgReference_str(stk, pci, 1);
-	if (isIdentifier(name) < 0)
+	if (name == NULL || isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", IDENTIFIER_EXPECTED);
 	i = BBPindex(name);
 	if (i == 0)

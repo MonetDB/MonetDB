@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module mkey;
 
@@ -46,26 +46,26 @@ pattern bulk_rotate_xor_hash(h:wrd, nbits:int, v:any) :wrd
 address MKEYrotate_xor_hash
 comment "post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-command bulk_rotate_xor_hash(h:wrd, nbits:int, b:bat[:oid,:any_1])
-	:bat[:oid,:wrd]
+command bulk_rotate_xor_hash(h:wrd, nbits:int, b:bat[:any_1])
+	:bat[:wrd]
 address MKEYconstbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-pattern bulk_rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, v:any)
-	:bat[:oid,:wrd]
+pattern bulk_rotate_xor_hash(h:bat[:wrd], nbits:int, v:any)
+	:bat[:wrd]
 address MKEYbulkconst_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
-command bulk_rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1])
-	:bat[:oid,:wrd]
+command bulk_rotate_xor_hash(h:bat[:wrd], nbits:int, b:bat[:any_1])
+	:bat[:wrd]
 address MKEYbulk_rotate_xor_hash
 comment "pre:  h and b should be synced on head
          post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
 module batmkey;
 
-command hash(b:bat[:oid,:any_1]) :bat[:oid,:wrd]
+command hash(b:bat[:any_1]) :bat[:wrd]
 address MKEYbathash
 comment "calculate a hash value";

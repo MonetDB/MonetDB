@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -42,7 +42,7 @@
  * sorted), we produce a single group or copy the input group.
  *
  * If the input bats b and g are sorted, or if the subsorted flag is
- * set (only used by BATsubsort), we only need to compare consecutive
+ * set (only used by BATsort), we only need to compare consecutive
  * values.
  *
  * If the input bat b is sorted, but g is not, we can compare
@@ -499,18 +499,21 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			gn = BATcopy(g, g->htype, g->ttype, 0, TRANSIENT);
+			assert(g->htype == TYPE_void);
+			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			*groups = gn;
 			if (extents) {
-				en = BATcopy(e, e->htype, e->ttype, 0, TRANSIENT);
+				assert(e->htype == TYPE_void);
+				en = COLcopy(e, e->ttype, 0, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				hn = BATcopy(h, h->htype, h->ttype, 0, TRANSIENT);
+				assert(h->htype == TYPE_void);
+				hn = COLcopy(h, h->ttype, 0, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -851,7 +854,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
-		 * BATassertHeadProps and BATderiveHeadProps for
+		 * BATassertTailProps and BATderiveTailProps for
 		 * similar code;
 		 * we also exploit if g is clustered */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","

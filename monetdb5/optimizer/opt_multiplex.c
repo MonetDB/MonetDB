@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -184,9 +184,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * and interpretation overhead.
  */
 str
-OPTmultiplexSimple(Client cntxt)
+OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 {
-	MalBlkPtr mb= cntxt->curprg->def;
+	//MalBlkPtr mb= cntxt->curprg->def;
 	int i, doit=0;
 	InstrPtr p;
 	if(mb)

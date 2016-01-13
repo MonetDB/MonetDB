@@ -1,0 +1,9 @@
+b:= bat.new(:str);
+bat.append(b,"Mary Ann Walker");
+bat.append(b,"Annie Chapman");
+
+io.print(b);
+
+bc:= batxml.attribute("name",b);
+bj:= batxml.str(bc);
+io.print(bj);

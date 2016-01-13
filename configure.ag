@@ -5,7 +5,7 @@ dnl This Source Code Form is subject to the terms of the Mozilla Public
 dnl License, v. 2.0.  If a copy of the MPL was not distributed with this
 dnl file, You can obtain one at http://mozilla.org/MPL/2.0/.
 dnl
-dnl Copyright 2008-2015 MonetDB B.V.
+dnl Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 # Process this file with autoconf to produce a configure script.
 
@@ -2187,6 +2187,15 @@ if test x"$have_zlib" = x"yes" ; then
 	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library])
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
+
+PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma="yes"], [have_liblzma="no"; why_have_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+if test x"$have_liblzma" = x"yes" ; then
+	AC_SUBST(PKG_LIBLZMA, liblzma)
+fi
+if test x"$have_liblzma" = x"yes" ; then
+	AC_DEFINE(HAVE_LIBLZMA, 1, [Define if you have the lzma library])
+fi
+AM_CONDITIONAL(HAVE_LIBLZMA, test x"$have_liblzma" != xno)
 
 org_have_valgrind=no
 have_valgrind=$org_have_valgrind

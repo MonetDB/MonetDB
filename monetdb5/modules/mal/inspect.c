@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*
@@ -434,10 +434,10 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 
-	b = BATcopy(GDKkey, TYPE_void, GDKkey->ttype, 0, TRANSIENT);
+	b = COLcopy(GDKkey, GDKkey->ttype, 0, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
-	bn = BATcopy(GDKval, TYPE_void, GDKval->ttype, 0, TRANSIENT);
+	bn = COLcopy(GDKval, GDKval->ttype, 0, TRANSIENT);
 	if (bn == 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);

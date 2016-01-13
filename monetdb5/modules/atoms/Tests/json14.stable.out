@@ -18,14 +18,14 @@ stdout of test 'json14` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-function user.main():void;
-    j := json.new("[{\"boter\":1},{\"kaas\":2},{\"eieren\":3}]");
-    b := json.text(j);
-    io.print(b);
-    j := json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}");
-    b := json.text(j);
-    io.print(b);
-end user.main;
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:05:39 >  
+# 10:05:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
+# 10:05:39 >  
+
 [ "1 2 3" ]
 [ "3 2 3 4" ]
 

@@ -2,23 +2,23 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module inspect;
 
-pattern getDefinition(mod:str,fcn:str) :bat[:oid,:str] 
+pattern getDefinition(mod:str,fcn:str) :bat[:str] 
 address INSPECTgetDefinition
 comment "Returns a string representation of a specific function.";
 
-pattern getSignature(mod:str,fcn:str) :bat[:oid,:str] 
+pattern getSignature(mod:str,fcn:str) :bat[:str] 
 address INSPECTgetSignature
 comment "Returns the function signature(s).";
 
-pattern getAddress(mod:str,fcn:str) :bat[:oid,:str] 
+pattern getAddress(mod:str,fcn:str) :bat[:str] 
 address INSPECTgetAddress
 comment "Returns the function signature(s).";
 
-pattern getComment(mod:str,fcn:str) :bat[:oid,:str]
+pattern getComment(mod:str,fcn:str) :bat[:str]
 address INSPECTgetComment
 comment "Returns the function help information.";
 
@@ -26,19 +26,19 @@ pattern getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function.";
 
-pattern getKind():bat[:oid,:str]
+pattern getKind():bat[:str]
 address INSPECTgetkind
 comment "Obtain the instruction kind.";
-pattern getModule():bat[:oid,:str]
+pattern getModule():bat[:str]
 address INSPECTgetAllModules
 comment "Obtain the function name.";
-pattern getFunction():bat[:oid,:str]
+pattern getFunction():bat[:str]
 address INSPECTgetAllFunctions
 comment "Obtain the function name.";
-pattern getSignatures():bat[:oid,:str]
+pattern getSignatures():bat[:str]
 address INSPECTgetAllSignatures
 comment "Obtain the function signatures.";
-pattern getAddresses():bat[:oid,:str]
+pattern getAddresses():bat[:str]
 address INSPECTgetAllAddresses
 comment "Obtain the function address.";
 
@@ -59,17 +59,17 @@ comment "Return the concrete type of a variable (expression).";
 pattern equalType(l:any, r:any):bit
 address INSPECTequalType
 comment "Return true if both operands are of the same type";
-command getAtomNames():bat[:oid,:str] 
+command getAtomNames():bat[:str] 
 address INSPECTatom_names
 comment "Collect a BAT with the atom names.";
-command getAtomSuper():bat[:oid,:str] 
+command getAtomSuper():bat[:str] 
 address INSPECTatom_sup_names
 comment "Collect a BAT with the atom names.";
-command getAtomSizes():bat[:oid,:int] 
+command getAtomSizes():bat[:int] 
 address INSPECTatom_sizes
 comment "Collect a BAT with the atom sizes.";
 
-command getEnvironment() (k:bat[:oid,:str], v:bat[:oid,:str])
+command getEnvironment() (k:bat[:str], v:bat[:str])
 address INSPECTgetEnvironment
 comment "Collect the environment variables.";
 command getEnvironment(k:str) :str

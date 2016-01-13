@@ -1,0 +1,14 @@
+t := bat.new(:str);
+t := bat.append(t, "0123456789");
+
+x1 := batstr.string(t, 0);
+x2 := batstr.string(t, 3);
+x3 := batstr.string(t, 9);
+x4 := batstr.string(t, 12);
+x5 := batstr.string(t, -6);
+
+io.print(x1);
+io.print(x2);
+io.print(x3);
+io.print(x4);
+io.print(x5);

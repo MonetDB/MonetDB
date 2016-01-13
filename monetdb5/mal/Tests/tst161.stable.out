@@ -5,25 +5,32 @@ stdout of test 'tst161` in directory 'monetdb5/mal` itself:
 # 19:09:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=43514 --set sql_port=57655 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst161.mal </dev/null
 # 19:09:44 >  
 
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_src_mal', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30696/
-!SyntaxException:defConstant:constant coercion error from int to mytype
-#end l;
-function mytype.l():mytype;
-    return l := "0":mytype;
-end mytype.l;
-!TypeException:user.main[2]:'mytype.l' undefined in:     z:mytype := mytype.l();
-function user.main():void;
-# testing definition of new atom type based on ptr 
-    z := mytype.l();
-    io.print(z);
-end user.main;
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:37326/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5138/.s.monetdb.37326
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
-# 19:09:44 >  
-# 19:09:44 >  Done.
-# 19:09:44 >  
+Ready.
+
+# 14:57:21 >  
+# 14:57:21 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5138" "--port=37326"
+# 14:57:21 >  
+
+
+# 14:57:21 >  
+# 14:57:21 >  "Done."
+# 14:57:21 >  
 

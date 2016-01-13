@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -22,10 +22,6 @@ for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
     for tp2 in 8:dbl 1:bte 2:sht 4:int 4:wrd 8:lng; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
-command sum(b:bat[:oid,:${tp1#*:}], e:bat[:oid,:any_1]) :bat[:oid,:${tp2#*:}]
-address AGGRsum2_${tp2#*:}
-comment "Sum over grouped tail sum on ${tp1#*:}";
-
 command sum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
 		:bat[:oid,:${tp2#*:}]
 address AGGRsum3_${tp2#*:}
@@ -43,10 +39,6 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
 address AGGRsubsumcand_${tp2#*:}
 comment "Grouped sum aggregate with candidates list";
-
-command prod(b:bat[:oid,:${tp1#*:}], e:bat[:oid,:any_1]) :bat[:oid,:${tp2#*:}]
-address AGGRprod2_${tp2#*:}
-comment "Product over grouped tail product on ${tp1#*:}";
 
 command prod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
 		:bat[:oid,:${tp2#*:}]
@@ -70,10 +62,6 @@ for tp1 in 4:flt 8:dbl; do
     for tp2 in 4:flt 8:dbl; do
 	if [ ${tp1%:*} -le ${tp2%:*} ]; then
 	    cat <<EOF
-command sum(b:bat[:oid,:${tp1#*:}], e:bat[:oid,:any_1]) :bat[:oid,:${tp2#*:}]
-address AGGRsum2_${tp2#*:}
-comment "Sum over grouped tail sum on ${tp1#*:}";
-
 command sum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
 		:bat[:oid,:${tp2#*:}]
 address AGGRsum3_${tp2#*:}
@@ -86,10 +74,6 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
 address AGGRsubsumcand_${tp2#*:}
 comment "Grouped sum aggregate with candidates list";
-
-command prod(b:bat[:oid,:${tp1#*:}], e:bat[:oid,:any_1]) :bat[:oid,:${tp2#*:}]
-address AGGRprod2_${tp2#*:}
-comment "Product over grouped tail product on ${tp1#*:}";
 
 command prod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
 		:bat[:oid,:${tp2#*:}]
@@ -112,17 +96,9 @@ done
 # We may have to extend the signatures to all possible {void,oid} combos
 for tp in bte sht int wrd lng flt dbl; do
     cat <<EOF
-command avg(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
-address AGGRavg12_dbl
-comment "Grouped tail average on ${tp}";
-
 command avg(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on ${tp}";
-
-command avg(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) (:bat[:oid,:dbl],:bat[:oid,:wrd])
-address AGGRavg22_dbl
-comment "Grouped tail average on ${tp}, also returns count";
 
 command avg(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]) (:bat[:oid,:dbl],:bat[:oid,:wrd])
 address AGGRavg23_dbl
@@ -149,10 +125,6 @@ EOF
 	comm=${func#*:}
 	func=${func%:*}
 	cat <<EOF
-command ${func}(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
-address AGGR${func}2_dbl
-comment "Grouped tail ${comm} (sample/non-biased) on ${tp}";
-
 command ${func}(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGR${func}3_dbl
 comment "Grouped tail ${comm} (sample/non-biased) on ${tp}";
@@ -164,10 +136,6 @@ comment "Grouped ${comm} (sample/non-biased) aggregate";
 command sub${func}(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
 address AGGRsub${func}cand_dbl
 comment "Grouped ${comm} (sample/non-biased) aggregate with candidates list";
-
-command ${func}p(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
-address AGGR${func}p2_dbl
-comment "Grouped tail ${comm} (population/biased) on ${tp}";
 
 command ${func}p(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
 address AGGR${func}p3_dbl
@@ -186,12 +154,6 @@ EOF
 done
 
 cat <<EOF
-command min(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
-address AGGRmin2;
-
-command max(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
-address AGGRmax2;
-
 command min(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1]
 address AGGRmin3;
 
@@ -231,28 +193,9 @@ command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid
 address AGGRsubmaxcand_val
 comment "Grouped maximum aggregate with candidates list";
 
-command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
-	:bat[:oid,:wrd]
-address AGGRcount2
-comment "Grouped count";
-
 command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2],
 		ignorenils:bit) :bat[:oid,:wrd]
 address AGGRcount3;
-
-command size(b:bat[:oid,:bit], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
-address AGGRsize2nils
-comment "Grouped count of true values";
-
-command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:wrd]
-address AGGRcount2nils
-comment "Grouped count";
-
-command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:wrd]
-address AGGRcount2nils;
-
-command count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:wrd]
-address AGGRcount2nonils;
 
 command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2])
 	:bat[:oid,:wrd]

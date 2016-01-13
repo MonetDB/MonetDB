@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _SQL_SEMANTIC_H_
@@ -66,8 +66,8 @@ extern void sql_destroy_args(mvc *sql);		/* used in backend */
 /* SQL's parameters '?' (in prepare statements) and parameters of sql
  * functions and procedures are kept in the param list.  */
 
-extern void sql_add_param(mvc *sql, char *name, sql_subtype *st);	
-extern sql_arg *sql_bind_param(mvc *sql, char *name);
+extern void sql_add_param(mvc *sql, const char *name, sql_subtype *st);	
+extern sql_arg *sql_bind_param(mvc *sql, const char *name);
 /* once the type of the '?' parameters is known it's set using the set_type
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -28,6 +28,7 @@ stream *eventstream = 0;
 static int sqlProfiling = FALSE;
 static str myname = 0;	// avoid tracing the profiler module
 static int eventcounter = 0;
+static str prettify = "\n"; /* or ' ' for single line json output */
 
 static int TRACE_init = 0;
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
@@ -62,30 +63,16 @@ static struct{
 // The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer)
 {	
-	char buf[BUFSIZ], *s;
-	size_t len, lenhdr;
+	size_t len;
 
-	s = strchr(logbuffer,(int) ':');
-	if( s == NULL){
-		return;
-	}
 	len = strlen(logbuffer);
 
 	MT_lock_set(&mal_profileLock);
-	snprintf(buf,BUFSIZ,"%d",eventcounter);
-	strncpy(s+1, buf,strlen(buf));
-
 	if (eventstream) {
 	// upon request the log record is sent over the profile stream
-		if( eventcounter == 0){
-			snprintf(buf,BUFSIZ,"%s\n",monet_characteristics);
-			lenhdr = strlen(buf);
-			(void) mnstr_write(eventstream, buf, 1, lenhdr);
-		}
 		(void) mnstr_write(eventstream, logbuffer, 1, len);
 		(void) mnstr_flush(eventstream);
 	}
-	eventcounter++;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -130,7 +117,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	/* make profile event tuple  */
 	lognew();
-	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
+	logadd("{%s",prettify); // fill in later with the event counter
 
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
@@ -145,29 +132,29 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	/* there should be less than 10^6 == 1M usecs in 1 sec */
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
 	if( usrname)
-		logadd("\"user\":\"%s\",\n",usrname);
-	logadd("\"clk\":"LLFMT",\n",GDKusec());
-	logadd("\"ctime\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
-	logadd("\"thread\":%d,\n", THRgettid());
+		logadd("\"user\":\"%s\",%s",usrname, prettify);
+	logadd("\"clk\":"LLFMT",%s",GDKusec(),prettify);
+	logadd("\"ctime\":\"%s.%06ld\",%s", tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
-	logadd("\"function\":\"%s.%s\",\n", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
-	logadd("\"pc\":%d,\n", mb?getPC(mb,pci):0);
-	logadd("\"tag\":%d,\n", stk?stk->tag:0);
+	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
+	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
+	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
 
 	if( start){
-		logadd("\"state\":\"start\",\n");
+		logadd("\"state\":\"start\",%s", prettify);
 		// determine the Estimated Time of Completion
 		if ( pci->calls){
-			logadd("\"usec\":"LLFMT",\n", pci->totticks/pci->calls);
+			logadd("\"usec\":"LLFMT",%s", pci->totticks/pci->calls, prettify);
 		} else{
-			logadd("\"usec\":"LLFMT",\n", pci->ticks);
+			logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 		}
 	} else {
-		logadd("\"state\":\"done\",\n");
-		logadd("\"usec\":"LLFMT",\n", pci->ticks);
+		logadd("\"state\":\"done\",%s", prettify);
+		logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 	}
-	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
-	logadd("\"size\":"LLFMT ",\n", pci? pci->wbytes/1024/1024:0);	// result size
+	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
+	logadd("\"size\":"LLFMT ",%s", pci? pci->wbytes/1024/1024:0, prettify);	// result size
 
 #ifdef NUMAprofiling
 		logadd("\"numa\":[");
@@ -175,21 +162,21 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		for( i= pci->retc ; i < pci->argc; i++)
 		if( !isVarConstant(mb, getArg(pci,i)) && mb->var[getArg(pci,i)]->worker)
 			logadd("%c %d", (i?',':' '), mb->var[getArg(pci,i)]->worker);
-		logadd("],\n");
+		logadd("],%s", prettify);
 #endif
 
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("\"inblock\":%ld,%s", infoUsage.ru_inblock - prevUsage.ru_inblock, prettify);
 	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		logadd("\"oublock\":%ld,%s", infoUsage.ru_oublock - prevUsage.ru_oublock, prettify);
 	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("\"majflt\":%ld,%s", infoUsage.ru_majflt - prevUsage.ru_majflt, prettify);
 	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("\"nswap\":%ld,s%sn", infoUsage.ru_nswap - prevUsage.ru_nswap, prettify);
 	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		logadd("\"nvcsw\":%ld,%s", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw, prettify);
 	prevUsage = infoUsage;
 #endif
 
@@ -208,7 +195,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		if( *c){
 			stmtq = mal_quote(c, strlen(c));
 			if (stmtq != NULL) {
-				logadd("\"stmt\":\"%s\",\n", stmtq);
+				logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
 				//GDKfree(stmtq);
 			}
 		} 
@@ -219,7 +206,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		stmt = shortStmtRendering(mb, stk, pci);
 		stmtq = mal_quote(stmt, strlen(stmt));
 		if (stmtq != NULL) {
-			logadd("\"short\":\"%s\",\n", stmtq);
+			logadd("\"short\":\"%s\",%s", stmtq, prettify);
 			GDKfree(stmtq);
 		} 
 		GDKfree(stmt);
@@ -246,9 +233,9 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		}
 //#define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
-		logadd("\"prereq\":%s],\n", prereq);
+		logadd("\"prereq\":%s],%s", prereq, prettify);
 #else
-		logadd("\"prereq\":%s]\n", prereq);
+		logadd("\"prereq\":%s]%s", prereq, prettify);
 #endif
 		
 /* EXAMPLE MAL statement argument decomposition
@@ -288,7 +275,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 				GDKfree(stmtq);
 			}
 			GDKfree(tname);
-			logadd("}%s\n", (j< pci->argc-1?",":""));
+			logadd("}%s%s", (j< pci->argc-1?",":""), prettify);
 		}
 #endif
 	}
@@ -354,7 +341,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 	// identify core processing
 	len += snprintf(cpuload, BUFSIZ, "[ ");
 	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
+		len +=snprintf(cpuload + len, BUFSIZ - len, "%c %.2f", (cpu?',':' '), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
 	return 0;
@@ -381,7 +368,7 @@ profilerHeartbeatEvent(char *alter)
 	clk = clock.tv_sec;
 	
 	lognew();
-	logadd("{\n\"event\":         ,\n"); // fill in later with the event counter
+	logadd("{%s",prettify); // fill in later with the event counter
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
@@ -392,24 +379,25 @@ profilerHeartbeatEvent(char *alter)
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"time\":\"%s.%06ld\",\n", tbuf+11, (long)clock.tv_usec);
-	logadd("\"rss\":"SZFMT ",\n", MT_getrss()/1024/1024);
+	logadd("\"user\":\"heartbeat\",%s", prettify);
+	logadd("\"ctime\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,\n", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("\"inblock\":%ld,%s", infoUsage.ru_inblock - prevUsage.ru_inblock, prettify);
 	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,\n", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		logadd("\"oublock\":%ld,%s", infoUsage.ru_oublock - prevUsage.ru_oublock, prettify);
 	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,\n", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("\"majflt\":%ld,%s", infoUsage.ru_majflt - prevUsage.ru_majflt, prettify);
 	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,\n", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("\"nswap\":%ld,%s", infoUsage.ru_nswap - prevUsage.ru_nswap, prettify);
 	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,\n", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		logadd("\"nvcsw\":%ld,%s", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw, prettify);
 	prevUsage = infoUsage;
 #endif
-	logadd("\"state\":\"%s\",\n",alter);
-	logadd("\"cpuload\":\"%s\",\n",cpuload);
+	logadd("\"state\":\"%s\",%s",alter,prettify);
+	logadd("\"cpuload\":\"%s\",%s",cpuload,prettify);
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }
@@ -422,7 +410,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 	if (getModuleId(pci) == myname) // ignore profiler commands from monitoring
 		return;
 
-	if( sqlProfiling)
+	if( sqlProfiling && !start )
 		cachedProfilerEvent(mb, stk, pci);
 		
 	if( eventstream) {
@@ -436,7 +424,12 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 
 /* The first scheme dumps the events
  * on a stream (and in the pool)
+ * The mode encodes two flags: 
+ * - showing all running instructions
+ * - single line json
  */
+#define PROFSHOWRUNNING	1
+#define PROFSINGLELINE 2
 str
 openProfilerStream(stream *fd, int mode)
 {
@@ -450,13 +443,16 @@ openProfilerStream(stream *fd, int mode)
 	if (myname == 0){
 		myname = putName("profiler", 8);
 		eventcounter = 0;
+		logjsonInternal(monet_characteristics);
 	}
 	if( eventstream)
 		closeProfilerStream();
 	malProfileMode = -1;
 	eventstream = fd;
+	prettify = (mode & PROFSINGLELINE) ? " ": "\n";
+
 	/* show all in progress instructions for stethoscope startup */
-	if( mode > 0){
+	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
 			if ( c->active ) 
@@ -496,6 +492,7 @@ startProfiler(void)
 	malProfileMode = 1;
 	sqlProfiling = TRUE;
 	MT_lock_unset(&mal_profileLock);
+	logjsonInternal(monet_characteristics);
 
 	return MAL_SUCCEED;
 }
@@ -552,27 +549,27 @@ static BAT *TRACE_id_majflt = 0;
 static BAT *TRACE_id_nvcsw = 0;
 static BAT *TRACE_id_stmt = 0;
 
-
-void
+int
 TRACEtable(BAT **r)
 {
 	if (TRACE_init == 0)
-		return ;       /* not initialized */
+		return -1;       /* not initialized */
 	MT_lock_set(&mal_profileLock);
-	r[0] = BATcopy(TRACE_id_event, TYPE_void, TRACE_id_event->ttype, 0, TRANSIENT);
-	r[1] = BATcopy(TRACE_id_time, TYPE_void, TRACE_id_time->ttype, 0, TRANSIENT);
-	r[2] = BATcopy(TRACE_id_pc, TYPE_void, TRACE_id_pc->ttype, 0, TRANSIENT);
-	r[3] = BATcopy(TRACE_id_thread, TYPE_void, TRACE_id_thread->ttype, 0, TRANSIENT);
-	r[4] = BATcopy(TRACE_id_ticks, TYPE_void, TRACE_id_ticks->ttype, 0, TRANSIENT);
-	r[5] = BATcopy(TRACE_id_rssMB, TYPE_void, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	r[6] = BATcopy(TRACE_id_tmpspace, TYPE_void, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
-	r[7] = BATcopy(TRACE_id_inblock, TYPE_void, TRACE_id_inblock->ttype, 0, TRANSIENT);
-	r[8] = BATcopy(TRACE_id_oublock, TYPE_void, TRACE_id_oublock->ttype, 0, TRANSIENT);
-	r[9] = BATcopy(TRACE_id_minflt, TYPE_void, TRACE_id_minflt->ttype, 0, TRANSIENT);
-	r[10] = BATcopy(TRACE_id_majflt, TYPE_void, TRACE_id_majflt->ttype, 0, TRANSIENT);
-	r[11] = BATcopy(TRACE_id_nvcsw, TYPE_void, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
-	r[12] = BATcopy(TRACE_id_stmt, TYPE_void, TRACE_id_stmt->ttype, 0, TRANSIENT);
+	r[0] = COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
+	r[1] = COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
+	r[2] = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
+	r[3] = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, 0, TRANSIENT);
+	r[4] = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, 0, TRANSIENT);
+	r[5] = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+	r[6] = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+	r[7] = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, 0, TRANSIENT);
+	r[8] = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, 0, TRANSIENT);
+	r[9] = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, 0, TRANSIENT);
+	r[10] = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, 0, TRANSIENT);
+	r[11] = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+	r[12] = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
+	return 13;
 }
 
 BAT *
@@ -581,31 +578,31 @@ getTrace(const char *nme)
 	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "event") == 0)
-		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "time") == 0)
-		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "pc") == 0)
-		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "thread") == 0)
-		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "usec") == 0)
-		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "rssMB") == 0)
-		return BATcopy(TRACE_id_rssMB, TRACE_id_rssMB->htype, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "tmpspace") == 0)
-		return BATcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->htype, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "reads") == 0)
-		return BATcopy(TRACE_id_inblock, TRACE_id_inblock->htype, TRACE_id_inblock->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "writes") == 0)
-		return BATcopy(TRACE_id_oublock, TRACE_id_oublock->htype, TRACE_id_oublock->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "minflt") == 0)
-		return BATcopy(TRACE_id_minflt, TRACE_id_minflt->htype, TRACE_id_minflt->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "majflt") == 0)
-		return BATcopy(TRACE_id_majflt, TRACE_id_majflt->htype, TRACE_id_majflt->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "nvcsw") == 0)
-		return BATcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->htype, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
 	if (strcmp(nme, "stmt") == 0)
-		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0, TRANSIENT);
+		return COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
 	return NULL;
 }
 
@@ -985,6 +982,12 @@ void setHeartbeat(int delay)
 	if (delay <= 10)
 		hbdelay =10;
 	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
+}
+
+void initProfiler(void)
+{
+	if( mal_trace)
+		openProfilerStream(mal_clients[0].fdout,0);
 }
 
 void initHeartbeat(void)

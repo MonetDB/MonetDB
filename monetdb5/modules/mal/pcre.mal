@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 atom pcre;
 command index(pat:pcre, s:str) :int
@@ -35,7 +35,7 @@ comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replaceme
 	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".
 	   Returns the replaced string, or if no matches found, the original string.";
 
-command replace(orig:bat[:oid,:str],pat:str,repl:str,flag:str):bat[:oid,:str]
+command replace(orig:bat[:str],pat:str,repl:str,flag:str):bat[:str]
 address PCREreplace_bat_wrap;
 
 command pcre_quote(s:str):str
@@ -66,16 +66,16 @@ command algebra.not_ilike(s:str, pat:str):bit address PCREnotilike2;
 
 module batalgebra;
 
-command batalgebra.like(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit] address BATPCRElike;
-command batalgebra.like(s:bat[:oid,:str], pat:str):bat[:oid,:bit] address BATPCRElike2;
-command batalgebra.not_like(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit] address BATPCREnotlike;
-command batalgebra.not_like(s:bat[:oid,:str], pat:str):bat[:oid,:bit] address BATPCREnotlike2;
-command batalgebra.ilike(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit] address BATPCREilike;
-command batalgebra.ilike(s:bat[:oid,:str], pat:str):bat[:oid,:bit] address BATPCREilike2;
-command batalgebra.not_ilike(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit] address BATPCREnotilike;
-command batalgebra.not_ilike(s:bat[:oid,:str], pat:str):bat[:oid,:bit] address BATPCREnotilike2;
+command batalgebra.like(s:bat[:str], pat:str, esc:str):bat[:bit] address BATPCRElike;
+command batalgebra.like(s:bat[:str], pat:str):bat[:bit] address BATPCRElike2;
+command batalgebra.not_like(s:bat[:str], pat:str, esc:str):bat[:bit] address BATPCREnotlike;
+command batalgebra.not_like(s:bat[:str], pat:str):bat[:bit] address BATPCREnotlike2;
+command batalgebra.ilike(s:bat[:str], pat:str, esc:str):bat[:bit] address BATPCREilike;
+command batalgebra.ilike(s:bat[:str], pat:str):bat[:bit] address BATPCREilike2;
+command batalgebra.not_ilike(s:bat[:str], pat:str, esc:str):bat[:bit] address BATPCREnotilike;
+command batalgebra.not_ilike(s:bat[:str], pat:str):bat[:bit] address BATPCREnotilike2;
 
-command algebra.likesubselect(b:bat[:oid,:str], s:bat[:oid,:oid], pat:str, esc:str, caseignore:bit, anti:bit) :bat[:oid,:oid]
+command algebra.likesubselect(b:bat[:str], s:bat[:oid], pat:str, esc:str, caseignore:bit, anti:bit) :bat[:oid]
 address PCRElikesubselect2
 comment "Select all head values of the first input BAT for which the
 	tail value is \"like\" the given (SQL-style) pattern and for
@@ -85,34 +85,34 @@ comment "Select all head values of the first input BAT for which the
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
-command algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid]
+command algebra.likesubselect(b:bat[:str], cand:bat[:oid], pat:str, esc:str, anti:bit) :bat[:oid]
 address PCRElikesubselect3;
 
-command algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid]
+command algebra.ilikesubselect(b:bat[:str], cand:bat[:oid], pat:str, esc:str, anti:bit) :bat[:oid]
 address PCRElikesubselect1;
 
-command algebra.likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, anti:bit) :bat[:oid,:oid]
+command algebra.likesubselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
 address PCRElikesubselect5;
 
-command algebra.ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, anti:bit) :bat[:oid,:oid]
+command algebra.ilikesubselect(b:bat[:str], cand:bat[:oid], pat:str, anti:bit) :bat[:oid]
 address PCRElikesubselect4;
 
-command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command algebra.likesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address LIKEsubjoin
 comment "Join the string bat L with the pattern bat R
 with optional candidate lists SL and SR using pattern escape string ESC
 and doing a case sensitive match.
 The result is two aligned bats with oids of matching rows.";
 
-command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],esc:str,sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],esc:str,sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ILIKEsubjoin
 comment "Join the string bat L with the pattern bat R
 with optional candidate lists SL and SR using pattern escape string ESC
 and doing a case insensitive match.
 The result is two aligned bats with oids of matching rows.";
 
-command algebra.likesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command algebra.likesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address LIKEsubjoin1;
 
-command algebra.ilikesubjoin(l:bat[:oid,:str],r:bat[:oid,:str],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command algebra.ilikesubjoin(l:bat[:str],r:bat[:str],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ILIKEsubjoin1;

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -348,16 +348,16 @@ for func in sum:sum prod:product; do
 	for tp2 in 1:bte 2:sht 4:int 4:wrd 8:lng 8:dbl; do
 	    if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 		cat <<EOF
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}]) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],nil_if_empty:bit) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],s:bat[:oid,:oid]) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],s:bat[:oid,:oid],nil_if_empty:bit) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
 
@@ -370,16 +370,16 @@ EOF
 	for tp2 in 4:flt 8:dbl; do
 	    if [ ${tp1%:*} -le ${tp2%:*} ]; then
 		cat <<EOF
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}]) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],nil_if_empty:bit) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],s:bat[:oid,:oid]) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid]) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
-pattern ${func%:*}(b:bat[:oid,:${tp1#*:}],s:bat[:oid,:oid],nil_if_empty:bit) :${tp2#*:}
+pattern ${func%:*}(b:bat[:${tp1#*:}],s:bat[:oid],nil_if_empty:bit) :${tp2#*:}
 address CMDBAT${func%:*}
 comment "Calculate aggregate ${func#*:} of B with candidate list.";
 

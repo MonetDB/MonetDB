@@ -1,120 +1,35 @@
 stdout of test 'tst031` in directory 'monetdb5/mal` itself:
 
 
-# 07:58:41 >  
-# 07:58:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst031.mal </dev/null
-# 07:58:41 >  
+# 11:38:02 >  
+# 11:38:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32718" "--set" "mapi_usock=/var/tmp/mtest-13830/.s.monetdb.32718" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 11:38:02 >  
 
-# MonetDB server v5.5.0, based on kernel v1.23.0
-# Serving database 'mTests_src_mal'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:30373/
-## testing the void semantics, both replace and delete fail (void != oid)
-#b:= bat.new(:void,:int);
-#bat.append(b,0);
-#bat.append(b,1);
-#bat.append(b,2);
-#io.print(b);
-##k:= 1@0;
-##bat.replace(b,k,3);
-##io.print(b);
-##bat.delete(b,2@0);
-##io.print(b);
-#
-## The oid cases, they should start as a vid column, both replace and delete work
-#io.print("oid as a vid column");
-#c:= bat.new(:oid,:int);
-#bat.insert(c,0@0,0);
-#bat.insert(c,1@0,1);
-#bat.insert(c,2@0,2);
-#io.print(c);
-#k:= 1@0;
-#bat.replace(c,k,3);
-#io.print(c);
-#bat.delete(c,2@0);
-#io.print(c);
-#
-## The oid cases using nils should fail on replace /delete
-#io.print("inserting nil's in a oid column");
-#d:= bat.new(:oid,:int);
-#bat.insert(d,nil:oid,0);
-#bat.insert(d,nil:oid,1);
-#bat.insert(d,nil:oid,2);
-#io.print(d);
-#k:= 1@0;
-#bat.replace(d,k,3);
-#io.print(d);
-#bat.delete(d,2@0);
-#io.print(d);
-#
-## can we handle a vid column starting differently
-#io.print("double oid as a vid column starting at 3,5");
-#e:= bat.new(:oid,:oid);
-#bat.insert(e,3@0,5@0);
-#bat.append(e,6@0);
-#io.print(e);
-#
-## the void,void bat they still consume space
-## shouldn't that be avoided or limited to at most 1 pair?
-#io.print("void,void bat");
-#f:= bat.new(:void,:void);
-#bat.insert(f,nil:void,nil:void);
-#bat.insert(f,nil:void,nil:void);
-#io.print(f);
-#
-#
-function user.main():void;
-# testing the void semantics, both replace and delete fail (void != oid) 
-    b := bat.new(:oid,:int);
-    bat.append(b,0);
-    bat.append(b,1);
-    bat.append(b,2);
-    io.print(b);
-#k:= 1@0; 
-#bat.replace(b,k,3); 
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32718/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13830/.s.monetdb.32718
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:38:03 >  
+# 11:38:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13830" "--port=32718"
+# 11:38:03 >  
+
 #io.print(b); 
-#bat.delete(b,2@0); 
-#io.print(b); 
-# The oid cases, they should start as a vid column, both replace and delete work 
-    io.print("oid as a vid column");
-    c := bat.new(:oid,:int);
-    bat.append(c,0);
-    bat.append(c,1);
-    bat.append(c,2);
-    io.print(c);
-    k := 1@0;
-    bat.replace(c,k,3);
-    io.print(c);
-    bat.delete(c,2@0);
-    io.print(c);
-# The oid cases using nils should fail on replace /delete 
-    io.print("appending nil's in a oid column");
-    d := bat.new(:oid,:int);
-    bat.append(d,0);
-    bat.append(d,1);
-    bat.append(d,2);
-    io.print(d);
-    k := 1@0;
-    bat.replace(d,k,3);
-    io.print(d);
-    bat.delete(d,2@0);
-    io.print(d);
-# can we handle a vid column starting differently 
-    io.print("double oid as a vid column starting at 3,5");
-    e := bat.new(:oid,:oid);
-    bat.append(e,5@0);
-    bat.append(e,6@0);
-    io.print(e);
-# the void,void bat they still consume space 
-# shouldn't that be avoided or limited to at most 1 pair? 
-    io.print("void,void bat");
-    f := bat.new(:oid,:oid);
-    bat.append(f,nil:oid);
-    bat.append(f,nil:oid);
-    io.print(f);
-end user.main;
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

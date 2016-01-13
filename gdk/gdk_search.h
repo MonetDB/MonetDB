@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _GDK_SEARCH_H_
@@ -166,7 +166,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
+		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
 			HASHloop_str((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -178,7 +178,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
+		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
 			HASHloop((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -190,7 +190,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if ((y).b->T->hash || BAThash((y).b, 0) == GDK_SUCCEED) { \
+		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
 			HASHloop_##TYPE((y), (y).b->T->hash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -216,9 +216,10 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  * doing or want to keep the hash. */
 #define HASHins(b,i,v)							\
 	do {								\
-		if (((i) & 1023) == 1023 && HASHgonebad((b), (v)))	\
+		if ((b)->T->hash == (Hash *) 1 ||			\
+		    (((i) & 1023) == 1023 && HASHgonebad((b), (v)))) {	\
 			HASHremove(b);					\
-		else {							\
+		} else {						\
 			BUN _c = HASHprobe((b)->T->hash, (v));		\
 			HASHputall((b)->T->hash, (i), _c);		\
 		}							\

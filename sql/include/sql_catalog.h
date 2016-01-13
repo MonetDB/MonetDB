@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -50,10 +50,11 @@
 #define OWNER_DEPENDENCY 9
 #define INDEX_DEPENDENCY 10
 #define FKEY_DEPENDENCY 11
-#define TYPE_DEPENDENCY 11
 #define SEQ_DEPENDENCY 12
 #define PROC_DEPENDENCY 13
 #define BEDROPPED_DEPENDENCY 14		/*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
+#define TYPE_DEPENDENCY 15
+
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
@@ -108,7 +109,7 @@
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
 
-extern char *TID;
+extern const char *TID;
 
 typedef enum temp_t { 
 	SQL_PERSIST = 0,
@@ -561,6 +562,7 @@ extern node *find_sql_schema_node(sql_trans *t, int id);
 
 extern sql_type *find_sql_type(sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
+extern node *find_sql_type_node(sql_schema *s, int id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
 extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);

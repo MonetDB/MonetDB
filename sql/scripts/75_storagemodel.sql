@@ -2,17 +2,17 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2008-2015 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
 -- footprint of the persistent tables and the maximum playground used
 -- when indices are introduced upon them.
--- By chancing the storagemodelinput table directly, the footprint for
+-- By changing the storagemodelinput table directly, the footprint for
 -- yet to be loaded databases can be assessed.
 
 -- The actual storage footprint of an existing database can be
--- obtained by the table procuding function storage()
+-- obtained by the table producing function storage()
 -- It represents the actual state of affairs, i.e. storage on disk
 -- of columns and foreign key indices, and possible temporary hash indices.
 -- For strings we take a sample to determine their average length.

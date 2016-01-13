@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* This file is included multiple times (from sql_cast.c).
@@ -91,14 +91,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	if (!BAThdense(b)) {
-		/* legacy */
-		BAT *b2 = VIEWcreate(b, dst);
-		BBPunfix(dst->batCacheid);
-		dst = b2;
-	} else {
-		BATseqbase(dst, b->hseqbase);
-	}
+	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

@@ -1,9 +1,0 @@
-b := bat.new(:oid, :bte);
-b := bat.append(b, 100:bte);
-b := bat.append(b, 105:bte);
-b := bat.append(b, 100:bte);
-b := bat.append(b, 105:bte);
-b := bat.append(b, 115:bte);
-io.print(b);
-e := algebra.project(b,0@0);
-io.print(e);

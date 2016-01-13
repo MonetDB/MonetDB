@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* stream
@@ -90,6 +90,9 @@
 #ifdef HAVE_LIBBZ2
 #include <bzlib.h>
 #endif
+#ifdef HAVE_LIBLZMA
+#include <lzma.h>
+#endif
 
 #ifdef HAVE_ICONV
 #ifdef HAVE_ICONV_H
@@ -173,6 +176,7 @@ struct stream {
 	int (*fgetpos) (stream *s, lng *p);
 	int (*fsetpos) (stream *s, lng p);
 	void (*update_timeout) (stream *s);
+	int (*isalive) (stream *s);
 };
 
 int
@@ -516,6 +520,17 @@ mnstr_fsetpos(stream *s, lng p)
 	return 0;
 }
 
+int
+mnstr_isalive(stream *s)
+{
+	if (s == NULL)
+		return 0;
+	if (s->errnr)
+		return -1;
+	if (s->isalive)
+		return (*s->isalive)(s);
+	return 1;
+}
 
 char *
 mnstr_name(stream *s)
@@ -687,6 +702,7 @@ create_stream(const char *name)
 	s->timeout = 0;
 	s->timeout_func = NULL;
 	s->update_timeout = NULL;
+	s->isalive = NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
@@ -1376,6 +1392,295 @@ open_bzwastream(const char *filename, const char *mode)
 #endif
 
 /* ------------------------------------------------------------------ */
+/* streams working on a lzma-compressed disk file */
+
+#ifdef HAVE_LIBLZMA
+#define XZBUFSIZ 64*1024
+typedef struct xz_stream {
+	FILE *fp;
+	lzma_stream strm;
+	int  todo;
+	uint8_t buf[XZBUFSIZ]; 
+} xz_stream;
+
+static ssize_t
+stream_xzread(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	xz_stream *xz = s->stream_data.p;
+	size_t size = elmsize * cnt, origsize = size, ressize = 0;
+	uint8_t *outbuf = buf;
+	lzma_action action = LZMA_RUN;
+
+	if (xz == NULL) {
+		s->errnr = MNSTR_READ_ERROR;
+		return -1;
+	}
+
+	xz->strm.next_in = xz->buf;
+	xz->strm.avail_in = xz->todo;
+	xz->strm.next_out = outbuf;
+	xz->strm.avail_out = size;
+	while (size && (xz->strm.avail_in || !feof(xz->fp))) {
+		lzma_ret ret;
+		size_t sz = (size>XZBUFSIZ) ? XZBUFSIZ : size;
+
+		if (!xz->strm.avail_in &&
+		    (xz->strm.avail_in = fread(xz->buf, 1, sz, xz->fp)) == 0) {
+			s->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
+		xz->strm.next_in = xz->buf;
+		if (feof(xz->fp))
+			action = LZMA_FINISH;
+		ret = lzma_code(&xz->strm, action);
+		if (xz->strm.avail_out == 0 || ret == LZMA_STREAM_END) {
+			origsize -= xz->strm.avail_out; /* remaining space */
+			xz->todo = xz->strm.avail_in;
+			if (xz->todo > 0)
+				memmove(xz->buf, xz->strm.next_in, xz->todo);
+			outbuf[origsize] = 0; /* add EOS */
+			ressize = origsize;
+			break;
+		}
+		if (ret != LZMA_OK) {
+			s->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
+	}
+	if (ressize) {
+#ifdef WIN32
+		/* on Windows when in text mode, convert \r\n line
+		 * endings to \n */
+		if (s->type == ST_ASCII) {
+			char *p1, *p2, *pe;
+
+			p1 = buf;
+			pe = p1 + ressize;
+			while (p1 < pe && *p1 != '\r')
+				p1++;
+			p2 = p1;
+			while (p1 < pe) {
+				if (*p1 == '\r' && p1[1] == '\n')
+					ressize--;
+				else
+					*p2++ = *p1;
+				p1++;
+			}
+		}
+#endif
+		return (ssize_t) (ressize / elmsize);
+	}
+	return 0;
+}
+
+static ssize_t
+stream_xzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	xz_stream *xz = s->stream_data.p;
+	size_t size = elmsize * cnt;
+	lzma_action action = LZMA_RUN;
+
+	if (xz == NULL) {
+		s->errnr = MNSTR_WRITE_ERROR;
+		return -1;
+	}
+
+	xz->strm.next_in = buf;
+	xz->strm.avail_in = size;
+	xz->strm.next_out = xz->buf;
+	xz->strm.avail_out = XZBUFSIZ;
+
+	size = 0;
+	while (xz->strm.avail_in) {
+		size_t sz = 0, isz = xz->strm.avail_in;
+
+		lzma_ret ret = lzma_code(&xz->strm, action);
+		if (xz->strm.avail_out == 0 || ret != LZMA_OK) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		}
+		sz = XZBUFSIZ - xz->strm.avail_out;
+		if (fwrite(xz->buf, 1, sz, xz->fp) != sz) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		}
+		assert(xz->strm.avail_in == 0);
+		size += isz;
+		xz->strm.next_out = xz->buf;
+		xz->strm.avail_out = XZBUFSIZ;
+	}
+	if (size) 
+		return (ssize_t) (size / elmsize);
+	return (ssize_t) cnt;
+}
+
+static void
+stream_xzclose(stream *s)
+{
+	xz_stream *xz = s->stream_data.p;
+
+	if (xz) {
+		if (s->access == ST_WRITE) {
+			lzma_ret ret = lzma_code(&xz->strm, LZMA_FINISH);
+
+			if (xz->strm.avail_out && ret == LZMA_STREAM_END) {
+				size_t sz = XZBUFSIZ - xz->strm.avail_out;
+				if (fwrite(xz->buf, 1, sz, xz->fp) != sz) 
+					s->errnr = MNSTR_WRITE_ERROR;
+			}
+		}
+		fflush(xz->fp);
+		fclose(xz->fp);
+		lzma_end(&xz->strm);
+		free(xz);
+	}
+	s->stream_data.p = NULL;
+}
+
+static int
+stream_xzflush(stream *s)
+{
+	xz_stream *xz = s->stream_data.p;
+
+	if (xz == NULL)
+		return -1;
+	if (s->access == ST_WRITE && fflush(xz->fp)) 
+		return -1;
+	return 0;
+}
+
+static stream *
+open_xzstream(const char *filename, const char *flags)
+{
+	stream *s;
+	xz_stream *xz;
+	uint32_t preset = 0;
+
+	if ((xz = malloc(sizeof(struct xz_stream))) == NULL)
+		return NULL;
+	if (xz)
+		memset(xz, 0, sizeof(xz_stream));
+	if (((flags[0] == 'r' && 
+	      lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK)) ||
+	     (flags[0] == 'w' &&
+	      lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64) != LZMA_OK)) {
+		free(xz);
+		return NULL;
+	}
+	if ((s = create_stream(filename)) == NULL) {
+		free(xz);
+		return NULL;
+	}
+#ifdef HAVE__WFOPEN
+	{_
+		wchar_t *wfname = utf8towchar(filename);
+		wchar_t *wflags = utf8towchar(flags);
+		if (wfname != NULL) 
+			xz->fp = _wfopen(wfname, wflags);
+		} else
+			xz->fp = NULL;
+		if (wfname)
+			free(wfname);
+		if (wflags)
+			free(wflags);
+	}
+#else
+	{
+		char *fname = cvfilename(filename);
+		if (fname) {
+			xz->fp = fopen(fname, flags);
+			free(fname);
+		} else
+			xz->fp = NULL;
+	}
+#endif
+	if (xz->fp == NULL) {
+		destroy(s);
+		free(xz);
+		return NULL;
+	}
+	s->read = stream_xzread;
+	s->write = stream_xzwrite;
+	s->close = stream_xzclose;
+	s->flush = stream_xzflush;
+	s->stream_data.p = (void *) xz;
+	if (flags[0] == 'r' && flags[1] != 'b') {
+		char buf[UTF8BOMLENGTH];
+		if (stream_xzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
+		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+			s->isutf8 = 1;
+		} else {
+			rewind(xz->fp);
+		}
+	}
+	return s;
+}
+
+static stream *
+open_xzrstream(const char *filename)
+{
+	stream *s;
+
+	if ((s = open_xzstream(filename, "rb")) == NULL)
+		return NULL;
+	s->type = ST_BIN;
+	if (s->errnr == MNSTR_NO__ERROR &&
+	    stream_xzread(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
+		stream_xzclose(s);
+		destroy(s);
+		return NULL;
+	}
+	return s;
+}
+
+static stream *
+open_xzwstream(const char *filename, const char *mode)
+{
+	stream *s;
+
+	if ((s = open_xzstream(filename, mode)) == NULL)
+		return NULL;
+	s->access = ST_WRITE;
+	s->type = ST_BIN;
+	if (s->errnr == MNSTR_NO__ERROR &&
+	    stream_xzwrite(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
+		stream_xzclose(s);
+		destroy(s);
+		return NULL;
+	}
+	return s;
+}
+
+static stream *
+open_xzrastream(const char *filename)
+{
+	stream *s;
+
+	if ((s = open_xzstream(filename, "rb")) == NULL)
+		return NULL;
+	s->type = ST_ASCII;
+	return s;
+}
+
+static stream *
+open_xzwastream(const char *filename, const char *mode)
+{
+	stream *s;
+
+	if ((s = open_xzstream(filename, mode)) == NULL)
+		return NULL;
+	s->access = ST_WRITE;
+	s->type = ST_ASCII;
+	return s;
+}
+#else
+#define open_xzrstream(filename)	NULL
+#define open_xzwstream(filename, mode)	NULL
+#define open_xzrastream(filename)	NULL
+#define open_xzwastream(filename, mode)	NULL
+#endif
+
+/* ------------------------------------------------------------------ */
 /* streams working on a disk file, compressed or not */
 
 stream *
@@ -1395,6 +1700,8 @@ open_rstream(const char *filename)
 		return open_gzrstream(filename);
 	if (strcmp(ext, "bz2") == 0)
 		return open_bzrstream(filename);
+	if (strcmp(ext, "xz") == 0)
+		return open_xzrstream(filename);
 
 	if ((s = open_stream(filename, "rb")) == NULL)
 		return NULL;
@@ -1428,6 +1735,8 @@ open_wstream_(const char *filename, char *mode)
 		return open_gzwstream(filename, mode);
 	if (strcmp(ext, "bz2") == 0)
 		return open_bzwstream(filename, mode);
+	if (strcmp(ext, "xz") == 0)
+		return open_xzwstream(filename, mode);
 
 	if ((s = open_stream(filename, mode)) == NULL)
 		return NULL;
@@ -1473,6 +1782,8 @@ open_rastream(const char *filename)
 		return open_gzrastream(filename);
 	if (strcmp(ext, "bz2") == 0)
 		return open_bzrastream(filename);
+	if (strcmp(ext, "xz") == 0)
+		return open_xzrastream(filename);
 
 	if ((s = open_stream(filename, "r")) == NULL)
 		return NULL;
@@ -1497,6 +1808,8 @@ open_wastream_(const char *filename, char *mode)
 		return open_gzwastream(filename, mode);
 	if (strcmp(ext, "bz2") == 0)
 		return open_bzwastream(filename, mode);
+	if (strcmp(ext, "xz") == 0)
+		return open_xzwastream(filename, mode);
 
 	if ((s = open_stream(filename, mode)) == NULL)
 		return NULL;
@@ -1965,6 +2278,32 @@ socket_update_timeout(stream *s)
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
+#endif
+
+static int
+socket_isalive(stream *s)
+{
+	SOCKET fd = s->stream_data.s;
+	char buffer[32];
+	fd_set fds;
+	struct timeval t;
+
+	t.tv_sec = 0;
+	t.tv_usec = 0;
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+	return select(
+#ifdef _MSC_VER
+		0,		/* ignored on Windows */
+#else
+		fd + 1,
+#endif
+		&fds, NULL, NULL, &t) <= 0 ||
+		recv(fd, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) != 0;
+}
+
 static stream *
 socket_open(SOCKET sock, const char *name)
 {
@@ -1980,6 +2319,7 @@ socket_open(SOCKET sock, const char *name)
 	s->close = socket_close;
 	s->stream_data.s = sock;
 	s->update_timeout = socket_update_timeout;
+	s->isalive = socket_isalive;
 
 	errno = 0;
 #ifdef _MSC_VER
@@ -2897,6 +3237,19 @@ ic_update_timeout(stream *s)
 	}
 }
 
+static int
+ic_isalive(stream *s)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+
+	if (ic && ic->s) {
+		if (ic->s->isalive)
+			return (*ic->s->isalive)(ic->s);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 ic_clrerr(stream *s)
 {
@@ -2920,6 +3273,7 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	s->clrerr = ic_clrerr;
 	s->flush = ic_flush;
 	s->update_timeout = ic_update_timeout;
+	s->isalive = ic_isalive;
 	s->stream_data.p = malloc(sizeof(struct icstream));
 	if (s->stream_data.p == NULL) {
 		mnstr_destroy(s);
@@ -3488,6 +3842,19 @@ bs_update_timeout(stream *ss)
 	}
 }
 
+static int
+bs_isalive(stream *ss)
+{
+	struct bs *s;
+
+	if ((s = ss->stream_data.p) != NULL && s->s) {
+		if (s->s->isalive)
+			return (*s->s->isalive)(s->s);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 bs_close(stream *ss)
 {
@@ -3555,6 +3922,7 @@ block_stream(stream *s)
 	ns->read = bs_read;
 	ns->write = bs_write;
 	ns->update_timeout = bs_update_timeout;
+	ns->isalive = bs_isalive;
 	ns->stream_data.p = (void *) b;
 
 	return ns;
@@ -4129,6 +4497,19 @@ wbs_update_timeout(stream *s)
 	}
 }
 
+static int
+wbs_isalive(stream *s)
+{
+	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
+
+	if (wbs && wbs->s) {
+		if (wbs->s->isalive)
+			return (*wbs->s->isalive)(wbs->s);
+		return 1;
+	}
+	return 0;
+}
+
 static void
 wbs_clrerr(stream *s)
 {
@@ -4159,6 +4540,7 @@ wbstream(stream *s, size_t buflen)
 	ns->destroy = wbs_destroy;
 	ns->flush = wbs_flush;
 	ns->update_timeout = wbs_update_timeout;
+	ns->isalive = wbs_isalive;
 	ns->write = wbs_write;
 	ns->stream_data.p = (void *) wbs;
 	wbs->s = s;

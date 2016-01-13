@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -127,6 +127,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* if data exceeds memory size,
 	 * i.e., (rowcnt*argsize > monet_memory),
 	 * i.e., (rowcnt > monet_memory/argsize = m) */
+	assert(threads > 0);
+	assert(activeClients > 0);
 	if (rowcnt > m && m / threads / activeClients > 0) {
 		/* create |pieces| > |threads| partitions such that
 		 * |threads| partitions at a time fit in memory,

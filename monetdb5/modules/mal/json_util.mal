@@ -2,14 +2,14 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 #
 # (c) Martin Kersten
 
 module json;
 
-command resultSet(u:bat[:oid,:uuid],rev:bat[:oid,:lng],js:bat[:oid,:json]):json
+command resultSet(u:bat[:uuid],rev:bat[:lng],js:bat[:json]):json
 address JSONresultSet
 comment "Converts the json store into a single json string:";
 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -850,7 +850,6 @@ static void
 mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 {
 	int tp = getArgType(mb,p,0), k;
-	int tail = getColumnType(tp);
 	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), r;
 	mat_t *mat = ml->v;
 
@@ -877,8 +876,6 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 	getArg(r,1) = mat[e].mv;
 	getArg(r,2) = getArg(ai1,0);
 	pushInstruction(mb,r);
-	if (tail == TYPE_oid)
-		mat_add_var(ml, ai1, r, getArg(r, 0), mat_ext,  -1, -1);
 }
 
 /* Per partition aggregates are merged and aggregated together. For 

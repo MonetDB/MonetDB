@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -58,7 +58,7 @@ sql_set_arg(mvc *sql, int nr, atom *v)
 }
 
 void
-sql_add_param(mvc *sql, char *name, sql_subtype *st)
+sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 {
 	sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
 
@@ -75,7 +75,7 @@ sql_add_param(mvc *sql, char *name, sql_subtype *st)
 }
 
 sql_arg *
-sql_bind_param(mvc *sql, char *name)
+sql_bind_param(mvc *sql, const char *name)
 {
 	node *n;
 
@@ -348,14 +348,14 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		break;
 	}
 	case SQL_NEXT:{
-		char *seq = qname_table(se->data.lval);
-		char *sname = qname_schema(se->data.lval);
-		char *s;
+		const char *seq = qname_table(se->data.lval);
+		const char *sname = qname_schema(se->data.lval);
+		const char *s;
 		
 		if (!sname)
 			sname = sql->session->schema->base.name;
 		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s=sql_escape_ident(seq)); 
-		_DELETE(s);
+		c_delete(s);
 	}	break;
 	case SQL_COLUMN: {
 		/* can only be variables */ 

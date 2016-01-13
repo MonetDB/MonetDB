@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 #ifndef _STREAM_H_
@@ -142,6 +142,7 @@ stream_export void mnstr_set_byteorder(stream *s, char bigendian);
 stream_export stream *mnstr_rstream(stream *s);
 stream_export stream *mnstr_wstream(stream *s);
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void));
+stream_export int mnstr_isalive(stream *s);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);

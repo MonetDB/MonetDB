@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2008-2015 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 # scalar MAL signatures
 module udf;
@@ -15,7 +15,7 @@ comment "Reverse a string";
 # BAT MAL signatures
 module batudf;
 
-command reverse(b:bat[:oid,:str]):bat[:oid,:str]
+command reverse(b:bat[:str]):bat[:str]
 address UDFBATreverse
 comment "Reverse a BAT of strings";
 
@@ -40,14 +40,14 @@ comment "fuse two (4-byte) int values into one (8-byte) lng value";
 # BAT MAL signatures
 module batudf;
 
-command fuse(one:bat[:oid,:bte],two:bat[:oid,:bte]):bat[:oid,:sht]
+command fuse(one:bat[:bte],two:bat[:bte]):bat[:sht]
 address UDFBATfuse
 comment "fuse two (1-byte) bte values into one (2-byte) sht value";
 
-command fuse(one:bat[:oid,:sht],two:bat[:oid,:sht]):bat[:oid,:int]
+command fuse(one:bat[:sht],two:bat[:sht]):bat[:int]
 address UDFBATfuse
 comment "fuse two (2-byte) sht values into one (4-byte) int value";
 
-command fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng]
+command fuse(one:bat[:int],two:bat[:int]):bat[:lng]
 address UDFBATfuse
 comment "fuse two (4-byte) int values into one (8-byte) lng value";
