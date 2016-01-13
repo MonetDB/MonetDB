@@ -1,7 +1,5 @@
 #include <Rdefines.h>
 #include "mal.h"
-#include "group.h"
-#include "algebra.h"
 
 #define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy)\
 	do {													\
@@ -84,7 +82,7 @@
 		BATsettrivprop(b);												\
 	} while (0)
 
-#define CONVERT_OLDSCHOOL
+//#define CONVERT_OLDSCHOOL
 
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
@@ -116,92 +114,76 @@ static SEXP bat_to_sexp(BAT* b) {
 			BAT_TO_REALSXP(b, lng, varvalue, 0);
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
-#ifndef CONVERT_OLDSCHOOL
-			BAT *grp, *ext, *ustrings, *uptrs, *allptrs;
-			BUN p, q;
-			BATiter li;
-			void* sptr;
-			BUN cnt, ucnt;
-			gdk_return r;
-			ptr *uptrs_p, *allptrs_p;
-			cnt = BATcount(b);
-			// we group on the passed string column to get unique strings, then only convert each string once
-			r = BATgroup(&grp, &ext, NULL, b, NULL, NULL, NULL);
-			if (r != GDK_SUCCEED || grp == NULL || ext == NULL) {
-				return NULL;
-			}
-			ustrings = BATproject(ext, b);
-			BBPunfix(ext->batCacheid);
-			if (ustrings == NULL) {
-				BBPunfix(grp->batCacheid);
-				return NULL;
-			}
-			ucnt = BATcount(ustrings);
-			uptrs = BATnew(TYPE_void, TYPE_ptr, ucnt, TRANSIENT);
-			if (uptrs == NULL) {
-				BBPunfix(grp->batCacheid);
-				BBPunfix(ustrings->batCacheid);
-				return NULL;
-			}
-			li = bat_iterator(ustrings);
-			uptrs_p = (ptr) Tloc(uptrs, BUNfirst(uptrs));
-			for(p = 0; p < ucnt; p++) {
-				const char *t = (const char *) BUNtail(li, p);
-				// TODO: check whether this check is better done outside loop
-				if (b->T->nil == 1 && ATOMcmp(TYPE_str, t, str_nil) == 0) {
-					sptr = NA_STRING;
-				} else {
-					sptr = mkCharCE(t, CE_UTF8);
+			/*
+			if (GDK_ELIMDOUBLES(b->T->vheap) || TRUE) {
+				BAT *grp, *ext;
+				BUN p, q;
+				BATiter b_it, ext_it, grp_it;
+				SEXP *sptrs;//#include <time.h>
+				// we group on the passed string column to get unique strings, then only convert each string once
+
+				gdk_return r = BATgroup(&grp, &ext, NULL, b, NULL, NULL, NULL);
+				if (r != GDK_SUCCEED || grp == NULL || ext == NULL) {
+					return NULL;
 				}
-				uptrs_p[p] = sptr;
-			}
-			BBPunfix(ustrings->batCacheid);
-			BATsetcount(uptrs, ucnt);
-			BATsettrivprop(uptrs);
-			allptrs = BATproject(grp, uptrs);
-			assert(BATcount(allptrs) == BATcount(b));
-			BBPunfix(grp->batCacheid);
-			BBPunfix(uptrs->batCacheid);
-			if (allptrs == NULL) {
-				return NULL;
-			}
-			li = bat_iterator(allptrs);
-			varvalue = PROTECT(NEW_STRING(cnt));
-			if (varvalue == NULL) {
-				BBPunfix(allptrs->batCacheid);
-				return NULL;
-			}
-			allptrs_p = (ptr) Tloc(allptrs, BUNfirst(allptrs));
-			for(p = 0; p < cnt; p++) {
-				SET_STRING_ELT(varvalue, p, (SEXP) allptrs_p[p]);
-			}
-			BBPunfix(allptrs->batCacheid);
-#else  /* old implementation */
-			BUN p = 0, q = 0, j = 0;
-			BATiter li;
-			li = bat_iterator(b);
-			varvalue = PROTECT(NEW_STRING(BATcount(b)));
-			if (varvalue == NULL) {
-				return NULL;
-			}
-			if (b->T->nonil && !b->T->nil) {
-				BATloop(b, p, q) {
-					SET_STRING_ELT(varvalue, j++, mkCharCE(
-						(const char *) BUNtail(li, p), CE_UTF8));
+
+				sptrs = GDKzalloc(sizeof(SEXP) * BATcount(ext));
+				varvalue = PROTECT(NEW_STRING(BATcount(b)));
+
+				if (sptrs == NULL || varvalue == NULL) {
+					BBPunfix(grp->batCacheid);
+					BBPunfix(ext->batCacheid);
+					return NULL;
 				}
-			}
-			else {
-				BATloop(b, p, q) {
-					const char *t = (const char *) BUNtail(li, p);
-					if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
-						SET_STRING_ELT(varvalue, j, NA_STRING);
-					} else {
-						SET_STRING_ELT(varvalue, j, mkCharCE(t, CE_UTF8));
+
+				b_it = bat_iterator(b);
+				ext_it = bat_iterator(ext);
+				grp_it = bat_iterator(grp);
+
+				BATloop(grp, p, q) {
+					oid grp_idx = *((oid*) BUNtail(grp_it, p));
+					if (sptrs[grp_idx] == NULL) {
+						oid ext_idx = *((oid*) BUNtail(ext_it, grp_idx));
+						const char *t = (const char *) BUNtail(b_it, ext_idx);
+						SEXP sptr;
+						if (b->T->nil && !b->T->nonil && ATOMcmp(TYPE_str, t, str_nil) == 0) {
+							sptr = NA_STRING;
+						} else {
+							sptr = mkCharCE(t, CE_UTF8);
+						}
+						sptrs[grp_idx] = sptr;
 					}
-					j++;
+					SET_STRING_ELT(varvalue, p,  sptrs[grp_idx]);
 				}
+
+				GDKfree(sptrs);
+				BBPunfix(grp->batCacheid);
+				BBPunfix(ext->batCacheid);
 			}
-#endif
+			else {*/
+				BUN p, q;
+				BATiter li = bat_iterator(b);
+				varvalue = PROTECT(NEW_STRING(BATcount(b)));
+				if (varvalue == NULL) {
+					return NULL;
+				}
+				if (b->T->nonil && !b->T->nil) {
+					BATloop(b, p, q) {
+						SET_STRING_ELT(varvalue, j++, mkCharCE(
+							(const char *) BUNtail(li, p), CE_UTF8));
+					}
+				}
+				else {
+					BATloop(b, p, q) {
+						const char *t = (const char *) BUNtail(li, p);
+						if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
+							SET_STRING_ELT(varvalue, p, NA_STRING);
+						} else {
+							SET_STRING_ELT(varvalue, p, mkCharCE(t, CE_UTF8));
+						}
+					}
+				}
+			//}
 		} 	break;
 	}
 	return varvalue;
