@@ -106,6 +106,7 @@ int mal_init(void){
 	initProfiler();
 	return 0;
 }
+
 /*
  * Upon exit we should attempt to remove all allocated memory explicitly.
  * This seemingly superflous action is necessary to simplify analyis of
@@ -116,13 +117,15 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mserver_reset(void){
+void mserver_reset(void)
+{
 	str err = 0;
 
-    MCstopClients(0);
-    setHeartbeat(-1);
-    stopProfiler();
-    RECYCLEdrop(mal_clients); 
+	GDKprepareExit();
+	MCstopClients(0);
+	setHeartbeat(-1);
+	stopProfiler();
+	RECYCLEdrop(mal_clients); 
 	AUTHreset(); 
 	if ((err = msab_wildRetreat()) != NULL) {
 		fprintf(stderr, "!%s", err);
@@ -141,18 +144,17 @@ void mserver_reset(void){
 	mal_client_reset();
 	mal_module_reset();
 	mal_module_reset();
-   	mal_linker_reset();
+  	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_scenario_reset();
-	
+
 	memset((char*)monet_cwd,0, sizeof(monet_cwd));
 	monet_memory = 0;
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
-	mal_trace = 0;		
-/* No need to clean up the namespace, it will simply be extended upon restart
-	mal_namespace_reset();
-*/
+	mal_trace = 0;
+	/* No need to clean up the namespace, it will simply be extended
+	 * upon restart mal_namespace_reset(); */
 }
 
 
