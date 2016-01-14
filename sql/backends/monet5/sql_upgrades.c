@@ -5892,13 +5892,16 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	/* if function sys.<<(geometry,geometry) does not exist, we need to
-	 * update */
-	sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "geometry"), 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "left_shift", &tp, &tp, F_FUNC)) {
-		if ((err = sql_update_dec2015(c)) !=NULL) {
-			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+	/* If the geometry type exists, check whether an upgrade is needed */
+	if (find_sql_type(mvc_bind_schema(m, "sys"), "geometry")) {
+		/* if function sys.<<(geometry,geometry) does not exist, we need to
+		 * update */
+		sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "geometry"), 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "left_shift", &tp, &tp, F_FUNC)) {
+			if ((err = sql_update_dec2015(c)) !=NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 	}
 }
