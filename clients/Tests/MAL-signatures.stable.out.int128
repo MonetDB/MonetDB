@@ -49929,27 +49929,27 @@ pattern mosaic.analyse():void
 address MOSanalyse;
 comment Apply heap compression on all
 
-pattern mosaic.compress(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
+pattern mosaic.compress(b:bat[:any_1]):bat[:any_1] 
 address MOScompress;
 comment Apply dynamic compression producing a temporary
 
-pattern mosaic.compress(b:bat[:oid,:any_1],prop:str):bat[:oid,:any_1] 
+pattern mosaic.compress(b:bat[:any_1],prop:str):bat[:any_1] 
 address MOScompress;
 comment Apply dynamic compression over chunks
 
-pattern mosaic.dump(b:bat[:oid,:any]):void 
+pattern mosaic.dump(b:bat[:any]):void 
 address MOSdump;
 comment Dump the compressed structure
 
-pattern mosaic.decompressStorage(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
+pattern mosaic.decompressStorage(b:bat[:any_1]):bat[:any_1] 
 address MOSdecompressStorage;
 comment Apply dynamic decompression, changing the storage layout permanently
 
-pattern mosaic.decompress(b:bat[:oid,:any_1]):bat[:oid,:any_1] 
+pattern mosaic.decompress(b:bat[:any_1]):bat[:any_1] 
 address MOSdecompress;
 comment Apply dynamic decompression over chunks producing a temporary version
 
-pattern mosaic.join(b:bat[:oid,:any_1],gen:bat[:oid,:any_1]) (l:bat[:oid,:oid],r:bat[:oid,:oid]) 
+pattern mosaic.join(b:bat[:any_1],gen:bat[:any_1]) (l:bat[:oid],r:bat[:oid]) 
 address MOSjoin;
 comment Overloaded join operation
 
@@ -49965,161 +49965,161 @@ pattern mosaic.optimize(bid:int):void
 address MOSoptimize;
 comment Perform a search thru the compression space using depth 1
 
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:daytime]):bat[:oid,:daytime] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:daytime]):bat[:daytime] 
 address MOSprojection;
 comment Overloaded projection operation
 
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:date]):bat[:oid,:date] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:date]):bat[:date] 
 address MOSprojection;
 comment Overloaded projection operation
 
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:timestamp]):bat[:oid,:timestamp] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:timestamp]):bat[:timestamp] 
 address MOSprojection;
 comment Overloaded projection operation
 
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:str]):bat[:oid,:str] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:str]):bat[:str] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:dbl]):bat[:oid,:dbl] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:dbl]):bat[:dbl] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:flt]):bat[:oid,:flt] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:flt]):bat[:flt] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:oid]):bat[:oid,:oid] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:oid]):bat[:oid] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:hge]):bat[:oid,:hge] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:hge]):bat[:hge] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:lng]):bat[:oid,:lng] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:lng]):bat[:lng] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:int]):bat[:oid,:int] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:int]):bat[:int] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:sht]):bat[:oid,:sht] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:sht]):bat[:sht] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:bit]):bat[:oid,:bit] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:bit]):bat[:bit] 
 address MOSprojection;
-pattern mosaic.projection(b:bat[:oid,:oid],cand:bat[:oid,:bte]):bat[:oid,:bte] 
+pattern mosaic.projection(b:bat[:oid],cand:bat[:bte]):bat[:bte] 
 address MOSprojection;
-pattern mosaic.subselect(b:bat[:oid,:daytime],cand:bat[:oid,:oid],low:daytime,high:daytime,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:daytime],cand:bat[:oid],low:daytime,high:daytime,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 comment Overloaded selection routine
 
-pattern mosaic.subselect(b:bat[:oid,:date],cand:bat[:oid,:oid],low:date,high:date,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:date],cand:bat[:oid],low:date,high:date,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 comment Overloaded selection routine
 
-pattern mosaic.subselect(b:bat[:oid,:timestamp],cand:bat[:oid,:oid],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:timestamp],cand:bat[:oid],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 comment Overloaded selection routine
 
-pattern mosaic.subselect(b:bat[:oid,:str],cand:bat[:oid,:oid],low:str,high:str,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:str],cand:bat[:oid],low:str,high:str,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:dbl],cand:bat[:oid,:oid],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:dbl],cand:bat[:oid],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:flt],cand:bat[:oid,:oid],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:flt],cand:bat[:oid],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:oid],cand:bat[:oid,:oid],low:oid,high:oid,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:oid],cand:bat[:oid],low:oid,high:oid,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:lng],cand:bat[:oid,:oid],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:lng],cand:bat[:oid],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:int],cand:bat[:oid,:oid],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:int],cand:bat[:oid],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:sht],cand:bat[:oid,:oid],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:sht],cand:bat[:oid],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:bit],cand:bat[:oid,:oid],low:bit,high:bit,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:bit],cand:bat[:oid],low:bit,high:bit,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:bte],cand:bat[:oid,:oid],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:bte],cand:bat[:oid],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:daytime],low:daytime,high:daytime,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
-address MOSsubselect;
-comment Overloaded selection routine
-
-pattern mosaic.subselect(b:bat[:oid,:date],low:date,high:date,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:daytime],low:daytime,high:daytime,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 comment Overloaded selection routine
 
-pattern mosaic.subselect(b:bat[:oid,:timestamp],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:date],low:date,high:date,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 comment Overloaded selection routine
 
-pattern mosaic.subselect(b:bat[:oid,:str],low:str,high:str,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:timestamp],low:timestamp,high:timestamp,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:dbl],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+comment Overloaded selection routine
+
+pattern mosaic.subselect(b:bat[:str],low:str,high:str,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:flt],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:dbl],low:dbl,high:dbl,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:oid],low:oid,high:oid,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:flt],low:flt,high:flt,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:lng],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:oid],low:oid,high:oid,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:int],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:lng],low:lng,high:lng,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:sht],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:int],low:int,high:int,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:bit],low:bit,high:bit,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:sht],low:sht,high:sht,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
-pattern mosaic.subselect(b:bat[:oid,:bte],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid,:oid] 
+pattern mosaic.subselect(b:bat[:bit],low:bit,high:bit,li:bit,hi:bit,anti:bit):bat[:oid] 
+address MOSsubselect;
+pattern mosaic.subselect(b:bat[:bte],low:bte,high:bte,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 pattern mosaic.slice(bid:lng) (b0:bte,b1:bte,b2:bte,b3:bte,b4:bte,b5:bte,b6:bte,b7:bte) 
 address MOSslice;
 comment Break column into verticalslices
 
-pattern mosaic.thetasubselect(b:bat[:oid,:daytime],c:bat[:oid,:oid],low:daytime,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:daytime],c:bat[:oid],low:daytime,oper:str):bat[:oid] 
 address MOSthetasubselect;
 comment Overloaded selection routine
 
-pattern mosaic.thetasubselect(b:bat[:oid,:date],c:bat[:oid,:oid],low:date,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:date],c:bat[:oid],low:date,oper:str):bat[:oid] 
 address MOSthetasubselect;
 comment Overloaded selection routine
 
-pattern mosaic.thetasubselect(b:bat[:oid,:timestamp],c:bat[:oid,:oid],low:timestamp,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:timestamp],c:bat[:oid],low:timestamp,oper:str):bat[:oid] 
 address MOSthetasubselect;
 comment Overloaded selection routine
 
-pattern mosaic.thetasubselect(b:bat[:oid,:str],c:bat[:oid,:oid],low:str,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:str],c:bat[:oid],low:str,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:dbl],c:bat[:oid,:oid],low:dbl,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:dbl],c:bat[:oid],low:dbl,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:flt],c:bat[:oid,:oid],low:flt,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:flt],c:bat[:oid],low:flt,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:oid],c:bat[:oid,:oid],low:oid,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:oid],c:bat[:oid],low:oid,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:lng],c:bat[:oid,:oid],low:lng,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:lng],c:bat[:oid],low:lng,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:int],c:bat[:oid,:oid],low:int,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:int],c:bat[:oid],low:int,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:sht],c:bat[:oid,:oid],low:sht,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:sht],c:bat[:oid],low:sht,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:bit],c:bat[:oid,:oid],low:bit,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:bit],c:bat[:oid],low:bit,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:bte],c:bat[:oid,:oid],low:bte,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:bte],c:bat[:oid],low:bte,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:daytime],low:daytime,oper:str):bat[:oid,:oid] 
-address MOSthetasubselect;
-comment Overloaded selection routine
-
-pattern mosaic.thetasubselect(b:bat[:oid,:date],low:date,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:daytime],low:daytime,oper:str):bat[:oid] 
 address MOSthetasubselect;
 comment Overloaded selection routine
 
-pattern mosaic.thetasubselect(b:bat[:oid,:timestamp],low:timestamp,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:date],low:date,oper:str):bat[:oid] 
 address MOSthetasubselect;
 comment Overloaded selection routine
 
-pattern mosaic.thetasubselect(b:bat[:oid,:str],low:str,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:timestamp],low:timestamp,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:dbl],low:dbl,oper:str):bat[:oid,:oid] 
+comment Overloaded selection routine
+
+pattern mosaic.thetasubselect(b:bat[:str],low:str,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:flt],low:flt,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:dbl],low:dbl,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:oid],low:oid,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:flt],low:flt,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:lng],low:lng,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:oid],low:oid,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:int],low:int,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:lng],low:lng,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:sht],low:sht,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:int],low:int,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:bit],low:bit,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:sht],low:sht,oper:str):bat[:oid] 
 address MOSthetasubselect;
-pattern mosaic.thetasubselect(b:bat[:oid,:bte],low:bte,oper:str):bat[:oid,:oid] 
+pattern mosaic.thetasubselect(b:bat[:bit],low:bit,oper:str):bat[:oid] 
+address MOSthetasubselect;
+pattern mosaic.thetasubselect(b:bat[:bte],low:bte,oper:str):bat[:oid] 
 address MOSthetasubselect;
 command mtime.add(v:timestamp,msecs:lng):timestamp 
 address MTIMEtimestamp_add;
@@ -51071,6 +51071,10 @@ pattern scheduler.srvpool():int
 address SRVPOOLscheduler;
 comment Run a program block in parallel.
 
+pattern scheduler.volumeCost(a:any):lng 
+address RUNvolumeCost;
+comment A sample cost function based on materialized results
+
 function sphinx.sphinx_searchIndexLimit(q:str,i:str,l:int):bat[:lng];
 function sphinx.sphinx_searchIndex(q:str,i:str):bat[:lng];
 function sphinx.sphinx_search(q:str):bat[:lng];
@@ -51430,17 +51434,17 @@ command sql.ms_trunc(v:flt,r:int):flt
 address flt_trunc_wrap;
 comment truncate the floating point v to r digits behind the dot (if r < 0, before the dot)
 
-pattern sql.mosaicAnalysis(sch:str,tbl:str,col:str) (technique:bat[:oid,:str],outputsize:bat[:oid,:lng],factor:bat[:oid,:dbl],run:bat[:oid,:lng]) 
+pattern sql.mosaicAnalysis(sch:str,tbl:str,col:str) (technique:bat[:str],outputsize:bat[:lng],factor:bat[:dbl],run:bat[:lng]) 
 address sql_mosaicAnalysis;
 comment Return a table with compression opportunities for the column
 
-pattern sql.mosaicAnalysis(sch:str,tbl:str,col:str,compression:str) (technique:bat[:oid,:str],outputsize:bat[:oid,:lng],factor:bat[:oid,:dbl],run:bat[:oid,:lng]) 
+pattern sql.mosaicAnalysis(sch:str,tbl:str,col:str,compression:str) (technique:bat[:str],outputsize:bat[:lng],factor:bat[:dbl],run:bat[:lng]) 
 address sql_mosaicAnalysis;
-pattern sql.mosaicLayout(sch:str,tbl:str,col:str) (technique:bat[:oid,:str],count:bat[:oid,:lng],inputsize:bat[:oid,:lng],outputsize:bat[:oid,:lng],properties:bat[:oid,:str]) 
+pattern sql.mosaicLayout(sch:str,tbl:str,col:str) (technique:bat[:str],count:bat[:lng],inputsize:bat[:lng],outputsize:bat[:lng],properties:bat[:str]) 
 address sql_mosaicLayout;
 comment Return a table with detailed compression information 
 
-pattern sql.mosaicLayout(sch:str,tbl:str,col:str,compressionscheme:str) (technique:bat[:oid,:str],count:bat[:oid,:lng],inputsize:bat[:oid,:lng],outputsize:bat[:oid,:lng],properties:bat[:oid,:str]) 
+pattern sql.mosaicLayout(sch:str,tbl:str,col:str,compressionscheme:str) (technique:bat[:str],count:bat[:lng],inputsize:bat[:lng],outputsize:bat[:lng],properties:bat[:str]) 
 address sql_mosaicLayout;
 pattern sql.mvc():int 
 address SQLmvc;

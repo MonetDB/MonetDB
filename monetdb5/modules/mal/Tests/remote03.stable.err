@@ -30,13 +30,14 @@ stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 # 23:12:08 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23626" "--port=30565"
 # 23:12:08 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23626/.s.monetdb.30565
+MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.30153
 QUERY = # let connect figure out itself how to connect to the running db
         uri := sabaoth.getLocalConnectionURI();
         conn:str := remote.connect(uri, "monetdb", "monetdb");
         
         # this is invalid, as io.print is an invalid module, and bla will be
         # taken as function
+        function tst(conn:str);
         res:str := remote.put(conn,:void);
         res := remote.exec(conn, "io.print", "bla");
         catch SyntaxException:str;
@@ -45,7 +46,7 @@ QUERY = # let connect figure out itself how to connect to the running db
         exit SyntaxException;
         
         # now do it with a function that returns something (a BAT in this case)
-        bn:= bat.new(:oid,:str);
+        bn:= bat.new(:str);
         b := remote.put(conn,bn);
         catch MALException:str;
         	io.print("Received second init error from the remote site");
@@ -59,7 +60,7 @@ QUERY = # let connect figure out itself how to connect to the running db
         exit MALException;
         io.print(b);
         
-        c:bat[:oid,:str] := remote.get(conn, b);
+        c:bat[:str] := remote.get(conn, b);
         io.print(c);
         catch MALException:str;
         	io.print("Received third error from the remote site");
@@ -81,14 +82,21 @@ QUERY = # let connect figure out itself how to connect to the running db
         	io.print("Received fifth error from the remote site");
         	io.printf("!%s\n", MALException);
         exit MALException;
+        end tst;
+        tst(conn);
         
+        catch SyntaxException:str;
+        	io.print("Received an error from the remote site");
+        	io.printf("!%s\n", SyntaxException);
+        exit SyntaxException;
         # help testweb a bit, since currently no cleanup is done on server
         # shutdown
         remote.disconnect(conn);
-ERROR = !SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_9_void := io.print.bla();
+        catch MALException:str;
+        	io.print("Received an error from the remote site");
+        exit MALException;
 
-
-
+ERROR = !SyntaxException:remote.exec:(mapi:monetdb://monetdb@lab02.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_3_void := io.print.bla();
 
 # 23:12:09 >  
 # 23:12:09 >  "Done."

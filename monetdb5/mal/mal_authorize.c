@@ -35,6 +35,21 @@ static str AUTHverifyPassword(str *passwd);
 static BAT *user = NULL;
 static BAT *pass = NULL;
 static BAT *duser = NULL;
+/* yep, the vault key is just stored in memory */
+static str vaultKey = NULL;
+
+void AUTHreset(void)
+{
+	//if( user) BBPunfix(user->batCacheid);
+	user = NULL;
+	//if( pass) BBPunfix(pass->batCacheid);
+	pass = NULL;
+	//if( duser) BBPunfix(duser->batCacheid);
+	duser = NULL;
+	if (vaultKey != NULL)
+		GDKfree(vaultKey);
+	vaultKey = NULL;
+}
 
 static BUN
 AUTHfindUser(const char *username)
@@ -642,8 +657,6 @@ AUTHgetPasswordHash(str *ret, Client cntxt, str *username)
 
 /*=== the vault ===*/
 
-/* yep, the vault key is just stored in memory */
-static str vaultKey = NULL;
 
 /**
  * Unlocks the vault with the given password.  Since the password is

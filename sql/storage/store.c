@@ -1688,6 +1688,8 @@ store_manager(void)
 		need_flush = 0;
         	while (store_nr_active) { /* find a moment to flush */
             		MT_lock_unset(&bs_lock);
+			if (GDKexiting())
+				continue;
             		MT_sleep_ms(50);
             		MT_lock_set(&bs_lock);
         	}

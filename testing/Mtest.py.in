@@ -2576,7 +2576,7 @@ def killProc(proc, outfile = None, cmd = None):
             cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
-        except ValueError:
+        except (ValueError, IOError):
             print 'cannot write timeout message',cmd
     if os.name == "nt":
         sym = ''
@@ -2606,8 +2606,9 @@ def killProc(proc, outfile = None, cmd = None):
     if outfile is not None and out:
         try:
             outfile.write('\n%s\n' % out)
-        except ValueError:
+        except (ValueError, IOError):
             print 'cannot write stack trace'
+            print out
     proc.killed = True
     try:
         os.kill(-proc.pid, signal.SIGKILL)
@@ -3105,8 +3106,10 @@ def Check(command, input) :
         raise
     qOut = qOut.split('\n')
     qErr = qErr.split('\n')
+    failed = False
     if proc.returncode:
         qOut.append('! Exit 1')
+        failed = True
     test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
                        r"^!WARNING: monet_checkbat: "                                        "|"
                        r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
@@ -3120,6 +3123,7 @@ def Check(command, input) :
                     noErr.append(l+"\n")
             else:
                 ErrMsg('"%s" failed:' % '" "'.join(command))
+                failed = True
                 if qOut and qOut[-1].startswith("! Exit 1"):
                     qErr.append(qOut.pop())
                 for l in qOut+qErr:
@@ -3140,7 +3144,7 @@ def Check(command, input) :
         STDOUT.flush()
         STDERR.writelines(noErr)
         STDERR.flush()
-    return 0
+    return failed
 ### Check(command, input) #
 
 def CheckClassPath() :

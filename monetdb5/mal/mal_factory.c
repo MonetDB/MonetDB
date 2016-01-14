@@ -43,6 +43,7 @@ static int plantId = 1;
 
 mal_export Plant newPlant(MalBlkPtr mb);
 
+
 static int
 findPlant(MalBlkPtr mb){
 	int i;
@@ -370,4 +371,36 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			return MAL_SUCCEED;
 		}
 	return MAL_SUCCEED;
+}
+
+void mal_factory_reset(void)
+{
+	Plant pl, plim;
+
+	plim = plants + lastPlant;
+	for (pl = plants; pl < plim; pl++){
+			/* MSresetVariables(mb, pl->stk, 0);*/
+			/* freeStack(pl->stk); there may be a reference?*/
+			/* we are inside the body of the factory and about to return */
+			pl->factory = 0;
+			if (pl->stk)
+				pl->stk->keepAlive = FALSE;
+			if ( pl->stk) {
+				//garbageCollector(cntxt, mb, pl->stk,TRUE);
+				GDKfree(pl->stk);
+			}
+			pl->stk=0;
+			pl->pc = 0;
+			pl->inuse = 0;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->pci = NULL;
+			pl->env = NULL;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->env= NULL;
+			pl->pci = NULL;
+	}
+	plantId = 1;
+	lastPlant = 0;
 }

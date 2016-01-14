@@ -26,6 +26,7 @@ EXTRA_DIST = \
 		Test_Int128.java \
 		BugConcurrent_clients_SF_1504657.java \
 		BugDatabaseMetaData_Bug_3356.java \
+		BugDecimalRound_Bug_3561.java \
 		build.xml build.properties
 
 ant_jar_jdbctests = {

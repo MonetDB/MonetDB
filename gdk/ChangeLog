@@ -1,6 +1,9 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Jan 14 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATmmap.  It was no longer used.
+
 * Fri Dec 18 2015 Sjoerd Mullender <sjoerd@acm.org>
 - BUNdelete and BATdel don't accept a foce argument and only allow
   deleting values that have not yet been committed.  BUNdelete exchanges

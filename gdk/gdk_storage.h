@@ -10,6 +10,5 @@
 #define _GDK_STORAGE_H_
 
 extern void DESCclean(BAT *);
-extern int DESCsetmodes(BAT *b);
 
 #endif /* _GDK_STORAGE_H_ */

@@ -63,14 +63,14 @@ function user.s2_1():void;
     X_48 := bat.append(X_41,0);
     X_55 := bat.append(X_48,0);
     X_1 := sql.mvc();
-    C_2:bat[:oid,:oid] := sql.tid(X_1,"sys","tmp3");
-    X_5:bat[:oid,:int] := sql.bind(X_1,"sys","tmp3","i",0);
+    C_2:bat[:oid] := sql.tid(X_1,"sys","tmp3");
+    X_5:bat[:int] := sql.bind(X_1,"sys","tmp3","i",0);
     X_8 := mosaic.projection(C_2,X_5);
-    X_9:bat[:oid,:bit] := sql.bind(X_1,"sys","tmp3","b",0);
+    X_9:bat[:bit] := sql.bind(X_1,"sys","tmp3","b",0);
     X_11 := mosaic.projection(C_2,X_9);
-    X_12:bat[:oid,:flt] := sql.bind(X_1,"sys","tmp3","f",0);
+    X_12:bat[:flt] := sql.bind(X_1,"sys","tmp3","f",0);
     X_14 := mosaic.projection(C_2,X_12);
-    X_15:bat[:oid,:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
+    X_15:bat[:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
     X_17 := mosaic.projection(C_2,X_15);
     sql.resultSet(X_49,X_50,X_51,X_53,X_55,X_8,X_11,X_14,X_17);
 end user.s2_1;
@@ -173,7 +173,7 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s6_1():void;
+function user.s7_1():void;
     X_56:void := querylog.define("explain select * from tmp3;","sequential_pipe",39);
     X_19 := bat.new(nil:oid,nil:str);
     X_27 := bat.append(X_19,"sys.tmp3");
@@ -201,17 +201,17 @@ function user.s6_1():void;
     X_48 := bat.append(X_41,0);
     X_55 := bat.append(X_48,0);
     X_1 := sql.mvc();
-    C_2:bat[:oid,:oid] := sql.tid(X_1,"sys","tmp3");
-    X_5:bat[:oid,:int] := sql.bind(X_1,"sys","tmp3","i",0);
+    C_2:bat[:oid] := sql.tid(X_1,"sys","tmp3");
+    X_5:bat[:int] := sql.bind(X_1,"sys","tmp3","i",0);
     X_8 := mosaic.projection(C_2,X_5);
-    X_9:bat[:oid,:bit] := sql.bind(X_1,"sys","tmp3","b",0);
+    X_9:bat[:bit] := sql.bind(X_1,"sys","tmp3","b",0);
     X_11 := mosaic.projection(C_2,X_9);
-    X_12:bat[:oid,:flt] := sql.bind(X_1,"sys","tmp3","f",0);
+    X_12:bat[:flt] := sql.bind(X_1,"sys","tmp3","f",0);
     X_14 := mosaic.projection(C_2,X_12);
-    X_15:bat[:oid,:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
+    X_15:bat[:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
     X_17 := mosaic.projection(C_2,X_15);
     sql.resultSet(X_49,X_50,X_51,X_53,X_55,X_8,X_11,X_14,X_17);
-end user.s6_1;
+end user.s7_1;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name
@@ -329,7 +329,7 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 85 # length
-function user.s13_1():void;
+function user.s15_1():void;
     X_56:void := querylog.define("explain select * from tmp3;","sequential_pipe",39);
     X_19 := bat.new(nil:oid,nil:str);
     X_27 := bat.append(X_19,"sys.tmp3");
@@ -357,17 +357,17 @@ function user.s13_1():void;
     X_48 := bat.append(X_41,0);
     X_55 := bat.append(X_48,0);
     X_1 := sql.mvc();
-    C_2:bat[:oid,:oid] := sql.tid(X_1,"sys","tmp3");
-    X_5:bat[:oid,:int] := sql.bind(X_1,"sys","tmp3","i",0);
+    C_2:bat[:oid] := sql.tid(X_1,"sys","tmp3");
+    X_5:bat[:int] := sql.bind(X_1,"sys","tmp3","i",0);
     X_8 := mosaic.projection(C_2,X_5);
-    X_9:bat[:oid,:bit] := sql.bind(X_1,"sys","tmp3","b",0);
+    X_9:bat[:bit] := sql.bind(X_1,"sys","tmp3","b",0);
     X_11 := mosaic.projection(C_2,X_9);
-    X_12:bat[:oid,:flt] := sql.bind(X_1,"sys","tmp3","f",0);
+    X_12:bat[:flt] := sql.bind(X_1,"sys","tmp3","f",0);
     X_14 := mosaic.projection(C_2,X_12);
-    X_15:bat[:oid,:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
+    X_15:bat[:timestamp] := sql.bind(X_1,"sys","tmp3","t",0);
     X_17 := mosaic.projection(C_2,X_15);
     sql.resultSet(X_49,X_50,X_51,X_53,X_55,X_8,X_11,X_14,X_17);
-end user.s13_1;
+end user.s15_1;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name
 % i,	b,	f,	t # name

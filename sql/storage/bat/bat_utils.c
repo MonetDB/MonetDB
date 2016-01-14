@@ -69,13 +69,19 @@ temp_copy(log_bid b, int temp)
 	BAT *c;
 	log_bid r;
 
+	if (!o)
+		return BID_NIL;
 	if (!temp) {
 		assert(o->htype == TYPE_void);
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
+		if (!c)
+			return BID_NIL;
 		bat_set_access(c, BAT_READ);
 		BATcommit(c);
 	} else {
 		c = bat_new(o->htype, o->ttype, COLSIZE, PERSISTENT);
+		if (!c)
+			return BID_NIL;
 	}
 	r = temp_create(c);
 	bat_destroy(c);
@@ -138,11 +144,15 @@ ebat_copy(log_bid b, oid ibase, int temp)
 	BAT *c;
 	log_bid r;
 
+	if (!o)
+		return BID_NIL;
 	if (!ebats[o->ttype]) 
 		ebats[o->ttype] = bat_new(TYPE_void, o->ttype, 0, TRANSIENT);
 
 	if (!temp && BATcount(o)) {
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
+		if (!c)
+			return BID_NIL;
 		BATseqbase(c, ibase );
 		c->H->dense = 1;
 		BATcommit(c);
@@ -151,6 +161,8 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		bat_destroy(c);
 	} else {
 		c = ebats[o->ttype];
+		if (!c)
+			return BID_NIL;
 		r = temp_create(c);
 	}
 	bat_destroy(o);

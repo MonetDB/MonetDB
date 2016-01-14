@@ -50,8 +50,8 @@ Ready.
 function user.s5_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
-    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
-    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","dtmp3");
+    X_6:bat[:int] := sql.bind(X_2,"sys","dtmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","dtmp3");
     C_9 := mosaic.thetasubselect(X_6,C_3,A0,"<");
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
@@ -68,16 +68,16 @@ end user.s5_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s6_1(A0:int):void;
+function user.s7_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
-    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
-    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","dtmp3");
+    X_6:bat[:int] := sql.bind(X_2,"sys","dtmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","dtmp3");
     C_9 := mosaic.subselect(X_6,C_3,A0,A0,true,false,false);
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s6_1;
+end user.s7_1;
 #select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
@@ -134,16 +134,16 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 104 # length
-function user.s17_1(A0:int):void;
+function user.s19_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
-    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
-    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","dtmp3");
+    X_6:bat[:int] := sql.bind(X_2,"sys","dtmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","dtmp3");
     C_9 := mosaic.thetasubselect(X_6,C_3,A0,"<");
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s17_1;
+end user.s19_1;
 #select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -155,16 +155,16 @@ end user.s17_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s18_1(A0:int):void;
+function user.s21_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
-    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
-    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","dtmp3");
+    X_6:bat[:int] := sql.bind(X_2,"sys","dtmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","dtmp3");
     C_9 := mosaic.subselect(X_6,C_3,A0,A0,true,false,false);
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s18_1;
+end user.s21_1;
 #select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name
@@ -203,16 +203,16 @@ end user.s18_1;
 % mal # name
 % clob # type
 % 104 # length
-function user.s26_1(A0:int):void;
+function user.s30_1(A0:int):void;
     X_19:void := querylog.define("explain select count(*) from dtmp3 where i <4;","sequential_pipe",10);
     X_2 := sql.mvc();
-    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
-    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","dtmp3");
+    X_6:bat[:int] := sql.bind(X_2,"sys","dtmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","dtmp3");
     C_9 := mosaic.thetasubselect(X_6,C_3,A0,"<");
     X_11 := mosaic.projection(C_9,X_6);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s26_1;
+end user.s30_1;
 #select count(*) from dtmp3 where i <4;
 % sys.L1 # table_name
 % L1 # name
@@ -224,16 +224,16 @@ end user.s26_1;
 % mal # name
 % clob # type
 % 105 # length
-function user.s27_1(A0:int):void;
+function user.s32_1(A0:int):void;
     X_20:void := querylog.define("explain select count(*) from dtmp3 where i = 7;","sequential_pipe",10);
     X_2 := sql.mvc();
-    X_6:bat[:oid,:int] := sql.bind(X_2,"sys","dtmp3","i",0);
-    C_3:bat[:oid,:oid] := sql.tid(X_2,"sys","dtmp3");
+    X_6:bat[:int] := sql.bind(X_2,"sys","dtmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","dtmp3");
     C_9 := mosaic.subselect(X_6,C_3,A0,A0,true,false,false);
     X_12 := mosaic.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s27_1;
+end user.s32_1;
 #select count(*) from dtmp3 where i = 7;
 % sys.L1 # table_name
 % L1 # name

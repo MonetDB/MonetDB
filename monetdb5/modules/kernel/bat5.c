@@ -563,7 +563,7 @@ BKCisSortedReverse(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered_rev(BATmirror(b));
+	*res = BATordered_rev(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
