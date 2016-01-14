@@ -112,7 +112,7 @@ static SEXP bat_to_sexp(BAT* b) {
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
 			// this was found to be always slower.
-			/*if (GDK_ELIMDOUBLES(b->T->vheap)) {
+			if (GDK_ELIMDOUBLES(b->T->vheap) && BATcount(b) > 0) {
 				BAT *grp, *ext;
 				BUN p, q;
 				BATiter b_it, ext_it, grp_it;
@@ -153,14 +153,14 @@ static SEXP bat_to_sexp(BAT* b) {
 				}
 
 				BATloop(grp, p, q) {
-					SET_STRING_ELT(varvalue, p,  sptrs[*((oid*) BUNtail(grp_it, p))]);
+					STRING_ELT(varvalue, p) = sptrs[*((oid*) BUNtail(grp_it, p))];
 				}
 
 				GDKfree(sptrs);
 				BBPunfix(grp->batCacheid);
 				BBPunfix(ext->batCacheid);
 			}
-			else {*/
+			else {
 				BUN p, q, j = 0;
 				BATiter li = bat_iterator(b);
 				varvalue = PROTECT(NEW_STRING(BATcount(b)));
@@ -169,21 +169,21 @@ static SEXP bat_to_sexp(BAT* b) {
 				}
 				if (b->T->nonil) {
 					BATloop(b, p, q) {
-						SET_STRING_ELT(varvalue, j++, mkCharCE(
-							(const char *) BUNtail(li, p), CE_UTF8));
+						STRING_ELT(varvalue, j++) = mkCharCE(
+							(const char *) BUNtail(li, p), CE_UTF8);
 					}
 				}
 				else {
 					BATloop(b, p, q) {
 						const char *t = (const char *) BUNtail(li, p);
 						if (strcmp(t, str_nil) == 0) {
-							SET_STRING_ELT(varvalue, j++, NA_STRING);
+							STRING_ELT(varvalue, j++) = NA_STRING;
 						} else {
-							SET_STRING_ELT(varvalue, j++, mkCharCE(t, CE_UTF8));
+							STRING_ELT(varvalue, j++) = mkCharCE(t, CE_UTF8);
 						}
 					}
 				}
-			//}
+			}
 		} 	break;
 	}
 	return varvalue;

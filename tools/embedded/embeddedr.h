@@ -13,6 +13,7 @@
 #ifndef _EMBEDDED_R_LIB_
 #define _EMBEDDED_R_LIB_
 
+#define USE_RINTERNALS 1
 #include <Rdefines.h>
 #include "embedded.h"
 

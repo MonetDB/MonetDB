@@ -89,7 +89,6 @@ char* monetdb_startup(char* dbdir, char silent) {
 		retval = GDKstrdup("setlocale() failed");
 		goto cleanup;
 	}
-
 	GDKfataljumpenable = 1;
 	if(setjmp(GDKfataljump) != 0) {
 		retval = GDKfatalmsg;
@@ -105,16 +104,17 @@ char* monetdb_startup(char* dbdir, char silent) {
 
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
-	BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT));
+	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_mmap_minsize", "18446744073709551615");
 
+	BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT));
 	if (GDKinit(set, setlen) == 0) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
 	GDKsetenv("monet_mod_path", "");
 	GDKsetenv("mapi_disable", "true");
-	GDKsetenv("max_clients", "0");
 	GDKsetenv("sql_optimizer", "sequential_pipe");
+
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(dbdir);
