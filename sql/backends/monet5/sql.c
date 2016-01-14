@@ -4288,7 +4288,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(SQL, "sql.rowid", "3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tname);
-	if (s == NULL)
+	if (t == NULL)
 		throw(SQL, "sql.rowid", "42S02!Table missing");
 	if (!s || !t || !t->columns.set->h)
 		throw(SQL, "calc.rowid", "42S22!Cannot find column");
