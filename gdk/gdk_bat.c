@@ -132,10 +132,6 @@ BATcreatedesc(int tt, int heapnames, int role)
 	bn->T->heap.filename = NULL;
 	bn->H->heap.farmid = BBPselectfarm(role, bn->htype, offheap);
 	bn->T->heap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	bn->batMaphead = 0;
-	bn->batMaptail = 0;
-	bn->batMaphheap = 0;
-	bn->batMaptheap = 0;
 	if (heapnames) {
 		const char *nme = BBP_physical(bn->batCacheid);
 

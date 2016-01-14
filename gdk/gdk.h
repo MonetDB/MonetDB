@@ -847,10 +847,6 @@ typedef struct {
 	 role:8,		/* role of the bat */
 	 unused:15;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
-	char map_head;		/* mmap mode for head bun heap */
-	char map_tail;		/* mmap mode for tail bun heap */
-	char map_hheap;		/* mmap mode for head atom heap */
-	char map_theap;		/* mmap mode for tail atom heap */
 
 	/* delta status administration */
 	BUN deleted;		/* start of deleted elements */
@@ -958,10 +954,6 @@ typedef int (*GDKfcn) ();
 #define halign		H->align
 #define talign		T->align
 
-#define batMaphead	S->map_head
-#define batMaptail	S->map_tail
-#define batMaphheap	S->map_hheap
-#define batMaptheap	S->map_theap
 /*
  * @- Heap Management
  * Heaps are the low-level entities of mass storage in

@@ -984,10 +984,6 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->S.first = (BUN) first;
 		bs->S.count = (BUN) count;
 		bs->S.capacity = (BUN) capacity;
-		bs->S.map_head = (char) map_head;
-		bs->S.map_tail = (char) map_tail;
-		bs->S.map_hheap = (char) map_hheap;
-		bs->S.map_theap = (char) map_theap;
 
 		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
 		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
@@ -1402,10 +1398,10 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_desc(i)->S.first,
 		    BBP_desc(i)->S.count,
 		    BBP_desc(i)->S.capacity,
-		    (unsigned char) BBP_desc(i)->S.map_head,
-		    (unsigned char) BBP_desc(i)->S.map_tail,
-		    (unsigned char) BBP_desc(i)->S.map_hheap,
-		    (unsigned char) BBP_desc(i)->S.map_theap) < 0 ||
+		    (unsigned char) 0,
+		    (unsigned char) 0,
+		    (unsigned char) 0,
+		    (unsigned char) 0) < 0 ||
 	    heap_entry(fp, &BBP_desc(i)->H) < 0 ||
 	    heap_entry(fp, &BBP_desc(i)->T) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->H.vheap) < 0 ||
