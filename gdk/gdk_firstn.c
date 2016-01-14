@@ -154,7 +154,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		BATseqbase(BATmirror(bn), start + b->hseqbase);
 		return bn;
 	}
-	if (b->tsorted || b->trevsorted) {
+	/* note, we want to do both calls */
+	if (BATordered(BATmirror(b)) | BATordered_rev(BATmirror(b))) {
 		/* trivial: b is sorted so we just need to return the
 		 * initial or final part of it (or of the candidate
 		 * list) */

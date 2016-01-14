@@ -91,7 +91,7 @@ BATsubunique(BAT *b, BAT *s)
 		return bn;
 	}
 
-	if ((b->tsorted && b->trevsorted) ||
+	if ((BATordered(BATmirror(b)) && BATordered_rev(BATmirror(b))) ||
 	    (b->ttype == TYPE_void && b->tseqbase == oid_nil)) {
 		/* trivial: all values are the same */
 		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: all equal\n",
@@ -143,7 +143,7 @@ BATsubunique(BAT *b, BAT *s)
 	cmp = ATOMcompare(b->ttype);
 	bi = bat_iterator(b);
 
-	if (b->tsorted || b->trevsorted) {
+	if (BATordered(BATmirror(b)) || BATordered_rev(BATmirror(b))) {
 		const void *prev = NULL;
 
 		ALGODEBUG fprintf(stderr, "#BATsubunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): (reverse) sorted\n",

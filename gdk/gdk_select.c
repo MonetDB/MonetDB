@@ -46,13 +46,13 @@ virtualize(BAT *bn)
 	/* since bn has unique and strictly ascending tail values, we
 	 * can easily check whether the tail is dense */
 	if (bn && bn->ttype == TYPE_oid &&
-	    (BATcount(bn) == 0 ||
+	    (BATcount(bn) <= 1 ||
 	     * (const oid *) Tloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* tail is dense, replace by virtual oid */
 		ALGODEBUG fprintf(stderr, "#virtualize(bn=%s#"BUNFMT",seq="OIDFMT")\n",
 				  BATgetId(bn), BATcount(bn),
-				  * (const oid *) Tloc(bn, BUNfirst(bn)));
+				  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, BUNfirst(bn)) : 0);
 		if (BATcount(bn) == 0)
 			bn->tseqbase = 0;
 		else
@@ -1420,7 +1420,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->tsorted || b->trevsorted) {
+	if (BATordered(BATmirror(b)) || BATordered_rev(BATmirror(b))) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1906,7 +1906,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		lvars = rlvars = rhvars = NULL;
 	}
 
-	if (l->tsorted || l->trevsorted) {
+	if (BATordered(BATmirror(l)) || BATordered_rev(BATmirror(l))) {
 		/* left column is sorted, use binary search */
 		const oid *sval = sl ? (const oid *) Tloc(sl, BUNfirst(sl)) : NULL;
 

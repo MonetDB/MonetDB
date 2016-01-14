@@ -3564,7 +3564,7 @@ not_unique_oids(bat *ret, const bat *bid)
 		}
 		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
-	} else if (b->tsorted) {	/* ugh handle both wrd and oid types */
+	} else if (BATordered(BATmirror(b))) {	/* ugh handle both wrd and oid types */
 		oid c = *(oid *) Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
 		oid *h = (oid *) Hloc(b, 0), *vp, *ve;
 		int first = 1;

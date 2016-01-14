@@ -1863,7 +1863,7 @@ BUNfnd(BAT *b, const void *v)
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
-		if (BATtordered(b) || BATtrevordered(b))
+		if (BATordered(BATmirror(b)) || BATordered_rev(BATmirror(b)))
 			return SORTfnd(b, v);
 	}
 	bi = bat_iterator(b);
@@ -1943,12 +1943,12 @@ BUNlocate(BAT *b, const void *x, const void *y)
 
 	/* sometimes BUNlocate is just about a single column */
 	if (y &&
-	    BAThordered(b) &&
+	    BATordered(b) &&
 	    (*hcmp) (x, BUNhead(bi, p)) == 0 &&
 	    (*hcmp) (x, BUNhead(bi, q - 1)) == 0)
 		usemirror();
 	if (y == NULL ||
-	    (BATtordered(b) &&
+	    (BATordered(BATmirror(b)) &&
 	     (*tcmp) (y, BUNtail(bi, p)) == 0 &&
 	     (*tcmp) (y, BUNtail(bi, q - 1)) == 0)) {
 		return BUNfnd(BATmirror(b), x);
@@ -1970,11 +1970,11 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	}
 
 	/* next, try to restrict the range using sorted columns */
-	if (BATtordered(b) || BATtrevordered(b)) {
+	if (BATordered(BATmirror(b)) || BATordered_rev(BATmirror(b))) {
 		p = SORTfndfirst(b, y);
 		q = SORTfndlast(b, y);
 	}
-	if (BAThordered(b) || BAThrevordered(b)) {
+	if (BATordered(b) || BATordered_rev(b)) {
 		BUN mp = SORTfndfirst(BATmirror(b), x);
 		BUN mq = SORTfndlast(BATmirror(b), x);
 

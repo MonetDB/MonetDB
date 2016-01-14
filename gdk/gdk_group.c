@@ -444,7 +444,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		return GDK_SUCCEED;
 	}
-	if (b->tsorted && b->trevsorted) {
+	if (BATordered(BATmirror(b)) && BATordered_rev(BATmirror(b))) {
 		/* all values are equal */
 		if (g == NULL) {
 			/* there's only a single group: 0 */
@@ -578,8 +578,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 
-	if (((b->tsorted || b->trevsorted) &&
-	     (g == NULL || g->tsorted || g->trevsorted)) ||
+	if (((BATordered(BATmirror(b)) || BATordered_rev(BATmirror(b))) &&
+	     (g == NULL || BATordered(BATmirror(g)) || BATordered_rev(BATmirror(g)))) ||
 	    subsorted) {
 		/* we only need to compare each entry with the previous */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
@@ -631,7 +631,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		gn->tsorted = 1;
 		*groups = gn;
-	} else if (b->tsorted || b->trevsorted) {
+	} else if (BATordered(BATmirror(b)) || BATordered_rev(BATmirror(b))) {
 		BUN i, j;
 		BUN *pgrp;
 
@@ -832,7 +832,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		}
 	} else {
-		bit gc = g && (g->tsorted || g->trevsorted);
+		bit gc = g && (BATordered(BATmirror(g)) || BATordered_rev(BATmirror(g)));
 		const char *nme;
 		size_t nmelen;
 		Heap *hp = NULL;

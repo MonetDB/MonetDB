@@ -1095,21 +1095,97 @@ BATslice(BAT *b, BUN l, BUN h)
 	return NULL;
 }
 
-/* Return whether the BAT is ordered or not.  */
+/* Return whether the BAT is ordered or not.  If we don't know, invest
+ * in a scan and record the results in the bat descriptor.  */
 int
 BATordered(BAT *b)
 {
-	if (!b->hsorted)
-		BATderiveHeadProps(b, 0);
+	lng t0 = GDKusec();
+
+	if (b->htype == TYPE_void)
+		return 1;
+	/* In order that multiple threads don't scan the same BAT at
+	 * the same time (happens a lot with mitosis/mergetable), we
+	 * use a lock.  We reuse the hash lock for this, not because
+	 * this scanning interferes with hashes, but because it's
+	 * there, and not so likely to be used at the same time. */
+	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATordered");
+	if (!b->hsorted && b->H->nosorted == 0) {
+		BATiter bi = bat_iterator(b);
+		int (*cmpf)(const void *, const void *) = ATOMcompare(b->htype);
+		BUN p, q;
+		b->batDirtydesc = 1;
+		switch (ATOMbasetype(b->htype)) {
+		case TYPE_int: {
+			const int *iptr = (const int *) Hloc(b, 0);
+			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
+				if (iptr[p - 1] > iptr[p]) {
+					b->H->nosorted = p;
+					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					goto doreturn;
+				}
+			}
+			break;
+		}
+		case TYPE_lng: {
+			const lng *lptr = (const lng *) Hloc(b, 0);
+			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
+				if (lptr[p - 1] > lptr[p]) {
+					b->H->nosorted = p;
+					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					goto doreturn;
+				}
+			}
+			break;
+		}
+		default:
+			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
+				if (cmpf(BUNhead(bi, p - 1), BUNhead(bi, p)) > 0) {
+					b->H->nosorted = p;
+					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					goto doreturn;
+				}
+			}
+			break;
+		}
+		b->hsorted = 1;
+		ALGODEBUG fprintf(stderr, "#BATordered: fixed sorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
+	}
+  doreturn:
+	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATordered");
 	return b->hsorted;
 }
 
-/* Return whether the BAT is reverse ordered or not.  */
+/* Return whether the BAT is reverse ordered or not.  If we don't
+ * know, invest in a scan and record the results in the bat
+ * descriptor.  */
 int
 BATordered_rev(BAT *b)
 {
-	if (!b->hrevsorted)
-		BATderiveHeadProps(b, 0);
+	lng t0 = GDKusec();
+
+	if (b == NULL)
+		return 0;
+	if (b->htype == TYPE_void)
+		return b->hseqbase == oid_nil;
+	MT_lock_set(&GDKhashLock(abs(b->batCacheid)), "BATordered_rev");
+	if (!b->hrevsorted && b->H->norevsorted == 0) {
+		BATiter bi = bat_iterator(b);
+		int (*cmpf)(const void *, const void *) = ATOMcompare(b->htype);
+		BUN p, q;
+		b->batDirtydesc = 1;
+		for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
+			if (cmpf(BUNhead(bi, p - 1), BUNhead(bi, p)) < 0) {
+				b->H->norevsorted = p;
+				ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+				goto doreturn;
+			}
+		}
+		b->hrevsorted = 1;
+		ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed revsorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
+	}
+  doreturn:
+	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)), "BATordered_rev");
 	return b->hrevsorted;
 }
 
