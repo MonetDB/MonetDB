@@ -1482,8 +1482,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @item BAT *
  * @tab BATsave (BAT *b)
  * @item int
- * @tab BATmmap (BAT *b, int hb, int tb, int hh, int th, int force )
- * @item int
  * @tab BATdelete (BAT *b)
  * @end multitable
  *
@@ -1498,14 +1496,12 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  *
  * @- Heap Storage Modes
  * The discriminative storage modes are memory-mapped, compressed, or
- * loaded in memory.  The @strong{BATmmap()} changes the storage mode
- * of each heap associated to a BAT.  As can be seen in the bat
- * record, each BAT has one BUN-heap (@emph{bn}), and possibly two
- * heaps (@emph{hh} and @emph{th}) for variable-sized atoms.
+ * loaded in memory.  As can be seen in the bat record, each BAT has
+ * one BUN-heap (@emph{bn}), and possibly two heaps (@emph{hh} and
+ * @emph{th}) for variable-sized atoms.
  */
 
 gdk_export gdk_return BATsave(BAT *b);
-gdk_export void BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export void BATmsync(BAT *b);
 
 gdk_export size_t BATmemsize(BAT *b, int dirty);

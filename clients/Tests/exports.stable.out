@@ -142,7 +142,6 @@ void *BATmax(BAT *b, void *aggr);
 size_t BATmemsize(BAT *b, int dirty);
 BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
-void BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_return BATmode(BAT *b, int onoff);
 void BATmsync(BAT *b);
 int BATname(BAT *b, const char *nme);
