@@ -1320,7 +1320,7 @@ BUNfnd(BAT *b, const void *v)
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
-		if (BATtordered(b) || BATtrevordered(b))
+		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
 	}
 	bi = bat_iterator(b);

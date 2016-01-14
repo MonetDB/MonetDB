@@ -444,7 +444,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		return GDK_SUCCEED;
 	}
-	if (b->tsorted && b->trevsorted) {
+	if (BATordered(b) && BATordered_rev(b)) {
 		/* all values are equal */
 		if (g == NULL) {
 			/* there's only a single group: 0 */
@@ -581,8 +581,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 
-	if (((b->tsorted || b->trevsorted) &&
-	     (g == NULL || g->tsorted || g->trevsorted)) ||
+	if (((BATordered(b) || BATordered_rev(b)) &&
+	     (g == NULL || BATordered(g) || BATordered_rev(g))) ||
 	    subsorted) {
 		/* we only need to compare each entry with the previous */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
@@ -634,7 +634,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		gn->tsorted = 1;
 		*groups = gn;
-	} else if (b->tsorted || b->trevsorted) {
+	} else if (BATordered(b) || BATordered_rev(b)) {
 		BUN i, j;
 		BUN *pgrp;
 
