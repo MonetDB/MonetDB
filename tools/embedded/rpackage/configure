@@ -1,7 +1,7 @@
 #!/bin/sh
 cd src
 
-CFLAGS="-I$R_INCLUDE_DIR -g" ./configure --enable-embedded --enable-embedded-r \
+CFLAGS="-I$R_INCLUDE_DIR" ./configure --enable-embedded --enable-embedded-r \
 --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
 --without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \

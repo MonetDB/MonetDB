@@ -1,6 +1,3 @@
-#include <Rdefines.h>
-#include "mal.h"
-
 #define BAT_TO_SXP(bat,tpe,retsxp,newfun,ptrfun,ctype,naval,memcopy)\
 	do {													\
 		tpe v; size_t j;									\
@@ -114,8 +111,8 @@ static SEXP bat_to_sexp(BAT* b) {
 			BAT_TO_REALSXP(b, lng, varvalue, 0);
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
-			/*
-			if (GDK_ELIMDOUBLES(b->T->vheap) || TRUE) {
+			// this was found to be always slower.
+			/*if (GDK_ELIMDOUBLES(b->T->vheap)) {
 				BAT *grp, *ext;
 				BUN p, q;
 				BATiter b_it, ext_it, grp_it;
@@ -127,7 +124,7 @@ static SEXP bat_to_sexp(BAT* b) {
 					return NULL;
 				}
 
-				sptrs = GDKzalloc(sizeof(SEXP) * BATcount(ext));
+				sptrs = GDKmalloc(sizeof(SEXP) * BATcount(ext));
 				varvalue = PROTECT(NEW_STRING(BATcount(b)));
 
 				if (sptrs == NULL || varvalue == NULL) {
@@ -140,20 +137,23 @@ static SEXP bat_to_sexp(BAT* b) {
 				ext_it = bat_iterator(ext);
 				grp_it = bat_iterator(grp);
 
-				BATloop(grp, p, q) {
-					oid grp_idx = *((oid*) BUNtail(grp_it, p));
-					if (sptrs[grp_idx] == NULL) {
-						oid ext_idx = *((oid*) BUNtail(ext_it, grp_idx));
-						const char *t = (const char *) BUNtail(b_it, ext_idx);
-						SEXP sptr;
-						if (b->T->nil && !b->T->nonil && ATOMcmp(TYPE_str, t, str_nil) == 0) {
-							sptr = NA_STRING;
-						} else {
-							sptr = mkCharCE(t, CE_UTF8);
-						}
-						sptrs[grp_idx] = sptr;
+				if (b->T->nonil) {
+					BATloop(ext, p, q) {
+						sptrs[p] = mkCharCE((const char *) BUNtail(b_it, *((oid*) BUNtail(ext_it, p))), CE_UTF8);;
 					}
-					SET_STRING_ELT(varvalue, p,  sptrs[grp_idx]);
+				} else {
+					BATloop(ext, p, q) {
+						const char* t = (const char *) BUNtail(b_it, *((oid*) BUNtail(ext_it, p)));
+						if (strcmp(t, str_nil) == 0) {
+							sptrs[p] = NA_STRING;
+						} else {
+							sptrs[p] = mkCharCE(t, CE_UTF8);
+						}
+					}
+				}
+
+				BATloop(grp, p, q) {
+					SET_STRING_ELT(varvalue, p,  sptrs[*((oid*) BUNtail(grp_it, p))]);
 				}
 
 				GDKfree(sptrs);
@@ -161,13 +161,13 @@ static SEXP bat_to_sexp(BAT* b) {
 				BBPunfix(ext->batCacheid);
 			}
 			else {*/
-				BUN p, q;
+				BUN p, q, j = 0;
 				BATiter li = bat_iterator(b);
 				varvalue = PROTECT(NEW_STRING(BATcount(b)));
 				if (varvalue == NULL) {
 					return NULL;
 				}
-				if (b->T->nonil && !b->T->nil) {
+				if (b->T->nonil) {
 					BATloop(b, p, q) {
 						SET_STRING_ELT(varvalue, j++, mkCharCE(
 							(const char *) BUNtail(li, p), CE_UTF8));
@@ -176,10 +176,10 @@ static SEXP bat_to_sexp(BAT* b) {
 				else {
 					BATloop(b, p, q) {
 						const char *t = (const char *) BUNtail(li, p);
-						if (ATOMcmp(TYPE_str, t, str_nil) == 0) {
-							SET_STRING_ELT(varvalue, p, NA_STRING);
+						if (strcmp(t, str_nil) == 0) {
+							SET_STRING_ELT(varvalue, j++, NA_STRING);
 						} else {
-							SET_STRING_ELT(varvalue, p, mkCharCE(t, CE_UTF8));
+							SET_STRING_ELT(varvalue, j++, mkCharCE(t, CE_UTF8));
 						}
 					}
 				}

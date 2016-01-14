@@ -1270,7 +1270,7 @@ GDKreset(int status)
 	MT_lock_unset(&GDKthreadLock);
 
 	if (status == 0) {
-		/* they had there chance, now kill them */
+		/* they had their chance, now kill them */
 		MT_lock_set(&GDKthreadLock);
 		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 			if (t->pid) {
