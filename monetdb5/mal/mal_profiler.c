@@ -953,19 +953,17 @@ static void profilerHeartbeat(void *dummy)
 	int t;
 
 	(void) dummy;
-	while (ATOMIC_GET(hbrunning, mal_beatLock) && !GDKexiting()) {
+	for (;;) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL) {
-			for (t = 1000; t > 0 && ! GDKexiting(); t -= 25) {
-				MT_sleep_ms(25);
-				if (!ATOMIC_GET(hbrunning, mal_beatLock))
-					return;
-			}
-		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0 && !GDKexiting(); t -= 25) {
-			MT_sleep_ms(t > 25 ? 25 : t);
-			if (!ATOMIC_GET(hbrunning, mal_beatLock))
+		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream == NULL) {
+			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
 				return;
+			MT_sleep_ms(25);
+		}
+		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= 25) {
+			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+				return;
+			MT_sleep_ms(t > 25 ? 25 : t);
 		}
 		profilerHeartbeatEvent("ping");
 	}
@@ -980,7 +978,7 @@ void setHeartbeat(int delay)
 		return;
 	}
 	if (delay <= 10)
-		hbdelay =10;
+		delay = 10;
 	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
 }
 
@@ -995,11 +993,11 @@ void initHeartbeat(void)
 #ifdef NEED_MT_LOCK_INIT
 	ATOMIC_INIT(mal_beatLock, "beatLock");
 #endif
-	hbrunning = 1;
+	ATOMIC_SET(hbrunning, 1, mal_beatLock);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
 		/* it didn't happen */
 		hbthread = 0;
-		hbrunning = 0;
+		ATOMIC_SET(hbrunning, 0, mal_beatLock);
 	}
 }
 

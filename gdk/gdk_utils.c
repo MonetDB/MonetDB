@@ -1240,15 +1240,44 @@ GDKexiting(void)
 	return stopped;
 }
 
+void
+GDKprepareExit(void)
+{
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
+		return;
+	if (GDKvmtrim_id)
+		MT_join_thread(GDKvmtrim_id);
+}
+
+static struct serverthread {
+	struct serverthread *next;
+	MT_Id pid;
+} *serverthread;
+
+/* Register a thread that should be waited for in GDKreset.  The
+ * thread must exit by itself when GDKexiting() returns true. */
+void
+GDKregister(MT_Id pid)
+{
+	struct serverthread *st;
+
+	if ((st = GDKmalloc(sizeof(struct serverthread))) == NULL)
+		return;
+	st->pid = pid;
+	MT_lock_set(&GDKthreadLock);
+	st->next = serverthread;
+	serverthread = st;
+	MT_lock_unset(&GDKthreadLock);
+}
+
 /* coverity[+kill] */
 void
 GDKreset(int status)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
+	struct serverthread *st;
 
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0) 
-		return ;
 	if( GDKkey){
 		BBPunfix(GDKkey->batCacheid);
 		GDKkey = 0;
@@ -1257,16 +1286,15 @@ GDKreset(int status)
 		BBPunfix(GDKval->batCacheid);
 		GDKval = 0;
 	}
-	if (GDKvmtrim_id)
-		MT_join_thread(GDKvmtrim_id);
 
 	MT_lock_set(&GDKthreadLock);
-	for (t = GDKthreads, s = t + THREADS; t < s; t++)
-		if (t->pid && t->pid != pid && t->waitfor) {
-			MT_lock_unset(&GDKthreadLock);
-			MT_join_thread(t->pid);
-			MT_lock_set(&GDKthreadLock);
-		}
+	for (st = serverthread; st; st = serverthread) {
+		MT_lock_unset(&GDKthreadLock);
+		MT_join_thread(st->pid);
+		MT_lock_set(&GDKthreadLock);
+		serverthread = st->next;
+		GDKfree(st);
+	}
 	MT_lock_unset(&GDKthreadLock);
 
 	if (status == 0) {
@@ -1335,6 +1363,7 @@ GDKexit(int status)
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 	}
+	GDKprepareExit();
 	GDKreset(status);
 	MT_exit_thread(-1);
 }
