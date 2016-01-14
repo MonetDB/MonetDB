@@ -679,6 +679,99 @@ fixoidheap(void)
 }
 #endif
 
+static void
+fixsorted(void)
+{
+	bat bid;
+	BATstore *bs;
+	BAT *b;
+	BATiter bi;
+	int dbg = GDKdebug;
+
+	GDKdebug &= ~(CHECKMASK | PROPMASK);
+	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
+		if ((bs = BBP_desc(bid)) == NULL)
+			continue; /* not a valid BAT */
+		b = NULL;
+		if (bs->H.nosorted != 0) {
+			bs->H.nosorted = 0;
+			bs->S.descdirty = 1;
+		}
+		if (bs->H.norevsorted != 0) {
+			bs->S.descdirty = 1;
+			bs->H.norevsorted = 0;
+		}
+		if (bs->T.nosorted != 0) {
+			if (bs->T.sorted) {
+				/* position should not be set */
+				bs->S.descdirty = 1;
+				bs->T.nosorted = 0;
+			} else if (bs->T.nosorted <= bs->S.first ||
+			    bs->T.nosorted >= bs->S.first + bs->S.count ||
+				bs->T.type < 0) {
+				/* out of range */
+				bs->S.descdirty = 1;
+				bs->T.nosorted = 0;
+			} else if (bs->T.type == TYPE_void) {
+				/* void is always sorted */
+				bs->S.descdirty = 1;
+				bs->T.nosorted = 0;
+				bs->T.sorted = 1;
+			} else {
+				if (b == NULL) {
+					b = BATdescriptor(bid);
+					bi = bat_iterator(b);
+				}
+				if (ATOMcmp(b->ttype,
+					    BUNtail(bi, bs->T.nosorted - 1),
+					    BUNtail(bi, bs->T.nosorted)) <= 0) {
+					/* incorrect hint */
+					bs->S.descdirty = 1;
+					bs->T.nosorted = 0;
+				}
+			}
+		}
+		if (bs->T.norevsorted != 0) {
+			if (bs->T.revsorted) {
+				/* position should not be set */
+				bs->S.descdirty = 1;
+				bs->T.norevsorted = 0;
+			} else if (bs->T.norevsorted <= bs->S.first ||
+			    bs->T.norevsorted >= bs->S.first + bs->S.count ||
+				bs->T.type < 0) {
+				/* out of range */
+				bs->S.descdirty = 1;
+				bs->T.norevsorted = 0;
+			} else if (bs->T.type == TYPE_void) {
+				/* void is only revsorted if nil */
+				bs->S.descdirty = 1;
+				if (bs->T.seq == oid_nil ||
+				    bs->S.count <= 1) {
+					bs->T.norevsorted = 0;
+					bs->T.revsorted = 1;
+				} else {
+					bs->T.norevsorted = 1;
+				}
+			} else {
+				if (b == NULL) {
+					b = BATdescriptor(bid);
+					bi = bat_iterator(b);
+				}
+				if (ATOMcmp(b->ttype,
+					    BUNtail(bi, bs->T.norevsorted - 1),
+					    BUNtail(bi, bs->T.norevsorted)) >= 0) {
+					/* incorrect hint */
+					bs->S.descdirty = 1;
+					bs->T.norevsorted = 0;
+				}
+			}
+		}
+		if (b)
+			BBPunfix(bid);
+	}
+	GDKdebug = dbg;
+}
+
 /*
  * A read only BAT can be shared in a file system by reading its
  * descriptor separately.  The default src=0 is to read the full
@@ -974,6 +1067,7 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_64_BIT_INT) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
@@ -1141,6 +1235,8 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
+	if (bbpversion <= GDKLIBRARY_SORTEDPOS)
+		fixsorted();
 	if (bbpversion < GDKLIBRARY || needcommit)
 		TMcommit();
 

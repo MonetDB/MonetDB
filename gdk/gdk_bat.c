@@ -2202,6 +2202,26 @@ BATassertTailProps(BAT *b)
 	/* only linear atoms can be sorted */
 	assert(!b->tsorted || ATOMlinear(b->ttype));
 	assert(!b->trevsorted || ATOMlinear(b->ttype));
+	if (ATOMlinear(b->ttype)) {
+		assert(b->T->nosorted == 0 ||
+		       (b->T->nosorted > b->batFirst &&
+			b->T->nosorted < b->batFirst + b->batCount));
+		assert(!b->tsorted || b->T->nosorted == 0);
+		if (!b->tsorted &&
+		    b->T->nosorted > b->batFirst &&
+		    b->T->nosorted < b->batFirst + b->batCount)
+			assert(cmpf(BUNtail(bi, b->T->nosorted - 1),
+				    BUNtail(bi, b->T->nosorted)) > 0);
+		assert(b->T->norevsorted == 0 ||
+		       (b->T->norevsorted > b->batFirst &&
+			b->T->norevsorted < b->batFirst + b->batCount));
+		assert(!b->trevsorted || b->T->norevsorted == 0);
+		if (!b->trevsorted &&
+		    b->T->norevsorted > b->batFirst &&
+		    b->T->norevsorted < b->batFirst + b->batCount)
+			assert(cmpf(BUNtail(bi, b->T->norevsorted - 1),
+				    BUNtail(bi, b->T->norevsorted)) < 0);
+	}
 	/* var heaps must have sane sizes */
 	assert(b->T->vheap == NULL || b->T->vheap->free <= b->T->vheap->size);
 
