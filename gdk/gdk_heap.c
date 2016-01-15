@@ -41,8 +41,6 @@
  * X.new files take preference over X files when opening them.
  * @end table
  * Read also the discussion in BATsetaccess (gdk_bat.mx).
- *
- * Todo: check DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
  */
 #include "monetdb_config.h"
 #include "gdk.h"

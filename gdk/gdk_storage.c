@@ -609,40 +609,6 @@ DESCload(int i)
 	return bs;
 }
 
-#define STORE_MODE(m,r,e) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))?STORE_PRIV:STORE_MMAP)
-int
-DESCsetmodes(BAT *b)
-{
-	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
-	int brestrict = (b->batRestricted == BAT_WRITE);
-	int ret = 0;
-	storage_t m;
-
-	if (b->batMaphead) {
-		m = STORE_MODE(b->batMaphead, brestrict, existing);
-		ret |= m != b->H->heap.newstorage || m != b->H->heap.storage;
-		b->H->heap.newstorage = b->H->heap.storage = m;
-	}
-	if (b->batMaptail) {
-		m = STORE_MODE(b->batMaptail, brestrict, existing);
-		ret |= b->T->heap.newstorage != m || b->T->heap.storage != m;
-		b->T->heap.newstorage = b->T->heap.storage = m;
-	}
-	if (b->H->vheap && b->batMaphheap) {
-		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		m = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing);
-		ret |= b->H->vheap->newstorage != m || b->H->vheap->storage != m;
-		b->H->vheap->newstorage = b->H->vheap->storage = m;
-	}
-	if (b->T->vheap && b->batMaptheap) {
-		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		m = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing);
-		ret |= b->T->vheap->newstorage != m || b->T->vheap->storage != m;
-		b->T->vheap->newstorage = b->T->vheap->storage = m;
-	}
-	return ret;
-}
-
 void
 DESCclean(BAT *b)
 {
@@ -857,13 +823,11 @@ BATload_intern(bat i, int lock)
 	str nme = BBP_physical(bid);
 	BATstore *bs = DESCload(bid);
 	BAT *b;
-	int batmapdirty;
 
 	if (bs == NULL) {
 		return NULL;
 	}
 	b = &bs->B;
-	batmapdirty = DESCsetmodes(b);
 
 	/* LOAD bun heap */
 	if (b->htype != TYPE_void) {
@@ -942,7 +906,6 @@ BATload_intern(bat i, int lock)
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);
 	}
-	b->batDirtydesc |= batmapdirty;	/* if some heap mode changed, make desc dirty */
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
 	    (GDKdebug & PROPMASK)) {

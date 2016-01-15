@@ -132,10 +132,6 @@ BATcreatedesc(int tt, int heapnames, int role)
 	bn->T->heap.filename = NULL;
 	bn->H->heap.farmid = BBPselectfarm(role, bn->htype, offheap);
 	bn->T->heap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	bn->batMaphead = 0;
-	bn->batMaptail = 0;
-	bn->batMaphheap = 0;
-	bn->batMaptheap = 0;
 	if (heapnames) {
 		const char *nme = BBP_physical(bn->batCacheid);
 
@@ -1320,7 +1316,7 @@ BUNfnd(BAT *b, const void *v)
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
-		if (BATtordered(b) || BATtrevordered(b))
+		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
 	}
 	bi = bat_iterator(b);
@@ -1614,77 +1610,6 @@ BATroles(BAT *b, const char *hnme, const char *tnme)
 }
 
 /*
- * @- BATmmap
- * Changing the storage status of heaps in a BAT is done in BATmmap.
- * The new semantics is to do nothing: the new mapping only takes
- * effect the next time the bat is loaded or extended. The latter is
- * needed for loading large data sets. These transient bats should
- * switch cheaply between malloced and memory mapped modes.
- *
- * We modify the hp->storage fields using HEAPnewstorage and store
- * that we want malloced or memory mapped heaps in special binary
- * batMap fields that are used when the BAT descriptor is saved.
- */
-/* TODO niels: merge with BATsetmodes in gdk_storage */
-#define STORE_MODE(m,r,e,s,f) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e)&&!(f))||(s)==STORE_PRIV?STORE_PRIV:STORE_MMAP)
-static void
-HEAPnewstorage(BAT *b, int force)
-{
-	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
-	int brestrict = (b->batRestricted == BAT_WRITE);
-
-	if (b->batMaphead) {
-		b->H->heap.newstorage = STORE_MODE(b->batMaphead, brestrict, existing, b->H->heap.storage, force);
-		if (force)
-			b->H->heap.forcemap = 1;
-	}
-	if (b->batMaptail) {
-		b->T->heap.newstorage = STORE_MODE(b->batMaptail, brestrict, existing, b->T->heap.storage, force);
-		if (force)
-			b->T->heap.forcemap = 1;
-	}
-	if (b->H->vheap && b->batMaphheap) {
-		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing, b->H->vheap->storage, force);
-		if (force)
-			b->H->vheap->forcemap = 1;
-	}
-	if (b->T->vheap && b->batMaptheap) {
-		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing, b->T->vheap->storage, force);
-		if (force)
-			b->T->vheap->forcemap = 1;
-	}
-}
-
-void
-BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
-{
-	if (b == NULL)
-		return;
-	IODEBUG fprintf(stderr, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
-
-	/* Reverse back if required, as this determines which heap is
-	 * saved in the "hheap" file and which in the "theap" file.
-	 */
-	if (b->batCacheid < 0) {
-		int swap = hb;
-		hb = tb;
-		tb = swap;
-		swap = hhp;
-		hhp = thp;
-		thp = swap;
-		b = BATmirror(b);
-	}
-	b->batMaphead = hb;
-	b->batMaptail = tb;
-	b->batMaphheap = hhp;
-	b->batMaptheap = thp;
-	HEAPnewstorage(b, force);
-	b->batDirtydesc = 1;
-}
-
-/*
  * @- Change the BAT access permissions (read, append, write)
  * Regrettably, BAT access-permissions, persistent status and memory
  * map modes, interact in ways that makes one's brain sizzle. This
@@ -1797,13 +1722,8 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
  * Note that this code is not about making heaps mmap-ed in the first
  * place.  It is just about determining which flavor of mmap should be
  * used. The MAL user is oblivious of such details.
- *
- * The route for making heaps mmapped in the first place (or make them
- * no longer so) is to request a mode change with BATmmap. The
- * requested modes are remembered in b->batMap*. At the next re-load
- * of the BAT, they are applied after a sanity check (DESCsetmodes()
- * in gdk_storage.mx).  @end verbatim
  */
+
 /* rather than deleting X.new, we comply with the commit protocol and
  * move it to backup storage */
 static gdk_return
@@ -2202,6 +2122,26 @@ BATassertTailProps(BAT *b)
 	/* only linear atoms can be sorted */
 	assert(!b->tsorted || ATOMlinear(b->ttype));
 	assert(!b->trevsorted || ATOMlinear(b->ttype));
+	if (ATOMlinear(b->ttype)) {
+		assert(b->T->nosorted == 0 ||
+		       (b->T->nosorted > b->batFirst &&
+			b->T->nosorted < b->batFirst + b->batCount));
+		assert(!b->tsorted || b->T->nosorted == 0);
+		if (!b->tsorted &&
+		    b->T->nosorted > b->batFirst &&
+		    b->T->nosorted < b->batFirst + b->batCount)
+			assert(cmpf(BUNtail(bi, b->T->nosorted - 1),
+				    BUNtail(bi, b->T->nosorted)) > 0);
+		assert(b->T->norevsorted == 0 ||
+		       (b->T->norevsorted > b->batFirst &&
+			b->T->norevsorted < b->batFirst + b->batCount));
+		assert(!b->trevsorted || b->T->norevsorted == 0);
+		if (!b->trevsorted &&
+		    b->T->norevsorted > b->batFirst &&
+		    b->T->norevsorted < b->batFirst + b->batCount)
+			assert(cmpf(BUNtail(bi, b->T->norevsorted - 1),
+				    BUNtail(bi, b->T->norevsorted)) < 0);
+	}
 	/* var heaps must have sane sizes */
 	assert(b->T->vheap == NULL || b->T->vheap->free <= b->T->vheap->size);
 

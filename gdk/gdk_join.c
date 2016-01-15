@@ -458,9 +458,33 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 {
 	BUN cnt;
 
+	r1->tkey = 1;
+	r1->T->nokey[0] = r1->T->nokey[1] = 0;
+	r1->tsorted = 1;
+	r1->T->nosorted = 0;
+	r1->tdense = 0;
+	r1->T->nodense = 0;
+	r1->T->nil = 0;
+	r1->T->nonil = 1;
+	if (r2) {
+		r2->tkey = 1;
+		r2->T->nokey[0] = r2->T->nokey[1] = 0;
+		r2->tsorted = 1;
+		r2->T->nosorted = 0;
+		r2->tdense = 0;
+		r2->T->nodense = 0;
+		r2->T->nil = 0;
+		r2->T->nonil = 1;
+	}
 	if (lstart == lend || !(nil_on_miss | only_misses)) {
 		virtualize(r1);
-		virtualize(r2);
+		r1->trevsorted = 1;
+		r1->T->norevsorted = 0;
+		if (r2) {
+			virtualize(r2);
+			r2->trevsorted = 1;
+			r2->T->norevsorted = 0;
+		}
 		return GDK_SUCCEED;
 	}
 	if (lcand) {
@@ -469,12 +493,6 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 			goto bailout;
 		memcpy(Tloc(r1, BUNfirst(r1)), lcand, (lcandend - lcand) * sizeof(oid));
 		BATsetcount(r1, cnt);
-		r1->tkey = 1;
-		r1->tsorted = 1;
-		r1->trevsorted = BATcount(r1) <= 1;
-		r1->tdense = 0;
-		r1->T->nil = 0;
-		r1->T->nonil = 1;
 	} else {
 		cnt = lend - lstart;
 		HEAPfree(&r1->T->heap, 1);
@@ -482,12 +500,12 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r1->tvarsized = 1;
 		r1->T->width = 0;
 		r1->T->shift = 0;
-		r1->tdense = 0;
 		if (BATextend(r1, cnt) != GDK_SUCCEED)
 			goto bailout;
 		BATsetcount(r1, cnt);
 		BATseqbase(BATmirror(r1), lstart + l->hseqbase);
 	}
+	r1->T->norevsorted = !(r1->trevsorted = BATcount(r1) <= 1);
 	BATseqbase(r1, 0);
 	if (r2) {
 		HEAPfree(&r2->T->heap, 1);
@@ -495,7 +513,6 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r2->tvarsized = 1;
 		r2->T->width = 0;
 		r2->T->shift = 0;
-		r2->tdense = 0;
 		if (BATextend(r2, cnt) != GDK_SUCCEED)
 			goto bailout;
 		BATsetcount(r2, cnt);
@@ -1109,10 +1126,12 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		lordering = 1;
 		rordering = r->tsorted ? 1 : -1;
 		/* if l not sorted, we only know for sure that r2 is
-		 * key if l is, and that r1 is key if r is */
+		 * key if l is, and that r1 is key if r is; r1 is also
+		 * key in the case of a semi-join or anti-semi-join
+		 * (only_misses) */
 		if (r2)
 			r2->tkey = l->tkey != 0;
-		r1->tkey = r->tkey != 0;
+		r1->tkey = (r->tkey != 0) | semi | only_misses;
 	}
 	/* determine opportunistic scan window for r; if l is not
 	 * sorted this is only used to find range of equal values */
@@ -3082,7 +3101,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r1, r2, l, r, sl, sr,
 				      nil_on_miss, only_misses, t0);
-	} else if ((r->tsorted || r->trevsorted) &&
+	} else if ((BATordered(r) || BATordered_rev(r)) &&
 		   (BATtdense(r) ||
 		    lcount < 1024 ||
 		    BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
@@ -3267,7 +3286,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	} else if (BATtdense(l) && (sl == NULL || BATtdense(sl))) {
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r2, r1, r, l, sr, sl, 0, 0, t0);
-	} else if ((l->tsorted || l->trevsorted) && (r->tsorted || r->trevsorted)) {
+	} else if ((BATordered(l) || BATordered_rev(l)) &&
+		   (BATordered(r) || BATordered_rev(r))) {
 		/* both sorted, smallest on left */
 		if (BATcount(l) <= BATcount(r))
 			return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
@@ -3285,14 +3305,14 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		/* only right has hash, don't swap */
 		swap = 0;
 		reason = "right has hash";
-	} else if ((l->tsorted || l->trevsorted) &&
+	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (l->ttype == TYPE_void || rcount < 1024 || MIN(lsize, rsize) > mem_size)) {
 		/* only left is sorted, swap; but only if right is
 		 * "large" and the smaller of the two isn't too large
 		 * (i.e. prefer hash over binary search, but only if
 		 * the hash table doesn't cause thrashing) */
 		return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0, maxsize, t0, 1);
-	} else if ((r->tsorted || r->trevsorted) &&
+	} else if ((BATordered(r) || BATordered_rev(r)) &&
 		   (r->ttype == TYPE_void || lcount < 1024 || MIN(lsize, rsize) > mem_size)) {
 		/* only right is sorted, don't swap; but only if left
 		 * is "large" and the smaller of the two isn't too
@@ -3387,12 +3407,12 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 
 #define project_loop(TYPE)						\
 static gdk_return							\
-project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
+project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 {									\
 	oid lo, hi;							\
 	const TYPE *restrict rt;					\
 	TYPE *restrict bt;						\
-	TYPE v, prev = 0;						\
+	TYPE v;								\
 	const oid *restrict o;						\
 	oid rseq, rend;							\
 									\
@@ -3401,7 +3421,37 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 	bt = (TYPE *) Tloc(bn, BUNfirst(bn));				\
 	rseq = r->hseqbase;						\
 	rend = rseq + BATcount(r);					\
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {		\
+	lo = 0;								\
+	hi = lo + BATcount(l);						\
+	if (nilcheck) {							\
+		for (; lo < hi; lo++) {					\
+			if (o[lo] < rseq || o[lo] >= rend) {		\
+				if (o[lo] == oid_nil) {			\
+					bt[lo] = TYPE##_nil;		\
+					bn->T->nonil = 0;		\
+					bn->T->nil = 1;			\
+					bn->tsorted = 0;		\
+					bn->trevsorted = 0;		\
+					bn->tkey = 0;			\
+					lo++;				\
+					break;				\
+				} else {				\
+					GDKerror("BATproject: does not match always\n"); \
+					return GDK_FAIL;		\
+				}					\
+			} else {					\
+				v = rt[o[lo] - rseq];			\
+				bt[lo] = v;				\
+				if (v == TYPE##_nil && bn->T->nonil) { \
+					bn->T->nonil = 0;		\
+					bn->T->nil = 1;			\
+					lo++;				\
+					break;				\
+				}					\
+			}						\
+		}							\
+	}								\
+	for (; lo < hi; lo++) {						\
 		if (o[lo] < rseq || o[lo] >= rend) {			\
 			if (o[lo] == oid_nil) {				\
 				bt[lo] = TYPE##_nil;			\
@@ -3417,30 +3467,6 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck, int sortcheck)	\
 		} else {						\
 			v = rt[o[lo] - rseq];				\
 			bt[lo] = v;					\
-			if (nilcheck && v == TYPE##_nil && bn->T->nonil) { \
-				bn->T->nonil = 0;			\
-				bn->T->nil = 1;				\
-				nilcheck = 0;				\
-			}						\
-			if (sortcheck && lo &&				\
-			    (bn->trevsorted | bn->tsorted | bn->tkey)) { \
-				if (v > prev) {				\
-					bn->trevsorted = 0;		\
-					if (!bn->tsorted) {		\
-						bn->tkey = 0; /* can't be sure */ \
-						sortcheck = 0;		\
-					}				\
-				} else if (v < prev) {			\
-					bn->tsorted = 0;		\
-					if (!bn->trevsorted) {		\
-						bn->tkey = 0; /* can't be sure */ \
-						sortcheck = 0;		\
-					}				\
-				} else {				\
-					bn->tkey = 0; /* definitely */	\
-				}					\
-			}						\
-			prev = v;					\
 		}							\
 	}								\
 	assert((BUN) lo == BATcount(l));				\
@@ -3505,19 +3531,16 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 {
 	BUN n;
 	oid lo, hi;
-	BATiter ri, bni;
+	BATiter ri;
 	int (*cmp)(const void *, const void *) = ATOMcompare(r->ttype);
 	const void *nil = ATOMnilptr(r->ttype);
 	const void *v;
-	BUN prev = BUN_NONE;
 	const oid *o;
-	int c;
 	oid rseq, rend;
 
 	o = (const oid *) Tloc(l, BUNfirst(l));
 	n = BUNfirst(bn);
 	ri = bat_iterator(r);
-	bni = bat_iterator(bn);
 	rseq = r->hseqbase;
 	rend = rseq + BATcount(r);
 	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, n++) {
@@ -3540,22 +3563,6 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 				bn->T->nonil = 0;
 				bn->T->nil = 1;
 			}
-			if (prev != BUN_NONE &&
-			    (bn->trevsorted | bn->tsorted | bn->tkey)) {
-				c = cmp(BUNtail(bni, prev), v);
-				if (c < 0) {
-					bn->trevsorted = 0;
-					if (!bn->tsorted)
-						bn->tkey = 0; /* can't be sure */
-				} else if (c > 0) {
-					bn->tsorted = 0;
-					if (!bn->trevsorted)
-						bn->tkey = 0; /* can't be sure */
-				} else {
-					bn->tkey = 0; /* definitely */
-				}
-			}
-			prev = n;
 		}
 	}
 	assert(n == BATcount(l));
@@ -3571,7 +3578,7 @@ BATproject(BAT *l, BAT *r)
 	BAT *bn;
 	oid lo, hi;
 	gdk_return res;
-	int tpe = ATOMtype(r->ttype), nilcheck = 1, sortcheck = 1, stringtrick = 0;
+	int tpe = ATOMtype(r->ttype), nilcheck = 1, stringtrick = 0;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 	lng t0 = GDKusec();
 
@@ -3649,7 +3656,6 @@ BATproject(BAT *l, BAT *r)
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */
 		nilcheck = 0;
-		sortcheck = 0;
 		stringtrick = 1;
 	}
 	bn = BATnew(TYPE_void, tpe, BATcount(l), TRANSIENT);
@@ -3687,26 +3693,26 @@ BATproject(BAT *l, BAT *r)
 
 	switch (tpe) {
 	case TYPE_bte:
-		res = project_bte(bn, l, r, nilcheck, sortcheck);
+		res = project_bte(bn, l, r, nilcheck);
 		break;
 	case TYPE_sht:
-		res = project_sht(bn, l, r, nilcheck, sortcheck);
+		res = project_sht(bn, l, r, nilcheck);
 		break;
 	case TYPE_int:
-		res = project_int(bn, l, r, nilcheck, sortcheck);
+		res = project_int(bn, l, r, nilcheck);
 		break;
 	case TYPE_flt:
-		res = project_flt(bn, l, r, nilcheck, sortcheck);
+		res = project_flt(bn, l, r, nilcheck);
 		break;
 	case TYPE_dbl:
-		res = project_dbl(bn, l, r, nilcheck, sortcheck);
+		res = project_dbl(bn, l, r, nilcheck);
 		break;
 	case TYPE_lng:
-		res = project_lng(bn, l, r, nilcheck, sortcheck);
+		res = project_lng(bn, l, r, nilcheck);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		res = project_hge(bn, l, r, nilcheck, sortcheck);
+		res = project_hge(bn, l, r, nilcheck);
 		break;
 #endif
 	case TYPE_oid:
@@ -3714,9 +3720,9 @@ BATproject(BAT *l, BAT *r)
 			res = project_void(bn, l, r);
 		} else {
 #if SIZEOF_OID == SIZEOF_INT
-			res = project_int(bn, l, r, nilcheck, sortcheck);
+			res = project_int(bn, l, r, nilcheck);
 #else
-			res = project_lng(bn, l, r, nilcheck, sortcheck);
+			res = project_lng(bn, l, r, nilcheck);
 #endif
 		}
 		break;
@@ -3765,9 +3771,9 @@ BATproject(BAT *l, BAT *r)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 	} else {
-		bn->tkey |= l->tkey && r->tkey;
-		bn->tsorted |= (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-		bn->trevsorted |= (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+		bn->tkey = l->tkey && r->tkey;
+		bn->tsorted = (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+		bn->trevsorted = (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
 	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
