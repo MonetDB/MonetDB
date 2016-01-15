@@ -639,6 +639,8 @@ create_type_list(mvc *sql, dlist *params, int param)
 			if (param) {
 				an = n->data.lval->h;
 				par_subtype = &an->next->data.typeval;
+				if (par_subtype && !par_subtype->type) /* var arg */
+					return type_list;
 				list_append(type_list, par_subtype);
 			} else { 
 				par_subtype = &an->data.typeval;
