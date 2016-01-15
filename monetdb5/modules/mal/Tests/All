@@ -31,26 +31,26 @@ mat
 
 remoteInit
 
-remote01
-remote02
-HAVE_GEOM?remote03
-remote04
-remote06
-remote07
-remote08
-remote09
-remote11
-remote12
+!BAD_HOSTNAME?remote01
+!BAD_HOSTNAME?remote02
+!BAD_HOSTNAME&HAVE_GEOM?remote03
+!BAD_HOSTNAME?remote04
+!BAD_HOSTNAME?remote06
+!BAD_HOSTNAME?remote07
+!BAD_HOSTNAME?remote08
+!BAD_HOSTNAME?remote09
+!BAD_HOSTNAME?remote11
+!BAD_HOSTNAME?remote12
 # needs Merovingian and aims at SQL
-#remote88
-#remote89
-remote99
+#!BAD_HOSTNAME?remote88
+#!BAD_HOSTNAME?remote89
+!BAD_HOSTNAME?remote99
 
-remote10
+!BAD_HOSTNAME?remote10
 
 # this will always return something else
-#sabaoth00
-sabaoth01
+#!BAD_HOSTNAME?sabaoth00
+!BAD_HOSTNAME?sabaoth01
 
 partition
 batpartition
