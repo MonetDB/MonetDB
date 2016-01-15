@@ -31,6 +31,7 @@ lib_gdk = {
 		gdk_unique.c \
 		gdk_firstn.c \
 		gdk_mosaic.c \
+		gdk_bitvector.c \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
@@ -48,6 +49,7 @@ headers_h = {
 		gdk_atomic.h \
 		gdk_atoms.h \
 		gdk_bbp.h \
+		gdk_bitvector.h \
 		gdk_calc.h \
 		gdk_delta.h \
 		gdk_posix.h \
