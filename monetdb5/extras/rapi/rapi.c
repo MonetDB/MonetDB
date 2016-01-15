@@ -27,6 +27,8 @@
 #undef SIZEOF_SIZE_T
 #undef ERROR
 
+#define USE_RINTERNALS 1
+
 #include <Rembedded.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
