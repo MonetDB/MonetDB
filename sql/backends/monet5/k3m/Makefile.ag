@@ -1,0 +1,38 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+
+INCLUDES = ../../../../monetdb5/mal \
+	   ../../../../common/options \
+	   ../../../../common/stream \
+	   ../../../../common/utils \
+	   ../../../../gdk
+
+lib__k3m = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = k3m.c point.c 3dtree.c median.c
+}
+
+headers_k3mmal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = k3m.mal
+}
+
+headers_k3mautoload = {
+    HEADERS = mal
+    DIR = libdir/monetdb5/autoload
+    SOURCES = 67_k3m.mal
+}
+
+headers_k3m = {
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 67_k3m.sql
+}
+
+EXTRA_DIST_DIR = Tests
+EXTRA_DIST = 67_k3m.mal k3m.mal

@@ -1,0 +1,33 @@
+module k3m;
+
+pattern build(arg:any...):any...
+address K3Mbuild
+comment "build tree";
+
+pattern query(arg:any...):any...
+address K3Mquery
+comment "query tree";
+
+pattern free():any...
+address K3Mfree
+comment "free tree";
+
+# initializer code
+command prelude() :void
+address K3Mprelude;
+
+module batk3m;
+pattern build(arg:any...):any...
+address K3Mbuild
+comment "build tree";
+
+pattern query(arg:any...):any...
+address K3Mquery
+comment "query tree";
+
+pattern free():any...
+address K3Mfree
+comment "free tree";
+
+k3m.prelude();
+
