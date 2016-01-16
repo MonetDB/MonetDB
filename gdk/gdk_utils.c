@@ -19,6 +19,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "mutils.h"
+#include "gdk_bitvector.h"
 
 static char GDKdbpathStr[PATHLENGTH] = { "dbpath" };
 
@@ -1091,6 +1092,7 @@ GDKinit(opt *set, int setlen)
 		return 0;
 	MT_init_posix();
 	THRinit();
+	initBitMasks();
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif

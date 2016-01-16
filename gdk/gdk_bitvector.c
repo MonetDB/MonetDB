@@ -18,12 +18,10 @@
 #include "string.h"
 #include "stdio.h"
 #include "stdlib.h"
-//#include "gdk_private.h"
 
 #define BITS (sizeof( unsigned int) * 8)
 static unsigned int masks[BITS+1];
 
-static
 void initBitMasks(void)
 {
 	unsigned int i,v=1;
@@ -42,7 +40,6 @@ newBitVector(BUN cnt, int width)
 	
 	m = (BitVector) malloc( (cnt * width)/ 8 + (((cnt * width) % 8) > 0)* 8);
 	memset((char*) m, 0,  (cnt * width)/ 8 + (((cnt * width) % 8) > 0)* 8);
-	initBitMasks();
 	return m;
 }
 
@@ -53,14 +50,15 @@ setBitVector(BitVector vector, const BUN i, const int bits, const int value)
 	BUN cid;
 	unsigned int m1,  m2;
 
+    //printf("#setBitVector %ld i "BUNFMT" bits %d value %d\n",(long)vector,i,bits, value);
 	cid = (i * bits) / BITS;
 	m1  = ((i * bits) % BITS)/bits;
     if ( m1 * bits <= BITS)
-        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 *bits))) | ((value & masks[bits]) << (m1 * bits));
+        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ((value & masks[bits]) << (m1 * bits));
     else{ 
 		m1 = (m1 * bits) % BITS;
 		m2 = bits - m1;
-        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 *bits))) | ( (value & masks[bits]) << (BITS-m1));
+        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ( (value & masks[bits]) << (BITS-m1));
         vector[cid+1]= 0 | ( (value & masks[bits])  >> m2);
 	}
 }
@@ -88,6 +86,7 @@ getBitVector(BitVector vector, BUN i, int bits)
 		m2 = bits - m1;
 		value  = (((vector[cid] >> (BITS - m1)) & masks[bits - m1]) << m2) | (vector[cid+1] & masks[m2]);
 	  }
+    //printf("#getBitVector %ld i "BUNFMT" bits %d value %d\n",(long)vector,i,bits,value);
 	return value;
 }
 

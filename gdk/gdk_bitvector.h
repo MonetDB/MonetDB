@@ -21,6 +21,7 @@
 
 typedef unsigned int *BitVector;
 
+gdk_export void initBitMasks(void);
 gdk_export BitVector newBitVector(BUN cnt, int width);
 gdk_export void setBitVector(BitVector vector, const BUN i, const int bits, const int value);
 gdk_export void clrBitVector(BitVector vector, BUN i, int bits);
