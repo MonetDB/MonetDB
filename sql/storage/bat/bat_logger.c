@@ -157,8 +157,8 @@ bl_postversion( void *lg)
 	if (catalog_version <= CATALOG_JUL2015) {
 		/* Prexisting columns of type point, linestring, polygon etc 
 		 * have to converted to geometry(0), geometry(1) etc. */
-		BAT *ct, *cnt, *cd, *cnd, *cs, *cns;
-		BATiter cti, cdi, csi;
+		BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn, *g;
+		BATiter cti, cdi, csi, cni, ctidi, tsi, tni, sni, gi;
 		char *s = "sys", n[64];
 		BUN p,q;
 
@@ -168,6 +168,18 @@ bl_postversion( void *lg)
 		cdi = bat_iterator(cd);
 		cs = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
 		csi = bat_iterator(cs);
+		cn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_name")));
+		cni = bat_iterator(cn);
+		ctid = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_table_id")));
+		ctidi = bat_iterator(ctid);
+		ti = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_tables_id")));
+		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_tables_name")));
+		tni = bat_iterator(tn);
+		ts = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_tables_schema_id")));
+		tsi = bat_iterator(ts);
+		si = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "schemas_id")));
+		sn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
+		sni = bat_iterator(sn);
 
 		cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
 		cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
@@ -180,47 +192,98 @@ bl_postversion( void *lg)
 		BATseqbase(cns, cs->hseqbase);
 
 		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
+			bool isGeom = false;
 			char *type = BUNtail(cti, p);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);
-
+			char* colname = BUNtail(cni, p);
+			
 			if (strcmp(toLower(type), "point") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbPoint;
 				scale = 0; // in the past we did not save the srid
 			} else if (strcmp(toLower(type), "linestring") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbLineString;
 				scale = 0;
 			} else if (strcmp(toLower(type), "linearring") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbLinearRing;
 				scale = 0;
 			} else if (strcmp(toLower(type), "polygon") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbPolygon;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multipoint") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbMultiPoint;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multilinestring") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbMultiLineString;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multipolygon") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbMultiPolygon;
 				scale = 0;
 			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
 				type = "geometry";
+				isGeom = true;
 				digits = wkbGeometryCollection;
 				scale = 0;
-			}
+			}  else if (strcmp(toLower(type), "geometry") == 0) {
+				type = "geometry";
+				isGeom = true;
+				digits = 0;
+				scale = 0;
+			} 
 
 			BUNappend(cnt, type, TRUE);
 			BUNappend(cnd, &digits, TRUE);
 			BUNappend(cns, &scale, TRUE);
+
+			/* The wkb struct changed. Update the respective BATs */
+			if (isGeom) {
+				typedef struct wkb_old {int len; char data[1];} wkb_old;
+				BAT *gn;
+				BUN k,l;
+				int table_id, schema_id;
+				char *sn, *tblname;
+
+				table_id = *(int*)BUNtail(ctidi, p);
+				if ((k = BUNfnd(ti, &table_id)) == BUN_NONE)
+					return;
+				tblname = BUNtail(tni, k);
+				schema_id = *(int*)BUNtail(tsi, k);
+				if ((k = BUNfnd(si, &schema_id)) == BUN_NONE)
+					return;
+				sn = BUNtail(sni, k);
+				g = temp_descriptor(logger_find_bat(lg, N(n, sn, tblname, colname)));
+				gi = bat_iterator(g);
+				gn = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(g), PERSISTENT);
+				if (!gn)
+					return;
+				BATseqbase(gn, g->hseqbase);
+				for(k=BUNfirst(g), l=BUNlast(g); k<l; k++) {
+					wkb_old *wo = (wkb_old*)BUNtail(gi, k);
+					wkb *wn = GDKmalloc(sizeof(wkb) - 1 + wo->len);
+					wn->len = wo->len;
+					wn->srid = 0;// we did not save the srid in the past
+					if (wo->len >= 0)
+						memcpy(wn->data, wo->data, wn->len);
+					BUNappend(gn, wn, TRUE);
+				}
+				BATsetaccess(gn, BAT_READ);
+				logger_add_bat(lg, gn, N(n, sn, tblname, colname));
+				bat_destroy(g);
+			}
 		}
 
 		BATsetaccess(cnt, BAT_READ);
@@ -234,6 +297,13 @@ bl_postversion( void *lg)
 		bat_destroy(ct);
 		bat_destroy(cd);
 		bat_destroy(cs);
+		bat_destroy(cn);
+		bat_destroy(ctid);
+		bat_destroy(ti);
+		bat_destroy(ts);
+		bat_destroy(tn);
+		bat_destroy(si);
+		bat_destroy(sn);
 	}
 }
 

@@ -1618,7 +1618,7 @@ sql_update_jul2015(Client c)
 static str
 sql_update_dec2015(Client c)
 {
-	size_t bufsize = 10240, pos = 0;
+	size_t bufsize = 4096000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
@@ -1629,6 +1629,7 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 /* insert upgrade code here */
+#if 0
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_openstream(host string, port int);");
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_stethoscope(ticks int);");
 	pos += snprintf(buf + pos, bufsize - pos, "create schema profiler;"
@@ -1637,65 +1638,64 @@ sql_update_dec2015(Client c)
 		"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"
 		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"
 		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;");
-
+#endif
 	/* drop the previous geometry types */
 	/* drop old types */
 	/** Keep only the geometry type **/
 	/** pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Geometry;"); **/
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Point;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Curve;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE LineString;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Surface;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Polygon;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE MultiPoint;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE MultiCurve;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE MultiLineString;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE MultiSurface;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE MultiPolygon;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE GeomCollection;");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"point\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"curve\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"linestring\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"surface\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"polygon\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multipoint\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multicurve\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multilinestring\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multisurface\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multipolygon\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop type \"geomcollection\";");
 
 	/* drop old functions */
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION mbr;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION mbroverlaps;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION GeomFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION PointFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION LineFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION PolyFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION MPointFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION MLineFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION MPolyFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION GeomCollectionFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION PolygonFromText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION AsText;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION X;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Y;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Point;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Dimension;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION GeometryTypeId;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION SRID;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Envelope;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION IsEmpty;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION IsSimple;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Boundary;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Equals;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Disjoint;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION \"Intersect\";");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Touches;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Crosses;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Within;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Contains;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Contains;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Overlaps;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Relate;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Area;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Length;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Distance;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Buffer;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION ConvexHull;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Intersection;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION \"Union\";");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION Difference;");
-	pos += snprintf(buf + pos, bufsize - pos, "DROP FUNCTION SymDifference;");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mbr\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mbroverlaps\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"geomfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"pointfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"linefromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"polyfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mpointfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mlinefromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mpolyfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"geomcollectionfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"polygonfromtext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"astext\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"x\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"y\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"point\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"dimension\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"geometrytypeid\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"srid\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"envelope\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"isempty\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"issimple\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"boundary\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"equals\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"disjoint\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"Intersect\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"touches\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"crosses\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"within\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop all function \"contains\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"overlaps\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"relate\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"area\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"length\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"distance\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"buffer\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"convexhull\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"intersection\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"Union\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"difference\";");
+	pos += snprintf(buf + pos, bufsize - pos, "drop function \"symdifference\";");
 
 	/* create the new geometry types */
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom.\"hasZ\";");
@@ -1769,16 +1769,16 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_SetExteriorRing(geom Geometry) RETURNS Geometry external name geom.\"MakePolygon\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME geom.\"NumInteriorRings\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom.\"InteriorRingN\";");
-	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom.\"InteriorRings\";");
+//	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom.\"InteriorRings\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom.\"NumGeometries\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_GeometryN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom.\"GeometryN\";");
-	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer");
-	pos += snprintf(buf + pos, bufsize - pos, "BEGIN");
-	pos += snprintf(buf + pos, bufsize - pos, "	RETURN SELECT ST_NumGeometries(geom);");
+	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer ");
+	pos += snprintf(buf + pos, bufsize - pos, "BEGIN ");
+	pos += snprintf(buf + pos, bufsize - pos, " RETURN SELECT ST_NumGeometries(geom);");
 	pos += snprintf(buf + pos, bufsize - pos, "END;");
-	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry");
+	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_PatchN(geom Geometry, patchNum integer) RETURNS Geometry ");
 	pos += snprintf(buf + pos, bufsize - pos, "BEGIN");
-	pos += snprintf(buf + pos, bufsize - pos, "	RETURN SELECT ST_GeometryN(geom, patchNum);");
+	pos += snprintf(buf + pos, bufsize - pos, " RETURN SELECT ST_GeometryN(geom, patchNum);");
 	pos += snprintf(buf + pos, bufsize - pos, "END; ");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_GeomFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom.\"GeomFromText\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_PointFromText(wkt string, srid integer) RETURNS Geometry EXTERNAL NAME geom.\"PointFromText\"; ");
@@ -1832,26 +1832,26 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_Segmentize(geom Geometry, sz double) RETURNS Geometry EXTERNAL NAME geom.\"Segmentize\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION getProj4(srid_in integer) RETURNS string ");
 	pos += snprintf(buf + pos, bufsize - pos, "BEGIN");
-	pos += snprintf(buf + pos, bufsize - pos, "	RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in; ");
+	pos += snprintf(buf + pos, bufsize - pos, " RETURN SELECT proj4text FROM spatial_ref_sys WHERE srid=srid_in; ");
 	pos += snprintf(buf + pos, bufsize - pos, "END;");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION InternalTransform(geom Geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) RETURNS Geometry EXTERNAL NAME geom.\"Transform\";");
-	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_Transform(geom Geometry, srid integer) RETURNS Geometry");
+	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_Transform(geom Geometry, srid integer) RETURNS Geometry ");
 	pos += snprintf(buf + pos, bufsize - pos, "BEGIN");
-	pos += snprintf(buf + pos, bufsize - pos, "	DECLARE srid_src integer;");
-	pos += snprintf(buf + pos, bufsize - pos, "	DECLARE proj4_src string;");
-	pos += snprintf(buf + pos, bufsize - pos, "	DECLARE proj4_dest string;");
-	pos += snprintf(buf + pos, bufsize - pos, "	SELECT st_srid(geom) INTO srid_src;");
-	pos += snprintf(buf + pos, bufsize - pos, "	SELECT getProj4(srid_src) INTO proj4_src;");
-	pos += snprintf(buf + pos, bufsize - pos, "	SELECT getProj4(srid) INTO proj4_dest;");
-	pos += snprintf(buf + pos, bufsize - pos, "	IF proj4_src IS NULL THEN");
-	pos += snprintf(buf + pos, bufsize - pos, "		RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest); ");
-	pos += snprintf(buf + pos, bufsize - pos, "	ELSE");
-	pos += snprintf(buf + pos, bufsize - pos, "		IF proj4_dest IS NULL THEN");
-	pos += snprintf(buf + pos, bufsize - pos, "			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null'); ");
-	pos += snprintf(buf + pos, bufsize - pos, "		ELSE");
-	pos += snprintf(buf + pos, bufsize - pos, "			RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);");
-	pos += snprintf(buf + pos, bufsize - pos, "		END IF;	");
-	pos += snprintf(buf + pos, bufsize - pos, "	END IF;");
+	pos += snprintf(buf + pos, bufsize - pos, " DECLARE srid_src integer;");
+	pos += snprintf(buf + pos, bufsize - pos, " DECLARE proj4_src string;");
+	pos += snprintf(buf + pos, bufsize - pos, " DECLARE proj4_dest string;");
+	pos += snprintf(buf + pos, bufsize - pos, " SELECT st_srid(geom) INTO srid_src;");
+	pos += snprintf(buf + pos, bufsize - pos, " SELECT getProj4(srid_src) INTO proj4_src;");
+	pos += snprintf(buf + pos, bufsize - pos, " SELECT getProj4(srid) INTO proj4_dest;");
+	pos += snprintf(buf + pos, bufsize - pos, " IF proj4_src IS NULL THEN");
+	pos += snprintf(buf + pos, bufsize - pos, "  RETURN SELECT InternalTransform(geom, srid_src, srid, 'null', proj4_dest); ");
+	pos += snprintf(buf + pos, bufsize - pos, " ELSE");
+	pos += snprintf(buf + pos, bufsize - pos, "  IF proj4_dest IS NULL THEN");
+	pos += snprintf(buf + pos, bufsize - pos, "   RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, 'null'); ");
+	pos += snprintf(buf + pos, bufsize - pos, "  ELSE");
+	pos += snprintf(buf + pos, bufsize - pos, "   RETURN SELECT InternalTransform(geom, srid_src, srid, proj4_src, proj4_dest);");
+	pos += snprintf(buf + pos, bufsize - pos, "  END IF;");
+	pos += snprintf(buf + pos, bufsize - pos, " END IF;");
 	pos += snprintf(buf + pos, bufsize - pos, "END;");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double) RETURNS Geometry EXTERNAL NAME geom.\"Translate\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_Translate(geom Geometry, dx double, dy double, dz double) RETURNS Geometry EXTERNAL NAME geom.\"Translate\";");
@@ -1866,8 +1866,9 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_Dump(geom Geometry) RETURNS TABLE(id string, polygonWKB Geometry) EXTERNAL NAME geom.\"Dump\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG Geometry) EXTERNAL NAME geom.\"DumpPoints\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom.\"Contains\";");
-
-	/* populate the spatial_ref_sys table */
+	pos += snprintf(buf + pos, bufsize - pos, "UPDATE _tables set system = true where name='spatial_ref_sys';");
+	pos += snprintf(buf + pos, bufsize - pos, "UPDATE _tables set system = true where name='geometry_columns';");
+/* populate the spatial_ref_sys table */
 	pos += snprintf(buf + pos, bufsize - pos, "COPY 3911 RECORDS INTO spatial_ref_sys FROM STDIN USING DELIMITERS ',';");
 	pos += snprintf(buf + pos, bufsize - pos, "3819,EPSG,3819,GEOGCS[\"HD1909\"\\,DATUM[\"Hungarian_Datum_1909\"\\,SPHEROID[\"Bessel 1841\"\\,6377397.155\\,299.1528128\\,AUTHORITY[\"EPSG\"\\,\"7004\"]]\\,TOWGS84[595.48\\,121.69\\,515.35\\,4.115\\,-2.9383\\,0.853\\,-3.408]\\,AUTHORITY[\"EPSG\"\\,\"1024\"]]\\,PRIMEM[\"Greenwich\"\\,0\\,AUTHORITY[\"EPSG\"\\,\"8901\"]]\\,UNIT[\"degree\"\\,0.0174532925199433\\,AUTHORITY[\"EPSG\"\\,\"9122\"]]\\,AUTHORITY[\"EPSG\"\\,\"3819\"]],+proj=longlat +ellps=bessel +towgs84=595.48\\,121.69\\,515.35\\,4.115\\,-2.9383\\,0.853\\,-3.408 +no_defs ");
 	pos += snprintf(buf + pos, bufsize - pos, "3821,EPSG,3821,GEOGCS[\"TWD67\"\\,DATUM[\"Taiwan_Datum_1967\"\\,SPHEROID[\"GRS 1967 Modified\"\\,6378160\\,298.25\\,AUTHORITY[\"EPSG\"\\,\"7050\"]]\\,AUTHORITY[\"EPSG\"\\,\"1025\"]]\\,PRIMEM[\"Greenwich\"\\,0\\,AUTHORITY[\"EPSG\"\\,\"8901\"]]\\,UNIT[\"degree\"\\,0.0174532925199433\\,AUTHORITY[\"EPSG\"\\,\"9122\"]]\\,AUTHORITY[\"EPSG\"\\,\"3821\"]],+proj=longlat +ellps=aust_SA +no_defs ");
@@ -5897,7 +5898,7 @@ SQLupgrades(Client c, mvc *m)
 		/* if function sys.<<(geometry,geometry) does not exist, we need to
 		 * update */
 		sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "geometry"), 0, 0);
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "left_shift", &tp, &tp, F_FUNC)) {
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "st_overlaps", &tp, &tp, F_FUNC)) {
 			if ((err = sql_update_dec2015(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
