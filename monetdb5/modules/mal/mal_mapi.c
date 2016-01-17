@@ -221,9 +221,9 @@ SERVERlistenThread(SOCKET *Sock)
 		if (usock != INVALID_SOCKET)
 			FD_SET(usock, &fds);
 #endif
-		/* Wait up to 0.5 seconds. */
+		/* Wait up to 0.025 seconds (0.01 if testing) */
 		tv.tv_sec = 0;
-		tv.tv_usec = 500000;
+		tv.tv_usec = GDKdebug & FORCEMITOMASK ? 10000 : 25000;
 
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;
