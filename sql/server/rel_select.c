@@ -1263,6 +1263,14 @@ rel_with_query(mvc *sql, symbol *q )
 			return NULL;
 		}
 		stack_push_rel_view(sql, name, nrel);
+		if (!is_project(nrel->op)) {
+			if (is_topn(nrel->op) || is_sample(nrel->op)) {
+				nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1));
+			} else {
+				stack_pop_frame(sql);
+				return NULL;
+			}
+		}
 		assert(is_project(nrel->op));
 		if (is_project(nrel->op) && nrel->exps) {
 			node *ne = nrel->exps->h;
@@ -6147,6 +6155,10 @@ rel_selects(mvc *sql, symbol *s)
 	sql_rel *ret = NULL;
 
 	switch (s->token) {
+	case SQL_WITH:
+		ret = rel_with_query(sql, s);
+		sql->type = Q_TABLE;
+		break;
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
  		SelectNode *sn = (SelectNode *) s;
