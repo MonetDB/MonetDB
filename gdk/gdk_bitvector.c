@@ -14,10 +14,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_bitvector.h"
-#include "malloc.h"
-#include "string.h"
-#include "stdio.h"
-#include "stdlib.h"
 
 #define BITS (sizeof( unsigned int) * 8)
 static unsigned int masks[BITS+1];
