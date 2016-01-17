@@ -208,12 +208,22 @@ bl_postversion( void *lg)
 				isGeom = true;
 				digits = wkbLineString;
 				scale = 0;
+			} else if (strcmp(toLower(type), "curve") == 0) {
+				type = "geometry";
+				isGeom = true;
+				digits = wkbLineString;
+				scale = 0;
 			} else if (strcmp(toLower(type), "linearring") == 0) {
 				type = "geometry";
 				isGeom = true;
 				digits = wkbLinearRing;
 				scale = 0;
 			} else if (strcmp(toLower(type), "polygon") == 0) {
+				type = "geometry";
+				isGeom = true;
+				digits = wkbPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "surface") == 0) {
 				type = "geometry";
 				isGeom = true;
 				digits = wkbPolygon;
@@ -228,10 +238,25 @@ bl_postversion( void *lg)
 				isGeom = true;
 				digits = wkbMultiLineString;
 				scale = 0;
+			} else if (strcmp(toLower(type), "multicurve") == 0) {
+				type = "geometry";
+				isGeom = true;
+				digits = wkbMultiLineString;
+				scale = 0;
 			} else if (strcmp(toLower(type), "multipolygon") == 0) {
 				type = "geometry";
 				isGeom = true;
 				digits = wkbMultiPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multisurface") == 0) {
+				type = "geometry";
+				isGeom = true;
+				digits = wkbMultiPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "geomcollection") == 0) {
+				type = "geometry";
+				isGeom = true;
+				digits = wkbGeometryCollection;
 				scale = 0;
 			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
 				type = "geometry";
@@ -273,11 +298,17 @@ bl_postversion( void *lg)
 				BATseqbase(gn, g->hseqbase);
 				for(k=BUNfirst(g), l=BUNlast(g); k<l; k++) {
 					wkb_old *wo = (wkb_old*)BUNtail(gi, k);
-					wkb *wn = GDKmalloc(sizeof(wkb) - 1 + wo->len);
-					wn->len = wo->len;
-					wn->srid = 0;// we did not save the srid in the past
-					if (wo->len >= 0)
+					wkb *wn;
+					if (wo->len == ~0) {
+						wn = GDKmalloc(sizeof(wkb));
+						wn->len = ~(int)0;
+						(wn->data)[0] = 0;
+					} else {
+						wn  = GDKmalloc(sizeof(wkb) - 1 + wo->len);
+						wn->len = wo->len;
 						memcpy(wn->data, wo->data, wn->len);
+					}
+					wn->srid = 0;// we did not save the srid in the past
 					BUNappend(gn, wn, TRUE);
 				}
 				BATsetaccess(gn, BAT_READ);
