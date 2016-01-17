@@ -774,7 +774,7 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_delta(Client cntxt,  MOStask task)
+MOSsubjoin_delta(Client cntxt,  MOStask task)
 {
 	BUN n, first, last;
 	oid o, oo;

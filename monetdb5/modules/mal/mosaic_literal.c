@@ -650,7 +650,7 @@ MOSprojection_literal(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_literal(Client cntxt,  MOStask task)
+MOSsubjoin_literal(Client cntxt,  MOStask task)
 {
 	BUN n,first,last;
 	oid o, oo;

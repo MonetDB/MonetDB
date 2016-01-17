@@ -27,6 +27,8 @@
  */
 
 #include "monetdb_config.h"
+#include "gdk.h"
+#include "gdk_bitvector.h"
 #include "mosaic.h"
 #include "mosaic_dictionary.h"
 
@@ -330,25 +332,12 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 }
 
 // insert a series of values into the compressor block using dictionary
-#define dictcompress(Vector,I,Bits,Value)\
-{int cid,lshift,rshift;\
-	cid = (int) (I * Bits)/64;\
-	lshift= 63 -((I * Bits) % 64) ;\
-	if ( lshift >= Bits){\
-		Vector[cid]= Vector[cid] | (((ulng) Value) << (lshift- Bits));\
-	}else{ \
-		rshift= 63 -  ((I+1) * Bits) % 64;\
-		Vector[cid]= Vector[cid] | (((ulng) Value) >> (Bits-lshift));\
-		Vector[cid+1]= 0 | (((ulng) Value)  << rshift);\
-}}
+#define dictcompress(I,Bits,Value) setBitVector(base,I,Bits,Value);
 
 #define DICTcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start;\
 	TPE *dict = (TPE*)hdr->dict;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
-	task->dst = ((char*) task->blk)+ MosaicBlkSize;\
-	base  = (ulng*) task->dst; \
-	base[0]=0;\
 	for(i =0; i<limit; i++, val++){\
 		hdr->checksum.sum##TPE += *val;\
 		MOSfind(j,*val,0,hdr->dictsize);\
@@ -357,7 +346,7 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 		else {\
 			hdr->dictfreq[j]++;\
 			MOSincCnt(blk,1);\
-			dictcompress(base,i,hdr->bits,j);\
+			dictcompress(i,hdr->bits,(unsigned int)j);\
 		}\
 	}\
 	assert(i);\
@@ -371,8 +360,10 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	int j;
 	MosaicBlk blk = task->blk;
 	MosaicHdr hdr = task->hdr;
-	int cid, lshift, rshift;
-	ulng *base;
+	BitVector base;
+
+	task->dst = ((char*) task->blk)+ MosaicBlkSize;
+	base  = (BitVector) task->dst; 
 
 	(void) cntxt;
 	MOSsetTag(blk,MOSAIC_DICT);
@@ -381,6 +372,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTcompress(sht); break;
+	case TYPE_int: DICTcompress(int); break;
 	case TYPE_lng: DICTcompress(lng); break;
 	case TYPE_oid: DICTcompress(oid); break;
 	case TYPE_flt: DICTcompress(flt); break;
@@ -388,59 +380,16 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 #ifdef HAVE_HGE
 	case TYPE_hge: DICTcompress(hge); break;
 #endif
-	case TYPE_int:
-		{	int *val = ((int*)task->src) + task->start;
-			int *dict = (int*)hdr->dict;
-			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-
-			task->dst = ((char*) task->blk)+ MosaicBlkSize;
-			base  = (ulng*) task->dst; // start of bit vector
-			base[0]=0;
-			for(i =0; i<limit; i++, val++){
-				hdr->checksum.sumint += *val;
-				MOSfind(j,*val,0,hdr->dictsize);
-				mnstr_printf(cntxt->fdout,"compress ["BUNFMT"] val %d index %d bits %d\n",i, *val,j,hdr->bits);
-				if( j == hdr->dictsize || dict[j] != *val )
-					break;
-				else {
-					hdr->dictfreq[j]++;
-					MOSincCnt(blk,1);
-					cid = i * hdr->bits/64;
-					lshift= 63 -((i * hdr->bits) % 64) ;
-					if ( lshift >= hdr->bits){
-						base[cid]= base[cid] | (((ulng)j) << (lshift-hdr->bits));
-						mnstr_printf(cntxt->fdout,"[%d] shift %d rbits %d \n",cid, lshift, hdr->bits);
-					}else{ 
-						rshift= 63 -  ((i+1) * hdr->bits) % 64;
-						base[cid]= base[cid] | (((ulng)j) >> (hdr->bits-lshift));
-						base[cid+1]= 0 | (((ulng)j)  << rshift);
-						mnstr_printf(cntxt->fdout,"[%d] shift %d %d val %o %o\n", cid, lshift, rshift,
-							(j >> (hdr->bits-lshift)),  (j <<rshift));
-					}
-				} 
-			}
-			assert(i);
-		}
 	}
 }
 
 // the inverse operator, extend the src
-#define dictdecompress(I)\
-cid = (int) (I * hdr->bits)/64;\
-lshift= 63 -((I * hdr->bits) % 64) ;\
-if ( lshift >= hdr->bits){\
-	j =(unsigned short)( (base[cid]>> (lshift-hdr->bits)) & ((ulng)hdr->mask));\
-  }else{ \
-	rshift= 63 -  ((I+1) * hdr->bits) % 64;\
-	m1 = (base[cid] & ( ((ulng)hdr->mask) >> (hdr->bits-lshift)));\
-	m2 = (base[cid+1] >>rshift) & 0377;\
-	j= (unsigned short)( ((m1 <<(hdr->bits-lshift)) | m2) & 0377);\
-  }
+#define dictdecompress(I) j= getBitVector(base,I,(int) hdr->bits); 
 
 #define DICTdecompress(TPE)\
 {	TPE *dict =(TPE*)((char*)hdr->dict);\
 	BUN lim = MOSgetCnt(blk);\
-	base = (ulng*)(((char*)blk) +  MosaicBlkSize);\
+	base = (BitVector)(((char*)blk) +  MosaicBlkSize);\
 	for(i = 0; i < lim; i++){\
 		dictdecompress(i);\
 		((TPE*)task->src)[i] = dict[j];\
@@ -456,44 +405,20 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 	MosaicHdr hdr = task->hdr;
 	BUN i;
 	int j;
-	ulng m1=0,m2;
-	int cid, lshift, rshift;
-	ulng *base;
+	BitVector base;
 	(void) cntxt;
 
 	switch(ATOMbasetype(task->type)){
 	//case TYPE_bte: CASE_bit: no compression achievable
 	case TYPE_sht: DICTdecompress(sht); break;
 	case TYPE_int: DICTdecompress(int); break;
+	case TYPE_lng: DICTdecompress(lng); break;
 	case TYPE_oid: DICTdecompress(oid); break;
 	case TYPE_flt: DICTdecompress(flt); break;
 	case TYPE_dbl: DICTdecompress(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: DICTdecompress(hge); break;
 #endif
-	case TYPE_lng:
-		{	lng *dict =(lng*)((char*)hdr->dict);
-			BUN lim = MOSgetCnt(blk);
-			base  = (ulng*)(((char*)blk) + MosaicBlkSize);
-
-			for(i = 0; i < lim; i++){
-				cid = (int)((i * hdr->bits)/64);
-				lshift= 63 -((i * hdr->bits) % 64) ;
-				if ( lshift >= hdr->bits){
-					j = (base[cid]>> (lshift-hdr->bits)) & ((ulng)hdr->mask);
-					mnstr_printf(cntxt->fdout,"[%d] lshift %d m "ULLFMT"\n", cid,  lshift,m1);
-				  }else{ 
-					rshift= 63 -  ((i+1) * hdr->bits) % 64;
-					m1 = (base[cid] & ( ((ulng)hdr->mask) >> (hdr->bits-lshift)));
-					m2 = (base[cid+1] >>rshift);
-					j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;\
-					mnstr_printf(cntxt->fdout,"[%d] shift %d %d cid "ULLFMT" "ULLFMT" val "ULLFMT" " ULLFMT"\n", cid, lshift, rshift,base[cid],base[cid+1], m1,  m2);
-				  }
-				((lng*)task->src)[i] = dict[j];
-				hdr->checksum2.sumlng += dict[j];
-			}
-			task->src += i * sizeof(lng);
-		}
 	}
 }
 
@@ -502,7 +427,7 @@ MOSdecompress_dictionary(Client cntxt, MOStask task)
 
 #define subselect_dictionary(TPE) {\
  	TPE *dict= (TPE*) hdr->dict;\
-	base = (ulng*) (((char*) task->blk) + MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize);\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 			for( ; first < last; first++){\
@@ -579,9 +504,7 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 	MosaicHdr hdr = task->hdr;
 	int cmp;
 	bte j;
-	ulng m1,m2;
-	int cid, lshift, rshift;
-	ulng *base;
+	BitVector base;
 	(void) cntxt;
 
 	// set the oid range covered and advance scan range
@@ -596,6 +519,7 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 
 	switch(task->type){
 	case TYPE_sht: subselect_dictionary(sht); break;
+	case TYPE_int: subselect_dictionary(int); break;
 	case TYPE_lng: subselect_dictionary(lng); break;
 	case TYPE_oid: subselect_dictionary(oid); break;
 	case TYPE_flt: subselect_dictionary(flt); break;
@@ -603,79 +527,6 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 #ifdef HAVE_HGE
 	case TYPE_hge: subselect_dictionary(hge); break;
 #endif
-	case TYPE_int:
-	// Expanded MOSselect_dictionary for debugging
-	{ 	int *dict= (int*) hdr->dict;
-		base = (ulng*) (((char*) task->blk) + MosaicBlkSize);
-
-		if( !*anti){
-			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-				for( ; first < last; first++){
-					MOSskipit();
-					*o++ = (oid) first;
-				}
-			} else
-			if( *(int*) low == int_nil ){
-				for(i=0 ; first < last; first++,i++){
-					MOSskipit();
-					dictdecompress(i);
-					cmp  =  ((*hi && dict[j] <= * (int*)hgh ) || (!*hi && dict[j] < *(int*)hgh ));
-					if (cmp )
-						*o++ = (oid) first;
-				}
-			} else
-			if( *(int*) hgh == int_nil ){
-				for(i=0 ; first < last; first++, i++){
-					MOSskipit();
-					dictdecompress(i);
-					cmp  =  ((*li && dict[j] >= * (int*)low ) || (!*li && dict[j] > *(int*)low ));
-					if (cmp )
-						*o++ = (oid) first;
-				}
-			} else{
-				for(i=0 ; first < last; first++, i++){
-					MOSskipit();
-					dictdecompress(i);
-					cmp  =  ((*hi && dict[j] <= * (int*)hgh ) || (!*hi && dict[j] < *(int*)hgh )) &&
-							((*li && dict[j] >= * (int*)low ) || (!*li && dict[j] > *(int*)low ));
-					if (cmp )
-						*o++ = (oid) first;
-				}
-			}
-		} else {
-			if( *(int*) low == int_nil && *(int*) hgh == int_nil){
-				/* nothing is matching */
-			} else
-			if( *(int*) low == int_nil ){
-				for(i=0 ; first < last; first++, i++){
-					MOSskipit();
-					dictdecompress(i);
-					cmp  =  ((*hi && dict[j] <= * (int*)hgh ) || (!*hi && dict[j] < *(int*)hgh ));
-					if ( !cmp )
-						*o++ = (oid) first;
-				}
-			} else
-			if( *(int*) hgh == int_nil ){
-				for(i=0 ; first < last; first++, i++){
-					MOSskipit();
-					dictdecompress(i);
-					cmp  =  ((*li && dict[j] >= * (int*)low ) || (!*li && dict[j] > *(int*)low ));
-					if ( !cmp )
-						*o++ = (oid) first;
-				}
-			} else{
-				for( i=0 ; first < last; first++, i++){
-					MOSskipit();
-					dictdecompress(i);
-					cmp  =  ((*hi && dict[j] <= * (int*)hgh ) || (!*hi && dict[j] < *(int*)hgh )) &&
-							((*li && dict[j] >= * (int*)low ) || (!*li && dict[j] > *(int*)low ));
-					if ( !cmp )
-						*o++ = (oid) first;
-				}
-			}
-		}
-	}
-	break;
 	default:
 		if( task->type == TYPE_date)
 			subselect_dictionary(date);
@@ -685,7 +536,7 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 		{ 	lng *dict= (lng*) hdr->dict;
 			int lownil = timestamp_isnil(*(timestamp*)low);
 			int hghnil = timestamp_isnil(*(timestamp*)hgh);
-			base = (ulng*) (((char*) task->blk) + MosaicBlkSize);
+			base = (BitVector) (((char*) task->blk) + MosaicBlkSize);
 
 			if( !*anti){
 				if( lownil && hghnil){
@@ -763,7 +614,7 @@ MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *
 #define thetasubselect_dictionary(TPE)\
 { 	TPE low,hgh;\
 	TPE *dict= (TPE*) hdr->dict;\
-	base = (ulng*) (((char*) task->blk) + MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize);\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -808,9 +659,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
 	bte j;
-	ulng m1,m2;
-	int cid, lshift, rshift;
-	ulng *base;
+	BitVector base;
 	(void) cntxt;
 	
 	// set the oid range covered and advance scan range
@@ -825,6 +674,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 
 	switch(task->type){
 	case TYPE_sht: thetasubselect_dictionary(sht); break;
+	case TYPE_int: thetasubselect_dictionary(int); break;
 	case TYPE_lng: thetasubselect_dictionary(lng); break;
 	case TYPE_oid: thetasubselect_dictionary(oid); break;
 	case TYPE_flt: thetasubselect_dictionary(flt); break;
@@ -832,51 +682,11 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetasubselect_dictionary(hge); break;
 #endif
-	case TYPE_int:
-		{ 	int low,hgh;
-			int *dict= (int*) hdr->dict;
-			base = (ulng*) (((char*) task->blk) + MosaicBlkSize);
-			low= hgh = int_nil;
-			if ( strcmp(oper,"<") == 0){
-				hgh= *(int*) val;
-				hgh = PREVVALUEint(hgh);
-			} else
-			if ( strcmp(oper,"<=") == 0){
-				hgh= *(int*) val;
-			} else
-			if ( strcmp(oper,">") == 0){
-				low = *(int*) val;
-				low = NEXTVALUEint(low);
-			} else
-			if ( strcmp(oper,">=") == 0){
-				low = *(int*) val;
-			} else
-			if ( strcmp(oper,"!=") == 0){
-				hgh= low= *(int*) val;
-				anti++;
-			} else
-			if ( strcmp(oper,"==") == 0){
-				hgh= low= *(int*) val;
-			} 
-			for(i=0 ; first < last; first++,i++){
-				MOSskipit();
-				dictdecompress(i);
-				if( (low == int_nil || dict[j] >= low) && (dict[j] <= hgh || hgh == int_nil) ){
-					if ( !anti) {
-						*o++ = (oid) first;
-					}
-				} else
-					if( anti){
-						*o++ = (oid) first;
-					}
-			}
-		} 
-		break;
 	default:
 		if( task->type == TYPE_timestamp){
 		{ 	lng *dict= (lng*) hdr->dict;
 			lng low,hgh;
-			base = (ulng*) (((char*) task->blk) + MosaicBlkSize);
+			base = (BitVector) (((char*) task->blk) + MosaicBlkSize);
 
 			low= hgh = int_nil;
 			if ( strcmp(oper,"<") == 0){
@@ -923,7 +733,7 @@ MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper)
 #define projection_dictionary(TPE)\
 {	TPE *v;\
 	TPE *dict= (TPE*) hdr->dict;\
-	base = (ulng*) (((char*) task->blk) + MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize);\
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++){\
 		MOSskipit();\
@@ -941,9 +751,7 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 	BUN i,first,last;
 	MosaicHdr hdr = task->hdr;
 	unsigned short j;
-	ulng m1,m2;
-	int cid, lshift, rshift;
-	ulng *base;
+	BitVector base;
 	(void) cntxt;
 	// set the oid range covered and advance scan range
 	first = task->start;
@@ -961,7 +769,7 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 		case TYPE_int:
 		{	int *v;
 			int *dict= (int*) hdr->dict;
-			base  = (ulng*) (((char*) task->blk) + MosaicBlkSize);
+			base  = (BitVector) (((char*) task->blk) + MosaicBlkSize);
 			v= (int*) task->src;
 			for(i=0 ; first < last; first++, i++){
 				MOSskipit();
@@ -980,7 +788,7 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 #define join_dictionary(TPE)\
 {	TPE  *w;\
 	TPE *dict= (TPE*) hdr->dict;\
-	base = (ulng*) (((char*) task->blk) + MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
@@ -995,20 +803,19 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_dictionary(Client cntxt,  MOStask task)
+MOSsubjoin_dictionary(Client cntxt,  MOStask task)
 {
 	BUN i,n,limit;
 	oid o, oo;
 	MosaicHdr hdr = task->hdr;
 	int j;
-	ulng m1,m2;
-	int cid, lshift, rshift;
-	ulng *base;
+	BitVector base;
 	(void) cntxt;
 
 	// set the oid range covered and advance scan range
 	switch(ATOMbasetype(task->type)){
 		case TYPE_sht: join_dictionary(sht); break;
+		case TYPE_int: join_dictionary(int); break;
 		case TYPE_lng: join_dictionary(lng); break;
 		case TYPE_oid: join_dictionary(oid); break;
 		case TYPE_flt: join_dictionary(flt); break;
@@ -1016,33 +823,6 @@ MOSjoin_dictionary(Client cntxt,  MOStask task)
 #ifdef HAVE_HGE
 		case TYPE_hge: join_dictionary(hge); break;
 #endif
-		case TYPE_int:
-		{	int  *w;
-			int *dict= (int*) hdr->dict;
-			base = (ulng*) (((char*) task->blk) + MosaicBlkSize);
-			w = (int*) task->src;
-			limit= MOSgetCnt(task->blk);
-			for( o=0, n= task->elm; n-- > 0; o++,w++ ){
-				for(oo = task->start,i=0; i < limit; i++,oo++){
-					//dictdecompress(i);
-					cid = (int) (i * hdr->bits)/64;
-					lshift= 63 -((i * hdr->bits) % 64) ;
-					if ( lshift >= hdr->bits){
-						j = (base[cid]>> (lshift-hdr->bits)) & ((ulng)hdr->mask);
-					  }else{ 
-						rshift= 63 -  ((i+1) * hdr->bits) % 64;
-						m1 = (base[cid] & ( ((ulng)hdr->mask) >> (hdr->bits-lshift)));
-						m2 = (base[cid+1] >>rshift ) & 0377;
-						j= ((m1 <<(hdr->bits-lshift)) | m2) & 0377;
-					  }
-					if ( *w == dict[j]){
-						BUNappend(task->lbat, &oo, FALSE);
-						BUNappend(task->rbat, &o, FALSE);
-					}
-				}
-			}
-
-		}
 	}
 	MOSskip_dictionary(cntxt,task);
 	return MAL_SUCCEED;

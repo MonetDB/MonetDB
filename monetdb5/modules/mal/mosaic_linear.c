@@ -764,7 +764,7 @@ MOSprojection_linear(Client cntxt,  MOStask task)
 }
 
 str
-MOSjoin_linear(Client cntxt,  MOStask task)
+MOSsubjoin_linear(Client cntxt,  MOStask task)
 {
 	MosaicBlk blk = task->blk;
 	BUN n,first,last;

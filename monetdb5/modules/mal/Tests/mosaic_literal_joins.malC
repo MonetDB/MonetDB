@@ -27,12 +27,12 @@ bat.append(d,9);
 bat.append(d,11);
 bat.append(d,nil:int);
 
-(jl,jr):= algebra.join(base,d);
+(jl,jr):= algebra.subjoin(base,d, nil:bat,nil:bat,false,0:lng);
 io.print(jl,jr);
-(ml,mr):= mosaic.join(x,d);
+(ml,mr):= mosaic.subjoin(x,d, nil:bat,nil:bat,false,0:lng);
 io.print(ml,mr);
 
-(jl,jr):= algebra.join(d,base);
+(jl,jr):= algebra.subjoin(d,base,nil:bat,nil:bat,false,0:lng);
 io.print(jl,jr);
-(ml,mr):= mosaic.join(d,x);
+(ml,mr):= mosaic.subjoin(d,x, nil:bat,nil:bat,false,0:lng);
 io.print(ml,mr);

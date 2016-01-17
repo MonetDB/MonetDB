@@ -1163,11 +1163,13 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *ret, *ret2,*lid,*rid;
+	bat *ret, *ret2,*lid,*rid, *sl, *sr;
 	int part, nrofparts;
 	int startblk,stopblk;
+	bit *nil_matches= 0;
+	lng *estimate;
 	BAT  *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt = 0;
 	int swapped = 0;
@@ -1180,11 +1182,13 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret2 = getArgReference_bat(stk,pci,1);
 	lid = getArgReference_bat(stk,pci,2);
 	rid = getArgReference_bat(stk,pci,3);
+	nil_matches = getArgReference_bit(stk,pci,6);
+	estimate = getArgReference_lng(stk,pci,7);
 
-	if( !isCompressed(*lid) && !isCompressed(*rid)) {
-		bit nil_matches = 0;
-		return ALGsubjoin(ret,ret2,lid,rid,NULL,NULL,&nil_matches,NULL);
-	}
+	sl = (bat*) getArgReference(stk,pci,4) ;
+	sr = (bat*) getArgReference(stk,pci,5);
+	if( (!isCompressed(*lid) && !isCompressed(*rid)) || (*sl != bat_nil || *sr != bat_nil)) 
+		return ALGsubjoin(ret,ret2,lid,rid,sl,sr,nil_matches,estimate);
 
 	bl = BATdescriptor(*lid);
 	if( bl == NULL)
@@ -1252,25 +1256,25 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while(task->blk )
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			MOSjoin_runlength(cntxt, task);
+			MOSsubjoin_runlength(cntxt, task);
 			break;
 		case MOSAIC_DICT:
-			MOSjoin_dictionary(cntxt, task);
+			MOSsubjoin_dictionary(cntxt, task);
 			break;
 		case MOSAIC_FRAME:
-			MOSjoin_frame(cntxt, task);
+			MOSsubjoin_frame(cntxt, task);
 			break;
 		case MOSAIC_DELTA:
-			MOSjoin_delta(cntxt, task);
+			MOSsubjoin_delta(cntxt, task);
 			break;
 		case MOSAIC_PREFIX:
-			MOSjoin_prefix(cntxt, task);
+			MOSsubjoin_prefix(cntxt, task);
 			break;
 		case MOSAIC_LINEAR:
-			MOSjoin_linear(cntxt, task);
+			MOSsubjoin_linear(cntxt, task);
 			break;
 		case MOSAIC_NONE:
-			MOSjoin_literal(cntxt, task);
+			MOSsubjoin_literal(cntxt, task);
 			break;
 		default:
 			assert(0);

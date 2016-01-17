@@ -39,21 +39,21 @@ bat.append(d,4);
 bat.append(d,13);
 bat.append(d,nil:int);
 
-(jl,jr):= algebra.join(base,d);
+(jl,jr):= algebra.subjoin(base,d, nil:bat, nil:bat,false,0:lng);
 io.print(jl);
 io.print(jr);
 io.print(jl,jr);
-(ml,mr):= mosaic.join(x,d);
+(ml,mr):= mosaic.subjoin(x,d, nil:bat, nil:bat,false,0:lng);
 io.print(ml);
 io.print(mr);
 io.print(ml,mr);
 
 io.printf("reverse join operands");
-(jl,jr):= algebra.join(d,base);
+(jl,jr):= algebra.subjoin(d,base, nil:bat, nil:bat,false,0:lng);
 io.print(jl);
 io.print(jr);
 io.print(jl,jr);
-(ml,mr):= mosaic.join(d,x);
+(ml,mr):= mosaic.subjoin(d,x, nil:bat, nil:bat,false,0:lng);
 io.print(ml);
 io.print(mr);
 io.print(ml,mr);

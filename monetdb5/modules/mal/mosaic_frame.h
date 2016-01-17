@@ -41,5 +41,5 @@ mosaic_export void MOSdecompress_frame(Client cntxt, MOStask task);
 mosaic_export str MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
 mosaic_export str MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper);
 mosaic_export str MOSprojection_frame(Client cntxt,  MOStask task);
-mosaic_export str MOSjoin_frame(Client cntxt,  MOStask task);
+mosaic_export str MOSsubjoin_frame(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_FRAME_ */

@@ -138,10 +138,7 @@ Ready.
 [ 0@0,	2@0,	0@0  ]
 [ 1@0,	7@0,	0@0  ]
 [ 2@0,	10@0,	1@0  ]
-#io.printf("reverse join operands");
-reverse join operands
-#io.print(jl);
-#--------------------------#
+reverse join operands#--------------------------#
 # h	t  # name
 # void	oid  # type
 #--------------------------#

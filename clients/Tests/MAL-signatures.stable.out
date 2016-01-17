@@ -39090,10 +39090,6 @@ pattern mosaic.decompress(b:bat[:any_1]):bat[:any_1]
 address MOSdecompress;
 comment Apply dynamic decompression over chunks producing a temporary version
 
-pattern mosaic.join(b:bat[:any_1],gen:bat[:any_1]) (l:bat[:oid],r:bat[:oid]) 
-address MOSjoin;
-comment Overloaded join operation
-
 pattern mosaic.optimize(bid:int,blk:int):void 
 address MOSoptimize;
 comment Perform a search thru the compression space using up to 2^plycandidate combinations and blk*1000 blocksize limits
@@ -39138,6 +39134,10 @@ pattern mosaic.projection(b:bat[:oid],cand:bat[:bit]):bat[:bit]
 address MOSprojection;
 pattern mosaic.projection(b:bat[:oid],cand:bat[:bte]):bat[:bte] 
 address MOSprojection;
+pattern mosaic.subjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (X_7:bat[:oid],X_8:bat[:oid]) 
+address MOSsubjoin;
+comment Overloaded join operation
+
 pattern mosaic.subselect(b:bat[:daytime],cand:bat[:oid],low:daytime,high:daytime,li:bit,hi:bit,anti:bit):bat[:oid] 
 address MOSsubselect;
 comment Overloaded selection routine
