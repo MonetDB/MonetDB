@@ -105,7 +105,6 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 	filesLoaded[lastfile].fullname = "libmonetdb5";
 	filesLoaded[lastfile].handle = dl;
 	lastfile ++;
-	//dlclose(dl);
 	if(adr != NULL)
 		return adr; /* found it */
 
