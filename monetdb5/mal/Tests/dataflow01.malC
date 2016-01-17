@@ -15,7 +15,7 @@ barrier i:= 0:lng;
 	k:= k+1;
 	l:= calc.lng(k);
 	bat.append(b,l);
-	redo i:= iterator.next(1:lng,1000000:lng);
+	redo i:= iterator.next(1:lng,100000:lng);
 exit i;
 
 mdb.setDebug(dbgmsk_restore);
