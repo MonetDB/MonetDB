@@ -173,6 +173,8 @@ str querylogRef;
 str queryRef;
 str rapiRef;
 str batrapiRef;
+str pyapiRef;
+str pyapimapRef;
 str subeval_aggrRef;
 str rankRef;
 str dense_rankRef;
@@ -383,6 +385,8 @@ void optimizerInit(void)
 	queryRef = putName("query",5);
 	rapiRef = putName("rapi", 4);
 	batrapiRef = putName("batrapi", 7);
+	pyapiRef = putName("batpyapi", 8);
+	pyapimapRef = putName("batpyapimap", 11);
 	subeval_aggrRef = putName("subeval_aggr", 12);
 	rankRef = putName("rank", 4);
 	dense_rankRef = putName("dense_rank", 10);

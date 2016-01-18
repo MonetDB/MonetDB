@@ -1,0 +1,59 @@
+stdout of test 'pyapi01` in directory 'sql/backends/monet5` itself:
+
+
+# 22:40:25 >  
+# 22:40:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32251" "--set" "mapi_usock=/var/tmp/mtest-8581/.s.monetdb.32251" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 22:40:25 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:32251/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8581/.s.monetdb.32251
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:40:26 >  
+# 22:40:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8581" "--port=32251"
+# 22:40:26 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION pyapi01(i integer) returns table (i integer, d double)
+#language P
+#{
+#	x = range(1, i + 1)
+#	y = [42.0] * i
+#	return([x,y])
+#};
+#SELECT i,d FROM pyapi01(42) AS R WHERE i>30;
+% .r,	.r # table_name
+% i,	d # name
+% int,	double # type
+% 2,	24 # length
+[ 31,	42	]
+[ 32,	42	]
+[ 33,	42	]
+[ 34,	42	]
+[ 35,	42	]
+[ 36,	42	]
+[ 37,	42	]
+[ 38,	42	]
+[ 39,	42	]
+[ 40,	42	]
+[ 41,	42	]
+[ 42,	42	]
+#DROP FUNCTION pyapi01;
+#ROLLBACK;
+
+# 22:40:26 >  
+# 22:40:26 >  "Done."
+# 22:40:26 >  
+

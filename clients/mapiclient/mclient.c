@@ -1220,8 +1220,7 @@ static void
 TIMERrenderer(MapiHdl hdl)
 {
 	SQLqueryEcho(hdl);
-	while (fetch_line(hdl) != 0)
-		;
+	mapi_next_result(hdl);
 	printf("%s\n", timerHuman());
 }
 
@@ -3269,6 +3268,9 @@ main(int argc, char **argv)
 		} else {
 			setFormatter("raw");
 		}
+	}
+	if (formatter == TIMERformatter) {
+		mapi_cache_limit(mid, 1);
 	}
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {

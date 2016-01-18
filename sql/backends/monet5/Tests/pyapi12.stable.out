@@ -1,0 +1,99 @@
+stdout of test 'pyapi12` in directory 'sql/backends/monet5` itself:
+
+
+# 17:13:01 >  
+# 17:13:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39806" "--set" "mapi_usock=/var/tmp/mtest-29161/.s.monetdb.39806" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 17:13:01 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:39806/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29161/.s.monetdb.39806
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:13:01 >  
+# 17:13:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29161" "--port=39806"
+# 17:13:01 >  
+
+#START TRANSACTION;
+#CREATE TABLE rval(i integer);
+#INSERT INTO rval VALUES (1),(2),(3),(4),(-1),(0);
+[ 6	]
+#CREATE FUNCTION pyapi12(i integer,z integer) returns boolean language P
+#{
+#	return(numpy.greater(i,z))
+#};
+#SELECT * FROM rval WHERE pyapi12(i,2);
+% sys.rval # table_name
+% i # name
+% int # type
+% 1 # length
+[ 3	]
+[ 4	]
+#DROP FUNCTION pyapi12;
+#CREATE FUNCTION pyapi12(i integer,z integer) returns string language P
+#{
+#	return(numpy.array(['Hello', 'Hello'], dtype=object))
+#};
+#SELECT pyapi12(i,2) FROM rval;
+% sys.L # table_name
+% pyapi12_i # name
+% clob # type
+% 5 # length
+[ "Hello"	]
+[ "Hello"	]
+[ "Hello"	]
+[ "Hello"	]
+[ "Hello"	]
+[ "Hello"	]
+#DROP FUNCTION pyapi12;
+#DROP TABLE rval;
+#ROLLBACK;
+
+# 17:13:01 >  
+# 17:13:01 >  "Done."
+# 17:13:01 >  
+

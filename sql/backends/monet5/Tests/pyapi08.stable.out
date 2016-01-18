@@ -1,0 +1,131 @@
+stdout of test 'pyapi08` in directory 'sql/backends/monet5` itself:
+
+
+# 13:45:47 >  
+# 13:45:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39903" "--set" "mapi_usock=/var/tmp/mtest-5759/.s.monetdb.39903" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 13:45:47 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:39903/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5759/.s.monetdb.39903
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 13:45:47 >  
+# 13:45:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5759" "--port=39903"
+# 13:45:47 >  
+
+#start transaction;
+#CREATE TABLE "streams" (
+#    "ts"      TIMESTAMP,
+#    "type"    TINYINT,
+#    "station" CHARACTER LARGE OBJECT,
+#    "lat"     DOUBLE,
+#    "lon"     DOUBLE,
+#    "alt"     DOUBLE
+#);
+#copy 1000 records into streams from stdin;
+#2015-06-03 15:11:17.000000|1|"244660232"|52.340983333333334|5.000218333333334|0
+#2015-06-03 15:11:17.000000|1|"244660583"|52.337675|5.00784|0
+#2015-06-03 15:11:17.000000|1|"244620981"|52.33674166666667|5.0085516666666665|0
+#2015-06-03 15:11:17.000000|1|"244750382"|52.37370166666667|5.0261233333333335|0
+#2015-06-03 15:11:17.000000|1|"244650760"|52.382495|4.930925|0
+#2015-06-03 15:11:17.000000|1|"244780353"|52.34011666666667|4.912881666666666|0
+#2015-06-03 15:11:17.000000|1|"244750454"|52.20508|5.001308333333333|0
+[ 1000	]
+#CREATE FUNCTION numpy_distance(stt string, tss bigint, lat double, lon double, alt double) returns table (s1 string, s2 string, timestamp int, mindist int) language P {
+#import numpy as np
+#import math
+#timelimit = 10
+#distlimit = 20000
+#rets1 = np.array([], dtype='|S10')
+#rets2 = np.array([], dtype='|S10')
+#retts = np.array([], dtype=np.int64)
+#retmd = np.array([], dtype=np.uint32)
+#it = np.nditer(tss, flags=['f_index'])
+#while not it.finished:
+#    if (it.index+1 >= tss.size) : break
+#    lat1 = lat[it.index]
+#    lon1 = lon[it.index]
+#create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)), lat, lon, alt*0.3048 FROM streams WHERE type = 2 and alt > 0 with data;
+#select * from numpy_distance( (SELECT * FROM planes AS p) );
+% .,	.,	.,	. # table_name
+% s1,	s2,	timestamp,	mindist # name
+% clob,	clob,	int,	int # type
+% 8,	8,	10,	5 # length
+[ "\"3949E9\"",	"\"4006A4\"",	1433344278,	12076	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344278,	12053	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344280,	11841	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344280,	11732	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344282,	11639	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344284,	11479	]
+[ "\"4009DA\"",	"\"4010EA\"",	1433344286,	14051	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344286,	11312	]
+[ "\"4CA56B\"",	"\"45AC45\"",	1433344287,	13933	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344287,	11251	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344288,	10555	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344289,	11157	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344289,	10321	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344290,	11117	]
+[ "\"4009DA\"",	"\"4010EA\"",	1433344290,	13724	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344290,	10154	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344293,	9828	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344294,	9700	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344294,	11047	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344296,	9461	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344296,	9406	]
+[ "\"3949E9\"",	"\"4006A4\"",	1433344298,	11085	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344298,	9129	]
+[ "\"45AC45\"",	"\"4CA56B\"",	1433344299,	8999	]
+#drop table planes;
+#drop function numpy_distance;
+#rollback;
+
+# 13:45:47 >  
+# 13:45:47 >  "Done."
+# 13:45:47 >  
+

@@ -1868,7 +1868,11 @@ mvc_export_result(backend *b, stream *s, int res_id)
 
 	if (!s || !t)
 		return 0;
-
+	
+	/* Proudly supporting SQLstatementIntern's output flag */
+	if (b->output_format == OFMT_NONE) {
+		return 0;
+	}
 	/* we shouldn't have anything else but Q_TABLE here */
 	assert(t->query_type == Q_TABLE);
 	if (t->tsep)
