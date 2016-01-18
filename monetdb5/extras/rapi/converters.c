@@ -112,7 +112,7 @@ static SEXP bat_to_sexp(BAT* b) {
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
 			// this was found to be always slower.
-			if (GDK_ELIMDOUBLES(b->T->vheap) && BATcount(b) > 0) {
+			/*if (GDK_ELIMDOUBLES(b->T->vheap) && BATcount(b) > 0) {
 				BAT *grp, *ext;
 				BUN p, q;
 				BATiter b_it, ext_it, grp_it;
@@ -160,7 +160,7 @@ static SEXP bat_to_sexp(BAT* b) {
 				BBPunfix(grp->batCacheid);
 				BBPunfix(ext->batCacheid);
 			}
-			else {
+			else {*/
 				BUN p, q, j = 0;
 				BATiter li = bat_iterator(b);
 				varvalue = PROTECT(NEW_STRING(BATcount(b)));
@@ -183,7 +183,7 @@ static SEXP bat_to_sexp(BAT* b) {
 						}
 					}
 				}
-			}
+			//}
 		} 	break;
 	}
 	return varvalue;
