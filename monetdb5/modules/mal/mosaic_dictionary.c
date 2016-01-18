@@ -219,52 +219,13 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	case TYPE_bte: break; // no compression achievable
 	case TYPE_sht: makeDict(sht); break;
 	case TYPE_int: makeDict(int); break;
+	case TYPE_lng: makeDict(lng); break;
 	case TYPE_oid: makeDict(oid); break;
 	case TYPE_flt: makeDict(flt); break;
 	case TYPE_dbl: makeDict(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: makeDict(hge); break;
 #endif
-	case TYPE_lng:
-		{	lng *val = ((lng*)task->src) + task->start;
-			lng *dict = (lng*)hdr->dict,v;
-			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
-
-			for(i =0; i< limit; i++, val++){
-				for(j= 0; j< hdr->dictsize; j++)
-					if( dict[j] == *val) break;
-				if ( j == hdr->dictsize){
-					if ( hdr->dictsize == 256){
-						int min = 0;
-						// select low frequent candidate
-						for(j=1;j<256;j++)
-							if( cnt[min] <cnt[j]) min = j;
-						j=min;
-						cnt[j]=0;
-						break;
-					}
-					dict[j] = *val;
-					cnt[j]++;
-					hdr->dictsize++;
-				} else
-					cnt[j]++;
-			}
-			// sort it
-			for(i=0; i< (BUN) hdr->dictsize; i++)
-				for(j=i+1; j< hdr->dictsize; j++)
-					if(dict[i] >dict[j]){
-						v= dict[i];
-						dict[i] = dict[j];
-						dict[j] = v;
-					}
-			hdr->bits = 1;
-			hdr->mask =1;
-			for( i=2 ; i < (BUN) hdr->dictsize; i *=2){
-				hdr->bits++;
-				hdr->mask = (hdr->mask <<1) | 1;
-			}
-		}
-		break;
 	default:
 		mnstr_printf(cntxt->fdout,"#does not support dictionary type %d\n",ATOMbasetype(task->type));
 	}

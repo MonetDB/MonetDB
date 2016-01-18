@@ -95,14 +95,15 @@ MOSdump_frame(Client cntxt, MOStask task)
 void
 MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
-	lng cnt=0,i;
+	lng cnt=0,j=0;
+	int i;
 	char buf[BUFSIZ];
 
 	(void) cntxt;
-	for(i=0; i< task->hdr->framesize; i++){
+	for(i=0; i< task->hdr->framesize; i++, j++){
 		MOSdump_frameInternal(buf, BUFSIZ, task,i);
 		BUNappend(btech, "frame_hdr", FALSE);
-		BUNappend(bcount, &i, FALSE);
+		BUNappend(bcount, &j, FALSE);
 		BUNappend(binput, &cnt, FALSE);
 		BUNappend(boutput, &task->hdr->framefreq[i], FALSE);
 		BUNappend(bproperties, buf, FALSE);
