@@ -2240,17 +2240,6 @@ if test "x$have_valgrind" != xno; then
 		[if test "x$have_valgrind" = xyes; then AC_MSG_ERROR([no valgrind support found]); fi])
 fi
 
-org_have_k3m=no
-have_k3m=$org_have_k3m
-AC_ARG_WITH(k3m,
-	AS_HELP_STRING([--with-k3m],
-		[include Pim Schellart's K3Match library (default=no)]),
-	have_k3m=$withval)
-if test "x$have_k3m" != xno; then
-	AC_DEFINE(HAVE_K3M, 1, [Define if you want to use the K3Match library])
-fi
-AM_CONDITIONAL(HAVE_K3M, test x"$have_k3m" != xno)
-
 # check for sphinxclient
 org_have_sphinxclient="auto"
 have_sphinxclient=$org_have_sphinxclient
@@ -3470,7 +3459,6 @@ for comp in \
 	'java         ' \
 	'java_control ' \
 	'java_jdbc    ' \
-	'k3m          ' \
 	'liblas       ' \
 	'libxml2      ' \
 	'openssl      ' \

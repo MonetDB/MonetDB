@@ -62,7 +62,7 @@ def main():
 
     s = server()
     client(script2)
-    time.sleep(60)                      # wait until log is flushed
+    time.sleep(20)                      # wait until log is flushed originally 60 sec
     server_stop(s)
 
     s = server()

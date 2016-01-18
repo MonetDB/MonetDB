@@ -4415,15 +4415,15 @@ pattern batcalc.!=(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatNE;
 comment Return B1 != B2
 
-pattern batcalc.!=(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.!=(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatNE;
 comment Return V != B with candidates list
 
-pattern batcalc.!=(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.!=(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatNE;
 comment Return V != B
 
-pattern batcalc.!=(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.!=(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatNE;
 comment Return B != V with candidates list
 
@@ -15943,15 +15943,15 @@ pattern batcalc.<=(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatLE;
 comment Return B1 <= B2
 
-pattern batcalc.<=(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.<=(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatLE;
 comment Return V <= B with candidates list
 
-pattern batcalc.<=(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.<=(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatLE;
 comment Return V <= B
 
-pattern batcalc.<=(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.<=(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatLE;
 comment Return B <= V with candidates list
 
@@ -17191,15 +17191,15 @@ pattern batcalc.<(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatLT;
 comment Return B1 < B2
 
-pattern batcalc.<(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.<(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatLT;
 comment Return V < B with candidates list
 
-pattern batcalc.<(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.<(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatLT;
 comment Return V < B
 
-pattern batcalc.<(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.<(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatLT;
 comment Return B < V with candidates list
 
@@ -20183,15 +20183,15 @@ pattern batcalc.==(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatEQ;
 comment Return B1 == B2
 
-pattern batcalc.==(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.==(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatEQ;
 comment Return V == B with candidates list
 
-pattern batcalc.==(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.==(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatEQ;
 comment Return V == B
 
-pattern batcalc.==(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.==(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatEQ;
 comment Return B == V with candidates list
 
@@ -21871,15 +21871,15 @@ pattern batcalc.>=(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatGE;
 comment Return B1 >= B2
 
-pattern batcalc.>=(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.>=(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatGE;
 comment Return V >= B with candidates list
 
-pattern batcalc.>=(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.>=(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatGE;
 comment Return V >= B
 
-pattern batcalc.>=(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.>=(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatGE;
 comment Return B >= V with candidates list
 
@@ -23119,15 +23119,15 @@ pattern batcalc.>(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatGT;
 comment Return B1 > B2
 
-pattern batcalc.>(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.>(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatGT;
 comment Return V > B with candidates list
 
-pattern batcalc.>(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.>(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatGT;
 comment Return V > B
 
-pattern batcalc.>(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.>(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatGT;
 comment Return B > V with candidates list
 
@@ -28551,15 +28551,15 @@ pattern batcalc.cmp(b1:bat[:bte],b2:bat[:bte]):bat[:bte]
 address CMDbatCMP;
 comment Return -1/0/1 if B1 </==/> B2
 
-pattern batcalc.cmp(vb:bat[:oid],s:bat[:oid]):bat[:bte] 
+pattern batcalc.cmp(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bte] 
 address CMDbatCMP;
 comment Return -1/0/1 if V </==/> B with candidates list
 
-pattern batcalc.cmp(b:bat[:oid],vs:bat[:oid]):bat[:bte] 
+pattern batcalc.cmp(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bte] 
 address CMDbatCMP;
 comment Return -1/0/1 if B </==/> V with candidates list
 
-pattern batcalc.cmp(vb:bat[:oid]):bat[:bte] 
+pattern batcalc.cmp(v:oid,b:bat[:oid]):bat[:bte] 
 address CMDbatCMP;
 comment Return -1/0/1 if V </==/> B
 
@@ -31474,18 +31474,6 @@ address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
 pattern batcalc.ifthenelse(b:bat[:bit],v1:any_1,v2:any_1):bat[:any_1] 
-address CMDifthen;
-comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],v2:any_1):bat[:any_1] 
-address CMDifthen;
-comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthenelse(v:bit,v1:any_1,b2:bat[:any_1]):bat[:any_1] 
-address CMDifthen;
-comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],b2:bat[:any_1]):bat[:any_1] 
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 

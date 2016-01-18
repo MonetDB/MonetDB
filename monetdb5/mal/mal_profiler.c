@@ -951,6 +951,7 @@ static volatile ATOMIC_TYPE hbrunning;
 static void profilerHeartbeat(void *dummy)
 {
 	int t;
+	const int timeout = GDKdebug & FORCEMITOMASK ? 10 : 25;
 
 	(void) dummy;
 	for (;;) {
@@ -958,12 +959,12 @@ static void profilerHeartbeat(void *dummy)
 		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream == NULL) {
 			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
 				return;
-			MT_sleep_ms(25);
+			MT_sleep_ms(timeout);
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= 25) {
+		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= timeout) {
 			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
 				return;
-			MT_sleep_ms(t > 25 ? 25 : t);
+			MT_sleep_ms(t > timeout ? timeout : t);
 		}
 		profilerHeartbeatEvent("ping");
 	}
