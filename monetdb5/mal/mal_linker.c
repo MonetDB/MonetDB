@@ -222,7 +222,7 @@ loadLibrary(str filename, int flag)
 
 	if (handle == NULL) {
 		if (flag)
-			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s')", s, filename);
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s'): %s", s, filename, dlerror());
 	}
 
 	MT_lock_set(&mal_contextLock);
