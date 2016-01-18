@@ -92,7 +92,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:str,A5:str):void;
     (X_42,r1_46) := sql.bind_idxbat(X_7,"sys","lineorder","lineorder_lo_partkey_fkey",2);
     X_44:bat[:oid] := sql.bind_idxbat(X_7,"sys","lineorder","lineorder_lo_partkey_fkey",1);
     X_45 := sql.delta(X_40,X_42,r1_46,X_44);
-    X_46:bat[:oid] := algebra.projectionPath(X_36,C_8,X_45);
+    X_46:bat[:oid] := algebra.projectionpath(X_36,C_8,X_45);
     C_47:bat[:oid] := sql.tid(X_7,"sys","part");
     X_49:bat[:str] := sql.bind(X_7,"sys","part","p_mfgr",0);
     (C_51,r1_56) := sql.bind(X_7,"sys","part","p_mfgr",2);

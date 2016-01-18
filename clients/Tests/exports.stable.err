@@ -6,7 +6,29 @@ stderr of test 'exports` in directory 'clients` itself:
 # 15:10:42 >  
 
 
-# 15:11:17 >  
-# 15:11:17 >  "Done."
-# 15:11:17 >  
+
+
+#0  0x00007f89c01f4764 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#1  0x00007f89c01f7666 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#2  0x00007f89c01f7666 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#3  0x00007f89c01f86b4 in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#4  0x00007f89c01f75c6 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#5  0x00007f89c01f86b4 in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#6  0x00007f89c01f75c6 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#7  0x00007f89c01f86b4 in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#8  0x00007f89c01f75c6 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#9  0x00007f89c01f7666 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#10 0x00007f89c01f7666 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#11 0x00007f89c01f7666 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#12 0x00007f89c01f86b4 in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#13 0x00007f89c01f75c6 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#14 0x00007f89c01f7666 in PyEval_EvalFrameEx () from /lib64/libpython2.7.so.1.0
+#15 0x00007f89c01f86b4 in PyEval_EvalCodeEx () from /lib64/libpython2.7.so.1.0
+#16 0x00007f89c01f87d9 in PyEval_EvalCode () from /lib64/libpython2.7.so.1.0
+#17 0x00007f89c0211bdf in run_mod () from /lib64/libpython2.7.so.1.0
+#18 0x00007f89c0212db2 in PyRun_FileExFlags () from /lib64/libpython2.7.so.1.0
+#19 0x00007f89c0213fc7 in PyRun_SimpleFileExFlags () from /lib64/libpython2.7.so.1.0
+#20 0x00007f89c02261e1 in Py_Main () from /lib64/libpython2.7.so.1.0
+#21 0x00007f89bf44a700 in __libc_start_main () from /lib64/libc.so.6
+#22 0x0000000000400729 in _start ()
 

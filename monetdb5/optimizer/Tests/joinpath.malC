@@ -16,9 +16,9 @@ function tst1();
 	io.print(j2);
 end tst1;
 
-optimizer.joinPath("user","tst0");
+optimizer.projectionpath("user","tst0");
 optimizer.deadcode("user","tst0");
 mdb.list("user","tst0");
-optimizer.joinPath("user","tst1");
+optimizer.projectionpath("user","tst1");
 optimizer.deadcode("user","tst1");
 mdb.list("user","tst1");

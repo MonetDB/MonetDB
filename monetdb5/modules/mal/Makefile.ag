@@ -25,7 +25,7 @@ lib_mal = {
 		groupby.c groupby.h \
 		inspect.c inspect.h \
 		iterator.c  iterator.h \
-		joinpath.c  joinpath.h \
+		projectionpath.c  projectionpath.h \
 		language.c language.h \
 		mal_io.c mal_io.h \
 		mal_mapi.c mal_mapi.h \

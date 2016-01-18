@@ -104,7 +104,7 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     (C_54,r1_66) := sql.bind(X_22,"sys","customer","c_custkey",2);
     X_56:bat[:int] := sql.bind(X_22,"sys","customer","c_custkey",1);
     X_57 := sql.delta(X_52,C_54,r1_66,X_56);
-    X_58:bat[:int] := algebra.projectionPath(X_51,C_23,X_57);
+    X_58:bat[:int] := algebra.projectionpath(X_51,C_23,X_57);
     X_59 := bat.mirror(X_58);
     X_60:bat[:lng] := sql.bind(X_22,"sys","customer","c_acctbal",0);
     (C_62,r1_75) := sql.bind(X_22,"sys","customer","c_acctbal",2);
@@ -145,12 +145,12 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     X_106 := algebra.projection(C_98,X_105);
     (X_107,r1_160) := algebra.subjoin(X_96,X_106,nil:BAT,nil:BAT,false,nil:lng);
     X_109 := algebra.subdiff(X_97,X_107,nil:BAT,nil:BAT,false,nil:lng);
-    X_110:bat[:str] := algebra.projectionPath(X_109,C_95,X_51,X_35);
+    X_110:bat[:str] := algebra.projectionpath(X_109,C_95,X_51,X_35);
     X_111:bat[:str] := batstr.substring(X_110,A0,A1);
     (X_112,r1_171,r2_171) := group.subgroupdone(X_111);
     X_115 := algebra.projection(r1_171,X_111);
     X_120:bat[:wrd] := aggr.subcount(X_112,X_112,r1_171,false);
-    X_122:bat[:lng] := algebra.projectionPath(X_109,C_95,X_67);
+    X_122:bat[:lng] := algebra.projectionpath(X_109,C_95,X_67);
     X_123:bat[:hge] := aggr.subsum(X_122,X_112,r1_171,true,true);
     (X_116,r1_175,r2_175) := algebra.subsort(X_115,false,false);
     X_119 := algebra.projection(r1_175,X_115);

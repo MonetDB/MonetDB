@@ -10,5 +10,5 @@ function foo();
 end;
 
 mdb.List("user","foo");
-optimizer.joinPath("user","foo");
+optimizer.projectionpath("user","foo");
 mdb.List("user","foo");

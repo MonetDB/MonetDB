@@ -163,19 +163,15 @@ pattern optimizer.inline(mod:str, fcn:str):str
 address OPTwrapper
 comment "Expand inline functions";
 
-#opt_joinpath.mal
-pattern optimizer.joinPath():str
+#opt_projectionpath.mal
+pattern optimizer.projectionpath():str
 address OPTwrapper;
-pattern optimizer.joinPath(mod:str, fcn:str):str
+pattern optimizer.projectionpath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern algebra.projectionPath(l:bat[:oid,:any]...):bat[:oid,:any]
-address ALGjoinPath
-comment "Routine to handle join paths.  The type analysis is rather tricky.";
-
-pattern algebra.semijoinPath(l:bat[:oid,:any]...):bat[:oid,:any]
-address ALGjoinPath
+pattern algebra.projectionpath(l:bat[:oid,:any]...):bat[:oid,:any]
+address ALGprojectionpath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
 #opt_joinselect

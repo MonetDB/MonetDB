@@ -35,9 +35,9 @@ function user.foo():void;               	#[0]  0
     b:bat[:oid] := bat.new(:oid,:oid);  	#[2] CMDBATnew 3 <- 2 2 
     c:bat[:str] := bat.new(:oid,:str);  	#[3] CMDBATnew 4 <- 2 5 
     j1:bat[:oid] := algebra.projection(a:bat[:oid],b:bat[:oid]);	#[4] ALGprojection 6 <- 1 3 
-    j2:bat[:str] := algebra.projectionPath(a:bat[:oid],b:bat[:oid],c:bat[:str]);	#[5] ALGjoinPath 7 <- 1 3 4 
+    j2:bat[:str] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:str]);	#[5] ALGprojectionpath 7 <- 1 3 4 
     j3:bat[:oid] := algebra.projection(b:bat[:oid],b:bat[:oid]);	#[6] ALGprojection 8 <- 3 3 
-    j4:bat[:oid] := algebra.projectionPath(b:bat[:oid],b:bat[:oid],b:bat[:oid]);	#[7] ALGjoinPath 9 <- 3 3 3 
+    j4:bat[:oid] := algebra.projectionpath(b:bat[:oid],b:bat[:oid],b:bat[:oid]);	#[7] ALGprojectionpath 9 <- 3 3 3 
 end user.foo;                           	#[8]  
 #mdb.List("user","foo");
 function user.foo():void;               	#[0]  0 
@@ -45,9 +45,9 @@ function user.foo():void;               	#[0]  0
     b:bat[:oid] := bat.new(:oid,:oid);  	#[2] CMDBATnew 3 <- 2 2 
     c:bat[:str] := bat.new(:oid,:str);  	#[3] CMDBATnew 4 <- 2 5 
     j1:bat[:oid] := algebra.projection(a:bat[:oid],b:bat[:oid]);	#[4] ALGprojection 6 <- 1 3 
-    j2:bat[:str] := algebra.projectionPath(a:bat[:oid],b:bat[:oid],c:bat[:str]);	#[5] ALGjoinPath 7 <- 1 3 4 
+    j2:bat[:str] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:str]);	#[5] ALGprojectionpath 7 <- 1 3 4 
     j3:bat[:oid] := algebra.projection(b:bat[:oid],b:bat[:oid]);	#[6] ALGprojection 8 <- 3 3 
-    j4:bat[:oid] := algebra.projectionPath(b:bat[:oid],b:bat[:oid],b:bat[:oid]);	#[7] ALGjoinPath 9 <- 3 3 3 
+    j4:bat[:oid] := algebra.projectionpath(b:bat[:oid],b:bat[:oid],b:bat[:oid]);	#[7] ALGprojectionpath 9 <- 3 3 3 
 end user.foo;                           	#[8]  
 
 # 06:41:06 >  
