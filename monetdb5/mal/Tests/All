@@ -191,10 +191,8 @@ tst960
 
 #tests for garbage collection of strings
 tst920
-tst400d
-tst400e
 tst901a
-tst901b
+#tst901b
 
 recycle00
 recycle01

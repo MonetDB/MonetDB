@@ -2366,6 +2366,8 @@ InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
 InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
 str putName(const char *nme, size_t len);
 str putRef;
+str pyapiRef;
+str pyapimapRef;
 str queryRef;
 str querylogRef;
 str rankRef;

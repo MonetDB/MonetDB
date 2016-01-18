@@ -2705,6 +2705,30 @@ pattern batrapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address RAPIevalAggr;
 comment grouped aggregates through R
 
+pattern batpyapimap.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern batpyapimap.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStdMap;
+comment Execute a simple Python script value
+
+pattern batpyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern batpyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
+pattern batpyapi.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStd;
+comment Execute a simple Python script value
+
+pattern batpyapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
 command batsql.alpha(dec:dbl,theta:bat[:dbl]):bat[:dbl] 
 address SQLcst_alpha_bat;
 comment BAT implementation of astronomy alpha function
@@ -4415,15 +4439,15 @@ pattern batcalc.!=(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatNE;
 comment Return B1 != B2
 
-pattern batcalc.!=(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.!=(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatNE;
 comment Return V != B with candidates list
 
-pattern batcalc.!=(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.!=(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatNE;
 comment Return V != B
 
-pattern batcalc.!=(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.!=(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatNE;
 comment Return B != V with candidates list
 
@@ -15943,15 +15967,15 @@ pattern batcalc.<=(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatLE;
 comment Return B1 <= B2
 
-pattern batcalc.<=(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.<=(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatLE;
 comment Return V <= B with candidates list
 
-pattern batcalc.<=(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.<=(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatLE;
 comment Return V <= B
 
-pattern batcalc.<=(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.<=(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatLE;
 comment Return B <= V with candidates list
 
@@ -17191,15 +17215,15 @@ pattern batcalc.<(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatLT;
 comment Return B1 < B2
 
-pattern batcalc.<(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.<(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatLT;
 comment Return V < B with candidates list
 
-pattern batcalc.<(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.<(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatLT;
 comment Return V < B
 
-pattern batcalc.<(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.<(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatLT;
 comment Return B < V with candidates list
 
@@ -20183,15 +20207,15 @@ pattern batcalc.==(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatEQ;
 comment Return B1 == B2
 
-pattern batcalc.==(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.==(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatEQ;
 comment Return V == B with candidates list
 
-pattern batcalc.==(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.==(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatEQ;
 comment Return V == B
 
-pattern batcalc.==(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.==(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatEQ;
 comment Return B == V with candidates list
 
@@ -21871,15 +21895,15 @@ pattern batcalc.>=(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatGE;
 comment Return B1 >= B2
 
-pattern batcalc.>=(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.>=(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatGE;
 comment Return V >= B with candidates list
 
-pattern batcalc.>=(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.>=(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatGE;
 comment Return V >= B
 
-pattern batcalc.>=(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.>=(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatGE;
 comment Return B >= V with candidates list
 
@@ -23119,15 +23143,15 @@ pattern batcalc.>(b1:bat[:bte],b2:bat[:bte]):bat[:bit]
 address CMDbatGT;
 comment Return B1 > B2
 
-pattern batcalc.>(vb:bat[:oid],s:bat[:oid]):bat[:bit] 
+pattern batcalc.>(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bit] 
 address CMDbatGT;
 comment Return V > B with candidates list
 
-pattern batcalc.>(vb:bat[:oid]):bat[:bit] 
+pattern batcalc.>(v:oid,b:bat[:oid]):bat[:bit] 
 address CMDbatGT;
 comment Return V > B
 
-pattern batcalc.>(b:bat[:oid],vs:bat[:oid]):bat[:bit] 
+pattern batcalc.>(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bit] 
 address CMDbatGT;
 comment Return B > V with candidates list
 
@@ -28551,15 +28575,15 @@ pattern batcalc.cmp(b1:bat[:bte],b2:bat[:bte]):bat[:bte]
 address CMDbatCMP;
 comment Return -1/0/1 if B1 </==/> B2
 
-pattern batcalc.cmp(vb:bat[:oid],s:bat[:oid]):bat[:bte] 
+pattern batcalc.cmp(v:oid,b:bat[:oid],s:bat[:oid]):bat[:bte] 
 address CMDbatCMP;
 comment Return -1/0/1 if V </==/> B with candidates list
 
-pattern batcalc.cmp(b:bat[:oid],vs:bat[:oid]):bat[:bte] 
+pattern batcalc.cmp(b:bat[:oid],v:oid,s:bat[:oid]):bat[:bte] 
 address CMDbatCMP;
 comment Return -1/0/1 if B </==/> V with candidates list
 
-pattern batcalc.cmp(vb:bat[:oid]):bat[:bte] 
+pattern batcalc.cmp(v:oid,b:bat[:oid]):bat[:bte] 
 address CMDbatCMP;
 comment Return -1/0/1 if V </==/> B
 
@@ -31474,18 +31498,6 @@ address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
 pattern batcalc.ifthenelse(b:bat[:bit],v1:any_1,v2:any_1):bat[:any_1] 
-address CMDifthen;
-comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],v2:any_1):bat[:any_1] 
-address CMDifthen;
-comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthenelse(v:bit,v1:any_1,b2:bat[:any_1]):bat[:any_1] 
-address CMDifthen;
-comment If-then-else operation to assemble a conditional result
-
-pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],b2:bat[:any_1]):bat[:any_1] 
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
@@ -50638,6 +50650,40 @@ comment Stop offline performance profiling
 pattern profiler.start():void 
 address CMDstartProfiler;
 comment Start offline performance profiling
+
+pattern pyapimap.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern pyapimap.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStdMap;
+comment Execute a simple Python script value
+
+pattern pyapimap.eval(fptr:ptr,expr:str):any 
+address PyAPIevalStdMap;
+comment Execute a simple Python script returning a single value
+
+pattern pyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern pyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
+pattern pyapi.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStd;
+comment Execute a simple Python script value
+
+pattern pyapi.eval(fptr:ptr,expr:str):any 
+address PyAPIevalStd;
+comment Execute a simple Python script returning a single value
+
+command pyapi.prelude():void 
+address PyAPIprelude;
+pattern pyapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
 
 pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;

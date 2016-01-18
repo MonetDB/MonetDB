@@ -22,8 +22,8 @@ for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
     for tp2 in 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
-command sum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
-		:bat[:oid,:${tp2#*:}]
+command sum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1])
+		:bat[:${tp2#*:}]
 address AGGRsum3_${tp2#*:}
 comment "Grouped tail sum on ${tp1#*:}";
 
@@ -32,24 +32,24 @@ EOF
 		continue
 	    fi
 	    cat <<EOF
-command subsum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subsum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubsum_${tp2#*:}
 comment "Grouped sum aggregate";
 
-command subsum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subsum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubsumcand_${tp2#*:}
 comment "Grouped sum aggregate with candidates list";
 
-command prod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
-		:bat[:oid,:${tp2#*:}]
+command prod(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1])
+		:bat[:${tp2#*:}]
 address AGGRprod3_${tp2#*:}
 comment "Grouped tail product on ${tp1#*:}";
 
-command subprod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subprod(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubprod_${tp2#*:}
 comment "Grouped product aggregate";
 
-command subprod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subprod(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubprodcand_${tp2#*:}
 comment "Grouped product aggregate with candidates list";
 
@@ -62,8 +62,8 @@ for tp1 in 16:hge; do
     for tp2 in 8:dbl 1:bte 2:sht 4:int 4:wrd 8:lng 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
-command sum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
-		:bat[:oid,:${tp2#*:}]
+command sum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1])
+		:bat[:${tp2#*:}]
 address AGGRsum3_${tp2#*:}
 comment "Grouped tail sum on ${tp1#*:}";
 
@@ -72,24 +72,24 @@ EOF
 		continue
 	    fi
 	    cat <<EOF
-command subsum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subsum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubsum_${tp2#*:}
 comment "Grouped sum aggregate";
 
-command subsum(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subsum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubsumcand_${tp2#*:}
 comment "Grouped sum aggregate with candidates list";
 
-command prod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1])
-		:bat[:oid,:${tp2#*:}]
+command prod(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1])
+		:bat[:${tp2#*:}]
 address AGGRprod3_${tp2#*:}
 comment "Grouped tail product on ${tp1#*:}";
 
-command subprod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subprod(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubprod_${tp2#*:}
 comment "Grouped product aggregate";
 
-command subprod(b:bat[:oid,:${tp1#*:}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:${tp2#*:}]
+command subprod(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:${tp2#*:}]
 address AGGRsubprodcand_${tp2#*:}
 comment "Grouped product aggregate with candidates list";
 
@@ -101,27 +101,27 @@ done
 # We may have to extend the signatures to all possible {void,oid} combos
 for tp in hge; do
     cat <<EOF
-command avg(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on ${tp}";
 
-command avg(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:wrd])
 address AGGRavg23_dbl
 comment "Grouped tail average on ${tp}, also returns count";
 
-command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
 
-command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
 
-command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:wrd])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
-command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) (:bat[:oid,:dbl],:bat[:oid,:wrd])
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:wrd])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -130,27 +130,27 @@ EOF
 	comm=${func#*:}
 	func=${func%:*}
 	cat <<EOF
-command ${func}(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+command ${func}(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGR${func}3_dbl
 comment "Grouped tail ${comm} (sample/non-biased) on ${tp}";
 
-command sub${func}(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
+command sub${func}(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsub${func}_dbl
 comment "Grouped ${comm} (sample/non-biased) aggregate";
 
-command sub${func}(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
+command sub${func}(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsub${func}cand_dbl
 comment "Grouped ${comm} (sample/non-biased) aggregate with candidates list";
 
-command ${func}p(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+command ${func}p(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGR${func}p3_dbl
 comment "Grouped tail ${comm} (population/biased) on ${tp}";
 
-command sub${func}p(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
+command sub${func}p(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsub${func}p_dbl
 comment "Grouped ${comm} (population/biased) aggregate";
 
-command sub${func}p(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:bit,abort_on_error:bit) :bat[:oid,:dbl]
+command sub${func}p(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsub${func}pcand_dbl
 comment "Grouped ${comm} (population/biased) aggregate with candidates list";
 

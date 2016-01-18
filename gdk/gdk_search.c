@@ -316,6 +316,35 @@ BATcheckhash(BAT *b)
 	return ret;
 }
 
+#ifdef PERSISTENTHASH
+static void
+BAThashsync(void *arg)
+{
+	Heap *hp = arg;
+	int fd;
+	lng t0 = GDKusec();
+
+	if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED)
+		return;
+	if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0)
+		return;
+	((size_t *) hp->base)[0] |= 1 << 24;
+	if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
+		perror("write hash");
+	if (!(GDKdebug & FORCEMITOMASK)) {
+#if defined(NATIVE_WIN32)
+		_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+		fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+		fsync(fd);
+#endif
+	}
+	close(fd);
+	ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
+}
+#endif
+
 /*
  * The prime routine for the BAT layer is to create a new hash index.
  * Its argument is the element type and the maximum number of BUNs be
@@ -340,9 +369,6 @@ BAThash(BAT *b, BUN masksize)
 		const char *nme = BBP_physical(b->batCacheid);
 		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
 		BATiter bi = bat_iterator(b);
-#ifdef PERSISTENTHASH
-		int fd;
-#endif
 
 		ALGODEBUG fprintf(stderr, "#BAThash: create hash(%s#" BUNFMT ");\n", BATgetId(b), BATcount(b));
 		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
@@ -516,24 +542,9 @@ BAThash(BAT *b, BUN masksize)
 			break;
 		}
 #ifdef PERSISTENTHASH
-		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-		    b->batInserted == b->batCount &&
-		    HEAPsave(hp, nme, ext) == GDK_SUCCEED &&
-		    (fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
-			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %d\n", b->batCacheid);
-			((size_t *) hp->base)[0] |= 1 << 24;
-			if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
-				perror("write hash");
-			if (!(GDKdebug & FORCEMITOMASK)) {
-#if defined(NATIVE_WIN32)
-				_commit(fd);
-#elif defined(HAVE_FDATASYNC)
-				fdatasync(fd);
-#elif defined(HAVE_FSYNC)
-				fsync(fd);
-#endif
-			}
-			close(fd);
+		if (BBP_status(b->batCacheid) & BBPEXISTING) {
+			MT_Id tid;
+			MT_create_thread(&tid, BAThashsync, hp, MT_THR_DETACHED);
 		} else
 			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
 #endif

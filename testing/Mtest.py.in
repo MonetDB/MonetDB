@@ -334,6 +334,7 @@ CONDITIONALS = {
     'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
+    'BAD_HOSTNAME'         : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -3791,6 +3792,12 @@ def main(argv) :
     except:
         pass
     os.chdir(BACK)
+
+    # check whether our hostname makes sense
+    try:
+        socket.getaddrinfo(socket.gethostname(), 50000)
+    except:
+        CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':

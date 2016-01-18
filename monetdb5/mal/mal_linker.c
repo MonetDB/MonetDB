@@ -81,6 +81,9 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 				return adr; /* found it */
 			}
 		}
+
+	if (lastfile)
+		return NULL;
 	/*
 	 * Try the program libraries at large or run through all
 	 * loaded files and try to resolve the functionname again.
@@ -98,7 +101,10 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 	}
 
 	adr = (MALfcn) dlsym(dl, fcnname);
-	dlclose(dl);
+	filesLoaded[lastfile].filename = GDKstrdup("libmonetdb5");
+	filesLoaded[lastfile].fullname = "libmonetdb5";
+	filesLoaded[lastfile].handle = dl;
+	lastfile ++;
 	if(adr != NULL)
 		return adr; /* found it */
 
@@ -227,7 +233,7 @@ loadLibrary(str filename, int flag)
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
-		filesLoaded[lastfile].handle = handle;
+		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
 		lastfile ++;
 	}
 	MT_lock_unset(&mal_contextLock);
