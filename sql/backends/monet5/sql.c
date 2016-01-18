@@ -66,6 +66,8 @@ rel_is_point_query(sql_rel *rel)
 		return 1;
 	if (is_project(rel->op))
 		return rel_is_point_query(rel->l);
+	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
+		return rel_is_point_query(rel->r);
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
 		is_point = 0;
 		/* just one point expression makes this a point query */
