@@ -39756,6 +39756,14 @@ command profiler.setheartbeat(b:int):void
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
 
+command profiler.stoptrace():void 
+address CMDstopTrace;
+comment Stop collecting trace information
+
+command profiler.starttrace():void 
+address CMDstartTrace;
+comment Start collecting trace information
+
 pattern profiler.stop():void 
 address CMDstopProfiler;
 comment Stop offline performance profiling

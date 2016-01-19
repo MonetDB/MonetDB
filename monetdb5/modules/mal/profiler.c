@@ -75,6 +75,20 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+CMDstartTrace(void *res)
+{
+	(void) res;
+	return startTrace();
+}
+
+str
+CMDstopTrace(void *res)
+{
+	(void) res;
+	return stopTrace();
+}
+
+str
 CMDnoopProfiler(void *res)
 {
 	(void) res;		/* fool compiler */
