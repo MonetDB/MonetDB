@@ -43,7 +43,7 @@ MOSadvance_dictionary(Client cntxt, MOStask task)
 	assert(cnt > 0);
 	task->start += (oid) cnt;
 	task->stop = task->elm;
-	bytes =  (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
+	bytes =  (long) (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
 	task->blk = (MosaicBlk) (((char*) dst)  + wordaligned(bytes, int)); 
 }
 

@@ -965,7 +965,7 @@ MOSsubjoin_prefix(Client cntxt,  MOStask task)
 		case TYPE_lng: join_prefix(lng,ulng); break;
 		case TYPE_oid: join_prefix(oid,ulng); break;
 		case TYPE_flt: join_prefix(flt,unsigned int); break;
-		case TYPE_dbl: join_prefix(dbl,ulng); break;
+		case TYPE_dbl: join_prefix(dbl,unsigned int); break;
 #ifdef HAVE_HGE
 		case TYPE_hge: join_prefix(hge,unsigned long long); break;
 #endif
@@ -975,7 +975,7 @@ MOSsubjoin_prefix(Client cntxt,  MOStask task)
 		case 1: join_prefix(bte, unsigned char); break;
 		case 2: join_prefix(sht, unsigned short); break;
 		case 4: join_prefix(int, unsigned int); break;
-		case 8: join_prefix(lng, ulng); break;
+		case 8: join_prefix(lng, unsigned int); break;
 		}
 	}
 	MOSskip_prefix(cntxt,task);
