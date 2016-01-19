@@ -493,6 +493,8 @@ startProfiler(void)
 	sqlProfiling = TRUE;
 	MT_lock_unset(&mal_profileLock);
 	logjsonInternal(monet_characteristics);
+	// reset the trace table
+	clearTrace();
 
 	return MAL_SUCCEED;
 }
@@ -697,15 +699,6 @@ initTrace(void)
 	return ret;
 }
 
-str
-cleanupTraces(void)
-{
-	MT_lock_set(&mal_contextLock);
-	_cleanupProfiler();
-	MT_lock_unset(&mal_contextLock);
-	return MAL_SUCCEED;
-}
-
 void
 clearTrace(void)
 {
@@ -729,6 +722,13 @@ clearTrace(void)
 	TRACE_init = 0;
 	MT_lock_unset(&mal_contextLock);
 	initTrace();
+}
+
+str
+cleanupTraces(void)
+{
+	clearTrace();
+	return MAL_SUCCEED;
 }
 
 void
