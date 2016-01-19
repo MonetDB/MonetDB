@@ -155,13 +155,13 @@ bl_postversion( void *lg)
 		}
 	}
 	if (catalog_version <= CATALOG_JUL2015) {
-		/* Prexisting columns of type point, linestring, polygon etc 
-		 * have to converted to geometry(0), geometry(1) etc. */
+		/* Do the updates needed for the new geom module */
 		BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn, *g;
 		BATiter cti, cdi, csi, cni, ctidi, tsi, tni, sni, gi;
 		char *s = "sys", n[64];
 		BUN p,q;
 
+		/* Update the catalog to use the new geometry types */
 		ct = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
 		cti = bat_iterator(ct);
 		cd = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
@@ -274,7 +274,7 @@ bl_postversion( void *lg)
 			BUNappend(cnd, &digits, TRUE);
 			BUNappend(cns, &scale, TRUE);
 
-			/* The wkb struct changed. Update the respective BATs */
+			/* The wkb struct has changed. Update the respective BATs */
 			if (isGeom) {
 				typedef struct wkb_old {int len; char data[1];} wkb_old;
 				BAT *gn;
