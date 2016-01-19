@@ -1994,6 +1994,41 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 		if (hb >= (lo) && hb < (hi) &&			\
 		    simple_EQ(v, BUNtloc(bi, hb), TYPE))
 
+#define HASHJOIN(TYPE, WIDTH)						\
+	do {								\
+		BUN hashnil = HASHnil(hsh);				\
+		for (lo = lstart - BUNfirst(l) + l->hseqbase;		\
+		     lstart < lend;					\
+		     lo++) {						\
+			v = FVALUE(l, lstart);				\
+			lstart++;					\
+			nr = 0;						\
+			if (*(const TYPE*)v != TYPE##_nil) {		\
+				for (rb = HASHget##WIDTH(hsh, hash_##TYPE(hsh, v)); \
+				     rb != hashnil;			\
+				     rb = HASHgetlink##WIDTH(hsh, rb))	\
+					if (rb >= rl && rb < rh &&	\
+					    * (const TYPE *) v == ((const TYPE *) base)[rb]) { \
+						ro = (oid) (rb - rl + rseq); \
+						HASHLOOPBODY();		\
+					}				\
+			}						\
+			if (nr == 0) {					\
+				lskipped = BATcount(r1) > 0;		\
+			} else {					\
+				if (lskipped) {				\
+					r1->tdense = 0;			\
+				}					\
+				if (nr > 1) {				\
+					r1->tkey = 0;			\
+					r1->tdense = 0;			\
+				}					\
+				if (BATcount(r1) > nr)			\
+					r1->trevsorted = 0;		\
+			}						\
+		}							\
+	} while (0)
+
 static gdk_return
 hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	 int nil_on_miss, int semi, int only_misses, BUN maxsize, lng t0,
@@ -2017,6 +2052,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	oid lval = oid_nil;	/* hold value if l has dense tail */
 	const char *v = (const char *) &lval;
 	int lskipped = 0;	/* whether we skipped values in l */
+	const Hash *restrict hsh;
+	int t;
 
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s#" BUNFMT "[%s]%s%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s%s,sl=%s#" BUNFMT "%s%s%s,"
@@ -2118,8 +2155,47 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		goto bailout;
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);
+	hsh = r->T->hash;
+	t = ATOMbasetype(r->ttype);
 
-	if (lcand) {
+	if (lcand == NULL && rcand == NULL && lvars == NULL &&
+	    !nil_matches && !nil_on_miss && !semi && !only_misses &&
+	    l->ttype != TYPE_void && (t == TYPE_int || t == TYPE_lng)) {
+		/* special case for a common way of calling this
+		 * function */
+		const void *restrict base = Tloc(r, 0);
+
+		if (t == TYPE_int) {
+			switch (hsh->width) {
+			case BUN2:
+				HASHJOIN(int, 2);
+				break;
+			case BUN4:
+				HASHJOIN(int, 4);
+				break;
+#ifdef BUN8
+			case BUN8:
+				HASHJOIN(int, 8);
+				break;
+#endif
+			}
+		} else {
+			/* t == TYPE_lng */
+			switch (hsh->width) {
+			case BUN2:
+				HASHJOIN(lng, 2);
+				break;
+			case BUN4:
+				HASHJOIN(lng, 4);
+				break;
+#ifdef BUN8
+			case BUN8:
+				HASHJOIN(lng, 8);
+				break;
+#endif
+			}
+		}
+	} else if (lcand) {
 		while (lcand < lcandend) {
 			lo = *lcand++;
 			if (l->ttype == TYPE_void) {
@@ -2132,7 +2208,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			if (!nil_matches && cmp(v, nil) == 0) {
 				/* no match */
 			} else if (rcand) {
-				HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 					ro = (oid) (rb - rl + rseq);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
@@ -2145,7 +2221,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 						break;
 				}
 			} else {
-				HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 					ro = (oid) (rb - rl + rseq);
 					if (only_misses) {
 						nr++;
@@ -2211,8 +2287,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 				r1->trevsorted = 0;
 		}
 	} else {
-		int t = ATOMbasetype(r->ttype);
-
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
 				if (l->tseqbase != oid_nil)
@@ -2224,7 +2298,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			nr = 0;
 			if (rcand) {
 				if (nil_matches || cmp(v, nil) != 0) {
-					HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+					HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 						ro = (oid) (rb - rl + rseq);
 						if (!binsearchcand(rcand, 0, nrcand, ro))
 							continue;
@@ -2241,7 +2315,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 				switch (t) {
 				case TYPE_int:
 					if (nil_matches || *(const int*)v != int_nil) {
-						HASHloop_bound_TYPE(ri, r->T->hash, rb, v, rl, rh, int) {
+						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, int) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -2255,7 +2329,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					break;
 				case TYPE_lng:
 					if (nil_matches || *(const lng*)v != lng_nil) {
-						HASHloop_bound_TYPE(ri, r->T->hash, rb, v, rl, rh, lng) {
+						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, lng) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -2270,7 +2344,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 #ifdef HAVE_HGE
 				case TYPE_hge:
 					if (nil_matches || *(const hge*)v != hge_nil) {
-						HASHloop_bound_TYPE(ri, r->T->hash, rb, v, rl, rh, hge) {
+						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, hge) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -2285,7 +2359,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 #endif
 				default:
 					if (nil_matches || cmp(v, nil) != 0) {
-						HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+						HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;

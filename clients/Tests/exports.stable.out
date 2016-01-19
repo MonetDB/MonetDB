@@ -252,7 +252,7 @@ size_t GDKvm_cursize(void);
 void *GDKzalloc(size_t size) __attribute__((__malloc__)) __attribute__((__warn_unused_result__));
 void HASHdestroy(BAT *b);
 BUN HASHlist(Hash *h, BUN i);
-BUN HASHprobe(Hash *h, const void *v);
+BUN HASHprobe(const Hash *h, const void *v);
 void HEAP_free(Heap *heap, var_t block);
 void HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
 var_t HEAP_malloc(Heap *heap, size_t nbytes);
