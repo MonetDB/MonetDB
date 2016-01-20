@@ -1769,7 +1769,7 @@ sql_update_dec2015(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_SetExteriorRing(geom Geometry) RETURNS Geometry external name geom.\"MakePolygon\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME geom.\"NumInteriorRings\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom.\"InteriorRingN\";");
-//	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom.\"InteriorRings\";");
+	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom.\"InteriorRings\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom.\"NumGeometries\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_GeometryN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom.\"GeometryN\";");
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION ST_NumPatches(geom Geometry) RETURNS integer ");
@@ -5894,10 +5894,10 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	/* If the geometry type exists, check whether an upgrade is needed */
-	if (find_sql_type(mvc_bind_schema(m, "sys"), "geometry")) {
+	if (find_sql_type(mvc_bind_schema(m, "sys"), "point")) {
 		/* if function sys.<<(geometry,geometry) does not exist, we need to
 		 * update */
-		sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "geometry"), 0, 0);
+		sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "point"), 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "st_overlaps", &tp, &tp, F_FUNC)) {
 			if ((err = sql_update_dec2015(c)) !=NULL) {
 				fprintf(stderr, "!%s\n", err);
