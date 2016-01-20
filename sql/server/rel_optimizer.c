@@ -5309,12 +5309,12 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			sql_rel *l = rel->l;
 
 			positional_exps_mark_used(rel, l);
-			rel_mark_used(sql, rel->l, 1);
+		//	rel_mark_used(sql, rel->l, 1);
 			/* based on child check set expression list */
 			if (is_project(l->op) && need_distinct(l))
 				positional_exps_mark_used(l, rel);
 			positional_exps_mark_used(rel, rel->r);
-			rel_mark_used(sql, rel->r, 1);
+		//	rel_mark_used(sql, rel->r, 1);
 		}
 		break;
 
