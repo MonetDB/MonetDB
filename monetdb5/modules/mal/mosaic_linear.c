@@ -323,23 +323,13 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 	case TYPE_bit: LINEARdecompress(bit); break ;
 	case TYPE_sht: LINEARdecompress(sht); break;
 	case TYPE_oid: LINEARdecompress(oid); break;
+	case TYPE_int: LINEARdecompress(int); break;
 	case TYPE_lng: LINEARdecompress(lng); break;
 	case TYPE_flt: LINEARdecompress(flt); break;
 	case TYPE_dbl: LINEARdecompress(dbl); break;
 #ifdef HAVE_HGE
 	case TYPE_hge: LINEARdecompress(hge); break;
 #endif
-	case TYPE_int:
-		{	int val = *(int*) linear_base(blk) ;
-			int step = *(int*) linear_step(task,blk);
-			BUN lim= MOSgetCnt(blk);
-			for(i = 0; i < lim; i++){
-				((int*)task->src)[i] = val + i * step;
-				hdr->checksum2.sumint += ((int*)task->src)[i];
-			}
-			task->src += i * sizeof(int);
-		}
-	break;
 	case  TYPE_str:
 		// we only have to look at the index width, not the values
 		switch(task->bsrc->T->width){
@@ -441,7 +431,8 @@ MOSsubselect_linear(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 	case TYPE_bit: subselect_linear(bit); break;
 	case TYPE_bte: subselect_linear(bte); break;
 	case TYPE_sht: subselect_linear(sht); break;
-	case TYPE_oid: subselect_linear(oid); break;
+	case TYPE_int: subselect_linear(int); break;
+	//case TYPE_oid: subselect_linear(oid); break;
 	case TYPE_lng: subselect_linear(lng); break;
 	case TYPE_flt: subselect_linear(flt); break;
 	case TYPE_dbl: subselect_linear(dbl); break;
