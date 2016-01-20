@@ -104,7 +104,7 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     (C_54,r1_66) := sql.bind(X_22,"sys","customer","c_custkey",2);
     X_56:bat[:int] := sql.bind(X_22,"sys","customer","c_custkey",1);
     X_57 := sql.delta(X_52,C_54,r1_66,X_56);
-    X_58:bat[:int] := algebra.projectionPath(X_51,C_23,X_57);
+    X_58:bat[:int] := algebra.projectionpath(X_51,C_23,X_57);
     X_59 := bat.mirror(X_58);
     X_60:bat[:lng] := sql.bind(X_22,"sys","customer","c_acctbal",0);
     (C_62,r1_75) := sql.bind(X_22,"sys","customer","c_acctbal",2);

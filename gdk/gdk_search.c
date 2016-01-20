@@ -562,7 +562,7 @@ BAThash(BAT *b, BUN masksize)
  * routine HASHprobe.
  */
 BUN
-HASHprobe(Hash *h, const void *v)
+HASHprobe(const Hash *h, const void *v)
 {
 	switch (ATOMbasetype(h->type)) {
 	case TYPE_bte:

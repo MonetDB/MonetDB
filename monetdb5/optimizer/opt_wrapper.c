@@ -39,7 +39,7 @@
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
-#include "opt_joinpath.h"
+#include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_mergetable.h"
@@ -74,7 +74,7 @@ struct{
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
 	{"generator", &OPTgeneratorImplementation},
 	{"inline", &OPTinlineImplementation},
-	{"joinPath", &OPTjoinPathImplementation},
+	{"projectionpath", &OPTprojectionpathImplementation},
 	{"matpack", &OPTmatpackImplementation},
 	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},

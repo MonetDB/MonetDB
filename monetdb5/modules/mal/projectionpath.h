@@ -6,8 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
-#ifndef _OPT_JOINPATH_
-#define _OPT_JOINPATH_
+#ifndef _OPT_PROJECTIONPATH_
+#define _OPT_PROJECTIONPATH_
 
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -22,6 +22,6 @@
 #define join_export extern
 #endif
 
-join_export str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+join_export str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

@@ -58,14 +58,14 @@ j := algebra.projectionPath(a,b,c,d);
 io.print(j);
 
 io.print("empty sequences");
-w :=algebra.projectionPath(empty,c,d);
+w :=algebra.projectionpath(empty,c,d);
 io.print(w);
-w :=algebra.projectionPath(c,empty,d);
+w :=algebra.projectionpath(c,empty,d);
 io.print(w);
 
 end qry;
 
 mdb.list("user","qry");
-optimizer.joinPath("user","qry");
+optimizer.projectionpath("user","qry");
 mdb.list("user","qry");
 qry();

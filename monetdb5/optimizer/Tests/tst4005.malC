@@ -25,7 +25,7 @@ end getz;
 optimizer.aliases("user","getz");
 #optimizer.commonTerms("user","getz");
 #optimizer.accumulators("user","getz");
-#optimizer.joinPath("user","getz");
+#optimizer.projectionpath("user","getz");
 #optimizer.deadcode("user","getz");
 #optimizer.reduce("user","getz");
 #optimizer.garbageCollector("user","getz");

@@ -1,9 +1,9 @@
 stdout of test 'exports` in directory 'clients` itself:
 
 
-# 15:10:42 >  
-# 15:10:42 >  "/usr/bin/python" "exports.py" "exports"
-# 15:10:42 >  
+# 21:40:57 >  
+# 21:40:57 >  "/usr/bin/python2" "exports.py" "exports"
+# 21:40:57 >  
 
 # gdk
 void ALIGNsetH(BAT *b1, BAT *b2);
@@ -252,7 +252,7 @@ size_t GDKvm_cursize(void);
 void *GDKzalloc(size_t size) __attribute__((__malloc__)) __attribute__((__warn_unused_result__));
 void HASHdestroy(BAT *b);
 BUN HASHlist(Hash *h, BUN i);
-BUN HASHprobe(Hash *h, const void *v);
+BUN HASHprobe(const Hash *h, const void *v);
 void HEAP_free(Heap *heap, var_t block);
 void HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
 var_t HEAP_malloc(Heap *heap, size_t nbytes);
@@ -669,10 +669,10 @@ str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
 str ALGfind(oid *ret, const bat *bid, ptr val);
 str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
-str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGmaxany(ptr result, const bat *bid);
 str ALGminany(ptr result, const bat *bid);
 str ALGprojection(bat *result, const bat *lid, const bat *rid);
+str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGreuse(bat *ret, const bat *bid);
 str ALGsample(bat *result, const bat *bid, const int *param);
@@ -1055,7 +1055,9 @@ str CMDscience_bat_flt_tanh(bat *ret, const bat *bid);
 str CMDsetHeartbeat(void *res, int *ev);
 str CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDstartTrace(void *res);
 str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDstopTrace(void *res);
 str CMDstr2qgrams(bat *ret, str *val);
 str CMDstrlength(int *ret, str *v);
 str CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1516,7 +1518,6 @@ int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 int OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTisAlias(InstrPtr p);
-int OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -1529,6 +1530,7 @@ str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+int OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -2167,7 +2169,6 @@ int isUnsafeFunction(InstrPtr q);
 int isUnsafeInstruction(InstrPtr q);
 int isUpdateInstruction(InstrPtr p);
 str iteratorRef;
-str joinPathRef;
 str jsonRef;
 str languageRef;
 str levenshtein_impl(int *result, str *s, str *t, int *insdel_cost, int *replace_cost, int *transpose_cost);
@@ -2338,8 +2339,8 @@ void profilerHeartbeatEvent(char *alter);
 str profilerRef;
 str projectRef;
 str projectdeltaRef;
-str projectionPathRef;
 str projectionRef;
+str projectionpathRef;
 void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
@@ -2456,8 +2457,12 @@ int sqlblob_tostr(str *tostr, int *l, const blob *p);
 str srvpoolRef;
 str startProfiler(void);
 str startRef;
+str startTrace(void);
+str starttraceRef;
 str stopProfiler(void);
 str stopRef;
+str stopTrace(void);
+str stoptraceRef;
 void strAfterCall(ValPtr v, ValPtr bak);
 void strBeforeCall(ValPtr v, ValPtr bak);
 str strEpilogue(void *ret);
@@ -2600,7 +2605,7 @@ stream *udp_wastream(const char *hostname, int port, const char *name);
 stream *wbstream(stream *s, size_t buflen);
 
 
-# 15:25:25 >  
-# 15:25:25 >  "Done."
-# 15:25:25 >  
+# 21:41:06 >  
+# 21:41:06 >  "Done."
+# 21:41:06 >  
 
