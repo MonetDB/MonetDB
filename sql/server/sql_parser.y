@@ -108,6 +108,7 @@ int yydebug=1;
 	copyfrom_stmt
 	table_def
 	view_def
+	query_expression_def
 	query_expression
 	with_query_expression
 	role_def
@@ -1356,7 +1357,7 @@ table_content_source:
 as_subquery_clause:
 	opt_column_list
 	AS
-	query_expression			
+	query_expression_def
 	with_or_without_data
 			{ $$ = append_list(L(), $1);
 			  append_symbol($$, $3); 
@@ -1669,7 +1670,7 @@ like_table:
  ;
 
 view_def:
-    VIEW qname opt_column_list AS query_expression opt_with_check_option
+    VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
 	  append_list(l, $2);
 	  append_list(l, $3);
@@ -1678,6 +1679,11 @@ view_def:
 	  append_int(l, TRUE);	/* persistent view */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
+  ;
+
+query_expression_def:
+	query_expression
+  |	'(' query_expression_def ')'	{ $$ = $2; }
   ;
 
 query_expression:
@@ -2466,14 +2472,14 @@ copyfrom_stmt:
 	  append_list(l, $7);
 	  append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY query_expression INTO string opt_seps opt_null_string 
+  | COPY query_expression_def INTO string opt_seps opt_null_string 
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
 	  append_list(l, $5);
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
-  | COPY query_expression INTO STDOUT opt_seps opt_null_string
+  | COPY query_expression_def INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, NULL);
