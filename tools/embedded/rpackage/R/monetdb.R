@@ -36,7 +36,6 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	if (is.character(res)) {
 		stop("Failed to initialize embedded MonetDB ", res)
 	}
-
 	monetdb_embedded_env$is_started <- TRUE
 	monetdb_embedded_env$started_dir <- dir
 	invisible(TRUE)
@@ -52,7 +51,7 @@ monetdb_embedded_query <- function(conn, query, notreally=FALSE) {
 		stop("Need a single noreally flag as parameter.")
 	}
 	if (!inherits(conn, classname)) {
-		stop("Need a embedded monetdb connection as parameter")
+		stop("Invalid connection")
 	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
@@ -90,7 +89,7 @@ monetdb_embedded_append <- function(conn, table, tdata, schema="sys") {
 		stop("Need a data frame as tdata parameter.")
 	}
 	if (!inherits(conn, classname)) {
-		stop("Need a embedded monetdb connection as parameter")
+		stop("Invalid connection")
 	}
 	.Call("monetdb_append_R", conn, schema, table, tdata, PACKAGE=libfilename)
 }
@@ -100,23 +99,23 @@ monetdb_embedded_connect <- function() {
 	if (!monetdb_embedded_env$is_started) {
 		stop("Call monetdb_embedded_startup() first")
 	}
-	res <- .Call("monetdb_connect_R", PACKAGE=libfilename)
-	class(res) <- classname
-	return(res)
+	conn <- .Call("monetdb_connect_R", PACKAGE=libfilename)
+	class(conn) <- classname
+	return(conn)
 }
 
 monetdb_embedded_disconnect <- function(conn) {
 	if (!inherits(conn, classname)) {
-		stop("Need a embedded monetdb connection as parameter")
+		stop("Invalid connection")
 	}
 	.Call("monetdb_disconnect_R", conn,  PACKAGE=libfilename)
-	return(invisible(TRUE))
+	invisible(TRUE)
 }
 
 monetdb_embedded_shutdown <- function() {
 	.Call("monetdb_shutdown_R", PACKAGE=libfilename)
 	monetdb_embedded_env$is_started <- FALSE
 	monetdb_embedded_env$started_dir <- ""
-	return(invisible(TRUE))
+	invisible(TRUE)
 }
 

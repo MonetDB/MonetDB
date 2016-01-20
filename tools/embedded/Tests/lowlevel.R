@@ -20,8 +20,10 @@ test_that("one can connect", {
 	con <- monetdb_embedded_connect()
 	expect_that(con, is_a("monetdb_embedded_connection"))
 	monetdb_embedded_disconnect(con)
+	# closed connections can be closed again
 	monetdb_embedded_disconnect(con)
 	expect_error(monetdb_embedded_disconnect(NULL))
+	expect_error(monetdb_embedded_disconnect(42))
 })
 
 test_that("db runs queries and returns results", {
@@ -35,6 +37,14 @@ test_that("db runs queries and returns results", {
 	expect_true(nrow(res$tuples) > 0)
 	expect_true(ncol(res$tuples) > 0)
 	monetdb_embedded_disconnect(con)
+})
+
+test_that("a disconnected connection cannot be used", {
+	con <- monetdb_embedded_connect()
+	monetdb_embedded_query(con, "SELECT 42")
+	monetdb_embedded_disconnect(con)
+	res <- monetdb_embedded_query(con, "SELECT 42")
+	expect_equal(res$type, "!")
 })
 
 test_that("commit", {
@@ -116,19 +126,26 @@ test_that("inserting data", {
 	monetdb_embedded_disconnect(con)
 })
 
+test_that("the garbage collector closes connections", {
+	# there are 64 connections max. if gc() does not close them, the last line will provoke a crash
+	conns <- lapply(1:64, function(x) monetdb_embedded_connect())
+	expect_error(monetdb_embedded_connect())
+
+	rm(conns)
+	gc()
+
+	conns <- lapply(1:64, function(x) monetdb_embedded_connect())
+	rm(conns)
+	gc()
+	monetdb_embedded_connect()
+})
+
+
 test_that("the logger does not misbehave", {
 	con <- monetdb_embedded_connect()
 	monetdb_embedded_query(con, "CREATE TABLE foo(i INTEGER, j INTEGER)")
 	Sys.sleep(5)
 	monetdb_embedded_query(con, "DROP TABLE foo")
 	monetdb_embedded_disconnect(con)
-})
-
-test_that("the garbage collector closes connections", {
-	# there are 64 connections max. if gc() does not close them, the last line will provoke a crash
-	conns <- lapply(1:60, function(x) monetdb_embedded_connect())
-	rm(conns)
-	gc()
-	conns <- lapply(1:60, function(x) monetdb_embedded_connect())
 })
 

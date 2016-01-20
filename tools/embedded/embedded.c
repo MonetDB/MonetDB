@@ -46,8 +46,9 @@ sqlcleanup_ptr_tpe sqlcleanup_ptr = NULL;
 typedef void (*mvc_trans_ptr_tpe)(mvc*);
 mvc_trans_ptr_tpe mvc_trans_ptr = NULL;
 
-static MT_Lock monetdb_embedded_lock;
 int monetdb_embedded_initialized = 0;
+#define EMBEDDED_MAX_CONNS 64
+static void *monetdb_embedded_connections[EMBEDDED_MAX_CONNS];
 
 static void* lookup_function(char* func) {
 	void *dl, *fun;
@@ -60,26 +61,62 @@ static void* lookup_function(char* func) {
 	return fun;
 }
 
+static int monetdb_valid_conn(void* conn) {
+	int i;
+	if (conn == NULL) {
+		return 0;
+	}
+	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
+		if (conn == monetdb_embedded_connections[i]) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void* monetdb_connect() {
+	void **conn = NULL;
+	int i;
+
+	if (!monetdb_embedded_initialized) {
+		return NULL;
+	}
+
+	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
+		if (monetdb_embedded_connections[i] == NULL) {
+			conn = &monetdb_embedded_connections[i];
+			break;
+		}
+	}
+	if (conn == NULL) {
+		return NULL;
+	}
 	Client c = MCforkClient(&mal_clients[0]);
 	if ((*SQLinitClient_ptr)(c) != MAL_SUCCEED) {
 		return NULL;
 	}
 	((backend *) c->sqlcontext)->mvc->session->auto_commit = 1;
-	// TODO: keep track of pointers returned
+	*conn = c;
 	return c;
 }
 
 void monetdb_disconnect(void* conn) {
-	if (conn == NULL) {
+	int i;
+	if (!monetdb_valid_conn(conn)) {
 		return;
 	}
-	MCcloseClient((Client) conn);
+	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
+		if (conn == monetdb_embedded_connections[i]) {
+			MCcloseClient((Client) conn);
+			monetdb_embedded_connections[i] = NULL;
+			return;
+		}
+	}
 }
 
 char* monetdb_startup(char* dbdir, char silent) {
 	opt *set = NULL;
-	int setlen = 0;
+	int setlen = 0, i;
 	str retval = MAL_SUCCEED;
 	char* sqres = NULL;
 	void* res = NULL;
@@ -98,8 +135,7 @@ char* monetdb_startup(char* dbdir, char silent) {
 		}
 		goto cleanup;
 	}
-	MT_lock_init(&monetdb_embedded_lock, "monetdb_embedded_lock");
-	MT_lock_set(&monetdb_embedded_lock);
+
 	if (monetdb_embedded_initialized) goto cleanup;
 
 	setlen = mo_builtin_settings(&set);
@@ -115,6 +151,9 @@ char* monetdb_startup(char* dbdir, char silent) {
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("sql_optimizer", "sequential_pipe");
 
+	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
+		monetdb_embedded_connections[i] = NULL;
+	}
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(dbdir);
@@ -148,14 +187,16 @@ char* monetdb_startup(char* dbdir, char silent) {
 		goto cleanup;
 	}
 
+	monetdb_embedded_initialized = true;
 	c = monetdb_connect();
 	if (c == NULL) {
+		monetdb_embedded_initialized = false;
 		retval = GDKstrdup("Failed to initialize client");
 		goto cleanup;
 	}
-	monetdb_embedded_initialized = true;
-	// we do not want to jump after this point, since we cannot do so between threads
 	GDKfataljumpenable = 0;
+
+	// we do not want to jump after this point, since we cannot do so between threads
 	// sanity check, run a SQL query
 	sqres = monetdb_query(c, "SELECT * FROM tables;", &res);
 	if (sqres != NULL) {
@@ -167,18 +208,20 @@ char* monetdb_startup(char* dbdir, char silent) {
 	monetdb_disconnect(c);
 cleanup:
 	mo_free_options(set, setlen);
-	MT_lock_unset(&monetdb_embedded_lock);
 	return retval;
 }
 
 char* monetdb_query(void* conn, char* query, void** result) {
-	// TODO: check client pointer
 	str res = MAL_SUCCEED;
 	Client c = (Client) conn;
-	mvc* m = ((backend *) c->sqlcontext)->mvc;
+	mvc* m;
 	if (!monetdb_embedded_initialized) {
 		return GDKstrdup("Embedded MonetDB is not started");
 	}
+	if (!monetdb_valid_conn(conn)) {
+		return GDKstrdup("Invalid connection");
+	}
+	m = ((backend *) c->sqlcontext)->mvc;
 
 	while (*query == ' ' || *query == '\t') query++;
 	if (strncasecmp(query, "START", 5) == 0) { // START TRANSACTION
@@ -216,7 +259,17 @@ char* monetdb_append(void* conn, const char* schema, const char* table, append_d
 	Client c = (Client) conn;
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 
-	assert(table != NULL && data != NULL && ncols > 0);
+	// TODO: check client pointer
+
+	if (!monetdb_embedded_initialized) {
+		return GDKstrdup("Embedded MonetDB is not started");
+	}
+	if(table == NULL || data == NULL || ncols < 1) {
+		return GDKstrdup("Invalid parameters");
+	}
+	if (!monetdb_valid_conn(conn)) {
+		return GDKstrdup("Invalid connection");
+	}
 
 	// very black MAL magic below
 	mb.var = GDKmalloc(nvar * sizeof(VarRecord*));
@@ -302,7 +355,6 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 
 // TODO: fix this, it is not working correctly
 void monetdb_shutdown() {
-	MT_lock_set(&monetdb_embedded_lock);
 	// kill SQL
 	(*SQLepilogue_ptr)(NULL);
 	// kill MAL & GDK
@@ -310,5 +362,4 @@ void monetdb_shutdown() {
 	// clean up global state
 	BBPresetfarms();
 	monetdb_embedded_initialized = 0;
-	MT_lock_unset(&monetdb_embedded_lock);
 }
