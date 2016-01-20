@@ -127,7 +127,7 @@ test_that("inserting data", {
 })
 
 test_that("the garbage collector closes connections", {
-	# there are 64 connections max. if gc() does not close them, the last line will provoke a crash
+	# there are 64 connections max. if gc() does not close them, the second batch will fail
 	conns <- lapply(1:64, function(x) monetdb_embedded_connect())
 	expect_error(monetdb_embedded_connect())
 
@@ -137,7 +137,6 @@ test_that("the garbage collector closes connections", {
 	conns <- lapply(1:64, function(x) monetdb_embedded_connect())
 	rm(conns)
 	gc()
-	monetdb_embedded_connect()
 })
 
 
