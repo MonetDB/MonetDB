@@ -47,8 +47,6 @@ typedef void (*mvc_trans_ptr_tpe)(mvc*);
 mvc_trans_ptr_tpe mvc_trans_ptr = NULL;
 
 int monetdb_embedded_initialized = 0;
-#define EMBEDDED_MAX_CONNS 64
-static void *monetdb_embedded_connections[EMBEDDED_MAX_CONNS];
 
 static void* lookup_function(char* func) {
 	void *dl, *fun;
@@ -61,62 +59,32 @@ static void* lookup_function(char* func) {
 	return fun;
 }
 
-static int monetdb_valid_conn(void* conn) {
-	int i;
-	if (conn == NULL) {
-		return 0;
-	}
-	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
-		if (conn == monetdb_embedded_connections[i]) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 void* monetdb_connect() {
-	void **conn = NULL;
-	int i;
-
+	Client conn = NULL;
 	if (!monetdb_embedded_initialized) {
 		return NULL;
 	}
-
-	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
-		if (monetdb_embedded_connections[i] == NULL) {
-			conn = &monetdb_embedded_connections[i];
-			break;
-		}
-	}
-	if (conn == NULL) {
+	conn = MCforkClient(&mal_clients[0]);
+	if (!MCvalid((Client) conn)) {
 		return NULL;
 	}
-	Client c = MCforkClient(&mal_clients[0]);
-	if ((*SQLinitClient_ptr)(c) != MAL_SUCCEED) {
+	if ((*SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
 		return NULL;
 	}
-	((backend *) c->sqlcontext)->mvc->session->auto_commit = 1;
-	*conn = c;
-	return c;
+	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
+	return conn;
 }
 
 void monetdb_disconnect(void* conn) {
-	int i;
-	if (!monetdb_valid_conn(conn)) {
+	if (!MCvalid((Client) conn)) {
 		return;
 	}
-	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
-		if (conn == monetdb_embedded_connections[i]) {
-			MCcloseClient((Client) conn);
-			monetdb_embedded_connections[i] = NULL;
-			return;
-		}
-	}
+	MCcloseClient((Client) conn);
 }
 
 char* monetdb_startup(char* dbdir, char silent) {
 	opt *set = NULL;
-	int setlen = 0, i;
+	int setlen = 0;
 	str retval = MAL_SUCCEED;
 	char* sqres = NULL;
 	void* res = NULL;
@@ -150,10 +118,6 @@ char* monetdb_startup(char* dbdir, char silent) {
 	GDKsetenv("monet_mod_path", "");
 	GDKsetenv("mapi_disable", "true");
 	GDKsetenv("sql_optimizer", "sequential_pipe");
-
-	for (i = 0; i < EMBEDDED_MAX_CONNS; i++) {
-		monetdb_embedded_connections[i] = NULL;
-	}
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(dbdir);
@@ -218,7 +182,7 @@ char* monetdb_query(void* conn, char* query, void** result) {
 	if (!monetdb_embedded_initialized) {
 		return GDKstrdup("Embedded MonetDB is not started");
 	}
-	if (!monetdb_valid_conn(conn)) {
+	if (!MCvalid((Client) conn)) {
 		return GDKstrdup("Invalid connection");
 	}
 	m = ((backend *) c->sqlcontext)->mvc;
@@ -257,9 +221,7 @@ char* monetdb_append(void* conn, const char* schema, const char* table, append_d
 	str res = MAL_SUCCEED;
 	VarRecord bat_varrec;
 	Client c = (Client) conn;
-	mvc* m = ((backend *) c->sqlcontext)->mvc;
-
-	// TODO: check client pointer
+	mvc* m;
 
 	if (!monetdb_embedded_initialized) {
 		return GDKstrdup("Embedded MonetDB is not started");
@@ -267,9 +229,10 @@ char* monetdb_append(void* conn, const char* schema, const char* table, append_d
 	if(table == NULL || data == NULL || ncols < 1) {
 		return GDKstrdup("Invalid parameters");
 	}
-	if (!monetdb_valid_conn(conn)) {
+	if (!MCvalid((Client) conn)) {
 		return GDKstrdup("Invalid connection");
 	}
+	m = ((backend *) c->sqlcontext)->mvc;
 
 	// very black MAL magic below
 	mb.var = GDKmalloc(nvar * sizeof(VarRecord*));
@@ -362,4 +325,5 @@ void monetdb_shutdown() {
 	// clean up global state
 	BBPresetfarms();
 	monetdb_embedded_initialized = 0;
+	// TODO: reset all mal clients
 }

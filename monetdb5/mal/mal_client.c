@@ -588,6 +588,25 @@ MCreadClient(Client c)
 	return 1;
 }
 
+
+int
+MCvalid(Client tc)
+{
+	Client c;
+	if (tc == NULL) {
+		return 0;
+	}
+	MT_lock_set(&mal_contextLock);
+	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		if (c == tc && c->mode == RUNCLIENT) {
+			MT_lock_unset(&mal_contextLock);
+			return 1;
+		}
+	}
+	MT_lock_unset(&mal_contextLock);
+	return 0;
+}
+
 str
 PROFinitClient(Client c){
 	(void) c;
