@@ -166,7 +166,7 @@ bl_postversion( void *lg)
 		unsigned char nft[] = {TYPE_int, TYPE_str, TYPE_str, TYPE_str, TYPE_int, TYPE_int, TYPE_bit, TYPE_bit, TYPE_bit, TYPE_int};
 		BAT *tt[8], *ttn[8], *ff[10], *ffn[10];
 		BATiter tti[8], ffi[10];
-		int val, maxid;
+		int val, maxid, i;
 		bit bval;
 
 		/* Update the catalog to use the new geometry types */
@@ -346,7 +346,7 @@ bl_postversion( void *lg)
 		bat_destroy(sn);
 
 		/* Add the new geometrya type and update the mbr type */
-		for (int i = 0; i < 8; i++) {
+		for (i = 0; i < 8; i++) {
 			if (!(tt[i] = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, nt[i])))))
 				return;
 			tti[i] = bat_iterator(tt[i]);
@@ -358,7 +358,7 @@ bl_postversion( void *lg)
 		for(p=BUNfirst(tt[0]), q=BUNlast(tt[0]); p<q; p++) {
 			char *systemname = BUNtail(tti[1], p);
 			char *sqlname = BUNtail(tti[2], p);
-			for (int i = 0; i <= 5; i++)
+			for (i = 0; i <= 5; i++)
 				BUNappend(ttn[i], BUNtail(tti[i], p), TRUE);
 			if (strcmp(systemname, "mbr") == 0) {
 				val = EC_EXTERNAL;
@@ -390,14 +390,14 @@ bl_postversion( void *lg)
 		val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
 		val = 0; BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
 
-		for (int i = 0; i < 8; i++) {
+		for (i = 0; i < 8; i++) {
 			BATsetaccess(ttn[i], BAT_READ);
 			logger_add_bat(lg, ttn[i], N(n, NULL, s, nt[i]));
 			bat_destroy(tt[i]);
 		}
 
 		/* Add the new functions */
-		for (int i = 0; i < 10; i++) {
+		for (i = 0; i < 10; i++) {
 			if (!(ff[i] = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, nf[i])))))
 				return;
 			ffi[i] = bat_iterator(ff[i]);
@@ -407,7 +407,7 @@ bl_postversion( void *lg)
 		}
 		maxid = 0;
 		for(p=BUNfirst(ff[0]), q=BUNlast(ff[0]); p<q; p++) {
-			for (int i = 0; i < 10; i++)
+			for (i = 0; i < 10; i++)
 				BUNappend(ffn[i], BUNtail(ffi[i], p), TRUE);
 			maxid = maxid < *(int*)BUNtail(ffi[0], p) ? *(int*)BUNtail(ffi[0], p) : maxid;
 		}
@@ -457,7 +457,7 @@ bl_postversion( void *lg)
 		GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
 		GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
 #undef GEOM_UPGRADE_STORE_FUNC
-		for (int i = 0; i < 10; i++) {
+		for (i = 0; i < 10; i++) {
 			BATsetaccess(ffn[i], BAT_READ);
 			logger_add_bat(lg, ffn[i], N(n, NULL, s, nf[i]));
 			bat_destroy(ff[i]);
