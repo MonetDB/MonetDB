@@ -112,6 +112,7 @@ static SEXP bat_to_sexp(BAT* b) {
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
 			// this was found to be always slower.
+			// TODO: find a way to keep BATgroup from memory-mapping the group BAT
 			/*if (GDK_ELIMDOUBLES(b->T->vheap) && BATcount(b) > 0) {
 				BAT *grp, *ext;
 				BUN p, q;

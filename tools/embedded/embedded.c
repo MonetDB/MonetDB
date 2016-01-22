@@ -108,7 +108,6 @@ char* monetdb_startup(char* dbdir, char silent) {
 
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
-	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_mmap_minsize", "104857600");
 
 	BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT));
 	if (GDKinit(set, setlen) == 0) {
