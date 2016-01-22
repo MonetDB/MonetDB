@@ -4952,9 +4952,6 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		if (!l || rel_is_ref(l) || 
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
-		   /* we cannot rewrite projection from outer joins */
-		   ((is_left(rel->op) || is_full(rel->op)) && r->op == op_project) ||
-		   ((is_right(rel->op) || is_full(rel->op)) && l->op == op_project) ||
 		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l))) ||
 		   (is_join(rel->op) && (is_subquery(r) ||
@@ -4971,7 +4968,8 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 			for (n = l->exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 
-				if (is_column(e->type) && exp_is_atom(e)) {
+		   		/* we cannot rewrite projection with atomic values from outer joins */
+				if (is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column /*||
 					   e->type == e_func ||
@@ -4994,7 +4992,8 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 			for (n = r->exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 
-				if (is_column(e->type) && exp_is_atom(e)) {
+		   		/* we cannot rewrite projection with atomic values from outer joins */
+				if (is_column(e->type) && exp_is_atom(e) && !(is_left(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column /*||
 					   e->type == e_func ||
