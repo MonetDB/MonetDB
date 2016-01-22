@@ -31,372 +31,110 @@
 	}					\
 } while (0)
 
-/* binary search */
-#define check(Z,X,W) if ((X) >= bins[W] && (X) < bins[W+1]) (Z) = W;
-#define left(Z,X,W)  if ((X) < bins[W+1])
-#define right(Z,X,W) if ((X) >= bins[W])
 
-#define GETBIN64(Z,X)						\
-	right(Z,X,32) {						\
-		right(Z,X,48) {					\
-			right(Z,X,56) {				\
-				right(Z,X,60){			\
-					right(Z,X,62) {		\
-						Z = 62;		\
-						right(Z,X,63) {	\
-							Z = 63;	\
-						}		\
-					}			\
-					check(Z,X,61)		\
-					left(Z,X,60) {		\
-						Z = 60;		\
-					}			\
-				}				\
-				check(Z,X,59)			\
-				left(Z,X,58) {			\
-					right(Z,X,58) {		\
-						Z = 58;		\
-					}			\
-					check(Z,X,57)		\
-					left(Z,X,56) {		\
-						Z = 56;		\
-					}			\
-				}				\
-			}					\
-			check(Z,X,55)				\
-			left(Z,X,54) {				\
-				right(Z,X,52){			\
-					right(Z,X,54) {		\
-						Z = 54;		\
-					}			\
-					check(Z,X,53)		\
-					left(Z,X,52) {		\
-						Z = 52;		\
-					}			\
-				}				\
-				check(Z,X,51)			\
-				left(Z,X,50) {			\
-					right(Z,X,50) {		\
-						Z = 50;		\
-					}			\
-					check(Z,X,49)		\
-					left(Z,X,48) {		\
-						Z = 48;		\
-					}			\
-				}				\
-			}					\
-		}						\
-		check(Z,X,47)					\
-		left(Z,X,46) {					\
-			right(Z,X,40) {				\
-				right(Z,X,44){			\
-					right(Z,X,46) {		\
-						Z = 46;		\
-					}			\
-					check(Z,X,45)		\
-					left(Z,X,44) {		\
-						Z = 44;		\
-					}			\
-				}				\
-				check(Z,X,43)			\
-				left(Z,X,42) {			\
-					right(Z,X,42) {		\
-						Z = 42;		\
-					}			\
-					check(Z,X,41)		\
-					left(Z,X,40) {		\
-						Z = 40;		\
-					}			\
-				}				\
-			}					\
-			check(Z,X,39)				\
-			left(Z,X,38) {				\
-				right(Z,X,36){			\
-					right(Z,X,38) {		\
-						Z = 38;		\
-					}			\
-					check(Z,X,37)		\
-					left(Z,X,36) {		\
-						Z = 36;		\
-					}			\
-				}				\
-				check(Z,X,35)			\
-				left(Z,X,34) {			\
-					right(Z,X,34) {		\
-						Z = 34;		\
-					}			\
-					check(Z,X,33)		\
-					left(Z,X,32) {		\
-						Z = 32;		\
-					}			\
-				}				\
-			}					\
-		}						\
-	}							\
-	check(Z,X,31)						\
-	left(Z,X,30) {						\
-		right(Z,X,16) {					\
-			right(Z,X,24) {				\
-				right(Z,X,28){			\
-					right(Z,X,30) {		\
-						Z = 30;		\
-					}			\
-					check(Z,X,29)		\
-					left(Z,X,28) {		\
-						Z = 28;		\
-					}			\
-				}				\
-				check(Z,X,27)			\
-				left(Z,X,26) {			\
-					right(Z,X,26) {		\
-						Z = 26;		\
-					}			\
-					check(Z,X,25)		\
-					left(Z,X,24) {		\
-						Z = 24;		\
-					}			\
-				}				\
-			}					\
-			check(Z,X,23)				\
-			left(Z,X,22) {				\
-				right(Z,X,20){			\
-					right(Z,X,22) {		\
-						Z = 22;		\
-					}			\
-					check(Z,X,21)		\
-					left(Z,X,20) {		\
-						Z = 20;		\
-					}			\
-				}				\
-				check(Z,X,19)			\
-				left(Z,X,18) {			\
-					right(Z,X,18) {		\
-						Z = 18;		\
-					}			\
-					check(Z,X,17)		\
-					left(Z,X,16) {		\
-						Z = 16;		\
-					}			\
-				}				\
-			}					\
-		}						\
-		check(Z,X,15)					\
-		left(Z,X,14) {					\
-			right(Z,X,8) {				\
-				right(Z,X,12){			\
-					right(Z,X,14) {		\
-						Z = 14;		\
-					}			\
-					check(Z,X,13)		\
-					left(Z,X,12) {		\
-						Z = 12;		\
-					}			\
-				}				\
-				check(Z,X,11)			\
-				left(Z,X,10) {			\
-					right(Z,X,10) {		\
-						Z = 10;		\
-					}			\
-					check(Z,X,9)		\
-					left(Z,X,8) {		\
-						Z = 8;		\
-					}			\
-				}				\
-			}					\
-			check(Z,X,7)				\
-			left(Z,X,6) {				\
-				right(Z,X,4){			\
-					right(Z,X,6) {		\
-						Z = 6;		\
-					}			\
-					check(Z,X,5)		\
-					left(Z,X,4) {		\
-						Z = 4;		\
-					}			\
-				}				\
-				check(Z,X,3)			\
-				left(Z,X,2) {			\
-					right(Z,X,2) {		\
-						Z = 2;		\
-					}			\
-					check(Z,X,1)		\
-					left(Z,X,0) {		\
-						Z = 0;		\
-					}			\
-				}				\
-			}					\
-		}						\
-	}
+/*
+ * bin-finding using "carefully controlled predication"
+ * reduces overall imprints creation time by up to 50%
+ * (i.e., 2x) compared to the original "binary search"
+ */
 
-#define GETBIN32(Z,X)					\
-	right(Z,X,16) {					\
-		right(Z,X,24) {				\
-			right(Z,X,28){			\
-				right(Z,X,30) {		\
-					Z = 30;		\
-					right(Z,X,31) {	\
-						Z = 31;	\
-					}		\
-				}			\
-				check(Z,X,29)		\
-				left(Z,X,28) {		\
-					Z = 28;		\
-				}			\
-			}				\
-			check(Z,X,27)			\
-			left(Z,X,26) {			\
-				right(Z,X,26) {		\
-					Z = 26;		\
-				}			\
-				check(Z,X,25)		\
-				left(Z,X,24) {		\
-					Z = 24;		\
-				}			\
-			}				\
-		}					\
-		check(Z,X,23)				\
-		left(Z,X,22) {				\
-			right(Z,X,20){			\
-				right(Z,X,22) {		\
-					Z = 22;		\
-				}			\
-				check(Z,X,21)		\
-				left(Z,X,20) {		\
-					Z = 20;		\
-				}			\
-			}				\
-			check(Z,X,19)			\
-			left(Z,X,18) {			\
-				right(Z,X,18) {		\
-					Z = 18;		\
-				}			\
-				check(Z,X,17)		\
-				left(Z,X,16) {		\
-					Z = 16;		\
-				}			\
-			}				\
-		}					\
-	}						\
-	check(Z,X,15)					\
-	left(Z,X,14) {					\
-		right(Z,X,8) {				\
-			right(Z,X,12){			\
-				right(Z,X,14) {		\
-					Z = 14;		\
-				}			\
-				check(Z,X,13)		\
-				left(Z,X,12) {		\
-					Z = 12;		\
-				}			\
-			}				\
-			check(Z,X,11)			\
-			left(Z,X,10) {			\
-				right(Z,X,10) {		\
-					Z = 10;		\
-				}			\
-				check(Z,X,9)		\
-				left(Z,X,8) {		\
-					Z = 8;		\
-				}			\
-			}				\
-		}					\
-		check(Z,X,7)				\
-		left(Z,X,6) {				\
-			right(Z,X,4){			\
-				right(Z,X,6) {		\
-					Z = 6;		\
-				}			\
-				check(Z,X,5)		\
-				left(Z,X,4) {		\
-					Z = 4;		\
-				}			\
-			}				\
-			check(Z,X,3)			\
-			left(Z,X,2) {			\
-				right(Z,X,2) {		\
-					Z = 2;		\
-				}			\
-				check(Z,X,1)		\
-				left(Z,X,0) {		\
-					Z = 0;		\
-				}			\
-			}				\
-		}					\
-	}
+#define GETBIN8(Z,X)		\
+do {				\
+	Z = ((X) >= bins[1])	\
+	  + ((X) >= bins[2])	\
+	  + ((X) >= bins[3])	\
+	  + ((X) >= bins[4])	\
+	  + ((X) >= bins[5])	\
+	  + ((X) >= bins[6])	\
+	  + ((X) >= bins[7]);	\
+} while (0)
 
-#define GETBIN16(Z,X)				\
-	right(Z,X,8) {				\
-		right(Z,X,12){			\
-			right(Z,X,14) {		\
-				Z = 14;		\
-				right(Z,X,15) {	\
-					Z = 15;	\
-				}		\
-			}			\
-			check(Z,X,13)		\
-			left(Z,X,12) {		\
-				Z = 12;		\
-			}			\
-		}				\
-		check(Z,X,11)			\
-		left(Z,X,10) {			\
-			right(Z,X,10) {		\
-				Z = 10;		\
-			}			\
-			check(Z,X,9)		\
-			left(Z,X,8) {		\
-				Z = 8;		\
-			}			\
-		}				\
-	}					\
-	check(Z,X,7)				\
-	left(Z,X,6) {				\
-		right(Z,X,4){			\
-			right(Z,X,6) {		\
-				Z = 6;		\
-			}			\
-			check(Z,X,5)		\
-			left(Z,X,4) {		\
-				Z = 4;		\
-			}			\
-		}				\
-		check(Z,X,3)			\
-		left(Z,X,2) {			\
-			right(Z,X,2) {		\
-				Z = 2;		\
-			}			\
-			check(Z,X,1)		\
-			left(Z,X,0) {		\
-				Z = 0;		\
-			}			\
-		}				\
-	}
+#define GETBIN16(Z,X)		\
+do {				\
+	Z = ((X) >= bins[ 1])	\
+	  + ((X) >= bins[ 2])	\
+	  + ((X) >= bins[ 3])	\
+	  + ((X) >= bins[ 4])	\
+	  + ((X) >= bins[ 5])	\
+	  + ((X) >= bins[ 6])	\
+	  + ((X) >= bins[ 7])	\
+	  + ((X) >= bins[ 8])	\
+	  + ((X) >= bins[ 9])	\
+	  + ((X) >= bins[10])	\
+	  + ((X) >= bins[11])	\
+	  + ((X) >= bins[12])	\
+	  + ((X) >= bins[13])	\
+	  + ((X) >= bins[14])	\
+	  + ((X) >= bins[15]);	\
+} while (0)
 
-#define GETBIN8(Z,X)				\
-	right(Z,X,4){				\
-		right(Z,X,6) {			\
-			Z = 6;			\
-			right(Z,X,7) {		\
-				Z = 7;		\
-			}			\
-		}				\
-		check(Z,X,5)			\
-		left(Z,X,4) {			\
-			Z = 4;			\
-		}				\
-	}					\
-	check(Z,X,3)				\
-	left(Z,X,2) {				\
-		right(Z,X,2) {			\
-			Z = 2;			\
-		}				\
-		check(Z,X,1)			\
-		left(Z,X,0) {			\
-			Z = 0;			\
-		}				\
-	}
+#define GETBIN32(Z,X)			\
+do {					\
+	if ((X) < bins[16]) {		\
+		GETBIN16(Z,X);		\
+	} else {			\
+		Z = 16			\
+		  + ((X) >= bins[17])	\
+		  + ((X) >= bins[18])	\
+		  + ((X) >= bins[19])	\
+		  + ((X) >= bins[20])	\
+		  + ((X) >= bins[21])	\
+		  + ((X) >= bins[22])	\
+		  + ((X) >= bins[23])	\
+		  + ((X) >= bins[24])	\
+		  + ((X) >= bins[25])	\
+		  + ((X) >= bins[26])	\
+		  + ((X) >= bins[27])	\
+		  + ((X) >= bins[28])	\
+		  + ((X) >= bins[29])	\
+		  + ((X) >= bins[30])	\
+		  + ((X) >= bins[31]);	\
+	}				\
+} while (0)
 
-/* end of binary search */
+#define GETBIN64(Z,X)			\
+do {					\
+	if ((X) < bins[32]) {		\
+		GETBIN32(Z,X);		\
+	} else if ((X) < bins[48]) {	\
+		Z = 32			\
+		  + ((X) >= bins[33])	\
+		  + ((X) >= bins[34])	\
+		  + ((X) >= bins[35])	\
+		  + ((X) >= bins[36])	\
+		  + ((X) >= bins[37])	\
+		  + ((X) >= bins[38])	\
+		  + ((X) >= bins[39])	\
+		  + ((X) >= bins[40])	\
+		  + ((X) >= bins[41])	\
+		  + ((X) >= bins[42])	\
+		  + ((X) >= bins[43])	\
+		  + ((X) >= bins[44])	\
+		  + ((X) >= bins[45])	\
+		  + ((X) >= bins[46])	\
+		  + ((X) >= bins[47]);	\
+	} else {			\
+		Z = 48			\
+		  + ((X) >= bins[49])	\
+		  + ((X) >= bins[50])	\
+		  + ((X) >= bins[51])	\
+		  + ((X) >= bins[52])	\
+		  + ((X) >= bins[53])	\
+		  + ((X) >= bins[54])	\
+		  + ((X) >= bins[55])	\
+		  + ((X) >= bins[56])	\
+		  + ((X) >= bins[57])	\
+		  + ((X) >= bins[58])	\
+		  + ((X) >= bins[59])	\
+		  + ((X) >= bins[60])	\
+		  + ((X) >= bins[61])	\
+		  + ((X) >= bins[62])	\
+		  + ((X) >= bins[63]);	\
+	}				\
+}while (0)
+
+/* end of bin-finding using "carefully controlled predication" */
+
 
 #define IMPS_CREATE(TYPE,B)						\
 do {									\
