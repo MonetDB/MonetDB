@@ -41,6 +41,7 @@ mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void finishSessionProfiler(Client cntxt);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export lng getBatSpace(BAT *b);
 
 mal_export QueryQueue QRYqueue;
 #endif
