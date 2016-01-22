@@ -35,6 +35,7 @@ str batmtimeRef;
 str batmmathRef;
 str batxmlRef;
 str batsqlRef;
+str blockRef;
 str bbpRef;
 str tidRef;
 str dateRef;
@@ -249,6 +250,7 @@ void optimizerInit(void)
 	batmmathRef = putName("batmmath",8);
 	batxmlRef = putName("batxml",6);
 	batsqlRef = putName("batsql",6);
+	blockRef = putName("block",5);
 	bbpRef = putName("bbp",3);
 	tidRef = putName("tid",3);
 	deltaRef = putName("delta",5);
