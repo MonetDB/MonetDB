@@ -451,6 +451,7 @@ BATprojectchain(BAT **bats)
 	cnt = BATcount(b);	/* this will be the size of the output */
 	hseq = b->hseqbase;	/* this will be the seqbase of the output */
 	tseq = oid_nil;		/* initialize, but overwritten before use */
+	off = 0;		/* this will be the BUN offset into last BAT */
 	for (i = n = 0; b != NULL; n++, i++) {
 		assert(BAThdense(b));
 		if (n > 0 && ba[i-1].vals == NULL) {
