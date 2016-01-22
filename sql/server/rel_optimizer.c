@@ -32,6 +32,10 @@ typedef struct global_props {
 typedef sql_rel *(*rewrite_fptr)(int *changes, mvc *sql, sql_rel *rel);
 typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
 
+static sql_rel * rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes);
+static sql_rel * rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) ;
+static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
+
 static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
 /* The important task of the relational optimizer is to optimize the
@@ -1035,8 +1039,6 @@ reorder_join(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
-static sql_rel * rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) ;
 static sql_rel *
 rel_join_order(mvc *sql, sql_rel *rel) 
 {
@@ -6860,7 +6862,11 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 				nrel->exps = rel->exps;
 			rel_destroy(rel);
 			if (sel) {
+				int changes = 0;
 				sel->l = nrel;
+				sel = rewrite_topdown(sql, sel, &rel_push_select_down_union, &changes); 
+				if (changes)
+					sel = rewrite(sql, sel, &rel_push_project_up, &changes); 
 				return sel;
 			}
 			return nrel;
