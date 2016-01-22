@@ -3,6 +3,8 @@
 
 STAGEDIR=/tmp/monetdb-embedded-stage
 RPKG=MonetDBLite_0.1.0.tar.gz
+OSXPKG=MonetDBLite_0.1.0.tgz
+WINPKG=MonetDBLite_0.1.0.zip
 
 rm -rf $STAGEDIR
 
@@ -43,10 +45,26 @@ touch rpackage/src/monetdb5/extras/rapi/placeholder
 
 R CMD build rpackage
 
-echo scp $STAGEDIR/$RPKG release@dev.monetdb.org:/var/www/html/Assets/R/
+read -p "Install and test? [y]" -r
+echo    # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    exit 1
+fi
 
-echo
-echo 'install.packages("MonetDBLite", repos="http://dev.monetdb.org/Assets/R/", type="source")'
-echo
+R CMD INSTALL --build $STAGEDIR/$RPKG && \
+R CMD INSTALL $STAGEDIR/$OSXPKG && \
+R -f $STAGEDIR/sourcetree/tools/embedded/Tests/lowlevel.R && \
+R -f $STAGEDIR/sourcetree/tools/embedded/Tests/dbi.R
+
+read -p "Upload? [y]" -r
+echo    # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    exit 1
+fi
+
+scp $STAGEDIR/$RPKG release@dev.monetdb.org:/var/www/html/Assets/R/
+scp $STAGEDIR/$OSXPKG release@dev.monetdb.org:/var/www/html/Assets/R/
 
 # OSX 10.10/10.11 needs pkg-config!
