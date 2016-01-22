@@ -37,6 +37,13 @@ pattern optimizer.candidates(mod:str, fcn:str):str
 address OPTwrapper
 comment "Mark candidate list variables";
 
+#opt_volcano
+pattern optimizer.volcano():str
+address OPTwrapper;
+pattern optimizer.volcano(mod:str, fcn:str):str 
+address OPTwrapper
+comment "Simulate volcano style execution";
+
 #opt_constants
 pattern optimizer.constants():str
 address OPTwrapper;
