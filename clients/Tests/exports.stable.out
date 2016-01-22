@@ -154,6 +154,7 @@ gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_return BATprintf(stream *f, BAT *b);
 gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATproject(BAT *l, BAT *r);
+BAT *BATprojectchain(BAT **bats);
 gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 void BATroles(BAT *b, const char *hnme, const char *tnme);
