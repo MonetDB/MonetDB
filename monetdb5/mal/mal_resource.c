@@ -222,7 +222,7 @@ MALresourceFairness(lng usec)
 }
 
 // Get a hint on the parallel behavior
-int
+size_t
 MALrunningThreads(void)
 {
 	return running;
