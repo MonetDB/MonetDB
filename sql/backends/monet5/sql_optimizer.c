@@ -120,7 +120,6 @@ static size_t SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						cnt = BATcount(b);
 						if( mode == 0) {
 							space += getBatSpace(b);
-							//mnstr_printf(GDKout, "#space estimate %s.%s.%s mode %d "LLFMT"\n",sname,tname,cname, mode, getBatSpace(b));
 						}
 						BBPunfix(b->batCacheid);
 					}
@@ -141,7 +140,6 @@ static size_t SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						cnt = BATcount(b);
 						if( mode == 0) {
 							space += getBatSpace(b);
-							//mnstr_printf(GDKout, "#space estimate %s.%s.%s mode %d "LLFMT"\n",sname,tname,cname, mode, getBatSpace(b));
 						}
 						BBPunfix(b->batCacheid);
 					}
@@ -150,6 +148,7 @@ static size_t SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						mt_member = c->t->p->base.id;
 				}
 			}
+			//mnstr_printf(GDKerr, "#space estimate after %s.%s.%s mode %d "SZFMT"\n",sname,tname,cname, mode, space);
 			if (rows > 1 && mode != RD_INS)
 				setRowCnt(mb,k,rows);
 			if (mt_member && mode != RD_INS)
@@ -192,7 +191,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 
 	space = SQLgetStatistics(c, be->mvc, mb);
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
-		if( space > MT_npages() * MT_pagesize()){
+		if( space > (size_t)(0.8 * MT_npages() * MT_pagesize()) ){
 			pipe = "volcano_pipe";
 			mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
 		}else

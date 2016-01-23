@@ -54,6 +54,14 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			}
 			continue;
 		}
+		if( getModuleId(p) == groupRef ){
+			if( getFunctionId(p) == subgroupdoneRef ){
+				q= newStmt(mb, languageRef, blockRef);
+				q =  pushArgument(mb,q,mvcvar);
+				q =  pushArgument(mb,q,getArg(p,0));
+				mvcvar=  getArg(q,0);
+			}
+		}
 		if( getModuleId(p) == sqlRef){
 			if ( getFunctionId(p) == bindRef ||
 				getFunctionId(p) == bindidxRef || 
