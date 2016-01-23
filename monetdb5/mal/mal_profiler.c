@@ -484,16 +484,38 @@ startProfiler(void)
 	prevUsage = infoUsage;
 #endif
 
+	if( eventstream){
+		throw(MAL,"profiler.start","Profiler already running, stream not available");
+	}
 	MT_lock_set(&mal_profileLock );
 	if (myname == 0){
 		myname = putName("profiler", 8);
 		eventcounter = 0;
 	}
 	malProfileMode = 1;
-	sqlProfiling = TRUE;
 	MT_lock_unset(&mal_profileLock);
 	logjsonInternal(monet_characteristics);
+	// reset the trace table
+	clearTrace();
 
+	return MAL_SUCCEED;
+}
+
+/* SQL queries can be traced without obstructing the stream */
+str
+startTrace(void)
+{
+	malProfileMode = 1;
+	sqlProfiling = TRUE;
+	clearTrace();
+	return MAL_SUCCEED;
+}
+
+str
+stopTrace(void)
+{
+	malProfileMode = eventstream != NULL;
+	sqlProfiling = FALSE;
 	return MAL_SUCCEED;
 }
 
@@ -697,15 +719,6 @@ initTrace(void)
 	return ret;
 }
 
-str
-cleanupTraces(void)
-{
-	MT_lock_set(&mal_contextLock);
-	_cleanupProfiler();
-	MT_lock_unset(&mal_contextLock);
-	return MAL_SUCCEED;
-}
-
 void
 clearTrace(void)
 {
@@ -729,6 +742,13 @@ clearTrace(void)
 	TRACE_init = 0;
 	MT_lock_unset(&mal_contextLock);
 	initTrace();
+}
+
+str
+cleanupTraces(void)
+{
+	clearTrace();
+	return MAL_SUCCEED;
 }
 
 void
@@ -978,7 +998,7 @@ void setHeartbeat(int delay)
 		MT_join_thread(hbthread);
 		return;
 	}
-	if (delay <= 10)
+	if ( delay > 0 &&  delay <= 10)
 		delay = 10;
 	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
 }

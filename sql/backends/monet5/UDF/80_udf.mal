@@ -6,4 +6,5 @@
 
 # This announces the UDF module to the MAL interpreter
 
+library udf;
 include udf;

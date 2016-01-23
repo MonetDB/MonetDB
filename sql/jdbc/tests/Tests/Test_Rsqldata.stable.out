@@ -52,12 +52,12 @@ Ready.
 
 0. false	false
 0. 4 columns:	2
-1.	mTests_sql_jdbc_tests
+1.	
 	classname     nl.cwi.monetdb.jdbc.types.INET
 	schemaname    sys
 	tablename     table_test_rsqldata
 	name          myinet
-2.	mTests_sql_jdbc_tests
+2.	
 	classname     nl.cwi.monetdb.jdbc.types.URL
 	schemaname    sys
 	tablename     table_test_rsqldata

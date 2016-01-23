@@ -8,7 +8,7 @@ MTSAFE
 
 man_MANS = mserver5.1
 
-EXTRA_DIST = $(man_MANS)
+EXTRA_DIST = mserver5.1.in
 
 INCLUDES = ../../monetdb5/mal \
 		   ../../gdk \
@@ -38,8 +38,7 @@ headers_png = {
 
 bin_mserver5 = {
 	# hack: include mserver5.1.in here to get it expanded
-	SOURCES = mserver5.c monet_version.h monet_version.c.in \
-		mserver5.1.in
+	SOURCES = mserver5.c monet_version.h monet_version.c.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat ../../common/stream/libstream \
 		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \

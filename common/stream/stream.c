@@ -301,15 +301,17 @@ cvfilename(const char *filename)
 			size_t len = strlen(filename);
 			size_t size = 4 * len;
 			ICONV_CONST char *from = (ICONV_CONST char *) filename;
-			char *r = malloc(size);
+			char *r = malloc(size + 1);
 			char *p = r;
 
-			if (r &&
-			    iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
-				iconv_close(cd);
-				return r;
-			} else if (r)
+			if (r) {
+				if (iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
+					iconv_close(cd);
+					*p = 0;
+					return r;
+				}
 				free(r);
+			}
 			iconv_close(cd);
 		}
 	}

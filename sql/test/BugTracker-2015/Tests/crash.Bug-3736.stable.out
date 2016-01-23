@@ -82,7 +82,6 @@ project (
 | | | | | | | | | select (
 | | | | | | | | | | group by (
 | | | | | | | | | | | join (
-| | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3a.id, bidder.open_auction_id NOT NULL as b3a.open_auction_id ] COUNT ,
 | | | | | | | | | | | | project (
 | | | | | | | | | | | | | crossproduct (
 | | | | | | | | | | | | | | project (
@@ -93,7 +92,8 @@ project (
 | | | | | | | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L10.L10 ],
 | | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3.id, bidder.increase NOT NULL as b3.increase ] COUNT 
 | | | | | | | | | | | | | ) [  ]
-| | | | | | | | | | | | ) [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L7.L7 ]
+| | | | | | | | | | | | ) [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L7.L7 ],
+| | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3a.id, bidder.open_auction_id NOT NULL as b3a.open_auction_id ] COUNT 
 | | | | | | | | | | | ) [ b3a.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
 | | | | | | | | | | ) [ L7.L7, L10.L10 ] [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, L7.L7 HASHCOL , sys.min no nil (b3a.id NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
 | | | | | | | | | ) [ b3.id NOT NULL HASHCOL  = L1 NOT NULL ]

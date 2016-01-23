@@ -3076,7 +3076,7 @@ BBPtrim(size_t target)
 		bbpscanstart = 1;	/* sometimes, the BBP shrinks! */
 	limit = bbpscanstart;
 
-	while (target > 0) {
+	while (target > 0 && !GDKexiting()) {
 		/* check for runtime overruling */
 		if (GDK_vm_trim == 0)
 			break;

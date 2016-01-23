@@ -31,6 +31,8 @@ mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sta
 
 mal_export str startProfiler(void);
 mal_export str stopProfiler(void);
+mal_export str startTrace(void);
+mal_export str stopTrace(void);
 mal_export void setHeartbeat(int delay);
 mal_export str setprofilerpoolsize(int size);
 mal_export void initHeartbeat(void);

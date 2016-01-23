@@ -23,6 +23,7 @@ q6_v
 q7_t
 q7_v
 q8_t
-q8_v
+#q8_v
+q8_v_small
 drop_tables_t
 drop_tables_v
