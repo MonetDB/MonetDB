@@ -193,7 +193,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
 		if( space > (size_t)(0.8 * MT_npages() * MT_pagesize()) ){
 			pipe = "volcano_pipe";
-			mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
+			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
 		}else
 			pipe = "default_pipe";
 	} else
