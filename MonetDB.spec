@@ -754,6 +754,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%{_unitdir}/monetdbd.service
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
@@ -891,9 +892,6 @@ developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
-# at least F12 doesn't produce these
-# %exclude %{_bindir}/*.pyc
-# %exclude %{_bindir}/*.pyo
 %{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
 %dir %{python_sitelib}/MonetDBtesting
