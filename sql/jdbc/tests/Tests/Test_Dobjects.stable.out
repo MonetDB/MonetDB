@@ -35,6 +35,7 @@ Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
 bam	null	null	
 json	null	null	
+mosaic	null	null	
 profiler	null	null	
 sys	null	null	
 tmp	null	null	
