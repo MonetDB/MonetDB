@@ -1251,7 +1251,7 @@ str MALpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MALpipeline(Client c);
 str MALreader(Client c);
 void MALresourceFairness(lng usec);
-int MALrunningThreads(void);
+size_t MALrunningThreads(void);
 str MALstartDataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
