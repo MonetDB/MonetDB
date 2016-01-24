@@ -50,14 +50,14 @@
  * common term optimizer, because the first bind has a side-effect.
  */
 
-static size_t SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
+static lng SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 {
 	InstrPtr *old = NULL;
 	int oldtop, i, actions = 0, size = 0;
 	lng clk = GDKusec();
 	sql_trans *tr = m->session->tr;
 	str msg;
-	size_t space = 0; // sum the total amount of data potentially read
+	lng space = 0; // sum the total amount of data potentially read
 
 	old = mb->stmt;
 	oldtop = mb->stop;
@@ -148,7 +148,7 @@ static size_t SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 						mt_member = c->t->p->base.id;
 				}
 			}
-			//mnstr_printf(GDKerr, "#space estimate after %s.%s.%s mode %d "SZFMT"\n",sname,tname,cname, mode, space);
+			//mnstr_printf(GDKerr, "#space estimate after %s.%s.%s mode %d "LLFMT"\n",sname,tname,cname, mode, space);
 			if (rows > 1 && mode != RD_INS)
 				setRowCnt(mb,k,rows);
 			if (mt_member && mode != RD_INS)
@@ -184,14 +184,14 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	InstrPtr q;
 	backend *be;
 	str msg;
-	size_t space;
+	lng space;
 
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	space = SQLgetStatistics(c, be->mvc, mb);
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
-		if( space > (size_t)(0.8 * MT_npages() * MT_pagesize()) ){
+		if( space > (lng)(0.8 * MT_npages() * MT_pagesize()) ){
 			pipe = "volcano_pipe";
 			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
 		}else

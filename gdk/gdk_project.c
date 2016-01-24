@@ -591,7 +591,7 @@ BATprojectchain(BAT **bats)
 						GDKerror("BATprojectchain: does not match always\n");
 						goto bunins_failed;
 					}
-					*v++ = o + offset;
+					*v++ = (oid) (o + offset);
 				}
 			}
 		} else {
