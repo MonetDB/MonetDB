@@ -300,11 +300,11 @@ MOSestimate_dictionary(Client cntxt, MOStask task)
 	TPE *dict = (TPE*)hdr->dict;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
-		hdr->checksum.sum##TPE += *val;\
 		MOSfind(j,*val,0,hdr->dictsize);\
 		if(j == hdr->dictsize || dict[j] != *val) \
 			break;\
 		else {\
+			hdr->checksum.sum##TPE += dict[j];\
 			hdr->dictfreq[j]++;\
 			MOSincCnt(blk,1);\
 			dictcompress(i,hdr->bits,(unsigned int)j);\

@@ -96,7 +96,44 @@ bat.append(b,9);
 b:= bat.append(b,b);
 
 io.print(b);
-x:= mosaic.compress(b);
+io.print("literal");
+x:= mosaic.compress(b,"literal");
 #mosaic.dump(x);
 z:= mosaic.decompress(x);
+io.print(z);
+
+io.print("prefix");
+x0:= mosaic.compress(b,"prefix");
+z:= mosaic.decompress(x0);
+io.print(z);
+
+io.print("dictionary");
+x1:= mosaic.compress(b,"dictionary");
+z:= mosaic.decompress(x1);
+io.print(z);
+
+io.print("runlength");
+x2:= mosaic.compress(b,"runlength");
+z:= mosaic.decompress(x2);
+io.print(z);
+
+io.print("frame");
+x3:= mosaic.compress(b,"frame");
+z:= mosaic.decompress(x3);
+io.print(z);
+
+io.print("linear");
+x4:= mosaic.compress(b,"linear");
+z:= mosaic.decompress(x4);
+io.print(z);
+
+io.print("delta");
+x5:= mosaic.compress(b,"delta");
+z:= mosaic.decompress(x5);
+io.print(z);
+
+## all together
+xall:= mosaic.compress(b);
+z:= mosaic.decompress(xall);
+io.print(xall);
 io.print(z);

@@ -574,6 +574,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 {	
 	BAT *bsrc;
 	MOStask task;
+	MosaicHdr hdr;
 	str msg;
 	int error;
 	(void) cntxt;
@@ -618,6 +619,8 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 	}
 
 	MOSinit(task,bsrc);
+	hdr = (MosaicHdr) task->hdr;
+	memset((char*) &hdr->checksum2,0 , sizeof(hdr->checksum2));
 	task->src = Tloc(bsrc, BUNfirst(bsrc));
 	task->timer = GDKusec();
 
@@ -687,7 +690,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 		mnstr_printf(cntxt->fdout,"#unknown compression compatibility\n");
 	}
 	if(error)
-		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
+		mnstr_printf(cntxt->fdout,"#incompatible compression %d %d\n", task->hdr->checksum.sumint, task->hdr->checksum2.sumint);
 	GDKfree(task);
 
 	task->timer = GDKusec() - task->timer;

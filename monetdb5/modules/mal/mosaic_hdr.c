@@ -101,8 +101,8 @@ MOSinitHeader(MOStask task)
 	hdr->ratio = 0;
 	hdr->version = MOSAIC_VERSION;
 	hdr->top = 0;
-	hdr->checksum.sumlng = 0;
-	hdr->checksum2.sumlng = 0;
+	memset((char*) &hdr->checksum,0 , sizeof(hdr->checksum));
+	memset((char*) &hdr->checksum2,0 , sizeof(hdr->checksum2));
 	for(i=0; i < MOSAICINDEX; i++){
 		hdr->oidbase[i] = 0;
 		hdr->offset[i] = 0;
