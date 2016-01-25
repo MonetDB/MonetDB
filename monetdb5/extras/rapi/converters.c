@@ -111,63 +111,33 @@ static SEXP bat_to_sexp(BAT* b) {
 			BAT_TO_REALSXP(b, lng, varvalue, 0);
 			break;
 		case TYPE_str: { // there is only one string type, thus no macro here
-			// this was found to be always slower.
-			// TODO: find a way to keep BATgroup from memory-mapping the group BAT
-			/*if (GDK_ELIMDOUBLES(b->T->vheap) && BATcount(b) > 0) {
-				BAT *grp, *ext;
-				BUN p, q;
-				BATiter b_it, ext_it, grp_it;
-				SEXP *sptrs;//#include <time.h>
-				// we group on the passed string column to get unique strings, then only convert each string once
-
-				gdk_return r = BATgroup(&grp, &ext, NULL, b, NULL, NULL, NULL);
-				if (r != GDK_SUCCEED || grp == NULL || ext == NULL) {
+			BUN p, q, j = 0;
+			BATiter li = bat_iterator(b);
+			varvalue = PROTECT(NEW_STRING(BATcount(b)));
+			if (varvalue == NULL) {
+				return NULL;
+			}
+			/* special case where we exploit the duplicate-eliminated string heap */
+			if (GDK_ELIMDOUBLES(b->T->vheap)) {
+				void* sexp_ptrs = GDKzalloc(b->T->vheap->free * sizeof(void*));
+				if (!sexp_ptrs) {
 					return NULL;
 				}
-
-				sptrs = GDKmalloc(sizeof(SEXP) * BATcount(ext));
-				varvalue = PROTECT(NEW_STRING(BATcount(b)));
-
-				if (sptrs == NULL || varvalue == NULL) {
-					BBPunfix(grp->batCacheid);
-					BBPunfix(ext->batCacheid);
-					return NULL;
-				}
-
-				b_it = bat_iterator(b);
-				ext_it = bat_iterator(ext);
-				grp_it = bat_iterator(grp);
-
-				if (b->T->nonil) {
-					BATloop(ext, p, q) {
-						sptrs[p] = mkCharCE((const char *) BUNtail(b_it, *((oid*) BUNtail(ext_it, p))), CE_UTF8);;
-					}
-				} else {
-					BATloop(ext, p, q) {
-						const char* t = (const char *) BUNtail(b_it, *((oid*) BUNtail(ext_it, p)));
+				BATloop(b, p, q) {
+					const char *t = (const char *) BUNtail(li, p);
+					void** s = &sexp_ptrs[t - b->T->vheap->base];
+					if (!*s) {
 						if (strcmp(t, str_nil) == 0) {
-							sptrs[p] = NA_STRING;
+							*s = (void*) NA_STRING;
 						} else {
-							sptrs[p] = mkCharCE(t, CE_UTF8);
+							*s = (void*) mkCharCE(t, CE_UTF8);
 						}
 					}
+					STRING_ELT(varvalue, j++) = (SEXP) *s;
 				}
-
-				BATloop(grp, p, q) {
-					STRING_ELT(varvalue, p) = sptrs[*((oid*) BUNtail(grp_it, p))];
-				}
-
-				GDKfree(sptrs);
-				BBPunfix(grp->batCacheid);
-				BBPunfix(ext->batCacheid);
+				GDKfree(sexp_ptrs);
 			}
-			else {*/
-				BUN p, q, j = 0;
-				BATiter li = bat_iterator(b);
-				varvalue = PROTECT(NEW_STRING(BATcount(b)));
-				if (varvalue == NULL) {
-					return NULL;
-				}
+			else {
 				if (b->T->nonil) {
 					BATloop(b, p, q) {
 						STRING_ELT(varvalue, j++) = mkCharCE(
@@ -184,7 +154,7 @@ static SEXP bat_to_sexp(BAT* b) {
 						}
 					}
 				}
-			//}
+			}
 		} 	break;
 	}
 	return varvalue;
