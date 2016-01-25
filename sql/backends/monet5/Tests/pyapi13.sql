@@ -6,15 +6,9 @@ START TRANSACTION;
 CREATE FUNCTION pyapi13_random_table_nulls(entries integer) returns table (i integer, j integer)
 language P
 {
-    import random
-    random.seed(123)
-    results = [numpy.ma.masked_array(numpy.zeros(entries), 0), numpy.ma.masked_array(numpy.zeros(entries), 0)]
-    for i in range(0,entries):
-        for j in range(0,2):
-            results[j][i] = random.randint(0,100)
-            if results[j][i] < 50:
-                results[j].mask[i] = True
-    return(results)
+    numpy.random.seed(123)
+    res = {'i': numpy.random.randint(0, 100, entries), 'j': numpy.random.randint(0, 100, entries)}
+    return {'i': numpy.ma.masked_array(res['i'], mask=res['i'] < 50), 'j': numpy.ma.masked_array(res['j'], mask=res['j'] < 50)}
 };
 
 #"normal" indentation

@@ -58,7 +58,7 @@ Ready.
 % pyapi11_mean_pyapi11_mult_i # name
 % double # type
 % 24 # length
-[ 5661.349765	]
+[ 5603.14638	]
 #DROP FUNCTION pyapi11_random_table_nulls;
 #DROP FUNCTION pyapi11_mean;
 #DROP FUNCTION pyapi11_mult;

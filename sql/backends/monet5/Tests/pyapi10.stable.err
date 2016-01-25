@@ -31,7 +31,7 @@ stderr of test 'pyapi10` in directory 'sql/backends/monet5` itself:
 # 15:32:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27693" "--port=33372"
 # 15:32:31 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
 QUERY = SELECT AVG(pyapi10_error(i,j)) FROM pyapi10_random_table_nulls(5000);
 ERROR = !MALException:pyapi.eval:Could not parse Python code
         !  
@@ -39,7 +39,7 @@ ERROR = !MALException:pyapi.eval:Could not parse Python code
         !> 2.     return(i*j 
         !  3. 
         !invalid syntax (<string>, line 2)
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
 QUERY = SELECT AVG(pyapi10_indentation_error(i,j)) FROM pyapi10_random_table_nulls(5000);
 ERROR = !MALException:pyapi.eval:Could not parse Python code
         !  7.     f = 6
@@ -48,7 +48,7 @@ ERROR = !MALException:pyapi.eval:Could not parse Python code
         !  10.     i = 9
         !  11.     j = 10
         !unexpected indent (<string>, line 9)
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
 QUERY = SELECT AVG(pyapi10_runtime_exception(i,j)) FROM pyapi10_random_table_nulls(5000);
 ERROR = !MALException:pyapi.eval:Python exception
         !  4.   mydivision = 0
