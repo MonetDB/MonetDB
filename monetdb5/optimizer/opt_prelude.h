@@ -33,6 +33,7 @@ opt_export  str batmtimeRef;
 opt_export  str batmmathRef;
 opt_export  str batxmlRef;
 opt_export  str batsqlRef;
+opt_export  str blockRef;
 opt_export  str bbpRef;
 opt_export  str tidRef;
 opt_export  str dateRef;

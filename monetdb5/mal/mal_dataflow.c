@@ -380,13 +380,17 @@ DFLOWworker(void *T)
 		MT_lock_unset(&flow->flowlock);
 
 #ifdef USE_MAL_ADMISSION
-		if (MALadmission(fe->argclaim, fe->hotclaim)) {
-			fe->hotclaim = 0;   /* don't assume priority anymore */
-			fe->maxclaim = 0;
-			if (todo->last == 0)
-				MT_sleep_ms(DELAYUNIT);
-			q_requeue(todo, fe);
-			continue;
+		if (MALrunningThreads() > 2 && MALadmission(fe->argclaim, fe->hotclaim)) {
+			// never block on deblockdataflow()
+			p= getInstrPtr(flow->mb,fe->pc);
+			if( p->fcn != (MALfcn) deblockdataflow){
+				fe->hotclaim = 0;   /* don't assume priority anymore */
+				fe->maxclaim = 0;
+				if (todo->last == 0)
+					MT_sleep_ms(DELAYUNIT);
+				q_requeue(todo, fe);
+				continue;
+			}
 		}
 #endif
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
@@ -929,6 +933,17 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	MT_sema_up(&todo->s);
 
 	return msg;
+}
+
+str
+deblockdataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    int *ret = getArgReference_int(stk,pci,0);
+    int *val = getArgReference_int(stk,pci,1);
+    (void) cntxt;
+    (void) mb;
+    *ret = *val;
+    return MAL_SUCCEED;
 }
 
 void

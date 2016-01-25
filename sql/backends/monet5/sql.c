@@ -4857,17 +4857,19 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								BUNappend(atom, &w, FALSE);
 
-								sz = tailsize(bn, BATcount(bn));
-								sz += headsize(bn, BATcount(bn));
+#define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
+#define hashinfo(X) ( (X)? heapinfo((X)->heap):0)
+
+
+								sz = heapinfo(&bn->T->heap);
 								BUNappend(size, &sz, FALSE);
 
-								sz = bn->T->vheap ? bn->T->vheap->size : 0;
-								sz += bn->H->vheap ? bn->H->vheap->size : 0;
+								sz = heapinfo(bn->T->vheap);
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize(bn)
-								sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize(bn)
+								sz = hashinfo(bn->T->hash);
 								BUNappend(indices, &sz, FALSE);
+
 								bitval = 0; // HASHispersistent(bn);
 								BUNappend(phash, &bitval, FALSE);
 

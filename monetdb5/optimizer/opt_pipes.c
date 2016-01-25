@@ -90,6 +90,37 @@ static struct PIPELINES {
 	 "optimizer.profiler();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
+/*
+ * Volcano style execution produces a sequence of blocks from the source relation
+ */
+	{"volcano_pipe",
+	 "optimizer.inline();"
+	 "optimizer.candidates();"
+	 "optimizer.remap();"
+	 "optimizer.costModel();"
+	 "optimizer.coercions();"
+	 "optimizer.evaluate();"
+	 "optimizer.aliases();"
+	 "optimizer.pushselect();"
+	 "optimizer.mitosis();"
+	 "optimizer.mergetable();"
+	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.commonTerms();"
+	 "optimizer.projectionpath();"
+	 "optimizer.reorder();"
+	 "optimizer.deadcode();"
+	 "optimizer.reduce();"
+	 "optimizer.matpack();"
+	 "optimizer.dataflow();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.volcano();"
+	 "optimizer.profiler();"
+	 "optimizer.garbageCollector();",
+	 "stable", NULL, NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check

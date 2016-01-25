@@ -49189,6 +49189,10 @@ command language.assert(v:sht,term:str):void
 address MALassertSht;
 command language.assert(v:bit,term:str):void 
 address MALassertBit;
+pattern language.block(v:int,w:any...):int 
+address deblockdataflow;
+comment Block on availability of all variables w, and then pass on v
+
 pattern language.call(s:bat[:str]):void 
 address CMDcallBAT;
 comment Evaluate a program stored in a BAT.
@@ -50532,6 +50536,12 @@ address OPTwrapper;
 comment Collect trace of a specific operation
 
 pattern optimizer.trace():str 
+address OPTwrapper;
+pattern optimizer.volcano(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Simulate volcano style execution
+
+pattern optimizer.volcano():str 
 address OPTwrapper;
 command pcre.imatch(s:str,pat:str):bit 
 address PCREimatch;
