@@ -1989,8 +1989,8 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
-pattern algebra.projectionPath(l:bat[:any]...):bat[:any] 
-address ALGjoinPath;
+pattern algebra.projectionpath(l:bat[:any]...):bat[:any] 
+address ALGprojectionpath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
 
 command algebra.projection(left:bat[:oid],right:bat[:any_3]):bat[:any_3] 
@@ -2004,10 +2004,6 @@ comment Fill the tail with a constant
 command algebra.reuse(b:bat[:any_1]):bat[:any_1] 
 address ALGreuse;
 comment Reuse a temporary BAT if you can. Otherwise,	allocate enough storage to accept result of an 	operation (not involving the heap)
-
-pattern algebra.semijoinPath(l:bat[:any]...):bat[:any] 
-address ALGjoinPath;
-comment Routine to handle join paths.  The type analysis is rather tricky.
 
 command algebra.subslice(b:bat[:any_1],x:wrd,y:wrd):bat[:oid] 
 address ALGsubslice_wrd;
@@ -38366,6 +38362,10 @@ command language.assert(v:sht,term:str):void
 address MALassertSht;
 command language.assert(v:bit,term:str):void 
 address MALassertBit;
+pattern language.block(v:int,w:any...):int 
+address deblockdataflow;
+comment Block on availability of all variables w, and then pass on v
+
 pattern language.call(s:bat[:str]):void 
 address CMDcallBAT;
 comment Evaluate a program stored in a BAT.
@@ -39548,12 +39548,6 @@ comment Replace select with join select
 
 pattern optimizer.joinselect():str 
 address OPTwrapper;
-pattern optimizer.joinPath(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Join path constructor
-
-pattern optimizer.joinPath():str 
-address OPTwrapper;
 pattern optimizer.matpack(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Unroll the mat.pack operation
@@ -39623,6 +39617,12 @@ address OPTwrapper;
 comment Experiment with partitioned databases
 
 pattern optimizer.partitions():str 
+address OPTwrapper;
+pattern optimizer.projectionpath(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Join path constructor
+
+pattern optimizer.projectionpath():str 
 address OPTwrapper;
 pattern optimizer.prelude():void 
 address optimizer_prelude;
@@ -39701,6 +39701,12 @@ address OPTwrapper;
 comment Collect trace of a specific operation
 
 pattern optimizer.trace():str 
+address OPTwrapper;
+pattern optimizer.volcano(mod:str,fcn:str):str 
+address OPTwrapper;
+comment Simulate volcano style execution
+
+pattern optimizer.volcano():str 
 address OPTwrapper;
 command pcre.imatch(s:str,pat:str):bit 
 address PCREimatch;
@@ -39783,6 +39789,14 @@ comment Start profiling the events, sent to output stream
 command profiler.setheartbeat(b:int):void 
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
+
+command profiler.stoptrace():void 
+address CMDstopTrace;
+comment Stop collecting trace information
+
+command profiler.starttrace():void 
+address CMDstartTrace;
+comment Start collecting trace information
 
 pattern profiler.stop():void 
 address CMDstopProfiler;

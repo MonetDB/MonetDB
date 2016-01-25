@@ -27,7 +27,7 @@ lib_gdk = {
 		gdk_calc.c gdk_calc.h gdk_calc_compare.h gdk_calc_private.h \
 		gdk_aggr.c gdk_group.c \
 		gdk_imprints.c gdk_imprints.h \
-		gdk_join.c \
+		gdk_join.c gdk_project.c \
 		gdk_unique.c \
 		gdk_firstn.c \
 		bat.feps bat1.feps bat2.feps \

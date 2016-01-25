@@ -12,7 +12,7 @@
 #include "mal_interpreter.h"
 
 #define TIMESLICE  2000000 /* usec */
-#define DELAYUNIT 5 /* ms delay in parallel processing decisions */
+#define DELAYUNIT 2 /* ms delay in parallel processing decisions */
 #define MAX_DELAYS 1000 /* never wait forever */
 
 #define USE_MAL_ADMISSION
@@ -22,5 +22,6 @@ mal_export int MALadmission(lng argclaim, lng hotclaim);
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
 mal_export void MALresourceFairness(lng usec);
+mal_export size_t MALrunningThreads(void);
 
 #endif /*  _MAL_RESOURCE_H*/

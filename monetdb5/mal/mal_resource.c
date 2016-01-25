@@ -206,7 +206,7 @@ MALresourceFairness(lng usec)
 			if (rss < MEMORY_THRESHOLD )
 				break;
 			threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
-			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
+			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads) + 1;
 			if (delay) {
 				if ( delayed++ == 0){
 						PARDEBUG mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD );
@@ -219,6 +219,13 @@ MALresourceFairness(lng usec)
 		}
 		(void) ATOMIC_INC(running, runningLock);
 	}
+}
+
+// Get a hint on the parallel behavior
+size_t
+MALrunningThreads(void)
+{
+	return running;
 }
 
 void

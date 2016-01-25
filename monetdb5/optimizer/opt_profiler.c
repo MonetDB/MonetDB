@@ -21,7 +21,7 @@ static struct{
     char *mod, *fcn;
     char *alias;
 }mapping[]={
-    {"algebra", "projectionPath", "projection"},
+    {"algebra", "projectionpath", "projection"},
     {"algebra", "thetasubselect", "select"},
     {"algebra", "projection", "projection"},
     {"dataflow", "language", "parallel"},

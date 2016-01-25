@@ -1,0 +1,15 @@
+[Unit]
+Description=MonetDB: the column store
+After=network.target
+
+[Service]
+Type=forking
+User=monetdb
+Group=monetdb
+ExecStart=@Ebindir@/monetdbd start @Elocalstatedir@/monetdb5/dbfarm
+ExecStop=@Ebindir@/monetdbd stop @Elocalstatedir@/monetdb5/dbfarm
+Restart=always
+PIDFILE=@Erundir@/merovingian.pid
+
+[Install]
+WantedBy=multi-user.target

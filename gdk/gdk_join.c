@@ -12,12 +12,12 @@
 #include "gdk_calc_private.h"
 
 /*
- * All "sub" join variants produce some sort of join on two input
- * BATs, optionally subject to up to two candidate lists.  Only values
- * in the input BATs that are mentioned in the associated candidate
- * list (if provided) are eligible.  They all return two output BATs
- * in the first two arguments.  The join operations differ in the way
- * in which tuples from the two inputs are matched.
+ * All join variants produce some sort of join on two input BATs,
+ * optionally subject to up to two candidate lists.  Only values in
+ * the input BATs that are mentioned in the associated candidate list
+ * (if provided) are eligible.  They all return two output BATs in the
+ * first two arguments.  The join operations differ in the way in
+ * which tuples from the two inputs are matched.
  *
  * All inputs BATs must be dense headed, the output BATs will also be
  * dense headed.  The outputs consist of two aligned BATs (i.e. same
@@ -62,16 +62,12 @@
  *	right values; two extra Boolean parameters, li and hi,
  *	indicate whether equal values match
  *
- * In addition to these functions, there are two more functions that
- * are closely related:
+ * In addition to these functions, there is one more functions that is
+ * closely related:
  * BATdiff
  *	difference: return a candidate list compatible list of OIDs of
  *	tuples in the left input whose value does not occur in the
  *	right input
- * BATproject
- *	projection: return a BAT aligned with the left input whose
- *	values are the values from the right input that were referred
- *	to by the OIDs in the tail of the left input
  */
 
 /* Perform a bunch of sanity checks on the inputs to a join. */
@@ -1994,6 +1990,41 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 		if (hb >= (lo) && hb < (hi) &&			\
 		    simple_EQ(v, BUNtloc(bi, hb), TYPE))
 
+#define HASHJOIN(TYPE, WIDTH)						\
+	do {								\
+		BUN hashnil = HASHnil(hsh);				\
+		for (lo = lstart - BUNfirst(l) + l->hseqbase;		\
+		     lstart < lend;					\
+		     lo++) {						\
+			v = FVALUE(l, lstart);				\
+			lstart++;					\
+			nr = 0;						\
+			if (*(const TYPE*)v != TYPE##_nil) {		\
+				for (rb = HASHget##WIDTH(hsh, hash_##TYPE(hsh, v)); \
+				     rb != hashnil;			\
+				     rb = HASHgetlink##WIDTH(hsh, rb))	\
+					if (rb >= rl && rb < rh &&	\
+					    * (const TYPE *) v == ((const TYPE *) base)[rb]) { \
+						ro = (oid) (rb - rl + rseq); \
+						HASHLOOPBODY();		\
+					}				\
+			}						\
+			if (nr == 0) {					\
+				lskipped = BATcount(r1) > 0;		\
+			} else {					\
+				if (lskipped) {				\
+					r1->tdense = 0;			\
+				}					\
+				if (nr > 1) {				\
+					r1->tkey = 0;			\
+					r1->tdense = 0;			\
+				}					\
+				if (BATcount(r1) > nr)			\
+					r1->trevsorted = 0;		\
+			}						\
+		}							\
+	} while (0)
+
 static gdk_return
 hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	 int nil_on_miss, int semi, int only_misses, BUN maxsize, lng t0,
@@ -2017,6 +2048,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	oid lval = oid_nil;	/* hold value if l has dense tail */
 	const char *v = (const char *) &lval;
 	int lskipped = 0;	/* whether we skipped values in l */
+	const Hash *restrict hsh;
+	int t;
 
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s#" BUNFMT "[%s]%s%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s%s,sl=%s#" BUNFMT "%s%s%s,"
@@ -2118,8 +2151,47 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		goto bailout;
 	ri = bat_iterator(r);
 	nrcand = (BUN) (rcandend - rcand);
+	hsh = r->T->hash;
+	t = ATOMbasetype(r->ttype);
 
-	if (lcand) {
+	if (lcand == NULL && rcand == NULL && lvars == NULL &&
+	    !nil_matches && !nil_on_miss && !semi && !only_misses &&
+	    l->ttype != TYPE_void && (t == TYPE_int || t == TYPE_lng)) {
+		/* special case for a common way of calling this
+		 * function */
+		const void *restrict base = Tloc(r, 0);
+
+		if (t == TYPE_int) {
+			switch (hsh->width) {
+			case BUN2:
+				HASHJOIN(int, 2);
+				break;
+			case BUN4:
+				HASHJOIN(int, 4);
+				break;
+#ifdef BUN8
+			case BUN8:
+				HASHJOIN(int, 8);
+				break;
+#endif
+			}
+		} else {
+			/* t == TYPE_lng */
+			switch (hsh->width) {
+			case BUN2:
+				HASHJOIN(lng, 2);
+				break;
+			case BUN4:
+				HASHJOIN(lng, 4);
+				break;
+#ifdef BUN8
+			case BUN8:
+				HASHJOIN(lng, 8);
+				break;
+#endif
+			}
+		}
+	} else if (lcand) {
 		while (lcand < lcandend) {
 			lo = *lcand++;
 			if (l->ttype == TYPE_void) {
@@ -2132,7 +2204,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			if (!nil_matches && cmp(v, nil) == 0) {
 				/* no match */
 			} else if (rcand) {
-				HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 					ro = (oid) (rb - rl + rseq);
 					if (!binsearchcand(rcand, 0, nrcand, ro))
 						continue;
@@ -2145,7 +2217,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 						break;
 				}
 			} else {
-				HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 					ro = (oid) (rb - rl + rseq);
 					if (only_misses) {
 						nr++;
@@ -2211,8 +2283,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 				r1->trevsorted = 0;
 		}
 	} else {
-		int t = ATOMbasetype(r->ttype);
-
 		for (lo = lstart - BUNfirst(l) + l->hseqbase; lstart < lend; lo++) {
 			if (l->ttype == TYPE_void) {
 				if (l->tseqbase != oid_nil)
@@ -2224,7 +2294,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			nr = 0;
 			if (rcand) {
 				if (nil_matches || cmp(v, nil) != 0) {
-					HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+					HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 						ro = (oid) (rb - rl + rseq);
 						if (!binsearchcand(rcand, 0, nrcand, ro))
 							continue;
@@ -2241,7 +2311,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 				switch (t) {
 				case TYPE_int:
 					if (nil_matches || *(const int*)v != int_nil) {
-						HASHloop_bound_TYPE(ri, r->T->hash, rb, v, rl, rh, int) {
+						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, int) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -2255,7 +2325,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					break;
 				case TYPE_lng:
 					if (nil_matches || *(const lng*)v != lng_nil) {
-						HASHloop_bound_TYPE(ri, r->T->hash, rb, v, rl, rh, lng) {
+						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, lng) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -2270,7 +2340,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 #ifdef HAVE_HGE
 				case TYPE_hge:
 					if (nil_matches || *(const hge*)v != hge_nil) {
-						HASHloop_bound_TYPE(ri, r->T->hash, rb, v, rl, rh, hge) {
+						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, hge) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -2285,7 +2355,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 #endif
 				default:
 					if (nil_matches || cmp(v, nil) != 0) {
-						HASHloop_bound(ri, r->T->hash, rb, v, rl, rh) {
+						HASHloop_bound(ri, hsh, rb, v, rl, rh) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
 								nr++;
@@ -3403,393 +3473,4 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	/* note, the rangejoin implementation is in gdk_select.c since
 	 * it uses the imprints code there */
 	return rangejoin(r1, r2, l, rl, rh, sl, sr, li, hi, maxsize);
-}
-
-#define project_loop(TYPE)						\
-static gdk_return							\
-project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
-{									\
-	oid lo, hi;							\
-	const TYPE *restrict rt;					\
-	TYPE *restrict bt;						\
-	TYPE v;								\
-	const oid *restrict o;						\
-	oid rseq, rend;							\
-									\
-	o = (const oid *) Tloc(l, BUNfirst(l));				\
-	rt = (const TYPE *) Tloc(r, BUNfirst(r));			\
-	bt = (TYPE *) Tloc(bn, BUNfirst(bn));				\
-	rseq = r->hseqbase;						\
-	rend = rseq + BATcount(r);					\
-	lo = 0;								\
-	hi = lo + BATcount(l);						\
-	if (nilcheck) {							\
-		for (; lo < hi; lo++) {					\
-			if (o[lo] < rseq || o[lo] >= rend) {		\
-				if (o[lo] == oid_nil) {			\
-					bt[lo] = TYPE##_nil;		\
-					bn->T->nonil = 0;		\
-					bn->T->nil = 1;			\
-					bn->tsorted = 0;		\
-					bn->trevsorted = 0;		\
-					bn->tkey = 0;			\
-					lo++;				\
-					break;				\
-				} else {				\
-					GDKerror("BATproject: does not match always\n"); \
-					return GDK_FAIL;		\
-				}					\
-			} else {					\
-				v = rt[o[lo] - rseq];			\
-				bt[lo] = v;				\
-				if (v == TYPE##_nil && bn->T->nonil) { \
-					bn->T->nonil = 0;		\
-					bn->T->nil = 1;			\
-					lo++;				\
-					break;				\
-				}					\
-			}						\
-		}							\
-	}								\
-	for (; lo < hi; lo++) {						\
-		if (o[lo] < rseq || o[lo] >= rend) {			\
-			if (o[lo] == oid_nil) {				\
-				bt[lo] = TYPE##_nil;			\
-				bn->T->nonil = 0;			\
-				bn->T->nil = 1;				\
-				bn->tsorted = 0;			\
-				bn->trevsorted = 0;			\
-				bn->tkey = 0;				\
-			} else {					\
-				GDKerror("BATproject: does not match always\n"); \
-				return GDK_FAIL;			\
-			}						\
-		} else {						\
-			v = rt[o[lo] - rseq];				\
-			bt[lo] = v;					\
-		}							\
-	}								\
-	assert((BUN) lo == BATcount(l));				\
-	BATsetcount(bn, (BUN) lo);					\
-	return GDK_SUCCEED;						\
-}
-
-
-/* project type switch */
-project_loop(bte)
-project_loop(sht)
-project_loop(int)
-project_loop(flt)
-project_loop(dbl)
-project_loop(lng)
-#ifdef HAVE_HGE
-project_loop(hge)
-#endif
-
-static gdk_return
-project_void(BAT *bn, BAT *l, BAT *r)
-{
-	oid lo, hi;
-	oid *restrict bt;
-	const oid *o;
-	oid rseq, rend;
-
-	assert(r->tseqbase != oid_nil);
-	o = (const oid *) Tloc(l, BUNfirst(l));
-	bt = (oid *) Tloc(bn, BUNfirst(bn));
-	bn->tsorted = l->tsorted;
-	bn->trevsorted = l->trevsorted;
-	bn->tkey = l->tkey & 1;
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
-	rseq = r->hseqbase;
-	rend = rseq + BATcount(r);
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {
-		if (o[lo] < rseq || o[lo] >= rend) {
-			if (o[lo] == oid_nil) {
-				bt[lo] = oid_nil;
-				bn->T->nonil = 0;
-				bn->T->nil = 1;
-				bn->tsorted = 0;
-				bn->trevsorted = 0;
-				bn->tkey = 0;
-			} else {
-				GDKerror("BATproject: does not match always\n");
-				return GDK_FAIL;
-			}
-		} else {
-			bt[lo] = o[lo] - rseq + r->tseqbase;
-		}
-	}
-	assert((BUN) lo == BATcount(l));
-	BATsetcount(bn, (BUN) lo);
-	return GDK_SUCCEED;
-}
-
-static gdk_return
-project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
-{
-	BUN n;
-	oid lo, hi;
-	BATiter ri;
-	int (*cmp)(const void *, const void *) = ATOMcompare(r->ttype);
-	const void *nil = ATOMnilptr(r->ttype);
-	const void *v;
-	const oid *o;
-	oid rseq, rend;
-
-	o = (const oid *) Tloc(l, BUNfirst(l));
-	n = BUNfirst(bn);
-	ri = bat_iterator(r);
-	rseq = r->hseqbase;
-	rend = rseq + BATcount(r);
-	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, n++) {
-		if (o[lo] < rseq || o[lo] >= rend) {
-			if (o[lo] == oid_nil) {
-				tfastins_nocheck(bn, n, nil, Tsize(bn));
-				bn->T->nonil = 0;
-				bn->T->nil = 1;
-				bn->tsorted = 0;
-				bn->trevsorted = 0;
-				bn->tkey = 0;
-			} else {
-				GDKerror("BATproject: does not match always\n");
-				goto bunins_failed;
-			}
-		} else {
-			v = BUNtail(ri, o[lo] - rseq + BUNfirst(r));
-			tfastins_nocheck(bn, n, v, Tsize(bn));
-			if (nilcheck && bn->T->nonil && cmp(v, nil) == 0) {
-				bn->T->nonil = 0;
-				bn->T->nil = 1;
-			}
-		}
-	}
-	assert(n == BATcount(l));
-	BATsetcount(bn, n);
-	return GDK_SUCCEED;
-bunins_failed:
-	return GDK_FAIL;
-}
-
-BAT *
-BATproject(BAT *l, BAT *r)
-{
-	BAT *bn;
-	oid lo, hi;
-	gdk_return res;
-	int tpe = ATOMtype(r->ttype), nilcheck = 1, stringtrick = 0;
-	BUN lcount = BATcount(l), rcount = BATcount(r);
-	lng t0 = GDKusec();
-
-	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s%s,"
-			  "r=%s#" BUNFMT "[%s]%s%s%s)\n",
-			  BATgetId(l), BATcount(l),
-			  l->tsorted ? "-sorted" : "",
-			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey & 1 ? "-key" : "",
-			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
-			  r->tsorted ? "-sorted" : "",
-			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey & 1 ? "-key" : "");
-
-	assert(BAThdense(l));
-	assert(BAThdense(r));
-	assert(ATOMtype(l->ttype) == TYPE_oid);
-
-	if (BATtdense(l) && BATcount(l) > 0) {
-		lo = l->tseqbase;
-		hi = l->tseqbase + BATcount(l);
-		if (lo < r->hseqbase || hi > r->hseqbase + BATcount(r)) {
-			GDKerror("BATproject: does not match always\n");
-			return NULL;
-		}
-		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
-		if (bn == NULL)
-			return NULL;
-		BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
-		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
-				  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
-				  bn->tsorted ? "-sorted" : "",
-				  bn->trevsorted ? "-revsorted" : "",
-				  bn->tkey & 1 ? "-key" : "");
-		assert(bn->htype == TYPE_void);
-		return bn;
-	}
-	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
-	    (r->ttype == TYPE_void && r->tseqbase == oid_nil)) {
-		/* trivial: all values are nil */
-		const void *nil = ATOMnilptr(r->ttype);
-
-		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
-				 nil, BATcount(l), TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATseqbase(bn, l->hseqbase);
-		if (ATOMtype(bn->ttype) == TYPE_oid &&
-		    BATcount(bn) == 0) {
-			bn->tdense = 1;
-			BATseqbase(BATmirror(bn), 0);
-		}
-		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
-				  BATgetId(l), BATgetId(r),
-				  BATgetId(bn), BATcount(bn),
-				  bn->tsorted ? "-sorted" : "",
-				  bn->trevsorted ? "-revsorted" : "",
-				  bn->tkey & 1 ? "-key" : "");
-		return bn;
-	}
-	assert(l->ttype == TYPE_oid);
-
-	if (ATOMstorage(tpe) == TYPE_str &&
-	    l->T->nonil &&
-	    (rcount == 0 ||
-	     lcount > (rcount >> 3) ||
-	     r->batRestricted == BAT_READ)) {
-		/* insert strings as ints, we need to copy the string
-		 * heap whole sale; we can not do this if there are
-		 * nils in the left column, and we will not do it if
-		 * the left is much smaller than the right and the
-		 * right is writable (meaning we have to actually copy
-		 * the right string heap) */
-		tpe = r->T->width == 1 ? TYPE_bte : (r->T->width == 2 ? TYPE_sht : (r->T->width == 4 ? TYPE_int : TYPE_lng));
-		/* int's nil representation is a valid offset, so
-		 * don't check for nils */
-		nilcheck = 0;
-		stringtrick = 1;
-	}
-	bn = BATnew(TYPE_void, tpe, BATcount(l), TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (stringtrick) {
-		/* "string type" */
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
-		bn->T->nonil = 0;
-	} else {
-		/* be optimistic, we'll clear these if necessary later */
-		bn->T->nonil = 1;
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
-		if (l->T->nonil && r->T->nonil)
-			nilcheck = 0; /* don't bother checking: no nils */
-		if (tpe != TYPE_oid &&
-		    tpe != ATOMstorage(tpe) &&
-		    !ATOMvarsized(tpe) &&
-		    ATOMcompare(tpe) == ATOMcompare(ATOMstorage(tpe)) &&
-		    (!nilcheck ||
-		     ATOMnilptr(tpe) == ATOMnilptr(ATOMstorage(tpe)))) {
-			/* use base type if we can:
-			 * only fixed sized (no advantage for variable sized),
-			 * compare function identical (for sorted check),
-			 * either no nils, or nil representation identical,
-			 * not oid (separate case for those) */
-			tpe = ATOMstorage(tpe);
-		}
-	}
-	bn->T->nil = 0;
-
-	switch (tpe) {
-	case TYPE_bte:
-		res = project_bte(bn, l, r, nilcheck);
-		break;
-	case TYPE_sht:
-		res = project_sht(bn, l, r, nilcheck);
-		break;
-	case TYPE_int:
-		res = project_int(bn, l, r, nilcheck);
-		break;
-	case TYPE_flt:
-		res = project_flt(bn, l, r, nilcheck);
-		break;
-	case TYPE_dbl:
-		res = project_dbl(bn, l, r, nilcheck);
-		break;
-	case TYPE_lng:
-		res = project_lng(bn, l, r, nilcheck);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		res = project_hge(bn, l, r, nilcheck);
-		break;
-#endif
-	case TYPE_oid:
-		if (r->ttype == TYPE_void) {
-			res = project_void(bn, l, r);
-		} else {
-#if SIZEOF_OID == SIZEOF_INT
-			res = project_int(bn, l, r, nilcheck);
-#else
-			res = project_lng(bn, l, r, nilcheck);
-#endif
-		}
-		break;
-	default:
-		res = project_any(bn, l, r, nilcheck);
-		break;
-	}
-
-	if (res != GDK_SUCCEED)
-		goto bailout;
-
-	/* handle string trick */
-	if (stringtrick) {
-		if (r->batRestricted == BAT_READ) {
-			/* really share string heap */
-			assert(r->T->vheap->parentid > 0);
-			BBPshare(r->T->vheap->parentid);
-			bn->T->vheap = r->T->vheap;
-		} else {
-			/* make copy of string heap */
-			bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-			if (bn->T->vheap == NULL)
-				goto bailout;
-			bn->T->vheap->parentid = bn->batCacheid;
-			bn->T->vheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
-			if (r->T->vheap->filename) {
-				char *nme = BBP_physical(bn->batCacheid);
-				bn->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-				if (bn->T->vheap->filename == NULL)
-					goto bailout;
-			}
-			if (HEAPcopy(bn->T->vheap, r->T->vheap) != GDK_SUCCEED)
-				goto bailout;
-		}
-		bn->ttype = r->ttype;
-		bn->tvarsized = 1;
-		bn->T->width = r->T->width;
-		bn->T->shift = r->T->shift;
-
-		bn->T->nil = 0; /* we don't know */
-	}
-	/* some properties follow from certain combinations of input
-	 * properties */
-	if (BATcount(bn) <= 1) {
-		bn->tkey = 1;
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-	} else {
-		bn->tkey = l->tkey && r->tkey;
-		bn->tsorted = (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-		bn->trevsorted = (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
-	}
-	bn->T->nonil |= l->T->nonil & r->T->nonil;
-
-	BATseqbase(bn, l->hseqbase);
-	if (!BATtdense(r))
-		BATseqbase(BATmirror(bn), oid_nil);
-	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s%s " LLFMT "us\n",
-			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
-			  bn->tsorted ? "-sorted" : "",
-			  bn->trevsorted ? "-revsorted" : "",
-			  bn->tkey & 1 ? "-key" : "",
-			  bn->ttype == TYPE_str && bn->T->vheap == r->T->vheap ? " shared string heap" : "",
-			  GDKusec() - t0);
-	return bn;
-
-  bailout:
-	BBPreclaim(bn);
-	return NULL;
 }

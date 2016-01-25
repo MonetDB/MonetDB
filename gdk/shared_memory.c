@@ -108,7 +108,7 @@ str ftok_enhanced(int id, key_t *return_key) {
 
 str init_process_semaphore(int id, int count, int flags, int *semid) {
     str msg = MAL_SUCCEED;
-    int key;
+    key_t key;
     msg = ftok_enhanced(id, &key);
     if (msg != MAL_SUCCEED) {
         return msg;
@@ -117,7 +117,7 @@ str init_process_semaphore(int id, int count, int flags, int *semid) {
     if (*semid < 0) {
         char *err = strerror(errno);
         errno = 0;
-        return createException(MAL, "semaphore.init", "Error calling semget(key:%d,nsems:%d,semflg:%d): %s", key, count, flags | 0666, err);
+        return createException(MAL, "semaphore.init", "Error calling semget(key:%d,nsems:%d,semflg:%d): %s", 0, count, flags | 0666, err);
     }
     return msg;
 }

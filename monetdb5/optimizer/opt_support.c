@@ -144,7 +144,7 @@ struct OPTcatalog {
 {"generator",	0,	0,	0,	DEBUG_OPT_GENERATOR},
 {"history",		0,	0,	0,	DEBUG_OPT_HISTORY},
 {"inline",		0,	0,	0,	DEBUG_OPT_INLINE},
-{"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
+{"projectionpath",	0,	0,	0,	DEBUG_OPT_PROJECTIONPATH},
 {"json",		0,	0,	0,	DEBUG_OPT_JSON},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
 {"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},

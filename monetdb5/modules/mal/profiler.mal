@@ -14,6 +14,14 @@ pattern stop():void
 address CMDstopProfiler
 comment "Stop offline performance profiling";
 
+command starttrace()
+address CMDstartTrace
+comment "Start collecting trace information";
+
+command stoptrace():void
+address CMDstopTrace
+comment "Stop collecting trace information";
+
 command setheartbeat(b:int):void
 address CMDsetHeartbeat
 comment "Set heart beat performance tracing";

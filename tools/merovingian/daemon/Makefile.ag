@@ -12,6 +12,8 @@ monetdb_var_rundir = $(rundir)
 monetdb_var_run_DATA = 
 monetdb_var_dbfarmdir = $(localstatedir)/monetdb5/dbfarm
 monetdb_var_dbfarm_DATA = .merovingian_properties
+monetdb_etc_systemddir = $(prefix)/lib/systemd/system
+monetdb_etc_systemd_DATA = monetdbd.service
 
 INCLUDES = .. \
 		   ../../../common/stream \
@@ -22,12 +24,10 @@ INCLUDES = .. \
 		   ../../../monetdb5/mal \
 		   $(MSGCONTROL_FLAGS)
 
-EXTRA_DIST = $(man_MANS) .merovingian_properties
+EXTRA_DIST = monetdbd.1.in .merovingian_properties.in monetdbd.service.in
 
 bin_monetdbd = {
-	# hack: include monetdbd.1.in and .merovingian_properties.in here to
-	#       get them expanded
-	SOURCES = monetdbd.1.in .merovingian_properties.in \
+	SOURCES = \
 			  merovingian.c merovingian.h \
 			  argvcmds.c argvcmds.h \
 			  client.c client.h \
