@@ -50,8 +50,17 @@
 * The tricky part for this statement is to ensure that the SQL statement
 * is executed within the client context specified. This leads to context juggling.
 */
+
+
+
 str
 SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result)
+{
+	return SQLstatementIntern_ext(c, expr, nme, execute, output, result, 0);
+}
+
+str
+SQLstatementIntern_ext(Client c, str *expr, str nme, int execute, bit output, res_table **result, bit ofmt)
 {
 	int status = 0;
 	int err = 0;
@@ -95,9 +104,9 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	be = sql;
 	sql = backend_create(m, c);
 	sql->output_format = be->output_format;
-	/*if (!output) {
+	if (ofmt) {
 		sql->output_format = OFMT_NONE;
-	}*/
+	}
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;

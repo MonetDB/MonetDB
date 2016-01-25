@@ -223,7 +223,7 @@ void _connection_cleanup_result(void* output)
 char* _connection_query(Client cntxt, char* query, res_table** result) {
     str res = MAL_SUCCEED;
     Client c = cntxt;
-    res = SQLstatementIntern(c, &query, "name", 1, 0, result);
+    res = SQLstatementIntern_ext(c, &query, "name", 1, 0, result, 1);
     return res;
 }
 

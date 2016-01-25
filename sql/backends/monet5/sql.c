@@ -3328,9 +3328,9 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	if (ATOMextern(mtype))
 		p = *(ptr *) p;
-	/*if (b->output_format == OFMT_NONE) {
+	if (b->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
-	}*/
+	}
 	if (b->out == NULL || mvc_export_value(b, b->out, 1, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, "", "NULL") != SQL_OK)
 		throw(SQL, "sql.exportValue", "failed");
 	return MAL_SUCCEED;
