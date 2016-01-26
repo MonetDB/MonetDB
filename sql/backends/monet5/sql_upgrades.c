@@ -1639,9 +1639,7 @@ sql_update_dec2015(Client c)
 		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"
 		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;");
 #endif
-	/* drop the previous geometry types */
-	/* drop old types */
-	/** Keep only the geometry type **/
+	/* drop old types (but keep the geometry type) **/
 	/** pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Geometry;"); **/
 	pos += snprintf(buf + pos, bufsize - pos, "drop type \"point\";");
 	pos += snprintf(buf + pos, bufsize - pos, "drop type \"curve\";");
