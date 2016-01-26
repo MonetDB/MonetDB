@@ -1287,7 +1287,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						}
 					} else {
 						while (nlx > 0) {
-							APPEND(r1, lstart + l->hseqbase - nlx);
+							APPEND(r1, l->hseqbase + lstart - nlx);
 							nlx--;
 						}
 					}
@@ -1311,7 +1311,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						}
 					} else {
 						while (nlx > 0) {
-							APPEND(r1, lstart + l->hseqbase - nlx);
+							APPEND(r1, l->hseqbase + lstart - nlx);
 							APPEND(r2, oid_nil);
 							nlx--;
 						}
@@ -1838,7 +1838,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		for (i = nl; i > 0; i--) {
 			BUN j;
 
-			lv = lcand ? lcand[-(ssize_t)i] : lstart + l->hseqbase - i;
+			lv = lcand ? lcand[-(ssize_t)i] : l->hseqbase + lstart - i;
 			for (j = 0; j < nr; j++)
 				APPEND(r1, lv);
 		}
@@ -1875,11 +1875,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		} else if (equal_order) {
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
-			    ((oid *) r2->T->heap.base)[r2->batFirst + r2->batCount - 1] + 1 != rstart + r->hseqbase - nr)
+			    ((oid *) r2->T->heap.base)[r2->batFirst + r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
 				r2->tdense = 0;
 			do {
 				for (i = nr; i > 0; i--) {
-					APPEND(r2, rstart + r->hseqbase - i);
+					APPEND(r2, r->hseqbase + rstart - i);
 				}
 			} while (--nl > 0);
 		} else {
