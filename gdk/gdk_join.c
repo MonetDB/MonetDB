@@ -195,15 +195,13 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 #define BINSEARCHFUNC(TYPE)						\
 static inline BUN							\
 binsearch_##TYPE(const oid *rcand, oid offset, const TYPE *rvals,	\
-		 BUN lo, BUN hi, const void *vp, int ordering, int last) \
+		 BUN lo, BUN hi, TYPE v, int ordering, int last)	\
 {									\
 	BUN mid;							\
-	TYPE v, x;							\
+	TYPE x;								\
 									\
 	assert(ordering == 1 || ordering == -1);			\
 	assert(lo <= hi);						\
-									\
-	v = *(const TYPE *) vp;		/* value we're searching for */	\
 									\
 	if (ordering > 0) {						\
 		if (rcand) {						\
@@ -355,10 +353,10 @@ BINSEARCHFUNC(hge)
 BINSEARCHFUNC(flt)
 BINSEARCHFUNC(dbl)
 #if SIZEOF_OID == SIZEOF_INT
-#define binsearch_oid(rcand, offset, rvals, lo, hi, vp, ordering, last) binsearch_int(rcand, offset, (const int *) rvals, lo, hi, (const int *) (vp), ordering, last)
+#define binsearch_oid(rcand, offset, rvals, lo, hi, v, ordering, last) binsearch_int(rcand, offset, (const int *) rvals, lo, hi, (int) (v), ordering, last)
 #endif
 #if SIZEOF_OID == SIZEOF_LNG
-#define binsearch_oid(rcand, offset, rvals, lo, hi, vp, ordering, last) binsearch_lng(rcand, offset, (const lng *) rvals, lo, hi, (const lng *) (vp), ordering, last)
+#define binsearch_oid(rcand, offset, rvals, lo, hi, v, ordering, last) binsearch_lng(rcand, offset, (const lng *) rvals, lo, hi, (lng) (v), ordering, last)
 #endif
 
 /* Do a binary search for the first/last occurrence of v between lo and hi
@@ -385,10 +383,10 @@ binsearch(const oid *rcand, oid offset,
 	switch (type) {
 	case TYPE_bte:
 		return binsearch_bte(rcand, offset, (const bte *) rvals,
-				     lo, hi, (const bte *) v, ordering, last);
+				     lo, hi, *(const bte *) v, ordering, last);
 	case TYPE_sht:
 		return binsearch_sht(rcand, offset, (const sht *) rvals,
-				     lo, hi, (const sht *) v, ordering, last);
+				     lo, hi, *(const sht *) v, ordering, last);
 	case TYPE_int:
 #if SIZEOF_WRD == SIZEOF_INT
 	case TYPE_wrd:
@@ -397,7 +395,7 @@ binsearch(const oid *rcand, oid offset,
 	case TYPE_oid:
 #endif
 		return binsearch_int(rcand, offset, (const int *) rvals,
-				     lo, hi, (const int *) v, ordering, last);
+				     lo, hi, *(const int *) v, ordering, last);
 	case TYPE_lng:
 #if SIZEOF_WRD == SIZEOF_LNG
 	case TYPE_wrd:
@@ -406,18 +404,18 @@ binsearch(const oid *rcand, oid offset,
 	case TYPE_oid:
 #endif
 		return binsearch_lng(rcand, offset, (const lng *) rvals,
-				     lo, hi, (const lng *) v, ordering, last);
+				     lo, hi, *(const lng *) v, ordering, last);
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		return binsearch_hge(rcand, offset, (const hge *) rvals,
-				     lo, hi, (const hge *) v, ordering, last);
+				     lo, hi, *(const hge *) v, ordering, last);
 #endif
 	case TYPE_flt:
 		return binsearch_flt(rcand, offset, (const flt *) rvals,
-				     lo, hi, (const flt *) v, ordering, last);
+				     lo, hi, *(const flt *) v, ordering, last);
 	case TYPE_dbl:
 		return binsearch_dbl(rcand, offset, (const dbl *) rvals,
-				     lo, hi, (const dbl *) v, ordering, last);
+				     lo, hi, *(const dbl *) v, ordering, last);
 	}
 
 	if ((c = ordering * cmp(VALUE(r, rcand ? rcand[lo] - offset : lo), v)) > 0 ||
@@ -746,7 +744,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (only_misses) {
 			for (i = 0; i < cnt && lvals[i] < lo; i++)
 				APPEND(r1, lvals[i]);
-			i = binsearch_oid(NULL, 0, lvals, 0, cnt - 1, &hi, 1, 0);
+			i = binsearch_oid(NULL, 0, lvals, 0, cnt - 1, hi, 1, 0);
 			for (; i < cnt; i++)
 				APPEND(r1, lvals[i]);
 		} else {
@@ -761,7 +759,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tkey = i > 1;
 				}
 			} else {
-				i = binsearch_oid(NULL, 0, lvals, 0, cnt - 1, &lo, 1, 0);
+				i = binsearch_oid(NULL, 0, lvals, 0, cnt - 1, lo, 1, 0);
 			}
 			for (; i < cnt && lvals[i] < hi; i++) {
 				APPEND(r1, lvals[i]);
@@ -812,11 +810,11 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* first restrict candidate list (lcand and
 			 * cnt) to section that refers to l */
 			o = l->hseqbase;
-			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, &o, 1, 0);
+			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, o, 1, 0);
 			lcand += i;
 			cnt -= i;
 			o = l->hseqbase + BATcount(l);
-			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, &o, 1, 0);
+			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, o, 1, 0);
 			cnt -= i;
 
 			if (BATextend(r1, cnt) != GDK_SUCCEED)
