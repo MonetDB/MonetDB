@@ -39,6 +39,75 @@ bl_preversion( int oldversion, int newversion)
 	return -1;
 }
 
+typedef struct list_element {
+	BAT *ob;
+	BAT *nb;
+	char *n;
+} list_element;
+
+typedef struct ulist {
+	size_t capacity;
+	size_t count;
+	list_element *elements;
+} ulist;
+
+static ulist*
+list_init(size_t capacity)
+{
+	ulist *l;
+	if ((l = GDKmalloc(sizeof(ulist))) == NULL)
+		return NULL;
+	l->capacity = capacity;
+	l->count = 0;
+	if ((l->elements = GDKmalloc(capacity*sizeof(list_element))) == NULL) {
+		GDKfree(l);
+		return NULL;
+	}
+	return l;
+}
+
+static char*
+list_delete(ulist* ul)
+{
+	size_t i;
+	for (i = 0; i < ul->count; i++)
+		GDKfree(ul->elements[i].n);
+	GDKfree(ul->elements);
+	GDKfree(ul);
+	return true;
+}
+
+static char*
+list_extend(ulist **ul)
+{
+	ulist* nl;
+	if ((nl = list_init((*ul)->capacity*2)) == NULL )
+		return NULL;
+	memcpy(nl->elements, (*ul)->elements, sizeof(list_element)*(*ul)->count);
+	nl->count = (*ul)->count;
+	GDKfree((*ul)->elements);
+	GDKfree(*ul);
+	*ul = nl;
+	return true;
+}
+
+static char*
+list_add(ulist **ul, BAT *ob, BAT *nb, char *n) 
+{
+	char *nn;
+	if ((nn =  GDKmalloc(sizeof(char)*strlen(n))) == NULL)
+		return NULL;
+	strcpy(nn, n);
+	if ((*ul)->count == (*ul)->capacity)
+		if (!list_extend(ul))
+			return NULL;
+	(*ul)->elements[(*ul)->count].ob = ob;
+	(*ul)->elements[(*ul)->count].nb = nb;
+	(*ul)->elements[(*ul)->count].n = nn;
+	(*ul)->count++;
+	return true;
+}
+
 static char *
 N( char *buf, char *pre, char *schema, char *post)
 {
@@ -167,7 +236,9 @@ bl_postversion( void *lg)
 		BAT *tt[8], *ttn[8], *ff[10], *ffn[10];
 		BATiter tti[8], ffi[10];
 		int val, maxid, i;
+		size_t ii;
 		bit bval;
+		ulist *ul = list_init(32);
 
 		/* Update the catalog to use the new geometry types */
 		ct = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
@@ -320,23 +391,14 @@ bl_postversion( void *lg)
 					wn->srid = 0;// we did not save the srid in the past
 					BUNappend(gn, wn, TRUE);
 				}
-				BATsetaccess(gn, BAT_READ);
-				logger_add_bat(lg, gn, N(n, sn, tblname, colname));
-				bat_destroy(g);
+				list_add(&ul, g, gn, N(n, sn, tblname, colname));
 			}
 		}
 
-		BATsetaccess(cnt, BAT_READ);
-		BATsetaccess(cnd, BAT_READ);
-		BATsetaccess(cns, BAT_READ);
+		list_add(&ul, ct, cnt, N(n, NULL, s, "_columns_type"));
+		list_add(&ul, cd, cnd, N(n, NULL, s, "_columns_type_digits"));
+		list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale"));
 
-		logger_add_bat(lg, cnt, N(n, NULL, s, "_columns_type"));
-		logger_add_bat(lg, cnd, N(n, NULL, s, "_columns_type_digits"));
-		logger_add_bat(lg, cns, N(n, NULL, s, "_columns_type_scale"));
-
-		bat_destroy(ct);
-		bat_destroy(cd);
-		bat_destroy(cs);
 		bat_destroy(cn);
 		bat_destroy(ctid);
 		bat_destroy(ti);
@@ -390,11 +452,8 @@ bl_postversion( void *lg)
 		val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
 		val = 0; BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
 
-		for (i = 0; i < 8; i++) {
-			BATsetaccess(ttn[i], BAT_READ);
-			logger_add_bat(lg, ttn[i], N(n, NULL, s, nt[i]));
-			bat_destroy(tt[i]);
-		}
+		for (i = 0; i < 8; i++) 
+			list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i]));
 
 		/* Add the new functions */
 		for (i = 0; i < 10; i++) {
@@ -457,11 +516,15 @@ bl_postversion( void *lg)
 		GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
 		GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
 #undef GEOM_UPGRADE_STORE_FUNC
-		for (i = 0; i < 10; i++) {
-			BATsetaccess(ffn[i], BAT_READ);
-			logger_add_bat(lg, ffn[i], N(n, NULL, s, nf[i]));
-			bat_destroy(ff[i]);
+		for (i = 0; i < 10; i++) 
+			list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i]));
+		
+		for (ii = 0; ii < ul->count; ii++) {
+			BATsetaccess(ul->elements[ii].nb, BAT_READ);
+			logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n);
+			bat_destroy(ul->elements[ii].ob);
 		}
+		list_delete(ul);
 	}
 }
 
