@@ -1001,6 +1001,608 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * r; otherwise all matches are returned.
  */
 static gdk_return
+mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
+	      int nil_matches, BUN maxsize, lng t0, int swapped)
+{
+	BUN lstart, lend;
+	BUN rstart, rend;
+	BUN lscan, rscan;	/* opportunistic scan window */
+	const int *lvals, *rvals;
+	int v;
+	BUN nl, nr;
+	oid lv;
+	BUN i;
+
+	ALGODEBUG fprintf(stderr, "#mergejoin_int(l=%s#" BUNFMT "[%s]%s%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s%s)%s\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  l->tkey & 1 ? "-key" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  r->tkey & 1 ? "-key" : "",
+			  swapped ? " swapped" : "");
+
+	assert(BAThdense(l));
+	assert(BAThdense(r));
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(r->tsorted || r->trevsorted);
+
+	lstart = rstart = 0;
+	lend = BATcount(l);
+	rend = BATcount(r);
+	lvals = (const int *) Tloc(l, BUNfirst(l));
+	rvals = (const int *) Tloc(r, BUNfirst(r));
+	assert(!r->tvarsized || !r->ttype);
+
+	/* basic properties will be adjusted if necessary later on,
+	 * they were initially set by joininitresults() */
+
+	if (lend == 0 || rend == 0) {
+		/* there are no matches */
+		return nomatch(r1, r2, l, r, lstart, lend, NULL, NULL,
+			       0, 0, "mergejoin_int", t0);
+	}
+
+	/* determine opportunistic scan window for l and r */
+	for (nl = lend - lstart, lscan = 4; nl > 0; lscan++)
+		nl >>= 1;
+	for (nr = rend - rstart, rscan = 4; nr > 0; rscan++)
+		nr >>= 1;
+
+	if (!nil_matches) {
+		/* skip over nils at the start of the columns */
+		if (lscan < lend - lstart && lvals[lstart + lscan] == int_nil) {
+			lstart = binsearch_int(NULL, 0, lvals, lstart + lscan,
+					       lend - 1, int_nil, 1, 1);
+		} else {
+			while (lvals[lstart] == int_nil)
+				lstart++;
+		}
+		if (rscan < rend - rstart && rvals[rstart + rscan] == int_nil) {
+			rstart = binsearch_int(NULL, 0, rvals, rstart + rscan,
+					       rend - 1, int_nil, 1, 1);
+		} else {
+			while (rvals[rstart] == int_nil)
+				rstart++;
+		}
+	}
+	/* from here on we don't have to worry about nil values */
+
+	while (lstart < lend && rstart < rend) {
+		v = rvals[rstart];
+
+		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
+			lstart = binsearch_int(NULL, 0, lvals, lstart + lscan,
+					       lend - 1, v, 1, 0);
+		} else {
+			/* scan l for v */
+			while (lstart < lend && lvals[lstart] < v)
+				lstart++;
+		}
+		if (lstart >= lend) {
+			/* nothing found */
+			break;
+		}
+
+		/* Here we determine the next value in l that we are
+		 * going to try to match in r.  We will also count the
+		 * number of occurrences in l of that value.
+		 * Afterwards, v points to the value and nl is the
+		 * number of times it occurs.  Also, lstart will
+		 * point to the next value to be considered (ready for
+		 * the next iteration).
+		 * If there are many equal values in l (more than
+		 * lscan), we will use binary search to find the end
+		 * of the sequence.  Obviously, we can do this only if
+		 * l is actually sorted (lscan > 0). */
+		nl = 1;		/* we'll match (at least) one in l */
+		nr = 0;		/* maybe we won't match anything in r */
+		v = lvals[lstart];
+		if (l->tkey) {
+			/* if l is key, there is a single value */
+			lstart++;
+		} else if (lscan < lend - lstart &&
+			   v == lvals[lstart + lscan]) {
+			/* lots of equal values: use binary search to
+			 * find end */
+			nl = binsearch_int(NULL, 0, lvals, lstart + lscan,
+					   lend - 1, v, 1, 1);
+			nl -= lstart;
+			lstart += nl;
+		} else {
+			/* just scan */
+			while (++lstart < lend && v == lvals[lstart])
+				nl++;
+		}
+		/* lstart points one beyond the value we're
+		 * going to match: ready for the next iteration. */
+
+		/* First we find the first value in r that is at
+		 * least as large as v, then we find the first
+		 * value in r that is larger than v.  The difference
+		 * is the number of values equal to v and is stored in
+		 * nr.
+		 * We will use binary search on r to find both ends of
+		 * the sequence of values that are equal to v in case
+		 * the position is "too far" (more than rscan
+		 * away). */
+
+		/* first find the location of the first value in r
+		 * that is >= v, then find the location of the first
+		 * value in r that is > v; the difference is the
+		 * number of values equal to v */
+
+		/* look ahead a little (rscan) in r to see whether
+		 * we're better off doing a binary search */
+		if (rscan < rend - rstart && rvals[rstart + rscan] < v) {
+			/* value too far away in r: use binary
+			 * search */
+			rstart = binsearch_int(NULL, 0, rvals, rstart + rscan,
+					       rend - 1, v, 1, 0);
+		} else {
+			/* scan r for v */
+			while (rstart < rend && rvals[rstart] < v)
+				rstart++;
+		}
+		if (rstart == rend) {
+			/* nothing found */
+			break;
+		}
+
+		/* now find the end of the sequence of equal values v */
+
+		/* if r is key, there is zero or one match, otherwise
+		 * look ahead a little (rscan) in r to see whether
+		 * we're better off doing a binary search */
+		if (r->tkey) {
+			if (rstart < rend && v == rvals[rstart]) {
+				nr = 1;
+				rstart++;
+			}
+		} else if (rscan < rend - rstart &&
+			   v == rvals[rstart + rscan]) {
+			/* range too large: use binary search */
+			nr = binsearch_int(NULL, 0, rvals, rstart + rscan,
+					   rend - 1, v, 1, 1);
+			nr -= rstart;
+			rstart += nr;
+		} else {
+			/* scan r for end of range */
+			while (rstart < rend && v == rvals[rstart]) {
+				nr++;
+				rstart++;
+			}
+		}
+		/* rstart points to first value > v or end of
+		 * r, and nr is the number of values in r that
+		 * are equal to v */
+		if (nr == 0) {
+			/* no entries in r found */
+			continue;
+		}
+		/* make space: nl values in l match nr values in r, so
+		 * we need to add nl * nr values in the results */
+		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
+			/* make some extra space by extrapolating how
+			 * much more we need (fraction of l we've seen
+			 * so far is used as the fraction of the
+			 * expected result size we've produced so
+			 * far) */
+			BUN newcap = (BUN) ((double) BATcount(l) / (BATcount(l) - (lend - lstart)) * (BATcount(r1) + nl * nr) * 1.1);
+			if (newcap < nl * nr + BATcount(r1))
+				newcap = nl * nr + BATcount(r1) + 1024;
+			if (newcap > maxsize)
+				newcap = maxsize;
+			/* make sure heap.free is set properly before
+			 * extending */
+			BATsetcount(r1, BATcount(r1));
+			if (BATextend(r1, newcap) != GDK_SUCCEED)
+				goto bailout;
+			BATsetcount(r2, BATcount(r2));
+			if (BATextend(r2, newcap) != GDK_SUCCEED)
+				goto bailout;
+			assert(BATcapacity(r1) == BATcapacity(r2));
+		}
+
+		/* maintain properties */
+		if (nl > 1) {
+			/* value occurs multiple times in l, so entry
+			 * in r will be repeated multiple times: hence
+			 * r2 is not key and not dense */
+			r2->tkey = 0;
+			r2->tdense = 0;
+			/* multiple different values will be inserted
+			 * in r1 (always in order), so not reverse
+			 * ordered anymore */
+			r1->trevsorted = 0;
+		}
+		if (nr > 1) {
+			/* value occurs multiple times in r, so entry
+			 * in l will be repeated multiple times: hence
+			 * r1 is not key and not dense */
+			r1->tkey = 0;
+			r1->tdense = 0;
+			/* multiple different values will be inserted
+			 * in r2 (in order), so not reverse ordered
+			 * anymore */
+			r2->trevsorted = 0;
+			if (nl > 1) {
+				/* multiple values in l match multiple
+				 * values in r, so an ordered sequence
+				 * will be inserted multiple times in
+				 * r2, so r2 is not ordered anymore */
+				r2->tsorted = 0;
+			}
+		}
+		if (BATcount(r1) > 0) {
+			/* a new, higher value will be inserted into
+			 * r1, so r1 is not reverse ordered anymore */
+			r1->trevsorted = 0;
+			/* a new higher value will be added to r2 */
+			r2->trevsorted = 0;
+			if (r1->tdense &&
+			    ((oid *) r1->T->heap.base)[r1->batFirst + r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
+				r1->tdense = 0;
+		}
+
+		if (BATcount(r2) > 0 &&
+		    r2->tdense &&
+		    ((oid *) r2->T->heap.base)[r2->batFirst + r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+			r2->tdense = 0;
+
+		/* insert values */
+		lv = l->hseqbase + lstart - nl;
+		for (i = 0; i < nl; i++) {
+			BUN j;
+			oid rv;
+
+			rv = r->hseqbase + rstart - nr;
+			for (j = 0; j < nr; j++) {
+				APPEND(r1, lv);
+				APPEND(r2, rv);
+				rv++;
+			}
+			lv++;
+		}
+	}
+	/* also set other bits of heap to correct value to indicate size */
+	BATsetcount(r1, BATcount(r1));
+	BATsetcount(r2, BATcount(r2));
+	assert(BATcount(r1) == BATcount(r2));
+	if (BATcount(r1) > 0) {
+		if (r1->tdense)
+			r1->tseqbase = ((oid *) r1->T->heap.base)[r1->batFirst];
+		if (r2->tdense)
+			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
+	}
+	BATseqbase(r1, 0);
+	BATseqbase(r2, 0);
+	ALGODEBUG fprintf(stderr, "#mergejoin_int(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  r1->tdense ? "-dense" : "",
+			  r1->tkey & 1 ? "-key" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "",
+			  r2->tdense ? "-dense" : "",
+			  r2->tkey & 1 ? "-key" : "",
+			  GDKusec() - t0);
+	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
+}
+
+static gdk_return
+mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
+	      int nil_matches, BUN maxsize, lng t0, int swapped)
+{
+	BUN lstart, lend;
+	BUN rstart, rend;
+	BUN lscan, rscan;	/* opportunistic scan window */
+	const lng *lvals, *rvals;
+	lng v;
+	BUN nl, nr;
+	oid lv;
+	BUN i;
+
+	ALGODEBUG fprintf(stderr, "#mergejoin_lng(l=%s#" BUNFMT "[%s]%s%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s%s)%s\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  l->tkey & 1 ? "-key" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  r->tkey & 1 ? "-key" : "",
+			  swapped ? " swapped" : "");
+
+	assert(BAThdense(l));
+	assert(BAThdense(r));
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(r->tsorted || r->trevsorted);
+
+	lstart = rstart = 0;
+	lend = BATcount(l);
+	rend = BATcount(r);
+	lvals = (const lng *) Tloc(l, BUNfirst(l));
+	rvals = (const lng *) Tloc(r, BUNfirst(r));
+	assert(!r->tvarsized || !r->ttype);
+
+	/* basic properties will be adjusted if necessary later on,
+	 * they were initially set by joininitresults() */
+
+	if (lend == 0 || rend == 0) {
+		/* there are no matches */
+		return nomatch(r1, r2, l, r, lstart, lend, NULL, NULL,
+			       0, 0, "mergejoin_lng", t0);
+	}
+
+	/* determine opportunistic scan window for l and r */
+	for (nl = lend - lstart, lscan = 4; nl > 0; lscan++)
+		nl >>= 1;
+	for (nr = rend - rstart, rscan = 4; nr > 0; rscan++)
+		nr >>= 1;
+
+	if (!nil_matches) {
+		/* skip over nils at the start of the columns */
+		if (lscan < lend - lstart && lvals[lstart + lscan] == lng_nil) {
+			lstart = binsearch_lng(NULL, 0, lvals, lstart + lscan,
+					       lend - 1, lng_nil, 1, 1);
+		} else {
+			while (lvals[lstart] == lng_nil)
+				lstart++;
+		}
+		if (rscan < rend - rstart && rvals[rstart + rscan] == lng_nil) {
+			rstart = binsearch_lng(NULL, 0, rvals, rstart + rscan,
+					       rend - 1, lng_nil, 1, 1);
+		} else {
+			while (rvals[rstart] == lng_nil)
+				rstart++;
+		}
+	}
+	/* from here on we don't have to worry about nil values */
+
+	while (lstart < lend && rstart < rend) {
+		v = rvals[rstart];
+
+		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
+			lstart = binsearch_lng(NULL, 0, lvals, lstart + lscan,
+					       lend - 1, v, 1, 0);
+		} else {
+			/* scan l for v */
+			while (lstart < lend && lvals[lstart] < v)
+				lstart++;
+		}
+		if (lstart >= lend) {
+			/* nothing found */
+			break;
+		}
+
+		/* Here we determine the next value in l that we are
+		 * going to try to match in r.  We will also count the
+		 * number of occurrences in l of that value.
+		 * Afterwards, v points to the value and nl is the
+		 * number of times it occurs.  Also, lstart will
+		 * point to the next value to be considered (ready for
+		 * the next iteration).
+		 * If there are many equal values in l (more than
+		 * lscan), we will use binary search to find the end
+		 * of the sequence.  Obviously, we can do this only if
+		 * l is actually sorted (lscan > 0). */
+		nl = 1;		/* we'll match (at least) one in l */
+		nr = 0;		/* maybe we won't match anything in r */
+		v = lvals[lstart];
+		if (l->tkey) {
+			/* if l is key, there is a single value */
+			lstart++;
+		} else if (lscan < lend - lstart &&
+			   v == lvals[lstart + lscan]) {
+			/* lots of equal values: use binary search to
+			 * find end */
+			nl = binsearch_lng(NULL, 0, lvals, lstart + lscan,
+					   lend - 1, v, 1, 1);
+			nl -= lstart;
+			lstart += nl;
+		} else {
+			/* just scan */
+			while (++lstart < lend && v == lvals[lstart])
+				nl++;
+		}
+		/* lstart points one beyond the value we're
+		 * going to match: ready for the next iteration. */
+
+		/* First we find the first value in r that is at
+		 * least as large as v, then we find the first
+		 * value in r that is larger than v.  The difference
+		 * is the number of values equal to v and is stored in
+		 * nr.
+		 * We will use binary search on r to find both ends of
+		 * the sequence of values that are equal to v in case
+		 * the position is "too far" (more than rscan
+		 * away). */
+
+		/* first find the location of the first value in r
+		 * that is >= v, then find the location of the first
+		 * value in r that is > v; the difference is the
+		 * number of values equal to v */
+
+		/* look ahead a little (rscan) in r to see whether
+		 * we're better off doing a binary search */
+		if (rscan < rend - rstart && rvals[rstart + rscan] < v) {
+			/* value too far away in r: use binary
+			 * search */
+			rstart = binsearch_lng(NULL, 0, rvals, rstart + rscan,
+					       rend - 1, v, 1, 0);
+		} else {
+			/* scan r for v */
+			while (rstart < rend && rvals[rstart] < v)
+				rstart++;
+		}
+		if (rstart == rend) {
+			/* nothing found */
+			break;
+		}
+
+		/* now find the end of the sequence of equal values v */
+
+		/* if r is key, there is zero or one match, otherwise
+		 * look ahead a little (rscan) in r to see whether
+		 * we're better off doing a binary search */
+		if (r->tkey) {
+			if (rstart < rend && v == rvals[rstart]) {
+				nr = 1;
+				rstart++;
+			}
+		} else if (rscan < rend - rstart &&
+			   v == rvals[rstart + rscan]) {
+			/* range too large: use binary search */
+			nr = binsearch_lng(NULL, 0, rvals, rstart + rscan,
+					   rend - 1, v, 1, 1);
+			nr -= rstart;
+			rstart += nr;
+		} else {
+			/* scan r for end of range */
+			while (rstart < rend && v == rvals[rstart]) {
+				nr++;
+				rstart++;
+			}
+		}
+		/* rstart points to first value > v or end of
+		 * r, and nr is the number of values in r that
+		 * are equal to v */
+		if (nr == 0) {
+			/* no entries in r found */
+			continue;
+		}
+		/* make space: nl values in l match nr values in r, so
+		 * we need to add nl * nr values in the results */
+		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
+			/* make some extra space by extrapolating how
+			 * much more we need (fraction of l we've seen
+			 * so far is used as the fraction of the
+			 * expected result size we've produced so
+			 * far) */
+			BUN newcap = (BUN) ((double) BATcount(l) / (BATcount(l) - (lend - lstart)) * (BATcount(r1) + nl * nr) * 1.1);
+			if (newcap < nl * nr + BATcount(r1))
+				newcap = nl * nr + BATcount(r1) + 1024;
+			if (newcap > maxsize)
+				newcap = maxsize;
+			/* make sure heap.free is set properly before
+			 * extending */
+			BATsetcount(r1, BATcount(r1));
+			if (BATextend(r1, newcap) != GDK_SUCCEED)
+				goto bailout;
+			BATsetcount(r2, BATcount(r2));
+			if (BATextend(r2, newcap) != GDK_SUCCEED)
+				goto bailout;
+			assert(BATcapacity(r1) == BATcapacity(r2));
+		}
+
+		/* maintain properties */
+		if (nl > 1) {
+			/* value occurs multiple times in l, so entry
+			 * in r will be repeated multiple times: hence
+			 * r2 is not key and not dense */
+			r2->tkey = 0;
+			r2->tdense = 0;
+			/* multiple different values will be inserted
+			 * in r1 (always in order), so not reverse
+			 * ordered anymore */
+			r1->trevsorted = 0;
+		}
+		if (nr > 1) {
+			/* value occurs multiple times in r, so entry
+			 * in l will be repeated multiple times: hence
+			 * r1 is not key and not dense */
+			r1->tkey = 0;
+			r1->tdense = 0;
+			/* multiple different values will be inserted
+			 * in r2 (in order), so not reverse ordered
+			 * anymore */
+			r2->trevsorted = 0;
+			if (nl > 1) {
+				/* multiple values in l match multiple
+				 * values in r, so an ordered sequence
+				 * will be inserted multiple times in
+				 * r2, so r2 is not ordered anymore */
+				r2->tsorted = 0;
+			}
+		}
+		if (BATcount(r1) > 0) {
+			/* a new, higher value will be inserted into
+			 * r1, so r1 is not reverse ordered anymore */
+			r1->trevsorted = 0;
+			/* a new higher value will be added to r2 */
+			r2->trevsorted = 0;
+			if (r1->tdense &&
+			    ((oid *) r1->T->heap.base)[r1->batFirst + r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
+				r1->tdense = 0;
+		}
+
+		if (BATcount(r2) > 0 &&
+		    r2->tdense &&
+		    ((oid *) r2->T->heap.base)[r2->batFirst + r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+			r2->tdense = 0;
+
+		/* insert values */
+		lv = l->hseqbase + lstart - nl;
+		for (i = 0; i < nl; i++) {
+			BUN j;
+			oid rv;
+
+			rv = r->hseqbase + rstart - nr;
+			for (j = 0; j < nr; j++) {
+				APPEND(r1, lv);
+				APPEND(r2, rv);
+				rv++;
+			}
+			lv++;
+		}
+	}
+	/* also set other bits of heap to correct value to indicate size */
+	BATsetcount(r1, BATcount(r1));
+	BATsetcount(r2, BATcount(r2));
+	assert(BATcount(r1) == BATcount(r2));
+	if (BATcount(r1) > 0) {
+		if (r1->tdense)
+			r1->tseqbase = ((oid *) r1->T->heap.base)[r1->batFirst];
+		if (r2->tdense)
+			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
+	}
+	BATseqbase(r1, 0);
+	BATseqbase(r2, 0);
+	ALGODEBUG fprintf(stderr, "#mergejoin_lng(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  r1->tdense ? "-dense" : "",
+			  r1->tkey & 1 ? "-key" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "",
+			  r2->tdense ? "-dense" : "",
+			  r2->tkey & 1 ? "-key" : "",
+			  GDKusec() - t0);
+	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
+}
+
+static gdk_return
 mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	  int nil_matches, int nil_on_miss, int semi, int only_misses,
 	  BUN maxsize, lng t0, int swapped)
@@ -1033,6 +1635,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int lskipped = 0;	/* whether we skipped values in l */
 	wrd loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
+
+	if (sl == NULL && sr == NULL && !nil_on_miss &&
+	    !semi && !only_misses && l->tsorted && r->tsorted && r2 != NULL) {
+		/* special cases with far fewer options */
+		switch (ATOMbasetype(l->ttype)) {
+		case TYPE_int:
+			return mergejoin_int(r1, r2, l, r, nil_matches,
+					     maxsize, t0, swapped);
+		case TYPE_lng:
+			return mergejoin_lng(r1, r2, l, r, nil_matches,
+					     maxsize, t0, swapped);
+		}
+	}
 
 	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s#" BUNFMT "[%s]%s%s%s,"
 			  "r=%s#" BUNFMT "[%s]%s%s%s,sl=%s#" BUNFMT "%s%s%s,"
