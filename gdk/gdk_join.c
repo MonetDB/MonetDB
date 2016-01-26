@@ -3356,11 +3356,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		return mergejoin_void(r2, r1, r, l, sr, sl, 0, 0, t0);
 	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATordered(r) || BATordered_rev(r))) {
-		/* both sorted, smallest on left */
-		if (BATcount(l) <= BATcount(r))
-			return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
-		else
-			return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0, maxsize, t0, 1);
+		/* both sorted */
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
 	} else if (lhash && rhash) {
 		/* both have hash, smallest on right */
 		swap = lcount < rcount;
