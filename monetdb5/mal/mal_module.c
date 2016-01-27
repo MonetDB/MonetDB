@@ -274,6 +274,20 @@ int isModuleDefined(Module scope, str name){
 	}
 	return FALSE;
 }
+
+int
+moduleExists(str name) {
+	Module scope = NULL;
+	if (name == NULL) return 0;
+	scope = scopeJump[(int)(*name)][(int)(*(name+1))];
+	while (scope != NULL){
+		if (idcmp(name, scope->name) == 0)
+			return 1;
+		scope= scope->sibling;
+	}
+	return 0;
+}
+
 /*
  * The routine findSymbolInModule starts at a MAL scope level and searches
  * an element amongst the peers. If it fails, it will recursively
