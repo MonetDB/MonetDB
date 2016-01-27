@@ -335,12 +335,15 @@ main(int argc, char **av)
 		case 0:
 			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
 				size_t optarglen = strlen(optarg);
+				char *dbpath = NULL;
 				/* remove trailing directory separator */
 				while (optarglen > 0 &&
 				       (optarg[optarglen - 1] == '/' ||
 					optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
+				dbpath = absolute_path(optarg);
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbpath);
+				GDKfree(dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
@@ -499,10 +502,10 @@ main(int argc, char **av)
 	}
 
 	if (dbextra) {
-		BBPaddfarm(".", 1 << PERSISTENT);
+		BBPaddfarm(GDKgetenv("gdk_dbpath"), 1 << PERSISTENT);
 		BBPaddfarm(dbextra, 1 << TRANSIENT);
 	} else {
-		BBPaddfarm(".", (1 << PERSISTENT) | (1 << TRANSIENT));
+		BBPaddfarm(GDKgetenv("gdk_dbpath"), (1 << PERSISTENT) | (1 << TRANSIENT));
 	}
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
