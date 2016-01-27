@@ -11,6 +11,7 @@
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
 #include "libgeom.h"
+#include "mal_module.h"
 
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
@@ -223,7 +224,7 @@ bl_postversion( void *lg)
 				s = NULL;
 		}
 	}
-	if (catalog_version <= CATALOG_JUL2015) {
+	if (catalog_version <= CATALOG_JUL2015 && moduleExists("geom")) {
 		/* Do the updates needed for the new geom module */
 		BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn, *g;
 		BATiter cti, cdi, csi, cni, ctidi, tsi, tni, sni, gi;
