@@ -79,8 +79,6 @@
 		BATsettrivprop(b);												\
 	} while (0)
 
-//#define CONVERT_OLDSCHOOL
-
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
@@ -125,7 +123,7 @@ static SEXP bat_to_sexp(BAT* b) {
 				}
 				BATloop(b, p, q) {
 					const char *t = (const char *) BUNtail(li, p);
-					void** s = &sexp_ptrs[t - b->T->vheap->base];
+					void** s = sexp_ptrs + (t - b->T->vheap->base) * sizeof(void*);
 					if (!*s) {
 						if (strcmp(t, str_nil) == 0) {
 							*s = (void*) NA_STRING;
