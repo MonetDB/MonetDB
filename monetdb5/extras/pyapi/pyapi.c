@@ -1912,7 +1912,8 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
                                     msg = createException(MAL, "pyapi.eval", "Failed to create string.");
                                     goto wrapup;
                                 }
-
+                            } else {
+                                Py_INCREF(pyptrs[offset]);
                             }
                             data[j++] = pyptrs[offset];
                         }
@@ -1949,6 +1950,8 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
                             ptrdiff_t offset = t - b->T->vheap->base;
                             if (!pyptrs[offset]) {
                                 pyptrs[offset] = PyString_FromString(t);
+                            } else {
+                                Py_INCREF(pyptrs[offset]);
                             }
                             data[j++] = pyptrs[offset];
                         }
