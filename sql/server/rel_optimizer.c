@@ -5956,6 +5956,16 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 				if (flag)
 					break;
 			}
+			if (is_atom(e->type) && !e->l && !e->r) { /* numbered variable */
+				atom *a = sql->args[e->flag];
+				int flag = a->data.val.bval;
+
+				/* remove simple select true expressions */
+				if (flag) {
+					sql->caching = 0;
+					break;
+				}
+			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
 				sql_exp *r = e->r;
