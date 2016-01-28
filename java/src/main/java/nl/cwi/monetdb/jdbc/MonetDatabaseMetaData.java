@@ -924,9 +924,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public String getCatalogSeparator() {
-		// Give them something to work with here
-		// everything else returns false so it won't matter what we return here
-		return ".";
+		// MonetDB does NOT support catalogs, so also no catalog separator
+		return null;
 	}
 
 	/**
@@ -1818,31 +1817,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public ResultSet getCatalogs() throws SQLException {
-		/*
-		// doing this with a VirtualResultSet is much more efficient...
-		String query =
-			"SELECT '" + ((String)env.get("gdk_dbname")) + "' AS \"TABLE_CAT\"";
-			// some applications need a database or catalog...
-
-		return getStmt().executeQuery(query);
-		*/
-		
-		String[] columns, types;
-		String[][] results;
-
-		columns = new String[1];
-		types = new String[1];
-		results = new String[1][1];
-
-		columns[0] = "TABLE_CAT";
-		types[0] = "varchar";
-		results[0][0] = "";
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		// MonetDB does NOT support catalogs.
+		// Return a resultset with no rows
+		return getStmt().executeQuery("SELECT cast(null as char(1)) AS \"TABLE_CAT\" WHERE 1 = 0");
 	}
 
 	/**
