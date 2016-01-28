@@ -146,6 +146,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		     k < end; i += incr1, j += incr2, k++) {		\
 			register TYPE1 v1;				\
 			register TYPE2 v2;				\
+			CHECKCAND((TYPE3 *) dst, k, candoff, TYPE3##_nil); \
 			v1 = ((const TYPE1 *) lft)[i];			\
 			v2 = ((const TYPE2 *) rgt)[j];			\
 			((TYPE3 *) dst)[k] = FUNC(v1, v2);		\
