@@ -650,10 +650,10 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		return bn;
 	}
 
-	bn = BATcalcop_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->batFirst), b1->T->type, 1,
+	bn = BATcalcop_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->batFirst), ATOMbasetype(b1->T->type), 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
-			      b2->T->type == TYPE_void ? (void *) &b2->T->seq : (void *) Tloc(b2, b2->batFirst), b2->T->type, 1,
+			      b2->T->type == TYPE_void ? (void *) &b2->T->seq : (void *) Tloc(b2, b2->batFirst), ATOMbasetype(b2->T->type), 1,
 			      b2->T->vheap ? b2->T->vheap->base : NULL,
 			      b2->T->width,
 			      cnt, start, end, cand, candend, b1->hseqbase,
@@ -677,10 +677,10 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(Tloc(b, b->batFirst), b->T->type, 1,
+	bn = BATcalcop_intern(Tloc(b, b->batFirst), ATOMbasetype(b->T->type), 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      VALptr(v), v->vtype, 0,
+			      VALptr(v), ATOMbasetype(v->vtype), 0,
 			      NULL, 0,
 			      cnt, start, end, cand, candend, b->hseqbase,
 			      cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
@@ -703,9 +703,9 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(VALptr(v), v->vtype, 0,
+	bn = BATcalcop_intern(VALptr(v), ATOMbasetype(v->vtype), 0,
 			      NULL, 0,
-			      Tloc(b, b->batFirst), b->T->type, 1,
+			      Tloc(b, b->batFirst), ATOMbasetype(b->T->type), 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      cnt, start, end, cand, candend, b->hseqbase,
@@ -719,8 +719,8 @@ gdk_return
 VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_TPE;
-	if (op_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
-			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+	if (op_typeswitchloop(VALptr(lft), ATOMbasetype(lft->vtype), 0, NULL, 0,
+			      VALptr(rgt), ATOMbasetype(rgt->vtype), 0, NULL, 0,
 			      VALget(ret), 1, 0, 1, NULL, NULL, 0, 0,
 			      VARcalcop_name) == BUN_NONE)
 		return GDK_FAIL;

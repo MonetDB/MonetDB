@@ -124,14 +124,16 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
 		for (i = start * incr1, j = start * incr2, k = start;	\
 		     k < end; i += incr1, j += incr2, k++) {		\
+			register TYPE1 v1;				\
+			register TYPE2 v2;				\
 			CHECKCAND((TYPE3 *) dst, k, candoff, TYPE3##_nil); \
-			if (((const TYPE1 *) lft)[i] == TYPE1##_nil ||	\
-			    ((const TYPE2 *) rgt)[j] == TYPE2##_nil) {	\
+			v1 = ((const TYPE1 *) lft)[i];			\
+			v2 = ((const TYPE2 *) rgt)[j];			\
+			if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {	\
 				nils++;					\
 				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
 			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], \
-							  ((const TYPE2 *) rgt)[j]); \
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
 		}							\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
@@ -141,9 +143,14 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	do {								\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
 		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++)		\
-			((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], \
-						  ((const TYPE2 *) rgt)[j]); \
+		     k < end; i += incr1, j += incr2, k++) {		\
+			register TYPE1 v1;				\
+			register TYPE2 v2;				\
+			CHECKCAND((TYPE3 *) dst, k, candoff, TYPE3##_nil); \
+			v1 = ((const TYPE1 *) lft)[i];			\
+			v2 = ((const TYPE2 *) rgt)[j];			\
+			((TYPE3 *) dst)[k] = FUNC(v1, v2);		\
+		}							\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
 	} while (0)
 
@@ -152,26 +159,27 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
 		for (i = start * incr1, j = start * incr2, k = start;	\
 		     k < end; i += incr1, j += incr2, k++) {		\
+			register TYPE1 v1;				\
+			register TYPE2 v2;				\
 			CHECKCAND((TYPE3 *) dst, k, candoff, TYPE3##_nil); \
-			if (((const TYPE1 *) lft)[i] == TYPE1##_nil ||	\
-			    ((const TYPE2 *) rgt)[j] == TYPE2##_nil) {	\
+			v1 = ((const TYPE1 *) lft)[i];			\
+			v2 = ((const TYPE2 *) rgt)[j];			\
+			if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {	\
 				nils++;					\
 				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
-			} else if (CHECK(((const TYPE1 *) lft)[i],	\
-					 ((const TYPE2 *) rgt)[j])) {	\
+			} else if (CHECK(v1, v2)) {			\
 				if (abort_on_error) {			\
 					GDKerror("%s: shift operand too large in " \
 						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
 						 func,			\
-						 CST##TYPE1 ((const TYPE1 *) lft)[i], \
-						 CST##TYPE2 ((const TYPE2 *) rgt)[j]); \
+						 CST##TYPE1 v1,		\
+						 CST##TYPE2 v2);	\
 					goto checkfail;			\
 				}					\
 				((TYPE3 *)dst)[k] = TYPE3##_nil;	\
 				nils++;					\
 			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], \
-							  ((const TYPE2 *) rgt)[j]); \
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
 		}							\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
@@ -12589,7 +12597,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* ---------------------------------------------------------------------- */
 /* generic comparison (any "linear" type) */
 
-#define CMP(a, b)	((bte) ((a) < (b) ? -1 : (a) > (b)))
+/* #define CMP(a, b)	((bte) ((a) < (b) ? -1 : (a) > (b))) */
+#define CMP(a, b)	((bte) (((a) > (b)) - ((a) < (b))))
 
 #define TYPE_TPE		TYPE_bte
 #define TPE			bte
