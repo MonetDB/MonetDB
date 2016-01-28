@@ -681,7 +681,7 @@ main(int argc, char *argv[])
 	}
 
 	kv = findConfKey(_mero_props, "listenaddr");
-	if (!kv->val <= 0 || strlen(kv->val) < 1) {
+	if (kv->val == NULL || strlen(kv->val) < 1) {
 		Mfprintf(stderr, "invalid host name: %s, defaulting to localhost\n",
 				kv->val);
 		setConfVal(kv, "localhost");
