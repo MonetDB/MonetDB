@@ -12415,13 +12415,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	lt_typeswitchloop
 #define BATcalcop_intern	BATcalclt_intern
 #define BATcalcop		BATcalclt
-#define BATcalcop_name		"BATcalclt"
 #define BATcalcopcst		BATcalcltcst
-#define BATcalcopcst_name	"BATcalcltcst"
 #define BATcalccstop		BATcalccstlt
-#define BATcalccstop_name	"BATcalccstlt"
 #define VARcalcop		VARcalclt
-#define VARcalcop_name		"VARcalclt"
 
 #include "gdk_calc_compare.h"
 
@@ -12429,13 +12425,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 /* ---------------------------------------------------------------------- */
 /* greater than (any "linear" type) */
@@ -12444,13 +12436,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	gt_typeswitchloop
 #define BATcalcop_intern	BATcalcgt_intern
 #define BATcalcop		BATcalcgt
-#define BATcalcop_name		"BATcalcgt"
 #define BATcalcopcst		BATcalcgtcst
-#define BATcalcopcst_name	"BATcalcgtcst"
 #define BATcalccstop		BATcalccstgt
-#define BATcalccstop_name	"BATcalccstgt"
 #define VARcalcop		VARcalcgt
-#define VARcalcop_name		"VARcalclt"
 
 #include "gdk_calc_compare.h"
 
@@ -12458,13 +12446,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 /* ---------------------------------------------------------------------- */
 /* less than or equal (any "linear" type) */
@@ -12475,13 +12459,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	le_typeswitchloop
 #define BATcalcop_intern	BATcalcle_intern
 #define BATcalcop		BATcalcle
-#define BATcalcop_name		"BATcalcle"
 #define BATcalcopcst		BATcalclecst
-#define BATcalcopcst_name	"BATcalclecst"
 #define BATcalccstop		BATcalccstle
-#define BATcalccstop_name	"BATcalccstle"
 #define VARcalcop		VARcalcle
-#define VARcalcop_name		"VARcalcle"
 
 #include "gdk_calc_compare.h"
 
@@ -12489,13 +12469,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 /* ---------------------------------------------------------------------- */
 /* greater than or equal (any "linear" type) */
@@ -12506,13 +12482,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	ge_typeswitchloop
 #define BATcalcop_intern	BATcalcge_intern
 #define BATcalcop		BATcalcge
-#define BATcalcop_name		"BATcalcge"
 #define BATcalcopcst		BATcalcgecst
-#define BATcalcopcst_name	"BATcalcgecst"
 #define BATcalccstop		BATcalccstge
-#define BATcalccstop_name	"BATcalccstge"
 #define VARcalcop		VARcalcge
-#define VARcalcop_name		"VARcalcge"
 
 #include "gdk_calc_compare.h"
 
@@ -12520,13 +12492,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 /* ---------------------------------------------------------------------- */
 /* equal (any type) */
@@ -12537,13 +12505,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	eq_typeswitchloop
 #define BATcalcop_intern	BATcalceq_intern
 #define BATcalcop		BATcalceq
-#define BATcalcop_name		"BATcalceq"
 #define BATcalcopcst		BATcalceqcst
-#define BATcalcopcst_name	"BATcalceqcst"
 #define BATcalccstop		BATcalccsteq
-#define BATcalccstop_name	"BATcalccsteq"
 #define VARcalcop		VARcalceq
-#define VARcalcop_name		"VARcalceq"
 
 #include "gdk_calc_compare.h"
 
@@ -12551,13 +12515,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 /* ---------------------------------------------------------------------- */
 /* not equal (any type) */
@@ -12568,13 +12528,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	ne_typeswitchloop
 #define BATcalcop_intern	BATcalcne_intern
 #define BATcalcop		BATcalcne
-#define BATcalcop_name		"BATcalcne"
 #define BATcalcopcst		BATcalcnecst
-#define BATcalcopcst_name	"BATcalcnecst"
 #define BATcalccstop		BATcalccstne
-#define BATcalccstop_name	"BATcalccstne"
 #define VARcalcop		VARcalcne
-#define VARcalcop_name		"VARcalcne"
 
 #include "gdk_calc_compare.h"
 
@@ -12582,13 +12538,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 #undef TYPE_TPE
 #undef TPE
@@ -12608,13 +12560,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define op_typeswitchloop	cmp_typeswitchloop
 #define BATcalcop_intern	BATcalccmp_intern
 #define BATcalcop		BATcalccmp
-#define BATcalcop_name		"BATcalccmp"
 #define BATcalcopcst		BATcalccmpcst
-#define BATcalcopcst_name	"BATcalccmpcst"
 #define BATcalccstop		BATcalccstcmp
-#define BATcalccstop_name	"BATcalccstcmp"
 #define VARcalcop		VARcalccmp
-#define VARcalcop_name		"VARcalccmp"
 
 #include "gdk_calc_compare.h"
 
@@ -12622,13 +12570,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #undef op_typeswitchloop
 #undef BATcalcop_intern
 #undef BATcalcop
-#undef BATcalcop_name
 #undef BATcalcopcst
-#undef BATcalcopcst_name
 #undef BATcalccstop
-#undef BATcalccstop_name
 #undef VARcalcop
-#undef VARcalcop_name
 
 #undef TYPE_TPE
 #undef TPE

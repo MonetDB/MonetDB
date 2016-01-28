@@ -629,10 +629,10 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b1, BATcalcop_name, NULL);
-	BATcheck(b2, BATcalcop_name, NULL);
+	BATcheck(b1, __func__, NULL);
+	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, BATcalcop_name) != GDK_SUCCEED)
+	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b1, s, start, end, cnt, cand, candend);
@@ -658,7 +658,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 			      b2->T->width,
 			      cnt, start, end, cand, candend, b1->hseqbase,
 			      cand == NULL && b1->T->nonil && b2->T->nonil,
-			      b1->H->seq, BATcalcop_name);
+			      b1->H->seq, __func__);
 
 	return bn;
 }
@@ -670,9 +670,9 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, BATcalcopcst_name, NULL);
+	BATcheck(b, __func__, NULL);
 
-	if (checkbats(b, NULL, BATcalcopcst_name) != GDK_SUCCEED)
+	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -684,7 +684,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 			      NULL, 0,
 			      cnt, start, end, cand, candend, b->hseqbase,
 			      cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->H->seq, BATcalcopcst_name);
+			      b->H->seq, __func__);
 
 	return bn;
 }
@@ -696,9 +696,9 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 	BUN start, end, cnt;
 	const oid *restrict cand = NULL, *candend = NULL;
 
-	BATcheck(b, BATcalccstop_name, NULL);
+	BATcheck(b, __func__, NULL);
 
-	if (checkbats(b, NULL, BATcalccstop_name) != GDK_SUCCEED)
+	if (checkbats(b, NULL, __func__) != GDK_SUCCEED)
 		return NULL;
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -710,7 +710,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 			      b->T->width,
 			      cnt, start, end, cand, candend, b->hseqbase,
 			      cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->H->seq, BATcalccstop_name);
+			      b->H->seq, __func__);
 
 	return bn;
 }
@@ -722,7 +722,7 @@ VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	if (op_typeswitchloop(VALptr(lft), ATOMbasetype(lft->vtype), 0, NULL, 0,
 			      VALptr(rgt), ATOMbasetype(rgt->vtype), 0, NULL, 0,
 			      VALget(ret), 1, 0, 1, NULL, NULL, 0, 0,
-			      VARcalcop_name) == BUN_NONE)
+			      __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
