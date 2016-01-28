@@ -3133,13 +3133,16 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(sql, lr, lo, f);
-			lexps = lr?lr->exps:NULL;
-			lr = lr->l;
-
+			if (lr) {
+				lexps = lr->exps;
+				lr = lr->l;
+			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(sql, rr, ro, f);
-			rexps = rr?rr->exps:NULL;
-			rr = rr->l;
+			if (rr) {	
+				rexps = rr->exps;
+				rr = rr->l;
+			}
 			sql->pushdown = pushdown;
 		} else {
 			lr = rel_logical_exp(sql, lr, lo, f);
