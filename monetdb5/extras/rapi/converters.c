@@ -117,21 +117,21 @@ static SEXP bat_to_sexp(BAT* b) {
 			}
 			/* special case where we exploit the duplicate-eliminated string heap */
 			if (GDK_ELIMDOUBLES(b->T->vheap)) {
-				void* sexp_ptrs = GDKzalloc(b->T->vheap->free * sizeof(void*));
+				SEXP* sexp_ptrs = GDKzalloc(b->T->vheap->free * sizeof(SEXP));
 				if (!sexp_ptrs) {
 					return NULL;
 				}
 				BATloop(b, p, q) {
 					const char *t = (const char *) BUNtail(li, p);
-					void** s = sexp_ptrs + (t - b->T->vheap->base) * sizeof(void*);
-					if (!*s) {
+					ptrdiff_t offset = t - b->T->vheap->base;
+					if (!sexp_ptrs[offset]) {
 						if (strcmp(t, str_nil) == 0) {
-							*s = (void*) NA_STRING;
+							sexp_ptrs[offset] = NA_STRING;
 						} else {
-							*s = (void*) mkCharCE(t, CE_UTF8);
+							sexp_ptrs[offset] = mkCharCE(t, CE_UTF8);
 						}
 					}
-					STRING_ELT(varvalue, j++) = (SEXP) *s;
+					STRING_ELT(varvalue, j++) = sexp_ptrs[offset];
 				}
 				GDKfree(sexp_ptrs);
 			}
