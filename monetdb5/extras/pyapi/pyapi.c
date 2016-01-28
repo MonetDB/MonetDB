@@ -10,6 +10,7 @@
 #include "mal.h"
 #include "mal_stack.h"
 #include "mal_linker.h"
+#include "gdk_atoms.h"
 #include "gdk_utils.h"
 #include "gdk.h"
 #include "sql_catalog.h"
@@ -1889,32 +1890,80 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
                 PyObject **data = ((PyObject**)PyArray_DATA((PyArrayObject*)vararray));
                 PyObject *obj;
                 j = 0;
-                if (unicode) {
-                    BATloop(b, p, q) {
-                        char *t = (char *) BUNtail(li, p);
-                        if (strcmp(t, str_nil) == 0) {
-                             //str_nil isn't a valid UTF-8 character (it's 0x80), so we can't decode it as UTF-8 (it will throw an error)
-                            obj = PyUnicode_FromString("-");
-                        } else {
-                            //otherwise we can just decode the string as UTF-8
-                            obj = PyUnicode_FromString(t);
-                        }
-
-                        if (obj == NULL) {
-                            msg = createException(MAL, "pyapi.eval", "Failed to create string.");
+                if (unicode) {                    
+                    if (GDK_ELIMDOUBLES(b->T->vheap)) {
+                        PyObject** pyptrs = GDKzalloc(b->T->vheap->free * sizeof(PyObject*));
+                        if (!pyptrs) {
+                            msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" PyObject strings.");
                             goto wrapup;
                         }
-                        data[j++] = obj;
+                        BATloop(b, p, q) {
+                            const char *t = (const char *) BUNtail(li, p);
+                            ptrdiff_t offset = t - b->T->vheap->base;
+                            if (!pyptrs[offset]) {
+                                if (strcmp(t, str_nil) == 0) {
+                                     //str_nil isn't a valid UTF-8 character (it's 0x80), so we can't decode it as UTF-8 (it will throw an error)
+                                    pyptrs[offset] = PyUnicode_FromString("-");
+                                } else {
+                                    //otherwise we can just decode the string as UTF-8
+                                    pyptrs[offset] = PyUnicode_FromString(t);
+                                }
+                                if (!pyptrs[offset]) {
+                                    msg = createException(MAL, "pyapi.eval", "Failed to create string.");
+                                    goto wrapup;
+                                }
+
+                            }
+                            data[j++] = pyptrs[offset];
+                        }
+                        GDKfree(pyptrs);
+                    }
+                    else {
+                    BATloop(b, p, q) {
+                            char *t = (char *) BUNtail(li, p);
+                            if (strcmp(t, str_nil) == 0) {
+                                 //str_nil isn't a valid UTF-8 character (it's 0x80), so we can't decode it as UTF-8 (it will throw an error)
+                                obj = PyUnicode_FromString("-");
+                            } else {
+                                //otherwise we can just decode the string as UTF-8
+                                obj = PyUnicode_FromString(t);
+                            }
+
+                            if (obj == NULL) {
+                                msg = createException(MAL, "pyapi.eval", "Failed to create string.");
+                                goto wrapup;
+                            }
+                            data[j++] = obj;
+                        }
                     }
                 } else {
-                    BATloop(b, p, q) {
-                        char *t = (char *) BUNtail(li, p);
-                        obj = PyString_FromString(t);
-                        if (obj == NULL) {
-                            msg = createException(MAL, "pyapi.eval", "Failed to create string.");
+                    /* special case where we exploit the duplicate-eliminated string heap */
+                    if (GDK_ELIMDOUBLES(b->T->vheap)) {
+                        PyObject** pyptrs = GDKzalloc(b->T->vheap->free * sizeof(PyObject*));
+                        if (!pyptrs) {
+                            msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" PyObject strings.");
                             goto wrapup;
                         }
-                        data[j++] = obj;
+                        BATloop(b, p, q) {
+                            const char *t = (const char *) BUNtail(li, p);
+                            ptrdiff_t offset = t - b->T->vheap->base;
+                            if (!pyptrs[offset]) {
+                                pyptrs[offset] = PyString_FromString(t);
+                            }
+                            data[j++] = pyptrs[offset];
+                        }
+                        GDKfree(pyptrs);
+                    }
+                    else {
+                        BATloop(b, p, q) {
+                            char *t = (char *) BUNtail(li, p);
+                            obj = PyString_FromString(t);
+                            if (obj == NULL) {
+                                msg = createException(MAL, "pyapi.eval", "Failed to create string.");
+                                goto wrapup;
+                            }
+                            data[j++] = obj;
+                        }
                     }
                 }
             }
