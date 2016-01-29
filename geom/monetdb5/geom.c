@@ -18,6 +18,7 @@ int TYPE_mbr;
 static inline int geometryHasZ(int info){return (info & 0x02);}
 static inline int geometryHasM(int info){return (info & 0x01);}
 const double pi=3.14159265358979323846;
+static wkb wkb_nil = {0, ~0};
 
 /* the first argument in the functions is the return variable */
 
@@ -343,7 +344,7 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_d
 
 
 	if(*geomWKB == NULL) {
-		*transformedWKB = wkb_nil;
+		*transformedWKB = wkbNULL();
 		pj_free(proj4_src);
 		pj_free(proj4_dst);
 		throw(MAL, "geom.Transform", "wkb is null");
@@ -385,7 +386,7 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_d
 		/* destroy the geos geometries */
 		GEOSGeom_destroy(transformedGeosGeometry);
 	} else
-		*transformedWKB = wkb_nil;
+		*transformedWKB = wkbNULL();
 
 	pj_free(proj4_src);
 	pj_free(proj4_dst);
@@ -645,20 +646,20 @@ str wkbForceDim(wkb** outWKB, wkb** geomWKB, int *dim) {
 	str err;
 
 	if(wkb_isnil(*geomWKB)){
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geosGeometry = wkb2geos(*geomWKB);
 	if(!geosGeometry) {
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		return createException(MAL, "geom.ForceDim", "wkb2geos failed");
 	}
 
 	if((err = forceDimGeometry(&outGeometry, geosGeometry, *dim)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.ForceDim", "%s", err);
 		GEOSGeom_destroy(geosGeometry);
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 
 		GDKfree(err);
 		return msg;
@@ -978,20 +979,20 @@ str wkbSegmentize(wkb** outWKB, wkb** geomWKB, dbl *sz) {
 	str err;
 
 	if(wkb_isnil(*geomWKB)){
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geosGeometry = wkb2geos(*geomWKB);
 	if(!geosGeometry) {
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		return createException(MAL, "geom.Segmentize", "wkb2geos failed");
 	}
 
 	if((err = segmentizeGeometry(&outGeometry, geosGeometry, *sz)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.Segmentize", "%s", err);
 		GEOSGeom_destroy(geosGeometry);
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 
 		GDKfree(err);
 		return msg;
@@ -1268,20 +1269,20 @@ str wkbTranslate(wkb** outWKB, wkb** geomWKB, dbl* dx, dbl* dy, dbl* dz) {
 	str err;
 
 	if(wkb_isnil(*geomWKB)){
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geosGeometry = wkb2geos(*geomWKB);
 	if(!geosGeometry) {
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		return createException(MAL, "geom.Translate", "wkb2geos failed");
 	}
 
 	if((err = translateGeometry(&outGeometry, geosGeometry, *dx, *dy, *dz)) != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.Translate", "%s", err);
 		GEOSGeom_destroy(geosGeometry);
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 
 		GDKfree(err);
 		return msg;
@@ -1306,7 +1307,7 @@ str wkbDelaunayTriangles(wkb** outWKB, wkb** geomWKB, dbl* tolerance, int* flag)
 
 	geosGeometry = wkb2geos(*geomWKB);
 	if(!(outGeometry = GEOSDelaunayTriangulation(geosGeometry, *tolerance, *flag))) {
-		*outWKB = wkb_nil;
+		*outWKB = wkbNULL();
 		GEOSGeom_destroy(geosGeometry);
 		return createException(MAL, "geom.DelaunayTriangles", "GEOSDelaunayTriangulation failed");
 	}
@@ -1324,19 +1325,19 @@ str wkbPointOnSurface(wkb** resWKB, wkb** geomWKB) {
 	GEOSGeom geosGeometry, resGeosGeometry;
 
 	if(wkb_isnil(*geomWKB)){
-		*resWKB = wkb_nil;
+		*resWKB = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geosGeometry = wkb2geos(*geomWKB);
 	if(!geosGeometry) {
-		*resWKB = wkb_nil;
+		*resWKB = wkbNULL();
 		throw(MAL, "geom.PointOnSurface", "wkb2geos failed");
 	}
 
 	resGeosGeometry = GEOSPointOnSurface(geosGeometry);
 	if(!resGeosGeometry) {
-		*resWKB = wkb_nil;
+		*resWKB = wkbNULL();
 		throw(MAL, "geom.PointOnSurface", "GEOSPointOnSurface failed");
 	}
 
@@ -1906,7 +1907,7 @@ static int wkbFROMSTR_withSRID(char* geomWKT, int* len, wkb **geomWKB, int srid)
 	size_t parsedCharacters = 0;
 
 	if (strcmp(geomWKT, str_nil) == 0) {
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		return 0;
 	}
 	//check whether the represenattion is binary (hex)
@@ -1943,13 +1944,13 @@ static int wkbFROMSTR_withSRID(char* geomWKT, int* len, wkb **geomWKB, int srid)
 	GEOSWKTReader_destroy(WKT_reader);
 
 	if(geosGeometry == NULL){
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		return 0;
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		return 0;
 	}
 
@@ -2253,7 +2254,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 
 	*geomWKB = NULL;
 	if (strcmp(*geomWKT, str_nil) == 0) {
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		return MAL_SUCCEED;
 	}
 	if (wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid) &&
@@ -2262,7 +2263,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 	}
 
 	if (*geomWKB == NULL) {
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 	}
 
 	te += (te>2);
@@ -2350,7 +2351,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	if(ret != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
 
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		GDKfree(ret);
 
 		if(inputWKB)
@@ -2363,7 +2364,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 	if(ret != MAL_SUCCEED) {
 		str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
 
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		GDKfree(ret);
 
 		return msg;
@@ -2380,7 +2381,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		if(ret != MAL_SUCCEED || !linestringsWKB[i-1]) {
 			str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
 
-			*geomWKB = wkb_nil;
+			*geomWKB = wkbNULL();
 			GDKfree(ret);
 
 			GDKfree(inputWKB);
@@ -2396,7 +2397,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		if(ret != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
 
-			*geomWKB = wkb_nil;
+			*geomWKB = wkbNULL();
 			GDKfree(ret);
 
 			GDKfree(inputWKB);
@@ -2413,7 +2414,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		if(ret != MAL_SUCCEED) {
 			str msg = createException(MAL, "geom.MLineStringToPolygon: ", "%s", ret);
 
-			*geomWKB = wkb_nil;
+			*geomWKB = wkbNULL();
 			GDKfree(ret);
 
 			GDKfree(inputWKB);
@@ -2466,7 +2467,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 
 		externalGeometry = wkb2geos(linestringsWKB[0]);
 		if(!externalGeometry) {
-			*geomWKB = wkb_nil;
+			*geomWKB = wkbNULL();
 			throw(MAL, "geom.MLineStringToPolygon", "Error in wkb2geos");
 		}
 
@@ -2481,7 +2482,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 
 			internalGeometry = wkb2geos(linestringsWKB[i]);
 			if(!internalGeometry) {
-				*geomWKB = wkb_nil;
+				*geomWKB = wkbNULL();
 				throw(MAL, "geom.MLineStringToPolygon", "Error in wkb2geos");
 			}
 
@@ -2495,7 +2496,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 			for(i=0; i<itemsNum; i++)
 				GEOSGeom_destroy(internalGeometries[i]);
 			GDKfree(internalGeometries);
-			*geomWKB = wkb_nil;
+			*geomWKB = wkbNULL();
 			throw(MAL, "geom.MLineStringToPolygon", "Error creating Polygon from LinearRing");
 		}
 
@@ -2508,7 +2509,7 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 			GEOSGeom_destroy(finalGeometry);
 			GDKfree(internalGeometries);
 
-			*geomWKB = wkb_nil;
+			*geomWKB = wkbNULL();
 			throw(MAL, "geom.MLineStringToPolygon", "The provided MultiLineString does not create a valid Polygon");
 
 		}
@@ -2519,10 +2520,10 @@ str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
 		GEOSGeom_destroy(finalGeometry);
 		GDKfree(internalGeometries);
 	} else if(*flag == 1) {
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		throw(MAL, "geom.MLineStringToPolygon", "Multipolygon from string has not been defined");
 	} else {
-		*geomWKB = wkb_nil;
+		*geomWKB = wkbNULL();
 		throw(MAL, "geom.MLineStringToPolygon", "Uknown flag");
 	}
 
@@ -2538,7 +2539,7 @@ str wkbMakePoint(wkb** out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag) {
 	GEOSCoordSequence *seq = NULL;
 
 	if (*x == dbl_nil || *y == dbl_nil) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -2555,7 +2556,7 @@ str wkbMakePoint(wkb** out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag) {
 
 	if(*zmFlag == 10) {
 		if(*z == dbl_nil) {
-			*out = wkb_nil;
+			*out = wkbNULL();
 			GEOSCoordSeq_destroy(seq);
 			return MAL_SUCCEED;
 		}
@@ -2563,7 +2564,7 @@ str wkbMakePoint(wkb** out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag) {
 		GEOSCoordSeq_setOrdinate(seq, 0, 2, *z);
 	} else if(*zmFlag == 1) {
 		if(*m == dbl_nil) {
-			*out = wkb_nil;
+			*out = wkbNULL();
 			GEOSCoordSeq_destroy(seq);
 			return MAL_SUCCEED;
 		}
@@ -2572,7 +2573,7 @@ str wkbMakePoint(wkb** out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag) {
 	}
 
 	if(!(geosGeometry = GEOSGeom_createPoint(seq))){
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, "geom.wkbMakePoint", "Failed to create GEOSGeometry from the coordiates");
 	}
 
@@ -2648,7 +2649,7 @@ str wkbSetSRID(wkb** resultGeomWKB, wkb **geomWKB, int* srid) {
 	GEOSGeom geosGeometry = wkb2geos(*geomWKB);
 
 	if (!geosGeometry) {
-		*resultGeomWKB = wkb_nil;
+		*resultGeomWKB = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -2704,7 +2705,7 @@ static str wkbBasic(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEOSGeome
 	GEOSGeom geosGeometry, outGeometry;
 
 	if (!(geosGeometry = wkb2geos(*geom))) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, name, "wkb2geos failed");
 	}
 
@@ -2771,7 +2772,7 @@ str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid) {
 	GEOSCoordSeq coordSeq_copy;
 
 	if(wkb_isnil(*external)){
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -2779,7 +2780,7 @@ str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid) {
 
 	//check the type of the external geometry
 	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLineString) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(externalGeometry);
 		throw(MAL, "geom.Polygon", "Geometries should be LineString");
 	}
@@ -2787,7 +2788,7 @@ str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid) {
 	//check whether the linestring is closed
 	wkbIsClosed(&closed, external);
 	if (!closed) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(externalGeometry);
 		throw(MAL, "geom.Polygon", "LineString should be closed");
 	}
@@ -2826,19 +2827,19 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 	unsigned geom1Dimension = 0, geom2Dimension =0;
 
 	if(wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)){
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geom1Geometry = wkb2geos(*geom1WKB);
 	if (!geom1Geometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return createException(MAL, "geom.MakeLine", "wkb2geos failed");
 	}
 
 	geom2Geometry = wkb2geos(*geom2WKB);
 	if (!geom2Geometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		return createException(MAL, "geom.MakeLine", "wkb2geos failed");
 	}
@@ -2852,13 +2853,13 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 
 	//check the types of the geometries
 	if ((GEOSGeomTypeId(geom1Geometry)+1) != wkbPoint && (GEOSGeomTypeId(geom1Geometry)+1) != wkbLineString) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "Geometries should be Point or LineString");
 	}
 	if ((GEOSGeomTypeId(geom2Geometry)+1) != wkbPoint && (GEOSGeomTypeId(geom2Geometry)+1) != wkbLineString) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "Geometries should be Point or LineString");
@@ -2866,14 +2867,14 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 
 	//get the cordinate sequences of the geometries
 	if(!(geom1CoordSeq = GEOSGeom_getCoordSeq(geom1Geometry))) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_getCoordSeq failed");
 	}
 
 	if(!(geom2CoordSeq = GEOSGeom_getCoordSeq(geom2Geometry))) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_getCoordSeq failed");
@@ -2881,19 +2882,19 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 
 	//make sure that the dimensions of the geometries are the same
 	if(GEOSCoordSeq_getDimensions(geom1CoordSeq, &geom1Dimension) == 0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_getDimensions failed");
 	}
 	if(GEOSCoordSeq_getDimensions(geom2CoordSeq, &geom2Dimension) == 0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_getDimensions failed");
 	}
 	if(geom1Dimension != geom2Dimension) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "Geometries should be of the same dimension");
@@ -2901,13 +2902,13 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 
 	//get the number of coordinates in the two geometries
 	if(GEOSCoordSeq_getSize(geom1CoordSeq, &geom1Size) == 0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_getSize failed");
 	}
 	if(GEOSCoordSeq_getSize(geom2CoordSeq, &geom2Size) == 0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_getSize failed");
@@ -2915,7 +2916,7 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 
 	//create the coordSeq for the new geometry
 	if(!(outCoordSeq = GEOSCoordSeq_create(geom1Size+geom2Size, geom1Dimension))) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSCoordSeq_create failed");
@@ -2943,7 +2944,7 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 	}
 
 	if(!(outGeometry = GEOSGeom_createLineString(outCoordSeq))) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "GEOSGeom_createLineString failed");
@@ -3023,12 +3024,12 @@ static str wkbBorderPoint(wkb **out, wkb **geom, GEOSGeometry* (*func)(const GEO
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, name, "wkb2geos failed");
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, name, "GEOSGeomGet%s failed. Geometry not a LineString", name + 5);
 	}
 
@@ -3224,12 +3225,12 @@ str wkbPointN(wkb **out, wkb **geom, int *n) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, "geom.PointN", "wkb2geos failed");
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, "geom.PointN", "Geometry not a LineString");
 	}
 
@@ -3239,7 +3240,7 @@ str wkbPointN(wkb **out, wkb **geom, int *n) {
 		throw(MAL, "geom.PointN", "GEOSGeomGetNumPoints failed");
 
 	if(rN <= *n || *n<0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.PointN", "Unable to retrieve point %d (not enough points)", *n);
 	}
@@ -3261,12 +3262,12 @@ str wkbExteriorRing(wkb **exteriorRingWKB, wkb **geom) {
 	geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*exteriorRingWKB = wkb_nil;
+		*exteriorRingWKB = wkbNULL();
 		throw(MAL, "geom.exteriorRing", "wkb2geos failed");
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_POLYGON) {
-		*exteriorRingWKB = wkb_nil;
+		*exteriorRingWKB = wkbNULL();
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.exteriorRing", "Geometry not a Polygon");
 
@@ -3291,12 +3292,12 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int* ringNum) {
 	geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*interiorRingWKB = wkb_nil;
+		*interiorRingWKB = wkbNULL();
 		throw(MAL, "geom.interiorRingN", "wkb2geos failed");
 	}
 
 	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon) {
-		*interiorRingWKB = wkb_nil;
+		*interiorRingWKB = wkbNULL();
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.interiorRingN", "Geometry not a Polygon");
 
@@ -3305,13 +3306,13 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int* ringNum) {
 	//check number of internal rings
 	rN = GEOSGetNumInteriorRings(geosGeometry);
 	if (rN == -1 ) {
-		*interiorRingWKB = wkb_nil;
+		*interiorRingWKB = wkbNULL();
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed.");
 	}
 
 	if(rN < *ringNum || *ringNum<=0) {
-		*interiorRingWKB = wkb_nil;
+		*interiorRingWKB = wkbNULL();
 		GEOSGeom_destroy(geosGeometry);
 		//NOT AN ERROR throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed. Not enough interior rings");
 		return MAL_SUCCEED;
@@ -3320,7 +3321,7 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int* ringNum) {
 	/* get the interior ring of the geometry */
 	interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, (*ringNum-1));
 	if (!interiorRingGeometry) {
-		*interiorRingWKB = wkb_nil;
+		*interiorRingWKB = wkbNULL();
 		throw(MAL, "geom.interiorRingN", "GEOSGetInteriorRingN failed");
 	}
 	/* get the wkb representation of it */
@@ -3367,7 +3368,7 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 		// get the interior ring of the geometry
 		interiorRingGeometry = GEOSGetInteriorRingN(geosGeometry, i);
 		if (!interiorRingGeometry) {
-			interiorRingWKB = wkb_nil;
+			interiorRingWKB = wkbNULL();
 			throw(MAL, "geom.InteriorRings", "GEOSGetInteriorRingN failed");
 		}
 		// get the wkb representation of it
@@ -3687,7 +3688,7 @@ str wkbCentroid(wkb **out, wkb **geom) {
 	GEOSGeom outGeometry;
 
 	if (!geosGeometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -3769,7 +3770,7 @@ str wkbConvexHull(wkb **out, wkb **geom) {
 	GEOSGeom convexHullGeometry = NULL;
 
 	if (!geosGeometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -3790,19 +3791,19 @@ static str wkbanalysis(wkb **out, wkb **geom1WKB, wkb **geom2WKB, GEOSGeometry *
 	GEOSGeom outGeometry, geom1Geometry, geom2Geometry;
 
 	if(wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)){
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geom1Geometry = wkb2geos(*geom1WKB);
 	if (!geom1Geometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return createException(MAL, name, "wkb2geos failed");
 	}
 
 	geom2Geometry = wkb2geos(*geom2WKB);
 	if (!geom2Geometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		return createException(MAL, name, "wkb2geos failed");
 	}
@@ -3815,7 +3816,7 @@ static str wkbanalysis(wkb **out, wkb **geom1WKB, wkb **geom2WKB, GEOSGeometry *
 	}
 
 	if(!(outGeometry = (*func)(geom1Geometry, geom2Geometry))) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, name, "@2 failed");
@@ -3936,7 +3937,7 @@ str wkbBuffer(wkb **out, wkb **geom, dbl *distance) {
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (!geosGeometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -4204,32 +4205,32 @@ str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum) {
 
 	//no geometry at this position
 	if(*geometryNum <= 0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	geosGeometry = wkb2geos(*geom);
 
 	if(!geosGeometry) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, "geom.GeometryN", "wkb2geos failed");
 	}
 
 	geometriesNum = GEOSGetNumGeometries(geosGeometry);
 	if(geometriesNum < 0) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		throw(MAL, "geom.GeometryN","GEOSGetNumGeometries failed");
 	}
 
 	//geometry is not a multi geometry
 	if(geometriesNum == 1) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
 	//no geometry at this position
 	if(geometriesNum < *geometryNum) {
-		*out = wkb_nil;
+		*out = wkbNULL();
 		return MAL_SUCCEED;
 	}
 
@@ -4966,8 +4967,6 @@ BUN wkbHASH(wkb *w) {
 }
 
 /* returns a pointer to a null wkb */
-static wkb wkb_nil = {~0};
-
 wkb *wkbNULL(void) {
 	return (&wkb_nil);
 }
