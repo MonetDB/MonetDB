@@ -43,7 +43,6 @@ mal_export void 	dumpSearchTable(stream *f, str text);
 mal_export char **getHelp(Module m, str pat, int flag);
 mal_export char **getHelpMatch(char *pat);
 mal_export void showHelp(Module m, str txt,stream *fs);
-mal_export int moduleExists(str name);
 
 #define getSubScope(N)  (*(N))
 
