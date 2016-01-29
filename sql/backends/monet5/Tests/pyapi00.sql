@@ -5,7 +5,7 @@ START TRANSACTION;
 CREATE FUNCTION pyapi00() returns table (d integer)
 language P
 {
-	return(range(1,11))
+	return(list(range(1,11)))
 };
 
 SELECT * FROM pyapi00() AS R WHERE d > 5;

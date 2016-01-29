@@ -16,6 +16,11 @@
 #include "gdk_utils.h"
 #include "gdk.h"
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyString_AsString PyUnicode_AsUTF8
+#endif
+
 bool PyType_IsInteger(int type)
 {
     switch (type)
@@ -152,14 +157,6 @@ bool PyType_IsPandasDataFrame(PyObject *object)
 {
     PyObject *str = PyObject_Str(PyObject_Type(object));
     bool ret = strcmp(PyString_AsString(str), "<class 'pandas.core.frame.DataFrame'>") == 0;
-    Py_DECREF(str);
-    return ret;
-}
-
-bool PyType_IsNumpyArray(PyObject *object)
-{
-    PyObject *str = PyObject_Str(PyObject_Type(object));
-    bool ret = strcmp(PyString_AsString(str), "<type 'numpy.ndarray'>") == 0;
     Py_DECREF(str);
     return ret;
 }

@@ -10,8 +10,17 @@
 #include "gdk.h"
 #include "mal_exception.h"
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyString_FromStringAndSize PyUnicode_FromStringAndSize
+#endif
+
 const size_t additional_argcount = 3;
 const char * additional_args[] = {"_columns", "_column_types", "_conn"};
+
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#endif
 
 //! Parse a PyCodeObject from a string, the string is expected to be in the format {@<encoded_function>};, where <encoded_function> is the Marshalled code object
 PyObject *PyCodeObject_ParseString(char *string, char **msg);
@@ -94,10 +103,14 @@ char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyOb
     char base_start[] = "def pyfun(";
     char base_end[] = "):\n";
     *msg = NULL;
+#ifndef IS_PY3K
     if (code[1] == '@') {
         *code_object = PyCodeObject_ParseString(code, msg);
         return NULL;
     }
+#else
+    (void) code_object;
+#endif
 
     indentation_levels = (size_t*)GDKzalloc(max_indentation * sizeof(size_t));
     statements_per_level = (size_t*)GDKzalloc(max_indentation * sizeof(size_t));

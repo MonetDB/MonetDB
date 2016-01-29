@@ -11,15 +11,18 @@
 
 #include <longintrepr.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#endif
 
-bool string_copy(char * source, char* dest, size_t max_size)
+bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode)
 {
     size_t i;
     for(i = 0; i < max_size; i++)
     {
         dest[i] = source[i];
         if (dest[i] == 0) return TRUE;
-        if ((*(unsigned char*)&source[i]) >= 128) return FALSE;
+        if (!allow_unicode && (*(unsigned char*)&source[i]) >= 128) return FALSE;
     }
     dest[max_size] = '\0';
     return TRUE;
@@ -86,6 +89,7 @@ PyObject *PyLong_FromHge(hge h)
 }
 #endif
 
+#ifndef IS_PY3K
 #define PY_TO_(type, inttpe)                                                                                             \
 bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)                                                                    \
 {                                                                                                                \
@@ -123,7 +127,6 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
     }                                                                                                            \
     return false;                                                                                                \
 }
-
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)              \
     bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
     { \
@@ -178,4 +181,91 @@ CONVERSION_FUNCTION_FACTORY(dbl, lng)
 
 #ifdef HAVE_HGE
 CONVERSION_FUNCTION_FACTORY(hge, hge)
+#endif
+#else
+#define PY_TO_(type, inttpe)                                                                                             \
+bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)                                                                    \
+{                                                                                                                \
+    PyObject *ptr = *pyobj; \
+    (void) maxsize; \
+    if (PyLong_CheckExact(ptr)) {                                                                                     \
+        PyLongObject *p = (PyLongObject*) ptr;                                                                   \
+        inttpe h = 0;                                                                                              \
+        inttpe prev = 0;                                                                                           \
+        int i = Py_SIZE(p);                                                                                      \
+        int sign = i < 0 ? -1 : 1;                                                                               \
+        i *= sign;                                                                                               \
+        while (--i >= 0) {                                                                                       \
+            prev = h; (void)prev;                                                                                \
+            h = (h << PyLong_SHIFT) + p->ob_digit[i];                                                            \
+            if ((h >> PyLong_SHIFT) != prev) {                                                                   \
+                printf("Overflow!\n");                                                                           \
+                return false;                                                                                    \
+            }                                                                                                    \
+        }                                                                                                        \
+        *value = (type)(h * sign);                                                                                       \
+        return true;                                                                                             \
+    } else if (PyBool_Check(ptr)) {                                                                              \
+        *value = ptr == Py_True ? 1 : 0;                                                             \
+        return true;                                                                                             \
+    } else if (PyFloat_CheckExact(ptr)) {                                                                             \
+        *value = (type) ((PyFloatObject*)ptr)->ob_fval;                                                          \
+        return true;                                                                                             \
+    } else if (PyUnicode_CheckExact(ptr)) {                                                                            \
+        return str_to_##type(PyUnicode_AsUTF8(ptr), -1, value);     \
+    }  else if (PyByteArray_CheckExact(ptr)) {                                                                        \
+        return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, -1, value);\
+    }                                                                                                            \
+    return false;                                                                                                \
+}
+#define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)              \
+    bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
+    { \
+        int i = maxsize - 1; \
+        tpe factor = 1; \
+        if (i < 0) i = strlen(ptr) - 1; \
+        *value = 0;  \
+        for( ; i >= 0; i--) \
+        { \
+            switch(ptr[i]) \
+            { \
+                case '0': break; \
+                case '1': *value += factor; break; \
+                case '2': *value += 2 * factor; break; \
+                case '3': *value += 3 * factor; break; \
+                case '4': *value += 4 * factor; break; \
+                case '5': *value += 5 * factor; break; \
+                case '6': *value += 6 * factor; break; \
+                case '7': *value += 7 * factor; break; \
+                case '8': *value += 8 * factor; break; \
+                case '9': *value += 9 * factor; break; \
+                case '-': *value *= -1; break; \
+                case '.': \
+                case ',': *value /= factor; factor = 1; continue; \
+                case '\0': continue; \
+                default: \
+                { \
+                    return false; \
+                } \
+            } \
+            factor *= 10; \
+        }  \
+        return true; \
+    } \
+    bool unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value) { return str_to_##tpe(ptr, maxsize, value); }\
+    PY_TO_(tpe, inttpe);
+
+CONVERSION_FUNCTION_FACTORY(bte, bte)
+CONVERSION_FUNCTION_FACTORY(wrd, wrd)
+CONVERSION_FUNCTION_FACTORY(oid, oid)
+CONVERSION_FUNCTION_FACTORY(bit, bit)
+CONVERSION_FUNCTION_FACTORY(sht, sht)
+CONVERSION_FUNCTION_FACTORY(int, int)
+CONVERSION_FUNCTION_FACTORY(lng, lng)
+CONVERSION_FUNCTION_FACTORY(flt, lng)
+CONVERSION_FUNCTION_FACTORY(dbl, lng)
+
+#ifdef HAVE_HGE
+CONVERSION_FUNCTION_FACTORY(hge, hge)
+#endif
 #endif

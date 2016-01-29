@@ -43,9 +43,9 @@ DROP TABLE pyapi09multiplication;
 CREATE FUNCTION pyapi09create() returns TABLE(s STRING)
 language P
 {
-    import cPickle
+    import pickle
     result = numpy.arange(100000)
-    return cPickle.dumps(result)
+    return pickle.dumps(result)
 };
 
 # Create the table containing the numpy array
@@ -55,9 +55,9 @@ CREATE TABLE pyapi09objects AS SELECT * FROM pyapi09create() WITH DATA;
 CREATE FUNCTION pyapi09load() returns TABLE(i INTEGER)
 language P
 {
-    import cPickle
+    import pickle
     res = _conn.execute('SELECT s FROM pyapi09objects;')
-    array = cPickle.loads(res['s'][0])
+    array = pickle.loads(res['s'][0])
     print array
     return array[:10]
 };

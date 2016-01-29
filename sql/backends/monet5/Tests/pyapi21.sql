@@ -1,11 +1,11 @@
-# Test storing Python objects in the database using the cPickle module to convert the objects to encoded strings
+# Test storing Python objects in the database using the pickle module to convert the objects to encoded strings
 START TRANSACTION;
 
 
 CREATE FUNCTION pyapi21_create() returns TABLE(s STRING)
 language P
 {
-	import cPickle
+	import pickle
     a = 3
     b = "hello"
     c = [3, 37, "hello"]
@@ -14,15 +14,15 @@ language P
 
 
     result = dict()
-    result['s'] = [cPickle.dumps(x) for x in [a,b,c,d,e]]
+    result['s'] = [pickle.dumps(x) for x in [a,b,c,d,e]]
     return result
 };
 
 CREATE FUNCTION pyapi21_load(objects STRING) returns BOOLEAN
 LANGUAGE P
 {
-	import cPickle
-	for x in [cPickle.loads(y) for y in objects]:
+	import pickle
+	for x in [pickle.loads(y) for y in objects]:
 		print str(type(x)) + ": " + str(x)
 	return True
 };

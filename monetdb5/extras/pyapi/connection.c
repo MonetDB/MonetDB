@@ -14,6 +14,12 @@
 #endif
 #include <numpy/arrayobject.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyString_CheckExact PyUnicode_CheckExact
+#define PyString_FromString PyUnicode_FromString
+#endif
+
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
@@ -28,8 +34,14 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
         PyObject *result;
         res_table* output = NULL;
         char *res = NULL;
+        char *query;
+#ifndef IS_PY3K
+        query = ((PyStringObject*)args)->ob_sval;
+#else
+        query = PyUnicode_AsUTF8(args);
+#endif
 
-        res = _connection_query(self->cntxt, ((PyStringObject*)args)->ob_sval, &output);
+        res = _connection_query(self->cntxt, query, &output);
         if (res != MAL_SUCCEED) {
             PyErr_Format(PyExc_Exception, "SQL Query Failed: %s", (res ? res : "<no error>"));
             return NULL;
@@ -67,10 +79,16 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
     else 
 #ifdef HAVE_FORK
     {
+        char *query;
+#ifndef IS_PY3K
+        query = ((PyStringObject*)args)->ob_sval;
+#else
+        query = PyUnicode_AsUTF8(args);
+#endif
         // This is a mapped process, we do not want forked processes to touch the database
         // Only the main process may touch the database, so we ship the query back to the main process
         // copy the query into shared memory and tell the main process there is a query to handle
-        strncpy(self->query_ptr->query, ((PyStringObject*)args)->ob_sval, 8192);
+        strncpy(self->query_ptr->query, query, 8192);
         self->query_ptr->pending_query = true;
         //free the main process so it can work on the query
         change_semaphore_value(self->query_sem, 0, 1);
@@ -213,6 +231,9 @@ PyTypeObject Py_ConnectionType = {
     0, 
     0,
     0
+#ifdef IS_PY3K
+    ,0
+#endif
 };
 
 void _connection_cleanup_result(void* output) 

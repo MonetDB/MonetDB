@@ -73,7 +73,7 @@ bat.append(fib, 28:int);
 bat.append(fib, 29:int);
 
 # define a function within the main function and map it to a BAT
-s:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(map(fibonacci, arg1))", fib);
+s:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(list(map(fibonacci, arg1)))", fib);
 io.print(s);
 
 indices:= bat.new(:oid,:int);
@@ -231,5 +231,5 @@ bat.append(indices, 150:int);
 
 
 # now do it while returning a hge, to test returning very large numbers
-s:bat[:oid,:hge] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(map(fibonacci, arg1))", indices);
+s:bat[:oid,:hge] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(list(map(fibonacci, arg1)))", indices);
 io.print(s);

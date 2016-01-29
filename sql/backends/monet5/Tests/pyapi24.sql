@@ -7,7 +7,7 @@ START TRANSACTION;
 CREATE FUNCTION pyapi24(*) RETURNS integer LANGUAGE PYTHON
 {
     sum = 0
-    print _columns.keys()
+    print(_columns.keys())
     for key in _columns.keys():
         sum += numpy.sum(_columns[key])
     return sum

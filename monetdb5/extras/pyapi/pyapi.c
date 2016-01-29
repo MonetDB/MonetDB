@@ -46,6 +46,21 @@
 #include <sys/wait.h>
 #endif
 
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyString_FromString PyUnicode_FromString
+#define PyString_Check PyUnicode_Check
+#define PyString_CheckExact PyUnicode_CheckExact
+#define PyString_AsString PyUnicode_AsUTF8
+#define PyString_AS_STRING PyUnicode_AsUTF8
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_Check PyLong_Check
+#define PythonUnicodeType char
+#else
+#define PythonUnicodeType Py_UNICODE
+
+#endif
+
 const char* pyapi_enableflag = "embedded_py";
 const char* verbose_enableflag = "enable_pyverbose";
 const char* warning_enableflag = "enable_pywarnings";
@@ -318,7 +333,7 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
                 case NPY_DOUBLE:                                                                                                                               \
                 case NPY_LONGDOUBLE: NP_COL_BAT_LOOP(bat, mtpe, dbl); break;                                                                                   \
                 case NPY_STRING:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, str_to_##mtpe, char); break;                                                                    \
-                case NPY_UNICODE:    NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe, Py_UNICODE); break;                                                                \
+                case NPY_UNICODE:    NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe, PythonUnicodeType); break;                                                                \
                 case NPY_OBJECT:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe, PyObject*); break;                                                               \
                 default:                                                                                                                                       \
                     msg = createException(MAL, "pyapi.eval", "Unrecognized type. Could not convert to %s.\n", BatType_Format(TYPE_##mtpe));                    \
@@ -1265,7 +1280,11 @@ aggrwrapup:
                         msg = createException(MAL, "pyapi.eval", "Expected a string key in the dictionary, but received an object of type %s", colname->ob_type->tp_name);
                         goto wrapup;
                     }
+#ifndef IS_PY3K
                     retnames[i] = ((PyStringObject*)colname)->ob_sval;
+#else
+                    retnames[i] = PyUnicode_AsUTF8(colname);
+#endif
                 }
             }
             pResult = PyDict_CheckForConversion(pResult, retcols, retnames, &msg);
@@ -1614,7 +1633,11 @@ str
 bool PyType_IsPyScalar(PyObject *object)
 {
     if (object == NULL) return false;
-    return (PyArray_CheckScalar(object) || PyInt_Check(object) || PyFloat_Check(object) || PyLong_Check(object) || PyString_Check(object) || PyBool_Check(object) || PyUnicode_Check(object) || PyByteArray_Check(object));
+    return (PyArray_CheckScalar(object) || PyInt_Check(object) || PyFloat_Check(object) || PyLong_Check(object) || PyString_Check(object) || PyBool_Check(object) || PyUnicode_Check(object) || PyByteArray_Check(object)
+#ifdef IS_PY3K   
+        || PyBytes_Check(object)
+#endif
+        );
 }
 
 
@@ -2417,7 +2440,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                             b->T->nil = 1;
                             BUNappend(b, str_nil, FALSE);
                         }  else {
-                            if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size)) {
+                            if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, true)) {
                                 msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
                                 goto wrapup;
                             }
@@ -2462,21 +2485,32 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                         } else {
                             //we try to handle as many types as possible
                             PyObject *obj = *((PyObject**) &data[(index_offset * ret->count + iu) * ret->memory_size]);
+#ifndef IS_PY3K             
                             if (PyString_CheckExact(obj)) {
                                 char *str = ((PyStringObject*)obj)->ob_sval;
-                                if (!string_copy(str, utf8_string, strlen(str) + 1)) {
+                                if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
                                     msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
                                     goto wrapup;
                                 }
-                            } else if (PyByteArray_CheckExact(obj)) {
+                            } else 
+#endif
+                            if (PyByteArray_CheckExact(obj)) {
                                 char *str = ((PyByteArrayObject*)obj)->ob_bytes;
-                                if (!string_copy(str, utf8_string, strlen(str) + 1)) {
+                                if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
                                     msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
                                     goto wrapup;
                                 }
                             } else if (PyUnicode_CheckExact(obj)) {
+#ifndef IS_PY3K
                                 Py_UNICODE *str = (Py_UNICODE*)((PyUnicodeObject*)obj)->str;
                                 utf32_to_utf8(0, ((PyUnicodeObject*)obj)->length, utf8_string, str);
+#else
+                                char *str = PyUnicode_AsUTF8(obj);
+                                if (!string_copy(str, utf8_string, strlen(str) + 1, true)) {
+                                    msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
+                                    goto wrapup;
+                                }
+#endif
                             } else if (PyBool_Check(obj) || PyLong_Check(obj) || PyInt_Check(obj) || PyFloat_Check(obj)) {
 #ifdef HAVE_HGE
                                 hge h;
@@ -2828,4 +2862,9 @@ wrapup:
     PyGILState_Release(gstate);
     gstate = PyGILState_LOCKED;
     return aggr_result;
+}
+
+bool PyType_IsNumpyArray(PyObject *object)
+{
+    return PyArray_CheckExact(object);
 }

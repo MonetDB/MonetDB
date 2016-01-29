@@ -11,7 +11,7 @@ language P
 	print(_columns['b'])
 	print(_columns['c'])
 	print(_columns['d'])
-	print _column_types
+	print(_column_types)
 	return True
 };
 SELECT * FROM pyapi16( (SELECT * FROM vals) );

@@ -73,5 +73,4 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage, int offs
 */
 int utf32_char_to_utf8_char(size_t position, char *utf8_storage, Py_UNICODE utf32_char);
 
-
 #endif /* _UNICODE_LIB_ */
