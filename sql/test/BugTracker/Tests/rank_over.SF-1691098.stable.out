@@ -38,7 +38,7 @@ Ready.
 #insert into rankbug select * from rankbug;
 [ 16	]
 #select RANK () OVER () as foo from rankbug;
-% sys.L # table_name
+% sys.L1 # table_name
 % foo # name
 % int # type
 % 2 # length
