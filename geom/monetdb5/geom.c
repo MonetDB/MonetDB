@@ -1877,8 +1877,8 @@ static int mbr_isnil(mbr *m) {
 static var_t wkb_size(size_t len) {
 	if (len == ~(size_t) 0)
 		len = 0;
-	assert(sizeof(wkb) - 1 + len <= VAR_MAX);
-	return (var_t) (sizeof(wkb) - 1 + len);
+	assert(offsetof(wkb, data) + len <= VAR_MAX);
+	return (var_t) (offsetof(wkb, data) + len);
 }
 
 /* returns the size of variable-sized atom wkba */
@@ -4966,11 +4966,10 @@ BUN wkbHASH(wkb *w) {
 }
 
 /* returns a pointer to a null wkb */
-wkb *wkbNULL(void) {
-	static wkb nullval;
+static wkb wkb_nil = {~0};
 
-	nullval.len = ~(int) 0;
-	return (&nullval);
+wkb *wkbNULL(void) {
+	return (&wkb_nil);
 }
 
 int wkbCOMP(wkb *l, wkb *r) {
