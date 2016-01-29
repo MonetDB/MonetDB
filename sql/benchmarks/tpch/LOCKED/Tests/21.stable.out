@@ -60,7 +60,7 @@ Ready.
 #			and l3.l_receiptdate > l3.l_commitdate
 % sys.supplier,	sys.L1 # table_name
 % s_name,	numwait # name
-% char,	wrd # type
+% char,	bigint # type
 % 25,	1 # length
 [ "Supplier#000000074",	9	]
 % .stats,	.stats # table_name
