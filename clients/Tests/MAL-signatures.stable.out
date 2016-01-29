@@ -18806,23 +18806,21 @@ pattern batcalc.flt(b:bat[:bit]):bat[:flt]
 address CMDconvertsignal_flt;
 comment cast from bit to flt, signal error on overflow
 
-command batcalc.hash(b:bat[:any_1]):bat[:wrd] 
+command batcalc.hash(b:bat[:any_1]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:dbl]):bat[:wrd] 
+command batcalc.hash(b:bat[:dbl]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:flt]):bat[:wrd] 
+command batcalc.hash(b:bat[:flt]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:wrd]):bat[:wrd] 
+command batcalc.hash(b:bat[:lng]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:oid]):bat[:wrd] 
+command batcalc.hash(b:bat[:oid]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:lng]):bat[:wrd] 
+command batcalc.hash(b:bat[:int]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:int]):bat[:wrd] 
+command batcalc.hash(b:bat[:sht]):bat[:lng] 
 address MKEYbathash;
-command batcalc.hash(b:bat[:sht]):bat[:wrd] 
-address MKEYbathash;
-command batcalc.hash(b:bat[:bte]):bat[:wrd] 
+command batcalc.hash(b:bat[:bte]):bat[:lng] 
 address MKEYbathash;
 command batcalc.int(s1:int,v:bat[:lng],d2:int,s2:int):bat[:int] 
 address batlng_dec2dec_int;
@@ -23517,250 +23515,6 @@ address MTIMEtimestamp_bulk;
 command batcalc.timestamp(d:bat[:date]):bat[:timestamp] 
 address MTIMEtimestamp_create_from_date_bulk;
 function batcalc.uuid(u:bat[:uuid]):bat[:uuid];
-command batcalc.wrd(s1:int,v:bat[:lng],d2:int,s2:int):bat[:wrd] 
-address batlng_dec2dec_wrd;
-comment cast decimal(lng) to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:lng]):bat[:wrd] 
-address batlng_dec2_wrd;
-comment cast decimal(lng) to wrd and check for overflow
-
-command batcalc.wrd(v:bat[:lng],digits:int,scale:int):bat[:wrd] 
-address batlng_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:wrd],d2:int,s2:int):bat[:wrd] 
-address batwrd_dec2dec_wrd;
-comment cast decimal(wrd) to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:wrd]):bat[:wrd] 
-address batwrd_dec2_wrd;
-comment cast decimal(wrd) to wrd and check for overflow
-
-command batcalc.wrd(v:bat[:wrd],digits:int,scale:int):bat[:wrd] 
-address batwrd_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:int],d2:int,s2:int):bat[:wrd] 
-address batint_dec2dec_wrd;
-comment cast decimal(int) to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:int]):bat[:wrd] 
-address batint_dec2_wrd;
-comment cast decimal(int) to wrd and check for overflow
-
-command batcalc.wrd(v:bat[:int],digits:int,scale:int):bat[:wrd] 
-address batint_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:sht],d2:int,s2:int):bat[:wrd] 
-address batsht_dec2dec_wrd;
-comment cast decimal(sht) to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:sht]):bat[:wrd] 
-address batsht_dec2_wrd;
-comment cast decimal(sht) to wrd and check for overflow
-
-command batcalc.wrd(v:bat[:sht],digits:int,scale:int):bat[:wrd] 
-address batsht_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:bte],d2:int,s2:int):bat[:wrd] 
-address batbte_dec2dec_wrd;
-comment cast decimal(bte) to decimal(wrd) and check for overflow
-
-command batcalc.wrd(s1:int,v:bat[:bte]):bat[:wrd] 
-address batbte_dec2_wrd;
-comment cast decimal(bte) to wrd and check for overflow
-
-command batcalc.wrd(v:bat[:bte],digits:int,scale:int):bat[:wrd] 
-address batbte_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(v:bat[:dbl],digits:int,scale:int):bat[:wrd] 
-address batdbl_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(v:bat[:flt],digits:int,scale:int):bat[:wrd] 
-address batflt_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command batcalc.wrd(v:bat[:str],digits:int,scale:int):bat[:wrd] 
-address batstr_2dec_wrd;
-comment cast to dec(wrd) and check for overflow
-
-command batcalc.wrd(v:bat[:str],digits:int):bat[:wrd] 
-address batstr_2num_wrd;
-comment cast to wrd and check for overflow
-
-command batcalc.wrd(v:bat[:oid],digits:int,scale:int):bat[:wrd] 
-address batnil_2dec_wrd;
-comment cast to dec(wrd) and check for overflow
-
-command batcalc.wrd(v:bat[:oid],digits:int):bat[:wrd] 
-address batnil_2num_wrd;
-comment cast to wrd and check for overflow
-
-pattern batcalc.wrd_noerror(b:bat[:str],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from str to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:str]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from str to wrd
-
-pattern batcalc.wrd(b:bat[:str],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from str to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:str]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from str to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:oid],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from oid to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from oid to wrd
-
-pattern batcalc.wrd(b:bat[:oid],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from oid to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from oid to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:dbl],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from dbl to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:dbl]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from dbl to wrd
-
-pattern batcalc.wrd(b:bat[:dbl],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from dbl to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:dbl]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from dbl to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:flt],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from flt to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:flt]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from flt to wrd
-
-pattern batcalc.wrd(b:bat[:flt],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from flt to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:flt]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from flt to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:lng],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from lng to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:lng]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from lng to wrd
-
-pattern batcalc.wrd(b:bat[:lng],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from lng to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:lng]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from lng to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:wrd],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from wrd to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:wrd]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from wrd to wrd
-
-pattern batcalc.wrd(b:bat[:wrd],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from wrd to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:wrd]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from wrd to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:int],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from int to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:int]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from int to wrd
-
-pattern batcalc.wrd(b:bat[:int],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from int to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:int]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from int to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:sht],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from sht to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:sht]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from sht to wrd
-
-pattern batcalc.wrd(b:bat[:sht],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from sht to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:sht]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from sht to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:bte],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from bte to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:bte]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from bte to wrd
-
-pattern batcalc.wrd(b:bat[:bte],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from bte to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:bte]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from bte to wrd, signal error on overflow
-
-pattern batcalc.wrd_noerror(b:bat[:bit],s:bat[:oid]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from bit to wrd with candidates list
-
-pattern batcalc.wrd_noerror(b:bat[:bit]):bat[:wrd] 
-address CMDconvert_wrd;
-comment cast from bit to wrd
-
-pattern batcalc.wrd(b:bat[:bit],s:bat[:oid]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from bit to wrd with candidates list, signal error on overflow
-
-pattern batcalc.wrd(b:bat[:bit]):bat[:wrd] 
-address CMDconvertsignal_wrd;
-comment cast from bit to wrd, signal error on overflow
-
 pattern batcalc.xor(v:lng,b:bat[:lng],s:bat[:oid]):bat[:lng] 
 address CMDbatXOR;
 comment Return V XOR B with candidates list
@@ -27524,23 +27278,21 @@ comment Cast VALUE to flt
 
 unsafe function calc.geomcollection(wkt:str):wkb;
 unsafe function calc.geometry(wkt:str):wkb;
-pattern calc.hash(v:any):wrd 
+pattern calc.hash(v:any):lng 
 address MKEYhash;
-pattern calc.hash(v:dbl):wrd 
+pattern calc.hash(v:dbl):lng 
 address MKEYhash;
-pattern calc.hash(v:flt):wrd 
+pattern calc.hash(v:flt):lng 
 address MKEYhash;
-pattern calc.hash(v:wrd):wrd 
+pattern calc.hash(v:lng):lng 
 address MKEYhash;
-pattern calc.hash(v:oid):wrd 
+pattern calc.hash(v:oid):lng 
 address MKEYhash;
-pattern calc.hash(v:lng):wrd 
+pattern calc.hash(v:int):lng 
 address MKEYhash;
-pattern calc.hash(v:int):wrd 
+pattern calc.hash(v:sht):lng 
 address MKEYhash;
-pattern calc.hash(v:sht):wrd 
-address MKEYhash;
-pattern calc.hash(v:bte):wrd 
+pattern calc.hash(v:bte):lng 
 address MKEYhash;
 command calc.int(s1:int,v:lng,d2:int,s2:int):int 
 address lng_dec2dec_int;
@@ -28882,143 +28634,11 @@ pattern calc.void(v:void):void
 address CMDvarCONVERT;
 comment Cast VALUE to void
 
-command calc.wrd(s1:int,v:lng,d2:int,s2:int):wrd 
-address lng_dec2dec_wrd;
-comment cast decimal(lng) to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:lng):wrd 
-address lng_dec2_wrd;
-comment cast decimal(lng) to wrd and check for overflow
-
-command calc.wrd(v:lng,digits:int,scale:int):wrd 
-address lng_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:wrd,d2:int,s2:int):wrd 
-address wrd_dec2dec_wrd;
-comment cast decimal(wrd) to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:wrd):wrd 
-address wrd_dec2_wrd;
-comment cast decimal(wrd) to wrd and check for overflow
-
-command calc.wrd(v:wrd,digits:int,scale:int):wrd 
-address wrd_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:int,d2:int,s2:int):wrd 
-address int_dec2dec_wrd;
-comment cast decimal(int) to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:int):wrd 
-address int_dec2_wrd;
-comment cast decimal(int) to wrd and check for overflow
-
-command calc.wrd(v:int,digits:int,scale:int):wrd 
-address int_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:sht,d2:int,s2:int):wrd 
-address sht_dec2dec_wrd;
-comment cast decimal(sht) to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:sht):wrd 
-address sht_dec2_wrd;
-comment cast decimal(sht) to wrd and check for overflow
-
-command calc.wrd(v:sht,digits:int,scale:int):wrd 
-address sht_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:bte,d2:int,s2:int):wrd 
-address bte_dec2dec_wrd;
-comment cast decimal(bte) to decimal(wrd) and check for overflow
-
-command calc.wrd(s1:int,v:bte):wrd 
-address bte_dec2_wrd;
-comment cast decimal(bte) to wrd and check for overflow
-
-command calc.wrd(v:bte,digits:int,scale:int):wrd 
-address bte_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(v:dbl,digits:int,scale:int):wrd 
-address dbl_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(v:flt,digits:int,scale:int):wrd 
-address flt_num2dec_wrd;
-comment cast number to decimal(wrd) and check for overflow
-
-command calc.wrd(v:str,digits:int,scale:int):wrd 
-address str_2dec_wrd;
-comment cast to dec(wrd) and check for overflow
-
-command calc.wrd(v:str,digits:int):wrd 
-address str_2num_wrd;
-comment cast to wrd and check for overflow
-
-command calc.wrd(v:void,digits:int,scale:int):wrd 
-address nil_2dec_wrd;
-comment cast to dec(wrd) and check for overflow
-
-command calc.wrd(v:void,digits:int):wrd 
-address nil_2num_wrd;
-comment cast to wrd and check for overflow
-
 command calc.wkb(v:wkb):wkb 
 address wkbFromWKB;
 command calc.wkb(v:str):wkb 
 address wkbFromString;
-pattern calc.wrd(v:str):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:oid):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:dbl):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:flt):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:lng):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:wrd):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:int):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:sht):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:bte):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:bit):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
-pattern calc.wrd(v:void):wrd 
-address CMDvarCONVERT;
-comment Cast VALUE to wrd
-
 pattern calc.xor(v1:lng,v2:lng):lng 
-address CMDvarXOR;
-comment Return V1 XOR V2
-
-pattern calc.xor(v1:wrd,v2:wrd):wrd 
 address CMDvarXOR;
 comment Return V1 XOR V2
 
@@ -30606,63 +30226,59 @@ pattern mdb.var():void
 address MDBvar;
 comment Dump the symboltable of current routine on standard out.
 
-command mkey.bulk_rotate_xor_hash(h:bat[:wrd],nbits:int,b:bat[:any_1]):bat[:wrd] 
+command mkey.bulk_rotate_xor_hash(h:bat[:lng],nbits:int,b:bat[:any_1]):bat[:lng] 
 address MKEYbulk_rotate_xor_hash;
 comment pre:  h and b should be synced on head         post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-pattern mkey.bulk_rotate_xor_hash(h:bat[:wrd],nbits:int,v:any):bat[:wrd] 
+pattern mkey.bulk_rotate_xor_hash(h:bat[:lng],nbits:int,v:any):bat[:lng] 
 address MKEYbulkconst_rotate_xor_hash;
 comment pre:  h and b should be synced on head         post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-command mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,b:bat[:any_1]):bat[:wrd] 
+command mkey.bulk_rotate_xor_hash(h:lng,nbits:int,b:bat[:any_1]):bat[:lng] 
 address MKEYconstbulk_rotate_xor_hash;
 comment pre:  h and b should be synced on head         post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-pattern mkey.bulk_rotate_xor_hash(h:wrd,nbits:int,v:any):wrd 
+pattern mkey.bulk_rotate_xor_hash(h:lng,nbits:int,v:any):lng 
 address MKEYrotate_xor_hash;
 comment post: [:xor=]([:rotate=](h, nbits), [hash](b))
 
-pattern mkey.hash(v:str):wrd 
+pattern mkey.hash(v:str):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:lng):wrd 
+pattern mkey.hash(v:lng):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:dbl):wrd 
+pattern mkey.hash(v:dbl):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:wrd):wrd 
+pattern mkey.hash(v:flt):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:flt):wrd 
+pattern mkey.hash(v:int):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:int):wrd 
+pattern mkey.hash(v:sht):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:sht):wrd 
+pattern mkey.hash(v:bte):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:bte):wrd 
+pattern mkey.hash(v:bit):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:bit):wrd 
+pattern mkey.hash(v:any):lng 
 address MKEYhash;
 comment calculate a hash value
 
-pattern mkey.hash(v:any):wrd 
-address MKEYhash;
-comment calculate a hash value
-
-command mkey.rotate(v:wrd,nbits:int):wrd 
+command mkey.rotate(v:lng,nbits:int):lng 
 address MKEYrotate;
 comment left-rotate an int by nbits
 

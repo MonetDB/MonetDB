@@ -179,7 +179,7 @@ function user.s2_1(A0:bte,A1:date,A2:date,A3:int,A4:str):void;
     X_108 := algebra.projection(C_107,X_104);
     (X_109,r1_161,r2_161) := algebra.subsort(X_108,true,false);
     X_112:bat[:int] := algebra.projectionpath(r1_161,C_107,X_83,X_82);
-    X_113 := algebra.subslice(X_112,0,19:wrd);
+    X_113 := algebra.subslice(X_112,0,19:lng);
     X_130:bat[:str] := algebra.projectionpath(X_113,r1_161,C_107,X_83,r1_99,X_68);
     X_114 := algebra.projection(X_113,X_112);
     X_115:bat[:str] := sql.bind(X_6,"sys","customer","c_name",0);

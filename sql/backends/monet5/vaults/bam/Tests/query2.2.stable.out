@@ -38,7 +38,7 @@ Ready.
 #           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
 % bam.L11,	bam.L12 # table_name
 % distance,	nr_alignments # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 108,	5	]
 [ 112,	3	]
@@ -66,7 +66,7 @@ Ready.
 #ORDER BY nr_alignments DESC;
 % bam.L,	bam.L1 # table_name
 % distance,	nr_alignments # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ 108,	5	]
 [ 112,	3	]
