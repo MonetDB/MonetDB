@@ -22,9 +22,9 @@ stdout of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 
 Ready.
 
-# 13:32:05 >  
-# 13:32:05 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-30987" "--port=38272"
-# 13:32:05 >  
+# 11:26:09 >  
+# 11:26:09 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23931" "--port=33516"
+# 11:26:09 >  
 
 [ "Received first error from the remote site"	]
 
