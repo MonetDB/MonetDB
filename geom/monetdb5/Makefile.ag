@@ -10,10 +10,6 @@ INCLUDES = ../lib \
            ../../common/stream \
            ../../common/options \
            ../../monetdb5/mal \
-           ../../sql/include \
-           ../../sql/common \
-           ../../sql/storage \
-           ../../sql/storage/bat \
            $(GEOS_INCS) $(PROJ_INCS)
 
 lib__geom = {
