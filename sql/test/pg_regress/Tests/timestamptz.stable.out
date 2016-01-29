@@ -34,25 +34,25 @@ Ready.
 #SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(current_date as timestamptz);
 % sys.L2 # table_name
 % one # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0)as timestamptz);
 % sys.L2 # table_name
 % one # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS One FROM TIMESTAMPTZ_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0)as timestamptz);
 % sys.L2 # table_name
 % one # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1 ]
 #SELECT count(*) AS None FROM TIMESTAMPTZ_TBL WHERE d1 = cast(now as timestamptz);
 % sys.L2 # table_name
 % none # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #DELETE FROM TIMESTAMPTZ_TBL;
@@ -65,7 +65,7 @@ Ready.
 #SELECT count(*) AS two FROM TIMESTAMPTZ_TBL WHERE d1 <= cast(now as timestamptz);
 % sys.L2 # table_name
 % two # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #COMMIT;

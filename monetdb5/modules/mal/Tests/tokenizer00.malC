@@ -36,9 +36,9 @@ io.print(level1);
 io.print(level2);
 io.print(level3);
 
-cnt:bat[:oid,:wrd] := tokenizer.getCount();
+cnt:bat[:oid,:lng] := tokenizer.getCount();
 io.print(cnt);
-cnt:bat[:oid,:wrd] := tokenizer.getCardinality();
+cnt:bat[:oid,:lng] := tokenizer.getCardinality();
 io.print(cnt);
 
 tokenizer.close();

@@ -50,13 +50,13 @@ Ready.
 #SELECT 1, (SELECT count(*) FROM tbls);
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 1,	2 # length
 [ 1,	40	]
 #SELECT (SELECT count(*) FROM tbls), 1;
 % sys.L1,	.L1 # table_name
 % L1,	single_value # name
-% wrd,	tinyint # type
+% bigint,	tinyint # type
 % 2,	1 # length
 [ 40,	1	]
 

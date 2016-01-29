@@ -34,7 +34,7 @@ Ready.
 #copy select count(*) from t into stdout using delimiters ',', '\n';
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 1
 [ 1	]

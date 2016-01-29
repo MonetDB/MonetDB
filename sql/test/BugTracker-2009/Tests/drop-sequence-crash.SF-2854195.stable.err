@@ -72,7 +72,7 @@ stderr of test 'drop-sequence-crash.SF-2854195` in directory 'sql/test/BugTracke
 # 14:55:13 >  mclient -lsql -ftest -i -e --host=volund --port=33166 
 # 14:55:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP SEQUENCE "seq_2184";
 ERROR = !DROP SEQUENCE: no such sequence 'seq_2184'
 

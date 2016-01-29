@@ -10,16 +10,16 @@ stderr of test 'default_next_value_for_non_ex_seq.SF.1246631` in directory 'sql/
 # 13:41:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40245  < default_next_value_for_non_ex_seq.SF.1246631.sql
 # 13:41:25 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table test1246631( i int default next value for non_ex_seq);
 ERROR = !NEXT VALUE FOR: no such sequence 'sys'.'non_ex_seq'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into test1246631;
 ERROR = !INSERT INTO: no such table 'test1246631'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from test1246631;
 ERROR = !SELECT: no such table 'test1246631'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into test1246631;
 ERROR = !INSERT INTO: no such table 'test1246631'
 

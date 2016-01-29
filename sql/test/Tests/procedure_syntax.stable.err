@@ -12,25 +12,25 @@ stderr of test 'procedure_syntax` in directory 'sql/test` itself:
 # 01:17:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34904 
 # 01:17:48 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP PROCEDURE p1;
 ERROR = !DROP PROCEDURE: there are more than one procedure called 'p1', please use the full signature
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP PROCEDURE p2 (int, varchar(1024));
 ERROR = !DROP PROCEDURE: no such procedure 'p2' (int(32), varchar(1024))
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP table t1;
 ERROR = !DROP TABLE: unable to drop table t1 (there are database objects which depend on it)
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP ALL PROCEDURE p1 CASCADE;
 ERROR = !DROP ALL PROCEDURE: no such procedure 'p1'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP FUNCTION p1;
 ERROR = !DROP FUNCTION: no such function 'p1'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP FUNCTION p1 ();
 ERROR = !DROP FUNCTION: no such function 'p1' ()
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP ALL FUNCTION p1;
 ERROR = !DROP ALL FUNCTION: no such function 'p1'
 

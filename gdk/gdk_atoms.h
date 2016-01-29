@@ -47,11 +47,6 @@
 #else
 #define oidStrlen	48
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-#define wrdStrlen	24
-#else
-#define wrdStrlen	48
-#endif
 #if SIZEOF_PTR == SIZEOF_INT
 #define ptrStrlen	24
 #else
@@ -143,20 +138,12 @@ gdk_export const lng lng_nil;
 gdk_export const hge hge_nil;
 #endif
 gdk_export const oid oid_nil;
-gdk_export const wrd wrd_nil;
 gdk_export const char str_nil[2];
 gdk_export const ptr ptr_nil;
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) bte_nil)
 #define bat_nil	((bat) int_nil)
-#if SIZEOF_WRD == SIZEOF_INT
-#define GDK_wrd_max ((wrd) GDK_int_max)
-#define GDK_wrd_min ((wrd) GDK_int_min)
-#else
-#define GDK_wrd_max ((wrd) GDK_lng_max)
-#define GDK_wrd_min ((wrd) GDK_lng_min)
-#endif
 #if SIZEOF_OID == SIZEOF_INT
 #define GDK_oid_max ((oid) GDK_int_max)
 #else
@@ -166,8 +153,8 @@ gdk_export const ptr ptr_nil;
 #define void_nil	oid_nil
 /*
  * @- Derived types
- * In all algorithms across GDK, you will find switches on the types (
- * bte, sht, int, wrd, flt, dbl, lng, hge, str). They respectively
+ * In all algorithms across GDK, you will find switches on the types
+ * (bte, sht, int, flt, dbl, lng, hge, str). They respectively
  * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
  * 64-bit double, a 64-bit int, and a pointer-sized location of a
  * char-buffer (ended by a zero char).

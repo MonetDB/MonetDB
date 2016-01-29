@@ -29,7 +29,7 @@ Ready.
 #SELECT a as t, count(distinct c) FROM test GROUP BY t;
 % sys.test,	sys.L1 # table_name
 % t,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 #drop table test;
 

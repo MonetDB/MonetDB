@@ -12,7 +12,7 @@ stderr of test 'alter_col_to_set_same_constraint.SF-1850781` in directory 'sql/t
 # 00:41:05 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=31820 
 # 00:41:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table atacc1 alter bar set not null;
 ERROR = !ALTER TABLE: no such column 'bar'
 

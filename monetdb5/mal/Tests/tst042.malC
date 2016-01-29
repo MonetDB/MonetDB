@@ -2,7 +2,7 @@ s := "hello";
 i := 1;
 f := 3.14;
 b:= true;
-w:= 1:wrd;
+w:= 1:lng;
 B:= 2:bte;
 bb:= bat.new(:str);
 

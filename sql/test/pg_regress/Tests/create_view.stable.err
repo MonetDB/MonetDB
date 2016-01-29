@@ -29,27 +29,27 @@ stderr of test 'create_view` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11947/.s.monetdb.35880
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT * FROM viewtest_tbl WHERE a > 10;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"
-MAPI  = (monetdb) /var/tmp/mtest-11947/.s.monetdb.35880
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"
-MAPI  = (monetdb) /var/tmp/mtest-11947/.s.monetdb.35880
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE VIEW viewtest AS
         	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 ERROR = !CREATE VIEW: ORDER BY not supported
-MAPI  = (monetdb) /var/tmp/mtest-11947/.s.monetdb.35880
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"
-MAPI  = (monetdb) /var/tmp/mtest-11947/.s.monetdb.35880
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT 1, * FROM viewtest_tbl;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"
-MAPI  = (monetdb) /var/tmp/mtest-11947/.s.monetdb.35880
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a, cast(b as numeric) FROM viewtest_tbl;
 ERROR = !syntax error, unexpected OR, expecting INDEX in: "create or"

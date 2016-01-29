@@ -30,7 +30,7 @@ stderr of test 'procedure_resolution_bug` in directory 'sql/test/bugs` itself:
 # 23:43:49 >  mclient -lsql -ftest -i -e --host=alf --port=32645 
 # 23:43:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = call p();
 ERROR = !SELECT: no such operator 'p'
 

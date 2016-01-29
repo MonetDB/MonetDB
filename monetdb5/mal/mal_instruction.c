@@ -1283,7 +1283,6 @@ convertConstant(int type, ValPtr vr)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
-	case TYPE_wrd:
 	case TYPE_lng:
 #ifdef HAVE_HGE
 	case TYPE_hge:

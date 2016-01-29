@@ -69,7 +69,7 @@ stderr of test 'strings_concat` in directory 'sql/test/pg_regress` itself:
 # 22:00:36 >  ./strings_concat.SQL.sh strings_concat 
 # 22:00:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT 'first line'
         ' - next line' /* this comment is not allowed here */
         ' - third line'

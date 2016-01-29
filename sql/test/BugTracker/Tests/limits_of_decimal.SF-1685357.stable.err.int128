@@ -10,11 +10,11 @@ stderr of test 'limits_of_decimal.SF-1685357` in directory 'sql/test/BugTracker`
 # 10:32:42 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34802 
 # 10:32:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table tab2 ( col1 decimal(40,0) not null );
 ERROR = !decimal(40,0) isn't supported because P=40 > 38 in: "create table tab2 ( col1 decimal(40,0)"
-        !syntax error, unexpected NOT in: "not"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+        !syntax error, unexpected NOT in: "not null"
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table tab2;
 ERROR = !DROP TABLE: no such table 'tab2'
 

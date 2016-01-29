@@ -11,7 +11,7 @@ cat <<EOF
 
 EOF
 
-integer="bte sht int wrd lng"	# all integer types
+integer="bte sht int lng"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 
 for tp1 in hge ; do

@@ -10,10 +10,10 @@ stderr of test 'primary_key-bug-sf-975308` in directory 'sql/test/bugs` itself:
 # 16:06:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=50118  < primary_key-bug-sf-975308.sql
 # 16:06:04 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO test_pk values( 2,4 );
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = UPDATE test_pk SET x = 1;
 ERROR = !UPDATE: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
 

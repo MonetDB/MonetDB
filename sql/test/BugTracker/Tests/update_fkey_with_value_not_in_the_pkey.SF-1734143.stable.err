@@ -12,7 +12,7 @@ stderr of test 'update_fkey_with_value_not_in_the_pkey.SF-1734143` in directory 
 # 20:17:19 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=36235 
 # 20:17:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update t1734143b set id = 2 where id =1;
 ERROR = !UPDATE: FOREIGN KEY constraint 't1734143b.t1734143b_id_fkey' violated
 

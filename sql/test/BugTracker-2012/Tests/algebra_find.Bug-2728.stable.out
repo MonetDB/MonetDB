@@ -79,7 +79,7 @@ Ready.
 #select count(*) from vve, kvk where toevoeging is null and vve.huisnummer is not null and vve.postcode = kvk.postcode and kvk.adres like ' %'||vve.huisnummer;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 

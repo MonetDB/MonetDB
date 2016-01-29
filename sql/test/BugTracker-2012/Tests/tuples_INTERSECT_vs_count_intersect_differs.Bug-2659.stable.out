@@ -382,7 +382,7 @@ Ready.
 #select count(*) from (select * from T intersect select * from T ) as cnt;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 102	]
 #DROP TABLE T;

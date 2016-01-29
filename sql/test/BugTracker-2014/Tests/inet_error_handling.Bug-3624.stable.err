@@ -30,22 +30,22 @@ stderr of test 'inet_error_handling.Bug-3624` in directory 'sql/test/BugTracker-
 # 10:46:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29407" "--port=30088"
 # 10:46:21 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14314/.s.monetdb.37270
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('192.168.1');
 ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-14314/.s.monetdb.37270
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('192.168.2.');
 ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-14314/.s.monetdb.37270
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('193');
 ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-14314/.s.monetdb.37270
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('193.169');
 ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-14314/.s.monetdb.37270
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('193.169.13');
 ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-14314/.s.monetdb.37270
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('193.169.13.4/80');
 ERROR = !GDKerror:!ERROR: Illegal mask value: 80
 

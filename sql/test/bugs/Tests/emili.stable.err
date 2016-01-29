@@ -28,7 +28,7 @@ stderr of test 'emili` in directory 'sql/test/bugs` itself:
 # 19:14:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15106" "--port=32975"
 # 19:14:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE PROCEDURE enrich2()
         BEGIN
              INSERT INTO sensors(ip, location, kind,value)
@@ -39,7 +39,7 @@ QUERY = CREATE PROCEDURE enrich2()
              END IF;
         END;
 ERROR = !IF THEN ELSE: No SELECT statements allowed within the IF condition
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE PROCEDURE enrich3()
         BEGIN
              DECLARE cnt INTEGER;

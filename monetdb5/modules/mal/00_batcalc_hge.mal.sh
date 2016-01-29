@@ -13,7 +13,7 @@ module batcalc;
 
 EOF
 
-integer="bte sht int wrd lng hge"	# all integer types
+integer="bte sht int lng hge"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 alltypes="bit $numeric oid str"
 
@@ -244,7 +244,6 @@ for tp1 in $numeric; do
 	    *bte*) tp3=bte;;
 	    *sht*) tp3=sht;;
 	    *int*) tp3=int;;
-	    *wrd*) tp3=wrd;;
 	    *lng*) tp3=lng;;
 	    *hge*) tp3=hge;;
 	    esac

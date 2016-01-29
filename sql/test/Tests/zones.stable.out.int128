@@ -111,7 +111,7 @@ Ready.
 #from GetNearbyObjects(193.75, 1.48, 0.1) as S;
 % .L4 # table_name
 % L4 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 3	]
 [ 1	]

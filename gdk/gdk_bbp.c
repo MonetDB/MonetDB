@@ -816,6 +816,9 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	/* silently convert chr columns to bte */
 	if (strcmp(type, "chr") == 0)
 		strcpy(type, "bte");
+	/* silently convert wrd columns to int or lng */
+	if (strcmp(type, "wrd") == 0)
+		strcpy(type, width == SIZEOF_INT ? "int" : "lng");
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))

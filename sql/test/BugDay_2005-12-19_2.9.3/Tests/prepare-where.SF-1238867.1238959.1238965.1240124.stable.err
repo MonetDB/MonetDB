@@ -10,10 +10,10 @@ stderr of test 'prepare-where.SF-1238867.1238959.1238965.1240124` in directory '
 # 13:00:07 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41457  < prepare-where.SF-1238867.1238959.1238965.1240124.sql
 # 13:00:07 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = prepare select * from env() as env where ? = ?;
 ERROR = !Cannot have a parameter (?) on both sides of an expression
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = prepare select ? from env() as env;
 ERROR = !SELECT: subquery result missing
 

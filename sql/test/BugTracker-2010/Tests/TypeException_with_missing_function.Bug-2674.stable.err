@@ -71,11 +71,11 @@ stderr of test 'TypeException_with_missing_function.Bug-2674` in directory 'sql/
 # 11:02:36 >  mclient -lsql -ftest -i -e --host=rig --port=33682 
 # 11:02:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select fDistanceArcMinEq(213.7849600 , -0.4932472, ra,"dec") as distance_arcmin
         from t2674, fGetNearbyObjAllEq(213.7849600 , -0.4932472 , 20.8897421 ) as N;
 ERROR = !SELECT: no such operator 'fgetnearbyobjalleq'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select fDistanceArcMinEq(213.7849600 , -0.4932472, ra,"dec") as distance_arcmin
         from t2674, fGetNearbyObjAllEq(213.7849600 , -0.4932472 , 20.8897421 ) as N;
 ERROR = !SELECT: no such operator 'fgetnearbyobjalleq'

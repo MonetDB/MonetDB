@@ -79,7 +79,7 @@ stderr of test 'alter_table_add_column` in directory 'sql/test/bugs` itself:
 # 18:35:20 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39702 
 # 18:35:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into t_not_null (a) values (1);
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t_not_null.foo
 

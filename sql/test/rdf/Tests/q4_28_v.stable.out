@@ -27,7 +27,7 @@ Ready.
 
 % .trip,	.trip,	.trip # table_name
 % prop,	obj,	cnt # name
-% char,	int,	wrd # type
+% char,	int,	bigint # type
 % 16,	1,	1 # length
 
 # 23:32:54 >  

@@ -39,7 +39,7 @@ Ready.
 #SELECT k as c,count(distinct b) from a3423 group by c;
 % sys.a3423,	sys.L1 # table_name
 % c,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
 [ 2,	1	]

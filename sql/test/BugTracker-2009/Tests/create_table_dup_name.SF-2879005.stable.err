@@ -75,7 +75,7 @@ stderr of test 'create_table_dup_name.SF-2879005` in directory 'sql/test/BugTrac
 # 19:39:54 >  mclient -lsql -i --host=alf --port=32337 
 # 19:39:54 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE TABLE ab AS SELECT * FROM a,b WITH DATA;
 ERROR = !CREATE TABLE: duplicate column name name
 

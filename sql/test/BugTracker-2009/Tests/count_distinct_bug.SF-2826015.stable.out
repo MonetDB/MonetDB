@@ -44,13 +44,13 @@ Ready.
 #select count(distinct(testcol)) from testdistinct ;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #select count(distinct testcol ) from testdistinct ;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 

@@ -30,10 +30,10 @@ stderr of test 'index_management.SF-927326` in directory 'sql/test/BugDay_2005-1
 # 11:45:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=39182"
 # 11:45:16 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE INDEX my_index ON my_table(my_column);
 ERROR = !CREATE INDEX: name 'my_index' already in use
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE UNIQUE INDEX my_index ON my_table(my_column);
 ERROR = !CREATE INDEX: name 'my_index' already in use
 

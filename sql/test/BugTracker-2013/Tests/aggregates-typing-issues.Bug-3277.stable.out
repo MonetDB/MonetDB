@@ -69,7 +69,7 @@ Ready.
 #select * from mtcars2;
 % sys.mtcars2,	sys.mtcars2 # table_name
 % carb,	prob1 # name
-% double,	wrd # type
+% double,	bigint # type
 % 24,	1 # length
 [ 4,	7	]
 [ 1,	7	]
@@ -80,7 +80,7 @@ Ready.
 #select median( prob1 )  from mtcars2;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 3	]
 #select prod( prob1 ) from mtcars2;

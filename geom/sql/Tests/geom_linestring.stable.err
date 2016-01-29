@@ -81,28 +81,28 @@ stderr of test 'geom_linestring` in directory 'geom/sql` itself:
 # 20:49:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=38689 
 # 20:49:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('POINT(10 10)');
 ERROR = !Geometry type 'Line' not found
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))');
 ERROR = !Geometry type 'Line' not found
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))');
 ERROR = !Geometry type 'Line' not found
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('LINESTRING(10 10)');
 ERROR = !IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('LINESTRING(10)');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('LINESTRING()');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('LINESTRING');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO lines values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
 

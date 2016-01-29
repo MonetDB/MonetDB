@@ -10,10 +10,10 @@ stderr of test 'set_operation_coersions.SF-1543216` in directory 'sql/test/BugTr
 # 11:19:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36646  < set_operation_coersions.SF-1543216.sql
 # 11:19:45 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t1543216 union select * from s1543216;
 ERROR = !types varchar(23,0) and int(32,0) are not equal for column 'id'
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from f1543216 union select * from b1543216;
 ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'id'
 

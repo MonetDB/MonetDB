@@ -10,13 +10,13 @@ stderr of test 'ambiguous_join.SF-1580565` in directory 'sql/test/BugTracker` it
 # 12:47:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34274  < ambiguous_join.SF-1580565.sql
 # 12:47:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from B left join B on B.id = B.id;
 ERROR = !SELECT: 'b' on both sides of the JOIN expression;
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from A, B left join B on B.id = A.id;
 ERROR = !SELECT: 'b' on both sides of the JOIN expression;
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from A, B left join B as b2 on B.id = A.id;
 ERROR = !SELECT: no such column 'a.id'
 

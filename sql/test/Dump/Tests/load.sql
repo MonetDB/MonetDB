@@ -14,7 +14,6 @@ create table "typestest" (
         "tinyint" tinyint,
         "smallint" smallint,
         "int" int,
-        "wrd" wrd,
         "bigint" bigint,
         "double" double,
         "real" real,
@@ -54,7 +53,7 @@ create table "typestest" (
         "varchar100" character varying(100),
         "character10" character(10)
 );
-insert into "typestest" values (true, 10, 10000, 1000000, 1000000,
+insert into "typestest" values (true, 10, 10000, 1000000,
 	10000000000, 1e30, 1e20, 1, 123456789, 12345.678, 3.1415, 3.1415,
 	3.1415, date '2009-04-15', interval '2' year, interval '18' month,
 	interval '3' month, interval '20' day, interval '30' hour,

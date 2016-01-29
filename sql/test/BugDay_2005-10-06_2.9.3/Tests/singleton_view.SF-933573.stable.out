@@ -26,7 +26,7 @@ Ready.
 [ 4	]
 % sys.v_sv # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 4	]
 

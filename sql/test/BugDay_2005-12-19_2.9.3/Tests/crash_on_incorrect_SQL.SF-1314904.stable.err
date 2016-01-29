@@ -10,7 +10,7 @@ stderr of test 'crash_on_incorrect_SQL.SF-1314904` in directory 'sql/test/BugDay
 # 16:53:01 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47799  < crash_on_incorrect_SQL.SF-1314904.sql
 # 16:53:01 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table t1314904b (testid unknowntype, testchar varchar(255));
 ERROR = !type (unknowntype) unknown in: "create table t1314904b (testid unknowntype,"
         !syntax error, unexpected IDENT in: "testchar"

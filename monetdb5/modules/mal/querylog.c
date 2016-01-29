@@ -48,7 +48,7 @@ create table querylog.calls(
     "start" timestamp,  -- time the statement was started
     "stop" timestamp,   -- time the statement was completely finished
     arguments string,
-    tuples wrd,         -- number of tuples in the result set
+    tuples lng,         -- number of tuples in the result set
     exec bigint,        -- time spent (in usec)  until the result export
     result bigint,      -- time spent (in usec)  to ship the result set
     cpuload int,        -- average cpu load percentage during execution
@@ -188,7 +188,7 @@ _initQlog(void)
 	QLOG_calls_start = QLOGcreate("calls","start",TYPE_timestamp);
 	QLOG_calls_stop = QLOGcreate("calls","stop",TYPE_timestamp);
 	QLOG_calls_arguments = QLOGcreate("calls","arguments",TYPE_str);
-	QLOG_calls_tuples = QLOGcreate("calls","tuples",TYPE_wrd);
+	QLOG_calls_tuples = QLOGcreate("calls","tuples",TYPE_lng);
 	QLOG_calls_exec = QLOGcreate("calls","exec",TYPE_lng);
 	QLOG_calls_result = QLOGcreate("calls","result",TYPE_lng);
 	QLOG_calls_cpuload = QLOGcreate("calls","cpuload",TYPE_int);
@@ -330,7 +330,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	timestamp *tick1  = getArgReference_TYPE(stk,pci,1,timestamp);
 	timestamp *tick2  = getArgReference_TYPE(stk,pci,2,timestamp);
 	str *arg	= getArgReference_str(stk,pci,3);
-	wrd *tuples = getArgReference_wrd(stk,pci,4);
+	lng *tuples = getArgReference_lng(stk,pci,4);
 	lng *xtime  = getArgReference_lng(stk,pci,5);
 	lng *rtime  = getArgReference_lng(stk,pci,6);
 	int *cpu	= getArgReference_int(stk,pci,7);

@@ -10,8 +10,6 @@ create aggregate stddev_samp(val SMALLINT) returns DOUBLE
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val INTEGER) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev_samp(val WRD) returns DOUBLE
-	external name "aggr"."stdev";
 create aggregate stddev_samp(val BIGINT) returns DOUBLE
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val REAL) returns DOUBLE
@@ -31,8 +29,6 @@ create aggregate stddev_pop(val TINYINT) returns DOUBLE
 create aggregate stddev_pop(val SMALLINT) returns DOUBLE
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val INTEGER) returns DOUBLE
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val WRD) returns DOUBLE
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val BIGINT) returns DOUBLE
 	external name "aggr"."stdevp";
@@ -54,8 +50,6 @@ create aggregate var_samp(val SMALLINT) returns DOUBLE
 	external name "aggr"."variance";
 create aggregate var_samp(val INTEGER) returns DOUBLE
 	external name "aggr"."variance";
-create aggregate var_samp(val WRD) returns DOUBLE
-	external name "aggr"."variance";
 create aggregate var_samp(val BIGINT) returns DOUBLE
 	external name "aggr"."variance";
 create aggregate var_samp(val REAL) returns DOUBLE
@@ -76,8 +70,6 @@ create aggregate var_pop(val SMALLINT) returns DOUBLE
 	external name "aggr"."variancep";
 create aggregate var_pop(val INTEGER) returns DOUBLE
 	external name "aggr"."variancep";
-create aggregate var_pop(val WRD) returns DOUBLE
-	external name "aggr"."variancep";
 create aggregate var_pop(val BIGINT) returns DOUBLE
 	external name "aggr"."variancep";
 create aggregate var_pop(val REAL) returns DOUBLE
@@ -97,8 +89,6 @@ create aggregate median(val TINYINT) returns TINYINT
 create aggregate median(val SMALLINT) returns SMALLINT
 	external name "aggr"."median";
 create aggregate median(val INTEGER) returns INTEGER
-	external name "aggr"."median";
-create aggregate median(val WRD) returns WRD
 	external name "aggr"."median";
 create aggregate median(val BIGINT) returns BIGINT
 	external name "aggr"."median";
@@ -122,8 +112,6 @@ create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT
 	external name "aggr"."quantile";
 create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER
 	external name "aggr"."quantile";
-create aggregate quantile(val WRD, q DOUBLE) returns WRD
-	external name "aggr"."quantile";
 create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT
 	external name "aggr"."quantile";
 create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL
@@ -146,8 +134,6 @@ create aggregate corr(e1 TINYINT, e2 TINYINT) returns TINYINT
 create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns SMALLINT
 	external name "aggr"."corr";
 create aggregate corr(e1 INTEGER, e2 INTEGER) returns INTEGER
-	external name "aggr"."corr";
-create aggregate corr(e1 WRD, e2 WRD) returns WRD
 	external name "aggr"."corr";
 create aggregate corr(e1 BIGINT, e2 BIGINT) returns BIGINT
 	external name "aggr"."corr";

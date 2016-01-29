@@ -29,7 +29,7 @@ stderr of test 'constants-optimizer.Bug-2317` in directory 'sql/test/BugTracker-
 # 00:10:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6273" "--port=37160"
 # 00:10:51 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-15619/.s.monetdb.35375
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = set optimizer='dictionary_pipe';
 ERROR = !optimizer 'dictionary_pipe' unknown
 

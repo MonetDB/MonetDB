@@ -72,7 +72,7 @@ stderr of test 'select_from_seq.Bug-2730` in directory 'sql/test/BugTracker-2010
 # 20:52:08 >  mclient -lsql -ftest -i -e --host=alf --port=33557 
 # 20:52:08 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from seq1;
 ERROR = !SELECT: no such table 'seq1'
 

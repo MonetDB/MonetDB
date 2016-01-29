@@ -123,7 +123,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 		i->t->data = timestamp_dbat(ot->data, tr->stime);
 	}
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_wrd);
+	u = delta_bind_ubat(i->data, access, (i->type==join_idx)?TYPE_oid:TYPE_lng);
 	return u;
 }
 
@@ -470,7 +470,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		return LOG_OK;
 
 	if (!i->data || !i->base.allocated) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (i->type==join_idx)?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
@@ -582,7 +582,7 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 	int ok = LOG_OK;
 
 	if (i->data) {
-		int type = (ni->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (ni->type==join_idx)?TYPE_oid:TYPE_lng;
 		sql_delta *bat = ni->data = ZNEW(sql_delta), *obat = i->data;
 		ok = dup_bat(tr, ni->t, obat, bat, type, isNew(i), ni->base.flag == TR_NEW);
 		ni->base.allocated = 1;
@@ -673,7 +673,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		return ok;
 
 	if (!i->data || !i->base.allocated) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (i->type==join_idx)?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
@@ -1183,7 +1183,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 {
 	int ok = LOG_OK;
 	sql_delta *bat = ni->data;
-	int type = TYPE_wrd;
+	int type = TYPE_lng;
 
 	if (ni->type == join_idx)
 		type = TYPE_oid;
@@ -1547,7 +1547,7 @@ static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
 	if (!i->data || !i->base.allocated) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+		int type = (i->type==join_idx)?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
 		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
@@ -1596,7 +1596,7 @@ empty_col(sql_column *c)
 static void 
 empty_idx(sql_idx *i)
 {
-	int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
+	int type = (i->type==join_idx)?TYPE_oid:TYPE_lng;
 	sql_delta *bat = i->data;
 
 	assert(i->data && i->base.allocated && bat->bid == 0);

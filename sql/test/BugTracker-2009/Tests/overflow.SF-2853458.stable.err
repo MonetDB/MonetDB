@@ -67,10 +67,10 @@ stderr of test 'overflow.SF-2853458` in directory 'sql/test/BugTracker-2009` its
 # 22:26:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35561 
 # 22:26:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9389/.s.monetdb.34946
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select cast(power(2,63) as bigint);
 ERROR = !overflow in conversion of 9.2233720368547758e+18 to lng.
-MAPI  = (monetdb) /var/tmp/mtest-9389/.s.monetdb.34946
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select cast(power(2,64) as bigint);
 ERROR = !overflow in conversion of 1.8446744073709552e+19 to lng.
 

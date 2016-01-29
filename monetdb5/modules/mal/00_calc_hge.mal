@@ -43,15 +43,7 @@ address CMDvarDECRsignal
 comment "Unary V - 1";
 
 
-pattern +(v1:bte,v2:wrd) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
 pattern +(v1:bte,v2:lng) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:sht,v2:wrd) :hge
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -59,31 +51,7 @@ pattern +(v1:sht,v2:lng) :hge
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
-pattern +(v1:int,v2:wrd) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
 pattern +(v1:int,v2:lng) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:wrd,v2:bte) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:wrd,v2:sht) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:wrd,v2:int) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:wrd,v2:wrd) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:wrd,v2:lng) :hge
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -96,10 +64,6 @@ address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
 pattern +(v1:lng,v2:int) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, guarantee no overflow by returning larger type";
-
-pattern +(v1:lng,v2:wrd) :hge
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -116,15 +80,7 @@ address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
 
-pattern -(v1:bte,v2:wrd) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
 pattern -(v1:bte,v2:lng) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:sht,v2:wrd) :hge
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -132,31 +88,7 @@ pattern -(v1:sht,v2:lng) :hge
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
-pattern -(v1:int,v2:wrd) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
 pattern -(v1:int,v2:lng) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:wrd,v2:bte) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:wrd,v2:sht) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:wrd,v2:int) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:wrd,v2:wrd) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:wrd,v2:lng) :hge
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -169,10 +101,6 @@ address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
 pattern -(v1:lng,v2:int) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, guarantee no overflow by returning larger type";
-
-pattern -(v1:lng,v2:wrd) :hge
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -189,15 +117,7 @@ address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
 
-pattern *(v1:bte,v2:wrd) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
 pattern *(v1:bte,v2:lng) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:sht,v2:wrd) :hge
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -205,31 +125,7 @@ pattern *(v1:sht,v2:lng) :hge
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
-pattern *(v1:int,v2:wrd) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
 pattern *(v1:int,v2:lng) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:wrd,v2:bte) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:wrd,v2:sht) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:wrd,v2:int) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:wrd,v2:wrd) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:wrd,v2:lng) :hge
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -242,10 +138,6 @@ address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:lng,v2:int) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:lng,v2:wrd) :hge
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -283,13 +175,6 @@ pattern add_noerror(v1:int,v2:hge) :hge
 address CMDvarADD
 comment "Return V1 + V2, overflow causes NIL value";
 
-pattern +(v1:wrd,v2:hge) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:wrd,v2:hge) :hge
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
 pattern +(v1:lng,v2:hge) :hge
 address CMDvarADDsignal
 comment "Return V1 + V2, signal error on overflow";
@@ -315,13 +200,6 @@ pattern +(v1:hge,v2:int) :hge
 address CMDvarADDsignal
 comment "Return V1 + V2, signal error on overflow";
 pattern add_noerror(v1:hge,v2:int) :hge
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:hge,v2:wrd) :hge
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:hge,v2:wrd) :hge
 address CMDvarADD
 comment "Return V1 + V2, overflow causes NIL value";
 
@@ -389,13 +267,6 @@ pattern sub_noerror(v1:int,v2:hge) :hge
 address CMDvarSUB
 comment "Return V1 - V2, overflow causes NIL value";
 
-pattern -(v1:wrd,v2:hge) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:wrd,v2:hge) :hge
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
 pattern -(v1:lng,v2:hge) :hge
 address CMDvarSUBsignal
 comment "Return V1 - V2, signal error on overflow";
@@ -421,13 +292,6 @@ pattern -(v1:hge,v2:int) :hge
 address CMDvarSUBsignal
 comment "Return V1 - V2, signal error on overflow";
 pattern sub_noerror(v1:hge,v2:int) :hge
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:hge,v2:wrd) :hge
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:hge,v2:wrd) :hge
 address CMDvarSUB
 comment "Return V1 - V2, overflow causes NIL value";
 
@@ -495,13 +359,6 @@ pattern mul_noerror(v1:int,v2:hge) :hge
 address CMDvarMUL
 comment "Return V1 * V2, overflow causes NIL value";
 
-pattern *(v1:wrd,v2:hge) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:wrd,v2:hge) :hge
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
 pattern *(v1:lng,v2:hge) :hge
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
@@ -527,13 +384,6 @@ pattern *(v1:hge,v2:int) :hge
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:hge,v2:int) :hge
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:hge,v2:wrd) :hge
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:hge,v2:wrd) :hge
 address CMDvarMUL
 comment "Return V1 * V2, overflow causes NIL value";
 
@@ -619,19 +469,6 @@ pattern div_noerror(v1:int,v2:hge) :int
 address CMDvarDIV
 comment "Return V1 / V2, overflow causes NIL value";
 
-pattern /(v1:wrd,v2:hge) :flt
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:wrd,v2:hge) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:wrd,v2:hge) :wrd
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern div_noerror(v1:wrd,v2:hge) :wrd
-address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
-
 pattern /(v1:lng,v2:hge) :flt
 address CMDvarDIVsignal
 comment "Return V1 / V2, signal error on overflow";
@@ -681,19 +518,6 @@ pattern /(v1:hge,v2:int) :hge
 address CMDvarDIVsignal
 comment "Return V1 / V2, signal error on overflow";
 pattern div_noerror(v1:hge,v2:int) :hge
-address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
-
-pattern /(v1:hge,v2:wrd) :flt
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:hge,v2:wrd) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:hge,v2:wrd) :hge
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern div_noerror(v1:hge,v2:wrd) :hge
 address CMDvarDIV
 comment "Return V1 / V2, overflow causes NIL value";
 
@@ -779,13 +603,6 @@ pattern mod_noerror(v1:int,v2:hge) :int
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
-pattern %(v1:wrd,v2:hge) :wrd
-address CMDvarMODsignal
-comment "Return V1 % V2, signal error on divide by zero";
-pattern mod_noerror(v1:wrd,v2:hge) :wrd
-address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
-
 pattern %(v1:lng,v2:hge) :lng
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
@@ -811,13 +628,6 @@ pattern %(v1:hge,v2:int) :int
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:hge,v2:int) :int
-address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
-
-pattern %(v1:hge,v2:wrd) :wrd
-address CMDvarMODsignal
-comment "Return V1 % V2, signal error on divide by zero";
-pattern mod_noerror(v1:hge,v2:wrd) :wrd
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
@@ -900,13 +710,6 @@ pattern lsh_noerror(v1:int,v2:hge) :int
 address CMDvarLSH
 comment "Return V1 << V2, out of range second operand causes NIL value";
 
-pattern <<(v1:wrd,v2:hge) :wrd
-address CMDvarLSHsignal
-comment "Return V1 << V2, raise error on out of range second operand";
-pattern lsh_noerror(v1:wrd,v2:hge) :wrd
-address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
-
 pattern <<(v1:lng,v2:hge) :lng
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
@@ -932,13 +735,6 @@ pattern <<(v1:hge,v2:int) :hge
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:hge,v2:int) :hge
-address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
-
-pattern <<(v1:hge,v2:wrd) :hge
-address CMDvarLSHsignal
-comment "Return V1 << V2, raise error on out of range second operand";
-pattern lsh_noerror(v1:hge,v2:wrd) :hge
 address CMDvarLSH
 comment "Return V1 << V2, out of range second operand causes NIL value";
 
@@ -978,13 +774,6 @@ pattern rsh_noerror(v1:int,v2:hge) :int
 address CMDvarRSH
 comment "Return V1 >> V2, out of range second operand causes NIL value";
 
-pattern >>(v1:wrd,v2:hge) :wrd
-address CMDvarRSHsignal
-comment "Return V1 >> V2, raise error on out of range second operand";
-pattern rsh_noerror(v1:wrd,v2:hge) :wrd
-address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
-
 pattern >>(v1:lng,v2:hge) :lng
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
@@ -1010,13 +799,6 @@ pattern >>(v1:hge,v2:int) :hge
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:hge,v2:int) :hge
-address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
-
-pattern >>(v1:hge,v2:wrd) :hge
-address CMDvarRSHsignal
-comment "Return V1 >> V2, raise error on out of range second operand";
-pattern rsh_noerror(v1:hge,v2:wrd) :hge
 address CMDvarRSH
 comment "Return V1 >> V2, out of range second operand causes NIL value";
 
@@ -1047,10 +829,6 @@ pattern <(v1:int,v2:hge) :bit
 address CMDvarLT
 comment "Return V1 < V2";
 
-pattern <(v1:wrd,v2:hge) :bit
-address CMDvarLT
-comment "Return V1 < V2";
-
 pattern <(v1:lng,v2:hge) :bit
 address CMDvarLT
 comment "Return V1 < V2";
@@ -1064,10 +842,6 @@ address CMDvarLT
 comment "Return V1 < V2";
 
 pattern <(v1:hge,v2:int) :bit
-address CMDvarLT
-comment "Return V1 < V2";
-
-pattern <(v1:hge,v2:wrd) :bit
 address CMDvarLT
 comment "Return V1 < V2";
 
@@ -1108,10 +882,6 @@ pattern <=(v1:int,v2:hge) :bit
 address CMDvarLE
 comment "Return V1 <= V2";
 
-pattern <=(v1:wrd,v2:hge) :bit
-address CMDvarLE
-comment "Return V1 <= V2";
-
 pattern <=(v1:lng,v2:hge) :bit
 address CMDvarLE
 comment "Return V1 <= V2";
@@ -1125,10 +895,6 @@ address CMDvarLE
 comment "Return V1 <= V2";
 
 pattern <=(v1:hge,v2:int) :bit
-address CMDvarLE
-comment "Return V1 <= V2";
-
-pattern <=(v1:hge,v2:wrd) :bit
 address CMDvarLE
 comment "Return V1 <= V2";
 
@@ -1169,10 +935,6 @@ pattern >(v1:int,v2:hge) :bit
 address CMDvarGT
 comment "Return V1 > V2";
 
-pattern >(v1:wrd,v2:hge) :bit
-address CMDvarGT
-comment "Return V1 > V2";
-
 pattern >(v1:lng,v2:hge) :bit
 address CMDvarGT
 comment "Return V1 > V2";
@@ -1186,10 +948,6 @@ address CMDvarGT
 comment "Return V1 > V2";
 
 pattern >(v1:hge,v2:int) :bit
-address CMDvarGT
-comment "Return V1 > V2";
-
-pattern >(v1:hge,v2:wrd) :bit
 address CMDvarGT
 comment "Return V1 > V2";
 
@@ -1230,10 +988,6 @@ pattern >=(v1:int,v2:hge) :bit
 address CMDvarGE
 comment "Return V1 >= V2";
 
-pattern >=(v1:wrd,v2:hge) :bit
-address CMDvarGE
-comment "Return V1 >= V2";
-
 pattern >=(v1:lng,v2:hge) :bit
 address CMDvarGE
 comment "Return V1 >= V2";
@@ -1247,10 +1001,6 @@ address CMDvarGE
 comment "Return V1 >= V2";
 
 pattern >=(v1:hge,v2:int) :bit
-address CMDvarGE
-comment "Return V1 >= V2";
-
-pattern >=(v1:hge,v2:wrd) :bit
 address CMDvarGE
 comment "Return V1 >= V2";
 
@@ -1291,10 +1041,6 @@ pattern ==(v1:int,v2:hge) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
-pattern ==(v1:wrd,v2:hge) :bit
-address CMDvarEQ
-comment "Return V1 == V2";
-
 pattern ==(v1:lng,v2:hge) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
@@ -1308,10 +1054,6 @@ address CMDvarEQ
 comment "Return V1 == V2";
 
 pattern ==(v1:hge,v2:int) :bit
-address CMDvarEQ
-comment "Return V1 == V2";
-
-pattern ==(v1:hge,v2:wrd) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -1352,10 +1094,6 @@ pattern !=(v1:int,v2:hge) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
-pattern !=(v1:wrd,v2:hge) :bit
-address CMDvarNE
-comment "Return V1 != V2";
-
 pattern !=(v1:lng,v2:hge) :bit
 address CMDvarNE
 comment "Return V1 != V2";
@@ -1369,10 +1107,6 @@ address CMDvarNE
 comment "Return V1 != V2";
 
 pattern !=(v1:hge,v2:int) :bit
-address CMDvarNE
-comment "Return V1 != V2";
-
-pattern !=(v1:hge,v2:wrd) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -1413,10 +1147,6 @@ pattern cmp(v1:int,v2:hge) :bte
 address CMDvarCMP
 comment "Return -1/0/1 if V1 </==/> V2";
 
-pattern cmp(v1:wrd,v2:hge) :bte
-address CMDvarCMP
-comment "Return -1/0/1 if V1 </==/> V2";
-
 pattern cmp(v1:lng,v2:hge) :bte
 address CMDvarCMP
 comment "Return -1/0/1 if V1 </==/> V2";
@@ -1430,10 +1160,6 @@ address CMDvarCMP
 comment "Return -1/0/1 if V1 </==/> V2";
 
 pattern cmp(v1:hge,v2:int) :bte
-address CMDvarCMP
-comment "Return -1/0/1 if V1 </==/> V2";
-
-pattern cmp(v1:hge,v2:wrd) :bte
 address CMDvarCMP
 comment "Return -1/0/1 if V1 </==/> V2";
 
@@ -1487,11 +1213,6 @@ address CMDvarCONVERT
 comment "Cast VALUE to int";
 
 
-pattern wrd(v:hge) :wrd
-address CMDvarCONVERT
-comment "Cast VALUE to wrd";
-
-
 pattern lng(v:hge) :lng
 address CMDvarCONVERT
 comment "Cast VALUE to lng";
@@ -1514,10 +1235,6 @@ address CMDvarCONVERT
 comment "Cast VALUE to hge";
 
 pattern hge(v:int) :hge
-address CMDvarCONVERT
-comment "Cast VALUE to hge";
-
-pattern hge(v:wrd) :hge
 address CMDvarCONVERT
 comment "Cast VALUE to hge";
 
@@ -1607,19 +1324,6 @@ pattern sum(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :hge
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
-pattern sum(b:bat[:wrd]) :hge
-address CMDBATsum
-comment "Calculate aggregate sum of B.";
-pattern sum(b:bat[:wrd],nil_if_empty:bit) :hge
-address CMDBATsum
-comment "Calculate aggregate sum of B.";
-pattern sum(b:bat[:wrd],s:bat[:oid]) :hge
-address CMDBATsum
-comment "Calculate aggregate sum of B with candidate list.";
-pattern sum(b:bat[:wrd],s:bat[:oid],nil_if_empty:bit) :hge
-address CMDBATsum
-comment "Calculate aggregate sum of B with candidate list.";
-
 pattern sum(b:bat[:lng]) :hge
 address CMDBATsum
 comment "Calculate aggregate sum of B.";
@@ -1695,19 +1399,6 @@ pattern prod(b:bat[:int],s:bat[:oid]) :hge
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :hge
-address CMDBATprod
-comment "Calculate aggregate product of B with candidate list.";
-
-pattern prod(b:bat[:wrd]) :hge
-address CMDBATprod
-comment "Calculate aggregate product of B.";
-pattern prod(b:bat[:wrd],nil_if_empty:bit) :hge
-address CMDBATprod
-comment "Calculate aggregate product of B.";
-pattern prod(b:bat[:wrd],s:bat[:oid]) :hge
-address CMDBATprod
-comment "Calculate aggregate product of B with candidate list.";
-pattern prod(b:bat[:wrd],s:bat[:oid],nil_if_empty:bit) :hge
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 

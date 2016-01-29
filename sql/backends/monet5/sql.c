@@ -1995,7 +1995,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sql_idx *i = mvc_bind_idx(m, s, *iname);
 
 				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_wrd);
+				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
 			}
 			BBPunfix(b->batCacheid);
 		} else {
@@ -2122,7 +2122,7 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* str mvc_clear_table_wrap(wrd *res, str *sname, str *tname); */
+/* str mvc_clear_table_wrap(lng *res, str *sname, str *tname); */
 str
 mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2130,7 +2130,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	mvc *m = NULL;
 	str msg;
-	wrd *res = getArgReference_wrd(stk, pci, 0);
+	lng *res = getArgReference_lng(stk, pci, 0);
 	str *sname = getArgReference_str(stk, pci, 1);
 	str *tname = getArgReference_str(stk, pci, 2);
 
@@ -3199,7 +3199,7 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return MAL_SUCCEED;
 }
 
-/* str mvc_affected_rows_wrap(int *m, int m, wrd *nr, str *w); */
+/* str mvc_affected_rows_wrap(int *m, int m, lng *nr, str *w); */
 str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3208,15 +3208,15 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 2);
 #endif
-	wrd nr;
+	lng nr;
 	str msg;
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	*res = 0;
-	assert(mtype == TYPE_wrd);
-	nr = *getArgReference_wrd(stk, pci, 2);
+	assert(mtype == TYPE_lng);
+	nr = *getArgReference_lng(stk, pci, 2);
 	b = cntxt->sqlcontext;
 	error = mvc_export_affrows(b, b->out, nr, "");
 	if (error)
@@ -3964,9 +3964,6 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_int:
 		r = stk->stk[getArg(pci, 1)].val.ival;
 		break;
-	case TYPE_wrd:
-		r = (int) stk->stk[getArg(pci, 1)].val.wval;
-		break;
 	case TYPE_lng:
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
 		break;
@@ -4009,9 +4006,6 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	case TYPE_int:
 		r = stk->stk[getArg(pci, 1)].val.ival;
-		break;
-	case TYPE_wrd:
-		r = stk->stk[getArg(pci, 1)].val.wval;
 		break;
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;

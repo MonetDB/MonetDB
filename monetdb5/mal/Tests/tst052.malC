@@ -1,11 +1,11 @@
-#dealing with wrd BATs
+#dealing with lng BATs
 # -1 + 2^n
 
-b:= bat.new(:wrd);
+b:= bat.new(:lng);
 
-bat.append(b,1:wrd);
-bat.append(b,127:wrd);
-bat.append(b,32768:wrd);
-bat.append(b,2147483647:wrd);
+bat.append(b,1:lng);
+bat.append(b,127:lng);
+bat.append(b,32768:lng);
+bat.append(b,2147483647:lng);
 
 io.print(b);

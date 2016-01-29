@@ -30,7 +30,7 @@ stderr of test 'order_by_incorrect_error.Bug-3630` in directory 'sql/test/BugTra
 # 15:51:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25544" "--port=30753"
 # 15:51:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-25544/.s.monetdb.30753
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select a.recordedattime, a.monexpectedarr, a.monexpecteddep, a.monaimedarr, b.monaimeddep, a.delay, b.delay, (b.recordedattime - a.monaimedarr)/1000 as ourdelay,  b.recordedattime, b.monexpectedarr, b.monexpecteddep, monstopref from sirivm as a join sirivm as b using (vehiclenumber, lineref, datedvehiclejourneyref, monstopref) where a.monatstop = 'false' and b.monatstop = 'true' order by abs(ourdelay) desc limit 10;
 ERROR = !SELECT: identifier 'ourdelay' unknown
 

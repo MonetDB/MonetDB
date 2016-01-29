@@ -388,18 +388,12 @@ binsearch(const oid *rcand, oid offset,
 		return binsearch_sht(rcand, offset, (const sht *) rvals,
 				     lo, hi, *(const sht *) v, ordering, last);
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
 	case TYPE_oid:
 #endif
 		return binsearch_int(rcand, offset, (const int *) rvals,
 				     lo, hi, *(const int *) v, ordering, last);
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
 	case TYPE_oid:
 #endif
@@ -1633,7 +1627,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	oid lv;
 	BUN i;
 	int lskipped = 0;	/* whether we skipped values in l */
-	wrd loff = 0, roff = 0;
+	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
 	if (sl == NULL && sr == NULL && !nil_on_miss &&
@@ -1758,9 +1752,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			lwidth = SIZEOF_OID;
 		}
 		if (l->tseqbase == oid_nil)
-			loff = wrd_nil;
+			loff = lng_nil;
 		else
-			loff = (wrd) l->tseqbase - (wrd) l->hseqbase;
+			loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 	if (r->ttype == TYPE_void) {
 		if (rcand) {
@@ -1771,9 +1765,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			rwidth = SIZEOF_OID;
 		}
 		if (r->tseqbase == oid_nil)
-			roff = wrd_nil;
+			roff = lng_nil;
 		else
-			roff = (wrd) r->tseqbase - (wrd) r->hseqbase;
+			roff = (lng) r->tseqbase - (lng) r->hseqbase;
 	}
 	assert(lvals != NULL || lcand == NULL);
 	assert(rvals != NULL || rcand == NULL);
@@ -1817,7 +1811,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					v = NULL;
 				} else if (rvals) {
 					v = VALUE(r, equal_order ? rstart : rend - 1);
-					if (roff == wrd_nil) {
+					if (roff == lng_nil) {
 						rval = oid_nil;
 						v = (const char *) &rval;
 					} else if (roff != 0) {
@@ -1825,7 +1819,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						v = (const char *) &rval;
 					}
 				} else {
-					if (roff == wrd_nil)
+					if (roff == lng_nil)
 						rval = oid_nil;
 					else if (equal_order)
 						rval = rstart + r->tseqbase;
@@ -1971,7 +1965,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					nl++;
 			}
 		} else if (lvals) {
-			if (loff == wrd_nil) {
+			if (loff == lng_nil) {
 				/* all values are nil */
 				lval = oid_nil;
 				nl = lend - lstart;
@@ -2008,7 +2002,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				}
 			}
 		} else {
-			if (loff == wrd_nil) {
+			if (loff == lng_nil) {
 				lval = oid_nil;
 				nl = lend - lstart;
 				lstart = lend;
@@ -3112,7 +3106,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	oid lo, ro;
 	int c;
 	int lskipped = 0;	/* whether we skipped values in l */
-	wrd loff = 0, roff = 0;
+	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
 	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s#" BUNFMT "[%s]%s%s%s,"
@@ -3173,7 +3167,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			lcand = NULL;
 			lwidth = SIZEOF_OID;
 		}
-		loff = (wrd) l->tseqbase - (wrd) l->hseqbase;
+		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 	if (r->ttype == TYPE_void) {
 		if (r->tseqbase == oid_nil) {
@@ -3187,7 +3181,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			rcand = NULL;
 			rwidth = SIZEOF_OID;
 		}
-		roff = (wrd) r->tseqbase - (wrd) r->hseqbase;
+		roff = (lng) r->tseqbase - (lng) r->hseqbase;
 	}
 	assert(lvals != NULL || lcand == NULL);
 	assert(rvals != NULL || rcand == NULL);

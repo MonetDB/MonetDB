@@ -99,7 +99,7 @@ Ready.
 #SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter;
 % sys.L1 # table_name
 % c # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 8	]
 #SELECT u, v, r  FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u, v, r;
@@ -114,7 +114,7 @@ Ready.
 #SELECT count(*) as c FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff;
 % sys.L1 # table_name
 % c # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 4	]
 #SELECT inter.u FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u;

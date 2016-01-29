@@ -27,7 +27,7 @@ Ready.
 #SELECT COUNT(*) AS cnt from tradeDate;
 % sys.L1 # table_name
 % cnt # name
-% wrd # type
+% bigint # type
 % 5 # length
 [ 32605	]
 #WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT date, rn from e ORDER BY date limit 5;

@@ -48,7 +48,7 @@ Ready.
 % L1,	L2 # name
 % char,	double # type
 % 20,	24 # length
-[ "avg(sqrt(n8)) == 1.1",	1.100000024	]
+[ "avg(sqrt(n8)) == 1.1",	1.1	]
 
 # 15:21:14 >  
 # 15:21:14 >  "Done."

@@ -26,13 +26,13 @@
 #endif
 
 static gdk_return
-BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
+BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 {
 	BUN n = (BUN) * size;
 	BAT *b = NULL;
 	BUN p, q;
 
-	if (*size > (wrd)BUN_MAX) {
+	if (*size > (lng)BUN_MAX) {
 		GDKerror("BATrandom: size must not exceed BUN_MAX");
 		return GDK_FAIL;
 	}
@@ -93,14 +93,14 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 }
 
 static gdk_return
-BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
+BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 {
 	BUN n = (BUN) * size, i, r;
 	BAT *b = NULL;
 	BUN firstbun, p, q;
 	int j = 0;
 
-	if (*size > (wrd)BUN_MAX) {
+	if (*size > (lng)BUN_MAX) {
 		GDKerror("BATuniform: size must not exceed BUN_MAX");
 		return GDK_FAIL;
 	}
@@ -161,7 +161,7 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 }
 
 static gdk_return
-BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
+BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 {
 	BUN n = (BUN) * size, i, r;
 	BAT *b = NULL;
@@ -170,7 +170,7 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 	BUN skewedSize;
 	int skewedDomain;
 
-	if (*size > (wrd)BUN_MAX) {
+	if (*size > (lng)BUN_MAX) {
 		GDKerror("BATskewed: size must not exceed BUN_MAX = " BUNFMT, BUN_MAX);
 		return GDK_FAIL;
 	}
@@ -251,7 +251,7 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 #endif
 
 static gdk_return
-BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
+BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 {
 	BUN n = (BUN) * size, i;
 	unsigned int r = (unsigned int) n;
@@ -262,7 +262,7 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 	int *itab;
 	flt *ftab, tot = 0.0;
 
-	if (*size > (wrd)BUN_MAX) {
+	if (*size > (lng)BUN_MAX) {
 		GDKerror("BATnormal: size must not exceed BUN_MAX");
 		return GDK_FAIL;
 	}
@@ -348,12 +348,12 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
  */
 
 str
-MBMrandom(bat *ret, oid *base, wrd *size, int *domain){
+MBMrandom(bat *ret, oid *base, lng *size, int *domain){
 	return MBMrandom_seed ( ret, base, size, domain, &int_nil );
 }
 
 str
-MBMrandom_seed(bat *ret, oid *base, wrd *size, int *domain, const int *seed){
+MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed){
 	BAT *bn = NULL;
 
 	BATrandom(&bn, base, size, domain, *seed);
@@ -366,7 +366,7 @@ MBMrandom_seed(bat *ret, oid *base, wrd *size, int *domain, const int *seed){
 
 
 str
-MBMuniform(bat *ret, oid *base, wrd *size, int *domain){
+MBMuniform(bat *ret, oid *base, lng *size, int *domain){
 	BAT *bn = NULL;
 
 	BATuniform(&bn, base, size, domain);
@@ -378,7 +378,7 @@ MBMuniform(bat *ret, oid *base, wrd *size, int *domain){
 }
 
 str
-MBMnormal(bat *ret, oid *base, wrd *size, int *domain, int *stddev, int *mean){
+MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
@@ -420,7 +420,7 @@ MBMmix(bat *bn, bat *batid)
 }
 
 str
-MBMskewed(bat *ret, oid *base, wrd *size, int *domain, int *skew){
+MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	BAT *bn = NULL;
 
 	BATskewed(&bn, base, size, domain, skew);

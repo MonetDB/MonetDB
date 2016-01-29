@@ -79,10 +79,10 @@ stderr of test 'div_by_zero.SF-987304` in directory 'sql/test/BugDay_2005-10-06_
 # 19:22:52 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32644 
 # 19:22:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select 1/0;
 ERROR = !division by zero.
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select x/y from a;
 ERROR = !division by zero.
 

@@ -29,7 +29,7 @@ stderr of test 'create_function.Bug-3172` in directory 'sql/test/BugTracker-2012
 # 16:07:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27661" "--port=38365"
 # 16:07:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16107/.s.monetdb.31536
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
 ERROR = !SELECT: 'x' requires a single sub query
 

@@ -26,7 +26,7 @@ Ready.
 #SELECT MODEL297.is_mutagen,MODEL297.is_mutagen, count(distinct MODEL297.model_id ) FROM MODEL MODEL297  WHERE MODEL297.logp='1' group by MODEL297.is_mutagen , MODEL297.is_mutagen;
 % sys.model297,	sys.model297,	sys.L1 # table_name
 % is_mutagen,	is_mutagen,	L1 # name
-% char,	char,	wrd # type
+% char,	char,	bigint # type
 % 3,	3,	1 # length
 [ "F",	"F",	5	]
 [ "T",	"T",	3	]

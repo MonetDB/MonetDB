@@ -80,7 +80,7 @@ stderr of test 'savepoint_rollback-bug-sf-953553` in directory 'sql/test/bugs` i
 # 21:02:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ROLLBACK TO SAVEPOINT a2;
 ERROR = !ROLLBACK TO SAVEPOINT: (a2) failed
 

@@ -195,15 +195,15 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 }
 
 str
-BKCdensebat(bat *ret, const wrd *size)
+BKCdensebat(bat *ret, const lng *size)
 {
 	BAT *bn;
-	wrd sz = *size;
+	lng sz = *size;
 
 	if (sz < 0)
 		sz = 0;
-	if (sz > (wrd) BUN_MAX)
-		sz = (wrd) BUN_MAX;
+	if (sz > (lng) BUN_MAX)
+		sz = (lng) BUN_MAX;
 	bn = BATdense(0, 0, (BUN) sz);
 	if (bn == NULL)
 		throw(MAL, "bat.densebat", GDK_EXCEPTION);

@@ -51,7 +51,7 @@ Ready.
 #;
 % sys.image,	sys.image,	sys.image,	sys.L1 # table_name
 % tilex,	tiley,	intensity,	count # name
-% double,	double,	int,	wrd # type
+% double,	double,	int,	bigint # type
 % 24,	24,	1,	1 # length
 [ 0,	0,	3,	1	]
 [ 0,	0,	6,	1	]

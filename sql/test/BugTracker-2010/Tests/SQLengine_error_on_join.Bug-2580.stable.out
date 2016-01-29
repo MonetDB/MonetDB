@@ -27,13 +27,13 @@ Ready.
 #select * from (select 1 as id , count(*) as cnt from (select distinct x,y from a) as b) as b2 join (select 1 as id , count(*) as cnt2 from a) as a2 on b2.id = a2.id;
 % .b2,	.b2,	.a2,	.a2 # table_name
 % id,	cnt,	id,	cnt2 # name
-% tinyint,	wrd,	tinyint,	wrd # type
+% tinyint,	bigint,	tinyint,	bigint # type
 % 1,	1,	1,	1 # length
 [ 1,	6,	1,	9	]
 #select * from (select 1 as id , count(*) as cnt from (select distinct x,y from a) as b) as b2, (select 1 as id , count(*) as cnt2 from a) as a2 where b2.id = a2.id;
 % .b2,	.b2,	.a2,	.a2 # table_name
 % id,	cnt,	id,	cnt2 # name
-% tinyint,	wrd,	tinyint,	wrd # type
+% tinyint,	bigint,	tinyint,	bigint # type
 % 1,	1,	1,	1 # length
 [ 1,	6,	1,	9	]
 

@@ -156,10 +156,6 @@ getTypeIndex(str nme, int len, int deftype)
 			if (qt("sht"))
 				return TYPE_sht;
 			break;
-		case 'w':
-			if (qt("wrd"))
-				return TYPE_wrd;
-			break;
 		}
 	if( nme[0]=='v' && qt("voi") && nme[3] == 'd')
 				return TYPE_void;

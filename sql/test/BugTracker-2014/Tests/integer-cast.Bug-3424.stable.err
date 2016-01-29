@@ -28,7 +28,7 @@ stderr of test 'integer-cast.Bug-3424` in directory 'sql/test/BugTracker-2014` i
 # 17:58:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25467" "--port=38988"
 # 17:58:28 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-25467/.s.monetdb.38988
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select cast('00asdf1' as INTEGER);
 ERROR = !conversion of string '00asdf1' to type int failed.
 

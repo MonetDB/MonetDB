@@ -45,7 +45,7 @@ Ready.
 #AND 
 #    "tables"."name" LIKE 'voyages'
 #ORDER BY "COLUMN_NAME";
-% .L,	.L,	.L,	.L,	.L,	.L # table_name
+% .L2,	.L2,	.L2,	.L2,	.L2,	.L2 # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
 % char,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length

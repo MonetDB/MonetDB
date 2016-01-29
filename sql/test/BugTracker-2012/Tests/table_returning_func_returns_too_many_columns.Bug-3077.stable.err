@@ -30,13 +30,13 @@ stderr of test 'table_returning_func_returns_too_many_columns.Bug-3077` in direc
 # 10:39:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=39624"
 # 10:39:10 >  
 
-MAPI  = monetdb@niels:32249
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create function t () returns table (x int) begin declare table t (x int, y int); return t; end;
 ERROR = !RETURN: number of columns do not match
-MAPI  = monetdb@niels:32249
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t();
 ERROR = !SELECT: no such operator 't'
-MAPI  = monetdb@niels:32249
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop function t;
 ERROR = !DROP FUNCTION: no such function 't'
 

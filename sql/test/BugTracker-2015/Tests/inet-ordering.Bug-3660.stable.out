@@ -84,19 +84,19 @@ Ready.
 #select count(*) from bug where address>=inet'4.0.0.0';
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 8	]
 #select count(*) from bug where address<inet'8.0.0.0';
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 7	]
 #select count(*) from bug where address>=inet'4.0.0.0' and address<inet'8.0.0.0';
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 4	]
 #rollback;

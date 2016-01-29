@@ -77,7 +77,7 @@ Ready.
 #select count(distinct g) from rapi18bad; 
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 500	]
 #select g, rapi18(n) from rapi18bad group by g;

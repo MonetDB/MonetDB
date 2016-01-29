@@ -71,7 +71,7 @@ Ready.
 #select * from sys.querylog_calls;
 % .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
 % id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
-% oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 
 # 21:52:29 >  

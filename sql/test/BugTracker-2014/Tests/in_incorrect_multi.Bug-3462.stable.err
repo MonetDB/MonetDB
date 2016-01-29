@@ -28,7 +28,7 @@ stderr of test 'in_incorrect_multi.Bug-3462` in directory 'sql/test/BugTracker-2
 # 14:17:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1586" "--port=39561"
 # 14:17:11 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-20229/.s.monetdb.38161
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT * FROM SYS.ARGS
          WHERE FUNC_ID NOT IN (SELECT * FROM SYS.FUNCTIONS);
 ERROR = !IN: inner query should return a single column

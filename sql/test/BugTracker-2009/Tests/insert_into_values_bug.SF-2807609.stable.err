@@ -69,10 +69,10 @@ stderr of test 'insert_into_values_bug.SF-2807609` in directory 'sql/test/BugTra
 # 22:02:16 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34561 
 # 22:02:16 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into test (a) values (select 2);
 ERROR = !syntax error, unexpected SELECT in: "insert into test (a) values (select"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into test (a,b) values (select 2, 2);
 ERROR = !syntax error, unexpected SELECT in: "insert into test (a,b) values (select"
 

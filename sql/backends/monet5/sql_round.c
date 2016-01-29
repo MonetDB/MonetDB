@@ -48,10 +48,6 @@
 #include "sql_round_impl.h"
 #undef TYPE
 
-#define TYPE wrd
-#include "sql_round_impl.h"
-#undef TYPE
-
 #define TYPE lng
 #include "sql_round_impl.h"
 #undef TYPE

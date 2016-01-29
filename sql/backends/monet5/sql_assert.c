@@ -71,25 +71,6 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	wrd *flg = getArgReference_wrd(stk, pci, 1);
-	str *msg = getArgReference_str(stk, pci, 2);
-	(void) cntxt;
-	(void) mb;
-	if (*flg) {
-		const char *sqlstate = "M0M29!";
-		/* mdbDump(mb,stk,pci); */
-		if (strlen(*msg) > 6 && (*msg)[5] == '!' && (('0' <= (*msg)[0] && (*msg)[0] <= '9') || ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) && (('0' <= (*msg)[1] && (*msg)[1] <= '9') || ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') || ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) && (('0' <= (*msg)[3] && (*msg)[3] <= '9') || ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) && (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
-																								 ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
-			sqlstate = "";
-		throw(SQL, "assert", "%s%s", sqlstate, *msg);
-	}
-	return MAL_SUCCEED;
-}
-
-str
 SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *flg = getArgReference_lng(stk, pci, 1);

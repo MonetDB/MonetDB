@@ -55,7 +55,7 @@
 static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
-	wrd j, gcnt = BATcount(gids);
+	lng j, gcnt = BATcount(gids);
 	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
 	if (r == NULL)
@@ -63,9 +63,9 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->hseqbase;
-		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		lng *cnt = (lng*)Tloc(cnts, 0);
 		for(j = 0; j < gcnt; j++) {
-			wrd i, sz = cnt[j];
+			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, &id, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(r);
@@ -76,9 +76,9 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		}
 	} else {
 		oid *id = (oid*)Tloc(gids, 0);
-		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		lng *cnt = (lng*)Tloc(cnts, 0);
 		for(j = 0; j < gcnt; j++) {
-			wrd i, sz = cnt[j];
+			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, id, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(r);
@@ -520,7 +520,7 @@ ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat 
 /* algebra.firstn(b:bat[:oid,:any],
  *                [ s:bat[:oid,:oid],
  *                [ g:bat[:oid,:oid], ] ]
- *                n:wrd,
+ *                n:lng,
  *                asc:bit,
  *                distinct:bit)
  * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
@@ -532,7 +532,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat bid, sid, gid;
 	BAT *b, *s = NULL, *g = NULL;
 	BAT *bn, *gn;
-	wrd n;
+	lng n;
 	bit asc, distinct;
 	gdk_return rc;
 
@@ -542,7 +542,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1 || pci->retc == 2);
 	assert(pci->argc - pci->retc >= 4 && pci->argc - pci->retc <= 6);
 
-	n = * getArgReference_wrd(stk, pci, pci->argc - 3);
+	n = * getArgReference_lng(stk, pci, pci->argc - 3);
 	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference_bat(stk, pci, 0);
@@ -789,20 +789,20 @@ ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
 }
 
 str
-ALGcount_bat(wrd *result, const bat *bid)
+ALGcount_bat(lng *result, const bat *bid)
 {
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
 	}
-	*result = (wrd) BATcount(b);
+	*result = (lng) BATcount(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGcount_nil(wrd *result, const bat *bid, const bit *ignore_nils)
+ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 {
 	BAT *b;
 	BUN cnt;
@@ -814,13 +814,13 @@ ALGcount_nil(wrd *result, const bat *bid, const bit *ignore_nils)
 		cnt = BATcount_no_nil(b);
 	else
 		cnt = BATcount(b);
-	*result = (wrd) cnt;
+	*result = (lng) cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGcount_no_nil(wrd *result, const bat *bid)
+ALGcount_no_nil(lng *result, const bat *bid)
 {
 	bit ignore_nils = 1;
 
@@ -902,10 +902,10 @@ ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 }
 
 str
-ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
+ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	lng s = *start;
-	lng e = (*end == wrd_nil ? lng_nil : *end);
+	lng e = *end;
 
 	return ALGslice(ret, bid, &s, &e);
 }
@@ -922,20 +922,20 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 }
 
 str
-ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
+ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	BAT *b, *bn;
 	BUN s, e;
 
-	if (*start < 0 || *start > (wrd) BUN_MAX ||
-		(*end < 0 && *end != wrd_nil) || *end >= (wrd) BUN_MAX)
+	if (*start < 0 || *start > (lng) BUN_MAX ||
+		(*end < 0 && *end != lng_nil) || *end >= (lng) BUN_MAX)
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.subslice", RUNTIME_OBJECT_MISSING);
 	s = (BUN) *start;
 	if (s > BATcount(b))
 		s = BATcount(b);
-	e = *end == wrd_nil ? BATcount(b) : (BUN) *end + 1;
+	e = *end == lng_nil ? BATcount(b) : (BUN) *end + 1;
 	if (e > BATcount(b))
 		e = BATcount(b);
 	if (e < s)

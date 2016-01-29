@@ -80,25 +80,25 @@ stderr of test 'alter_add_constraint_should_check_existing_data.SF-2075241` in d
 # 16:00:59 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=38461 
 # 16:00:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table A add constraint test1 primary key (test);
 ERROR = !ALTER TABLE: NOT NULL constraint violated for column a.test
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table A add constraint test1 primary key (test);
 ERROR = !UPDATE: PRIMARY KEY constraint 'a.test1' violated
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into A (test) values (1);
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'a.test1' violated
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table A add constraint test1 primary key (test, id);
 ERROR = !ALTER TABLE: NOT NULL constraint violated for column a.test
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table A add constraint test1 primary key (test, id);
 ERROR = !ALTER TABLE: NOT NULL constraint violated for column a.id
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table A add constraint test1 primary key (test, id);
 ERROR = !ALTER TABLE: NOT NULL constraint violated for column a.test
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into t2 select * from t1;
 ERROR = !INSERT INTO: PRIMARY KEY constraint 't2.t2_id_pkey' violated
 

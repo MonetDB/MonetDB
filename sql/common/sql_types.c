@@ -164,11 +164,11 @@ localtypes_cmp(int nlt, int olt)
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
 		nlt = TYPE_dbl;
 #ifdef HAVE_HGE
-	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_wrd || nlt == TYPE_lng || nlt == TYPE_hge) {
+	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng || nlt == TYPE_hge) {
 		assert(have_hge || nlt != TYPE_hge);
 		nlt = have_hge ? TYPE_hge : TYPE_lng;
 #else
-	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_wrd || nlt == TYPE_lng) {
+	} else if (nlt == TYPE_bte || nlt == TYPE_sht || nlt == TYPE_int || nlt == TYPE_lng) {
 		nlt = TYPE_lng;
 #endif
 	}
@@ -1223,7 +1223,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *WRD, *DEC;
+	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *DEC;
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
@@ -1259,14 +1259,8 @@ sqltypeinit( sql_allocator *sa)
 	BTE = *t++ = sql_create_type(sa, "TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
 	SHT = *t++ = sql_create_type(sa, "SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type(sa, "INT",      32, SCALE_FIX, 2, EC_NUM, "int");
-#if SIZEOF_WRD == SIZEOF_INT
-	WRD = *t++ = sql_create_type(sa, "WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
-#endif
 	LargestINT =
 	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
-#if SIZEOF_WRD == SIZEOF_LNG
-	WRD = *t++ = sql_create_type(sa, "WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
-#endif
 #ifdef HAVE_HGE
 	if (have_hge) {
 		LargestINT =
@@ -1318,12 +1312,12 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", OID, BIT);
 	/* well to be precise it does reduce and map */
-	sql_create_func(sa, "not_uniques", "sql", "not_uniques", WRD, NULL, OID, SCALE_NONE);
+	sql_create_func(sa, "not_uniques", "sql", "not_uniques", LNG, NULL, OID, SCALE_NONE);
 	sql_create_func(sa, "not_uniques", "sql", "not_uniques", OID, NULL, OID, SCALE_NONE);
 
 	/* functions needed for all types */
-	sql_create_func(sa, "hash", "mkey", "hash", ANY, NULL, WRD, SCALE_FIX);
-	sql_create_func3(sa, "rotate_xor_hash", "calc", "rotate_xor_hash", WRD, INT, ANY, WRD, SCALE_NONE);
+	sql_create_func(sa, "hash", "mkey", "hash", ANY, NULL, LNG, SCALE_FIX);
+	sql_create_func3(sa, "rotate_xor_hash", "calc", "rotate_xor_hash", LNG, INT, ANY, LNG, SCALE_NONE);
 	sql_create_func(sa, "=", "calc", "=", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "<>", "calc", "!=", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "isnull", "calc", "isnil", ANY, NULL, BIT, SCALE_FIX);
@@ -1350,12 +1344,12 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "sum", "aggr", "sum", BTE, LargestINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", SHT, LargestINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", INT, LargestINT);
-	sql_create_aggr(sa, "sum", "aggr", "sum", LNG, LargestINT);
+	//sql_create_aggr(sa, "sum", "aggr", "sum", LNG, LargestINT);
 #ifdef HAVE_HGE
 	if (have_hge)
 		sql_create_aggr(sa, "sum", "aggr", "sum", HGE, LargestINT);
 #endif
-	sql_create_aggr(sa, "sum", "aggr", "sum", WRD, WRD);
+	sql_create_aggr(sa, "sum", "aggr", "sum", LNG, LNG);
 
 	t = decimals; /* BTE */
 	sql_create_aggr(sa, "sum", "aggr", "sum", *(t), LargestDEC);
@@ -1381,7 +1375,7 @@ sqltypeinit( sql_allocator *sa)
 	if (HAVE_HGE)
 		sql_create_aggr(sa, "prod", "aggr", "prod", HGE, LargestINT);
 #endif
-	/*sql_create_aggr(sa, "prod", "aggr", "prod", WRD, WRD);*/
+	/*sql_create_aggr(sa, "prod", "aggr", "prod", LNG, LNG);*/
 
 	t = decimals; /* BTE */
 	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
@@ -1419,8 +1413,8 @@ sqltypeinit( sql_allocator *sa)
 	*/
 	sql_create_aggr(sa, "avg", "aggr", "avg", DBL, DBL);
 
-	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, WRD);
-	sql_create_aggr(sa, "count", "aggr", "count", NULL, WRD);
+	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, LNG);
+	sql_create_aggr(sa, "count", "aggr", "count", NULL, LNG);
 
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", ANY, NULL, NULL, BIT, SCALE_NONE);

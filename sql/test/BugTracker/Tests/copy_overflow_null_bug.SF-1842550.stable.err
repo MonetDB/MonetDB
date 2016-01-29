@@ -30,7 +30,7 @@ stderr of test 'copy_overflow_null_bug.SF-1842550` in directory 'sql/test/BugTra
 # 13:05:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=38256"
 # 13:05:29 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 2 RECORDS INTO bulk FROM stdin USING DELIMITERS '|', '\n', '''';
         5536|'5536'
         53605|'53605'

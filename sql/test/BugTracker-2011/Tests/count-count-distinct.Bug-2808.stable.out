@@ -77,19 +77,19 @@ Ready.
 #select count(name) from tbls;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 40	]
 #select count(distinct name) from tbls;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 34	]
 #select count(name) , count(distinct name) from tbls;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% wrd,	wrd # type
+% bigint,	bigint # type
 % 2,	2 # length
 [ 40,	34	]
 

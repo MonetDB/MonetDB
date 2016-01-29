@@ -12,7 +12,7 @@ stderr of test 'auto_increment.SF-1834820` in directory 'sql/test/BugTracker` it
 # 15:29:02 >  mclient -lsql -umonetdb -Pmonetdb --host=alviss --port=38834 
 # 15:29:02 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO testusers (name, fullname) VALUES ('fred', 'Fred Flintstone');
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'testusers.testusers_id_pkey' violated
 

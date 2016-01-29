@@ -119,12 +119,12 @@
 
 #define GDK_ROTATE(x,y,z,m) ((((x) << (y)) & ~(m)) | (((x) >> (z)) & (m)))
 
-mkey_export str  MKEYrotate(wrd *ret, const wrd *v, const int *nbits);
+mkey_export str  MKEYrotate(lng *ret, const lng *v, const int *nbits);
 mkey_export str  MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mkey_export str  MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mkey_export str  MKEYbulk_rotate_xor_hash(bat *ret, const bat *hid, const int *nbits, const bat *bid);
 mkey_export str  MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mkey_export str  MKEYconstbulk_rotate_xor_hash(bat *ret, const wrd *h, const int *nbits, const bat *bid);
+mkey_export str  MKEYconstbulk_rotate_xor_hash(bat *ret, const lng *h, const int *nbits, const bat *bid);
 mkey_export str  MKEYbathash(bat *res, const bat *bid);
 
 #endif /* _MKEY_H */

@@ -47,7 +47,7 @@ Ready.
 
 #set time zone interval -'14:00' hour to minute;
 #SELECT EXTRACT(DAY FROM CURRENT_TIMESTAMP) <> 27;
-% . # table_name
+% .L # table_name
 % current_timestamp # name
 % boolean # type
 % 5 # length

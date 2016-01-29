@@ -59,7 +59,7 @@ Ready.
 #SELECT count(*) FROM rval WHERE rsample(val,10);
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 10	]
 

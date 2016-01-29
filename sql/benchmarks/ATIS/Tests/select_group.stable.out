@@ -22,7 +22,7 @@ Ready.
 #select day_name.day_name,day_name.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name,day_name.day_code order by day_code;
 % sys.day_name,	sys.day_name,	sys.L1 # table_name
 % day_name,	day_code,	L1 # name
-% char,	decimal,	wrd # type
+% char,	decimal,	bigint # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
 [ "TUESDAY",	2,	64	]
@@ -34,7 +34,7 @@ Ready.
 #select day_name.day_name,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name;
 % sys.day_name,	sys.L1 # table_name
 % day_name,	L1 # name
-% char,	wrd # type
+% char,	bigint # type
 % 9,	2 # length
 [ "MONDAY",	64	]
 [ "TUESDAY",	64	]
@@ -54,7 +54,7 @@ Ready.
 #select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code;
 % sys.day_name,	sys.flight_day,	sys.L1 # table_name
 % day_name,	day_code,	L1 # name
-% char,	decimal,	wrd # type
+% char,	decimal,	bigint # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
 [ "TUESDAY",	2,	64	]
@@ -84,7 +84,7 @@ Ready.
 #select count(*),min(pay_load),max(pay_load) from aircraft where pay_load>0;
 % sys.L1,	sys.L2,	sys.L3 # table_name
 % L1,	L2,	L3 # name
-% wrd,	int,	int # type
+% bigint,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 #select min(flight_code),min(flight_code) from flight;
@@ -102,19 +102,19 @@ Ready.
 #select count(*) from aircraft where pay_load>10000;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 50	]
 #select count(*) from aircraft where pay_load<>0;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 94	]
 #select count(*) from flight where flight_code >= 112793;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 279	]
 #SELECT from_airport,to_airport,avg(time_elapsed) FROM flight WHERE from_airport='ATL' AND to_airport='BOS' group by from_airport,to_airport;
@@ -142,7 +142,7 @@ Ready.
 #select count(*), ground_service.city_code from ground_service group by ground_service.city_code;
 % sys.L1,	sys.ground_service # table_name
 % L1,	city_code # name
-% wrd,	char # type
+% bigint,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
 [ 3,	"BBOS"	]
@@ -159,7 +159,7 @@ Ready.
 #select category,count(*) as totalnr from aircraft where engines=2 group by category having count(*)>4 order by category;
 % sys.aircraft,	sys.L1 # table_name
 % category,	totalnr # name
-% char,	wrd # type
+% char,	bigint # type
 % 10,	2 # length
 [ "JET",	15	]
 [ "PROPELLER",	16	]
@@ -167,7 +167,7 @@ Ready.
 #select category,count(*) from aircraft where engines=2 group by category having count(*)>4 order by category;
 % sys.aircraft,	sys.L1 # table_name
 % category,	L1 # name
-% char,	wrd # type
+% char,	bigint # type
 % 10,	2 # length
 [ "JET",	15	]
 [ "PROPELLER",	16	]

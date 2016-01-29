@@ -23,7 +23,7 @@ mdb.setDebug(dbgmsk_restore);
 	return b;
 end load;
 
-function qry(z:bat[:lng],low:int,hgh:int):wrd;
+function qry(z:bat[:lng],low:int,hgh:int):lng;
 	l:= calc.lng(low);
 	h:= calc.lng(hgh);
 	s:= algebra.subselect(z,l,h,true,true,false);
@@ -33,11 +33,11 @@ end qry;
 
 s:= load();
 
-t1:= 0:wrd;
-t2:= 0:wrd;
-t3:= 0:wrd;
-t4:= 0:wrd;
-c := 0:wrd;
+t1:= 0:lng;
+t2:= 0:lng;
+t3:= 0:lng;
+t4:= 0:lng;
+c := 0:lng;
 barrier go:= language.dataflow();
 	t1:= qry(s,1,100);
 	t2:= qry(s,101,1000);

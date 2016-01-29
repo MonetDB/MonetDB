@@ -60,21 +60,21 @@ Ready.
 #SELECT COUNT(*) FROM TEST1 JOIN TEST2 USING(ONE, TWO);
 % sys.L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #CREATE INDEX ONEDEX ON TEST1 (ONE, TWO);
 #SELECT COUNT(*) FROM TEST1 JOIN TEST2 USING(ONE, TWO);
 % sys.L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #DROP INDEX ONEDEX;
 #SELECT COUNT(*) FROM TEST1 JOIN TEST2 USING(ONE, TWO);
 % sys.L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #ROLLBACK;

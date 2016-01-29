@@ -72,7 +72,7 @@ stderr of test 'temp_table_fail_leaves_data.SF-2793286` in directory 'sql/test/B
 # 15:05:11 >  
 
 table sys.testpk does not exist
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create temporary table testpk (hello int, primary key(hello));
 ERROR = !CREATE TABLE: name 'testpk' already in use
 

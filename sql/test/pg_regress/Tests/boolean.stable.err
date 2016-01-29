@@ -29,52 +29,52 @@ stderr of test 'boolean` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('t' AS boolean) AS "true";
 ERROR = !conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('true' AS boolean) AS true;
 ERROR = !syntax error, unexpected BOOL_TRUE in: "select cast('true' as boolean) as true"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('f' AS boolean) AS "false";
 ERROR = !conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('false' AS boolean) AS false;
 ERROR = !syntax error, unexpected BOOL_FALSE in: "select cast('false' as boolean) as false"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('t' AS boolean) or cast('f' AS boolean) AS "true";
 ERROR = !conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('t' AS boolean) and cast('f' AS boolean) AS "false";
 ERROR = !conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT not cast('f' AS boolean) AS "true";
 ERROR = !conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('t' AS boolean) = cast('f' AS boolean) AS "false";
 ERROR = !conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('t' AS boolean) <> cast('f' AS boolean) AS "true";
 ERROR = !conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (cast('t' AS boolean));
 ERROR = !conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS zero, BOOLTBL1.*
            FROM BOOLTBL1
            WHERE booleq(cast('false' AS boolean), f1);
 ERROR = !SELECT: no such binary operator 'booleq(boolean,boolean)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (cast('f' AS boolean));
 ERROR = !conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO BOOLTBL2 (f1) VALUES (cast('f' AS boolean));
 ERROR = !conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO BOOLTBL2 (f1) 
            VALUES ('XXX');  
 ERROR = !conversion of string 'XXX' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
            FROM BOOLTBL1, BOOLTBL2
            WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1);

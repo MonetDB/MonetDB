@@ -70,20 +70,20 @@ stderr of test 'crashonschema.Bug-2547` in directory 'sql/test/BugTracker-2010` 
 # 18:47:50 >  mclient -lsql -ftest -i -e --host=alf --port=39317 
 # 18:47:50 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create schema intro2 authorized monetdb;
 ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create schema intro2 authorized"
-MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create schema authorized monetdb;
 ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create schema authorized monetdb"
-MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop schema intro2;
 ERROR = !DROP SCHEMA: name intro2 does not exist
-MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create schema intro3 
           grant insert on t2010 to monetdb;
 ERROR = !GRANT no such table 't2010'
-MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop schema intro3;
 ERROR = !DROP SCHEMA: name intro3 does not exist
 

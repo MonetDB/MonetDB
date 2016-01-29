@@ -27,7 +27,7 @@ stderr of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 # 13:48:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32735"
 # 13:48:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16107/.s.monetdb.31536
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
 ERROR = !SELECT: 'x' requires a single sub query
 

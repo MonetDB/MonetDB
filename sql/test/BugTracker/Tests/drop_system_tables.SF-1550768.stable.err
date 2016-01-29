@@ -10,13 +10,13 @@ stderr of test 'drop_system_tables.SF-1550768` in directory 'sql/test/BugTracker
 # 10:53:33 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34124  < drop_system_tables.SF-1550768.sql
 # 10:53:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table tables;
 ERROR = !DROP TABLE: cannot drop VIEW 'tables'
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop view tables;
 ERROR = !DROP VIEW: cannot drop system view 'tables'
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table _tables;
 ERROR = !DROP TABLE: cannot drop system table '_tables'
 

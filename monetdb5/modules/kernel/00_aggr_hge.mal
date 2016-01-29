@@ -86,32 +86,6 @@ command subprod(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,
 address AGGRsubprodcand_hge
 comment "Grouped product aggregate with candidates list";
 
-command sum(b:bat[:wrd],g:bat[:oid],e:bat[:any_1])
-		:bat[:hge]
-address AGGRsum3_hge
-comment "Grouped tail sum on wrd";
-
-command subsum(b:bat[:wrd],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:hge]
-address AGGRsubsum_hge
-comment "Grouped sum aggregate";
-
-command subsum(b:bat[:wrd],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:hge]
-address AGGRsubsumcand_hge
-comment "Grouped sum aggregate with candidates list";
-
-command prod(b:bat[:wrd],g:bat[:oid],e:bat[:any_1])
-		:bat[:hge]
-address AGGRprod3_hge
-comment "Grouped tail product on wrd";
-
-command subprod(b:bat[:wrd],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:hge]
-address AGGRsubprod_hge
-comment "Grouped product aggregate";
-
-command subprod(b:bat[:wrd],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:hge]
-address AGGRsubprodcand_hge
-comment "Grouped product aggregate with candidates list";
-
 command sum(b:bat[:lng],g:bat[:oid],e:bat[:any_1])
 		:bat[:hge]
 address AGGRsum3_hge
@@ -168,7 +142,7 @@ command avg(b:bat[:hge], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on hge";
 
-command avg(b:bat[:hge], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:wrd])
+command avg(b:bat[:hge], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on hge, also returns count";
 
@@ -180,11 +154,11 @@ command subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,a
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
 
-command subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:wrd])
+command subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
-command subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:wrd])
+command subavg(b:bat[:hge],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 

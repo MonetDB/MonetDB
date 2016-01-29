@@ -83,25 +83,25 @@ Ready.
 #SELECT count(*) FROM bottom();
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf1();
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf2();
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf3();
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #DROP FUNCTION leaf3;

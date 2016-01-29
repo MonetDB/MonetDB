@@ -241,7 +241,7 @@ Ready.
 #SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY i.name, times desc;
 % .i,	.L1 # table_name
 % name,	times # name
-% varchar,	wrd # type
+% varchar,	bigint # type
 % 45,	1 # length
 [ "Chief Constable Adolphus Frederick Williamson",	0	]
 [ "Chief Inspector Donald Swanson",	1	]
@@ -291,7 +291,7 @@ Ready.
 #SELECT eyes, count(name) AS times FROM Jtr_victim WHERE NOT eyes = '' GROUP BY eyes ORDER BY eyes, times desc;
 % sys.jtr_victim,	sys.L1 # table_name
 % eyes,	times # name
-% varchar,	wrd # type
+% varchar,	bigint # type
 % 10,	1 # length
 [ "blue",	2	]
 [ "brown",	1	]
@@ -301,7 +301,7 @@ Ready.
 #SELECT s.victim, COUNT(w.witness) AS witnesses, COUNT(i.inspector) AS inspectors, COUNT(d.doctor) AS doctors, COUNT(sp.suspect) AS suspects FROM Jtr_scene s LEFT OUTER JOIN Jtr_scene_witnesses w ON w.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_inspectors i ON i.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_doctors d ON d.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_suspects sp ON sp.scene_id = s.scene_id GROUP BY s.victim ORDER BY s.victim asc, witnesses, inspectors, doctors, suspects;
 % .s,	.L1,	.L2,	.L3,	.L4 # table_name
 % victim,	witnesses,	inspectors,	doctors,	suspects # name
-% varchar,	wrd,	wrd,	wrd,	wrd # type
+% varchar,	bigint,	bigint,	bigint,	bigint # type
 % 42,	1,	1,	1,	1 # length
 [ "\"Fairy Fay\"",	0,	1,	0,	0	]
 [ "Ada Wilson",	2,	0,	0,	0	]

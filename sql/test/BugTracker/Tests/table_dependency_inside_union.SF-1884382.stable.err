@@ -12,10 +12,10 @@ stderr of test 'table_dependency_inside_union.SF-1884382` in directory 'sql/test
 # 14:42:29 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=32819 
 # 14:42:29 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1884382a;
 ERROR = !DROP TABLE: unable to drop table t1884382a (there are database objects which depend on it)
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1884382b;
 ERROR = !DROP TABLE: unable to drop table t1884382b (there are database objects which depend on it)
 

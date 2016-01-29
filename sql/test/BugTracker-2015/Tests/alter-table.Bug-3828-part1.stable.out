@@ -92,7 +92,7 @@ Ready.
 #select actiontype, propertytype, loanpurpose, count(*) as num_records from hmda_14 group by actiontype, propertytype, loanpurpose;
 % sys.hmda_14,	sys.hmda_14,	sys.hmda_14,	sys.L1 # table_name
 % actiontype,	propertytype,	loanpurpose,	num_records # name
-% double,	varchar,	double,	wrd # type
+% double,	varchar,	double,	bigint # type
 % 24,	0,	24,	1 # length
 #select tables.name, columns.name, location from tables inner join columns on tables.id=columns.table_id left join storage on tables.name=storage.table and columns.name=storage.column where location is null and tables.name like 'hmda%';
 % .tables,	.columns,	.storage # table_name

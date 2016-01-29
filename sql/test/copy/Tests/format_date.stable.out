@@ -48,13 +48,13 @@ Ready.
 #select count(*) from orders_1;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 150	]
 #select count(*) from orders_2;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 150	]
 #drop table orders_1;

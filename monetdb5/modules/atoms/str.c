@@ -1713,7 +1713,7 @@ STRFromWChr(str *res, const int *c)
 str
 STRWChrAt(int *res, const str *arg1, const int *at)
 {
-/* 64bit: should have wrd arg */
+/* 64bit: should have lng arg */
 	const char *s = *arg1;
 	const unsigned char *u;
 
@@ -1800,7 +1800,7 @@ STRUpper(str *res, const str *arg1)
 str
 STRstrSearch(int *res, const str *haystack, const str *needle)
 {
-/* 64bit: should return wrd */
+/* 64bit: should return lng */
 	char *p;
 	const char *s = *haystack;
 	const char *s2 = *needle;
@@ -1819,7 +1819,7 @@ STRstrSearch(int *res, const str *haystack, const str *needle)
 str
 STRReverseStrSearch(int *res, const str *arg1, const str *arg2)
 {
-/* 64bit: should return wrd */
+/* 64bit: should return lng */
 	size_t len, slen;
 	const char *p, *q;
 	size_t i;

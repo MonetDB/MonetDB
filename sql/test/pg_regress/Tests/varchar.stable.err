@@ -69,16 +69,16 @@ stderr of test 'varchar` in directory 'sql/test/pg_regress` itself:
 # 22:22:59 >  ./varchar.SQL.sh varchar 
 # 22:22:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('cd');
 ERROR = !value too long for type (var)char(1)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('c     ');
 ERROR = !value too long for type (var)char(1)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('abcde');
 ERROR = !value too long for type (var)char(4)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd    ');
 ERROR = !value too long for type (var)char(4)
 

@@ -28,19 +28,19 @@ stderr of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 # 10:46:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24209" "--port=38855"
 # 10:46:44 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select stddev( prob1 ) from mtcars2;
-ERROR = !SELECT: no such unary operator 'stddev(wrd)'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !SELECT: no such unary operator 'stddev(bigint)'
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select stddev( prob1 ) from mtcars2;
 ERROR = !SELECT: no such unary operator 'stddev(tinyint)'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select stddev( prob1 ) from mtcars2;
 ERROR = !SELECT: no such unary operator 'stddev(smallint)'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select stddev( prob1 ) from mtcars2;
 ERROR = !SELECT: no such unary operator 'stddev(int)'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select stddev( prob1 ) from mtcars2;
 ERROR = !SELECT: no such unary operator 'stddev(bigint)'
 

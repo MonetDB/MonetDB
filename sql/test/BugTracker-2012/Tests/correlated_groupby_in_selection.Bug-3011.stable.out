@@ -43,9 +43,9 @@ Ready.
 #            counter.timinglinkorder < test.timinglinkorder and
 #            counter.userstopcodebegin = test.userstopcodebegin
 #            group by dataownercode, lineplanningnumber, journeypatterncode) as
-% .test,	.test,	.test,	.test,	.test,	.test,	.L1 # table_name
+% .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
-% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	wrd # type
+% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 0,	0,	0,	4,	0,	5,	1 # length
 #select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 #userstopcodebegin, istimingstop,
@@ -58,7 +58,7 @@ Ready.
 #passagesequencenumber 
 % .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
-% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	wrd # type
+% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 0,	0,	0,	4,	0,	5,	1 # length
 #COPY 10 RECORDS INTO "test" FROM STDIN USING DELIMITERS ',', '\n';
 #1,true,CXX,A001,0,0,40000010,40004015,santro,A00100998,true,,34
@@ -78,9 +78,9 @@ Ready.
 #            counter.timinglinkorder < test.timinglinkorder and
 #            counter.userstopcodebegin = test.userstopcodebegin
 #            group by dataownercode, lineplanningnumber, journeypatterncode) as
-% .test,	.test,	.test,	.test,	.test,	.test,	.L1 # table_name
+% .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
-% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	wrd # type
+% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 3,	4,	1,	4,	8,	5,	1 # length
 [ "CXX",	"A001",	"0",	0,	"40000010",	true,	1	]
 [ "CXX",	"A001",	"0",	1,	"40004015",	false,	1	]
@@ -103,7 +103,7 @@ Ready.
 #passagesequencenumber 
 % .test,	.test,	.test,	.test,	.test,	.test,	.L2 # table_name
 % dataownercode,	lineplanningnumber,	journeypatterncode,	timinglinkorder,	userstopcodebegin,	istimingstop,	passagesequencenumber # name
-% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	wrd # type
+% varchar,	varchar,	varchar,	decimal,	varchar,	boolean,	bigint # type
 % 3,	4,	1,	4,	8,	5,	1 # length
 [ "CXX",	"A001",	"0",	0,	"40000010",	true,	0	]
 [ "CXX",	"A001",	"0",	1,	"40004015",	false,	0	]

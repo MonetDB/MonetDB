@@ -13,7 +13,7 @@ module calc;
 
 EOF
 
-integer="bte sht int wrd lng hge"	# all integer types
+integer="bte sht int lng hge"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 fixtypes="bit $numeric oid"
 alltypes="$fixtypes str"
@@ -71,14 +71,14 @@ done
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int wrd lng hge flt; do
-	for tp2 in bte sht int wrd lng hge flt; do
+    for tp1 in bte sht int lng hge flt; do
+	for tp2 in bte sht int lng hge flt; do
 	    case $tp1$tp2 in
 	    hgeflt|flthge)
 		tp3=dbl;;
 	    *flt*|*hge*)
 		continue;;	# hge only allowed in combination with flt
-	    *lng*|*wrd*)
+	    *lng*)
 		tp3=hge;;
 	    *)
 		continue;;
@@ -172,7 +172,6 @@ for tp1 in $numeric; do
 	    *bte*) tp3=bte;;
 	    *sht*) tp3=sht;;
 	    *int*) tp3=int;;
-	    *wrd*) tp3=wrd;;
 	    *lng*) tp3=lng;;
 	    *hge*) tp3=hge;;
 	    esac
@@ -298,8 +297,8 @@ module aggr;
 EOF
 
 for func in sum:sum prod:product; do
-    for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng 9:hge; do
-	for tp2 in 1:bte 2:sht 4:int 4:wrd 8:lng 9:hge 9:dbl; do
+    for tp1 in 1:bte 2:sht 4:int 8:lng 9:hge; do
+	for tp2 in 1:bte 2:sht 4:int 8:lng 9:hge 9:dbl; do
 	    case $tp1$tp2 in
 	    *hge*) ;;
 	    *) continue;;

@@ -53,13 +53,13 @@ Ready.
 % 41 # length
 [ 11510005109700.000000	]
 #select convert (                   10000000                *          100000 * 11.51 , decimal(15)) + convert (51.097 *          100000 , decimal(15));
-% .L # table_name
+% .L2 # table_name
 % sql_mul_single_value # name
 % decimal # type
 % 19 # length
 [ 11510005109700	]
 #select convert (convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51 , decimal(35)) + convert (51.097 * 100000000000000 , decimal(35));
-% .L # table_name
+% .L3 # table_name
 % sql_mul_single_value # name
 % decimal # type
 % 40 # length

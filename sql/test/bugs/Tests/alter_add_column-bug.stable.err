@@ -12,7 +12,7 @@ stderr of test 'alter_add_column-bug` in directory 'sql/test/bugs` itself:
 # 23:04:06 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=36740 
 # 23:04:06 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28252/.s.monetdb.32257
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE "myschema"."COLLECTION_INFO" ADD COLUMN test_col1  varchar(256);
 ERROR = !ALTER TABLE: no such table 'COLLECTION_INFO' in schema 'myschema'
 

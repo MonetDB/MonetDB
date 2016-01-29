@@ -70,7 +70,7 @@ stderr of test 'copy-into-too-long-string.Bug-2358` in directory 'sql/test/BugTr
 # 15:34:26 >  mclient -lsql -ftest -i -e --host=volund --port=32555 
 # 15:34:26 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
         ','"' NULL AS '';
         "abcd"

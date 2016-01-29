@@ -29,19 +29,19 @@ stderr of test 'insert` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT);
 ERROR = !syntax error, unexpected DEFAULT in: "insert into inserttest (col1, col2, col3) values (default"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT);
 ERROR = !syntax error, unexpected DEFAULT in: "insert into inserttest (col1, col2, col3) values (default"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1, col2, col3) values (1, 2);
 ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1) values (1, 2);
 ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1) values (DEFAULT, DEFAULT);
 ERROR = !syntax error, unexpected DEFAULT in: "insert into inserttest (col1) values (default"
 

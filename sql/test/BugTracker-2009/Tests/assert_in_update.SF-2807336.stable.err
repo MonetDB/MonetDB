@@ -69,7 +69,7 @@ stderr of test 'assert_in_update.SF-2807336` in directory 'sql/test/BugTracker-2
 # 10:38:04 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36216 
 # 10:38:04 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update anbi set kvk = (select kvk from kvk,anbi where lower(naam)
         = lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats));
 ERROR = !SELECT: identifier 'kvk' ambiguous

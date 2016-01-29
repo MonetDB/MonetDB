@@ -22,7 +22,7 @@ SELECT count(*) from sampleData;
 -- Median tests
 SELECT median(numValue) FROM sampleData;  -- should return 6
 SELECT median(groupID) FROM sampleData;  -- should return 2
-SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID;  -- should return (6, 5, 17, 18,  0)
+SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID ORDER BY groupID;  -- should return (6, 5, 17, 18,  0)
 
 
 SELECT R.groupID, AVG(1.0*R.numValue) AS medianValue
@@ -49,6 +49,6 @@ INNER JOIN
     GROUP BY GroupID
 ) G
 ON R.GroupID = G.GroupID 
-GROUP BY R.groupID;
+GROUP BY R.groupID ORDER BY R.groupID;
 
 drop table sampleData;

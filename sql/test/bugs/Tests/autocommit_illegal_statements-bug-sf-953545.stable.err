@@ -10,16 +10,16 @@ stderr of test 'autocommit_illegal_statements-bug-sf-953545` in directory 'sql/t
 # 15:22:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53599  < autocommit_illegal_statements-bug-sf-953545.sql
 # 15:22:34 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ROLLBACK;
 ERROR = !ROLLBACK: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COMMIT;
 ERROR = !COMMIT: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SAVEPOINT failingsavepoint;
 ERROR = !SAVEPOINT: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = RELEASE SAVEPOINT failingsavepoint;
 ERROR = !RELEASE SAVEPOINT: not allowed in auto commit mode
 

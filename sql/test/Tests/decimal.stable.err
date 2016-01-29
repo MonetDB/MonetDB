@@ -79,16 +79,16 @@ stderr of test 'decimal` in directory 'sql/test` itself:
 # 20:30:39 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
 # 20:30:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into decimaltest values (1234);
 ERROR = !too many digits (6 > 5)
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into decimaltest values (-1234);
 ERROR = !too many digits (6 > 5)
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into decimaltest values (1234.1);
 ERROR = !too many digits (6 > 5)
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into decimaltest values (-1234.1);
 ERROR = !too many digits (6 > 5)
 

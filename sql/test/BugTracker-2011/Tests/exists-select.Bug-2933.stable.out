@@ -63,7 +63,7 @@ Ready.
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #SELECT
@@ -79,7 +79,7 @@ Ready.
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #DROP TABLE _rank2933;

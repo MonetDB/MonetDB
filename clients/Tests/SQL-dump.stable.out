@@ -547,8 +547,6 @@ create aggregate corr(e1 smallint, e2 smallint) returns smallint
 	external name "aggr"."corr";
 create aggregate corr(e1 integer, e2 integer) returns integer
 	external name "aggr"."corr";
-create aggregate corr(e1 wrd, e2 wrd) returns wrd
-	external name "aggr"."corr";
 create aggregate corr(e1 bigint, e2 bigint) returns bigint
 	external name "aggr"."corr";
 create aggregate corr(e1 real, e2 real) returns real
@@ -859,8 +857,6 @@ create aggregate median(val smallint) returns smallint
 	external name "aggr"."median";
 create aggregate median(val integer) returns integer
 	external name "aggr"."median";
-create aggregate median(val wrd) returns wrd
-	external name "aggr"."median";
 create aggregate median(val bigint) returns bigint
 	external name "aggr"."median";
 create aggregate median(val decimal) returns decimal
@@ -980,8 +976,6 @@ create aggregate quantile(val smallint, q double) returns smallint
  	external name "aggr"."quantile";
 create aggregate quantile(val integer, q double) returns integer
  	external name "aggr"."quantile";
-create aggregate quantile(val wrd, q double) returns wrd
-	external name "aggr"."quantile";
 create aggregate quantile(val bigint, q double) returns bigint
 	external name "aggr"."quantile";
 create aggregate quantile(val decimal, q double) returns decimal
@@ -1025,7 +1019,7 @@ returns table(
 	"start" timestamp,	-- time the statement was started
 	"stop" timestamp,	-- time the statement was completely finished
 	arguments string,	-- actual call structure
-	tuples wrd,			-- number of tuples in the result set
+	tuples bigint,		-- number of tuples in the result set
 	run bigint,		-- time spent (in usec)  until the result export
 	ship bigint,		-- time spent (in usec)  to ship the result set
 	cpu int,  		-- average cpu load percentage during execution
@@ -1166,8 +1160,6 @@ create aggregate stddev_pop(val smallint) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val integer) returns double
 	external name "aggr"."stdevp";
-create aggregate stddev_pop(val wrd) returns double
-	external name "aggr"."stdevp";
 create aggregate stddev_pop(val bigint) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val real) returns double
@@ -1191,8 +1183,6 @@ create aggregate stddev_samp(val tinyint) returns double
 create aggregate stddev_samp(val smallint) returns double
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val integer) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val wrd) returns double
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val bigint) returns double
 	external name "aggr"."stdev";
@@ -1362,8 +1352,6 @@ create aggregate var_pop(val smallint) returns double
 	external name "aggr"."variancep";
 create aggregate var_pop(val integer) returns double
 	external name "aggr"."variancep";
-create aggregate var_pop(val wrd) returns double
-	external name "aggr"."variancep";
 create aggregate var_pop(val bigint) returns double
 	external name "aggr"."variancep";
 create aggregate var_pop(val real) returns double
@@ -1381,8 +1369,6 @@ create aggregate var_samp(val tinyint) returns double
 create aggregate var_samp(val smallint) returns double
 	external name "aggr"."variance";
 create aggregate var_samp(val integer) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val wrd) returns double
 	external name "aggr"."variance";
 create aggregate var_samp(val bigint) returns double
 	external name "aggr"."variance";

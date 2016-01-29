@@ -9,7 +9,7 @@ module status;
 command cpuStatistics()(:bat[:oid,:str],:bat[:oid,:int] )
 address SYScpuStatistics
 comment "Global cpu usage information";
-command memStatistics() (:bat[:oid,:str],:bat[:oid,:wrd] )
+command memStatistics() (:bat[:oid,:str],:bat[:oid,:lng] )
 address SYSmemStatistics
 comment "Global memory usage information";
 command ioStatistics()(:bat[:oid,:str],:bat[:oid,:int] )

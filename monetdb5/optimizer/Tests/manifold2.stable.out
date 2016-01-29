@@ -29,8 +29,8 @@ Ready.
 
 function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
 barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
-    c:wrd := aggr.count(b:bat[:dbl]);   	#[2] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[3] ALGcount_bat 4 <- 2 
+    c:lng := aggr.count(b:bat[:dbl]);   	#[2] ALGcount_bat 3 <- 1 
+    c2:lng := aggr.count(b2:bat[:dbl]); 	#[3] ALGcount_bat 4 <- 2 
 exit X_9:bit;                           	#[4]  9 
     X_12:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
 barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:dbl]);	#[6] ITRbunIterator 16 17 <- 1 
@@ -57,8 +57,8 @@ end user.tst;                           	#[14]
 #[21]   _21 =  :dbl  
 function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
 barrier X_9:bit := language.dataflow(); 	#[1] MALstartDataflow 9 
-    c:wrd := aggr.count(b:bat[:dbl]);   	#[2] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[3] ALGcount_bat 4 <- 2 
+    c:lng := aggr.count(b:bat[:dbl]);   	#[2] ALGcount_bat 3 <- 1 
+    c2:lng := aggr.count(b2:bat[:dbl]); 	#[3] ALGcount_bat 4 <- 2 
 exit X_9:bit;                           	#[4]  9 
     X_12:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[5] CMDBATnew 12 <- 13 14 
 barrier (X_16:oid,X_17:dbl) := iterator.new(b:bat[:dbl]);	#[6] ITRbunIterator 16 17 <- 1 

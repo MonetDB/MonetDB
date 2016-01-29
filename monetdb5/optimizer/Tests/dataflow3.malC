@@ -3,11 +3,11 @@ function mvc():int;
 	return mvc:=1;
 end mvc;
 function user.s1_0():void;
-    _17 := bat.new(nil:oid,nil:wrd);
-    _54 := bat.new(nil:oid,nil:wrd);
-    _55 := bat.new(nil:oid,nil:wrd);
-    _56 := bat.new(nil:oid,nil:wrd);
-    _57 := bat.new(nil:oid,nil:wrd);
+    _17 := bat.new(nil:oid,nil:lng);
+    _54 := bat.new(nil:oid,nil:lng);
+    _55 := bat.new(nil:oid,nil:lng);
+    _56 := bat.new(nil:oid,nil:lng);
+    _57 := bat.new(nil:oid,nil:lng);
 
     _59 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn4","monetdb","monetdb","msql");
     remote.register(_59,"user","s1_0map");

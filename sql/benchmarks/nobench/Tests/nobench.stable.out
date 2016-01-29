@@ -60,7 +60,7 @@ Ready.
 #select count(*) from bench10;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 10	]
 #select json.filter(js, '$..str1,$..num') from bench10;
@@ -283,7 +283,7 @@ Ready.
 #group by f.h;
 % sys.f,	sys.L1 # table_name
 % h,	L1 # name
-% double,	wrd # type
+% double,	bigint # type
 % 24,	1 # length
 [ 3,	1	]
 [ 1,	1	]

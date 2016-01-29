@@ -25,7 +25,7 @@ Ready.
 
 % .trip,	sys.trip,	sys.trip # table_name
 % prop,	obj,	cnt # name
-% char,	int,	wrd # type
+% char,	int,	bigint # type
 % 16,	1,	1 # length
 #drop table prop1;
 #drop table prop2;

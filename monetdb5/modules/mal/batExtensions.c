@@ -45,8 +45,6 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			lcap = *getArgReference_lng(s, p, 3);
 		else if (getArgType(m, p, 3) == TYPE_int)
 			lcap = (lng) *getArgReference_int(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_wrd)
-			lcap = (lng) *getArgReference_wrd(s, p, 3);
 		else
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)
@@ -77,8 +75,6 @@ CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 			lcap = *getArgReference_lng(s, p, 2);
 		else if (getArgType(m, p, 2) == TYPE_int)
 			lcap = (lng) *getArgReference_int(s, p, 2);
-		else if (getArgType(m, p, 2) == TYPE_wrd)
-			lcap = (lng) *getArgReference_wrd(s, p, 2);
 		else
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)
@@ -111,8 +107,6 @@ CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			lcap = *getArgReference_lng(s, p, 3);
 		else if (getArgType(m, p, 3) == TYPE_int)
 			lcap = (lng) *getArgReference_int(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_wrd)
-			lcap = (lng) *getArgReference_wrd(s, p, 3);
 		else
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
 		if (lcap < 0)

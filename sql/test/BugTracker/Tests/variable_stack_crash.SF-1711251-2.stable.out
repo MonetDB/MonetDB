@@ -46,7 +46,7 @@ Ready.
 #-- Bi
 % .result,	.result # table_name
 % pos_nat,	item_int # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 

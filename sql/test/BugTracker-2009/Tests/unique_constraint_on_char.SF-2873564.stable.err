@@ -75,19 +75,19 @@ stderr of test 'unique_constraint_on_char.SF-2873564` in directory 'sql/test/Bug
 # 21:33:07 >  mclient -lsql -i --host=alf --port=30183 
 # 21:33:07 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into keytest (date_added, hash_key, dimension1, dimension2, metric1, metric2) VALUES (1, 'a', 1, 1, 2, 2);
 ERROR = !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE UNIQUE INDEX unique_key_test ON test.keytest (date_added, hash_key);
 ERROR = !CREATE INDEX: no such schema 'test'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into keytest (date_added, hash_key, dimension1, dimension2, metric1, metric2) VALUES (1, 'a', 1, 1, 2, 2);
 ERROR = !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into keytest (date_added, hash_key, dimension1, dimension2, metric1, metric2) VALUES (1, 'a', 1, 1, 2, 2);
 ERROR = !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into keytest2 (date_added, key, dimension1, dimension2, metric1, metric2) VALUES (1, 1, 1, 1, 2, 2);
 ERROR = !INSERT INTO: UNIQUE constraint 'keytest2.key_test2' violated
 

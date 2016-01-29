@@ -26,7 +26,7 @@ Ready.
 #SELECT MODEL2.is_mutagen,ATOM3.charge, count(distinct MODEL2.model_id ) FROM MODEL MODEL2, ATOM ATOM3  WHERE MODEL2.model_id=ATOM3.model_id group by ATOM3.charge , MODEL2.is_mutagen;
 % sys.model2,	sys.atom3,	sys.L1 # table_name
 % is_mutagen,	charge,	L1 # name
-% char,	int,	wrd # type
+% char,	int,	bigint # type
 % 3,	1,	3 # length
 [ "T",	0,	125	]
 [ "F",	0,	63	]

@@ -192,19 +192,19 @@ Ready.
 #select count(*) from scene_witness where scene_id IN ( select scene_id from scene where victim_id IN ( select victim_id from victim where surname='Stride'));
 % sys.L12 # table_name
 % L12 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from scene_inspector where inspector_id IN (Select inspector_id from inspector where surname='Monro') Group by inspector_id;
 % sys.L4 # table_name
 % L4 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from victim where eyes='blue';
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 % sys.victim,	sys.victim,	sys.victim # table_name
@@ -259,7 +259,7 @@ Ready.
 #SELECT count(*) FROM victim;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 18	]
 

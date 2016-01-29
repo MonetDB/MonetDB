@@ -79,10 +79,10 @@ stderr of test 'string2int_conversion.SF-1356068` in directory 'sql/test/BugTrac
 # 19:33:07 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33470 
 # 19:33:07 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into test values ('');
 ERROR = !conversion of string '' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into test values ('');
 ERROR = !conversion of string '' to type sht failed.
 

@@ -6,6 +6,6 @@
 
 module mkey;
 
-pattern hash(v:hge):wrd
+pattern hash(v:hge):lng
 address MKEYhash
 comment "calculate a hash value";

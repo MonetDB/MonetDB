@@ -10,31 +10,31 @@ stderr of test 'basic` in directory 'geom/sql` itself:
 # 09:07:41 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=34403 
 # 09:07:41 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('LINESTRING(10 10)');
 ERROR = !IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('LINESTRING(10)');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('LINESTRING()');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('LINESTRING');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('POINT(10)');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('POINT()');
 ERROR = !ParseException: Expected number but encountered ')'
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('POINT');
 ERROR = !ParseException: Expected word but encountered end of stream
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = INSERT INTO geoms values ('');
 ERROR = !ParseException: Expected word but encountered end of stream
 

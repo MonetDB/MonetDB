@@ -42,7 +42,7 @@ returns table(
 	"start" timestamp,	-- time the statement was started
 	"stop" timestamp,	-- time the statement was completely finished
 	arguments string,	-- actual call structure
-	tuples wrd,		-- number of tuples in the result set
+	tuples bigint,		-- number of tuples in the result set
 	run bigint,		-- time spent (in usec)  until the result export
 	ship bigint,		-- time spent (in usec)  to ship the result set
 	cpu int,		-- average cpu load percentage during execution

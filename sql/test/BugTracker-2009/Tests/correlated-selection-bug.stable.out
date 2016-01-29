@@ -76,7 +76,7 @@ Ready.
 #		"warehouse_class"."warehouse_class_id" = "warehouse"."warehouse_class_id" and 
 % .L,	.L3,	.L6,	.L11,	.L12,	.L13,	.L14 # table_name
 % c0,	m0,	m1,	m2,	m3,	m4,	m5 # name
-% varchar,	wrd,	wrd,	wrd,	wrd,	wrd,	wrd # type
+% varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	1,	1,	1,	1,	1,	1 # length
 
 # 19:20:37 >  

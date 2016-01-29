@@ -25,7 +25,7 @@
  * ...
  * _9 := algebra.select(_1,0,100);
  * ..
- * (grp_4:bat[:oid,:wrd], gid:bat[:oid,:oid]) := groupby.count(_9,_2);
+ * (grp_4:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.count(_9,_2);
  * (grp_5:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.max(_9,_2,_3);
  * @end verbatim
  *

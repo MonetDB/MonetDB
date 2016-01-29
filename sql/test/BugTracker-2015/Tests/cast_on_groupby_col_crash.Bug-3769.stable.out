@@ -36,7 +36,7 @@ Ready.
 #select count(*), cast(mytimestamp as date) as mydate from union_view group by mydate;
 % .L2,	.L2 # table_name
 % L2,	mydate # name
-% wrd,	date # type
+% bigint,	date # type
 % 1,	10 # length
 #Rollback;
 

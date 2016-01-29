@@ -488,7 +488,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_exp *e;
 			sql_idx *i = cn->data;
-			sql_subtype *t = sql_bind_localtype("wrd"); /* hash "wrd" */
+			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
 			if (i->type == join_idx)
@@ -5648,13 +5648,13 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		return NULL;
 
 	if (sn->limit || sn->offset) {
-		sql_subtype *wrd = sql_bind_localtype("wrd");
+		sql_subtype *lng = sql_bind_localtype("lng");
 		list *exps = new_exp_list(sql->sa);
 
 		if (sn->limit) {
 			sql_exp *l = rel_value_exp( sql, NULL, sn->limit, 0, ek);
 
-			if (!l || !(l=rel_check_type(sql, wrd, l, type_equal)))
+			if (!l || !(l=rel_check_type(sql, lng, l, type_equal)))
 				return NULL;
 			if ((ek.card != card_relation && sn->limit) &&
 				(ek.card == card_value && sn->limit)) {
@@ -5667,7 +5667,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			append(exps, NULL);
 		if (sn->offset) {
 			sql_exp *o = rel_value_exp( sql, NULL, sn->offset, 0, ek);
-			if (!o || !(o=rel_check_type(sql, wrd, o, type_equal)))
+			if (!o || !(o=rel_check_type(sql, lng, o, type_equal)))
 				return NULL;
 			append(exps, o);
 		}

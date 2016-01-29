@@ -32,19 +32,19 @@ Ready.
 #select COUNT(*) from "sys"."queue";
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #select COUNT(*) from "sys"."rejects";
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #select COUNT(*) from "sys"."sessions";
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 

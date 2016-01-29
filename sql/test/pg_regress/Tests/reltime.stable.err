@@ -29,51 +29,51 @@ stderr of test 'reltime` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 1 minute');
 ERROR = !wrong format (@ 1 minute)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 5 hour');
 ERROR = !wrong format (@ 5 hour)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 10 day');
 ERROR = !wrong format (@ 10 day)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 34 year');
 ERROR = !wrong format (@ 34 year)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 3 months');
 ERROR = !wrong format (@ 3 months)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 14 seconds ago');
 ERROR = !wrong format (@ 14 seconds ago)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('badly formatted reltime');
 ERROR = !wrong format (badly formatted reltime)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO RELTIME_TBL (f1) VALUES ('@ 30 eons ago');
 ERROR = !wrong format (@ 30 eons ago)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
            WHERE RELTIME_TBL.f1 <> cast('@ 10 days' as interval second);
 ERROR = !wrong format (@ 10 days)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
            WHERE RELTIME_TBL.f1 <= cast('@ 5 hours' as interval second);
 ERROR = !wrong format (@ 5 hours)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS three, RELTIME_TBL.* FROM RELTIME_TBL
            WHERE RELTIME_TBL.f1 < cast('@ 1 day' as interval second);
 ERROR = !wrong format (@ 1 day)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS one, RELTIME_TBL.* FROM RELTIME_TBL
            WHERE RELTIME_TBL.f1 = cast('@ 34 years' as interval second);
 ERROR = !wrong format (@ 34 years)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS two, RELTIME_TBL.* FROM RELTIME_TBL
            WHERE RELTIME_TBL.f1 >= cast('@ 1 month' as interval second);
 ERROR = !wrong format (@ 1 month)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
            WHERE RELTIME_TBL.f1 > cast('@ 3 seconds ago' as interval second);
 ERROR = !wrong format (@ 3 seconds ago)

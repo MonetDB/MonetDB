@@ -59,7 +59,7 @@ comment "Returns a new BAT with dense head and tail of the given type and uses
         the given file to initialize the tail. The file will be owned by the
         server.";
 
-command densebat(sz:wrd) :bat[:oid,:oid]
+command densebat(sz:lng) :bat[:oid,:oid]
 address BKCdensebat
 comment "Creates a new [void,void] BAT of size 'sz'.";
 

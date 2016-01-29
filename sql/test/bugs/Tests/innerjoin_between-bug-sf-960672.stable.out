@@ -38,7 +38,7 @@ Ready.
 #;
 % sys.h,	sys.h,	sys.L1 # table_name
 % a,	b,	L1 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 2,	2,	1 # length
 [ 0,	10,	2	]
 [ 10,	20,	1	]
@@ -51,7 +51,7 @@ Ready.
 #;
 % sys.h,	sys.h,	sys.L1 # table_name
 % a,	b,	L1 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 2,	2,	1 # length
 [ 0,	10,	2	]
 [ 10,	20,	1	]

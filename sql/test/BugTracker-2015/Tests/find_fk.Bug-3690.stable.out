@@ -67,7 +67,7 @@ Ready.
 #select count(*) from output_1427369057457;
 % sys.L5 # table_name
 % L5 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 

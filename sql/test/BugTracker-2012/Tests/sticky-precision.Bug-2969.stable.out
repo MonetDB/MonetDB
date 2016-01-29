@@ -49,19 +49,19 @@ Ready.
 #return power(10,7);
 #end;
 #select bug2969(12,12);
-% . # table_name
+% .L # table_name
 % bug2969_single_value # name
 % decimal # type
 % 16 # length
 [ 10000000	]
 #select bug2969(12.1111,12.1111);
-% . # table_name
+% .L # table_name
 % scale_up_single_value # name
 % decimal # type
 % 16 # length
 [ 10000000	]
 #select bug2969(12,12);
-% . # table_name
+% .L # table_name
 % bug2969_single_value # name
 % decimal # type
 % 16 # length
