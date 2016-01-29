@@ -32,6 +32,10 @@ typedef struct global_props {
 typedef sql_rel *(*rewrite_fptr)(int *changes, mvc *sql, sql_rel *rel);
 typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
 
+static sql_rel * rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes);
+static sql_rel * rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) ;
+static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
+
 static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
 /* The important task of the relational optimizer is to optimize the
@@ -288,19 +292,22 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	}
 }
 
+static sql_rel * rel_join_order(mvc *sql, sql_rel *rel) ;
+
 static void
-get_relations(sql_rel *rel, list *rels)
+get_relations(mvc *sql, sql_rel *rel, list *rels)
 {
 	if (!rel_is_ref(rel) && rel->op == op_join && rel->exps == NULL) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		
-		get_relations(l, rels);
-		get_relations(r, rels);
+		get_relations(sql, l, rels);
+		get_relations(sql, r, rels);
 		rel->l = NULL;
 		rel->r = NULL;
 		rel_destroy(rel);
 	} else {
+		rel = rel_join_order(sql, rel);
 		append(rels, rel);
 	}
 }
@@ -960,38 +967,6 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 	return rels;
 }
 
-static sql_rel *
-reorder_join(mvc *sql, sql_rel *rel)
-{
-	list *exps = rel->exps;
-	list *rels;
-
-	if (!exps) /* crosstable, ie order not important */
-		return rel;
-	rel->exps = NULL; /* should be all crosstables by now */
- 	rels = new_rel_list(sql->sa);
-	if (is_outerjoin(rel->op)) {
-		int cnt = 0;
-		/* try to use an join index also for outer joins */
-		list_append(rels, rel->l);
-		list_append(rels, rel->r);
-		cnt = list_length(exps);
-		rel->exps = find_fk(sql, rels, exps);
-		if (list_length(rel->exps) != cnt) 
-			rel->exps = order_join_expressions(sql, exps, rels);
-	} else { 
- 		get_relations(rel, rels);
-		if (list_length(rels) > 1) {
-			rels = push_in_join_down(sql, rels, exps);
-			rel = order_joins(sql, rels, exps);
-		} else {
-			rel->exps = exps;
-			exps = NULL;
-		}
-	}
-	return rel;
-}
-
 static list *
 push_up_join_exps( mvc *sql, sql_rel *rel) 
 {
@@ -1028,20 +1003,93 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 	}
 }
 
-static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
-static sql_rel * rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) ;
 static sql_rel *
-rel_join_order(int *changes, mvc *sql, sql_rel *rel) 
+reorder_join(mvc *sql, sql_rel *rel)
+{
+	list *exps;
+	list *rels;
+
+	if (rel->op == op_join)
+		rel->exps = push_up_join_exps(sql, rel);
+
+       	exps = rel->exps;
+	if (!exps) /* crosstable, ie order not important */
+		return rel;
+	rel->exps = NULL; /* should be all crosstables by now */
+ 	rels = new_rel_list(sql->sa);
+	if (is_outerjoin(rel->op)) {
+		int cnt = 0;
+		/* try to use an join index also for outer joins */
+		list_append(rels, rel->l);
+		list_append(rels, rel->r);
+		cnt = list_length(exps);
+		rel->exps = find_fk(sql, rels, exps);
+		if (list_length(rel->exps) != cnt) 
+			rel->exps = order_join_expressions(sql, exps, rels);
+	} else { 
+ 		get_relations(sql, rel, rels);
+		if (list_length(rels) > 1) {
+			rels = push_in_join_down(sql, rels, exps);
+			rel = order_joins(sql, rels, exps);
+		} else {
+			rel->exps = exps;
+			exps = NULL;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
+rel_join_order(mvc *sql, sql_rel *rel) 
 {
 	int e_changes = 0;
 
+	if (!rel)
+		return rel;
+
+	switch (rel->op) {
+	case op_basetable:
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+		break;
+
+	case op_apply: 
+	case op_semi: 
+	case op_anti: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		rel->l = rel_join_order(sql, rel->l);
+		rel->r = rel_join_order(sql, rel->r);
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+	case op_sample: 
+		rel->l = rel_join_order(sql, rel->l);
+		break;
+	case op_ddl: 
+		rel->l = rel_join_order(sql, rel->l);
+		if (rel->r)
+			rel->r = rel_join_order(sql, rel->r);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		rel->l = rel_join_order(sql, rel->l);
+		rel->r = rel_join_order(sql, rel->r);
+		break;
+	}
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
-		if (rel->op == op_join)
-			rel->exps = push_up_join_exps(sql, rel);
 		rel = reorder_join(sql, rel);
 	}
-	(void)*changes;
 	(void)e_changes;
 	return rel;
 }
@@ -4904,9 +4952,6 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		if (!l || rel_is_ref(l) || 
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
-		   /* we cannot rewrite projection from outer joins */
-		   ((is_left(rel->op) || is_full(rel->op)) && r->op == op_project) ||
-		   ((is_right(rel->op) || is_full(rel->op)) && l->op == op_project) ||
 		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l))) ||
 		   (is_join(rel->op) && (is_subquery(r) ||
@@ -4923,7 +4968,8 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 			for (n = l->exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 
-				if (is_column(e->type) && exp_is_atom(e)) {
+		   		/* we cannot rewrite projection with atomic values from outer joins */
+				if (is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column /*||
 					   e->type == e_func ||
@@ -4946,7 +4992,8 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 			for (n = r->exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 
-				if (is_column(e->type) && exp_is_atom(e)) {
+		   		/* we cannot rewrite projection with atomic values from outer joins */
+				if (is_column(e->type) && exp_is_atom(e) && !(is_left(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
 				} else if (e->type == e_column /*||
 					   e->type == e_func ||
@@ -5309,12 +5356,12 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			sql_rel *l = rel->l;
 
 			positional_exps_mark_used(rel, l);
-			rel_mark_used(sql, rel->l, 1);
+		//	rel_mark_used(sql, rel->l, 1);
 			/* based on child check set expression list */
 			if (is_project(l->op) && need_distinct(l))
 				positional_exps_mark_used(l, rel);
 			positional_exps_mark_used(rel, rel->r);
-			rel_mark_used(sql, rel->r, 1);
+		//	rel_mark_used(sql, rel->r, 1);
 		}
 		break;
 
@@ -5908,6 +5955,16 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 				/* remove simple select true expressions */
 				if (flag)
 					break;
+			}
+			if (is_atom(e->type) && !e->l && !e->r) { /* numbered variable */
+				atom *a = sql->args[e->flag];
+				int flag = a->data.val.bval;
+
+				/* remove simple select true expressions */
+				if (flag) {
+					sql->caching = 0;
+					break;
+				}
 			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
@@ -6814,7 +6871,11 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 				nrel->exps = rel->exps;
 			rel_destroy(rel);
 			if (sel) {
+				int changes = 0;
 				sel->l = nrel;
+				sel = rewrite_topdown(sql, sel, &rel_push_select_down_union, &changes); 
+				if (changes)
+					sel = rewrite(sql, sel, &rel_push_project_up, &changes); 
 				return sel;
 			}
 			return nrel;
@@ -7724,7 +7785,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	    gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(sql, rel, &changes);
 		if (!gp.cnt[op_update])
-			rel = rewrite(sql, rel, &rel_join_order, &changes); 
+			rel = rel_join_order(sql, rel);
 		rel = rewrite(sql, rel, &rel_push_join_down_union, &changes); 
 		/* rel_join_order may introduce empty selects */
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 

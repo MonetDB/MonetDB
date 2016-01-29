@@ -1263,6 +1263,14 @@ rel_with_query(mvc *sql, symbol *q )
 			return NULL;
 		}
 		stack_push_rel_view(sql, name, nrel);
+		if (!is_project(nrel->op)) {
+			if (is_topn(nrel->op) || is_sample(nrel->op)) {
+				nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1));
+			} else {
+				stack_pop_frame(sql);
+				return NULL;
+			}
+		}
 		assert(is_project(nrel->op));
 		if (is_project(nrel->op) && nrel->exps) {
 			node *ne = nrel->exps->h;
@@ -3125,13 +3133,16 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(sql, lr, lo, f);
-			lexps = lr?lr->exps:NULL;
-			lr = lr->l;
-
+			if (lr) {
+				lexps = lr->exps;
+				lr = lr->l;
+			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(sql, rr, ro, f);
-			rexps = rr?rr->exps:NULL;
-			rr = rr->l;
+			if (rr) {	
+				rexps = rr->exps;
+				rr = rr->l;
+			}
 			sql->pushdown = pushdown;
 		} else {
 			lr = rel_logical_exp(sql, lr, lo, f);
@@ -6147,6 +6158,10 @@ rel_selects(mvc *sql, symbol *s)
 	sql_rel *ret = NULL;
 
 	switch (s->token) {
+	case SQL_WITH:
+		ret = rel_with_query(sql, s);
+		sql->type = Q_TABLE;
+		break;
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
  		SelectNode *sn = (SelectNode *) s;

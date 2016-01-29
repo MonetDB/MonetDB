@@ -66,6 +66,8 @@ rel_is_point_query(sql_rel *rel)
 		return 1;
 	if (is_project(rel->op))
 		return rel_is_point_query(rel->l);
+	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
+		return rel_is_point_query(rel->r);
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
 		is_point = 0;
 		/* just one point expression makes this a point query */
@@ -4288,7 +4290,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(SQL, "sql.rowid", "3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tname);
-	if (s == NULL)
+	if (t == NULL)
 		throw(SQL, "sql.rowid", "42S02!Table missing");
 	if (!s || !t || !t->columns.set->h)
 		throw(SQL, "calc.rowid", "42S22!Cannot find column");
@@ -4847,17 +4849,19 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								BUNappend(atom, &w, FALSE);
 
-								sz = tailsize(bn, BATcount(bn));
-								sz += headsize(bn, BATcount(bn));
+#define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
+#define hashinfo(X) ( (X)? heapinfo((X)->heap):0)
+
+
+								sz = heapinfo(&bn->T->heap);
 								BUNappend(size, &sz, FALSE);
 
-								sz = bn->T->vheap ? bn->T->vheap->size : 0;
-								sz += bn->H->vheap ? bn->H->vheap->size : 0;
+								sz = heapinfo(bn->T->vheap);
 								BUNappend(heap, &sz, FALSE);
 
-								sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; // HASHsize(bn)
-								sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; // HASHsize(bn)
+								sz = hashinfo(bn->T->hash);
 								BUNappend(indices, &sz, FALSE);
+
 								bitval = 0; // HASHispersistent(bn);
 								BUNappend(phash, &bitval, FALSE);
 

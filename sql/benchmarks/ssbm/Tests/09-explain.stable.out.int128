@@ -127,7 +127,7 @@ function user.s2_1(A0:str,A1:str,A2:str,A3:str,A4:str,A5:str,A6:int,A7:int):void
     (X_71,r1_97) := sql.bind_idxbat(X_9,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
     X_73:bat[:oid] := sql.bind_idxbat(X_9,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
     X_74 := sql.projectdelta(C_10,X_69,X_71,r1_97,X_73);
-    X_75:bat[:oid] := algebra.projectionPath(X_67,X_40,X_74);
+    X_75:bat[:oid] := algebra.projectionpath(X_67,X_40,X_74);
     X_78:bat[:int] := sql.bind(X_9,"sys","dwdate","d_year",0);
     C_76:bat[:oid] := sql.tid(X_9,"sys","dwdate");
     C_187 := algebra.subselect(X_78,C_76,A6,A7,true,true,false);
@@ -141,11 +141,11 @@ function user.s2_1(A0:str,A1:str,A2:str,A3:str,A4:str,A5:str,A6:int,A7:int):void
     (C_88,r1_124) := sql.bind(X_9,"sys","lineorder","lo_revenue",2);
     X_90:bat[:int] := sql.bind(X_9,"sys","lineorder","lo_revenue",1);
     X_91 := sql.projectdelta(C_10,X_86,C_88,r1_124,X_90);
-    X_92:bat[:int] := algebra.projectionPath(X_84,X_67,X_40,X_91);
+    X_92:bat[:int] := algebra.projectionpath(X_84,X_67,X_40,X_91);
     X_93 := sql.projectdelta(X_66,X_53,C_55,r1_67,X_57);
-    X_94:bat[:str] := algebra.projectionPath(X_84,r1_90,X_93);
+    X_94:bat[:str] := algebra.projectionpath(X_84,r1_90,X_93);
     X_95 := sql.projectdelta(X_39,X_24,C_26,r1_27,X_28);
-    X_96:bat[:str] := algebra.projectionPath(X_84,X_67,r1_50,X_95);
+    X_96:bat[:str] := algebra.projectionpath(X_84,X_67,r1_50,X_95);
     X_97 := sql.projectdelta(C_83,X_78,C_80,r1_108,X_82);
     X_98 := algebra.projection(r1_120,X_97);
     (X_99,r1_141,r2_141) := group.subgroup(X_98);
@@ -155,8 +155,8 @@ function user.s2_1(A0:str,A1:str,A2:str,A3:str,A4:str,A5:str,A6:int,A7:int):void
     X_109 := algebra.projection(r1_147,X_98);
     (X_110,r1_154,r2_154) := algebra.subsort(X_109,false,false);
     (X_113,r1_159,r2_159) := algebra.subsort(X_108,r1_154,r2_154,true,false);
-    X_116:bat[:str] := algebra.projectionPath(r1_159,r1_147,X_96);
-    X_117:bat[:str] := algebra.projectionPath(r1_159,r1_147,X_94);
+    X_116:bat[:str] := algebra.projectionpath(r1_159,r1_147,X_96);
+    X_117:bat[:str] := algebra.projectionpath(r1_159,r1_147,X_94);
     X_118 := algebra.projection(r1_159,X_109);
     X_119 := algebra.projection(r1_159,X_108);
     sql.resultSet(X_150,X_152,X_154,X_156,X_158,X_116,X_117,X_118,X_119);

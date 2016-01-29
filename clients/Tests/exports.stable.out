@@ -1,9 +1,9 @@
 stdout of test 'exports` in directory 'clients` itself:
 
 
-# 15:10:42 >  
-# 15:10:42 >  "/usr/bin/python" "exports.py" "exports"
-# 15:10:42 >  
+# 21:40:57 >  
+# 21:40:57 >  "/usr/bin/python2" "exports.py" "exports"
+# 21:40:57 >  
 
 # gdk
 void ALIGNsetH(BAT *b1, BAT *b2);
@@ -142,7 +142,6 @@ void *BATmax(BAT *b, void *aggr);
 size_t BATmemsize(BAT *b, int dirty);
 BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
-void BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_return BATmode(BAT *b, int onoff);
 void BATmsync(BAT *b);
 int BATname(BAT *b, const char *nme);
@@ -155,6 +154,7 @@ gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_return BATprintf(stream *f, BAT *b);
 gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 BAT *BATproject(BAT *l, BAT *r);
+BAT *BATprojectchain(BAT **bats);
 gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate);
 gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 void BATroles(BAT *b, const char *hnme, const char *tnme);
@@ -233,9 +233,12 @@ size_t GDKmem_cursize(void);
 void *GDKmmap(const char *path, int mode, size_t len);
 int GDKms(void);
 int GDKnr_threads;
+void GDKprepareExit(void);
 void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 void *GDKrealloc(void *pold, size_t size) __attribute__((__warn_unused_result__));
+void GDKregister(MT_Id pid);
+void GDKreset(int status);
 void GDKsetenv(str name, str value);
 ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
 str GDKstrdup(const char *s) __attribute__((__warn_unused_result__));
@@ -250,7 +253,7 @@ size_t GDKvm_cursize(void);
 void *GDKzalloc(size_t size) __attribute__((__malloc__)) __attribute__((__warn_unused_result__));
 void HASHdestroy(BAT *b);
 BUN HASHlist(Hash *h, BUN i);
-BUN HASHprobe(Hash *h, const void *v);
+BUN HASHprobe(const Hash *h, const void *v);
 void HEAP_free(Heap *heap, var_t block);
 void HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
 var_t HEAP_malloc(Heap *heap, size_t nbytes);
@@ -667,10 +670,10 @@ str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
 str ALGfind(oid *ret, const bat *bid, ptr val);
 str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
-str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGmaxany(ptr result, const bat *bid);
 str ALGminany(ptr result, const bat *bid);
 str ALGprojection(bat *result, const bat *lid, const bat *rid);
+str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGreuse(bat *ret, const bat *bid);
 str ALGsample(bat *result, const bat *bid, const int *param);
@@ -722,6 +725,7 @@ str AUTHgetUsername(str *ret, Client c);
 str AUTHgetUsers(BAT **ret1, BAT **ret2, Client c);
 str AUTHinitTables(str *passwd);
 str AUTHremoveUser(Client c, str *username);
+void AUTHreset(void) __attribute__((__visibility__("hidden")));
 str AUTHresolveUser(str *ret, oid *uid);
 str AUTHsetPassword(Client c, str *username, str *passwd);
 str AUTHunlockVault(str *password);
@@ -1052,7 +1056,9 @@ str CMDscience_bat_flt_tanh(bat *ret, const bat *bid);
 str CMDsetHeartbeat(void *res, int *ev);
 str CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDstartTrace(void *res);
 str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str CMDstopTrace(void *res);
 str CMDstr2qgrams(bat *ret, str *val);
 str CMDstrlength(int *ret, str *v);
 str CMDvarABS(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1245,6 +1251,7 @@ str MALpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MALpipeline(Client c);
 str MALreader(Client c);
 void MALresourceFairness(lng usec);
+size_t MALrunningThreads(void);
 str MALstartDataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -1513,7 +1520,6 @@ int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 int OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTisAlias(InstrPtr p);
-int OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -1526,6 +1532,7 @@ str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+int OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -1534,6 +1541,7 @@ int OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 int OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTsetDebugStr(void *ret, str *nme);
+int OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str PCREilike2(bit *ret, const str *s, const str *pat);
 str PCREilike3(bit *ret, const str *s, const str *pat, const str *esc);
@@ -1927,6 +1935,7 @@ str bindRef;
 str binddbatRef;
 str bindidxRef;
 var_t blobsize(size_t nitems);
+str blockRef;
 str bpmRef;
 str bstreamRef;
 int bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize);
@@ -1987,6 +1996,7 @@ int daytime_fromstr(const char *buf, int *len, daytime **ret);
 int daytime_tostr(str *buf, int *len, const daytime *val);
 int daytime_tz_fromstr(const char *buf, int *len, daytime **ret);
 str dblRef;
+str deblockdataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 void debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span);
 str debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2051,6 +2061,7 @@ str generatorRef;
 MALfcn getAddress(stream *out, str filename, str modnme, str fcnname, int silent);
 str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
+lng getBatSpace(BAT *b);
 int getBitConstant(MalBlkPtr mb, bit val);
 int getBlockBegin(MalBlkPtr mb, int pc);
 int getBlockExit(MalBlkPtr mb, int pc);
@@ -2164,7 +2175,6 @@ int isUnsafeFunction(InstrPtr q);
 int isUnsafeInstruction(InstrPtr q);
 int isUpdateInstruction(InstrPtr p);
 str iteratorRef;
-str joinPathRef;
 str jsonRef;
 str languageRef;
 str levenshtein_impl(int *result, str *s, str *t, int *insdel_cost, int *replace_cost, int *transpose_cost);
@@ -2190,15 +2200,24 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci);
 int malProfileMode;
 str malRef;
 MT_Lock mal_beatLock;
+void mal_client_reset(void) __attribute__((__visibility__("hidden")));
 ClientRec *mal_clients;
 MT_Lock mal_contextLock;
 MT_Lock mal_copyLock;
+void mal_dataflow_reset(void) __attribute__((__visibility__("hidden")));
 MT_Lock mal_delayLock;
 void mal_exit(void);
+void mal_factory_reset(void) __attribute__((__visibility__("hidden")));
 int mal_init(void);
+void mal_linker_reset(void) __attribute__((__visibility__("hidden")));
+void mal_module_reset(void) __attribute__((__visibility__("hidden")));
+void mal_namespace_reset(void) __attribute__((__visibility__("hidden")));
 MT_Lock mal_profileLock;
 str mal_quote(const char *msg, size_t size);
 MT_Lock mal_remoteLock;
+void mal_resource_reset(void) __attribute__((__visibility__("hidden")));
+void mal_runtime_reset(void) __attribute__((__visibility__("hidden")));
+void mal_scenario_reset(void) __attribute__((__visibility__("hidden")));
 int mal_trace;
 void mal_unquote(char *msg);
 str manifoldRef;
@@ -2253,6 +2272,7 @@ char monet_characteristics[PATHLENGTH];
 char monet_cwd[PATHLENGTH];
 size_t monet_memory;
 void moveInstruction(MalBlkPtr mb, int pc, int target);
+void mserver_reset(void);
 str mtimeRef;
 str mulRef;
 str multicolumnRef;
@@ -2325,8 +2345,8 @@ void profilerHeartbeatEvent(char *alter);
 str profilerRef;
 str projectRef;
 str projectdeltaRef;
-str projectionPathRef;
 str projectionRef;
+str projectionpathRef;
 void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
@@ -2443,8 +2463,12 @@ int sqlblob_tostr(str *tostr, int *l, const blob *p);
 str srvpoolRef;
 str startProfiler(void);
 str startRef;
+str startTrace(void);
+str starttraceRef;
 str stopProfiler(void);
 str stopRef;
+str stopTrace(void);
+str stoptraceRef;
 void strAfterCall(ValPtr v, ValPtr bak);
 void strBeforeCall(ValPtr v, ValPtr bak);
 str strEpilogue(void *ret);
@@ -2587,7 +2611,7 @@ stream *udp_wastream(const char *hostname, int port, const char *name);
 stream *wbstream(stream *s, size_t buflen);
 
 
-# 15:25:25 >  
-# 15:25:25 >  "Done."
-# 15:25:25 >  
+# 21:41:06 >  
+# 21:41:06 >  "Done."
+# 21:41:06 >  
 

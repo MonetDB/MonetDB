@@ -132,10 +132,6 @@ BATcreatedesc(int tt, int heapnames, int role)
 	bn->T->heap.filename = NULL;
 	bn->H->heap.farmid = BBPselectfarm(role, bn->htype, offheap);
 	bn->T->heap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	bn->batMaphead = 0;
-	bn->batMaptail = 0;
-	bn->batMaphheap = 0;
-	bn->batMaptheap = 0;
 	if (heapnames) {
 		const char *nme = BBP_physical(bn->batCacheid);
 
@@ -484,6 +480,10 @@ BATclear(BAT *b, int force)
 	BATseqbase(BATmirror(b), 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
+	b->H->nosorted = b->H->norevsorted = b->H->nodense = 0;
+	b->H->nokey[0] = b->H->nokey[1] = 0;
+	b->T->nosorted = b->T->norevsorted = b->T->nodense = 0;
+	b->T->nokey[0] = b->T->nokey[1] = 0;
 	return GDK_SUCCEED;
 }
 
@@ -796,15 +796,38 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		ALIGNsetT(bn, b);
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
+		BUN l = BUNfirst(b), h = BUNlast(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
+		if (b->T->nosorted > l && b->T->nosorted < h)
+			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
+		else
+			bn->T->nosorted = 0;
+		if (b->T->norevsorted > l && b->T->norevsorted < h)
+			bn->T->norevsorted = b->T->norevsorted - l + BUNfirst(bn);
+		else
+			bn->T->norevsorted = 0;
+		if (b->T->nodense > l && b->T->nodense < h)
+			bn->T->nodense = b->T->nodense - l + BUNfirst(bn);
+		else
+			bn->T->nodense = 0;
+		if (b->T->nokey[0] >= l && b->T->nokey[0] < h &&
+		    b->T->nokey[1] >= l && b->T->nokey[1] < h &&
+		    b->T->nokey[0] != b->T->nokey[1]) {
+			bn->T->nokey[0] = b->T->nokey[0] - l + BUNfirst(bn);
+			bn->T->nokey[1] = b->T->nokey[1] - l + BUNfirst(bn);
+		} else {
+			bn->T->nokey[0] = bn->T->nokey[1] = 0;
+		}
 	} else {
 		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
 		bn->tdense = bn->T->nonil = 0;
+		bn->T->nosorted = bn->T->norevsorted = bn->T->nodense = 0;
+		bn->T->nokey[0] = bn->T->nokey[1] = 0;
 	}
 	if (BATcount(bn) <= 1) {
 		bn->hsorted = ATOMlinear(b->htype);
@@ -879,7 +902,10 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	if (b->batCount == 0) {
 		/* first value */
 		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
+		col->nosorted = col->norevsorted = 0;
 		col->key |= 1;
+		col->nokey[0] = col->nokey[1] = 0;
+		col->nodense = 0;
 		if (col->type == TYPE_void) {
 			if (x) {
 				col->seq = * (const oid *) x;
@@ -892,18 +918,27 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 			if (col->type == TYPE_oid) {
 				col->dense = !isnil;
 				col->seq = * (const oid *) x;
+				if (isnil)
+					col->nodense = BUNlast(b);
 			}
 		}
 	} else if (col->type == TYPE_void) {
 		/* not the first value in a VOID column: we keep the
-		 * seqbase and x is not used, so only some properties
+		 * seqbase, and x is not used, so only some properties
 		 * are affected */
 		if (col->seq != oid_nil) {
-			col->revsorted = 0;
+			if (col->revsorted) {
+				col->norevsorted = BUNlast(b);
+				col->revsorted = 0;
+			}
 			col->nil = 0;
 			col->nonil = 1;
 		} else {
-			col->key = 0;
+			if (col->key) {
+				col->nokey[0] = BUNfirst(b);
+				col->nokey[1] = BUNlast(b);
+				col->key = 0;
+			}
 			col->nil = 1;
 			col->nonil = 0;
 		}
@@ -920,8 +955,10 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 		       (col->revsorted && cmp < 0) ||
 		       (!col->sorted && !col->revsorted))))) {
 			col->key = 0;
-			col->nokey[0] = pos - 1;
-			col->nokey[1] = pos;
+			if (cmp == 0) {
+				col->nokey[0] = pos - 1;
+				col->nokey[1] = pos;
+			}
 		}
 		if (col->sorted && cmp > 0) {
 			/* out of order */
@@ -1067,16 +1104,23 @@ BUNdelete(BAT *b, oid o)
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = 0;
 	}
+	if (b->T->nosorted >= p)
+		b->T->nosorted = 0;
+	if (b->T->norevsorted >= p)
+		b->T->norevsorted = 0;
 	b->batCount--;
 	if (b->batCount <= 1) {
 		/* some trivial properties */
 		b->tkey |= 1;
 		b->tsorted = b->trevsorted = 1;
+		b->T->nosorted = b->T->norevsorted = 0;
 		if (b->batCount == 0) {
 			b->T->nil = 0;
 			b->T->nonil = 1;
 		}
 	}
+	IMPSdestroy(b);
+	HASHdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1097,7 +1141,6 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 {
 	BUN last = BUNlast(b) - 1;
 	BAT *bm = BBP_cache(-b->batCacheid);
-	BUN pit = p;
 	BATiter bi = bat_iterator(b);
 	int tt;
 	BUN prv, nxt;
@@ -1123,34 +1166,42 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	nxt = p < last ? p + 1 : BUN_NONE;
 
 	if (BATtordered(b)) {
-		if ((prv != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) ||
-		    (nxt != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0)) {
+		if (prv != BUN_NONE &&
+		    ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) {
 			b->tsorted = FALSE;
-			b->T->nosorted = pit;
+			b->T->nosorted = p;
+		} else if (nxt != BUN_NONE &&
+			   ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0) {
+			b->tsorted = FALSE;
+			b->T->nosorted = nxt;
 		} else if (b->ttype != TYPE_void && b->tdense) {
-			if ((prv != BUN_NONE &&
-			     1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) ||
-			    (nxt != BUN_NONE &&
-			     * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t)) {
+			if (prv != BUN_NONE &&
+			    1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) {
 				b->tdense = FALSE;
-				b->T->nodense = pit;
+				b->T->nodense = p;
+			} else if (nxt != BUN_NONE &&
+				   * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t) {
+				b->tdense = FALSE;
+				b->T->nodense = nxt;
 			} else if (prv == BUN_NONE &&
 				   nxt == BUN_NONE) {
 				bm->hseqbase = b->tseqbase = * (oid *) t;
 			}
 		}
-	}
+	} else if (b->T->nosorted >= p)
+		b->T->nosorted = 0;
 	if (BATtrevordered(b)) {
-		if ((prv != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) ||
-		    (nxt != BUN_NONE &&
-		     ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0)) {
+		if (prv != BUN_NONE &&
+		    ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) {
 			b->trevsorted = FALSE;
-			b->T->norevsorted = pit;
+			b->T->norevsorted = p;
+		} else if (nxt != BUN_NONE &&
+			   ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0) {
+			b->trevsorted = FALSE;
+			b->T->norevsorted = nxt;
 		}
-	}
+	} else if (b->T->norevsorted >= p)
+		b->T->norevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 		BATkey(bm, FALSE);
 	}
@@ -1265,7 +1316,7 @@ BUNfnd(BAT *b, const void *v)
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
-		if (BATtordered(b) || BATtrevordered(b))
+		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
 	}
 	bi = bat_iterator(b);
@@ -1327,6 +1378,29 @@ BATsetcount(BAT *b, BUN cnt)
 	if (cnt <= 1) {
 		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
+		b->H->nosorted = b->H->norevsorted = 0;
+		b->T->nosorted = b->T->norevsorted = 0;
+	}
+	/* if the BAT was made smaller, we need to zap some values */
+	if (b->H->nosorted >= BUNlast(b))
+		b->H->nosorted = 0;
+	if (b->H->norevsorted >= BUNlast(b))
+		b->H->norevsorted = 0;
+	if (b->H->nodense >= BUNlast(b))
+		b->H->nodense = 0;
+	if (b->H->nokey[0] >= BUNlast(b) || b->H->nokey[1] >= BUNlast(b)) {
+		b->H->nokey[0] = 0;
+		b->H->nokey[1] = 0;
+	}
+	if (b->T->nosorted >= BUNlast(b))
+		b->T->nosorted = 0;
+	if (b->T->norevsorted >= BUNlast(b))
+		b->T->norevsorted = 0;
+	if (b->T->nodense >= BUNlast(b))
+		b->T->nodense = 0;
+	if (b->T->nokey[0] >= BUNlast(b) || b->T->nokey[1] >= BUNlast(b)) {
+		b->T->nokey[0] = 0;
+		b->T->nokey[1] = 0;
 	}
 	if (b->htype == TYPE_void) {
 		b->hsorted = 1;
@@ -1446,8 +1520,10 @@ BATseqbase(BAT *b, oid o)
 				b->halign = 0;
 		}
 		b->hseqbase = o;
-		if (b->htype == TYPE_oid && o == oid_nil)
+		if (b->htype == TYPE_oid && o == oid_nil) {
 			b->hdense = 0;
+			b->H->nodense = BUNfirst(b);
+		}
 
 		/* adapt keyness */
 		if (BAThvoid(b)) {
@@ -1456,6 +1532,13 @@ BATseqbase(BAT *b, oid o)
 				b->H->nonil = b->batCount == 0;
 				b->H->nil = b->batCount > 0;
 				b->hsorted = b->hrevsorted = 1;
+				b->H->nosorted = b->H->norevsorted = 0;
+				if (!b->hkey) {
+					b->H->nokey[0] = BUNfirst(b);
+					b->H->nokey[1] = BUNfirst(b) + 1;
+				} else {
+					b->H->nokey[0] = b->H->nokey[1] = 0;
+				}
 			} else {
 				if (!b->hkey) {
 					b->hkey = TRUE;
@@ -1465,6 +1548,8 @@ BATseqbase(BAT *b, oid o)
 				b->H->nil = 0;
 				b->hsorted = 1;
 				b->hrevsorted = b->batCount <= 1;
+				if (!b->hrevsorted)
+					b->H->norevsorted = BUNfirst(b) + 1;
 			}
 		}
 	}
@@ -1522,77 +1607,6 @@ BATroles(BAT *b, const char *hnme, const char *tnme)
 		b->tident = GDKstrdup(tnme);
 	else
 		b->tident = BATstring_t;
-}
-
-/*
- * @- BATmmap
- * Changing the storage status of heaps in a BAT is done in BATmmap.
- * The new semantics is to do nothing: the new mapping only takes
- * effect the next time the bat is loaded or extended. The latter is
- * needed for loading large data sets. These transient bats should
- * switch cheaply between malloced and memory mapped modes.
- *
- * We modify the hp->storage fields using HEAPnewstorage and store
- * that we want malloced or memory mapped heaps in special binary
- * batMap fields that are used when the BAT descriptor is saved.
- */
-/* TODO niels: merge with BATsetmodes in gdk_storage */
-#define STORE_MODE(m,r,e,s,f) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e)&&!(f))||(s)==STORE_PRIV?STORE_PRIV:STORE_MMAP)
-static void
-HEAPnewstorage(BAT *b, int force)
-{
-	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
-	int brestrict = (b->batRestricted == BAT_WRITE);
-
-	if (b->batMaphead) {
-		b->H->heap.newstorage = STORE_MODE(b->batMaphead, brestrict, existing, b->H->heap.storage, force);
-		if (force)
-			b->H->heap.forcemap = 1;
-	}
-	if (b->batMaptail) {
-		b->T->heap.newstorage = STORE_MODE(b->batMaptail, brestrict, existing, b->T->heap.storage, force);
-		if (force)
-			b->T->heap.forcemap = 1;
-	}
-	if (b->H->vheap && b->batMaphheap) {
-		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing, b->H->vheap->storage, force);
-		if (force)
-			b->H->vheap->forcemap = 1;
-	}
-	if (b->T->vheap && b->batMaptheap) {
-		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing, b->T->vheap->storage, force);
-		if (force)
-			b->T->vheap->forcemap = 1;
-	}
-}
-
-void
-BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
-{
-	if (b == NULL)
-		return;
-	IODEBUG fprintf(stderr, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
-
-	/* Reverse back if required, as this determines which heap is
-	 * saved in the "hheap" file and which in the "theap" file.
-	 */
-	if (b->batCacheid < 0) {
-		int swap = hb;
-		hb = tb;
-		tb = swap;
-		swap = hhp;
-		hhp = thp;
-		thp = swap;
-		b = BATmirror(b);
-	}
-	b->batMaphead = hb;
-	b->batMaptail = tb;
-	b->batMaphheap = hhp;
-	b->batMaptheap = thp;
-	HEAPnewstorage(b, force);
-	b->batDirtydesc = 1;
 }
 
 /*
@@ -1708,13 +1722,8 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
  * Note that this code is not about making heaps mmap-ed in the first
  * place.  It is just about determining which flavor of mmap should be
  * used. The MAL user is oblivious of such details.
- *
- * The route for making heaps mmapped in the first place (or make them
- * no longer so) is to request a mode change with BATmmap. The
- * requested modes are remembered in b->batMap*. At the next re-load
- * of the BAT, they are applied after a sanity check (DESCsetmodes()
- * in gdk_storage.mx).  @end verbatim
  */
+
 /* rather than deleting X.new, we comply with the commit protocol and
  * move it to backup storage */
 static gdk_return
@@ -2113,6 +2122,26 @@ BATassertTailProps(BAT *b)
 	/* only linear atoms can be sorted */
 	assert(!b->tsorted || ATOMlinear(b->ttype));
 	assert(!b->trevsorted || ATOMlinear(b->ttype));
+	if (ATOMlinear(b->ttype)) {
+		assert(b->T->nosorted == 0 ||
+		       (b->T->nosorted > b->batFirst &&
+			b->T->nosorted < b->batFirst + b->batCount));
+		assert(!b->tsorted || b->T->nosorted == 0);
+		if (!b->tsorted &&
+		    b->T->nosorted > b->batFirst &&
+		    b->T->nosorted < b->batFirst + b->batCount)
+			assert(cmpf(BUNtail(bi, b->T->nosorted - 1),
+				    BUNtail(bi, b->T->nosorted)) > 0);
+		assert(b->T->norevsorted == 0 ||
+		       (b->T->norevsorted > b->batFirst &&
+			b->T->norevsorted < b->batFirst + b->batCount));
+		assert(!b->trevsorted || b->T->norevsorted == 0);
+		if (!b->trevsorted &&
+		    b->T->norevsorted > b->batFirst &&
+		    b->T->norevsorted < b->batFirst + b->batCount)
+			assert(cmpf(BUNtail(bi, b->T->norevsorted - 1),
+				    BUNtail(bi, b->T->norevsorted)) < 0);
+	}
 	/* var heaps must have sane sizes */
 	assert(b->T->vheap == NULL || b->T->vheap->free <= b->T->vheap->size);
 

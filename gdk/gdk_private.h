@@ -13,6 +13,7 @@
 #endif
 
 #define DISABLE_PARENT_HASH 1
+/* #define PERSISTENTHASH 1 */
 
 #include "gdk_system_private.h"
 
@@ -93,6 +94,8 @@ __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 __hidden void BBPtrim(size_t delta)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
+	__attribute__((__visibility__("hidden")));
+__hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
 	__attribute__((__visibility__("hidden")));
@@ -204,6 +207,10 @@ __hidden void VIEWdestroy(BAT *b)
 __hidden gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *virtualize(BAT *bn)
+	__attribute__((__visibility__("hidden")));
+__hidden void gdk_bbp_reset(void)
+	__attribute__((__visibility__("hidden")));
+__hidden void gdk_system_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 #define BBP_BATMASK	511

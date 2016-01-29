@@ -1658,13 +1658,15 @@ store_flush_log(void)
 void
 store_manager(void)
 {
+	const int timeout = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
 		lng shared_transactions_drift = -1;
 
-		for (t = 30000; t > 0 && !need_flush; t -= 50) {
-			MT_sleep_ms(50);
+		for (t = 30000; t > 0 && !need_flush; t -= timeout) {
+			MT_sleep_ms(timeout);
 			if (GDKexiting())
 				return;
 		}
@@ -1688,7 +1690,9 @@ store_manager(void)
 		need_flush = 0;
         	while (store_nr_active) { /* find a moment to flush */
             		MT_lock_unset(&bs_lock);
-            		MT_sleep_ms(50);
+			if (GDKexiting())
+				continue;
+            		MT_sleep_ms(timeout);
             		MT_lock_set(&bs_lock);
         	}
 

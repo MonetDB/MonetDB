@@ -67,23 +67,23 @@ project (
 | | | | | | | join (
 | | | | | | | | join (
 | | | | | | | | | join (
-| | | | | | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT ,
+| | | | | | | | | | table(sys.nation) [ nation.%TID% NOT NULL as n1.%TID%, nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey as n1.%nation_n_regionkey_fkey ] COUNT ,
 | | | | | | | | | | select (
-| | | | | | | | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
-| | | | | | | | | | ) [ date "1995-01-01" <= orders.o_orderdate NOT NULL <= date "1996-12-31" ]
-| | | | | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
-| | | | | | | | | select (
-| | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_type NOT NULL ] COUNT 
-| | | | | | | | | ) [ part.p_type NOT NULL = varchar(25) "ECONOMY ANODIZED STEEL" ]
-| | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ],
-| | | | | | | | table(sys.customer) [ customer.%TID% NOT NULL, customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
+| | | | | | | | | | | table(sys.region) [ region.r_name NOT NULL, region.%TID% NOT NULL ] COUNT 
+| | | | | | | | | | ) [ region.r_name NOT NULL = char(25) "AMERICA" ]
+| | | | | | | | | ) [ n1.%nation_n_regionkey_fkey NOT NULL = region.%TID% NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ],
+| | | | | | | | | table(sys.customer) [ customer.%TID% NOT NULL, customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
+| | | | | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = n1.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ],
+| | | | | | | | select (
+| | | | | | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | | | | | ) [ date "1995-01-01" <= orders.o_orderdate NOT NULL <= date "1996-12-31" ]
 | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
-| | | | | | | table(sys.nation) [ nation.%TID% NOT NULL as n1.%TID%, nation.%nation_n_regionkey_fkey NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey as n1.%nation_n_regionkey_fkey ] COUNT 
-| | | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = n1.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ],
+| | | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL, lineitem.l_suppkey NOT NULL, lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
+| | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
 | | | | | | select (
-| | | | | | | table(sys.region) [ region.r_name NOT NULL, region.%TID% NOT NULL ] COUNT 
-| | | | | | ) [ region.r_name NOT NULL = char(25) "AMERICA" ]
-| | | | | ) [ n1.%nation_n_regionkey_fkey NOT NULL = region.%TID% NOT NULL JOINIDX sys.nation.nation_n_regionkey_fkey ],
+| | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_type NOT NULL ] COUNT 
+| | | | | | ) [ part.p_type NOT NULL = varchar(25) "ECONOMY ANODIZED STEEL" ]
+| | | | | ) [ part.p_partkey NOT NULL HASHCOL  = lineitem.l_partkey NOT NULL ],
 | | | | | table(sys.supplier) [ supplier.s_suppkey NOT NULL HASHCOL , supplier.%supplier_s_nationkey_fkey NOT NULL JOINIDX sys.supplier.supplier_s_nationkey_fkey ] COUNT 
 | | | | ) [ supplier.s_suppkey NOT NULL HASHCOL  = lineitem.l_suppkey NOT NULL ],
 | | | | table(sys.nation) [ nation.n_name NOT NULL as n2.n_name, nation.%TID% NOT NULL as n2.%TID% ] COUNT 

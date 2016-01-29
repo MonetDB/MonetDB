@@ -69,3 +69,4 @@ cat("#~EndVariableOutput~#\n")
 
 
 print("SUCCESS")
+dbDisconnect(db)

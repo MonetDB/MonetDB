@@ -15,7 +15,7 @@ barrier i:= 0:lng;
 	k:= mmath.rand();
 	l:= calc.dbl(k);
 	bat.append(b,l);
-	redo i:= iterator.next(1:lng,1000000:lng);
+	redo i:= iterator.next(1:lng,10000:lng);
 exit i;
 
 mdb.setDebug(dbgmsk_restore);
@@ -37,7 +37,7 @@ barrier j:= 0@0;
 	ii:= algebra.fetch(b,j);
 	d:= mmath.sin(ii);
 	bat.append(x,d);
-	redo j:= iterator.next(1@0,1000000@0);
+	redo j:= iterator.next(1@0,10000@0);
 exit j;
 t1:= alarm.usec();
 d0:= t1-t0;

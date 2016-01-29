@@ -46,13 +46,13 @@ virtualize(BAT *bn)
 	/* since bn has unique and strictly ascending tail values, we
 	 * can easily check whether the tail is dense */
 	if (bn && bn->ttype == TYPE_oid &&
-	    (BATcount(bn) == 0 ||
+	    (BATcount(bn) <= 1 ||
 	     * (const oid *) Tloc(bn, BUNfirst(bn)) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* tail is dense, replace by virtual oid */
 		ALGODEBUG fprintf(stderr, "#virtualize(bn=%s#"BUNFMT",seq="OIDFMT")\n",
 				  BATgetId(bn), BATcount(bn),
-				  * (const oid *) Tloc(bn, BUNfirst(bn)));
+				  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, BUNfirst(bn)) : 0);
 		if (BATcount(bn) == 0)
 			bn->tseqbase = 0;
 		else
@@ -1421,7 +1421,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (b->tsorted || b->trevsorted) {
+	if (BATordered(b) || BATordered_rev(b)) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1509,15 +1509,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (anti) {
 			if (b->tsorted) {
 				BUN first = SORTfndlast(b, nil) - BUNfirst(b);
-				/* match: [first..low) + [high..count) */
+				/* match: [first..low) + [high..last) */
 				if (s) {
+					/* restrict first, last so
+					 * that they refer to existing
+					 * head values of b whose tail
+					 * is not nil */
 					oid o = (oid) first + b->H->seq;
+					BUN last;
 					first = SORTfndfirst(s, &o) - BUNfirst(s);
 					o = (oid) low + b->H->seq;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
 					o = (oid) high + b->H->seq;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
-					bn = doubleslice(s, first, low, high, BATcount(s));
+					o = b->H->seq + b->batCount;
+					last = SORTfndfirst(s, &o) - BUNfirst(s);
+					bn = doubleslice(s, first, low, high, last);
 				} else {
 					bn = doublerange(first + b->hseqbase,
 							 low + b->hseqbase,
@@ -1526,15 +1533,22 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			} else {
 				BUN last = SORTfndfirst(b, nil) - BUNfirst(b);
-				/* match: [0..low) + [high..last) */
+				/* match: [first..low) + [high..last) */
 				if (s) {
+					/* restrict first, last so
+					 * that they refer to existing
+					 * head values of b whose tail
+					 * is not nil */
 					oid o = (oid) last + b->H->seq;
+					BUN first;
 					last = SORTfndfirst(s, &o) - BUNfirst(s);
 					o = (oid) low + b->H->seq;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
 					o = (oid) high + b->H->seq;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
-					bn = doubleslice(s, 0, low, high, last);
+					o = b->H->seq;
+					first = SORTfndfirst(s, &o) - BUNfirst(s);
+					bn = doubleslice(s, first, low, high, last);
 				} else {
 					bn = doublerange(0 + b->hseqbase,
 							 low + b->hseqbase,
@@ -1891,7 +1905,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		lvars = rlvars = rhvars = NULL;
 	}
 
-	if (l->tsorted || l->trevsorted) {
+	if (BATordered(l) || BATordered_rev(l)) {
 		/* left column is sorted, use binary search */
 		const oid *sval = sl ? (const oid *) Tloc(sl, BUNfirst(sl)) : NULL;
 

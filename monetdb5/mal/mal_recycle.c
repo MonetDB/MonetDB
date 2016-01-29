@@ -911,6 +911,14 @@ RECYCLEdrop(Client cntxt){
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i),used);
 	freeMalBlk(mb);
 	GDKfree(used);
+	recyclerMemoryUsed = 0;
+	recyclerSavings = 0;
+	recycled = 0;
+	ATOMIC_SET(statements, 0, statementsLock);
+	recycleSearchTime =0;	/* cache search time in ms*/
+	recycleSearchCalls =0;	
+	bindRef = 0, bind_idxRef = 0, sqlRef = 0;
+	subselectRef = 0, thetasubselectRef = 0, likesubselectRef = 0;
 }
 
 /*

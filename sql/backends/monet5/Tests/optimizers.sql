@@ -13,21 +13,21 @@ select 'optimizer on test:',optimizer;
 set optimizer='';
 select 'optimizer <empty> test:',optimizer;
 
-set optimizer='optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.coercions();optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
 set optimizer='optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
@@ -35,9 +35,9 @@ set optimizer='optimizer.reduce();optimizer.garbageCollector();';
 
 set optimizer='optimizer.garbageCollector();';
 
-set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
+set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 
-set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
+set optimizer='optimizer.costModel();optimizer.coercions();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.garbageCollector();';
 
 set optimizer='optimizer.inline();';
 

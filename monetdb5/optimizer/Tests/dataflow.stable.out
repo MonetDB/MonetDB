@@ -26,7 +26,7 @@ Ready.
 
 #mdb.List("user","tst");
 function user.tst():void;               	#[0]  0 
-    s:bat[:int] := microbenchmark.uniform(0@0:oid,10000000:wrd,10000000:int);	#[1] MBMuniform 1 <- 2 3 4 
+    s:bat[:int] := microbenchmark.uniform(0@0:oid,100000:wrd,100000:int);	#[1] MBMuniform 1 <- 2 3 4 
     l:int := aggr.min(s:bat[:int]);     	#[2] ALGminany 5 <- 1 
     h:int := l:int;                     	#[3]  6 <- 5 
 #mdb.setTimer(true);                    

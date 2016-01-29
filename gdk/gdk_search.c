@@ -223,7 +223,7 @@ HASHcollisions(BAT *b, Hash *h)
 				max = cnt;
 			total += cnt;
 		}
-	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, total / entries);
+	fprintf(stderr, "#BAThash: statistics (" BUNFMT ", entries " LLFMT ", mask " BUNFMT ", max " LLFMT ", avg %2.6f);\n", BATcount(b), entries, h->mask, max, entries == 0 ? 0 : total / entries);
 }
 
 /* Return TRUE if we have a hash on the tail, even if we need to read
@@ -296,7 +296,7 @@ BATcheckhash(BAT *b)
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
 					b->T->hash = h;
-					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %d\n", b->batCacheid);
+					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 					return 1;
 				}
@@ -312,9 +312,38 @@ BATcheckhash(BAT *b)
 	}
 	ret = b->T->hash != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %d, waited " LLFMT " usec\n", b->batCacheid, t);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
+
+#ifdef PERSISTENTHASH
+static void
+BAThashsync(void *arg)
+{
+	Heap *hp = arg;
+	int fd;
+	lng t0 = GDKusec();
+
+	if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED)
+		return;
+	if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0)
+		return;
+	((size_t *) hp->base)[0] |= 1 << 24;
+	if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
+		perror("write hash");
+	if (!(GDKdebug & FORCEMITOMASK)) {
+#if defined(NATIVE_WIN32)
+		_commit(fd);
+#elif defined(HAVE_FDATASYNC)
+		fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+		fsync(fd);
+#endif
+	}
+	close(fd);
+	ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
+}
+#endif
 
 /*
  * The prime routine for the BAT layer is to create a new hash index.
@@ -340,11 +369,8 @@ BAThash(BAT *b, BUN masksize)
 		const char *nme = BBP_physical(b->batCacheid);
 		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
 		BATiter bi = bat_iterator(b);
-#ifdef PERSISTENTHASH
-		int fd;
-#endif
 
-		ALGODEBUG fprintf(stderr, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
+		ALGODEBUG fprintf(stderr, "#BAThash: create hash(%s#" BUNFMT ");\n", BATgetId(b), BATcount(b));
 		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(strlen(nme) + 12)) == NULL) {
@@ -516,24 +542,9 @@ BAThash(BAT *b, BUN masksize)
 			break;
 		}
 #ifdef PERSISTENTHASH
-		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-		    b->batInserted == b->batCount &&
-		    HEAPsave(hp, nme, ext) == GDK_SUCCEED &&
-		    (fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
-			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %d\n", b->batCacheid);
-			((size_t *) hp->base)[0] |= 1 << 24;
-			if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
-				perror("write hash");
-			if (!(GDKdebug & FORCEMITOMASK)) {
-#if defined(NATIVE_WIN32)
-				_commit(fd);
-#elif defined(HAVE_FDATASYNC)
-				fdatasync(fd);
-#elif defined(HAVE_FSYNC)
-				fsync(fd);
-#endif
-			}
-			close(fd);
+		if (BBP_status(b->batCacheid) & BBPEXISTING) {
+			MT_Id tid;
+			MT_create_thread(&tid, BAThashsync, hp, MT_THR_DETACHED);
 		} else
 			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
 #endif
@@ -551,7 +562,7 @@ BAThash(BAT *b, BUN masksize)
  * routine HASHprobe.
  */
 BUN
-HASHprobe(Hash *h, const void *v)
+HASHprobe(const Hash *h, const void *v)
 {
 	switch (ATOMbasetype(h->type)) {
 	case TYPE_bte:

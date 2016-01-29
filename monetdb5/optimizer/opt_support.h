@@ -46,7 +46,7 @@
 #define DEBUG_OPT_GARBAGE			19
 #define DEBUG_OPT_GENERATOR			56
 #define DEBUG_OPT_INLINE			20
-#define DEBUG_OPT_JOINPATH			21
+#define DEBUG_OPT_PROJECTIONPATH	21
 #define DEBUG_OPT_MACRO				23
 #define DEBUG_OPT_MATPACK			53
 #define DEBUG_OPT_MERGETABLE		24
@@ -73,6 +73,7 @@
 #define DEBUG_OPT_PUSHSELECT		51
 #define DEBUG_OPT_JSON				54
 #define DEBUG_OPT_GEOSPATIAL			55
+#define DEBUG_OPT_VOLCANO			10
 
 #define DEBUG_OPT(X) ((lng) 1 << (X))
 opt_export lng optDebug;

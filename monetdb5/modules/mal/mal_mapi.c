@@ -221,9 +221,9 @@ SERVERlistenThread(SOCKET *Sock)
 		if (usock != INVALID_SOCKET)
 			FD_SET(usock, &fds);
 #endif
-		/* Wait up to 0.5 seconds. */
+		/* Wait up to 0.025 seconds (0.01 if testing) */
 		tv.tv_sec = 0;
-		tv.tv_usec = 500000;
+		tv.tv_usec = GDKdebug & FORCEMITOMASK ? 10000 : 25000;
 
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;
@@ -359,7 +359,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
 			mnstr_printf(data->out, "!internal server error (cannot fork new "
 						 "client thread), please try again later\n");
 			mnstr_flush(data->out);
@@ -367,6 +367,7 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot fork new client thread");
 			GDKfree(data);
 		}
+		GDKregister(tid);
 	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
 			 !GDKexiting());
 	(void) ATOMIC_DEC(nlistener, atomicLock);
@@ -433,7 +434,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	SOCKLEN length = 0;
 	int on = 1;
 	int i = 0;
-	MT_Id pid, *pidp = &pid;
+	MT_Id pid;
 	int port;
 	int maxusers;
 	char *usockfile;
@@ -635,12 +636,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	psock[1] = INVALID_SOCKET;
 #endif
 	psock[2] = INVALID_SOCKET;
-	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, psock, MT_THR_DETACHED) != 0) {
+	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock, MT_THR_JOINABLE) != 0) {
 		GDKfree(psock);
 		if (usockfile)
 			GDKfree(usockfile);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	}
+	GDKregister(pid);
 #ifdef DEBUG_SERVER
 	gethostname(host, (int) 512);
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
@@ -746,7 +748,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	data = GDKmalloc(sizeof(*data));
 	data->in = *In;
 	data->out = *Out;
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+	if (MT_create_thread(&tid, doChallenge, data, MT_THR_JOINABLE)) {
 		mnstr_printf(data->out, "!internal server error (cannot fork new "
 					 "client thread), please try again later\n");
 		mnstr_flush(data->out);
@@ -754,6 +756,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 					  "cannot fork new client thread");
 		free(data);
 	}
+	GDKregister(tid);
 	return MAL_SUCCEED;
 }
 

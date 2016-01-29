@@ -39,7 +39,7 @@
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
-#include "opt_joinpath.h"
+#include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_mergetable.h"
@@ -55,6 +55,7 @@
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
 #include "opt_statistics.h"
+#include "opt_volcano.h"
 
 struct{
 	str nme;
@@ -74,7 +75,7 @@ struct{
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
 	{"generator", &OPTgeneratorImplementation},
 	{"inline", &OPTinlineImplementation},
-	{"joinPath", &OPTjoinPathImplementation},
+	{"projectionpath", &OPTprojectionpathImplementation},
 	{"matpack", &OPTmatpackImplementation},
 	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},
@@ -88,6 +89,7 @@ struct{
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
+	{"volcano", &OPTvolcanoImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

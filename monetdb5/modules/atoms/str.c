@@ -1439,6 +1439,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 	const unsigned char *src = (const unsigned char *) s;
 	const unsigned char *end = (const unsigned char *) (src + len);
 	BUN UTF8_CONV_r;
+	int lower_to_upper = from == UTF8_lowerBat;
 
 	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
@@ -1450,9 +1451,21 @@ convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 				int c;
 
 				UTF8_GETCHAR(c, src);
-				HASHfnd_int(UTF8_CONV_r, fromi, &c);
-				if (UTF8_CONV_r != BUN_NONE)
-					c = *(int*) BUNtloc(toi, UTF8_CONV_r);
+				if (c < 0x80) {
+					/* for ASCII characters we don't need to do a hash
+					 * lookup */
+					if (lower_to_upper) {
+						if ('a' <= c && c <= 'z')
+							c += 'A' - 'a';
+					} else {
+						if ('A' <= c && c <= 'Z')
+							c += 'a' - 'A';
+					}
+				} else {
+					HASHfnd_int(UTF8_CONV_r, fromi, &c);
+					if (UTF8_CONV_r != BUN_NONE)
+						c = *(int*) BUNtloc(toi, UTF8_CONV_r);
+				}
 				if (dst + 6 > (unsigned char *) *res + len) {
 					/* not guaranteed to fit, so allocate more space;
 					 * also allocate enough for the rest of the

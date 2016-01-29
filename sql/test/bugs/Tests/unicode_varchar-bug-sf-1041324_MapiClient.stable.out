@@ -35,7 +35,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 128 # length
+% 22 # length
 [ "SAVE 25¢ ON ICE CREAM"	]
 
 # 12:55:03 >  

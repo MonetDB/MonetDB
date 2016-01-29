@@ -8,19 +8,30 @@
 
 package nl.cwi.monetdb.jdbc;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.Driver;
+import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowIdLifetime;
+import java.sql.Types;
+
+import java.util.ArrayList;
 
 /**
  * A DatabaseMetaData object suitable for the MonetDB database.
  * 
  *
- * @author Fabian Groffen
- * @version 0.5
+ * @author Fabian Groffen, Martin van Dinther
+ * @version 0.6
  */
 public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaData {
 	private Connection con;
-	private static Map<Connection, Map<String,String>> envs = new HashMap<Connection, Map<String,String>>();
+	private String env_current_user;
+	private String env_monet_version;
+	private String env_max_clients;
 
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
@@ -36,58 +47,50 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Internal cache for environment properties retrieved from the
-	 * server.  To avoid querying the server over and over again, once a
-	 * value is read, it is kept in a Map for reuse.
+	 * Internal cache for 3 environment properties retrieved from the
+	 * server, to avoid querying the server over and over again.
+	 * Once a value is read, it is kept in the private env_* variables for reuse.
+	 * We currently only need the env values of: current_user, monet_version and max_clients.
 	 */
-	private synchronized String getEnv(String key) {
-		// if due to concurrency on this Class envs is assigned twice, I
-		// just don't care here
-		Map<String,String> menvs = envs.get(con);
-		if (menvs == null) {
-			// make the env map, insert all entries from env()
-			menvs = new HashMap<String,String>();
-			try {
-				ResultSet env = getStmt().executeQuery(
-						"SELECT \"name\", \"value\" FROM sys.env() as env");
-				try {
-					while (env.next()) {
-						menvs.put(env.getString("name"), env.getString("value"));
+	private synchronized void getEnvProperties() {
+		Statement st = null;
+		ResultSet rs = null;
+		try {
+			st = getStmt();
+			rs = st.executeQuery(
+				"SELECT \"name\", \"value\" FROM \"sys\".\"environment\"" +
+				" WHERE \"name\" IN ('monet_version', 'max_clients')" +
+				" UNION SELECT 'current_user' as \"name\", current_user as \"value\"");
+			if (rs != null) {
+				while (rs.next()) {
+					String prop = rs.getString("name");
+					String value = rs.getString("value");
+					if ("current_user".equals(prop)) {
+						env_current_user = value;
+					} else
+					if ("monet_version".equals(prop)) {
+						env_monet_version = value;
+					} else
+					if ("max_clients".equals(prop)) {
+						env_max_clients = value;
 					}
-				} finally {
-					env.close();
 				}
-			} catch (SQLException e) {
-				// ignore
 			}
-			envs.put(con, menvs);
-		}
-		
-		String ret = menvs.get(key);
-		if (ret == null) {
-			// It might be some key from the "sessions" table, which is
-			// no longer there, but available as variables.  Just query
-			// for the variable, and hope that it is ok (not a user
-			// variable, etc.)  In general, it should be ok, because
-			// it's only used inside this class.
-			// The effects of caching a variable, might be
-			// undesirable... TODO
-			try {
-				ResultSet env = getStmt().executeQuery(
-						"SELECT @\"" + key + "\" AS \"value\"");
+		} catch (SQLException e) {
+			// ignore
+		} finally {
+			if (rs != null) {
 				try {
-					if (env.next()) {
-						ret = env.getString("value");
-						menvs.put(key, ret);
-					}
-				} finally {
-					env.close();
-				}
-			} catch (SQLException e) {
-				// ignore
+					rs.close();
+				} catch (SQLException e) { /* ignore */ }
+			}
+			if (st != null) {
+				try {
+					 st.close();
+				} catch (SQLException e) { /* ignore */ }
 			}
 		}
-		return ret;
+// for debug: System.out.println("Read: env_current_user: " + env_current_user + "  env_monet_version: " + env_monet_version + "  env_max_clients: " + env_max_clients);
 	}
 
 	/**
@@ -131,7 +134,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public String getUserName() throws SQLException {
-		return getEnv("current_user");
+		if (env_current_user == null)
+			getEnvProperties();
+		return env_current_user;
 	}
 
 	/**
@@ -204,7 +209,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
-		return getEnv("monet_version");
+		if (env_monet_version == null)
+			getEnvProperties();
+		return env_monet_version;
 	}
 
 	/**
@@ -552,7 +559,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * Get all the "extra" characters that can be used in unquoted
 	 * identifier names (those beyond a-zA-Z0-9 and _)
-	 * MonetDB has no extras
+	 * MonetDB has no extra characters (verified it for chars: !@#$%^&*()~{}[]?
 	 *
 	 * @return a string containing the extra characters
 	 */
@@ -917,9 +924,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public String getCatalogSeparator() {
-		// Give them something to work with here
-		// everything else returns false so it won't matter what we return here
-		return ".";
+		// MonetDB does NOT support catalogs, so also no catalog separator
+		return null;
 	}
 
 	/**
@@ -1290,11 +1296,15 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public int getMaxConnections() {
+		if (env_max_clients == null)
+			getEnvProperties();
+
 		int max_clients = 16;
-		try {
-			String max_clients_val = getEnv("max_clients");
-			max_clients = Integer.parseInt(max_clients_val);
-		} catch (NumberFormatException nfe) { /* ignore */ }
+		if (env_max_clients != null) {
+			try {
+				max_clients = Integer.parseInt(env_max_clients);
+			} catch (NumberFormatException nfe) { /* ignore */ }
+		}
 		return max_clients;
 	}
 
@@ -1660,6 +1670,26 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
+	 * Returns a SQL match part string where depending on the input value we
+	 * compose an exact match (use =) or match with wildcards (use LIKE)
+	 *
+	 * @param in the string to match
+	 * @return the SQL match part string
+	 */
+	private static final String composeMatchPart(String in) {
+		if (in == null)
+			return "IS NULL";
+
+		String sql;
+		// check if SQL wildcards are used in the input, if so use LIKE
+		if (in.contains("%") || in.contains("_"))
+			sql = "LIKE '" + escapeQuotes(in) + "'";
+		else
+			sql = "= '" + escapeQuotes(in) + "'";
+		return sql;
+	}
+
+	/**
 	 * Returns the given string between two double quotes for usage as
 	 * exact column or table name in SQL queries.
 	 *
@@ -1714,7 +1744,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String types[]
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		// as of Jul2015 release the sys.tables.type values (0 through 6) is extended with new values 10, 11, 20, and 30 (for system and temp tables/views).
 		// for correct behavior we need to know if the server is using the old (pre Jul2015) or new sys.tables.type values
 		boolean preJul2015 = ("11.19.15".compareTo(getDatabaseProductVersion()) >= 0);
@@ -1722,7 +1751,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		String query =
 			"SELECT * FROM ( " +
-			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
+			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
 				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "10") + " AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
 				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "11") + " AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
 				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 0 THEN 'TABLE' " +
@@ -1780,17 +1809,13 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public ResultSet getSchemas(String catalog, String schemaPattern)
 		throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT \"name\" AS \"TABLE_SCHEM\", " +
-				"'" + cat + "' AS \"TABLE_CATALOG\", " +
-				"'" + cat + "' AS \"TABLE_CAT\" " +	// SquirrelSQL requests this one...
-			"FROM \"sys\".\"schemas\" " +
-			"WHERE 1 = 1 ";
-		if (catalog != null)
-			query += "AND '" + cat + "' ILIKE '" + escapeQuotes(catalog) + "' ";
+				"cast(null as char(1)) AS \"TABLE_CATALOG\", " +
+				"cast(null as char(1)) AS \"TABLE_CAT\" " +	// SquirrelSQL requests this one...
+			"FROM \"sys\".\"schemas\" ";
 		if (schemaPattern != null)
-			query += "AND \"name\" ILIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query += "WHERE \"name\" ILIKE '" + escapeQuotes(schemaPattern) + "' ";
 		query += "ORDER BY \"TABLE_SCHEM\"";
 
 		return getStmt().executeQuery(query);
@@ -1812,31 +1837,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public ResultSet getCatalogs() throws SQLException {
-		/*
-		// doing this with a VirtualResultSet is much more efficient...
-		String query =
-			"SELECT '" + ((String)env.get("gdk_dbname")) + "' AS \"TABLE_CAT\"";
-			// some applications need a database or catalog...
-
-		return getStmt().executeQuery(query);
-		*/
-		
-		String[] columns, types;
-		String[][] results;
-
-		columns = new String[1];
-		types = new String[1];
-		results = new String[1][1];
-
-		columns[0] = "TABLE_CAT";
-		types[0] = "varchar";
-		results[0][0] = getEnv("gdk_dbname");
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		// MonetDB does NOT support catalogs.
+		// Return a resultset with no rows
+		return getStmt().executeQuery("SELECT cast(null as char(1)) AS \"TABLE_CAT\" WHERE 1 = 0");
 	}
 
 	/**
@@ -1941,9 +1944,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String columnNamePattern
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-			"SELECT '" + cat + "' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
+			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", \"columns\".\"name\" AS \"COLUMN_NAME\", " +
 			"cast(" + MonetDriver.getSQLTypeMap("\"columns\".\"type\"") + " " +
 			"AS smallint) AS \"DATA_TYPE\", " +
@@ -2024,9 +2026,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String columnNamePattern
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-		"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
+		"SELECT cast(null as char(1)) AS \"TABLE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
@@ -2107,9 +2108,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String tableNamePattern
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-		"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
+		"SELECT cast(null as char(1)) AS \"TABLE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 			"\"grantors\".\"name\" AS \"GRANTOR\", " +
@@ -2419,8 +2419,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public ResultSet getImportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
-		String query = keyQuery(cat);
+		String query = keyQuery("");
 
 		if (schema != null) {
 			query += "AND \"fkschema\".\"name\" ILIKE '" + escapeQuotes(schema) + "' ";
@@ -2490,8 +2489,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public ResultSet getExportedKeys(String catalog, String schema, String table)
 		throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
-		String query = keyQuery(cat);
+		String query = keyQuery("");
 
 		if (schema != null) {
 			query += "AND \"pkschema\".\"name\" ILIKE '" + escapeQuotes(schema) + "' ";
@@ -2576,8 +2574,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String ftable
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
-		String query = keyQuery(cat);
+		String query = keyQuery("");
 
 		if (pschema != null) {
 			query += "AND \"pkschema\".\"name\" ILIKE '" + escapeQuotes(pschema) + "' ";
@@ -2750,10 +2747,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		boolean approximate
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
 			"SELECT * FROM ( " +
-			"SELECT '" + cat + "' AS \"TABLE_CAT\", " +
+			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", " +
 				"\"idxs\".\"name\" AS \"INDEX_NAME\", " +
 				"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 				"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
@@ -2804,7 +2800,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"varchar", "varchar", "int", "int", "varchar"
 		};
 
-		List<String[]> tmpRes = new ArrayList<String[]>();
+		ArrayList<String[]> tmpRes = new ArrayList<String[]>();
 
 		Statement sub = null;
 		if (!approximate) sub = con.createStatement();
@@ -2963,9 +2959,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		int[] types
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+			"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'java.lang.Object' AS \"CLASS_NAME\", 0 AS \"DATA_TYPE\", " +
 			"'' AS \"REMARKS\", 0 AS \"BASE_TYPE\" WHERE 1 = 0";
 
@@ -3089,10 +3084,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String typeNamePattern
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
-			"'' AS \"SUPERTYPE_CAT\", '' AS \"SUPERTYPE_SCHEM\", " +
+			"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+			"cast(null as char(1)) AS \"SUPERTYPE_CAT\", '' AS \"SUPERTYPE_SCHEM\", " +
 			"'' AS \"SUPERTYPE_NAME\" WHERE 1 = 0";
 
 		return getStmt().executeQuery(query);
@@ -3137,9 +3131,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String tableNamePattern
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-			"SELECT '" + cat + "' AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
+			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
 			"'' AS \"SUPERTABLE_NAME\" WHERE 1 = 0";
 
 		return getStmt().executeQuery(query);
@@ -3222,9 +3215,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String attributeNamePattern
 	) throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
 		String query =
-			"SELECT '" + cat + "' AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+			"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'' AS \"ATTR_NAME\", '' AS \"ATTR_TYPE_NAME\", 0 AS \"ATTR_SIZE\", " +
 			"0 AS \"DECIMAL_DIGITS\", 0 AS \"NUM_PREC_RADIX\", 0 AS \"NULLABLE\", " +
 			"'' AS \"REMARKS\", '' AS \"ATTR_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
@@ -3273,14 +3265,17 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public int getDatabaseMajorVersion() throws SQLException {
-		String version = getEnv("monet_version");
+		if (env_monet_version == null)
+			getEnvProperties();
 		int major = 0;
-		try {
-			major = Integer.parseInt(version.substring(0, version.indexOf(".")));
-		} catch (NumberFormatException e) {
-			// baaaaaaaaaa
+		if (env_monet_version != null) {
+			try {
+				int start = env_monet_version.indexOf(".");
+				major = Integer.parseInt(env_monet_version.substring(0, start));
+			} catch (NumberFormatException e) {
+				// ignore
+			}
 		}
-
  		return major;
 	}
 
@@ -3292,15 +3287,18 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public int getDatabaseMinorVersion() throws SQLException {
-		String version = getEnv("monet_version");
+		if (env_monet_version == null)
+			getEnvProperties();
 		int minor = 0;
-		try {
-			int start = version.indexOf(".");
-			minor = Integer.parseInt(version.substring(start + 1, version.indexOf(".", start + 1)));
-		} catch (NumberFormatException e) {
-			// baaaaaaaaaa
+		if (env_monet_version != null) {
+			try {
+				int start = env_monet_version.indexOf(".");
+				int end = env_monet_version.indexOf(".", start + 1);
+				minor = Integer.parseInt(env_monet_version.substring(start + 1, end));
+			} catch (NumberFormatException e) {
+				// ignore
+			}
 		}
-
  		return minor;
 	}
 
@@ -3517,31 +3515,34 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			String functionNamePattern)
 		throws SQLException
 	{
-		String cat = getEnv("gdk_dbname");
-		String select =
-			"SELECT * FROM ( " +
-			"SELECT '" + cat + "' AS \"FUNCTION_CAT\", " +
-				"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
-				"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
-				"null AS \"REMARKS\", " +
-				DatabaseMetaData.functionResultUnknown + " AS \"FUNCTION_TYPE\", " +
-				"CASE WHEN \"functions\".\"sql\" = false THEN CAST(\"functions\"/\"mod\" || '.' || \"functions\".\"func\" AS CLOB) ELSE CAST(\"functions\".\"name\" AS CLOB) END AS \"SPECIFIC_NAME\" " +
-			"FROM \"sys\".\"functions\" AS \"functions\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
-			") AS \"functions\" WHERE 1 = 1 ";
+		StringBuilder query = new StringBuilder(800);
+		query.append("SELECT DISTINCT cast(null as char(1)) AS \"FUNCTION_CAT\", ")
+			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
+			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
+			.append("cast(null as char(1)) AS \"REMARKS\", ")
+			.append("CASE \"functions\".\"type\"")
+				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 2 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 3 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 4 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 5 THEN ").append(DatabaseMetaData.functionReturnsTable)
+				.append(" ELSE ").append(DatabaseMetaData.functionResultUnknown).append(" END AS \"FUNCTION_TYPE\", ")
+			.append("CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" ")
+		.append("FROM \"sys\".\"functions\", \"sys\".\"schemas\" ")
+		.append("WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		// exclude procedures (type = 2). Those need to be returned via getProcedures()
+		.append("AND \"functions\".\"type\" <> 2");
 
-		if (catalog != null) {
-			select += "AND '" + cat + "' ILIKE '" + escapeQuotes(catalog) + "' ";
-		}
 		if (schemaPattern != null) {
-			select += "AND \"FUNCTION_SCHEM\" ILIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query.append(" AND \"schemas\".\"name\" ").append(composeMatchPart(schemaPattern));
 		}
 		if (functionNamePattern != null) {
-			select += "AND \"FUNCTION_NAME\" ILIKE '" + escapeQuotes(functionNamePattern) + "' ";
+			query.append(" AND \"functions\".\"name\" ").append(composeMatchPart(functionNamePattern));
 		}
 
-		select += "ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"";
+		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"");
 
-		return getStmt().executeQuery(select);
+		return getStmt().executeQuery(query.toString());
 	}
 
 	/**

@@ -19,6 +19,12 @@
 lng memorypool = 0;      /* memory claimed by concurrent threads */
 int memoryclaims = 0;    /* number of threads active with expensive operations */
 
+void
+mal_resource_reset(void)
+{
+	memorypool = 0;
+	memoryclaims = 0;
+}
 /*
  * Running all eligible instructions in parallel creates
  * resource contention. This means we should implement
@@ -200,7 +206,7 @@ MALresourceFairness(lng usec)
 			if (rss < MEMORY_THRESHOLD )
 				break;
 			threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
-			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads);
+			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads) + 1;
 			if (delay) {
 				if ( delayed++ == 0){
 						PARDEBUG mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD );
@@ -213,6 +219,13 @@ MALresourceFairness(lng usec)
 		}
 		(void) ATOMIC_INC(running, runningLock);
 	}
+}
+
+// Get a hint on the parallel behavior
+size_t
+MALrunningThreads(void)
+{
+	return running;
 }
 
 void
