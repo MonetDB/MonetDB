@@ -127,6 +127,9 @@ log_find(BAT *b, BAT *d, int val)
 	return BUN_NONE;
 }
 
+static geomcatalogfix_fptr geomcatalogfix = NULL;
+static geomsqlfix_fptr geomsqlfix = NULL;
+
 static void
 logbat_destroy(BAT *b)
 {
@@ -2807,3 +2810,28 @@ logger_find_bat(logger *lg, const char *name)
 	}
 	return 0;
 }
+
+void
+geomcatalogfix_set(geomcatalogfix_fptr f)
+{
+	geomcatalogfix = f;
+}
+
+geomcatalogfix_fptr
+geomcatalogfix_get(void)
+{
+	return geomcatalogfix;
+}
+
+void
+geomsqlfix_set(geomsqlfix_fptr f)
+{
+	geomsqlfix = f;
+}
+
+geomsqlfix_fptr
+geomsqlfix_get(void)
+{
+	return geomsqlfix;
+}
+

@@ -1852,6 +1852,9 @@ str geom_prelude(void *ret) {
 	(void) ret;
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
+	geomcatalogfix_set(geom_catalog_upgrade);
+	geomsqlfix_set(geom_sql_upgrade);
+
 	return MAL_SUCCEED;
 }
 
@@ -5679,3 +5682,4 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	*out = TRUE;
 	return MAL_SUCCEED;
 }
+

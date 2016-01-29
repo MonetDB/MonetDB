@@ -10,12 +10,16 @@ INCLUDES = ../lib \
            ../../common/stream \
            ../../common/options \
            ../../monetdb5/mal \
+           ../../sql/include \
+           ../../sql/common \
+           ../../sql/storage \
+           ../../sql/storage/bat \
            $(GEOS_INCS) $(PROJ_INCS)
 
 lib__geom = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = geom.h geom.c geomBulk.c
+	SOURCES = geom.h geom.c geomBulk.c geom_upgrade.c
 	LIBS = ../lib/libgeom \
 		   ../../gdk/libbat \
 	       ../../common/stream/libstream \
