@@ -1611,6 +1611,8 @@ store_manager(void)
 		while (store_nr_active) { /* find a moment to flush */
 			MT_lock_unset(&bs_lock, "store_manager");
 			MT_sleep_ms(50);
+			if (GDKexiting())
+				continue;
 			MT_lock_set(&bs_lock, "store_manager");
 		}
 		logging = 1;

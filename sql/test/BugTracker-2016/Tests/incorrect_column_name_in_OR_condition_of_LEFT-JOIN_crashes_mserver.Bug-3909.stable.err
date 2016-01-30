@@ -30,7 +30,13 @@ stderr of test 'incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserv
 # 12:49:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29239" "--port=35896"
 # 12:49:55 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29239/.s.monetdb.35896
+MAPI  = (monetdb) /var/tmp/mtest-15285/.s.monetdb.30430
+QUERY = CREATE TABLE foo (id INTEGER, bar1 INTEGER, bar2 INTEGER);
+ERROR = !CREATE TABLE: name 'foo' already in use
+MAPI  = (monetdb) /var/tmp/mtest-15285/.s.monetdb.30430
+QUERY = CREATE TABLE bar (barid INTEGER, value CHAR(10));
+ERROR = !CREATE TABLE: name 'bar' already in use
+MAPI  = (monetdb) /var/tmp/mtest-15285/.s.monetdb.30430
 QUERY = SELECT B.value, F.id FROM bar B LEFT JOIN foo F ON (F.bar1 = B.barid OR F.bar2 = B.id);
 ERROR = !SELECT: no such column 'b.id'	
 
