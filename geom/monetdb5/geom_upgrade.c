@@ -40,7 +40,7 @@ list_init(size_t capacity)
 	return l;
 }
 
-static char*
+static int
 list_delete(ulist* ul)
 {
 	size_t i;
@@ -48,38 +48,38 @@ list_delete(ulist* ul)
 		GDKfree(ul->elements[i].n);
 	GDKfree(ul->elements);
 	GDKfree(ul);
-	return true;
+	return 1;
 }
 
-static char*
+static int
 list_extend(ulist **ul)
 {
 	ulist* nl;
 	if ((nl = list_init((*ul)->capacity*2)) == NULL )
-		return NULL;
+		return 0;
 	memcpy(nl->elements, (*ul)->elements, sizeof(list_element)*(*ul)->count);
 	nl->count = (*ul)->count;
 	GDKfree((*ul)->elements);
 	GDKfree(*ul);
 	*ul = nl;
-	return true;
+	return 1;
 }
 
-static char*
+static int
 list_add(ulist **ul, BAT *ob, BAT *nb, char *n) 
 {
 	char *nn;
 	if ((nn =  GDKmalloc(sizeof(char)*strlen(n))) == NULL)
-		return NULL;
+		return 0;
 	strcpy(nn, n);
 	if ((*ul)->count == (*ul)->capacity)
 		if (!list_extend(ul))
-			return NULL;
+			return 0;
 	(*ul)->elements[(*ul)->count].ob = ob;
 	(*ul)->elements[(*ul)->count].nb = nb;
 	(*ul)->elements[(*ul)->count].n = nn;
 	(*ul)->count++;
-	return true;
+	return 1;
 }
 
 static char *
@@ -129,7 +129,9 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 	int val, maxid, i;
 	size_t ii;
 	bit bval;
-	ulist *ul = list_init(32);
+	ulist *ul;
+	if ((ul = list_init(32)) == NULL)
+		return 0;
 
 	/* Update the catalog to use the new geometry types */
 	ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
@@ -163,7 +165,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 	BATseqbase(cns, cs->hseqbase);
 
 	for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
-		bool isGeom = false;
+		bte isGeom = 0;
 		char *type = BUNtail(cti, p);
 		int digits = *(int*)BUNtail(cdi, p);
 		int scale = *(int*)BUNtail(csi, p);
@@ -171,72 +173,72 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 		
 		if (strcmp(toLower(type), "point") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbPoint;
 			scale = 0; // in the past we did not save the srid
 		} else if (strcmp(toLower(type), "linestring") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbLineString;
 			scale = 0;
 		} else if (strcmp(toLower(type), "curve") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbLineString;
 			scale = 0;
 		} else if (strcmp(toLower(type), "linearring") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbLinearRing;
 			scale = 0;
 		} else if (strcmp(toLower(type), "polygon") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbPolygon;
 			scale = 0;
 		} else if (strcmp(toLower(type), "surface") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbPolygon;
 			scale = 0;
 		} else if (strcmp(toLower(type), "multipoint") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbMultiPoint;
 			scale = 0;
 		} else if (strcmp(toLower(type), "multilinestring") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbMultiLineString;
 			scale = 0;
 		} else if (strcmp(toLower(type), "multicurve") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbMultiLineString;
 			scale = 0;
 		} else if (strcmp(toLower(type), "multipolygon") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbMultiPolygon;
 			scale = 0;
 		} else if (strcmp(toLower(type), "multisurface") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbMultiPolygon;
 			scale = 0;
 		} else if (strcmp(toLower(type), "geomcollection") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbGeometryCollection;
 			scale = 0;
 		} else if (strcmp(toLower(type), "geometrycollection") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = wkbGeometryCollection;
 			scale = 0;
 		}  else if (strcmp(toLower(type), "geometry") == 0) {
 			type = "geometry";
-			isGeom = true;
+			isGeom = 1;
 			digits = 0;
 			scale = 0;
 		} 
@@ -282,13 +284,15 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 				wn->srid = 0;// we did not save the srid in the past
 				BUNappend(gn, wn, TRUE);
 			}
-			list_add(&ul, g, gn, N(n, sn, tblname, colname));
+			if (list_add(&ul, g, gn, N(n, sn, tblname, colname)) == 0)
+				return 0;
 		}
 	}
 
-	list_add(&ul, ct, cnt, N(n, NULL, s, "_columns_type"));
-	list_add(&ul, cd, cnd, N(n, NULL, s, "_columns_type_digits"));
-	list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale"));
+	if (!list_add(&ul, ct, cnt, N(n, NULL, s, "_columns_type")) ||
+	    !list_add(&ul, cd, cnd, N(n, NULL, s, "_columns_type_digits")) ||
+	    !list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale")))
+		return 0;
 
 	if (cn) BBPunfix(cn->batCacheid);
 	if (ctid) BBPunfix(ctid->batCacheid);
@@ -344,7 +348,8 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 	val = 0; BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
 
 	for (i = 0; i < 8; i++) 
-		list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i]));
+		if (!list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i])))
+			return 0;
 
 	/* Add the new functions */
 	for (i = 0; i < 10; i++) {
@@ -408,7 +413,8 @@ do {							\
 	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
 #undef GEOM_UPGRADE_STORE_FUNC
 	for (i = 0; i < 10; i++) 
-		list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i]));
+		if (!list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i])))
+			return 0;
 	
 	for (ii = 0; ii < ul->count; ii++) {
 		BATsetaccess(ul->elements[ii].nb, BAT_READ);
