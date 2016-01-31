@@ -2660,8 +2660,8 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 	return rel_compare_exp(sql, rel, ls, rs, compare_op, rs2, k.reduce);
 }
 
-static sql_rel *
-rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, int f)
+sql_rel *
+rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
 	sql_rel *rel, *ll = l->l, *rl = r->l;
 
@@ -2676,7 +2676,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 	}
 
 	if (l->op == r->op && 
-		((ll == rl && l->r == r->r) ||
+		((ll == rl && l->r == r->r && l->r == NULL /* or check if columns are equal*/) ||
 		(exps_card(l->exps) == exps_card(r->exps) && exps_card(l->exps) <= CARD_ATOM))) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
@@ -2686,7 +2686,6 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 		l->exps = nl;
 		return l;
 	}
-	(void)f;
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	set_processed(l);
@@ -3118,7 +3117,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!lr || !rr)
 			return NULL;
-		return rel_or(sql, lr, rr, exps, lexps, rexps, f);
+		return rel_or(sql, lr, rr, exps, lexps, rexps);
 	}
 	case SQL_AND:
 	{

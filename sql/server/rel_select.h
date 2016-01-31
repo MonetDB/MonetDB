@@ -49,6 +49,7 @@ extern void rel_join_add_exp(sql_allocator *sa, sql_rel *rel, sql_exp *e);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e);
 extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e);
+extern sql_rel *rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps);
 /* TODO rename to exp_check_type + move to rel_exp.mx */
 extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe);
 extern int rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe);
