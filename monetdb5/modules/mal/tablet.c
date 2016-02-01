@@ -1256,7 +1256,7 @@ SQLproducer(void *p)
 	base = end = s = task->input[cur];
 	*s = 0;
 	task->cur = cur;
-	if (task->b == task->cntxt->fdin) {
+	if (task->as->filename == NULL) {
 		consoleinput = 1;
 		goto parseSTDIN;
 	}
