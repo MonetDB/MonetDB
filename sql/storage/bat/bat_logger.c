@@ -10,7 +10,6 @@
 #include "bat_logger.h"
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
-#include "mal_module.h"
 
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
