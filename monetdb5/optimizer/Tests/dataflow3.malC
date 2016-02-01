@@ -50,7 +50,7 @@ end s1_0;
     optimizer.mergetable("user","s1_0");
     optimizer.deadcode("user","s1_0");
     optimizer.commonTerms("user","s1_0");
-    optimizer.joinPath("user","s1_0");
+    optimizer.projectionpath("user","s1_0");
     optimizer.reorder("user","s1_0");
     optimizer.deadcode("user","s1_0");
     optimizer.reduce("user","s1_0");

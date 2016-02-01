@@ -165,6 +165,12 @@ static struct winthread {
 static CRITICAL_SECTION winthread_cs;
 static int winthread_cs_init = 0;
 
+void
+gdk_system_reset(void)
+{
+	winthread_cs_init = 0;
+}
+
 static struct winthread *
 find_winthread(DWORD tid)
 {
@@ -467,15 +473,14 @@ thread_starter(void *arg)
 static void
 join_threads(void)
 {
-	struct posthread *p, *n = NULL;
+	struct posthread *p;
 	int waited;
 	pthread_t tid;
 
 	pthread_mutex_lock(&posthread_lock);
 	do {
 		waited = 0;
-		for (p = posthreads; p; p = n) {
-			n = p->next;
+		for (p = posthreads; p; p = p->next) {
 			if (p->exited) {
 				tid = p->tid;
 				rm_posthread_locked(p);
@@ -518,8 +523,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		pthread_mutex_lock(&posthread_lock);
 		p->next = posthreads;
 		posthreads = p;
-		f = thread_starter;
 		pthread_mutex_unlock(&posthread_lock);
+		f = thread_starter;
 		arg = p;
 		newtp = &p->tid;
 	} else {

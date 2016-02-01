@@ -9,18 +9,15 @@ stdout of test 'load` in directory 'sql/benchmarks/ATIS` itself:
 # Serving database 'mTests_src_benchmarks_ATIS', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31295/
-# MonetDB/SQL module v2.37.0 loaded
-function user.main():void;
-    INT_MAX := 2147483647;
-    dbgmsk := mdb.getDebug();
-    unset := calc.+(8,8388608);
-    keep := calc.xor(INT_MAX,unset);
-    set := calc.and(dbgmsk,keep);
-    mdb.setDebug(set);
-end user.main;
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:35352/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5703/.s.monetdb.35352
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
 #function user.main():void;

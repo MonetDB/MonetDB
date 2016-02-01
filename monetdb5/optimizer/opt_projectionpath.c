@@ -16,121 +16,13 @@
  * For example, using recursion for all common paths.
  */
 #include "monetdb_config.h"
-#include "opt_joinpath.h"
+#include "opt_projectionpath.h"
 
-typedef struct{
-	int cnt;
-	int lvar, rvar;
-	str fcn;
-	InstrPtr p;
-} Candidate;
-
-//#undef OPTDEBUGjoinPath 
-//#define OPTDEBUGjoinPath  if(1)
-/*
- * The join path type analysis should also be done at run time,
- * because the expressive power of MAL is insufficient to
- * enforce a proper join type list.
- * The current  costmodel is rather limited. It takes as default
- * the order presented and catches a few more cases that do not
- * lead to materialization of large views. This solved the earlier
- * problem noticable on TPC-H that join order was producing slower
- * results. Now, on TPCH-H, all queries run equal or better.
- * about 12 out of 84 joinpaths are improved with more than 10%.
- * (affecting Q2, Q5, Q7, Q8,Q11,Q13)
- */
-static int
-OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
-{
-	int i,j,k,top=0, actions =0;
-	InstrPtr q = NULL, p, *old;
-	int limit, slimit;
-	Candidate *candidate;
-
-	candidate = (Candidate *) GDKzalloc(mb->stop * sizeof(Candidate));
-	if ( candidate == NULL)
-		return 0;
-	(void) cntxt;
-
-	/* collect all candidates */
-	limit= mb->stop;
-	slimit= mb->ssize;
-	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
-		if ( getFunctionId(p) == projectionPathRef)
-			for ( j= p->retc; j< p->argc-1; j++){
-				for (k= top-1; k >= 0 ; k--)
-					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
-						candidate[k].cnt++;
-						break;
-					}
-				if (k < 0) k = top;
-				if ( k == top && top < mb->stop ){
-					candidate[k].cnt =1;
-					candidate[k].lvar = getArg(p,j);
-					candidate[k].rvar = getArg(p,j+1);
-					candidate[k].fcn = getFunctionId(p);
-					top++;
-				}
-			}
-
-	if (top == 0) {
-		GDKfree(candidate);
-		return 0;
-	}
-
-	/* now inject and replace the subpaths */
-	old = mb->stmt;
-	if ( newMalBlkStmt(mb,mb->ssize) < 0) {
-		GDKfree(candidate);
-		return 0;
-	}
-
-	for(i=0, p= old[i]; i< limit; i++, p= old[i]) {
-		if( getFunctionId(p)== projectionPathRef)
-			for ( j= p->retc ; j< p->argc-1; j++){
-				for (k= top-1; k >= 0 ; k--)
-					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
-						if ( candidate[k].p == 0 ) {
-							if ( candidate[k].fcn == projectionPathRef)
-								q= newStmt(mb, algebraRef, projectionRef);
-							q= pushArgument(mb,q, candidate[k].lvar);
-							q= pushArgument(mb,q, candidate[k].rvar);
-							candidate[k].p = q;
-						} 
-						delArgument(p,j);
-						getArg(p,j) = getArg(candidate[k].p,0);
-						if ( p->argc == 3 ){
-							if ( getFunctionId(p) == projectionPathRef)
-								setFunctionId(p, projectionRef);
-						}
-						actions ++;
-						OPTDEBUGjoinPath {
-							mnstr_printf(cntxt->fdout,"re-use pair\n");
-							printInstruction(cntxt->fdout,mb,0,candidate[k].p,0);
-							printInstruction(cntxt->fdout,mb,0,p,0);
-						}
-						goto breakout;
-					}
-			}
-	breakout:
-		pushInstruction(mb,p);
-	}
-	for(; i<slimit; i++)
-		if( old[i])
-			freeInstruction(old[i]);
-	
-	GDKfree(old);
-	GDKfree(candidate);
-	/* there may be new opportunities to remove common expressions 
-	   avoid the recursion
-	*/
-	if ( actions )
-		return actions + OPTjoinSubPath(cntxt, mb);
-	return actions;
-}
+//#undef OPTDEBUGprojectionpath 
+//#define OPTDEBUGprojectionpath  if(1)
 
 int
-OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0;
 	int *pc;
@@ -167,7 +59,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			varcnt[getArg(p,j)]++;
 	}
 
-	/* assume a single pass over the plan, and only consider projection sequences composed of projection
+	/* assume a single pass over the plan, and only consider projection sequences 
  	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
@@ -185,29 +77,29 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				 * For projection series we may benefitt
 				 */
 				if (r && varcnt[getArg(p,j)] > 1){
-					OPTDEBUGjoinPath {
+					OPTDEBUGprojectionpath{
 						mnstr_printf(cntxt->fdout,"#double use %d %d\n", getArg(p,j), varcnt[getArg(p,j)]);
 						printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					}
 					r = 0;
 				}
 				
-				OPTDEBUGjoinPath if (r) {
+				OPTDEBUGprojectionpath if (r) {
 					mnstr_printf(cntxt->fdout,"#expand list \n");
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				}
 				if ( getFunctionId(p) == projectionRef){
-					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionPathRef) ){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
 							q = pushArgument(mb,q,getArg(r,k));
 					} else 
 						q = pushArgument(mb,q,getArg(p,j));
 				}
 			}
-			OPTDEBUGjoinPath {
+			OPTDEBUGprojectionpath {
 				chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-				mnstr_printf(cntxt->fdout,"#new [[left]fetch]joinPath instruction\n");
+				mnstr_printf(cntxt->fdout,"#new [[left]fetch]projectionpath instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}
 			if(q->argc<= p->argc){
@@ -230,7 +122,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			setVarUDFtype(mb, getArg(q,0));
 			setVarType(mb, getArg(q,0), newBatType( TYPE_oid, getColumnType(getArgType(mb,q,q->argc-1))));
 			if ( getFunctionId(q) == projectionRef )
-				setFunctionId(q,projectionPathRef);
+				setFunctionId(q,projectionpathRef);
 			freeInstruction(p);
 			p= q;
 			actions++;
@@ -246,8 +138,6 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 /* perform a second phase, trial code, many TPCH queries have subpaths of interest.
  * The count is meant to illustrate the impact
  */
-	if (0 &&  actions )
-		actions = 10000*actions+ OPTjoinSubPath(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);

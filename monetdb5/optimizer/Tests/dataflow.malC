@@ -3,7 +3,7 @@
 include microbenchmark;
 
 function tst();
-s:= microbenchmark.uniform(0:oid, 10000000:wrd, 10000000);
+s:= microbenchmark.uniform(0:oid, 100000:wrd, 100000);
 l:= aggr.min(s);
 h:= l;
 #mdb.setTimer(true);

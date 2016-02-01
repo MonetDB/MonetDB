@@ -30,10 +30,8 @@ stderr of test 'tst115` in directory 'monetdb5/mal` itself:
 # 13:20:26 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:20:26 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-21455/.s.monetdb.39502
 QUERY = # the next step is to trace the call of a mal function call
-        
-        command + (L:any_1,R:any_1):any_1 address addIntInt; 
         
         function doitOnce():int;
         	z:= 12;

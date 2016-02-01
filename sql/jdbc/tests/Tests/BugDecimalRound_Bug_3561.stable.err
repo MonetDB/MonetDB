@@ -1,0 +1,42 @@
+stderr of test 'BugDecimalRound_Bug_3561` in directory 'sql/jdbc/tests` itself:
+
+
+# 17:37:35 >  
+# 17:37:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38629" "--set" "mapi_usock=/var/tmp/mtest-14593/.s.monetdb.38629" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_jdbc_tests" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:37:35 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38629
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14593/.s.monetdb.38629
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_jdbc_tests
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:37:36 >  
+# 17:37:36 >  "./BugDecimalRound_Bug_3561.SQL.sh" "BugDecimalRound_Bug_3561"
+# 17:37:36 >  
+
+
+# 17:37:36 >  
+# 17:37:36 >  java BugDecimalRound_Bug_3561 "jdbc:monetdb://madrid:38629/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 17:37:36 >  
+
+
+# 17:37:36 >  
+# 17:37:36 >  "Done."
+# 17:37:36 >  
+

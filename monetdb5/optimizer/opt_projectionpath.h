@@ -6,13 +6,13 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
-#ifndef _OPT_JOINPATH_
-#define _OPT_JOINPATH_
+#ifndef _OPT_PROJECTIONPATH_
+#define _OPT_PROJECTIONPATH_
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-#define OPTDEBUGjoinPath  if ( optDebug & ((lng)1 <<DEBUG_OPT_JOINPATH) )
-opt_export int OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#define OPTDEBUGprojectionpath  if ( optDebug & ((lng)1 <<DEBUG_OPT_PROJECTIONPATH) )
+opt_export int OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

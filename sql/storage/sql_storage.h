@@ -119,11 +119,11 @@ typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 /*
 -- append/update to columns and indices 
 */
-typedef void (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
-typedef void (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
-typedef void (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
-typedef void (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
-typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
+typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
+typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
+typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
+typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
+typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 
 /*
 -- count number of rows in column (excluding the deletes)

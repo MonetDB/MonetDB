@@ -63,30 +63,16 @@ static struct{
 // The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer)
 {	
-	char buf[BUFSIZ], *s;
-	size_t len, lenhdr;
+	size_t len;
 
-	s = strchr(logbuffer,(int) ':');
-	if( s == NULL){
-		return;
-	}
 	len = strlen(logbuffer);
 
 	MT_lock_set(&mal_profileLock);
-	snprintf(buf,BUFSIZ,"%d",eventcounter);
-	strncpy(s+1, buf,strlen(buf));
-
 	if (eventstream) {
 	// upon request the log record is sent over the profile stream
-		if( eventcounter == 0){
-			snprintf(buf,BUFSIZ,"%s\n",monet_characteristics);
-			lenhdr = strlen(buf);
-			(void) mnstr_write(eventstream, buf, 1, lenhdr);
-		}
 		(void) mnstr_write(eventstream, logbuffer, 1, len);
 		(void) mnstr_flush(eventstream);
 	}
-	eventcounter++;
 	MT_lock_unset(&mal_profileLock);
 }
 
@@ -131,7 +117,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 	/* make profile event tuple  */
 	lognew();
-	logadd("{%s\"event\":         ,%s",prettify,prettify); // fill in later with the event counter
+	logadd("{%s",prettify); // fill in later with the event counter
 
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
@@ -355,7 +341,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 	// identify core processing
 	len += snprintf(cpuload, BUFSIZ, "[ ");
 	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		len +=snprintf(cpuload + len, BUFSIZ - len, " %.2f ",corestat[cpu].load);
+		len +=snprintf(cpuload + len, BUFSIZ - len, "%c %.2f", (cpu?',':' '), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
 	return 0;
@@ -382,7 +368,7 @@ profilerHeartbeatEvent(char *alter)
 	clk = clock.tv_sec;
 	
 	lognew();
-	logadd("{\n\"event\":         ,%s",prettify); // fill in later with the event counter
+	logadd("{%s",prettify); // fill in later with the event counter
 #ifdef HAVE_CTIME_R3
 	tbuf = ctime_r(&clk, ctm, sizeof(ctm));
 #else
@@ -393,7 +379,8 @@ profilerHeartbeatEvent(char *alter)
 #endif
 #endif
 	tbuf[19]=0;
-	logadd("\"time\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
+	logadd("\"user\":\"heartbeat\",%s", prettify);
+	logadd("\"ctime\":\"%s.%06ld\",%s",tbuf+11, (long)clock.tv_usec, prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -456,6 +443,7 @@ openProfilerStream(stream *fd, int mode)
 	if (myname == 0){
 		myname = putName("profiler", 8);
 		eventcounter = 0;
+		logjsonInternal(monet_characteristics);
 	}
 	if( eventstream)
 		closeProfilerStream();
@@ -496,15 +484,38 @@ startProfiler(void)
 	prevUsage = infoUsage;
 #endif
 
+	if( eventstream){
+		throw(MAL,"profiler.start","Profiler already running, stream not available");
+	}
 	MT_lock_set(&mal_profileLock );
 	if (myname == 0){
 		myname = putName("profiler", 8);
 		eventcounter = 0;
 	}
 	malProfileMode = 1;
-	sqlProfiling = TRUE;
 	MT_lock_unset(&mal_profileLock);
+	logjsonInternal(monet_characteristics);
+	// reset the trace table
+	clearTrace();
 
+	return MAL_SUCCEED;
+}
+
+/* SQL queries can be traced without obstructing the stream */
+str
+startTrace(void)
+{
+	malProfileMode = 1;
+	sqlProfiling = TRUE;
+	clearTrace();
+	return MAL_SUCCEED;
+}
+
+str
+stopTrace(void)
+{
+	malProfileMode = eventstream != NULL;
+	sqlProfiling = FALSE;
 	return MAL_SUCCEED;
 }
 
@@ -708,15 +719,6 @@ initTrace(void)
 	return ret;
 }
 
-str
-cleanupTraces(void)
-{
-	MT_lock_set(&mal_contextLock);
-	_cleanupProfiler();
-	MT_lock_unset(&mal_contextLock);
-	return MAL_SUCCEED;
-}
-
 void
 clearTrace(void)
 {
@@ -740,6 +742,13 @@ clearTrace(void)
 	TRACE_init = 0;
 	MT_lock_unset(&mal_contextLock);
 	initTrace();
+}
+
+str
+cleanupTraces(void)
+{
+	clearTrace();
+	return MAL_SUCCEED;
 }
 
 void
@@ -962,21 +971,20 @@ static volatile ATOMIC_TYPE hbrunning;
 static void profilerHeartbeat(void *dummy)
 {
 	int t;
+	const int timeout = GDKdebug & FORCEMITOMASK ? 10 : 25;
 
 	(void) dummy;
-	while (ATOMIC_GET(hbrunning, mal_beatLock)) {
+	for (;;) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL) {
-			for (t = 1000; t > 0; t -= 25) {
-				MT_sleep_ms(25);
-				if (!ATOMIC_GET(hbrunning, mal_beatLock))
-					return;
-			}
-		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= 25) {
-			MT_sleep_ms(t > 25 ? 25 : t);
-			if (!ATOMIC_GET(hbrunning, mal_beatLock))
+		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream == NULL) {
+			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
 				return;
+			MT_sleep_ms(timeout);
+		}
+		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= timeout) {
+			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+				return;
+			MT_sleep_ms(t > timeout ? timeout : t);
 		}
 		profilerHeartbeatEvent("ping");
 	}
@@ -990,8 +998,8 @@ void setHeartbeat(int delay)
 		MT_join_thread(hbthread);
 		return;
 	}
-	if (delay <= 10)
-		hbdelay =10;
+	if ( delay > 0 &&  delay <= 10)
+		delay = 10;
 	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
 }
 
@@ -1006,11 +1014,11 @@ void initHeartbeat(void)
 #ifdef NEED_MT_LOCK_INIT
 	ATOMIC_INIT(mal_beatLock, "beatLock");
 #endif
-	hbrunning = 1;
+	ATOMIC_SET(hbrunning, 1, mal_beatLock);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
 		/* it didn't happen */
 		hbthread = 0;
-		hbrunning = 0;
+		ATOMIC_SET(hbrunning, 0, mal_beatLock);
 	}
 }
 

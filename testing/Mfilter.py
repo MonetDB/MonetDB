@@ -83,7 +83,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 2: 5
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )(\d+)( .*)\n",                                                                  # 3: 8
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 4: 3
-    r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 5: 4
+    r'^(ERROR = !.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                # 5: 4
     r"^(DBD::monetdb::db table_info warning: Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line \d+\.)\n",            # 6: 3
     r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pm line \d+\.)\n',                         # 7: 4
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere

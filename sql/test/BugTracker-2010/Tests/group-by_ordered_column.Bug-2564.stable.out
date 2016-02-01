@@ -39,7 +39,7 @@ Ready.
 % mal # name
 % clob # type
 % 113 # length
-function user.s5_1():void;
+function user.s7_1():void;
     X_58:void := querylog.define("explain select count(*) from t2564 group by c1, c2, c3;","sequential_pipe",35);
     X_41 := bat.new(nil:oid,nil:str);
     X_49 := bat.append(X_41,"sys.L1");
@@ -73,7 +73,7 @@ function user.s5_1():void;
     (X_35,r1_35,r2_35) := group.subgroupdone(X_14,X_32);
     X_38:bat[:wrd] := aggr.subcount(X_35,X_35,r1_35,false);
     sql.resultSet(X_49,X_51,X_53,X_55,X_57,X_38);
-end user.s5_1;
+end user.s7_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.L1 # table_name
 % L1 # name

@@ -252,13 +252,15 @@ SQLinit(void)
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock);
-	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
+	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
+	GDKregister(sqllogthread);
 #if 0
-	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
+	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_JOINABLE) != 0) {
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
+	GDKregister(minmaxthread);
 #endif
 	return MAL_SUCCEED;
 }
@@ -869,10 +871,10 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 	(void) be;
 	if (onoff) {
-		(void) newStmt(mb, "profiler", "start");
+		(void) newStmt(mb, "profiler", "starttrace");
 		initTrace();
 	} else {
-		(void) newStmt(mb, "profiler", "stop");
+		(void) newStmt(mb, "profiler", "stoptrace");
 		/* cook a new resultSet instruction */
 		resultset = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(resultset, sqlRef);

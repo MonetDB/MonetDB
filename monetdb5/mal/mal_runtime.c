@@ -19,15 +19,26 @@
 #include "mal_profiler.h"
 #include "mal_listing.h"
 #include "mal_authorize.h"
+#include "mal_private.h"
 
 #define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
-#define hashinfo(X) (((X) && (X) != (Hash *) 1 && (X)->mask)? ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)) + cnt * sizeof(int):  0)
+#define hashinfo(X) ( (X)? heapinfo((X)->heap):0)
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;
 static int qtop, qsize;
 static int qtag= 1;
 static int calltag =0; // to identify each invocation
+
+void
+mal_runtime_reset(void)
+{
+	QRYqueue = 0;
+	qtop = 0;
+	qsize = 0;
+	qtag= 1;
+	calltag =0; 
+}
 
 static str isaSQLquery(MalBlkPtr mb){
 	int i;
@@ -201,6 +212,19 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
  * may trigger a side effect, such as creating a hash-index.
  * Side effects are ignored.
  */
+
+lng
+getBatSpace(BAT *b){
+	lng space=0;
+	if( b == NULL)
+		return 0;
+	if( b->T) space += heapinfo(&b->T->heap); 
+	if( b->T->vheap) space += heapinfo(b->T->vheap); 
+	if(b->T) space += hashinfo(b->T->hash); 
+	space += IMPSimprintsize(b);
+	return space;
+}
+
 lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;

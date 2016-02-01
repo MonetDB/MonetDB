@@ -144,6 +144,11 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 static str fillScenario(Client c, Scenario scen);
 static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
 
+
+void
+mal_scenario_reset(void)
+{
+}
 /*
  * @-
  * Currently each user can define a new scenario, provided we have a free slot.
@@ -190,7 +195,7 @@ initScenario(Client c, Scenario s)
 	/* prepare for conclicts */
 	MT_lock_set(&mal_contextLock);
 	if (s->initSystem && s->initSystemCmd == 0) {
-		s->initSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->initSystem,1);
+		s->initSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->initSystem,0);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
@@ -205,21 +210,21 @@ initScenario(Client c, Scenario s)
 	}
 
 	if (s->exitSystem && s->exitSystemCmd == 0)
-		s->exitSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->exitSystem,1);
+		s->exitSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->exitSystem,0);
 	if (s->initClient && s->initClientCmd == 0)
-		s->initClientCmd = (MALfcn) getAddress(c->fdout, l, l, s->initClient,1);
+		s->initClientCmd = (MALfcn) getAddress(c->fdout, l, l, s->initClient,0);
 	if (s->exitClient && s->exitClientCmd == 0)
-		s->exitClientCmd = (MALfcn) getAddress(c->fdout, l, l, s->exitClient,1);
+		s->exitClientCmd = (MALfcn) getAddress(c->fdout, l, l, s->exitClient,0);
 	if (s->reader && s->readerCmd == 0)
-		s->readerCmd = (MALfcn) getAddress(c->fdout, l, l, s->reader,1);
+		s->readerCmd = (MALfcn) getAddress(c->fdout, l, l, s->reader,0);
 	if (s->parser && s->parserCmd == 0)
-		s->parserCmd = (MALfcn) getAddress(c->fdout, l, l, s->parser,1);
+		s->parserCmd = (MALfcn) getAddress(c->fdout, l, l, s->parser,0);
 	if (s->optimizer && s->optimizerCmd == 0)
-		s->optimizerCmd = (MALfcn) getAddress(c->fdout, l, l, s->optimizer,1);
+		s->optimizerCmd = (MALfcn) getAddress(c->fdout, l, l, s->optimizer,0);
 	if (s->tactics && s->tacticsCmd == 0)
-		s->tacticsCmd = (MALfcn) getAddress(c->fdout, l, l, s->tactics,1);
+		s->tacticsCmd = (MALfcn) getAddress(c->fdout, l, l, s->tactics,0);
 	if (s->engine && s->engineCmd == 0)
-		s->engineCmd = (MALfcn) getAddress(c->fdout, l, l, s->engine,1);
+		s->engineCmd = (MALfcn) getAddress(c->fdout, l, l, s->engine,0);
 	MT_lock_unset(&mal_contextLock);
 	return(fillScenario(c, s));
 }

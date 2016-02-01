@@ -48,24 +48,22 @@ l := algebra.projection(f,k);
 io.print(g);
 io.print(l);
 
-h := algebra.projectionPath(c,d);
+h := algebra.projectionpath(c,d);
 io.print(h);
 
-i := algebra.projectionPath(b,c,d);
+i := algebra.projectionpath(b,c,d);
 io.print(i);
 
-j := algebra.projectionPath(a,b,c,d);
+j := algebra.projectionpath(a,b,c,d);
 io.print(j);
 
 io.print("empty sequences");
-w :=algebra.projectionPath(empty,c,d);
-io.print(w);
-w :=algebra.projectionPath(c,empty,d);
+w :=algebra.projectionpath(empty,c,d);
 io.print(w);
 
 end qry;
 
 mdb.list("user","qry");
-optimizer.joinPath("user","qry");
+optimizer.projectionpath("user","qry");
 mdb.list("user","qry");
 qry();

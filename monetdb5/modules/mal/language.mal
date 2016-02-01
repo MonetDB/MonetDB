@@ -51,6 +51,10 @@ pattern pass(v:any_1)
 address MALpass
 comment "Cheap instruction to disgard storage while retaining the dataflow dependency";
 
+pattern block(v:int,w:any...):int
+address deblockdataflow
+comment "Block on availability of all variables w, and then pass on v";
+
 pattern register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string to MAL and register it as a function.";

@@ -331,6 +331,7 @@ CONDITIONALS = {
     'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
+    'BAD_HOSTNAME'         : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -2576,7 +2577,7 @@ def killProc(proc, outfile = None, cmd = None):
             cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
-        except ValueError:
+        except (ValueError, IOError):
             print 'cannot write timeout message',cmd
     if os.name == "nt":
         sym = ''
@@ -2606,8 +2607,9 @@ def killProc(proc, outfile = None, cmd = None):
     if outfile is not None and out:
         try:
             outfile.write('\n%s\n' % out)
-        except ValueError:
+        except (ValueError, IOError):
             print 'cannot write stack trace'
+            print out
     proc.killed = True
     try:
         os.kill(-proc.pid, signal.SIGKILL)
@@ -2810,11 +2812,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
             if SERVER == "MAL":
                 lang="mal"
-                Srvr.extend(['--set', 'mal_listing=2'])
                 Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
-                Srvr.extend(['--set', 'mal_listing=0'])
                 Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
 
@@ -3107,8 +3107,10 @@ def Check(command, input) :
         raise
     qOut = qOut.split('\n')
     qErr = qErr.split('\n')
+    failed = False
     if proc.returncode:
         qOut.append('! Exit 1')
+        failed = True
     test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
                        r"^!WARNING: monet_checkbat: "                                        "|"
                        r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
@@ -3122,6 +3124,7 @@ def Check(command, input) :
                     noErr.append(l+"\n")
             else:
                 ErrMsg('"%s" failed:' % '" "'.join(command))
+                failed = True
                 if qOut and qOut[-1].startswith("! Exit 1"):
                     qErr.append(qOut.pop())
                 for l in qOut+qErr:
@@ -3142,7 +3145,7 @@ def Check(command, input) :
         STDOUT.flush()
         STDERR.writelines(noErr)
         STDERR.flush()
-    return 0
+    return failed
 ### Check(command, input) #
 
 def CheckClassPath() :
@@ -3783,6 +3786,12 @@ def main(argv) :
         pass
     os.chdir(BACK)
 
+    # check whether our hostname makes sense
+    try:
+        socket.getaddrinfo(socket.gethostname(), None)
+    except:
+        CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
         f = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
@@ -3947,7 +3956,7 @@ def main(argv) :
 
             exe = {}
             exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s --set mal_listing=2 %s' % \
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
             exe['python']        = CheckExec(sys.executable) , sys.executable

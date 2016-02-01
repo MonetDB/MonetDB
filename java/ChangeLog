@@ -1,3 +1,14 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Jan 28 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Method getFunctions() in DatabaseMetadata used to throw an SQLException:
+  SELECT: no such column 'functions.sql' This has been corrected. It
+  now returns a resultset as requested.
+- The resultsets of DatabaseMetadata methods now no longer return a
+  value for the *_CAT columns as MonetDB does not support Catalogs.
+
+* Thu Jan  7 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Fixed a memory leak in MonetDatabaseMetaData.java for a static cache
+  which kept references to closed Connection objects.
+

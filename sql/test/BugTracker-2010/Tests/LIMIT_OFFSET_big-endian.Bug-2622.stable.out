@@ -129,7 +129,7 @@ top N (
 % mal # name
 % clob # type
 % 82 # length
-function user.s4_1():void;
+function user.s7_1():void;
     X_32:void := querylog.define("explain select * from oblo;","minimal_pipe",21);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -149,13 +149,13 @@ function user.s4_1():void;
     X_29 := bat.append(X_21,32);
     X_31 := bat.append(X_23,0);
     sql.resultSet(X_24,X_26,X_27,X_29,X_31,X_14);
-end user.s4_1;
+end user.s7_1;
 #EXPLAIN select * from oblo OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 91 # length
-function user.s5_1():void;
+function user.s8_1():void;
     X_41:void := querylog.define("explain select * from oblo offset 2;","minimal_pipe",27);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -181,13 +181,13 @@ function user.s5_1():void;
     X_37 := bat.append(X_29,32);
     X_39 := bat.append(X_31,0);
     sql.resultSet(X_32,X_34,X_35,X_37,X_39,X_22);
-end user.s5_1;
+end user.s8_1;
 #EXPLAIN select * from oblo LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 90 # length
-function user.s6_1():void;
+function user.s9_1():void;
     X_41:void := querylog.define("explain select * from oblo limit 2;","minimal_pipe",27);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -213,13 +213,13 @@ function user.s6_1():void;
     X_37 := bat.append(X_29,32);
     X_39 := bat.append(X_31,0);
     sql.resultSet(X_32,X_34,X_35,X_37,X_39,X_22);
-end user.s6_1;
+end user.s9_1;
 #EXPLAIN select * from oblo LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 99 # length
-function user.s7_1():void;
+function user.s10_1():void;
     X_41:void := querylog.define("explain select * from oblo limit 1 offset 2;","minimal_pipe",27);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -245,13 +245,13 @@ function user.s7_1():void;
     X_37 := bat.append(X_29,32);
     X_39 := bat.append(X_31,0);
     sql.resultSet(X_32,X_34,X_35,X_37,X_39,X_22);
-end user.s7_1;
+end user.s10_1;
 #EXPLAIN select * from oblo LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
 % 99 # length
-function user.s8_1():void;
+function user.s11_1():void;
     X_41:void := querylog.define("explain select * from oblo limit 2 offset 1;","minimal_pipe",27);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -277,13 +277,13 @@ function user.s8_1():void;
     X_37 := bat.append(X_29,32);
     X_39 := bat.append(X_31,0);
     sql.resultSet(X_32,X_34,X_35,X_37,X_39,X_22);
-end user.s8_1;
+end user.s11_1;
 #EXPLAIN select * from oblo ORDER BY a;
 % .explain # table_name
 % mal # name
 % clob # type
 % 93 # length
-function user.s9_1():void;
+function user.s12_1():void;
     X_38:void := querylog.define("explain select * from oblo order by a;","minimal_pipe",23);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -305,13 +305,13 @@ function user.s9_1():void;
     X_35 := bat.append(X_27,32);
     X_37 := bat.append(X_29,0);
     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_20);
-end user.s9_1;
+end user.s12_1;
 #EXPLAIN select * from oblo ORDER BY a OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 102 # length
-function user.s10_1():void;
+function user.s13_1():void;
     X_48:void := querylog.define("explain select * from oblo order by a offset 2;","minimal_pipe",29);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -339,13 +339,13 @@ function user.s10_1():void;
     X_44 := bat.append(X_35,32);
     X_46 := bat.append(X_37,0);
     sql.resultSet(X_38,X_40,X_42,X_44,X_46,X_28);
-end user.s10_1;
+end user.s13_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 101 # length
-function user.s11_1():void;
+function user.s14_1():void;
     X_53:void := querylog.define("explain select * from oblo order by a limit 2;","minimal_pipe",34);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -378,13 +378,13 @@ function user.s11_1():void;
     X_49 := bat.append(X_40,32);
     X_51 := bat.append(X_42,0);
     sql.resultSet(X_43,X_45,X_47,X_49,X_51,X_33);
-end user.s11_1;
+end user.s14_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
 % 110 # length
-function user.s12_1():void;
+function user.s15_1():void;
     X_56:void := querylog.define("explain select * from oblo order by a limit 2 offset 1;","minimal_pipe",36);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -419,13 +419,13 @@ function user.s12_1():void;
     X_52 := bat.append(X_43,32);
     X_54 := bat.append(X_45,0);
     sql.resultSet(X_46,X_48,X_50,X_52,X_54,X_36);
-end user.s12_1;
+end user.s15_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 110 # length
-function user.s13_1():void;
+function user.s16_1():void;
     X_56:void := querylog.define("explain select * from oblo order by a limit 1 offset 2;","minimal_pipe",36);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","oblo");
@@ -460,7 +460,7 @@ function user.s13_1():void;
     X_52 := bat.append(X_43,32);
     X_54 := bat.append(X_45,0);
     sql.resultSet(X_46,X_48,X_50,X_52,X_54,X_36);
-end user.s13_1;
+end user.s16_1;
 #select * from oblo;
 % sys.oblo # table_name
 % a # name

@@ -712,7 +712,7 @@ Ready.
 % .L # table_name
 % joeuser # name
 % char # type
-% 18 # length
+% 20 # length
 [ "joeuser"     ]
 
 #select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";

@@ -13,7 +13,7 @@ function qry( a:bat[:oid,:any_2], b:bat[:oid,:any_3], c:bat[:oid,:any_4]):bat[:o
     return qry:= xx;
 end qry;
 
-optimizer.joinPath("user","qry");
+optimizer.projectionpath("user","qry");
 #optimizer.commonTerms("user","qry");
 mdb.List("user","qry");
 

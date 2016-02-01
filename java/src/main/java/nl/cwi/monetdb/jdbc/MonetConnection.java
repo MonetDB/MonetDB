@@ -111,11 +111,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
-
-	{
+		{
 			put("inet", INET.class);
 			put("url",  URL.class);
-	}};
+		}
+	};
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)
@@ -615,17 +615,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	@Override
 	public String getCatalog() throws SQLException {
-		if (lang != LANG_SQL)
-			throw new SQLException("This method is only supported in SQL mode", "M0M04");
-
-		// this is a dirty hack, but it works as long as MonetDB
-		// only handles one catalog (dbfarm) at a time
-		ResultSet rs = getMetaData().getCatalogs();
-		try {
-			return rs.next() ? rs.getString(1) : null;
-		} finally {
-			rs.close();
-		}
+		// MonetDB does NOT support catalogs
+		return null;
 	}
 	
 	/**
@@ -1138,7 +1129,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	@Override
 	public void setCatalog(String catalog) throws SQLException {
-		// silently ignore this request
+		// silently ignore this request as MonetDB does not support catalogs
 	}
 
 	/**
@@ -1318,7 +1309,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public void setSchema(String schema) throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
-		createStatement().executeUpdate("SET SCHEMA \"" + schema + "\"");
+		if (schema != null)
+			createStatement().execute("SET SCHEMA \"" + schema + "\"");
 	}
 
 	/**
@@ -1332,14 +1324,21 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public String getSchema() throws SQLException {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
-		ResultSet rs = createStatement().executeQuery("SELECT CURRENT_SCHEMA");
-		try { 
+
+		String cur_schema;
+		Statement st = createStatement();
+		ResultSet rs = null;
+		try {
+			rs = st.executeQuery("SELECT CURRENT_SCHEMA");
 			if (!rs.next())
 				throw new SQLException("Row expected", "02000");
-			return rs.getString(1);
+			cur_schema = rs.getString(1);
 		} finally {
-			rs.close();
+			if (rs != null)
+				rs.close();
+			st.close();
 		}
+		return cur_schema;
 	}
 
 	/**
@@ -2756,4 +2755,3 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	// }}}
 }
 
-// vim: foldmethod=marker:

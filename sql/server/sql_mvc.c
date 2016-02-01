@@ -154,6 +154,7 @@ void
 mvc_logmanager(void)
 {
 	Thread thr = THRnew("logmanager");
+
 	store_manager();
 	THRdel(thr);
 }
@@ -162,6 +163,7 @@ void
 mvc_minmaxmanager(void)
 {
 	Thread thr = THRnew("minmaxmanager");
+
 	minmax_manager();
 	THRdel(thr);
 }

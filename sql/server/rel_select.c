@@ -1263,6 +1263,14 @@ rel_with_query(mvc *sql, symbol *q )
 			return NULL;
 		}
 		stack_push_rel_view(sql, name, nrel);
+		if (!is_project(nrel->op)) {
+			if (is_topn(nrel->op) || is_sample(nrel->op)) {
+				nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1));
+			} else {
+				stack_pop_frame(sql);
+				return NULL;
+			}
+		}
 		assert(is_project(nrel->op));
 		if (is_project(nrel->op) && nrel->exps) {
 			node *ne = nrel->exps->h;
@@ -2685,8 +2693,8 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 	return rel_compare_exp(sql, rel, ls, rs, compare_op, rs2, k.reduce);
 }
 
-static sql_rel *
-rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, int f)
+sql_rel *
+rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
 	sql_rel *rel, *ll = l->l, *rl = r->l;
 
@@ -2701,7 +2709,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 	}
 
 	if (l->op == r->op && 
-		((ll == rl && l->r == r->r) ||
+		((ll == rl && l->r == r->r && l->r == NULL /* or check if columns are equal*/) ||
 		(exps_card(l->exps) == exps_card(r->exps) && exps_card(l->exps) <= CARD_ATOM))) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
@@ -2711,7 +2719,6 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps, 
 		l->exps = nl;
 		return l;
 	}
-	(void)f;
 	l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	set_processed(l);
@@ -3125,13 +3132,16 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(sql, lr, lo, f);
-			lexps = lr?lr->exps:NULL;
-			lr = lr->l;
-
+			if (lr) {
+				lexps = lr->exps;
+				lr = lr->l;
+			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(sql, rr, ro, f);
-			rexps = rr?rr->exps:NULL;
-			rr = rr->l;
+			if (rr) {
+				rexps = rr->exps;
+				rr = rr->l;
+			}
 			sql->pushdown = pushdown;
 		} else {
 			lr = rel_logical_exp(sql, lr, lo, f);
@@ -3140,7 +3150,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!lr || !rr)
 			return NULL;
-		return rel_or(sql, lr, rr, exps, lexps, rexps, f);
+		return rel_or(sql, lr, rr, exps, lexps, rexps);
 	}
 	case SQL_AND:
 	{
@@ -6147,6 +6157,10 @@ rel_selects(mvc *sql, symbol *s)
 	sql_rel *ret = NULL;
 
 	switch (s->token) {
+	case SQL_WITH:
+		ret = rel_with_query(sql, s);
+		sql->type = Q_TABLE;
+		break;
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
  		SelectNode *sn = (SelectNode *) s;
