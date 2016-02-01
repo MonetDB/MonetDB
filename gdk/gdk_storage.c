@@ -711,7 +711,13 @@ BATsave(BAT *bd)
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
-	CHECKDEBUG BATassertProps(b);
+	/* there is a possibility that BATsave gets called with a
+	 * pointer to a BAT that has *no* fixes (refs == 0), and so
+	 * the heaps may not be in core, in which case BATmirror()
+	 * would not find the mirror (this can happen when BATsave
+	 * gets called during a (sub)commit after the BAT had been
+	 * trimmed) */
+	CHECKDEBUG if (BATmirror(b)) BATassertProps(b);
 
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
