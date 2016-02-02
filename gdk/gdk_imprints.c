@@ -496,11 +496,11 @@ BATimprints(BAT *b)
 		assert(s4->tkey && s4->tsorted);
 		cnt = BATcount(s4);
 		imprints->bits = 64;
-		if (cnt < 32)
+		if (cnt <= 32)
 			imprints->bits = 32;
-		if (cnt < 16)
+		if (cnt <= 16)
 			imprints->bits = 16;
-		if (cnt < 8)
+		if (cnt <= 8)
 			imprints->bits = 8;
 
 		/* The heap we create here consists of four parts:
