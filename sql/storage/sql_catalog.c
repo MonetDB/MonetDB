@@ -11,6 +11,12 @@
 
 const char *TID = "%TID%";
 
+int
+base_key( sql_base *b )
+{
+	return hash_key(b->name);
+}
+
 static void *
 _list_find_name(list *l, const char *name)
 {

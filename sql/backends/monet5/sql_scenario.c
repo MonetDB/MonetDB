@@ -1267,7 +1267,7 @@ recompilequery:
 
 			trimMalBlk(mb);
 			chkProgram(c->fdout, c->nspace, mb);
-			addOptimizers(c, mb, "default_pipe");
+			addOptimizers(c, mb, "default_pipe"); // TODO change to active pipe! 
 			msg = optimizeMALBlock(c, mb);
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);

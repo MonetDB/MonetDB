@@ -10,6 +10,7 @@
 #include "rel_updates.h"
 #include "rel_semantic.h"
 #include "rel_select.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
 #include "rel_optimizer.h"
@@ -908,7 +909,6 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			sq = rel_selects(sql, sym);
 			if (sq)
 				sq = rel_optimizer(sql, sq);
-			rel_print(sql,sq,0);
 		}
 #endif
 

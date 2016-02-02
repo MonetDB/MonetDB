@@ -17,7 +17,7 @@
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
-#include "rel_select.h"
+#include "rel_rel.h"
 #include "gdk_logger.h"
 
 static int mvc_debug = 0;
@@ -183,6 +183,16 @@ mvc_type(mvc *m)
 
 	m->type = Q_PARSE;
 	return res;
+}
+
+int
+mvc_debug_on(mvc *m, int flg)
+{
+
+	if (m->debug & flg)
+		return 1;
+
+	return 0;
 }
 
 void

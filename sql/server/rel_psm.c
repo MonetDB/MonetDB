@@ -11,6 +11,7 @@
 #include "rel_semantic.h"
 #include "rel_schema.h"
 #include "rel_select.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_updates.h"
 #include "sql_privileges.h"
