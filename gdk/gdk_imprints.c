@@ -233,8 +233,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 	BUN *restrict cnt_bins = max_bins + 64;
 	bte bin = 0;
 	dcnt = icnt = 0;
-	for (i = 0; i < 64; i++)
-		cnt_bins[i] = 0;
+	memset(cnt_bins, 0, 64 * SIZEOF_BUN);
 
 	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
