@@ -7,7 +7,8 @@
  */
 
 /*
- * Mark the production and use of candidate lists.
+ * Selectively inject serialization operations when we know the
+ * raw footprint of the query exceeds 80% of RAM.
  */
 
 #include "monetdb_config.h"
