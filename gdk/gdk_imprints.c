@@ -231,7 +231,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 	BUN *restrict min_bins = stats;
 	BUN *restrict max_bins = min_bins + 64;
 	BUN *restrict cnt_bins = max_bins + 64;
-	bte bin = 0;
+	int bin = 0;
 	dcnt = icnt = 0;
 	memset(cnt_bins, 0, 64 * SIZEOF_BUN);
 
