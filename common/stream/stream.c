@@ -829,7 +829,7 @@ file_fgetpos(stream *s, lng *p)
 
 	if (fp == NULL || p == NULL)
 		return -1;
-#if defined(NATIVE_WIN32) && _MSC_VER >= 1400	/* Visual Studio 2005 */
+#if defined(NATIVE_WIN32) && (_MSC_VER >= 1400 || defined(__MINGW32__))	/* Visual Studio 2005 */
 	*p = (lng) _ftelli64(fp);	/* returns __int64 */
 #else
 #ifdef HAVE_FSEEKO
@@ -849,7 +849,7 @@ file_fsetpos(stream *s, lng p)
 
 	if (fp == NULL)
 		return -1;
-#if defined(NATIVE_WIN32) && _MSC_VER >= 1400	/* Visual Studio 2005 */
+#if defined(NATIVE_WIN32) && (_MSC_VER >= 1400 || defined(__MINGW32__))	/* Visual Studio 2005 */
 	res = _fseeki64(fp, (__int64) p, SEEK_SET);
 #else
 #ifdef HAVE_FSEEKO

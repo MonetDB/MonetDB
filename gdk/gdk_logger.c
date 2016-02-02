@@ -2577,6 +2577,7 @@ log_tend(logger *lg)
 	l.flag = LOG_END;
 	l.tid = lg->tid;
 	l.nr = lg->tid;
+
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) == LOG_ERR ||
 	    mnstr_flush(lg->log) ||
