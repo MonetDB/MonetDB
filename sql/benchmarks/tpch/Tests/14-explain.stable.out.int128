@@ -42,9 +42,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 424 # length
+% 406 # length
 function user.s2_1(A0:sht,A1:str,A2:bte,A3:bte,A4:bte,A5:date,A6:date,A7:int):void;
-    X_91:void := querylog.define("explain select\n\t100.00 * sum(case\n\t\twhen p_type like \\'PROMO%\\'\n\t\t\tthen l_extendedprice * (1 - l_discount)\n\t\telse 0\n\tend) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue\nfrom\n\tlineitem,\n\tpart\nwhere\n\tl_partkey = p_partkey\n\tand l_shipdate >= date \\'1995-09-01\\'\n\tand l_shipdate < date \\'1995-09-01\\' + interval \\'1\\' month;","sequential_pipe",55);
+    X_91:void := querylog.define("explain select\n 100.00 * sum(case\n when p_type like \\'PROMO%\\'\n then l_extendedprice * (1 - l_discount)\n else 0\n end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue\nfrom\n lineitem,\n part\nwhere\n l_partkey = p_partkey\n and l_shipdate >= date \\'1995-09-01\\'\n and l_shipdate < date \\'1995-09-01\\' + interval \\'1\\' month;","sequential_pipe",55);
     X_9 := sql.mvc();
     X_13:bat[:date] := sql.bind(X_9,"sys","lineitem","l_shipdate",0);
     C_10:bat[:oid] := sql.tid(X_9,"sys","lineitem");

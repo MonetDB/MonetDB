@@ -49,9 +49,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 450 # length
+% 400 # length
 function user.s2_1(A0:str):void;
-    X_101:void := querylog.define("explain select\n\tc_count,\n\tcount(*) as custdist\nfrom\n\t(\n\t\tselect\n\t\t\tc_custkey,\n\t\t\tcount(o_orderkey)\n\t\tfrom\n\t\t\tcustomer left outer join orders on\n\t\t\t\tc_custkey = o_custkey\n\t\t\t\tand o_comment not like \\'%special%requests%\\'\n\t\tgroup by\n\t\t\tc_custkey\n\t) as c_orders (c_custkey, c_count)\ngroup by\n\tc_count\norder by\n\tcustdist desc,\n\tc_count desc;","sequential_pipe",65);
+    X_101:void := querylog.define("explain select\n c_count,\n count(*) as custdist\nfrom\n (\n select\n c_custkey,\n count(o_orderkey)\n from\n customer left outer join orders on\n c_custkey = o_custkey\n and o_comment not like \\'%special%requests%\\'\n group by\n c_custkey\n ) as c_orders (c_custkey, c_count)\ngroup by\n c_count\norder by\n custdist desc,\n c_count desc;","sequential_pipe",65);
     X_79 := bat.new(nil:oid,nil:str);
     X_85 := bat.append(X_79,".c_orders");
     X_94 := bat.append(X_85,".L2");

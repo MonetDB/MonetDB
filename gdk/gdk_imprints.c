@@ -32,108 +32,13 @@
 } while (0)
 
 
-/*
- * bin-finding using "carefully controlled predication"
- * reduces overall imprints creation time by up to 50%
- * (i.e., 2x) compared to the original "binary search"
- */
-
-#define GETBIN8(Z,X)		\
-do {				\
-	Z = ((X) >= bins[1])	\
-	  + ((X) >= bins[2])	\
-	  + ((X) >= bins[3])	\
-	  + ((X) >= bins[4])	\
-	  + ((X) >= bins[5])	\
-	  + ((X) >= bins[6])	\
-	  + ((X) >= bins[7]);	\
-} while (0)
-
-#define GETBIN16(Z,X)		\
-do {				\
-	Z = ((X) >= bins[ 1])	\
-	  + ((X) >= bins[ 2])	\
-	  + ((X) >= bins[ 3])	\
-	  + ((X) >= bins[ 4])	\
-	  + ((X) >= bins[ 5])	\
-	  + ((X) >= bins[ 6])	\
-	  + ((X) >= bins[ 7])	\
-	  + ((X) >= bins[ 8])	\
-	  + ((X) >= bins[ 9])	\
-	  + ((X) >= bins[10])	\
-	  + ((X) >= bins[11])	\
-	  + ((X) >= bins[12])	\
-	  + ((X) >= bins[13])	\
-	  + ((X) >= bins[14])	\
-	  + ((X) >= bins[15]);	\
-} while (0)
-
-#define GETBIN32(Z,X)			\
+#define GETBIN(Z,X,B)			\
 do {					\
-	if ((X) < bins[16]) {		\
-		GETBIN16(Z,X);		\
-	} else {			\
-		Z = 16			\
-		  + ((X) >= bins[17])	\
-		  + ((X) >= bins[18])	\
-		  + ((X) >= bins[19])	\
-		  + ((X) >= bins[20])	\
-		  + ((X) >= bins[21])	\
-		  + ((X) >= bins[22])	\
-		  + ((X) >= bins[23])	\
-		  + ((X) >= bins[24])	\
-		  + ((X) >= bins[25])	\
-		  + ((X) >= bins[26])	\
-		  + ((X) >= bins[27])	\
-		  + ((X) >= bins[28])	\
-		  + ((X) >= bins[29])	\
-		  + ((X) >= bins[30])	\
-		  + ((X) >= bins[31]);	\
-	}				\
+	int _i;				\
+	Z = 0;				\
+	for (_i = 1; _i < B; _i++)	\
+		Z += ((X) >= bins[_i]);	\
 } while (0)
-
-#define GETBIN64(Z,X)			\
-do {					\
-	if ((X) < bins[32]) {		\
-		GETBIN32(Z,X);		\
-	} else if ((X) < bins[48]) {	\
-		Z = 32			\
-		  + ((X) >= bins[33])	\
-		  + ((X) >= bins[34])	\
-		  + ((X) >= bins[35])	\
-		  + ((X) >= bins[36])	\
-		  + ((X) >= bins[37])	\
-		  + ((X) >= bins[38])	\
-		  + ((X) >= bins[39])	\
-		  + ((X) >= bins[40])	\
-		  + ((X) >= bins[41])	\
-		  + ((X) >= bins[42])	\
-		  + ((X) >= bins[43])	\
-		  + ((X) >= bins[44])	\
-		  + ((X) >= bins[45])	\
-		  + ((X) >= bins[46])	\
-		  + ((X) >= bins[47]);	\
-	} else {			\
-		Z = 48			\
-		  + ((X) >= bins[49])	\
-		  + ((X) >= bins[50])	\
-		  + ((X) >= bins[51])	\
-		  + ((X) >= bins[52])	\
-		  + ((X) >= bins[53])	\
-		  + ((X) >= bins[54])	\
-		  + ((X) >= bins[55])	\
-		  + ((X) >= bins[56])	\
-		  + ((X) >= bins[57])	\
-		  + ((X) >= bins[58])	\
-		  + ((X) >= bins[59])	\
-		  + ((X) >= bins[60])	\
-		  + ((X) >= bins[61])	\
-		  + ((X) >= bins[62])	\
-		  + ((X) >= bins[63]);	\
-	}				\
-}while (0)
-
-/* end of bin-finding using "carefully controlled predication" */
 
 
 #define IMPS_CREATE(TYPE,B)						\
@@ -142,82 +47,61 @@ do {									\
 	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
 	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);	\
 	const TYPE *restrict bins = (TYPE *) inbins;			\
-	TYPE nil = TYPE##_nil;						\
-	prvmask = mask = 0;						\
-	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
-	for (i = 0; i < b->batCount; i++) {				\
-		if (!(i&new) && i>0) {					\
-			/* same mask as previous and enough count to add */ \
-			if ((prvmask == mask) &&			\
-			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
-				/* not a repeat header */		\
-				if (!dict[dcnt-1].repeat) {		\
-					/* if compressed */		\
-					if (dict[dcnt-1].cnt > 1) {	\
-						/* uncompress last */	\
-						dict[dcnt-1].cnt--;	\
-						dcnt++; /* new header */ \
-						dict[dcnt-1].cnt = 1;	\
-					}				\
-					/* set repeat */		\
-					dict[dcnt-1].repeat = 1;	\
-				}					\
-				/* increase cnt */			\
-				dict[dcnt-1].cnt++;			\
-			} else { /* new mask (or run out of header count) */ \
-				prvmask=mask;				\
-				im[icnt] = mask;			\
-				icnt++;					\
-				if ((dcnt > 0) && !(dict[dcnt-1].repeat) && \
-				    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) { \
-					dict[dcnt-1].cnt++;		\
+	const TYPE nil = TYPE##_nil;					\
+	const BUN page = IMPS_PAGE / sizeof(TYPE);			\
+	prvmask = 0;							\
+	for (i = 0; i < b->batCount; ) {				\
+		const BUN lim = MIN(i + page, b->batCount);		\
+		/* new mask */						\
+		mask = 0;						\
+		/* build mask for all BUNs in one PAGE */		\
+		for ( ; i < lim; i++) {					\
+			register const TYPE val = col[i];		\
+			GETBIN(bin,val,B);				\
+			mask = IMPSsetBit(B,mask,bin);			\
+			if (val != nil) { /* do not count nils */	\
+				if (!cnt_bins[bin]++) {			\
+					min_bins[bin] = max_bins[bin] = i;\
 				} else {				\
+					if (val < col[min_bins[bin]])	\
+						min_bins[bin] = i;	\
+					if (val > col[max_bins[bin]])	\
+						max_bins[bin] = i;	\
+				}					\
+			}						\
+		}							\
+		/* same mask as previous and enough count to add */	\
+		if ((prvmask == mask) && (dcnt > 0) &&			\
+		    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
+			/* not a repeat header */			\
+			if (!dict[dcnt-1].repeat) {			\
+				/* if compressed */			\
+				if (dict[dcnt-1].cnt > 1) {		\
+					/* uncompress last */		\
+					dict[dcnt-1].cnt--;		\
+					/* new header */		\
 					dict[dcnt].cnt = 1;		\
-					dict[dcnt].repeat = 0;		\
 					dict[dcnt].flags = 0;		\
 					dcnt++;				\
 				}					\
+				/* set repeat */			\
+				dict[dcnt-1].repeat = 1;		\
 			}						\
-			/* new mask */					\
-			mask = 0;					\
-		}							\
-		GETBIN##B(bin,col[i]);					\
-		mask = IMPSsetBit(B,mask,bin);				\
-		if (col[i] != nil) { /* do not count nils */		\
-			if (!cnt_bins[bin]++) {				\
-				min_bins[bin] = max_bins[bin] = i;	\
+			/* increase cnt */				\
+			dict[dcnt-1].cnt++;				\
+		} else { /* new mask (or run out of header count) */	\
+			prvmask=mask;					\
+			im[icnt] = mask;				\
+			icnt++;						\
+			if ((dcnt > 0) && !(dict[dcnt-1].repeat) &&	\
+			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
+				dict[dcnt-1].cnt++;			\
 			} else {					\
-				if (col[i] < col[min_bins[bin]])	\
-					min_bins[bin] = i;		\
-				if (col[i] > col[max_bins[bin]])	\
-					max_bins[bin] = i;		\
-			}						\
-		}							\
-	}								\
-	/* one last left */						\
-	if (prvmask == mask && dcnt > 0 &&				\
-	    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {			\
-		if (!dict[dcnt-1].repeat) {				\
-			if (dict[dcnt-1].cnt > 1) {			\
-				dict[dcnt-1].cnt--;			\
 				dict[dcnt].cnt = 1;			\
+				dict[dcnt].repeat = 0;			\
 				dict[dcnt].flags = 0;			\
 				dcnt++;					\
 			}						\
-			dict[dcnt-1].repeat = 1;			\
-		}							\
-		dict[dcnt-1].cnt ++;					\
-	} else {							\
-		im[icnt] = mask;					\
-		icnt++;							\
-		if ((dcnt > 0) && !(dict[dcnt-1].repeat) &&		\
-		    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
-			dict[dcnt-1].cnt++;				\
-		} else {						\
-			dict[dcnt].cnt = 1;				\
-			dict[dcnt].repeat = 0;				\
-			dict[dcnt].flags = 0;				\
-			dcnt++;						\
 		}							\
 	}								\
 } while (0)
@@ -227,14 +111,13 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
 	BUN i;
-	BUN dcnt, icnt, new;
+	BUN dcnt, icnt;
 	BUN *restrict min_bins = stats;
 	BUN *restrict max_bins = min_bins + 64;
 	BUN *restrict cnt_bins = max_bins + 64;
-	bte bin = 0;
+	int bin = 0;
 	dcnt = icnt = 0;
-	for (i = 0; i < 64; i++)
-		cnt_bins[i] = 0;
+	memset(cnt_bins, 0, 64 * SIZEOF_BUN);
 
 	switch (ATOMbasetype(b->T->type)) {
 	case TYPE_bte:
@@ -496,11 +379,11 @@ BATimprints(BAT *b)
 		assert(s4->tkey && s4->tsorted);
 		cnt = BATcount(s4);
 		imprints->bits = 64;
-		if (cnt < 32)
+		if (cnt <= 32)
 			imprints->bits = 32;
-		if (cnt < 16)
+		if (cnt <= 16)
 			imprints->bits = 16;
-		if (cnt < 8)
+		if (cnt <= 8)
 			imprints->bits = 8;
 
 		/* The heap we create here consists of four parts:
@@ -629,7 +512,11 @@ BATimprints(BAT *b)
 	return GDK_SUCCEED;
 }
 
-#define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
+#define getbin(TYPE,B)				\
+do {						\
+	register const TYPE val = * (TYPE *) v;	\
+	GETBIN(ret,val,B);			\
+} while (0)
 
 int
 IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict v)
@@ -664,7 +551,7 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 #ifdef HAVE_HGE
 	case TYPE_hge:
 	{
-		hge *bins = (hge *) inbins;
+		const hge *restrict bins = (hge *) inbins;
 		BINSIZE(bits, getbin, hge);
 	}
 		break;

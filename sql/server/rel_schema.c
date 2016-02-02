@@ -1011,7 +1011,9 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		}
 
 		if (create) {
+			q = query_cleaned(q);
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
+			GDKfree(q);
 			if (as_subquery( sql, t, sq, column_spec, "CREATE VIEW") != 0) {
 				rel_destroy(sq);
 				return NULL;
