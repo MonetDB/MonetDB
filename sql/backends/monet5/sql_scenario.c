@@ -1210,13 +1210,15 @@ recompilequery:
 			}
 		} else {
 			/* generate a factory instantiation */
+			char *q = query_cleaned(QUERY(m->scanner));
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
 					  m->sym,	/* the sql symbol tree */
 					  m->args,	/* the argument list */
 					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 					  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-					  sql_escape_str(QUERY(m->scanner)));
+					  sql_escape_str(q));
+			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
 			if (!be->q->code)

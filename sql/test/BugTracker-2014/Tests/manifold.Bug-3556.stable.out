@@ -61,7 +61,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 195 # length
+% 193 # length
 function user.s2_1(A0:str,A1:str):void;
     X_52:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n  from sys.functions\n) as x;","sequential_pipe",32);
     X_28 := bat.new(nil:oid,nil:str);
@@ -102,7 +102,7 @@ end user.s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 199 # length
+% 197 # length
 function user.s3_1(A0:str,A1:str,A2:lng):void;
     X_57:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n  from sys.functions\n) as x;","sequential_pipe",36);
     X_33 := bat.new(nil:oid,nil:str);
@@ -147,7 +147,7 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 200 # length
+% 198 # length
 function user.s4_1(A0:str,A1:str):void;
     X_55:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n  select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n  from sys.functions\n) as x;","sequential_pipe",35);
     X_31 := bat.new(nil:oid,nil:str);
