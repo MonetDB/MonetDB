@@ -32,108 +32,12 @@
 } while (0)
 
 
-/*
- * bin-finding using "carefully controlled predication"
- * reduces overall imprints creation time by up to 50%
- * (i.e., 2x) compared to the original "binary search"
- */
-
-#define GETBIN8(Z,X)		\
-do {				\
-	Z = ((X) >= bins[1])	\
-	  + ((X) >= bins[2])	\
-	  + ((X) >= bins[3])	\
-	  + ((X) >= bins[4])	\
-	  + ((X) >= bins[5])	\
-	  + ((X) >= bins[6])	\
-	  + ((X) >= bins[7]);	\
-} while (0)
-
-#define GETBIN16(Z,X)		\
-do {				\
-	Z = ((X) >= bins[ 1])	\
-	  + ((X) >= bins[ 2])	\
-	  + ((X) >= bins[ 3])	\
-	  + ((X) >= bins[ 4])	\
-	  + ((X) >= bins[ 5])	\
-	  + ((X) >= bins[ 6])	\
-	  + ((X) >= bins[ 7])	\
-	  + ((X) >= bins[ 8])	\
-	  + ((X) >= bins[ 9])	\
-	  + ((X) >= bins[10])	\
-	  + ((X) >= bins[11])	\
-	  + ((X) >= bins[12])	\
-	  + ((X) >= bins[13])	\
-	  + ((X) >= bins[14])	\
-	  + ((X) >= bins[15]);	\
-} while (0)
-
-#define GETBIN32(Z,X)			\
+#define GETBIN(Z,X,B)			\
 do {					\
-	if ((X) < bins[16]) {		\
-		GETBIN16(Z,X);		\
-	} else {			\
-		Z = 16			\
-		  + ((X) >= bins[17])	\
-		  + ((X) >= bins[18])	\
-		  + ((X) >= bins[19])	\
-		  + ((X) >= bins[20])	\
-		  + ((X) >= bins[21])	\
-		  + ((X) >= bins[22])	\
-		  + ((X) >= bins[23])	\
-		  + ((X) >= bins[24])	\
-		  + ((X) >= bins[25])	\
-		  + ((X) >= bins[26])	\
-		  + ((X) >= bins[27])	\
-		  + ((X) >= bins[28])	\
-		  + ((X) >= bins[29])	\
-		  + ((X) >= bins[30])	\
-		  + ((X) >= bins[31]);	\
-	}				\
+	Z = 0;				\
+	for (int _i = 1; _i < B; _i++)	\
+		Z += ((X) >= bins[_i]);	\
 } while (0)
-
-#define GETBIN64(Z,X)			\
-do {					\
-	if ((X) < bins[32]) {		\
-		GETBIN32(Z,X);		\
-	} else if ((X) < bins[48]) {	\
-		Z = 32			\
-		  + ((X) >= bins[33])	\
-		  + ((X) >= bins[34])	\
-		  + ((X) >= bins[35])	\
-		  + ((X) >= bins[36])	\
-		  + ((X) >= bins[37])	\
-		  + ((X) >= bins[38])	\
-		  + ((X) >= bins[39])	\
-		  + ((X) >= bins[40])	\
-		  + ((X) >= bins[41])	\
-		  + ((X) >= bins[42])	\
-		  + ((X) >= bins[43])	\
-		  + ((X) >= bins[44])	\
-		  + ((X) >= bins[45])	\
-		  + ((X) >= bins[46])	\
-		  + ((X) >= bins[47]);	\
-	} else {			\
-		Z = 48			\
-		  + ((X) >= bins[49])	\
-		  + ((X) >= bins[50])	\
-		  + ((X) >= bins[51])	\
-		  + ((X) >= bins[52])	\
-		  + ((X) >= bins[53])	\
-		  + ((X) >= bins[54])	\
-		  + ((X) >= bins[55])	\
-		  + ((X) >= bins[56])	\
-		  + ((X) >= bins[57])	\
-		  + ((X) >= bins[58])	\
-		  + ((X) >= bins[59])	\
-		  + ((X) >= bins[60])	\
-		  + ((X) >= bins[61])	\
-		  + ((X) >= bins[62])	\
-		  + ((X) >= bins[63]);	\
-	}				\
-}while (0)
-
-/* end of bin-finding using "carefully controlled predication" */
 
 
 #define IMPS_CREATE(TYPE,B)						\
@@ -152,7 +56,7 @@ do {									\
 		/* build mask for all BUNs in one PAGE */		\
 		for ( ; i < lim; i++) {					\
 			register const TYPE val = col[i];		\
-			GETBIN##B(bin,val);				\
+			GETBIN(bin,val,B);				\
 			mask = IMPSsetBit(B,mask,bin);			\
 			if (val != nil) { /* do not count nils */	\
 				if (!cnt_bins[bin]++) {			\
@@ -610,7 +514,7 @@ BATimprints(BAT *b)
 #define getbin(TYPE,B)				\
 do {						\
 	register const TYPE val = * (TYPE *) v;	\
-	GETBIN##B(ret,val);			\
+	GETBIN(ret,val,B);			\
 } while (0)
 
 int
