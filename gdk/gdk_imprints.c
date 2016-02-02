@@ -142,82 +142,61 @@ do {									\
 	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
 	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);	\
 	const TYPE *restrict bins = (TYPE *) inbins;			\
-	TYPE nil = TYPE##_nil;						\
-	prvmask = mask = 0;						\
-	new = (IMPS_PAGE/sizeof(TYPE))-1;				\
-	for (i = 0; i < b->batCount; i++) {				\
-		if (!(i&new) && i>0) {					\
-			/* same mask as previous and enough count to add */ \
-			if ((prvmask == mask) &&			\
-			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
-				/* not a repeat header */		\
-				if (!dict[dcnt-1].repeat) {		\
-					/* if compressed */		\
-					if (dict[dcnt-1].cnt > 1) {	\
-						/* uncompress last */	\
-						dict[dcnt-1].cnt--;	\
-						dcnt++; /* new header */ \
-						dict[dcnt-1].cnt = 1;	\
-					}				\
-					/* set repeat */		\
-					dict[dcnt-1].repeat = 1;	\
-				}					\
-				/* increase cnt */			\
-				dict[dcnt-1].cnt++;			\
-			} else { /* new mask (or run out of header count) */ \
-				prvmask=mask;				\
-				im[icnt] = mask;			\
-				icnt++;					\
-				if ((dcnt > 0) && !(dict[dcnt-1].repeat) && \
-				    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) { \
-					dict[dcnt-1].cnt++;		\
+	const TYPE nil = TYPE##_nil;					\
+	const BUN page = IMPS_PAGE / sizeof(TYPE);			\
+	prvmask = 0;							\
+	for (i = 0; i < b->batCount; ) {				\
+		const BUN lim = MIN(i + page, b->batCount);		\
+		/* new mask */						\
+		mask = 0;						\
+		/* build mask for all BUNs in one PAGE */		\
+		for ( ; i < lim; i++) {					\
+			register const TYPE val = col[i];		\
+			GETBIN##B(bin,val);				\
+			mask = IMPSsetBit(B,mask,bin);			\
+			if (val != nil) { /* do not count nils */	\
+				if (!cnt_bins[bin]++) {			\
+					min_bins[bin] = max_bins[bin] = i;\
 				} else {				\
+					if (val < col[min_bins[bin]])	\
+						min_bins[bin] = i;	\
+					if (val > col[max_bins[bin]])	\
+						max_bins[bin] = i;	\
+				}					\
+			}						\
+		}							\
+		/* same mask as previous and enough count to add */	\
+		if ((prvmask == mask) && (dcnt > 0) &&			\
+		    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
+			/* not a repeat header */			\
+			if (!dict[dcnt-1].repeat) {			\
+				/* if compressed */			\
+				if (dict[dcnt-1].cnt > 1) {		\
+					/* uncompress last */		\
+					dict[dcnt-1].cnt--;		\
+					/* new header */		\
 					dict[dcnt].cnt = 1;		\
-					dict[dcnt].repeat = 0;		\
 					dict[dcnt].flags = 0;		\
 					dcnt++;				\
 				}					\
+				/* set repeat */			\
+				dict[dcnt-1].repeat = 1;		\
 			}						\
-			/* new mask */					\
-			mask = 0;					\
-		}							\
-		GETBIN##B(bin,col[i]);					\
-		mask = IMPSsetBit(B,mask,bin);				\
-		if (col[i] != nil) { /* do not count nils */		\
-			if (!cnt_bins[bin]++) {				\
-				min_bins[bin] = max_bins[bin] = i;	\
+			/* increase cnt */				\
+			dict[dcnt-1].cnt++;				\
+		} else { /* new mask (or run out of header count) */	\
+			prvmask=mask;					\
+			im[icnt] = mask;				\
+			icnt++;						\
+			if ((dcnt > 0) && !(dict[dcnt-1].repeat) &&	\
+			    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {	\
+				dict[dcnt-1].cnt++;			\
 			} else {					\
-				if (col[i] < col[min_bins[bin]])	\
-					min_bins[bin] = i;		\
-				if (col[i] > col[max_bins[bin]])	\
-					max_bins[bin] = i;		\
-			}						\
-		}							\
-	}								\
-	/* one last left */						\
-	if (prvmask == mask && dcnt > 0 &&				\
-	    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {			\
-		if (!dict[dcnt-1].repeat) {				\
-			if (dict[dcnt-1].cnt > 1) {			\
-				dict[dcnt-1].cnt--;			\
 				dict[dcnt].cnt = 1;			\
+				dict[dcnt].repeat = 0;			\
 				dict[dcnt].flags = 0;			\
 				dcnt++;					\
 			}						\
-			dict[dcnt-1].repeat = 1;			\
-		}							\
-		dict[dcnt-1].cnt ++;					\
-	} else {							\
-		im[icnt] = mask;					\
-		icnt++;							\
-		if ((dcnt > 0) && !(dict[dcnt-1].repeat) &&		\
-		    (dict[dcnt-1].cnt < (IMPS_MAX_CNT-1))) {		\
-			dict[dcnt-1].cnt++;				\
-		} else {						\
-			dict[dcnt].cnt = 1;				\
-			dict[dcnt].repeat = 0;				\
-			dict[dcnt].flags = 0;				\
-			dcnt++;						\
 		}							\
 	}								\
 } while (0)
@@ -227,7 +206,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 		void *imps, BUN *impcnt, cchdc_t *dict, BUN *dictcnt)
 {
 	BUN i;
-	BUN dcnt, icnt, new;
+	BUN dcnt, icnt;
 	BUN *restrict min_bins = stats;
 	BUN *restrict max_bins = min_bins + 64;
 	BUN *restrict cnt_bins = max_bins + 64;
@@ -628,7 +607,11 @@ BATimprints(BAT *b)
 	return GDK_SUCCEED;
 }
 
-#define getbin(TYPE,B) GETBIN##B(ret, *(TYPE *)v);
+#define getbin(TYPE,B)				\
+do {						\
+	register const TYPE val = * (TYPE *) v;	\
+	GETBIN##B(ret,val);			\
+} while (0)
 
 int
 IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict v)
