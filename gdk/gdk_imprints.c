@@ -664,7 +664,7 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 #ifdef HAVE_HGE
 	case TYPE_hge:
 	{
-		hge *bins = (hge *) inbins;
+		const hge *restrict bins = (hge *) inbins;
 		BINSIZE(bits, getbin, hge);
 	}
 		break;
