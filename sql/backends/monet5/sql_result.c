@@ -805,7 +805,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		as.error = NULL;
 		as.tryall = 0;
 		as.complaints = NULL;
-		as.filename = "";
+		as.filename = m->scanner.rs == bs ? NULL : "";
 		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");

@@ -407,6 +407,7 @@ main(int argc, char *argv[])
 	int usock = -1;
 	int unsock = -1;
 	int socku = -1;
+	char* host = NULL;
 	unsigned short port = 0;
 	char discovery = 0;
 	struct stat sb;
@@ -419,6 +420,7 @@ main(int argc, char *argv[])
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
 
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
+		{"listenaddr",    strdup("localhost"),     0,                  STR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
@@ -678,6 +680,15 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 
+	kv = findConfKey(_mero_props, "listenaddr");
+	if (kv->val == NULL || strlen(kv->val) < 1) {
+		Mfprintf(stderr, "invalid host name: %s, defaulting to localhost\n",
+				kv->val);
+		setConfVal(kv, "localhost");
+		writeProps(_mero_props, ".");
+	}
+	host = kv->val;
+
 	kv = findConfKey(_mero_props, "port");
 	if (kv->ival <= 0 || kv->ival > 65535) {
 		Mfprintf(stderr, "invalid port number: %s, defaulting to %s\n",
@@ -901,11 +912,11 @@ main(int argc, char *argv[])
 
 	/* open up connections */
 	if (
-			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
+			(e = openConnectionTCP(&sock, host, port, stdout)) == NO_ERR &&
 			/* coverity[operator_confusion] */
 			(unlink(control_usock) | unlink(mapi_usock) | 1) &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-			(discovery == 0 || (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
+			(discovery == 0 || (e = openConnectionUDP(&usock, host, port)) == NO_ERR) &&
 			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR
 	   )
 	{

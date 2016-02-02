@@ -924,9 +924,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public String getCatalogSeparator() {
-		// Give them something to work with here
-		// everything else returns false so it won't matter what we return here
-		return ".";
+		// MonetDB does NOT support catalogs, so also no catalog separator
+		return null;
 	}
 
 	/**
@@ -1671,6 +1670,26 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
+	 * Returns a SQL match part string where depending on the input value we
+	 * compose an exact match (use =) or match with wildcards (use LIKE)
+	 *
+	 * @param in the string to match
+	 * @return the SQL match part string
+	 */
+	private static final String composeMatchPart(String in) {
+		if (in == null)
+			return "IS NULL";
+
+		String sql;
+		// check if SQL wildcards are used in the input, if so use LIKE
+		if (in.contains("%") || in.contains("_"))
+			sql = "LIKE '" + escapeQuotes(in) + "'";
+		else
+			sql = "= '" + escapeQuotes(in) + "'";
+		return sql;
+	}
+
+	/**
 	 * Returns the given string between two double quotes for usage as
 	 * exact column or table name in SQL queries.
 	 *
@@ -1818,31 +1837,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public ResultSet getCatalogs() throws SQLException {
-		/*
-		// doing this with a VirtualResultSet is much more efficient...
-		String query =
-			"SELECT '" + ((String)env.get("gdk_dbname")) + "' AS \"TABLE_CAT\"";
-			// some applications need a database or catalog...
-
-		return getStmt().executeQuery(query);
-		*/
-		
-		String[] columns, types;
-		String[][] results;
-
-		columns = new String[1];
-		types = new String[1];
-		results = new String[1][1];
-
-		columns[0] = "TABLE_CAT";
-		types[0] = "varchar";
-		results[0][0] = "";
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		// MonetDB does NOT support catalogs.
+		// Return a resultset with no rows
+		return getStmt().executeQuery("SELECT cast(null as char(1)) AS \"TABLE_CAT\" WHERE 1 = 0");
 	}
 
 	/**
@@ -3518,27 +3515,34 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			String functionNamePattern)
 		throws SQLException
 	{
-		String select =
-			"SELECT * FROM ( " +
-			"SELECT cast(null as char(1)) AS \"FUNCTION_CAT\", " +
-				"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
-				"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
-				"null AS \"REMARKS\", " +
-				DatabaseMetaData.functionResultUnknown + " AS \"FUNCTION_TYPE\", " +
-				"CASE WHEN \"functions\".\"sql\" = false THEN CAST(\"functions\"/\"mod\" || '.' || \"functions\".\"func\" AS CLOB) ELSE CAST(\"functions\".\"name\" AS CLOB) END AS \"SPECIFIC_NAME\" " +
-			"FROM \"sys\".\"functions\" AS \"functions\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
-			") AS \"functions\" WHERE 1 = 1 ";
+		StringBuilder query = new StringBuilder(800);
+		query.append("SELECT DISTINCT cast(null as char(1)) AS \"FUNCTION_CAT\", ")
+			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
+			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
+			.append("cast(null as char(1)) AS \"REMARKS\", ")
+			.append("CASE \"functions\".\"type\"")
+				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 2 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 3 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 4 THEN ").append(DatabaseMetaData.functionNoTable)
+				.append(" WHEN 5 THEN ").append(DatabaseMetaData.functionReturnsTable)
+				.append(" ELSE ").append(DatabaseMetaData.functionResultUnknown).append(" END AS \"FUNCTION_TYPE\", ")
+			.append("CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" ")
+		.append("FROM \"sys\".\"functions\", \"sys\".\"schemas\" ")
+		.append("WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		// exclude procedures (type = 2). Those need to be returned via getProcedures()
+		.append("AND \"functions\".\"type\" <> 2");
 
 		if (schemaPattern != null) {
-			select += "AND \"FUNCTION_SCHEM\" ILIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query.append(" AND \"schemas\".\"name\" ").append(composeMatchPart(schemaPattern));
 		}
 		if (functionNamePattern != null) {
-			select += "AND \"FUNCTION_NAME\" ILIKE '" + escapeQuotes(functionNamePattern) + "' ";
+			query.append(" AND \"functions\".\"name\" ").append(composeMatchPart(functionNamePattern));
 		}
 
-		select += "ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"";
+		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"");
 
-		return getStmt().executeQuery(select);
+		return getStmt().executeQuery(query.toString());
 	}
 
 	/**

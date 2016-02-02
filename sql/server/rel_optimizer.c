@@ -5956,6 +5956,16 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 				if (flag)
 					break;
 			}
+			if (is_atom(e->type) && !e->l && !e->r) { /* numbered variable */
+				atom *a = sql->args[e->flag];
+				int flag = a->data.val.bval;
+
+				/* remove simple select true expressions */
+				if (flag) {
+					sql->caching = 0;
+					break;
+				}
+			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
 				sql_exp *r = e->r;
@@ -6529,6 +6539,112 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 		(void) find_fk( sql, rels, exps);
 
 		rel->exps = exps;
+	}
+	return rel;
+}
+
+/* leftouterjoin(a,b)[ a.C op b.D or a.E op2 b.F ]) -> 
+ * union(
+ * 	join(a,b)[ a.C op b.D or a.E op2 b. F ], 
+ * 	project( 
+ * 		antijoin(a,b) [a.C op b.D or a.E op2 b.F ])
+ *	 	[ a.*, NULL * foreach column of b]
+ * )
+ */
+static int
+exps_nr_of_or(list *exps)
+{
+	int ors = 0;
+	node *n;
+
+	if (!exps)
+		return ors;
+	for(n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && e->flag == cmp_or)
+			ors++;
+	}
+	return ors;
+}
+
+static void 
+add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
+{
+	list *exps;
+	node *n;
+
+	exps = rel_projections(sql, r, NULL, 1, 1);
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *ne;
+
+		ne = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(e), NULL));
+		exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+		append(rel->exps, ne);
+	}
+}
+
+static sql_rel *
+rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
+{
+	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) && 
+			list_length(rel->exps) && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
+		sql_rel *l = rel_dup(rel->l), *nl, *nll, *nlr;
+		sql_rel *r = rel_dup(rel->r), *nr;
+		sql_exp *e;
+
+		nll = rel_crossproduct(sql->sa, l, r, op_join); 
+		nlr = rel_crossproduct(sql->sa, l, r, op_join); 
+
+		/* TODO find or exp, ie handle rest with extra joins */
+		/* expect only a single or expr for now */
+		assert(list_length(rel->exps) == 1);
+	       	e = rel->exps->h->data;
+		nll->exps = exps_copy(sql->sa, e->l);
+		nlr->exps = exps_copy(sql->sa, e->r);
+		nl = rel_or( sql, nll, nlr, NULL, e->l, e->r);
+
+		if (rel->op == op_full) {
+			l = rel_dup(l);
+			r = rel_dup(r);
+		}
+
+		if (rel->op == op_left || rel->op == op_full) {
+			/* split in 2 anti joins */
+			nr = rel_crossproduct(sql->sa, l, r, op_anti);
+			nr->exps = exps_copy(sql->sa, e->l);
+			nr = rel_crossproduct(sql->sa, nr, r, op_anti);
+			nr->exps = exps_copy(sql->sa, e->r);
+
+			/* project left */
+			nr = rel_project(sql->sa, nr, 
+				rel_projections(sql, l, NULL, 1, 1));
+			/* add null's for right */
+			add_nulls( sql, nr, r);
+			nl = rel_setop(sql->sa, nl, nr, op_union);
+		}
+		if (rel->op == op_right || rel->op == op_full) {
+			/* split in 2 anti joins */
+			nr = rel_crossproduct(sql->sa, r, l, op_anti);
+			nr->exps = exps_copy(sql->sa, e->l);
+			nr = rel_crossproduct(sql->sa, nr, l, op_anti);
+			nr->exps = exps_copy(sql->sa, e->r);
+
+			nr = rel_project(sql->sa, nr, sa_list(sql->sa));
+			/* add null's for left */
+			add_nulls( sql, nr, l);
+			/* project right */
+			nr->exps = list_merge(nr->exps, 
+				rel_projections(sql, r, NULL, 1, 1),
+				(fdup)NULL);
+			nl = rel_setop(sql->sa, nl, nr, op_union);
+		}
+
+		rel->l = NULL;
+		rel->r = NULL;
+		rel_destroy(rel);
+		*changes = 1;
+		rel = nl;
 	}
 	return rel;
 }
@@ -7231,7 +7347,9 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 		return rel;
 	}
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
+	//e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
+	e = rel->exps->h->data;
+	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	rel_project_add_exp(sql, rel, e);
@@ -7729,6 +7847,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		if (level <= 0)
 			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
 	}
+	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
+		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
 	if (gp.cnt[op_select]) {
 		/* only once */
