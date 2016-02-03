@@ -249,8 +249,8 @@ main(int argc, char **av)
 	char *modpath = NULL;
 	char *binpath = NULL;
 	str *monet_script;
+	char *dbpath = NULL;
 	char *dbextra = NULL;
-
 	static struct option long_options[] = {
 		{ "config", 1, 0, 'c' },
 		{ "dbpath", 1, 0, 0 },
@@ -335,7 +335,6 @@ main(int argc, char **av)
 		case 0:
 			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
 				size_t optarglen = strlen(optarg);
-				char *dbpath = NULL;
 				/* remove trailing directory separator */
 				while (optarglen > 0 &&
 				       (optarg[optarglen - 1] == '/' ||
@@ -343,7 +342,6 @@ main(int argc, char **av)
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbpath);
-				GDKfree(dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
@@ -500,12 +498,14 @@ main(int argc, char **av)
 			idx++;
 		}
 	}
-
+	if (!dbpath) {
+		dbpath = absolute_path(".");
+	}
 	if (dbextra) {
-		BBPaddfarm(GDKgetenv("gdk_dbpath"), 1 << PERSISTENT);
+		BBPaddfarm(dbpath, 1 << PERSISTENT);
 		BBPaddfarm(dbextra, 1 << TRANSIENT);
 	} else {
-		BBPaddfarm(GDKgetenv("gdk_dbpath"), (1 << PERSISTENT) | (1 << TRANSIENT));
+		BBPaddfarm(dbpath, (1 << PERSISTENT) | (1 << TRANSIENT));
 	}
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
