@@ -1171,6 +1171,7 @@ SQLparser(Client c)
 		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
 			msg = SQLCacheRemove(c, be->q->name);
 			qc_delete(be->mvc->qc, be->q);
+			be->q = NULL;
 			goto recompilequery;
 		}
 
@@ -1264,19 +1265,11 @@ recompilequery:
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
 		if (opt) {
 			str msg = optimizeQuery(c);
-			/*
-			MalBlkPtr mb = c->curprg->def;
 
-			trimMalBlk(mb);
-			chkProgram(c->fdout, c->nspace, mb);
-			addOptimizers(c, mb, "default_pipe"); // TODO change to active pipe! 
-			msg = optimizeMALBlock(c, mb);
-			*/
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);
 				goto finalize;
 			}
-			//c->curprg->def = mb;
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
 		/* we know more in this case than chkProgram(c->fdout, c->nspace, c->curprg->def); */
