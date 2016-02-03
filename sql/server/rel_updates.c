@@ -53,18 +53,6 @@ insert_exp_array(mvc *sql, sql_table *t, int *Len)
 
 #define get_basetable(rel) rel->l
 
-sql_table *
-rel_ddl_table_get(sql_rel *r)
-{
-	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
-		sql_exp *e = r->exps->t->data;
-		atom *a = e->l;
-
-		return a->data.val.pval;
-	}
-	return NULL;
-}
-
 static sql_table *
 get_table( sql_rel *t)
 {
