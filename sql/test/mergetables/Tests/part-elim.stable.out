@@ -1,0 +1,89 @@
+stdout of test 'part-elim` in directory 'sql/test/mergetables` itself:
+
+
+# 12:32:44 >  
+# 12:32:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32914" "--set" "mapi_usock=/var/tmp/mtest-25433/.s.monetdb.32914" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables" "--set" "embedded_r=yes"
+# 12:32:44 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:32914/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25433/.s.monetdb.32914
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.19'
+# Finished reading the write-ahead log 'sql_logs/sql/log.19'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:32:44 >  
+# 12:32:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25433" "--port=32914"
+# 12:32:44 >  
+
+#create table mt2(id bigint, posX real); 
+#create table mt1(id bigint, posX real);
+#create merge table test(id bigint, posX real); 
+#alter table test add table mt1; 
+#alter table test add table mt2;
+#insert into mt1 values (1021, 12.4);
+[ 1	]
+#insert into mt1 values (1022, 13.4);
+[ 1	]
+#insert into mt1 values (1023, 14.4);
+[ 1	]
+#insert into mt1 values (1024, 15.4);
+[ 1	]
+#insert into mt2 values (1, 1.4);
+[ 1	]
+#insert into mt2 values (2, 1.4);
+[ 1	]
+#insert into mt2 values (3, 1.4);
+[ 1	]
+#insert into mt2 values (4, 1.4);
+[ 1	]
+#alter table mt1 set read only;
+#alter table mt2 set read only;
+#plan select * from test where id between 1 and 10000;
+% .plan # table_name
+% rel # name
+% clob # type
+% 106 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ mt1.id as test.id, mt1.posx as test.posx, mt1.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint "1" <= test.id <= bigint "10000" ]
+| ) [ test.id, test.posx ],
+| project (
+| | select (
+| | | table(sys.mt2) [ mt2.id as test.id, mt2.posx as test.posx, mt2.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint "1" <= test.id <= bigint "10000" ]
+| ) [ test.id, test.posx ]
+) [ test.id, test.posx ]
+#plan select * from test where id between 1 and 1000;
+% .plan # table_name
+% rel # name
+% clob # type
+% 69 # length
+project (
+| select (
+| | table(sys.mt2) [ test.id, test.posx, test.%TID% NOT NULL ] COUNT 
+| ) [ bigint "1" <= test.id <= bigint "1000" ]
+) [ test.id, test.posx ]
+#drop table test;
+#drop table mt1;
+#drop table mt2;
+
+# 12:32:44 >  
+# 12:32:44 >  "Done."
+# 12:32:44 >  
+

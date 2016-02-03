@@ -23,64 +23,6 @@
 #include <string.h>
 #include <ctype.h>
 
-comp_type 
-swap_compare( comp_type t )
-{
-	switch(t) {
-	case cmp_equal:
-		return cmp_equal;
-	case cmp_lt:
-		return cmp_gt;
-	case cmp_lte:
-		return cmp_gte;
-	case cmp_gte:
-		return cmp_lte;
-	case cmp_gt:
-		return cmp_lt;
-	case cmp_notequal:
-		return cmp_notequal;
-	default:
-		return cmp_equal;
-	}
-}
-
-comp_type 
-range2lcompare( int r )
-{
-	if (r&1) {
-		return cmp_gte;
-	} else {
-		return cmp_gt;
-	}
-}
-
-comp_type 
-range2rcompare( int r )
-{
-	if (r&2) {
-		return cmp_lte;
-	} else {
-		return cmp_lt;
-	}
-}
-
-int 
-compare2range( int l, int r )
-{
-	if (l == cmp_gt) {
-		if (r == cmp_lt)
-			return 0;
-		else if (r == cmp_lte)
-			return 2;
-	} else if (l == cmp_gte) {
-		if (r == cmp_lt)
-			return 1;
-		else if (r == cmp_lte)
-			return 3;
-	} 
-	return -1;
-}
-
 
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, char *query, char emode)

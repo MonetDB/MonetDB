@@ -38,9 +38,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 326 # length
+% 320 # length
 function user.s2_1(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):void;
-    X_63:void := querylog.define("explain select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date \\'1994-01-01\\'\n\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;","sequential_pipe",42);
+    X_63:void := querylog.define("explain select\n sum(l_extendedprice * l_discount) as revenue\nfrom\n lineitem\nwhere\n l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n and l_discount between .06 - 0.01 and .06 + 0.01\n and l_quantity < 24;","sequential_pipe",42);
     X_9 := sql.mvc();
     X_13:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_quantity",0);
     X_23:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_discount",0);
