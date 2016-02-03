@@ -10,14 +10,12 @@
 
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
-#include "rel_select.h"
-#include "rel_updates.h"
 #include "rel_planner.h"
-#include "rel_psm.h"
-#include "sql_env.h"
+#include "sql_mvc.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif

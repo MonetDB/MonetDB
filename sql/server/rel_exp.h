@@ -9,10 +9,17 @@
 #ifndef _REL_EXP_H_
 #define _REL_EXP_H_
 
+#include "sql_relation.h"
 #include "sql_mvc.h"
+#include "sql_atom.h"
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
+
+extern comp_type swap_compare( comp_type t );
+extern comp_type range2lcompare( int r );
+extern comp_type range2rcompare( int r );
+extern int compare2range( int l, int r );
 
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
@@ -63,6 +70,7 @@ extern int have_nil(list *exps);
 
 extern sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
+extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old);
 extern sql_exp * exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level);
 extern sql_exp * exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level);
 extern sql_exp * exp_table(sql_allocator *sa, const char *name, sql_table *t, int level);

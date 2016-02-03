@@ -1111,27 +1111,6 @@ atom_cast(atom *a, sql_subtype *tp)
 	return 0;
 }
 
-void
-atom_dump(atom *a, stream *s)
-{
-	if (!a->isnull && a->data.vtype == TYPE_str) {
-		ATOMprint(a->data.vtype, VALptr(&a->data), s);
-	} else if (!a->isnull && ATOMstorage(a->data.vtype) == TYPE_str) {
-		mnstr_write(s, a->tpe.type->base.name, strlen(a->tpe.type->base.name), 1);
-		mnstr_write(s, "(", 1, 1);
-		ATOMprint(a->data.vtype, VALptr(&a->data), s);
-		mnstr_write(s, ")", 1, 1);
-	} else if (!a->isnull) {
-		mnstr_write(s, a->tpe.type->base.name, strlen(a->tpe.type->base.name), 1);
-		mnstr_write(s, "(\"", 2, 1);
-		ATOMprint(a->data.vtype, VALptr(&a->data), s);
-		mnstr_write(s, "\")", 2, 1);
-	} else {
-		mnstr_write(s, a->tpe.type->base.name, strlen(a->tpe.type->base.name), 1);
-		mnstr_write(s, "(nil)", 5, 1);
-	}
-}
-
 int 
 atom_neg( atom *a )
 {

@@ -18,10 +18,5 @@
 extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
 extern sql_rel *rel_parse(mvc *m, sql_schema *s, char *query, char emode);
 
-extern comp_type swap_compare( comp_type t );
-extern comp_type range2lcompare( int r );
-extern comp_type range2rcompare( int r );
-extern int compare2range( int l, int r );
-
 #endif /*_REL_SEMANTIC_H_*/
 

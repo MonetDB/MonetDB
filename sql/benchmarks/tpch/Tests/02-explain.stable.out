@@ -64,9 +64,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 844 # length
+% 759 # length
 function user.s2_1(A0:int,A1:str,A2:str,A3:str):void;
-    X_261:void := querylog.define("explain select\n\ts_acctbal,\n\ts_name,\n\tn_name,\n\tp_partkey,\n\tp_mfgr,\n\ts_address,\n\ts_phone,\n\ts_comment\nfrom\n\tpart,\n\tsupplier,\n\tpartsupp,\n\tnation,\n\tregion\nwhere\n\tp_partkey = ps_partkey\n\tand s_suppkey = ps_suppkey\n\tand p_size = 15\n\tand p_type like \\'%BRASS\\'\n\tand s_nationkey = n_nationkey\n\tand n_regionkey = r_regionkey\n\tand r_name = \\'EUROPE\\'\n\tand ps_supplycost = (\n\t\tselect\n\t\t\tmin(ps_supplycost)\n\t\tfrom\n\t\t\tpartsupp,\n\t\t\tsupplier,\n\t\t\tnation,\n\t\t\tregion\n\t\twhere\n\t\t\tp_partkey = ps_partkey\n\t\t\tand s_suppkey = ps_suppkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand n_regionkey = r_regionkey\n\t\t\tand r_name = \\'EUROPE\\'\n\t)\norder by\n\ts_acctbal desc,\n\tn_name,\n\ts_name,\n\tp_partkey\nlimit 100;","sequential_pipe",185);
+    X_261:void := querylog.define("explain select\n s_acctbal,\n s_name,\n n_name,\n p_partkey,\n p_mfgr,\n s_address,\n s_phone,\n s_comment\nfrom\n part,\n supplier,\n partsupp,\n nation,\n region\nwhere\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and p_size = 15\n and p_type like \\'%BRASS\\'\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n and ps_supplycost = (\n select\n min(ps_supplycost)\n from\n partsupp,\n supplier,\n nation,\n region\n where\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n )\norder by\n s_acctbal desc,\n n_name,\n s_name,\n p_partkey\nlimit 100;","sequential_pipe",185);
     X_201 := bat.new(nil:oid,nil:str);
     X_209 := bat.append(X_201,"sys.supplier");
     X_217 := bat.append(X_209,"sys.supplier");

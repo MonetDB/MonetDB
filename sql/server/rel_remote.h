@@ -9,7 +9,7 @@
 #ifndef _REL_REMOTE_H_
 #define _REL_REMOTE_H_
 
-#include "rel_semantic.h"
+#include "sql_relation.h"
 
 extern int mapiuri_valid( const char *uri);
 extern const char *mapiuri_uri(const char *uri, sql_allocator *sa);

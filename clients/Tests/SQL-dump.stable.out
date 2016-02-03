@@ -447,7 +447,6 @@ SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "
 create view sys.environment as select * from sys.environment();
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.querylog_calls as select * from sys.querylog_calls();
--- create table views for convenience
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_history as
 select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
@@ -458,9 +457,6 @@ create view sys.sessions as select * from sys.sessions();
 create view sys."storage" as select * from sys."storage"();
 create view sys.storagemodel as select * from sys.storagemodel();
 SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 /* system table/view */ ELSE (CASE WHEN "commit_action" = 0 THEN "type" /* table/view */ ELSE "type" + 20 /* global temp table */ END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 /* local temp table */ AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";
--- A summary of the table storage requirement is is available as a table view.
--- The auxiliary column denotes the maximum space if all non-sorted columns
--- would be augmented with a hash (rare situation)
 create view sys.tablestoragemodel
 as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
@@ -483,11 +479,8 @@ create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string
 external name sql.analyze;
 create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
 external name sql.analyze;
--- ogc Spatial Analysis methods
-
 create function area(g geometry) returns float external name geom."Area";
 create function astext(g geometry) returns string external name geom."AsText";
--- The BAT buffer pool overview
 create function sys.bbp () 
 	returns table (id int, name string, 
 		ttype string, count bigint, refcnt int, lrefcnt int, 
@@ -498,25 +491,10 @@ create function boundary(g geometry) returns geometry external name geom."Bounda
 create function "broadcast" (p inet) returns inet 
 	external name inet."broadcast";
 create function buffer(a geometry, distance float) returns geometry external name geom."Buffer";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- (co) Arjen de Rijke, Bart Scheers
--- Use statistical functions from gsl library
-
--- Calculate Chi squared probability
 create function sys.chi2prob(chi2 double, datapoints double)
 returns double external name gsl."chi2prob";
 create procedure sys.clearrejects()
 external name sql.copy_rejects_clear;
--- The predicted storage footprint of the complete database
--- determines the amount of diskspace needed for persistent storage
--- and the upperbound when all possible index structures are created.
--- The storage requirement for foreign key joins is split amongst the participants.
-
 create function sys.columnsize(nme string, i bigint, d bigint)
 returns bigint
 begin
@@ -559,114 +537,69 @@ create function crosses(a geometry, b geometry) returns boolean external name ge
 create function date_to_str(d date, format string) returns string
 	external name mtime."date_to_str";
 CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create function degrees(r double) 
 returns double
 	return r*180/pi();
---Column c has a dependency on function f
 create function dependencies_columns_on_functions()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);
---Column c has a dependency on index i 
 create function dependencies_columns_on_indexes()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));
---Column c has a dependency on key k
 create function dependencies_columns_on_keys()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);
---Column c has a dependency on trigger tri
 create function dependencies_columns_on_triggers()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);
---Column c has a dependency on view v
 create function dependencies_columns_on_views()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
---Function f1 has a dependency on function f2
 create function dependencies_functions_on_functions()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);
---Function f1 has a dependency on trigger tri
 create function dependencies_functions_os_triggers()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);
---Key k has a dependency on foreign key fk
 create function dependencies_keys_on_foreignkeys()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);
---User (owner) has a dependency in schema s
 create function dependencies_owners_on_schemas()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
---Schema s has a dependency on user u
 create function dependencies_schemas_on_users()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);
---Table t has a dependency on foreign key k
 create function dependencies_tables_on_foreignkeys()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);
---Table t has a dependency on function f
 create function dependencies_tables_on_functions()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);
---Table t has a dependency on index  i
 create function dependencies_tables_on_indexes()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);
---Table t has a dependency on trigger tri
-
 create function dependencies_tables_on_triggers()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));
---Table t has a dependency on view v
 create function dependencies_tables_on_views()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
---View v has a dependency on function f
 create function dependencies_views_on_functions()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);
---View v has a dependency on trigger tri
 create function dependencies_views_on_triggers()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
 create function difference(a geometry, b geometry) returns geometry external name geom."Difference";
--- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;
--- CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;
--- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;
--- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;
--- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;
-
--- ogc basic methods
 create function dimension(g geometry) returns integer external name geom."Dimension";
 create function disjoint(a geometry, b geometry) returns boolean external name geom."Disjoint";
 create function distance(a geometry, b geometry) returns float external name geom."Distance";
 CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
 create function envelope(g geometry) returns geometry external name geom."Envelope";
--- The environment table
 create function sys.environment()
 	returns table ("name" string, value string)
 	external name sql.sql_environment;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- assume milliseconds when converted to TIMESTAMP
 create function sys."epoch"(sec bigint) returns timestamp
 	external name timestamp."epoch";
 create function sys."epoch"(sec int) returns timestamp
@@ -675,29 +608,17 @@ create function sys."epoch"(ts timestamp) returns int
 	external name timestamp."epoch";
 create function sys."epoch"(ts timestamp with time zone) returns int
 	external name timestamp."epoch";
--- ogc spatial relation methods
 create function equals(a geometry, b geometry) returns boolean external name geom."Equals";
 create procedure sys.evalalgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
 create procedure fitsattach(fname string) external name fits.attach;
 create procedure fitsload(tname string) external name fits.load;
--- fuse two (1-byte) tinyint values into one (2-byte) smallint value
 create function fuse(one tinyint, two tinyint)
 returns smallint external name udf.fuse;
--- fuse two (2-byte) smallint values into one (4-byte) integer value
 create function fuse(one smallint, two smallint)
 returns integer external name udf.fuse;
--- fuse two (4-byte) integer values into one (8-byte) bigint value
 create function fuse(one integer, two integer)
 returns bigint external name udf.fuse;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- (c) Author M.Kersten
-
 create function sys.generate_series(first tinyint, last tinyint)
 returns table (value tinyint)
 external name generator.series;
@@ -736,7 +657,6 @@ returns table (value timestamp)
 external name generator.series;
 create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom."GeomCollectionFromText";
 create function geometrytypeid(g geometry) returns integer external name geom."GeometryTypeId";
--- The srid in the *FromText Functions is currently not used
 create function geomfromtext(wkt string, srid smallint) returns geometry external name geom."GeomFromText";
 create function getanchor( theurl url ) returns string 
 	external name url."getAnchor";
@@ -767,7 +687,7 @@ create function getuser(theurl url) returns string
 create function sys.hashsize(b boolean, i bigint)
 returns bigint
 begin
-	-- assume non-compound keys
+ 
 	if  b = true
 	then
 		return 8 * i;
@@ -822,12 +742,6 @@ create function "left_shift"(i1 inet, i2 inet) returns boolean
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean
 	external name inet."<<=";
 create function length(g geometry) returns float external name geom."Length";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
 create function linefromtext(wkt string, srid smallint) returns linestring external name geom."LineFromText";
@@ -837,20 +751,8 @@ create procedure listdir(dirname string) external name fits.listdir;
 create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;
 create function "masklen" (p inet) returns int
 	external name inet."masklen";
--- currently we only use mbr instead of
--- Envelope():Geometry
--- as that returns Geometry objects, and we prefer the explicit mbr's
--- minimum bounding rectangle (mbr)
 create function mbr (g geometry) returns mbr external name geom.mbr;
 create function mbroverlaps(a mbr, b mbr) returns boolean external name geom."mbroverlaps";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- (co) Arjen de Rijke
-
 create function sys.md5(v string)
 returns string external name clients.md5sum;
 create aggregate median(val tinyint) returns tinyint
@@ -891,12 +793,6 @@ returns string
 begin
         return cast(num as string);
 end;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))
 returns varchar(32)
 begin
@@ -918,13 +814,6 @@ end;
 create function ms_trunc(num double, prc int)
 returns double
 external name sql.ms_trunc;
--- gr_name is "GLOBAL" or "ROOT" for classic NetCDF files
--- used for groups in HDF5 files
--- global attributes have obj_name=""
-
--- create function netcdfvar (fname varchar(256)) 
---	returns int external name netcdf.test;
-
 create procedure netcdf_attach(fname varchar(256))
     external name netcdf.attach;
 create procedure netcdf_importvar(fid integer, varnname varchar(256))
@@ -939,32 +828,16 @@ create function newurl(protocol string, hostname string, "port" int, file string
 create function newurl(protocol string, hostname string, file string) 
 	returns url 
 	external name url."new";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- show the optimizer statistics maintained by the SQL frontend
 create function sys.optimizer_stats () 
 	returns table (rewrite string, count int) 
 	external name sql.dump_opt_stats;
--- MONETDB KERNEL SECTION
--- optimizer pipe catalog
 create function sys.optimizers () 
 	returns table (name string, def string, status string)
 	external name sql.optimizers;
 create function overlaps(a geometry, b geometry) returns boolean external name geom."Overlaps";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create function sys.password_hash (username string) 
 	returns string 
 	external name sql.password;
--- operations to manipulate the state of havoc queries
 create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
 create procedure sys.pause(tag bigint)
@@ -972,7 +845,6 @@ external name sql.sysmon_pause;
 create function point(x double,y double) returns point external name geom.point;
 create function pointfromtext(wkt string, srid smallint) returns point external name geom."PointFromText";
 create function polyfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
--- alias
 create function polygonfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
 create aggregate quantile(val tinyint, q double) returns tinyint
  	external name "aggr"."quantile";
@@ -996,53 +868,24 @@ create aggregate quantile(val time, q double) returns time
 	external name "aggr"."quantile";
 create aggregate quantile(val timestamp, q double) returns timestamp
 	external name "aggr"."quantile";
--- SQL QUERY CACHE
--- The SQL query cache returns a table with the query plans kept
-
 create function sys.querycache() 
 	returns table (query string, count int) 
 	external name sql.dump_cache;
--- Trace the SQL input
 create procedure sys.querylog(filename string) 
 	external name sql.logfile;
--- Each query call is stored in the table calls
--- At regular intervals the query history table should be cleaned.
--- This can be done manually on the SQL console, or be integrated
--- in the keepQuery and keepCall upon need.
--- The parameters are geared at understanding the resource claims
--- They reflect the effect of the total workload mix during execution.
--- The 'cpu' gives the average cpu load percentage over all cores on the 
--- server during execution phase. 
--- increasing cpu load indicates better use of multi-cores.
--- The 'io' indicate IOs during complete query run.
--- The 'space' is the total amount of intermediates created in MB.
--- Reducing the space component improves performance/
--- All timing in usec and all storage in bytes.
-
 create function sys.querylog_calls()
 returns table(
-	id oid,				 -- references query plan
-	"start" timestamp,	-- time the statement was started
-	"stop" timestamp,	-- time the statement was completely finished
-	arguments string,	-- actual call structure
-	tuples wrd,			-- number of tuples in the result set
-	run bigint,		-- time spent (in usec)  until the result export
-	ship bigint,		-- time spent (in usec)  to ship the result set
-	cpu int,  		-- average cpu load percentage during execution
-	io int			-- percentage time waiting for IO to finish 
+ id oid, 
+ "start" timestamp, 
+ "stop" timestamp, 
+ arguments string, 
+ tuples wrd, 
+ run bigint, 
+ ship bigint, 
+ cpu int, 
+ io int 
 )
 external name sql.querylog_calls;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- QUERY HISTORY
--- The query history mechanism of MonetDB/SQL relies on a few hooks.
--- The most important one is a global system variable which controls
---  monitoring of all sessions. 
-
 create function sys.querylog_catalog()
 returns table(
 	id oid,
@@ -1050,30 +893,19 @@ returns table(
 	defined timestamp,
 	query string,
 	pipe string,
-	"plan" string,		-- Name of MAL plan
-	mal int,			-- size of MAL plan
-	optimize bigint 	-- time in usec
+ "plan" string, 
+ mal int, 
+ optimize bigint 
 )
 external name sql.querylog_catalog;
 create procedure sys.querylog_disable()
 external name sql.querylog_disable;
--- reset history for a particular user
 create procedure sys.querylog_empty()
 external name sql.querylog_empty;
--- manipulate the query logger
 create procedure sys.querylog_enable()
 external name sql.querylog_enable;
 create procedure sys.querylog_enable(threshold smallint)
 external name sql.querylog_enable_threshold;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- System monitoring
-
--- show status of all active SQL queries.
 create function sys.queue()
 returns table(
 	qtag bigint,
@@ -1089,14 +921,6 @@ external name sql.sysmon_queue;
 create function radians(d double) 
 returns double
 	return d*pi()/180;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- COPY into reject management
-
 create function sys.rejects()
 returns table(
 	rowid bigint,
@@ -1112,16 +936,6 @@ create procedure sys.resume(tag bigint)
 external name sql.sysmon_resume;
 create procedure reuse(sys string, tab string)
 	external name sql.reuse;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- add function signatures to SQL catalog
-
-
--- Reverse a string
 create function reverse(src string)
 returns string external name udf.reverse;
 create function "right_shift"(i1 inet, i2 inet) returns boolean
@@ -1135,24 +949,10 @@ create function "setmasklen" (p inet, mask int) returns inet
 	external name inet."setmasklen";
 create procedure sys.setsession("timeout" bigint)
 	external name sql.setsession;
--- control the query and session time out 
 create procedure sys.settimeout("query" bigint)
 	external name sql.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint)
 	external name sql.settimeout;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- Vacuum a relational table should be done with care.
--- For, the oid's are used in join-indices.
-
--- Vacuum of tables may improve IO performance and disk footprint.
--- The foreign key constraints should be dropped before
--- and re-established after the cluster operation.
-
 create procedure shrink(sys string, tab string)
 	external name sql.shrink;
 create procedure sys.shutdown(delay tinyint) 
@@ -1180,12 +980,6 @@ create aggregate stddev_pop(val time) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val timestamp) returns double
 	external name "aggr"."stdevp";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create aggregate stddev_samp(val tinyint) returns double
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val smallint) returns double
@@ -1210,25 +1004,6 @@ create procedure sys.stop(tag int)
 external name sql.sysmon_stop;
 create procedure sys.stop(tag bigint)
 external name sql.sysmon_stop;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- Author M.Kersten
--- This script gives the database administrator insight in the actual
--- footprint of the persistent tables and the maximum playground used
--- when indices are introduced upon them.
--- By changing the storagemodelinput table directly, the footprint for
--- yet to be loaded databases can be assessed.
-
--- The actual storage footprint of an existing database can be
--- obtained by the table producing function storage()
--- It represents the actual state of affairs, i.e. storage on disk
--- of columns and foreign key indices, and possible temporary hash indices.
--- For strings we take a sample to determine their average length.
-
 create function sys."storage"()
 returns table (
 	"schema" string,
@@ -1268,9 +1043,6 @@ begin
 	i.sorted
 	from sys.storagemodelinput i;
 end;
--- this table can be adjusted to reflect the anticipated final database size
-
--- The model input can be derived from the current database using
 create procedure sys.storagemodelinit()
 begin
 	delete from sys.storagemodelinput;
@@ -1292,15 +1064,9 @@ begin
 			and "fkkey"."rkey" > -1);
 
 	update sys.storagemodelinput
-	set "distinct" = "count" -- assume all distinct
+ set "distinct" = "count" 
 	where "type" = 'varchar' or "type"='clob';
 end;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create function str_to_date(s string, format string) returns date
 	external name mtime."str_to_date";
 create function str_to_time(s string, format string) returns time
@@ -1312,45 +1078,28 @@ create function "text" (p inet) returns clob
 	external name inet."text";
 create function time_to_str(d time, format string) returns string
 	external name mtime."time_to_str";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- Provide a simple equivalent for the UNIX times command
--- times 0 ms user 0 ms system 0 ms 0 reads 0 writes
-
 create procedure times()
 external name sql.times;
 create function timestamp_to_str(d timestamp, format string) returns string
 	external name mtime."timestamp_to_str";
 create function touches(a geometry, b geometry) returns boolean external name geom."Touches";
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
--- make the offline tracing table available for inspection
 create function sys.tracelog() 
 	returns table (
-		event integer,		-- event counter
-		clk varchar(20), 	-- wallclock, no mtime in kernel
-		pc varchar(50), 	-- module.function[nr]
-		thread int, 		-- thread identifier
-		ticks bigint, 		-- time in microseconds
-		rrsmb bigint, 		-- resident memory in MB
-		vmmb bigint, 		-- virtual size in MB
-		reads bigint, 		-- number of blocks read
-		writes bigint, 	-- number of blocks written
-		minflt bigint, 		-- minor page faults
-		majflt bigint, 		-- major page faults
-		nvcsw bigint, 		-- non-volantary conext switch
-		stmt string			-- actual statement executed
+ event integer, 
+ clk varchar(20), 
+ pc varchar(50), 
+ thread int, 
+ ticks bigint, 
+ rrsmb bigint, 
+ vmmb bigint, 
+ reads bigint, 
+ writes bigint, 
+ minflt bigint, 
+ majflt bigint, 
+ nvcsw bigint, 
+ stmt string 
 	)
 	external name sql.dump_trace;
--- generate a new uuid
 create function sys.uuid()
 returns uuid external name uuid."new";
 create procedure vacuum(sys string, tab string)
@@ -1403,12 +1152,6 @@ create function zorder_decode_x(z oid) returns integer
     external name zorder.decode_x;
 create function zorder_decode_y(z oid) returns integer
     external name zorder.decode_y;
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
---
--- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
-
 create function zorder_encode(x integer, y integer) returns oid
     external name zorder.encode;
 START TRANSACTION;
@@ -1825,7 +1568,7 @@ COPY 54 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 5240	"user_role"	2000	NULL	0	true	0	0
 5243	"auths"	2000	NULL	0	true	0	0
 5247	"privileges"	2000	NULL	0	true	0	0
-5469	"querylog_catalog"	2000	"-- create table views for convenience\ncreate view sys.querylog_catalog as select * from sys.querylog_catalog();"	1	true	0	0
+5469	"querylog_catalog"	2000	"create view sys.querylog_catalog as select * from sys.querylog_catalog();"	1	true	0	0
 5480	"querylog_calls"	2000	"create view sys.querylog_calls as select * from sys.querylog_calls();"	1	true	0	0
 5498	"querylog_history"	2000	"create view sys.querylog_history as\nselect qd.*, ql.""start"",ql.""stop"", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\nfrom sys.querylog_catalog() qd, sys.querylog_calls() ql\nwhere qd.id = ql.id and qd.owner = user;"	1	true	0	0
 5537	"tracelog"	2000	"create view sys.tracelog as select * from sys.tracelog();"	1	true	0	0
@@ -1845,7 +1588,7 @@ COPY 54 RECORDS INTO "sys"."_tables" FROM stdin USING DELIMITERS '\t','\n','"';
 6574	"storage"	2000	"create view sys.""storage"" as select * from sys.""storage""();"	1	true	0	0
 6586	"storagemodelinput"	2000	NULL	0	true	0	0
 6634	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	0
-6644	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	0
+6644	"tablestoragemodel"	2000	"create view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n sum(columnsize) as columnsize,\n sum(heapsize) as heapsize,\n sum(hashes) as hashes,\n sum(imprints) as imprints,\n sum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	0
 6657	"statistics"	2000	NULL	0	true	0	0
 6755	"files"	6699	NULL	0	true	0	0
 6768	"sq"	6699	NULL	0	true	0	0
@@ -7128,185 +6871,185 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 5225	"env"	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;"	"sql"	2	5	false	false	false	2000
 5228	"var"	"CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;"	"sql"	2	5	false	false	false	2000
 5234	"db_users"	"CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;"	"sql"	2	5	false	false	false	2000
-5254	"like"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate filter function ""like""(val string, pat string, esc string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
+5254	"like"	"create filter function ""like""(val string, pat string, esc string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
 5259	"ilike"	"create filter function ""ilike""(val string, pat string, esc string) external name algebra.""ilike"";"	"algebra"	1	4	true	false	false	2000
 5264	"like"	"create filter function ""like""(val string, pat string) external name algebra.""like"";"	"algebra"	1	4	true	false	false	2000
 5268	"ilike"	"create filter function ""ilike""(val string, pat string) external name algebra.""ilike"";"	"algebra"	1	4	true	false	false	2000
-5272	"degrees"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function degrees(r double)\nreturns double\n\treturn r*180/pi();"	"user"	2	1	false	false	false	2000
-5276	"radians"	"create function radians(d double)\nreturns double\n\treturn d*pi()/180;"	"user"	2	1	false	false	false	2000
-5280	"times"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Provide a simple equivalent for the UNIX times command\n-- times 0 ms user 0 ms system 0 ms 0 reads 0 writes\n\ncreate procedure times()\nexternal name sql.times;"	"sql"	1	2	true	false	false	2000
-5283	"getanchor"	"create function getanchor( theurl url ) returns string\n\texternal name url.""getAnchor"";"	"url"	1	1	false	false	false	2000
-5287	"getbasename"	"create function getbasename(theurl url) returns string\n\texternal name url.""getBasename"";"	"url"	1	1	false	false	false	2000
-5291	"getcontent"	"create function getcontent(theurl url)   returns string\n\texternal name url.""getContent"";"	"url"	1	1	false	false	false	2000
-5295	"getcontext"	"create function getcontext(theurl url)   returns string\n\texternal name url.""getContext"";"	"url"	1	1	false	false	false	2000
-5299	"getdomain"	"create function getdomain(theurl url) returns string\n\texternal name url.""getDomain"";"	"url"	1	1	false	false	false	2000
-5303	"getextension"	"create function getextension(theurl url) returns string\n\texternal name url.""getExtension"";"	"url"	1	1	false	false	false	2000
-5307	"getfile"	"create function getfile(theurl url) returns string\n\texternal name url.""getFile"";"	"url"	1	1	false	false	false	2000
-5311	"gethost"	"create function gethost(theurl url)   returns string\n\texternal name url.""getHost"";"	"url"	1	1	false	false	false	2000
-5315	"getport"	"create function getport(theurl url) returns string\n\texternal name url.""getPort"";"	"url"	1	1	false	false	false	2000
-5319	"getprotocol"	"create function getprotocol(theurl url) returns string\n\texternal name url.""getProtocol"";"	"url"	1	1	false	false	false	2000
-5323	"getquery"	"create function getquery(theurl url) returns string\n\texternal name url.""getQuery"";"	"url"	1	1	false	false	false	2000
-5327	"getuser"	"create function getuser(theurl url) returns string\n\texternal name url.""getUser"";"	"url"	1	1	false	false	false	2000
-5331	"getroboturl"	"create function getroboturl(theurl url) returns string\n\texternal name url.""getRobotURL"";"	"url"	1	1	false	false	false	2000
-5335	"isaurl"	"create function isaurl(theurl url) returns bool\n\texternal name url.""isaURL"";"	"url"	1	1	false	false	false	2000
-5339	"newurl"	"create function newurl(protocol string, hostname string, ""port"" int, file string)\n\treturns url\n\texternal name url.""new"";"	"url"	1	1	false	false	false	2000
-5346	"newurl"	"create function newurl(protocol string, hostname string, file string)\n\treturns url\n\texternal name url.""new"";"	"url"	1	1	false	false	false	2000
-5352	"str_to_date"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function str_to_date(s string, format string) returns date\n\texternal name mtime.""str_to_date"";"	"mtime"	1	1	false	false	false	2000
-5357	"date_to_str"	"create function date_to_str(d date, format string) returns string\n\texternal name mtime.""date_to_str"";"	"mtime"	1	1	false	false	false	2000
-5362	"str_to_time"	"create function str_to_time(s string, format string) returns time\n\texternal name mtime.""str_to_time"";"	"mtime"	1	1	false	false	false	2000
-5367	"time_to_str"	"create function time_to_str(d time, format string) returns string\n\texternal name mtime.""time_to_str"";"	"mtime"	1	1	false	false	false	2000
-5372	"str_to_timestamp"	"create function str_to_timestamp(s string, format string) returns timestamp\n\texternal name mtime.""str_to_timestamp"";"	"mtime"	1	1	false	false	false	2000
-5377	"timestamp_to_str"	"create function timestamp_to_str(d timestamp, format string) returns string\n\texternal name mtime.""timestamp_to_str"";"	"mtime"	1	1	false	false	false	2000
-5383	"broadcast"	"create function ""broadcast"" (p inet) returns inet\n\texternal name inet.""broadcast"";"	"inet"	1	1	false	false	false	2000
-5387	"host"	"create function ""host"" (p inet) returns clob\n\texternal name inet.""host"";"	"inet"	1	1	false	false	false	2000
-5391	"masklen"	"create function ""masklen"" (p inet) returns int\n\texternal name inet.""masklen"";"	"inet"	1	1	false	false	false	2000
-5395	"setmasklen"	"create function ""setmasklen"" (p inet, mask int) returns inet\n\texternal name inet.""setmasklen"";"	"inet"	1	1	false	false	false	2000
-5400	"netmask"	"create function ""netmask"" (p inet) returns inet\n\texternal name inet.""netmask"";"	"inet"	1	1	false	false	false	2000
-5404	"hostmask"	"create function ""hostmask"" (p inet) returns inet\n\texternal name inet.""hostmask"";"	"inet"	1	1	false	false	false	2000
-5408	"network"	"create function ""network"" (p inet) returns inet\n\texternal name inet.""network"";"	"inet"	1	1	false	false	false	2000
-5412	"text"	"create function ""text"" (p inet) returns clob\n\texternal name inet.""text"";"	"inet"	1	1	false	false	false	2000
-5416	"abbrev"	"create function ""abbrev"" (p inet) returns clob\n\texternal name inet.""abbrev"";"	"inet"	1	1	false	false	false	2000
-5420	"left_shift"	"create function ""left_shift""(i1 inet, i2 inet) returns boolean\n\texternal name inet.""<<"";"	"inet"	1	1	false	false	false	2000
-5425	"right_shift"	"create function ""right_shift""(i1 inet, i2 inet) returns boolean\n\texternal name inet."">>"";"	"inet"	1	1	false	false	false	2000
-5430	"left_shift_assign"	"create function ""left_shift_assign""(i1 inet, i2 inet) returns boolean\n\texternal name inet.""<<="";"	"inet"	1	1	false	false	false	2000
-5435	"right_shift_assign"	"create function ""right_shift_assign""(i1 inet, i2 inet) returns boolean\n\texternal name inet."">>="";"	"inet"	1	1	false	false	false	2000
-5440	"querylog_catalog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- QUERY HISTORY\n-- The query history mechanism of MonetDB/SQL relies on a few hooks.\n-- The most important one is a global system variable which controls\n--  monitoring of all sessions.\n\ncreate function sys.querylog_catalog()\nreturns table(\n\tid oid,\n\towner string,\n\tdefined timestamp,\n\tquery string,\n\tpipe string,\n\t""plan"" string,\t\t-- Name of MAL plan\n\tmal int,\t\t-- size of MAL plan\n\toptimize bigint\t-- time in usec\n)\nexternal name sql.querylog_catalog;"	"sql"	1	5	false	false	false	2000
-5450	"querylog_calls"	"-- Each query call is stored in the table calls\n-- At regular intervals the query history table should be cleaned.\n-- This can be done manually on the SQL console, or be integrated\n-- in the keepQuery and keepCall upon need.\n-- The parameters are geared at understanding the resource claims\n-- They reflect the effect of the total workload mix during execution.\n-- The 'cpu' gives the average cpu load percentage over all cores on the\n-- server during execution phase.\n-- increasing cpu load indicates better use of multi-cores.\n-- The 'io' indicate IOs during complete query run.\n-- The 'space' is the total amount of intermediates created in MB.\n-- Reducing the space component improves performance/\n-- All timing in usec and all storage in bytes.\n\ncreate function sys.querylog_calls()\nreturns table(\n\tid oid,\t\t -- references query plan\n\t""start"" timestamp,\t-- time the statement was started\n\t""stop"" timestamp,\t-- time the statement was completely finished\n\targuments string,\t-- actual call structure\n\ttuples wrd,\t\t-- number of tuples in the result set\n\trun bigint,\t\t-- time spent (in usec)  until the result export\n\tship bigint,\t\t-- time spent (in usec)  to ship the result set\n\tcpu int,\t\t-- average cpu load percentage during execution\n\tio int\t\t\t-- percentage time waiting for IO to finish\n)\nexternal name sql.querylog_calls;"	"sql"	1	5	false	false	false	2000
-5500	"querylog_empty"	"-- reset history for a particular user\ncreate procedure sys.querylog_empty()\nexternal name sql.querylog_empty;"	"sql"	1	2	true	false	false	2000
-5502	"querylog_enable"	"-- manipulate the query logger\ncreate procedure sys.querylog_enable()\nexternal name sql.querylog_enable;"	"sql"	1	2	true	false	false	2000
+5272	"degrees"	"create function degrees(r double)\nreturns double\n return r*180/pi();"	"user"	2	1	false	false	false	2000
+5276	"radians"	"create function radians(d double)\nreturns double\n return d*pi()/180;"	"user"	2	1	false	false	false	2000
+5280	"times"	"create procedure times()\nexternal name sql.times;"	"sql"	1	2	true	false	false	2000
+5283	"getanchor"	"create function getanchor( theurl url ) returns string\n external name url.""getAnchor"";"	"url"	1	1	false	false	false	2000
+5287	"getbasename"	"create function getbasename(theurl url) returns string\n external name url.""getBasename"";"	"url"	1	1	false	false	false	2000
+5291	"getcontent"	"create function getcontent(theurl url) returns string\n external name url.""getContent"";"	"url"	1	1	false	false	false	2000
+5295	"getcontext"	"create function getcontext(theurl url) returns string\n external name url.""getContext"";"	"url"	1	1	false	false	false	2000
+5299	"getdomain"	"create function getdomain(theurl url) returns string\n external name url.""getDomain"";"	"url"	1	1	false	false	false	2000
+5303	"getextension"	"create function getextension(theurl url) returns string\n external name url.""getExtension"";"	"url"	1	1	false	false	false	2000
+5307	"getfile"	"create function getfile(theurl url) returns string\n external name url.""getFile"";"	"url"	1	1	false	false	false	2000
+5311	"gethost"	"create function gethost(theurl url) returns string\n external name url.""getHost"";"	"url"	1	1	false	false	false	2000
+5315	"getport"	"create function getport(theurl url) returns string\n external name url.""getPort"";"	"url"	1	1	false	false	false	2000
+5319	"getprotocol"	"create function getprotocol(theurl url) returns string\n external name url.""getProtocol"";"	"url"	1	1	false	false	false	2000
+5323	"getquery"	"create function getquery(theurl url) returns string\n external name url.""getQuery"";"	"url"	1	1	false	false	false	2000
+5327	"getuser"	"create function getuser(theurl url) returns string\n external name url.""getUser"";"	"url"	1	1	false	false	false	2000
+5331	"getroboturl"	"create function getroboturl(theurl url) returns string\n external name url.""getRobotURL"";"	"url"	1	1	false	false	false	2000
+5335	"isaurl"	"create function isaurl(theurl url) returns bool\n external name url.""isaURL"";"	"url"	1	1	false	false	false	2000
+5339	"newurl"	"create function newurl(protocol string, hostname string, ""port"" int, file string)\n returns url\n external name url.""new"";"	"url"	1	1	false	false	false	2000
+5346	"newurl"	"create function newurl(protocol string, hostname string, file string)\n returns url\n external name url.""new"";"	"url"	1	1	false	false	false	2000
+5352	"str_to_date"	"create function str_to_date(s string, format string) returns date\n external name mtime.""str_to_date"";"	"mtime"	1	1	false	false	false	2000
+5357	"date_to_str"	"create function date_to_str(d date, format string) returns string\n external name mtime.""date_to_str"";"	"mtime"	1	1	false	false	false	2000
+5362	"str_to_time"	"create function str_to_time(s string, format string) returns time\n external name mtime.""str_to_time"";"	"mtime"	1	1	false	false	false	2000
+5367	"time_to_str"	"create function time_to_str(d time, format string) returns string\n external name mtime.""time_to_str"";"	"mtime"	1	1	false	false	false	2000
+5372	"str_to_timestamp"	"create function str_to_timestamp(s string, format string) returns timestamp\n external name mtime.""str_to_timestamp"";"	"mtime"	1	1	false	false	false	2000
+5377	"timestamp_to_str"	"create function timestamp_to_str(d timestamp, format string) returns string\n external name mtime.""timestamp_to_str"";"	"mtime"	1	1	false	false	false	2000
+5383	"broadcast"	"create function ""broadcast"" (p inet) returns inet\n external name inet.""broadcast"";"	"inet"	1	1	false	false	false	2000
+5387	"host"	"create function ""host"" (p inet) returns clob\n external name inet.""host"";"	"inet"	1	1	false	false	false	2000
+5391	"masklen"	"create function ""masklen"" (p inet) returns int\n external name inet.""masklen"";"	"inet"	1	1	false	false	false	2000
+5395	"setmasklen"	"create function ""setmasklen"" (p inet, mask int) returns inet\n external name inet.""setmasklen"";"	"inet"	1	1	false	false	false	2000
+5400	"netmask"	"create function ""netmask"" (p inet) returns inet\n external name inet.""netmask"";"	"inet"	1	1	false	false	false	2000
+5404	"hostmask"	"create function ""hostmask"" (p inet) returns inet\n external name inet.""hostmask"";"	"inet"	1	1	false	false	false	2000
+5408	"network"	"create function ""network"" (p inet) returns inet\n external name inet.""network"";"	"inet"	1	1	false	false	false	2000
+5412	"text"	"create function ""text"" (p inet) returns clob\n external name inet.""text"";"	"inet"	1	1	false	false	false	2000
+5416	"abbrev"	"create function ""abbrev"" (p inet) returns clob\n external name inet.""abbrev"";"	"inet"	1	1	false	false	false	2000
+5420	"left_shift"	"create function ""left_shift""(i1 inet, i2 inet) returns boolean\n external name inet.""<<"";"	"inet"	1	1	false	false	false	2000
+5425	"right_shift"	"create function ""right_shift""(i1 inet, i2 inet) returns boolean\n external name inet."">>"";"	"inet"	1	1	false	false	false	2000
+5430	"left_shift_assign"	"create function ""left_shift_assign""(i1 inet, i2 inet) returns boolean\n external name inet.""<<="";"	"inet"	1	1	false	false	false	2000
+5435	"right_shift_assign"	"create function ""right_shift_assign""(i1 inet, i2 inet) returns boolean\n external name inet."">>="";"	"inet"	1	1	false	false	false	2000
+5440	"querylog_catalog"	"create function sys.querylog_catalog()\nreturns table(\n id oid,\n owner string,\n defined timestamp,\n query string,\n pipe string,\n ""plan"" string, \n mal int, \n optimize bigint \n)\nexternal name sql.querylog_catalog;"	"sql"	1	5	false	false	false	2000
+5450	"querylog_calls"	"create function sys.querylog_calls()\nreturns table(\n id oid, \n ""start"" timestamp, \n ""stop"" timestamp, \n arguments string, \n tuples wrd, \n run bigint, \n ship bigint, \n cpu int, \n io int \n)\nexternal name sql.querylog_calls;"	"sql"	1	5	false	false	false	2000
+5500	"querylog_empty"	"create procedure sys.querylog_empty()\nexternal name sql.querylog_empty;"	"sql"	1	2	true	false	false	2000
+5502	"querylog_enable"	"create procedure sys.querylog_enable()\nexternal name sql.querylog_enable;"	"sql"	1	2	true	false	false	2000
 5504	"querylog_enable"	"create procedure sys.querylog_enable(threshold smallint)\nexternal name sql.querylog_enable_threshold;"	"sql"	1	2	true	false	false	2000
 5507	"querylog_disable"	"create procedure sys.querylog_disable()\nexternal name sql.querylog_disable;"	"sql"	1	2	true	false	false	2000
-5509	"tracelog"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- make the offline tracing table available for inspection\ncreate function sys.tracelog()\n\treturns table (\n\t\tevent integer,\t\t-- event counter\n\t\tclk varchar(20),\t-- wallclock, no mtime in kernel\n\t\tpc varchar(50),\t-- module.function[nr]\n\t\tthread int,\t\t-- thread identifier\n\t\tticks bigint,\t\t-- time in microseconds\n\t\trrsmb bigint,\t\t-- resident memory in MB\n\t\tvmmb bigint,\t\t-- virtual size in MB\n\t\treads bigint,\t\t-- number of blocks read\n\t\twrites bigint,\t\t-- number of blocks written\n\t\tminflt bigint,\t\t-- minor page faults\n\t\tmajflt bigint,\t\t-- major page faults\n\t\tnvcsw bigint,\t\t-- non-volantary conext switch\n\t\tstmt string\t\t-- actual statement executed\n\t)\n\texternal name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
-5539	"epoch"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- assume milliseconds when converted to TIMESTAMP\ncreate function sys.""epoch""(sec bigint) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
-5543	"epoch"	"create function sys.""epoch""(sec int) returns timestamp\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
-5547	"epoch"	"create function sys.""epoch""(ts timestamp) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
-5551	"epoch"	"create function sys.""epoch""(ts timestamp with time zone) returns int\n\texternal name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
-5555	"shrink"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Vacuum a relational table should be done with care.\n-- For, the oid's are used in join-indices.\n\n-- Vacuum of tables may improve IO performance and disk footprint.\n-- The foreign key constraints should be dropped before\n-- and re-established after the cluster operation.\n\ncreate procedure shrink(sys string, tab string)\n\texternal name sql.shrink;"	"sql"	1	2	true	false	false	2000
-5559	"reuse"	"create procedure reuse(sys string, tab string)\n\texternal name sql.reuse;"	"sql"	1	2	true	false	false	2000
-5563	"vacuum"	"create procedure vacuum(sys string, tab string)\n\texternal name sql.vacuum;"	"sql"	1	2	true	false	false	2000
-5567	"dependencies_schemas_on_users"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n--Schema s has a dependency on user u\ncreate function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	2	5	false	false	false	2000
-5572	"dependencies_owners_on_schemas"	"--User (owner) has a dependency in schema s\ncreate function dependencies_owners_on_schemas()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);"	"user"	2	5	false	false	false	2000
-5577	"dependencies_tables_on_views"	"--Table t has a dependency on view v\ncreate function dependencies_tables_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	2	5	false	false	false	2000
-5582	"dependencies_tables_on_indexes"	"--Table t has a dependency on index  i\ncreate function dependencies_tables_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);"	"user"	2	5	false	false	false	2000
-5587	"dependencies_tables_on_triggers"	"--Table t has a dependency on trigger tri\n\ncreate function dependencies_tables_on_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));"	"user"	2	5	false	false	false	2000
-5592	"dependencies_tables_on_foreignkeys"	"--Table t has a dependency on foreign key k\ncreate function dependencies_tables_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);"	"user"	2	5	false	false	false	2000
-5597	"dependencies_tables_on_functions"	"--Table t has a dependency on function f\ncreate function dependencies_tables_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);"	"user"	2	5	false	false	false	2000
-5602	"dependencies_columns_on_views"	"--Column c has a dependency on view v\ncreate function dependencies_columns_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	2	5	false	false	false	2000
-5607	"dependencies_columns_on_keys"	"--Column c has a dependency on key k\ncreate function dependencies_columns_on_keys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc.""name"" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);"	"user"	2	5	false	false	false	2000
-5612	"dependencies_columns_on_indexes"	"--Column c has a dependency on index i\ncreate function dependencies_columns_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc.""name"" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));"	"user"	2	5	false	false	false	2000
-5617	"dependencies_columns_on_functions"	"--Column c has a dependency on function f\ncreate function dependencies_columns_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);"	"user"	2	5	false	false	false	2000
-5622	"dependencies_columns_on_triggers"	"--Column c has a dependency on trigger tri\ncreate function dependencies_columns_on_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	2	5	false	false	false	2000
-5627	"dependencies_views_on_functions"	"--View v has a dependency on function f\ncreate function dependencies_views_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);"	"user"	2	5	false	false	false	2000
-5632	"dependencies_views_on_triggers"	"--View v has a dependency on trigger tri\ncreate function dependencies_views_on_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);"	"user"	2	5	false	false	false	2000
-5637	"dependencies_functions_on_functions"	"--Function f1 has a dependency on function f2\ncreate function dependencies_functions_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);"	"user"	2	5	false	false	false	2000
-5642	"dependencies_functions_os_triggers"	"--Function f1 has a dependency on trigger tri\ncreate function dependencies_functions_os_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	2	5	false	false	false	2000
-5647	"dependencies_keys_on_foreignkeys"	"--Key k has a dependency on foreign key fk\ncreate function dependencies_keys_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);"	"user"	2	5	false	false	false	2000
-5652	"password_hash"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function sys.password_hash (username string)\n\treturns string\n\texternal name sql.password;"	"sql"	1	1	false	false	false	2000
+5509	"tracelog"	"create function sys.tracelog()\n returns table (\n event integer, \n clk varchar(20), \n pc varchar(50), \n thread int, \n ticks bigint, \n rrsmb bigint, \n vmmb bigint, \n reads bigint, \n writes bigint, \n minflt bigint, \n majflt bigint, \n nvcsw bigint, \n stmt string \n )\n external name sql.dump_trace;"	"sql"	1	5	false	false	false	2000
+5539	"epoch"	"create function sys.""epoch""(sec bigint) returns timestamp\n external name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+5543	"epoch"	"create function sys.""epoch""(sec int) returns timestamp\n external name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+5547	"epoch"	"create function sys.""epoch""(ts timestamp) returns int\n external name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+5551	"epoch"	"create function sys.""epoch""(ts timestamp with time zone) returns int\n external name timestamp.""epoch"";"	"timestamp"	1	1	false	false	false	2000
+5555	"shrink"	"create procedure shrink(sys string, tab string)\n external name sql.shrink;"	"sql"	1	2	true	false	false	2000
+5559	"reuse"	"create procedure reuse(sys string, tab string)\n external name sql.reuse;"	"sql"	1	2	true	false	false	2000
+5563	"vacuum"	"create procedure vacuum(sys string, tab string)\n external name sql.vacuum;"	"sql"	1	2	true	false	false	2000
+5567	"dependencies_schemas_on_users"	"create function dependencies_schemas_on_users()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);"	"user"	2	5	false	false	false	2000
+5572	"dependencies_owners_on_schemas"	"create function dependencies_owners_on_schemas()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);"	"user"	2	5	false	false	false	2000
+5577	"dependencies_tables_on_views"	"create function dependencies_tables_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	2	5	false	false	false	2000
+5582	"dependencies_tables_on_indexes"	"create function dependencies_tables_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);"	"user"	2	5	false	false	false	2000
+5587	"dependencies_tables_on_triggers"	"create function dependencies_tables_on_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));"	"user"	2	5	false	false	false	2000
+5592	"dependencies_tables_on_foreignkeys"	"create function dependencies_tables_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);"	"user"	2	5	false	false	false	2000
+5597	"dependencies_tables_on_functions"	"create function dependencies_tables_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);"	"user"	2	5	false	false	false	2000
+5602	"dependencies_columns_on_views"	"create function dependencies_columns_on_views()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);"	"user"	2	5	false	false	false	2000
+5607	"dependencies_columns_on_keys"	"create function dependencies_columns_on_keys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc.""name"" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);"	"user"	2	5	false	false	false	2000
+5612	"dependencies_columns_on_indexes"	"create function dependencies_columns_on_indexes()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc.""name"" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));"	"user"	2	5	false	false	false	2000
+5617	"dependencies_columns_on_functions"	"create function dependencies_columns_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);"	"user"	2	5	false	false	false	2000
+5622	"dependencies_columns_on_triggers"	"create function dependencies_columns_on_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	2	5	false	false	false	2000
+5627	"dependencies_views_on_functions"	"create function dependencies_views_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);"	"user"	2	5	false	false	false	2000
+5632	"dependencies_views_on_triggers"	"create function dependencies_views_on_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);"	"user"	2	5	false	false	false	2000
+5637	"dependencies_functions_on_functions"	"create function dependencies_functions_on_functions()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);"	"user"	2	5	false	false	false	2000
+5642	"dependencies_functions_os_triggers"	"create function dependencies_functions_os_triggers()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);"	"user"	2	5	false	false	false	2000
+5647	"dependencies_keys_on_foreignkeys"	"create function dependencies_keys_on_foreignkeys()\nreturns table (sch varchar(100), usr varchar(100), dep_type varchar(32))\nreturn table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);"	"user"	2	5	false	false	false	2000
+5652	"password_hash"	"create function sys.password_hash (username string)\n returns string\n external name sql.password;"	"sql"	1	1	false	false	false	2000
 5656	"sessions"	"create function sys.sessions()\nreturns table(""user"" string, ""login"" timestamp, ""sessiontimeout"" bigint, ""lastcommand"" timestamp, ""querytimeout"" bigint, ""active"" bool)\nexternal name sql.sessions;"	"sql"	1	5	false	false	false	2000
 5672	"shutdown"	"create procedure sys.shutdown(delay tinyint)\nexternal name sql.shutdown;"	"sql"	1	2	true	false	false	2000
 5675	"shutdown"	"create procedure sys.shutdown(delay tinyint, force bool)\nexternal name sql.shutdown;"	"sql"	1	2	true	false	false	2000
-5679	"settimeout"	"-- control the query and session time out\ncreate procedure sys.settimeout(""query"" bigint)\n\texternal name sql.settimeout;"	"sql"	1	2	true	false	false	2000
-5682	"settimeout"	"create procedure sys.settimeout(""query"" bigint, ""session"" bigint)\n\texternal name sql.settimeout;"	"sql"	1	2	true	false	false	2000
-5686	"setsession"	"create procedure sys.setsession(""timeout"" bigint)\n\texternal name sql.setsession;"	"sql"	1	2	true	false	false	2000
-5689	"ms_stuff"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n\tdeclare res varchar(32), aux varchar(32);\n\tdeclare ofset int;\n\n    if ( st < 0 or st > length(s1))\n        then return '';\n    end if;\n\n    set ofset = 1;\n    set res = substring(s1,ofset,st-1);\n    set res = res || s3;\n    set ofset = st + len;\n    set aux = substring(s1,ofset,length(s1)-ofset+1);\n\tset res = res || aux;\n\treturn res;\nend;"	"user"	2	1	false	false	false	2000
+5679	"settimeout"	"create procedure sys.settimeout(""query"" bigint)\n external name sql.settimeout;"	"sql"	1	2	true	false	false	2000
+5682	"settimeout"	"create procedure sys.settimeout(""query"" bigint, ""session"" bigint)\n external name sql.settimeout;"	"sql"	1	2	true	false	false	2000
+5686	"setsession"	"create procedure sys.setsession(""timeout"" bigint)\n external name sql.setsession;"	"sql"	1	2	true	false	false	2000
+5689	"ms_stuff"	"create function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))\nreturns varchar(32)\nbegin\n declare res varchar(32), aux varchar(32);\n declare ofset int;\n if ( st < 0 or st > length(s1))\n then return '';\n end if;\n set ofset = 1;\n set res = substring(s1,ofset,st-1);\n set res = res || s3;\n set ofset = st + len;\n set aux = substring(s1,ofset,length(s1)-ofset+1);\n set res = res || aux;\n return res;\nend;"	"user"	2	1	false	false	false	2000
 5696	"ms_trunc"	"create function ms_trunc(num double, prc int)\nreturns double\nexternal name sql.ms_trunc;"	"sql"	1	1	false	false	false	2000
-5701	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n\tif (truncat = 0)\n\t\tthen return round(num, prc);\n\t\telse return ms_trunc(num, prc);\n\tend if;\nend;"	"user"	2	1	false	false	false	2000
+5701	"ms_round"	"create function ms_round(num double, prc int, truncat int)\nreturns double\nbegin\n if (truncat = 0)\n then return round(num, prc);\n else return ms_trunc(num, prc);\n end if;\nend;"	"user"	2	1	false	false	false	2000
 5707	"ms_str"	"create function ms_str(num float, prc int, truncat int)\nreturns string\nbegin\n        return cast(num as string);\nend;"	"user"	2	1	false	false	false	2000
 5713	"alpha"	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	"sql"	1	1	false	false	false	2000
-5718	"zorder_encode"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate function zorder_encode(x integer, y integer) returns oid\n    external name zorder.encode;"	"zorder"	1	1	false	false	false	2000
+5718	"zorder_encode"	"create function zorder_encode(x integer, y integer) returns oid\n external name zorder.encode;"	"zorder"	1	1	false	false	false	2000
 5723	"zorder_decode_x"	"create function zorder_decode_x(z oid) returns integer\n    external name zorder.decode_x;"	"zorder"	1	1	false	false	false	2000
 5727	"zorder_decode_y"	"create function zorder_decode_y(z oid) returns integer\n    external name zorder.decode_y;"	"zorder"	1	1	false	false	false	2000
-5731	"optimizer_stats"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- show the optimizer statistics maintained by the SQL frontend\ncreate function sys.optimizer_stats ()\n\treturns table (rewrite string, count int)\n\texternal name sql.dump_opt_stats;"	"sql"	1	5	false	false	false	2000
-5735	"querycache"	"-- SQL QUERY CACHE\n-- The SQL query cache returns a table with the query plans kept\n\ncreate function sys.querycache()\n\treturns table (query string, count int)\n\texternal name sql.dump_cache;"	"sql"	1	5	false	false	false	2000
-5739	"querylog"	"-- Trace the SQL input\ncreate procedure sys.querylog(filename string)\n\texternal name sql.logfile;"	"sql"	1	2	true	false	false	2000
-5742	"optimizers"	"-- MONETDB KERNEL SECTION\n-- optimizer pipe catalog\ncreate function sys.optimizers ()\n\treturns table (name string, def string, status string)\n\texternal name sql.optimizers;"	"sql"	1	5	false	false	false	2000
-5752	"environment"	"-- The environment table\ncreate function sys.environment()\n\treturns table (""name"" string, value string)\n\texternal name sql.sql_environment;"	"sql"	1	5	false	false	false	2000
-5760	"bbp"	"-- The BAT buffer pool overview\ncreate function sys.bbp ()\n\treturns table (id int, name string, \n\t\tttype string, count bigint, refcnt int, lrefcnt int,\n\t\tlocation string, heat int, dirty string,\n\t\tstatus string, kind string)\n\texternal name bbp.get;"	"bbp"	1	5	false	false	false	2000
-5773	"malfunctions"	"create function sys.malfunctions()\n\treturns table(""signature"" string, ""address"" string, ""comment"" string)\n\texternal name ""manual"".""functions"";"	"manual"	1	5	false	false	false	2000
-5778	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n\texternal name sql.""evalAlgebra"";"	"sql"	1	2	true	false	false	2000
-5782	"flush_log"	"-- enqueue a flush log, ie as soon as no transactions are active \n-- flush the log and cleanup the used storage\ncreate procedure sys.flush_log ()\n\texternal name sql.""flush_log"";"	"sql"	1	2	true	false	false	2000
-5784	"debug"	"create function sys.debug(debug int) returns integer\n\texternal name mdb.""setDebug"";"	"mdb"	1	1	false	false	false	2000
-5788	"queue"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- System monitoring\n\n-- show status of all active SQL queries.\ncreate function sys.queue()\nreturns table(\n\tqtag bigint,\n\t""user"" string,\n\tstarted timestamp,\n\testimate timestamp,\n\tprogress int,\n\tstatus string,\n\ttag oid,\n\tquery string\n)\nexternal name sql.sysmon_queue;"	"sql"	1	5	false	false	false	2000
-5808	"pause"	"-- operations to manipulate the state of havoc queries\ncreate procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
+5731	"optimizer_stats"	"create function sys.optimizer_stats ()\n returns table (rewrite string, count int)\n external name sql.dump_opt_stats;"	"sql"	1	5	false	false	false	2000
+5735	"querycache"	"create function sys.querycache()\n returns table (query string, count int)\n external name sql.dump_cache;"	"sql"	1	5	false	false	false	2000
+5739	"querylog"	"create procedure sys.querylog(filename string)\n external name sql.logfile;"	"sql"	1	2	true	false	false	2000
+5742	"optimizers"	"create function sys.optimizers ()\n returns table (name string, def string, status string)\n external name sql.optimizers;"	"sql"	1	5	false	false	false	2000
+5752	"environment"	"create function sys.environment()\n returns table (""name"" string, value string)\n external name sql.sql_environment;"	"sql"	1	5	false	false	false	2000
+5760	"bbp"	"create function sys.bbp ()\n returns table (id int, name string, \n ttype string, count bigint, refcnt int, lrefcnt int,\n location string, heat int, dirty string,\n status string, kind string)\n external name bbp.get;"	"bbp"	1	5	false	false	false	2000
+5773	"malfunctions"	"create function sys.malfunctions()\n returns table(""signature"" string, ""address"" string, ""comment"" string)\n external name ""manual"".""functions"";"	"manual"	1	5	false	false	false	2000
+5778	"evalalgebra"	"create procedure sys.evalalgebra( ra_stmt string, opt bool)\n external name sql.""evalAlgebra"";"	"sql"	1	2	true	false	false	2000
+5782	"flush_log"	"create procedure sys.flush_log ()\n external name sql.""flush_log"";"	"sql"	1	2	true	false	false	2000
+5784	"debug"	"create function sys.debug(debug int) returns integer\n external name mdb.""setDebug"";"	"mdb"	1	1	false	false	false	2000
+5788	"queue"	"create function sys.queue()\nreturns table(\n qtag bigint,\n ""user"" string,\n started timestamp,\n estimate timestamp,\n progress int,\n status string,\n tag oid,\n query string\n)\nexternal name sql.sysmon_queue;"	"sql"	1	5	false	false	false	2000
+5808	"pause"	"create procedure sys.pause(tag int)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
 5811	"resume"	"create procedure sys.resume(tag int)\nexternal name sql.sysmon_resume;"	"sql"	1	2	true	false	false	2000
 5814	"stop"	"create procedure sys.stop(tag int)\nexternal name sql.sysmon_stop;"	"sql"	1	2	true	false	false	2000
 5817	"pause"	"create procedure sys.pause(tag bigint)\nexternal name sql.sysmon_pause;"	"sql"	1	2	true	false	false	2000
 5820	"resume"	"create procedure sys.resume(tag bigint)\nexternal name sql.sysmon_resume;"	"sql"	1	2	true	false	false	2000
 5823	"stop"	"create procedure sys.stop(tag bigint)\nexternal name sql.sysmon_stop;"	"sql"	1	2	true	false	false	2000
-5826	"rejects"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- COPY into reject management\n\ncreate function sys.rejects()\nreturns table(\n\trowid bigint,\n\tfldid int,\n\t""message"" string,\n\t""input"" string\n)\nexternal name sql.copy_rejects;"	"sql"	1	5	false	false	false	2000
+5826	"rejects"	"create function sys.rejects()\nreturns table(\n rowid bigint,\n fldid int,\n ""message"" string,\n ""input"" string\n)\nexternal name sql.copy_rejects;"	"sql"	1	5	false	false	false	2000
 5838	"clearrejects"	"create procedure sys.clearrejects()\nexternal name sql.copy_rejects_clear;"	"sql"	1	2	true	false	false	2000
-5840	"stddev_samp"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\ncreate aggregate stddev_samp(val tinyint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5844	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5848	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5852	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5856	"stddev_samp"	"create aggregate stddev_samp(val bigint) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5860	"stddev_samp"	"create aggregate stddev_samp(val real) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5864	"stddev_samp"	"create aggregate stddev_samp(val double) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5868	"stddev_samp"	"create aggregate stddev_samp(val date) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5872	"stddev_samp"	"create aggregate stddev_samp(val time) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5876	"stddev_samp"	"create aggregate stddev_samp(val timestamp) returns double\n\texternal name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
-5880	"stddev_pop"	"create aggregate stddev_pop(val tinyint) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5884	"stddev_pop"	"create aggregate stddev_pop(val smallint) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5888	"stddev_pop"	"create aggregate stddev_pop(val integer) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5892	"stddev_pop"	"create aggregate stddev_pop(val wrd) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5896	"stddev_pop"	"create aggregate stddev_pop(val bigint) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5900	"stddev_pop"	"create aggregate stddev_pop(val real) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5904	"stddev_pop"	"create aggregate stddev_pop(val double) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5908	"stddev_pop"	"create aggregate stddev_pop(val date) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5912	"stddev_pop"	"create aggregate stddev_pop(val time) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5916	"stddev_pop"	"create aggregate stddev_pop(val timestamp) returns double\n\texternal name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
-5920	"var_samp"	"create aggregate var_samp(val tinyint) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5924	"var_samp"	"create aggregate var_samp(val smallint) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5928	"var_samp"	"create aggregate var_samp(val integer) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5932	"var_samp"	"create aggregate var_samp(val wrd) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5936	"var_samp"	"create aggregate var_samp(val bigint) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5940	"var_samp"	"create aggregate var_samp(val real) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5944	"var_samp"	"create aggregate var_samp(val double) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5948	"var_samp"	"create aggregate var_samp(val date) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5952	"var_samp"	"create aggregate var_samp(val time) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5956	"var_samp"	"create aggregate var_samp(val timestamp) returns double\n\texternal name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
-5960	"var_pop"	"create aggregate var_pop(val tinyint) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5964	"var_pop"	"create aggregate var_pop(val smallint) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5968	"var_pop"	"create aggregate var_pop(val integer) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5972	"var_pop"	"create aggregate var_pop(val wrd) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5976	"var_pop"	"create aggregate var_pop(val bigint) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5980	"var_pop"	"create aggregate var_pop(val real) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5984	"var_pop"	"create aggregate var_pop(val double) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5988	"var_pop"	"create aggregate var_pop(val date) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5992	"var_pop"	"create aggregate var_pop(val time) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-5996	"var_pop"	"create aggregate var_pop(val timestamp) returns double\n\texternal name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
-6000	"median"	"create aggregate median(val tinyint) returns tinyint\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6004	"median"	"create aggregate median(val smallint) returns smallint\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6008	"median"	"create aggregate median(val integer) returns integer\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6012	"median"	"create aggregate median(val wrd) returns wrd\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6016	"median"	"create aggregate median(val bigint) returns bigint\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6020	"median"	"create aggregate median(val decimal) returns decimal\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6024	"median"	"create aggregate median(val real) returns real\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6028	"median"	"create aggregate median(val double) returns double\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6032	"median"	"create aggregate median(val date) returns date\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6036	"median"	"create aggregate median(val time) returns time\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6040	"median"	"create aggregate median(val timestamp) returns timestamp\n\texternal name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
-6044	"quantile"	"create aggregate quantile(val tinyint, q double) returns tinyint\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6049	"quantile"	"create aggregate quantile(val smallint, q double) returns smallint\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6054	"quantile"	"create aggregate quantile(val integer, q double) returns integer\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6059	"quantile"	"create aggregate quantile(val wrd, q double) returns wrd\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6064	"quantile"	"create aggregate quantile(val bigint, q double) returns bigint\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6069	"quantile"	"create aggregate quantile(val decimal, q double) returns decimal\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6074	"quantile"	"create aggregate quantile(val real, q double) returns real\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6079	"quantile"	"create aggregate quantile(val double, q double) returns double\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6084	"quantile"	"create aggregate quantile(val date, q double) returns date\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6089	"quantile"	"create aggregate quantile(val time, q double) returns time\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6094	"quantile"	"create aggregate quantile(val timestamp, q double) returns timestamp\n\texternal name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
-6099	"corr"	"create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6104	"corr"	"create aggregate corr(e1 smallint, e2 smallint) returns smallint\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6109	"corr"	"create aggregate corr(e1 integer, e2 integer) returns integer\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6114	"corr"	"create aggregate corr(e1 wrd, e2 wrd) returns wrd\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6119	"corr"	"create aggregate corr(e1 bigint, e2 bigint) returns bigint\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6124	"corr"	"create aggregate corr(e1 real, e2 real) returns real\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6129	"corr"	"create aggregate corr(e1 double, e2 double) returns double\n\texternal name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
-6147	"mbr"	"-- currently we only use mbr instead of\n-- Envelope():Geometry\n-- as that returns Geometry objects, and we prefer the explicit mbr's\n-- minimum bounding rectangle (mbr)\ncreate function mbr (g geometry) returns mbr external name geom.mbr;"	"geom"	1	1	false	false	false	2000
+5840	"stddev_samp"	"create aggregate stddev_samp(val tinyint) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5844	"stddev_samp"	"create aggregate stddev_samp(val smallint) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5848	"stddev_samp"	"create aggregate stddev_samp(val integer) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5852	"stddev_samp"	"create aggregate stddev_samp(val wrd) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5856	"stddev_samp"	"create aggregate stddev_samp(val bigint) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5860	"stddev_samp"	"create aggregate stddev_samp(val real) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5864	"stddev_samp"	"create aggregate stddev_samp(val double) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5868	"stddev_samp"	"create aggregate stddev_samp(val date) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5872	"stddev_samp"	"create aggregate stddev_samp(val time) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5876	"stddev_samp"	"create aggregate stddev_samp(val timestamp) returns double\n external name ""aggr"".""stdev"";"	"aggr"	1	3	false	false	false	2000
+5880	"stddev_pop"	"create aggregate stddev_pop(val tinyint) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5884	"stddev_pop"	"create aggregate stddev_pop(val smallint) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5888	"stddev_pop"	"create aggregate stddev_pop(val integer) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5892	"stddev_pop"	"create aggregate stddev_pop(val wrd) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5896	"stddev_pop"	"create aggregate stddev_pop(val bigint) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5900	"stddev_pop"	"create aggregate stddev_pop(val real) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5904	"stddev_pop"	"create aggregate stddev_pop(val double) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5908	"stddev_pop"	"create aggregate stddev_pop(val date) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5912	"stddev_pop"	"create aggregate stddev_pop(val time) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5916	"stddev_pop"	"create aggregate stddev_pop(val timestamp) returns double\n external name ""aggr"".""stdevp"";"	"aggr"	1	3	false	false	false	2000
+5920	"var_samp"	"create aggregate var_samp(val tinyint) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5924	"var_samp"	"create aggregate var_samp(val smallint) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5928	"var_samp"	"create aggregate var_samp(val integer) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5932	"var_samp"	"create aggregate var_samp(val wrd) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5936	"var_samp"	"create aggregate var_samp(val bigint) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5940	"var_samp"	"create aggregate var_samp(val real) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5944	"var_samp"	"create aggregate var_samp(val double) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5948	"var_samp"	"create aggregate var_samp(val date) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5952	"var_samp"	"create aggregate var_samp(val time) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5956	"var_samp"	"create aggregate var_samp(val timestamp) returns double\n external name ""aggr"".""variance"";"	"aggr"	1	3	false	false	false	2000
+5960	"var_pop"	"create aggregate var_pop(val tinyint) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5964	"var_pop"	"create aggregate var_pop(val smallint) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5968	"var_pop"	"create aggregate var_pop(val integer) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5972	"var_pop"	"create aggregate var_pop(val wrd) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5976	"var_pop"	"create aggregate var_pop(val bigint) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5980	"var_pop"	"create aggregate var_pop(val real) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5984	"var_pop"	"create aggregate var_pop(val double) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5988	"var_pop"	"create aggregate var_pop(val date) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5992	"var_pop"	"create aggregate var_pop(val time) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+5996	"var_pop"	"create aggregate var_pop(val timestamp) returns double\n external name ""aggr"".""variancep"";"	"aggr"	1	3	false	false	false	2000
+6000	"median"	"create aggregate median(val tinyint) returns tinyint\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6004	"median"	"create aggregate median(val smallint) returns smallint\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6008	"median"	"create aggregate median(val integer) returns integer\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6012	"median"	"create aggregate median(val wrd) returns wrd\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6016	"median"	"create aggregate median(val bigint) returns bigint\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6020	"median"	"create aggregate median(val decimal) returns decimal\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6024	"median"	"create aggregate median(val real) returns real\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6028	"median"	"create aggregate median(val double) returns double\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6032	"median"	"create aggregate median(val date) returns date\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6036	"median"	"create aggregate median(val time) returns time\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6040	"median"	"create aggregate median(val timestamp) returns timestamp\n external name ""aggr"".""median"";"	"aggr"	1	3	false	false	false	2000
+6044	"quantile"	"create aggregate quantile(val tinyint, q double) returns tinyint\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6049	"quantile"	"create aggregate quantile(val smallint, q double) returns smallint\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6054	"quantile"	"create aggregate quantile(val integer, q double) returns integer\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6059	"quantile"	"create aggregate quantile(val wrd, q double) returns wrd\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6064	"quantile"	"create aggregate quantile(val bigint, q double) returns bigint\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6069	"quantile"	"create aggregate quantile(val decimal, q double) returns decimal\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6074	"quantile"	"create aggregate quantile(val real, q double) returns real\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6079	"quantile"	"create aggregate quantile(val double, q double) returns double\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6084	"quantile"	"create aggregate quantile(val date, q double) returns date\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6089	"quantile"	"create aggregate quantile(val time, q double) returns time\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6094	"quantile"	"create aggregate quantile(val timestamp, q double) returns timestamp\n external name ""aggr"".""quantile"";"	"aggr"	1	3	false	false	false	2000
+6099	"corr"	"create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6104	"corr"	"create aggregate corr(e1 smallint, e2 smallint) returns smallint\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6109	"corr"	"create aggregate corr(e1 integer, e2 integer) returns integer\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6114	"corr"	"create aggregate corr(e1 wrd, e2 wrd) returns wrd\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6119	"corr"	"create aggregate corr(e1 bigint, e2 bigint) returns bigint\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6124	"corr"	"create aggregate corr(e1 real, e2 real) returns real\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6129	"corr"	"create aggregate corr(e1 double, e2 double) returns double\n external name ""aggr"".""corr"";"	"aggr"	1	3	false	false	false	2000
+6147	"mbr"	"create function mbr (g geometry) returns mbr external name geom.mbr;"	"geom"	1	1	false	false	false	2000
 6151	"mbroverlaps"	"create function mbroverlaps(a mbr, b mbr) returns boolean external name geom.""mbroverlaps"";"	"geom"	1	1	false	false	false	2000
-6156	"geomfromtext"	"-- The srid in the *FromText Functions is currently not used\ncreate function geomfromtext(wkt string, srid smallint) returns geometry external name geom.""GeomFromText"";"	"geom"	1	1	false	false	false	2000
+6156	"geomfromtext"	"create function geomfromtext(wkt string, srid smallint) returns geometry external name geom.""GeomFromText"";"	"geom"	1	1	false	false	false	2000
 6161	"pointfromtext"	"create function pointfromtext(wkt string, srid smallint) returns point external name geom.""PointFromText"";"	"geom"	1	1	false	false	false	2000
 6166	"linefromtext"	"create function linefromtext(wkt string, srid smallint) returns linestring external name geom.""LineFromText"";"	"geom"	1	1	false	false	false	2000
 6171	"polyfromtext"	"create function polyfromtext(wkt string, srid smallint) returns polygon external name geom.""PolyFromText"";"	"geom"	1	1	false	false	false	2000
@@ -7314,19 +7057,19 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6181	"mlinefromtext"	"create function mlinefromtext(wkt string, srid smallint) returns multilinestring external name geom.""MultiLineFromText"";"	"geom"	1	1	false	false	false	2000
 6186	"mpolyfromtext"	"create function mpolyfromtext(wkt string, srid smallint) returns multipolygon external name geom.""MultiPolyFromText"";"	"geom"	1	1	false	false	false	2000
 6191	"geomcollectionfromtext"	"create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom.""GeomCollectionFromText"";"	"geom"	1	1	false	false	false	2000
-6196	"polygonfromtext"	"-- alias\ncreate function polygonfromtext(wkt string, srid smallint) returns polygon external name geom.""PolyFromText"";"	"geom"	1	1	false	false	false	2000
+6196	"polygonfromtext"	"create function polygonfromtext(wkt string, srid smallint) returns polygon external name geom.""PolyFromText"";"	"geom"	1	1	false	false	false	2000
 6201	"astext"	"create function astext(g geometry) returns string external name geom.""AsText"";"	"geom"	1	1	false	false	false	2000
 6205	"x"	"create function x(g geometry) returns double external name geom.""X"";"	"geom"	1	1	false	false	false	2000
 6209	"y"	"create function y(g geometry) returns double external name geom.""Y"";"	"geom"	1	1	false	false	false	2000
 6213	"point"	"create function point(x double,y double) returns point external name geom.point;"	"geom"	1	1	false	false	false	2000
-6218	"dimension"	"-- CREATE FUNCTION Point(g Geometry) RETURNS Point external name geom.point;\n-- CREATE FUNCTION Curve(g Geometry) RETURNS Curve external name geom.curve;\n-- CREATE FUNCTION LineString(g Geometry) RETURNS LineString external name geom.linestring;\n-- CREATE FUNCTION Surface(g Geometry) RETURNS Surface external name geom.surface;\n-- CREATE FUNCTION Polygon(g Geometry) RETURNS Polygon external name geom.polygon;\n\n-- ogc basic methods\ncreate function dimension(g geometry) returns integer external name geom.""Dimension"";"	"geom"	1	1	false	false	false	2000
+6218	"dimension"	"create function dimension(g geometry) returns integer external name geom.""Dimension"";"	"geom"	1	1	false	false	false	2000
 6222	"geometrytypeid"	"create function geometrytypeid(g geometry) returns integer external name geom.""GeometryTypeId"";"	"geom"	1	1	false	false	false	2000
 6226	"srid"	"create function srid(g geometry) returns integer external name geom.""SRID"";"	"geom"	1	1	false	false	false	2000
 6230	"envelope"	"create function envelope(g geometry) returns geometry external name geom.""Envelope"";"	"geom"	1	1	false	false	false	2000
 6234	"isempty"	"create function isempty(g geometry) returns boolean external name geom.""IsEmpty"";"	"geom"	1	1	false	false	false	2000
 6238	"issimple"	"create function issimple(g geometry) returns boolean external name geom.""IsSimple"";"	"geom"	1	1	false	false	false	2000
 6242	"boundary"	"create function boundary(g geometry) returns geometry external name geom.""Boundary"";"	"geom"	1	1	false	false	false	2000
-6246	"equals"	"-- ogc spatial relation methods\ncreate function equals(a geometry, b geometry) returns boolean external name geom.""Equals"";"	"geom"	1	1	false	false	false	2000
+6246	"equals"	"create function equals(a geometry, b geometry) returns boolean external name geom.""Equals"";"	"geom"	1	1	false	false	false	2000
 6251	"disjoint"	"create function disjoint(a geometry, b geometry) returns boolean external name geom.""Disjoint"";"	"geom"	1	1	false	false	false	2000
 6256	"Intersect"	"create function ""Intersect""(a geometry, b geometry) returns boolean external name geom.""Intersect"";"	"geom"	1	1	false	false	false	2000
 6261	"touches"	"create function touches(a geometry, b geometry) returns boolean external name geom.""Touches"";"	"geom"	1	1	false	false	false	2000
@@ -7336,7 +7079,7 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6281	"contains"	"create function contains(a geometry, x double, y double) returns boolean external name geom.""Contains"";"	"geom"	1	1	false	false	false	2000
 6287	"overlaps"	"create function overlaps(a geometry, b geometry) returns boolean external name geom.""Overlaps"";"	"geom"	1	1	false	false	false	2000
 6292	"relate"	"create function relate(a geometry, b geometry, pattern string) returns boolean external name geom.""Relate"";"	"geom"	1	1	false	false	false	2000
-6298	"area"	"-- ogc Spatial Analysis methods\n\ncreate function area(g geometry) returns float external name geom.""Area"";"	"geom"	1	1	false	false	false	2000
+6298	"area"	"create function area(g geometry) returns float external name geom.""Area"";"	"geom"	1	1	false	false	false	2000
 6302	"length"	"create function length(g geometry) returns float external name geom.""Length"";"	"geom"	1	1	false	false	false	2000
 6306	"distance"	"create function distance(a geometry, b geometry) returns float external name geom.""Distance"";"	"geom"	1	1	false	false	false	2000
 6311	"buffer"	"create function buffer(a geometry, distance float) returns geometry external name geom.""Buffer"";"	"geom"	1	1	false	false	false	2000
@@ -7345,59 +7088,59 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6325	"Union"	"create function ""Union""(a geometry, b geometry) returns geometry external name geom.""Union"";"	"geom"	1	1	false	false	false	2000
 6330	"difference"	"create function difference(a geometry, b geometry) returns geometry external name geom.""Difference"";"	"geom"	1	1	false	false	false	2000
 6335	"symdifference"	"create function symdifference(a geometry, b geometry) returns geometry external name geom.""SymDifference"";"	"geom"	1	1	false	false	false	2000
-6342	"filter"	"-- access the top level key by name, return its value\ncreate function json.filter(js json, pathexpr string)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	6339
+6342	"filter"	"create function json.filter(js json, pathexpr string)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	6339
 6347	"filter"	"create function json.filter(js json, name tinyint)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	6339
 6352	"filter"	"create function json.filter(js json, name integer)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	6339
 6357	"filter"	"create function json.filter(js json, name bigint)\nreturns json external name json.filter;"	"json"	1	1	false	false	false	6339
 6362	"text"	"create function json.text(js json, e string)\nreturns string external name json.text;"	"json"	1	1	false	false	false	6339
 6367	"number"	"create function json.number(js json)\nreturns float external name json.number;"	"json"	1	1	false	false	false	6339
 6371	"integer"	"create function json.""integer""(js json)\nreturns bigint external name json.""integer"";"	"json"	1	1	false	false	false	6339
-6375	"isvalid"	"-- test string for JSON compliancy\ncreate function json.isvalid(js string)\nreturns bool external name json.isvalid;"	"json"	1	1	false	false	false	6339
+6375	"isvalid"	"create function json.isvalid(js string)\nreturns bool external name json.isvalid;"	"json"	1	1	false	false	false	6339
 6379	"isobject"	"create function json.isobject(js string)\nreturns bool external name json.isobject;"	"json"	1	1	false	false	false	6339
 6383	"isarray"	"create function json.isarray(js string)\nreturns bool external name json.isarray;"	"json"	1	1	false	false	false	6339
 6387	"isvalid"	"create function json.isvalid(js json)\nreturns bool external name json.isvalid;"	"json"	1	1	false	false	false	6339
 6391	"isobject"	"create function json.isobject(js json)\nreturns bool external name json.isobject;"	"json"	1	1	false	false	false	6339
 6395	"isarray"	"create function json.isarray(js json)\nreturns bool external name json.isarray;"	"json"	1	1	false	false	false	6339
-6399	"length"	"-- return the number of primary components\ncreate function json.length(js json)\nreturns integer external name json.length;"	"json"	1	1	false	false	false	6339
+6399	"length"	"create function json.length(js json)\nreturns integer external name json.length;"	"json"	1	1	false	false	false	6339
 6403	"keyarray"	"create function json.keyarray(js json)\nreturns json external name json.keyarray;"	"json"	1	1	false	false	false	6339
 6407	"valuearray"	"create function json.valuearray(js json)\nreturns  json external name json.valuearray;"	"json"	1	1	false	false	false	6339
 6411	"text"	"create function json.text(js json)\nreturns string external name json.text;"	"json"	1	1	false	false	false	6339
 6415	"text"	"create function json.text(js string)\nreturns string external name json.text;"	"json"	1	1	false	false	false	6339
 6419	"text"	"create function json.text(js int)\nreturns string external name json.text;"	"json"	1	1	false	false	false	6339
-6423	"output"	"-- The remainder awaits the implementation\n\ncreate aggregate json.output(js json)\nreturns string external name json.output;"	"json"	1	3	false	false	false	6339
-6427	"tojsonarray"	"-- create function json.object(*) returns json external name json.objectrender;\n\n-- create function json.array(*) returns json external name json.arrayrender;\n\n-- unnesting the JSON structure\n\n-- create function json.unnest(js json)\n-- returns table( id integer, k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( k string, v string) external name json.unnest;\n\n-- create function json.unnest(js json)\n-- returns table( v string) external name json.unnest;\n\n-- create function json.nest table( id integer, k string, v string)\n-- returns json external name json.nest;\n\ncreate aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	6339
+6423	"output"	"create aggregate json.output(js json)\nreturns string external name json.output;"	"json"	1	3	false	false	false	6339
+6427	"tojsonarray"	"create aggregate json.tojsonarray( x string ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	6339
 6431	"tojsonarray"	"create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;"	"aggr"	1	3	false	false	false	6339
-6435	"md5"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Arjen de Rijke\n\ncreate function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	1	1	false	false	false	2000
-6440	"uuid"	"-- generate a new uuid\ncreate function sys.uuid()\nreturns uuid external name uuid.""new"";"	"uuid"	1	1	false	false	false	2000
+6435	"md5"	"create function sys.md5(v string)\nreturns string external name clients.md5sum;"	"clients"	1	1	false	false	false	2000
+6440	"uuid"	"create function sys.uuid()\nreturns uuid external name uuid.""new"";"	"uuid"	1	1	false	false	false	2000
 6443	"isauuid"	"create function sys.isauuid(u uuid)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	1	1	false	false	false	2000
 6447	"isauuid"	"create function sys.isauuid(u string)\nreturns uuid external name uuid.""isaUUID"";"	"uuid"	1	1	false	false	false	2000
-6451	"chi2prob"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (co) Arjen de Rijke, Bart Scheers\n-- Use statistical functions from gsl library\n\n-- Calculate Chi squared probability\ncreate function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.""chi2prob"";"	"gsl"	1	1	false	false	false	2000
+6451	"chi2prob"	"create function sys.chi2prob(chi2 double, datapoints double)\nreturns double external name gsl.""chi2prob"";"	"gsl"	1	1	false	false	false	2000
 6457	"start"	"create procedure profiler.start() external name profiler.""start"";"	"profiler"	1	2	true	false	false	6455
 6459	"stop"	"create procedure profiler.stop() external name profiler.stop;"	"profiler"	1	2	true	false	false	6455
 6461	"setheartbeat"	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"	"profiler"	1	2	true	false	false	6455
 6464	"setpoolsize"	"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"	"profiler"	1	2	true	false	false	6455
 6467	"setstream"	"create procedure profiler.setstream(host string, port int) external name profiler.setstream;"	"profiler"	1	2	true	false	false	6455
-6492	"listdir"	"\n\ncreate procedure listdir(dirname string) external name fits.listdir;"	"fits"	1	2	true	false	false	2000
+6492	"listdir"	"create procedure listdir(dirname string) external name fits.listdir;"	"fits"	1	2	true	false	false	2000
 6495	"fitsattach"	"create procedure fitsattach(fname string) external name fits.attach;"	"fits"	1	2	true	false	false	2000
 6498	"fitsload"	"create procedure fitsload(tname string) external name fits.load;"	"fits"	1	2	true	false	false	2000
 6501	"listdirpat"	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;"	"fits"	1	2	true	false	false	2000
-6537	"netcdf_attach"	"-- gr_name is ""GLOBAL"" or ""ROOT"" for classic NetCDF files\n-- used for groups in HDF5 files\n-- global attributes have obj_name=""""\n\n-- create function netcdfvar (fname varchar(256)) \n--\treturns int external name netcdf.test;\n\ncreate procedure netcdf_attach(fname varchar(256))\n    external name netcdf.attach;"	"netcdf"	1	2	true	false	false	2000
+6537	"netcdf_attach"	"create procedure netcdf_attach(fname varchar(256))\n external name netcdf.attach;"	"netcdf"	1	2	true	false	false	2000
 6540	"netcdf_importvar"	"create procedure netcdf_importvar(fid integer, varnname varchar(256))\n    external name netcdf.importvariable;"	"netcdf"	1	2	true	false	false	2000
-6544	"storage"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- Author M.Kersten\n-- This script gives the database administrator insight in the actual\n-- footprint of the persistent tables and the maximum playground used\n-- when indices are introduced upon them.\n-- By changing the storagemodelinput table directly, the footprint for\n-- yet to be loaded databases can be assessed.\n\n-- The actual storage footprint of an existing database can be\n-- obtained by the table producing function storage()\n-- It represents the actual state of affairs, i.e. storage on disk\n-- of columns and foreign key indices, and possible temporary hash indices.\n-- For strings we take a sample to determine their average length.\n\ncreate function sys.""storage""()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""mode"" string,\n\tlocation string,\n\t""count"" bigint,\n\ttypewidth int,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\tphash boolean,\n\timprints bigint,\n\tsorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
-6588	"storagemodelinit"	"-- this table can be adjusted to reflect the anticipated final database size\n\n-- The model input can be derived from the current database using\ncreate procedure sys.storagemodelinit()\nbegin\n\tdelete from sys.storagemodelinput;\n\n\tinsert into sys.storagemodelinput\n\tselect x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n\n\tupdate sys.storagemodelinput\n\tset reference = true\n\twhere concat(concat(""schema"",""table""), ""column"") in (\n\t\tselect concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n\t\tfrom\t""sys"".""keys"" as    ""fkkey"",\n\t\t\t\t""sys"".""objects"" as ""fkkeycol"",\n\t\t\t\t""sys"".""tables"" as  ""fktable"",\n\t\t\t\t""sys"".""schemas"" as ""fkschema""\n\t\twhere   ""fktable"".""id"" = ""fkkey"".""table_id""\n\t\t\tand ""fkkey"".""id"" = ""fkkeycol"".""id""\n\t\t\tand ""fkschema"".""id"" = ""fktable"".""schema_id""\n\t\t\tand ""fkkey"".""rkey"" > -1);\n\n\tupdate sys.storagemodelinput\n\tset ""distinct"" = ""count"" -- assume all distinct\n\twhere ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	2	2	true	false	false	2000
-6590	"columnsize"	"-- The predicted storage footprint of the complete database\n-- determines the amount of diskspace needed for persistent storage\n-- and the upperbound when all possible index structures are created.\n-- The storage requirement for foreign key joins is split amongst the participants.\n\ncreate function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n\tcase\n\twhen nme = 'boolean' then return i;\n\twhen nme = 'char' then return 2*i;\n\twhen nme = 'smallint' then return 2 * i;\n\twhen nme = 'int' then return 4 * i;\n\twhen nme = 'bigint' then return 8 * i;\n\twhen nme = 'hugeint' then return 16 * i;\n\twhen nme = 'timestamp' then return 8 * i;\n\twhen  nme = 'varchar' then\n\t\tcase\n\t\twhen cast(d as bigint) << 8 then return i;\n\t\twhen cast(d as bigint) << 16 then return 2 * i;\n\t\twhen cast(d as bigint) << 32 then return 4 * i;\n\t\telse return 8 * i;\n\t\tend case;\n\telse return 8 * i;\n\tend case;\nend;"	"user"	2	1	false	false	false	2000
-6596	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n\tif  tpe <> 'varchar' and tpe <> 'clob'\n\tthen\n\t\treturn 0;\n\tend if;\n\treturn 10240 + i * w;\nend;"	"user"	2	1	false	false	false	2000
-6602	"hashsize"	"create function sys.hashsize(b boolean, i bigint)\nreturns bigint\nbegin\n\t-- assume non-compound keys\n\tif  b = true\n\tthen\n\t\treturn 8 * i;\n\tend if;\n\treturn 0;\nend;"	"user"	2	1	false	false	false	2000
-6607	"imprintsize"	"create function sys.imprintsize(i bigint, nme string)\nreturns bigint\nbegin\n\tif nme = 'boolean'\n\t\tor nme = 'tinyint'\n\t\tor nme = 'smallint'\n\t\tor nme = 'int'\n\t\tor nme = 'bigint'\n\t\tor nme = 'hugeint'\n\t\tor nme = 'decimal'\n\t\tor nme = 'date'\n\t\tor nme = 'timestamp'\n\t\tor nme = 'real'\n\t\tor nme = 'double'\n\tthen\n\t\treturn cast( i * 0.12 as bigint);\n\tend if ;\n\treturn 0;\nend;"	"user"	2	1	false	false	false	2000
-6612	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n\t""schema"" string,\n\t""table"" string,\n\t""column"" string,\n\t""type"" string,\n\t""count"" bigint,\n\tcolumnsize bigint,\n\theapsize bigint,\n\thashes bigint,\n\timprints bigint,\n\tsorted boolean)\nbegin\n\treturn select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n\tcolumnsize(i.""type"", i.count, i.""distinct""),\n\theapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n\thashsize(i.""reference"", i.""count""),\n\timprintsize(i.""count"",i.""type""),\n\ti.sorted\n\tfrom sys.storagemodelinput i;\nend;"	"user"	2	5	false	false	false	2000
+6544	"storage"	"create function sys.""storage""()\nreturns table (\n ""schema"" string,\n ""table"" string,\n ""column"" string,\n ""type"" string,\n ""mode"" string,\n location string,\n ""count"" bigint,\n typewidth int,\n columnsize bigint,\n heapsize bigint,\n hashes bigint,\n phash boolean,\n imprints bigint,\n sorted boolean\n)\nexternal name sql.""storage"";"	"sql"	1	5	false	false	false	2000
+6588	"storagemodelinit"	"create procedure sys.storagemodelinit()\nbegin\n delete from sys.storagemodelinput;\n insert into sys.storagemodelinput\n select x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n update sys.storagemodelinput\n set reference = true\n where concat(concat(""schema"",""table""), ""column"") in (\n select concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n from ""sys"".""keys"" as ""fkkey"",\n ""sys"".""objects"" as ""fkkeycol"",\n ""sys"".""tables"" as ""fktable"",\n ""sys"".""schemas"" as ""fkschema""\n where ""fktable"".""id"" = ""fkkey"".""table_id""\n and ""fkkey"".""id"" = ""fkkeycol"".""id""\n and ""fkschema"".""id"" = ""fktable"".""schema_id""\n and ""fkkey"".""rkey"" > -1);\n update sys.storagemodelinput\n set ""distinct"" = ""count"" \n where ""type"" = 'varchar' or ""type""='clob';\nend;"	"user"	2	2	true	false	false	2000
+6590	"columnsize"	"create function sys.columnsize(nme string, i bigint, d bigint)\nreturns bigint\nbegin\n case\n when nme = 'boolean' then return i;\n when nme = 'char' then return 2*i;\n when nme = 'smallint' then return 2 * i;\n when nme = 'int' then return 4 * i;\n when nme = 'bigint' then return 8 * i;\n when nme = 'hugeint' then return 16 * i;\n when nme = 'timestamp' then return 8 * i;\n when nme = 'varchar' then\n case\n when cast(d as bigint) << 8 then return i;\n when cast(d as bigint) << 16 then return 2 * i;\n when cast(d as bigint) << 32 then return 4 * i;\n else return 8 * i;\n end case;\n else return 8 * i;\n end case;\nend;"	"user"	2	1	false	false	false	2000
+6596	"heapsize"	"create function sys.heapsize(tpe string, i bigint, w int)\nreturns bigint\nbegin\n if tpe <> 'varchar' and tpe <> 'clob'\n then\n return 0;\n end if;\n return 10240 + i * w;\nend;"	"user"	2	1	false	false	false	2000
+6602	"hashsize"	"create function sys.hashsize(b boolean, i bigint)\nreturns bigint\nbegin\n \n if b = true\n then\n return 8 * i;\n end if;\n return 0;\nend;"	"user"	2	1	false	false	false	2000
+6607	"imprintsize"	"create function sys.imprintsize(i bigint, nme string)\nreturns bigint\nbegin\n if nme = 'boolean'\n or nme = 'tinyint'\n or nme = 'smallint'\n or nme = 'int'\n or nme = 'bigint'\n or nme = 'hugeint'\n or nme = 'decimal'\n or nme = 'date'\n or nme = 'timestamp'\n or nme = 'real'\n or nme = 'double'\n then\n return cast( i * 0.12 as bigint);\n end if ;\n return 0;\nend;"	"user"	2	1	false	false	false	2000
+6612	"storagemodel"	"create function sys.storagemodel()\nreturns table (\n ""schema"" string,\n ""table"" string,\n ""column"" string,\n ""type"" string,\n ""count"" bigint,\n columnsize bigint,\n heapsize bigint,\n hashes bigint,\n imprints bigint,\n sorted boolean)\nbegin\n return select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n columnsize(i.""type"", i.count, i.""distinct""),\n heapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n hashsize(i.""reference"", i.""count""),\n imprintsize(i.""count"",i.""type""),\n i.sorted\n from sys.storagemodelinput i;\nend;"	"user"	2	5	false	false	false	2000
 6659	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
 6663	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
 6668	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
 6674	"analyze"	"create procedure sys.analyze(minmax int, ""sample"" bigint, sch string, tbl string, col string)\nexternal name sql.analyze;"	"sql"	1	2	true	false	false	2000
-6681	"reverse"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- add function signatures to SQL catalog\n\n\n-- Reverse a string\ncreate function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	1	1	false	false	false	2000
-6685	"fuse"	"-- fuse two (1-byte) tinyint values into one (2-byte) smallint value\ncreate function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
-6690	"fuse"	"-- fuse two (2-byte) smallint values into one (4-byte) integer value\ncreate function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	1	1	false	false	false	2000
-6695	"fuse"	"-- fuse two (4-byte) integer values into one (8-byte) bigint value\ncreate function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+6681	"reverse"	"create function reverse(src string)\nreturns string external name udf.reverse;"	"udf"	1	1	false	false	false	2000
+6685	"fuse"	"create function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+6690	"fuse"	"create function fuse(one smallint, two smallint)\nreturns integer external name udf.fuse;"	"udf"	1	1	false	false	false	2000
+6695	"fuse"	"create function fuse(one integer, two integer)\nreturns bigint external name udf.fuse;"	"udf"	1	1	false	false	false	2000
 6701	"bam_loader_repos"	"create procedure bam.bam_loader_repos(bam_repos string, dbschema smallint)\nexternal name bam.bam_loader_repos;"	"bam"	1	2	true	false	false	6699
 6705	"bam_loader_files"	"create procedure bam.bam_loader_files(bam_files string, dbschema smallint)\nexternal name bam.bam_loader_files;"	"bam"	1	2	true	false	false	6699
 6709	"bam_loader_file"	"create procedure bam.bam_loader_file(bam_file string, dbschema smallint)\nexternal name bam.bam_loader_file;"	"bam"	1	2	true	false	false	6699
@@ -7409,7 +7152,7 @@ COPY 1370 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','
 6734	"seq_char"	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string)\nreturns char(1) external name bam.seq_char;"	"bam"	1	1	false	false	false	6699
 6741	"sam_export"	"create procedure bam.sam_export(output_path string)\nexternal name bam.sam_export;"	"bam"	1	2	true	false	false	6699
 6744	"bam_export"	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	"bam"	1	2	true	false	false	6699
-6814	"generate_series"	"-- This Source Code Form is subject to the terms of the Mozilla Public\n-- License, v. 2.0.  If a copy of the MPL was not distributed with this\n-- file, You can obtain one at http://mozilla.org/MPL/2.0/.\n--\n-- Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.\n\n-- (c) Author M.Kersten\n\ncreate function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
+6814	"generate_series"	"create function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 6819	"generate_series"	"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 6825	"generate_series"	"create function sys.generate_series(first smallint, last smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000
 6830	"generate_series"	"create function sys.generate_series(first smallint, last smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	"generator"	1	5	false	false	false	2000

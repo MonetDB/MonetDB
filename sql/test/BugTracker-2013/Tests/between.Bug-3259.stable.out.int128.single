@@ -44,7 +44,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 192 # length
+% 191 # length
 function user.s2_1():void;
     X_49:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom  treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",33);
     X_26 := bat.new(nil:oid,nil:str);

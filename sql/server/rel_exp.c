@@ -7,16 +7,72 @@
  */
 
 #include <monetdb_config.h>
-#include "sql_semantic.h"
-#include "rel_semantic.h"
+#include "sql_relation.h"
 #include "rel_exp.h"
-#include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
+
+comp_type 
+swap_compare( comp_type t )
+{
+	switch(t) {
+	case cmp_equal:
+		return cmp_equal;
+	case cmp_lt:
+		return cmp_gt;
+	case cmp_lte:
+		return cmp_gte;
+	case cmp_gte:
+		return cmp_lte;
+	case cmp_gt:
+		return cmp_lt;
+	case cmp_notequal:
+		return cmp_notequal;
+	default:
+		return cmp_equal;
+	}
+}
+
+comp_type 
+range2lcompare( int r )
+{
+	if (r&1) {
+		return cmp_gte;
+	} else {
+		return cmp_gt;
+	}
+}
+
+comp_type 
+range2rcompare( int r )
+{
+	if (r&2) {
+		return cmp_lte;
+	} else {
+		return cmp_lt;
+	}
+}
+
+int 
+compare2range( int l, int r )
+{
+	if (l == cmp_gt) {
+		if (r == cmp_lt)
+			return 0;
+		else if (r == cmp_lte)
+			return 2;
+	} else if (l == cmp_gte) {
+		if (r == cmp_lt)
+			return 1;
+		else if (r == cmp_lte)
+			return 3;
+	} 
+	return -1;
+}
 
 static sql_exp * 
 exp_create(sql_allocator *sa, int type ) 
@@ -418,6 +474,37 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 	if (intern)
 		set_intern(e);
 	return e;
+}
+
+sql_exp *
+exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old)
+{
+	sql_exp *ne = NULL;
+
+	if (!tname)
+		tname = old->rname;
+
+	if (!tname && old->type == e_column)
+		tname = old->l;
+
+	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne->p = prop_copy(sql->sa, old->p);
+		return ne;
+	} else if (!cname) {
+		char name[16], *nme;
+		nme = number2name(name, 16, ++sql->label);
+
+		exp_setname(sql->sa, old, nme, nme);
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+		ne->p = prop_copy(sql->sa, old->p);
+		return ne;
+	} else if (cname && !old->name) {
+		exp_setname(sql->sa, old, tname, cname);
+	}
+	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
+	ne->p = prop_copy(sql->sa, old->p);
+	return ne;
 }
 
 sql_exp *

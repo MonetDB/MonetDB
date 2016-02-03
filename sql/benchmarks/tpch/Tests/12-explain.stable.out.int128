@@ -53,9 +53,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 731 # length
+% 684 # length
 function user.s2_1(A0:str,A1:str,A2:bte,A3:bte,A4:str,A5:str,A6:bte,A7:bte,A8:str,A9:str,A10:date,A11:date,A12:int):void;
-    X_133:void := querylog.define("explain select\n\tl_shipmode,\n\tsum(case\n\t\twhen o_orderpriority = \\'1-URGENT\\'\n\t\t\tor o_orderpriority = \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as high_line_count,\n\tsum(case\n\t\twhen o_orderpriority <> \\'1-URGENT\\'\n\t\t\tand o_orderpriority <> \\'2-HIGH\\'\n\t\t\tthen 1\n\t\telse 0\n\tend) as low_line_count\nfrom\n\torders,\n\tlineitem\nwhere\n\to_orderkey = l_orderkey\n\tand l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n\tand l_commitdate < l_receiptdate\n\tand l_shipdate < l_commitdate\n\tand l_receiptdate >= date \\'1994-01-01\\'\n\tand l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n\tl_shipmode\norder by\n\tl_shipmode;","sequential_pipe",92);
+    X_133:void := querylog.define("explain select\n l_shipmode,\n sum(case\n when o_orderpriority = \\'1-URGENT\\'\n or o_orderpriority = \\'2-HIGH\\'\n then 1\n else 0\n end) as high_line_count,\n sum(case\n when o_orderpriority <> \\'1-URGENT\\'\n and o_orderpriority <> \\'2-HIGH\\'\n then 1\n else 0\n end) as low_line_count\nfrom\n orders,\n lineitem\nwhere\n o_orderkey = l_orderkey\n and l_shipmode in (\\'MAIL\\', \\'SHIP\\')\n and l_commitdate < l_receiptdate\n and l_shipdate < l_commitdate\n and l_receiptdate >= date \\'1994-01-01\\'\n and l_receiptdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n l_shipmode\norder by\n l_shipmode;","sequential_pipe",92);
     X_101 := bat.new(nil:oid,nil:str);
     X_109 := bat.append(X_101,"sys.lineitem");
     X_117 := bat.append(X_109,"sys.L1");

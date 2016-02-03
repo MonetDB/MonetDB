@@ -9,12 +9,6 @@
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
-int
-base_key( sql_base *b )
-{
-	return hash_key(b->name);
-}
-
 void
 cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 {
