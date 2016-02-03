@@ -267,7 +267,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(BAThdense(b));	/* assert void headed */
 	assert(b->torderidx == NULL);
 
-	switch (ATOMstorage(b->ttype)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -278,11 +278,11 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt:
 	case TYPE_dbl:
 		break;
-	case TYPE_void:
 	case TYPE_str:
+		/* TODO: support strings etc. */
+	case TYPE_void:
 	case TYPE_ptr:
 	default:
-		/* TODO: support strings, date, timestamps etc. */
 		BBPunfix(bid);
 		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 	}
