@@ -12,6 +12,7 @@
 
 //#define _SQL_OPTIMIZER_DEBUG
 
+sql5_export str optimizeQuery(Client c);
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
