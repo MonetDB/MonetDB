@@ -267,6 +267,8 @@ typedef enum operator_type {
 	(rel->subquery)
 #define set_subquery(rel) \
 	rel->subquery = 1
+#define reset_subquery(rel) \
+	rel->subquery = 0
 
 #define rel_is_ref(rel) 	(((sql_rel*)rel)->ref.refcnt > 1)
 

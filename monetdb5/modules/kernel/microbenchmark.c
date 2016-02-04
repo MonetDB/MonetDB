@@ -59,7 +59,7 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int * restrict) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, BUNfirst(b));
 
 	/* create BUNs with random distribution */
 	if (seed != int_nil)
@@ -129,7 +129,7 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int * restrict) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, BUNfirst(b));
 
 	/* create BUNs with uniform distribution */
         for (v = 0, i = 0; i < n; i++) {
@@ -202,7 +202,7 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int * restrict) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, BUNfirst(b));
 
 	/* create BUNs with skewed distribution */
 	for (i = 0; i < skewedSize; i++)
@@ -260,10 +260,12 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 
 	assert(sizeof(unsigned int) == sizeof(flt));
 
+#if SIZEOF_BUN > 4
 	if (n >= ((ulng) 1 << 32)) {
 		GDKerror("BATnormal: size must be less than 2^32 = "LLFMT, (lng) 1 << 32);
 		return GDK_FAIL;
 	}
+#endif
 	if (*size > (wrd)BUN_MAX) {
 		GDKerror("BATnormal: size must not exceed BUN_MAX");
 		return GDK_FAIL;
@@ -291,14 +293,14 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int * restrict) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, BUNfirst(b));
 
-	abs = (unsigned int *restrict) GDKmalloc(d * sizeof(unsigned int));
+	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
 	if (abs == NULL) {
 	        BBPreclaim(b);
 	        return GDK_FAIL;
 	}
-	rel = (flt *restrict) abs;
+	rel = (flt *) abs;
 
 	/* assert(0 <= *mean && *mean < *size); */
 
@@ -307,7 +309,7 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 		const dbl j_m = (dbl) j - m;
 		const dbl tmp = j_m * j_m / s_s_2;
 
-		rel[j] = pow(M_E, -tmp) / s_sqrt_2_pi;
+		rel[j] = (flt) (pow(M_E, -tmp) / s_sqrt_2_pi);
 		tot += rel[j];
 	}
 	/* just in case we get tot != 1 due to. e.g.,
@@ -321,7 +323,7 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 		r -= abs[j];
 	}
 	assert(((ulng) 1 << 32) - r > abs[m]);
-	abs[m] += r;
+	abs[m] += (unsigned int) r;
 
 	/* create BUNs with normal distribution */
 	for (j = 0, i = 0; i < n && j < d; i++) {

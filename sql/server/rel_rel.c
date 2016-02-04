@@ -1064,3 +1064,16 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 	}
 	return rel;
 }
+
+sql_table *
+rel_ddl_table_get(sql_rel *r)
+{
+	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
+		sql_exp *e = r->exps->t->data;
+		atom *a = e->l;
+
+		return a->data.val.pval;
+	}
+	return NULL;
+}
+
