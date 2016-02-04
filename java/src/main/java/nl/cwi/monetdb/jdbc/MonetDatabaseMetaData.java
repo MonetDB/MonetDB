@@ -46,12 +46,12 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Internal cache for 3 environment properties retrieved from the
+	 * Internal cache for 3 environment values retrieved from the
 	 * server, to avoid querying the server over and over again.
 	 * Once a value is read, it is kept in the private env_* variables for reuse.
 	 * We currently only need the env values of: current_user, monet_version and max_clients.
 	 */
-	private synchronized void getEnvProperties() {
+	private synchronized void getEnvValues() {
 		Statement st = null;
 		ResultSet rs = null;
 		try {
@@ -134,7 +134,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	@Override
 	public String getUserName() throws SQLException {
 		if (env_current_user == null)
-			getEnvProperties();
+			getEnvValues();
 		return env_current_user;
 	}
 
@@ -209,7 +209,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
 		if (env_monet_version == null)
-			getEnvProperties();
+			getEnvValues();
 		return env_monet_version;
 	}
 
@@ -1296,7 +1296,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	@Override
 	public int getMaxConnections() {
 		if (env_max_clients == null)
-			getEnvProperties();
+			getEnvValues();
 
 		int max_clients = 16;
 		if (env_max_clients != null) {
@@ -3265,7 +3265,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	@Override
 	public int getDatabaseMajorVersion() throws SQLException {
 		if (env_monet_version == null)
-			getEnvProperties();
+			getEnvValues();
 		int major = 0;
 		if (env_monet_version != null) {
 			try {
@@ -3287,7 +3287,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	@Override
 	public int getDatabaseMinorVersion() throws SQLException {
 		if (env_monet_version == null)
-			getEnvProperties();
+			getEnvValues();
 		int minor = 0;
 		if (env_monet_version != null) {
 			try {
