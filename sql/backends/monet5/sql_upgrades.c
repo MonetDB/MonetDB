@@ -1117,7 +1117,7 @@ sql_update_jul2015(Client c)
 }
 
 static str
-sql_update_dec2015(Client c)
+sql_update_dec2015(Client c, int olddb)
 {
 	size_t bufsize = 25000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
@@ -1146,7 +1146,7 @@ sql_update_dec2015(Client c)
 		str geomupgrade;
 		size_t gbufsize;
 
-		geomupgrade = (*geomsqlfix_get())();
+		geomupgrade = (*geomsqlfix_get())(olddb);
 		gbufsize = strlen(geomupgrade) + bufsize + 1;
 		if ((strlen(geomupgrade) <= 0) || 
 		    ((gbuf = GDKmalloc(gbufsize)) == NULL)) {
@@ -1243,10 +1243,17 @@ SQLupgrades(Client c, mvc *m)
 
 	/* If the point type exists, but the geometry type does not exist
 	 * any more at the "sys" schema (i.e., the first part of the upgrade has
-	 * been completed succesfully), then perform the upgrade */
+	 * been completed succesfully), then move on to the second part */
 	if (find_sql_type(mvc_bind_schema(m, "sys"), "point") && 
 	   (find_sql_type(mvc_bind_schema(m, "sys"), "geometry") == NULL)) {
-		if ((err = sql_update_dec2015(c)) !=NULL) {
+		if ((err = sql_update_dec2015(c, 1)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	} else if (geomsqlfix_get() != NULL && 
+		   sql_find_subtype(&tp, "geometry", 0, 0)) {
+		// the geom module is loaded but the database is not geom-enabled
+		if ((err = sql_update_dec2015(c, 0)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}

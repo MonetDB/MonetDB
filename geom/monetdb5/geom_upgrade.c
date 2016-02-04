@@ -113,7 +113,7 @@ N( char *buf, char *pre, char *schema, char *post)
 }
 
 int
-geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
+geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 {
 	/* Do the updates needed for the new geom module */
 	BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn, *g;
@@ -133,176 +133,179 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 	if ((ul = list_init(32)) == NULL)
 		return 0;
 
-	/* Update the catalog to use the new geometry types */
-	ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
-	cti = bat_iterator(ct);
-	cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
-	cdi = bat_iterator(cd);
-	cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
-	csi = bat_iterator(cs);
-	cn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_name")));
-	cni = bat_iterator(cn);
-	ctid = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_table_id")));
-	ctidi = bat_iterator(ctid);
-	ti = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_id")));
-	tn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_name")));
-	tni = bat_iterator(tn);
-	ts = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_schema_id")));
-	tsi = bat_iterator(ts);
-	si = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_id")));
-	sn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
-	sni = bat_iterator(sn);
+	if (olddb) {
+		/* Update the catalog to use the new geometry types */
+		ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+		cti = bat_iterator(ct);
+		cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
+		cdi = bat_iterator(cd);
+		cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
+		csi = bat_iterator(cs);
+		cn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_name")));
+		cni = bat_iterator(cn);
+		ctid = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_table_id")));
+		ctidi = bat_iterator(ctid);
+		ti = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_id")));
+		tn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_name")));
+		tni = bat_iterator(tn);
+		ts = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_schema_id")));
+		tsi = bat_iterator(ts);
+		si = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_id")));
+		sn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
+		sni = bat_iterator(sn);
 
-	cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
-	cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
-	cns = BATnew(TYPE_void, TYPE_int, BATcount(cs), PERSISTENT);
+		cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
+		cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
+		cns = BATnew(TYPE_void, TYPE_int, BATcount(cs), PERSISTENT);
 
-	if (!cnt || !cnd || !cns || !ct || !cd || !cs || 
-	    !cn || !ctid || !ti || !tn || !ts || !si || !sn)
-		return 0;
-	BATseqbase(cnt, ct->hseqbase);
-	BATseqbase(cnd, cd->hseqbase);
-	BATseqbase(cns, cs->hseqbase);
+		if (!cnt || !cnd || !cns || !ct || !cd || !cs || 
+		    !cn || !ctid || !ti || !tn || !ts || !si || !sn)
+			return 0;
+		BATseqbase(cnt, ct->hseqbase);
+		BATseqbase(cnd, cd->hseqbase);
+		BATseqbase(cns, cs->hseqbase);
 
-	for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
-		bte isGeom = 0;
-		char *type = BUNtail(cti, p);
-		int digits = *(int*)BUNtail(cdi, p);
-		int scale = *(int*)BUNtail(csi, p);
-		char* colname = BUNtail(cni, p);
-		
-		if (strcmp(toLower(type), "point") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbPoint;
-			scale = 0; // in the past we did not save the srid
-		} else if (strcmp(toLower(type), "linestring") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbLineString;
-			scale = 0;
-		} else if (strcmp(toLower(type), "curve") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbLineString;
-			scale = 0;
-		} else if (strcmp(toLower(type), "linearring") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbLinearRing;
-			scale = 0;
-		} else if (strcmp(toLower(type), "polygon") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbPolygon;
-			scale = 0;
-		} else if (strcmp(toLower(type), "surface") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbPolygon;
-			scale = 0;
-		} else if (strcmp(toLower(type), "multipoint") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbMultiPoint;
-			scale = 0;
-		} else if (strcmp(toLower(type), "multilinestring") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbMultiLineString;
-			scale = 0;
-		} else if (strcmp(toLower(type), "multicurve") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbMultiLineString;
-			scale = 0;
-		} else if (strcmp(toLower(type), "multipolygon") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbMultiPolygon;
-			scale = 0;
-		} else if (strcmp(toLower(type), "multisurface") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbMultiPolygon;
-			scale = 0;
-		} else if (strcmp(toLower(type), "geomcollection") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbGeometryCollection;
-			scale = 0;
-		} else if (strcmp(toLower(type), "geometrycollection") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = wkbGeometryCollection;
-			scale = 0;
-		}  else if (strcmp(toLower(type), "geometry") == 0) {
-			type = "geometry";
-			isGeom = 1;
-			digits = 0;
-			scale = 0;
-		} 
+		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
+			bte isGeom = 0;
+			char *type = BUNtail(cti, p);
+			int digits = *(int*)BUNtail(cdi, p);
+			int scale = *(int*)BUNtail(csi, p);
+			char* colname = BUNtail(cni, p);
+			
+			if (strcmp(toLower(type), "point") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbPoint;
+				scale = 0; // in the past we did not save the srid
+			} else if (strcmp(toLower(type), "linestring") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbLineString;
+				scale = 0;
+			} else if (strcmp(toLower(type), "curve") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbLineString;
+				scale = 0;
+			} else if (strcmp(toLower(type), "linearring") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbLinearRing;
+				scale = 0;
+			} else if (strcmp(toLower(type), "polygon") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "surface") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multipoint") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbMultiPoint;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multilinestring") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbMultiLineString;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multicurve") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbMultiLineString;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multipolygon") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbMultiPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "multisurface") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbMultiPolygon;
+				scale = 0;
+			} else if (strcmp(toLower(type), "geomcollection") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbGeometryCollection;
+				scale = 0;
+			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = wkbGeometryCollection;
+				scale = 0;
+			}  else if (strcmp(toLower(type), "geometry") == 0) {
+				type = "geometry";
+				isGeom = 1;
+				digits = 0;
+				scale = 0;
+			} 
 
-		BUNappend(cnt, type, TRUE);
-		BUNappend(cnd, &digits, TRUE);
-		BUNappend(cns, &scale, TRUE);
+			BUNappend(cnt, type, TRUE);
+			BUNappend(cnd, &digits, TRUE);
+			BUNappend(cns, &scale, TRUE);
 
-		/* The wkb struct has changed. Update the respective BATs */
-		if (isGeom) {
-			typedef struct wkb_old {int len; char data[1];} wkb_old;
-			BAT *gn;
-			BUN k,l;
-			int table_id, schema_id;
-			char *sn, *tblname;
+			/* The wkb struct has changed. Update the respective BATs */
+			if (isGeom) {
+				typedef struct wkb_old {int len; char data[1];} wkb_old;
+				BAT *gn;
+				BUN k,l;
+				int table_id, schema_id;
+				char *sn, *tblname;
 
-			table_id = *(int*)BUNtail(ctidi, p);
-			if ((k = BUNfnd(ti, &table_id)) == BUN_NONE)
-				return 0;
-			tblname = BUNtail(tni, k);
-			schema_id = *(int*)BUNtail(tsi, k);
-			if ((k = BUNfnd(si, &schema_id)) == BUN_NONE)
-				return 0;
-			sn = BUNtail(sni, k);
-			g = BATdescriptor((bat) logger_find_bat(lg, N(n, sn, tblname, colname)));
-			gi = bat_iterator(g);
-			gn = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(g), PERSISTENT);
-			if (!gn)
-				return 0;
-			BATseqbase(gn, g->hseqbase);
-			for(k=BUNfirst(g), l=BUNlast(g); k<l; k++) {
-				wkb_old *wo = (wkb_old*)BUNtail(gi, k);
-				wkb *wn;
-				if (wo->len == ~0) {
-					wn = GDKmalloc(sizeof(wkb));
-					wn->len = ~(int)0;
-					(wn->data)[0] = 0;
-				} else {
-					wn  = GDKmalloc(sizeof(wkb) - 1 + wo->len);
-					wn->len = wo->len;
-					memcpy(wn->data, wo->data, wn->len);
+				table_id = *(int*)BUNtail(ctidi, p);
+				if ((k = BUNfnd(ti, &table_id)) == BUN_NONE)
+					return 0;
+				tblname = BUNtail(tni, k);
+				schema_id = *(int*)BUNtail(tsi, k);
+				if ((k = BUNfnd(si, &schema_id)) == BUN_NONE)
+					return 0;
+				sn = BUNtail(sni, k);
+				g = BATdescriptor((bat) logger_find_bat(lg, N(n, sn, tblname, colname)));
+				gi = bat_iterator(g);
+				gn = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(g), PERSISTENT);
+				if (!gn)
+					return 0;
+				BATseqbase(gn, g->hseqbase);
+				for(k=BUNfirst(g), l=BUNlast(g); k<l; k++) {
+					wkb_old *wo = (wkb_old*)BUNtail(gi, k);
+					wkb *wn;
+					if (wo->len == ~0) {
+						wn = GDKmalloc(sizeof(wkb));
+						wn->len = ~(int)0;
+						(wn->data)[0] = 0;
+					} else {
+						wn  = GDKmalloc(sizeof(wkb) - 1 + wo->len);
+						wn->len = wo->len;
+						memcpy(wn->data, wo->data, wn->len);
+					}
+					wn->srid = 0;// we did not save the srid in the past
+					BUNappend(gn, wn, TRUE);
 				}
-				wn->srid = 0;// we did not save the srid in the past
-				BUNappend(gn, wn, TRUE);
+				if (list_add(&ul, g, gn, N(n, sn, tblname, colname)) == 0)
+					return 0;
 			}
-			if (list_add(&ul, g, gn, N(n, sn, tblname, colname)) == 0)
-				return 0;
 		}
+
+		if (!list_add(&ul, ct, cnt, N(n, NULL, s, "_columns_type")) ||
+		    !list_add(&ul, cd, cnd, N(n, NULL, s, "_columns_type_digits")) ||
+		    !list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale")))
+			return 0;
+
+		if (cn) BBPunfix(cn->batCacheid);
+		if (ctid) BBPunfix(ctid->batCacheid);
+		if (ti) BBPunfix(ti->batCacheid);
+		if (ts) BBPunfix(ts->batCacheid);
+		if (tn) BBPunfix(tn->batCacheid);
+		if (si) BBPunfix(si->batCacheid);
+		if (sn) BBPunfix(sn->batCacheid);
 	}
 
-	if (!list_add(&ul, ct, cnt, N(n, NULL, s, "_columns_type")) ||
-	    !list_add(&ul, cd, cnd, N(n, NULL, s, "_columns_type_digits")) ||
-	    !list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale")))
-		return 0;
-
-	if (cn) BBPunfix(cn->batCacheid);
-	if (ctid) BBPunfix(ctid->batCacheid);
-	if (ti) BBPunfix(ti->batCacheid);
-	if (ts) BBPunfix(ts->batCacheid);
-	if (tn) BBPunfix(tn->batCacheid);
-	if (si) BBPunfix(si->batCacheid);
-	if (sn) BBPunfix(sn->batCacheid);
-
-	/* Add the new geometrya type and update the mbr type */
+	/* If this is a new database add the geometry type and the mbr type */
+	/* If this is an old database add the new geometrya type and update the mbr type */
 	for (i = 0; i < 8; i++) {
 		if (!(tt[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nt[i])))))
 			return 0;
@@ -337,6 +340,26 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 		maxid = maxid < *(int*)BUNtail(tti[0], p) ? *(int*)BUNtail(tti[0], p) : maxid;
 	}
 
+	if (!olddb) {
+		val = ++maxid;
+		BUNappend(ttn[0], &val, TRUE);
+		BUNappend(ttn[1], "mbr", TRUE);
+		BUNappend(ttn[2], "mbr", TRUE);
+		val = 0; BUNappend(ttn[3], &val, TRUE);
+		val = 0; BUNappend(ttn[4], &val, TRUE);
+		val = 0; BUNappend(ttn[5], &val, TRUE);
+		val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
+		val = 0; BUNappend(ttn[7], &val, TRUE);
+		val = ++maxid;
+		BUNappend(ttn[0], &val, TRUE);
+		BUNappend(ttn[1], "wkb", TRUE);
+		BUNappend(ttn[2], "geometry", TRUE);
+		val = 0; BUNappend(ttn[3], &val, TRUE);
+		val = 0; BUNappend(ttn[4], &val, TRUE);
+		val = 0; BUNappend(ttn[5], &val, TRUE);
+		val = EC_GEOM; BUNappend(ttn[6], &val, TRUE);
+		val = 0; BUNappend(ttn[7], &val, TRUE);
+	}
 	val = ++maxid;
 	BUNappend(ttn[0], &val, TRUE);
 	BUNappend(ttn[1], "wkba", TRUE);
@@ -346,6 +369,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL)
 	val = 0; BUNappend(ttn[5], &val, TRUE);
 	val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
 	val = 0; BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
+
 
 	for (i = 0; i < 8; i++) 
 		if (!list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i])))
@@ -428,7 +452,7 @@ do {							\
 
 
 str
-geom_sql_upgrade(void)
+geom_sql_upgrade(int olddb)
 {
 	size_t bufsize = 4096000, pos = 0;
 	str buf;
@@ -437,60 +461,62 @@ geom_sql_upgrade(void)
 		return "";
 
 	/* drop old functions */
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mbr\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mbroverlaps\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"geomfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"pointfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"linefromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"polyfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mpointfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mlinefromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"mpolyfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"geomcollectionfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"polygonfromtext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"astext\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"x\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"y\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"point\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"dimension\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"geometrytypeid\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"srid\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"envelope\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"isempty\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"issimple\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"boundary\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"equals\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"disjoint\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"Intersect\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"touches\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"crosses\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"within\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop all function \"contains\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"overlaps\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"relate\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"area\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"length\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"distance\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"buffer\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"convexhull\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"intersection\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"Union\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"difference\";");
-	pos += snprintf(buf + pos, bufsize - pos, "drop function \"symdifference\";");
+	if (olddb) {
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"mbr\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"mbroverlaps\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"geomfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"pointfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"linefromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"polyfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"mpointfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"mlinefromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"mpolyfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"geomcollectionfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"polygonfromtext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"astext\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"x\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"y\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"point\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"dimension\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"geometrytypeid\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"srid\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"envelope\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"isempty\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"issimple\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"boundary\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"equals\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"disjoint\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"Intersect\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"touches\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"crosses\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"within\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop all function \"contains\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"overlaps\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"relate\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"area\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"length\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"distance\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"buffer\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"convexhull\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"intersection\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"Union\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"difference\";");
+		pos += snprintf(buf + pos, bufsize - pos, "drop function \"symdifference\";");
 
-	/* drop old types (but keep the geometry type) **/
-	/** pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Geometry;"); **/
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"point\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"curve\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"linestring\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"surface\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"polygon\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multipoint\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multicurve\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multilinestring\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multisurface\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"multipolygon\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop type \"geomcollection\";\n");
+		/* drop old types (but keep the geometry type) **/
+		/** pos += snprintf(buf + pos, bufsize - pos, "DROP TYPE Geometry;"); **/
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"point\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"curve\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"linestring\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"surface\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"polygon\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"multipoint\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"multicurve\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"multilinestring\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"multisurface\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"multipolygon\";\n");
+		pos += snprintf(buf + pos, bufsize - pos, "drop type \"geomcollection\";\n");
+	}
 
 	/* create the new geometry types */
 	pos += snprintf(buf + pos, bufsize - pos, "CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom.\"hasZ\";\n");

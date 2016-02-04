@@ -1316,43 +1316,46 @@ sqltypeinit( sql_allocator *sa)
 
 	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
 
-	GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
-	/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
-	*t++ = sql_create_type(sa, "GEOMETRYA", 0, SCALE_NONE, 0, EC_EXTERNAL, "wkba");
+	if (geomcatalogfix_get() != NULL) {
+		// the geom module is loaded 
+		GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
+		/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
+		*t++ = sql_create_type(sa, "GEOMETRYA", 0, SCALE_NONE, 0, EC_EXTERNAL, "wkba");
 
-	MBR = *t++ = sql_create_type(sa, "MBR", 0, SCALE_NONE, 0, EC_EXTERNAL, "mbr");
-	
-	/* mbr operator functions */
-	sql_create_func(sa, "mbr_overlap", "geom", "mbrOverlaps", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap", "geom", "mbrOverlaps", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_above", "geom", "mbrAbove", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_above", "geom", "mbrAbove", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_below", "geom", "mbrBelow", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_below", "geom", "mbrBelow", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_right", "geom", "mbrRight", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_right", "geom", "mbrRight", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_left", "geom", "mbrLeft", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_left", "geom", "mbrLeft", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_contains", "geom", "mbrContains", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_contains", "geom", "mbrContains", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_contained", "geom", "mbrContained", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_contained", "geom", "mbrContained", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_equal", "geom", "mbrEqual", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_equal", "geom", "mbrEqual", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", GEOM, GEOM, DBL, SCALE_FIX);
-	sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", MBR, MBR, DBL, SCALE_FIX);
-	sql_create_func(sa, "left_shift", "geom", "mbrLeft", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "left_shift", "geom", "mbrLeft", MBR, MBR, BIT, SCALE_FIX);
-	sql_create_func(sa, "right_shift", "geom", "mbrRight", GEOM, GEOM, BIT, SCALE_FIX);
-	sql_create_func(sa, "right_shift", "geom", "mbrRight", MBR, MBR, BIT, SCALE_FIX);
+		MBR = *t++ = sql_create_type(sa, "MBR", 0, SCALE_NONE, 0, EC_EXTERNAL, "mbr");
+		
+		/* mbr operator functions */
+		sql_create_func(sa, "mbr_overlap", "geom", "mbrOverlaps", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap", "geom", "mbrOverlaps", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_above", "geom", "mbrAbove", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_above", "geom", "mbrAbove", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_below", "geom", "mbrBelow", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_below", "geom", "mbrBelow", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_right", "geom", "mbrRight", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_right", "geom", "mbrRight", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_left", "geom", "mbrLeft", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_left", "geom", "mbrLeft", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_contains", "geom", "mbrContains", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_contains", "geom", "mbrContains", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_contained", "geom", "mbrContained", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_contained", "geom", "mbrContained", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_equal", "geom", "mbrEqual", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_equal", "geom", "mbrEqual", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", GEOM, GEOM, DBL, SCALE_FIX);
+		sql_create_func(sa, "mbr_distance", "geom", "mbrDistance", MBR, MBR, DBL, SCALE_FIX);
+		sql_create_func(sa, "left_shift", "geom", "mbrLeft", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "left_shift", "geom", "mbrLeft", MBR, MBR, BIT, SCALE_FIX);
+		sql_create_func(sa, "right_shift", "geom", "mbrRight", GEOM, GEOM, BIT, SCALE_FIX);
+		sql_create_func(sa, "right_shift", "geom", "mbrRight", MBR, MBR, BIT, SCALE_FIX);
+	}
 
 	end = t;
 	*t = NULL;
