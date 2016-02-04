@@ -3548,9 +3548,43 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Retrieves a description of the given catalog's system or user
 	 * function parameters and return type.
 	 *
-	 * We don't implement this, because it is too much work, and left as
-	 * an SQL exercise for the future.  This function is here just for
-	 * JDBC4.
+	 *
+	 * Only descriptions matching the schema, function and parameter name criteria are returned.
+	 * They are ordered by FUNCTION_CAT, FUNCTION_SCHEM, FUNCTION_NAME and SPECIFIC_ NAME.
+	 * Within this, the return value, if any, is first. Next are the parameter descriptions in call order.
+	 * The column descriptions follow in column number order.
+	 *
+	 * 1.  FUNCTION_CAT String => function catalog (may be null)
+	 * 2.  FUNCTION_SCHEM String => function schema (may be null)
+	 * 3.  FUNCTION_NAME String => function name. This is the name used to invoke the function
+	 * 4.   COLUMN_NAME String => column/parameter name
+	 * 5.   COLUMN_TYPE Short => kind of column/parameter:
+	 *         functionColumnUnknown - nobody knows
+	 *         functionColumnIn - IN parameter
+	 *         functionColumnInOut - INOUT parameter
+	 *         functionColumnOut - OUT parameter
+	 *         functionColumnReturn - function return value
+	 *         functionColumnResult - Indicates that the parameter or column is a column in the ResultSet 
+	 * 6.   DATA_TYPE int => SQL type from java.sql.Types
+	 * 7.   TYPE_NAME String => SQL type name, for a UDT type the type name is fully qualified
+	 * 8.   PRECISION int => precision
+	 * 9.   LENGTH int => length in bytes of data
+	 * 10.  SCALE short => scale - null is returned for data types where SCALE is not applicable.
+	 * 11.  RADIX short => radix
+	 * 12.  NULLABLE short => can it contain NULL.
+	 *         functionNoNulls - does not allow NULL values
+	 *         functionNullable - allows NULL values
+	 *         functionNullableUnknown - nullability unknown 
+	 * 13.  REMARKS String => comment describing column/parameter
+	 * 14.  CHAR_OCTET_LENGTH int => the maximum length of binary and character based parameters or columns. For any other datatype the returned value is a NULL
+	 * 15.  ORDINAL_POSITION int => the ordinal position, starting from 1, for the input and output parameters.
+	 * 	   A value of 0 is returned if this row describes the function's return value. For result set columns, it is the ordinal position of the column in the result set starting from 1.
+	 * 16.  IS_NULLABLE String => ISO rules are used to determine the nullability for a parameter or column.
+	 *         YES --- if the parameter or column can include NULLs
+	 *         NO --- if the parameter or column cannot include NULLs
+	 *         empty string --- if the nullability for the parameter or column is unknown 
+	 * 17.  SPECIFIC_NAME String => the name which uniquely identifies this function within its schema.
+	 * 	  This is a user specified, or DBMS generated, name that may be different then the FUNCTION_NAME for example with overload functions 
 	 *
 	 * @param catalog a catalog name; must match the catalog name as
 	 *        it is stored in the database; "" retrieves those without a
@@ -3576,7 +3610,42 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			String columnNamePattern)
 		throws SQLException
 	{
-		throw new SQLException("getFunctionColumns(String, String, String, String) is not implemented", "0A000");
+		StringBuilder query = new StringBuilder(2600);
+		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"FUNCTION_CAT\", ")
+			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
+			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
+			.append("\"args\".\"name\" AS \"COLUMN_NAME\", ")
+			.append("CAST(CASE \"args\".\"inout\"")
+				.append(" WHEN 0 THEN (CASE \"args\".\"number\" WHEN 0 THEN ").append(DatabaseMetaData.functionReturn).append(" ELSE ").append(DatabaseMetaData.functionColumnOut).append(" END)")
+				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionColumnIn)
+				.append(" ELSE ").append(DatabaseMetaData.functionColumnUnknown).append(" END AS smallint) AS \"COLUMN_TYPE\", ")
+			.append("CAST(").append(MonetDriver.getSQLTypeMap("\"args\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", ")
+			.append("\"args\".\"type\" AS \"TYPE_NAME\", ")
+			.append("CASE \"args\".\"type\" WHEN 'tinyint' THEN 3 WHEN 'smallint' THEN 5 WHEN 'int' THEN 10 WHEN 'bigint' THEN 19 WHEN 'hugeint' THEN 38 WHEN 'oid' THEN 19 WHEN 'wrd' THEN 19 ELSE \"args\".\"type_digits\" END AS \"PRECISION\", ")
+			.append("CASE \"args\".\"type\" WHEN 'tinyint' THEN 1 WHEN 'smallint' THEN 2 WHEN 'int' THEN 4 WHEN 'bigint' THEN 8 WHEN 'hugeint' THEN 16 WHEN 'oid' THEN 8 WHEN 'wrd' THEN 8 ELSE \"args\".\"type_digits\" END AS \"LENGTH\", ")
+			.append("CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric','time','timetz','timestamp','timestamptz','sec_interval') THEN \"args\".\"type_scale\" ELSE NULL END AS smallint) AS \"SCALE\", ")
+			.append("CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric') THEN 10 WHEN \"args\".\"type\" IN ('real','float','double') THEN 2 ELSE NULL END AS smallint) AS \"RADIX\", ")
+			.append("CAST(").append(DatabaseMetaData.functionNullableUnknown).append(" AS smallint) AS \"IS_NULLABLE\", ")
+			.append("CAST(null as char(1)) AS \"REMARKS\", ")
+			.append("CASE WHEN \"args\".\"type\" IN ('char','varchar','binary','varbinary') THEN \"args\".\"type_digits\" ELSE NULL END AS \"CHAR_OCTET_LENGTH\", ")
+			.append("\"args\".\"number\" AS \"ORDINAL_POSITION\", ")
+			.append("CAST('' as varchar(3)) AS \"IS_NULLABLE\", ")
+			.append("CAST(null as char(1)) AS \"SPECIFIC_NAME\" ")
+		.append("FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" ")
+		.append("WHERE \"args\".\"func_id\" = \"functions\".\"id\" ")
+		.append("AND \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		// exclude procedures (type = 2). Those need to be returned via getProcedures()
+		.append("AND \"functions\".\"type\" <> 2");
+
+		if (schemaPattern != null) {
+			query.append(" AND \"schemas\".\"name\" ").append(composeMatchPart(schemaPattern));
+		}
+		if (functionNamePattern != null) {
+			query.append(" AND \"functions\".\"name\" ").append(composeMatchPart(functionNamePattern));
+		}
+		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"ORDINAL_POSITION\"");
+
+		return getStmt().executeQuery(query.toString());
 	}
 
 	//== 1.7 methods (JDBC 4.1)
