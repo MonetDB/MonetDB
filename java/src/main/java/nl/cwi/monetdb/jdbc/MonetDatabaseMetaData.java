@@ -10,7 +10,6 @@ package nl.cwi.monetdb.jdbc;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.Driver;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -655,16 +654,16 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 	/**
 	 * Are expressions in "ORDER BY" lists supported?
-	 *
 	 * e.g. select * from t order by a + b;
 	 *
-	 * MonetDB does not support this (yet?)
+	 * MonetDB supports this, try:
+	 *  select (radix * 1000) + digits as comp, * from types order by (radix * 1000) + digits, -id;
 	 *
 	 * @return true if so
 	 */
 	@Override
 	public boolean supportsExpressionsInOrderBy() {
-		return false;
+		return true;
 	}
 
 	/**
