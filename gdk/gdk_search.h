@@ -205,6 +205,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #ifdef HAVE_HGE
 #define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
 #endif
+#define HASHfnd_flt(x,y,z)	HASHfnd_TYPE(x,y,z,flt)
+#define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
 
 /*
  * A new entry is added with HASHins using the BAT, the BUN index, and
