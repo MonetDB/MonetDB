@@ -70,6 +70,17 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		BATsetcount(b, 1);
 		BATseqbase(b, 0);
 		BATsettrivprop(b);
+		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
+		if (!t->order) {
+			oid zero = 0;
+			BAT *o = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
+			BUNappend(o, &zero, FALSE);
+			BATsetcount(o, 1);
+			BATseqbase(o, 0);
+			BATsettrivprop(o);
+			t->order = o->batCacheid;
+			bat_incref(t->order);
+		}
 	}
 	c->b = b->batCacheid;
 	bat_incref(c->b);
