@@ -225,12 +225,6 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		}							\
 	} while (0)
 
-#define HASHins_oid(h,i,v)			\
-	do {					\
-		BUN _c = hash_oid(h,v);		\
-		HASHputall(h,i,_c);		\
-	} while (0)
-
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
