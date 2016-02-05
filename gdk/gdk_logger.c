@@ -1923,7 +1923,6 @@ logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
 {
 	logger *lg;
-
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
 	if (!lg)
 			return NULL;
@@ -2514,8 +2513,9 @@ static char zeros[DBLKSZ] = { 0 };
 static gdk_return
 pre_allocate(logger *lg)
 {
+	// FIXME: this causes serious issues on Windows at least with MinGW
+#ifndef WIN32
 	lng p;
-
 	if (mnstr_fgetpos(lg->log, &p) != 0)
 		return GDK_FAIL;
 	if (p + DBLKSZ > lg->end) {
@@ -2540,6 +2540,9 @@ pre_allocate(logger *lg)
 		if (mnstr_fsetpos(lg->log, s) < 0)
 			return GDK_FAIL;
 	}
+#else
+	(void) lg;
+#endif
 	return GDK_SUCCEED;
 }
 
