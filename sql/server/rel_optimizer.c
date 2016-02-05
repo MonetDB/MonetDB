@@ -5380,7 +5380,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 }
 
 static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
-static sql_rel * rel_dce(mvc *sql, sql_rel *rel);
 
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel) 
@@ -5654,7 +5653,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	rel = rel_add_projects(sql, rel);
@@ -6908,10 +6907,12 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					int skip = 0, j;
 
 					/* do not include empty partitions */
+					/*
 					if ((nrel || nt->next) && 
 					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
+					*/
 
 					MT_lock_set(&prel->exps->ht_lock);
 					prel->exps->ht = NULL;
@@ -7332,48 +7333,6 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 	}
 	assert(0);
 	return rel;
-}
-
-static sql_rel *
-_rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
-{
-	list *exps = rel_projections(sql, rel, NULL, 1, 1);
-	sql_exp *e;
-
-	if (list_length(exps) == 0) {
-		*exp = NULL;
-		return rel;
-	}
-	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-	//e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
-	e = rel->exps->h->data;
-	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
-	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-	*exp = exp_label(sql->sa, e, ++sql->label);
-	rel_project_add_exp(sql, rel, e);
-	return rel;
-}
-
-static sql_exp *
-exps_find_identity(list *exps) 
-{
-	node *n;
-
-	for (n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (is_identity(e, NULL))
-			return e;
-	}
-	return NULL;
-}
-
-static sql_rel *
-rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
-{
-	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps)) != NULL) 
-		return rel;
-	return _rel_add_identity(sql, rel, exp);
 }
 
 static int
