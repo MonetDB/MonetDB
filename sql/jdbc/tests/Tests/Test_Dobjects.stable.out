@@ -30,24 +30,11 @@ Ready.
 
 Resultset with 1 columns
 TABLE_CAT	
-	
-Resultset with 3 columns
-TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
-bam	null	null	
-json	null	null	
-profiler	null	null	
-sys	null	null	
-tmp	null	null	
 Resultset with 3 columns
 TABLE_SCHEM	TABLE_CATALOG	TABLE_CAT	
 sys	null	null	
 Resultset with 10 columns
 TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS	TYPE_CAT	TYPE_SCHEM	TYPE_NAME	SELF_REFERENCING_COL_NAME	REF_GENERATION	
-null	bam	export	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	bam	files	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	bam	pg	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	bam	rg	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	bam	sq	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 null	sys	_columns	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 null	sys	_tables	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 null	sys	args	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
@@ -76,12 +63,6 @@ null	sys	table_types	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM
 null	sys	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 null	sys	types	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 null	sys	user_role	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	tmp	_columns	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	tmp	_tables	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	tmp	idxs	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	tmp	keys	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	tmp	objects	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
-null	tmp	triggers	SYSTEM TABLE	null	null	null	null	rowid	SYSTEM	
 null	sys	columns	SYSTEM VIEW	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	null	null	null	rowid	SYSTEM	
 null	sys	environment	SYSTEM VIEW	create view sys.environment as select * from sys.environment();	null	null	null	rowid	SYSTEM	
 null	sys	optimizers	SYSTEM VIEW	create view sys.optimizers as select * from sys.optimizers();	null	null	null	rowid	SYSTEM	
