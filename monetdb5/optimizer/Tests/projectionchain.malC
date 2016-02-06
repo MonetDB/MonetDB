@@ -48,6 +48,16 @@ l := algebra.projection(f,k);
 io.print(g);
 io.print(l);
 
+# recognize common heads
+e1 := algebra.projection(a,b);
+e2 := algebra.projection(e1,b);
+f1 := algebra.projection(a,b);
+f2 := algebra.projection(f1,b);
+g1 := algebra.projection(e2,d);
+l1 := algebra.projection(f2,k);
+#io.print(g1);
+#io.print(l1);
+
 h := algebra.projectionpath(c,d);
 io.print(h);
 
