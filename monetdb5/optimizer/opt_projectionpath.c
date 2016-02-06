@@ -11,41 +11,27 @@
  * The algorithm is quadratic in the number of paths considered.
  */
 #include "monetdb_config.h"
+#include "opt_deadcode.h"
 #include "opt_projectionpath.h"
 
 //#undef OPTDEBUGprojectionpath 
 //#define OPTDEBUGprojectionpath  if(1)
 
+#define LOOKAHEAD 500   /* limit the lookahead for candidates */
 /* locate common prefixes  in projection lists */
 static int
 OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 {
 	int i, j,  k, match, actions=0;
-	InstrPtr p,q,r,*old, *projections;
-	int limit, ptop = 0, pidx=0 ;
-
-	projections = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * mb->stop);
-	if( projections == 0)
-		return 0;
+	InstrPtr p,q,r,*old;
+	int limit;
 
 	old= mb->stmt;
 	limit= mb->stop;
-	if ( newMalBlkStmt(mb,mb->ssize) < 0){
-		GDKfree(projections);
+	if ( newMalBlkStmt(mb,mb->ssize) < 0)
 		return 0;
-	}
-	// Collect all candidate projections
-	for( i = 0; i < limit; i++){
-		p= old[i];
-		assert(p);
-		if ( getFunctionId(p) != projectionpathRef || p->argc < prefixlength) {
-			pushInstruction(mb,p);
-			continue;
-		}
-		projections[ptop++] = p;
-	}
 	OPTDEBUGprojectionpath 
-		mnstr_printf(cntxt->fdout,"#projectionpath find common prefix prefixlength %d candidates %d \n", prefixlength, ptop);
+		mnstr_printf(cntxt->fdout,"#projectionpath find common prefix prefixlength %d\n", prefixlength);
  
 	for( i = 0; i < limit; i++){
 		p= old[i];
@@ -54,12 +40,15 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			pushInstruction(mb,p);
 			continue;
 		}
-		 (void)pidx++; // next entry in candidate list
+		OPTDEBUGprojectionpath {
+			mnstr_printf(cntxt->fdout,"#projectionpath candidate prefix pc %d \n", i);
+			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+		}
 		/* we fixed a projection path of the target prefixlength
 		 * Search now the remainder for at least one case where it
 		 * has a common prefix of prefixlength 
 		 */
-		for(match = 0,  j= i+1; j < limit; j++) {
+		for(match = 0,  j= i+1; j < limit && j < i + LOOKAHEAD; j++) {
 			q= old[j];
 			if ( getFunctionId(q) != projectionpathRef || q->argc < prefixlength) 
 				continue;
@@ -74,7 +63,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			 * Inject the prefex projection path and replace all use cases
 			 */
 			OPTDEBUGprojectionpath {
-				mnstr_printf(cntxt->fdout,"#projectionpath found common prefix prefixlength %d \n", match);
+				mnstr_printf(cntxt->fdout,"#projectionpath found common prefix pc %d \n", j);
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 			}
 			/* create the factored out prefix projection */
@@ -127,7 +116,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 					delArgument(p, p->retc + 1);
 			}
 			/* Finally check if we already have this prefix operation then an alias is sufficient 
-			for( jj= i-1; jj > 0; jj--) {
+			for( jj= i-1; jj > 0 && jj > i - LOOKAHEAD; jj--) {
 				q= old[jj];
 				if ( getFunctionId(q) != getFunctionId(r) || q->argc != r->argc) 
 					continue;
@@ -152,7 +141,8 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 		mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
 		if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 	}
-	GDKfree(projections);
+	if( actions)
+		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
 	return actions;
 }
 
@@ -192,10 +182,12 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	/*
 	 * Count the variable re-use  used as arguments first.
+	 * A pass operation is not a real re-use
 	 */
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		for(j=p->retc; j<p->argc; j++)
+		if( ! (getModuleId(p) == languageRef && getFunctionId(p)== passRef))
 			varcnt[getArg(p,j)]++;
 	}
 
@@ -216,16 +208,17 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			}
 			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){
-				r= getInstrPtr(mb,pc[getArg(p,j)]);
-				if (r && varcnt[getArg(p,j)] > 1 ){
-					/* inject the complete sub-path */
-					OPTDEBUGprojectionpath {
-						mnstr_printf(cntxt->fdout,"#inject ");
-						printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
-					}
+				if (pc[getArg(p,j)] )
+					r= getInstrPtr(mb,pc[getArg(p,j)]);
+				else r = 0;
+				if (r && varcnt[getArg(p,j)] > 1 )
 					r = 0;
-				}
 				
+				/* inject the complete sub-path */
+				OPTDEBUGprojectionpath if( r) {
+					mnstr_printf(cntxt->fdout,"#inject ");
+					printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
+				}
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
@@ -233,11 +226,6 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					} else 
 						q = pushArgument(mb,q,getArg(p,j));
 				}
-			}
-			OPTDEBUGprojectionpath {
-				chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
-				mnstr_printf(cntxt->fdout,"#new [[left]fetch]projectionpath instruction\n");
-				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}
 			if(q->argc<= p->argc){
 				/* no change */
@@ -274,10 +262,12 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	wrapup:
 		pushInstruction(mb,p);
 		for(j=0; j< p->retc; j++)
+		if( getModuleId(p)== algebraRef && ( getFunctionId(p)== projectionRef  || getFunctionId(p)== projectionpathRef) ){
 			pc[getArg(p,j)]= mb->stop-1;
-		OPTDEBUGprojectionpath {
-			mnstr_printf(cntxt->fdout,"#keep ");
-			printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+			OPTDEBUGprojectionpath {
+				mnstr_printf(cntxt->fdout,"#keep ");
+				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+			}
 		}
 	}
 	OPTDEBUGprojectionpath 
@@ -294,8 +284,12 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	 * There may be cases where there is a common prefix used multiple times.
 	 * There are located and removed in a few scans over the plan
 	 */
-	for( ; maxprefixlength > 2; maxprefixlength--)
-		actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
+	if( maxprefixlength > 3){
+		 /* Before searching the prefix, we should remove all non-used instructions.  */
+		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
+		for( ; maxprefixlength > 2; maxprefixlength--)
+			actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
+	}
 	OPTDEBUGprojectionpath {
 		mnstr_printf(cntxt->fdout,"#projectionpath optimizer result \n");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
