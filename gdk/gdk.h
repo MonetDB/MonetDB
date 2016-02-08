@@ -870,7 +870,7 @@ typedef struct {
 	 varsized:1,		/* varsized (1) or fixedsized (0) */
 	 key:2,			/* duplicates allowed? */
 	 dense:1,		/* OID only: only consecutive values */
-	 nonil:1,		/* nonil isn't propchecked yet */
+	 nonil:1,		/* there are no nils in the column */
 	 nil:1,			/* there is a nil in the column */
 	 sorted:1,		/* column is sorted in ascending order */
 	 revsorted:1;		/* column is sorted in descending order */

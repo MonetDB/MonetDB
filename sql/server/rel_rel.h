@@ -70,4 +70,5 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexp
 
 extern sql_table *rel_ddl_table_get(sql_rel *r);
 
+extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 #endif /* _REL_REL_H_ */

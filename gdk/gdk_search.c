@@ -467,24 +467,16 @@ BAThash(BAT *b, BUN masksize)
 			case TYPE_sht:
 				starthash(sht);
 				break;
-			case TYPE_int:
 			case TYPE_flt:
-#if SIZEOF_OID == SIZEOF_INT
-			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
+				starthash(flt);
+				break;
+			case TYPE_int:
 				starthash(int);
 				break;
 			case TYPE_dbl:
+				starthash(dbl);
+				break;
 			case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				starthash(lng);
 				break;
 #ifdef HAVE_HGE
@@ -517,23 +509,15 @@ BAThash(BAT *b, BUN masksize)
 			finishhash(sht);
 			break;
 		case TYPE_int:
-		case TYPE_flt:
-#if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			finishhash(int);
 			break;
+		case TYPE_flt:
+			finishhash(flt);
+			break;
 		case TYPE_dbl:
+			finishhash(dbl);
+			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			finishhash(lng);
 			break;
 #ifdef HAVE_HGE

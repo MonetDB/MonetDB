@@ -1077,3 +1077,43 @@ rel_ddl_table_get(sql_rel *r)
 	return NULL;
 }
 
+static sql_exp *
+exps_find_identity(list *exps) 
+{
+	node *n;
+
+	for (n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (is_identity(e, NULL))
+			return e;
+	}
+	return NULL;
+}
+
+static sql_rel *
+_rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
+{
+	list *exps = rel_projections(sql, rel, NULL, 1, 1);
+	sql_exp *e;
+
+	if (list_length(exps) == 0) {
+		*exp = NULL;
+		return rel;
+	}
+	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+	e = rel->exps->h->data;
+	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
+	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+	*exp = exp_label(sql->sa, e, ++sql->label);
+	rel_project_add_exp(sql, rel, e);
+	return rel;
+}
+
+sql_rel *
+rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
+{
+	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps)) != NULL) 
+		return rel;
+	return _rel_add_identity(sql, rel, exp);
+}
