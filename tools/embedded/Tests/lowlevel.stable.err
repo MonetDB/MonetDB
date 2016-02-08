@@ -30,6 +30,8 @@ stderr of test 'lowlevel` in directory 'tools/embedded` itself:
 # 10:20:15 >  "R" "--vanilla" "--slave" "--args" "36499"
 # 10:20:15 >  
 
+Warning message:
+In dir.create(dir, recursive = T) : '/dev/null' already exists
 
 # 10:20:21 >  
 # 10:20:21 >  "Done."
