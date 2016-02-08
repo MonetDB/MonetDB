@@ -1,6 +1,6 @@
 monetdb.server.start <-
   function( bat.file ){
-    
+    .Deprecated("Consider using MonetDBLite")
     if ( .Platform$OS.type == "unix" ) {
       if( !file.exists( bat.file ) ) stop( paste( bat.file , "does not exist. Run monetdb.server.setup() to create a batch file." ) )
       
@@ -113,7 +113,7 @@ monetdb.server.setup <-
     # cannot be accessed at the same time
     dbport = 50000
   ){
-
+   .Deprecated("Consider using MonetDBLite")
     # switch all slashes to match windows
     monetdb.program.path <- normalizePath(getOption("monetdb.programpath.override", monetdb.program.path), mustWork = FALSE)
     # remove trailing slash from paths, otherwise the server won't start
@@ -238,6 +238,7 @@ monetdb.server.getpid <- function (con) {
 
 # this is somewhat evil, no admin rights required to kill server. Even works on closed connections.
 monetdb.server.shutdown <- function(con) {
+  .Deprecated("Consider using MonetDBLite")
   stopifnot(inherits(con, "MonetDBConnection"))
   # reconnect with MAL scenario
   newparms <- con@connenv$params
