@@ -52,7 +52,7 @@ winredist/*.cpl
 /testing/
 /geom/
 /NT/
-/buildtools/conf/ltmain.sh
-/buildtools/conf/libtool.m4
+/buildtools/autogen/
+/buildtools/conf/banner.bmp
 *.mal
 *.sql
