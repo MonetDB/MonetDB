@@ -2208,6 +2208,11 @@ if test "x$enable_embedded" = xno; then
 else
 	AC_MSG_WARN([Not requiring libxml2 in embedded configuration])
 fi
+if test x"$have_libxml2" = x"yes" ; then
+	AC_DEFINE(HAVE_LIBXML, 1, [Define if you have the xml library])
+fi
+AM_CONDITIONAL(HAVE_LIBXML, test x"$have_liblxml2" != xno)
+
 
 PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
 if test x"$have_curl" = x"yes" ; then
