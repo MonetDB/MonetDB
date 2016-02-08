@@ -30,47 +30,22 @@
 #define BAT_TO_REALSXP(bat,tpe,retsxp,memcopy)						\
 	BAT_TO_SXP(bat,tpe,retsxp,NEW_NUMERIC,NUMERIC_POINTER,double,NA_REAL,memcopy)\
 
-
-#define SCALAR_TO_INTSXP(tpe,retsxp)					\
-	do {												\
-		tpe v;											\
-		retsxp = PROTECT(NEW_INTEGER(1));				\
-		v = *getArgReference_##tpe(stk,pci,i);			\
-		if ( v == tpe##_nil)							\
-			INTEGER_POINTER(retsxp)[0] = 	NA_INTEGER; \
-		else											\
-			INTEGER_POINTER(retsxp)[0] = 	(int)v;		\
-	} while (0)
-
-#define SCALAR_TO_REALSXP(tpe,retsxp)                   \
-	do {												\
-		tpe v;											\
-		retsxp = PROTECT(NEW_NUMERIC(1));				\
-		v = * getArgReference_##tpe(stk,pci,i);			\
-		if ( v == tpe##_nil)							\
-			NUMERIC_POINTER(retsxp)[0] = 	NA_REAL;	\
-		else											\
-			NUMERIC_POINTER(retsxp)[0] = 	(double)v;	\
-	} while (0)
-
 #define SXP_TO_BAT(tpe,access_fun,na_check)								\
 	do {																\
-		tpe *p, prev = tpe##_nil; int j;								\
+		tpe *p, prev = tpe##_nil; size_t j;								\
 		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
 		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
-		b->tsorted = 1; b->trevsorted = 1;								\
+		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
 		p = (tpe*) Tloc(b, BUNfirst(b));								\
-		for( j =0; j< (int) cnt; j++, p++){								\
-			*p = (tpe) access_fun(s)[j];							\
+		for( j = 0; j < cnt; j++, p++){								    \
+			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
 			if (j > 0){													\
 				if ( *p > prev && b->trevsorted){						\
 					b->trevsorted = 0;									\
-					if (*p != prev +1) b->tdense = 0;					\
 				} else													\
 					if ( *p < prev && b->tsorted){						\
 						b->tsorted = 0;									\
-						b->tdense = 0;									\
 					}													\
 			}															\
 			prev = *p;													\
@@ -160,7 +135,7 @@ static SEXP bat_to_sexp(BAT* b) {
 
 static BAT* sexp_to_bat(SEXP s, int type) {
 	BAT* b = NULL;
-	BUN cnt = LENGTH(s);
+	size_t cnt = LENGTH(s);
 	switch (type) {
 	case TYPE_int: {
 		if (!IS_INTEGER(s)) {
@@ -213,7 +188,6 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		b->tkey = 0;
 		b->tsorted = 0;
 		b->trevsorted = 0;
-		b->tdense = 1;
 		/* get levels once, since this is a function call */
 		levels = GET_LEVELS(s);
 

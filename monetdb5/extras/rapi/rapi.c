@@ -399,7 +399,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// collect the return values
 	for (i = 0; i < pci->retc; i++) {
 		SEXP ret_col = VECTOR_ELT(retval, i);
-		int bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
+		int bat_type = getColumnType(getArgType(mb,pci,i));
 		if (bat_type == TYPE_any || bat_type == TYPE_void) {
 			getArgType(mb,pci,i) = bat_type;
 			msg = createException(MAL, "rapi.eval",
@@ -418,8 +418,9 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		if (isaBatType(getArgType(mb,pci,i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 		} else { // single value return, only for non-grouped aggregations
+			BATiter li = bat_iterator(b);
 			VALinit(&stk->stk[pci->argv[i]], bat_type,
-					Tloc(b, BUNfirst(b)));
+					BUNtail(li, 0)); // TODO BUNtail here
 		}
 		msg = MAL_SUCCEED;
 	}

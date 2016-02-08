@@ -30,19 +30,19 @@ stderr of test 'rapi09` in directory 'sql/backends/monet5` itself:
 # 11:20:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14205" "--port=36531"
 # 11:20:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
+MAPI  = (monetdb) /var/tmp/mtest-78330/.s.monetdb.30467
 QUERY = SELECT * FROM shouldbeint();
-ERROR = !wrong R column type for column 0, expected INTeger, got REAL.
-MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
+ERROR = !Failed to convert column 0
+MAPI  = (monetdb) /var/tmp/mtest-78330/.s.monetdb.30467
 QUERY = SELECT * FROM throwerror();
 ERROR = !Error running R expression: Error in (function() { : goodbye cruel world Calls: as.data.frame -> <Anonymous> 
-MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
+MAPI  = (monetdb) /var/tmp/mtest-78330/.s.monetdb.30467
 QUERY = SELECT * FROM suicide();
 ERROR = !Error running R expression: Error in quit(save = "no") :    We do not want to call q(uit), it would exit MonetDB, too. You probably want to exit the R context, so I am calling stop() instead. Calls: as.data.frame -> <Anonymous> -> quit 
-MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
+MAPI  = (monetdb) /var/tmp/mtest-78330/.s.monetdb.30467
 QUERY = SELECT * FROM suicide2();
 ERROR = !Error running R expression: Error in base::quit(save = "no") :    We do not want to call q(uit), it would exit MonetDB, too. You probably want to exit the R context, so I am calling stop() instead. Calls: as.data.frame -> <Anonymous> -> <Anonymous> 
-MAPI  = (monetdb) /var/tmp/mtest-14205/.s.monetdb.36531
+MAPI  = (monetdb) /var/tmp/mtest-78330/.s.monetdb.30467
 QUERY = SELECT * FROM suicide3();
 ERROR = !Error running R expression: Error in .Internal(quit("no", 0, F)) :    there is no .Internal function 'quit' Calls: as.data.frame -> <Anonymous> 
 
