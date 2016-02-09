@@ -41,16 +41,16 @@
 			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
 			if (j > 0){													\
-				if ( *p > prev && b->trevsorted){						\
+				if (*p > prev && b->trevsorted){						\
 					b->trevsorted = 0;									\
 				} else													\
-					if ( *p < prev && b->tsorted){						\
+					if (*p < prev && b->tsorted){						\
 						b->tsorted = 0;									\
 					}													\
 			}															\
 			prev = *p;													\
 		}																\
-		BATsetcount(b,cnt);												\
+		BATsetcount(b, cnt);												\
 		BATsettrivprop(b);												\
 	} while (0)
 
@@ -135,7 +135,7 @@ static SEXP bat_to_sexp(BAT* b) {
 
 static BAT* sexp_to_bat(SEXP s, int type) {
 	BAT* b = NULL;
-	size_t cnt = LENGTH(s);
+	BUN cnt = LENGTH(s);
 	switch (type) {
 	case TYPE_int: {
 		if (!IS_INTEGER(s)) {
