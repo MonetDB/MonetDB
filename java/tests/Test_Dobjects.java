@@ -35,9 +35,9 @@ public class Test_Dobjects {
 		try {
 			// inspect the catalog by use of dbmd functions
 			dumpResultSet(dbmd.getCatalogs());
-			dumpResultSet(dbmd.getSchemas());
+//			dumpResultSet(dbmd.getSchemas());	// this produces different outputs on different platforms due to dependency on SAMTOOLS and NETCDF. so exclude it
 			dumpResultSet(dbmd.getSchemas(null, "sys"));
-			dumpResultSet(dbmd.getTables(null, null, null, null));
+			dumpResultSet(dbmd.getTables(null, "sys", null, null));
 		} catch (SQLException e) {
 			System.out.println("FAILED :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");

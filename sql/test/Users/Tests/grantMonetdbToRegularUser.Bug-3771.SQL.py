@@ -4,7 +4,16 @@
 ###
 
 
-from util import sql_test_client
+import os, sys
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
+
+def sql_test_client(user, passwd, input):
+    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
+                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
+                   input = input, port = int(os.getenv("MAPIPORT")))
 
 sql_test_client('monetdb', 'monetdb', input = """\
 CREATE USER user_with_many_rights with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys;

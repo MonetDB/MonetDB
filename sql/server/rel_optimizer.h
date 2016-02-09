@@ -18,4 +18,6 @@ extern int exp_joins_rels(sql_exp *e, list *rels);
 
 extern void *name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt );
 
+extern sql_rel * rel_dce(mvc *sql, sql_rel *rel);
+
 #endif /*_REL_OPTIMIZER_H_*/
