@@ -516,6 +516,7 @@ BATfree(BAT *b)
 	b->T->props = NULL;
 	HASHfree(b);
 	IMPSfree(b);
+	OIDXfree(b);
 	if (b->htype)
 		HEAPfree(&b->H->heap, 0);
 	else

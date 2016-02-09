@@ -14,6 +14,7 @@
 
 #define DISABLE_PARENT_HASH 1
 /* #define PERSISTENTHASH 1 */
+#define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
 
@@ -194,6 +195,8 @@ __hidden int OIDinit(void)
 __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
+	__attribute__((__visibility__("hidden")));
+__hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
