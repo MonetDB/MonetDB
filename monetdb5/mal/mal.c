@@ -135,9 +135,11 @@ void mserver_reset(void)
 		fprintf(stderr, "!%s", err);
 		free(err);
 	}
+	/* TODO: make sure this is still required
 #ifdef HAVE_EMBEDDED
 	MTIMEreset();
 #endif
+*/
 	mal_factory_reset();
 	mal_dataflow_reset();
 	GDKreset(0);	// terminate all other threads

@@ -473,6 +473,8 @@ SQLinitClient(Client c)
 		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
 	_DELETE(schema);
+#else
+	(void) schema;
 #endif
 
 	/*expect SQL text first */
@@ -496,6 +498,8 @@ SQLinitClient(Client c)
 	}
 	if (SQLnewcatalog > 0) {
 #ifdef HAVE_EMBEDDED
+		(void) bfd;
+		(void) fd;
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
 		{

@@ -69,6 +69,7 @@ malOpenSource(str file)
 	return fd;
 }
 
+#ifndef HAVE_EMBEDDED
 /*
  * The malLoadScript routine merely reads the contents of a file into
  * the input buffer of the client. It is typically used in situations
@@ -97,6 +98,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
 	return MAL_SUCCEED;
 }
+#endif
 
 /*
  * Beware that we have to isolate the execution of the source file
@@ -188,6 +190,8 @@ malInclude(Client c, str name, int listing)
 	c->fdin = NULL;
 
 #ifdef HAVE_EMBEDDED
+	(void) filename;
+	(void) p;
 	{
 		size_t mal_init_len = strlen(mal_init_inline);
 		buffer* mal_init_buf = buffer_create(mal_init_len);

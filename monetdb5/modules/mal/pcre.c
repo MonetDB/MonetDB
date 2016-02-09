@@ -736,10 +736,8 @@ str
 pcre_init(void *ret)
 {
 	(void) ret;
-#if !defined(HAVE_EMBEDDED) && !defined(NATIVE_WIN32)
 	pcre_malloc = my_pcre_malloc;
 	pcre_free = my_pcre_free;
-#endif
 	return NULL;
 }
 
