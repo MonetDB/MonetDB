@@ -1257,6 +1257,12 @@ gdk_export gdk_return BATdel(BAT *b, BAT *d);
 gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bit force);
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force);
 
+/* Functions to perform a binary search on a sorted BAT.
+ * See gdk_search.c for details. */
+gdk_export BUN SORTfnd(BAT *b, const void *v);
+gdk_export BUN SORTfndfirst(BAT *b, const void *v);
+gdk_export BUN SORTfndlast(BAT *b, const void *v);
+
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BUNfndVOID(b, v)						\
@@ -2390,7 +2396,7 @@ __declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ cons
  * @
  */
 #include "gdk_delta.h"
-#include "gdk_search.h"
+#include "gdk_hash.h"
 #include "gdk_atoms.h"
 #include "gdk_bbp.h"
 #include "gdk_utils.h"
