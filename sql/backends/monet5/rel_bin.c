@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 
 #include "rel_bin.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_psm.h"
 #include "rel_prop.h"

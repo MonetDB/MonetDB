@@ -55,9 +55,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 739 # length
+% 641 # length
 function user.s2_1(A0:bte,A1:str):void;
-    X_189:void := querylog.define("explain select\n\tnation,\n\to_year,\n\tsum(amount) as sum_profit\nfrom\n\t(\n\t\tselect\n\t\t\tn_name as nation,\n\t\t\textract(year from o_orderdate) as o_year,\n\t\t\tl_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n\t\tfrom\n\t\t\tpart,\n\t\t\tsupplier,\n\t\t\tlineitem,\n\t\t\tpartsupp,\n\t\t\torders,\n\t\t\tnation\n\t\twhere\n\t\t\ts_suppkey = l_suppkey\n\t\t\tand ps_suppkey = l_suppkey\n\t\t\tand ps_partkey = l_partkey\n\t\t\tand p_partkey = l_partkey\n\t\t\tand o_orderkey = l_orderkey\n\t\t\tand s_nationkey = n_nationkey\n\t\t\tand p_name like \\'%green%\\'\n\t) as profit\ngroup by\n\tnation,\n\to_year\norder by\n\tnation,\n\to_year desc;","sequential_pipe",121);
+    X_189:void := querylog.define("explain select\n nation,\n o_year,\n sum(amount) as sum_profit\nfrom\n (\n select\n n_name as nation,\n extract(year from o_orderdate) as o_year,\n l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n from\n part,\n supplier,\n lineitem,\n partsupp,\n orders,\n nation\n where\n s_suppkey = l_suppkey\n and ps_suppkey = l_suppkey\n and ps_partkey = l_partkey\n and p_partkey = l_partkey\n and o_orderkey = l_orderkey\n and s_nationkey = n_nationkey\n and p_name like \\'%green%\\'\n ) as profit\ngroup by\n nation,\n o_year\norder by\n nation,\n o_year desc;","sequential_pipe",123);
     X_155 := bat.new(nil:oid,nil:str);
     X_163 := bat.append(X_155,"sys.profit");
     X_171 := bat.append(X_163,"sys.profit");
@@ -144,29 +144,31 @@ function user.s2_1(A0:bte,A1:str):void;
     (X_104,r1_133,r2_133) := group.subgroupdone(X_93,X_101);
     X_107 := algebra.projection(r1_133,X_93);
     X_108 := algebra.projection(r1_133,X_100);
+    X_203:bat[:oid] := algebra.projectionpath(X_84,X_73);
+    X_202:bat[:oid] := algebra.projectionpath(X_203,X_62,X_51,r1_40);
     X_118:bat[:lng] := sql.bind(X_3,"sys","lineitem","l_extendedprice",0);
     (C_120,r1_150) := sql.bind(X_3,"sys","lineitem","l_extendedprice",2);
     X_122:bat[:lng] := sql.bind(X_3,"sys","lineitem","l_extendedprice",1);
     X_123 := sql.projectdelta(C_25,X_118,C_120,r1_150,X_122);
-    X_124:bat[:lng] := algebra.projectionpath(X_84,X_73,X_62,X_51,r1_40,X_123);
+    X_124:bat[:lng] := algebra.projectionpath(X_202,X_123);
     X_125 := calc.lng(A0,15,2);
     X_127:bat[:lng] := sql.bind(X_3,"sys","lineitem","l_discount",0);
     (C_129,r1_170) := sql.bind(X_3,"sys","lineitem","l_discount",2);
     X_131:bat[:lng] := sql.bind(X_3,"sys","lineitem","l_discount",1);
     X_132 := sql.projectdelta(C_25,X_127,C_129,r1_170,X_131);
-    X_133:bat[:lng] := algebra.projectionpath(X_84,X_73,X_62,X_51,r1_40,X_132);
+    X_133:bat[:lng] := algebra.projectionpath(X_202,X_132);
     X_134:bat[:lng] := batcalc.-(X_125,X_133);
     X_135:bat[:hge] := batcalc.*(X_124,X_134);
     X_136:bat[:lng] := sql.bind(X_3,"sys","partsupp","ps_supplycost",0);
     (C_138,r1_186) := sql.bind(X_3,"sys","partsupp","ps_supplycost",2);
     X_140:bat[:lng] := sql.bind(X_3,"sys","partsupp","ps_supplycost",1);
     X_141 := sql.projectdelta(C_60,X_136,C_138,r1_186,X_140);
-    X_142:bat[:lng] := algebra.projectionpath(X_84,X_73,r1_76,X_141);
+    X_142:bat[:lng] := algebra.projectionpath(X_203,r1_76,X_141);
     X_143:bat[:lng] := sql.bind(X_3,"sys","lineitem","l_quantity",0);
     (C_145,r1_201) := sql.bind(X_3,"sys","lineitem","l_quantity",2);
     X_147:bat[:lng] := sql.bind(X_3,"sys","lineitem","l_quantity",1);
     X_148 := sql.projectdelta(C_25,X_143,C_145,r1_201,X_147);
-    X_149:bat[:lng] := algebra.projectionpath(X_84,X_73,X_62,X_51,r1_40,X_148);
+    X_149:bat[:lng] := algebra.projectionpath(X_202,X_148);
     X_150:bat[:hge] := batcalc.*(X_142,X_149);
     X_151:bat[:hge] := batcalc.-(X_135,X_150);
     X_152:bat[:hge] := aggr.subsum(X_151,X_104,r1_133,true,true);

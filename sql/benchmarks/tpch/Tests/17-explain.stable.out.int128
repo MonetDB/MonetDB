@@ -46,9 +46,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 377 # length
+% 345 # length
 function user.s2_1(A0:bte,A1:str,A2:str,A3:dbl):void;
-    X_92:void := querylog.define("explain select\n\tsum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n\tlineitem,\n\tpart\nwhere\n\tp_partkey = l_partkey\n\tand p_brand = \\'Brand#23\\'\n\tand p_container = \\'MED BOX\\'\n\tand l_quantity < (\n\t\tselect\n\t\t\t0.2 * avg(l_quantity)\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_partkey = p_partkey\n\t);","sequential_pipe",61);
+    X_92:void := querylog.define("explain select\n sum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n lineitem,\n part\nwhere\n p_partkey = l_partkey\n and p_brand = \\'Brand#23\\'\n and p_container = \\'MED BOX\\'\n and l_quantity < (\n select\n 0.2 * avg(l_quantity)\n from\n lineitem\n where\n l_partkey = p_partkey\n );","sequential_pipe",61);
     X_5 := sql.mvc();
     C_6:bat[:oid] := sql.tid(X_5,"sys","lineitem");
     X_9:bat[:int] := sql.bind(X_5,"sys","lineitem","l_partkey",0);
@@ -93,14 +93,14 @@ function user.s2_1(A0:bte,A1:str,A2:str,A3:dbl):void;
     X_67 := algebra.projection(X_45,X_64);
     X_68:bat[:dbl] := batcalc.dbl(2,X_67);
     X_69:bat[:dbl] := aggr.subavg(X_68,X_56,r1_78,true,true);
-    X_73:bat[:lng] := sql.bind(X_5,"sys","lineitem","l_extendedprice",0);
-    (C_75,r1_115) := sql.bind(X_5,"sys","lineitem","l_extendedprice",2);
-    X_77:bat[:lng] := sql.bind(X_5,"sys","lineitem","l_extendedprice",1);
-    X_78 := sql.projectdelta(C_6,X_73,C_75,r1_115,X_77);
     X_66:bat[:dbl] := batcalc.dbl(2,X_65);
     X_70:bat[:dbl] := batcalc.*(A3,X_69);
     X_71:bat[:bit] := batcalc.<(X_66,X_70);
     C_72 := algebra.subselect(X_71,true,true,true,true,false);
+    X_73:bat[:lng] := sql.bind(X_5,"sys","lineitem","l_extendedprice",0);
+    (C_75,r1_115) := sql.bind(X_5,"sys","lineitem","l_extendedprice",2);
+    X_77:bat[:lng] := sql.bind(X_5,"sys","lineitem","l_extendedprice",1);
+    X_78 := sql.projectdelta(C_6,X_73,C_75,r1_115,X_77);
     X_79:bat[:lng] := algebra.projectionpath(C_72,r1_78,r1_64,r1_58,X_78);
     X_80:hge := aggr.sum(X_79);
     X_81 := calc.hge(2,X_80,39,5);

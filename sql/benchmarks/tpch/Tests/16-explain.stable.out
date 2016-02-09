@@ -59,9 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 598 # length
+% 555 # length
 function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
-    X_191:void := querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe",118);
+    X_191:void := querylog.define("explain select\n p_brand,\n p_type,\n p_size,\n count(distinct ps_suppkey) as supplier_cnt\nfrom\n partsupp,\n part\nwhere\n p_partkey = ps_partkey\n and p_brand <> \\'Brand#45\\'\n and p_type not like \\'MEDIUM POLISHED%\\'\n and p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n and ps_suppkey not in (\n select\n s_suppkey\n from\n supplier\n where\n s_comment like \\'%Customer%Complaints%\\'\n )\ngroup by\n p_brand,\n p_type,\n p_size\norder by\n supplier_cnt desc,\n p_brand,\n p_type,\n p_size;","sequential_pipe",119);
     X_152 := bat.new(nil:oid,nil:str);
     X_160 := bat.append(X_152,"sys.part");
     X_168 := bat.append(X_160,"sys.part");
@@ -149,10 +149,11 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_98 := bat.mergecand(X_96,C_97);
     X_99 := algebra.projection(X_98,C_58);
     (X_100,r1_119) := algebra.subjoin(X_57,X_99,nil:BAT,nil:BAT,false,nil:lng);
-    X_102:bat[:str] := algebra.projectionpath(r1_119,X_98,X_73);
-    X_103:bat[:int] := algebra.projectionpath(r1_119,X_98,X_66);
+    X_200:bat[:oid] := algebra.projectionpath(r1_119,X_98);
+    X_102:bat[:str] := algebra.projectionpath(X_200,X_73);
+    X_103:bat[:int] := algebra.projectionpath(X_200,X_66);
     X_104:bat[:int] := algebra.projectionpath(X_100,X_50,X_25);
-    X_105:bat[:str] := algebra.projectionpath(r1_119,X_98,X_80);
+    X_105:bat[:str] := algebra.projectionpath(X_200,X_80);
     (X_106,r1_132,r2_132) := group.subgroup(X_105);
     (X_109,r1_135,r2_135) := group.subgroup(X_104,X_106);
     (X_112,r1_138,r2_138) := group.subgroup(X_103,X_109);

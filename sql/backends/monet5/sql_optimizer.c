@@ -191,7 +191,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 
 	space = SQLgetStatistics(c, be->mvc, mb);
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
-		if( space > (lng)(0.8 * MT_npages() * MT_pagesize()) ){
+		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
 			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
 		}else
@@ -215,8 +215,8 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 		addtoMalBlkHistory(mb, "getStatistics");
 }
 
-void
-addQueryToCache(Client c)
+str
+optimizeQuery(Client c)
 {
 	MalBlkPtr mb;
 	backend *be;
@@ -226,13 +226,12 @@ addQueryToCache(Client c)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 	pipe = getSQLoptimizer(be->mvc);
 
-	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	mb = c->curprg->def;
 	chkProgram(c->fdout, c->nspace, mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "ADD QUERY TO CACHE\n");
+	mnstr_printf(GDKout, "Optimize query\n");
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 	/*
@@ -250,23 +249,34 @@ addQueryToCache(Client c)
 			if (msg != MAL_SUCCEED)
 				GDKfree(msg); /* ignore error */
 		}
-		return;
+		return NULL;
 	}
 	addOptimizers(c, mb, pipe);
 	msg = optimizeMALBlock(c, mb);
-	if (msg != MAL_SUCCEED) {
-		showScriptException(c->fdout, mb, 0, MAL, "%s", msg);
-		GDKfree(msg);
-		return;
-	}
+	if (msg)
+		return msg;
 
 	/* time to execute the optimizers */
 	if (c->debug)
 		optimizerCheck(c, mb, "sql.baseline", -1, 0);
 #ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "ADD optimized QUERY TO CACHE\n");
+	mnstr_printf(GDKout, "End Optimize Query\n");
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
+	return NULL;
+}
+
+void
+addQueryToCache(Client c)
+{
+	str msg = NULL;
+
+	insertSymbol(c->nspace, c->curprg);
+	msg = optimizeQuery(c);
+	if (msg != MAL_SUCCEED) {
+		showScriptException(c->fdout, c->curprg->def, 0, MAL, "%s", msg);
+		GDKfree(msg);
+	}
 }
 
 /*

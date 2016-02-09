@@ -9,7 +9,8 @@
 #ifndef _REL_PLANNER_H_
 #define _REL_PLANNER_H_
 
-#include "rel_semantic.h"
+#include "sql_relation.h"
+#include "sql_mvc.h"
 
 extern sql_rel * rel_planner(mvc *sql, list *rels, list *djes, list *ojes);
 

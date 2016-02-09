@@ -182,10 +182,8 @@ typedef enum jt {
 } jt;
 
 extern char *token2string(int token);
-extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
-extern int sqlerror(mvc *sql, const char *s);
 extern int sqlparse(mvc *m);
+extern int sqlerror(mvc *sql, const char *s);
 
 #endif /*_SQL_PARSER_H_*/
 
