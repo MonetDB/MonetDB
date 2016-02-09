@@ -34,7 +34,7 @@ INCLUDES = ../../monetdb5/mal \
 		   $(pcre_CFLAGS)
 
 lib_embedded  = {
-	SOURCES = embedded.c embedded.h
+	SOURCES = embedded.c embedded.h inlined_scripts.c
 	VERSION = 1
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
 		../../gdk/libbat \

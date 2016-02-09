@@ -416,7 +416,7 @@ SQLtrans(mvc *m)
 }
 
 #ifdef HAVE_EMBEDDED
-#include "createdb_inline.h"
+extern char* createdb_inline;
 #endif
 
 str
