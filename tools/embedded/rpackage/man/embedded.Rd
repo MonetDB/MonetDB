@@ -7,10 +7,10 @@
 \alias{monetdb_embedded_shutdown}
 
 \title{
-  Control embedded MonetDB
+  MonetDBLite low-level interface
 }
 \description{
-This is a low-level API for MonetDBLite. A \code{DBI}/\code{dplyr} frontend for these functions is in the \code{MonetDB.R} package.
+This is a low-level API for MonetDBLite. \code{DBI}/\code{dplyr} frontends for these functions is in the \code{MonetDB.R} package. This package is not really meant to be used directly.
 }
 \usage{
 monetdb_embedded_startup(dir=tempdir(), quiet=TRUE)
