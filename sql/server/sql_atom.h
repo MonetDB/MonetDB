@@ -51,8 +51,6 @@ extern char *atom2string(sql_allocator *sa, atom *a);
 extern char *atom2sql(atom *a);
 extern sql_subtype *atom_type(atom *a);
 
-extern void atom_dump(atom *a, stream *s);
-
 #ifdef HAVE_HGE
 extern hge atom_get_int(atom *a);
 #else

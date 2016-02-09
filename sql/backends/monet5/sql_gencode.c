@@ -39,6 +39,7 @@
 #include <rel_select.h>
 #include <rel_optimizer.h>
 #include <rel_prop.h>
+#include <rel_rel.h>
 #include <rel_exp.h>
 #include <rel_bin.h>
 #include <rel_dump.h>
@@ -487,6 +488,24 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		c->curprg = backup;
 	return 0;
 }
+
+static str
+rel2str( mvc *sql, sql_rel *rel)
+{
+	buffer *b;
+	stream *s = buffer_wastream(b = buffer_create(1024), "rel_dump");
+	list *refs = sa_list(sql->sa);
+	char *res = NULL; 
+
+	rel_print_refs(sql, s, rel, 0, refs, 0);
+	rel_print_(sql, s, rel, 0, refs, 0);
+	mnstr_printf(s, "\n");
+	res = buffer_get_buf(b);
+	buffer_destroy(b);
+	mnstr_destroy(s);
+	return res;
+}
+
 
 /* stub and remote function */
 static int
@@ -3109,3 +3128,62 @@ backend_create_subaggr(backend *be, sql_subaggr *f)
 {
 	return backend_create_func(be, f->aggr, f->res, NULL);
 }
+
+void
+_rel_print(mvc *sql, sql_rel *rel) 
+{
+	list *refs = sa_list(sql->sa);
+	rel_print_refs(sql, GDKstdout, rel, 0, refs, 1);
+	rel_print_(sql, GDKstdout, rel, 0, refs, 1);
+	mnstr_printf(GDKstdout, "\n");
+}
+
+void
+rel_print(mvc *sql, sql_rel *rel, int depth) 
+{
+	list *refs = sa_list(sql->sa);
+	size_t pos;
+	size_t nl = 0;
+	size_t len = 0, lastpos = 0;
+	stream *fd = sql->scanner.ws;
+	stream *s;
+	buffer *b = buffer_create(16364); /* hopefully enough */
+	if (!b)
+		return; /* signal somehow? */
+	s = buffer_wastream(b, "SQL Plan");
+	if (!s) {
+		buffer_destroy(b);
+		return; /* signal somehow? */
+	}
+
+	rel_print_refs(sql, s, rel, depth, refs, 1);
+	rel_print_(sql, s, rel, depth, refs, 1);
+	mnstr_printf(s, "\n");
+
+	/* count the number of lines in the output, skip the leading \n */
+	for (pos = 1; pos < b->pos; pos++) {
+		if (b->buf[pos] == '\n') {
+			nl++;
+			if (len < pos - lastpos)
+				len = pos - lastpos;
+			lastpos = pos + 1;
+		}
+	}
+	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
+
+	/* craft a semi-professional header */
+	mnstr_printf(fd, "&1 0 " SZFMT " 1 " SZFMT "\n", /* type id rows columns tuples */
+			nl, nl);
+	mnstr_printf(fd, "%% .plan # table_name\n");
+	mnstr_printf(fd, "%% rel # name\n");
+	mnstr_printf(fd, "%% clob # type\n");
+	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 1 /* remove = */);
+
+	/* output the data */
+	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
+
+	mnstr_close(s);
+	mnstr_destroy(s);
+	buffer_destroy(b);
+}
+

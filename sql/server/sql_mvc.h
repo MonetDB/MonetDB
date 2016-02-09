@@ -27,6 +27,19 @@
 
 #define ERRSIZE 8192
 
+/* value vs predicate (boolean) */
+#define type_value	0
+#define type_predicate	1
+
+/* cardinality expected by enclosing operator */
+#define card_none	-1	/* psm call doesn't return anything */
+#define card_value	0
+#define card_row 	1
+#define card_column 	2
+#define card_set	3 /* some operators require only a set (IN/EXISTS) */
+#define card_relation 	4
+/* allowed to reduce (in the where and having parts we can reduce) */
+
 /* different query execution modes (emode) */
 #define m_normal 	0
 #define m_inplace 	1 
@@ -127,6 +140,7 @@ extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
 extern int mvc_type(mvc *c);
+extern int mvc_debug_on(mvc *m, int flag);
 
 /* since Savepoints and transactions are related the 
  * commit function includes the savepoint creation.
@@ -243,5 +257,8 @@ extern void stack_set_number(mvc *sql, const char *name, lng v);
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
+
+extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
 
 #endif /*_SQL_MVC_H*/

@@ -8,9 +8,9 @@
 
 #include "monetdb_config.h"
 #include "rel_planner.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
-#include "rel_select.h"
 #include "rel_optimizer.h"
 
 typedef struct memoitem {

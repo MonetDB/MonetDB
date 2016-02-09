@@ -57,7 +57,7 @@ Ready.
 #				from
 % sys.custsale,	sys.L2,	sys.L3 # table_name
 % cntrycode,	numcust,	totacctbal # name
-% char,	wrd,	decimal # type
+% char,	bigint,	decimal # type
 % 15,	2,	41 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]

@@ -97,7 +97,7 @@ top N (
 | | | ) [ orders.o_orderkey NOT NULL = L7.o_orderkey NOT NULL FETCH  ]
 | | ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6.L6 NOT NULL ]
 | ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6 NOT NULL as L6.L6 ] [ orders.o_totalprice NOT NULL, orders.o_orderdate ASC NOT NULL ]
-) [ wrd "100" ]
+) [ bigint "100" ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

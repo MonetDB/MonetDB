@@ -80,33 +80,21 @@ stderr of test 'dynamicload` in directory 'monetdb5/mal` itself:
 # 13:21:38 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:21:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21455/.s.monetdb.39502
+MAPI  = (monetdb) /var/tmp/mtest-6360/.s.monetdb.38700
 QUERY = # examples of non-bindable instructions
+        
+        #load unknown library
+        library UNKNOWlib;
         
         command wrong()
         address UNKOWNaddress
         comment "Should not be callable";
         
         wrong();
+ERROR = !TypeException:user.main[3]:object code for command user.wrong missing
+        !TypeException:user.main[3]:'user.wrong' undefined in:     user.wrong();
         
-        #load unknown library
-        library UNKNOWlib;
-ERROR = !MALException:MAL.getAddress:address of 'user.UNKOWNaddress' not found
-MAPI  = (monetdb) /var/tmp/mtest-21455/.s.monetdb.39502
-QUERY = # examples of non-bindable instructions
-        
-        command wrong()
-        address UNKOWNaddress
-        comment "Should not be callable";
-        
-        wrong();
-        
-        #load unknown library
-        library UNKNOWlib;
-ERROR = !TypeException:user.main[2]:object code for command user.wrong missing
-        !TypeException:user.main[2]:'user.wrong' undefined in:     user.wrong();
-
-# 13:21:38 >  
-# 13:21:38 >  "Done."
-# 13:21:38 >  
+# 13:26:24 >  
+# 13:26:24 >  "Done."
+# 13:26:24 >  
 

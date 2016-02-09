@@ -10,6 +10,7 @@
 #include "rel_updates.h"
 #include "rel_semantic.h"
 #include "rel_select.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
 #include "rel_optimizer.h"
@@ -51,18 +52,6 @@ insert_exp_array(mvc *sql, sql_table *t, int *Len)
 }
 
 #define get_basetable(rel) rel->l
-
-sql_table *
-rel_ddl_table_get(sql_rel *r)
-{
-	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
-		sql_exp *e = r->exps->t->data;
-		atom *a = e->l;
-
-		return a->data.val.pval;
-	}
-	return NULL;
-}
 
 static sql_table *
 get_table( sql_rel *t)
@@ -908,7 +897,6 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			sq = rel_selects(sql, sym);
 			if (sq)
 				sq = rel_optimizer(sql, sq);
-			rel_print(sql,sq,0);
 		}
 #endif
 
