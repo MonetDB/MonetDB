@@ -324,80 +324,78 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		assert(BATcount(a[0]) == BATcount(b));
 		assert(VIEWtparent(a[0]) == -b->batCacheid && a[0]->torderidx);
 		memcpy(mv, (oid *) a[0]->torderidx->base + ORDERIDXOFF, BATcount(b) * SIZEOF_OID);
-	} else {
+	} else if (n_ar == 2) {
 		/* sort merge with 1 comparison per BUN */
-		if (n_ar == 2) {
-			const oid *restrict p0, *restrict p1, *q0, *q1;
-			assert(BATcount(a[0]) + BATcount(a[1]) == BATcount(b));
-			assert(VIEWtparent(a[0]) == -b->batCacheid && a[0]->torderidx);
-			assert(VIEWtparent(a[1]) == -b->batCacheid && a[1]->torderidx);
-			p0 = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
-			p1 = (const oid *) a[1]->torderidx->base + ORDERIDXOFF;
-			q0 = p0 + BATcount(a[0]);
-			q1 = p1 + BATcount(a[1]);
+		const oid *restrict p0, *restrict p1, *q0, *q1;
+		assert(BATcount(a[0]) + BATcount(a[1]) == BATcount(b));
+		assert(VIEWtparent(a[0]) == -b->batCacheid && a[0]->torderidx);
+		assert(VIEWtparent(a[1]) == -b->batCacheid && a[1]->torderidx);
+		p0 = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
+		p1 = (const oid *) a[1]->torderidx->base + ORDERIDXOFF;
+		q0 = p0 + BATcount(a[0]);
+		q1 = p1 + BATcount(a[1]);
 
-			switch (ATOMstorage(b->ttype)) {
-			case TYPE_bte: BINARY_MERGE(bte); break;
-			case TYPE_sht: BINARY_MERGE(sht); break;
-			case TYPE_int: BINARY_MERGE(int); break;
-			case TYPE_lng: BINARY_MERGE(lng); break;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte: BINARY_MERGE(bte); break;
+		case TYPE_sht: BINARY_MERGE(sht); break;
+		case TYPE_int: BINARY_MERGE(int); break;
+		case TYPE_lng: BINARY_MERGE(lng); break;
 #ifdef HAVE_HGE
-			case TYPE_hge: BINARY_MERGE(hge); break;
+		case TYPE_hge: BINARY_MERGE(hge); break;
 #endif
-			case TYPE_flt: BINARY_MERGE(flt); break;
-			case TYPE_dbl: BINARY_MERGE(dbl); break;
-			case TYPE_str:
-			default:
-				/* TODO: support strings, date, timestamps etc. */
-				assert(0);
-				HEAPfree(m, 1);
-				GDKfree(m);
-				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-				return GDK_FAIL;
-			}
+		case TYPE_flt: BINARY_MERGE(flt); break;
+		case TYPE_dbl: BINARY_MERGE(dbl); break;
+		case TYPE_str:
+		default:
+			/* TODO: support strings, date, timestamps etc. */
+			assert(0);
+			HEAPfree(m, 1);
+			GDKfree(m);
+			MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+			return GDK_FAIL;
+		}
 
+	} else {
 		/* use min-heap */
-		} else {
-			oid **p, **q, *t_oid;
+		oid **p, **q, *t_oid;
 
-			p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
-			q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
-			if (p == NULL || q == NULL) {
-bailout:
-				GDKfree(p);
-				GDKfree(q);
-				HEAPfree(m, 1);
-				GDKfree(m);
-				MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-				return GDK_FAIL;
-			}
-			for (i = 0; i < n_ar; i++) {
-				assert(VIEWtparent(a[i]) == -b->batCacheid && a[i]->torderidx);
-				p[i] = (oid *) a[i]->torderidx->base + ORDERIDXOFF;
-				q[i] = p[i] + BATcount(a[i]);
-			}
-
-			switch (ATOMstorage(b->ttype)) {
-			case TYPE_bte: NWAY_MERGE(bte); break;
-			case TYPE_sht: NWAY_MERGE(sht); break;
-			case TYPE_int: NWAY_MERGE(int); break;
-			case TYPE_lng: NWAY_MERGE(lng); break;
-#ifdef HAVE_HGE
-			case TYPE_hge: NWAY_MERGE(hge); break;
-#endif
-			case TYPE_flt: NWAY_MERGE(flt); break;
-			case TYPE_dbl: NWAY_MERGE(dbl); break;
-			case TYPE_void:
-			case TYPE_str:
-			case TYPE_ptr:
-			default:
-				/* TODO: support strings, date, timestamps etc. */
-				assert(0);
-				goto bailout;
-			}
+		p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+		q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+		if (p == NULL || q == NULL) {
+		  bailout:
 			GDKfree(p);
 			GDKfree(q);
+			HEAPfree(m, 1);
+			GDKfree(m);
+			MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+			return GDK_FAIL;
 		}
+		for (i = 0; i < n_ar; i++) {
+			assert(VIEWtparent(a[i]) == -b->batCacheid && a[i]->torderidx);
+			p[i] = (oid *) a[i]->torderidx->base + ORDERIDXOFF;
+			q[i] = p[i] + BATcount(a[i]);
+		}
+
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte: NWAY_MERGE(bte); break;
+		case TYPE_sht: NWAY_MERGE(sht); break;
+		case TYPE_int: NWAY_MERGE(int); break;
+		case TYPE_lng: NWAY_MERGE(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: NWAY_MERGE(hge); break;
+#endif
+		case TYPE_flt: NWAY_MERGE(flt); break;
+		case TYPE_dbl: NWAY_MERGE(dbl); break;
+		case TYPE_void:
+		case TYPE_str:
+		case TYPE_ptr:
+		default:
+			/* TODO: support strings, date, timestamps etc. */
+			assert(0);
+			goto bailout;
+		}
+		GDKfree(p);
+		GDKfree(q);
 	}
 
 #ifdef PERSISTENTIDX
