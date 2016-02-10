@@ -59,7 +59,7 @@ static void* lookup_function(char* func) {
 	return fun;
 }
 
-void* monetdb_connect() {
+void* monetdb_connect(void) {
 	Client conn = NULL;
 	if (!monetdb_embedded_initialized) {
 		return NULL;
@@ -82,7 +82,7 @@ void monetdb_disconnect(void* conn) {
 	MCcloseClient((Client) conn);
 }
 
-char* monetdb_startup(char* dbdir, char silent) {
+char* monetdb_startup(char* dbdir, char silent, char sequential) {
 	opt *set = NULL;
 	int setlen = 0;
 	str retval = MAL_SUCCEED;
@@ -116,7 +116,9 @@ char* monetdb_startup(char* dbdir, char silent) {
 	}
 	GDKsetenv("monet_mod_path", "");
 	GDKsetenv("mapi_disable", "true");
-	GDKsetenv("sql_optimizer", "sequential_pipe");
+	if (sequential) {
+		GDKsetenv("sql_optimizer", "sequential_pipe");
+	}
 
 	if (silent) THRdata[0] = stream_blackhole_create();
 	msab_dbpathinit(dbdir);
@@ -316,7 +318,7 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 
 
 // TODO: fix this, it is not working correctly
-void monetdb_shutdown() {
+void monetdb_shutdown(void) {
 	// kill SQL
 	(*SQLepilogue_ptr)(NULL);
 	// kill MAL & GDK
