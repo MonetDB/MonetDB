@@ -6,7 +6,7 @@ pattern bat.orderidx(bv:bat[:oid,:any_1], pieces:int):void
 address OIDXcreate
 comment "Introduces the OID index arrangement of ordered values";
 
-pattern bat.orderidx(bv:bat[:oid,:any_1], l:bat[:oid,:oid]...):void
+pattern bat.orderidx(bv:bat[:oid,:any_1], l:bat[:oid,:any_1]...):void
 address OIDXmerge
 comment "Consolidates the OID index arrangement";
 
@@ -18,7 +18,6 @@ pattern bat.getorderidx(bv:bat[:oid,:any_1]):bat[:oid,:oid]
 address OIDXgetorderidx
 comment "Return the order index if it exists";
 
-function algebra.orderidx(bv:bat[:oid,:any_1], reverse:bit, stable:bit ):bat[:oid,:oid];
-	(v,o):= algebra.subsort(bv,reverse,stable);
-	return sortorder:= o;
-end orderidx;
+command algebra.orderidx(bv:bat[:oid,:any_1], stable:bit):bat[:oid,:any_1]
+address OIDXorderidx
+comment "Create an order index";

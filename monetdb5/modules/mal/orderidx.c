@@ -123,10 +123,9 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
 		q = newStmt(smb, putName("algebra",7), putName("orderidx", 8));
-		setVarType(smb, getArg(q, 0), newBatType(TYPE_oid, TYPE_oid));
+		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
 		q = pushArgument(smb, q, pack->argv[2+i]);
-		q = pushBit(smb, q, 0);
 		q = pushBit(smb, q, 1);
 		pack->argv[2+i] = getArg(q, 0);
 	}
@@ -234,6 +233,28 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
+{
+	BAT *b;
+	gdk_return r;
+
+	(void) ret;
+	b = BATdescriptor(*bid);
+	if (b == NULL)
+		throw(MAL, "algebra.orderidx", RUNTIME_OBJECT_MISSING);
+
+	assert(BAThdense(b));
+	r = BATorderidx(b, *stable);
+	if (r != GDK_SUCCEED) {
+		BBPunfix(*bid);
+		throw(MAL, "algebra.orderidx", MAL_MALLOC_FAIL);
+	}
+	*ret = *bid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
