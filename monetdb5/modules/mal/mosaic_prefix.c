@@ -971,16 +971,16 @@ MOSsubjoin_prefix(Client cntxt,  MOStask task)
 	oid m;
 	BitVector base;
 	int residu;
-	TPE value;
+	oid value;
 	m = ~mask;
 	residu = val & m;
 	val = val & mask;
 	base = (BitVector) dst;
-	w = (TPE*) task->src;
+	w = (oid*) task->src;
 	for(n = task->elm, o = 0; n -- > 0; w++,o++){
 		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){
 			v = decompress(base,i,residu);
-			value =  (TPE) ((oid)val |(oid) v);
+			value =  (oid) ((oid)val |(oid) v);
 			if ( *w == value){
 				BUNappend(task->lbat, &oo, FALSE);
 				BUNappend(task->rbat, &o, FALSE);
