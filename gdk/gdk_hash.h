@@ -227,10 +227,4 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		}							\
 	} while (0)
 
-/* Functions to perform a binary search on a sorted BAT.
- * See gdk_search.c for details. */
-gdk_export BUN SORTfnd(BAT *b, const void *v);
-gdk_export BUN SORTfndfirst(BAT *b, const void *v);
-gdk_export BUN SORTfndlast(BAT *b, const void *v);
-
 #endif /* _GDK_SEARCH_H_ */
