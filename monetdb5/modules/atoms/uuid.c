@@ -230,7 +230,7 @@ BUN
 UUIDhash(const void *v)
 {
 	const uuid *u = (const uuid *) v;
-	int u1, u2, u3, u4;
+	unsigned int u1, u2, u3, u4;
 
 	u1 = u->u[0] << 24 | u->u[1] << 16 | u->u[2] << 8 | u->u[3];
 	u2 = u->u[4] << 24 | u->u[5] << 16 | u->u[6] << 8 | u->u[7];
