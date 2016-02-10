@@ -208,7 +208,7 @@ BATorderidx(BAT *b, int stable)
 	do {								\
 		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
 		while (p0 < q0 && p1 < q1) {				\
-			if (v[*p0 - b->hseqbase] < v[*p1 - b->hseqbase]) { \
+			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) { \
 				*mv++ = *p0++;				\
 			} else {					\
 				*mv++ = *p1++;				\
@@ -229,23 +229,27 @@ BATorderidx(BAT *b, int stable)
 
 #define HEAPIFY(X)							\
 	do {								\
-		int __cur, __min = X;					\
+		int cur, min = X, chld;					\
 		do {							\
-			__cur = __min;					\
-			if (left_child(__cur) < n_ar &&			\
-				minhp[left_child(__cur)] < minhp[__min]) { \
-				__min = left_child(__cur);		\
+			cur = min;					\
+			if ((chld = left_child(cur)) < n_ar &&		\
+			    (minhp[chld] < minhp[min] ||		\
+			     (minhp[chld] == minhp[min] &&		\
+			      *p[cur] < *p[min]))) {			\
+				min = chld;				\
 			}						\
-			if (right_child(__cur) < n_ar &&		\
-				minhp[right_child(__cur)] < minhp[__min]) { \
-				__min = right_child(__cur);		\
+			if ((chld = right_child(cur)) < n_ar &&		\
+			    (minhp[chld] < minhp[min] ||		\
+			     (minhp[chld] == minhp[min] &&		\
+			      *p[cur] < *p[min]))) {			\
+				min = chld;				\
 			}						\
-			if (__min != __cur) {				\
-				swap(minhp[__cur], minhp[__min], t);	\
-				swap(p[__cur], p[__min], t_oid);	\
-				swap(q[__cur], q[__min], t_oid);	\
+			if (min != cur) {				\
+				swap(minhp[cur], minhp[min], t);	\
+				swap(p[cur], p[min], t_oid);		\
+				swap(q[cur], q[min], t_oid);		\
 			}						\
-		} while (__cur != __min);				\
+		} while (cur != min);					\
 	} while (0)
 
 #define NWAY_MERGE(TYPE)						\
