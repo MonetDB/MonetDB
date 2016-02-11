@@ -51,18 +51,15 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 	return ScalarLogical(1);
 }
 
-SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp) {
-	const char* dbdir=NULL;
-	char silent = 0;
+SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp, SEXP sequentialsexp) {
 	char* res = NULL;
 
 	if (monetdb_embedded_initialized) {
 		return ScalarLogical(0);
 	}
-	dbdir = CHAR(STRING_ELT(dbdirsexp, 0));
-	silent = LOGICAL(silentsexp)[0];
 
-	res = monetdb_startup((char*) dbdir, silent);
+	res = monetdb_startup((char*) CHAR(STRING_ELT(dbdirsexp, 0)),
+		LOGICAL(silentsexp)[0], LOGICAL(sequentialsexp)[0]);
 
 	if (res == NULL) {
 		return ScalarLogical(1);
@@ -75,7 +72,7 @@ SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp) {
 SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabledatasexp) {
 	const char *schema = NULL, *name = NULL;
 	str msg;
-	int col_ct, row_ct, i;
+	int col_ct, i;
 	BAT *b = NULL;
 	append_data *ad = NULL;
 	int t_column_count;
@@ -87,9 +84,7 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 	}
 	schema = CHAR(STRING_ELT(schemasexp, 0));
 	name = CHAR(STRING_ELT(namesexp, 0));
-
 	col_ct = LENGTH(tabledatasexp);
-	row_ct = LENGTH(VECTOR_ELT(tabledatasexp, 0));
 
 	msg = monetdb_get_columns(R_ExternalPtrAddr(connsexp), schema, name, &t_column_count, &t_column_names, &t_column_types);
 	if (msg != MAL_SUCCEED)
@@ -131,12 +126,13 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 }
 
 
-SEXP monetdb_connect_R() {
+SEXP monetdb_connect_R(void) {
 	void* llconn = monetdb_connect();
+	SEXP conn = NULL;
 	if (!llconn) {
 		error("Could not create connection.");
 	}
-	SEXP conn = PROTECT(R_MakeExternalPtr(llconn, R_NilValue, R_NilValue));
+	conn = PROTECT(R_MakeExternalPtr(llconn, R_NilValue, R_NilValue));
 	R_RegisterCFinalizer(conn, (void (*)(SEXP)) monetdb_disconnect_R);
 	UNPROTECT(1);
 	return conn;
@@ -151,7 +147,7 @@ SEXP monetdb_disconnect_R(SEXP connsexp) {
 	return R_NilValue;
 }
 
-SEXP monetdb_shutdown_R() {
+SEXP monetdb_shutdown_R(void) {
 	monetdb_shutdown();
 	return R_NilValue;
 }

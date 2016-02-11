@@ -17,7 +17,7 @@
 #include "monetdb_config.h"
 #include "xml.h"
 #include "mal_interpreter.h"
-#ifdef HAVE_LIBXML
+#if defined(HAVE_LIBXML) && !defined(HAVE_EMBEDDED)
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 #endif
@@ -29,7 +29,7 @@
    * A - XML name/attribute pair.
 */
 
-#ifdef HAVE_LIBXML
+#if defined(HAVE_LIBXML) && !defined(HAVE_EMBEDDED)
 size_t
 XMLquotestring(const char *s, char *buf, size_t len)
 {

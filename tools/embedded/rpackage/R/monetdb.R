@@ -25,7 +25,8 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 		stop("Cannot write to ", dir)
 	}
 	if (!monetdb_embedded_env$is_started) {
-		res <- .Call("monetdb_startup_R", dir, quiet, PACKAGE=libfilename)
+		res <- .Call("monetdb_startup_R", dir, quiet, 
+			getOption('monetdb.squential', FALSE), PACKAGE=libfilename)
 	} else {
 		if (dir != monetdb_embedded_env$started_dir) {
 			stop("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ", restart R).")
