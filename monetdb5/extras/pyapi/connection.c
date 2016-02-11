@@ -69,6 +69,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                     return NULL;
                 }
                 PyDict_SetItem(result, PyString_FromString(output->cols[i].name), numpy_array);
+                Py_DECREF(numpy_array);
             }
             _connection_cleanup_result(output);
             return result;
@@ -163,6 +164,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                     return NULL;
                 }
                 PyDict_SetItem(result, PyString_FromString(colname), numpy_array);
+                Py_DECREF(numpy_array);
             }
             release_mmap_memory(ptr, self->query_ptr->memsize, self->query_ptr->mmapid);
             return result;

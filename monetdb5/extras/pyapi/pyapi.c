@@ -1549,7 +1549,9 @@ wrapup:
         // First clean up any return values
         if (!ret->multidimensional) {
             // Clean up numpy arrays, if they are there
-            if (ret->numpy_array != NULL) Py_DECREF(ret->numpy_array);
+            if (ret->numpy_array != NULL && ret->numpy_array->ob_refcnt > 1) {
+                Py_DECREF(ret->numpy_array);
+            }
             if (ret->numpy_mask != NULL) Py_DECREF(ret->numpy_mask);
         }
     }
@@ -2114,6 +2116,7 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, cha
             msg = createException(MAL, "pyapi.eval", "Expected a return value with name \"%s\", but this key was not present in the dictionary.", retcol_names[i]);
             goto wrapup;
         }
+        Py_INCREF(object);
         object = PyObject_CheckForConversion(object, 1, NULL, return_message);
         if (object == NULL) {
             msg = createException(MAL, "pyapi.eval", "Error converting dict return value \"%s\": %s.", retcol_names[i], *return_message);
@@ -2127,6 +2130,8 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, cha
             goto wrapup;
         }
     }
+    Py_DECREF(keys);
+    Py_DECREF(pResult);
     return result;
 wrapup:
     *return_message = msg;
