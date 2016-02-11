@@ -3,3 +3,8 @@
 #undef HAVE_CURL
 #undef HAVE_LIBBZ2
 #undef HAVE_LIBLZMA
+#undef HAVE_FITS
+#undef HAVE_GSL
+#undef HAVE_LIBXML
+#undef HAVE_NETCDF
+#undef HAVE_SAMTOOLS
