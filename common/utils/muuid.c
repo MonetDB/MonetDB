@@ -43,8 +43,8 @@ generateUUID(void)
 	/* try to do some pseudo interesting stuff, and stash it in the
 	 * format of a UUID to at least return some uniform answer */
 	char out[37];
-	unsigned char randbuf[16];
 #ifdef HAVE_OPENSSL
+	unsigned char randbuf[16];
 	if (RAND_bytes(randbuf, 16) >= 0) {
 		snprintf(out, sizeof(out),
 			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"

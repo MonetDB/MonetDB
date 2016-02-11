@@ -164,19 +164,20 @@ str
 UUIDgenerateUuid(uuid **retval)
 {
 	uuid *u;
+	int i, r;
 
 	if (*retval == NULL)
 		*retval = GDKmalloc(UUID_SIZE);
 	u = *retval;
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
+	(void) i;
+	(void) r;
 #else
 #ifdef HAVE_OPENSSL
 	if (RAND_bytes(u->u, 16) < 0) {
 #endif
 		/* if it failed, use rand */
-		int i, r;
-
 		for (i = 0; i < UUID_SIZE;) {
 			r = rand() % 65536;
 			u->u[i++] = (unsigned char) (r >> 8);

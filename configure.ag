@@ -3416,6 +3416,10 @@ typedef lng ptrdiff_t;
 #define LIBXML_ATTR_ALLOC_SIZE(x)
 #endif
 
+#ifdef HAVE_EMBEDDED
+#include "tools/embedded/undef.h"
+#endif
+
 #endif /* _SEEN_MONETDB_CONFIG_H */
 ])
 
