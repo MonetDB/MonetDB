@@ -128,13 +128,16 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
-#define mix_bte(X)	((unsigned int) (X))
-#define mix_sht(X)	((unsigned int) (X))
-#define mix_int(X)	(((X)>>7)^((X)>>13)^((X)>>21)^(X))
-#define mix_lng(X)	mix_int((unsigned int) ((X) ^ ((X) >> 32)))
+#define mix_bte(X)	((unsigned int) (unsigned char) (X))
+#define mix_sht(X)	((unsigned int) (unsigned short) (X))
+#define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
+			 ((unsigned int) (X) >> 13) ^	\
+			 ((unsigned int) (X) >> 21) ^	\
+			 (unsigned int) (X))
+#define mix_lng(X)	mix_int((unsigned int) ((ulng) (X) ^		\
+						((ulng) (X) >> 32)))
 #ifdef HAVE_HGE
-#define mix_hge(X)	mix_int((unsigned int) ((X) ^ ((X) >> 32) ^ \
-						((X) >> 64) ^ ((X) >> 96)))
+#define mix_hge(X)	mix_lng((ulng) ((uhge) (X) ^ ((uhge) (X) >> 64)))
 #endif
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)

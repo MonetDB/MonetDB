@@ -24,17 +24,18 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 {
 	int i, j,  k, match, actions=0;
 	InstrPtr p,q,r,*old;
-	int limit;
+	int limit, slimit;
 
-	old= mb->stmt;
-	limit= mb->stop;
-	if ( newMalBlkStmt(mb,mb->ssize) < 0)
+	old = mb->stmt;
+	limit = mb->stop;
+	slimit= mb->ssize;
+	if (newMalBlkStmt(mb,mb->ssize) < 0)
 		return 0;
 	OPTDEBUGprojectionpath 
 		mnstr_printf(cntxt->fdout,"#projectionpath find common prefix prefixlength %d\n", prefixlength);
  
 	for( i = 0; i < limit; i++){
-		p= old[i];
+		p = old[i];
 		assert(p);
 		if ( getFunctionId(p) != projectionpathRef || p->argc < prefixlength) {
 			pushInstruction(mb,p);
@@ -141,6 +142,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 		mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
 		if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 	}
+	for(; i<slimit; i++)
+		if(old[i])
+			freeInstruction(old[i]);
+	GDKfree(old);
 	if( actions)
 		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
 	return actions;
@@ -201,7 +206,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			/*
 			 * Try to expand its argument list with what we have found so far.
 			 */
-			q= copyInstruction(p);
+			q = copyInstruction(p);
 			OPTDEBUGprojectionpath {
 				mnstr_printf(cntxt->fdout,"#before ");
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
@@ -209,8 +214,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){
 				if (pc[getArg(p,j)] )
-					r= getInstrPtr(mb,pc[getArg(p,j)]);
-				else r = 0;
+					r = getInstrPtr(mb,pc[getArg(p,j)]);
+				else 
+					r = 0;
 				if (r && varcnt[getArg(p,j)] > 1 )
 					r = 0;
 				
@@ -253,7 +259,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}
 			freeInstruction(p);
-			p= q;
+			p = q;
 			/* keep track of the longest projection path */
 			if ( p->argc  > maxprefixlength)
 				maxprefixlength = p->argc;
