@@ -522,10 +522,6 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	@Override
 	public ResultSet executeQuery(String sql) throws SQLException {
-// for debug/trace enable: 
-//if (sql != null && !sql.startsWith("SELECT 'demo' AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", \"columns\".\"name\" AS \"COLUMN_NAME\", cast(CASE \"columns\".\"type\" WHEN 'char' THEN 1"))
-//	System.out.println("\n" + sql);
-
 		if (execute(sql) != true)
 			throw new SQLException("Query did not produce a result set", "M1M19");
 
