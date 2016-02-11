@@ -364,7 +364,6 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
     GDKfree(temp_indices);                                                        \
 } 
 
-
 str
 PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
 
@@ -950,7 +949,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         if (pyinput_values[i - (pci->retc + 2)].scalar) {
             result_array = PyArrayObject_FromScalar(&pyinput_values[i - (pci->retc + 2)], &msg);
         } else {
-                result_array = PyMaskedArray_FromBAT(cntxt, &pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg, false);
+            result_array = PyMaskedArray_FromBAT(cntxt, &pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg, false);
         }
         if (result_array == NULL) {
             if (msg == MAL_SUCCEED) {
@@ -1241,8 +1240,6 @@ aggrwrapup:
 
         Py_DECREF(pFunc);
         Py_DECREF(pArgs);
-        Py_DECREF(pColumns);
-        Py_DECREF(pColumnTypes);
 
         if (PyErr_Occurred()) {
             msg = PyError_CreateException("Python exception", pycall);
@@ -1549,10 +1546,12 @@ wrapup:
         // First clean up any return values
         if (!ret->multidimensional) {
             // Clean up numpy arrays, if they are there
-            if (ret->numpy_array != NULL && ret->numpy_array->ob_refcnt > 1) {
+            if (ret->numpy_array != NULL) {
                 Py_DECREF(ret->numpy_array);
             }
-            if (ret->numpy_mask != NULL) Py_DECREF(ret->numpy_mask);
+            if (ret->numpy_mask != NULL) {
+                Py_DECREF(ret->numpy_mask);
+            }
         }
     }
     if (pResult != NULL) {
@@ -2124,7 +2123,10 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, cha
             goto wrapup;
         }
         if (PyList_CheckExact(object)) {
-            PyList_SetItem(result, i, PyList_GetItem(object, 0));
+            PyObject *item = PyList_GetItem(object, 0);
+            PyList_SetItem(result, i, item);
+            Py_INCREF(item);
+            Py_DECREF(object);
         } else {
             msg = createException(MAL, "pyapi.eval", "Why is this not a list?");
             goto wrapup;
@@ -2132,11 +2134,13 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, cha
     }
     Py_DECREF(keys);
     Py_DECREF(pResult);
+    //Py_INCREF(result);
     return result;
 wrapup:
     *return_message = msg;
     Py_DECREF(result);
     Py_DECREF(keys);
+    Py_DECREF(pResult);
     return NULL;
 }
 
