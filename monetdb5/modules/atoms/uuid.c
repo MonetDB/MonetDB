@@ -164,7 +164,7 @@ str
 UUIDgenerateUuid(uuid **retval)
 {
 	uuid *u;
-	int i, r;
+	int i = 0, r = 0;
 
 	if (*retval == NULL)
 		*retval = GDKmalloc(UUID_SIZE);
