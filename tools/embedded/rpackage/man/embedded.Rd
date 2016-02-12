@@ -10,7 +10,7 @@
   MonetDBLite low-level interface
 }
 \description{
-This is a low-level API for MonetDBLite. \code{DBI}/\code{dplyr} frontends for these functions is in the \code{MonetDB.R} package. This package is not really meant to be used directly.
+Low-level API for MonetDBLite. \code{DBI}/\code{dplyr} frontends for these functions is in the \code{MonetDB.R} package. This package is not really meant to be used directly.
 }
 \usage{
 monetdb_embedded_startup(dir=tempdir(), quiet=TRUE)
