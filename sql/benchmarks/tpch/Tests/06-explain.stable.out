@@ -38,9 +38,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 326 # length
+% 320 # length
 function user.s2_1(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):void;
-    X_63:void := querylog.define("explain select\n\tsum(l_extendedprice * l_discount) as revenue\nfrom\n\tlineitem\nwhere\n\tl_shipdate >= date \\'1994-01-01\\'\n\tand l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n\tand l_discount between .06 - 0.01 and .06 + 0.01\n\tand l_quantity < 24;","sequential_pipe",42);
+    X_63:void := querylog.define("explain select\n sum(l_extendedprice * l_discount) as revenue\nfrom\n lineitem\nwhere\n l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n and l_discount between .06 - 0.01 and .06 + 0.01\n and l_quantity < 24;","sequential_pipe",42);
     X_9 := sql.mvc();
     X_13:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_quantity",0);
     X_23:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_discount",0);
@@ -61,23 +61,23 @@ function user.s2_1(A0:date,A1:date,A2:int,A3:bte,A4:sht,A5:bte,A6:sht,A7:bte):vo
     X_34 := calc.lng(2,X_33,15,2);
     C_76 := algebra.subselect(X_23,C_41,X_31,X_34,true,true,false);
     (C_25,r1_28) := sql.bind(X_9,"sys","lineitem","l_discount",2);
-    C_77 := algebra.subselect(r1_28,nil:bat[:oid,:oid],X_31,X_34,true,true,false);
-    X_27:bat[:oid,:lng] := sql.bind(X_9,"sys","lineitem","l_discount",1);
+    C_77 := algebra.subselect(r1_28,nil:bat[:oid],X_31,X_34,true,true,false);
+    X_27:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_discount",1);
     C_78 := algebra.subselect(X_27,C_41,X_31,X_34,true,true,false);
     C_44 := sql.subdelta(C_76,C_41,C_25,C_77,C_78);
     X_21 := calc.lng(A7,15,2);
     C_79 := algebra.thetasubselect(X_13,C_44,X_21,"<");
     (C_16,r1_16) := sql.bind(X_9,"sys","lineitem","l_quantity",2);
-    C_80 := algebra.thetasubselect(r1_16,nil:bat[:oid,:oid],X_21,"<");
-    X_19:bat[:oid,:lng] := sql.bind(X_9,"sys","lineitem","l_quantity",1);
+    C_80 := algebra.thetasubselect(r1_16,nil:bat[:oid],X_21,"<");
+    X_19:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_quantity",1);
     C_81 := algebra.thetasubselect(X_19,C_44,X_21,"<");
     C_45 := sql.subdelta(C_79,C_44,C_16,C_80,C_81);
-    X_47:bat[:oid,:lng] := sql.bind(X_9,"sys","lineitem","l_extendedprice",0);
+    X_47:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_extendedprice",0);
     (C_49,r1_64) := sql.bind(X_9,"sys","lineitem","l_extendedprice",2);
-    X_51:bat[:oid,:lng] := sql.bind(X_9,"sys","lineitem","l_extendedprice",1);
+    X_51:bat[:lng] := sql.bind(X_9,"sys","lineitem","l_extendedprice",1);
     X_52 := sql.projectdelta(C_45,X_47,C_49,r1_64,X_51);
     X_53 := sql.projectdelta(C_45,X_23,C_25,r1_28,X_27);
-    X_54:bat[:oid,:lng] := batcalc.*(X_52,X_53);
+    X_54:bat[:lng] := batcalc.*(X_52,X_53);
     X_55:lng := aggr.sum(X_54);
     sql.resultSet("sys.L1","revenue","decimal",19,4,10,X_55);
 end user.s2_1;

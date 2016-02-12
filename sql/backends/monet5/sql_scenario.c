@@ -1171,6 +1171,7 @@ SQLparser(Client c)
 		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
 			msg = SQLCacheRemove(c, be->q->name);
 			qc_delete(be->mvc->qc, be->q);
+			be->q = NULL;
 			goto recompilequery;
 		}
 
@@ -1210,13 +1211,15 @@ recompilequery:
 			}
 		} else {
 			/* generate a factory instantiation */
+			char *q = query_cleaned(QUERY(m->scanner));
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
 					  m->sym,	/* the sql symbol tree */
 					  m->args,	/* the argument list */
 					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 					  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-					  sql_escape_str(QUERY(m->scanner)));
+					  sql_escape_str(q));
+			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
 			if (!be->q->code)
@@ -1261,17 +1264,12 @@ recompilequery:
 
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
 		if (opt) {
-			MalBlkPtr mb = c->curprg->def;
+			str msg = optimizeQuery(c);
 
-			trimMalBlk(mb);
-			chkProgram(c->fdout, c->nspace, mb);
-			addOptimizers(c, mb, "default_pipe");
-			msg = optimizeMALBlock(c, mb);
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);
 				goto finalize;
 			}
-			c->curprg->def = mb;
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
 		/* we know more in this case than chkProgram(c->fdout, c->nspace, c->curprg->def); */

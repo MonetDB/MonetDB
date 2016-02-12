@@ -7,7 +7,7 @@
  */
 
 #include <monetdb_config.h>
-#include "rel_semantic.h"
+#include "sql_relation.h"
 #include "rel_prop.h"
 
 prop *

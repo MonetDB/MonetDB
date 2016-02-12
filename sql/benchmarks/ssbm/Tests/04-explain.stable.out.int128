@@ -39,9 +39,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 412 # length
+% 362 # length
 function user.s2_1(A0:str,A1:str):void;
-    X_130:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n\tfrom lineorder, dwdate, part, supplier\n\twhere lo_orderdate = d_datekey\n\t\tand lo_partkey = p_partkey\n\t\tand lo_suppkey = s_suppkey\n\t\tand p_category = \\'MFGR#12\\' -- OK to add p_mfgr = ’MFGR#1’\n\t\tand s_region = \\'AMERICA\\'\n\tgroup by d_year, p_brand1\n\torder by d_year, p_brand1;","sequential_pipe",85);
+    X_130:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n from lineorder, dwdate, part, supplier\n where lo_orderdate = d_datekey\n and lo_partkey = p_partkey\n and lo_suppkey = s_suppkey\n and p_category = \\'MFGR#12\\' \n and s_region = \\'AMERICA\\'\n group by d_year, p_brand1\n order by d_year, p_brand1;","sequential_pipe",86);
     X_98 := bat.new(nil:oid,nil:str);
     X_106 := bat.append(X_98,"sys.L1");
     X_115 := bat.append(X_106,"sys.dwdate");
@@ -98,11 +98,12 @@ function user.s2_1(A0:str,A1:str):void;
     X_53:bat[:oid] := algebra.projectionpath(X_45,X_26,X_52);
     C_54:bat[:oid] := sql.tid(X_3,"sys","dwdate");
     (X_56,r1_70) := algebra.subjoin(X_53,C_54,nil:BAT,nil:BAT,false,nil:lng);
+    X_146:bat[:oid] := algebra.projectionpath(X_56,X_45);
     X_58:bat[:str] := sql.bind(X_3,"sys","part","p_brand1",0);
     (C_60,r1_78) := sql.bind(X_3,"sys","part","p_brand1",2);
     X_62:bat[:str] := sql.bind(X_3,"sys","part","p_brand1",1);
     X_63 := sql.projectdelta(C_23,X_58,C_60,r1_78,X_62);
-    X_64:bat[:str] := algebra.projectionpath(X_56,X_45,r1_32,X_63);
+    X_64:bat[:str] := algebra.projectionpath(X_146,r1_32,X_63);
     X_65:bat[:int] := sql.bind(X_3,"sys","dwdate","d_year",0);
     (C_67,r1_89) := sql.bind(X_3,"sys","dwdate","d_year",2);
     X_69:bat[:int] := sql.bind(X_3,"sys","dwdate","d_year",1);
@@ -116,7 +117,7 @@ function user.s2_1(A0:str,A1:str):void;
     (C_88,r1_113) := sql.bind(X_3,"sys","lineorder","lo_revenue",2);
     X_90:bat[:int] := sql.bind(X_3,"sys","lineorder","lo_revenue",1);
     X_91 := sql.projectdelta(C_4,X_86,C_88,r1_113,X_90);
-    X_92:bat[:int] := algebra.projectionpath(X_56,X_45,X_26,X_91);
+    X_92:bat[:int] := algebra.projectionpath(X_146,X_26,X_91);
     X_93:bat[:hge] := aggr.subsum(X_92,X_75,r1_98,true,true);
     (X_80,r1_103,r2_103) := algebra.subsort(X_79,false,false);
     (X_83,r1_106,r2_106) := algebra.subsort(X_78,r1_103,r2_103,false,false);

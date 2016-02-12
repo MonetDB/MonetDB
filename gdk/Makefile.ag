@@ -14,7 +14,7 @@ lib_gdk = {
 	SOURCES = \
 		gdk.h gdk_cand.h gdk_atomic.h gdk_batop.c \
 		gdk_select.c \
-		gdk_search.c gdk_search.h gdk_tm.c \
+		gdk_search.c gdk_hash.c gdk_hash.h gdk_tm.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_utils.c gdk_utils.h \
 		gdk_atoms.c gdk_atoms.h \
@@ -50,7 +50,7 @@ headers_h = {
 		gdk_calc.h \
 		gdk_delta.h \
 		gdk_posix.h \
-		gdk_search.h \
+		gdk_hash.h \
 		gdk_system.h \
 		gdk_utils.h
 }

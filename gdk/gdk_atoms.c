@@ -82,13 +82,13 @@ dblCmp(const dbl *l, const dbl *r)
 static BUN
 bteHash(const bte *v)
 {
-	return (BUN) *(const unsigned char *) v;
+	return (BUN) mix_bte(*(const unsigned char *) v);
 }
 
 static BUN
 shtHash(const sht *v)
 {
-	return (BUN) *(const unsigned short *) v;
+	return (BUN) mix_sht(*(const unsigned short *) v);
 }
 
 static BUN
@@ -100,15 +100,14 @@ intHash(const int *v)
 static BUN
 lngHash(const lng *v)
 {
-	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1]);
+	return (BUN) mix_lng(*(const ulng *) v);
 }
 
 #ifdef HAVE_HGE
 static BUN
 hgeHash(const hge *v)
 {
-	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1] ^ \
-	                     ((const unsigned int *) v)[2] ^ ((const unsigned int *) v)[3]);
+	return (BUN) mix_hge(*(const uhge *) v);
 }
 #endif
 

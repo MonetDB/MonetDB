@@ -10,14 +10,12 @@
 
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_dump.h"
-#include "rel_select.h"
-#include "rel_updates.h"
 #include "rel_planner.h"
-#include "rel_psm.h"
-#include "sql_env.h"
+#include "sql_mvc.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
@@ -5382,7 +5380,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 }
 
 static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
-static sql_rel * rel_dce(mvc *sql, sql_rel *rel);
 
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel) 
@@ -5656,7 +5653,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	rel = rel_add_projects(sql, rel);
@@ -5955,6 +5952,16 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 				/* remove simple select true expressions */
 				if (flag)
 					break;
+			}
+			if (is_atom(e->type) && !e->l && !e->r) { /* numbered variable */
+				atom *a = sql->args[e->flag];
+				int flag = a->data.val.bval;
+
+				/* remove simple select true expressions */
+				if (flag) {
+					sql->caching = 0;
+					break;
+				}
 			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
 				sql_exp *l = e->l;
@@ -6533,6 +6540,112 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* leftouterjoin(a,b)[ a.C op b.D or a.E op2 b.F ]) -> 
+ * union(
+ * 	join(a,b)[ a.C op b.D or a.E op2 b. F ], 
+ * 	project( 
+ * 		antijoin(a,b) [a.C op b.D or a.E op2 b.F ])
+ *	 	[ a.*, NULL * foreach column of b]
+ * )
+ */
+static int
+exps_nr_of_or(list *exps)
+{
+	int ors = 0;
+	node *n;
+
+	if (!exps)
+		return ors;
+	for(n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && e->flag == cmp_or)
+			ors++;
+	}
+	return ors;
+}
+
+static void 
+add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
+{
+	list *exps;
+	node *n;
+
+	exps = rel_projections(sql, r, NULL, 1, 1);
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *ne;
+
+		ne = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(e), NULL));
+		exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+		append(rel->exps, ne);
+	}
+}
+
+static sql_rel *
+rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
+{
+	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) && 
+			list_length(rel->exps) && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
+		sql_rel *l = rel_dup(rel->l), *nl, *nll, *nlr;
+		sql_rel *r = rel_dup(rel->r), *nr;
+		sql_exp *e;
+
+		nll = rel_crossproduct(sql->sa, l, r, op_join); 
+		nlr = rel_crossproduct(sql->sa, l, r, op_join); 
+
+		/* TODO find or exp, ie handle rest with extra joins */
+		/* expect only a single or expr for now */
+		assert(list_length(rel->exps) == 1);
+	       	e = rel->exps->h->data;
+		nll->exps = exps_copy(sql->sa, e->l);
+		nlr->exps = exps_copy(sql->sa, e->r);
+		nl = rel_or( sql, nll, nlr, NULL, e->l, e->r);
+
+		if (rel->op == op_full) {
+			l = rel_dup(l);
+			r = rel_dup(r);
+		}
+
+		if (rel->op == op_left || rel->op == op_full) {
+			/* split in 2 anti joins */
+			nr = rel_crossproduct(sql->sa, l, r, op_anti);
+			nr->exps = exps_copy(sql->sa, e->l);
+			nr = rel_crossproduct(sql->sa, nr, r, op_anti);
+			nr->exps = exps_copy(sql->sa, e->r);
+
+			/* project left */
+			nr = rel_project(sql->sa, nr, 
+				rel_projections(sql, l, NULL, 1, 1));
+			/* add null's for right */
+			add_nulls( sql, nr, r);
+			nl = rel_setop(sql->sa, nl, nr, op_union);
+		}
+		if (rel->op == op_right || rel->op == op_full) {
+			/* split in 2 anti joins */
+			nr = rel_crossproduct(sql->sa, r, l, op_anti);
+			nr->exps = exps_copy(sql->sa, e->l);
+			nr = rel_crossproduct(sql->sa, nr, l, op_anti);
+			nr->exps = exps_copy(sql->sa, e->r);
+
+			nr = rel_project(sql->sa, nr, sa_list(sql->sa));
+			/* add null's for left */
+			add_nulls( sql, nr, l);
+			/* project right */
+			nr->exps = list_merge(nr->exps, 
+				rel_projections(sql, r, NULL, 1, 1),
+				(fdup)NULL);
+			nl = rel_setop(sql->sa, nl, nr, op_union);
+		}
+
+		rel->l = NULL;
+		rel->r = NULL;
+		rel_destroy(rel);
+		*changes = 1;
+		rel = nl;
+	}
+	return rel;
+}
+
 /* rewrite sqltype into backend types */
 static sql_rel *
 rel_rewrite_types(int *changes, mvc *sql, sql_rel *rel)
@@ -6794,10 +6907,12 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					int skip = 0, j;
 
 					/* do not include empty partitions */
+					/*
 					if ((nrel || nt->next) && 
 					   pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(sql->session->tr, pt->columns.set->h->data, 1)){
 						continue;
 					}
+					*/
 
 					MT_lock_set(&prel->exps->ht_lock);
 					prel->exps->ht = NULL;
@@ -7218,46 +7333,6 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 	}
 	assert(0);
 	return rel;
-}
-
-static sql_rel *
-_rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
-{
-	list *exps = rel_projections(sql, rel, NULL, 1, 1);
-	sql_exp *e;
-
-	if (list_length(exps) == 0) {
-		*exp = NULL;
-		return rel;
-	}
-	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
-	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-	*exp = exp_label(sql->sa, e, ++sql->label);
-	rel_project_add_exp(sql, rel, e);
-	return rel;
-}
-
-static sql_exp *
-exps_find_identity(list *exps) 
-{
-	node *n;
-
-	for (n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (is_identity(e, NULL))
-			return e;
-	}
-	return NULL;
-}
-
-static sql_rel *
-rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
-{
-	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps)) != NULL) 
-		return rel;
-	return _rel_add_identity(sql, rel, exp);
 }
 
 static int
@@ -7729,6 +7804,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		if (level <= 0)
 			rel = rewrite_topdown(sql, rel, &rel_semijoin_use_fk, &changes);
 	}
+	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
+		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
 	if (gp.cnt[op_select]) {
 		/* only once */

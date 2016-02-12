@@ -27,7 +27,7 @@
 
 
 err
-openConnectionTCP(int *ret, unsigned short port, FILE *log)
+openConnectionTCP(int *ret, char* bindaddr, unsigned short port, FILE *log)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -37,9 +37,6 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 	struct hostent *hoste;
 	char *host;
 	char hostip[24];
-#ifdef CONTROL_BINDADDR
-	char bindaddr[512];   /* eligable for configuration */
-#endif
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
@@ -53,14 +50,13 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 	}
 
 	server.sin_family = AF_INET;
-#ifdef CONTROL_BINDADDR
-	gethostname(bindaddr, 512);
-	hoste = gethostbyname(bindaddr);
-	memcpy(&server.sin_addr.s_addr, *(hoste->h_addr_list),
-			sizeof(server.sin_addr.s_addr));
-#else
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
-#endif
+	if (bindaddr) {
+		hoste = gethostbyname(bindaddr);
+		memcpy(&server.sin_addr.s_addr, *(hoste->h_addr_list),
+				sizeof(server.sin_addr.s_addr));
+	} else {
+		server.sin_addr.s_addr = htonl(INADDR_ANY);
+	}
 	for (i = 0; i < 8; i++)
 		server.sin_zero[i] = 0;
 	length = (socklen_t) sizeof(server);
@@ -99,7 +95,7 @@ openConnectionTCP(int *ret, unsigned short port, FILE *log)
 }
 
 err
-openConnectionUDP(int *ret, unsigned short port)
+openConnectionUDP(int *ret, char* bindaddr, unsigned short port)
 {
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
@@ -118,7 +114,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	hints.ai_next = NULL;
 
 	snprintf(sport, 10, "%hu", port);
-	sock = getaddrinfo(NULL, sport, &hints, &result);
+	sock = getaddrinfo(bindaddr, sport, &hints, &result);
 	if (sock != 0)
 		return(newErr("failed getting address info: %s", gai_strerror(sock)));
 

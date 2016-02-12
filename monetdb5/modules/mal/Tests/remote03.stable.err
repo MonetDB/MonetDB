@@ -95,8 +95,9 @@ QUERY = # let connect figure out itself how to connect to the running db
         catch MALException:str;
         	io.print("Received an error from the remote site");
         exit MALException;
-
+        
 ERROR = !SyntaxException:remote.exec:(mapi:monetdb://monetdb@lab02.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_3_void := io.print.bla();
+
 
 # 23:12:09 >  
 # 23:12:09 >  "Done."

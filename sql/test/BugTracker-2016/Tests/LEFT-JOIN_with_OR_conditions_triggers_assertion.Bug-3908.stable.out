@@ -80,10 +80,10 @@ Ready.
 % .b,	.f # table_name
 % value,	id # name
 % char,	int # type
-% 10,	1 # length
+% 10,	3 # length
 [ "aaa",	100	]
-[ "bbb",	100	]
 [ "bbb",	101	]
+[ "bbb",	100	]
 [ "ccc",	101	]
 #DROP TABLE bar;
 #DROP TABLE foo;

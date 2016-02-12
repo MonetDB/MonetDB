@@ -94,7 +94,7 @@ project (
 project (
 | group by (
 | | table(sys.sorted) [ sorted.a, sorted.b ] COUNT 
-| ) [ sorted.a, sorted.b ] [ sorted.b, sorted.a ]
+| ) [ sorted.b, sorted.a ] [ sorted.b, sorted.a ]
 ) [ sorted.a, sorted.b ]
 
 # 13:59:55 >  

@@ -13,8 +13,6 @@
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 
-extern int mvc_debug_on(mvc *m, int flag);
-
 extern str sql_update_var(mvc *sql, char *name, char *sval, lng sgn);
 
 extern int sql_create_env(mvc *sql, sql_schema *s);

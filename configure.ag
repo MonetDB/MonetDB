@@ -3563,6 +3563,7 @@ for comp in \
 	'java_control ' \
 	'java_jdbc    ' \
 	'liblas       ' \
+	'liblzma      ' \
 	'libxml2      ' \
 	'lidar        ' \
 	'netcdf       ' \

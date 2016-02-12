@@ -56,9 +56,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 889 # length
+% 710 # length
 function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:str,A9:str,A10:str,A11:bte,A12:int,A13:int,A14:str,A15:str,A16:str,A17:str,A18:str,A19:str,A20:str):void;
-    X_160:void := querylog.define("explain select\n\tcntrycode,\n\tcount(*) as numcust,\n\tsum(c_acctbal) as totacctbal\nfrom\n\t(\n\t\tselect\n\t\t\tsubstring(c_phone from 1 for 2) as cntrycode,\n\t\t\tc_acctbal\n\t\tfrom\n\t\t\tcustomer\n\t\twhere\n\t\t\tsubstring(c_phone from 1 for 2) in\n\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\tand c_acctbal > (\n\t\t\t\tselect\n\t\t\t\t\tavg(c_acctbal)\n\t\t\t\tfrom\n\t\t\t\t\tcustomer\n\t\t\t\twhere\n\t\t\t\t\tc_acctbal > 0.00\n\t\t\t\t\tand substring(c_phone from 1 for 2) in\n\t\t\t\t\t\t(\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n\t\t\t)\n\t\t\tand not exists (\n\t\t\t\tselect\n\t\t\t\t\t*\n\t\t\t\tfrom\n\t\t\t\t\torders\n\t\t\t\twhere\n\t\t\t\t\to_custkey = c_custkey\n\t\t\t)\n\t) as custsale\ngroup by\n\tcntrycode\norder by\n\tcntrycode;","sequential_pipe",101);
+    X_160:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",102);
     X_126 := bat.new(nil:oid,nil:str);
     X_134 := bat.append(X_126,"sys.custsale");
     X_142 := bat.append(X_134,"sys.L2");
@@ -130,28 +130,28 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:st
     C_85 := algebra.subselect(X_69,C_72,A20,A20,true,false,false);
     X_86 := bat.mergecand(X_84,C_85);
     X_87 := algebra.projection(X_86,X_66);
-    X_88:bat[:oid,:dbl] := batcalc.dbl(2,X_87);
+    X_88:bat[:dbl] := batcalc.dbl(2,X_87);
     X_89:dbl := aggr.avg(X_88);
     X_90 := sql.single(X_89);
     (X_91,r1_140) := algebra.subthetajoin(X_68,X_90,nil:BAT,nil:BAT,1,true,nil:lng);
     C_95 := algebra.subinter(X_59,X_91,nil:BAT,nil:BAT,false,nil:lng);
     X_96 := algebra.projection(C_95,X_58);
     X_97 := bat.mirror(X_96);
-    C_98:bat[:oid,:oid] := sql.tid(X_22,"sys","orders");
-    X_100:bat[:oid,:int] := sql.bind(X_22,"sys","orders","o_custkey",0);
+    C_98:bat[:oid] := sql.tid(X_22,"sys","orders");
+    X_100:bat[:int] := sql.bind(X_22,"sys","orders","o_custkey",0);
     (C_102,r1_155) := sql.bind(X_22,"sys","orders","o_custkey",2);
-    X_104:bat[:oid,:int] := sql.bind(X_22,"sys","orders","o_custkey",1);
+    X_104:bat[:int] := sql.bind(X_22,"sys","orders","o_custkey",1);
     X_105 := sql.delta(X_100,C_102,r1_155,X_104);
     X_106 := algebra.projection(C_98,X_105);
     (X_107,r1_160) := algebra.subjoin(X_96,X_106,nil:BAT,nil:BAT,false,nil:lng);
     X_109 := algebra.subdiff(X_97,X_107,nil:BAT,nil:BAT,false,nil:lng);
-    X_110:bat[:oid,:str] := algebra.projectionPath(X_109,C_95,X_51,X_35);
-    X_111:bat[:oid,:str] := batstr.substring(X_110,A0,A1);
+    X_110:bat[:str] := algebra.projectionpath(X_109,C_95,X_51,X_35);
+    X_111:bat[:str] := batstr.substring(X_110,A0,A1);
     (X_112,r1_171,r2_171) := group.subgroupdone(X_111);
     X_115 := algebra.projection(r1_171,X_111);
-    X_120:bat[:oid,:wrd] := aggr.subcount(X_112,X_112,r1_171,false);
-    X_122:bat[:oid,:lng] := algebra.projectionPath(X_109,C_95,X_67);
-    X_123:bat[:oid,:lng] := aggr.subsum(X_122,X_112,r1_171,true,true);
+    X_120:bat[:wrd] := aggr.subcount(X_112,X_112,r1_171,false);
+    X_122:bat[:lng] := algebra.projectionpath(X_109,C_95,X_67);
+    X_123:bat[:lng] := aggr.subsum(X_122,X_112,r1_171,true,true);
     (X_116,r1_175,r2_175) := algebra.subsort(X_115,false,false);
     X_119 := algebra.projection(r1_175,X_115);
     X_121 := algebra.projection(r1_175,X_120);

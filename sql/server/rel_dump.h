@@ -9,13 +9,12 @@
 #ifndef _REL_DUMP_H_
 #define _REL_DUMP_H_
 
-#include "rel_semantic.h"
+#include "sql_relation.h"
+#include "sql_mvc.h"
 
-extern void rel_print(mvc *sql, sql_rel *rel, int depth);
-extern void _rel_print(mvc *sql, sql_rel *rel);
+extern void rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
+extern void rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int decorate);
 extern const char *op2string(operator_type op);
-
-extern str rel2str( mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_read(mvc *sql, char *ra, int *pos, list *refs);
 

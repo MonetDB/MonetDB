@@ -80,11 +80,13 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if ( getModuleId(p) == generatorRef && getFunctionId(p) == seriesRef)
 			break;
 	}
-	if( i == limit)
+	if (i == limit) {
+		GDKfree(series);
 		return 0;
+	}
 	
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-	GDKfree(series);
+		GDKfree(series);
 		return 0;
 	}
 
@@ -100,40 +102,29 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			setFunctionId(p, parametersRef);
 			typeChecker(cntxt->fdout, cntxt->nspace, mb, p, TRUE);
 			pushInstruction(mb,p); 
-		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == subselectRef && series[getArg(p,1)]){
+		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == subselectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
-		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetasubselectRef && series[getArg(p,1)]){
+		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetasubselectRef && series[getArg(p,1)]){
 			errorCheck(p,algebraRef,getArg(p,1));
-		} else
-		if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
+		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
 			errorCheck(p,algebraRef,getArg(p,2));
-		} else
-		if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue",11) && isaBatType(getArgType(mb,p,0)) ){
+		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue",11) && isaBatType(getArgType(mb,p,0)) ){
 			// interface expects scalar type only, not expressable in MAL signature
 			mb->errors++;
 			showException(cntxt->fdout, MAL, "generate_series", "internal error, generate_series is a table producing function");
-		}else 
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == bteRef && series[getArg(p,1)] && p->argc == 2 ){
+		}else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == bteRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(bte);
-		} else
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == shtRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == shtRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(sht);
-		} else
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == intRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == intRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(int);
-		} else
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == lngRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == lngRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(lng);
-		} else
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == fltRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == fltRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(flt);
-		} else
-		if ( getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef && series[getArg(p,1)] && p->argc == 2 ){
+		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == dblRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(dbl);
-		} else
-		if ( getModuleId(p) == languageRef && getFunctionId(p) == passRef )
+		} else if ( getModuleId(p) == languageRef && getFunctionId(p) == passRef )
 			pushInstruction(mb,p);
 		else {
 			// check for use without conversion

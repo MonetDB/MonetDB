@@ -39,6 +39,7 @@ lib_sqlserver = {
 		rel_sequence.c \
 		rel_prop.c \
 		rel_exp.c \
+		rel_rel.c \
 		rel_optimizer.c \
 		rel_planner.c rel_planner.h \
 		rel_distribute.c \
@@ -46,7 +47,7 @@ lib_sqlserver = {
 		rel_psm.c \
 		rel_xml.c \
 		rel_dump.c \
-		rel_dump.h rel_exp.h \
+		rel_dump.h rel_exp.h rel_rel.h \
 		rel_optimizer.h rel_distribute.h rel_prop.h rel_schema.h rel_select.h \
 		rel_semantic.h rel_sequence.h rel_trans.h \
 		rel_updates.h rel_psm.h rel_xml.h sql_atom.h sql_datetime.h \

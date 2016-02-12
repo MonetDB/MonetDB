@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 
 #include "rel_bin.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_psm.h"
 #include "rel_prop.h"
@@ -666,8 +667,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			}
 			return stmt_tunion(sql->sa, sel1, sel2);
 		}
-		if (e->flag == cmp_or && right)  /* join */
+		if (e->flag == cmp_or && right) {  /* join */
 			assert(0);
+		}
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL) 

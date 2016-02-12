@@ -711,7 +711,6 @@ BATsave(BAT *bd)
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
-	CHECKDEBUG BATassertProps(b);
 
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
@@ -791,20 +790,6 @@ BATsave(BAT *bd)
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = 1;
 		DESCclean(bd);
-		if (bd->htype && bd->H->heap.storage == STORE_MMAP) {
-			HEAPshrink(&bd->H->heap, bd->H->heap.free);
-			if (bd->batCapacity > bd->H->heap.size >> bd->H->shift)
-				bd->batCapacity = (BUN) (bd->H->heap.size >> bd->H->shift);
-		}
-		if (bd->ttype && bd->T->heap.storage == STORE_MMAP) {
-			HEAPshrink(&bd->T->heap, bd->T->heap.free);
-			if (bd->batCapacity > bd->T->heap.size >> bd->T->shift)
-				bd->batCapacity = (BUN) (bd->T->heap.size >> bd->T->shift);
-		}
-		if (bd->H->vheap && bd->H->vheap->storage == STORE_MMAP)
-			HEAPshrink(bd->H->vheap, bd->H->vheap->free);
-		if (bd->T->vheap && bd->T->vheap->storage == STORE_MMAP)
-			HEAPshrink(bd->T->vheap, bd->T->vheap->free);
 		return GDK_SUCCEED;
 	}
 	return err;
