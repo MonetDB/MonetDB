@@ -70,6 +70,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 }
                 PyDict_SetItem(result, PyString_FromString(output->cols[i].name), numpy_array);
                 Py_DECREF(numpy_array);
+                BBPunfix(b->batCacheid);
             }
             _connection_cleanup_result(output);
             return result;

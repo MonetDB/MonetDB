@@ -694,9 +694,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                     if (msg != MAL_SUCCEED) {
                                         goto wrapup;
                                     }
-                                    BBPunfix(col.b);
                                     output->cols[i].b = ret_bat->batCacheid;
                                 }
+                                BBPunfix(col.b);
                             }
 
                             // first obtain the total size of the shared memory region
@@ -717,6 +717,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                     size += sizeof(Heap);                                             //[VHEAP]
                                     size += b->T->vheap->size;                                        //[VHEAPDATA]
                                 }
+                                BBPunfix(b->batCacheid);
                             }
 
                             query_ptr->memsize = size;
@@ -765,6 +766,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                     memcpy(result_ptr + position, b->T->vheap->base, b->T->vheap->size);
                                     position += b->T->vheap->size;
                                 }
+                                BBPunfix(b->batCacheid);
                             }
                             //detach the main process from this piece of shared memory so the child process can delete it
                             _connection_cleanup_result(output);
