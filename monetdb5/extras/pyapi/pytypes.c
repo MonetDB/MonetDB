@@ -96,16 +96,18 @@ char *BatType_Format(int type)
 {
     switch (type)
     {
-        case TYPE_bit: return "BIT";
-        case TYPE_bte: return "BYTE";
-        case TYPE_sht: return "SHORT";
+        case TYPE_bit: return "BOOL";
+        case TYPE_bte: return "TINYINT";
+        case TYPE_sht: return "SHORTINT";
         case TYPE_int: return "INTEGER";
-        case TYPE_lng: return "LONG";
+        case TYPE_lng: return "LONGINT";
         case TYPE_flt: return "FLOAT";
         case TYPE_dbl: return "DOUBLE";
         case TYPE_str: return "STRING";
-        case TYPE_hge: return "HUGE";
         case TYPE_oid: return "OID";
+#ifdef HAVE_HGE
+        case TYPE_hge: return "HUGEINT";
+#endif
         default: return "UNKNOWN";
     }
 }
@@ -147,8 +149,10 @@ int BatType_ToPyType(int type)
         case TYPE_flt: return NPY_FLOAT32;
         case TYPE_dbl: return NPY_FLOAT64;
         case TYPE_str: return NPY_UNICODE;
-        case TYPE_hge: return NPY_STRING;
         case TYPE_oid: return NPY_INT32;
+#ifdef HAVE_HGE
+        case TYPE_hge: return NPY_FLOAT64;
+#endif
         default: return NPY_STRING;
     }
 }
