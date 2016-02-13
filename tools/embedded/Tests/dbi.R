@@ -253,6 +253,13 @@ test_that("fetch progressively pulls in rows", {
 	dbRemoveTable(con, "test")
 })
 
+test_that("this never happens again", {
+	dbBegin(con)
+	dbSendQuery(con, "create table ep (pde_id clob, bene_id clob, srvc_dt clob, prod_srvc_id clob, plan_cntrct_rec_id clob, plan_pbp_rec_num clob, qty_dspnsd_num double, days_suply_num double, drug_cvrg_stus_cd clob, ctstrphc_cvrg_cd clob, ptnt_pay_amt double, othr_troop_amt double, lics_amt double, plro_amt double, cvrd_d_plan_pd_amt double, ncvrd_plan_pd_amt double, tot_rx_cst_amt double, benefit_phase clob, ccw_pharmacy_id double, ccw_prscrbr_id double, pde_prscrbr_id_frmt_cd clob, formulary_id clob, frmlry_rx_id clob, rptd_gap_dscnt_num double, brnd_gnrc_cd clob, rx_c_cov double, rx_c_lics double, rx_c_tpc double, rx_c_tdc double, rx_c_oop double, rx_c_gdc double, rx_e_cov double, rx_e_lics double, rx_e_tpc double, rx_e_tdc double, rx_e_oop double, rx_e_gdc double, rx_o_cov double, rx_o_lics double, rx_o_tpc double, rx_o_tdc double, rx_o_oop double, rx_o_gdc double, rx_ce_cov double, rx_ce_lics double, rx_ce_tpc double, rx_ce_tdc double, rx_ce_oop double, rx_ce_gdc double, rx_co_cov double, rx_co_lics double, rx_co_tpc double, rx_co_tdc double, rx_co_oop double, rx_co_gdc double, rx_eo_cov double, rx_eo_lics double, rx_eo_tpc double, rx_eo_tdc double, rx_eo_oop double, rx_eo_gdc double, rx_ceo_cov double, rx_ceo_lics double, rx_ceo_tpc double, rx_ceo_tdc double, rx_ceo_oop double, rx_ceo_gdc double);
+create table aep13 as select bene_id ,CAST( COUNT( DISTINCT CASE WHEN drug_cvrg_stus_cd IN ('c') THEN ccw_prscrbr_id END ) AS DOUBLE ) as rx_c_pre,CAST( COUNT( DISTINCT CASE WHEN drug_cvrg_stus_cd IN ('c') THEN ccw_pharmacy_id END ) AS DOUBLE ) as rx_c_pha from ep group by bene_id WITH DATA;")
+		dbRollback(con)
+	})
+
 test_that("dis/re-connect", {
 	expect_true(dbIsValid(con))
 	dbDisconnect(con)
