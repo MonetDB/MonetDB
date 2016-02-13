@@ -80,7 +80,7 @@ stderr of test 'dynamicload` in directory 'monetdb5/mal` itself:
 # 13:21:38 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:21:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6360/.s.monetdb.38700
+MAPI  = (monetdb) /var/tmp/mtest-16561/.s.monetdb.38261
 QUERY = # examples of non-bindable instructions
         
         #load unknown library
