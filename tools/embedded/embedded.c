@@ -84,7 +84,7 @@ void monetdb_disconnect(void* conn) {
 
 char* monetdb_startup(char* dbdir, char silent, char sequential) {
 	opt *set = NULL;
-	int setlen = 0;
+	volatile int setlen = 0;
 	str retval = MAL_SUCCEED;
 	char* sqres = NULL;
 	void* res = NULL;
