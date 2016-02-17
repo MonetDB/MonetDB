@@ -22,10 +22,6 @@ stdout of test 'Mexample` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    c:bat[:oid,:int] := mal.multiplex("calc":str,"+":str,b:any,1:int);
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    c:bat[:oid,:int] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:int],1:int);
 
 # 15:36:19 >  
 # 15:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"

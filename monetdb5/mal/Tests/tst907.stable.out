@@ -24,12 +24,6 @@ stdout of test 'tst907` in directory 'monetdb5/mal` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.three a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"three":str,b:any,2:int,3:int);
-#WARNING To speedup user.three a bulk operator implementation is needed
-#WARNING To speedup user.one a bulk operator implementation is needed
-#WARNING To speedup user.pow a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"pow":str,b:bat[:oid,:int],2:int);
 
 # 22:45:40 >  
 # 22:45:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
