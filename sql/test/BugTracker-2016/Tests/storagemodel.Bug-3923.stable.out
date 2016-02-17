@@ -60,8 +60,6 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_59:bat[:lng] := mal.multiplex("user":str,"columnsize":str,X_44:bat[:str],X_51:bat[:lng],X_58:bat[:lng]);
 
 # 23:38:44 >  
 # 23:38:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=30783"

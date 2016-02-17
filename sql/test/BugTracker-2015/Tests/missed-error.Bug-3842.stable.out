@@ -24,20 +24,6 @@ stdout of test 'missed-error.Bug-3842` in directory 'sql/test/BugTracker-2015` i
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup calc.>= a bulk operator implementation is needed
-#    X_116:bat[:oid,:bit] := mal.multiplex("calc":str,">=":str,X_19:timestamp,X_115:bat[:oid,:timestamp]);
-#WARNING To speedup calc.<= a bulk operator implementation is needed
-#    X_141:bat[:oid,:bit] := mal.multiplex("calc":str,"<=":str,X_132:timestamp,X_140:bat[:oid,:timestamp]);
-#WARNING To speedup calc.and a bulk operator implementation is needed
-#    X_143:bat[:oid,:bit] := mal.multiplex("calc":str,"and":str,X_116:bat[:oid,:bit],X_141:bat[:oid,:bit]);
-#WARNING To speedup user.get_r a bulk operator implementation is needed
-#    X_67:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_63:bat[:oid,:str],A0:str,X_16:timestamp);
-#WARNING To speedup user.get_r a bulk operator implementation is needed
-#    X_68:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_64:bat[:oid,:str],A0:str,X_16:timestamp);
-#WARNING To speedup user.get_r a bulk operator implementation is needed
-#    X_69:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_65:bat[:oid,:str],A0:str,X_16:timestamp);
-#WARNING To speedup user.get_r a bulk operator implementation is needed
-#    X_70:bat[:oid,:lng] := mal.multiplex("user":str,"get_r":str,X_66:bat[:oid,:str],A0:str,X_16:timestamp);
 
 # 17:48:00 >  
 # 17:48:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18246" "--port=31631"

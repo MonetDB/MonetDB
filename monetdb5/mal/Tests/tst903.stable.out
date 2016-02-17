@@ -20,10 +20,6 @@ stdout of test 'tst903` in directory 'monetdb5/mal` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    x:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:any,c:any);
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    x:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:lng],c:bat[:oid,:lng]);
 
 
 #mdb.list("user","foo");

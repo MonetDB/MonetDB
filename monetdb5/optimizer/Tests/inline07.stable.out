@@ -24,8 +24,6 @@ stdout of test 'inline07` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:dbl] := mal.multiplex("user":str,"foo":str,b:any,b:any);
 
 # 06:41:00 >  
 # 06:41:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"

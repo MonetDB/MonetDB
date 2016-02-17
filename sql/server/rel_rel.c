@@ -1103,6 +1103,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 	e = rel->exps->h->data;
+	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);

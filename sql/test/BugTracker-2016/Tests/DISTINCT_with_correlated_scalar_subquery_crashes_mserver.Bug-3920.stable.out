@@ -70,7 +70,7 @@ Ready.
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
 #AND "functions"."type" = 2
-% .L,	.L,	.L3,	.L4 # table_name
+% .L,	.L,	.L2,	.L3 # table_name
 % PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % varchar,	varchar,	smallint,	varchar # type
 % 3,	16,	1,	20 # length
@@ -112,49 +112,49 @@ Ready.
 #, CAST((SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L3,	.L4 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	smallint,	varchar # type
-% 0,	3,	16,	1,	20 # length
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
-[ null,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
-[ null,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
-[ null,	"sys",	"fitsload",	1,	"sys.fitsload"	]
-[ null,	"sys",	"flush_log",	0,	"sys.flush_log"	]
-[ null,	"sys",	"listdir",	1,	"sys.listdir"	]
-[ null,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
-[ null,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
-[ null,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"querylog",	1,	"sys.querylog"	]
-[ null,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
-[ null,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
-[ null,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
-[ null,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"reuse",	1,	"sys.reuse"	]
-[ null,	"sys",	"setsession",	1,	"sys.setsession"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"shrink",	1,	"sys.shrink"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
-[ null,	"sys",	"times",	0,	"sys.times"	]
-[ null,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+% 1,	3,	16,	1,	20 # length
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
+[ NULL,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
+[ NULL,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
+[ NULL,	"sys",	"fitsload",	1,	"sys.fitsload"	]
+[ NULL,	"sys",	"flush_log",	0,	"sys.flush_log"	]
+[ NULL,	"sys",	"listdir",	1,	"sys.listdir"	]
+[ NULL,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
+[ NULL,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
+[ NULL,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"querylog",	1,	"sys.querylog"	]
+[ NULL,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
+[ NULL,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
+[ NULL,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"reuse",	1,	"sys.reuse"	]
+[ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
+[ NULL,	"sys",	"times",	0,	"sys.times"	]
+[ NULL,	"sys",	"vacuum",	1,	"sys.vacuum"	]
 #SELECT cast('' as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
 #, CAST((SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L3,	.L4 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	smallint,	varchar # type
 % 1,	3,	16,	1,	20 # length
@@ -196,7 +196,7 @@ Ready.
 #, CAST((SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L3,	.L4 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	smallint,	varchar # type
 % 1,	3,	16,	1,	20 # length
@@ -230,172 +230,193 @@ Ready.
 #, CAST((SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L3,	.L4 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	smallint,	varchar # type
-% 0,	3,	16,	1,	20 # length
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
-[ null,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
-[ null,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
-[ null,	"sys",	"fitsload",	1,	"sys.fitsload"	]
-[ null,	"sys",	"flush_log",	0,	"sys.flush_log"	]
-[ null,	"sys",	"listdir",	1,	"sys.listdir"	]
-[ null,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
-[ null,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
-[ null,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"querylog",	1,	"sys.querylog"	]
-[ null,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
-[ null,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
-[ null,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
-[ null,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"reuse",	1,	"sys.reuse"	]
-[ null,	"sys",	"setsession",	1,	"sys.setsession"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"shrink",	1,	"sys.shrink"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
-[ null,	"sys",	"times",	0,	"sys.times"	]
-[ null,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+% 1,	3,	16,	1,	20 # length
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
+[ NULL,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
+[ NULL,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
+[ NULL,	"sys",	"fitsload",	1,	"sys.fitsload"	]
+[ NULL,	"sys",	"flush_log",	0,	"sys.flush_log"	]
+[ NULL,	"sys",	"listdir",	1,	"sys.listdir"	]
+[ NULL,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
+[ NULL,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
+[ NULL,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"querylog",	1,	"sys.querylog"	]
+[ NULL,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
+[ NULL,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
+[ NULL,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"reuse",	1,	"sys.reuse"	]
+[ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
+[ NULL,	"sys",	"times",	0,	"sys.times"	]
+[ NULL,	"sys",	"vacuum",	1,	"sys.vacuum"	]
 #SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
 #, (SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	wrd,	varchar # type
-% 0,	3,	16,	1,	20 # length
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
-[ null,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
-[ null,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
-[ null,	"sys",	"fitsload",	1,	"sys.fitsload"	]
-[ null,	"sys",	"flush_log",	0,	"sys.flush_log"	]
-[ null,	"sys",	"listdir",	1,	"sys.listdir"	]
-[ null,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
-[ null,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
-[ null,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"querylog",	1,	"sys.querylog"	]
-[ null,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
-[ null,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
-[ null,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
-[ null,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"reuse",	1,	"sys.reuse"	]
-[ null,	"sys",	"setsession",	1,	"sys.setsession"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"shrink",	1,	"sys.shrink"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
-[ null,	"sys",	"times",	0,	"sys.times"	]
-[ null,	"sys",	"vacuum",	1,	"sys.vacuum"	]
-#SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
+% 1,	3,	16,	1,	20 # length
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
+[ NULL,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
+[ NULL,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
+[ NULL,	"sys",	"fitsload",	1,	"sys.fitsload"	]
+[ NULL,	"sys",	"flush_log",	0,	"sys.flush_log"	]
+[ NULL,	"sys",	"listdir",	1,	"sys.listdir"	]
+[ NULL,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
+[ NULL,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
+[ NULL,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"querylog",	1,	"sys.querylog"	]
+[ NULL,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
+[ NULL,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
+[ NULL,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"reuse",	1,	"sys.reuse"	]
+[ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
+[ NULL,	"sys",	"times",	0,	"sys.times"	]
+[ NULL,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+#SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
 #, (SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	wrd,	varchar # type
-% 0,	3,	16,	1,	20 # length
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
-[ null,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
-[ null,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
-[ null,	"sys",	"fitsload",	1,	"sys.fitsload"	]
-[ null,	"sys",	"flush_log",	0,	"sys.flush_log"	]
-[ null,	"sys",	"listdir",	1,	"sys.listdir"	]
-[ null,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
-[ null,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
-[ null,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"querylog",	1,	"sys.querylog"	]
-[ null,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
-[ null,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
-[ null,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
-[ null,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"reuse",	1,	"sys.reuse"	]
-[ null,	"sys",	"setsession",	1,	"sys.setsession"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"shrink",	1,	"sys.shrink"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
-[ null,	"sys",	"times",	0,	"sys.times"	]
-[ null,	"sys",	"vacuum",	1,	"sys.vacuum"	]
-#SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
+% 1,	3,	16,	1,	20 # length
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
+[ NULL,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
+[ NULL,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
+[ NULL,	"sys",	"fitsload",	1,	"sys.fitsload"	]
+[ NULL,	"sys",	"flush_log",	0,	"sys.flush_log"	]
+[ NULL,	"sys",	"listdir",	1,	"sys.listdir"	]
+[ NULL,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
+[ NULL,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
+[ NULL,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"querylog",	1,	"sys.querylog"	]
+[ NULL,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
+[ NULL,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
+[ NULL,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"reuse",	1,	"sys.reuse"	]
+[ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
+[ NULL,	"sys",	"times",	0,	"sys.times"	]
+[ NULL,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+#SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
 #, (SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	wrd,	varchar # type
-% 0,	3,	16,	1,	20 # length
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
-[ null,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
-[ null,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
-[ null,	"sys",	"fitsload",	1,	"sys.fitsload"	]
-[ null,	"sys",	"flush_log",	0,	"sys.flush_log"	]
-[ null,	"sys",	"listdir",	1,	"sys.listdir"	]
-[ null,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
-[ null,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
-[ null,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"querylog",	1,	"sys.querylog"	]
-[ null,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
-[ null,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
-[ null,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
-[ null,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"reuse",	1,	"sys.reuse"	]
-[ null,	"sys",	"setsession",	1,	"sys.setsession"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"shrink",	1,	"sys.shrink"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
-[ null,	"sys",	"times",	0,	"sys.times"	]
-[ null,	"sys",	"vacuum",	1,	"sys.vacuum"	]
-#SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
+% 1,	8,	16,	1,	21 # length
+[ NULL,	"bam",	"bam_drop_file",	1,	"bam.bam_drop_file"	]
+[ NULL,	"bam",	"bam_export",	1,	"bam.bam_export"	]
+[ NULL,	"bam",	"bam_loader_file",	1,	"bam.bam_loader_file"	]
+[ NULL,	"bam",	"bam_loader_files",	1,	"bam.bam_loader_files"	]
+[ NULL,	"bam",	"bam_loader_repos",	1,	"bam.bam_loader_repos"	]
+[ NULL,	"bam",	"sam_export",	1,	"bam.sam_export"	]
+[ NULL,	"profiler",	"setheartbeat",	1,	"profiler.setheartbeat"	]
+[ NULL,	"profiler",	"setpoolsize",	1,	"profiler.setpoolsize"	]
+[ NULL,	"profiler",	"setstream",	1,	"profiler.setstream"	]
+[ NULL,	"profiler",	"start",	0,	"profiler.start"	]
+[ NULL,	"profiler",	"stop",	0,	"profiler.stop"	]
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
+[ NULL,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
+[ NULL,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
+[ NULL,	"sys",	"fitsload",	1,	"sys.fitsload"	]
+[ NULL,	"sys",	"flush_log",	0,	"sys.flush_log"	]
+[ NULL,	"sys",	"listdir",	1,	"sys.listdir"	]
+[ NULL,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
+[ NULL,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
+[ NULL,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"querylog",	1,	"sys.querylog"	]
+[ NULL,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
+[ NULL,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
+[ NULL,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"reuse",	1,	"sys.reuse"	]
+[ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
+[ NULL,	"sys",	"times",	0,	"sys.times"	]
+[ NULL,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+#SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions"."name" AS "PROCEDURE_NAME"
 #, (SELECT COUNT(*) FROM "sys"."args" where "args"."func_id" = "functions"."id" and "args"."number" = 0) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions"."language" WHEN 0 THEN "functions"."mod" || '.' || "functions"."func" ELSE "schemas"."name" || '.' || "functions"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
 #FROM "sys"."functions", "sys"."schemas" WHERE "functions"."schema_id" = "schemas"."id"
-% .L1,	.L1,	.L1,	.L4,	.L5 # table_name
+% .L1,	.L1,	.L1,	.L2,	.L3 # table_name
 % PROCEDURE_CAT,	PROCEDURE_SCHEM,	PROCEDURE_NAME,	PROCEDURE_TYPE,	SPECIFIC_NAME # name
 % char,	varchar,	varchar,	wrd,	varchar # type
-% 0,	3,	16,	1,	20 # length
-[ null,	"sys",	"analyze",	1,	"sys.analyze"	]
-[ null,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
-[ null,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
-[ null,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
-[ null,	"sys",	"fitsload",	1,	"sys.fitsload"	]
-[ null,	"sys",	"flush_log",	0,	"sys.flush_log"	]
-[ null,	"sys",	"listdir",	1,	"sys.listdir"	]
-[ null,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
-[ null,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
-[ null,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
-[ null,	"sys",	"pause",	1,	"sys.pause"	]
-[ null,	"sys",	"querylog",	1,	"sys.querylog"	]
-[ null,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
-[ null,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
-[ null,	"sys",	"querylog_enable",	0,	"sys.querylog_enable"	]
-[ null,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
-[ null,	"sys",	"resume",	1,	"sys.resume"	]
-[ null,	"sys",	"reuse",	1,	"sys.reuse"	]
-[ null,	"sys",	"setsession",	1,	"sys.setsession"	]
-[ null,	"sys",	"settimeout",	1,	"sys.settimeout"	]
-[ null,	"sys",	"shrink",	1,	"sys.shrink"	]
-[ null,	"sys",	"shutdown",	1,	"sys.shutdown"	]
-[ null,	"sys",	"stop",	1,	"sys.stop"	]
-[ null,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
-[ null,	"sys",	"times",	0,	"sys.times"	]
-[ null,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+% 1,	8,	16,	1,	21 # length
+[ NULL,	"sys",	"querylog_enable",	1,	"sys.querylog_enable"	]
+[ NULL,	"sys",	"shrink",	1,	"sys.shrink"	]
+[ NULL,	"sys",	"reuse",	1,	"sys.reuse"	]
+[ NULL,	"sys",	"vacuum",	1,	"sys.vacuum"	]
+[ NULL,	"sys",	"shutdown",	1,	"sys.shutdown"	]
+[ NULL,	"sys",	"settimeout",	1,	"sys.settimeout"	]
+[ NULL,	"sys",	"setsession",	1,	"sys.setsession"	]
+[ NULL,	"sys",	"querylog",	1,	"sys.querylog"	]
+[ NULL,	"sys",	"evalalgebra",	1,	"sys.evalalgebra"	]
+[ NULL,	"sys",	"pause",	1,	"sys.pause"	]
+[ NULL,	"sys",	"resume",	1,	"sys.resume"	]
+[ NULL,	"sys",	"stop",	1,	"sys.stop"	]
+[ NULL,	"profiler",	"setheartbeat",	1,	"profiler.setheartbeat"	]
+[ NULL,	"profiler",	"setpoolsize",	1,	"profiler.setpoolsize"	]
+[ NULL,	"profiler",	"setstream",	1,	"profiler.setstream"	]
+[ NULL,	"sys",	"listdir",	1,	"sys.listdir"	]
+[ NULL,	"sys",	"fitsattach",	1,	"sys.fitsattach"	]
+[ NULL,	"sys",	"fitsload",	1,	"sys.fitsload"	]
+[ NULL,	"sys",	"listdirpat",	1,	"sys.listdirpat"	]
+[ NULL,	"sys",	"netcdf_attach",	1,	"sys.netcdf_attach"	]
+[ NULL,	"sys",	"netcdf_importvar",	1,	"sys.netcdf_importvar"	]
+[ NULL,	"sys",	"analyze",	1,	"sys.analyze"	]
+[ NULL,	"bam",	"bam_loader_repos",	1,	"bam.bam_loader_repos"	]
+[ NULL,	"bam",	"bam_loader_files",	1,	"bam.bam_loader_files"	]
+[ NULL,	"bam",	"bam_loader_file",	1,	"bam.bam_loader_file"	]
+[ NULL,	"bam",	"bam_drop_file",	1,	"bam.bam_drop_file"	]
+[ NULL,	"bam",	"sam_export",	1,	"bam.sam_export"	]
+[ NULL,	"bam",	"bam_export",	1,	"bam.bam_export"	]
+[ NULL,	"sys",	"times",	0,	"sys.times"	]
+[ NULL,	"sys",	"querylog_empty",	0,	"sys.querylog_empty"	]
+[ NULL,	"sys",	"querylog_disable",	0,	"sys.querylog_disable"	]
+[ NULL,	"sys",	"flush_log",	0,	"sys.flush_log"	]
+[ NULL,	"sys",	"clearrejects",	0,	"sys.clearrejects"	]
+[ NULL,	"profiler",	"start",	0,	"profiler.start"	]
+[ NULL,	"profiler",	"stop",	0,	"profiler.stop"	]
+[ NULL,	"sys",	"storagemodelinit",	0,	"sys.storagemodelinit"	]
 
 # 15:33:16 >  
 # 15:33:16 >  "Done."

@@ -68,7 +68,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 366 # length
+% 368 # length
 project (
 | select (
 | | project (
@@ -79,28 +79,30 @@ project (
 | | | | | | project (
 | | | | | | | crossproduct (
 | | | | | | | | project (
-| | | | | | | | | select (
-| | | | | | | | | | group by (
-| | | | | | | | | | | join (
-| | | | | | | | | | | | project (
-| | | | | | | | | | | | | crossproduct (
-| | | | | | | | | | | | | | project (
-| | | | | | | | | | | | | | | join (
-| | | | | | | | | | | | | | | | table(sys.open_auctions) [ open_auctions.id NOT NULL HASHCOL  as o.id, open_auctions.open_auction_id NOT NULL as o.open_auction_id ] COUNT ,
-| | | | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b.id, bidder.open_auction_id NOT NULL as b.open_auction_id, bidder.date NOT NULL as b.date, bidder.time NOT NULL as b.time, bidder.personref NOT NULL as b.personref, bidder.increase NOT NULL as b.increase ] COUNT 
-| | | | | | | | | | | | | | | ) [ o.open_auction_id NOT NULL = b.open_auction_id NOT NULL ]
-| | | | | | | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L10.L10 ],
-| | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3.id, bidder.increase NOT NULL as b3.increase ] COUNT 
-| | | | | | | | | | | | | ) [  ]
-| | | | | | | | | | | | ) [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L7.L7 ],
-| | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3a.id, bidder.open_auction_id NOT NULL as b3a.open_auction_id ] COUNT 
-| | | | | | | | | | | ) [ b3a.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
-| | | | | | | | | | ) [ L7.L7, L10.L10 ] [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, L7.L7 HASHCOL , sys.min no nil (b3a.id NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
-| | | | | | | | | ) [ b3.id NOT NULL HASHCOL  = L1 NOT NULL ]
-| | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.increase NOT NULL as L2.L2, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L12.L12 ],
+| | | | | | | | | project (
+| | | | | | | | | | select (
+| | | | | | | | | | | group by (
+| | | | | | | | | | | | join (
+| | | | | | | | | | | | | project (
+| | | | | | | | | | | | | | crossproduct (
+| | | | | | | | | | | | | | | project (
+| | | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | | table(sys.open_auctions) [ open_auctions.id NOT NULL HASHCOL  as o.id, open_auctions.open_auction_id NOT NULL as o.open_auction_id ] COUNT ,
+| | | | | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b.id, bidder.open_auction_id NOT NULL as b.open_auction_id, bidder.date NOT NULL as b.date, bidder.time NOT NULL as b.time, bidder.personref NOT NULL as b.personref, bidder.increase NOT NULL as b.increase ] COUNT 
+| | | | | | | | | | | | | | | | ) [ o.open_auction_id NOT NULL = b.open_auction_id NOT NULL ]
+| | | | | | | | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L10.L10 ],
+| | | | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3.id, bidder.increase NOT NULL as b3.increase ] COUNT 
+| | | | | | | | | | | | | | ) [  ]
+| | | | | | | | | | | | | ) [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L7.L7 ],
+| | | | | | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL HASHCOL  as b3a.id, bidder.open_auction_id NOT NULL as b3a.open_auction_id ] COUNT 
+| | | | | | | | | | | | ) [ b3a.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
+| | | | | | | | | | | ) [ L7.L7, L10.L10 ] [ L10.L10 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.id NOT NULL HASHCOL , b3.increase NOT NULL, L7.L7 HASHCOL , sys.min no nil (b3a.id NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
+| | | | | | | | | | ) [ b3.id NOT NULL HASHCOL  = L1 NOT NULL ]
+| | | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, b3.increase NOT NULL as L2.L2 ]
+| | | | | | | | ) [ o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L12.L12 ],
 | | | | | | | | table(sys.bidder) [ bidder.id NOT NULL as L5.id, bidder.increase NOT NULL as L5.increase ] COUNT 
 | | | | | | | ) [  ]
-| | | | | | ) [ L12.L12 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, sys.identity(o.id NOT NULL HASHCOL ) HASHCOL  as L11.L11 ]
+| | | | | | ) [ L12.L12 HASHCOL , o.id NOT NULL HASHCOL , o.open_auction_id NOT NULL, b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, sys.identity(o.id NOT NULL) HASHCOL  as L11.L11 ]
 | | | | | ) [ L6.open_auction_id NOT NULL = o.open_auction_id NOT NULL ]
 | | | | ) [ L11.L11, L12.L12 ] [ L12.L12 HASHCOL , b.id NOT NULL HASHCOL , b.open_auction_id NOT NULL, b.date NOT NULL, b.time NOT NULL, b.personref NOT NULL, b.increase NOT NULL, L2.L2 NOT NULL, L5.id NOT NULL, L5.increase NOT NULL, L11.L11 HASHCOL , sys.max no nil (L6.id NOT NULL HASHCOL  as b2a.id) NOT NULL as L3.L3 ]
 | | | ) [ L5.id NOT NULL = L3.L3 NOT NULL ]

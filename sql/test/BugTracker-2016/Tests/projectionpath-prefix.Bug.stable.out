@@ -43,8 +43,8 @@ Ready.
 % sys.ps,	sys.pkt,	sys.pkkc,	sys.fkkc,	sys.fkkc,	sys.fkk,	sys.fkk,	sys.fs,	sys.fkt # table_name
 % name,	name,	name,	name,	nr,	name,	action,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar,	int,	varchar,	varchar # type
-% 3,	3,	4,	7,	1,	13,	2,	3,	3 # length
-[ "sys",	"bar",	"name",	"barname",	0,	"fname",	-1,	"sys",	"foo"	]
+% 3,	3,	4,	7,	1,	5,	1,	3,	3 # length
+[ "sys",	"bar",	"name",	"barname",	0,	"fname",	1,	"sys",	"foo"	]
 #DROP TABLE foo;
 #DROP TABLE bar;
 

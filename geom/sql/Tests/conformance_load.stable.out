@@ -20,30 +20,6 @@ stdout of test 'conformance_load` in directory 'geom/sql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup geom.Dimension a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
-#WARNING To speedup geom.SRID a bulk operator implementation is needed
-#WARNING To speedup geom.IsEmpty a bulk operator implementation is needed
-#WARNING To speedup geom.IsSimple a bulk operator implementation is needed
-#WARNING To speedup geom.Length a bulk operator implementation is needed
-#WARNING To speedup geom.Area a bulk operator implementation is needed
-#WARNING To speedup geom.Length a bulk operator implementation is needed
-#WARNING To speedup geom.Area a bulk operator implementation is needed
-#WARNING To speedup geom.Equals a bulk operator implementation is needed
-#WARNING To speedup geom.Disjoint a bulk operator implementation is needed
-#WARNING To speedup geom.Touches a bulk operator implementation is needed
-#WARNING To speedup geom.Within a bulk operator implementation is needed
-#WARNING To speedup geom.Overlaps a bulk operator implementation is needed
-#WARNING To speedup geom.Contains a bulk operator implementation is needed
-#WARNING To speedup geom.Relate a bulk operator implementation is needed
-#WARNING To speedup geom.Intersection a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
-#WARNING To speedup geom.Difference a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
-#WARNING To speedup geom.SymDifference a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
-#WARNING To speedup geom.ConvexHull a bulk operator implementation is needed
-#WARNING To speedup geom.AsText a bulk operator implementation is needed
 
 # 14:27:16 >  
 # 14:27:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17423" "--port=30565"
