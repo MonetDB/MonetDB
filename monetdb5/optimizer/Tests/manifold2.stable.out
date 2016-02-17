@@ -23,7 +23,6 @@ function user.tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]):void;
     z:bat[:oid,:dbl]  := mal.multiplex("calc","max",b,b2);
     io.print(z,b,b2);
 end user.tst;
-#WARNING To speedup calc.max a bulk operator implementation is needed
 function user.main():void;
 # the manifold code blocks  
     b := bat.new(:oid,:dbl);

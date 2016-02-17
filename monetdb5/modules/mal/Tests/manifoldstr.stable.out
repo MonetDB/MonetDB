@@ -18,7 +18,6 @@ stdout of test 'manifoldstr` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-#WARNING To speedup str.toUpper a bulk operator implementation is needed
 function user.main():void;
 # the multiplex code blocks. 
     t0 := alarm.usec();

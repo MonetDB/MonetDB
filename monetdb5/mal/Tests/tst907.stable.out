@@ -31,9 +31,6 @@ function user.pow(base:int,raise:int):int;
     pg_a := calc.int(og_a);
     return pow := pg_a;
 end user.pow;
-#WARNING To speedup user.three a bulk operator implementation is needed
-#WARNING To speedup user.one a bulk operator implementation is needed
-#WARNING To speedup user.pow a bulk operator implementation is needed
 function user.main():void;
     k := user.one(1);
     l := user.three(1,2,3);
