@@ -30,6 +30,7 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../sql/server \
 		   ../../sql/common \
 		   ../../sql/storage \
+		   ../../sql/storage/bat \
 		   ../../sql/backends/monet5 \ 
 		   $(pcre_CFLAGS)
 

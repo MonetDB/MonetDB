@@ -1439,13 +1439,13 @@ GDKlockHome(void)
 static void
 GDKunlockHome(void)
 {
-	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
 	if (GDKlockFile) {
+		str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
 		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
 		fclose(GDKlockFile);
 		GDKlockFile = 0;
+		GDKfree(gdklockpath);
 	}
-	GDKfree(gdklockpath);
 }
 
 /*

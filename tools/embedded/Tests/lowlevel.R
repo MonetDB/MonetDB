@@ -1,3 +1,4 @@
+
 library(testthat)
 
 basedir <- Sys.getenv("TSTTRGDIR")
@@ -146,5 +147,10 @@ test_that("the logger does not misbehave", {
 	Sys.sleep(5)
 	monetdb_embedded_query(con, "DROP TABLE foo")
 	monetdb_embedded_disconnect(con)
+})
+
+
+test_that("shutdown does not crash stuff", {
+	monetdb_embedded_shutdown()
 })
 

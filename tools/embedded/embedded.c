@@ -21,43 +21,16 @@
 #include "msabaoth.h"
 #include "sql_scenario.h"
 #include "gdk_utils.h"
+#include "sql_scenario.h"
+#include "sql_execute.h"
+#include "sql.h"
+#include "sql_mvc.h"
+#include "res_table.h"
+#include "sql_scenario.h"
+
 #include <locale.h>
 
-typedef str (*SQLstatementIntern_ptr_tpe)(Client, str*, str, bit, bit, res_table**);
-SQLstatementIntern_ptr_tpe SQLstatementIntern_ptr = NULL;
-typedef str (*SQLautocommit_ptr_tpe)(Client, mvc*);
-SQLautocommit_ptr_tpe SQLautocommit_ptr = NULL;
-typedef str (*SQLinitClient_ptr_tpe)(Client);
-SQLinitClient_ptr_tpe SQLinitClient_ptr = NULL;
-typedef str (*SQLepilogue_ptr_tpe)(void*);
-SQLepilogue_ptr_tpe SQLepilogue_ptr = NULL;
-typedef str (*getSQLContext_ptr_tpe)(Client, MalBlkPtr, mvc**, backend**);
-getSQLContext_ptr_tpe getSQLContext_ptr = NULL;
-typedef void (*res_table_destroy_ptr_tpe)(res_table *t);
-res_table_destroy_ptr_tpe res_table_destroy_ptr = NULL;
-typedef str (*mvc_append_wrap_ptr_tpe)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
-mvc_append_wrap_ptr_tpe mvc_append_wrap_ptr = NULL;
-typedef sql_schema* (*mvc_bind_schema_ptr_tpe)(mvc*, const char*);
-mvc_bind_schema_ptr_tpe mvc_bind_schema_ptr = NULL;
-typedef sql_table* (*mvc_bind_table_ptr_tpe)(mvc*, sql_schema*, const char*);
-mvc_bind_table_ptr_tpe mvc_bind_table_ptr = NULL;
-typedef int (*sqlcleanup_ptr_tpe)(mvc*, int);
-sqlcleanup_ptr_tpe sqlcleanup_ptr = NULL;
-typedef void (*mvc_trans_ptr_tpe)(mvc*);
-mvc_trans_ptr_tpe mvc_trans_ptr = NULL;
-
 int monetdb_embedded_initialized = 0;
-
-static void* lookup_function(char* func) {
-	void *dl, *fun;
-	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) {
-		return NULL;
-	}
-	fun = dlsym(dl, func);
-	dlclose(dl);
-	return fun;
-}
 
 void* monetdb_connect(void) {
 	Client conn = NULL;
@@ -68,7 +41,7 @@ void* monetdb_connect(void) {
 	if (!MCvalid((Client) conn)) {
 		return NULL;
 	}
-	if ((*SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
+	if (SQLinitClient(conn) != MAL_SUCCEED) {
 		return NULL;
 	}
 	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
@@ -81,6 +54,12 @@ void monetdb_disconnect(void* conn) {
 	}
 	MCcloseClient((Client) conn);
 }
+
+#ifdef WIN32
+#define NULLFILE "nul"
+#else
+#define NULLFILE "/dev/null"
+#endif
 
 char* monetdb_startup(char* dbdir, char silent, char sequential) {
 	opt *set = NULL;
@@ -106,6 +85,9 @@ char* monetdb_startup(char* dbdir, char silent, char sequential) {
 
 	if (monetdb_embedded_initialized) goto cleanup;
 
+	embedded_stdout = fopen(NULLFILE, "w");
+	embedded_stderr = fopen(NULLFILE, "w");
+
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 
@@ -129,28 +111,6 @@ char* monetdb_startup(char* dbdir, char silent, char sequential) {
 	}
 
 	if (silent) mal_clients[0].fdout = THRdata[0];
-
-	// This dynamically looks up functions, because the libraries containing them are loaded at runtime.
-	SQLstatementIntern_ptr = (SQLstatementIntern_ptr_tpe) lookup_function("SQLstatementIntern");
-	SQLautocommit_ptr      = (SQLautocommit_ptr_tpe)      lookup_function("SQLautocommit");
-	SQLinitClient_ptr      = (SQLinitClient_ptr_tpe)      lookup_function("SQLinitClient");
-	SQLepilogue_ptr        = (SQLepilogue_ptr_tpe)        lookup_function("SQLepilogue");
-	getSQLContext_ptr      = (getSQLContext_ptr_tpe)      lookup_function("getSQLContext");
-	res_table_destroy_ptr  = (res_table_destroy_ptr_tpe)  lookup_function("res_table_destroy");
-	mvc_append_wrap_ptr    = (mvc_append_wrap_ptr_tpe)    lookup_function("mvc_append_wrap");
-	mvc_bind_schema_ptr    = (mvc_bind_schema_ptr_tpe)    lookup_function("mvc_bind_schema");
-	mvc_bind_table_ptr     = (mvc_bind_table_ptr_tpe)     lookup_function("mvc_bind_table");
-	sqlcleanup_ptr         = (sqlcleanup_ptr_tpe)         lookup_function("sqlcleanup");
-	mvc_trans_ptr          = (mvc_trans_ptr_tpe)          lookup_function("mvc_trans");
-
-	if (SQLstatementIntern_ptr    == NULL || SQLautocommit_ptr   == NULL ||
-			SQLinitClient_ptr     == NULL || getSQLContext_ptr   == NULL ||
-			res_table_destroy_ptr == NULL || mvc_append_wrap_ptr == NULL ||
-			mvc_bind_schema_ptr   == NULL || mvc_bind_table_ptr  == NULL ||
-			sqlcleanup_ptr        == NULL || mvc_trans_ptr       == NULL) {
-		retval = GDKstrdup("Dynamic function lookup failed");
-		goto cleanup;
-	}
 
 	monetdb_embedded_initialized = true;
 	c = monetdb_connect();
@@ -206,10 +166,10 @@ char* monetdb_query(void* conn, char* query, void** result) {
 	else if (m->session->status < 0 && m->session->auto_commit == 0){
 		res = GDKstrdup("Current transaction is aborted (please ROLLBACK)");
 	} else {
-		res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, (res_table **) result);
+		res = SQLstatementIntern(c, &query, "name", 1, 0, (res_table **) result);
 	}
 
-	(*SQLautocommit_ptr)(c, m);
+	SQLautocommit(c, m);
 	return res;
 }
 
@@ -252,19 +212,19 @@ char* monetdb_append(void* conn, const char* schema, const char* table, append_d
 	stk->stk[4].vtype = TYPE_str;
 	stk->stk[5].vtype = TYPE_bat;
 	mb.var[5] = &bat_varrec;
-	if (!m->session->active) (*mvc_trans_ptr)(m);
+	if (!m->session->active) mvc_trans(m);
 	for (i=0; i < ncols; i++) {
 		append_data ad = data[i];
 		stk->stk[4].val.sval = ad.colname;
 		stk->stk[5].val.bval = ad.batid;
 
-		res = (*mvc_append_wrap_ptr)(c, &mb, stk, pci);
+		res = mvc_append_wrap(c, &mb, stk, pci);
 		if (res != NULL) {
 			break;
 		}
 	}
 	if (res == MAL_SUCCEED) {
-		(*sqlcleanup_ptr)(m, 0);
+		sqlcleanup(m, 0);
 	}
 	GDKfree(mb.var);
 	GDKfree(stk);
@@ -274,7 +234,7 @@ char* monetdb_append(void* conn, const char* schema, const char* table, append_d
 
 void  monetdb_cleanup_result(void* conn, void* output) {
 	(void) conn; // not needing conn here (but perhaps someday)
-	(*res_table_destroy_ptr)((res_table*) output);
+	res_table_destroy((res_table*) output);
 }
 
 str monetdb_get_columns(void* conn, const char* schema_name, const char *table_name, int *column_count, char ***column_names, int **column_types) {
@@ -288,13 +248,13 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 
 	assert(column_count != NULL && column_names != NULL && column_types != NULL);
 
-	if ((msg = (*getSQLContext_ptr)(c, NULL, &m, NULL)) != NULL)
+	if ((msg = getSQLContext(c, NULL, &m, NULL)) != NULL)
 		return msg;
 
-	s = (*mvc_bind_schema_ptr)(m, schema_name);
+	s = mvc_bind_schema(m, schema_name);
 	if (s == NULL)
 		return createException(MAL, "embedded", "Missing schema!");
-	t = (*mvc_bind_table_ptr)(m, s, table_name);
+	t = mvc_bind_table(m, s, table_name);
 	if (t == NULL)
 		return createException(MAL, "embedded", "Could not find table %s", table_name);
 
@@ -316,15 +276,14 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 	return msg;
 }
 
-
 // TODO: fix this, it is not working correctly
 void monetdb_shutdown(void) {
 	// kill SQL
-	(*SQLepilogue_ptr)(NULL);
+	SQLepilogue(NULL);
 	// kill MAL & GDK
 	mal_exit();
 	// clean up global state
-	BBPresetfarms();
+	// BBPresetfarms();
 	monetdb_embedded_initialized = 0;
 	// TODO: reset all mal clients
 }
