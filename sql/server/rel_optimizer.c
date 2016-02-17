@@ -2025,6 +2025,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		list *l = e->l, *nl = NULL;
 	        sql_exp *ne = NULL;
 
+		if (e->type == e_func && exp_unsafe(e))
+			return NULL;
 		if (!l) {
 			return e;
 		} else {
@@ -2207,6 +2209,7 @@ exps_share_expensive_exp( list *exps, list *shared )
 	return 0;
 }
 
+/* merge 2 projects into the lower one */
 static sql_rel *
 rel_merge_projects(int *changes, mvc *sql, sql_rel *rel) 
 {

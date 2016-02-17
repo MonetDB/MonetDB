@@ -24,6 +24,7 @@
 #include <sql_optimizer.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
+#include <rel_partition.h>
 #include <rel_distribute.h>
 #include <rel_select.h>
 #include <rel_rel.h>
@@ -117,6 +118,7 @@ sql_symbol2relation(mvc *c, symbol *sym)
 	if (r) {
 		r = rel_optimizer(c, r);
 		r = rel_distribute(c, r);
+		r = rel_partition(c, r);
 		if (rel_is_point_query(r) || rel_need_distinct_query(r))
 			c->point_query = 1;
 	}

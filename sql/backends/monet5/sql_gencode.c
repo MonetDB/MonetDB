@@ -1079,11 +1079,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			if (t && (!isRemote(t) && !isMergeTable(t)) && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+				BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
+				setRowCnt(mb,getArg(q,0),rows);
+				if (t->p && 0)
+					setMitosisPartition(q, t->p->base.id);
+			}
 		}
 			break;
 		case st_bat:{
 			int tt = s->op4.cval->type.type->localtype;
-			sql_table *t = s->op4.cval->t;
+			sql_column *c = s->op4.cval;
+			sql_table *t = c->t;
 
 			q = newStmt2(mb, sqlRef, bindRef);
 			if (q == NULL)
@@ -1097,7 +1105,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
-			q = pushArgument(mb, q, getStrConstant(mb,s->op4.cval->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
@@ -1107,11 +1115,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 			}
+			if (s->flag != RD_INS && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+
+				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+					BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
+					setRowCnt(mb,getArg(q,0),rows);
+					if (t->p && 0)
+						setMitosisPartition(q, t->p->base.id);
+				}
+			}
 		}
 			break;
 		case st_idxbat:{
 			int tt = tail_type(s)->type->localtype;
-			sql_table *t = s->op4.idxval->t;
+			sql_idx *i = s->op4.idxval;
+			sql_table *t = i->t;
 
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			if (q == NULL)
@@ -1126,7 +1145,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
-			q = pushArgument(mb, q, getStrConstant(mb,s->op4.idxval->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,i->base.name));
 			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
@@ -1135,6 +1154,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->flag == RD_UPD_ID) {
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+			}
+			if (s->flag != RD_INS && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+					BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
+					setRowCnt(mb,getArg(q,0),rows);
+					if (t->p && 0)
+						setMitosisPartition(q, t->p->base.id);
+				}
 			}
 		}
 			break;

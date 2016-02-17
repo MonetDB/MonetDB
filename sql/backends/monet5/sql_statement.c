@@ -206,6 +206,7 @@ stmt_create(sql_allocator *sa, st_type type)
 	s->key = 0;
 	s->aggr = 0;
 	s->nr = 0;
+	s->partition = 0;
 	s->optimized = -1;
 	s->rewritten = NULL;
 	s->tname = s->cname = NULL;
