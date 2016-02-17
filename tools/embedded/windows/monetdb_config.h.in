@@ -1131,4 +1131,8 @@ typedef __uint128_t uhge;
 #define PTRFMT		"%p"
 #define PTRFMTCAST
 
+#ifdef HAVE_EMBEDDED
+#include "tools/embedded/undef.h"
+#endif
+
 #endif /* _SEEN_MONETDB_CONFIG_H */

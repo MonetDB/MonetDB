@@ -255,11 +255,10 @@ mal_linker_reset(void)
 	for (i = 0; i < lastfile; i++){
 		if (filesLoaded[i].fullname) {
 			/* dlclose(filesLoaded[i].handle);*/
-			GDKfree(filesLoaded[i].filename);
-			GDKfree(filesLoaded[i].fullname);
+			if (filesLoaded[i].filename) GDKfree(filesLoaded[i].filename);
 		}
-		filesLoaded[i].filename = 0;
-		filesLoaded[i].fullname = 0;
+		filesLoaded[i].filename = NULL;
+		filesLoaded[i].fullname = NULL;
 	}
 	lastfile = 0;
 	MT_lock_unset(&mal_contextLock);

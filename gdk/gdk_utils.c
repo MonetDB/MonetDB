@@ -1353,7 +1353,9 @@ GDKreset(int status)
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
+#ifndef HAVE_EMBEDDED
 	MT_global_exit(status);
+#endif
 }
 
 void

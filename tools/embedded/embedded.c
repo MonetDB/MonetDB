@@ -279,11 +279,8 @@ str monetdb_get_columns(void* conn, const char* schema_name, const char *table_n
 // TODO: fix this, it is not working correctly
 void monetdb_shutdown(void) {
 	// kill SQL
-	SQLepilogue(NULL);
+	// SQLepilogue(NULL);
 	// kill MAL & GDK
-	mal_exit();
-	// clean up global state
-	// BBPresetfarms();
-	monetdb_embedded_initialized = 0;
-	// TODO: reset all mal clients
+	// mal_exit();
+	// monetdb_embedded_initialized = 0;
 }
