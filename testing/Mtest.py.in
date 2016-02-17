@@ -1224,7 +1224,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     body_good.append(bodyline)
                 else:
                     body_bad.append(bodyline)
-            if FtOut == F_OK and FtErr == F_OK:
+            if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                 oktests.append(TST)
             if global_timeout and start_time + global_timeout < time.time():
                 break
