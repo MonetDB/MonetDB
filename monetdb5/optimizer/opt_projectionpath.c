@@ -16,7 +16,9 @@
 //#undef OPTDEBUGprojectionpath 
 //#define OPTDEBUGprojectionpath  if(1)
 
-#define ELIMCOMMONPREFIX
+// Common prefix reduction was not effective it is retained for 
+// future experiments.
+//#define ELIMCOMMONPREFIX
 
 #define LOOKAHEAD 500   /* limit the lookahead for candidates */
 
