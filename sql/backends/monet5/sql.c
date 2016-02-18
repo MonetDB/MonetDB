@@ -4715,6 +4715,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rphash = getArgReference_bat(stk, pci, 11);
 	bat *rimprints = getArgReference_bat(stk, pci, 12);
 	bat *rsort = getArgReference_bat(stk, pci, 13);
+	str sname = 0;
+	str tname = 0;
+	str cname = 0;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4784,23 +4787,37 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(sort->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
+	if( pci->argc - pci->retc >= 1)
+		sname = *getArgReference_str(stk, pci, pci->retc);
+	if( pci->argc - pci->retc >= 2)
+		tname = *getArgReference_str(stk, pci, pci->retc + 1);
+	if( pci->argc - pci->retc >= 3)
+		cname = *getArgReference_str(stk, pci, pci->retc + 2);
+
+	/* check for limited storage tables */
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
+		if( sname && strcmp(b->name, sname) )
+			continue;
 		if (isalpha((int) b->name[0]))
-
 			if (s->tables.set)
 				for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 					sql_base *bt = ntab->data;
 					sql_table *t = (sql_table *) bt;
+					if( tname && strcmp(bt->name, tname) )
+						continue;
 					if (isTable(t))
 						if (t->columns.set)
 							for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_column *c = (sql_column *) ncol->data;
-								BAT *bn = store_funcs.bind_col(tr, c, RDONLY);
+								BAT *bn;
 								lng sz;
 
+								if( cname && strcmp(bc->name, cname) )
+									continue;
+								bn = store_funcs.bind_col(tr, c, RDONLY);
 								if (bn == NULL)
 									throw(SQL, "sql.storage", "Can not access column");
 
@@ -4884,6 +4901,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 									if (bn == NULL)
 										throw(SQL, "sql.storage", "Can not access column");
+									if( cname && strcmp(bc->name, cname) )
+										continue;
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
 									BUNappend(sch, b->name, FALSE);
 									BUNappend(tab, bt->name, FALSE);

@@ -490,6 +490,60 @@ pattern storage()(
 address sql_storage
 comment "return a table with storage information ";
 
+pattern storage(sname:str)(
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit])
+address sql_storage
+comment "return a table with storage information for a particular schema ";
+
+pattern storage(sname:str, tname:str)(
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit])
+address sql_storage
+comment "return a table with storage information for a particular table";
+
+pattern storage(sname:str, tname:str, cname:str)(
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit])
+address sql_storage
+comment "return a table with storage information for a particular column";
+
 command calc.identity(:any_2) :oid 
 address SQLidentity
 comment "Returns a unique row identitfier.";

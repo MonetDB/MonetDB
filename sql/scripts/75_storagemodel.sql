@@ -38,6 +38,64 @@ external name sql."storage";
 
 create view sys."storage" as select * from sys."storage"();
 
+-- refinements for schemas, tables, and individual columns
+create function sys."storage"( sname string)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
+external name sql."storage";
+
+create function sys."storage"( sname string, tname string)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
+external name sql."storage";
+
+create function sys."storage"( sname string, tname string, cname string)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
+external name sql."storage";
+
 -- To determine the footprint of an arbitrary database, we first have
 -- to define its schema, followed by an indication of the properties of each column.
 -- A storage model input table for the size prediction is shown below:

@@ -40470,6 +40470,18 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:lng],user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int],status:bat[:str],tag:bat[:oid],query:bat[:str]) 
 address SYSMONqueue;
+pattern sql.storage(sname:str,tname:str,cname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+address sql_storage;
+comment return a table with storage information for a particular column
+
+pattern sql.storage(sname:str,tname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+address sql_storage;
+comment return a table with storage information for a particular table
+
+pattern sql.storage(sname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+address sql_storage;
+comment return a table with storage information for a particular schema 
+
 pattern sql.storage() (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
 address sql_storage;
 comment return a table with storage information 
