@@ -29,7 +29,7 @@ Ready.
 # 20:45:30 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23471" "--port=34866"
 # 20:45:30 >  
 
-inline function user.qry():void;        	#[0]  0 
+function user.qry():void;               	#[0]  0 
     b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_14:int := 1:int;                  	#[3]  14 <- 5 
