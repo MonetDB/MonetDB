@@ -10,6 +10,15 @@
 #include "sql_scenario.h"
 #include "gdk_utils.h"
 
+int embedded_r_rand(void) {
+	int ret;
+	GetRNGstate();
+	ret = (int) lround(unif_rand() * RAND_MAX);
+	PutRNGstate();
+	return(ret);
+}
+
+
 /* we need the BAT-SEXP-BAT conversion in two places, here and in RAPI */
 #include "converters.c"
 

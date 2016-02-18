@@ -18,6 +18,10 @@
 #include <unistd.h>
 #include "sql_upgrades.h"
 
+#ifdef HAVE_EMBEDDED
+#define printf(fmt,...) ((void) 0)
+#endif
+
 /* Because of a difference of computing hash values for single vs bulk operators we need to drop and recreate all constraints/indices */
 static str
 sql_update_oct2014_2(Client c)

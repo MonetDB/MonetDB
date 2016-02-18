@@ -63,6 +63,10 @@
 #define SOCKLEN int
 #endif
 
+#ifdef HAVE_EMBEDDED
+#define printf(fmt,...) ((void) 0)
+#endif
+
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -383,6 +387,7 @@ error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }
 
+#ifndef HAVE_EMBEDDED
 /**
  * Small utility function to call the sabaoth marchConnection function
  * with the right arguments.  If the socket is bound to 0.0.0.0 the
@@ -670,6 +675,18 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		GDKfree(usockfile);
 	return MAL_SUCCEED;
 }
+#else
+str
+SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
+{
+	(void) Port;
+	(void) Usockfile;
+	(void) Maxusers;
+	throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": No MAPI server in embedded mode");
+}
+#endif // HAVE_EMBEDDED
+
+
 
 /*
  * @- Wrappers

@@ -107,7 +107,7 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 			break;
 #endif
 		default:
-			printf("atom_int %d\n", a->data.vtype);
+			fprintf(stderr, "atom_int %d\n", a->data.vtype);
 			assert(0);
 		}
 		a->d = (dbl) val;

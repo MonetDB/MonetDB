@@ -32,6 +32,9 @@
 
 int monetdb_embedded_initialized = 0;
 
+FILE* embedded_stdout;
+FILE* embedded_stderr;
+
 void* monetdb_connect(void) {
 	Client conn = NULL;
 	if (!monetdb_embedded_initialized) {

@@ -56,3 +56,5 @@ winredist/*.cpl
 /buildtools/conf/banner.bmp
 *.mal
 *.sql
+.hgtags
+.hgignore

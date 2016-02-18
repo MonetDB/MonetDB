@@ -75,6 +75,10 @@
 #define LOG_CLEAR	9
 #define LOG_SEQ		10
 
+#ifdef HAVE_EMBEDDED
+#define printf(fmt,...) ((void) 0)
+#endif
+
 static char *log_commands[] = {
 	NULL,
 	"LOG_START",

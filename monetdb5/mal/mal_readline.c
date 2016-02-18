@@ -5,7 +5,6 @@
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
-
 /*
  * @- Online help
  * The textual interface @sc{mclient} supports a limited
@@ -59,6 +58,7 @@
  * features to assemble a command before it is being interpreted.
  */
 #include "monetdb_config.h"
+#ifndef HAVE_EMBEDDED
 #include "mal.h"
 #undef PATHLENGTH
 #include "mal_client.h"
@@ -497,3 +497,4 @@ readConsole(Client cntxt)
 #endif
 	return -1;
 }
+#endif
