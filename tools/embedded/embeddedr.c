@@ -2,6 +2,7 @@
 
 #ifdef HAVE_EMBEDDED_R
 #include "embeddedr.h"
+#include "R_ext/Random.h"
 #include "monet_options.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -15,7 +16,7 @@ int embedded_r_rand(void) {
 	GetRNGstate();
 	ret = (int) lround(unif_rand() * RAND_MAX);
 	PutRNGstate();
-	return(ret);
+	return ret;
 }
 
 
