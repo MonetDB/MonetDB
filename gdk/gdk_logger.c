@@ -1349,7 +1349,15 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 			logger_fatal("logger_new: writing log file %s failed",
 				     filename, 0, 0);
 		}
-		if (fclose(fp) < 0) {
+		if (fflush(fp) < 0 ||
+#if defined(_MSC_VER)
+		    _commit(_fileno(fp)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fileno(fp)) < 0 ||
+#elif defined(HAVE_FSYNC)
+		    fsync(fileno(fp)) < 0 ||
+#endif
+		    fclose(fp) < 0) {
 			unlink(filename);
 			logger_fatal("logger_new: closing log file %s failed",
 				     filename, 0, 0);
@@ -1838,7 +1846,15 @@ logger_exit(logger *lg)
 			return LOG_ERR;
 		}
 
-		if (fclose(fp) < 0) {
+		if (fflush(fp) < 0 ||
+#if defined(_MSC_VER)
+		    _commit(_fileno(fp)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fileno(fp)) < 0 ||
+#elif defined(HAVE_FSYNC)
+		    fsync(fileno(fp)) < 0 ||
+#endif
+		    fclose(fp) < 0) {
 			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
 			return LOG_ERR;
