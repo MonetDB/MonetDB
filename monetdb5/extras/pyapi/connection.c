@@ -62,7 +62,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 input.scalar = false;
                 input.sql_subtype = &col.type;
 
-                numpy_array = PyMaskedArray_FromBAT(self->cntxt, &input, 0, input.count, &res, true);
+                numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
                 if (!numpy_array) {
                     _connection_cleanup_result(output);
                     PyErr_Format(PyExc_Exception, "SQL Query Failed: %s", (res ? res : "<no error>"));
@@ -158,7 +158,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 input.scalar = false;
                 input.sql_subtype = NULL;
 
-                numpy_array = PyMaskedArray_FromBAT(self->cntxt, &input, 0, input.count, &msg, true);
+                numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &msg, true);
                 if (!numpy_array) {
                     PyErr_Format(PyExc_Exception, "SQL Query Failed: %s", (msg ? msg : "<no error>"));
                     release_mmap_memory(ptr, self->query_ptr->memsize, self->query_ptr->mmapid);

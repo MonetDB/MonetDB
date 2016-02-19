@@ -527,8 +527,25 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             inp->bat = b;
         }
         if (argnode) {
+            enum _sqltype sql_type;
             inp->sql_subtype = &((sql_arg*)argnode->data)->type;
+            sql_type = get_sql_token(inp->sql_subtype);
 
+            if (sql_type != sql_none) { // if the sql type is set, we have to do some conversion
+                if (inp->scalar) {
+                    // todo: scalar SQL types
+                    msg = PyError_CreateException("Scalar SQL types haven't been implemented yet... sorry", NULL);
+                    goto wrapup;
+                } else {
+                    BAT *ret_bat = NULL;
+                    msg = ConvertFromSQLType(cntxt, inp->bat, sql_type, inp->sql_subtype, &ret_bat, &inp->bat_type);
+                    if (msg != MAL_SUCCEED) {
+                        goto wrapup;
+                    }
+                    inp->bat = ret_bat;
+                }
+            }
+            b = inp->bat;
             argnode = argnode->next;
         }
     }
@@ -951,7 +968,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         if (pyinput_values[i - (pci->retc + 2)].scalar) {
             result_array = PyArrayObject_FromScalar(&pyinput_values[i - (pci->retc + 2)], &msg);
         } else {
-            result_array = PyMaskedArray_FromBAT(cntxt, &pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg, false);
+            result_array = PyMaskedArray_FromBAT(&pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg, false);
         }
         if (result_array == NULL) {
             if (msg == MAL_SUCCEED) {
@@ -1779,28 +1796,11 @@ wrapup:
     return vararray;
 }
 
-PyObject *PyMaskedArray_FromBAT(Client cntxt, PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
+PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
 {
-    BAT *b;
+    BAT *b = inp->bat;
     char *msg;
     PyObject *vararray;
-    enum _sqltype sql_type = get_sql_token(inp->sql_subtype);
-
-    if (sql_type != sql_none) { // if the sql type is set, we have to do some conversion
-        if (inp->scalar) {
-            // todo: scalar SQL types
-            msg = PyError_CreateException("Scalar SQL types haven't been implemented yet... sorry", NULL);
-            goto wrapup;
-        } else {
-            BAT *ret_bat = NULL;
-            msg = ConvertFromSQLType(cntxt, inp->bat, sql_type, inp->sql_subtype, &ret_bat, &inp->bat_type);
-            if (msg != MAL_SUCCEED) {
-                goto wrapup;
-            }
-            inp->bat = ret_bat;
-        }
-    }
-    b = inp->bat;
 
     vararray = PyArrayObject_FromBAT(inp, t_start, t_end, return_message, copy);
     if (vararray == NULL) {
