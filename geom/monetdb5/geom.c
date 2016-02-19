@@ -4992,7 +4992,9 @@ wkb* wkbREAD(wkb *a, stream *s, size_t cnt) {
 	assert(cnt == 1);
 	if (mnstr_readInt(s, &len) != 1)
 		return NULL;
-	if (mnstr_readInt(s, &srid) != 1)
+	if (geomversion_get())
+		srid = 0;
+	else if (mnstr_readInt(s, &srid) != 1)
 		return NULL;
 	if ((a = GDKmalloc(wkb_size(len))) == NULL)
 		return NULL;
@@ -5682,4 +5684,3 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	*out = TRUE;
 	return MAL_SUCCEED;
 }
-

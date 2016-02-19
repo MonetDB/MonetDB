@@ -24,14 +24,17 @@ bl_preversion( int oldversion, int newversion)
 	(void)newversion;
 	if (oldversion == CATALOG_OCT2014SP3) {
 		catalog_version = oldversion;
+		geomversion_set();
 		return 0;
 	}
 	if (oldversion == CATALOG_OCT2014) {
 		catalog_version = oldversion;
+		geomversion_set();
 		return 0;
 	}
 	if (oldversion == CATALOG_JUL2015) {
 		catalog_version = oldversion;
+		geomversion_set();
 		return 0;
 	}
 

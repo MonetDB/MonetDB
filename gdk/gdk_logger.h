@@ -147,4 +147,7 @@ typedef str (*geomsqlfix_fptr)(int);
 gdk_export void geomsqlfix_set(geomsqlfix_fptr);
 gdk_export geomsqlfix_fptr geomsqlfix_get(void);
 
+gdk_export void geomversion_set(void);
+gdk_export int geomversion_get(void);
+
 #endif /*_LOGGER_H_*/

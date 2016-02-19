@@ -1201,6 +1201,8 @@ sql_update_dec2015(Client c, int olddb)
 		")\n"
 		"external name sql.\"storage\";\n"
 	);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'storage' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	if ((fixfunc = geomsqlfix_get()) != NULL) {
 		str geomupgrade;

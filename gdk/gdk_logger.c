@@ -95,6 +95,11 @@ typedef struct logformat_t {
 	lng nr;
 } logformat;
 
+/* When reading an old format database, we may need to read the geom
+ * Well-known Binary (WKB) type differently.  This variable is used to
+ * indicate that to the function wkbREAD during reading of the log. */
+static int geomisoldversion;
+
 static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
@@ -126,9 +131,6 @@ log_find(BAT *b, BAT *d, int val)
 	}
 	return BUN_NONE;
 }
-
-static geomcatalogfix_fptr geomcatalogfix = NULL;
-static geomsqlfix_fptr geomsqlfix = NULL;
 
 static void
 logbat_destroy(BAT *b)
@@ -1785,6 +1787,9 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 #endif
 		if (lg->postfuncp)
 			(*lg->postfuncp)(lg);
+
+		/* done reading the log, revert to "normal" behavior */
+		geomisoldversion = 0;
 	}
 
 	return LOG_OK;
@@ -2811,6 +2816,9 @@ logger_find_bat(logger *lg, const char *name)
 	return 0;
 }
 
+static geomcatalogfix_fptr geomcatalogfix = NULL;
+static geomsqlfix_fptr geomsqlfix = NULL;
+
 void
 geomcatalogfix_set(geomcatalogfix_fptr f)
 {
@@ -2835,3 +2843,13 @@ geomsqlfix_get(void)
 	return geomsqlfix;
 }
 
+void
+geomversion_set(void)
+{
+	geomisoldversion = 1;
+}
+int
+geomversion_get(void)
+{
+	return geomisoldversion;
+}
