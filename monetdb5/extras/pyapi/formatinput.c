@@ -2,14 +2,6 @@
 #include "formatinput.h"
 #include "type_conversion.h"
 
-#include "monetdb_config.h"
-#include "mal.h"
-#include "mal_stack.h"
-#include "mal_linker.h"
-#include "gdk_utils.h"
-#include "gdk.h"
-#include "mal_exception.h"
-
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #define PyString_FromStringAndSize PyUnicode_FromStringAndSize
@@ -381,4 +373,8 @@ finally:
     GDKfree(indentation_levels);
     GDKfree(statements_per_level);
     return newcode;
+}
+
+void _formatinput_init(void) {
+    import_array();
 }

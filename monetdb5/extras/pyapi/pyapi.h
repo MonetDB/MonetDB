@@ -16,11 +16,32 @@
 
 #include "monetdb_config.h"
 #include "mal.h"
-#include "mal_exception.h"
-#include "mal_interpreter.h"
+#include "mal_stack.h"
+#include "mal_linker.h"
+#include "gdk_atoms.h"
+#include "gdk_utils.h"
+#include "gdk.h"
+#include "sql_catalog.h"
+#include "sql_scenario.h"
+#include "sql_cast.h"
+#include "sql_execute.h"
+#include "sql_storage.h"
 
-#define PYAPI_TESTING
- 
+// Python library
+#undef _GNU_SOURCE
+#undef _XOPEN_SOURCE
+#undef _POSIX_C_SOURCE
+#include <Python.h>
+
+// Numpy Library
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#ifdef __INTEL_COMPILER
+// Intel compiler complains about trailing comma's in numpy source code,
+#pragma warning(disable:271)
+#endif
+#include <numpy/arrayobject.h>
+#include <numpy/npy_common.h>
+
 #ifndef NDEBUG
 // Enable verbose output, note that this #define must be set and mserver must be started with --set <verbose_enableflag>=true
 #define _PYAPI_VERBOSE_

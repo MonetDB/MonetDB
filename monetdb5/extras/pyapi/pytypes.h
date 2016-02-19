@@ -19,13 +19,6 @@
 #include <stddef.h>
 
 #include "pyapi.h"
-#include "sql_catalog.h"
-
-#undef _GNU_SOURCE
-#undef _XOPEN_SOURCE
-#undef _POSIX_C_SOURCE
-#include <Python.h>
-
 
 // This describes return values, used in multiprocessing to tell the main process the size of the shared memory to allocate
 struct _ReturnBatDescr
@@ -128,5 +121,8 @@ pyapi_export bool Python_ReleaseGIL(bool);
 
 // A simple #define that converts a numeric TYPE_<mtpe> value to a Python scalar
 #define SCALAR_TO_PYSCALAR(mtpe, value) mtpe##_TO_PYSCALAR(value)
+
+
+void _pytypes_init(void);
 
 #endif /* _PYTYPE_LIB_ */

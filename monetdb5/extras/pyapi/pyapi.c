@@ -6,39 +6,14 @@
  * Copyright 2008-2015 MonetDB B.V.
  */
 
-#include "monetdb_config.h"
-#include "mal.h"
-#include "mal_stack.h"
-#include "mal_linker.h"
-#include "gdk_atoms.h"
-#include "gdk_utils.h"
-#include "gdk.h"
-#include "sql_catalog.h"
 #include "pyapi.h"
 #include "connection.h"
-
-// Python library
-#undef _GNU_SOURCE
-#undef _XOPEN_SOURCE
-#undef _POSIX_C_SOURCE
-#include <Python.h>
-
-// Numpy Library
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#ifdef __INTEL_COMPILER
-// Intel compiler complains about trailing comma's in numpy source code,
-#pragma warning(disable:271)
-#endif
-#include <numpy/arrayobject.h>
 
 #include "unicode.h"
 #include "pytypes.h"
 #include "shared_memory.h"
 #include "type_conversion.h"
 #include "formatinput.h"
-
-#include "sql_scenario.h"
-#include "sql_cast.h"
 
 #ifdef HAVE_FORK
 // These libraries are used for PYTHON_MAP when forking is enabled [to start new processes and wait on them]

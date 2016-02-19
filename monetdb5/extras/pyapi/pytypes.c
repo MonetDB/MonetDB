@@ -1,21 +1,6 @@
 
 #include "pytypes.h"
 
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#ifdef __INTEL_COMPILER
-// Intel compiler complains about trailing comma's in numpy source code
-#pragma warning(disable:271)
-#endif
-#include <numpy/ndarraytypes.h>
-#include <numpy/npy_common.h>
-
-#include "monetdb_config.h"
-#include "mal.h"
-#include "mal_stack.h"
-#include "mal_linker.h"
-#include "gdk_utils.h"
-#include "gdk.h"
-
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #define PyString_AsString PyUnicode_AsUTF8
@@ -179,4 +164,8 @@ bool PyType_IsLazyArray(PyObject *object)
     bool ret = strcmp(PyString_AsString(str), "<class 'lazyarray'>") == 0;
     Py_DECREF(str);
     return ret;
+}
+
+void _pytypes_init(void) {
+    import_array();
 }

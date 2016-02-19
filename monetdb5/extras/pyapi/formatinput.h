@@ -16,13 +16,12 @@
 
 #include <stddef.h>
 
-#undef _GNU_SOURCE
-#undef _XOPEN_SOURCE
-#undef _POSIX_C_SOURCE
-#include <Python.h>
+#include "pyapi.h"
  
 extern PyObject *marshal_loads;
 
 char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyObject **code_object, char **return_message);
+
+void _formatinput_init(void);
 
 #endif /* _PY_FORMAT_INPUT_LIB_ */

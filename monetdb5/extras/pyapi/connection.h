@@ -14,22 +14,7 @@
 #ifndef _LOOPBACK_QUERY_
 #define _LOOPBACK_QUERY_
 
-#undef _GNU_SOURCE
-#undef _XOPEN_SOURCE
-#undef _POSIX_C_SOURCE
-#include <Python.h>
-
-#include "monetdb_config.h"
-#include "mal.h"
-#include "mal_exception.h"
-#include "mal_interpreter.h"
-#include "mal_stack.h"
-#include "mal_linker.h"
-#include "gdk_utils.h"
-#include "gdk.h"
-#include "sql_catalog.h"
-
- #include "pytypes.h"
+#include "pytypes.h"
 
 extern PyTypeObject *_connection_type;
 

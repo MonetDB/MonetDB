@@ -1,18 +1,7 @@
 
 #include "connection.h"
-#include "pytypes.h"
 #include "type_conversion.h"
-#include "sql_execute.h"
-#include "sql_storage.h"
 #include "shared_memory.h"
-
-// Numpy Library
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#ifdef __INTEL_COMPILER
-// Intel compiler complains about trailing comma's in numpy source code
-#pragma warning(disable:271)
-#endif
-#include <numpy/arrayobject.h>
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K

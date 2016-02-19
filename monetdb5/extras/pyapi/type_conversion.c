@@ -269,3 +269,7 @@ CONVERSION_FUNCTION_FACTORY(dbl, lng)
 CONVERSION_FUNCTION_FACTORY(hge, hge)
 #endif
 #endif
+
+void _typeconversion_init(void) {
+    import_array();
+}
