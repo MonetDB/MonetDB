@@ -85,19 +85,19 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			// inherit property of first argument
 			v = getSTC(mb,getArg(p,1));
 			if(v != NULL)
-				setSTC(mb, getArg(p,0),GDKstrdup(buf));
+				setSTC(mb, getArg(p,0),GDKstrdup(v));
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
 			// inherit property of last argument
 			v = getSTC(mb,getArg(p,p->argc-1));
 			if( v != NULL)
-				setSTC(mb, getArg(p,0), GDKstrdup(buf));
+				setSTC(mb, getArg(p,0), GDKstrdup(v));
 		} else
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== subjoinRef){
 			// inherit property of last argument
 			v = getSTC(mb,getArg(p,p->argc-1) );
 			if( v != NULL)
-				setSTC(mb, getArg(p,0), GDKstrdup(buf));
+				setSTC(mb, getArg(p,0), GDKstrdup(v));
 		} 
 	}
 	return 1;

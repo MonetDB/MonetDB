@@ -24,18 +24,12 @@ stdout of test 'inline04` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:any,b:any);
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],b:bat[:oid,:int]);
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],2:int);
 
 # 15:49:03 >  
 # 15:49:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29846" "--port=34870"
 # 15:49:03 >  
 
-inline function user.qry():void;        	#[0]  0 
+function user.qry():void;               	#[0]  0 
     b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] CMDbatADDsignal 14 <- 1 1 

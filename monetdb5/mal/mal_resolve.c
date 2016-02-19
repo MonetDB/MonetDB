@@ -525,11 +525,11 @@ resolveType(int dsttype, int srctype)
 		if (tracefcn) {
 			int i2 = getColumnIndex(dsttype);
 			char *tpe1, *tpe2, *tpe3; 
-			tpe2 = getTypeName(t1);
-			tpe4 = getTypeName(t2);
-			tpe6 = getTypeName(t3);
+			tpe1 = getTypeName(t1);
+			tpe2 = getTypeName(t2);
+			tpe3 = getTypeName(t3);
 			mnstr_printf(GDKout, "resolved to bat[:oid,:%s] bat[:oid,:%s]->bat[:oid,%s:%d]\n",
-						 tpe2, tpe4, tpe6, i2);
+						 tpe1, tpe2, tpe3, i2);
 			GDKfree(tpe1);
 			GDKfree(tpe2);
 			GDKfree(tpe3);

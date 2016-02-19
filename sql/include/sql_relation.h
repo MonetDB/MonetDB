@@ -71,6 +71,8 @@ typedef struct expression {
 #define UPD_LOCKED		2
 #define UPD_NO_CONSTRAINT	4
  
+#define REL_PARTITION	8
+
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
 #define PSM_SET 1
 #define PSM_VAR 2

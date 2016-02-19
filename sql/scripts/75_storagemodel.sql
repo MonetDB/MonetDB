@@ -18,10 +18,83 @@
 -- For strings we take a sample to determine their average length.
 
 create function sys."storage"()
-returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean,  imprints bigint, sorted boolean, compress boolean)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
 external name sql."storage";
 
 create view sys."storage" as select * from sys."storage"();
+
+-- refinements for schemas, tables, and individual columns
+create function sys."storage"( sname string)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
+external name sql."storage";
+
+create function sys."storage"( sname string, tname string)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
+external name sql."storage";
+
+create function sys."storage"( sname string, tname string, cname string)
+returns table (
+	"schema" string,
+	"table" string,
+	"column" string,
+	"type" string,
+	"mode" string,
+	location string,
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	imprints bigint,
+	sorted boolean
+)
+external name sql."storage";
 
 -- To determine the footprint of an arbitrary database, we first have
 -- to define its schema, followed by an indication of the properties of each column.
@@ -32,7 +105,7 @@ create table sys.storagemodelinput(
 	"column" string,
 	"type" string,
 	"typewidth" int,
-	"count" bigint,	-- estimated number of tuples
+	"count" bigint,		-- estimated number of tuples
 	"distinct" bigint,	-- indication of distinct number of strings
 	"atomwidth" int,	-- average width of strings or clob
 	"reference" boolean,	-- used as foreign key reference

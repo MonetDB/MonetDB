@@ -36,12 +36,11 @@ function user.foo():void;               	#[0]  0
     c:bat[:oid] := bat.new(:oid,:oid);  	#[3] CMDBATnew 4 <- 2 2 
     d:bat[:oid] := bat.new(:oid,:oid);  	#[4] CMDBATnew 5 <- 2 2 
     j1:bat[:oid] := algebra.projection(a:bat[:oid],b:bat[:oid]);	#[5] ALGprojection 6 <- 1 3 
-    X_11:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[6] ALGprojectionpath 11 <- 1 3 4 
-    j2:bat[:oid] := X_11:bat[:oid];     	#[7]  7 <- 11 
-    j3:bat[:any] := algebra.projectionpath(X_11:bat[:oid],d:bat[:oid]);	#[8] ALGprojectionpath 8 <- 11 5 
-    j4:bat[:any] := X_11:bat[:oid];     	#[9]  9 <- 11 
-    j5:bat[:oid] := algebra.projectionpath(X_11:bat[:oid],b:bat[:oid]);	#[10] ALGprojectionpath 10 <- 11 3 
-end user.foo;                           	#[11]  
+    j2:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[6] ALGprojectionpath 7 <- 1 3 4 
+    j3:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],d:bat[:oid]);	#[7] ALGprojectionpath 8 <- 1 3 4 5 
+    j4:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[8] ALGprojectionpath 9 <- 1 3 4 
+    j5:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],b:bat[:oid]);	#[9] ALGprojectionpath 10 <- 1 3 4 3 
+end user.foo;                           	#[10]  
 
 # 06:41:06 >  
 # 06:41:06 >  "Done."
