@@ -1124,6 +1124,7 @@ sql_update_dec2015(Client c, int olddb)
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
+	geomsqlfix_fptr fixfunc;
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
@@ -1141,28 +1142,75 @@ sql_update_dec2015(Client c, int olddb)
 		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;");
 #endif
 
-	if (geomsqlfix_get() != NULL) {
-		char *gbuf, *obuf;
+	// Add the new storage inspection functions.
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create function sys.\"storage\"( sname string)\n"
+		"returns table (\n"
+		"    \"schema\" string,\n"
+		"    \"table\" string,\n"
+		"    \"column\" string,\n"
+		"    \"type\" string,\n"
+		"    \"mode\" string,\n"
+		"    location string,\n"
+		"    \"count\" bigint,\n"
+		"    typewidth int,\n"
+		"    columnsize bigint,\n"
+		"    heapsize bigint,\n"
+		"    hashes bigint,\n"
+		"    phash boolean,\n"
+		"    imprints bigint,\n"
+		"    sorted boolean\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"\n"
+		"create function sys.\"storage\"( sname string, tname string)\n"
+		"returns table (\n"
+		"    \"schema\" string,\n"
+		"    \"table\" string,\n"
+		"    \"column\" string,\n"
+		"    \"type\" string,\n"
+		"    \"mode\" string,\n"
+		"    location string,\n"
+		"    \"count\" bigint,\n"
+		"    typewidth int,\n"
+		"    columnsize bigint,\n"
+		"    heapsize bigint,\n"
+		"    hashes bigint,\n"
+		"    phash boolean,\n"
+		"    imprints bigint,\n"
+		"    sorted boolean\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"\n"
+		"create function sys.\"storage\"( sname string, tname string, cname string)\n"
+		"returns table (\n"
+		"    \"schema\" string,\n"
+		"    \"table\" string,\n"
+		"    \"column\" string,\n"
+		"    \"type\" string,\n"
+		"    \"mode\" string,\n"
+		"    location string,\n"
+		"    \"count\" bigint,\n"
+		"    typewidth int,\n"
+		"    columnsize bigint,\n"
+		"    heapsize bigint,\n"
+		"    hashes bigint,\n"
+		"    phash boolean,\n"
+		"    imprints bigint,\n"
+		"    sorted boolean\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+	);
+
+	if ((fixfunc = geomsqlfix_get()) != NULL) {
 		str geomupgrade;
 		size_t gbufsize;
 
-		geomupgrade = (*geomsqlfix_get())(olddb);
-		gbufsize = strlen(geomupgrade) + bufsize + 1;
-		if ((strlen(geomupgrade) <= 0) || 
-		    ((gbuf = GDKmalloc(gbufsize)) == NULL)) {
-			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-			GDKfree(buf);
-			return err;
-		}
-
-		strcpy(gbuf, buf);
-		strcat(gbuf, geomupgrade);
-		strcat(gbuf, " ");
-		obuf = buf;
-		buf = gbuf;
-		pos = strlen(buf);
-		bufsize = gbufsize;
-		GDKfree(obuf);
+		geomupgrade = (*fixfunc)(olddb);
+		gbufsize = strlen(geomupgrade) + 1;
+		buf = GDKrealloc(buf, bufsize + gbufsize);
+		bufsize += gbufsize;
+		pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
 		GDKfree(geomupgrade);
 	}
 
@@ -1170,67 +1218,8 @@ sql_update_dec2015(Client c, int olddb)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
 	}
-	assert(pos < bufsize);
 
-	// Add the new storage inspection functions.
-	pos += snprintf(buf + pos, bufsize - pos, 
-		"create function sys.\"storage\"( sname string)"
-		"returns table ("
-		"	\"schema\" string,"
-		"	\"table\" string,"
-		"	\"column\" string,"
-		"	\"type\" string,"
-		"	\"mode\" string,"
-		"	location string,"
-		"	\"count\" bigint,"
-		"	typewidth int,"
-		"	columnsize bigint,"
-		"	heapsize bigint,"
-		"	hashes bigint,"
-		"	phash boolean,"
-		"	imprints bigint,"
-		"	sorted boolean"
-		")"
-		"external name sql.\"storage\";"
-		""
-		"create function sys.\"storage\"( sname string, tname string)"
-		"returns table ("
-		"	\"schema\" string,"
-		"	\"table\" string,"
-		"	\"column\" string,"
-		"	\"type\" string,"
-		"	\"mode\" string,"
-		"	location string,"
-		"	\"count\" bigint,"
-		"	typewidth int,"
-		"	columnsize bigint,"
-		"	heapsize bigint,"
-		"	hashes bigint,"
-		"	phash boolean,"
-		"	imprints bigint,"
-		"	sorted boolean"
-		")"
-		"external name sql.\"storage\";"
-		""
-		"create function sys.\"storage\"( sname string, tname string, cname string)"
-		"returns table ("
-		"	\"schema\" string,"
-		"	\"table\" string,"
-		"	\"column\" string,"
-		"	\"type\" string,"
-		"	\"mode\" string,"
-		"	location string,"
-		"	\"count\" bigint,"
-		"	typewidth int,"
-		"	columnsize bigint,"
-		"	heapsize bigint,"
-		"	hashes bigint,"
-		"	phash boolean,"
-		"	imprints bigint,"
-		"	sorted boolean"
-		")"
-		"external name sql.\"storage\";"
-	);
+	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
