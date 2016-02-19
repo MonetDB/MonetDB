@@ -5140,13 +5140,15 @@ BUN mbrHASH(mbr *atom) {
 
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
+static mbr mbrNIL = {
+	GDK_flt_min,		/* flt_nil */
+	GDK_flt_min,
+	GDK_flt_min,
+	GDK_flt_min
+};
+
 mbr *mbrNULL(void) {
-	static mbr mbrNIL;
-	mbrNIL.xmin = flt_nil;
-	mbrNIL.ymin = flt_nil;
-	mbrNIL.xmax = flt_nil;
-	mbrNIL.ymax = flt_nil;
-	return (&mbrNIL);
+	return &mbrNIL;
 }
 
 /* COMP: compare two mbrs. */
