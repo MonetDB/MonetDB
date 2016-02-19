@@ -1310,7 +1310,7 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(err);
 		}
 	} else if (geomsqlfix_get() != NULL && 
-		   sql_find_subtype(&tp, "geometry", 0, 0)) {
+		   !sql_find_subtype(&tp, "geometry", 0, 0)) {
 		// the geom module is loaded but the database is not geom-enabled
 		if ((err = sql_update_dec2015(c, 0)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
