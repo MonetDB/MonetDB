@@ -435,7 +435,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 #endif
     bit varres = sqlfun ? sqlfun->varres : 0;
     int retcols = !varres ? pci->retc : -1;
-    PyGILState_STATE gstate = PyGILState_LOCKED;
+    bool gstate = 0;
     int unnamedArgs = 0;
     bit parallel_aggregation = grouped && mapped;
     int argcount = pci->argc;
@@ -629,7 +629,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         VERBOSE_MESSAGE("Waiting to fork.\n");
         //fork
         MT_lock_set(&pyapiLock);
-        gstate = PyGILState_Ensure(); // we need the GIL before forking, otherwise it can get stuck in the forked child
+        gstate = Python_ObtainGIL(); // we need the GIL before forking, otherwise it can get stuck in the forked child
         VERBOSE_MESSAGE("Start forking.\n");
         if ((pid = fork()) < 0)
         {
@@ -647,8 +647,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 goto wrapup;
             }
         } else {
-            PyGILState_Release(gstate);
-            gstate = PyGILState_LOCKED;
+            gstate = Python_ReleaseGIL(gstate);
         }
         if (!child_process) {
             //main process
@@ -889,7 +888,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 
     //After this point we will execute Python Code, so we need to acquire the GIL
     if (!mapped) { 
-        gstate = PyGILState_Ensure();
+        gstate = Python_ObtainGIL();
     }
 
     if (sqlfun) {
@@ -1042,8 +1041,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             PyObject *aggr_result;
 
             // release the GIL
-            PyGILState_Release(gstate);
-            gstate = PyGILState_LOCKED;
+            gstate = Python_ReleaseGIL(gstate);
 
             // the first unnamed argument has the group numbers for every row
             aggr_group = BATdescriptor(*getArgReference_bat(stk, pci, unnamedArgs));
@@ -1201,7 +1199,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 }
 
                 // we need the GIL again to group the parameters
-                gstate = PyGILState_Ensure();
+                gstate = Python_ObtainGIL();
 
                 ai = 0;
                 aggr_result = PyList_New(group_count);
@@ -1429,8 +1427,7 @@ aggrwrapup:
     }
 #endif
     // We are done executing Python code (aside from cleanup), so we can release the GIL
-    PyGILState_Release(gstate);
-    gstate = PyGILState_LOCKED;
+    gstate = Python_ReleaseGIL(gstate);
 
 #ifdef HAVE_FORK // This goto is only used for multiprocessing, if HAVE_FORK is set to 0 this is unused
 returnvalues:
@@ -1555,10 +1552,10 @@ wrapup:
         PyInput *inp = &pyinput_values[i - (pci->retc + 2)];
         if (inp->bat != NULL) BBPunfix(inp->bat->batCacheid);
     }
-    if (pResult != NULL && gstate == PyGILState_LOCKED) {
+    if (pResult != NULL && gstate == 0) {
         //if there is a pResult here, we are running single threaded (LANGUAGE PYTHON),
         //thus we need to free python objects, thus we need to obtain the GIL
-        gstate = PyGILState_Ensure();
+        gstate = Python_ObtainGIL();
     }
     for (i = 0; i < retcols; i++) {
         PyReturn *ret = &pyreturn_values[i];
@@ -1576,8 +1573,8 @@ wrapup:
     if (pResult != NULL) {
         Py_DECREF(pResult);
     }
-    if (gstate != PyGILState_LOCKED) {
-        PyGILState_Release(gstate);
+    if (gstate != 0) {
+        gstate = Python_ReleaseGIL(gstate);
     }
 
     // Now release some GDK memory we allocated for strings and input values
@@ -2762,12 +2759,12 @@ PyObject* ComputeParallelAggregation(AggrParams *p)
     int i;
     size_t group_it, ai;
     PyObject *aggr_result;
-    PyGILState_STATE gstate = PyGILState_LOCKED;
+    bool gstate = 0;
     //now perform the actual aggregation
     //we perform one aggregation per group
 
     //we need the GIL to execute the functions
-    gstate = PyGILState_Ensure();
+    gstate = Python_ObtainGIL();
     aggr_result = PyList_New(p->group_end - p->group_start);
     for(group_it = p->group_start; group_it < p->group_end; group_it++) {
         // we first have to construct new 
@@ -2870,12 +2867,24 @@ PyObject* ComputeParallelAggregation(AggrParams *p)
     }
     //release the GIL again   
 wrapup: 
-    PyGILState_Release(gstate);
-    gstate = PyGILState_LOCKED;
+    gstate = Python_ReleaseGIL(gstate);
     return aggr_result;
 }
 
 bool PyType_IsNumpyArray(PyObject *object)
 {
     return PyArray_CheckExact(object);
+}
+
+bool Python_ObtainGIL(void)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    return gstate == PyGILState_LOCKED ? 0 : 1;
+}
+
+bool Python_ReleaseGIL(bool state)
+{
+    PyGILState_STATE gstate = state == 0 ? PyGILState_LOCKED : PyGILState_UNLOCKED;
+    PyGILState_Release(gstate);
+    return 0;
 }

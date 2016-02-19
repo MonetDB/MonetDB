@@ -115,6 +115,9 @@ pyapi_export char *BatType_Format(int);
 pyapi_export int PyType_ToBat(int);
 pyapi_export int BatType_ToPyType(int);
 
+pyapi_export bool Python_ObtainGIL(void);
+pyapi_export bool Python_ReleaseGIL(bool);
+
 #define bte_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define bit_TO_PYSCALAR(value) PyInt_FromLong(value)
 #define sht_TO_PYSCALAR(value) PyInt_FromLong(value)
