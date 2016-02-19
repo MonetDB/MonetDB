@@ -17,7 +17,6 @@ int TYPE_mbr;
 
 static inline int geometryHasZ(int info){return (info & 0x02);}
 static inline int geometryHasM(int info){return (info & 0x01);}
-const double pi=3.14159265358979323846;
 static wkb wkb_nil = {~0, 0};
 
 static wkb *
@@ -35,16 +34,16 @@ wkbNULLcopy(void)
 
 /** convert degrees to radians */
 static void degrees2radians(double *x, double *y, double *z) {
-	(*x) *= pi/180.0;
-	(*y) *= pi/180.0;
-	(*z) *= pi/180.0;
+	(*x) *= M_PI/180.0;
+	(*y) *= M_PI/180.0;
+	(*z) *= M_PI/180.0;
 }
 
 /** convert radians to degrees */
 static void radians2degrees(double *x, double *y, double *z) {
-	(*x) *= 180.0/pi;
-	(*y) *= 180.0/pi;
-	(*z) *= 180.0/pi;
+	(*x) *= 180.0/M_PI;
+	(*y) *= 180.0/M_PI;
+	(*z) *= 180.0/M_PI;
 }
 
 static str transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_dst, const GEOSCoordSequence* gcs_old, GEOSCoordSequence** gcs_new){
