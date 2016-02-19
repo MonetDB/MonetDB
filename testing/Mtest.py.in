@@ -39,6 +39,9 @@ quiet = False
 
 releaserun = False
 
+global_timeout = 0
+start_time = time.time()
+
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
@@ -1222,8 +1225,10 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     body_good.append(bodyline)
                 else:
                     body_bad.append(bodyline)
-            if FtOut == F_OK and FtErr == F_OK:
+            if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                 oktests.append(TST)
+            if global_timeout and start_time + global_timeout < time.time():
+                break
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -3541,6 +3546,8 @@ def main(argv) :
              'special handling for Jenkins'),
             ('addreqs', None, 'addreqs', None,
              'automatically add required tests when testing individual tests'),
+            ('global_timeout', 'T', 'global_timeout', '<sec>',
+             'global timeout'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3622,6 +3629,7 @@ def main(argv) :
     CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
     addreqs = False
+    global global_timeout
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3665,6 +3673,9 @@ def main(argv) :
             env['MULTIFARM'] = 'True'
         jenkins = opts.get('jenkins', False)
         addreqs = opts.get('addreqs', False)
+        a = opts.get('global_timeout')
+        if a is not None:
+            global_timeout = int(a)
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -4186,6 +4197,8 @@ def main(argv) :
                         body_good.append(elem)
                     else:
                         body_bad.append(elem)
+                if global_timeout and start_time + global_timeout < time.time():
+                    break
         body = body_bad + body_good
 
         if THISFILE == "Mtest.py":

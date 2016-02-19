@@ -9,7 +9,8 @@
 #ifndef _REL_DISTRIBUTE_H_
 #define _REL_DISTRIBUTE_H_
 
-#include "rel_semantic.h"
+#include "sql_relation.h"
+#include "sql_mvc.h"
 
 extern int mapiuri_valid( char *uri);
 extern char *mapiuri_database(char *uri, char *fallback);

@@ -1,0 +1,19 @@
+# remapping inline functions
+# inspired by SQL module
+inline function foo(a:int,b:int):int;
+	c:= a+b;
+	return foo:=c;
+end foo;
+
+function qry();
+	b:= bat.new(:oid,:int);
+	bat.append(b,1);
+	zz:= user.foo(1,2); # base line test for inlining
+
+	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
+	z:bat[:oid,:int]:= mal.multiplex("calc","+",b,2);
+end qry;
+
+	optimizer.inline("user","qry");
+	optimizer.remap("user","qry");
+	mdb.List("user","qry");

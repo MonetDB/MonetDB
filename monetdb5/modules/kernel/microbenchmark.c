@@ -28,9 +28,10 @@
 static gdk_return
 BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 {
-	BUN n = (BUN) * size;
+	const BUN n = (BUN) * size;
+	BUN i;
 	BAT *b = NULL;
-	BUN p, q;
+	int *restrict val;
 
 	if (*size > (wrd)BUN_MAX) {
 		GDKerror("BATrandom: size must not exceed BUN_MAX");
@@ -58,27 +59,28 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
+	val = (int *) Tloc(b, BUNfirst(b));
 
-	BATsetcount(b, n);
 	/* create BUNs with random distribution */
 	if (seed != int_nil)
 		srand(seed);
 	if (*domain == int_nil) {
-		BATloop(b, p, q) {
-			*(int *) Tloc(b, p) = rand();
+	        for (i = 0; i < n; i++) {
+			val[i] = rand();
 		}
 #if RAND_MAX < 46340	    /* 46340*46340 = 2147395600 < INT_MAX */
 	} else if (*domain > RAND_MAX + 1) {
-		BATloop(b, p, q) {
-			*(int *) Tloc(b, p) = (rand() * (RAND_MAX + 1) + rand()) % *domain;
+	        for (i = 0; i < n; i++) {
+			val[i] = (rand() * (RAND_MAX + 1) + rand()) % *domain;
 		}
 #endif
 	} else {
-		BATloop(b, p, q) {
-			*(int *) Tloc(b, p) = rand() % *domain;
+	        for (i = 0; i < n; i++) {
+			val[i] = rand() % *domain;
 		}
 	}
 
+	BATsetcount(b, n);
 	b->hsorted = 1;
 	b->hrevsorted = 0;
 	b->hdense = TRUE;
@@ -95,10 +97,11 @@ BATrandom(BAT **bn, oid *base, wrd *size, int *domain, int seed)
 static gdk_return
 BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 {
-	BUN n = (BUN) * size, i, r;
+	const BUN n = (BUN) * size;
+	BUN i, r;
 	BAT *b = NULL;
-	BUN firstbun, p, q;
-	int j = 0;
+	int *restrict val;
+	int v;
 
 	if (*size > (wrd)BUN_MAX) {
 		GDKerror("BATuniform: size must not exceed BUN_MAX");
@@ -126,27 +129,25 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
+	val = (int *) Tloc(b, BUNfirst(b));
 
-	firstbun = BUNfirst(b);
-	BATsetcount(b, n);
 	/* create BUNs with uniform distribution */
-	BATloop(b, p, q) {
-		*(int *) Tloc(b, p) = j;
-		if (++j >= *domain)
-			j = 0;
+        for (v = 0, i = 0; i < n; i++) {
+		val[i] = v;
+		if (++v >= *domain)
+			v = 0;
 	}
 
 	/* mix BUNs randomly */
-	for (r = i = 0; i < n; i++) {
-		BUN idx = i + ((r += (BUN) rand()) % (n - i));
-		int val;
+	for (r = 0, i = 0; i < n; i++) {
+		const BUN j = i + ((r += rand()) % (n - i));
+		const int tmp = val[i];
 
-		p = firstbun + i;
-		q = firstbun + idx;
-		val = *(int *) Tloc(b, p);
-		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
-		*(int *) Tloc(b, q) = val;
+		val[i] = val[j];
+		val[j] = tmp;
 	}
+
+	BATsetcount(b, n);
 	b->hsorted = 1;
 	b->hrevsorted = 0;
 	b->hdense = TRUE;
@@ -163,12 +164,12 @@ BATuniform(BAT **bn, oid *base, wrd *size, int *domain)
 static gdk_return
 BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 {
-	BUN n = (BUN) * size, i, r;
+	const BUN n = (BUN) * size;
+	BUN i, r;
 	BAT *b = NULL;
-	BUN firstbun, lastbun, p, q;
-
-	BUN skewedSize;
-	int skewedDomain;
+	int *restrict val;
+	const BUN skewedSize = ((*skew) * n) / 100;
+	const int skewedDomain = ((100 - (*skew)) * (*domain)) / 100;
 
 	if (*size > (wrd)BUN_MAX) {
 		GDKerror("BATskewed: size must not exceed BUN_MAX = " BUNFMT, BUN_MAX);
@@ -201,33 +202,24 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
+	val = (int *) Tloc(b, BUNfirst(b));
 
-	firstbun = BUNfirst(b);
-	BATsetcount(b, n);
 	/* create BUNs with skewed distribution */
-	skewedSize = ((*skew) * n)/100;
-	skewedDomain = ((100-(*skew)) * (*domain))/100;
-
-	lastbun = firstbun + skewedSize;
-	for(p=firstbun; p <lastbun; p++)
-		*(int *) Tloc(b, p) = (int)rand() % skewedDomain;
-
-	lastbun = BUNlast(b);
-	for(; p <lastbun; p++)
-		*(int *) Tloc(b, p) = ((int)rand() % (*domain-skewedDomain)) + skewedDomain;
+	for (i = 0; i < skewedSize; i++)
+		val[i] = rand() % skewedDomain;
+	for( ; i < n; i++)
+		val[i] = (rand() % (*domain - skewedDomain)) + skewedDomain;
 
 	/* mix BUNs randomly */
+	for (r = 0, i = 0; i < n; i++) {
+		const BUN j = i + ((r += rand()) % (n - i));
+		const int tmp = val[i];
 
-	for (r = i = 0; i < n; i++) {
-		BUN idx = i + ((r += (BUN) rand()) % (n - i));
-		int val;
-
-		p = firstbun + i;
-		q = firstbun + idx;
-		val = *(int *) Tloc(b, p);
-		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
-		*(int *) Tloc(b, q) = val;
+		val[i] = val[j];
+		val[j] = tmp;
 	}
+
+	BATsetcount(b, n);
 	b->hsorted = 1;
 	b->hrevsorted = 0;
 	b->hdense = TRUE;
@@ -244,24 +236,36 @@ BATskewed(BAT **bn, oid *base, wrd *size, int *domain, int *skew)
 
 /* math.h files do not have M_PI/M_E defined */
 #ifndef M_PI
-# define M_PI		3.14159265358979323846	/* pi */
+# define M_PI		((dbl) 3.14159265358979323846)	/* pi */
 #endif
 #ifndef M_E
-# define M_E		2.7182818284590452354	/* e */
+# define M_E		((dbl) 2.7182818284590452354)	/* e */
 #endif
 
 static gdk_return
 BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 {
-	BUN n = (BUN) * size, i;
-	unsigned int r = (unsigned int) n;
-	BUN d = (BUN) (*domain < 0 ? 0 : *domain);
+	const BUN n = (BUN) * size;
+	BUN i, r;
+	const int d = (*domain < 0 ? 0 : *domain);
+	int j;
 	BAT *b = NULL;
-	BUN firstbun, p, q;
-	int m = *mean, s = *stddev;
-	int *itab;
-	flt *ftab, tot = 0.0;
+	int *restrict val;
+	const int m = *mean, s = *stddev;
+	unsigned int *restrict abs;
+	flt *restrict rel;
+	dbl tot = 0;
+	const dbl s_s_2 = (dbl) s * (dbl) s * 2;
+	const dbl s_sqrt_2_pi = ((dbl) s * sqrt(2 * M_PI));
 
+	assert(sizeof(unsigned int) == sizeof(flt));
+
+#if SIZEOF_BUN > 4
+	if (n >= ((ulng) 1 << 32)) {
+		GDKerror("BATnormal: size must be less than 2^32 = "LLFMT, (lng) 1 << 32);
+		return GDK_FAIL;
+	}
+#endif
 	if (*size > (wrd)BUN_MAX) {
 		GDKerror("BATnormal: size must not exceed BUN_MAX");
 		return GDK_FAIL;
@@ -273,8 +277,9 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 	}
 
 	b = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
-	if (b == NULL)
+	if (b == NULL) {
 		return GDK_FAIL;
+        }
 	if (n == 0) {
 		b->tsorted = 1;
 		b->trevsorted = 0;
@@ -288,48 +293,55 @@ BATnormal(BAT **bn, oid *base, wrd *size, int *domain, int *stddev, int *mean)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
+	val = (int *) Tloc(b, BUNfirst(b));
 
-	firstbun = BUNfirst(b);
-	itab = (int *) GDKmalloc(d * sizeof(int));
-	ftab = (flt *) itab;
+	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
+	if (abs == NULL) {
+	        BBPreclaim(b);
+	        return GDK_FAIL;
+	}
+	rel = (flt *) abs;
 
 	/* assert(0 <= *mean && *mean < *size); */
 
-	/* created inverted table */
-	for (i = 0; i < d; i++) {
-		dbl tmp = (dbl) ((i - m) * (i - m));
+	/* created inverted table with rel fraction per value */
+	for (tot = 0, j = 0; j < d; j++) {
+		const dbl j_m = (dbl) j - m;
+		const dbl tmp = j_m * j_m / s_s_2;
 
-		tmp = pow(M_E, -tmp / (2 * s * s)) / sqrt(2 * M_PI * s * s);
-		ftab[i] = (flt) tmp;
-		tot += ftab[i];
+		rel[j] = (flt) (pow(M_E, -tmp) / s_sqrt_2_pi);
+		tot += rel[j];
 	}
-	for (tot = (flt) (1.0 / tot), i = 0; i < d; i++) {
-		itab[i] = (int) ((flt) n * ftab[i] * tot);
-		r -= itab[i];
+	/* just in case we get tot != 1 due to. e.g.,
+	 * rounding errors, limited precision, or limited domain */
+	tot = 1.0 / tot;
+	/* calculate abs count per value from rel fraction */
+	for (r = n, j = 0; j < d; j++) {
+		assert(((dbl) n * rel[j] * tot) < (dbl) ((lng) 1 << 32));
+		abs[j] = (unsigned int) ((dbl) n * rel[j] * tot);
+		assert(r >= abs[j]);
+		r -= abs[j];
 	}
-	itab[m] += r;
+	assert(((ulng) 1 << 32) - r > abs[m]);
+	abs[m] += (unsigned int) r;
+
+	/* create BUNs with normal distribution */
+	for (j = 0, i = 0; i < n && j < d; i++) {
+	        while (j < d && abs[j] == 0)
+	                j++;
+                if (j < d) {
+        	        val[i] = j;
+	                abs[j]--;
+                }
+	}
+	assert(i == n);
+        while (j < d && abs[j] == 0)
+                j++;
+	assert(j == d);
+	GDKfree(abs);
+
 
 	BATsetcount(b, n);
-	/* create BUNs with normal distribution */
-	BATloop(b, p, q) {
-		while (itab[r] == 0)
-			r++;
-		itab[r]--;
-		*(int *) Tloc(b, p) = (int) r;
-	}
-	GDKfree(itab);
-
-	/* mix BUNs randomly */
-	for (r = 0, i = 0; i < n; i++) {
-		BUN idx = i + (BUN) ((r += (unsigned int) rand()) % (n - i));
-		int val;
-
-		p = firstbun + i;
-		q = firstbun + idx;
-		val = *(int *) Tloc(b, p);
-		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
-		*(int *) Tloc(b, q) = val;
-	}
 	b->hsorted = 1;
 	b->hrevsorted = 0;
 	b->hdense = TRUE;

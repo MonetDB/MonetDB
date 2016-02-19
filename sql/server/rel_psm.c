@@ -11,6 +11,7 @@
 #include "rel_semantic.h"
 #include "rel_schema.h"
 #include "rel_select.h"
+#include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_updates.h"
 #include "sql_privileges.h"
@@ -784,8 +785,11 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				list *b = NULL;
 				sql_schema *old_schema = cur_schema(sql);
 	
-				if (create) /* needed for recursive functions */
+				if (create) { /* needed for recursive functions */
+					q = query_cleaned(q);
 					sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
+					GDKfree(q);
+				}
 				sql->session->schema = s;
 				b = sequential_block(sql, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
 				sql->forward = NULL;
@@ -816,7 +820,9 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					return NULL;
 				sql->params = NULL;
 				if (create) {
+					q = query_cleaned(q);
 					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
+					GDKfree(q);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
@@ -1061,10 +1067,12 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 			    (trigger_event->token == SQL_DELETE)?1:2;
 		int orientation = triggered_action->h->data.i_val;
 		char *condition = triggered_action->h->next->data.sval;
-		char *q = QUERY(sql->scanner);
+		char *q = query_cleaned(QUERY(sql->scanner));
 
 		assert(triggered_action->h->type == type_int);
-		return rel_create_trigger(sql, t->s->base.name, t->base.name, tname, time, orientation, event, old_name, new_name, condition, q);
+		r = rel_create_trigger(sql, t->s->base.name, t->base.name, tname, time, orientation, event, old_name, new_name, condition, q);
+		GDKfree(q);
+		return r;
 	}
 
 	t = mvc_bind_table(sql, ss, table_name);

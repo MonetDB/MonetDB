@@ -42,16 +42,6 @@
 #define SESSION_RW 0
 #define SESSION_RO 1
 
-int
-mvc_debug_on(mvc *m, int flg)
-{
-
-	if (m->debug & flg)
-		return 1;
-
-	return 0;
-}
-
 str
 sql_update_var(mvc *m, char *name, char *sval, lng sgn)
 {

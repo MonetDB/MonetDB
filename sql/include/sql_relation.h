@@ -71,6 +71,19 @@ typedef struct expression {
 #define UPD_LOCKED		2
 #define UPD_NO_CONSTRAINT	4
  
+#define REL_PARTITION	8
+
+/* We need bit wise exclusive numbers as we merge the level also in the flag */
+#define PSM_SET 1
+#define PSM_VAR 2
+#define PSM_RETURN 4
+#define PSM_WHILE 8
+#define PSM_IF 16
+#define PSM_REL 32
+
+#define SET_PSM_LEVEL(level)	(level<<8)
+#define GET_PSM_LEVEL(level)	(level>>8)
+
 /* todo make enum */
 #define DDL_OUTPUT	1
 #define DDL_LIST	2	
@@ -256,6 +269,8 @@ typedef enum operator_type {
 	(rel->subquery)
 #define set_subquery(rel) \
 	rel->subquery = 1
+#define reset_subquery(rel) \
+	rel->subquery = 0
 
 #define rel_is_ref(rel) 	(((sql_rel*)rel)->ref.refcnt > 1)
 

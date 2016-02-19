@@ -359,6 +359,10 @@ int escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote
 int fltFromStr(const char *src, int *len, flt **dst);
 int fltToStr(str *dst, int *len, const flt *src);
 const flt flt_nil;
+geomcatalogfix_fptr geomcatalogfix_get(void);
+void geomcatalogfix_set(geomcatalogfix_fptr);
+geomsqlfix_fptr geomsqlfix_get(void);
+void geomsqlfix_set(geomsqlfix_fptr);
 bat getBBPsize(void);
 char *get_bin_path(void);
 int gettimeofday(struct timeval *tv, int *ignore_zone);

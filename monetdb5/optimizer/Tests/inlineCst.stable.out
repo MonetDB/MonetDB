@@ -36,7 +36,7 @@ Ready.
 [ 0@0,	  213	  ]
 [ 1@0,	  213	  ]
 [ 2@0,	  213	  ]
-inline function user.qry():void;        	#[0]  0 
+function user.qry():void;               	#[0]  0 
     b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     bat.append(b:bat[:int],10:int);     	#[3] BKCappend_val_wrap 6 <- 1 7 

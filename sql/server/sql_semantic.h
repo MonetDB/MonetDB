@@ -15,29 +15,11 @@
 #include "sql_symbol.h"
 #include "sql_parser.h"
 
-/* value vs predicate (boolean) */
-#define type_value	0
-#define type_predicate	1
-/* cardinality expected by enclosing operator */
-#define card_none	-1	/* psm call doesn't return anything */
-#define card_value	0
-#define card_row 	1
-#define card_column 	2
-#define card_set	3 /* some operators require only a set (IN/EXISTS) */
-#define card_relation 	4
-/* allowed to reduce (in the where and having parts we can reduce) */
-
 typedef struct exp_kind_t {
 	bte type;
 	bte card;
 	bit reduce;	
 } exp_kind;
-
-#define sql_from 	0
-#define sql_where 	1
-#define sql_sel   	2	
-#define sql_having 	3
-#define sql_orderby   	4	
 
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);

@@ -39,6 +39,7 @@
 #include <rel_select.h>
 #include <rel_optimizer.h>
 #include <rel_prop.h>
+#include <rel_rel.h>
 #include <rel_exp.h>
 #include <rel_bin.h>
 #include <rel_dump.h>
@@ -487,6 +488,24 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		c->curprg = backup;
 	return 0;
 }
+
+static str
+rel2str( mvc *sql, sql_rel *rel)
+{
+	buffer *b;
+	stream *s = buffer_wastream(b = buffer_create(1024), "rel_dump");
+	list *refs = sa_list(sql->sa);
+	char *res = NULL; 
+
+	rel_print_refs(sql, s, rel, 0, refs, 0);
+	rel_print_(sql, s, rel, 0, refs, 0);
+	mnstr_printf(s, "\n");
+	res = buffer_get_buf(b);
+	buffer_destroy(b);
+	mnstr_destroy(s);
+	return res;
+}
+
 
 /* stub and remote function */
 static int
@@ -1060,11 +1079,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			if (t && (!isRemote(t) && !isMergeTable(t)) && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+				BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
+				setRowCnt(mb,getArg(q,0),rows);
+				if (t->p && 0)
+					setMitosisPartition(q, t->p->base.id);
+			}
 		}
 			break;
 		case st_bat:{
 			int tt = s->op4.cval->type.type->localtype;
-			sql_table *t = s->op4.cval->t;
+			sql_column *c = s->op4.cval;
+			sql_table *t = c->t;
 
 			q = newStmt2(mb, sqlRef, bindRef);
 			if (q == NULL)
@@ -1078,7 +1105,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
-			q = pushArgument(mb, q, getStrConstant(mb,s->op4.cval->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
@@ -1088,11 +1115,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 			}
+			if (s->flag != RD_INS && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+
+				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+					BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
+					setRowCnt(mb,getArg(q,0),rows);
+					if (t->p && 0)
+						setMitosisPartition(q, t->p->base.id);
+				}
+			}
 		}
 			break;
 		case st_idxbat:{
 			int tt = tail_type(s)->type->localtype;
-			sql_table *t = s->op4.idxval->t;
+			sql_idx *i = s->op4.idxval;
+			sql_table *t = i->t;
 
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			if (q == NULL)
@@ -1107,7 +1145,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
-			q = pushArgument(mb, q, getStrConstant(mb,s->op4.idxval->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,i->base.name));
 			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
@@ -1116,6 +1154,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->flag == RD_UPD_ID) {
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+			}
+			if (s->flag != RD_INS && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+					BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
+					setRowCnt(mb,getArg(q,0),rows);
+					if (t->p && 0)
+						setMitosisPartition(q, t->p->base.id);
+				}
 			}
 		}
 			break;
@@ -3131,3 +3179,62 @@ backend_create_subaggr(backend *be, sql_subaggr *f)
 {
 	return backend_create_func(be, f->aggr, f->res, NULL);
 }
+
+void
+_rel_print(mvc *sql, sql_rel *rel) 
+{
+	list *refs = sa_list(sql->sa);
+	rel_print_refs(sql, GDKstdout, rel, 0, refs, 1);
+	rel_print_(sql, GDKstdout, rel, 0, refs, 1);
+	mnstr_printf(GDKstdout, "\n");
+}
+
+void
+rel_print(mvc *sql, sql_rel *rel, int depth) 
+{
+	list *refs = sa_list(sql->sa);
+	size_t pos;
+	size_t nl = 0;
+	size_t len = 0, lastpos = 0;
+	stream *fd = sql->scanner.ws;
+	stream *s;
+	buffer *b = buffer_create(16364); /* hopefully enough */
+	if (!b)
+		return; /* signal somehow? */
+	s = buffer_wastream(b, "SQL Plan");
+	if (!s) {
+		buffer_destroy(b);
+		return; /* signal somehow? */
+	}
+
+	rel_print_refs(sql, s, rel, depth, refs, 1);
+	rel_print_(sql, s, rel, depth, refs, 1);
+	mnstr_printf(s, "\n");
+
+	/* count the number of lines in the output, skip the leading \n */
+	for (pos = 1; pos < b->pos; pos++) {
+		if (b->buf[pos] == '\n') {
+			nl++;
+			if (len < pos - lastpos)
+				len = pos - lastpos;
+			lastpos = pos + 1;
+		}
+	}
+	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
+
+	/* craft a semi-professional header */
+	mnstr_printf(fd, "&1 0 " SZFMT " 1 " SZFMT "\n", /* type id rows columns tuples */
+			nl, nl);
+	mnstr_printf(fd, "%% .plan # table_name\n");
+	mnstr_printf(fd, "%% rel # name\n");
+	mnstr_printf(fd, "%% clob # type\n");
+	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 1 /* remove = */);
+
+	/* output the data */
+	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
+
+	mnstr_close(s);
+	mnstr_destroy(s);
+	buffer_destroy(b);
+}
+

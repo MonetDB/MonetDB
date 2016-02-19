@@ -79,11 +79,11 @@ stderr of test 'setoptimizer` in directory 'sql/test` itself:
 # 12:49:31 >  mclient -lsql -i --host=eir --port=36907 
 # 12:49:31 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-12887/.s.monetdb.38476
+MAPI  = (monetdb) /var/tmp/mtest-21247/.s.monetdb.38932
 QUERY = set optimizer=' optimizer.inline(); optimizer.remap(); optimizer.evaluate(); optimizer.costModel(); optimizer.coercions(); optimizer.emptySet(); optimizer.aliases(); optimizer.mergetable(); optimizer.deadcode(); optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode(); optimizer.reduce(); optimizer.querylog(); optimizer.multiplex(); optimizer.garbageCollector();';
 ERROR = !TypeException:user.main[6]:'optimizer.emptySet' undefined in: optimizer.emptySet();
         !Semantic errors detected
-MAPI  = (monetdb) /var/tmp/mtest-12887/.s.monetdb.38476
+MAPI  = (monetdb) /var/tmp/mtest-21247/.s.monetdb.38932
 QUERY = set optimizer='myfamous_pipe';
 ERROR = !optimizer 'myfamous_pipe' unknown
 

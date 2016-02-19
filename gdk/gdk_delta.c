@@ -171,9 +171,6 @@ BATundo(BAT *b)
 	bunfirst = b->batDeleted;
 	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
-		BUN i = bunfirst;
-		BAT *bm = BBP_cache(-b->batCacheid);
-
 		/* elements are 'inserted' => zap properties */
 		b->hsorted = 0;
 		b->hrevsorted = 0;
@@ -183,18 +180,7 @@ BATundo(BAT *b)
 			BATkey(b, FALSE);
 		if (b->tkey)
 			BATkey(BATmirror(b), FALSE);
-
-		for (p = bunfirst; p < bunlast; p++, i++) {
-			ptr h = BUNhead(bi, p);
-			ptr t = BUNtail(bi, p);
-
-			if (b->H->hash) {
-				HASHins(bm, i, h);
-			}
-			if (b->T->hash) {
-				HASHins(b, i, t);
-			}
-		}
+		HASHremove(b);
 	}
 	b->batFirst = b->batDeleted;
 	BATsetcount(b, b->batInserted);

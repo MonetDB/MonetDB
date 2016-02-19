@@ -128,13 +128,16 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
-#define mix_bte(X)	((unsigned int) (X))
-#define mix_sht(X)	((unsigned int) (X))
-#define mix_int(X)	(((X)>>7)^((X)>>13)^((X)>>21)^(X))
-#define mix_lng(X)	mix_int((unsigned int) ((X) ^ ((X) >> 32)))
+#define mix_bte(X)	((unsigned int) (unsigned char) (X))
+#define mix_sht(X)	((unsigned int) (unsigned short) (X))
+#define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
+			 ((unsigned int) (X) >> 13) ^	\
+			 ((unsigned int) (X) >> 21) ^	\
+			 (unsigned int) (X))
+#define mix_lng(X)	mix_int((unsigned int) ((ulng) (X) ^		\
+						((ulng) (X) >> 32)))
 #ifdef HAVE_HGE
-#define mix_hge(X)	mix_int((unsigned int) ((X) ^ ((X) >> 32) ^ \
-						((X) >> 64) ^ ((X) >> 96)))
+#define mix_hge(X)	mix_lng((ulng) ((uhge) (X) ^ ((uhge) (X) >> 64)))
 #endif
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
@@ -205,6 +208,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #ifdef HAVE_HGE
 #define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
 #endif
+#define HASHfnd_flt(x,y,z)	HASHfnd_TYPE(x,y,z,flt)
+#define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
 
 /*
  * A new entry is added with HASHins using the BAT, the BUN index, and
@@ -224,17 +229,5 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			HASHputall((b)->T->hash, (i), _c);		\
 		}							\
 	} while (0)
-
-#define HASHins_oid(h,i,v)			\
-	do {					\
-		BUN _c = hash_oid(h,v);		\
-		HASHputall(h,i,_c);		\
-	} while (0)
-
-/* Functions to perform a binary search on a sorted BAT.
- * See gdk_search.c for details. */
-gdk_export BUN SORTfnd(BAT *b, const void *v);
-gdk_export BUN SORTfndfirst(BAT *b, const void *v);
-gdk_export BUN SORTfndlast(BAT *b, const void *v);
 
 #endif /* _GDK_SEARCH_H_ */

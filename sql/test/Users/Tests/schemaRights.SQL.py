@@ -4,7 +4,16 @@
 # Verify that the user can DROP SCHEMA created by both the 'monetdb' user and the created user.
 ###
 
-from util import sql_test_client
+import os, sys
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
+
+def sql_test_client(user, passwd, input):
+    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
+                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
+                   input = input, port = int(os.getenv("MAPIPORT")))
 
 sql_test_client('monetdb', 'monetdb', input = """\
 CREATE USER user1 WITH PASSWORD 'user1' name 'schema test user1' schema sys;

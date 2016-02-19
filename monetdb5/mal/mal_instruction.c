@@ -1088,6 +1088,8 @@ clearVariable(MalBlkPtr mb, int varid)
 		return;
 	if (v->name)
 		GDKfree(v->name);
+	if (v->stc)
+		GDKfree(v->stc);
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->name = 0;
@@ -1096,6 +1098,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->tmpindex = 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
+	v->stc = 0;
 }
 
 void

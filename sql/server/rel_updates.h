@@ -16,12 +16,6 @@
 #include "sql_mvc.h"
 #include <sql_relation.h>
 
-#define is_updateble(rel) \
-	(rel->op == op_basetable || \
-	(rel->op == op_ddl && (rel->flag == DDL_CREATE_TABLE || rel->flag == DDL_ALTER_TABLE)))
-
-extern sql_table *rel_ddl_table_get(sql_rel *r);
-
 extern sql_exp **table_update_array(mvc *sql, sql_table *t);
 extern sql_rel *rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps);
 

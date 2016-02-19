@@ -24,15 +24,12 @@ stdout of test 'inline10` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.bar a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"bar":str,b:any,b:any);
 
 # 06:41:01 >  
 # 06:41:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:41:01 >  
 
-#	mdb.List("user","qry");
-inline function user.qry():void;        	#[0]  0 
+function user.qry():void;               	#[0]  0 
     b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     X_19:int := calc.+(1:int,2:int);    	#[3] CMDvarADDsignal 19 <- 5 7 
