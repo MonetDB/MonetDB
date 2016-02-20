@@ -35,6 +35,7 @@
 #include <opt_pipes.h>
 #include "clients.h"
 #include "mal_instruction.h"
+#include "mal_resource.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -4863,10 +4864,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										w = (int) (sum / cnt2);
 								}
 								BUNappend(atom, &w, FALSE);
-
-#define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
-#define hashinfo(X) ( (X)? heapinfo((X)->heap):0)
-
 
 								sz = heapinfo(&bn->T->heap);
 								BUNappend(size, &sz, FALSE);
