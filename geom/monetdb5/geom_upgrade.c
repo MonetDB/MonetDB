@@ -250,7 +250,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 
 			/* The wkb struct has changed. Update the respective BATs */
 			if (isGeom) {
-				typedef struct wkb_old {int len; char data[1];} wkb_old;
+				typedef struct wkb_old {int len; char data[FLEXIBLE_ARRAY_MEMBER];} wkb_old;
 				BAT *gn;
 				BUN k,l;
 				int table_id, schema_id;
@@ -276,7 +276,6 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 					if (wo->len == ~0) {
 						wn = GDKmalloc(sizeof(wkb));
 						wn->len = ~(int)0;
-						(wn->data)[0] = 0;
 					} else {
 						wn  = GDKmalloc(sizeof(wkb) - 1 + wo->len);
 						wn->len = wo->len;
@@ -284,6 +283,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 					}
 					wn->srid = 0;// we did not save the srid in the past
 					BUNappend(gn, wn, TRUE);
+					GDKfree(wn);
 				}
 				if (list_add(&ul, g, gn, N(n, sn, tblname, colname)) == 0)
 					return 0;
