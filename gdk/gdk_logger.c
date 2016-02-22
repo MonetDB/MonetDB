@@ -1124,6 +1124,8 @@ logger_commit(logger *lg)
 	return bm_commit(lg);
 }
 
+static void geom_upgrade_wkb(void);
+
 static gdk_return
 check_version(logger *lg, FILE *fp)
 {
@@ -1145,6 +1147,8 @@ check_version(logger *lg, FILE *fp)
 
 			return GDK_FAIL;
 		}
+		if (geomisoldversion)
+			geom_upgrade_wkb();
 	} else
 		lg->postfuncp = NULL;	 /* don't call */
 	if (fgetc(fp) != '\n' ||	 /* skip \n */
@@ -2848,8 +2852,135 @@ geomversion_set(void)
 {
 	geomisoldversion = 1;
 }
-int
-geomversion_get(void)
+int geomversion_get(void)
 {
 	return geomisoldversion;
+}
+
+/* "Danger, Will Robinson".
+ *
+ * Upgrade the Well-known Binary (WKB) from older geom versions to the
+ * one in current use.  This function should only be called when the
+ * geom module has been loaded, and it should be called before the
+ * Write-ahead Log (WAL) is processed.  The WAL may create new BATs
+ * with the WKB type, or append values to an existing BAT.  In the
+ * first case it is hard, and in the second impossible, to upgrade the
+ * BAT later.
+ *
+ * This function is located here, since it needs to be called early
+ * (as discussed), and because it calls functions that are GDK only.
+ * There is a little knowledge about the MonetDB WKB type, but nothing
+ * about the internals of the type.
+ *
+ * All errors are fatal.
+ */
+static void
+geom_upgrade_wkb(void)
+{
+	bat bid, bbpsize = getBBPsize();
+	BATstore *bs;
+	BAT *b;
+	int typewkb = ATOMindex("wkb");
+	int utypewkb = ATOMunknown_find("wkb");
+	const char *nme, *bnme;
+	char filename[64];
+	Heap h1, h2;
+	const var_t *restrict old;
+	var_t *restrict new;
+	BUN i;
+	struct old_wkb {
+		int len;
+		char data[FLEXIBLE_ARRAY_MEMBER];
+	} *owkb;
+	struct new_wkb {
+		int len;
+		int srid;
+		char data[FLEXIBLE_ARRAY_MEMBER];
+	} *nwkb;
+	char *oldname, *newname;
+
+	assert(typewkb > 0);
+	for (bid = 1; bid < bbpsize; bid++) {
+		if ((bs = BBP_desc(bid)) == NULL)
+			continue; /* not a valid BAT */
+		b = (BAT *) bs;	  /* bit of a hack: BATstore contents not known */
+		if ((b->T->type != typewkb && b->T->type != utypewkb) ||
+		    b->batCount == 0)
+			continue; /* nothing to do for this BAT */
+		assert(b->T->vheap);
+		assert(b->T->width == SIZEOF_VAR_T);
+
+		nme = BBP_physical(bid);
+		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
+			bnme = nme;
+		else
+			bnme++;
+		snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
+		if ((oldname = GDKfilepath(b->T->heap.farmid, BATDIR, nme, "tail")) == NULL ||
+		    (newname = GDKfilepath(b->T->heap.farmid, BAKDIR, bnme, "tail")) == NULL ||
+		    GDKcreatedir(newname) != GDK_SUCCEED ||
+		    rename(oldname, newname) < 0)
+			GDKfatal("geom_upgrade_wkb: cannot make backup of %s.tail\n", nme);
+		GDKfree(oldname);
+		GDKfree(newname);
+		if ((oldname = GDKfilepath(b->T->vheap->farmid, BATDIR, nme, "theap")) == NULL ||
+		    (newname = GDKfilepath(b->T->vheap->farmid, BAKDIR, bnme, "theap")) == NULL ||
+		    rename(oldname, newname) < 0)
+			GDKfatal("geom_upgrade_wkb: cannot make backup of %s.theap\n", nme);
+		GDKfree(oldname);
+		GDKfree(newname);
+
+		h1 = b->T->heap;
+		h1.filename = NULL;
+		h1.base = NULL;
+		h1.dirty = 0;
+		h2 = *b->T->vheap;
+		h2.filename = NULL;
+		h2.base = NULL;
+		h2.dirty = 0;
+
+		/* load old heaps */
+		if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED ||
+		    HEAPload(&h2, filename, "theap", 0) != GDK_SUCCEED)
+			GDKfatal("geom_upgrade_wkb: cannot load old heaps for BAT %d\n", bid);
+		/* create new heaps */
+		if ((b->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, "tail")) == NULL ||
+		    (b->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
+			GDKfatal("geom_upgrade_wkb: out of memory\n");
+		if (HEAPalloc(&b->T->heap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
+			GDKfatal("geom_upgrade_wkb: cannot allocate heap\n");
+		b->T->heap.dirty = TRUE;
+		b->T->heap.free = h1.free;
+		HEAP_initialize(b->T->vheap, b->batCapacity, 0, (int) sizeof(var_t));
+		if (b->T->vheap->base == NULL)
+			GDKfatal("geom_upgrade_wkb: cannot allocate heap\n");
+		b->T->vheap->parentid = bid;
+
+		/* do the conversion */
+		b->T->heap.dirty = TRUE;
+		b->T->vheap->dirty = TRUE;
+		old = (const var_t *) h1.base + BUNfirst(b);
+		new = (var_t *) Tloc(b, BUNfirst(b));
+		for (i = 0; i < b->batCount; i++) {
+			int len;
+			owkb = (struct old_wkb *) (h2.base + old[i]);
+			if ((len = owkb->len) == ~0)
+				len = 0;
+			if ((new[i] = HEAP_malloc(b->T->vheap, offsetof(struct new_wkb, data) + len)) == 0)
+				GDKfatal("geom_upgrade_wkb: cannot allocate heap space\n");
+			nwkb = (struct new_wkb *) (b->T->vheap->base + (new[i] << GDK_VARSHIFT));
+			nwkb->len = owkb->len;
+			nwkb->srid = 0;
+			if (len > 0)
+				memcpy(nwkb->data, owkb->data, len);
+		}
+		HEAPfree(&h1, 0);
+		HEAPfree(&h2, 0);
+		HEAPsave(&b->T->heap, nme, "tail");
+		HEAPfree(&b->T->heap, 0);
+		HEAPsave(b->T->vheap, nme, "theap");
+		HEAPfree(b->T->vheap, 0);
+	}
+	if (TMcommit() != GDK_SUCCEED)
+		GDKfatal("geom_upgrade_wkb: cannot commit changes\n");
 }

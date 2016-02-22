@@ -116,8 +116,8 @@ int
 geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 {
 	/* Do the updates needed for the new geom module */
-	BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn, *g;
-	BATiter cti, cdi, csi, cni, ctidi, tsi, tni, sni, gi;
+	BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn;
+	BATiter cti, cdi, csi;
 	char *s = "sys", n[64];
 	BUN p,q;
 	char *nt[] = {"types_id", "types_systemname", "types_sqlname", "types_digits", "types_scale", "types_radix", "types_eclass", "types_schema_id"};
@@ -142,17 +142,12 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
 		csi = bat_iterator(cs);
 		cn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_name")));
-		cni = bat_iterator(cn);
 		ctid = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_table_id")));
-		ctidi = bat_iterator(ctid);
 		ti = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_id")));
 		tn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_name")));
-		tni = bat_iterator(tn);
 		ts = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_schema_id")));
-		tsi = bat_iterator(ts);
 		si = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_id")));
 		sn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
-		sni = bat_iterator(sn);
 
 		cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
 		cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
@@ -166,80 +161,64 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		BATseqbase(cns, cs->hseqbase);
 
 		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
-			bte isGeom = 0;
 			char *type = BUNtail(cti, p);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);
-			char* colname = BUNtail(cni, p);
 			
 			if (strcmp(toLower(type), "point") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbPoint << 2;
 				scale = 0; // in the past we did not save the srid
 			} else if (strcmp(toLower(type), "linestring") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbLineString << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "curve") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbLineString << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "linearring") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbLinearRing << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "polygon") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbPolygon << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "surface") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbPolygon << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multipoint") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbMultiPoint << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multilinestring") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbMultiLineString << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multicurve") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbMultiLineString << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multipolygon") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbMultiPolygon << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multisurface") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbMultiPolygon << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "geomcollection") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbGeometryCollection << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = wkbGeometryCollection << 2;
 				scale = 0;
 			}  else if (strcmp(toLower(type), "geometry") == 0) {
 				type = "geometry";
-				isGeom = 1;
 				digits = 0;
 				scale = 0;
 			} 
@@ -247,47 +226,6 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 			BUNappend(cnt, type, TRUE);
 			BUNappend(cnd, &digits, TRUE);
 			BUNappend(cns, &scale, TRUE);
-
-			/* The wkb struct has changed. Update the respective BATs */
-			if (isGeom) {
-				typedef struct wkb_old {int len; char data[FLEXIBLE_ARRAY_MEMBER];} wkb_old;
-				BAT *gn;
-				BUN k,l;
-				int table_id, schema_id;
-				char *sn, *tblname;
-
-				table_id = *(int*)BUNtail(ctidi, p);
-				if ((k = BUNfnd(ti, &table_id)) == BUN_NONE)
-					return 0;
-				tblname = BUNtail(tni, k);
-				schema_id = *(int*)BUNtail(tsi, k);
-				if ((k = BUNfnd(si, &schema_id)) == BUN_NONE)
-					return 0;
-				sn = BUNtail(sni, k);
-				g = BATdescriptor((bat) logger_find_bat(lg, N(n, sn, tblname, colname)));
-				gi = bat_iterator(g);
-				gn = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(g), PERSISTENT);
-				if (!gn)
-					return 0;
-				BATseqbase(gn, g->hseqbase);
-				for(k=BUNfirst(g), l=BUNlast(g); k<l; k++) {
-					wkb_old *wo = (wkb_old*)BUNtail(gi, k);
-					wkb *wn;
-					if (wo->len == ~0) {
-						wn = GDKmalloc(sizeof(wkb));
-						wn->len = ~(int)0;
-					} else {
-						wn  = GDKmalloc(sizeof(wkb) - 1 + wo->len);
-						wn->len = wo->len;
-						memcpy(wn->data, wo->data, wn->len);
-					}
-					wn->srid = 0;// we did not save the srid in the past
-					BUNappend(gn, wn, TRUE);
-					GDKfree(wn);
-				}
-				if (list_add(&ul, g, gn, N(n, sn, tblname, colname)) == 0)
-					return 0;
-			}
 		}
 
 		if (!list_add(&ul, ct, cnt, N(n, NULL, s, "_columns_type")) ||
