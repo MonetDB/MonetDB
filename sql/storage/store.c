@@ -2127,6 +2127,17 @@ sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, const char *extra, const
 			return 1;
 		*tp++ = '_';
 	}
+       	tmp = sa_strdup(tr->sa, cname);
+	tp = tmp;
+	while ((tp = strchr(tp, '_')) != NULL) {
+		char *ntmp;
+		*tp = 0;
+		ntmp = sa_message(tr->sa, "%s_%s", tname, tmp);
+		t = find_sql_table(s, ntmp);
+		if (t && sql_trans_cname_conflict(tr, t, NULL, tp+1))
+			return 1;
+		*tp++ = '_';
+	}
 	t = find_sql_table(s, tname);
 	if (t && sql_trans_cname_conflict(tr, t, NULL, cname))
 		return 1;
