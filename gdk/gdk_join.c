@@ -3974,7 +3974,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		/* both sorted */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
 	} else if (lhash && rhash) {
-		/* both have hash, smallest on right */
+		/* both have hash, smallest on right */ /* TODO: swap = lcount > rcount (small side left)*/
 		swap = lcount < rcount;
 		reason = "both have hash";
 	} else if (lhash) {

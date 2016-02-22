@@ -675,6 +675,7 @@ typedef struct {
 } Hash;
 
 typedef struct Imprints Imprints;
+typedef struct Bloomfilter Bloomfilter;
 
 
 /*
@@ -798,6 +799,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Hash   *hhash;           // linear chained hash table on head
  *           Imprints *himprints;     // column imprints index on head
  *           orderidx horderidx;      // order oid index on head
+ *           bloomfilter hbloom;      // bloomfilter on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -812,6 +814,7 @@ gdk_export int VALisnil(const ValRecord *v);
  *           Hash   *thash;           // linear chained hash table on tail
  *           Imprints *timprints;     // column imprints index on tail
  *           orderidx torderidx;      // order oid index on tail
+ *           bloomfilter tbloom;      // bloom filter on tail
  *  } BAT;
  * @end verbatim
  *
@@ -888,6 +891,7 @@ typedef struct {
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
+	Bloomfilter *bloom;	/* a bloomfilter */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -960,6 +964,9 @@ typedef int (*GDKfcn) ();
 #define talign		T->align
 #define horderidx	H->orderidx
 #define torderidx	T->orderidx
+#define hbloom		H->bloom
+#define tbloom		T->bloom
+
 
 
 /*
@@ -2018,8 +2025,13 @@ gdk_export gdk_return BAThash(BAT *b, BUN masksize);
 gdk_export gdk_return BATimprints(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
+/* The ordered index structure */
+
 gdk_export gdk_return BATorderidx(BAT *b, int stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
+
+/* The bloom filters */
+gdk_export gdk_return BATbloom(BAT *b);
 
 /*
  * @- Multilevel Storage Modes
