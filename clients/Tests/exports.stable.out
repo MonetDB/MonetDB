@@ -196,7 +196,6 @@ BAT *BBPquickdesc(bat b, int delaccess);
 int BBPreclaim(BAT *b);
 int BBPrename(bat bid, const char *nme);
 void BBPresetfarms(void);
-void BBPresetfarms(void){ BBPexit();
 gdk_return BBPsave(BAT *b);
 void BBPshare(bat b);
 gdk_return BBPsync(int cnt, bat *subcommit);
