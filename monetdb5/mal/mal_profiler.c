@@ -253,18 +253,18 @@ This information can be used to determine memory footprint and variable life tim
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
 		if(mb){
-			logadd("\"result\":[");
+			logadd("\"res\":[");
 			for( j=0; j< pci->argc; j++){
 				int tpe = getVarType(mb, getArg(pci,j));
 				str tname = 0, cv;
 				lng total = 0;
 				BUN cnt = 0;
-				str kind;
+				str kind="";
 				str pret = ""; // or prettify
 				int p = getPC(mb,pci);
 
 				if( j == pci->retc ){
-					logadd("],%s\"arguments\":[",prettify);
+					logadd("],%s\"arg\":[",prettify);
 				} 
 				logadd("{");
 				logadd("\"clk\":"LLFMT",%s",usec,pret);
@@ -283,7 +283,7 @@ This information can be used to determine memory footprint and variable life tim
 						if ( d->T->vheap && d->T->vheap->parentid ){
 							total += heapinfo(d->T->vheap); 
 						}
-						kind =  d->batPersistence? "persistent":"transient";
+						kind =  d->batPersistence == PERSISTENT? "persistent":"transient";
 						BBPunfix(d->batCacheid);
 					} 
 					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
