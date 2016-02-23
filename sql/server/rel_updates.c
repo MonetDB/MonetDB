@@ -308,7 +308,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tnam
 }
 
 static list *
-rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount)
+rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, int copy)
 {
 	int len, i;
 	sql_exp **inserts = insert_exp_array(sql, t, &len);
@@ -316,11 +316,19 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount)
 	node *n, *m;
 
 	if (r->exps) {
-		for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
-			sql_column *c = m->data;
-			sql_exp *e = n->data;
-	
-			inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
+		if (!copy) {
+			for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
+				sql_column *c = m->data;
+				sql_exp *e = n->data;
+		
+				inserts[c->colnr] = rel_check_type(sql, &c->type, e, type_equal);
+			}
+		} else {
+			for (m = collist->h; m; m = m->next) {
+				sql_column *c = m->data;
+
+				inserts[c->colnr] = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+			}
 		}
 	}
 	for (i = 0; i < len; i++) {
@@ -522,7 +530,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	   (!r->exps && collist)) 
 		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
-	r->exps = rel_inserts(sql, t, r, collist, rowcount);
+	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0);
 	return rel_insert_table(sql, t, tname, r);
 }
 
@@ -1184,6 +1192,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
+	int reorder = 0;
 
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
@@ -1268,6 +1277,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		}
 		if (!has_formats)
 			headers = NULL;
+		reorder = 1;
 	}
 	if (files) {
 		dnode *n = files->h;
@@ -1341,7 +1351,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	
 	if (!rel)
 		return rel;
-	rel->exps = rel_inserts(sql, t, rel, collist, 1);
+	if (reorder) 
+		rel = rel_project(sql->sa, rel, rel_inserts(sql, t, rel, collist, 1, 1));
+	else
+		rel->exps = rel_inserts(sql, t, rel, collist, 1, 0);
 	rel = rel_insert_table(sql, t, tname, rel);
 	if (rel && locked)
 		rel->flag |= UPD_LOCKED;
