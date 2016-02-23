@@ -1,0 +1,39 @@
+stderr of test 'mbr_right` in directory 'geom/sql` itself:
+
+
+# 16:11:35 >  
+# 16:11:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30091" "--set" "mapi_usock=/var/tmp/mtest-9198/.s.monetdb.30091" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 16:11:35 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/monetdb/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30091
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9198/.s.monetdb.30091
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:11:35 >  
+# 16:11:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9198" "--port=30091"
+# 16:11:35 >  
+
+SELECT: no such binary operator 'mbr_left(bigint,tinyint)'
+ParseException:SQLparser:SELECT: no such binary operator 'mbr_left(bigint,tinyint)'
+
+
+# 16:11:36 >  
+# 16:11:36 >  "Done."
+# 16:11:36 >  
+

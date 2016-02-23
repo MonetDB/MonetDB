@@ -1,0 +1,89 @@
+stdout of test 'ST_MPolygonFromText` in directory 'geom/sql/functions` itself:
+
+
+# 15:46:19 >  
+# 15:46:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32350" "--set" "mapi_usock=/var/tmp/mtest-9662/.s.monetdb.32350" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:46:19 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32350/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9662/.s.monetdb.32350
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:46:19 >  
+# 15:46:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
+# 15:46:19 >  
+
+#create table polygons_tbl(g geometry(multipolygon));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
+[ 1	]
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((30 30, 40 40, 50 50, 30 30),(300 300, 400 400, 500 500, 300 300)))', 0));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))"	]
+[ "MULTIPOLYGON (((30 30, 40 40, 50 50, 30 30), (300 300, 400 400, 500 500, 300 300)))"	]
+#drop table polygons_tbl;
+#create table polygons_tbl(g geometry(multipolygon, 4326));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))"	]
+#drop table polygons_tbl;
+#create table polygons_tbl(g geometry(multipolygonz));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'));
+[ 1	]
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((30 30 30, 40 40 40, 50 50 50, 30 30 30),(300 300 300, 400 400 400, 500 500 500, 300 300 300)))', 0));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))"	]
+[ "MULTIPOLYGON Z (((30 30 30, 40 40 40, 50 50 50, 30 30 30), (300 300 300, 400 400 400, 500 500 500, 300 300 300)))"	]
+#drop table polygons_tbl;
+#create table polygons_tbl(g geometry(multipolygonz, 4326));
+#insert into polygons_tbl values (st_mpolyfromtext('multipolygon(((20 20 20, 30 30 30, 40 40 40, 20 20 20),(200 200 200, 300 300 300, 400 400 400, 200 200 200)))', 4326));
+[ 1	]
+#select * from polygons_tbl;
+% sys.polygons_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))"	]
+#drop table polygons_tbl;
+#select st_mpolyfromtext(geom) from geometriesTxt WHERE id=6;
+% sys.L # table_name
+% st_mpolyfromtext_geom # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))"	]
+#select st_mpolyfromtext(geom) from geometriesTxt WHERE id=7;
+% sys.L # table_name
+% st_mpolyfromtext_geom # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON EMPTY"	]
+
+# 15:46:19 >  
+# 15:46:19 >  "Done."
+# 15:46:19 >  
+

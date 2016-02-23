@@ -1116,21 +1116,22 @@ sql_update_jul2015(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
-#if 0
 static str
-sql_update_dec2015(Client c)
+sql_update_dec2015(Client c, int olddb)
 {
-	size_t bufsize = 10240, pos = 0;
+	size_t bufsize = 25000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
+	geomsqlfix_fptr fixfunc;
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
-/* insert upgrade code here */
+	/* insert upgrade code here */
+#if 0
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_openstream(host string, port int);");
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_stethoscope(ticks int);");
 	pos += snprintf(buf + pos, bufsize - pos, "create schema profiler;"
@@ -1139,78 +1140,93 @@ sql_update_dec2015(Client c)
 		"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"
 		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"
 		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;");
+#endif
 
-			if (schema) {
+	// Add the new storage inspection functions.
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create function sys.\"storage\"( sname string)\n"
+		"returns table (\n"
+		"    \"schema\" string,\n"
+		"    \"table\" string,\n"
+		"    \"column\" string,\n"
+		"    \"type\" string,\n"
+		"    \"mode\" string,\n"
+		"    location string,\n"
+		"    \"count\" bigint,\n"
+		"    typewidth int,\n"
+		"    columnsize bigint,\n"
+		"    heapsize bigint,\n"
+		"    hashes bigint,\n"
+		"    phash boolean,\n"
+		"    imprints bigint,\n"
+		"    sorted boolean\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"\n"
+		"create function sys.\"storage\"( sname string, tname string)\n"
+		"returns table (\n"
+		"    \"schema\" string,\n"
+		"    \"table\" string,\n"
+		"    \"column\" string,\n"
+		"    \"type\" string,\n"
+		"    \"mode\" string,\n"
+		"    location string,\n"
+		"    \"count\" bigint,\n"
+		"    typewidth int,\n"
+		"    columnsize bigint,\n"
+		"    heapsize bigint,\n"
+		"    hashes bigint,\n"
+		"    phash boolean,\n"
+		"    imprints bigint,\n"
+		"    sorted boolean\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"\n"
+		"create function sys.\"storage\"( sname string, tname string, cname string)\n"
+		"returns table (\n"
+		"    \"schema\" string,\n"
+		"    \"table\" string,\n"
+		"    \"column\" string,\n"
+		"    \"type\" string,\n"
+		"    \"mode\" string,\n"
+		"    location string,\n"
+		"    \"count\" bigint,\n"
+		"    typewidth int,\n"
+		"    columnsize bigint,\n"
+		"    heapsize bigint,\n"
+		"    hashes bigint,\n"
+		"    phash boolean,\n"
+		"    imprints bigint,\n"
+		"    sorted boolean\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+	);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'storage' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
+	if ((fixfunc = geomsqlfix_get()) != NULL) {
+		str geomupgrade;
+		size_t gbufsize;
+
+		geomupgrade = (*fixfunc)(olddb);
+		gbufsize = strlen(geomupgrade) + 1;
+		buf = GDKrealloc(buf, bufsize + gbufsize);
+		bufsize += gbufsize;
+		pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
+		GDKfree(geomupgrade);
+	}
+
+	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
 	}
-	assert(pos < bufsize);
 
-	// Add the new storage inspection functions.
-	pos += snprintf(buf + pos, bufsize - pos, 
-		"create function sys.\"storage\"( sname string)"
-		"returns table ("
-		"	\"schema\" string,"
-		"	\"table\" string,"
-		"	\"column\" string,"
-		"	\"type\" string,"
-		"	\"mode\" string,"
-		"	location string,"
-		"	\"count\" bigint,"
-		"	typewidth int,"
-		"	columnsize bigint,"
-		"	heapsize bigint,"
-		"	hashes bigint,"
-		"	phash boolean,"
-		"	imprints bigint,"
-		"	sorted boolean"
-		")"
-		"external name sql.\"storage\";"
-		""
-		"create function sys.\"storage\"( sname string, tname string)"
-		"returns table ("
-		"	\"schema\" string,"
-		"	\"table\" string,"
-		"	\"column\" string,"
-		"	\"type\" string,"
-		"	\"mode\" string,"
-		"	location string,"
-		"	\"count\" bigint,"
-		"	typewidth int,"
-		"	columnsize bigint,"
-		"	heapsize bigint,"
-		"	hashes bigint,"
-		"	phash boolean,"
-		"	imprints bigint,"
-		"	sorted boolean"
-		")"
-		"external name sql.\"storage\";"
-		""
-		"create function sys.\"storage\"( sname string, tname string, cname string)"
-		"returns table ("
-		"	\"schema\" string,"
-		"	\"table\" string,"
-		"	\"column\" string,"
-		"	\"type\" string,"
-		"	\"mode\" string,"
-		"	location string,"
-		"	\"count\" bigint,"
-		"	typewidth int,"
-		"	columnsize bigint,"
-		"	heapsize bigint,"
-		"	hashes bigint,"
-		"	phash boolean,"
-		"	imprints bigint,"
-		"	sorted boolean"
-		")"
-		"external name sql.\"storage\";"
-	);
+	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
-#endif
 
 void
 SQLupgrades(Client c, mvc *m)
@@ -1275,13 +1291,21 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-#if 0
-	/* test for upgrade condition */
-	if (...) {
-		if ((err = sql_update_dec2015(c)) !=NULL) {
+	/* If the point type exists, but the geometry type does not exist
+	 * any more at the "sys" schema (i.e., the first part of the upgrade has
+	 * been completed succesfully), then move on to the second part */
+	if (find_sql_type(mvc_bind_schema(m, "sys"), "point") && 
+	   (find_sql_type(mvc_bind_schema(m, "sys"), "geometry") == NULL)) {
+		if ((err = sql_update_dec2015(c, 1)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	} else if (geomsqlfix_get() != NULL && 
+		   !sql_find_subtype(&tp, "geometry", 0, 0)) {
+		// the geom module is loaded but the database is not geom-enabled
+		if ((err = sql_update_dec2015(c, 0)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
 	}
-#endif
 }

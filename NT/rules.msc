@@ -386,6 +386,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PERL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_PROJ
+	$(ECHO) HAVE_PROJ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_PYTHON
 	$(ECHO) HAVE_PYTHON_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

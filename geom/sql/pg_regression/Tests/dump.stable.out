@@ -1,0 +1,115 @@
+stdout of test 'dump` in directory 'geom/sql/pg_regression` itself:
+
+
+# 12:29:08 >  
+# 12:29:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34232" "--set" "mapi_usock=/var/tmp/mtest-2024/.s.monetdb.34232" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
+# 12:29:08 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_pg_regression', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:34232/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2024/.s.monetdb.34232
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:29:09 >  
+# 12:29:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2024" "--port=34232"
+# 12:29:09 >  
+
+#SELECT 't1', * FROM ST_Dump(ST_WKTToSQL('POINT (0 9)'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	1,	0 # length
+[ "t1",	"1",	"POINT (0 9)"	]
+#SELECT 't2', * FROM ST_Dump(ST_WKTToSQL('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)')); 
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	1,	0 # length
+[ "t2",	"1",	"LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)"	]
+#SELECT 't3', * FROM ST_Dump(ST_WKTToSQL('POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0))'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	1,	0 # length
+[ "t3",	"1",	"POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0))"	]
+#SELECT 't5', * FROM ST_Dump(ST_WKTToSQL('POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0), (1 1, 1 3, 3 2, 1 1), (7 6, 6 8, 8 8, 7 6))'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	1,	0 # length
+[ "t5",	"1",	"POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0), (1 1, 1 3, 3 2, 1 1), (7 6, 6 8, 8 8, 7 6))"	]
+#SELECT 't6', * FROM ST_Dump(ST_WKTToSQL('MULTIPOLYGON (((0 0, 0 3, 4 3, 4 0, 0 0)), ((2 4, 1 6, 4 5, 2 4), (7 6, 6 8, 8 8, 7 6)))'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	1,	0 # length
+[ "t6",	"1",	"POLYGON ((0 0, 0 3, 4 3, 4 0, 0 0))"	]
+[ "t6",	"2",	"POLYGON ((2 4, 1 6, 4 5, 2 4), (7 6, 6 8, 8 8, 7 6))"	]
+#SELECT 't7', * FROM ST_Dump(ST_WKTToSQL('POLYHEDRALSURFACE (((0 0 0, 0 0 1, 0 1 1, 0 1 0, 0 0 0)), ((0 0 0, 0 1 0, 1 1 0, 1 0 0, 0 0 0)))'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	1,	0 # length
+[ "t7",	"1",	"POLYGON Z ((0 0 0, 0 0 1, 0 1 1, 0 1 0, 0 0 0))"	]
+[ "t7",	"2",	"POLYGON Z ((0 0 0, 0 1 0, 1 1 0, 1 0 0, 0 0 0))"	]
+#SELECT 't9', * 
+#FROM ST_Dump(ST_WKTToSQL('
+#	GEOMETRYCOLLECTION(
+#		POINT(99 98),
+#		LINESTRING(1 1, 3 3),
+#		POLYGON((0 0, 0 1, 1 1, 0 0)),
+#		POLYGON((0 0, 0 9, 9 9, 9 0, 0 0), (5 5, 5 6, 6 6, 5 5)),
+#		MULTIPOLYGON(((0 0, 0 9, 9 9, 9 0, 0 0), (5 5, 5 6, 6 6, 5 5))))'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 2,	3,	0 # length
+[ "t9",	"1",	"POINT (99 98)"	]
+[ "t9",	"2",	"LINESTRING (1 1, 3 3)"	]
+[ "t9",	"3",	"POLYGON ((0 0, 0 1, 1 1, 0 0))"	]
+[ "t9",	"4",	"POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0), (5 5, 5 6, 6 6, 5 5))"	]
+[ "t9",	"5,1",	"POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0), (5 5, 5 6, 6 6, 5 5))"	]
+#SELECT 't10', count(*)  FROM ST_Dump(ST_WKTToSQL('GEOMETRYCOLLECTION EMPTY'));
+% .L2,	.L3 # table_name
+% L2,	L3 # name
+% char,	wrd # type
+% 3,	1 # length
+[ "t10",	1	]
+#SELECT 't11', * 
+#FROM ST_Dump(ST_WKTToSQL('
+#	GEOMETRYCOLLECTION (
+#		GEOMETRYCOLLECTION EMPTY,
+#		LINESTRING EMPTY,
+#		POLYGON EMPTY,
+#		MULTIPOINT EMPTY,
+#		MULTILINESTRING EMPTY,
+#		MULTIPOLYGON EMPTY,
+#		GEOMETRYCOLLECTION (GEOMETRYCOLLECTION EMPTY))'));
+% .L2,	.,	. # table_name
+% L2,	id,	polygonwkb # name
+% char,	clob,	geometry # type
+% 3,	3,	0 # length
+[ "t11",	"1",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "t11",	"1",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "t11",	"2",	"LINESTRING EMPTY"	]
+[ "t11",	"3",	"POLYGON EMPTY"	]
+[ "t11",	"4",	"MULTIPOINT EMPTY"	]
+[ "t11",	"5",	"MULTILINESTRING EMPTY"	]
+[ "t11",	"6",	"MULTIPOLYGON EMPTY"	]
+[ "t11",	"7",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "t11",	"7,1",	"GEOMETRYCOLLECTION EMPTY"	]
+
+# 12:29:09 >  
+# 12:29:09 >  "Done."
+# 12:29:09 >  
+

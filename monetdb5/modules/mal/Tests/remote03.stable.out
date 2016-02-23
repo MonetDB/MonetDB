@@ -19,7 +19,7 @@ stdout of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
-
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@athens.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_9_void := io.print.bla();
 Ready.
 
 # 11:26:09 >  
@@ -27,6 +27,7 @@ Ready.
 # 11:26:09 >  
 
 [ "Received first error from the remote site"	]
+[ 32@0,	"wkba"  ]
 
 # 22:17:31 >  
 # 22:17:31 >  "Done."

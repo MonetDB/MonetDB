@@ -80,6 +80,7 @@
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
 #define SCALE_EQ	7	/* user defined functions need equal scales */
+#define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
 #define TR_OLD 0
 #define TR_NEW 1

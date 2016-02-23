@@ -432,6 +432,18 @@ static int dump_column_definition(
 	int foreign,
 	int hashge);
 
+static const char *geomsubtypes[] = {
+	NULL,			/* 0 */
+	"POINT",		/* 1 */
+	"LINESTRING",		/* 2 */
+	NULL,			/* 3 */
+	"POLYGON",		/* 4 */
+	"MULTIPOINT",		/* 5 */
+	"MULTILINESTRING",	/* 6 */
+	"MULTIPOLYGON",		/* 7 */
+	"GEOMETRYCOLLECTION",	/* 8 */
+};
+
 static int
 dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *c_type_scale, int hashge)
 {
@@ -539,6 +551,22 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 	} else if (strcmp(c_type, "table") == 0) {
 		mnstr_printf(toConsole, "TABLE ");
 		dump_column_definition(mid, toConsole, NULL, NULL, c_type_digits, 1, hashge);
+	} else if (strcmp(c_type, "geometry") == 0 &&
+		   strcmp(c_type_digits, "0") != 0) {
+		const char *geom = NULL;
+		int sub = atoi(c_type_digits);
+
+		if (sub > 0 && (sub & 3) == 0 &&
+		    (sub >> 2) < (int) (sizeof(geomsubtypes) / sizeof(geomsubtypes[0])))
+			geom = geomsubtypes[sub >> 2];
+		if (geom) {
+			mnstr_printf(toConsole, "GEOMETRY(%s", geom);
+			if (strcmp(c_type_scale, "0") != 0)
+				mnstr_printf(toConsole, ",%s", c_type_scale);
+			mnstr_printf(toConsole, ")");
+		} else {
+			mnstr_printf(toConsole, "GEOMETRY");
+		}
 	} else if (strcmp(c_type_digits, "0") == 0) {
 		space = mnstr_printf(toConsole, "%s", toUpper(c_type));
 	} else if (strcmp(c_type_scale, "0") == 0) {
