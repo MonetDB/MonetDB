@@ -1,0 +1,4 @@
+debian/tmp/usr/lib/monetdb5/autoload/*_lidar.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/createdb/*_lidar.sql usr/lib/monetdb5/createdb
+debian/tmp/usr/lib/monetdb5/lidar.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/lib_lidar.so usr/lib/monetdb5
