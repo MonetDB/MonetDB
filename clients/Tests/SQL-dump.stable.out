@@ -1022,6 +1022,60 @@ returns table (
 	sorted boolean
 )
 external name sql."storage";
+create function sys."storage"( sname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ imprints bigint,
+ sorted boolean
+)
+external name sql."storage";
+create function sys."storage"( sname string, tname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ imprints bigint,
+ sorted boolean
+)
+external name sql."storage";
+create function sys."storage"( sname string, tname string, cname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ imprints bigint,
+ sorted boolean
+)
+external name sql."storage";
 create function sys.storagemodel()
 returns table (
 	"schema" string,

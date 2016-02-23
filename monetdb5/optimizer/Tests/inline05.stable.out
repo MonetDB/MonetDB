@@ -29,7 +29,7 @@ Ready.
 # 10:12:44 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-10076" "--port=33029"
 # 10:12:44 >  
 
-inline function user.qry():void;        	#[0]  0 
+function user.qry():void;               	#[0]  0 
     b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
     bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
     z:bat[:dbl] := mal.multiplex("user":str,"foo":str,b:bat[:int],b:bat[:int]);	#[3] MANIFOLDremapMultiplex 6 <- 7 8 1 1 

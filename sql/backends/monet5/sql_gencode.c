@@ -871,7 +871,6 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 static int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 static int backend_create_subaggr(backend *be, sql_subaggr *f);
 
-#define SMALLBUFSIZ 64
 static int
 dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
@@ -1023,10 +1022,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (sql->mvc->argc && sql->mvc->args[s->flag]->varid >= 0) {
 					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
 				} else {
-					char *buf = GDKmalloc(SMALLBUFSIZ);
+					char *buf = GDKmalloc(IDLENGTH);
 					if (buf == NULL)
 						return -1;
-					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+					(void) snprintf(buf, IDLENGTH, "A%d", s->flag);
 					q = pushArgumentId(mb, q, buf);
 				}
 				if (q == NULL)
@@ -1810,10 +1809,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* delta bat */
 				if (s->op3) {
-					char nme[SMALLBUFSIZ];
+					char nme[IDLENGTH];
 					int uval = -1;
 
-					snprintf(nme, SMALLBUFSIZ, "r1_%d", r);
+					snprintf(nme, IDLENGTH, "r1_%d", r);
 					uval = findVariable(mb, nme);
 					assert(uval >= 0);
 
@@ -1967,10 +1966,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (s->flag)
 					s->nr = s->op1->op2->nr;
 			} else if (s->flag) {
-				char nme[SMALLBUFSIZ];
+				char nme[IDLENGTH];
 				int v = -1;
 
-				snprintf(nme, SMALLBUFSIZ, "r%d_%d", s->flag, l);
+				snprintf(nme, IDLENGTH, "r%d_%d", s->flag, l);
 				v = findVariable(mb, nme);
 				assert(v >= 0);
 
@@ -2821,7 +2820,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0;
-	char arg[SMALLBUFSIZ];
+	char arg[IDLENGTH];
 	node *n;
 
 	backup = c->curprg;
@@ -2849,7 +2848,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
 
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
+			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)
@@ -2864,7 +2863,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = a->type.type->localtype;
 			int varid = 0;
 
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
+			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)

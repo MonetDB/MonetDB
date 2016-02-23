@@ -22,11 +22,10 @@
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
 #define MAXARG 4				/* BEWARE the code depends on this knowledge */
-#define STMT_INCREMENT 32
+#define STMT_INCREMENT 512
 #define MAL_VAR_WINDOW  32
-#define MAXVARS 32
+#define MAXVARS 512				/* >= STMT_INCREMENT */
 #define MAXLISTING 64*1024
-#define SMALLBUFSIZ 64
 
 /* Allocation of space assumes a rather exotic number of
  * arguments. Access to module and function name are cast in macros to
