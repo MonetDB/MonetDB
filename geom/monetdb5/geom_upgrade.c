@@ -116,7 +116,7 @@ int
 geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 {
 	/* Do the updates needed for the new geom module */
-	BAT *ct, *cnt, *cd, *cnd, *cs, *cns, *cn, *ctid, *ti, *tn, *ts, *si, *sn;
+	BAT *ct, *cnt, *cd, *cnd, *cs, *cns;
 	BATiter cti, cdi, csi;
 	char *s = "sys", n[64];
 	BUN p,q;
@@ -141,20 +141,12 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		cdi = bat_iterator(cd);
 		cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
 		csi = bat_iterator(cs);
-		cn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_name")));
-		ctid = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_table_id")));
-		ti = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_id")));
-		tn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_name")));
-		ts = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_tables_schema_id")));
-		si = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_id")));
-		sn = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "schemas_name")));
 
 		cnt = BATnew(TYPE_void, TYPE_str, BATcount(ct), PERSISTENT);
 		cnd = BATnew(TYPE_void, TYPE_int, BATcount(cd), PERSISTENT);
 		cns = BATnew(TYPE_void, TYPE_int, BATcount(cs), PERSISTENT);
 
-		if (!cnt || !cnd || !cns || !ct || !cd || !cs || 
-		    !cn || !ctid || !ti || !tn || !ts || !si || !sn)
+		if (!cnt || !cnd || !cns || !ct || !cd || !cs)
 			return 0;
 		BATseqbase(cnt, ct->hseqbase);
 		BATseqbase(cnd, cd->hseqbase);
@@ -164,7 +156,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 			char *type = BUNtail(cti, p);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);
-			
+
 			if (strcmp(toLower(type), "point") == 0) {
 				type = "geometry";
 				digits = wkbPoint << 2;
@@ -221,7 +213,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 				type = "geometry";
 				digits = 0;
 				scale = 0;
-			} 
+			}
 
 			BUNappend(cnt, type, TRUE);
 			BUNappend(cnd, &digits, TRUE);
@@ -233,13 +225,6 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		    !list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale")))
 			return 0;
 
-		if (cn) BBPunfix(cn->batCacheid);
-		if (ctid) BBPunfix(ctid->batCacheid);
-		if (ti) BBPunfix(ti->batCacheid);
-		if (ts) BBPunfix(ts->batCacheid);
-		if (tn) BBPunfix(tn->batCacheid);
-		if (si) BBPunfix(si->batCacheid);
-		if (sn) BBPunfix(sn->batCacheid);
 	}
 
 	/* If this is a new database add the geometry type and the mbr type */
