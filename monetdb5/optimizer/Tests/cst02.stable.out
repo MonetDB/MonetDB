@@ -28,12 +28,11 @@ Ready.
 # 15:36:07 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
 # 15:36:07 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    X2:dbl := nil:dbl;                  	#[1]  1 <- 6 
-    X14:dbl := nil:dbl;                 	#[2]  3 <- 7 
-    io.print(nil:dbl);                  	#[3] IOprint_val 5 <- 7 
-end user.foo;                           	#[4]  
+function user.foo():void;               	#[0] (0)  0 
+    X2:dbl := nil:dbl;                  	#[1] (0)  1 <- 6 
+    X14:dbl := nil:dbl;                 	#[2] (0)  3 <- 7 
+    io.print(nil:dbl);                  	#[3] (0) IOprint_val 5 <- 7 
+end user.foo;                           	#[4] (0)  
 
 # 15:36:07 >  
 # 15:36:07 >  "Done."

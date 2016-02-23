@@ -34,8 +34,8 @@ Ready.
 # t	t	t  # name
 # void	str	str  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_47"	]
-[ 1@0,	"batCacheid",	"39"	]
+[ 0@0,	"batId",	"tmp_22"	]
+[ 1@0,	"batCacheid",	"18"	]
 [ 2@0,	"hparentid",	"0"	]
 [ 3@0,	"tparentid",	"0"	]
 [ 4@0,	"batSharecnt",	"0"	]
@@ -98,7 +98,7 @@ Ready.
 [ 61@0,	"tail.size",	"1024"	]
 [ 62@0,	"tail.storage",	"malloced"	]
 [ 63@0,	"tail.newstorage",	"malloced"	]
-[ 64@0,	"tail.filename",	"47.tail"	]
+[ 64@0,	"tail.filename",	"22.tail"	]
 [ 65@0,	"H->vheap->dirty",	"clean"	]
 [ 66@0,	"T->vheap->dirty",	"clean"	]
 #~EndVariableOutput~#

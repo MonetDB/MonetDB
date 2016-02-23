@@ -25,16 +25,16 @@ stdout of test 'tst840` in directory 'monetdb5/mal` itself:
 
 Ready.
 
-# 11:35:27 >  
-# 11:35:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-13954" "--port=38078"
-# 11:35:27 >  
+# 10:53:47 >  
+# 10:53:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-5303" "--port=30531"
+# 10:53:47 >  
 
-function user.foo():void;               	#[0]  0 
-    s:str := " \nline1\n\nline2\n":str; 	#[1]  1 <- 2 
-    io.printf("----\n":str);            	#[2] IOprintf 3 <- 4 
-    io.printf("%s":str,s:str);          	#[3] IOprintf 5 <- 6 1 
-    io.printf("----\n":str);            	#[4] IOprintf 7 <- 4 
-end user.foo;                           	#[5]  
+function user.foo():void;               	#[0] (0)  0 
+    s:str := " \nline1\n\nline2\n":str; 	#[1] (0)  1 <- 2 
+    io.printf("----\n":str);            	#[2] (0) IOprintf 3 <- 4 
+    io.printf("%s":str,s:str);          	#[3] (0) IOprintf 5 <- 6 1 
+    io.printf("----\n":str);            	#[4] (0) IOprintf 7 <- 4 
+end user.foo;                           	#[5] (0)  
 ----
  
 line1

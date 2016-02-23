@@ -25,13 +25,13 @@ Ready.
 # 09:00:04 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
 # 09:00:04 >  
 
-function user.foo():void;               	#[0]  0 
-barrier i:flt := 0:flt;                 	#[1]  1 <- 2 
-    io.print(i:flt);                    	#[2] IOprint_val 3 <- 1 
-    v:str := "do something":str;        	#[3]  4 <- 5 
-    redo i:flt := iterator.next(1.3:flt,2.5:flt);	#[4] ITRnext_flt 1 <- 6 7 
-exit i:flt;                             	#[5]  1 
-end user.foo;                           	#[6]  
+function user.foo():void;               	#[0] (0)  0 
+barrier i:flt := 0:flt;                 	#[1] (0)  1 <- 2 
+    io.print(i:flt);                    	#[2] (0) IOprint_val 3 <- 1 
+    v:str := "do something":str;        	#[3] (0)  4 <- 5 
+    redo i:flt := iterator.next(1.3:flt,2.5:flt);	#[4] (0) ITRnext_flt 1 <- 6 7 
+exit i:flt;                             	#[5] (0)  1 
+end user.foo;                           	#[6] (0)  
 [ 0 ]
 [ 1.3 ]
 

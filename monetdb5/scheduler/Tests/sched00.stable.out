@@ -25,24 +25,24 @@ Ready.
 # 11:27:20 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-11496" "--port=31436"
 # 11:27:20 >  
 
-function user.f():void;                 	#[0]  0 
-    i:int := 1:int;                     	#[1]  1 <- 2 
+function user.f():void;                 	#[0] (0)  0 
+    i:int := 1:int;                     	#[1] (0)  1 <- 2 
 # just properties                       
-    mdb.List();                         	#[3] MDBlistDetail 4 
-    io.print("start running\n":str);    	#[4] IOprint_val 5 <- 6 
-    scheduler.isolation();              	#[5] RUNisolation 7 
-    io.print("done\n":str);             	#[6] IOprint_val 8 <- 9 
-    mdb.List();                         	#[7] MDBlistDetail 10 
-end user.f;                             	#[8]  
+    mdb.List();                         	#[3] (0) MDBlistDetail 4 
+    io.print("start running\n":str);    	#[4] (0) IOprint_val 5 <- 6 
+    scheduler.isolation();              	#[5] (0) RUNisolation 7 
+    io.print("done\n":str);             	#[6] (0) IOprint_val 8 <- 9 
+    mdb.List();                         	#[7] (0) MDBlistDetail 10 
+end user.f;                             	#[8] (0)  
 [ "start running\n" ]
-function user.f():void;                 	#[0]  0 
-    i:int := 1:int;                     	#[1]  1 <- 2 
+function user.f():void;                 	#[0] (0)  0 
+    i:int := 1:int;                     	#[1] (0)  1 <- 2 
 # just properties                       
-    mdb.List();                         	#[3] MDBlistDetail 4 
-    io.print("start running\n":str);    	#[4] IOprint_val 5 <- 6 
-    io.print("done\n":str);             	#[5] IOprint_val 8 <- 9 
-    mdb.List();                         	#[6] MDBlistDetail 10 
-end user.f;                             	#[7]  
+    mdb.List();                         	#[3] (0) MDBlistDetail 4 
+    io.print("start running\n":str);    	#[4] (0) IOprint_val 5 <- 6 
+    io.print("done\n":str);             	#[5] (0) IOprint_val 8 <- 9 
+    mdb.List();                         	#[6] (0) MDBlistDetail 10 
+end user.f;                             	#[7] (0)  
 
 # 23:28:18 >  
 # 23:28:18 >  Done.

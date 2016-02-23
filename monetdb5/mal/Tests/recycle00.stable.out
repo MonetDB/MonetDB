@@ -35,11 +35,11 @@ function user.qry():void;
     j := calc.*(i,i);
     io.print(j);
 end user.qry;
-function user.qry():void;               	#[0]  0 
-    i:int := 23:int;                    	#[1]  1 <- 2 
-    j:int := calc.*(i:int,i:int);       	#[2] CMDvarMULsignal 3 <- 1 1 
-    io.print(j:int);                    	#[3] IOprint_val 4 <- 3 
-end user.qry;                           	#[4]  
+function user.qry():void;               	#[0] (0)  0 
+    i:int := 23:int;                    	#[1] (0)  1 <- 2 
+    j:int := calc.*(i:int,i:int);       	#[2] (0) CMDvarMULsignal 3 <- 1 1 
+    io.print(j:int);                    	#[3] (0) IOprint_val 4 <- 3 
+end user.qry;                           	#[4] (0)  
 [ "start" ]
 [ 529 ]
 [ "next" ]

@@ -26,10 +26,9 @@ Ready.
 # 15:36:07 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
 # 15:36:07 >  
 
-#mdb.List("user","tst");
-function user.tst():void;               	#[0]  0 
-    io.print(57.29577951308232:dbl);    	#[1] IOprint_val 8 <- 13 
-end user.tst;                           	#[2]  
+function user.tst():void;               	#[0] (0)  0 
+    io.print(57.29577951308232:dbl);    	#[1] (0) IOprint_val 8 <- 13 
+end user.tst;                           	#[2] (0)  
 
 # 21:32:15 >  
 # 21:32:15 >  Done.
