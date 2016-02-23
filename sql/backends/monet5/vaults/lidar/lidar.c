@@ -347,39 +347,25 @@ lidar2subtype(sql_subtype *tpe, int t, long rep, long wid)
 
 str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-(void) cntxt;
-(void) mb;
-(void) stk;
-(void) pci;
-#if 0
 	str msg = MAL_SUCCEED;
+//	int* res_id = *getArgReference_str(stk, pci, 1);
 	str tname = *getArgReference_str(stk, pci, 1);
+	str filename = *getArgReference_str(stk, pci, 2);
+	str format = toLower(*getArgReference_str(stk, pci, 2));
 	mvc *m = NULL;
 	sql_trans *tr;
 	sql_schema *sch;
-	sql_table *tbl, *column, *tables = NULL;
-	sql_column *col;
-	oid rid = oid_nil;
-	str type, name, *colname, *tform;
-	lidarfile *fptr;
-	char filename[BUFSIZ];
-	long nrows = 0, optimal;
-	rids * rs;
+	sql_table *tbl;
+	BUN nrows = 0;
+	BUN i;
+	
+	sql_column *cols[3];
+	dbl *cols_dbl[3];
+	BAT *bats_dbl[3];
 
-	int tm0, texportboolean=0, texportchar=0, texportstring=0, texportshort=0, texportint=0, texportlong=0, texportfloat=0, texportdouble=0;
-	int numberrow = 0, cc = 0, status = 0, j = 0, columns, fid, dimension = 0, block = 0;
-	int boolcols = 0, charcols = 0, strcols = 0, shortcols = 0, intcols = 0, longcols = 0, floatcols = 0, doublecols = 0;
-	int hdutype;
-
-	char charvalue, *readcharrows;
-	str strvalue; char **readstrrows;
-	short shortvalue, *readshortrows;
-	int intvalue, *readintrows;
-	long longvalue, *readlongrows;
-	float realvalue, *readfloatrows;
-	double doublevalue, *readdoublerows;
-	_Bool boolvalue, *readboolrows;
-	struct list * set;
+	LASHeaderH header;
+	LASWriterH writer;
+	LASPointH point;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
 		return msg;
@@ -397,328 +383,98 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
-	set = (*tbl).columns.set;
+	/* Bind the necessary columns */
+	cols[0] = mvc_bind_column(m, tbl, "x");
+	cols[1] = mvc_bind_column(m, tbl, "y");
+	cols[2] = mvc_bind_column(m, tbl, "z");
+	if (cols[0] == NULL || cols[1] == NULL || cols[2] == NULL) {
+		msg = createException(MAL, "lidar.exporttable", "Could not locate a column with name 'x', 'y', or 'z'.");
+		return msg;
+	} 
+	//bats_dbl[0] = mvc_bind(m, *sname, *tname, *cname, *access);
+	bats_dbl[0] = store_funcs.bind_col(tr, cols[0], 0);
+	bats_dbl[1] = store_funcs.bind_col(tr, cols[1], 0);
+	bats_dbl[2] = store_funcs.bind_col(tr, cols[2], 0);
 
-	columns = list_length(set);
-	colname = (str *) GDKmalloc(columns * sizeof(str));
-	tform = (str *) GDKmalloc(columns * sizeof(str));
+	cols_dbl[0] = (dbl*)Tloc(bats_dbl[0], BUNfirst(bats_dbl[0]));
+	cols_dbl[1] = (dbl*)Tloc(bats_dbl[1], BUNfirst(bats_dbl[1]));
+	cols_dbl[2] = (dbl*)Tloc(bats_dbl[2], BUNfirst(bats_dbl[2]));
 
-	/* fprintf(stderr,"Number of columns: %d\n", columns);*/
+	nrows = store_funcs.count_col(tr, cols[0], 1);
 
-	tables = mvc_bind_table(m, sch, "_tables");
-	col = mvc_bind_column(m, tables, "name");
-	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
+	/* Populate the header */
+	header = LASHeader_Create();
+	LASHeader_SetCompressed(header, (strcmp(format, "laz") == 0));
+/*
+	LASHeader_SetCreationDOY
+	LASHeader_SetCreationYear
+	LASHeader_SetDataFormatId
+	LASHeader_SetDataOffset
+	LASHeader_SetDataRecordLength
+	LASHeader_SetFileSourceId
+	LASHeader_SetGUID
+	LASHeader_SetHeaderPadding
+	LASHeader_SetMax
+	LASHeader_SetMin
+	LASHeader_SetOffset
+	LASHeader_SetPointRecordsByReturnCount
+*/
+	LASHeader_SetPointRecordsCount(header, nrows);
+/*
+	LASHeader_SetProjectId
+	LASHeader_SetReserved
+	LASHeader_SetScale
+	LASHeader_SetSchema
+*/
+	LASHeader_SetSoftwareId(header, "MonetDB B.V.");
+/*	LASHeader_SetSRS */
+	LASHeader_SetSystemId(header, "MonetDB B.V.");
+	LASHeader_SetVersionMajor(header, '1');
+	LASHeader_SetVersionMinor(header, '2');
 
-	col = mvc_bind_column(m, tables, "id");
-	fid = *(int*) table_funcs.column_find_value(m->session->tr, col, rid);
+	/* Create the writer*/
+	MT_lock_set(&mt_lidar_lock);
+	writer = LASWriter_Create(filename, header, LAS_MODE_WRITE);
+	// TODO: Failure is always an option
+	MT_lock_unset(&mt_lidar_lock);
 
-	column =  mvc_bind_table(m, sch, "_columns");
-	col = mvc_bind_column(m, column, "table_id");
 
-	rs = table_funcs.rids_select(m->session->tr, col, (void *) &fid, (void *) &fid, NULL);
+	/* Iterate over the table */
+	for (i = 0; i < nrows; i++) {
+		point = LASPoint_Create();
+/*
+		LASPoint_SetClassification
+		LASPoint_SetColor
+		LASPoint_SetData
+		LASPoint_SetFlightLineEdge
+		LASPoint_SetHeader
+		LASPoint_SetIntensity
+		LASPoint_SetNumberOfReturns
+		LASPoint_SetPointSourceId
+		LASPoint_SetRawX
+		LASPoint_SetRawY
+		LASPoint_SetRawZ
+		LASPoint_SetReturnNumber
+		LASPoint_SetScanAngleRank
+		LASPoint_SetScanDirection
+		LASPoint_SetScanFlags
+		LASPoint_SetTime
+		LASPoint_SetUserData
+*/
+		LASPoint_SetX(point, cols_dbl[0][i]);
+		LASPoint_SetY(point, cols_dbl[1][i]);
+		LASPoint_SetZ(point, cols_dbl[2][i]);
 
-	while ((rid = table_funcs.rids_next(rs)) != oid_nil)
-	{
-		col = mvc_bind_column(m, column, "name");
-		name = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
-		colname[j] = toLower(name);
-
-		col = mvc_bind_column(m, column, "type");
-		type = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
-
-		if (strcmp(type,"boolean")==0) tform[j] = "1L";
-
- 		if (strcmp(type,"char")==0) tform[j] = "1S";
-
-		if (strcmp(type,"varchar")==0) tform[j] = "8A";
-
-		if (strcmp(type,"smallint")==0) tform[j] = "1I";
-
-		if (strcmp(type,"int")==0) tform[j] = "1J";
-
-		if (strcmp(type,"bigint")==0) tform[j] = "1K";
-
-		if (strcmp(type,"real")==0) tform[j] = "1E";
-
-		if (strcmp(type,"double")==0) tform[j] = "1D";
-
-		j++;
+		LASWriter_WritePoint(writer, point);
+		LASPoint_Destroy(point);
 	}
 
-	col = mvc_bind_column(m, tbl, colname[0]);
+	MT_lock_set(&mt_lidar_lock);
+	LASHeader_Destroy(header);
+	LASWriter_Destroy(writer);
+	MT_lock_unset(&mt_lidar_lock);
 
-	nrows = store_funcs.count_col(tr, col, 1);
-
-	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
-	fprintf(stderr, "Filename: %s\n", filename);
-
-	remove(filename);
-
-	status=0;
-
-	lidar_create_file(&fptr, filename, &status);
-	lidar_create_img(fptr,  USHORT_IMG, 0, NULL, &status);
-	lidar_close_file(fptr, &status);
-	lidar_open_file(&fptr, filename, READWRITE, &status);
-
-	lidar_movabs_hdu(fptr, 1, &hdutype, &status);
-	lidar_create_tbl( fptr, BINARY_TBL, 0, columns, colname, tform, NULL, tname, &status);
-
-	for (cc = 0; cc < columns; cc++)
-	{
-		char * columntype;
-		col = mvc_bind_column(m, tbl, colname[cc]);
-		columntype = col -> type.type->sqlname;
-
-		if (strcmp(columntype,"boolean")==0)
-		{
-			boolcols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readboolrows = (_Bool *) GDKmalloc (sizeof(_Bool) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				boolvalue = *(_Bool*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readboolrows[dimension] = boolvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TLOGICAL, cc+1, (optimal*block)+1, 1, optimal, readboolrows, &status);
-					texportboolean += GDKms() - tm0;
-					GDKfree(readboolrows);
-					readboolrows = (_Bool *) GDKmalloc (sizeof(_Bool) * optimal);
-					block++;
-				}
-			}
-			tm0 = GDKms();
-			lidar_write_col(fptr, TLOGICAL, cc+1, (optimal*block)+1, 1, dimension, readboolrows, &status);
-			texportboolean += GDKms() - tm0;
-			GDKfree(readboolrows);		
-		}
-
-		if (strcmp(columntype,"char")==0)
-		{
-			charcols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readcharrows = (char *) GDKmalloc (sizeof(char) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				charvalue = *(char*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readcharrows[dimension] = charvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TBYTE, cc+1, (optimal*block)+1, 1, optimal, readcharrows, &status);
-					texportchar += GDKms() - tm0;
-					GDKfree(readcharrows);
-					readcharrows = (char *) GDKmalloc (sizeof(char) * optimal);
-					block++;
-				}
-			}
-			tm0 = GDKms();
-			lidar_write_col(fptr, TBYTE, cc+1, (optimal*block)+1, 1, dimension, readcharrows, &status);
-			texportchar += GDKms() - tm0;
-			GDKfree(readcharrows);
-		}
-
-		if (strcmp(columntype,"varchar")==0)
-		{
-			strcols++; dimension=0; block=0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readstrrows = (char **) GDKmalloc (sizeof(char *) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				strvalue = (char *) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readstrrows[dimension] = strvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col_str(fptr, cc+1, (optimal*block)+1, 1, optimal, readstrrows, &status);
-					texportstring += GDKms() - tm0;
-					GDKfree(readstrrows);
-					readstrrows = (char **) GDKmalloc(sizeof(char *) * optimal);
-					block++;
-				}
-			}
-			tm0 = GDKms();
-			lidar_write_col_str(fptr, cc+1, (optimal*block)+1, 1, dimension, readstrrows, &status);
-			texportstring += GDKms() - tm0;
-			GDKfree(readstrrows);
-		}
-
-		if (strcmp(columntype,"smallint")==0)
-		{
-			shortcols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readshortrows = (short *) GDKmalloc (sizeof(short) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				shortvalue = *(short*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readshortrows[dimension] = shortvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TSHORT, cc+1, (optimal*block)+1, 1, optimal, readshortrows, &status);
-					texportshort += GDKms() - tm0;
-					GDKfree(readshortrows);
-					readshortrows = (short *) GDKmalloc (sizeof(short) * optimal);
-					block++;
-				}
-			} 
-			tm0 = GDKms();
-			lidar_write_col(fptr, TSHORT, cc+1, (optimal*block)+1, 1, dimension, readshortrows, &status);
-			texportshort += GDKms() - tm0;
-			GDKfree(readshortrows);
-		}
-
-		if (strcmp(columntype,"int")==0)
-		{
-			intcols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readintrows = (int *) GDKmalloc (sizeof(int) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				intvalue = *(int*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readintrows[dimension] = intvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TINT, cc+1, (optimal*block)+1, 1, optimal, readintrows, &status);
-					texportint += GDKms() - tm0;
-					GDKfree(readintrows);
-					readintrows = (int *) GDKmalloc (sizeof(int) * optimal);
-					block++;
-				}
-			} 
-			tm0 = GDKms();
-			lidar_write_col(fptr, TINT, cc+1, (optimal*block)+1, 1, dimension, readintrows, &status);
-			texportint += GDKms() - tm0;
-			GDKfree(readintrows);	
-		}
-
-		if (strcmp(columntype,"bigint")==0)
-		{
-			longcols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readlongrows = (long *) GDKmalloc (sizeof(long) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				longvalue = *(long*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readlongrows[dimension] = longvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, optimal, readlongrows, &status);
-					texportlong += GDKms() - tm0;
-					GDKfree(readlongrows);
-					readlongrows = (long *) GDKmalloc (sizeof(long) * optimal);
-					block++;
-				}
-			} 
-			tm0 = GDKms();
-			lidar_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, dimension, readlongrows, &status);
-			texportlong += GDKms() - tm0;
-			GDKfree(readlongrows);
-		}
-
-		if (strcmp(columntype,"real")==0)
-		{
-			floatcols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readfloatrows = (float *) GDKmalloc (sizeof(float) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				realvalue = *(float*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readfloatrows[dimension] = realvalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TFLOAT, cc+1, (optimal*block)+1, 1, optimal, readfloatrows, &status);
-					texportfloat += GDKms() - tm0;
-					GDKfree(readfloatrows);
-					readfloatrows = (float *) GDKmalloc (sizeof(float) * optimal);
-					block++;
-				}
-			} 
-			tm0 = GDKms();
-			lidar_write_col(fptr, TFLOAT, cc+1, (optimal*block)+1, 1, dimension, readfloatrows, &status);
-			texportfloat += GDKms() - tm0;
-			GDKfree(readfloatrows);
-		}
-
-		if (strcmp(columntype,"double")==0)
-		{
-			doublecols++; dimension = 0; block = 0;
-			lidar_get_rowsize(fptr,&optimal,&status);
-			readdoublerows = (double *) GDKmalloc (sizeof(double) * optimal);
-
-			for (numberrow = 0; numberrow < nrows ; numberrow++)
-			{
-				doublevalue = *(double*) table_funcs.column_find_value(m->session->tr, col, numberrow);
-				readdoublerows[dimension] = doublevalue;
-				dimension++;
-
-				if (dimension == optimal)
-				{
-					dimension = 0;
-					tm0 = GDKms();
-					lidar_write_col(fptr, TDOUBLE, cc+1, (optimal*block)+1, 1, optimal, readdoublerows, &status);
-					texportdouble += GDKms() - tm0;
-					GDKfree(readdoublerows);
-					readdoublerows = (double *) GDKmalloc (sizeof(double) * optimal);
-					block++;
-				}
-			}
-			tm0 = GDKms();
-			lidar_write_col(fptr, TDOUBLE, cc+1, (optimal*block)+1, 1, optimal, readdoublerows, &status);
-			texportdouble += GDKms() - tm0;
-			GDKfree(readdoublerows); 
-		}
-	}
-
-	/* print all the times that were needed to export each one of the columns
-	fprintf(stderr, "\n\n");
-	if (texportboolean > 0)		fprintf(stderr, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols,   texportboolean);
-	if (texportchar > 0)		fprintf(stderr, "%d Char\t\tcolumn(s) exported in %d ms\n",    charcols,   texportchar);
-	if (texportstring > 0)		fprintf(stderr, "%d String\tcolumn(s) exported in %d ms\n",  strcols,    texportstring);
-	if (texportshort > 0)		fprintf(stderr, "%d Short\t\tcolumn(s) exported in %d ms\n",   shortcols,  texportshort);
-	if (texportint > 0)		fprintf(stderr, "%d Integer\tcolumn(s) exported in %d ms\n", intcols,    texportint);
-	if (texportlong > 0)		fprintf(stderr, "%d Long\t\tcolumn(s) exported in %d ms\n",    longcols,   texportlong);
-	if (texportfloat > 0)		fprintf(stderr, "%d Float\t\tcolumn(s) exported in %d ms\n",   floatcols,  texportfloat);
-	if (texportdouble > 0) 		fprintf(stderr, "%d Double\tcolumn(s) exported in %d ms\n",  doublecols, texportdouble);
-	*/
-
-	lidar_close_file(fptr, &status);
-	return msg;
-#endif
-return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 

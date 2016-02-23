@@ -1,0 +1,37 @@
+stdout of test 'T4` in directory 'geom/sql/conformance` itself:
+
+
+# 13:50:02 >  
+# 13:50:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37941" "--set" "mapi_usock=/var/tmp/mtest-12717/.s.monetdb.37941" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_conformance" "--set" "mal_listing=0"
+# 13:50:02 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_conformance', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:37941/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12717/.s.monetdb.37941
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:50:02 >  
+# 13:50:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12717" "--port=37941"
+# 13:50:02 >  
+
+#SELECT srid FROM geometry_columns WHERE f_table_name = 'streams';
+% .geometry_columns # table_name
+% srid # name
+% int # type
+% 3 # length
+[ 101	]
+
+# 13:50:02 >  
+# 13:50:02 >  "Done."
+# 13:50:02 >  
+

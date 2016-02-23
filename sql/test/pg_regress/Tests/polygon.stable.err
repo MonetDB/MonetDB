@@ -29,130 +29,39 @@ stderr of test 'polygon` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon((0.0 0.0, 0.0 0.0))');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0.0 0.0, 0.0 0.0))');
 ERROR = !IllegalArgumentException: Invalid number of points in LinearRing found 2 - must be 0 or >= 4
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon((0.0 1.0, 1.0 1.0, 0.0 1.0))');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0.0 1.0, 1.0 1.0, 0.0 1.0))');
 ERROR = !IllegalArgumentException: Invalid number of points in LinearRing found 3 - must be 0 or >= 4
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('0.0');
-ERROR = !ParseException: Expected word but encountered number: '0'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0 0.0');
 ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('(0,1,2)');
 ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('(0,1,2,3');
 ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('asdf');
 ERROR = !ParseException: Unknown type: 'ASDF'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon(0.0)');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON(0.0)');
 ERROR = !ParseException: Expected word but encountered number: '0'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon((0.0 0.0)');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0.0 0.0)');
 ERROR = !IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon((0,1,2))');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0,1,2))');
 ERROR = !ParseException: Expected number but encountered ','
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon((0 1, 2 3)');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0 1, 2 3)');
 ERROR = !IllegalArgumentException: Points of LinearRing do not form a closed linestring
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('polygon(asdf)');
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON(asdf)');
 ERROR = !ParseException: Expected 'Z', 'M', 'ZM', 'EMPTY' or '(' but encountered : 'ASDF'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS three, p.*
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 && '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 && 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !syntax error, unexpected '&' in: "select '' as three, p.*
-        !   from polygon_tbl_vw p
-        !--   WHERE p.f1 && '(3.0,1.0),("
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS four, p.* 
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 &< '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 &< 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as four, p.* 
-        !   from polygon_tbl_vw p
-        !--   WHERE p.f1 &< '(3.0,1.0),("
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS two, p.* 
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 &> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 &> 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as two, p.* 
-        !   from polygon_tbl_vw p
-        !--   WHERE p.f1 &> '(3.0,1.0),(3"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS one, p.*
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 << '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 << 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !SELECT: no such binary operator 'left_shift(polygon,char)'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS zero, p.*
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 >> '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 >> 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !SELECT: no such binary operator 'right_shift(polygon,char)'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS one, p.* 
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 @ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 @ 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select '' as one, p.* 
-        !   from polygon_tbl_vw p
-        !--   WHERE p.f1 @ polygon '(3.0,"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS one, p.*
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 ~= polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 ~= 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select '' as one, p.*
-        !   from polygon_tbl_vw p
-        !--   WHERE p.f1 ~= polygon '(3.0,"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT '' AS one, p.*
-           FROM POLYGON_TBL_VW p
-        --   WHERE p.f1 ~ polygon '(3.0,1.0),(3.0,3.0),(1.0,0.0)';
-           WHERE p.f1 ~ 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))';
-ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select '' as one, p.*
-        !   from polygon_tbl_vw p
-        !--   WHERE p.f1 ~ polygon '(3.0,1"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' <<  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
-ERROR = !SELECT: no such binary operator 'left_shift(polygon,polygon)'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &<  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "true";
-ERROR = !syntax error, unexpected COMPARISON in: "select polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &<"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &>  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "true";
-ERROR = !syntax error, unexpected COMPARISON in: "select polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &>"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' >>  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
-ERROR = !SELECT: no such binary operator 'right_shift(polygon,polygon)'
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' @  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
-ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' @"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' ~  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
-ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' ~"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' ~=  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "false";
-ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' ~"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &&  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))' AS "true";
-ERROR = !syntax error, unexpected '&' in: "select polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))' &&"
-MAPI  = (monetdb) /var/tmp/mtest-19968/.s.monetdb.34183
-QUERY = SELECT Intersects(polygon 'polygon((2.0 0.0, 2.0 4.0, 0.0 0.0, 2.0 0.0))',  polygon 'polygon((3.0 1.0, 3.0 3.0, 1.0 0.0, 3.0 1.0))') AS "false";
-ERROR = !SELECT: no such binary operator 'intersects(polygon,polygon)'
-
 
 # 18:15:16 >  
 # 18:15:16 >  "Done."

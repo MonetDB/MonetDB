@@ -30,6 +30,8 @@ Ready.
 # 15:46:48 >  
 
 #CREATE TABLE geom (id INTEGER, g GEOMETRY, b MBR);
+#INSERT INTO geom values (5, NULL, NULL);
+[ 1	]
 #INSERT INTO geom values (1, 'POLYGON((1 2, 3 2, 3 4, 1 4, 1 2))', NULL);
 [ 1	]
 #INSERT INTO geom values (2, 'POLYGON((1 2, 3 2, 3 4, 1 4, 1 2))', 'BOX(1 2,3 4)');
@@ -47,8 +49,9 @@ Ready.
 [ 2,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
 [ 3,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
 [ 4,	NULL,	NULL	]
+[ 5,	NULL,	NULL	]
 #UPDATE geom SET b = MBR(g);
-[ 4	]
+[ 5	]
 #SELECT * FROM geom ORDER BY id;
 % sys.geom,	sys.geom,	sys.geom # table_name
 % id,	g,	b # name
@@ -58,9 +61,10 @@ Ready.
 [ 2,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
 [ 3,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
 [ 4,	NULL,	NULL	]
+[ 5,	NULL,	NULL	]
 #CREATE TABLE newgeom (id INTEGER, g GEOMETRY, b MBR);
 #INSERT INTO newgeom SELECT * FROM geom ORDER BY id;
-[ 4	]
+[ 5	]
 #SELECT * FROM newgeom ORDER BY id;
 % sys.newgeom,	sys.newgeom,	sys.newgeom # table_name
 % id,	g,	b # name
@@ -70,6 +74,7 @@ Ready.
 [ 2,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
 [ 3,	"POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))",	"BOX (1 2, 3 4)"	]
 [ 4,	NULL,	NULL	]
+[ 5,	NULL,	NULL	]
 #DROP TABLE geom;
 #DROP TABLE newgeom;
 

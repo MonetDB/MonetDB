@@ -1,0 +1,149 @@
+stdout of test 'ST_GeometryType` in directory 'geom/sql/functions` itself:
+
+
+# 10:35:12 >  
+# 10:35:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39577" "--set" "mapi_usock=/var/tmp/mtest-16320/.s.monetdb.39577" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 10:35:12 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39577/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16320/.s.monetdb.39577
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup geom.GeometryType1 a bulk operator implementation is needed
+#WARNING To speedup geom.GeometryType2 a bulk operator implementation is needed
+
+# 10:35:12 >  
+# 10:35:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16320" "--port=39577"
+# 10:35:12 >  
+
+#WITH t AS ( SELECT 'POINT(10 10)' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 5,	8 # length
+[ "POINT",	"ST_Point"	]
+#WITH t AS ( SELECT 'POINT(10 10 10)' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 5,	8 # length
+[ "POINT",	"ST_Point"	]
+#WITH t AS ( SELECT 'linestring(10 10, 20 20, 30 30)' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 10,	13 # length
+[ "LINESTRING",	"ST_LineString"	]
+#WITH t AS ( SELECT 'linestring(10 10 10, 20 20 20, 30 30 30)' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 10,	13 # length
+[ "LINESTRING",	"ST_LineString"	]
+#WITH t AS ( SELECT 'polygon((10 10, 20 20, 30 30, 10 10))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 7,	10 # length
+[ "POLYGON",	"ST_Polygon"	]
+#WITH t AS ( SELECT 'polygon((10 10 0, 20 20 0, 30 30 0, 10 10 0))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 7,	10 # length
+[ "POLYGON",	"ST_Polygon"	]
+#WITH t AS ( SELECT 'multipoint(10 10, 20 20)' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 10,	13 # length
+[ "MULTIPOINT",	"ST_MultiPoint"	]
+#WITH t AS ( SELECT 'multipoint(10 10 10, 20 20 20)' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 10,	13 # length
+[ "MULTIPOINT",	"ST_MultiPoint"	]
+#WITH t AS ( SELECT 'multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 15,	18 # length
+[ "MULTILINESTRING",	"ST_MultiLinestring"	]
+#WITH t AS ( SELECT 'multilinestring((10 10 10, 20 20 10, 30 30 10), (40 40 20, 50 50 20, 60 60 20))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 15,	18 # length
+[ "MULTILINESTRING",	"ST_MultiLinestring"	]
+#WITH t AS ( SELECT 'multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 12,	15 # length
+[ "MULTIPOLYGON",	"ST_MultiPolygon"	]
+#WITH t AS ( SELECT 'multipolygon(((10 10 1, 20 20 ,1 30 30 1, 10 10 1),(100 100 2, 200 200 2, 300 300 2, 100 100 2)))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 12,	15 # length
+[ "MULTIPOLYGON",	"ST_MultiPolygon"	]
+#WITH t AS ( SELECT 'GEOMETRYCOLLECTION(POINT(10 20),LINESTRING(10 20, 30 40),POLYGON((10 10, 10 20, 20 20, 20 10, 10 10)))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 18,	21 # length
+[ "GEOMETRYCOLLECTION",	"ST_GeometryCollection"	]
+#WITH t AS ( SELECT 'GEOMETRYCOLLECTION(POINT(10 20 30),LINESTRING(10 20 30, 30 40 50),POLYGON((10 10 5, 10 20 5, 20 20 5, 20 10 5, 10 10 5)))' AS geom )
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM t;
+% .L,	.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 18,	21 # length
+[ "GEOMETRYCOLLECTION",	"ST_GeometryCollection"	]
+#SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM geometries;
+% sys.L,	sys.L # table_name
+% DESC1,	DESC2 # name
+% clob,	clob # type
+% 18,	21 # length
+[ "POINT",	"ST_Point"	]
+[ "LINESTRING",	"ST_LineString"	]
+[ "LINESTRING",	"ST_LineString"	]
+[ "LINESTRING",	"ST_LineString"	]
+[ "POLYGON",	"ST_Polygon"	]
+[ "MULTIPOINT",	"ST_MultiPoint"	]
+[ "MULTILINESTRING",	"ST_MultiLinestring"	]
+[ "MULTILINESTRING",	"ST_MultiLinestring"	]
+[ "MULTILINESTRING",	"ST_MultiLinestring"	]
+[ "MULTIPOLYGON",	"ST_MultiPolygon"	]
+[ "MULTIPOLYGON",	"ST_MultiPolygon"	]
+[ "GEOMETRYCOLLECTION",	"ST_GeometryCollection"	]
+[ "GEOMETRYCOLLECTION",	"ST_GeometryCollection"	]
+
+# 10:35:12 >  
+# 10:35:12 >  "Done."
+# 10:35:12 >  
+

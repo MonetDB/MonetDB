@@ -6,26 +6,21 @@
 
 MTSAFE
 INCLUDES = ../lib \
-		   ../../common/options \
-		   ../../common/stream \
-		   ../../gdk \
-		   ../../monetdb5/modules/atoms \
-		   ../../monetdb5/modules/kernel \
-		   ../../monetdb5/mal \
-		   ../../monetdb5/modules/mal \
-		   ../../monetdb5/optimizer \
-		   ../../monetdb5/scheduler \
-		   $(GEOS_INCS)
+           ../../gdk \
+           ../../common/stream \
+           ../../common/options \
+           ../../monetdb5/mal \
+           $(GEOS_INCS) $(PROJ_INCS)
 
 lib__geom = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = geom.c
+	SOURCES = geom.h geom.c geomBulk.c geom_upgrade.c
 	LIBS = ../lib/libgeom \
 		   ../../gdk/libbat \
 	       ../../common/stream/libstream \
 	       ../../monetdb5/tools/libmonetdb5 \
-	       $(GEOS_LIBS)
+	       $(GEOS_LIBS) $(PROJ_LIBS)
 }
 
 headers_mal = {

@@ -1,0 +1,47 @@
+stdout of test 'regression_drop` in directory 'geom/sql/pg_regression` itself:
+
+
+# 15:38:43 >  
+# 15:38:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33183" "--set" "mapi_usock=/var/tmp/mtest-5054/.s.monetdb.33183" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
+# 15:38:43 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_pg_regression', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:33183/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5054/.s.monetdb.33183
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:38:44 >  
+# 15:38:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5054" "--port=33183"
+# 15:38:44 >  
+
+#DROP TABLE "point";
+#DROP TABLE "pointz";
+#DROP TABLE "multipoint";
+#DROP TABLE "multipointz";
+#DROP TABLE "arc";
+#DROP TABLE "arcz";
+#DROP TABLE "polygon";
+#DROP TABLE "polygonz";
+#DROP TABLE "tstpolygon";
+#DROP TABLE "tsipolygon";
+#DROP TABLE "tstipolygon";
+#DROP TABLE "notranspoint";
+#DROP TABLE "notreallymultipoint";
+#DROP TABLE "multitosinglepoint";
+#DROP TABLE "reprojectpts";
+#DROP TABLE "reprojectptsgeog";
+
+# 15:38:44 >  
+# 15:38:44 >  "Done."
+# 15:38:44 >  
+

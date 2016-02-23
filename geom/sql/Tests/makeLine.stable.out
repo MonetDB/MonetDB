@@ -1,0 +1,110 @@
+stdout of test 'makeLine` in directory 'geom/sql` itself:
+
+
+# 17:09:00 >  
+# 17:09:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33356" "--set" "mapi_usock=/var/tmp/mtest-21080/.s.monetdb.33356" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 17:09:00 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:33356/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21080/.s.monetdb.33356
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 17:09:00 >  
+# 17:09:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21080" "--port=33356"
+# 17:09:00 >  
+
+#select st_makeline(st_geomfromtext('point(10 20)'), st_geomfromtext('point(30 40)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (10 20, 30 40)"	]
+#select st_makeline(st_geomfromtext('linestring(10 20, 30 40, 50 60)'), st_geomfromtext('linestring(100 200, 300 400, 500 600)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (10 20, 30 40, 50 60, 100 200, 300 400, 500 600)"	]
+#create table points(p Geometry(POINT));
+#insert into points values(st_geomfromtext('point(10 20)'));
+[ 1	]
+#insert into points values(st_geomfromtext('point(20 30)'));
+[ 1	]
+#insert into points values(st_geomfromtext('point(30 40)'));
+[ 1	]
+#insert into points values(st_geomfromtext('point(40 50)'));
+[ 1	]
+#create table points2(p Geometry(POINT));
+#insert into points2 values(st_geomfromtext('point(100 200)'));
+[ 1	]
+#insert into points2 values(st_geomfromtext('point(200 300)'));
+[ 1	]
+#insert into points2 values(st_geomfromtext('point(300 400)'));
+[ 1	]
+#insert into points2 values(st_geomfromtext('point(400 500)'));
+[ 1	]
+#select st_makeline(p) from points;
+% sys.L1 # table_name
+% L1 # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (10 20, 20 30, 30 40, 40 50)"	]
+#select st_makeline(points.p, points2.p) from points, points2 where st_X(points2.p) = 10*st_X(points.p);
+% sys.L # table_name
+% st_makeline_p # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (10 20, 100 200)"	]
+[ "LINESTRING (20 30, 200 300)"	]
+[ "LINESTRING (30 40, 300 400)"	]
+[ "LINESTRING (40 50, 400 500)"	]
+#drop table points;
+#drop table points2;
+
+# 17:09:01 >  
+# 17:09:01 >  "Done."
+# 17:09:01 >  
+

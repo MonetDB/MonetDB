@@ -1,2 +1,2 @@
-SELECT contains(smallc, bigc) AS smallcontainsbig, contains(bigc, smallc) AS bigcontainssmall FROM (SELECT Buffer(GeomFromText('POINT(1 2)', 0), 10) As smallc, Buffer(GeomFromText('POINT(1 2)', 0), 20) As bigc) As foo;
+SELECT st_contains(smallc, bigc) AS smallcontainsbig, st_contains(bigc, smallc) AS bigcontainssmall FROM (SELECT st_Buffer(st_GeomFromText('POINT(1 2)', 0), 10) As smallc, st_Buffer(st_GeomFromText('POINT(1 2)', 0), 20) As bigc) As foo;
 

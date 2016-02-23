@@ -1,0 +1,171 @@
+stdout of test 'regress_ogc_cover` in directory 'geom/sql/pg_regression` itself:
+
+
+# 17:00:01 >  
+# 17:00:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37341" "--set" "mapi_usock=/var/tmp/mtest-15092/.s.monetdb.37341" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
+# 17:00:01 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_pg_regression', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:37341/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15092/.s.monetdb.37341
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 17:00:02 >  
+# 17:00:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15092" "--port=37341"
+# 17:00:02 >  
+
+#SELECT 'covers100', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'LINESTRING(1 10, 9 10, 9 8)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers100",	true	]
+#SELECT 'covers101', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'LINESTRING(1 10, 10 10, 10 8)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers101",	true	]
+#SELECT 'covers102', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(5 5)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers102",	true	]
+#SELECT 'covers103', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 0)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers103",	true	]
+#SELECT 'covers104', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(-1 0)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers104",	false	]
+#SELECT 'covers105', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 5)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers105",	true	]
+#SELECT 'covers106', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 12)');
+% .L1,	.L1 # table_name
+% L1,	st_covers_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers106",	false	]
+#SELECT 'covers107', ST_Covers(ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631), ST_GeomFromText('POINT(521513 5377804)', 32631));
+% .L1,	.L1 # table_name
+% L1,	st_geomfromtext_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers107",	true	]
+#SELECT 'covers108', ST_Covers(ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631), ST_GeomFromText('POINT(521513 5377804)', 32631));
+% .L1,	.L1 # table_name
+% L1,	st_geomfromtext_single_value # name
+% char,	boolean # type
+% 9,	5 # length
+[ "covers108",	true	]
+#SELECT 'coveredby100', ST_CoveredBy('LINESTRING(1 10, 9 10, 9 8)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby100",	true	]
+#SELECT 'coveredby101', ST_CoveredBy('LINESTRING(1 10, 10 10, 10 8)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby101",	true	]
+#SELECT 'coveredby102', ST_CoveredBy('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby102",	true	]
+#SELECT 'coveredby103', ST_CoveredBy('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby103",	true	]
+#SELECT 'coveredby104', ST_CoveredBy('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby104",	false	]
+#SELECT 'coveredby105', ST_CoveredBy('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby105",	true	]
+#SELECT 'coveredby106', ST_CoveredBy('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))');
+% .L1,	.L1 # table_name
+% L1,	st_coveredby_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby106",	false	]
+#SELECT 'coveredby107', ST_CoveredBy(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631));
+% .L1,	.L1 # table_name
+% L1,	st_geomfromtext_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby107",	true	]
+#SELECT 'coveredby108', ST_CoveredBy(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631));
+% .L1,	.L1 # table_name
+% L1,	st_geomfromtext_single_value # name
+% char,	boolean # type
+% 12,	5 # length
+[ "coveredby108",	true	]
+
+# 17:00:02 >  
+# 17:00:02 >  "Done."
+# 17:00:02 >  
+

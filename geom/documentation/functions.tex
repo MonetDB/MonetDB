@@ -1,0 +1,141 @@
+\documentclass{article}
+
+\begin{document}
+
+\tableofcontents
+
+%\addcontentsline{toc}{section}{Transformations}
+\section{Transformations}
+
+%\addcontentsline{toc}{subsection}{wkb2geos}
+\subsection{wkb2geos}
+
+{\tt GEOSGeom wkb2geos(wkb* geomWKB) }
+
+\vspace{10pt}
+
+\noindent
+The functions gets a pointer to a wkb struct and uses GEOS library to create a 
+GEOSGeometry. In case {\tt geomWKB} is {\bf NULL} {\tt wkb2geos} returns {\bf NULL}.
+
+
+\subsection{geos2wkb}
+
+{\tt wkb* geos2wkb(const GEOSGeometry* geosGeometry)}
+
+\vspace{10pt}
+
+\noindent
+The function gets a pointer to a GEOSGeometry and uses GEOS library to create a wkb struct.
+In case {\tt geosGeometry} is {\bf NULL}, {\tt malloc} cannot reserve the needed memory 
+or GEOS {\tt GEOSGeomToWKB\_buf} function returns {\bf NULL} the function also returns a pointer
+to a {\bf NULL wkb struct}. 
+
+
+\subsection{wkbFROMSTR}
+
+{\tt int wkbFROMSTR(char* geomWKT, int* len, wkb **geomWKB, int srid)}
+
+\vspace{10pt}
+
+\noindent
+The function is used when reading data from disk. It gets a WKT geometry representation 
+{\tt geomWKT} and the {\tt srid} of it and creates the wkb struct {\tt geomWKB}. In case 
+{\tt geomWKT} is {\tt str\_nil} or there is some error when creating the GEOSGeometry or 
+the wkb struct from it the function creates a {\tt wkb\_nil}. It returns the number of 
+characters in {\tt geomWKT} or 0 if an error occurred. {\tt *len} is set to the size of the  
+{\tt geomWKB} but I am not sure why this is needed. The function returns the size of the created 
+{\tt geomWKT} and it is important in order to return the correact value.
+
+
+\subsection{wkbTOSTR}
+
+{\tt int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB)}
+
+\vspace{10pt}
+
+\noindent
+The functions is used when writting data to disk. It gets a wkb struct {\tt geomWKB} and creates
+the WKT representation of it {\tt geomWKT}. If an error occurs when creating the GEOSGeometry from 
+the {\tt geomWKB} or when creating the WKT from the GEOSGeometry {\tt "nil"} is returned as 
+{\tt geomWKT}. {\tt *len} has the length of {\tt geomWKT} including quotes and `$\backslash$0' 
+character, and is very important for the correct storage of the data.
+
+
+\subsection{wkbFromText}
+
+{\tt str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe)}
+
+\vspace{10pt}
+
+\noindent
+The function uses the {\tt wkbFROMSTR} to create a {\tt geomWKB} out of {\tt geomWKT}.
+The function is used by the SQL functions
+\begin{itemize}
+\item {\tt ST\_GeomFromText}
+\item {\tt ST\_GeometryFromText}
+\item {\tt ST\_PointFromText}
+\item {\tt ST\_LineFromText}
+\item {\tt ST\_PolygonFromText}
+\item {\tt ST\_MPointFromText}
+\item {\tt ST\_MLineFromText}
+\item {\tt ST\_MPolyFromText}
+\item {\tt ST\_GeomCollFromText}
+\end{itemize}
+{\tt *tpe} is used to indicate the geometry type that should be created. Although all SQL
+functions use the same {\tt wkbFromText} c function a check is performed whether the 
+{\tt geomWKT} created a {\tt geomWKB} of the same type as {\tt *tpe}.
+
+
+\section{Basic Methods on geometric objects (OGC)}
+
+\subsection{wkbDimension}
+
+{\tt str wkbDimension(int *dimension, wkb **geomWKB)}
+
+\subsection{wkbGeometryType}
+
+{\tt str wkbGeometryType(char** out, wkb** geomWKB, int* flag)}
+
+\subsection{wkbGetSRID}
+
+{\tt str wkbGetSRID(int *out, wkb **geomWKB)}
+
+\subsection{Envelope}
+
+\subsection{wkbAsText}
+
+{\tt str wkbAsText(str *txt, wkb **geomWKB)}
+
+\vspace{10pt}
+\noindent
+The function uses the {\tt wkbFROMSTR} to create a {\tt geomWKT} from {\tt geomWKB}.
+The function is used by the SQL function {\tt ST\_AsText}.
+
+\subsection{AsBinary}
+
+\subsection{wkbIsEmpty}
+
+{\tt str wkbIsEmpty(bit *out, wkb **geomWKB)}
+
+\subsection{wkbIsSimple}
+
+{\tt str wkbIsSimple(bit *out, wkb **geomWKB)}
+
+\subsection{Is3D}
+
+\subsection{IsMeasured}
+
+\subsection{wkbBoundary}
+
+{\tt str wkbBoundary(wkb **boundaryWKB, wkb **geomWKB)}
+
+\section{Notes on sql level}
+
+\subsection{{\tt int atom\_cast(atom *a, sql\_subtype *tp)}}
+It is called to check the arguments of a function (once for each argument) \\
+{\tt sql\_subtype *tp} has the type of the expected argument and {\tt sql\_subtype *at = \&a->tpe} 
+has the type of the provided argument.
+
+
+\end{document}

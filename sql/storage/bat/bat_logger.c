@@ -19,16 +19,25 @@ bl_preversion( int oldversion, int newversion)
 {
 #define CATALOG_OCT2014 52100
 #define CATALOG_OCT2014SP3 52101
+#define CATALOG_JUL2015 52200
 
 	(void)newversion;
 	if (oldversion == CATALOG_OCT2014SP3) {
 		catalog_version = oldversion;
+		geomversion_set();
 		return 0;
 	}
 	if (oldversion == CATALOG_OCT2014) {
 		catalog_version = oldversion;
+		geomversion_set();
 		return 0;
 	}
+	if (oldversion == CATALOG_JUL2015) {
+		catalog_version = oldversion;
+		geomversion_set();
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -145,6 +154,65 @@ bl_postversion( void *lg)
 				s = "tmp";
 			else
 				s = NULL;
+		}
+	}
+
+	if (catalog_version <= CATALOG_JUL2015) {
+		BAT *b;
+		BATiter bi;
+		BUN p,q;
+		char geomUpgrade = 0;
+		char *s = "sys", n[64];
+
+		// test whether the catalog contains information regarding geometry types
+		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
+		bi = bat_iterator(b);
+		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+			char *t = (char*)BUNtail(bi, p);
+			if (strcmp(toLower(t), "wkb") == 0){
+				geomUpgrade++;
+				break;
+			}
+		}
+		bat_destroy(b);
+
+		// test whether the catalog contains information about geometry columns
+		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+		bi = bat_iterator(b);
+		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+			char *t = (char*)BUNtail(bi, p);
+			if (strcmp(toLower(t), "point") == 0 ||
+				strcmp(toLower(t), "curve") == 0 ||
+				strcmp(toLower(t), "linestring") == 0 ||
+				strcmp(toLower(t), "surface") == 0 ||
+				strcmp(toLower(t), "polygon") == 0 ||
+				strcmp(toLower(t), "multipoint") == 0 ||
+				strcmp(toLower(t), "multicurve") == 0 ||
+				strcmp(toLower(t), "multilinestring") == 0 ||
+				strcmp(toLower(t), "multisurface") == 0 ||
+				strcmp(toLower(t), "multipolygon") == 0 ||
+				strcmp(toLower(t), "geometry") == 0 ||
+				strcmp(toLower(t), "geometrycollection") == 0){
+				geomUpgrade++;
+				break;
+			}
+		}
+		bat_destroy(b);
+
+		if (!geomUpgrade && geomcatalogfix_get() == NULL) {
+			// The catalog knew nothing about geometries and the geom module is not loaded
+			// Do nothing
+		} else if (!geomUpgrade && geomcatalogfix_get() != NULL) {
+			// The catalog knew nothing about geometries but the geom module is loaded
+			// Add geom functionality
+			(*(geomcatalogfix_get()))(lg, (int)EC_GEOM, (int)EC_EXTERNAL, 0);
+		} else if (geomUpgrade && geomcatalogfix_get() == NULL) {
+			// The catalog needs to be updated but the geom module has not been loaded
+			// The case is prohibited by the sanity check performed during initialization
+			GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
+		} else if (geomUpgrade && geomcatalogfix_get() != NULL) {
+			// The catalog needs to be updated and the geom module has been loaded
+			(*(geomcatalogfix_get()))(lg, (int)EC_GEOM, (int)EC_EXTERNAL, 1);
 		}
 	}
 }

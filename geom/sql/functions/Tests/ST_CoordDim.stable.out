@@ -1,0 +1,75 @@
+stdout of test 'ST_CoordDim` in directory 'geom/sql/functions` itself:
+
+
+# 15:20:11 >  
+# 15:20:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31268" "--set" "mapi_usock=/var/tmp/mtest-30590/.s.monetdb.31268" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:20:11 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:31268/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30590/.s.monetdb.31268
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:20:12 >  
+# 15:20:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30590" "--port=31268"
+# 15:20:12 >  
+
+#SELECT ST_CoordDim('LINESTRING(1 2 3, 1 3 4, 5 6 7, 8 9 10, 11 12 13)');
+% .L # table_name
+% st_coorddim_single_value # name
+% int # type
+% 1 # length
+[ 3	]
+#SELECT ST_CoordDim(ST_Point(1,2));
+% .L # table_name
+% st_point_single_value # name
+% int # type
+% 1 # length
+[ 2	]
+#SELECT geom AS "GEOMETRY", ST_CoordDim(geom) AS "COORDS" FROM geometries;
+% sys.L,	sys.L # table_name
+% GEOMETRY,	COORDS # name
+% geometry,	int # type
+% 0,	1 # length
+[ "POINT (10 20)",	2	]
+[ "LINESTRING (10 20, 30 40, 50 60)",	2	]
+[ "LINESTRING (10 20, 30 40, 50 60, 80 60, 60 40, 10 20)",	2	]
+[ "LINESTRING (10 10, 50 50, 30 80, 25 5)",	2	]
+[ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))",	2	]
+[ "MULTIPOINT (10 20, 30 40)",	2	]
+[ "MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))",	2	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))",	2	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))",	2	]
+[ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))",	2	]
+[ "MULTIPOLYGON EMPTY",	2	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))",	2	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40, 10 20), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))",	2	]
+[ "POINT Z (10 20 30)",	3	]
+[ "LINESTRING Z (10 20 10, 30 40 10, 50 60 10)",	3	]
+[ "LINESTRING Z (10 20 10, 30 40 10, 50 60 10, 80 60 10, 60 40 10, 10 20 10)",	3	]
+[ "LINESTRING Z (10 10 20, 50 50 30, 30 80 40, 25 5 50)",	3	]
+[ "POLYGON Z ((10 10 5, 10 20 10, 20 20 15, 20 10 20, 10 10 25))",	3	]
+[ "MULTIPOINT Z (10 20 10, 30 40 30)",	3	]
+[ "MULTILINESTRING Z ((30 40 10, 40 50 20), (50 60 30, 60 70 40))",	3	]
+[ "MULTILINESTRING Z ((30 40 10, 40 50 20, 30 40 30), (50 60 40, 60 70 50))",	3	]
+[ "MULTILINESTRING Z ((30 40 100, 40 50 90, 30 40 80), (50 60 70, 40 50 60, 20 30 50, 50 60 40))",	3	]
+[ "MULTIPOLYGON Z (((10 10 5, 10 20 5, 20 20 5, 20 10 5, 10 10 5), (30 30 10, 30 40 10, 40 40 10, 40 30 10, 30 30 10)))",	3	]
+[ "GEOMETRYCOLLECTION Z (POINT Z (10 20 30), LINESTRING Z (10 20 10, 30 40 20), POLYGON Z ((10 10 30, 10 20 30, 20 20 30, 20 10 30, 10 10 30)))",	3	]
+[ "GEOMETRYCOLLECTION Z (POINT Z (10 20 30), LINESTRING Z (10 20 10, 30 40 20, 10 20 10), POLYGON Z ((10 10 30, 10 20 30, 20 20 30, 20 10 30, 10 10 30)))",	3	]
+[ "POLYGON ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10))",	2	]
+[ "MULTIPOLYGON (((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10), (1 1, 1 2, 2 2, 2 1, 1 1)), ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10)))",	2	]
+
+# 15:20:12 >  
+# 15:20:12 >  "Done."
+# 15:20:12 >  
+
