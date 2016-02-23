@@ -679,6 +679,7 @@ fixoidheap(void)
 }
 #endif
 
+#ifdef GDKLIBRARY_SORTEDPOS
 static void
 fixsorted(void)
 {
@@ -771,6 +772,7 @@ fixsorted(void)
 	}
 	GDKdebug = dbg;
 }
+#endif
 
 #ifdef GDKLIBRARY_OLDWKB
 /* "Danger, Will Robinson".
@@ -1357,8 +1359,10 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
+#ifdef GDKLIBRARY_SORTEDPOS
 	if (bbpversion <= GDKLIBRARY_SORTEDPOS)
 		fixsorted();
+#endif
 #ifdef GDKLIBRARY_OLDWKB
 	if (bbpversion <= GDKLIBRARY_OLDWKB)
 		fixwkbheap();
