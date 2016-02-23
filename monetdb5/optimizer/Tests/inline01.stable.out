@@ -29,24 +29,23 @@ Ready.
 # 16:09:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32223" "--port=39816"
 # 16:09:46 >  
 
-#mdb.List("user","qry");
-function user.qry():void;               	#[0]  0 
-    X_5:bat[:int] := bat.new(:oid,:int);	#[1] CMDBATnew 5 <- 6 7 
-    X_8:bat[:int] := bat.new(:oid,:int);	#[2] CMDBATnew 8 <- 6 7 
-    X_9:int := 1:int;                   	#[3]  9 <- 10 
-    bat.append(X_5:bat[:int],1:int);    	#[4] BKCappend_val_wrap 11 <- 5 10 
-barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:int]);	#[5] ITRbunIterator 12 9 <- 5 
-    io.print(X_12:oid);                 	#[6] IOprint_val 13 <- 12 
-catch MALException:str;                 	#[7]  14 
-exit MALException:str;                  	#[8]  14 
-exit (X_12:oid,X_9:int);                	#[9]  12 9 
-barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:int]);	#[10] ITRbunIterator 12 9 <- 8 
-    io.print(X_12:oid);                 	#[11] IOprint_val 15 <- 12 
-    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:int]);	#[12] ITRbunNext 12 9 <- 8 
-catch MALException:str;                 	#[13]  14 
-exit MALException:str;                  	#[14]  14 
-exit (X_12:oid,X_16:any,X_9:int);       	#[15]  12 16 9 
-end user.qry;                           	#[16]  
+function user.qry():void;               	#[0] (0)  0 
+    X_5:bat[:int] := bat.new(:oid,:int);	#[1] (0) CMDBATnew 5 <- 6 7 
+    X_8:bat[:int] := bat.new(:oid,:int);	#[2] (0) CMDBATnew 8 <- 6 7 
+    X_9:int := 1:int;                   	#[3] (0)  9 <- 10 
+    bat.append(X_5:bat[:int],1:int);    	#[4] (0) BKCappend_val_wrap 11 <- 5 10 
+barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:int]);	#[5] (0) ITRbunIterator 12 9 <- 5 
+    io.print(X_12:oid);                 	#[6] (0) IOprint_val 13 <- 12 
+catch MALException:str;                 	#[7] (0)  14 
+exit MALException:str;                  	#[8] (0)  14 
+exit (X_12:oid,X_9:int);                	#[9] (0)  12 9 
+barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:int]);	#[10] (0) ITRbunIterator 12 9 <- 8 
+    io.print(X_12:oid);                 	#[11] (0) IOprint_val 15 <- 12 
+    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:int]);	#[12] (0) ITRbunNext 12 9 <- 8 
+catch MALException:str;                 	#[13] (0)  14 
+exit MALException:str;                  	#[14] (0)  14 
+exit (X_12:oid,X_16:any,X_9:int);       	#[15] (0)  12 16 9 
+end user.qry;                           	#[16] (0)  
 
 # 00:18:07 >  
 # 00:18:07 >  Done.

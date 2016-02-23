@@ -27,17 +27,16 @@ Ready.
 # 06:40:52 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:40:52 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[3] BKCappend_val_wrap 5 <- 1 6 
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
 # in this case D should be left alone 
-    d:bat[:int] := bat.new(:oid,:int);  	#[5] CMDBATnew 8 <- 2 3 
-    bat.append(d:bat[:int],2:int);      	#[6] BKCappend_val_wrap 9 <- 8 10 
-end user.foo;                           	#[7]  
-#commonTerms          actions= 0 time=9 usec 
-#aliases              actions= 0 time=13 usec 
+    d:bat[:int] := bat.new(:oid,:int);  	#[5] (0) CMDBATnew 8 <- 2 3 
+    bat.append(d:bat[:int],2:int);      	#[6] (0) BKCappend_val_wrap 9 <- 8 10 
+end user.foo;                           	#[7] (0)  
+#commonTerms          actions= 0 time=12 usec 
+#aliases              actions= 0 time=9 usec 
 
 # 23:52:52 >  
 # 23:52:52 >  Done.

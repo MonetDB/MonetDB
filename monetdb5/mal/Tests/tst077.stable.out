@@ -25,15 +25,15 @@ Ready.
 # 13:14:25 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24111" "--port=37355"
 # 13:14:25 >  
 
-function user.foo():void;               	#[0]  0 
-    X:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
-    bat.append(X:bat[:int],1:int);      	#[2] BKCappend_val_wrap 3 <- 1 4 
-    Y:bat[:int] := bat.new(:int);       	#[3] CMDBATnewColumn 5 <- 2 
-    bat.append(Y:bat[:int],2:int);      	#[4] BKCappend_val_wrap 6 <- 5 7 
-    (x:str,y:bat[:int]) := user.swap(X:bat[:int],Y:bat[:int]);	#[5]  8 9 <- 1 5 
-    io.print(x:str);                    	#[6] IOprint_val 10 <- 8 
-    io.print(y:bat[:int]);              	#[7] IOprint_val 11 <- 9 
-end user.foo;                           	#[8]  
+function user.foo():void;               	#[0] (0)  0 
+    X:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    bat.append(X:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    Y:bat[:int] := bat.new(:int);       	#[3] (0) CMDBATnewColumn 5 <- 2 
+    bat.append(Y:bat[:int],2:int);      	#[4] (0) BKCappend_val_wrap 6 <- 5 7 
+    (x:str,y:bat[:int]) := user.swap(X:bat[:int],Y:bat[:int]);	#[5] (0)  8 9 <- 1 5 
+    io.print(x:str);                    	#[6] (0) IOprint_val 10 <- 8 
+    io.print(y:bat[:int]);              	#[7] (0) IOprint_val 11 <- 9 
+end user.foo;                           	#[8] (0)  
 [ "done" ]
 #-----------------#
 # h	t	  # name

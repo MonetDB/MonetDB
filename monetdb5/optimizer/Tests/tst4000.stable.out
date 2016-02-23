@@ -25,20 +25,19 @@ Ready.
 # 06:40:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:40:49 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
 # identical until insert takes place 
-    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] (0) ALGsubselect1 6 <- 1 7 8 9 10 11 
 # mapped onto one instruction 
-    l:int := calc.+(24:int,27:int);     	#[6] CMDvarADDsignal 18 <- 15 17 
+    l:int := calc.+(24:int,27:int);     	#[6] (0) CMDvarADDsignal 18 <- 15 17 
 # mapped to l 
-    l3:int := calc.+(l:int,24:int);     	#[8] CMDvarADDsignal 21 <- 18 15 
+    l3:int := calc.+(l:int,24:int);     	#[8] (0) CMDvarADDsignal 21 <- 18 15 
 # replace the alias 
-end user.foo;                           	#[10]  
-#commonTerms          actions= 2 time=14 usec 
-#aliases              actions= 4 time=6 usec 
+end user.foo;                           	#[10] (0)  
+#commonTerms          actions= 2 time=16 usec 
+#aliases              actions= 4 time=10 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

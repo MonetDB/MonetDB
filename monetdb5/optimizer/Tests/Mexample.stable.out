@@ -27,18 +27,17 @@ Ready.
 # 15:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
 # 15:36:19 >  
 
-#	mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_9:bat[:int] := bat.new(nil:oid,nil:int);	#[3] CMDBATnew 9 <- 10 11 
-barrier (X_13:oid,X_14:int) := iterator.new(b:bat[:int]);	#[4] ITRbunIterator 13 14 <- 1 
-    X_16:int := calc.+(X_14:int,1:int); 	#[5] CMDvarADDsignal 16 <- 14 5 
-    bat.append(X_9:bat[:int],X_16:int); 	#[6] BKCappend_val_wrap 17 <- 9 16 
-    redo (X_13:oid,X_14:int) := iterator.next(b:bat[:int]);	#[7] ITRbunNext 13 14 <- 1 
-exit (X_13:oid,X_14:int);               	#[8]  13 14 
-    c:bat[:int] := X_9:bat[:int];       	#[9]  6 <- 9 
-end user.foo;                           	#[10]  
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
+    X_9:bat[:int] := bat.new(nil:oid,nil:int);	#[3] (0) CMDBATnew 9 <- 10 11 
+barrier (X_13:oid,X_14:int) := iterator.new(b:bat[:int]);	#[4] (0) ITRbunIterator 13 14 <- 1 
+    X_16:int := calc.+(X_14:int,1:int); 	#[5] (0) CMDvarADDsignal 16 <- 14 5 
+    bat.append(X_9:bat[:int],X_16:int); 	#[6] (0) BKCappend_val_wrap 17 <- 9 16 
+    redo (X_13:oid,X_14:int) := iterator.next(b:bat[:int]);	#[7] (0) ITRbunNext 13 14 <- 1 
+exit (X_13:oid,X_14:int);               	#[8] (0)  13 14 
+    c:bat[:int] := X_9:bat[:int];       	#[9] (0)  6 <- 9 
+end user.foo;                           	#[10] (0)  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.
