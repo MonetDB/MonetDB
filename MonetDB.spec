@@ -117,6 +117,8 @@ BuildRequires: geos-devel >= 3.0.0
 BuildRequires: gsl-devel
 %if %{?with_lidar:1}%{!?with_lidar:0}
 BuildRequires: liblas-devel gdal-devel libgeotiff-devel
+# Fedora 22 libas-devel does not depend on liblas:
+BuildRequires: liblas
 %endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
