@@ -29,8 +29,8 @@ Ready.
 % sys.L # table_name
 % st_centroid_boundary # name
 % clob # type
-% 49 # length
-[ "\"POINT (63.0000000000000000 15.5000000000000000)\""	]
+% 17 # length
+[ "\"POINT (63 15.5)\""	]
 
 # 14:52:43 >  
 # 14:52:43 >  "Done."

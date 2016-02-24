@@ -29,8 +29,8 @@ Ready.
 % sys.L # table_name
 % st_startpoint_centerline # name
 % clob # type
-% 48 # length
-[ "\"POINT (0.0000000000000000 18.0000000000000000)\""	]
+% 14 # length
+[ "\"POINT (0 18)\""	]
 
 # 14:23:23 >  
 # 14:23:23 >  "Done."

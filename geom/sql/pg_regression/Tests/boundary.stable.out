@@ -28,26 +28,26 @@ Ready.
 % .L # table_name
 % st_geomfromtext_single_value # name
 % clob # type
-% 92 # length
-[ "\"MULTIPOINT (1.0000000000000000 1.0000000000000000, -1.0000000000000000 1.0000000000000000)\""	]
+% 24 # length
+[ "\"MULTIPOINT (1 1, -1 1)\""	]
 #SELECT ST_AsText(ST_Boundary(ST_GeomFromText('POLYGON((1 1,0 0, -1 1, 1 1))')));
 % .L # table_name
 % st_geomfromtext_single_value # name
 % clob # type
-% 170 # length
-[ "\"LINESTRING (1.0000000000000000 1.0000000000000000, 0.0000000000000000 0.0000000000000000, -1.0000000000000000 1.0000000000000000, 1.0000000000000000 1.0000000000000000)\""	]
+% 34 # length
+[ "\"LINESTRING (1 1, 0 0, -1 1, 1 1)\""	]
 #SELECT ST_AsEWKT(ST_Boundary(ST_GeomFromText('POLYGON((1 1 1,0 0 1, -1 1 1, 1 1 1))')));
 % .L # table_name
 % st_geomfromtext_single_value # name
 % clob # type
-% 255 # length
-[ "SRID:0;\"LINESTRING Z (1.0000000000000000 1.0000000000000000 1.0000000000000000, 0.0000000000000000 0.0000000000000000 1.0000000000000000, -1.0000000000000000 1.0000000000000000 1.0000000000000000, 1.0000000000000000 1.0000000000000000 1.0000000000000000)\""	]
+% 51 # length
+[ "SRID:0;\"LINESTRING Z (1 1 1, 0 0 1, -1 1 1, 1 1 1)\""	]
 #SELECT ST_AsEWKT(ST_Boundary(ST_GeomFromText('MULTILINESTRING((1 1 1,0 0 0.5, -1 1 1),(1 1 0.5,0 0 0.5, -1 1 0.5, 1 1 0.5) )')));
 % .L # table_name
 % st_geomfromtext_single_value # name
 % clob # type
-% 139 # length
-[ "SRID:0;\"MULTIPOINT Z (-1.0000000000000000 1.0000000000000000 1.0000000000000000, 1.0000000000000000 1.0000000000000000 0.7500000000000000)\""	]
+% 40 # length
+[ "SRID:0;\"MULTIPOINT Z (-1 1 1, 1 1 0.75)\""	]
 
 # 15:14:23 >  
 # 15:14:23 >  "Done."
