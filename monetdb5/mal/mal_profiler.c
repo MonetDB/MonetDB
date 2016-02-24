@@ -253,12 +253,13 @@ This information can be used to determine memory footprint and variable life tim
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
 		if(mb){
-			logadd("\"res\":[");
+			logadd("\"ret\":[");
 			for( j=0; j< pci->argc; j++){
 				int tpe = getVarType(mb, getArg(pci,j));
 				str tname = 0, cv;
 				lng total = 0;
 				BUN cnt = 0;
+				bat bid=0;
 				str pret = ""; // or prettify
 				int p = getPC(mb,pci);
 
@@ -269,10 +270,12 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( isaBatType(tpe) ){
-					BAT *d= BATdescriptor(abs(stk->stk[getArg(pci,j)].val.ival));
+					BAT *d= BATdescriptor( bid = abs(stk->stk[getArg(pci,j)].val.ival));
 					tname = getTypeName(getColumnType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
+						if( isVIEW(d))
+							bid = abs(VIEWtparent(d));
 						cnt = BATcount(d);
 						total += heapinfo(&d->T->heap);
 						if ( d->T->vheap && d->T->vheap->parentid ){
@@ -280,6 +283,7 @@ This information can be used to determine memory footprint and variable life tim
 						}
 						BBPunfix(d->batCacheid);
 					} 
+					logadd("\"bid\":\"%d\",%s", bid,pret);
 					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
 					logadd("\"size\":" LLFMT",%s", total,pret);
 				} else{
