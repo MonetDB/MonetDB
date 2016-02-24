@@ -259,7 +259,6 @@ This information can be used to determine memory footprint and variable life tim
 				str tname = 0, cv;
 				lng total = 0;
 				BUN cnt = 0;
-				str kind="";
 				str pret = ""; // or prettify
 				int p = getPC(mb,pci);
 
@@ -267,12 +266,8 @@ This information can be used to determine memory footprint and variable life tim
 					logadd("],%s\"arg\":[",prettify);
 				} 
 				logadd("{");
-				logadd("\"clk\":"LLFMT",%s",usec,pret);
-				logadd("\"pc\":%d,%s", p, pret);
 				logadd("\"index\":\"%d\",%s", j,pret);
-				if( !isVarConstant(mb, getArg(pci,j))){
-					logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
-				}
+				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( isaBatType(tpe) ){
 					BAT *d= BATdescriptor(abs(stk->stk[getArg(pci,j)].val.ival));
 					tname = getTypeName(getColumnType(tpe));
@@ -283,12 +278,10 @@ This information can be used to determine memory footprint and variable life tim
 						if ( d->T->vheap && d->T->vheap->parentid ){
 							total += heapinfo(d->T->vheap); 
 						}
-						kind =  d->batPersistence == PERSISTENT? "persistent":"transient";
 						BBPunfix(d->batCacheid);
 					} 
 					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
-					logadd("\"kind\":\"%s\",%s",kind,pret);
-					logadd("\"footprint\":" LLFMT",%s", total,pret);
+					logadd("\"size\":" LLFMT",%s", total,pret);
 				} else{
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
