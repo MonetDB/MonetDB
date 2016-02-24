@@ -2,7 +2,7 @@
 C_LIBRARY <- "MonetDB.R"
 
 # Make S4 aware of S3 classes
-setOldClass(c("sockconn", "connection", "monetdb_mapi_conn"))
+# setOldClass(c("sockconn", "connection"))
 
 ### MonetDBDriver
 setClass("MonetDBDriver", representation("DBIDriver"))
@@ -163,6 +163,11 @@ setMethod("dbGetInfo", "MonetDBConnection", def=function(dbObj, ...) {
   ll <- as.list(envdata$value)
   names(ll) <- envdata$name
   ll$name <- "MonetDBConnection"
+  ll$db.version <- NA
+  ll$dbname <- ll$gdk_dbname
+  ll$username <- NA
+  ll$host <- NA
+  ll$port <- NA
   ll
 })
 
@@ -176,6 +181,7 @@ setMethod("dbDisconnect", "MonetDBConnection", def=function(conn, ...) {
 })
 
 setMethod("dbDisconnect", "MonetDBEmbeddedConnection", def=function(conn, shutdown=FALSE, ...) {
+  if (!conn@connenv$open) warning("already disconnected")
   conn@connenv$open <- FALSE
   MonetDBLite::monetdb_embedded_disconnect(conn@connenv$conn)
   if (shutdown) MonetDBLite::monetdb_embedded_shutdown()
@@ -219,7 +225,7 @@ setMethod("dbRollback", "MonetDBConnection", def=function(conn, ...) {
   invisible(TRUE)
 })
 
-setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
+setMethod("dbListFields", signature(conn="MonetDBConnection", name = "character"), def=function(conn, name, ...) {
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
   df <- dbGetQuery(conn, paste0("select columns.name as name from sys.columns join sys.tables on \
@@ -227,7 +233,7 @@ setMethod("dbListFields", "MonetDBConnection", def=function(conn, name, ...) {
   df$name
 })
 
-setMethod("dbExistsTable", "MonetDBConnection", def=function(conn, name, ...) {
+setMethod("dbExistsTable", signature(conn="MonetDBConnection", name = "character"), def=function(conn, name, ...) {
   name <- quoteIfNeeded(conn, name)
   return(as.character(name) %in% 
     dbListTables(conn, sys_tables=T))
@@ -237,7 +243,7 @@ setMethod("dbGetException", "MonetDBConnection", def=function(conn, ...) {
   conn@connenv$exception
 })
 
-setMethod("dbReadTable", "MonetDBConnection", def=function(conn, name, ...) {
+setMethod("dbReadTable", signature(conn="MonetDBConnection", name = "character"), def=function(conn, name, ...) {
   name <- quoteIfNeeded(conn, name)
   if (!dbExistsTable(conn, name))
     stop(paste0("Unknown table: ", name));
@@ -448,7 +454,7 @@ quoteIfNeeded <- function(conn, x, warn=T, ...) {
   x
 }
 
-setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, overwrite=FALSE, 
+setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character", value="data.frame"), def=function(conn, name, value, overwrite=FALSE, 
   append=FALSE, csvdump=FALSE, transaction=TRUE,...) {
   if (is.character(value)) {
     message("Treating character vector parameter as file name(s) for monetdb.read.csv()")
@@ -542,7 +548,7 @@ setMethod("dbDataType", signature(dbObj="MonetDBConnection", obj = "ANY"), def =
 }, valueClass = "character")
 
 
-setMethod("dbRemoveTable", "MonetDBConnection", def=function(conn, name, ...) {
+setMethod("dbRemoveTable", signature(conn="MonetDBConnection", name = "character"), def=function(conn, name, ...) {
   name <- quoteIfNeeded(conn, name)
   if (dbExistsTable(conn, name)) {
     dbSendUpdate(conn, paste("DROP TABLE", name))
@@ -646,7 +652,7 @@ monetdbRtype <- function(dbType) {
 
 setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res, n, ...) {
   # DBI on CRAN still uses fetch()
-  # message("fetch() is deprecated, use dbFetch()")
+  .Deprecated("dbFetch")
   dbFetch(res, n, ...)
 })
 

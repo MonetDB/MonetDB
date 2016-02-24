@@ -127,6 +127,15 @@ test_that("inserting data", {
 	monetdb_embedded_disconnect(con)
 })
 
+test_that("selecting null works", {
+	con <- monetdb_embedded_connect()
+	res <- monetdb_embedded_query(con, "SELECT NULL as nl")
+	expect_equal(nrow(res$tuples), 1)
+	expect_equal(ncol(res$tuples), 1)
+	expect_true(is.na(res$tuples$nl))
+	monetdb_embedded_disconnect(con)
+})
+
 test_that("the garbage collector closes connections", {
 	# there are 64 connections max. if gc() does not close them, the second batch will fail
 	conns <- lapply(1:64, function(x) monetdb_embedded_connect())
