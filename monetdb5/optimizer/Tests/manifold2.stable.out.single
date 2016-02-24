@@ -20,7 +20,6 @@ stdout of test 'manifold2` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup calc.max a bulk operator implementation is needed
 #    z:bat[:dbl] := mal.multiplex("calc":str,"max":str,b:bat[:dbl],b2:bat[:dbl]);
 
 # 12:52:57 >  

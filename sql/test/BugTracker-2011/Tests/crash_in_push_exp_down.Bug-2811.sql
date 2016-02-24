@@ -107,5 +107,5 @@ ll_PROPERTYTYPE.value
 	END
 	END = 'example2' 
 	)
-	AND (Within(l_SERVICEREGIONGEO.strdfgeo,l_SOLENTGEO.strdfgeo));
+	AND (ST_Within(l_SERVICEREGIONGEO.strdfgeo,l_SOLENTGEO.strdfgeo));
 rollback;

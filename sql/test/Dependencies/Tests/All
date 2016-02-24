@@ -1,2 +1,2 @@
-HAVE_SAMTOOLS?Dependencies
-dependency_loop
+HAVE_GEOM&HAVE_SAMTOOLS?Dependencies
+HAVE_GEOM?dependency_loop

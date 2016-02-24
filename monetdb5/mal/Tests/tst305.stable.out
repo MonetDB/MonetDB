@@ -29,10 +29,10 @@ Ready.
 # 09:16:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24715" "--port=38956"
 # 09:16:50 >  
 
-function user.foo():void;               	#[0]  0 
-    user.myException();                 	#[1]  1 
-    io.print("should not come here":str);	#[2] IOprint_val 2 <- 3 
-end user.foo;                           	#[3]  
+function user.foo():void;               	#[0] (0)  0 
+    user.myException();                 	#[1] (0)  1 
+    io.print("should not come here":str);	#[2] (0) IOprint_val 2 <- 3 
+end user.foo;                           	#[3] (0)  
 
 # 09:16:50 >  
 # 09:16:50 >  "Done."

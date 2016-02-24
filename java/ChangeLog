@@ -1,10 +1,18 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Feb 11 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Implemented methods getProcedures() and getProcedureColumns()
+  in DatabaseMetadata.java. They used to return an empty resultset.
+  Now they return the expected Procedures and ProcedureColumns.
+  Also getProcedureColumns() now returns a resultset with all 20 columns
+  instead of 13 columns previously.
+
 * Thu Feb  4 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Method getFunctionColumns() in DatabaseMetadata used to throw an
   SQLException:  getFunctionColumns(String, String, String, String) is
-  not implemented This method is now implemented and returns a resultset.
+  not implemented.
+  This method is now implemented and returns a resultset.
 
 * Thu Jan 28 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Method getFunctions() in DatabaseMetadata used to throw an SQLException:

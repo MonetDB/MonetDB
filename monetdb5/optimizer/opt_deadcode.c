@@ -27,12 +27,12 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return 0;
 
 	varused = GDKzalloc(mb->vtop * sizeof(int));
-	if( varused == NULL)
+	if (varused == NULL)
 		return 0;
 
-	limit= mb->stop;
+	limit = mb->stop;
 	slimit = mb->ssize;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0){
+	if (newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(varused);
 		return 0;
 	}
@@ -40,14 +40,14 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
 	for (i = 1; i < limit; i++) {
-		p= old[i];
+		p = old[i];
 		for( k=p->retc; k<p->argc; k++)
 			varused[getArg(p,k)]++;
 	}
 
 	// Consolidate the actual need for variables
 	for (i = limit; i >= 0; i--) {
-		p= old[i];
+		p = old[i];
 		if( p == 0)
 			continue; //left behind by others?
 
@@ -75,27 +75,27 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// Now we can simply copy the intructions and discard useless ones.
 	pushInstruction(mb, old[0]);
 	for (i = 1; i < limit; i++) 
-	if( (p = old[i]) ){
-		if( p->token == ENDsymbol){
-			pushInstruction(mb,p);
-			// Also copy the optimizer trace information
-			for(i++; i<limit; i++)
-				if(old[i])
-					pushInstruction(mb,old[i]);
-			break;
+		if ((p = old[i]) != NULL) {
+			if( p->token == ENDsymbol){
+				pushInstruction(mb,p);
+				// Also copy the optimizer trace information
+				for(i++; i<limit; i++)
+					if(old[i])
+						pushInstruction(mb,old[i]);
+				break;
+			}
+
+			// Is the instruction still relevant?
+			se = 0;
+			for ( k=0; k < p->retc; k++)
+				se += varused[getArg(p,k)] > 0;
+	
+			if (se)
+				pushInstruction(mb,p);
+			else 
+				freeInstruction(p);
+			actions += se > 0;
 		}
-
-		// Is the instruction still relevant?
-		se = 0;
-		for ( k=0; k < p->retc; k++)
-			se += varused[getArg(p,k)] > 0;
-
-		if ( se)
-			pushInstruction(mb,p);
-		else 
-			freeInstruction(p);
-		actions += se > 0;
-	}
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);

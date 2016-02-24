@@ -43,7 +43,7 @@ Ready.
 % clob # type
 % 366 # length
 function user.s2_1(A0:str,A1:str):void;
-    X_125:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n from lineorder, dwdate, part, supplier\n where lo_orderdate = d_datekey\n and lo_partkey = p_partkey\n and lo_suppkey = s_suppkey\n \n \n and p_brand1 = \\'MFGR#2221\\'\n and s_region = \\'EUROPE\\'\n group by d_year, p_brand1\n order by d_year, p_brand1;","sequential_pipe",83);
+    X_125:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n from lineorder, dwdate, part, supplier\n where lo_orderdate = d_datekey\n and lo_partkey = p_partkey\n and lo_suppkey = s_suppkey\n \n \n and p_brand1 = \\'MFGR#2221\\'\n and s_region = \\'EUROPE\\'\n group by d_year, p_brand1\n order by d_year, p_brand1;","sequential_pipe",82);
     X_93 := bat.new(nil:oid,nil:str);
     X_101 := bat.append(X_93,"sys.L1");
     X_110 := bat.append(X_101,"sys.dwdate");
@@ -100,9 +100,8 @@ function user.s2_1(A0:str,A1:str):void;
     X_53:bat[:oid] := algebra.projectionpath(X_45,X_26,X_52);
     C_54:bat[:oid] := sql.tid(X_3,"sys","dwdate");
     (X_56,r1_70) := algebra.subjoin(X_53,C_54,nil:BAT,nil:BAT,false,nil:lng);
-    X_141:bat[:oid] := algebra.projectionpath(X_56,X_45);
     X_58 := sql.projectdelta(C_23,X_18,C_20,r1_21,X_22);
-    X_59:bat[:str] := algebra.projectionpath(X_141,r1_32,X_58);
+    X_59:bat[:str] := algebra.projectionpath(X_56,X_45,r1_32,X_58);
     X_60:bat[:int] := sql.bind(X_3,"sys","dwdate","d_year",0);
     (C_62,r1_82) := sql.bind(X_3,"sys","dwdate","d_year",2);
     X_64:bat[:int] := sql.bind(X_3,"sys","dwdate","d_year",1);
@@ -116,7 +115,7 @@ function user.s2_1(A0:str,A1:str):void;
     (C_83,r1_104) := sql.bind(X_3,"sys","lineorder","lo_revenue",2);
     X_85:bat[:int] := sql.bind(X_3,"sys","lineorder","lo_revenue",1);
     X_86 := sql.projectdelta(C_4,X_81,C_83,r1_104,X_85);
-    X_87:bat[:int] := algebra.projectionpath(X_141,X_26,X_86);
+    X_87:bat[:int] := algebra.projectionpath(X_56,X_45,X_26,X_86);
     X_88:bat[:hge] := aggr.subsum(X_87,X_70,r1_91,true,true);
     (X_75,r1_96,r2_96) := algebra.subsort(X_74,false,false);
     (X_78,r1_99,r2_99) := algebra.subsort(X_73,r1_96,r2_96,false,false);

@@ -1,0 +1,39 @@
+stderr of test 'union` in directory 'geom/sql` itself:
+
+
+# 12:35:27 >  
+# 12:35:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39429" "--set" "mapi_usock=/var/tmp/mtest-2813/.s.monetdb.39429" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 12:35:27 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/MonetDB/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39429
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2813/.s.monetdb.39429
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/MonetDB/var/MonetDB/mTests_geom_sql
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:35:27 >  
+# 12:35:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2813" "--port=39429"
+# 12:35:27 >  
+
+CREATE FUNCTION: name 'st_union' (geometry, geometry) already in use
+ParseException:SQLparser:CREATE FUNCTION: name 'st_union' (geometry, geometry) already in use
+
+
+# 12:35:28 >  
+# 12:35:28 >  "Done."
+# 12:35:28 >  
+

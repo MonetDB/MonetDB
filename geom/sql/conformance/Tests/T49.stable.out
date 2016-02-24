@@ -1,0 +1,38 @@
+stdout of test 'T49` in directory 'geom/sql/conformance` itself:
+
+
+# 15:15:54 >  
+# 15:15:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32193" "--set" "mapi_usock=/var/tmp/mtest-4470/.s.monetdb.32193" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_conformance" "--set" "mal_listing=0"
+# 15:15:54 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_conformance', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32193/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4470/.s.monetdb.32193
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup geom.AsText a bulk operator implementation is needed
+
+# 15:15:54 >  
+# 15:15:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4470" "--port=32193"
+# 15:15:54 >  
+
+#SELECT ST_AsText(ST_Union(shore, boundary)) FROM lakes, named_places WHERE lakes.name = 'Blue Lake' AND named_places.name = 'Goose Island';
+% sys.L # table_name
+% st_astext_st_union_shore # name
+% clob # type
+% 45 # length
+[ "\"POLYGON ((52 18, 66 23, 73 9, 48 6, 52 18))\""	]
+
+# 15:15:54 >  
+# 15:15:54 >  "Done."
+# 15:15:54 >  
+

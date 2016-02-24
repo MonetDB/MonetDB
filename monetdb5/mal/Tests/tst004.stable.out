@@ -27,16 +27,16 @@ Ready.
 # 22:18:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25410" "--port=39815"
 # 22:18:45 >  
 
-function user.foo():void;               	#[0]  0 
-barrier l:int := 1:int;                 	#[1]  1 <- 2 
-    io.print(l:int);                    	#[2] IOprint_val 3 <- 1 
-exit l:int := 2:int;                    	#[3]  1 <- 4 
-    io.print(l:int);                    	#[4] IOprint_val 5 <- 1 
-barrier m:int := 3:int;                 	#[5]  6 <- 7 
-    leave m:int;                        	#[6]  6 
-exit m:int := 4:int;                    	#[7]  6 <- 8 
-    io.print(m:int);                    	#[8] IOprint_val 9 <- 6 
-end user.foo;                           	#[9]  
+function user.foo():void;               	#[0] (0)  0 
+barrier l:int := 1:int;                 	#[1] (0)  1 <- 2 
+    io.print(l:int);                    	#[2] (0) IOprint_val 3 <- 1 
+exit l:int := 2:int;                    	#[3] (0)  1 <- 4 
+    io.print(l:int);                    	#[4] (0) IOprint_val 5 <- 1 
+barrier m:int := 3:int;                 	#[5] (0)  6 <- 7 
+    leave m:int;                        	#[6] (0)  6 
+exit m:int := 4:int;                    	#[7] (0)  6 <- 8 
+    io.print(m:int);                    	#[8] (0) IOprint_val 9 <- 6 
+end user.foo;                           	#[9] (0)  
 [ 1	]
 [ 2	]
 [ 4	]

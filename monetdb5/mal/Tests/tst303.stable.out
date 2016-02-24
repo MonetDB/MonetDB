@@ -29,16 +29,16 @@ Ready.
 # 09:00:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
 # 09:00:01 >  
 
-function user.foo():void;               	#[0]  0 
-    raise IllegalAccess:str := "an exception":str;	#[1]  1 <- 2 
-    io.print("should not come here\n":str);	#[2] IOprint_val 3 <- 4 
-catch IllegalAccess:str;                	#[3]  1 
-    io.printf("caught %s\n":str,IllegalAccess:str);	#[4] IOprintf 5 <- 6 1 
-    raise IllegalAccess:str := "a second exception raised":str;	#[5]  1 <- 7 
-    io.print("should not come here either\n":str);	#[6] IOprint_val 8 <- 9 
-exit IllegalAccess:str;                 	#[7]  1 
-    io.print("should not be done":str); 	#[8] IOprint_val 10 <- 11 
-end user.foo;                           	#[9]  
+function user.foo():void;               	#[0] (0)  0 
+    raise IllegalAccess:str := "an exception":str;	#[1] (0)  1 <- 2 
+    io.print("should not come here\n":str);	#[2] (0) IOprint_val 3 <- 4 
+catch IllegalAccess:str;                	#[3] (0)  1 
+    io.printf("caught %s\n":str,IllegalAccess:str);	#[4] (0) IOprintf 5 <- 6 1 
+    raise IllegalAccess:str := "a second exception raised":str;	#[5] (0)  1 <- 7 
+    io.print("should not come here either\n":str);	#[6] (0) IOprint_val 8 <- 9 
+exit IllegalAccess:str;                 	#[7] (0)  1 
+    io.print("should not be done":str); 	#[8] (0) IOprint_val 10 <- 11 
+end user.foo;                           	#[9] (0)  
 caught an exception
 
 # 17:45:29 >  

@@ -1,0 +1,77 @@
+stdout of test 'mbr` in directory 'geom/sql` itself:
+
+
+# 15:00:14 >  
+# 15:00:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35943" "--set" "mapi_usock=/var/tmp/mtest-12064/.s.monetdb.35943" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/alvanaki/INSTALL/monetdb/var/MonetDB/mTests_geom_sql" "--set" "mal_listing=0"
+# 15:00:14 >  
+
+# MonetDB 5 server v11.18.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:35943/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12064/.s.monetdb.35943
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 15:00:15 >  
+# 15:00:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12064" "--port=35943"
+# 15:00:15 >  
+
+#select st_xmin(b), st_ymin(b), st_xmax(b), st_ymax(b) from ( select mbr(st_geomfromtext('polygon((0 0, 1 1, 2 2, 0 0),(1 1, 2 2, 0 0, 1 1))')) ) as foo(b);
+% .L1,	.L2,	.L3,	.L3 # table_name
+% L1,	L2,	L3,	st_ymax_b # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 0,	0,	2,	2	]
+#select st_xmin(b), st_ymin(b), st_xmax(b), st_ymax(b) from ( select st_geomfromtext('polygon((0 0, 1 1, 2 2, 0 0),(1 1, 2 2, 0 0, 1 1))') ) as foo(b);
+% .L1,	.L2,	.L3,	.L3 # table_name
+% L1,	L2,	L3,	st_ymax_b # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ 0,	0,	2,	2	]
+#select mbr(st_mlinefromtext('multilinestring((10 10 10, 20 20 20, 30 30 30), (40 40 40, 50 50 50, 60 60 60))'));
+% .L # table_name
+% st_mlinefromtext_single_value # name
+% mbr # type
+% 0 # length
+[ "BOX (10 10, 60 60)"	]
+
+# 15:00:16 >  
+# 15:00:16 >  "Done."
+# 15:00:16 >  
+

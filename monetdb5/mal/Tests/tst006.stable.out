@@ -27,16 +27,16 @@ Ready.
 # 10:37:23 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6574" "--port=37178"
 # 10:37:23 >  
 
-function user.foo():void;               	#[0]  0 
-    r:int := 0:int;                     	#[1]  1 <- 2 
-barrier l:bit := calc.<(r:int,1:int);   	#[2] CMDvarLT 3 <- 1 4 
-    io.print(l:bit);                    	#[3] IOprint_val 5 <- 3 
-    io.print(r:int);                    	#[4] IOprint_val 6 <- 1 
-    r:int := calc.+(r:int,1:int);       	#[5] CMDvarADDsignal 1 <- 1 4 
-    l:bit := false:bit;                 	#[6]  3 <- 7 
-    redo l:bit;                         	#[7]  3 
-exit l:bit;                             	#[8]  3 
-end user.foo;                           	#[9]  
+function user.foo():void;               	#[0] (0)  0 
+    r:int := 0:int;                     	#[1] (0)  1 <- 2 
+barrier l:bit := calc.<(r:int,1:int);   	#[2] (0) CMDvarLT 3 <- 1 4 
+    io.print(l:bit);                    	#[3] (0) IOprint_val 5 <- 3 
+    io.print(r:int);                    	#[4] (0) IOprint_val 6 <- 1 
+    r:int := calc.+(r:int,1:int);       	#[5] (0) CMDvarADDsignal 1 <- 1 4 
+    l:bit := false:bit;                 	#[6] (0)  3 <- 7 
+    redo l:bit;                         	#[7] (0)  3 
+exit l:bit;                             	#[8] (0)  3 
+end user.foo;                           	#[9] (0)  
 [ true ]
 [ 0 ]
 

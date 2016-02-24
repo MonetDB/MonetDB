@@ -506,13 +506,15 @@ getStrConstant(MalBlkPtr mb, str val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_str;
-	if ((cst.val.sval= GDKstrdup(val)) == NULL) 
-		return -1;
-	cst.len= (int) strlen(cst.val.sval);
+	cst.vtype = TYPE_str;
+	cst.val.sval = val; 
+	cst.len = (int) strlen(val);
 	_t= fndConstant(mb, &cst, mb->vtop);
-	if( _t < 0)
+	if( _t < 0) {
+		if ((cst.val.sval= GDKstrdup(val)) == NULL) 
+			return -1;
 		_t = defConstant(mb, TYPE_str, &cst);
+	}
 	return _t;
 }
 

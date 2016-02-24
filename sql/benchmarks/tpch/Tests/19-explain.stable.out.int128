@@ -52,7 +52,7 @@ Ready.
 % clob # type
 % 1117 # length
 function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sht,A9:int,A10:int,A11:str,A12:str,A13:str,A14:str,A15:str,A16:str,A17:str,A18:str,A19:bte,A20:sht,A21:sht,A22:int,A23:int,A24:str,A25:str,A26:str,A27:str,A28:str,A29:str,A30:str,A31:str,A32:bte,A33:sht,A34:sht,A35:int,A36:int,A37:str,A38:str,A39:str):void;
-    X_250:void := querylog.define("explain select\n sum(l_extendedprice* (1 - l_discount)) as revenue\nfrom\n lineitem,\n part\nwhere\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#12\\'\n and p_container in (\\'SM CASE\\', \\'SM BOX\\', \\'SM PACK\\', \\'SM PKG\\')\n and l_quantity >= 1 and l_quantity <= 1 + 10\n and p_size between 1 and 5\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#23\\'\n and p_container in (\\'MED BAG\\', \\'MED BOX\\', \\'MED PKG\\', \\'MED PACK\\')\n and l_quantity >= 10 and l_quantity <= 10 + 10\n and p_size between 1 and 10\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#34\\'\n and p_container in (\\'LG CASE\\', \\'LG BOX\\', \\'LG PACK\\', \\'LG PKG\\')\n and l_quantity >= 20 and l_quantity <= 20 + 10\n and p_size between 1 and 15\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n );","sequential_pipe",175);
+    X_250:void := querylog.define("explain select\n sum(l_extendedprice* (1 - l_discount)) as revenue\nfrom\n lineitem,\n part\nwhere\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#12\\'\n and p_container in (\\'SM CASE\\', \\'SM BOX\\', \\'SM PACK\\', \\'SM PKG\\')\n and l_quantity >= 1 and l_quantity <= 1 + 10\n and p_size between 1 and 5\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#23\\'\n and p_container in (\\'MED BAG\\', \\'MED BOX\\', \\'MED PKG\\', \\'MED PACK\\')\n and l_quantity >= 10 and l_quantity <= 10 + 10\n and p_size between 1 and 10\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#34\\'\n and p_container in (\\'LG CASE\\', \\'LG BOX\\', \\'LG PACK\\', \\'LG PKG\\')\n and l_quantity >= 20 and l_quantity <= 20 + 10\n and p_size between 1 and 15\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n );","sequential_pipe",172);
     X_41 := sql.mvc();
     C_42:bat[:oid] := sql.tid(X_41,"sys","part");
     X_45:bat[:str] := sql.bind(X_41,"sys","part","p_container",0);
@@ -141,18 +141,16 @@ function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sh
     X_148 := sql.delta(X_143,C_145,r1_183,X_147);
     X_149:bat[:int] := algebra.projectionpath(X_142,C_111,X_148);
     (X_150,r1_189) := algebra.subjoin(X_110,X_149,nil:BAT,nil:BAT,false,nil:lng);
-    X_260:bat[:oid] := algebra.projectionpath(r1_189,X_142);
-    X_154:bat[:str] := algebra.projectionpath(X_260,X_126);
-    X_155:bat[:str] := algebra.projectionpath(X_260,X_119);
-    X_261:bat[:oid] := algebra.projectionpath(X_150,X_103);
-    X_156:bat[:int] := algebra.projectionpath(X_261,X_68);
+    X_154:bat[:str] := algebra.projectionpath(r1_189,X_142,X_126);
+    X_155:bat[:str] := algebra.projectionpath(r1_189,X_142,X_119);
+    X_156:bat[:int] := algebra.projectionpath(X_150,X_103,X_68);
     X_157:bat[:lng] := sql.bind(X_41,"sys","lineitem","l_quantity",0);
     (C_159,r1_207) := sql.bind(X_41,"sys","lineitem","l_quantity",2);
     X_161:bat[:lng] := sql.bind(X_41,"sys","lineitem","l_quantity",1);
     X_162 := sql.delta(X_157,C_159,r1_207,X_161);
-    X_163:bat[:lng] := algebra.projectionpath(X_260,C_111,X_162);
-    X_168:bat[:str] := algebra.projectionpath(X_261,X_54);
-    X_169:bat[:str] := algebra.projectionpath(X_261,X_61);
+    X_163:bat[:lng] := algebra.projectionpath(r1_189,X_142,C_111,X_162);
+    X_168:bat[:str] := algebra.projectionpath(X_150,X_103,X_54);
+    X_169:bat[:str] := algebra.projectionpath(X_150,X_103,X_61);
     C_170 := algebra.subselect(X_169,A1,A1,true,false,false);
     C_171 := algebra.subselect(X_168,C_170,A2,A2,true,false,false);
     C_172 := algebra.subselect(X_168,C_170,A3,A3,true,false,false);
@@ -209,18 +207,17 @@ function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sh
     C_222 := algebra.subselect(X_154,X_221,A39,A39,true,false,false);
     X_223 := bat.mergecand(C_204,C_222);
     X_224 := bat.mergecand(C_186,X_223);
-    X_259:bat[:oid] := algebra.projectionpath(X_224,r1_189,X_142,C_111);
     X_225:bat[:lng] := sql.bind(X_41,"sys","lineitem","l_extendedprice",0);
     (C_227,r1_332) := sql.bind(X_41,"sys","lineitem","l_extendedprice",2);
     X_229:bat[:lng] := sql.bind(X_41,"sys","lineitem","l_extendedprice",1);
     X_230 := sql.delta(X_225,C_227,r1_332,X_229);
-    X_231:bat[:lng] := algebra.projectionpath(X_259,X_230);
+    X_231:bat[:lng] := algebra.projectionpath(X_224,r1_189,X_142,C_111,X_230);
     X_232 := calc.lng(A0,15,2);
     X_233:bat[:lng] := sql.bind(X_41,"sys","lineitem","l_discount",0);
     (C_235,r1_350) := sql.bind(X_41,"sys","lineitem","l_discount",2);
     X_237:bat[:lng] := sql.bind(X_41,"sys","lineitem","l_discount",1);
     X_238 := sql.delta(X_233,C_235,r1_350,X_237);
-    X_239:bat[:lng] := algebra.projectionpath(X_259,X_238);
+    X_239:bat[:lng] := algebra.projectionpath(X_224,r1_189,X_142,C_111,X_238);
     X_240:bat[:lng] := batcalc.-(X_232,X_239);
     X_241:bat[:hge] := batcalc.*(X_231,X_240);
     X_242:hge := aggr.sum(X_241);

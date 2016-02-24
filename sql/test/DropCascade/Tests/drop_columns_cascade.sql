@@ -49,7 +49,7 @@ select name from functions where name = 'f2';
 select name from triggers where name = 'test1';
 select name from idxs where name = 'id_index';
 select name from columns where name = 'id' and table_id in (select id from tables where name = 't1' or name = 't2');
-select name from keys where name not in ('files_pkey_file_id', 'sq_pkey_sn_file_id', 'sq_fkey_file_id', 'rg_pkey_id_file_id', 'rg_fkey_file_id', 'pg_pkey_id_file_id', 'pg_fkey_file_id');
+select name from keys where name not in ('files_pkey_file_id', 'sq_pkey_sn_file_id', 'sq_fkey_file_id', 'rg_pkey_id_file_id', 'rg_fkey_file_id', 'pg_pkey_id_file_id', 'pg_fkey_file_id', 'spatial_ref_sys_srid_pkey');
 
 
 --Just for debug

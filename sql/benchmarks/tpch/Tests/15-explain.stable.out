@@ -59,9 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 298 # length
+% 297 # length
 function user.s3_1():void;
-    X_147:void := querylog.define("explain select\n s_suppkey,\n s_name,\n s_address,\n s_phone,\n total_revenue\nfrom\n supplier,\n revenue0\nwhere\n s_suppkey = supplier_no\n and total_revenue = (\n select\n max(total_revenue)\n from\n revenue0\n )\norder by\n s_suppkey;","sequential_pipe",101);
+    X_147:void := querylog.define("explain select\n s_suppkey,\n s_name,\n s_address,\n s_phone,\n total_revenue\nfrom\n supplier,\n revenue0\nwhere\n s_suppkey = supplier_no\n and total_revenue = (\n select\n max(total_revenue)\n from\n revenue0\n )\norder by\n s_suppkey;","sequential_pipe",99);
     X_102 := bat.new(nil:oid,nil:str);
     X_110 := bat.append(X_102,"sys.supplier");
     X_118 := bat.append(X_110,"sys.supplier");

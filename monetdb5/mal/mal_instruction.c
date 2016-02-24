@@ -33,7 +33,7 @@ newSymbol(str nme, int kind)
 	cur->name = putName(nme, strlen(nme));
 	cur->kind = kind;
 	cur->peer = NULL;
-	cur->def = newMalBlk(MAXVARS, STMT_INCREMENT);
+	cur->def = newMalBlk(kind == FUNCTIONsymbol?MAXVARS : MAXARG, kind == FUNCTIONsymbol? STMT_INCREMENT : 1);
 	if ( cur->def == NULL){
 		GDKfree(cur);
 		return NULL;
@@ -971,9 +971,9 @@ renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 
 	if (v->name)
 		GDKfree(v->name);
-	nme= GDKmalloc(SMALLBUFSIZ);
+	nme= GDKmalloc(IDLENGTH);
 	if( nme) {
-		snprintf(nme,SMALLBUFSIZ,pattern,newid);
+		snprintf(nme,IDLENGTH,pattern,newid);
 		v->name = nme;
 		v->tmpindex = 0;
 	} else
@@ -1088,6 +1088,8 @@ clearVariable(MalBlkPtr mb, int varid)
 		return;
 	if (v->name)
 		GDKfree(v->name);
+	if (v->stc)
+		GDKfree(v->stc);
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->name = 0;
@@ -1096,6 +1098,7 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->tmpindex = 0;
 	v->rowcnt = 0;
 	v->eolife = 0;
+	v->stc = 0;
 }
 
 void

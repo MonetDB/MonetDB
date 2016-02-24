@@ -1,0 +1,43 @@
+stdout of test 'makeEnvelope` in directory 'geom/sql/functions` itself:
+
+
+# 10:52:19 >  
+# 10:52:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 10:52:19 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:52:19 >  
+# 10:52:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
+# 10:52:19 >  
+
+#select ST_MakeEnvelope(10, 10, 11, 11);
+% .L # table_name
+% st_makeenvelope_single_value # name
+% geometry # type
+% 0 # length
+[ "POLYGON ((10 10, 10 11, 11 11, 11 10, 10 10))"	]
+#select ST_MakeEnvelope(10, 11, 12, 13, 4326);
+% .L # table_name
+% st_makeenvelope_single_value # name
+% geometry # type
+% 0 # length
+[ "POLYGON ((10 11, 10 13, 12 13, 12 11, 10 11))"	]
+
+# 10:52:20 >  
+# 10:52:20 >  "Done."
+# 10:52:20 >  
+

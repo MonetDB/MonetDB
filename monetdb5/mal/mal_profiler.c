@@ -20,6 +20,7 @@
 #include "mal_profiler.h"
 #include "mal_runtime.h"
 #include "mal_debugger.h"
+#include "mal_resource.h"
 
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -107,6 +108,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	str stmt, c;
 	char *tbuf;
 	str stmtq;
+	lng usec= GDKusec();
 
 
 	if( start) // show when instruction was started
@@ -133,7 +135,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
 	if( usrname)
 		logadd("\"user\":\"%s\",%s",usrname, prettify);
-	logadd("\"clk\":"LLFMT",%s",GDKusec(),prettify);
+	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":\"%s.%06ld\",%s", tbuf+11, (long)clock.tv_usec, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
@@ -242,38 +244,59 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
  * The eventparser may assume this layout for ease of parsing
 {
 ... as above ...
-"result":{"index":0,"name":"X_41","value":"0@0","count":1,"type": "void" }
+"result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
 ...
-"argument":{"index":4,"value":"30","type": "int" }
+"argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
 }
+This information can be used to determine memory footprint and variable life times.
  */
+#define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
+		if(mb)
 		for( j=0; j< pci->argc; j++){
 			int tpe = getVarType(mb, getArg(pci,j));
-			str tname = getTypeName(tpe), cv;
+			str tname = 0, cv;
+			lng total = 0;
+			BUN cnt = 0;
+			str kind;
+			str pret = ""; // or prettify
+			int p = getPC(mb,pci);
 
 			logadd("\"%s\":{", j< pci->retc?"result":"argument");
-			logadd("\"index\":\"%d\",", j);
+			logadd("\"clk\":"LLFMT",%s",usec,pret);
+			logadd("\"pc\":%d,%s", p, pret);
+			logadd("\"index\":\"%d\",%s", j,pret);
 			if( !isVarConstant(mb, getArg(pci,j))){
-				logadd("\"name\":\"%s\",", getVarName(mb, getArg(pci,j)));
+				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 			}
 			if( isaBatType(tpe) ){
-				BAT *d= BBPquickdesc(abs(stk->stk[getArg(pci,j)].val.ival),TRUE);
-				if( d)
-					logadd("\"count\":" BUNFMT",", BATcount(d));
-				GDKfree(tname);
+				BAT *d= BATdescriptor(abs(stk->stk[getArg(pci,j)].val.ival));
 				tname = getTypeName(getColumnType(tpe));
-				logadd("\"type\":\"col[:%s]\"", tname);
+				logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
+				if( d) {
+					cnt = BATcount(d);
+					total += heapinfo(&d->T->heap);
+					if ( d->T->vheap && d->T->vheap->parentid ){
+						total += heapinfo(d->T->vheap); 
+					}
+					kind =  d->batPersistence? "persistent":"transient";
+					BBPunfix(d->batCacheid);
+				} 
+				logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
+				logadd("\"kind\":\"%s\",%s",kind,pret);
+				logadd("\"footprint\":" LLFMT",%s", total,pret);
 			} else{
+				tname = getTypeName(tpe);
+				logadd("\"type\":\"%s\",%s", tname,pret);
 				cv = 0;
 				VALformat(&cv, &stk->stk[getArg(pci,j)]);
 				stmtq = mal_quote(cv, strlen(cv));
-				logadd("\"value\":\"%s\",", stmtq);
-				logadd("\"type\":\"%s\"", tname);
+				logadd("\"value\":\"%s\",%s", stmtq,pret);
 				GDKfree(cv);
 				GDKfree(stmtq);
 			}
+			logadd("\"eol\":%d%s", p == getEndOfLife(mb,getArg(pci,j)) , pret);
 			GDKfree(tname);
 			logadd("}%s%s", (j< pci->argc-1?",":""), prettify);
 		}

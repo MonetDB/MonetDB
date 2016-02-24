@@ -1,0 +1,67 @@
+stdout of test 'ST_IsValid` in directory 'geom/sql/functions` itself:
+
+
+# 15:17:46 >  
+# 15:17:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39488" "--set" "mapi_usock=/var/tmp/mtest-8421/.s.monetdb.39488" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:17:46 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39488/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8421/.s.monetdb.39488
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:17:46 >  
+# 15:17:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8421" "--port=39488"
+# 15:17:46 >  
+
+#create table geo (g geometry(multipoint, 4326));
+#insert into geo values (st_mpointfromtext('MULTIPOINT(10 10, 20 20, 30 30)', 4326));
+[ 1	]
+#insert into geo values (st_mpointfromtext('MULTIPOINT(10 10, 20 20, 10 10)', 4326));
+[ 1	]
+#select st_isvalid(g) from geo;
+% sys.L # table_name
+% st_isvalid_g # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+#drop table geo;
+#select ST_IsValid(ST_GeomFromText('POLYGON((0 0, 1 1, 1 2, 1 1, 0 0))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT geom AS "GEOMETRY" FROM geometries WHERE ST_IsValid(geom);
+% sys.L # table_name
+% GEOMETRY # name
+% geometry # type
+% 0 # length
+[ "POINT (10 20)"	]
+[ "LINESTRING (10 20, 30 40, 50 60)"	]
+[ "LINESTRING (10 20, 30 40, 50 60, 80 60, 60 40, 10 20)"	]
+[ "LINESTRING (10 10, 50 50, 30 80, 25 5)"	]
+[ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))"	]
+[ "MULTIPOINT (10 20, 30 40)"	]
+[ "MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))"	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))"	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))"	]
+[ "MULTIPOLYGON EMPTY"	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))"	]
+[ "GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40, 10 20), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))"	]
+
+# 15:17:47 >  
+# 15:17:47 >  "Done."
+# 15:17:47 >  
+

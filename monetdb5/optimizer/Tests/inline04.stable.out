@@ -24,37 +24,31 @@ stdout of test 'inline04` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:any,b:any);
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],b:bat[:oid,:int]);
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"foo":str,b:bat[:oid,:int],2:int);
 
 # 15:49:03 >  
 # 15:49:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29846" "--port=34870"
 # 15:49:03 >  
 
-inline function user.qry():void;        	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] CMDbatADDsignal 14 <- 1 1 
-    X_15:int := 1:int;                  	#[4]  15 <- 5 
-barrier X_16:bit := true:bit;           	#[5]  16 <- 17 
-    X_14:bat[:int] := batcalc.*(X_14:bat[:int],X_14:bat[:int]);	#[6] CMDbatMULsignal 14 <- 14 14 
-    X_15:int := calc.+(X_15:int,1:int); 	#[7] CMDvarADDsignal 15 <- 15 5 
-    redo X_16:bit := calc.<(X_15:int,3:int);	#[8] CMDvarLT 16 <- 15 18 
-exit X_16:bit;                          	#[9]  16 
-    z:bat[:int] := X_14:bat[:int];      	#[10]  6 <- 14 
-    X_22:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[11] CMDbatADDsignal 22 <- 1 10 
-    X_23:int := 1:int;                  	#[12]  23 <- 5 
-barrier X_24:bit := true:bit;           	#[13]  24 <- 17 
-    X_22:bat[:int] := batcalc.*(X_22:bat[:int],X_22:bat[:int]);	#[14] CMDbatMULsignal 22 <- 22 22 
-    X_23:int := calc.+(X_23:int,1:int); 	#[15] CMDvarADDsignal 23 <- 23 5 
-    redo X_24:bit := calc.<(X_23:int,3:int);	#[16] CMDvarLT 24 <- 23 18 
-exit X_24:bit;                          	#[17]  24 
-    z:bat[:int] := X_22:bat[:int];      	#[18]  6 <- 22 
-end user.qry;                           	#[19]  
+function user.qry():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
+    X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] (0) CMDbatADDsignal 14 <- 1 1 
+    X_15:int := 1:int;                  	#[4] (0)  15 <- 5 
+barrier X_16:bit := true:bit;           	#[5] (0)  16 <- 17 
+    X_14:bat[:int] := batcalc.*(X_14:bat[:int],X_14:bat[:int]);	#[6] (0) CMDbatMULsignal 14 <- 14 14 
+    X_15:int := calc.+(X_15:int,1:int); 	#[7] (0) CMDvarADDsignal 15 <- 15 5 
+    redo X_16:bit := calc.<(X_15:int,3:int);	#[8] (0) CMDvarLT 16 <- 15 18 
+exit X_16:bit;                          	#[9] (0)  16 
+    z:bat[:int] := X_14:bat[:int];      	#[10] (0)  6 <- 14 
+    X_22:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[11] (0) CMDbatADDsignal 22 <- 1 10 
+    X_23:int := 1:int;                  	#[12] (0)  23 <- 5 
+barrier X_24:bit := true:bit;           	#[13] (0)  24 <- 17 
+    X_22:bat[:int] := batcalc.*(X_22:bat[:int],X_22:bat[:int]);	#[14] (0) CMDbatMULsignal 22 <- 22 22 
+    X_23:int := calc.+(X_23:int,1:int); 	#[15] (0) CMDvarADDsignal 23 <- 23 5 
+    redo X_24:bit := calc.<(X_23:int,3:int);	#[16] (0) CMDvarLT 24 <- 23 18 
+exit X_24:bit;                          	#[17] (0)  24 
+    z:bat[:int] := X_22:bat[:int];      	#[18] (0)  6 <- 22 
+end user.qry;                           	#[19] (0)  
 
 # 18:00:43 >  
 # 18:00:43 >  Done.

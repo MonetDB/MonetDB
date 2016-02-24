@@ -1,0 +1,55 @@
+stdout of test 'delaunaytriangles` in directory 'geom/sql/pg_regression` itself:
+
+
+# 11:45:10 >  
+# 11:45:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37553" "--set" "mapi_usock=/var/tmp/mtest-4255/.s.monetdb.37553" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_pg_regression" "--set" "mal_listing=0"
+# 11:45:10 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_pg_regression', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:37553/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4255/.s.monetdb.37553
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:45:10 >  
+# 11:45:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4255" "--port=37553"
+# 11:45:10 >  
+
+#SELECT 1,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9)'), 0.0, 0));
+% .L1,	.L1 # table_name
+% L1,	st_wkttosql_single_value # name
+% tinyint,	clob # type
+% 1,	53 # length
+[ 1,	"\"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 7 9, 5 5)))\""	]
+#SELECT 2,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 0.0, 0));
+% .L1,	.L1 # table_name
+% L1,	st_wkttosql_single_value # name
+% tinyint,	clob # type
+% 1,	85 # length
+[ 2,	"\"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 8 9, 5 5)), POLYGON ((5 5, 8 9, 7 9, 5 5)))\""	]
+#SELECT 3,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 2.0, 0));
+% .L1,	.L1 # table_name
+% L1,	st_wkttosql_single_value # name
+% tinyint,	clob # type
+% 1,	53 # length
+[ 3,	"\"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 7 9, 5 5)))\""	]
+#SELECT 4,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 2.0, 1));
+% .L1,	.L1 # table_name
+% L1,	st_wkttosql_single_value # name
+% tinyint,	clob # type
+% 1,	54 # length
+[ 4,	"\"MULTILINESTRING ((5 5, 7 9), (5 5, 6 0), (6 0, 7 9))\""	]
+
+# 11:45:10 >  
+# 11:45:10 >  "Done."
+# 11:45:10 >  
+
