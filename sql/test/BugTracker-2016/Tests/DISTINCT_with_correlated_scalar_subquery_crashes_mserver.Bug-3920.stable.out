@@ -65,20 +65,89 @@ Ready.
 # 15:33:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3784" "--port=32053"
 # 15:33:15 >  
 
-#CREATE TABLE sys."functions_cpy" AS SELECT * FROM sys.functions WHERE name LIKE 's%' AND schema_id IN (2000, 0) WITH DATA;
+#SET SCHEMA "sys";
+#CREATE TABLE "sys"."functions_cpy" (
+#	"id"          INTEGER,
+#	"name"        VARCHAR(256),
+#	"func"        VARCHAR(8196),
+#	"mod"         VARCHAR(8196),
+#	"language"    INTEGER,
+#	"type"        INTEGER,
+#	"side_effect" BOOLEAN,
+#	"varres"      BOOLEAN,
+#	"vararg"      BOOLEAN,
+#	"schema_id"   INTEGER
+#);
+#COPY 1167 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|','\n','"';
+#83|"sql_min"|"min"|"calc"|0|1|false|false|false|0
+#84|"sql_max"|"max"|"calc"|0|1|false|false|false|0
+#139|"sql_mul"|"*"|"calc"|0|1|false|false|false|0
+#140|"sql_div"|"/"|"calc"|0|1|false|false|false|0
+#141|"sql_mul"|"*"|"calc"|0|1|false|false|false|0
+#142|"sql_div"|"/"|"calc"|0|1|false|false|false|0
+#143|"sql_mul"|"*"|"calc"|0|1|false|false|false|0
+#144|"sql_div"|"/"|"calc"|0|1|false|false|false|0
+#145|"sql_mul"|"*"|"calc"|0|1|false|false|false|0
+[ 1167	]
+#CREATE TABLE "sys"."args_cpy" (
+#	"id"      INTEGER,
+#	"func_id" INTEGER,
+#	"number"  INTEGER
+#);
+#COPY 3416 RECORDS INTO "sys"."args_cpy" FROM stdin USING DELIMITERS '|','\n','"';
+#2286|83|0
+#2287|83|1
+#2288|83|2
+#2289|84|0
+#2290|84|1
+#2291|84|2
+#2366|139|0
+#2367|139|1
+#2368|139|2
+#2369|140|0
+#2370|140|1
+#2371|140|2
+#2372|141|0
+#2373|141|1
+#2374|141|2
+#2375|142|0
+#2376|142|1
+#2377|142|2
+#2378|143|0
+#2379|143|1
+#2380|143|2
+#2381|144|0
+#2382|144|1
+#2383|144|2
+#2384|145|0
+#2385|145|1
+#2386|145|2
+#2387|146|0
+#2388|146|1
+#2389|146|2
+#2390|147|0
+#2391|147|1
+#2392|147|2
+#2393|148|0
+#2394|148|1
+#2395|148|2
+#2396|149|0
+#2397|149|1
+#2398|149|2
+#2399|150|0
+[ 3416	]
 #SELECT COUNT(*) FROM sys."functions_cpy";
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
-% 3 # length
-[ 908	]
-#CREATE TABLE sys."args_cpy" AS SELECT id, func_id, number FROM sys.args WHERE func_id IN (SELECT id FROM sys.functions_cpy) WITH DATA;
+% 4 # length
+[ 1167	]
 #SELECT COUNT(*) FROM sys."args_cpy";
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
 % 4 # length
-[ 2645	]
+[ 3416	]
 #SELECT "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 #, CAST((SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 #, CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
