@@ -2,3 +2,4 @@ LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908
 incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserver.Bug-3909
 copy_into_with_header.Bug-3910
 column_name_conflict.Bug-3912
+prepare-utf8.Bug-3930

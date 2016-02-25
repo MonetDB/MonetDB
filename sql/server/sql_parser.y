@@ -57,6 +57,40 @@
 #define MAX_HEX_DIGITS 16
 #endif
 
+static inline int
+UTF8_strlen(const char *val)
+{
+	const unsigned char *s = (const unsigned char *) val;
+	int pos = 0;
+
+	while (*s) {
+		int c = *s++;
+
+		pos++;
+		if (c < 0xC0)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xE0)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xF0)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xF8)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xFC)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+	}
+	return pos;
+}
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -728,7 +762,7 @@ set_statement:
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
-	        sql_find_subtype(&t, "char", _strlen($4), 0 );
+	        sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
@@ -736,7 +770,7 @@ set_statement:
   |	set SCHEMA ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", _strlen($3), 0 );
+		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
 		append_string(l, sa_strdup(SA, "current_schema"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
@@ -744,7 +778,7 @@ set_statement:
   |	set user '=' ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", _strlen($4), 0 );
+		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
@@ -752,7 +786,7 @@ set_statement:
   |	set ROLE ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", _strlen($3), 0);
+		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
 		append_string(l, sa_strdup(SA, "current_role"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
@@ -4143,7 +4177,7 @@ user:
 
 literal:
     string 	{ char *s = sql2str($1);
-		  int len = _strlen(s);
+		  int len = UTF8_strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
