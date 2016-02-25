@@ -455,7 +455,7 @@ quoteIfNeeded <- function(conn, x, warn=T, ...) {
 }
 
 setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character", value="data.frame"), def=function(conn, name, value, overwrite=FALSE, 
-  append=FALSE, csvdump=FALSE, transaction=TRUE,...) {
+  append=FALSE, csvdump=FALSE, transaction=TRUE, temporary=FALSE, ...) {
   if (is.character(value)) {
     message("Treating character vector parameter as file name(s) for monetdb.read.csv()")
     monetdb.read.csv(conn=conn, files=value, tablename=name, create=!append, ...)
@@ -483,10 +483,15 @@ setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character"
       to remove the existing table. Set append=TRUE if you would like to add the new data to the 
       existing table.")
   }
+  
   if (!dbExistsTable(conn, qname)) {
     fts <- sapply(value, dbDataType, dbObj=conn)
     fdef <- paste(quoteIfNeeded(conn, names(value)), fts, collapse=', ')
-    ct <- paste("CREATE TABLE ", qname, " (", fdef, ")", sep= '')
+    if (TEMPORARY) {
+      ct <- paste0("CREATE TEMPORARY TABLE ", qname, " (", fdef, ") ON COMMIT PRESERVE ROWS")
+    } else {
+      ct <- paste0("CREATE TABLE ", qname, " (", fdef, ")")
+    }
     dbSendUpdate(conn, ct)
   }
   if (length(value[[1]])) {
@@ -861,11 +866,20 @@ setMethod("dbColumnInfo", "MonetDBEmbeddedResult", def = function(res, ...) {
 }, 
 valueClass = "data.frame")
 
+setMethod("dbGetStatement", "MonetDBResult", def = function(res, ...) {
+  res@env$query
+}, 
+valueClass = "character")
 
-setMethod("dbGetInfo", "MonetDBResult", def=function(dbObj, ...) {
-  return(list(statement=dbObj@env$query, rows.affected=0, row.count=dbObj@env$info$rows, 
-              has.completed=dbHasCompleted(dbObj), is.select=TRUE))	
-}, valueClass="list")
+setMethod("dbGetRowCount", "MonetDBResult", def = function(res, ...) {
+  res@env$info$rows
+}, 
+valueClass = "numeric")
+
+setMethod("dbGetRowsAffected", "MonetDBResult", def = function(res, ...) {
+  as.numeric(NA)
+}, 
+valueClass = "numeric")
 
 # adapted from RMonetDB, no java-specific things in here...
 monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, header=TRUE, 
