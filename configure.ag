@@ -202,6 +202,22 @@ no-auto)
 	;;
 esac
 
+dft_shp=auto
+AC_ARG_ENABLE(shp,
+	AS_HELP_STRING([--enable-shp],
+		[enable support for ESRI Shapefiles (default=auto)]),
+	have_shp=$enableval,
+	have_shp=$dft_shp)
+case "$enable_geom-$have_shp" in
+no-yes)
+	AC_MSG_ERROR([ESRI Shapefile vault requires the geom module])
+	;;
+no-auto)
+	have_shp=no
+	disable_shp="(ESRI Shapefile vault requires the geom module)"
+	;;
+esac
+
 dft_microhttpd=no
 AC_ARG_ENABLE(microhttpd,
 	AS_HELP_STRING([--enable-microhttpd],
@@ -2742,16 +2758,16 @@ AM_CONDITIONAL(HAVE_GDAL, test x"$have_gdal" != xno)
 
 # if shp is enabled and gdal was not found abort
 if test "x$have_gdal" = xno; then
-	if test "x$enable_shp" = xyes; then
-		AC_MSG_ERROR([gdal library required for ESRI shape file module])
+	if test "x$have_shp" = xyes; then
+		AC_MSG_ERROR([gdal library required for ESRI Shapefile vault])
 	fi
 	# no gdal, so don't compile shp
-	enable_shp=no
+	have_shp=no
 	if test "x$disable_shp" = x; then
-		disable_shp=${why_have_shp:-"(gdal library required for shape file module)"}
+		disable_shp=${why_have_shp:-"(gdal library required for ESRI Shapefile vault)"}
 	fi
 fi
-AM_CONDITIONAL(HAVE_SHP, test x"$enable_shp" != xno)
+AM_CONDITIONAL(HAVE_SHP, test x"$have_shp" != xno )
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
