@@ -247,16 +247,16 @@ static str transformMultiGeometry(GEOSGeometry** transformedGeometry, const GEOS
 		subGeometryType = GEOSGeomTypeId(multiGeometry)+1;
 
 		switch(subGeometryType) {
-		case wkbPoint:
+		case wkbPoint_mdb:
 			ret = transformPoint(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
 			break;
-		case wkbLineString:
+		case wkbLineString_mdb:
 			ret = transformLineString(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
 			break;
-		case wkbLinearRing:
+		case wkbLinearRing_mdb:
 			ret = transformLinearRing(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
 			break;
-		case wkbPolygon:
+		case wkbPolygon_mdb:
 			ret = transformPolygon(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst, srid);
 			break;
 		default:
@@ -363,21 +363,21 @@ str wkbTransform(wkb** transformedWKB, wkb** geomWKB, int* srid_src, int* srid_d
 	geometryType = GEOSGeomTypeId(geosGeometry)+1;
 
 	switch(geometryType) {
-	case wkbPoint:
+	case wkbPoint_mdb:
 		ret = transformPoint(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
 		break;
-	case wkbLineString:
+	case wkbLineString_mdb:
 		ret = transformLineString(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
 		break;
-	case wkbLinearRing:
+	case wkbLinearRing_mdb:
 		ret = transformLinearRing(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst);
 		break;
-	case wkbPolygon:
+	case wkbPolygon_mdb:
 		ret = transformPolygon(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid_dst);
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
 		ret = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, proj4_src, proj4_dst, *srid_dst, geometryType);
 		break;
 	default:
@@ -607,32 +607,32 @@ static str forceDimGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geos
 
 	//check the type of the geometry
 	switch(geometryType) {
-	case wkbPoint:
+	case wkbPoint_mdb:
 		if((err = forceDimPoint(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.ForceDim", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbLineString:
-	case wkbLinearRing:
+	case wkbLineString_mdb:
+	case wkbLinearRing_mdb:
 		if((err = forceDimLineString(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.ForceDim", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbPolygon:
+	case wkbPolygon_mdb:
 		if((err = forceDimPolygon(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.ForceDim", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
-	case wkbGeometryCollection:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
+	case wkbGeometryCollection_mdb:
 		if((err = forceDimMultiGeometry(outGeometry, geosGeometry, dim)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.ForceDim", "%s",err);
 			GDKfree(err);
@@ -940,32 +940,32 @@ static str segmentizeGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* ge
 
 	//check the type of the geometry
 	switch(geometryType) {
-	case wkbPoint:
+	case wkbPoint_mdb:
 		if((err = segmentizePoint(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Segmentize", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbLineString:
-	case wkbLinearRing:
+	case wkbLineString_mdb:
+	case wkbLinearRing_mdb:
 		if((err = segmentizeLineString(outGeometry, geosGeometry, sz, 0)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Segmentize", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbPolygon:
+	case wkbPolygon_mdb:
 		if((err = segmentizePolygon(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Segmentize", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
-	case wkbGeometryCollection:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
+	case wkbGeometryCollection_mdb:
 		if((err = segmentizeMultiGeometry(outGeometry, geosGeometry, sz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Segmentize", "%s",err);
 			GDKfree(err);
@@ -1228,32 +1228,32 @@ static str translateGeometry(GEOSGeometry** outGeometry, const GEOSGeometry* geo
 
 	//check the type of the geometry
 	switch(geometryType) {
-	case wkbPoint:
+	case wkbPoint_mdb:
 		if((err = translatePoint(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Translate", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbLineString:
-	case wkbLinearRing:
+	case wkbLineString_mdb:
+	case wkbLinearRing_mdb:
 		if((err = translateLineString(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Translate", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbPolygon:
+	case wkbPolygon_mdb:
 		if((err = translatePolygon(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Translate", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
-	case wkbGeometryCollection:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
+	case wkbGeometryCollection_mdb:
 		if((err = translateMultiGeometry(outGeometry, geosGeometry, dx, dy, dz)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Translate", "%s",err);
 			GDKfree(err);
@@ -1429,10 +1429,10 @@ static str dumpGeometriesGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* 
 
 	//check the type of the geometry
 	switch(geometryType) {
-	case wkbPoint:
-	case wkbLineString:
-	case wkbLinearRing:
-	case wkbPolygon:
+	case wkbPoint_mdb:
+	case wkbLineString_mdb:
+	case wkbLinearRing_mdb:
+	case wkbPolygon_mdb:
 		//Single Geometry
 		if((err = dumpGeometriesSingle(idBAT, geomBAT, geosGeometry, &lvl, path)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.Dump", "%s",err);
@@ -1440,10 +1440,10 @@ static str dumpGeometriesGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* 
 			return msg;
 		}
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
-	case wkbGeometryCollection:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
+	case wkbGeometryCollection_mdb:
 		//Multi Geometry
 		//check if the geometry was empty
 		if(GEOSisEmpty(geosGeometry) == 1) {
@@ -1695,32 +1695,32 @@ static str dumpPointsGeometry(BAT* idBAT, BAT* geomBAT, const GEOSGeometry* geos
 
 	//check the type of the geometry
 	switch(geometryType) {
-	case wkbPoint:
+	case wkbPoint_mdb:
 		if((err = dumpPointsPoint(idBAT, geomBAT, geosGeometry, &lvl, path)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.DumpPoints", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbLineString:
-	case wkbLinearRing:
+	case wkbLineString_mdb:
+	case wkbLinearRing_mdb:
 		if((err = dumpPointsLineString(idBAT, geomBAT, geosGeometry, path)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.DumpPoints", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbPolygon:
+	case wkbPolygon_mdb:
 		if((err = dumpPointsPolygon(idBAT, geomBAT, geosGeometry, &lvl, path)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.DumpPoints", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
-	case  wkbGeometryCollection:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
+	case  wkbGeometryCollection_mdb:
 		if((err = dumpPointsMultiGeometry(idBAT, geomBAT, geosGeometry, path)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.DumpPoints", "%s",err);
 			GDKfree(err);
@@ -2057,7 +2057,7 @@ mbr* mbrFromGeos(const GEOSGeom geosGeometry) {
 		return geomMBR;
 	}
 
-	if ((GEOSGeomTypeId(envelope)+1) == wkbPoint) {
+	if ((GEOSGeomTypeId(envelope)+1) == wkbPoint_mdb) {
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 		const GEOSCoordSequence *coords = GEOSGeom_getCoordSeq(envelope);
 #else
@@ -2258,7 +2258,7 @@ str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe) {
 		return MAL_SUCCEED;
 	}
 	if (wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid) &&
-	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection || ((te = ((*((*geomWKB)->data + 1) & 0x0f)))+(*tpe>2)) == *tpe)) {
+	    (wkb_isnil(*geomWKB) || *tpe==0 || *tpe == wkbGeometryCollection_mdb || ((te = ((*((*geomWKB)->data + 1) & 0x0f)))+(*tpe>2)) == *tpe)) {
 		return MAL_SUCCEED;
 	}
 
@@ -2338,7 +2338,7 @@ str wkbAsText(char **txt, wkb **geomWKB, int* withSRID) {
 	throw(MAL, "geom.wkbAsText", "Failed to create Text from Well Known Format");
 }
 str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag) {
-	int itemsNum =0, i, type=wkbMultiLineString;
+	int itemsNum =0, i, type=wkbMultiLineString_mdb;
 	str ret = MAL_SUCCEED;
 	wkb* inputWKB = NULL;
 
@@ -2673,7 +2673,7 @@ str wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum) {
 		throw(MAL, "geom.wkbGetCoordinate", "wkb2geos failed");
 	}
 
-	if((GEOSGeomTypeId(geosGeometry)+1) != wkbPoint) {
+	if((GEOSGeomTypeId(geosGeometry)+1) != wkbPoint_mdb) {
 		str err;
 		char *geomSTR;
 		if((err = wkbAsText(&geomSTR, geom, NULL)) != MAL_SUCCEED) {
@@ -2779,7 +2779,7 @@ str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid) {
 	externalGeometry = wkb2geos(*external);
 
 	//check the type of the external geometry
-	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLineString) {
+	if ((GEOSGeomTypeId(externalGeometry)+1) != wkbLineString_mdb) {
 		*out = NULL;
 		GEOSGeom_destroy(externalGeometry);
 		throw(MAL, "geom.Polygon", "Geometries should be LineString");
@@ -2852,13 +2852,13 @@ str wkbMakeLine(wkb** out, wkb** geom1WKB, wkb** geom2WKB) {
 	}
 
 	//check the types of the geometries
-	if ((GEOSGeomTypeId(geom1Geometry)+1) != wkbPoint && (GEOSGeomTypeId(geom1Geometry)+1) != wkbLineString) {
+	if ((GEOSGeomTypeId(geom1Geometry)+1) != wkbPoint_mdb && (GEOSGeomTypeId(geom1Geometry)+1) != wkbLineString_mdb) {
 		*out = NULL;
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
 		return createException(MAL, "geom.MakeLine", "Geometries should be Point or LineString");
 	}
-	if ((GEOSGeomTypeId(geom2Geometry)+1) != wkbPoint && (GEOSGeomTypeId(geom2Geometry)+1) != wkbLineString) {
+	if ((GEOSGeomTypeId(geom2Geometry)+1) != wkbPoint_mdb && (GEOSGeomTypeId(geom2Geometry)+1) != wkbLineString_mdb) {
 		*out = NULL;
 		GEOSGeom_destroy(geom1Geometry);
 		GEOSGeom_destroy(geom2Geometry);
@@ -3138,26 +3138,26 @@ static str numPointsGeometry(unsigned int *out, const GEOSGeometry* geosGeometry
 
 	//check the type of the geometry
 	switch(geometryType) {
-	case wkbPoint:
-	case wkbLineString:
-	case wkbLinearRing:
+	case wkbPoint_mdb:
+	case wkbLineString_mdb:
+	case wkbLinearRing_mdb:
 		if((err = numPointsLineString(out, geosGeometry)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.NumPoints", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbPolygon:
+	case wkbPolygon_mdb:
 		if((err = numPointsPolygon(out, geosGeometry)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.NumPoints", "%s",err);
 			GDKfree(err);
 			return msg;
 		}
 		break;
-	case wkbMultiPoint:
-	case wkbMultiLineString:
-	case wkbMultiPolygon:
-	case  wkbGeometryCollection:
+	case wkbMultiPoint_mdb:
+	case wkbMultiLineString_mdb:
+	case wkbMultiPolygon_mdb:
+	case  wkbGeometryCollection_mdb:
 		if((err = numPointsMultiGeometry(out, geosGeometry)) != MAL_SUCCEED){
 			str msg = createException(MAL, "geom.NumPoints", "%s",err);
 			GDKfree(err);
@@ -3187,7 +3187,7 @@ str wkbNumPoints(int *out, wkb **geom, int *check) {
 
 	geometryType = GEOSGeomTypeId(geosGeometry)+1;
 
-	if (*check && geometryType != wkbLineString) {
+	if (*check && geometryType != wkbLineString_mdb) {
 		*out = int_nil;
 		GEOSGeom_destroy(geosGeometry);
 
@@ -3296,7 +3296,7 @@ str wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int* ringNum) {
 		throw(MAL, "geom.interiorRingN", "wkb2geos failed");
 	}
 
-	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon) {
+	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon_mdb) {
 		*interiorRingWKB = NULL;
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.interiorRingN", "Geometry not a Polygon");
@@ -3345,7 +3345,7 @@ str wkbInteriorRings(wkba** geomArray, wkb** geomWKB) {
 		throw(MAL, "geom.InteriorRings", "Error in wkb2geos");
 	}
 
-	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon) {
+	if ((GEOSGeomTypeId(geosGeometry)+1) != wkbPolygon_mdb) {
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.interiorRings", "Geometry not a Polygon");
 
@@ -3408,10 +3408,10 @@ str wkbNumRings(int* out, wkb** geom, int* exteriorRing) {
 	if(!geosGeometry)
 		throw(MAL, "geom.wkbNumRings", "Problem converting WKB to GEOS");
 
-	if(GEOSGeomTypeId(geosGeometry)+1 == wkbMultiPolygon) {
+	if(GEOSGeomTypeId(geosGeometry)+1 == wkbMultiPolygon_mdb) {
 		//use the first polygon as done by PostGIS
 		ret = wkbBasicInt(out, geos2wkb(GEOSGetGeometryN(geosGeometry, 0)), GEOSGetNumInteriorRings, "geom.NumRngs");
-	} else if(GEOSGeomTypeId(geosGeometry)+1 == wkbPolygon) {
+	} else if(GEOSGeomTypeId(geosGeometry)+1 == wkbPolygon_mdb) {
 		ret = wkbBasicInt(out, *geom, GEOSGetNumInteriorRings, "geom.NumRings");
 	} else {
 		//It is not a polygon so the nu,ber of rings is 0
@@ -3460,21 +3460,21 @@ static str geosIsClosed(bit *out, const GEOSGeometry *geosGeometry) {
 	switch(geometryType) {
 	case -1:
 		throw(MAL, "geom.IsClosed", "GEOSGeomTypeId failed");
-	case wkbPoint:
-	case wkbPolygon:
-	case wkbMultiPoint:
-	case wkbMultiPolygon:
+	case wkbPoint_mdb:
+	case wkbPolygon_mdb:
+	case wkbMultiPoint_mdb:
+	case wkbMultiPolygon_mdb:
 		//In all these case it is always true
 		*out = 1;
 		break;
-	case wkbLineString:
+	case wkbLineString_mdb:
 		//check
 		if((i = GEOSisClosed(geosGeometry)) == 2)
 			throw(MAL, "geom.IsClosed", "GEOSisClosed failed");
 		*out = i;
 		break;
-	case wkbMultiLineString:
-	case wkbGeometryCollection:
+	case wkbMultiLineString_mdb:
+	case wkbGeometryCollection_mdb:
 		//check each one separately
 		geometriesNum = GEOSGetNumGeometries(geosGeometry);
 		if(geometriesNum < 0)
@@ -4311,14 +4311,14 @@ str wkbBox2D(mbr** box, wkb** point1, wkb** point2) {
 
 	//check input not point geometries
 	point1_geom = wkb2geos(*point1);
-	if((GEOSGeomTypeId(point1_geom)+1) != wkbPoint) {
+	if((GEOSGeomTypeId(point1_geom)+1) != wkbPoint_mdb) {
 		GEOSGeom_destroy(point1_geom);
 		*box = mbr_nil;
 		throw(MAL, "geom.MakeBox2D", "Geometries should be points");
 	}
 
 	point2_geom = wkb2geos(*point2);
-	if((GEOSGeomTypeId(point2_geom)+1) != wkbPoint) {
+	if((GEOSGeomTypeId(point2_geom)+1) != wkbPoint_mdb) {
 		GEOSGeom_destroy(point1_geom);
 		GEOSGeom_destroy(point2_geom);
 		*box = mbr_nil;

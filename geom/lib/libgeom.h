@@ -94,15 +94,15 @@ Type values:
 */
 
 typedef enum wkb_type {
-	//wkbGeometry = 0,
-	wkbPoint = 1,
-	wkbLineString = 2,
-	wkbLinearRing = 3,
-	wkbPolygon = 4,
-	wkbMultiPoint = 5,
-	wkbMultiLineString = 6,
-	wkbMultiPolygon = 7,
-	wkbGeometryCollection = 8
+	//wkbGeometry_mbd = 0,
+	wkbPoint_mdb = 1,
+	wkbLineString_mdb = 2,
+	wkbLinearRing_mdb = 3,
+	wkbPolygon_mdb = 4,
+	wkbMultiPoint_mdb = 5,
+	wkbMultiLineString_mdb = 6,
+	wkbMultiPolygon_mdb = 7,
+	wkbGeometryCollection_mdb = 8
 } wkb_type;
 
 libgeom_export const char *geom_type2str(int t, int flag);

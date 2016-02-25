@@ -130,21 +130,21 @@ const char* geom_type2str(int t, int flag){
 		switch (t) {
 		//case wkbGeometry:
 		//	return "GEOMETRY";
-		case wkbPoint:
+		case wkbPoint_mdb:
 			return "POINT";
-		case wkbLineString:
+		case wkbLineString_mdb:
 			return "LINESTRING";
-		case wkbLinearRing:
+		case wkbLinearRing_mdb:
 			return "LINEARRING";
-		case wkbPolygon:
+		case wkbPolygon_mdb:
 			return "POLYGON";
-		case wkbMultiPoint:
+		case wkbMultiPoint_mdb:
 			return "MULTIPOINT";
-		case wkbMultiLineString:
+		case wkbMultiLineString_mdb:
 			return "MULTILINESTRING";
-		case wkbMultiPolygon:
+		case wkbMultiPolygon_mdb:
 			return "MULTIPOLYGON";
-		case wkbGeometryCollection:
+		case wkbGeometryCollection_mdb:
 			return "GEOMETRYCOLLECTION";
 		} 
 	}
@@ -152,21 +152,21 @@ const char* geom_type2str(int t, int flag){
 		switch (t) {
 		//case wkbGeometry:
 		//	return "ST_Geometry";
-		case wkbPoint:
+		case wkbPoint_mdb:
 			return "ST_Point";
-		case wkbLineString:
+		case wkbLineString_mdb:
 			return "ST_LineString";
-		case wkbLinearRing:
+		case wkbLinearRing_mdb:
 			return "ST_LinearRing";
-		case wkbPolygon:
+		case wkbPolygon_mdb:
 			return "ST_Polygon";
-		case wkbMultiPoint:
+		case wkbMultiPoint_mdb:
 			return "ST_MultiPoint";
-		case wkbMultiLineString:
+		case wkbMultiLineString_mdb:
 			return "ST_MultiLinestring";
-		case wkbMultiPolygon:
+		case wkbMultiPolygon_mdb:
 			return "ST_MultiPolygon";
-		case wkbGeometryCollection:
+		case wkbGeometryCollection_mdb:
 			return "ST_GeometryCollection";
 		}
 	}
