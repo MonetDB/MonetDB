@@ -21,6 +21,8 @@ INCLUDES = ../ \
 	   ../../../../../common/stream \
 	   ../../../../../common/utils \
 	   ../../../../../gdk \
+	   ../../../../../geom/lib \
+	   ../../../../../geom/monetdb5 \
 	   $(READLINE_INCS) \
 	   $(GDAL_CFLAGS)
 

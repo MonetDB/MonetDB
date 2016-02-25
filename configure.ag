@@ -3582,6 +3582,7 @@ for comp in \
 	'curl         ' \
 	'fits         ' \
 	'getaddrinfo  ' \
+	'gdal         ' \
 	'gsl          ' \
 	'java         ' \
 	'java_control ' \
