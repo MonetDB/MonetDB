@@ -2839,13 +2839,14 @@ set_timezone(Mapi mid)
 
 	/* figure out our current timezone */
 #ifdef HAVE__GET_TIMEZONE
-	long tz; /* type long required by _get_timezone() */
-	int dst;
+	__time64_t ltime, lt, gt;
+	struct tm loctime;
 
-	_tzset();
-	_get_timezone(&tz);
-	_get_dstbias(&dst);
-	tzone = (int) (tz + dst);
+	_time64(&ltime);
+	_localtime64_s(&loctime, &ltime);
+	lt = _mktime64(&loctime);
+	gt = _mkgmtime64(&loctime);
+	tzone = (int) (lt - gt);
 #else
 	time_t t, lt, gt;
 	struct tm *tmp;
