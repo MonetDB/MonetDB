@@ -487,7 +487,7 @@ setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character"
   if (!dbExistsTable(conn, qname)) {
     fts <- sapply(value, dbDataType, dbObj=conn)
     fdef <- paste(quoteIfNeeded(conn, names(value)), fts, collapse=', ')
-    if (TEMPORARY) {
+    if (temporary) {
       ct <- paste0("CREATE TEMPORARY TABLE ", qname, " (", fdef, ") ON COMMIT PRESERVE ROWS")
     } else {
       ct <- paste0("CREATE TABLE ", qname, " (", fdef, ")")
