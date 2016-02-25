@@ -32,13 +32,13 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 		return ScalarString(mkCharCE(err, CE_UTF8));
 	}
 	if (output && output->nr_cols > 0) {
-		int i;
+		int i, ncols = output->nr_cols;
 		SEXP retlist, names, varvalue = R_NilValue;
-		retlist = PROTECT(allocVector(VECSXP, output->nr_cols));
-		names = PROTECT(NEW_STRING(output->nr_cols));
+		retlist = PROTECT(allocVector(VECSXP, ncols));
+		names = PROTECT(NEW_STRING(ncols));
 		SET_ATTR(retlist, install("__rows"),
 			Rf_ScalarReal(BATcount(BATdescriptor(output->cols[0].b))));
-		for (i = 0; i < output->nr_cols; i++) {
+		for (i = 0; i < ncols; i++) {
 			res_col col = output->cols[i];
 			BAT* b = BATdescriptor(col.b);
 			if (notreally) {
@@ -52,9 +52,10 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 			}
 			SET_VECTOR_ELT(retlist, i, varvalue);
 		}
+
 		monetdb_cleanup_result(R_ExternalPtrAddr(connsexp), output);
 		SET_NAMES(retlist, names);
-		UNPROTECT(output->nr_cols + 2);
+		UNPROTECT(ncols + 2);
 		return retlist;
 	}
 	return ScalarLogical(1);
