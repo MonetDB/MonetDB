@@ -59,9 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 598 # length
+% 555 # length
 function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
-    X_190:void := querylog.define("explain select\n\tp_brand,\n\tp_type,\n\tp_size,\n\tcount(distinct ps_suppkey) as supplier_cnt\nfrom\n\tpartsupp,\n\tpart\nwhere\n\tp_partkey = ps_partkey\n\tand p_brand <> \\'Brand#45\\'\n\tand p_type not like \\'MEDIUM POLISHED%\\'\n\tand p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n\tand ps_suppkey not in (\n\t\tselect\n\t\t\ts_suppkey\n\t\tfrom\n\t\t\tsupplier\n\t\twhere\n\t\t\ts_comment like \\'%Customer%Complaints%\\'\n\t)\ngroup by\n\tp_brand,\n\tp_type,\n\tp_size\norder by\n\tsupplier_cnt desc,\n\tp_brand,\n\tp_type,\n\tp_size;","sequential_pipe",118);
+    X_190:void := querylog.define("explain select\n p_brand,\n p_type,\n p_size,\n count(distinct ps_suppkey) as supplier_cnt\nfrom\n partsupp,\n part\nwhere\n p_partkey = ps_partkey\n and p_brand <> \\'Brand#45\\'\n and p_type not like \\'MEDIUM POLISHED%\\'\n and p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n and ps_suppkey not in (\n select\n s_suppkey\n from\n supplier\n where\n s_comment like \\'%Customer%Complaints%\\'\n )\ngroup by\n p_brand,\n p_type,\n p_size\norder by\n supplier_cnt desc,\n p_brand,\n p_type,\n p_size;","sequential_pipe",118);
     X_152 := bat.new(nil:oid,nil:str);
     X_160 := bat.append(X_152,"sys.part");
     X_168 := bat.append(X_160,"sys.part");

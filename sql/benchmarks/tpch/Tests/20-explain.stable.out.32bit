@@ -65,7 +65,7 @@ Ready.
 % clob # type
 % 618 # length
 function user.s2_1(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
-    X_211:void := querylog.define("explain select\n s_name,\n s_address\nfrom\n supplier,\n nation\nwhere\n s_suppkey in (\n select\n ps_suppkey\n from\n partsupp\n where\n ps_partkey in (\n select\n p_partkey\n from\n part\n where\n p_name like \\'forest%\\'\n )\n and ps_availqty > (\n select\n 0.5 * sum(l_quantity)\n from\n lineitem\n where\n l_partkey = ps_partkey\n and l_suppkey = ps_suppkey\n and l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n )\n )\n and s_nationkey = n_nationkey\n and n_name = \\'CANADA\\'\norder by\n s_name;","sequential_pipe",144);
+    X_211:void := querylog.define("explain select\n s_name,\n s_address\nfrom\n supplier,\n nation\nwhere\n s_suppkey in (\n select\n ps_suppkey\n from\n partsupp\n where\n ps_partkey in (\n select\n p_partkey\n from\n part\n where\n p_name like \\'forest%\\'\n )\n and ps_availqty > (\n select\n 0.5 * sum(l_quantity)\n from\n lineitem\n where\n l_partkey = ps_partkey\n and l_suppkey = ps_suppkey\n and l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n )\n )\n and s_nationkey = n_nationkey\n and n_name = \\'CANADA\\'\norder by\n s_name;","sequential_pipe",142);
     X_188 := bat.new(nil:oid,nil:str);
     X_196 := bat.append(X_188,"sys.supplier");
     X_204 := bat.append(X_196,"sys.supplier");
@@ -110,12 +110,11 @@ function user.s2_1(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
     X_51:bat[:int] := algebra.projectionpath(C_42,C_32,X_50);
     (X_52,r1_55) := algebra.subjoin(X_30,X_51,nil:BAT,nil:BAT,false,nil:lng);
     C_55 := algebra.subinter(X_31,X_52,nil:BAT,nil:BAT,false,nil:lng);
-    X_220:bat[:oid] := algebra.projection(C_55,C_22);
     X_56:bat[:wrd] := sql.bind_idxbat(X_7,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",0);
     (X_58,r1_61) := sql.bind_idxbat(X_7,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",2);
     X_60:bat[:wrd] := sql.bind_idxbat(X_7,"sys","partsupp","partsupp_ps_partkey_ps_suppkey_pkey",1);
     X_61 := sql.delta(X_56,X_58,r1_61,X_60);
-    X_62:bat[:wrd] := algebra.projection(X_220,X_61);
+    X_62:bat[:wrd] := algebra.projectionpath(C_55,C_22,X_61);
     C_63:bat[:oid] := sql.tid(X_7,"sys","lineitem");
     X_65:bat[:date] := sql.bind(X_7,"sys","lineitem","l_shipdate",0);
     (C_67,r1_71) := sql.bind(X_7,"sys","lineitem","l_shipdate",2);
@@ -147,7 +146,7 @@ function user.s2_1(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
     (C_102,r1_125) := sql.bind(X_7,"sys","partsupp","ps_suppkey",2);
     X_104:bat[:int] := sql.bind(X_7,"sys","partsupp","ps_suppkey",1);
     X_105 := sql.delta(X_100,C_102,r1_125,X_104);
-    X_106:bat[:int] := algebra.projection(X_220,X_105);
+    X_106:bat[:int] := algebra.projectionpath(C_55,C_22,X_105);
     X_107 := algebra.projection(X_99,X_106);
     X_108 := algebra.projection(C_98,r1_106);
     X_109 := algebra.projection(X_108,X_90);

@@ -79,10 +79,9 @@ stderr of test 'offset_limited_32bit.SF-2950579` in directory 'sql/test/BugTrack
 # 09:37:07 >  mclient -lsql -ftest -i -e --host=alf --port=33568 
 # 09:37:07 >  
 
-MAPI  = monetdb@maggie:35536
+MAPI  = monetdb@WIN2012:39044
 QUERY = SELECT * from tables OFFSET 2147483647; -- never finishes
-ERROR = !GDK reported error.
-        !CMDslice: argument out of range
+ERROR = !Illegal argument
 
 # 09:37:07 >  
 # 09:37:07 >  Done.
