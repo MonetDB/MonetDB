@@ -2,7 +2,7 @@
 	do {													\
 		tpe v; size_t j;									\
 		ctype *valptr = NULL;                               \
-		tpe* p = (tpe*) Tloc(bat,BUNfirst(bat));            \
+		tpe* p = (tpe*) Tloc(bat, BUNfirst(bat));           \
 		retsxp = PROTECT(newfun(BATcount(bat)));		    \
 		valptr = ptrfun(retsxp);                            \
 		if (bat->T->nonil && !bat->T->nil) {                \

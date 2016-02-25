@@ -52,10 +52,9 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 			}
 			SET_VECTOR_ELT(retlist, i, varvalue);
 		}
+		monetdb_cleanup_result(R_ExternalPtrAddr(connsexp), output);
 		SET_NAMES(retlist, names);
 		UNPROTECT(output->nr_cols + 2);
-
-		monetdb_cleanup_result(R_ExternalPtrAddr(connsexp), output);
 		return retlist;
 	}
 	return ScalarLogical(1);
