@@ -34,19 +34,19 @@ lib__shp = {
 	       $(GDAL_LIBS)
 }
 
-headers_lidarmal = {
+headers_shpmal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = shp.mal
 }
 
-headers_lidarsql = {
+headers_shpsql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 75_shp.sql
 }
 
-headers_lidarautoload = {
+headers_shpautoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 75_shp.mal
