@@ -4922,6 +4922,7 @@ int wkbTOSTR(char **geomWKT, int* len, wkb *geomWKB) {
 		//set the number of dimensions in the writer so that it can
 		//read correctly the geometry coordinates
 		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
+		GEOSWKTWriter_setTrim(WKT_wr, 1);
 		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
 		l = strlen(wkt);
 		assert(l < GDK_int_max);

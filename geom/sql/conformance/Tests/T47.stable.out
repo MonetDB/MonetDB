@@ -29,8 +29,8 @@ Ready.
 % sys.L # table_name
 % st_intersection_centerline # name
 % clob # type
-% 49 # length
-[ "\"POINT (52.0000000000000000 18.0000000000000000)\""	]
+% 15 # length
+[ "\"POINT (52 18)\""	]
 
 # 15:15:54 >  
 # 15:15:54 >  "Done."

@@ -2707,6 +2707,13 @@ no)
 	why_have_liblas="(lidar module is disabled)"
 	;;
 esac
+case "$enable_lidar" in
+no)	LIBLAS_RPM=without;;
+*)	LIBLAS_RPM=with;;
+esac
+# this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
+AC_SUBST(LIBLAS_RPM)
+
 AC_SUBST(LIBLAS_INCS)
 AC_SUBST(LIBLAS_LIBS)
 AC_MSG_CHECKING(['enable lidar: $enable_lidar'])

@@ -27,7 +27,7 @@ INCLUDES = ../ \
 lib__lidar = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = lidar.c
+	SOURCES = lidar.c lidar.h
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       $(LIBLAS_LIBS)
 }
@@ -49,5 +49,3 @@ headers_lidarautoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 75_lidar.mal
 }
-
-EXTRA_DIST = 75_lidar.mal  lidar.mal  75_lidar.sql  lidar.h

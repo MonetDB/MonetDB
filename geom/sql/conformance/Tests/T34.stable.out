@@ -29,8 +29,8 @@ Ready.
 % sys.L # table_name
 % st_centroid_shores # name
 % clob # type
-% 49 # length
-[ "\"POINT (25.0000000000000000 42.0000000000000000)\""	]
+% 15 # length
+[ "\"POINT (25 42)\""	]
 
 # 15:05:53 >  
 # 15:05:53 >  "Done."

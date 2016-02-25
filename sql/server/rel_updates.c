@@ -1312,7 +1312,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		for (n = headers->h; n; n = n->next) {
 			dnode *dn = n->data.lval->h;
 			char *cname = dn->data.sval;
-			sql_exp *e;
+			sql_exp *e, *ne;
 
 			if (!list_find_name(collist, cname)) 
 				continue;
@@ -1334,14 +1334,16 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 					return sql_error(sql, 02, "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
 				append(args, e);
 				append(args, exp_atom_clob(sql->sa, format));
-				e = exp_op(sql->sa, args, f);
-				append(nexps, e);
+				ne = exp_op(sql->sa, args, f);
+				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+				append(nexps, ne);
 			} else {
 				append(nexps, e);
 			}
 			m = m->next;
 		}
 		rel = rel_project(sql->sa, rel, nexps);
+		reorder = 0;
 	}
 	
 	if (!rel)

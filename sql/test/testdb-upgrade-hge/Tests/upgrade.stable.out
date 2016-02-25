@@ -83,6 +83,10 @@ returns table (
 )
 external name sql."storage";
 insert into sys.systemfunctions (select id from sys.functions where name = 'storage' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
 drop function "mbr";
 drop function "mbroverlaps";
 drop function "geomfromtext";
