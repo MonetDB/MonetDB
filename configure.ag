@@ -170,6 +170,13 @@ AC_ARG_ENABLE(lidar,
 	enable_lidar=$enableval,
 	enable_lidar=$dft_lidar)
 
+dft_shp=auto
+AC_ARG_ENABLE(shp,
+	AS_HELP_STRING([--enable-shp],
+		[enable support for ESRI Shapefiles (default=auto)]),
+	enable_shp=$enableval,
+	enable_shp=$dft_shp)
+
 dft_sql=yes
 AC_ARG_ENABLE(sql,
 	AS_HELP_STRING([--enable-sql],
@@ -2677,6 +2684,81 @@ AM_CONDITIONAL(HAVE_LIDAR, test "x$enable_lidar" = xyes -o "x$enable_lidar" = xa
 
 AC_MSG_CHECKING(['enable lidar: $enable_lidar'])
 
+# gdal
+org_have_gdal="auto"
+have_gdal=$org_have_gdal
+AC_ARG_WITH(gdal,
+	AS_HELP_STRING([--with-gdal=DIR],
+		[gdal library is installed in DIR]),
+		[have_gdal="$withval"], [have_gdal="auto"])
+# first autoconf for distributions that added a .pc file themselves (Fedora)
+if test "x$have_gdal" != xno; then
+	case "$have_gdal" in
+	auto|yes)
+		PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])
+		;;
+	*)
+		GDAL_CFLAGS="-I$have_gdal/include"
+		GDAL_LIBS="-L$have_gdal/lib"
+		;;
+	esac
+fi
+# try to detect it manually like upstream provides it
+if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
+	LDFLAGS="$LDFLAGS $GDAL_LIBS"
+	LIBS=""
+	found_gdal_h=yes
+	AC_CHECK_HEADER(gdal.h,,
+		AC_CHECK_HEADER(gdal/gdal.h,
+			[if test "x$GDAL_CFLAGS" = x; then
+				GDAL_CFLAGS="-I/usr/include/gdal"
+			else
+				GDAL_CFLAGS="$GDAL_CFLAGS/gdal"
+			fi
+			CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
+			[found_gdal_h=no]))
+	if test "x$found_gdal_h" = xyes; then
+		AC_CHECK_LIB(gdal, GDALAllRegister,
+			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
+				have_gdal=yes
+				LIBS="$LIBS -lgdal"],
+			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi
+				have_gdal=no; why_have_gdal="(gdal library not found)" ],
+			[$MATH_LIBS])
+	else
+		if test "x$have_gdal" != xauto; then AC_MSG_ERROR([gdal.h header not found]); fi
+		have_gdal=no; why_have_gdal="(gdal.h header not found)"
+	fi
+	GDAL_LIBS="$GDAL_LIBS $LIBS"
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	LIBS="$save_LIBS"
+	if test "x$have_gdal" != "xyes"; then
+		GDAL_CFLAGS=""
+		GDAL_LIBS=""
+	fi
+fi
+
+AC_SUBST(gdal_CFLAGS, $GDAL_CFLAGS)
+AC_SUBST(gdal_LIBS, $GDAL_LIBS)
+AM_CONDITIONAL(HAVE_GDAL, test x"$have_gdal" != xno)
+
+# if shp is enabled and gdal was not found abort
+if test "x$have_gdal" = xno; then
+	if test "x$enable_shp" = xyes; then
+		AC_MSG_ERROR([gdal library required for ESRI shape file module])
+	fi
+	# no gdal, so don't compile shp
+	enable_shp=no
+	if test "x$disable_shp" = x; then
+		disable_shp=${why_have_shp:-"(gdal library required for shape file module)"}
+	fi
+fi
+AM_CONDITIONAL(HAVE_SHP, test x"$enable_shp" != xno)
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
@@ -3519,6 +3601,7 @@ for comp in \
 	'readline     ' \
 	'rubygem      ' \
 	'samtools     ' \
+	'shp          ' \
 	'sphinxclient ' \
 	'unixodbc     ' \
 	'valgrind     ' \
