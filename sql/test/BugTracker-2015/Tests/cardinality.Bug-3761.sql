@@ -77,8 +77,8 @@ COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS '\t','\n','"';
 6821	"json"	3	3	true
 7176	"bam"	3	3	true
 
-SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t;
-SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t;
+SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t ORDER BY table_schema;
+SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t ORDER BY table_schema;
 
 DROP TABLE schms;
 DROP TABLE tbls;
