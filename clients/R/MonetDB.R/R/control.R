@@ -165,7 +165,7 @@ monetdb.server.setup <-
           paste0( 'set MONETDB=' , monetdb.program.path ) ,
           'set PATH=%MONETDB%\\bin;%MONETDB%\\lib;%MONETDB%\\lib\\MonetDB5;%PATH%' ,
           paste0( 
-            '"%MONETDB%\\bin\\mserver5.exe" --daemon=yes --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" --dbpath=',dbfl,' %* --set mapi_port=' , dbport) ,
+            '"%MONETDB%\\bin\\mserver5.exe" --daemon=yes --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" "--dbpath=',dbfl,'" %* --set mapi_port=' , dbport) ,
           'if ERRORLEVEL 1 pause' ,
           'endlocal'
         ) 
