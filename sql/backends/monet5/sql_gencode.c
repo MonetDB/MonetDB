@@ -820,8 +820,7 @@ _dump_2(MalBlkPtr mb, char *mod, char *name, int o1, int o2)
 static int
 dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 {
-	int o1 = _dumpstmt(sql, mb, s->op1);
-	int o2 = _dumpstmt(sql, mb, s->op2);
+	int o1, o2;
 
 	if ((o1 = _dumpstmt(sql, mb, s->op1)) < 0)
 		return -1;
