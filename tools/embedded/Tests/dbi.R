@@ -214,13 +214,11 @@ test_that("row-by-row fetch is equivalent", {
 	dbRemoveTable(con, "t1")
 })
 
-# TODO: fix this
-# test_that("column types as expected in presence of NULLs", {
-# 	dbWriteTable(con, "t1", datasets::USArrests)
-# 	a1 <- dbGetQuery(con, "SELECT Murder/(Murder - 8.1) FROM t1 LIMIT 10")
-# 	expect_is(a1[[1]], "numeric")
-#   	dbRemoveTable(con, "t1")
-# })
+test_that("column types as expected in presence of NULLs", {
+	dbWriteTable(con, "t1", datasets::USArrests)
+	expect_error( dbGetQuery(con, "SELECT \"Murder\"/(\"Murder\" - 8.1) FROM t1 LIMIT 10"))
+  	dbRemoveTable(con, "t1")
+})
 
 test_that("correct number of columns, even if 0 rows", {
 	ans <- dbGetQuery(con, "select 1 as a, 2 as b where 1=1")
