@@ -29,13 +29,13 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 128 # length
+% 126 # length
 [ "http://shopping.b92.net/index.php?IDS=11&ID_Group=39&ID_prod=754&PROD_NAME=Belgrade+Coffee+Shop+4&GROUP_NAME=Muzi�a+produkcija"	]
 #select 'SAVE 25¢ ON ICE CREAM';
 % .L # table_name
 % single_value # name
 % char # type
-% 22 # length
+% 21 # length
 [ "SAVE 25¢ ON ICE CREAM"	]
 
 # 12:55:03 >  
