@@ -159,55 +159,55 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 
 			if (strcmp(toLower(type), "point") == 0) {
 				type = "geometry";
-				digits = wkbPoint << 2;
+				digits = wkbPoint_mdb << 2;
 				scale = 0; // in the past we did not save the srid
 			} else if (strcmp(toLower(type), "linestring") == 0) {
 				type = "geometry";
-				digits = wkbLineString << 2;
+				digits = wkbLineString_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "curve") == 0) {
 				type = "geometry";
-				digits = wkbLineString << 2;
+				digits = wkbLineString_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "linearring") == 0) {
 				type = "geometry";
-				digits = wkbLinearRing << 2;
+				digits = wkbLinearRing_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "polygon") == 0) {
 				type = "geometry";
-				digits = wkbPolygon << 2;
+				digits = wkbPolygon_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "surface") == 0) {
 				type = "geometry";
-				digits = wkbPolygon << 2;
+				digits = wkbPolygon_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multipoint") == 0) {
 				type = "geometry";
-				digits = wkbMultiPoint << 2;
+				digits = wkbMultiPoint_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multilinestring") == 0) {
 				type = "geometry";
-				digits = wkbMultiLineString << 2;
+				digits = wkbMultiLineString_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multicurve") == 0) {
 				type = "geometry";
-				digits = wkbMultiLineString << 2;
+				digits = wkbMultiLineString_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multipolygon") == 0) {
 				type = "geometry";
-				digits = wkbMultiPolygon << 2;
+				digits = wkbMultiPolygon_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "multisurface") == 0) {
 				type = "geometry";
-				digits = wkbMultiPolygon << 2;
+				digits = wkbMultiPolygon_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "geomcollection") == 0) {
 				type = "geometry";
-				digits = wkbGeometryCollection << 2;
+				digits = wkbGeometryCollection_mdb << 2;
 				scale = 0;
 			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
 				type = "geometry";
-				digits = wkbGeometryCollection << 2;
+				digits = wkbGeometryCollection_mdb << 2;
 				scale = 0;
 			}  else if (strcmp(toLower(type), "geometry") == 0) {
 				type = "geometry";

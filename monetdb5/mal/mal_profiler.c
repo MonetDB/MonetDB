@@ -274,13 +274,13 @@ This information can be used to determine memory footprint and variable life tim
 					tname = getTypeName(getColumnType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
-						if( isVIEW(d))
-							bid = abs(VIEWtparent(d));
+						//if( isVIEW(d))
+							//bid = abs(VIEWtparent(d));
 						cnt = BATcount(d);
-						total += heapinfo(&d->T->heap);
-						if ( d->T->vheap && d->T->vheap->parentid ){
-							total += heapinfo(d->T->vheap); 
-						}
+						total += cnt * d->T->width;
+						total += heapinfo(d->T->vheap, abs(d->batCacheid)); 
+						total += hashinfo(d->T->hash, abs(d->batCacheid)); 
+						total += IMPSimprintsize(d);
 						BBPunfix(d->batCacheid);
 					} 
 					logadd("\"bid\":\"%d\",%s", bid,pret);

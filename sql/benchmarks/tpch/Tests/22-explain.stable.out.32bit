@@ -58,7 +58,7 @@ Ready.
 % clob # type
 % 710 # length
 function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:str,A5:str,A6:str,A7:str,A8:str,A9:str,A10:str,A11:bte,A12:int,A13:int,A14:str,A15:str,A16:str,A17:str,A18:str,A19:str,A20:str):void;
-    X_160:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",102);
+    X_160:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",101);
     X_126 := bat.new(nil:oid,nil:str);
     X_134 := bat.append(X_126,"sys.custsale");
     X_142 := bat.append(X_134,"sys.L2");

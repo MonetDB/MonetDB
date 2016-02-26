@@ -250,6 +250,7 @@ BATcheckhash(BAT *b)
 					h->Link = hp->base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
+					hp->parentid = b->batCacheid;
 					b->T->hash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
@@ -490,6 +491,7 @@ BAThash(BAT *b, BUN masksize)
 			}
 			break;
 		}
+		hp->parentid = b->batCacheid;
 #ifdef PERSISTENTHASH
 		if (BBP_status(b->batCacheid) & BBPEXISTING) {
 			MT_Id tid;

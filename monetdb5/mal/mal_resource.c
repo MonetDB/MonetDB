@@ -76,12 +76,11 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			return 0;
 		}
 
-		total += heapinfo(&b->T->heap); 
+		total += BATcount(b) * b->T->width;
 		// string heaps can be shared, consider them as space-less views
-		if ( b->T->vheap && b->T->vheap->parentid ){
-			total += heapinfo(b->T->vheap); 
-		}
-		//total += hashinfo(b->T->hash); 
+		total += heapinfo(b->T->vheap, abs(b->batCacheid)); 
+		total += hashinfo(b->T->hash, abs(d->batCacheid)); 
+		total += IMPSimprintsize(b);
 		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
 	}

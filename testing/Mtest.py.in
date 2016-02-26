@@ -307,6 +307,7 @@ CONDITIONALS = {
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
+    'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
