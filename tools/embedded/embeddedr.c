@@ -21,7 +21,7 @@ int embedded_r_rand(void) {
 
 
 /* we need the BAT-SEXP-BAT conversion in two places, here and in RAPI */
-#include "converters.c"
+#include "converters.c.h"
 
 SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 	res_table* output = NULL;

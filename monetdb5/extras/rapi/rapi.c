@@ -40,7 +40,7 @@
 //#define _RAPI_DEBUG_
 
 /* we need the BAT-SEXP-BAT conversion in two places, here and in tools/embedded */
-#include "converters.c"
+#include "converters.c.h"
 
 const char* rapi_enableflag = "embedded_r";
 
