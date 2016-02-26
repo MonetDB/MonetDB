@@ -129,10 +129,17 @@ test_that("inserting data", {
 
 test_that("selecting null works", {
 	con <- monetdb_embedded_connect()
+
 	res <- monetdb_embedded_query(con, "SELECT NULL as nl")
 	expect_equal(nrow(res$tuples), 1)
 	expect_equal(ncol(res$tuples), 1)
 	expect_true(is.na(res$tuples$nl))
+
+	res <- monetdb_embedded_query(con, "SELECT NULL AS nl, name FROM tables")
+	expect_true(nrow(res$tuples) > 1)
+	expect_equal(ncol(res$tuples), 2)
+	expect_true(all(is.na(res$tuples$nl)))
+
 	monetdb_embedded_disconnect(con)
 })
 

@@ -58,10 +58,13 @@ static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
 	switch (ATOMstorage(getColumnType(b->T->type))) {
-		case TYPE_void:
-			varvalue = PROTECT(NEW_INTEGER(1));
-			INTEGER_POINTER(varvalue)[0] = NA_INTEGER;
-			break;
+		case TYPE_void: {
+			size_t i = 0;
+			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
+			for (i = 0; i < BATcount(b); i++) {
+				LOGICAL_POINTER(varvalue)[i] = NA_LOGICAL;
+			}
+			} break;
 		case TYPE_bte:
 			BAT_TO_INTSXP(b, bte, varvalue, 0);
 			break;
