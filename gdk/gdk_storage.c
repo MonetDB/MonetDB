@@ -97,7 +97,7 @@ GDKcreatedir(const char *dir)
 	DIR *dirp;
 
 	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
-
+	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= PATHLENGTH) {
 		GDKerror("GDKcreatedir: directory name too long\n");
 		return GDK_FAIL;
@@ -106,7 +106,11 @@ GDKcreatedir(const char *dir)
 	/* skip initial /, if any */
 	for (r = strchr(path + 1, DIR_SEP); r; r = strchr(r, DIR_SEP)) {
 		*r = 0;
-		if (mkdir(path, 0755) < 0) {
+		if (
+#ifdef WIN32
+			strlen(path) > 3 &&
+#endif
+			mkdir(path, 0755) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
 				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);
