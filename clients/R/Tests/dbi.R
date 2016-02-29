@@ -213,6 +213,12 @@ dbRollback(conn)
 # empty result set
 stopifnot(!is.null(dbGetQuery(conn, "SELECT * FROM tables WHERE 1=0")))
 
+#non-standard dbwritetable use
+dbBegin(conn)
+dbWriteTable(conn, "vectable", 1:1000, transaction=F)
+stopifnot(dbExistsTable(conn, "vectable"))
+dbRollback(conn)
+
 stopifnot(dbIsValid(conn))
 #thrice to catch null pointer errors
 stopifnot(identical(dbDisconnect(con),TRUE))

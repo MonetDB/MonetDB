@@ -454,7 +454,7 @@ quoteIfNeeded <- function(conn, x, warn=T, ...) {
   x
 }
 
-setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character", value="data.frame"), def=function(conn, name, value, overwrite=FALSE, 
+setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character", value="ANY"), def=function(conn, name, value, overwrite=FALSE, 
   append=FALSE, csvdump=FALSE, transaction=TRUE, temporary=FALSE, ...) {
   if (is.character(value)) {
     message("Treating character vector parameter as file name(s) for monetdb.read.csv()")
