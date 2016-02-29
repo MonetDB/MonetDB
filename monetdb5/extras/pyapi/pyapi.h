@@ -31,7 +31,14 @@
 #undef _GNU_SOURCE
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
-#include <Python.h>
+#ifdef _DEBUG
+ #undef _DEBUG
+ #include <Python.h>
+ #define _DEBUG
+#else
+ #include <Python.h>
+#endif
+
 
 // Numpy Library
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
