@@ -47,7 +47,7 @@ static bool option_verbose;
 static bool option_debug;
 #endif
 #ifdef _PYAPI_WARNINGS_
-static bool option_warning;
+bool option_warning;
 #endif
 
 static PyObject *marshal_module = NULL;
@@ -77,7 +77,9 @@ struct _AggrParams{
     size_t group_count;
     size_t group_start;
     size_t group_end;
+#ifdef HAVE_PTHREAD_H
     pthread_t thread;
+#endif
 };
 #define AggrParams struct _AggrParams
 static PyObject* ComputeParallelAggregation(AggrParams *p);
@@ -1159,22 +1161,27 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                     params->group_end = floor(current += increment);
                     params->args = &args;
                     params->msg = NULL;
-
+#ifdef HAVE_PTHREAD_H
                     res = pthread_create(&params->thread, NULL, (void * (*)(void *))&ComputeParallelAggregation, params);
                     if (res != 0) {
                         msg = createException(MAL, "pyapi.eval", "Failed to start thread.");
                         goto aggrwrapup;
                     }
+#endif
                 }
                 results = GDKzalloc(threads * sizeof(PyObject*));
                 for(thread_it = 0; thread_it < threads; thread_it++) {
                     AggrParams params = parameters[thread_it];
                     PyObject *result;
+#ifdef HAVE_PTHREAD_H
                     int res = pthread_join(params.thread, (void**)&result);
                     if (res != 0) {
                         msg = createException(MAL, "pyapi.eval", "Failed to join thread.");
                         goto aggrwrapup;
                     }
+#else
+                    result = ComputeParallelAggregation(&params);
+#endif
                     results[thread_it] = result;
                 }
                 for(thread_it = 0; thread_it < threads; thread_it++) {
