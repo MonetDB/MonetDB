@@ -500,7 +500,12 @@ BAThash(BAT *b, BUN masksize)
 				BBPfix(b->batCacheid);
 				hs->id = b->batCacheid;
 				hs->hp = hp;
-				MT_create_thread(&tid, BAThashsync, hs, MT_THR_DETACHED);
+				if (MT_create_thread(&tid, BAThashsync, hs,
+						     MT_THR_DETACHED) < 0) {
+					/* couldn't start thread: clean up */
+					BBPunfix(b->batCacheid);
+					GDKfree(hs);
+				}
 			}
 		} else
 			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
