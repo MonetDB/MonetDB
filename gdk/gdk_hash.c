@@ -285,29 +285,30 @@ BAThashsync(void *arg)
 	Heap *hp = hs->hp;
 	int fd;
 	lng t0 = GDKusec();
+	const char *failed = " failed";
 
-	if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||
-	    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
-		BBPunfix(hs->id);
-		GDKfree(arg);
-		return;
-	}
-	((size_t *) hp->base)[0] |= 1 << 24;
-	if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
-		perror("write hash");
-	if (!(GDKdebug & FORCEMITOMASK)) {
+	if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED &&
+	    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+		((size_t *) hp->base)[0] |= 1 << 24;
+		if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
+			failed = ""; /* not failed */
+			if (!(GDKdebug & FORCEMITOMASK)) {
 #if defined(NATIVE_WIN32)
-		_commit(fd);
+				_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-		fdatasync(fd);
+				fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-		fsync(fd);
+				fsync(fd);
 #endif
+			}
+		} else {
+			perror("write hash");
+		}
+		close(fd);
 	}
-	close(fd);
 	BBPunfix(hs->id);
 	GDKfree(arg);
-	ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
+	ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 }
 #endif
 
