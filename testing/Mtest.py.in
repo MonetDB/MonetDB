@@ -3790,7 +3790,7 @@ def main(argv) :
     BACK = os.getcwd()
     try:
         os.chdir(TSTSRCBASE)
-        proc = process.Popen(['hg', 'root'], stdout = process.PIPE)
+        proc = process.Popen(['hg', 'root'], stdout = process.PIPE, stderr = process.PIPE)
         out, err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['MERCURIAL'] = '#' # True
