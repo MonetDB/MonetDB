@@ -62,6 +62,7 @@
 #endif
 
 #ifdef _PYAPI_WARNINGS_
+bool option_warning;
 #define WARNING_MESSAGE(...) {           \
     if (option_warning) {                \
     fprintf(stderr, __VA_ARGS__);        \
@@ -89,5 +90,17 @@ pyapi_export str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 pyapi_export str PyAPIprelude(void *ret);
 
 int PyAPIEnabled(void);
+
+pyapi_export void* lookup_function(char *func, char* library);
+
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname, params) \
+    typedef retval (*fcnname##_ptr_tpe)params;                   \
+    fcnname##_ptr_tpe fcnname##_ptr = NULL;
+
+#define LOAD_SQL_FUNCTION_PTR(fcnname)                                   \
+    fcnname##_ptr = (fcnname##_ptr_tpe) lookup_function(#fcnname, "sql");        \
+    if (fcnname##_ptr == NULL) {                                         \
+        WARNING_MESSAGE("Failed to load function %s", #fcnname);                       \
+    }
 
 #endif /* _PYPI_LIB_ */

@@ -9,6 +9,9 @@
 #define PyString_FromString PyUnicode_FromString
 #endif
 
+CREATE_SQL_FUNCTION_PTR(void,res_table_destroy,(res_table*));
+CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern_ext,(Client, str *, str, int, bit, res_table **, bit));
+
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
@@ -230,13 +233,13 @@ PyTypeObject Py_ConnectionType = {
 
 void _connection_cleanup_result(void* output) 
 {
-    res_table_destroy((res_table*) output);
+    (*res_table_destroy_ptr)((res_table*) output);
 }
 
 char* _connection_query(Client cntxt, char* query, res_table** result) {
     str res = MAL_SUCCEED;
     Client c = cntxt;
-    res = SQLstatementIntern_ext(c, &query, "name", 1, 0, result, 1);
+    res = (*SQLstatementIntern_ext_ptr)(c, &query, "name", 1, 0, result, 1);
     return res;
 }
 
@@ -261,6 +264,9 @@ PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
 void _connection_init(void)
 {
     import_array();
+
+    LOAD_SQL_FUNCTION_PTR(res_table_destroy);
+    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern_ext);
 
     if (PyType_Ready(&Py_ConnectionType) < 0)
         return;
