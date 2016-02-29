@@ -39,9 +39,7 @@ struct _PyReturn{
     bool *mask_data;                    //bool* pointer to mask data
     size_t count;                       //amount of return elements
     size_t memory_size;                 //memory size of each element
-#ifdef HAVE_FORK
     lng mmap_id;
-#endif
     int result_type;                    //result type as NPY_<TYPE>
     bool multidimensional;              //whether or not the result is multidimensional
 };

@@ -1157,8 +1157,8 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                     params->function = &pFunc;
                     params->connection = &pConnection;
                     params->pycall = &pycall;
-                    params->group_start = floor(current);
-                    params->group_end = floor(current += increment);
+                    params->group_start = (size_t)floor(current);
+                    params->group_end = (size_t)floor(current += increment);
                     params->args = &args;
                     params->msg = NULL;
 #ifdef HAVE_PTHREAD_H
@@ -1280,7 +1280,7 @@ aggrwrapup:
             } else {
                 // If there are a variable number of return types, we take the column names from the dictionary
                 PyObject *keys = PyDict_Keys(pResult);
-                retcols = PyList_Size(keys);
+                retcols = (int)PyList_Size(keys);
                 retnames = GDKzalloc(sizeof(char*) * retcols);
                 for(i = 0; i < retcols; i++) {
                     PyObject *colname = PyList_GetItem(keys, i);
@@ -2239,8 +2239,8 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns, i
             else {
                 //the return value is an array of arrays, all we need to do is check if it is the correct size
                 int results = 0;
-                if (PyList_Check(data)) results = PyList_Size(data);
-                else results = PyArray_DIMS((PyArrayObject*)data)[0];
+                if (PyList_Check(data)) results = (int)PyList_Size(data);
+                else results = (int)PyArray_DIMS((PyArrayObject*)data)[0];
                 columns = results;
                 if (results != expected_columns && expected_columns > 0) {
                     //wrong return size, we expect pci->retc arrays
@@ -2712,7 +2712,7 @@ str
 ConvertToSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
 {
     str res = MAL_SUCCEED;
-    bat result_bat;
+    bat result_bat = 0;
     int digits = sql_subtype->digits;
     int scale = sql_subtype->scale;
     (void) cntxt;

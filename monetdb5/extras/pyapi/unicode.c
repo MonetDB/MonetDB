@@ -30,7 +30,7 @@ int utf8_strlen(const char *utf8_str, bool *ascii)
 
 int utf32_strlen(const Py_UNICODE *utf32_str)
 {
-	size_t i = 0;
+	int i = 0;
 	while(utf32_str[i] != 0)
 		i++;
 	return (i - 1);
@@ -74,7 +74,7 @@ int utf32_char_to_utf8_char(size_t position, char *utf8_storage, Py_UNICODE utf3
             utf8_storage[position]     =  (utf32_char | 0xc0);
             return utf8_size;
         default:
-            utf8_storage[position]     = utf32_char;
+            utf8_storage[position]     = (char)utf32_char;
             return utf8_size;
     }
 }
@@ -171,7 +171,7 @@ bool utf8_to_utf32(size_t offset, size_t size, Py_UNICODE *utf32_storage, const 
             return true;
         }
 
-        shift = utf8_char_to_utf32_char(i, utf32_storage, offset + position, utf8);
+        shift = utf8_char_to_utf32_char((int)i, utf32_storage, (int)(offset + position), utf8);
         if (shift < 0) return false;
         position += shift;
     }
