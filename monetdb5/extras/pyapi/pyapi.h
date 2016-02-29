@@ -20,12 +20,15 @@
 #include "mal_linker.h"
 #include "gdk_atoms.h"
 #include "gdk_utils.h"
+#include "gdk_posix.h"
 #include "gdk.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"
 #include "sql_cast.h"
 #include "sql_execute.h"
 #include "sql_storage.h"
+
+#include "unspecified_evil.h"
 
 // Python library
 #undef _GNU_SOURCE
