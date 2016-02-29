@@ -61,7 +61,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = pushArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
-	q = newStmt1(mb, sqlRef, "argRecord");
+	q = newStmt(mb, sqlRef, "argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 
@@ -94,7 +94,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			 idcmp(getFunctionId(p),"exportResult")==0  ) ) {
 
 			q = newStmt(mb, "alarm", "usec");
-			r = newStmt1(mb, calcRef, "-");
+			r = newStmt(mb, calcRef, "-");
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, xtime);
 			getArg(r,0)=xtime;
@@ -114,7 +114,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if ( rtime == 0){
 				q = newStmt(mb, "alarm", "usec");
-				r = newStmt1(mb, calcRef, "-");
+				r = newStmt(mb, calcRef, "-");
 				r = pushArgument(mb, r, getArg(q,0));
 				r = pushArgument(mb, r, xtime);
 				getArg(r,0)=xtime;
@@ -122,7 +122,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				rtime= getArg(q,0)= newVariable(mb,GDKstrdup("rtime"),TYPE_lng);
 			}
 			q = newStmt(mb, "alarm", "usec");
-			r = newStmt1(mb, calcRef, "-");
+			r = newStmt(mb, calcRef, "-");
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, rtime);
 			getArg(r,0)=rtime;
@@ -161,7 +161,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* the factory yield may return */
 			q = newStmt(mb, "mtime", "current_timestamp");
 			start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_any);
-			q = newStmt1(mb, sqlRef, "argRecord");
+			q = newStmt(mb, sqlRef, "argRecord");
 			for ( argc=1; argc < old[0]->argc; argc++)
 				q = pushArgument(mb, q, getArg(old[0],argc));
 			arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
