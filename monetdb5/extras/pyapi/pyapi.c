@@ -116,10 +116,10 @@ static bool python_call_active = false;
 
 #define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
         if (copy) {                                                                                                                 \
-            vararray = PyArray_EMPTY(1, (npy_intp[1]) {(t_end - t_start)}, nptpe, 0);                        \
+            vararray = PyArray_EMPTY(1, elements, nptpe, 0);                        \
             memcpy(PyArray_DATA((PyArrayObject*)vararray), Tloc(bat, BUNfirst(bat)), sizeof(mtpe) * (t_end - t_start));             \
         } else {                                                                                                                    \
-            vararray = PyArray_New(&PyArray_Type, 1, (npy_intp[1]) {(t_end-t_start)},                                               \
+            vararray = PyArray_New(&PyArray_Type, 1, elements,                                               \
             nptpe, NULL, &((mtpe*) Tloc(bat, BUNfirst(bat)))[t_start], 0,                                                           \
             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);                                                                        \
         }
@@ -1848,6 +1848,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
     BUN p = 0, q = 0;
     BATiter li;
     BAT *b = inp->bat;
+    npy_intp elements[1] = { t_end-t_start };
 
     assert(!inp->scalar); //input has to be a BAT
 
@@ -1887,7 +1888,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
             vararray = PyArray_New(
                 &PyArray_Type,
                 1,
-                (npy_intp[1]) {t_end - t_start},
+                elements,
                 NPY_OBJECT,
                 NULL,
                 NULL,
@@ -2051,7 +2052,8 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 {
     // We will now construct the Masked array, we start by setting everything to False
     size_t count = t_end - t_start;
-    PyArrayObject* nullmask = (PyArrayObject*) PyArray_EMPTY(1, (npy_intp[1]) {( count )}, NPY_BOOL, 0);
+    npy_intp elements[1] = { count };
+    PyArrayObject* nullmask = (PyArrayObject*) PyArray_EMPTY(1, elements, NPY_BOOL, 0);
     const void *nil = ATOMnilptr(b->ttype);
     size_t j;
     bool found_nil = false;
@@ -2780,38 +2782,39 @@ PyObject* ComputeParallelAggregation(AggrParams *p)
                 // scalar not handled yet
                 vararray = input.result;
             } else {
+                npy_intp elements[1] = { group_elements };
                 switch(input.bat_type) {
                     case TYPE_bte:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_INT8, 
                             NULL, ((bte***)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_sht:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_INT16, 
                             NULL, ((sht***)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_int:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_INT32, 
                             NULL, ((int***)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_lng:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_INT64, 
                             NULL, ((lng***)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_flt:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_FLOAT32, 
                             NULL, ((flt***)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
@@ -2821,14 +2824,14 @@ PyObject* ComputeParallelAggregation(AggrParams *p)
                 #endif
                     case TYPE_dbl:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_FLOAT64, 
                             NULL, ((dbl***)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
                         break;
                     case TYPE_str:
                         vararray = PyArray_New(&PyArray_Type, 1, 
-                            (npy_intp[1]) { ( group_elements ) }, 
+                            elements, 
                             NPY_OBJECT, 
                             NULL, ((PyObject****)(*p->split_bats))[group_it][i], 0, 
                             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
