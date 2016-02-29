@@ -186,6 +186,13 @@ R.lib: "$(libr_DLL)"
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 !ENDIF
 
+!IFDEF HAVE_LIBPY
+ 
+libpy_LIBS = $(PYTHON2DIR)\libs\python27.lib
+libpy_CFLAGS = -DHAVE_LIBPY -I$(PYTHON2DIR)\include -I$(PYTHON2DIR)\Lib\site-packages\numpy-1.10.4-py2.7-win-amd64.egg\numpy\core\include
+ 
+!ENDIF
+
 # some programs we use, probably no need to edit
 
 # install python, flex and bison on your systems

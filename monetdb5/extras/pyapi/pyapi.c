@@ -2898,7 +2898,6 @@ bool Python_ReleaseGIL(bool state)
     return 0;
 }
 
-pyapi_export 
 void* lookup_function(char *func, char* library) {
     void *dl, *fun;
     dl = mdlopen(library, RTLD_NOW | RTLD_GLOBAL);
