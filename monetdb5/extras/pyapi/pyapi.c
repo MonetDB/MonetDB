@@ -68,6 +68,7 @@ struct _AggrParams{
     PyObject **connection;
     PyObject **function;
     PyObject **column_types_dict;
+    PyObject **result_objects;
     str *pycall;
     str msg;
     size_t base;
@@ -77,12 +78,10 @@ struct _AggrParams{
     size_t group_count;
     size_t group_start;
     size_t group_end;
-#ifdef HAVE_PTHREAD_H
-    pthread_t thread;
-#endif
+    MT_Id thread;
 };
 #define AggrParams struct _AggrParams
-static PyObject* ComputeParallelAggregation(AggrParams *p);
+static void ComputeParallelAggregation(AggrParams *p);
 
 static char* FunctionBasePath(void);
 static char* FunctionBasePath(void) {
@@ -1132,7 +1131,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 int res = 0;
                 size_t threads = 8; //GDKgetenv("gdk_nr_threads");
                 size_t thread_it;
-                int result_it;
+                size_t result_it;
                 AggrParams *parameters;
                 PyObject **results;
                 double current = 0.0;
@@ -1144,6 +1143,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 increment = (double) group_count / (double) threads;
                 // start running the threads
                 parameters = GDKzalloc(threads * sizeof(AggrParams));
+                results = GDKzalloc(group_count * sizeof(PyObject*));
                 for(thread_it = 0; thread_it < threads; thread_it++) {
                     AggrParams *params = &parameters[thread_it];
                     params->named_columns = named_columns;
@@ -1161,29 +1161,22 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                     params->group_end = (size_t)floor(current += increment);
                     params->args = &args;
                     params->msg = NULL;
-#ifdef HAVE_PTHREAD_H
-                    res = pthread_create(&params->thread, NULL, (void * (*)(void *))&ComputeParallelAggregation, params);
+                    params->result_objects = results;
+                    res = MT_create_thread(&params->thread, (void (*)(void *))&ComputeParallelAggregation, params, MT_THR_JOINABLE);
                     if (res != 0) {
                         msg = createException(MAL, "pyapi.eval", "Failed to start thread.");
                         goto aggrwrapup;
                     }
-#endif
                 }
-                results = GDKzalloc(threads * sizeof(PyObject*));
                 for(thread_it = 0; thread_it < threads; thread_it++) {
                     AggrParams params = parameters[thread_it];
-                    PyObject *result;
-#ifdef HAVE_PTHREAD_H
-                    int res = pthread_join(params.thread, (void**)&result);
+                    int res = MT_join_thread(params.thread);
                     if (res != 0) {
                         msg = createException(MAL, "pyapi.eval", "Failed to join thread.");
                         goto aggrwrapup;
                     }
-#else
-                    result = ComputeParallelAggregation(&params);
-#endif
-                    results[thread_it] = result;
                 }
+
                 for(thread_it = 0; thread_it < threads; thread_it++) {
                     AggrParams params = parameters[thread_it];
                     if (results[thread_it] == NULL || params.msg != NULL) {
@@ -1195,21 +1188,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 // we need the GIL again to group the parameters
                 gstate = Python_ObtainGIL();
 
-                ai = 0;
                 aggr_result = PyList_New(group_count);
-                for(thread_it = 0; thread_it < threads; thread_it++) {
-                    AggrParams params = parameters[thread_it];
-                    PyObject *result = results[thread_it];
-                    for(result_it = 0; result_it < PyList_Size(result); result_it++) {
-                        PyObject *res = PyList_GetItem(result, result_it);
-                        PyList_SetItem(aggr_result, ai++, res);
-                        Py_INCREF(res);
-                    }
-                    Py_DECREF(result);
-                    if (params.msg != MAL_SUCCEED) {
-                        msg = GDKstrdup(params.msg);
-                        goto aggrwrapup;
-                    }
+                for(result_it = 0; result_it < group_count; result_it++) {
+                    PyList_SetItem(aggr_result, result_it, results[result_it]);
                 }
                 GDKfree(parameters);
                 GDKfree(results);
@@ -2762,18 +2743,16 @@ get_sql_token(sql_subtype *sqltype)
 
 
 static 
-PyObject* ComputeParallelAggregation(AggrParams *p)
+void ComputeParallelAggregation(AggrParams *p)
 {
     int i;
     size_t group_it, ai;
-    PyObject *aggr_result;
     bool gstate = 0;
     //now perform the actual aggregation
     //we perform one aggregation per group
 
     //we need the GIL to execute the functions
     gstate = Python_ObtainGIL();
-    aggr_result = PyList_New(p->group_end - p->group_start);
     for(group_it = p->group_start; group_it < p->group_end; group_it++) {
         // we first have to construct new 
         PyObject *pArgsPartial = PyTuple_New(p->named_columns + p->additional_columns);
@@ -2847,7 +2826,6 @@ PyObject* ComputeParallelAggregation(AggrParams *p)
 
                 if (vararray == NULL) {
                     p->msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" to create NumPy array.");
-                    Py_DECREF(aggr_result); aggr_result = NULL;
                     goto wrapup;
                 }
             }
@@ -2868,16 +2846,14 @@ PyObject* ComputeParallelAggregation(AggrParams *p)
 
         if (result == NULL) {
             p->msg = PyError_CreateException("Python exception", *p->pycall);
-            Py_DECREF(aggr_result); aggr_result = NULL;
             goto wrapup;
         }
         // gather results
-        PyList_SetItem(aggr_result, group_it - p->group_start, result);
+        p->result_objects[group_it] = result;
     }
     //release the GIL again   
 wrapup: 
     gstate = Python_ReleaseGIL(gstate);
-    return aggr_result;
 }
 
 bool PyType_IsNumpyArray(PyObject *object)
