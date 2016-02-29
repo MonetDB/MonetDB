@@ -179,7 +179,8 @@ static PyMethodDef _connectionObject_methods[] = {
 };
 
 PyTypeObject Py_ConnectionType = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyObject_HEAD_INIT(NULL)
+    0,
     "monetdb._connection",
     sizeof(Py_ConnectionObject),
     0,

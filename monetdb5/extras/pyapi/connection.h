@@ -16,8 +16,6 @@
 
 #include "pytypes.h"
 
-extern PyTypeObject *_connection_type;
-
 typedef struct {
     PyObject_HEAD
     Client cntxt;
@@ -26,7 +24,7 @@ typedef struct {
     int query_sem;
 } Py_ConnectionObject;
 
-PyAPI_DATA(PyTypeObject) Py_ConnectionType;
+extern PyTypeObject Py_ConnectionType;
 
 #define Py_Connection_Check(op) (Py_TYPE(op) == &Py_ConnectionType)
 #define Py_Connection_CheckExact(op) (Py_TYPE(op) == &Py_ConnectionType)
