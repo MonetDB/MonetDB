@@ -341,6 +341,8 @@ main(int argc, char **argv)
 	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		buffer[len + n] = 0;
 		response = buffer;
+		if( debug)
+				printf("%s", response);
 		if(json) {
 			if(trace != NULL) {
 				fprintf(trace, "%s", response);

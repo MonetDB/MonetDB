@@ -1,0 +1,83 @@
+stdout of test 'ST_PointFromText` in directory 'geom/sql/functions` itself:
+
+
+# 15:46:15 >  
+# 15:46:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32350" "--set" "mapi_usock=/var/tmp/mtest-9662/.s.monetdb.32350" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:46:15 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:32350/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9662/.s.monetdb.32350
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:46:15 >  
+# 15:46:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
+# 15:46:15 >  
+
+#create table points_tbl(g geometry(point));
+#insert into points_tbl values (st_pointfromtext('point(0 10)'));
+[ 1	]
+#insert into points_tbl values (st_pointfromtext('point(0 20)', 0));
+[ 1	]
+#select * from points_tbl;
+% sys.points_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "POINT (0 10)"	]
+[ "POINT (0 20)"	]
+#drop table points_tbl;
+#create table points_tbl(g geometry(point, 4326));
+#insert into points_tbl values (st_pointfromtext('point(0 10)', 4326));
+[ 1	]
+#select * from points_tbl;
+% sys.points_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "POINT (0 10)"	]
+#drop table points_tbl;
+#create table points_tbl(g geometry(pointz));
+#insert into points_tbl values (st_pointfromtext('point(0 10 20)'));
+[ 1	]
+#insert into points_tbl values (st_pointfromtext('point(0 20 20)', 0));
+[ 1	]
+#select * from points_tbl;
+% sys.points_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "POINT Z (0 10 20)"	]
+[ "POINT Z (0 20 20)"	]
+#drop table points_tbl;
+#create table points_tbl(g geometry(pointz, 4326));
+#insert into points_tbl values (st_pointfromtext('point(0 10 20)', 4326));
+[ 1	]
+#select * from points_tbl;
+% sys.points_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "POINT Z (0 10 20)"	]
+#drop table points_tbl;
+#select st_pointfromtext(geom) from geometriesTxt WHERE id=1;
+% sys.L # table_name
+% st_pointfromtext_geom # name
+% geometry # type
+% 0 # length
+[ "POINT (10 20)"	]
+
+# 15:46:16 >  
+# 15:46:16 >  "Done."
+# 15:46:16 >  
+

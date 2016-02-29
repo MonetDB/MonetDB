@@ -118,8 +118,8 @@ Ready.
 % sys.L1 # table_name
 % L1 # name
 % wrd # type
-% 2 # length
-[ 92	]
+% 3 # length
+[ 106	]
 
 # 10:37:19 >  
 # 10:37:19 >  Done.

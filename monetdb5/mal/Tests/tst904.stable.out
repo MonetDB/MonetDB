@@ -24,34 +24,30 @@ stdout of test 'tst904` in directory 'monetdb5/mal` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    xz:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:any,c:any);
-#WARNING To speedup calc.+ a bulk operator implementation is needed
-#    xz:bat[:oid,:lng] := mal.multiplex("calc":str,"+":str,b:bat[:oid,:lng],c:int);
 
 # 22:45:39 >  
 # 22:45:39 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:39 >  
 
-function user.foo():void;               	#[0]  0 
-    clients.setListing(15:int);         	#[1] CLTsetListing 1 <- 2 
-    b:bat[:lng] := bat.new(:lng);       	#[2] CMDBATnewColumn 3 <- 4 
-    i:lng := -1:lng;                    	#[3]  5 <- 6 
-barrier i:lng := 0:lng;                 	#[4]  5 <- 7 
-    bat.append(b:bat[:lng],i:lng);      	#[5] BKCappend_val_wrap 8 <- 3 5 
-    redo i:lng := iterator.next(1:lng,10:lng);	#[6] ITRnext_lng 5 <- 9 10 
-exit i:lng;                             	#[7]  5 
-    io.print(b:bat[:lng]);              	#[8] IOprint_val 11 <- 3 
-    c:int := 1:int;                     	#[9]  12 <- 13 
-    X_18:bat[:lng] := bat.new(nil:oid,nil:lng);	#[10] CMDBATnew 18 <- 19 20 
-barrier (X_22:oid,X_23:lng) := iterator.new(b:bat[:lng]);	#[11] ITRbunIterator 22 23 <- 3 
-    X_25:lng := calc.+(X_23:lng,c:int); 	#[12] CMDvarADDsignal 25 <- 23 12 
-    bat.append(X_18:bat[:lng],X_25:lng);	#[13] BKCappend_val_wrap 26 <- 18 25 
-    redo (X_22:oid,X_23:lng) := iterator.next(b:bat[:lng]);	#[14] ITRbunNext 22 23 <- 3 
-exit (X_22:oid,X_23:lng);               	#[15]  22 23 
-    xz:bat[:lng] := X_18:bat[:lng];     	#[16]  14 <- 18 
-    io.print(xz:bat[:lng]);             	#[17] IOprint_val 17 <- 14 
-end user.foo;                           	#[18]  
+function user.foo():void;               	#[0] (0)  0 
+    clients.setListing(15:int);         	#[1] (0) CLTsetListing 1 <- 2 
+    b:bat[:lng] := bat.new(:lng);       	#[2] (0) CMDBATnewColumn 3 <- 4 
+    i:lng := -1:lng;                    	#[3] (0)  5 <- 6 
+barrier i:lng := 0:lng;                 	#[4] (0)  5 <- 7 
+    bat.append(b:bat[:lng],i:lng);      	#[5] (0) BKCappend_val_wrap 8 <- 3 5 
+    redo i:lng := iterator.next(1:lng,10:lng);	#[6] (0) ITRnext_lng 5 <- 9 10 
+exit i:lng;                             	#[7] (0)  5 
+    io.print(b:bat[:lng]);              	#[8] (0) IOprint_val 11 <- 3 
+    c:int := 1:int;                     	#[9] (0)  12 <- 13 
+    X_18:bat[:lng] := bat.new(nil:oid,nil:lng);	#[10] (0) CMDBATnew 18 <- 19 20 
+barrier (X_22:oid,X_23:lng) := iterator.new(b:bat[:lng]);	#[11] (0) ITRbunIterator 22 23 <- 3 
+    X_25:lng := calc.+(X_23:lng,c:int); 	#[12] (0) CMDvarADDsignal 25 <- 23 12 
+    bat.append(X_18:bat[:lng],X_25:lng);	#[13] (0) BKCappend_val_wrap 26 <- 18 25 
+    redo (X_22:oid,X_23:lng) := iterator.next(b:bat[:lng]);	#[14] (0) ITRbunNext 22 23 <- 3 
+exit (X_22:oid,X_23:lng);               	#[15] (0)  22 23 
+    xz:bat[:lng] := X_18:bat[:lng];     	#[16] (0)  14 <- 18 
+    io.print(xz:bat[:lng]);             	#[17] (0) IOprint_val 17 <- 14 
+end user.foo;                           	#[18] (0)  
 #--------------------------#
 # h	t  # name
 # void	lng  # type

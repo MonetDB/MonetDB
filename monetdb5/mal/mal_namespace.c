@@ -146,6 +146,7 @@ str putName(const char *nme, size_t len)
 	n->nme= GDKstrdup(buf);
 	if (n->nme == NULL) {
         /* absolute an error we can not recover from */
+		GDKfree(n);
         showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
 		mal_exit();
 	}

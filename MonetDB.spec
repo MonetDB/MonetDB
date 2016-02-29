@@ -50,10 +50,23 @@
 %define with_geos 1
 %endif
 
+# On Fedora, the liblas library is available, and so we can require it
+# and build the lidar modules.  On RedHat Enterprise Linux and
+# derivatives (CentOS, Scientific Linux), the liblas library is not
+# available, even with EPEL available.
 %if %{?rhel:0}%{!?rhel:1}
-# If the _without_samtools macro is set, the MonetDB-bam-MonetDB5 RPM
-# will be created.  The macro can be set when using mock by passing it
-# the flag --without=samtools.
+# If the _without_lidar macro is not set, the MonetDB-lidar RPM will
+# be created.  The macro can be set when using mock by passing it the
+# flag --without=lidar.
+%if %{?_without_lidar:0}%{!?_without_lidar:1}
+%define with_lidar 1
+%endif
+%endif
+
+%if %{?rhel:0}%{!?rhel:1}
+# If the _without_samtools macro is not set, the MonetDB-bam-MonetDB5
+# RPM will be created.  The macro can be set when using mock by
+# passing it the flag --without=samtools.
 # Note that the samtools-devel RPM is not available on RedHat
 # Enterprise Linux and derivatives, even with EPEL availabe.
 # (Actually, at the moment of writing, samtools-devel is available in
@@ -102,6 +115,11 @@ BuildRequires: cfitsio-devel
 BuildRequires: geos-devel >= 3.0.0
 %endif
 BuildRequires: gsl-devel
+%if %{?with_lidar:1}%{!?with_lidar:0}
+BuildRequires: liblas-devel gdal-devel libgeotiff-devel
+# Fedora 22 libas-devel does not depend on liblas:
+BuildRequires: liblas
+%endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
 # BuildRequires: libmicrohttpd-devel
@@ -473,6 +491,28 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%package lidar
+Summary: MonetDB5 SQL support for working with LiDAR data
+Group: Applications/Databases
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+
+%description lidar
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains support for reading and writing LiDAR data.
+
+%files lidar
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_lidar.mal
+%{_libdir}/monetdb5/createdb/*_lidar.sql
+%{_libdir}/monetdb5/lidar.mal
+%{_libdir}/monetdb5/lib_lidar.so
+%endif
+
 %package gsl-MonetDB5
 Summary: MonetDB5 SQL interface to the gsl library
 Group: Applications/Databases
@@ -628,6 +668,9 @@ fi
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/lidar.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
@@ -641,6 +684,9 @@ fi
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
@@ -650,6 +696,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/lib_lidar.so
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/lib_rapi.so
 %endif
@@ -763,6 +812,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
+%endif
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
@@ -913,6 +965,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
+	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
@@ -928,6 +981,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-bz2=yes \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-java=no \
+	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-perl=yes \
 	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \

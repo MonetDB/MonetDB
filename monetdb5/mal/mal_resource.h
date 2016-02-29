@@ -15,6 +15,10 @@
 #define DELAYUNIT 2 /* ms delay in parallel processing decisions */
 #define MAX_DELAYS 1000 /* never wait forever */
 
+//#define heapinfo(X,Id)	(((X) && (X)->base && ((X)->parentid == 0 || (X)->parentid == Id)) ? (X)->free : 0)
+#define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
+#define hashinfo(X,Id) ( (X)? heapinfo((X)->heap, Id):0)
+
 #define USE_MAL_ADMISSION
 #ifdef USE_MAL_ADMISSION
 mal_export int MALadmission(lng argclaim, lng hotclaim);

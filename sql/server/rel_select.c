@@ -4147,7 +4147,6 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		}
 		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 			sql_exp *rs = NULL;
-			int card = 0;
 
 			if (!*rel)
 				return NULL;
@@ -4157,11 +4156,10 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			sql->errstr[0] = '\0';
 
 			/* add unique */
-			card = exps_card((*rel)->exps);
 			*rel = r = rel_subquery(sql, *rel, se, ek, f == sql_sel?APPLY_LOJ:APPLY_JOIN);
 			if (r) {
 				rs = rel_lastexp(sql, r);
-				if (f == sql_sel && card > CARD_ATOM && r->card > CARD_ATOM && r->r) {
+				if (f == sql_sel && exp_card(rs) > CARD_ATOM && r->card > CARD_ATOM && r->r) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 

@@ -30,139 +30,53 @@
 #include "sql_gencode.h"
 #include "opt_pipes.h"
 
-#define TOSMALL 10
-
-/*
- * Cost-based optimization and semantic evaluations require statistics to work with.
- * They should come from the SQL catalog or the BATs themselves.
- * A better way is to mark all BATs used as a constant, because that permits
- * access to all properties. However, this creates unnecessary locking during stack
- * initialization. Therfore, we store the BAT id as a property for the optimizer
- * to work with. It can pick up the BAT if needed.
- *
- * Care should be taken in marking the delta bats as empty, because their
- * purpose is to fill them during the query. Therefore, we keep track
- * of all bound tables and mark them not-empty when a direct update
- * takes place using append().
- *
- * We also reduce the number of bind operations by keeping track
- * of those seen already.  This can not be handled by the
- * common term optimizer, because the first bind has a side-effect.
- */
-
-static lng SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
+static lng 
+SQLgetSpace(mvc *m, MalBlkPtr mb)
 {
-	InstrPtr *old = NULL;
-	int oldtop, i, actions = 0, size = 0;
-	lng clk = GDKusec();
 	sql_trans *tr = m->session->tr;
-	str msg;
-	lng space = 0; // sum the total amount of data potentially read
+	lng space = 0, i; 
 
-	old = mb->stmt;
-	oldtop = mb->stop;
-	size = (mb->stop * 1.2 < mb->ssize) ? mb->ssize : (int) (mb->stop * 1.2);
-	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
-	mb->ssize = size;
-	mb->stop = 0;
-
-	for (i = 0; i < oldtop; i++) {
-		InstrPtr p = old[i];
+	for (i = 0; i < mb->stop; i++) {
+		InstrPtr p = mb->stmt[i];
 		char *f = getFunctionId(p);
 
-		if (getModuleId(p) == sqlRef && f == tidRef) {
-			char *sname = getVarConstant(mb, getArg(p, 2)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p, 3)).val.sval;
-			sql_schema *s = mvc_bind_schema(m, sname);
-			sql_table *t;
-
-			if (!s || strcmp(s->base.name, dt_schema) == 0) {
-				pushInstruction(mb, p);
-				continue;
-			}
-
-		       	t = mvc_bind_table(m, s, tname);
-
-			if (t && (!isRemote(t) && !isMergeTable(t)) && t->p) {
-				int mt_member = t->p->base.id;
-				setMitosisPartition(p,mt_member);
-			}
-		}
 		if (getModuleId(p) == sqlRef && (f == bindRef || f == bindidxRef)) {
-			int upd = (p->argc == 7 || p->argc == 9);
+			int upd = (p->argc == 7 || p->argc == 9), mode = 0;
 			char *sname = getVarConstant(mb, getArg(p, 2 + upd)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p, 3 + upd)).val.sval;
 			char *cname = NULL;
-
-			int mt_member = 0;
-			BUN rows = 1;	/* default to cope with delta bats */
-			int mode = 0;
-			int k = getArg(p, 0);
 			sql_schema *s = mvc_bind_schema(m, sname);
-			BAT *b;
 
-			if (!s || strcmp(s->base.name, dt_schema) == 0) {
-				pushInstruction(mb, p);
+			if (!s || strcmp(s->base.name, dt_schema) == 0) 
 				continue;
-			}
 			cname = getVarConstant(mb, getArg(p, 4 + upd)).val.sval;
 			mode = getVarConstant(mb, getArg(p, 5 + upd)).val.ival;
-
-			if (s && f == bindidxRef && cname) {
-				size_t cnt;
+			if (mode != 0 || !cname || !s)
+				continue;
+			if (f == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					cnt = store_funcs.count_idx(tr, i, 1);
-					assert(cnt <= (size_t) GDK_oid_max);
-					b = store_funcs.bind_idx(m->session->tr, i, RDONLY);
+					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
 					if (b) {
-						cnt = BATcount(b);
-						if( mode == 0) {
-							space += getBatSpace(b);
-						}
+						space += getBatSpace(b);
 						BBPunfix(b->batCacheid);
 					}
-					rows = (BUN) cnt;
-					if (i->t->p) 
-						mt_member = i->t->p->base.id;
 				}
-			} else if (s && f == bindRef && cname) {
-				size_t cnt;
+			} else if (f == bindRef) {
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
 				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-					cnt = store_funcs.count_col(tr, c, 1);
-					assert(cnt <= (size_t) GDK_oid_max);
-					b = store_funcs.bind_col(m->session->tr, c, RDONLY);
+					BAT *b = store_funcs.bind_col(tr, c, RDONLY);
 					if (b) {
-						cnt = BATcount(b);
-						if( mode == 0) {
-							space += getBatSpace(b);
-						}
+						space += getBatSpace(b);
 						BBPunfix(b->batCacheid);
 					}
-					rows = (BUN) cnt;
-					if (c->t->p) 
-						mt_member = c->t->p->base.id;
 				}
 			}
-			//mnstr_printf(GDKerr, "#space estimate after %s.%s.%s mode %d "LLFMT"\n",sname,tname,cname, mode, space);
-			if (rows > 1 && mode != RD_INS)
-				setRowCnt(mb,k,rows);
-			if (mt_member && mode != RD_INS)
-				setMitosisPartition(p,mt_member);
-
-			pushInstruction(mb, p);
-		} else {
-			pushInstruction(mb, p);
 		}
 	}
-	GDKfree(old);
-	msg = optimizerCheck(cntxt, mb, "optimizer.SQLgetstatistics", actions, GDKusec() - clk);
-	if (msg)		/* what to do with an error? */
-		GDKfree(msg);
 	return space;
 }
 
@@ -189,7 +103,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	space = SQLgetStatistics(c, be->mvc, mb);
+	space = SQLgetSpace(be->mvc, mb);
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";

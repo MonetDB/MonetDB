@@ -53,16 +53,11 @@ Ready.
 # 21:52:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26218" "--port=33559"
 # 21:52:29 >  
 
-#select * from sys.querylog_catalog;
-% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
-% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
-% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
-% 3,	0,	26,	0,	0,	0,	1,	1 # length
-#select * from sys.querylog_catalog;
-% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
-% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
-% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
-% 3,	0,	26,	0,	0,	0,	1,	1 # length
+#select * from sys.querylog_history;
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select * from sys.querylog_catalog;
 % .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
@@ -73,6 +68,49 @@ Ready.
 % id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
 % 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#select 1;
+% .L # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select owner, query, pipe, plan, mal from sys.querylog_catalog;
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% owner,	query,	pipe,	plan,	mal # name
+% clob,	clob,	clob,	clob,	int # type
+% 7,	63,	12,	9,	2 # length
+[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	21	]
+[ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	53	]
+#select arguments, tuples from sys.querylog_calls;
+% .querylog_calls,	.querylog_calls # table_name
+% arguments,	tuples # name
+% clob,	wrd # type
+% 23,	1 # length
+[ "user.s5_1(A0:bte):void;",	1	]
+[ "user.s6_1():void;",	5	]
+#select owner, query, pipe, plan, mal, arguments, tuples from sys.querylog_history;
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% owner,	query,	pipe,	plan,	mal,	arguments,	tuples # name
+% clob,	clob,	clob,	clob,	int,	clob,	wrd # type
+% 7,	63,	12,	9,	2,	23,	1 # length
+[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	21,	"user.s5_1(A0:bte):void;",	1	]
+[ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	53,	"user.s6_1():void;",	5	]
+[ "monetdb",	"select arguments, tuples from sys.querylog_calls;",	"default_pipe",	"user.s7_1",	38,	"user.s7_1():void;",	2	]
+#select * from sys.querylog_history;
+% .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#select * from sys.querylog_calls;
+% .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
+% id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
+% oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
+#select * from sys.querylog_catalog;
+% .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
+% id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize # name
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint # type
+% 3,	0,	26,	0,	0,	0,	1,	1 # length
 
 # 21:52:29 >  
 # 21:52:29 >  "Done."

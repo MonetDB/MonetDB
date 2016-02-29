@@ -1371,7 +1371,7 @@ exp_unsafe( sql_exp *e)
 		list *args = e->l;
 		node *n;
 
-		if (IS_ANALYTIC(f->func))
+		if (IS_ANALYTIC(f->func) || is_identity(e, NULL))
 			return 1;
 		for(n = args->h; n; n = n->next) {
 			sql_exp *e = n->data;

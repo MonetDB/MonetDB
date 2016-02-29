@@ -27,16 +27,15 @@ Ready.
 # 06:40:51 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:40:51 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    b:bat[:str] := bat.new(:oid,:str);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:str] := bat.new(:oid,:str);  	#[2] CMDBATnew 4 <- 2 3 
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:str] := bat.new(:oid,:str);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:str] := bat.new(:oid,:str);  	#[2] (0) CMDBATnew 4 <- 2 3 
 # identical until insert takes place 
-    d:bat[:oid] := algebra.subselect(b:bat[:str],"hello":str,"world":str,true:bit,true:bit,false:bit);	#[4] ALGsubselect1 6 <- 1 7 8 9 10 11 
+    d:bat[:oid] := algebra.subselect(b:bat[:str],"hello":str,"world":str,true:bit,true:bit,false:bit);	#[4] (0) ALGsubselect1 6 <- 1 7 8 9 10 11 
 # mapped onto one instruction 
-end user.foo;                           	#[6]  
-#commonTerms          actions= 1 time=13 usec 
-#aliases              actions= 1 time=6 usec 
+end user.foo;                           	#[6] (0)  
+#commonTerms          actions= 1 time=17 usec 
+#aliases              actions= 1 time=8 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

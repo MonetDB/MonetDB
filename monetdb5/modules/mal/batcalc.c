@@ -1373,12 +1373,12 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (b1 != NULL)
 				bn = COLcopy(b1, b1->ttype, 0, TRANSIENT);
 			else
-				bn = BATconst(b2, b2->ttype, getArgReference(stk, pci, 2), TRANSIENT);
+				bn = BATconst(b2, b2->ttype, VALptr(&stk->stk[getArg(pci, 2)]), TRANSIENT);
 		} else {
 			if (b2 != NULL)
 				bn = COLcopy(b2, b2->ttype, 0, TRANSIENT);
 			else
-				bn = BATconst(b1, b1->ttype, getArgReference(stk, pci, 3), TRANSIENT);
+				bn = BATconst(b1, b1->ttype, VALptr(&stk->stk[getArg(pci, 3)]), TRANSIENT);
 		}
 	}
 	if (b)

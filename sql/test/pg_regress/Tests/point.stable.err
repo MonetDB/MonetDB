@@ -1,11 +1,11 @@
 stderr of test 'point` in directory 'sql/test/pg_regress` itself:
 
 
-# 17:11:18 >  
-# 17:11:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38959" "--set" "mapi_usock=/var/tmp/mtest-1142/.s.monetdb.38959" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
-# 17:11:18 >  
+# 18:36:56 >  
+# 18:36:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31786" "--set" "mapi_usock=/var/tmp/mtest-5174/.s.monetdb.31786" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0"
+# 18:36:56 >  
 
-# builtin opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /export/scratch2/alvanaki/INSTALL/MonetDB-public/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,106 +17,67 @@ stderr of test 'point` in directory 'sql/test/pg_regress` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38959
-# cmdline opt 	mapi_usock = /var/tmp/mtest-1142/.s.monetdb.38959
+# cmdline opt 	mapi_port = 31786
+# cmdline opt 	mapi_usock = /var/tmp/mtest-5174/.s.monetdb.31786
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	gdk_dbpath = /export/scratch2/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_sql_test_pg_regress
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 536870922
 
-# 17:11:19 >  
-# 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
-# 17:11:19 >  
+# 18:36:57 >  
+# 18:36:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5174" "--port=31786"
+# 18:36:57 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES (1.0,2.0);
 ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'point_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('asdfasdf');
 ERROR = !ParseException: Unknown type: 'ASDFASDF'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = INSERT INTO POINT_TBL(f1) VALUES (point('asdfasdf'));
-ERROR = !SELECT: no such unary operator 'point(char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint('asdfasdf'));
+ERROR = !SELECT: no such unary operator 'st_makepoint(char)'
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('10.0,10.0');
 ERROR = !ParseException: Expected word but encountered number: '10'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = INSERT INTO POINT_TBL(f1) VALUES (point('10.0,10.0'));
-ERROR = !SELECT: no such unary operator 'point(char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint('10.0,10.0'));
+ERROR = !SELECT: no such unary operator 'st_makepoint(char)'
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('(10.0 10.0)');
 ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = INSERT INTO POINT_TBL(f1) VALUES (point(10.0 10.0)));
-ERROR = !syntax error, unexpected INTNUM, expecting ')' or ',' in: "insert into point_tbl(f1) values (point(10.0 10.0"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint(10.0 10.0)));
+ERROR = !syntax error, unexpected INTNUM, expecting ')' or ',' in: "insert into point_tbl(f1) values (st_makepoint(10.0 10.0"
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('(10,0.10,0');
 ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = INSERT INTO POINT_TBL(f1) VALUES (point(10,0.10,0));
-ERROR = !SELECT: no such operator 'point'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE p.f1 << '(0.0, 0.0)';
-ERROR = !SELECT: no such binary operator 'left_shift(point,char)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE '(0.0,0.0)' >> p.f1;
-ERROR = !SELECT: no such binary operator 'right_shift(char,point)'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE '(0.0,0.0)' >^ p.f1;
-ERROR = !syntax error, unexpected '^' in: "select '' as one, p.* from point_tbl_vw p where '(0.0,0.0)' >^"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 <^ '(0.0, 0.0)';
-ERROR = !syntax error, unexpected '^' in: "select '' as one, p.* from point_tbl_vw p where p.f1 <^"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 ~= '(5.1, 34.5)';
-ERROR = !syntax error, unexpected '~', expecting SCOLON in: "select '' as one, p.* from point_tbl_vw p where p.f1 ~"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS three, p.* FROM POINT_TBL_VW p
-           WHERE p.f1 @ mbr('linestring(0 0, 100 100)');
-ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select '' as three, p.* from point_tbl_vw p
-        !   where p.f1 @"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS three, p.* FROM POINT_TBL_VW p
-           WHERE not p.f1 @ box '(0,0,100,100)';
-ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select '' as three, p.* from point_tbl_vw p
-        !   where not p.f1 @"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS two, p.* FROM POINT_TBL_VW p
-           WHERE p.f1 @ path '[(0,0),(-10,0),(-10,10)]';
-ERROR = !syntax error, unexpected AT, expecting SCOLON in: "select '' as two, p.* from point_tbl_vw p
-        !   where p.f1 @"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS six, p.f1, p.f1 <-> point '(0,0)' AS dist
-           FROM POINT_TBL p
-           ORDER BY dist;
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as six, p.f1, p.f1 <->"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint(10,0.10,0));
+ERROR = !column needs geometry(4, 0) and value is geometry(6, 0)
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+QUERY = SELECT '' AS two, p.* FROM POINT_TBL_VW p WHERE p.f1 @ path '[(0,0),(-10,0),(-10,10)]';
+ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select '' as two, p.* from point_tbl_vw p where p.f1 @ path '[(0,0),(-10,0),(-10"
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
            FROM POINT_TBL p1, POINT_TBL p2
            ORDER BY dist, point1 using <<, point2 using <<;
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as thirtysix, p1.f1 as point1, p2.f1 as point2, p1.f1 <->"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
-QUERY = SELECT '' AS thirty, p1.f1 AS point1, p2.f1 AS point2
-           FROM POINT_TBL p1, POINT_TBL p2
-           WHERE (p1.f1 <-> p2.f1) > 3;
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as thirty, p1.f1 as point1, p2.f1 as point2
-        !   from point_tbl p1, poin"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !syntax error, unexpected USING, expecting SCOLON in: "select '' as thirtysix, p1.f1 as point1, p2.f1 as point2, p1.f1 <-> p2.f1 as dis"
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = SELECT '' AS fifteen, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
            FROM POINT_TBL p1, POINT_TBL p2
            WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1
            ORDER BY distance, point1 using <<, point2 using <<;
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as fifteen, p1.f1 as point1, p2.f1 as point2, (p1.f1 <->"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !syntax error, unexpected USING, expecting SCOLON in: "select '' as fifteen, p1.f1 as point1, p2.f1 as point2, (p1.f1 <-> p2.f1) as dis"
+MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = SELECT '' AS three, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
            FROM POINT_TBL p1, POINT_TBL p2 
            WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1 and p1.f1 >^ p2.f1
            ORDER BY distance;
-ERROR = !syntax error, unexpected COMPARISON in: "select '' as three, p1.f1 as point1, p2.f1 as point2, (p1.f1 <->"
+ERROR = !syntax error, unexpected '^' in: "select '' as three, p1.f1 as point1, p2.f1 as point2, (p1.f1 <-> p2.f1) as dista"
 
-
-# 17:11:19 >  
-# 17:11:19 >  "Done."
-# 17:11:19 >  
+# 18:36:57 >  
+# 18:36:57 >  "Done."
+# 18:36:57 >  
 

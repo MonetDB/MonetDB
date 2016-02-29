@@ -1,0 +1,65 @@
+stdout of test 'ST_NumInteriorRings` in directory 'geom/sql/functions` itself:
+
+
+# 14:51:11 >  
+# 14:51:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37873" "--set" "mapi_usock=/var/tmp/mtest-30133/.s.monetdb.37873" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 14:51:11 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://essen.ins.cwi.nl:37873/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30133/.s.monetdb.37873
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup geom.NumInteriorRings a bulk operator implementation is needed
+
+# 14:51:11 >  
+# 14:51:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30133" "--port=37873"
+# 14:51:11 >  
+
+#SELECT ST_NumInteriorRings(ST_polygonFromText('POLYGON((1 2, 3 4, 5 6, 1 2), (3 4, 5 6, 7 8, 3 4))') ) AS "INTERIOR RINGS";
+% .L # table_name
+% INTERIOR RINGS # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT ST_NumInteriorRings(ST_MPolyFromText('MULTIPOLYGON(((1 2, 3 4, 5 6, 1 2),(10 20, 30 40, 50 60, 10 20), (100 200, 300 400, 500 600, 100 200)), ((1 2, 3 4, 5 6, 1 2)))') ) AS "INTERIOR RINGS";
+% .L # table_name
+% INTERIOR RINGS # name
+% int # type
+% 1 # length
+[ 2	]
+#SELECT ST_NumInteriorRings(st_linefromtext('linestring(1 2 3, 4 5 6, 7 8 9)')) AS "INTERIOR RINGS";
+% .L # table_name
+% INTERIOR RINGS # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT id, geom AS "GEOMETRY", ST_NumInteriorRings(geom) AS "INTERIOR RINGS" FROM geometries WHERE 5<=id AND id<=10 OR id=18 OR id=23 OR id=26 OR id=27;
+% sys.geometries,	sys.L,	sys.L # table_name
+% id,	GEOMETRY,	"INTERIOR RINGS" # name
+% int,	geometry,	int # type
+% 2,	0,	1 # length
+[ 5,	"POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))",	0	]
+[ 6,	"MULTIPOINT (10 20, 30 40)",	0	]
+[ 7,	"MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))",	0	]
+[ 8,	"MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))",	0	]
+[ 9,	"MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))",	0	]
+[ 10,	"MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))",	1	]
+[ 18,	"POLYGON Z ((10 10 5, 10 20 10, 20 20 15, 20 10 20, 10 10 25))",	0	]
+[ 23,	"MULTIPOLYGON Z (((10 10 5, 10 20 5, 20 20 5, 20 10 5, 10 10 5), (30 30 10, 30 40 10, 40 40 10, 40 30 10, 30 30 10)))",	1	]
+[ 26,	"POLYGON ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10))",	1	]
+[ 27,	"MULTIPOLYGON (((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10), (1 1, 1 2, 2 2, 2 1, 1 1)), ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10)))",	2	]
+
+# 14:51:12 >  
+# 14:51:12 >  "Done."
+# 14:51:12 >  
+

@@ -1767,7 +1767,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *
 	 * <p>Only table descriptions matching the catalog, schema, table
 	 * name and type criteria are returned. They are ordered by
-	 * TABLE_TYPE, TABLE_SCHEM and TABLE_NAME.
+	 * TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME.
 	 *
 	 * <p>Each table description has the following columns:
 	 *
@@ -1776,22 +1776,19 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li><b>TABLE_SCHEM</b> String => table schema (may be null)
 	 * <li><b>TABLE_NAME</b> String => table name
 	 * <li><b>TABLE_TYPE</b> String => table type. Typical types are "TABLE",
-	 * "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL
-	 * TEMPORARY", "ALIAS", "SYNONYM".
+	 * "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
 	 * <li><b>REMARKS</b> String => explanatory comment on the table
+	 * <li><b>TYPE_CAT</b> String => the types catalog (may be null)
+	 * <li><b>TYPE_SCHEM</b> String => the types schema (may be null)
+	 * <li><b>TYPE_NAME</b> String => type name (may be null)
+	 * <li><b>SELF_REFERENCING_COL_NAME</b> String => name of the designated "identifier" column of a typed table (may be null)
+	 * <li><b>REF_GENERATION</b> String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null) 
 	 * </ol>
-	 *
-	 * <p>The valid values for the types parameter are:
-	 * "TABLE", "INDEX", "SEQUENCE", "VIEW",
-	 * "SYSTEM TABLE", "SYSTEM INDEX", "SYSTEM VIEW",
-	 * "SYSTEM TOAST TABLE", "SYSTEM TOAST INDEX",
-	 * "TEMPORARY TABLE", and "TEMPORARY VIEW"
 	 *
 	 * @param catalog a catalog name; this parameter is currently ignored
 	 * @param schemaPattern a schema name pattern
 	 * @param tableNamePattern a table name pattern. For all tables this should be "%"
-	 * @param types a list of table types to include; null returns all types;
-	 *              this parameter is currently ignored
+	 * @param types a list of table types, which must be from the list of table types returned from getTableTypes(), to include; null returns all types;
 	 * @return each row is a table description
 	 * @throws SQLException if a database-access error occurs.
 	 */
@@ -1804,43 +1801,68 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		// as of Jul2015 release the sys.tables.type values (0 through 6) is extended with new values 10, 11, 20, and 30 (for system and temp tables/views).
+		// as of Jul2015 release we also have a new table: sys.table_types with names for the new table types
 		// for correct behavior we need to know if the server is using the old (pre Jul2015) or new sys.tables.type values
 		boolean preJul2015 = ("11.19.15".compareTo(getDatabaseProductVersion()) >= 0);
 		/* for debug: System.out.println("getDatabaseProductVersion() is " + getDatabaseProductVersion() + "  preJul2015 is " + preJul2015); */
 
-		String query =
-			"SELECT * FROM ( " +
-			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", \"schemas\".\"name\" AS \"TABLE_SCHEM\", \"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "10") + " AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
-				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "11") + " AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
+		StringBuilder query = new StringBuilder(1600);
+		query.append("SELECT * FROM (SELECT DISTINCT cast(null as char(1)) AS \"TABLE_CAT\", ")
+			.append("\"schemas\".\"name\" AS \"TABLE_SCHEM\", ")
+			.append("\"tables\".\"name\" AS \"TABLE_NAME\", ");
+		if (preJul2015) {
+			query.append(
+				"CASE WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" IN (0, 10) AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM TABLE' " +
+				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" IN (1, 11) AND \"tables\".\"temporary\" = 0 THEN 'SYSTEM VIEW' " +
 				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 0 AND \"tables\".\"temporary\" = 0 THEN 'TABLE' " +
 				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = 1 AND \"tables\".\"temporary\" = 0 THEN 'VIEW' " +
-				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "20") + " AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
-				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "21") + " AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
-				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = " + (preJul2015 ? "0" : "30") + " AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
-				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" = " + (preJul2015 ? "1" : "31") + " AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
-				"END AS \"TABLE_TYPE\", \"tables\".\"query\" AS \"REMARKS\", null AS \"TYPE_CAT\", null AS \"TYPE_SCHEM\", " +
-				"null AS \"TYPE_NAME\", 'rowid' AS \"SELF_REFERENCING_COL_NAME\", 'SYSTEM' AS \"REF_GENERATION\" " +
-			"FROM \"sys\".\"tables\" AS \"tables\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
-			") AS \"tables\" WHERE 1 = 1 ";
+				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" IN (0, 20) AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION TABLE' " +
+				"WHEN \"tables\".\"system\" = true AND \"tables\".\"type\" IN (1, 21) AND \"tables\".\"temporary\" = 1 THEN 'SYSTEM SESSION VIEW' " +
+				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" IN (0, 30) AND \"tables\".\"temporary\" = 1 THEN 'SESSION TABLE' " +
+				"WHEN \"tables\".\"system\" = false AND \"tables\".\"type\" IN (1, 31) AND \"tables\".\"temporary\" = 1 THEN 'SESSION VIEW' " +
+				"END AS \"TABLE_TYPE\", ");
+		} else {
+			query.append("\"table_type_name\" AS \"TABLE_TYPE\", ");
+		}
+		query.append("\"tables\".\"query\" AS \"REMARKS\", ")
+			.append("cast(null as char(1)) AS \"TYPE_CAT\", ")
+			.append("cast(null as char(1)) AS \"TYPE_SCHEM\", ")
+			.append("cast(null as char(1)) AS \"TYPE_NAME\", ")
+			.append("cast(null as char(1)) AS \"SELF_REFERENCING_COL_NAME\", ")
+			.append("cast(null as char(1)) AS \"REF_GENERATION\" ")
+			.append("FROM \"sys\".\"tables\", \"sys\".\"schemas\"");
+		if (!preJul2015) {
+			query.append(", \"sys\".\"table_types\"");
+		}
+		query.append(" WHERE \"tables\".\"schema_id\" = \"schemas\".\"id\"");
+		if (!preJul2015) {
+			query.append(" AND \"tables\".\"type\" = \"table_types\".\"table_type_id\"");
+		}
+		query.append(") AS \"getTables\" WHERE 1 = 1");
 
-		if (tableNamePattern != null) {
-			query += "AND \"TABLE_NAME\" ILIKE '" + escapeQuotes(tableNamePattern) + "' ";
+		if (catalog != null && catalog.length() > 0) {
+			query.append(" AND \"TABLE_CAT\" ").append(composeMatchPart(catalog));
 		}
 		if (schemaPattern != null) {
-			query += "AND \"TABLE_SCHEM\" ILIKE '" + escapeQuotes(schemaPattern) + "' ";
+			query.append(" AND \"TABLE_SCHEM\" ").append(composeMatchPart(schemaPattern));
 		}
-		if (types != null) {
-			query += "AND (";
+		if (tableNamePattern != null) {
+			query.append(" AND \"TABLE_NAME\" ").append(composeMatchPart(tableNamePattern));
+		}
+		if (types != null && types.length > 0) {
+			query.append(" AND \"TABLE_TYPE\" IN (");
 			for (int i = 0; i < types.length; i++) {
-				query += (i == 0 ? "" : " OR ") + "\"TABLE_TYPE\" ILIKE '" + escapeQuotes(types[i]) + "'";
+				if (i > 0) {
+					query.append(", ");
+				}
+				query.append("'").append(types[i]).append("'");
 			}
-			query += ") ";
+			query.append(")");
 		}
 
-		query += "ORDER BY \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"";
+		query.append(" ORDER BY \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"");
 
-		return getStmt().executeQuery(query);
+		return getStmt().executeQuery(query.toString());
 	}
 
 	/**
@@ -1918,31 +1940,22 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public ResultSet getTableTypes() throws SQLException {
-		String[] columns, types;
-		String[][] results;
-
-		columns = new String[1];
-		columns[0] = "TABLE_TYPE";
-
-		types = new String[1];
-		types[0] = "varchar";
-
-		results = new String[8][1];
-		// The results need to be ordered by TABLE_TYPE
-		results[0][0] = "SESSION TABLE";
-		results[1][0] = "SESSION VIEW";
-		results[2][0] = "SYSTEM SESSION TABLE";
-		results[3][0] = "SYSTEM SESSION VIEW";
-		results[4][0] = "SYSTEM TABLE";
-		results[5][0] = "SYSTEM VIEW";
-		results[6][0] = "TABLE";
-		results[7][0] = "VIEW";
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
+		// as of Jul2015 release we have a new table: sys.table_types with more table types
+		String query = "SELECT \"table_type_name\" AS \"TABLE_TYPE\" FROM \"sys\".\"table_types\" ORDER BY 1";
+		// For old (pre jul2015) servers fall back to old behavior.
+		boolean preJul2015 = ("11.19.15".compareTo(getDatabaseProductVersion()) >= 0);
+		if (preJul2015) {
+			query = "SELECT 'SESSION TABLE' AS \"TABLE_TYPE\" UNION ALL " +
+				"SELECT 'SESSION VIEW' UNION ALL " +
+				"SELECT 'SYSTEM SESSION TABLE' UNION ALL " +
+				"SELECT 'SYSTEM SESSION VIEW' UNION ALL " +
+				"SELECT 'SYSTEM TABLE' UNION ALL " +
+				"SELECT 'SYSTEM VIEW' UNION ALL " +
+				"SELECT 'TABLE' UNION ALL " +
+				"SELECT 'VIEW' ORDER BY 1";
 		}
+
+		return getStmt().executeQuery(query);
 	}
 
 	/**

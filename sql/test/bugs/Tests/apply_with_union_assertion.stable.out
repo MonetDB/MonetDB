@@ -49,8 +49,6 @@ Ready.
 # loading sql script: 85_bam.sql
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup user.mydateformat a bulk operator implementation is needed
-#WARNING To speedup user.mydateformat a bulk operator implementation is needed
 
 # 15:11:30 >  
 # 15:11:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12425" "--port=33563"

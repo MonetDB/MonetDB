@@ -1,0 +1,95 @@
+stdout of test 'XYZMinMax` in directory 'geom/sql/functions` itself:
+
+
+# 17:54:59 >  
+# 17:54:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31755" "--set" "mapi_usock=/var/tmp/mtest-32024/.s.monetdb.31755" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 17:54:59 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:31755/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32024/.s.monetdb.31755
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:54:59 >  
+# 17:54:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32024" "--port=31755"
+# 17:54:59 >  
+
+#select id, ST_XMin(geom) AS "Xmin", ST_YMin(geom) AS "Ymin", ST_XMax(geom) AS "Xmax", ST_YMax(geom) AS "Ymax" from geometries;
+% sys.geometries,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% id,	Xmin,	Ymin,	Xmax,	Ymax # name
+% int,	double,	double,	double,	double # type
+% 2,	24,	24,	24,	24 # length
+[ 1,	10,	20,	10,	20	]
+[ 2,	10,	20,	50,	60	]
+[ 3,	10,	20,	80,	60	]
+[ 4,	10,	5,	50,	80	]
+[ 5,	10,	10,	20,	20	]
+[ 6,	10,	20,	30,	40	]
+[ 7,	30,	40,	60,	70	]
+[ 8,	30,	40,	60,	70	]
+[ 9,	20,	30,	50,	60	]
+[ 10,	10,	10,	20,	20	]
+[ 11,	NULL,	NULL,	NULL,	NULL	]
+[ 12,	10,	10,	30,	40	]
+[ 13,	10,	10,	30,	40	]
+[ 14,	10,	20,	10,	20	]
+[ 15,	10,	20,	50,	60	]
+[ 16,	10,	20,	80,	60	]
+[ 17,	10,	5,	50,	80	]
+[ 18,	10,	10,	20,	20	]
+[ 19,	10,	20,	30,	40	]
+[ 20,	30,	40,	60,	70	]
+[ 21,	30,	40,	60,	70	]
+[ 22,	20,	30,	50,	60	]
+[ 23,	10,	10,	20,	20	]
+[ 24,	10,	10,	30,	40	]
+[ 25,	10,	10,	30,	40	]
+[ 26,	100,	100,	200,	200	]
+[ 27,	100,	100,	200,	200	]
+#select id, ST_XMin(mbr(geom)) AS "Xmin", ST_YMin(mbr(geom)) AS "Ymin", ST_XMax(mbr(geom)) AS "Xmax", ST_YMax(mbr(geom)) AS "Ymax" from geometries;
+% sys.geometries,	sys.L,	sys.L,	sys.L,	sys.L # table_name
+% id,	Xmin,	Ymin,	Xmax,	Ymax # name
+% int,	double,	double,	double,	double # type
+% 2,	24,	24,	24,	24 # length
+[ 1,	10,	20,	10,	20	]
+[ 2,	10,	20,	50,	60	]
+[ 3,	10,	20,	80,	60	]
+[ 4,	10,	5,	50,	80	]
+[ 5,	10,	10,	20,	20	]
+[ 6,	10,	20,	30,	40	]
+[ 7,	30,	40,	60,	70	]
+[ 8,	30,	40,	60,	70	]
+[ 9,	20,	30,	50,	60	]
+[ 10,	10,	10,	20,	20	]
+[ 11,	NULL,	NULL,	NULL,	NULL	]
+[ 12,	10,	10,	30,	40	]
+[ 13,	10,	10,	30,	40	]
+[ 14,	10,	20,	10,	20	]
+[ 15,	10,	20,	50,	60	]
+[ 16,	10,	20,	80,	60	]
+[ 17,	10,	5,	50,	80	]
+[ 18,	10,	10,	20,	20	]
+[ 19,	10,	20,	30,	40	]
+[ 20,	30,	40,	60,	70	]
+[ 21,	30,	40,	60,	70	]
+[ 22,	20,	30,	50,	60	]
+[ 23,	10,	10,	20,	20	]
+[ 24,	10,	10,	30,	40	]
+[ 25,	10,	10,	30,	40	]
+[ 26,	100,	100,	200,	200	]
+[ 27,	100,	100,	200,	200	]
+
+# 17:54:59 >  
+# 17:54:59 >  "Done."
+# 17:54:59 >  
+

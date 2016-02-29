@@ -1,0 +1,85 @@
+stdout of test 'ST_MakePoint` in directory 'geom/sql/functions` itself:
+
+
+# 17:12:18 >  
+# 17:12:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37625" "--set" "mapi_usock=/var/tmp/mtest-10118/.s.monetdb.37625" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 17:12:18 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:37625/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10118/.s.monetdb.37625
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:12:18 >  
+# 17:12:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10118" "--port=37625"
+# 17:12:18 >  
+
+#create table points_tbl(g geometry(point));
+#insert into points_tbl values (st_makepoint(10, 10));
+[ 1	]
+#insert into points_tbl values (st_point(20, 20));
+[ 1	]
+#select * from points_tbl;
+% sys.points_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "POINT (10 10)"	]
+[ "POINT (20 20)"	]
+#drop table points_tbl;
+#create table points_tbl(g geometry(pointz));
+#insert into points_tbl values (st_makepoint(10, 10, 10));
+[ 1	]
+#insert into points_tbl values (st_makepoint(10, 20, 30));
+[ 1	]
+#select * from points_tbl;
+% sys.points_tbl # table_name
+% g # name
+% geometry # type
+% 0 # length
+[ "POINT Z (10 10 10)"	]
+[ "POINT Z (10 20 30)"	]
+#drop table points_tbl;
+#create table points_tbl(x double, y double, z double, m double);
+#insert into points_tbl values (10, 20, 30, 40), (100, 200, 300, 400), (1, 2, 3, 4);
+[ 3	]
+#select st_makepoint(x,y) as "XY" from points_tbl;
+% sys.L # table_name
+% XY # name
+% geometry # type
+% 0 # length
+[ "POINT (10 20)"	]
+[ "POINT (100 200)"	]
+[ "POINT (1 2)"	]
+#select st_makepoint(x,y,z) as "XYZ" from points_tbl;
+% sys.L # table_name
+% XYZ # name
+% geometry # type
+% 0 # length
+[ "POINT Z (10 20 30)"	]
+[ "POINT Z (100 200 300)"	]
+[ "POINT Z (1 2 3)"	]
+#select st_makepointm(x,y,m) as "XYM" from points_tbl;
+% sys.L # table_name
+% XYM # name
+% geometry # type
+% 0 # length
+[ "POINT Z (10 20 40)"	]
+[ "POINT Z (100 200 400)"	]
+[ "POINT Z (1 2 4)"	]
+#drop table points_tbl;
+
+# 17:12:18 >  
+# 17:12:18 >  "Done."
+# 17:12:18 >  
+

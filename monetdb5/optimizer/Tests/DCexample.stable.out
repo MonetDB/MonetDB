@@ -27,13 +27,12 @@ Ready.
 # 15:36:17 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
 # 15:36:17 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    io.print("done":str);               	#[1] IOprint_val 15 <- 16 
-end user.foo;                           	#[2]  
-function user.foo():void;               	#[0]  0 
-    io.print("done":str);               	#[1] IOprint_val 15 <- 16 
-end user.foo;                           	#[2]  
+function user.foo():void;               	#[0] (0)  0 
+    io.print("done":str);               	#[1] (0) IOprint_val 15 <- 16 
+end user.foo;                           	#[2] (0)  
+function user.foo():void;               	#[0] (0)  0 
+    io.print("done":str);               	#[1] (0) IOprint_val 15 <- 16 
+end user.foo;                           	#[2] (0)  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

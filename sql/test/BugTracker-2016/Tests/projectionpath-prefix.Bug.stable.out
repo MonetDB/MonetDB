@@ -1,0 +1,54 @@
+stdout of test 'projectionpath-prefix.Bug` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 10:56:46 >  
+# 10:56:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39911" "--set" "mapi_usock=/var/tmp/mtest-21202/.s.monetdb.39911" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 10:56:46 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:39911/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21202/.s.monetdb.39911
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.6'
+# Finished reading the write-ahead log 'sql_logs/sql/log.6'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:56:46 >  
+# 10:56:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21202" "--port=39911"
+# 10:56:46 >  
+
+#CREATE TABLE bar (name CHAR(8) PRIMARY KEY);
+#CREATE TABLE foo (id INTEGER, barname CHAR(8));
+#ALTER TABLE foo ADD CONSTRAINT "fname" FOREIGN KEY ("barname")
+#REFERENCES bar ("name") ON DELETE CASCADE;
+#SELECT ps.name, pkt.name, pkkc.name, fkkc.name, fkkc.nr, fkk.name,
+#fkk."action", fs.name, fkt.name FROM sys._tables fkt, sys.objects fkkc,
+#sys.keys fkk, sys._tables pkt, sys.objects pkkc, sys.keys pkk,
+#sys.schemas ps, sys.schemas fs WHERE fkt.id = fkk.table_id AND pkt.id =
+#pkk.table_id AND fkk.id = fkkc.id AND pkk.id = pkkc.id AND fkk.rkey =
+#pkk.id AND fkkc.nr = pkkc.nr AND pkt.schema_id = ps.id AND fkt.schema_id
+#= fs.id AND fkt.system = FALSE ORDER BY fs.name,fkt.name, fkk.name, nr;
+% sys.ps,	sys.pkt,	sys.pkkc,	sys.fkkc,	sys.fkkc,	sys.fkk,	sys.fkk,	sys.fs,	sys.fkt # table_name
+% name,	name,	name,	name,	nr,	name,	action,	name,	name # name
+% varchar,	varchar,	varchar,	varchar,	int,	varchar,	int,	varchar,	varchar # type
+% 3,	3,	4,	7,	1,	5,	1,	3,	3 # length
+[ "sys",	"bar",	"name",	"barname",	0,	"fname",	1,	"sys",	"foo"	]
+#DROP TABLE foo;
+#DROP TABLE bar;
+
+# 10:56:46 >  
+# 10:56:46 >  "Done."
+# 10:56:46 >  
+

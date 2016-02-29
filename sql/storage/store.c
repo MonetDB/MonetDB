@@ -19,7 +19,7 @@
 #include <bat/bat_logger.h>
 
 /* version 05.21.00 of catalog */
-#define CATALOG_VERSION 52200
+#define CATALOG_VERSION 52201
 int catalog_version = 0;
 
 static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
@@ -2124,6 +2124,17 @@ sql_trans_tname_conflict( sql_trans *tr, sql_schema *s, const char *extra, const
 		*tp = 0;
 		t = find_sql_table(s, tmp);
 		if (t && sql_trans_cname_conflict(tr, t, tp+1, cname))
+			return 1;
+		*tp++ = '_';
+	}
+       	tmp = sa_strdup(tr->sa, cname);
+	tp = tmp;
+	while ((tp = strchr(tp, '_')) != NULL) {
+		char *ntmp;
+		*tp = 0;
+		ntmp = sa_message(tr->sa, "%s_%s", tname, tmp);
+		t = find_sql_table(s, ntmp);
+		if (t && sql_trans_cname_conflict(tr, t, NULL, tp+1))
 			return 1;
 		*tp++ = '_';
 	}

@@ -1,0 +1,285 @@
+stdout of test 'ST_AsText` in directory 'geom/sql/functions` itself:
+
+
+# 15:21:06 >  
+# 15:21:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33810" "--set" "mapi_usock=/var/tmp/mtest-15845/.s.monetdb.33810" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 15:21:06 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:33810/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15845/.s.monetdb.33810
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_jsonstore.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 89_generator_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 15:21:06 >  
+# 15:21:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15845" "--port=33810"
+# 15:21:06 >  
+
+#select st_astext(st_pointfromtext('point(10 10)'));
+% .L # table_name
+% st_pointfromtext_single_value # name
+% clob # type
+% 15 # length
+[ "\"POINT (10 10)\""	]
+#select st_astext(st_pointfromtext('point(20 20)', 4326));
+% .L # table_name
+% st_pointfromtext_single_value # name
+% clob # type
+% 15 # length
+[ "\"POINT (20 20)\""	]
+#select st_astext(st_pointfromtext('point(10 10 10)'));
+% .L # table_name
+% st_pointfromtext_single_value # name
+% clob # type
+% 20 # length
+[ "\"POINT Z (10 10 10)\""	]
+#select st_astext(st_makepoint(10, 10));
+% .L # table_name
+% st_makepoint_single_value # name
+% clob # type
+% 15 # length
+[ "\"POINT (10 10)\""	]
+#select st_astext(st_point(20, 20));
+% .L # table_name
+% st_point_single_value # name
+% clob # type
+% 15 # length
+[ "\"POINT (20 20)\""	]
+#select st_astext(st_makepoint(10, 10, 10));
+% .L # table_name
+% st_makepoint_single_value # name
+% clob # type
+% 20 # length
+[ "\"POINT Z (10 10 10)\""	]
+#select st_astext(st_linefromtext('linestring(10 10, 20 20, 30 30)'));
+% .L # table_name
+% st_linefromtext_single_value # name
+% clob # type
+% 34 # length
+[ "\"LINESTRING (10 10, 20 20, 30 30)\""	]
+#select st_astext(st_linefromtext('linestring(20 20, 30 30, 40 40)', 4326));
+% .L # table_name
+% st_linefromtext_single_value # name
+% clob # type
+% 34 # length
+[ "\"LINESTRING (20 20, 30 30, 40 40)\""	]
+#select st_astext(st_linefromtext('linestring(20 20 20, 30 30 30, 40 40 40)', 4326));
+% .L # table_name
+% st_linefromtext_single_value # name
+% clob # type
+% 45 # length
+[ "\"LINESTRING Z (20 20 20, 30 30 30, 40 40 40)\""	]
+#select st_astext(st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
+% .L # table_name
+% st_polygonfromtext_single_value # name
+% clob # type
+% 40 # length
+[ "\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
+#select st_astext(st_polygonfromtext('polygon((20 20, 30 30, 40 40, 20 20))', 4326));
+% .L # table_name
+% st_polygonfromtext_single_value # name
+% clob # type
+% 40 # length
+[ "\"POLYGON ((20 20, 30 30, 40 40, 20 20))\""	]
+#select st_astext(st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
+% .L # table_name
+% st_polygonfromtext_single_value # name
+% clob # type
+% 54 # length
+[ "\"POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))\""	]
+#select st_astext(st_mpointfromtext('multipoint(10 10, 20 20)'));
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% clob # type
+% 27 # length
+[ "\"MULTIPOINT (10 10, 20 20)\""	]
+#select st_astext(st_mpointfromtext('multipoint(20 20, 30 30)', 4326));
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% clob # type
+% 27 # length
+[ "\"MULTIPOINT (20 20, 30 30)\""	]
+#select st_astext(st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326));
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% clob # type
+% 35 # length
+[ "\"MULTIPOINT Z (20 20 20, 30 30 30)\""	]
+#select st_astext(st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
+% .L # table_name
+% st_mlinefromtext_single_value # name
+% clob # type
+% 64 # length
+[ "\"MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))\""	]
+#select st_astext(st_mlinefromtext('multilinestring((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))', 4326));
+% .L # table_name
+% st_mlinefromtext_single_value # name
+% clob # type
+% 64 # length
+[ "\"MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))\""	]
+#select st_astext(st_mlinefromtext('multilinestring((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))', 4326));
+% .L # table_name
+% st_mlinefromtext_single_value # name
+% clob # type
+% 84 # length
+[ "\"MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))\""	]
+#select st_astext(st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
+% .L # table_name
+% st_mpolyfromtext_single_value # name
+% clob # type
+% 85 # length
+[ "\"MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))\""	]
+#select st_astext(st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326));
+% .L # table_name
+% st_mpolyfromtext_single_value # name
+% clob # type
+% 85 # length
+[ "\"MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))\""	]
+#select st_astext(st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'));
+% .L # table_name
+% st_mpolyfromtext_single_value # name
+% clob # type
+% 115 # length
+[ "\"MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))\""	]
+#select st_astext(st_geomfromtext('point(10 10)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% clob # type
+% 15 # length
+[ "\"POINT (10 10)\""	]
+#select st_astext(st_geomfromtext('linestring(10 10, 20 20, 30 30)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% clob # type
+% 34 # length
+[ "\"LINESTRING (10 10, 20 20, 30 30)\""	]
+#select st_astext(st_geomfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% clob # type
+% 40 # length
+[ "\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
+#select st_astext(st_geomfromtext('multipoint(10 10, 20 20)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% clob # type
+% 27 # length
+[ "\"MULTIPOINT (10 10, 20 20)\""	]
+#select st_astext(st_geomfromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% clob # type
+% 64 # length
+[ "\"MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))\""	]
+#select st_astext(st_geomfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% clob # type
+% 85 # length
+[ "\"MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))\""	]
+#create table points_tbl(g geometry(point));
+#insert into points_tbl values (st_pointfromtext('point(10 10)'));
+[ 1	]
+#select st_astext(g) from points_tbl;
+% sys.L # table_name
+% st_astext_g # name
+% clob # type
+% 15 # length
+[ "\"POINT (10 10)\""	]
+#drop table points_tbl;
+#create table lines_tbl(g geometry(linestring));
+#insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
+[ 1	]
+#select st_astext(g) from lines_tbl;
+% sys.L # table_name
+% st_astext_g # name
+% clob # type
+% 34 # length
+[ "\"LINESTRING (10 10, 20 20, 30 30)\""	]
+#drop table lines_tbl;
+#create table polygons_tbl(g geometry(polygon));
+#insert into polygons_tbl values (st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
+[ 1	]
+#select st_astext(g) from polygons_tbl;
+% sys.L # table_name
+% st_astext_g # name
+% clob # type
+% 40 # length
+[ "\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
+#drop table polygons_tbl;
+#create table points_tbl(g geometry(pointz));
+#insert into points_tbl values (st_pointfromtext('point(10 10 10)'));
+[ 1	]
+#select st_astext(g) from points_tbl;
+% sys.L # table_name
+% st_astext_g # name
+% clob # type
+% 20 # length
+[ "\"POINT Z (10 10 10)\""	]
+#drop table points_tbl;
+#create table lines_tbl(g geometry(linestringz));
+#insert into lines_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
+[ 1	]
+#select st_astext(g) from lines_tbl;
+% sys.L # table_name
+% st_astext_g # name
+% clob # type
+% 45 # length
+[ "\"LINESTRING Z (10 10 10, 20 20 20, 30 30 30)\""	]
+#drop table lines_tbl;
+#create table polygons_tbl(g geometry(polygonz));
+#insert into polygons_tbl values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
+[ 1	]
+#select st_astext(g) from polygons_tbl;
+% sys.L # table_name
+% st_astext_g # name
+% clob # type
+% 54 # length
+[ "\"POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))\""	]
+#drop table polygons_tbl;
+
+# 15:21:07 >  
+# 15:21:07 >  "Done."
+# 15:21:07 >  
+

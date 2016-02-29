@@ -29,49 +29,48 @@ Ready.
 # 06:41:05 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:41:05 >  
 
-#mdb.List("user","qry");
-function user.qry():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
-    d:bat[:int] := bat.new(:oid,:int);  	#[3] CMDBATnew 5 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[4] BKCappend_val_wrap 6 <- 1 7 
-barrier (x:oid,z:int) := iterator.new(b:bat[:int]);	#[5] ITRbunIterator 8 9 <- 1 
-    io.print(x:oid);                    	#[6] IOprint_val 10 <- 8 
-exit (x:oid,z:int);                     	#[7]  8 9 
-    b:bat[:int] := nil:bat[:int];       	#[8]  1 <- 17 
-barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[9] ITRbunIterator 8 9 <- 4 
-    io.print(x:oid);                    	#[10] IOprint_val 11 <- 8 
-    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[11] ITRbunNext 8 9 <- 4 
-exit (x:oid,z:int);                     	#[12]  8 9 
-    c:bat[:int] := nil:bat[:int];       	#[13]  4 <- 19 
+function user.qry():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
+    d:bat[:int] := bat.new(:oid,:int);  	#[3] (0) CMDBATnew 5 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[4] (0) BKCappend_val_wrap 6 <- 1 7 
+barrier (x:oid,z:int) := iterator.new(b:bat[:int]);	#[5] (0) ITRbunIterator 8 9 <- 1 
+    io.print(x:oid);                    	#[6] (0) IOprint_val 10 <- 8 
+exit (x:oid,z:int);                     	#[7] (0)  8 9 
+    b:bat[:int] := nil:bat[:int];       	#[8] (0)  1 <- 17 
+barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[9] (0) ITRbunIterator 8 9 <- 4 
+    io.print(x:oid);                    	#[10] (0) IOprint_val 11 <- 8 
+    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[11] (0) ITRbunNext 8 9 <- 4 
+exit (x:oid,z:int);                     	#[12] (0)  8 9 
+    c:bat[:int] := nil:bat[:int];       	#[13] (0)  4 <- 19 
 # do not close d, it may be reused 
-barrier go:bit := true:bit;             	#[15]  13 <- 14 
-    io.print(d:bat[:int]);              	#[16] IOprint_val 15 <- 5 
-    redo go:bit := true:bit;            	#[17]  13 <- 14 
-exit go:bit;                            	#[18]  13 
-    d:bat[:int] := nil:bat[:int];       	#[19]  5 <- 21 
-end user.qry;                           	#[20]  
-function user.qry():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
-    d:bat[:int] := bat.new(:oid,:int);  	#[3] CMDBATnew 5 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[4] BKCappend_val_wrap 6 <- 1 7 
-barrier (x:oid,z:int) := iterator.new(b:bat[:int]);	#[5] ITRbunIterator 8 9 <- 1 
-    io.print(x:oid);                    	#[6] IOprint_val 10 <- 8 
-exit (x:oid,z:int);                     	#[7]  8 9 
-    b:bat[:int] := nil:bat[:int];       	#[8]  1 <- 17 
-barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[9] ITRbunIterator 8 9 <- 4 
-    io.print(x:oid);                    	#[10] IOprint_val 11 <- 8 
-    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[11] ITRbunNext 8 9 <- 4 
-exit (x:oid,z:int);                     	#[12]  8 9 
-    c:bat[:int] := nil:bat[:int];       	#[13]  4 <- 19 
+barrier go:bit := true:bit;             	#[15] (0)  13 <- 14 
+    io.print(d:bat[:int]);              	#[16] (0) IOprint_val 15 <- 5 
+    redo go:bit := true:bit;            	#[17] (0)  13 <- 14 
+exit go:bit;                            	#[18] (0)  13 
+    d:bat[:int] := nil:bat[:int];       	#[19] (0)  5 <- 21 
+end user.qry;                           	#[20] (0)  
+function user.qry():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
+    d:bat[:int] := bat.new(:oid,:int);  	#[3] (0) CMDBATnew 5 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[4] (0) BKCappend_val_wrap 6 <- 1 7 
+barrier (x:oid,z:int) := iterator.new(b:bat[:int]);	#[5] (0) ITRbunIterator 8 9 <- 1 
+    io.print(x:oid);                    	#[6] (0) IOprint_val 10 <- 8 
+exit (x:oid,z:int);                     	#[7] (0)  8 9 
+    b:bat[:int] := nil:bat[:int];       	#[8] (0)  1 <- 17 
+barrier (x:oid,z:int) := iterator.new(c:bat[:int]);	#[9] (0) ITRbunIterator 8 9 <- 4 
+    io.print(x:oid);                    	#[10] (0) IOprint_val 11 <- 8 
+    redo (x:oid,z:int) := iterator.next(c:bat[:int]);	#[11] (0) ITRbunNext 8 9 <- 4 
+exit (x:oid,z:int);                     	#[12] (0)  8 9 
+    c:bat[:int] := nil:bat[:int];       	#[13] (0)  4 <- 19 
 # do not close d, it may be reused      
-barrier go:bit := true:bit;             	#[15]  13 <- 14 
-    io.print(d:bat[:int]);              	#[16] IOprint_val 15 <- 5 
-    redo go:bit := true:bit;            	#[17]  13 <- 14 
-exit go:bit;                            	#[18]  13 
-    d:bat[:int] := nil:bat[:int];       	#[19]  5 <- 21 
-end user.qry;                           	#[20]  
+barrier go:bit := true:bit;             	#[15] (0)  13 <- 14 
+    io.print(d:bat[:int]);              	#[16] (0) IOprint_val 15 <- 5 
+    redo go:bit := true:bit;            	#[17] (0)  13 <- 14 
+exit go:bit;                            	#[18] (0)  13 
+    d:bat[:int] := nil:bat[:int];       	#[19] (0)  5 <- 21 
+end user.qry;                           	#[20] (0)  
 
 # 23:17:49 >  
 # 23:17:49 >  Done.

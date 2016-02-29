@@ -1,0 +1,83 @@
+stdout of test 'ST_Boundary` in directory 'geom/sql/functions` itself:
+
+
+# 16:00:22 >  
+# 16:00:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39071" "--set" "mapi_usock=/var/tmp/mtest-17783/.s.monetdb.39071" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 16:00:22 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39071/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17783/.s.monetdb.39071
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:00:22 >  
+# 16:00:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17783" "--port=39071"
+# 16:00:22 >  
+
+#SELECT ST_Boundary(ST_GeomFromText('LINESTRING(1 1,0 0, -1 1)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "MULTIPOINT (1 1, -1 1)"	]
+#SELECT ST_Boundary(ST_GeomFromText('POLYGON((1 1,0 0, -1 1, 1 1))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "LINESTRING (1 1, 0 0, -1 1, 1 1)"	]
+#SELECT ST_Boundary(ST_GeomFromText('POLYGON((1 1 1,0 0 1, -1 1 1, 1 1 1))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "LINESTRING Z (1 1 1, 0 0 1, -1 1 1, 1 1 1)"	]
+#SELECT ST_Boundary(ST_GeomFromText('MULTILINESTRING((1 1 1,0 0 0.5, -1 1 1),(1 1 0.5,0 0 0.5, -1 1 0.5, 1 1 0.5) )'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% geometry # type
+% 0 # length
+[ "MULTIPOINT Z (-1 1 1, 1 1 0.75)"	]
+#SELECT geom AS "GEOMETRY", ST_Boundary(geom) AS "BOUNDARY" FROM geometries WHERE id<7;
+% sys.L,	sys.L # table_name
+% GEOMETRY,	BOUNDARY # name
+% geometry,	geometry # type
+% 0,	0 # length
+[ "POINT (10 20)",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "LINESTRING (10 20, 30 40, 50 60)",	"MULTIPOINT (10 20, 50 60)"	]
+[ "LINESTRING (10 20, 30 40, 50 60, 80 60, 60 40, 10 20)",	"MULTIPOINT EMPTY"	]
+[ "LINESTRING (10 10, 50 50, 30 80, 25 5)",	"MULTIPOINT (10 10, 25 5)"	]
+[ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))",	"LINESTRING (10 10, 10 20, 20 20, 20 10, 10 10)"	]
+[ "MULTIPOINT (10 20, 30 40)",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))",	"MULTIPOINT (30 40, 40 50, 50 60, 60 70)"	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))",	"MULTIPOINT (50 60, 60 70)"	]
+[ "MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))",	"MULTIPOINT EMPTY"	]
+[ "MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))",	"MULTILINESTRING ((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30))"	]
+[ "MULTIPOLYGON EMPTY",	"MULTILINESTRING EMPTY"	]
+[ "POINT Z (10 20 30)",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "LINESTRING Z (10 20 10, 30 40 10, 50 60 10)",	"MULTIPOINT Z (10 20 10, 50 60 10)"	]
+[ "LINESTRING Z (10 20 10, 30 40 10, 50 60 10, 80 60 10, 60 40 10, 10 20 10)",	"MULTIPOINT EMPTY"	]
+[ "LINESTRING Z (10 10 20, 50 50 30, 30 80 40, 25 5 50)",	"MULTIPOINT Z (10 10 20, 25 5 50)"	]
+[ "POLYGON Z ((10 10 5, 10 20 10, 20 20 15, 20 10 20, 10 10 25))",	"LINESTRING Z (10 10 5, 10 20 10, 20 20 15, 20 10 20, 10 10 25)"	]
+[ "MULTIPOINT Z (10 20 10, 30 40 30)",	"GEOMETRYCOLLECTION EMPTY"	]
+[ "MULTILINESTRING Z ((30 40 10, 40 50 20), (50 60 30, 60 70 40))",	"MULTIPOINT Z (30 40 10, 40 50 20, 50 60 30, 60 70 40)"	]
+[ "MULTILINESTRING Z ((30 40 10, 40 50 20, 30 40 30), (50 60 40, 60 70 50))",	"MULTIPOINT Z (50 60 40, 60 70 50)"	]
+[ "MULTILINESTRING Z ((30 40 100, 40 50 90, 30 40 80), (50 60 70, 40 50 60, 20 30 50, 50 60 40))",	"MULTIPOINT EMPTY"	]
+[ "MULTIPOLYGON Z (((10 10 5, 10 20 5, 20 20 5, 20 10 5, 10 10 5), (30 30 10, 30 40 10, 40 40 10, 40 30 10, 30 30 10)))",	"MULTILINESTRING Z ((10 10 5, 10 20 5, 20 20 5, 20 10 5, 10 10 5), (30 30 10, 30 40 10, 40 40 10, 40 30 10, 30 30 10))"	]
+[ "POLYGON ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10))",	"MULTILINESTRING ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10))"	]
+[ "MULTIPOLYGON (((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10), (1 1, 1 2, 2 2, 2 1, 1 1)), ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10)))",	"MULTILINESTRING ((100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10), (1 1, 1 2, 2 2, 2 1, 1 1), (100 100, 100 200, 200 200, 200 100, 100 100), (10 10, 10 20, 20 20, 20 10, 10 10))"	]
+
+# 16:00:23 >  
+# 16:00:23 >  "Done."
+# 16:00:23 >  
+

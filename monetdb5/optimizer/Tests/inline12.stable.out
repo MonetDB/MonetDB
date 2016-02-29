@@ -1,0 +1,44 @@
+stdout of test 'inline12` in directory 'monetdb5/optimizer` itself:
+
+
+# 17:43:58 >  
+# 17:43:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39581" "--set" "mapi_usock=/var/tmp/mtest-6812/.s.monetdb.39581" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_monetdb5_optimizer" "--set" "embedded_r=yes"
+# 17:43:58 >  
+
+# MonetDB 5 server v11.22.0 (hg id: 323f6deb2a47+)
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_optimizer', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:39581/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6812/.s.monetdb.39581
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 17:43:58 >  
+# 17:43:58 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-6812" "--port=39581"
+# 17:43:58 >  
+
+function user.qry():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
+    X_17:int := calc.+(1:int,2:int);    	#[3] (0) CMDvarADDsignal 17 <- 5 7 
+    zz:int := X_17:int;                 	#[4] (0)  6 <- 17 
+# base line test for inlining           
+    X_21:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[6] (0) CMDbatADDsignal 21 <- 1 1 
+    z:bat[:int] := X_21:bat[:int];      	#[7] (0)  9 <- 21 
+    z:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 9 <- 1 7 
+end user.qry;                           	#[9] (0)  
+
+# 17:43:59 >  
+# 17:43:59 >  "Done."
+# 17:43:59 >  
+

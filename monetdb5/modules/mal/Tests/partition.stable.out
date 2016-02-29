@@ -27,26 +27,26 @@ Ready.
 # 09:46:29 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
 # 09:46:29 >  
 
-function user.tst():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:int);       	#[1] CMDBATnewColumn 1 <- 2 
-    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 3 <- 1 4 
-    bat.append(b:bat[:int],2:int);      	#[3] BKCappend_val_wrap 5 <- 1 6 
-    bat.append(b:bat[:int],3:int);      	#[4] BKCappend_val_wrap 7 <- 1 8 
-    bat.append(b:bat[:int],4:int);      	#[5] BKCappend_val_wrap 9 <- 1 10 
-    bat.append(b:bat[:int],5:int);      	#[6] BKCappend_val_wrap 11 <- 1 12 
-    c:bat[:int] := bat.partition(b:bat[:int],2:int,0:int);	#[7] CMDBATpartition2 13 <- 1 6 14 
-    io.print(c:bat[:int]);              	#[8] IOprint_val 15 <- 13 
-    d:bat[:int] := bat.partition(b:bat[:int],2:int,1:int);	#[9] CMDBATpartition2 16 <- 1 6 4 
-    io.print(d:bat[:int]);              	#[10] IOprint_val 17 <- 16 
-    (b1:bat[:int],b2:bat[:int]) := bat.partition(b:bat[:int]);	#[11] CMDBATpartition 18 19 <- 1 
-    io.print(b1:bat[:int]);             	#[12] IOprint_val 20 <- 18 
-    io.print(b2:bat[:int]);             	#[13] IOprint_val 21 <- 19 
-    b3:bat[:int] := bat.partition(b:bat[:int]);	#[14] CMDBATpartition 22 <- 1 
-    io.print(b3:bat[:int]);             	#[15] IOprint_val 23 <- 22 
+function user.tst():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:int],2:int);      	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:int],3:int);      	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:int],4:int);      	#[5] (0) BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:int],5:int);      	#[6] (0) BKCappend_val_wrap 11 <- 1 12 
+    c:bat[:int] := bat.partition(b:bat[:int],2:int,0:int);	#[7] (0) CMDBATpartition2 13 <- 1 6 14 
+    io.print(c:bat[:int]);              	#[8] (0) IOprint_val 15 <- 13 
+    d:bat[:int] := bat.partition(b:bat[:int],2:int,1:int);	#[9] (0) CMDBATpartition2 16 <- 1 6 4 
+    io.print(d:bat[:int]);              	#[10] (0) IOprint_val 17 <- 16 
+    (b1:bat[:int],b2:bat[:int]) := bat.partition(b:bat[:int]);	#[11] (0) CMDBATpartition 18 19 <- 1 
+    io.print(b1:bat[:int]);             	#[12] (0) IOprint_val 20 <- 18 
+    io.print(b2:bat[:int]);             	#[13] (0) IOprint_val 21 <- 19 
+    b3:bat[:int] := bat.partition(b:bat[:int]);	#[14] (0) CMDBATpartition 22 <- 1 
+    io.print(b3:bat[:int]);             	#[15] (0) IOprint_val 23 <- 22 
 # an error should be produced           
-    e:bat[:int] := bat.partition(b:bat[:int],2:int,-1:int);	#[17] CMDBATpartition2 25 <- 1 6 26 
-    io.print(e:bat[:int]);              	#[18] IOprint_val 27 <- 25 
-end user.tst;                           	#[19]  
+    e:bat[:int] := bat.partition(b:bat[:int],2:int,-1:int);	#[17] (0) CMDBATpartition2 25 <- 1 6 26 
+    io.print(e:bat[:int]);              	#[18] (0) IOprint_val 27 <- 25 
+end user.tst;                           	#[19] (0)  
 #--------------------------#
 # h	t	  # name
 # void	int	  # type

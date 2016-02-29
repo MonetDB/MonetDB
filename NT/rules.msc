@@ -368,6 +368,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_SHP
+	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_MONETDB5
 	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -392,6 +397,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_PERL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_PERL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_PROJ
+	$(ECHO) HAVE_PROJ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_PYTHON
 	$(ECHO) HAVE_PYTHON_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

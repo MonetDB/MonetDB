@@ -62,7 +62,7 @@ Ready.
 % clob # type
 % 729 # length
 function user.s2_1(A0:str,A1:str):void;
-    X_176:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",121);
+    X_176:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",120);
     X_151 := bat.new(nil:oid,nil:str);
     X_159 := bat.append(X_151,"sys.supplier");
     X_167 := bat.append(X_159,"sys.L1");
@@ -136,17 +136,16 @@ function user.s2_1(A0:str,A1:str):void;
     (X_88,r1_98) := algebra.subjoin(X_76,X_87,nil:BAT,nil:BAT,false,nil:lng);
     X_90:bat[:int] := algebra.projectionpath(X_88,r1_74,X_67);
     X_91 := bat.mirror(X_90);
-    X_186:bat[:oid] := algebra.projectionpath(X_88,X_68);
     X_92:bat[:int] := sql.bind(X_3,"sys","lineitem","l_orderkey",0);
     (C_94,r1_108) := sql.bind(X_3,"sys","lineitem","l_orderkey",2);
     X_96:bat[:int] := sql.bind(X_3,"sys","lineitem","l_orderkey",1);
     X_97 := sql.delta(X_92,C_94,r1_108,X_96);
     X_98 := algebra.projection(C_4,X_97);
     X_99 := algebra.projection(C_25,X_98);
-    X_100:bat[:int] := algebra.projectionpath(X_186,X_46,X_99);
+    X_100:bat[:int] := algebra.projectionpath(X_88,X_68,X_46,X_99);
     (X_101,r1_125) := algebra.subjoin(X_100,X_98,nil:BAT,nil:BAT,false,nil:lng);
     X_103 := algebra.projection(r1_125,X_56);
-    X_104:bat[:int] := algebra.projectionpath(X_186,X_58);
+    X_104:bat[:int] := algebra.projectionpath(X_88,X_68,X_58);
     X_105 := algebra.projection(X_101,X_104);
     X_106:bat[:bit] := batcalc.!=(X_103,X_105);
     C_107 := algebra.subselect(X_106,true,true,true,true,false);

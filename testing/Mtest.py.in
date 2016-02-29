@@ -310,11 +310,13 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY'        : "@HAVE_LIBSCIPY_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
+    'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
+    'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
     'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
@@ -1227,7 +1229,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     body_good.append(bodyline)
                 else:
                     body_bad.append(bodyline)
-            if FtOut == F_OK and FtErr == F_OK:
+            if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                 oktests.append(TST)
             if global_timeout and start_time + global_timeout < time.time():
                 break
@@ -3795,7 +3797,7 @@ def main(argv) :
     BACK = os.getcwd()
     try:
         os.chdir(TSTSRCBASE)
-        proc = process.Popen(['hg', 'root'], stdout = process.PIPE)
+        proc = process.Popen(['hg', 'root'], stdout = process.PIPE, stderr = process.PIPE)
         out, err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['MERCURIAL'] = '#' # True

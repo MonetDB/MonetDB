@@ -29,18 +29,18 @@ Ready.
 # 22:45:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7101" "--port=34631"
 # 22:45:46 >  
 
-function user.foo():void;               	#[0]  0 
-    b:bat[:str] := bat.new(:str);       	#[1] CMDBATnewColumn 1 <- 2 
-    bat.append(b:bat[:str],"true":str); 	#[2] BKCappend_val_wrap 3 <- 1 4 
-    bat.append(b:bat[:str],"TRUE":str); 	#[3] BKCappend_val_wrap 5 <- 1 6 
-    bat.append(b:bat[:str],"FALSE":str);	#[4] BKCappend_val_wrap 7 <- 1 8 
-    bat.append(b:bat[:str],"false":str);	#[5] BKCappend_val_wrap 9 <- 1 10 
-    bat.append(b:bat[:str],"":str);     	#[6] BKCappend_val_wrap 11 <- 1 12 
-    bat.append(b:bat[:str],nil:str);    	#[7] BKCappend_val_wrap 13 <- 1 14 
-    io.print(b:bat[:str]);              	#[8] IOprint_val 15 <- 1 
-    bc:bat[:bit] := batcalc.bit_noerror(b:bat[:str]);	#[9] CMDconvert_bit 16 <- 1 
-    io.print(bc:bat[:bit]);             	#[10] IOprint_val 17 <- 16 
-end user.foo;                           	#[11]  
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:str],"true":str); 	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    bat.append(b:bat[:str],"TRUE":str); 	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
+    bat.append(b:bat[:str],"FALSE":str);	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
+    bat.append(b:bat[:str],"false":str);	#[5] (0) BKCappend_val_wrap 9 <- 1 10 
+    bat.append(b:bat[:str],"":str);     	#[6] (0) BKCappend_val_wrap 11 <- 1 12 
+    bat.append(b:bat[:str],nil:str);    	#[7] (0) BKCappend_val_wrap 13 <- 1 14 
+    io.print(b:bat[:str]);              	#[8] (0) IOprint_val 15 <- 1 
+    bc:bat[:bit] := batcalc.bit_noerror(b:bat[:str]);	#[9] (0) CMDconvert_bit 16 <- 1 
+    io.print(bc:bat[:bit]);             	#[10] (0) IOprint_val 17 <- 16 
+end user.foo;                           	#[11] (0)  
 #--------------------------#
 # h	t		  # name
 # int	str		  # type

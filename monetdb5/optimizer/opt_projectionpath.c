@@ -8,7 +8,6 @@
 
 /* author: M Kersten
  * Post-optimization of projection lists.
- * The algorithm is quadratic in the number of paths considered.
  */
 #include "monetdb_config.h"
 #include "opt_deadcode.h"
@@ -17,12 +16,20 @@
 //#undef OPTDEBUGprojectionpath 
 //#define OPTDEBUGprojectionpath  if(1)
 
+// Common prefix reduction was not effective it is retained for 
+// future experiments.
+//#define ELIMCOMMONPREFIX
+
 #define LOOKAHEAD 500   /* limit the lookahead for candidates */
-/* locate common prefixes  in projection lists */
+
+/* locate common prefixes  in projection lists 
+ * The algorithm is quadratic in the number of paths considered. */
+
+#ifdef ELIMCOMMONPREFIX
 static int
 OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 {
-	int i, j,  k, match, actions=0;
+	int i, j, k, match, actions=0;
 	InstrPtr p,q,r,*old;
 	int limit, slimit;
 
@@ -72,6 +79,8 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			r->argc = prefixlength;
 			getArg(r,0) = newTmpVariable(mb, newBatType( TYPE_oid, getColumnType(getArgType(mb,r,r->argc-1))));
 			setVarUDFtype(mb, getArg(r,0));
+			if( r->argc == 3)
+				setFunctionId(r,projectionRef);
 			pushInstruction(mb,r);
 			OPTDEBUGprojectionpath  {
 				mnstr_printf(cntxt->fdout,"#projectionpath prefix instruction\n");
@@ -99,6 +108,8 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 						getArg(q,q->retc) = getArg(r,0);
 						for( k= q->retc +1 ; k < prefixlength; k++)
 							delArgument(q, q->retc + 1);
+						if( q->argc == 3)
+							setFunctionId(q,projectionRef);
 					}
 					OPTDEBUGprojectionpath {
 						mnstr_printf(cntxt->fdout,"#projectionpath after :");
@@ -115,22 +126,9 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 				getArg(p,p->retc) = getArg(r,0);
 				for( k= p->retc +  1; k < prefixlength; k++)
 					delArgument(p, p->retc + 1);
+				if( p->argc == 3)
+					setFunctionId(p,projectionRef);
 			}
-			/* Finally check if we already have this prefix operation then an alias is sufficient 
-			for( jj= i-1; jj > 0 && jj > i - LOOKAHEAD; jj--) {
-				q= old[jj];
-				if ( getFunctionId(q) != getFunctionId(r) || q->argc != r->argc) 
-					continue;
-				for( match =0,  k = q->retc; k < q->argc; k++)
-					match += getArg(q,k) == getArg(r,k);
-				if ( match &&  match ==  q->argc - q->retc){
-					clrFunction(r);
-					r->argc = r->retc +1;
-					getArg(r,r->retc) = getArg(q,0);
-					break;
-				}
-			}
-			*/
 
 			OPTDEBUGprojectionpath 
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
@@ -150,6 +148,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
 	return actions;
 }
+#endif
 
 int
 OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -288,14 +287,22 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	/* All complete projection paths have been constructed.
 	 * There may be cases where there is a common prefix used multiple times.
-	 * There are located and removed in a few scans over the plan
+	 * They are located and removed in a few scans over the plan
+	 *
+	 * The prefix path mostly consist of smaller columns,
+	 * which make the benefit not large. In SF100 roughly 100 out of
+	 * 4500 projection operations were removed.
+	 * On medium scale databases it may save cpu cycles.
+	 * Turning this feature into a compile time option.
 	 */
+#ifdef ELIMCOMMONPREFIX
 	if( maxprefixlength > 3){
 		 /* Before searching the prefix, we should remove all non-used instructions.  */
 		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
 		for( ; maxprefixlength > 2; maxprefixlength--)
 			actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
 	}
+#endif
 	OPTDEBUGprojectionpath {
 		mnstr_printf(cntxt->fdout,"#projectionpath optimizer result \n");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);

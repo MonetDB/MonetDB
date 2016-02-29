@@ -60,14 +60,6 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_59:bat[:oid,:lng] := mal.multiplex("user":str,"columnsize":str,X_44:bat[:oid,:str],X_51:bat[:oid,:lng],X_58:bat[:oid,:lng]);
-#WARNING To speedup user.heapsize a bulk operator implementation is needed
-#    X_69:bat[:oid,:lng] := mal.multiplex("user":str,"heapsize":str,X_44:bat[:oid,:str],X_58:bat[:oid,:lng],X_68:bat[:oid,:int]);
-#WARNING To speedup user.hashsize a bulk operator implementation is needed
-#    X_78:bat[:oid,:lng] := mal.multiplex("user":str,"hashsize":str,X_77:bat[:oid,:bit],X_51:bat[:oid,:lng]);
-#WARNING To speedup user.imprintsize a bulk operator implementation is needed
-#    X_80:bat[:oid,:lng] := mal.multiplex("user":str,"imprintsize":str,X_51:bat[:oid,:lng],X_44:bat[:oid,:str]);
 
 # 14:11:11 >  
 # 14:11:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17906" "--port=36024"

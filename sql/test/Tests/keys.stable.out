@@ -61,6 +61,7 @@ Ready.
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 44,	1,	44,	1 # length
+[ "spatial_ref_sys_srid_pkey",	0,	"spatial_ref_sys_srid_pkey",	0	]
 [ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
 [ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
 [ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
@@ -83,6 +84,7 @@ Ready.
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 44,	1,	44,	1 # length
+[ "spatial_ref_sys_srid_pkey",	0,	"spatial_ref_sys_srid_pkey",	0	]
 [ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
 [ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
 [ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
