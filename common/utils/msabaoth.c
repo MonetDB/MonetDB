@@ -167,7 +167,7 @@ msab_init(const char *dbfarm, const char *dbname)
 		_sabaoth_internal_dbname = strdup(dbname);
 	}
 
-	/* clean out old sabaoth-* files in case the database crashed in a
+	/* clean out old UUID files in case the database crashed in a
 	 * previous incarnation */
 	if (_sabaoth_internal_dbname != NULL &&
 		(tmp = malloc(strlen(_sabaoth_internal_dbfarm) + strlen(_sabaoth_internal_dbname) + 2)) != NULL) {
