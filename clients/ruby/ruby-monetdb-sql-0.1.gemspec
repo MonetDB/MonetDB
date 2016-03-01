@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
    s.date = %q{2009-04-27}
    s.authors = ["G Modena"]
    s.email = "info@monetdb.org"
-   s.license = "MPL-1.1"
+   s.license = "MPL-2.0"
    s.summary = %q{Pure Ruby database driver for MonetDB/SQL}
    s.homepage = %q{http://www.monetdb.org/}
    s.description = %q{Pure Ruby database driver for the MonetDB/SQL columnar database management system}
