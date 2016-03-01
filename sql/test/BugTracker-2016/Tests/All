@@ -7,3 +7,4 @@ DISTINCT_with_correlated_scalar_subquery_crashes_mserver.Bug-3920
 create_table_from_complex_query.Bug-3921
 projectionpath-prefix.Bug
 prepare-utf8.Bug-3930
+case-with-string-Bug.3932
