@@ -43,12 +43,11 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 			if (notreally) {
 				BATsetcount(b, 0); // hehe
 			}
-			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
-			varvalue = bat_to_sexp(b);
-			if (!varvalue) {
+			if (!(varvalue = bat_to_sexp(b))) {
 				UNPROTECT(i + 3);
 				return ScalarString(mkCharCE("Conversion error", CE_UTF8));
 			}
+			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
 			SET_VECTOR_ELT(retlist, i, varvalue);
 		}
 
