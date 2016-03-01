@@ -1,6 +1,6 @@
 %define name MonetDB
 %define version 11.21.14
-%{!?buildno: %define buildno %(date +%Y%m%d)}
+%{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -404,7 +404,9 @@ program.
 %files -n rubygem-monetdb-sql
 %defattr(-,root,root)
 %docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
+%if (0%{?fedora} <= 23)
 %{gem_dir}/doc/ruby-monetdb-sql-0.1/*
+%endif
 %{gem_dir}/cache/ruby-monetdb-sql-0.1.gem
 %{gem_dir}/gems/ruby-monetdb-sql-0.1
 %{gem_dir}/specifications/ruby-monetdb-sql-0.1.gemspec
@@ -428,7 +430,9 @@ This package contains the activerecord adapter for MonetDB.
 %files -n rubygem-activerecord-monetdb-adapter
 %defattr(-,root,root)
 %docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
+%if (0%{?fedora} <= 23)
 %{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
+%endif
 %{gem_dir}/cache/activerecord-monetdb-adapter-0.1.gem
 %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
