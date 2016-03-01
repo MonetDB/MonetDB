@@ -406,7 +406,6 @@ program.
 %docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
 %{gem_dir}/doc/ruby-monetdb-sql-0.1/*
 %{gem_dir}/cache/ruby-monetdb-sql-0.1.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.1
 %{gem_dir}/gems/ruby-monetdb-sql-0.1
 %{gem_dir}/specifications/ruby-monetdb-sql-0.1.gemspec
 
@@ -431,7 +430,6 @@ This package contains the activerecord adapter for MonetDB.
 %docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
 %{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
 %{gem_dir}/cache/activerecord-monetdb-adapter-0.1.gem
-# %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
 %{gem_dir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
 %endif
@@ -916,9 +914,6 @@ developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
-# at least F12 doesn't produce these
-# %exclude %{_bindir}/*.pyc
-# %exclude %{_bindir}/*.pyo
 %{_bindir}/Mapprove.py
 %{_bindir}/Mfilter.py
 %{_bindir}/Mtest.py
