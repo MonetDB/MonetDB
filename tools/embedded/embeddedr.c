@@ -25,10 +25,10 @@ int embedded_r_rand(void) {
 
 SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 	res_table* output = NULL;
-	char* err = monetdb_query(R_ExternalPtrAddr(connsexp), (char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
 	char notreally = LOGICAL(notreallys)[0];
-
-	if (err != NULL) { // there was an error
+	char* err = monetdb_query(R_ExternalPtrAddr(connsexp),
+			(char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
+	if (err) { // there was an error
 		return ScalarString(mkCharCE(err, CE_UTF8));
 	}
 	if (output && output->nr_cols > 0) {
@@ -39,14 +39,13 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 		SET_ATTR(retlist, install("__rows"),
 			Rf_ScalarReal(BATcount(BATdescriptor(output->cols[0].b))));
 		for (i = 0; i < ncols; i++) {
-			res_col col = output->cols[i];
-			BAT* b = BATdescriptor(col.b);
+			BAT* b = BATdescriptor(output->cols[i].b);
 			if (notreally) {
 				BATsetcount(b, 0); // hehe
 			}
 			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
 			varvalue = bat_to_sexp(b);
-			if (varvalue == NULL) {
+			if (!varvalue) {
 				UNPROTECT(i + 3);
 				return ScalarString(mkCharCE("Conversion error", CE_UTF8));
 			}
@@ -71,7 +70,7 @@ SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp, SEXP sequentialsexp) {
 	res = monetdb_startup((char*) CHAR(STRING_ELT(dbdirsexp, 0)),
 		LOGICAL(silentsexp)[0], LOGICAL(sequentialsexp)[0]);
 
-	if (res == NULL) {
+	if (!res) {
 		return ScalarLogical(1);
 	}  else {
 		return ScalarString(mkCharCE(res, CE_UTF8));
@@ -106,7 +105,7 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 	}
 
 	ad = GDKmalloc(col_ct * sizeof(append_data));
-	assert(ad != NULL);
+	assert(ad);
 
 	for (i = 0; i < col_ct; i++) {
 		SEXP ret_col = VECTOR_ELT(tabledatasexp, i);
@@ -123,13 +122,13 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 	msg = monetdb_append(R_ExternalPtrAddr(connsexp), schema, name, ad, col_ct);
 
 	wrapup:
-		if (t_column_names != NULL) {
+		if (t_column_names) {
 			GDKfree(t_column_names);
 		}
-		if (t_column_types != NULL) {
+		if (t_column_types) {
 			GDKfree(t_column_types);
 		}
-		if (msg == NULL) {
+		if (!msg) {
 			return ScalarLogical(1);
 		}
 		return ScalarString(mkCharCE(msg, CE_UTF8));
@@ -150,7 +149,7 @@ SEXP monetdb_connect_R(void) {
 
 SEXP monetdb_disconnect_R(SEXP connsexp) {
 	void* addr = R_ExternalPtrAddr(connsexp);
-	if (addr != NULL) {
+	if (addr) {
 		monetdb_disconnect(addr);
 		R_ClearExternalPtr(connsexp);
 	}

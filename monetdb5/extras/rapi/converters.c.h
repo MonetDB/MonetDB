@@ -4,6 +4,7 @@
 		ctype *valptr = NULL;                               \
 		tpe* p = (tpe*) Tloc(bat, BUNfirst(bat));           \
 		retsxp = PROTECT(newfun(BATcount(bat)));		    \
+		if (!retsxp) break;                                 \
 		valptr = ptrfun(retsxp);                            \
 		if (bat->T->nonil && !bat->T->nil) {                \
 			if (memcopy) {									\
@@ -34,6 +35,7 @@
 	do {																\
 		tpe *p, prev = tpe##_nil; size_t j;								\
 		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
+		if (!b) break;                                                  \
 		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
 		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
 		p = (tpe*) Tloc(b, BUNfirst(b));								\
@@ -61,6 +63,9 @@ static SEXP bat_to_sexp(BAT* b) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
+			if (!varvalue) {
+				return NULL;
+			}
 			for (i = 0; i < BATcount(b); i++) {
 				LOGICAL_POINTER(varvalue)[i] = NA_LOGICAL;
 			}
@@ -189,6 +194,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 			return NULL;
 		}
 		b = BATnew(TYPE_void, TYPE_str, cnt, TRANSIENT);
+		if (!b) return NULL;
 		BATseqbase(b, 0);
 		b->T->nil = 0;
 		b->T->nonil = 1;
@@ -222,7 +228,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 	}
 	}
 
-	if (b != NULL) {
+	if (b) {
 		BATsetcount(b, cnt);
 		BBPkeepref(b->batCacheid);
 	}
