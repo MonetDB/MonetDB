@@ -317,7 +317,6 @@ CONDITIONALS = {
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
     'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
-    'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
     'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
     'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
@@ -3722,7 +3721,13 @@ def main(argv) :
         ruby_ver = ruby_reg.match(ruby_out)
         if ruby_ver and \
            100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
-            CONDITIONALS['HAVE_RUBY'] = '#'
+            # now check whether the monetdb-ruby gem is available
+            proc = process.Popen(['ruby', '-e', "require 'MonetDB'"], stdout = process.PIPE, stderr = process.PIPE)
+            ruby_out, ruby_err = proc.communicate()
+            if proc.returncode == 0:
+                CONDITIONALS['HAVE_RUBY'] = '#'
+            else:
+                print 'Ruby available, but MonetDB gem not available'
 #     else:
 #         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
@@ -3853,20 +3858,6 @@ def main(argv) :
     env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
-    if CONDITIONALS.has_key('HAVE_RUBY')    and CONDITIONALS['HAVE_RUBY'] and \
-       CONDITIONALS.has_key('HAVE_RUBYGEM') and CONDITIONALS['HAVE_RUBYGEM']:
-        if os.environ.has_key('GEM_PATH'):
-            gem_path = os.environ['GEM_PATH']
-        else:
-            try:
-                proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
-                gem_path, gem_err = proc.communicate()
-            except:
-                gem_path = ''
-        if gem_path:
-            gem_path = os.pathsep + gem_path
-        env['GEM_PATH'] = _configure(os.path.join('@QXprefix@', '@QXRUBY_DIR@')) + gem_path.strip()
-        vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
     STDERR.flush()
@@ -3887,7 +3878,7 @@ def main(argv) :
         if os.environ.has_key('CLASSPATH'):
             print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
     if testweb:
-        for v in 'GEM_PATH', 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+        for v in 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
             if os.environ.has_key(v):
                 print "%s = %s" % (v, os.environ[v])
     STDOUT.flush()

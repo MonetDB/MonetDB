@@ -1425,89 +1425,6 @@ if test "x$enable_testing" != xno ; then
 	fi
 fi
 
-RUBY=ruby
-AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
-have_rubygem_dir=auto
-AC_ARG_WITH(rubygem-dir,
-	AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
-	have_rubygem_dir="$withval")
-
-case "$have_rubygem_dir" in
-	no) ;;
-	*)
-		if test "x$RUBY" = xno; then
-			if test "x$have_rubygem_dir" != xauto; then
-				AC_MSG_ERROR([No Ruby executable found])
-			fi
-			have_rubygem_dir=no
-		else
-			case "$have_rubygem_dir" in
-				yes|auto)
-					AC_MSG_CHECKING([where rubygems are stored])
-					RUBY_DIR=
-					d=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['prefix']]" 2>/dev/null`
-					RUBY_DIR=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
-					if test x"$RUBY_DIR" = x ; then
-						if test x"$have_rubygem_dir" != xauto; then
-							AC_MSG_ERROR([unable to determine rubygems location])
-						else
-							AC_MSG_RESULT([unable to determine rubygems location])
-							RUBY=no
-							have_rubygem_dir=no
-						fi
-					else
-						AC_MSG_RESULT([$RUBY_DIR])
-					fi
-					;;
-				*)
-					RUBY_DIR="$have_rubygem_dir"
-					;;
-			esac
-		fi
-		;;
-	*)
-		;;
-esac
-case "$RUBY_DIR" in
-${prefix}/*)
-	RUBY_DIR="`echo "$RUBY_DIR" | sed "s|^$prefix/||"`";;
-/*)	RUBY_DIR="${RUBY_DIR#/}";;
-esac
-AC_SUBST(RUBY_DIR)
-QRUBY_DIR="$RUBY_DIR"
-XRUBY_DIR="`$translatepath "$QRUBY_DIR"`"
-QXRUBY_DIR="`echo "$XRUBY_DIR" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QXRUBY_DIR)
-
-RUBYGEM=gem
-org_have_rubygem=auto
-have_rubygem=$org_have_rubygem
-AC_ARG_WITH(rubygem,
-	AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
-	have_rubygem="$withval")
-
-case "$have_rubygem" in
-	yes|no|auto)
-		;;
-	*)
-		RUBYGEM="$have_rubygem"
-		have_rubygem=yes
-		;;
-esac
-
-if test "x$have_rubygem" != xno; then
-	AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
-	if test "x$RUBYGEM" = xno; then
-		if test "x$have_rubygem" != xauto; then
-			AC_MSG_ERROR([No rubygem executable found])
-		fi
-		have_rubygem=no
-		why_have_rubygem="(no rubygem executable found)"
-	fi
-fi
-AC_SUBST(RUBYGEM)
-AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
-
 AC_PROG_YACC
 case "$YACC" in
 	bison*)
@@ -3609,7 +3526,6 @@ for comp in \
 	'python2      ' \
 	'python3      ' \
 	'readline     ' \
-	'rubygem      ' \
 	'samtools     ' \
 	'shp          ' \
 	'sphinxclient ' \

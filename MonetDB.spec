@@ -134,15 +134,6 @@ BuildRequires: python-devel
 BuildRequires: python3-devel
 %endif
 BuildRequires: readline-devel
-# On RedHat Enterprise Linux and derivatives (CentOS, Scientific
-# Linux), the rubygem-activerecord package is not available (also not
-# in the Extra Packages for Enterprise Linux EPEL), so it makes no
-# sense providing our ruby packages.
-%if %{?rhel:0}%{!?rhel:1}
-BuildRequires: ruby
-BuildRequires: rubygems
-BuildRequires: rubygems-devel
-%endif
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
@@ -401,35 +392,6 @@ program.
 %files client-perl
 %defattr(-,root,root)
 %{perl_vendorlib}/*
-
-%if %{?rhel:0}%{!?rhel:1}
-%package -n rubygem-monetdb-sql
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Obsoletes: %{name}-client-ruby
-BuildArch: noarch
-
-%description -n rubygem-monetdb-sql
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Ruby
-program.
-
-%files -n rubygem-monetdb-sql
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
-%if (0%{?fedora} <= 23)
-%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
-%endif
-%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
-%endif
 
 %package client-tests
 Summary: MonetDB Client tests package
@@ -990,8 +952,6 @@ developer, but if you do want to test, this is the package you need.
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
-	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
-	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
