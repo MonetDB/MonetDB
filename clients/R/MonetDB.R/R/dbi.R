@@ -260,9 +260,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
   conn@connenv$exception <- list()
   env <- NULL
   if (getOption("monetdb.debug.query", F))  message("QQ: '", statement, "'")
-  # make the progress bar wait for querylog.define
-  # if (getOption("monetdb.profile", T))  .profiler_arm()
-
+  if(!is.null(log_file <- getOption("monetdb.log.query", NULL)))
+    cat(statement, file = log_file, sep = "\n", append = TRUE)
   # the actual request
   resp <- NA
   tryCatch({
@@ -342,6 +341,8 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   } 
   env <- NULL
   if (getOption("monetdb.debug.query", F)) message("QQ: '", statement, "'")
+  if(!is.null(log_file <- getOption("monetdb.log.query", NULL)))
+    cat(statement, file = log_file, sep = "\n", append = TRUE)
   startt <- Sys.time()
   resp <- MonetDBLite::monetdb_embedded_query(conn@connenv$conn, statement, notreally)
   takent <- round(as.numeric(Sys.time() - startt), 2)
