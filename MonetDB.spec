@@ -1,6 +1,6 @@
 %define name MonetDB
 %define version 11.22.0
-%{!?buildno: %define buildno %(date +%Y%m%d)}
+%{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -422,7 +422,9 @@ program.
 %files -n rubygem-monetdb-sql
 %defattr(-,root,root)
 %docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
+%if (0%{?fedora} <= 23)
 %{gem_dir}/doc/ruby-monetdb-sql-0.2/*
+%endif
 %{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
 # %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
 %{gem_dir}/gems/ruby-monetdb-sql-0.2
