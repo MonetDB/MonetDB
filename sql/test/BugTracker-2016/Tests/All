@@ -4,3 +4,4 @@ copy_into_with_header.Bug-3910
 column_name_conflict.Bug-3912
 prepare-utf8.Bug-3930
 case-with-string-Bug.3932
+date_calculation_and_comparison_wrong_results.Bug-3940
