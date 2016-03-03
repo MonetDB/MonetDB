@@ -928,63 +928,6 @@ def am_libs(fd, var, libsmap, am):
     am_find_ins(am, libsmap)
     am_deps(fd, libsmap['DEPS'], am)
 
-def am_gem(fd, var, gem, am):
-    gemre = re.compile(r'\.files *= *\[ *(.*[^ ]) *\]')
-    rd = 'RUBY_DIR'
-    if 'DIR' in gem:
-        rd = gem['DIR'][0]
-    rd = am_translate_dir(rd, am)
-    fd.write('if HAVE_RUBYGEM\n')
-    fd.write('all-local-%s:' % var)
-    am['ALL'].append(var)
-    for f in gem['FILES']:
-        fd.write(' %s' % f[:-4])
-    fd.write('\n')
-    for f in gem['FILES']:
-        srcs = list(map(lambda x: x.strip('" '),
-                   gemre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', ')))
-        srcs.append(f)
-        sf = f.replace('.', '_')
-        am['INSTALL'].append(sf)
-        am['UNINSTALL'].append(sf)
-        fd.write('%s: %s\n' % (f[:-4], ' '.join(srcs)))
-        dirs = []
-        for src in srcs:
-            if '/' in src:
-                d = posixpath.dirname(src)
-                if d not in dirs:
-                    fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % posixpath.dirname(src))
-                    dirs.append(d)
-                    while '/' in d:
-                        d = posixpath.dirname(d)
-                        dirs.append(d)
-            fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (src, src))
-        fd.write("\tgem build '%s'\n" % f)
-        # use deprecated --rdoc and --ri options instead of --document=rdoc,ri
-        # since we're still building on systems with old gem
-        fd.write("\tgem install --local --install-dir ./'%s' --bindir .'%s' --force --rdoc --ri %s\n" % (rd, am_translate_dir('bindir', am), f[:-4]))
-        fd.write('mostlyclean-local: mostlyclean-local-%s\n' % sf)
-        fd.write('.PHONY: mostlyclean-local-%s\n' % sf)
-        fd.write('mostlyclean-local-%s:\n' % sf)
-        for src in srcs:
-            fd.write("\t[ '$(srcdir)' -ef . ] || rm -f '%s'\n" % src)
-        for d in sorted(dirs, reverse = True):
-            fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rmdir '%s'\n" % (d, d))
-        fd.write("install-exec-local-%s: %s\n" % (sf, f[:-4]))
-        fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
-        fd.write("\tcp -a ./'%s'/* $(DESTDIR)'%s'\n" % (rd, rd))
-        fd.write("uninstall-local-%s: %s\n" % (sf, f[:-4]))
-        # remove "-0.1.gemspec" from end of `f'
-        fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-12]))
-        am['BUILT_SOURCES'].append(f[:-4])
-        am['CLEAN'].append(f[:-4])
-    fd.write('else\n')
-    for f in gem['FILES']:
-        sf = f.replace('.', '_')
-        fd.write("install-exec-local-%s:\n" % sf)
-        fd.write('uninstall-local-%s:\n' % sf)
-    fd.write('endif\n')
-
 def am_python_generic(fd, var, python, am, PYTHON):
     pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
     pynmre = re.compile('name *= *([\'"])([^\'"]+)\\1')
@@ -1153,7 +1096,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
                 'ANT': am_ant,
-                'GEM': am_gem,
                 'PYTHON2': am_python2,
                 'PYTHON3': am_python3,
                 }

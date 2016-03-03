@@ -240,6 +240,7 @@ BATcheckimprints(BAT *b)
 					imprints->imps = (void *) (imprints->stats + 64 * 3);
 					imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 					close(fd);
+					imprints->imprints->parentid = b->batCacheid;
 					b->T->imprints = imprints;
 					ALGODEBUG fprintf(stderr, "#BATcheckimprints: reusing persisted imprints %d\n", b->batCacheid);
 					MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
@@ -486,6 +487,7 @@ BATimprints(BAT *b)
 			}
 			close(fd);
 		}
+		imprints->imprints->parentid = b->batCacheid;
 		b->T->imprints = imprints;
 	}
 

@@ -10,7 +10,7 @@ Depends: DBI (>= 0.3.1)
 Imports: digest (>= 0.6.4), methods, codetools
 Enhances: dplyr (>= 0.3.0)
 Description: Allows to pull data from MonetDB into R. Includes a DBI implementation and a dplyr backend.
-License: MPL (== 1.1)
+License: MPL (== 2.0)
 URL: http://monetr.r-forge.r-project.org
 SystemRequirements: MonetDB, available from http://www.monetdb.org
 Collate: mapi.R dbi.R dbapply.R dplyr.R control.R

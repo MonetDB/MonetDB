@@ -1,8 +1,4 @@
-# tests rubytest.rb & gemtest.rb are (and shoudl be kept!) identical,
-# except the following two lines:
-
-#require_relative '$RELSRCDIR/../lib/MonetDB' # rubytest.rb.in
- require                            'MonetDB' #  gemtest.rb
+require 'MonetDB'
 
 class MapiRubyInterfaceTestCase
 

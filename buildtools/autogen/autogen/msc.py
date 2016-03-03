@@ -963,38 +963,6 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
-def msc_gem(fd, var, gem, msc):
-    gemre = re.compile(r'\.files *= *\[ *(.*[^ ]) *\]')
-    rd = 'RUBY_DIR'
-    if 'DIR' in gem:
-        rd = gem['DIR'][0]
-    rd = msc_translate_dir(rd, msc)
-    fd.write('!IF defined(HAVE_RUBYGEM)\n')
-    for f in gem['FILES']:
-        msc['SCRIPTS'].append(f[:-4])
-        srcs = list(map(lambda x: x.strip('" '),
-                   gemre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', ')))
-        srcs.append(f)
-        fd.write('%s: %s\n' % (f[:-4], ' '.join(srcs)))
-        fd.write('\tgem build %s\n' % f)
-        for src in srcs:
-            src = src.replace('/', '\\')
-            fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
-            if '\\' in src:
-                d = src[:src.rfind('\\')]
-                fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (d, d))
-            fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (src, src))
-        msc['INSTALL'][f] = f, '', '', '', 'defined(HAVE_RUBYGEM)'
-        fd.write('install_%s: "%s" "%s"\n' % (f, f[:-4], rd))
-        fd.write('\tgem install "%s" --local --install-dir "%s" --force --rdoc\n' % (f[:-4], rd))
-        fd.write('"%s":\n' % rd)
-        fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (rd, rd))
-    fd.write('!ELSE\n')
-    for f in gem['FILES']:
-        fd.write('%s:\n' % f[:-4])
-        fd.write('install_%s:\n' % f)
-    fd.write('!ENDIF\n')
-
 def msc_python_generic(fd, var, python, msc, PYTHON):
     pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
     for f in python['FILES']:
@@ -1090,7 +1058,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
                 'ANT': msc_ant,
-                'GEM': msc_gem,
                 'PYTHON2': msc_python2,
                 'PYTHON3': msc_python3,
                 }

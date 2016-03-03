@@ -4869,13 +4869,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								BUNappend(atom, &w, FALSE);
 
-								sz = heapinfo(&bn->T->heap);
+								sz = BATcount(bn) * bn->T->width; 
 								BUNappend(size, &sz, FALSE);
 
-								sz = heapinfo(bn->T->vheap);
+								sz = heapinfo(bn->T->vheap, abs(bn->batCacheid));
 								BUNappend(heap, &sz, FALSE);
 
-								sz = hashinfo(bn->T->hash);
+								sz = hashinfo(bn->T->hash, abs(bn->batCacheid));
 								BUNappend(indices, &sz, FALSE);
 
 								bitval = 0; /* HASHispersistent(bn); */
