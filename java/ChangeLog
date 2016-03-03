@@ -2,14 +2,17 @@
 # This file is updated with Maddlog
 
 * Thu Mar  3 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Implemented method DatabaseMetaData.getClientProperties(). It used to always
+  return a resultset with 4 completely empty rows.  It now returns a
+  resultset with the possible connection properties.
 - Implemented method DatabaseMetaData.getUDTs(). It used to return an empty
   resultset. Now it returns the User Defined Types such as inet, json, url and uuid.
 
 * Thu Feb 18 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected the returned table types in DatabaseMetaData.getTableTypes().
-  It now returns all 14 table types (as stored in sys.table_types) instead
+  It now returns all 10 table types (as stored in sys.table_types) instead
   of the previously 8 hardcoded table types.
-  For old MonetDB servers which do not contain the sys.table_types table,
+  For old MonetDB servers which do not have the sys.table_types table,
   the old behavior is retained.
 
 * Thu Feb 11 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
@@ -27,8 +30,8 @@
 
 * Thu Jan 28 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Method getFunctions() in DatabaseMetadata used to throw an SQLException:
-  SELECT: no such column 'functions.sql' This has been corrected. It
-  now returns a resultset as requested.
+  SELECT: no such column 'functions.sql' This has been corrected.
+  It now returns a resultset as requested.
 - The resultsets of DatabaseMetadata methods now no longer return a
   value for the *_CAT columns as MonetDB does not support Catalogs.
 

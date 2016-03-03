@@ -3083,10 +3083,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			query.append(" AND \"TYPE_CAT\" ").append(composeMatchPart(catalog));
 		}
 		if (schemaPattern != null) {
-			query.append(" AND \"TYPE_SCHEM\" ").append(composeMatchPart(schemaPattern));
+			query.append(" AND \"schemas\".\"name\" ").append(composeMatchPart(schemaPattern));
 		}
 		if (typeNamePattern != null) {
-			query.append(" AND \"TYPE_NAME\" ").append(composeMatchPart(typeNamePattern));
+			query.append(" AND \"types\".\"sqlname\" ").append(composeMatchPart(typeNamePattern));
 		}
 		if (types != null && types.length > 0) {
 			query.append(" AND \"DATA_TYPE\" IN (");
@@ -3580,27 +3580,20 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public ResultSet getClientInfoProperties() throws SQLException {
-		String[] columns, types;
-		String[][] results;
+		// for a list of connection properties see also MonetConnection.java constructor MonetConnection(Properties props)
+		String query =
+		"SELECT 'host' AS \"NAME\", CAST(1024 as int) AS \"MAX_LEN\", 'localhost' AS \"DEFAULT_VALUE\", 'DSN or IP-address of machine running MonetDB' AS \"DESCRIPTION\" UNION ALL " +
+		"SELECT 'port', 5, '50000', 'communication port number of MonetDB server process' UNION ALL " +
+		"SELECT 'user', 128, '', 'user name to login to MonetDB server' UNION ALL " +
+		"SELECT 'password', 128, '', 'password for user name to login to MonetDB server' UNION ALL " +
+		"SELECT 'langauge', 16, 'sql', 'language (sql or mal) used to parse commands in MonetDB server' UNION ALL " +
+		"SELECT 'debug', 5, 'false', 'boolean flag true or false' UNION ALL " +
+		"SELECT 'hash', 128, '', 'hash string' UNION ALL " +
+		"SELECT 'treat_blob_as_binary', 5, 'false', 'boolean flag true or false' UNION ALL " +
+		"SELECT 'so_timeout', 10, '0', 'timeout of communication socket. 0 means no timeout is set' " +
+		"ORDER BY \"NAME\"";
 
-		columns = new String[4];
-		types = new String[4];
-		results = new String[4][0];
-
-		columns[0] = "NAME";
-		types[0] = "varchar";
-		columns[1] = "MAX_LEN";
-		types[1] = "integer";
-		columns[2] = "DEFAULT_VALUE";
-		types[2] = "varchar";
-		columns[3] = "DESCRIPTION";
-		types[3] = "varchar";
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		return executeMetaDataQuery(query);
 	}
 
 	/**
