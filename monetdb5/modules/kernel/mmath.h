@@ -15,7 +15,7 @@
 #include "mal_exception.h"
 #include <math.h>
 
-#ifdef _MSC_VER
+#ifdef WIN32
 # include <float.h>
 #if _MSC_VER <= 1600
 /* Windows spells these differently */
