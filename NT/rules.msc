@@ -161,10 +161,6 @@ GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
 !ENDIF
 GEOS_INCS = -I$(LIBGEOS)\include
 
-!IFNDEF RUBY_DIR
-RUBY_DIR = lib\ruby\gems\1.9.1
-!ENDIF
-
 !IFDEF HAVE_LIBR
 # This is the location of the R library
 libr_LIBDEP = R.lib
@@ -411,11 +407,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_RUBYGEM
-	$(ECHO) HAVE_RUBYGEM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_RUBYGEM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SAMTOOLS
 	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -471,7 +462,6 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \
 	"PYTHON3=$(PYTHON3)" \
 	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
-	"RUBY_DIR=$(RUBY_DIR)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \
 	"builtby=%USER%@%COMPUTERNAME%" \
