@@ -9,6 +9,7 @@ INCLUDES = \
 	../../../common/stream \
 	../../../gdk \
 	../../mal \
+	../../modules/kernel \
 	../../../sql/include \
 	$(libr_CFLAGS)
 

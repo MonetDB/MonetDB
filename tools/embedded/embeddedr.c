@@ -5,6 +5,7 @@
 #include "R_ext/Random.h"
 #include "monet_options.h"
 #include "mal.h"
+#include "mmath.h"
 #include "mal_client.h"
 #include "mal_linker.h"
 #include "msabaoth.h"

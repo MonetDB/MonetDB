@@ -18,9 +18,10 @@
 MTSAFE
 
 INCLUDES = ../../monetdb5/mal \
-		   ../../monetdb5/modules/atoms \ 
-		   ../../monetdb5/modules/mal \ 
-		   ../../monetdb5/extras/rapi \ 
+		   ../../monetdb5/modules/atoms \
+		   ../../monetdb5/modules/mal \
+		   ../../monetdb5/modules/kernel \
+		   ../../monetdb5/extras/rapi \
 		   ../../gdk \
 		   ../../common/stream \
 		   ../../common/utils \
@@ -31,7 +32,7 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../sql/common \
 		   ../../sql/storage \
 		   ../../sql/storage/bat \
-		   ../../sql/backends/monet5 \ 
+		   ../../sql/backends/monet5 \
 		   $(pcre_CFLAGS)
 
 lib_embedded  = {

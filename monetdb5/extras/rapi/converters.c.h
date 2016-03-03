@@ -184,7 +184,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		if (!IS_NUMERIC(s)) {
 			return NULL;
 		}
-		SXP_TO_BAT(dbl, NUMERIC_POINTER, (ISNA(*p) || isnan(*p) || isinf(*p)));
+		SXP_TO_BAT(dbl, NUMERIC_POINTER, (ISNA(*p) || MNisnan(*p) || MNisinf(*p)));
 		break;
 	}
 	case TYPE_str: {
