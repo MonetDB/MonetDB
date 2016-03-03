@@ -36,15 +36,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		con = parent;
 	}
 
-	private synchronized Statement getStmt() throws SQLException {
-		// use Statement which allows scrolling both directions through results
-		// cannot reuse stmt here, as people may request multiple
-		// queries, see for example bug #2703
-		return con.createStatement(
-					ResultSet.TYPE_SCROLL_INSENSITIVE,
-					ResultSet.CONCUR_READ_ONLY);
-	}
-
 	/**
 	 * Internal cache for 3 environment values retrieved from the
 	 * server, to avoid querying the server over and over again.
@@ -55,7 +46,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		Statement st = null;
 		ResultSet rs = null;
 		try {
-			st = getStmt();
+			st = con.createStatement();
 			rs = st.executeQuery(
 				"SELECT \"name\", \"value\" FROM \"sys\".\"environment\"" +
 				" WHERE \"name\" IN ('monet_version', 'max_clients')" +
@@ -90,6 +81,29 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			}
 		}
 // for debug: System.out.println("Read: env_current_user: " + env_current_user + "  env_monet_version: " + env_monet_version + "  env_max_clients: " + env_max_clients);
+	}
+
+
+	/**
+	 * Internal utility method to create a Statement object, execute a query and return the ResulSet object.
+	 * As the Statement object is created internally (the caller does not see it and thus can not close it),
+	 * we set it to close (and free server resources) when the ResultSet object is closed by the caller.
+	 */
+	private ResultSet executeMetaDataQuery(String query) throws SQLException {
+		Statement stmt = null;
+		ResultSet rs = null;
+		stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+		if (stmt != null) {
+			rs = stmt.executeQuery(query);
+			if (rs != null) {
+				/* we want the statement object to be closed also when the resultset is closed by the caller */
+				stmt.closeOnCompletion();
+			} else {
+				/* failed to produce a resultset, so release resources for created statement object now */
+				stmt.close();
+			}
+		}
+		return rs;
 	}
 
 	/**
@@ -391,7 +405,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		Statement st = null;
 		ResultSet rs = null;
 		try {
-			st = getStmt();
+			st = con.createStatement();
 			rs = st.executeQuery("SELECT \"keyword\" FROM \"sys\".\"keywords\" ORDER BY 1");
 			// Fetch the keywords and concatenate them into a StringBuffer separated by comma's
 			boolean isfirst = true;
@@ -490,7 +504,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		ResultSet rs = null;
 		try {
 			String select = "SELECT DISTINCT \"name\" FROM \"sys\".\"functions\" " + whereClause + " ORDER BY 1";
-			st = getStmt();
+			st = con.createStatement();
 			rs = st.executeQuery(select);
 			// Fetch the function names and concatenate them into a StringBuffer separated by comma's
 			boolean isfirst = true;
@@ -1601,7 +1615,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query.append(" ORDER BY \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\"");
 
-		return getStmt().executeQuery(query.toString());
+		return executeMetaDataQuery(query.toString());
 	}
 
 	/**
@@ -1712,7 +1726,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		}
 		query.append(" ORDER BY \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"ORDINAL_POSITION\"");
 
-		return getStmt().executeQuery(query.toString());
+		return executeMetaDataQuery(query.toString());
 	}
 
 	//== this is a helper method which does not belong to the interface
@@ -1862,7 +1876,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query.append(" ORDER BY \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"");
 
-		return getStmt().executeQuery(query.toString());
+		return executeMetaDataQuery(query.toString());
 	}
 
 	/**
@@ -1899,7 +1913,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			query += "WHERE \"name\" ILIKE '" + escapeQuotes(schemaPattern) + "' ";
 		query += "ORDER BY \"TABLE_SCHEM\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -1920,7 +1934,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public ResultSet getCatalogs() throws SQLException {
 		// MonetDB does NOT support catalogs.
 		// Return a resultset with no rows
-		return getStmt().executeQuery("SELECT cast(null as char(1)) AS \"TABLE_CAT\" WHERE 1 = 0");
+		return executeMetaDataQuery("SELECT cast(null as char(1)) AS \"TABLE_CAT\" WHERE 1 = 0");
 	}
 
 	/**
@@ -1955,7 +1969,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				"SELECT 'VIEW' ORDER BY 1";
 		}
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2058,7 +2072,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2141,7 +2155,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"COLUMN_NAME\", \"PRIVILEGE\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2217,7 +2231,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2294,7 +2308,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		}
 		query += "ORDER BY \"keys\".\"type\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2407,7 +2421,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"COLUMN_NAME\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	final static String keyQuery1 =
@@ -2502,7 +2516,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"PK_NAME\", \"KEY_SEQ\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2572,7 +2586,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2663,7 +2677,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2756,7 +2770,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				"\"radix\" AS \"NUM_PREC_RADIX\" " +
 			"FROM \"sys\".\"types\"";
 			
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -2877,7 +2891,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		Statement sub = null;
 		if (!approximate) sub = con.createStatement();
 
-		ResultSet rs = getStmt().executeQuery(query);
+		ResultSet rs = executeMetaDataQuery(query);
 		try {
 			while (rs.next()) {
 				String[] result = new String[13];
@@ -3036,7 +3050,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"'java.lang.Object' AS \"CLASS_NAME\", 0 AS \"DATA_TYPE\", " +
 			"'' AS \"REMARKS\", 0 AS \"BASE_TYPE\" WHERE 1 = 0";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 
@@ -3161,7 +3175,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"cast(null as char(1)) AS \"SUPERTYPE_CAT\", '' AS \"SUPERTYPE_SCHEM\", " +
 			"'' AS \"SUPERTYPE_NAME\" WHERE 1 = 0";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -3207,7 +3221,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
 			"'' AS \"SUPERTABLE_NAME\" WHERE 1 = 0";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -3297,7 +3311,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"'' AS \"SCOPE_CATALOG\", '' AS \"SCOPE_SCHEMA\", '' AS \"SCOPE_TABLE\", " +
 			"0 AS \"SOURCE_DATA_TYPE\" WHERE 1 = 0";
 
-		return getStmt().executeQuery(query);
+		return executeMetaDataQuery(query);
 	}
 
 	/**
@@ -3614,7 +3628,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"");
 
-		return getStmt().executeQuery(query.toString());
+		return executeMetaDataQuery(query.toString());
 	}
 
 	/**
@@ -3721,7 +3735,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		}
 		query.append(" ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"ORDINAL_POSITION\"");
 
-		return getStmt().executeQuery(query.toString());
+		return executeMetaDataQuery(query.toString());
 	}
 
 	//== 1.7 methods (JDBC 4.1)
