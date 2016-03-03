@@ -65,7 +65,7 @@ BLOOMsize(BUN cnt) {
 	return m;
 }
 
-static void bloom_stats(BAT b, Bloomfilter *bloom) {
+static void bloom_stats(BAT *b, Bloomfilter *bloom) {
 	BUN on = 0, off=0;
 	size_t i, j;
 	unsigned char *filter = (unsigned char *) bloom->filter->base;
@@ -78,7 +78,7 @@ static void bloom_stats(BAT b, Bloomfilter *bloom) {
 			else
 				off++;
 	fprintf(stderr, "#BATbloom(b=%s#" BUNFMT ") %s: bits on = " BUNFMT ", bits off = " BUNFMT "\n",
-	        BATgetId(b), BATcount(b), b->T->heap.filename on, off);
+	        BATgetId(b), BATcount(b), b->T->heap.filename, on, off);
 }
 
 #define BLOOM_BUILD(TYPE)							\
