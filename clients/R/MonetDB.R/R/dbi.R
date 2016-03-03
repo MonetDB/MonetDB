@@ -658,7 +658,7 @@ monetdbRtype <- function(dbType) {
 
 setMethod("fetch", signature(res="MonetDBResult", n="numeric"), def=function(res, n, ...) {
   # DBI on CRAN still uses fetch()
-  .Deprecated("dbFetch")
+  # .Deprecated("dbFetch")
   dbFetch(res, n, ...)
 })
 
