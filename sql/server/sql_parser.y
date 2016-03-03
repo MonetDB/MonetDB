@@ -49,6 +49,9 @@
 
 #define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
+#define SET_Z(info)(info = info | 0x02)
+#define SET_M(info)(info = info | 0x01)
+
 #ifdef HAVE_HGE
 #define MAX_DEC_DIGITS (have_hge ? 38 : 18)
 #define MAX_HEX_DIGITS (have_hge ? 32 : 16)
@@ -435,6 +438,7 @@ int yydebug=1;
 	XML_whitespace_option
 	window_frame_units
 	window_frame_exclusion
+	subgeometry_type
 
 %type <w_val>
 	wrdval
@@ -481,6 +485,9 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
+	
+/* the tokens used in geom */
+%token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA 
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
@@ -533,7 +540,10 @@ int yydebug=1;
 %left <operation> '%'
 %left <operation> '~'
 
-	/* literal keyword tokens */
+%left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
+%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST
+
+/* literal keyword tokens */
 /*
 CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
@@ -3436,12 +3446,88 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_LEFT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_left")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp  GEOM_OVERLAP_OR_RIGHT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_right")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_BELOW scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_below")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_BELOW scalar_exp
+			{ dlist *l = L();
+			  append_list(l, append_string(L(), sa_strdup(SA, "mbr_below")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_ABOVE scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_above")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_ABOVE scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_above")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_DIST scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_distance")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp AT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_contained")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '|' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_or")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '~' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_contains")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '~''=' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $4);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();
@@ -4794,8 +4880,87 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
+| GEOMETRY {
+		sql_find_subtype(&$$, "geometry", 0, 0 );
+	}
+| GEOMETRY '(' subgeometry_type ')' {
+		int geoSubType = $3; 
 
+		if(geoSubType == 0) {
+			$$.type = NULL;
+			YYABORT;
+		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		}
+		
+	}
+| GEOMETRY '(' subgeometry_type ',' intval ')' {
+		int geoSubType = $3; 
+		int srid = $5; 
+
+		if(geoSubType == 0) {
+			$$.type = NULL;
+			YYABORT;
+		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, srid )) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		}
+	}
+| GEOMETRYA {
+		sql_find_subtype(&$$, "geometrya", 0, 0 );
+	}
+| GEOMETRYSUBTYPE {
+	int geoSubType = find_subgeometry_type($1);
+
+	if(geoSubType == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		$$.type = NULL;
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
+	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
+	char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		yyerror(m, msg);
+		_DELETE(msg);
+		$$.type = NULL;
+		YYABORT;
+	}
+}
  ;
+
+subgeometry_type:
+  GEOMETRYSUBTYPE {
+	int subtype = find_subgeometry_type($1);
+	char* geoSubType = $1;
+
+	if(subtype == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		
+	} 
+	$$ = subtype;	
+}
+| string {
+	int subtype = find_subgeometry_type($1);
+	char* geoSubType = $1;
+
+	if(subtype == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		
+	} 
+	$$ = subtype;	
+}
+;
 
 type_alias:
  ALIAS
@@ -4928,6 +5093,7 @@ non_reserved_word:
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 |  MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
+|  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 ;
 
 name_commalist:
@@ -5580,6 +5746,46 @@ XML_aggregate:
  ;
 
 %%
+int find_subgeometry_type(char* geoSubType) {
+	int subType = 0;
+	if(strcmp(geoSubType, "point") == 0 )
+		subType = (1 << 2);
+	else if(strcmp(geoSubType, "linestring") == 0)
+		subType = (2 << 2);
+	else if(strcmp(geoSubType, "polygon") == 0)
+		subType = (4 << 2);
+	else if(strcmp(geoSubType, "multipoint") == 0)
+		subType = (5 << 2);
+	else if(strcmp(geoSubType, "multilinestring") == 0)
+		subType = (6 << 2);
+	else if(strcmp(geoSubType, "multipolygon") == 0)
+		subType = (7 << 2);
+	else if(strcmp(geoSubType, "geometrycollection") == 0)
+		subType = (8 << 2);
+	else {
+		size_t strLength = strlen(geoSubType);
+		if(strLength > 0 ) {
+			char *typeSubStr = malloc(strLength);
+			char flag = geoSubType[strLength-1]; 
+			
+			memcpy(typeSubStr, geoSubType, strLength-1);
+			typeSubStr[strLength-1]='\0';
+			if(flag == 'z' || flag == 'm' ) {
+				subType = find_subgeometry_type(typeSubStr);
+			
+			
+				if(flag == 'z')
+					SET_Z(subType);
+				if(flag == 'm')
+					SET_M(subType);
+			}
+			free(typeSubStr);
+		}
+
+	}
+	return subType;	
+}
+
 char *token2string(int token)
 {
 	switch (token) {

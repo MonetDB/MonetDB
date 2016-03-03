@@ -1,0 +1,64 @@
+stdout of test 'ST_NPoints` in directory 'geom/sql/functions` itself:
+
+
+# 09:59:57 >  
+# 09:59:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38496" "--set" "mapi_usock=/var/tmp/mtest-1038/.s.monetdb.38496" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 09:59:57 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:38496/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1038/.s.monetdb.38496
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+#WARNING To speedup geom.NPoints a bulk operator implementation is needed
+
+# 09:59:57 >  
+# 09:59:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1038" "--port=38496"
+# 09:59:57 >  
+
+#SELECT ST_NPoints(ST_GeomFromText('LINESTRING(77.29 29.07,77.42 29.26,77.27 29.31,77.29 29.07)'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% int # type
+% 1 # length
+[ 4	]
+#SELECT ST_NPoints(ST_GeomFromText('polygon((77.29 29.07,77.42 29.26,77.27 29.31,77.29 29.07))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% int # type
+% 1 # length
+[ 4	]
+#select ST_NPoints(st_mpointFromText('multipoint(1 2 3, 4 5 6, 7 8 9, 10 11 12)'));
+% .L # table_name
+% st_mpointfromtext_single_value # name
+% int # type
+% 1 # length
+[ 4	]
+#select ST_NPoints(geom) AS "POINTS" from geometries where id <10;
+% sys.L # table_name
+% POINTS # name
+% int # type
+% 1 # length
+[ 1	]
+[ 3	]
+[ 6	]
+[ 4	]
+[ 5	]
+[ 2	]
+[ 4	]
+[ 5	]
+[ 7	]
+
+# 09:59:57 >  
+# 09:59:57 >  "Done."
+# 09:59:57 >  
+

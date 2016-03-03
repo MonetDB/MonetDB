@@ -871,7 +871,6 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 static int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 static int backend_create_subaggr(backend *be, sql_subaggr *f);
 
-#define SMALLBUFSIZ 64
 static int
 dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
@@ -1023,10 +1022,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (sql->mvc->argc && sql->mvc->args[s->flag]->varid >= 0) {
 					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
 				} else {
-					char *buf = GDKmalloc(SMALLBUFSIZ);
+					char *buf = GDKmalloc(IDLENGTH);
 					if (buf == NULL)
 						return -1;
-					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+					(void) snprintf(buf, IDLENGTH, "A%d", s->flag);
 					q = pushArgumentId(mb, q, buf);
 				}
 				if (q == NULL)
@@ -1079,11 +1078,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
+			if (t && (!isRemote(t) && !isMergeTable(t)) && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+				BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
+				setRowCnt(mb,getArg(q,0),rows);
+				if (t->p && 0)
+					setMitosisPartition(q, t->p->base.id);
+			}
 		}
 			break;
 		case st_bat:{
 			int tt = s->op4.cval->type.type->localtype;
-			sql_table *t = s->op4.cval->t;
+			sql_column *c = s->op4.cval;
+			sql_table *t = c->t;
 
 			q = newStmt2(mb, sqlRef, bindRef);
 			if (q == NULL)
@@ -1097,7 +1104,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
-			q = pushArgument(mb, q, getStrConstant(mb,s->op4.cval->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
@@ -1107,11 +1114,22 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 			}
+			if (s->flag != RD_INS && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+
+				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+					BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
+					setRowCnt(mb,getArg(q,0),rows);
+					if (t->p && 0)
+						setMitosisPartition(q, t->p->base.id);
+				}
+			}
 		}
 			break;
 		case st_idxbat:{
 			int tt = tail_type(s)->type->localtype;
-			sql_table *t = s->op4.idxval->t;
+			sql_idx *i = s->op4.idxval;
+			sql_table *t = i->t;
 
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			if (q == NULL)
@@ -1126,7 +1144,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushArgument(mb, q, getStrConstant(mb,t->base.name));
-			q = pushArgument(mb, q, getStrConstant(mb,s->op4.idxval->base.name));
+			q = pushArgument(mb, q, getStrConstant(mb,i->base.name));
 			q = pushArgument(mb, q, getIntConstant(mb,s->flag));
 			if (q == NULL)
 				return -1;
@@ -1135,6 +1153,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->flag == RD_UPD_ID) {
 				/* rename second result */
 				renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
+			}
+			if (s->flag != RD_INS && s->partition) {
+				sql_trans *tr = sql->mvc->session->tr;
+
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+					BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
+					setRowCnt(mb,getArg(q,0),rows);
+					if (t->p && 0)
+						setMitosisPartition(q, t->p->base.id);
+				}
 			}
 		}
 			break;
@@ -1781,10 +1809,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* delta bat */
 				if (s->op3) {
-					char nme[SMALLBUFSIZ];
+					char nme[IDLENGTH];
 					int uval = -1;
 
-					snprintf(nme, SMALLBUFSIZ, "r1_%d", r);
+					snprintf(nme, IDLENGTH, "r1_%d", r);
 					uval = findVariable(mb, nme);
 					assert(uval >= 0);
 
@@ -1938,10 +1966,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (s->flag)
 					s->nr = s->op1->op2->nr;
 			} else if (s->flag) {
-				char nme[SMALLBUFSIZ];
+				char nme[IDLENGTH];
 				int v = -1;
 
-				snprintf(nme, SMALLBUFSIZ, "r%d_%d", s->flag, l);
+				snprintf(nme, IDLENGTH, "r%d_%d", s->flag, l);
 				v = findVariable(mb, nme);
 				assert(v >= 0);
 
@@ -2023,6 +2051,28 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* convert a string to a time(stamp) with time zone */
 			if (EC_VARCHAR(f->type->eclass) && EC_TEMP_FRAC(t->type->eclass) && type_has_tz(t))
 				q = pushInt(mb, q, type_has_tz(t));
+			if (t->type->eclass == EC_GEOM) {
+				/* push the type and coordinates of the column */
+				q = pushInt(mb, q, t->digits);
+				/* push the SRID of the whole columns */
+				q = pushInt(mb, q, t->scale);
+				/* push the type and coordinates of the inserted value */
+				//q = pushInt(mb, q, f->digits);
+				/* push the SRID of the inserted value */
+				//q = pushInt(mb, q, f->scale);
+
+/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
+				/* push the SRID provided for this value */
+				/* GEOS library is able to store in the returned wkb the type an
+ 				* number if coordinates but not the SRID so SRID should be provided 
+ 				* from this level */
+/*				if(sql->mvc->argc > 1)
+					f->scale = ((ValRecord)((atom*)((mvc*)sql->mvc)->args[1])->data).val.ival;
+				
+				q = pushInt(mb, q, f->digits);
+				q = pushInt(mb, q, f->scale);
+*/				//q = pushInt(mb, q, ((ValRecord)((atom*)((mvc*)sql->mvc)->args[1])->data).val.ival);
+			}
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
@@ -2792,7 +2842,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0;
-	char arg[SMALLBUFSIZ];
+	char arg[IDLENGTH];
 	node *n;
 
 	backup = c->curprg;
@@ -2820,7 +2870,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
 
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
+			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)
@@ -2835,7 +2885,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = a->type.type->localtype;
 			int varid = 0;
 
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
+			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)

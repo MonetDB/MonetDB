@@ -51,8 +51,8 @@ Ready.
 [ 6,	1,	42	]
 #select id, n, flag, (select count(*) from mytest as i where i.id <
 #	mytest.id and i.n = mytest.n) from mytest order by id;
-% .mytest,	.mytest,	.mytest,	.L2 # table_name
-% id,	n,	flag,	L2 # name
+% .mytest,	.mytest,	.mytest,	.L1 # table_name
+% id,	n,	flag,	L1 # name
 % int,	int,	int,	wrd # type
 % 1,	1,	2,	1 # length
 [ 1,	1,	NULL,	0	]
@@ -63,8 +63,8 @@ Ready.
 [ 6,	1,	42,	4	]
 #select id, n, flag, (select count(*) from mytest as i where i.id <
 #	mytest.id and i.n = mytest.n and flag is not null) from mytest order by id;
-% .mytest,	.mytest,	.mytest,	.L2 # table_name
-% id,	n,	flag,	L2 # name
+% .mytest,	.mytest,	.mytest,	.L1 # table_name
+% id,	n,	flag,	L1 # name
 % int,	int,	int,	wrd # type
 % 1,	1,	2,	1 # length
 [ 1,	1,	NULL,	0	]

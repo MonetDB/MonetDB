@@ -29,14 +29,14 @@ Ready.
 # 12:36:17 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11334" "--port=30001"
 # 12:36:17 >  
 
-function user.foo():void;               	#[0]  0 
-    t:bat[:str] := bat.new(:str);       	#[1] CMDBATnewColumn 1 <- 2 
-    bat.append(t:bat[:str],"#hello world":str);	#[2] BKCappend_val_wrap 3 <- 1 4 
-    bat.append(t:bat[:str],"#sleep well":str);	#[3] BKCappend_val_wrap 5 <- 1 6 
-    io.print(t:bat[:str]);              	#[4] IOprint_val 7 <- 1 
-    b:bat[:bit] := mal.manifold("str":str,"startsWith":str,t:bat[:str],"#":str);	#[5] MANIFOLDevaluate 8 <- 9 10 1 11 
-    io.print(b:bat[:bit]);              	#[6] IOprint_val 12 <- 8 
-end user.foo;                           	#[7]  
+function user.foo():void;               	#[0] (0)  0 
+    t:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    bat.append(t:bat[:str],"#hello world":str);	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    bat.append(t:bat[:str],"#sleep well":str);	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
+    io.print(t:bat[:str]);              	#[4] (0) IOprint_val 7 <- 1 
+    b:bat[:bit] := mal.manifold("str":str,"startsWith":str,t:bat[:str],"#":str);	#[5] (0) MANIFOLDevaluate 8 <- 9 10 1 11 
+    io.print(b:bat[:bit]);              	#[6] (0) IOprint_val 12 <- 8 
+end user.foo;                           	#[7] (0)  
 #--------------------------#
 # h	t  # name
 # void	str		  # type

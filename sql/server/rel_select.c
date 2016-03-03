@@ -2119,7 +2119,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = NULL;
 		dnode *n = dl->h->next, *dn = NULL;
 		sql_rel *left = NULL, *right = NULL, *outer = rel;
-		sql_exp *l = NULL, *e, *r = NULL;
+		sql_exp *l = NULL, *e, *r = NULL, *ident = NULL;
 		list *vals = NULL, *ll = sa_list(sql->sa);
 		int correlated = 0;
 		int l_is_value = 1, r_is_rel = 0;
@@ -2222,14 +2222,17 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						sql->session->status = 0;
 						sql->errstr[0] = 0;
 
-						if (l_is_value) 
-							rel = rel_dup(outer);
-						else
+						if (l_is_value) {
+							outer = rel = rel_add_identity(sql, rel_dup(outer), &ident);
+							ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
+						} else
 							rel = left = rel_dup(left);
 						r = rel_value_exp(sql, &rel, sval, f, ek);
 						if (r && !is_project(rel->op)) {
 							rel = rel_project(sql->sa, rel, NULL);
 							rel_project_add_exp(sql, rel, r);
+							if (ident)
+								rel_project_add_exp(sql, rel, ident);
 						}
 						z = rel;
 						correlated = 1;
@@ -2271,13 +2274,12 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (right) {
 			node *n, *m;
-			list *rexps;
+			list *rexps, *jexps = sa_list(sql->sa);
 
-			rel = rel_crossproduct(sql->sa, left, right, op_join);
 
 			/* list through all left/right expressions */
 			rexps = right->exps;
-			if (!is_project(right->op) || list_length(ll) != list_length(rexps)) {
+			if (!is_project(right->op) || (list_length(ll)+((ident)?1:0)) != list_length(rexps)) {
 				if (list_length(ll) == 1)
 					return sql_error(sql, 02, "IN: inner query should return a single column");
 				return NULL;
@@ -2293,7 +2295,26 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 					return NULL;
 				e = exp_compare(sql->sa, l, r, cmp_equal );
-				rel_join_add_exp(sql->sa, rel, e);
+				//rel_join_add_exp(sql->sa, rel, e);
+				append(jexps, e);
+			}
+			if (correlated && l_is_value) {
+				sql_exp *le;
+
+				le = exps_bind_column2(right->exps, exp_relname(ident), exp_name(ident));
+				exp_label(sql->sa, le, ++sql->label);
+				le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
+
+				right = rel_select(sql->sa, right, NULL);
+				right->exps = jexps;
+
+				rel = rel_crossproduct(sql->sa, outer, right, op_join);
+				rel->exps = sa_list(sql->sa);
+				le = exp_compare(sql->sa, ident, le, cmp_equal);
+				append(rel->exps, le);
+			} else {
+				rel = rel_crossproduct(sql->sa, left, right, op_join);
+				rel->exps = jexps;
 			}
 			if (correlated || l_is_value || r_is_rel) {
 				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
@@ -2305,7 +2326,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				e = exp_compare(sql->sa,  e, r, cmp_equal);
 				rel = rel_select(sql->sa, rel, e);
 			}
-			if (l_is_value && outer)
+			if (!correlated && l_is_value && outer)
 				rel = rel_crossproduct(sql->sa, outer, rel, op_join);
 			rel = rel_project(sql->sa, rel, rel_projections(sql, outer, NULL, 1, 1));
 			set_processed(rel);
@@ -4126,7 +4147,6 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		}
 		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 			sql_exp *rs = NULL;
-			int card = 0;
 
 			if (!*rel)
 				return NULL;
@@ -4136,11 +4156,10 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			sql->errstr[0] = '\0';
 
 			/* add unique */
-			card = exps_card((*rel)->exps);
 			*rel = r = rel_subquery(sql, *rel, se, ek, f == sql_sel?APPLY_LOJ:APPLY_JOIN);
 			if (r) {
 				rs = rel_lastexp(sql, r);
-				if (f == sql_sel && card > CARD_ATOM && r->card > CARD_ATOM && r->r) {
+				if (f == sql_sel && exp_card(rs) > CARD_ATOM && r->card > CARD_ATOM && r->r) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 

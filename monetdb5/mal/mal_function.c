@@ -476,7 +476,7 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 			if (p->token == REMsymbol)
 				mnstr_printf(fd,"%-40s\n",ps);
 			else {
-				mnstr_printf(fd,"%-40s\t#[%d] %s ",ps, i, (p->blk && p->blk->binding? p->blk->binding:""));
+				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk && p->blk->binding? p->blk->binding:""));
 				for(j =0; j < p->retc; j++)
 					mnstr_printf(fd,"%d ",getArg(p,j));
 				if( p->argc - p->retc > 0)

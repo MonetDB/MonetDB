@@ -180,8 +180,8 @@ _initQlog(void)
 	QLOG_cat_defined = QLOGcreate("cat","defined",TYPE_timestamp);
 	QLOG_cat_query = QLOGcreate("cat","query",TYPE_str);
 	QLOG_cat_pipe = QLOGcreate("cat","pipe",TYPE_str);
-	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_plan = QLOGcreate("cat","size",TYPE_str);
+	QLOG_cat_mal = QLOGcreate("cat","mal",TYPE_int);
 	QLOG_cat_optimize = QLOGcreate("cat","optimize",TYPE_lng);
 	
 	QLOG_calls_id = QLOGcreate("calls","id",TYPE_oid);

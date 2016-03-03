@@ -51,7 +51,7 @@ decimal2
 null
 joins
 default
-HAVE_SAMTOOLS?keys
+HAVE_GEOM&HAVE_SAMTOOLS?keys
 
 like_tests
 

@@ -904,7 +904,8 @@ typedef struct {
 #define GDKLIBRARY_INET_COMPARE	061026	/* version with missing inet cmp func */
 #define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
 #define GDKLIBRARY_SORTEDPOS	061030	/* version where we can't trust no(rev)sorted */
-#define GDKLIBRARY		061031
+#define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
+#define GDKLIBRARY		061032
 
 typedef struct BAT {
 	/* static bat properties */

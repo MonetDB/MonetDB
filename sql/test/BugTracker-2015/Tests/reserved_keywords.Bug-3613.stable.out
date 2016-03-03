@@ -20,10 +20,6 @@ stdout of test 'reserved_keywords.Bug-3613` in directory 'sql/test/BugTracker-20
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#WARNING To speedup user.heapsize a bulk operator implementation is needed
-#WARNING To speedup user.hashsize a bulk operator implementation is needed
-#WARNING To speedup user.imprintsize a bulk operator implementation is needed
 
 # 18:58:09 >  
 # 18:58:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21543" "--port=39106"

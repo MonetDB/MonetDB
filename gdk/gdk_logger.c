@@ -95,6 +95,11 @@ typedef struct logformat_t {
 	lng nr;
 } logformat;
 
+/* When reading an old format database, we may need to read the geom
+ * Well-known Binary (WKB) type differently.  This variable is used to
+ * indicate that to the function wkbREAD during reading of the log. */
+static int geomisoldversion;
+
 static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
@@ -1400,7 +1405,15 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			logger_fatal("logger_load: writing log file %s failed",
 				     filename, 0, 0);
 		}
-		if (fclose(fp) < 0) {
+		if (fflush(fp) < 0 ||
+#if defined(_MSC_VER)
+		    _commit(_fileno(fp)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fileno(fp)) < 0 ||
+#elif defined(HAVE_FSYNC)
+		    fsync(fileno(fp)) < 0 ||
+#endif
+		    fclose(fp) < 0) {
 			unlink(filename);
 			logger_fatal("logger_load: closing log file %s failed",
 				     filename, 0, 0);
@@ -1782,6 +1795,9 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 #endif
 		if (lg->postfuncp)
 			(*lg->postfuncp)(lg);
+
+		/* done reading the log, revert to "normal" behavior */
+		geomisoldversion = 0;
 	}
 
 	return LOG_OK;
@@ -2028,7 +2044,15 @@ logger_exit(logger *lg)
 			return LOG_ERR;
 		}
 
-		if (fclose(fp) < 0) {
+		if (fflush(fp) < 0 ||
+#if defined(_MSC_VER)
+		    _commit(_fileno(fp)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fileno(fp)) < 0 ||
+#elif defined(HAVE_FSYNC)
+		    fsync(fileno(fp)) < 0 ||
+#endif
+		    fclose(fp) < 0) {
 			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
 			return LOG_ERR;
@@ -2806,4 +2830,41 @@ logger_find_bat(logger *lg, const char *name)
 		}
 	}
 	return 0;
+}
+
+static geomcatalogfix_fptr geomcatalogfix = NULL;
+static geomsqlfix_fptr geomsqlfix = NULL;
+
+void
+geomcatalogfix_set(geomcatalogfix_fptr f)
+{
+	geomcatalogfix = f;
+}
+
+geomcatalogfix_fptr
+geomcatalogfix_get(void)
+{
+	return geomcatalogfix;
+}
+
+void
+geomsqlfix_set(geomsqlfix_fptr f)
+{
+	geomsqlfix = f;
+}
+
+geomsqlfix_fptr
+geomsqlfix_get(void)
+{
+	return geomsqlfix;
+}
+
+void
+geomversion_set(void)
+{
+	geomisoldversion = 1;
+}
+int geomversion_get(void)
+{
+	return geomisoldversion;
 }

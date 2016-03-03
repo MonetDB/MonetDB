@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Feb 18 2016 Martin Kersten <mk@cwi.nl>
+- Extended the storage() table producing function to also accept
+  storage([schemaname [, tablename [, columnname]]])
+
 * Tue Dec 22 2015 Martin Kersten <mk@cwi.nl>
 - The :bat[:oid,:any] type descriptor has been turned into its columnar
   version :bat[:any]

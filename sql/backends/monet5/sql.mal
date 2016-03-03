@@ -491,6 +491,63 @@ pattern storage()(
 address sql_storage
 comment "return a table with storage information ";
 
+pattern storage(sname:str)(
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
+address sql_storage
+comment "return a table with storage information for a particular schema ";
+
+pattern storage(sname:str, tname:str)(
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
+address sql_storage
+comment "return a table with storage information for a particular table";
+
+pattern storage(sname:str, tname:str, cname:str)(
+	schema:bat[:str],
+	table:bat[:str],
+	column:bat[:str],
+	type:bat[:str],
+	mode:bat[:str],
+	location:bat[:str],
+	count:bat[:lng],
+	atomwidth:bat[:int],
+	columnsize:bat[:lng],
+	heap:bat[:lng],
+	hashes:bat[:lng],
+	phash:bat[:bit],
+	imprints:bat[:lng],
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
+address sql_storage
+comment "return a table with storage information for a particular column";
+
 pattern createorderindex(sch:str,tbl:str,col:str)
 address sql_createorderindex
 comment "Instantiate the order index on a column";

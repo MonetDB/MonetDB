@@ -28,7 +28,7 @@ Ready.
 #SELECT f1 FROM PATH_TBL;
 % sys.path_tbl # table_name
 % f1 # name
-% linestring # type
+% geometry # type
 % 0 # length
 [ "LINESTRING (1 2, 3 4)"	]
 [ "LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)"	]
@@ -36,17 +36,17 @@ Ready.
 #SELECT * FROM PATH_TBL_VW;
 % sys.path_tbl_vw,	sys.path_tbl_vw # table_name
 % f1,	txt # name
-% linestring,	clob # type
-% 0,	173 # length
-[ "LINESTRING (1 2, 3 4)",	"\"LINESTRING (1.0000000000000000 2.0000000000000000, 3.0000000000000000 4.0000000000000000)\""	]
-[ "LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1.0000000000000000 -1.0000000000000000, 2.0000000000000000 -2.0000000000000000, 3.0000000000000000 -3.0000000000000000, 4.0000000000000000 -4.0000000000000000)\""	]
+% geometry,	clob # type
+% 0,	37 # length
+[ "LINESTRING (1 2, 3 4)",	"\"LINESTRING (1 2, 3 4)\""	]
+[ "LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)\""	]
 #SELECT Length(f1), * FROM PATH_TBL_VW;
 % sys.L2,	sys.path_tbl_vw,	sys.path_tbl_vw # table_name
 % L2,	f1,	txt # name
-% double,	linestring,	clob # type
-% 24,	0,	173 # length
-[ 2.828427125,	"LINESTRING (1 2, 3 4)",	"\"LINESTRING (1.0000000000000000 2.0000000000000000, 3.0000000000000000 4.0000000000000000)\""	]
-[ 4.242640687,	"LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1.0000000000000000 -1.0000000000000000, 2.0000000000000000 -2.0000000000000000, 3.0000000000000000 -3.0000000000000000, 4.0000000000000000 -4.0000000000000000)\""	]
+% int,	geometry,	clob # type
+% 2,	0,	37 # length
+[ 23,	"LINESTRING (1 2, 3 4)",	"\"LINESTRING (1 2, 3 4)\""	]
+[ 37,	"LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)",	"\"LINESTRING (1 -1, 2 -2, 3 -3, 4 -4)\""	]
 #DROP VIEW PATH_TBL_VW;
 
 # 15:27:51 >  

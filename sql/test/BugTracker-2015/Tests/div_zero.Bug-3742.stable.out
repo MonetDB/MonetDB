@@ -24,8 +24,6 @@ stdout of test 'div_zero.Bug-3742` in directory 'sql/test/BugTracker-2015` itsel
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup calc.second_interval a bulk operator implementation is needed
-#    X_30:bat[:oid,:lng] := mal.multiplex("calc":str,"second_interval":str,X_29:bat[:oid,:wrd],13:int,0:int);
 
 # 21:30:40 >  
 # 21:30:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9124" "--port=30165"

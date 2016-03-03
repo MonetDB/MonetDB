@@ -1,0 +1,77 @@
+stdout of test 'ST_MakeBox2D` in directory 'geom/sql/functions` itself:
+
+
+# 12:51:07 >  
+# 12:51:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35113" "--set" "mapi_usock=/var/tmp/mtest-22301/.s.monetdb.35113" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 12:51:07 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:35113/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22301/.s.monetdb.35113
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:51:08 >  
+# 12:51:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22301" "--port=35113"
+# 12:51:08 >  
+
+#select ST_MakeBox2D(ST_Point(-989502.1875, 528439.5625), ST_Point(-987121.375 ,529933.1875));
+% .L # table_name
+% st_point_single_value # name
+% mbr # type
+% 0 # length
+[ "BOX (-989502.1875 528439.5625, -987121.375 529933.1875)"	]
+#select ST_MakeBox2D(ST_Point(-989502.1875, 528439.5625), null);
+% .L # table_name
+% st_point_single_value # name
+% mbr # type
+% 0 # length
+[ NULL	]
+#CREATE TABLE t(geom GEOMETRY(POINT));
+#INSERT INTO t VALUES(ST_Point(10, 20)), (ST_Point(30, 40)), (ST_Point(50, 60)), (ST_Point(70, 80));
+[ 4	]
+#SELECT geom AS "P", ST_MakeBox2D(geom, ST_Point(90, 90)) AS "BOX2D" FROM t;
+% sys.L,	sys.L # table_name
+% P,	BOX2D # name
+% geometry,	mbr # type
+% 0,	0 # length
+[ "POINT (10 20)",	"BOX (10 20, 90 90)"	]
+[ "POINT (30 40)",	"BOX (30 40, 90 90)"	]
+[ "POINT (50 60)",	"BOX (50 60, 90 90)"	]
+[ "POINT (70 80)",	"BOX (70 80, 90 90)"	]
+#SELECT g1.geom AS "P1", g2.geom AS "P2", ST_MakeBox2D(g1.geom, g2.geom) AS "BOX2D" FROM t g1, t g2;
+% sys.L,	sys.L,	sys.L # table_name
+% P1,	P2,	BOX2D # name
+% geometry,	geometry,	mbr # type
+% 0,	0,	0 # length
+[ "POINT (10 20)",	"POINT (10 20)",	"BOX (10 20, 10 20)"	]
+[ "POINT (10 20)",	"POINT (30 40)",	"BOX (10 20, 30 40)"	]
+[ "POINT (10 20)",	"POINT (50 60)",	"BOX (10 20, 50 60)"	]
+[ "POINT (10 20)",	"POINT (70 80)",	"BOX (10 20, 70 80)"	]
+[ "POINT (30 40)",	"POINT (10 20)",	"BOX (10 20, 30 40)"	]
+[ "POINT (30 40)",	"POINT (30 40)",	"BOX (30 40, 30 40)"	]
+[ "POINT (30 40)",	"POINT (50 60)",	"BOX (30 40, 50 60)"	]
+[ "POINT (30 40)",	"POINT (70 80)",	"BOX (30 40, 70 80)"	]
+[ "POINT (50 60)",	"POINT (10 20)",	"BOX (10 20, 50 60)"	]
+[ "POINT (50 60)",	"POINT (30 40)",	"BOX (30 40, 50 60)"	]
+[ "POINT (50 60)",	"POINT (50 60)",	"BOX (50 60, 50 60)"	]
+[ "POINT (50 60)",	"POINT (70 80)",	"BOX (50 60, 70 80)"	]
+[ "POINT (70 80)",	"POINT (10 20)",	"BOX (10 20, 70 80)"	]
+[ "POINT (70 80)",	"POINT (30 40)",	"BOX (30 40, 70 80)"	]
+[ "POINT (70 80)",	"POINT (50 60)",	"BOX (50 60, 70 80)"	]
+[ "POINT (70 80)",	"POINT (70 80)",	"BOX (70 80, 70 80)"	]
+#DROP TABLE t;
+
+# 12:51:08 >  
+# 12:51:08 >  "Done."
+# 12:51:08 >  
+

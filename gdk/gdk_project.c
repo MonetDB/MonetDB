@@ -525,14 +525,18 @@ BATprojectchain(BAT **bats)
 		/* only dense-tailed BATs before last: we can return a
 		 * slice and manipulate offsets and head seqbase */
 		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, size "BUNFMT", type %s, using BATslice("BUNFMT","BUNFMT")\n", n, cnt, ATOMname(tpe), off, off + cnt);
-		bn = BATslice(b, off, off + cnt);
-		if (bn == NULL) {
-			GDKfree(ba);
-			return NULL;
+		if (BATtdense(b)) {
+			bn = BATdense(hseq, tseq, cnt);
+		} else {
+			bn = BATslice(b, off, off + cnt);
+			if (bn == NULL) {
+				GDKfree(ba);
+				return NULL;
+			}
+			BATseqbase(bn, hseq);
+			if (bn->ttype == TYPE_void)
+				BATseqbase(BATmirror(bn), tseq);
 		}
-		BATseqbase(bn, hseq);
-		if (bn->ttype == TYPE_void)
-			BATseqbase(BATmirror(bn), tseq);
 		GDKfree(ba);
 		return bn;
 	}

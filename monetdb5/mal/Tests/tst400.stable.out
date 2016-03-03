@@ -29,18 +29,18 @@ Ready.
 # 09:00:03 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
 # 09:00:03 >  
 
-function user.foo():void;               	#[0]  0 
-barrier i:int := 0:int;                 	#[1]  1 <- 2 
-    io.print("do something":str);       	#[2] IOprint_val 3 <- 4 
-    redo i:int := iterator.next(1:int,2:int);	#[3] ITRnext_int 1 <- 5 6 
-exit i:int;                             	#[4]  1 
-    io.printf("left first loop with %d\n":str,i:int);	#[5] IOprintf 7 <- 8 1 
-    io.print("next iteration":str);     	#[6] IOprint_val 9 <- 10 
-barrier i:int := 0:int;                 	#[7]  1 <- 2 
-    io.print("do something else":str);  	#[8] IOprint_val 11 <- 12 
-    redo i:int := iterator.next(2:int,5:int);	#[9] ITRnext_int 1 <- 6 13 
-exit i:int;                             	#[10]  1 
-end user.foo;                           	#[11]  
+function user.foo():void;               	#[0] (0)  0 
+barrier i:int := 0:int;                 	#[1] (0)  1 <- 2 
+    io.print("do something":str);       	#[2] (0) IOprint_val 3 <- 4 
+    redo i:int := iterator.next(1:int,2:int);	#[3] (0) ITRnext_int 1 <- 5 6 
+exit i:int;                             	#[4] (0)  1 
+    io.printf("left first loop with %d\n":str,i:int);	#[5] (0) IOprintf 7 <- 8 1 
+    io.print("next iteration":str);     	#[6] (0) IOprint_val 9 <- 10 
+barrier i:int := 0:int;                 	#[7] (0)  1 <- 2 
+    io.print("do something else":str);  	#[8] (0) IOprint_val 11 <- 12 
+    redo i:int := iterator.next(2:int,5:int);	#[9] (0) ITRnext_int 1 <- 6 13 
+exit i:int;                             	#[10] (0)  1 
+end user.foo;                           	#[11] (0)  
 [ "do something" ]
 [ "do something" ]
 left first loop with nil

@@ -2375,6 +2375,47 @@ else
 fi
 AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
 
+#proj only used in geom module
+org_have_proj="auto"
+have_proj=$org_have_proj
+PROJ_INCS=''
+PROJ_LIBS=''
+AC_ARG_WITH(proj,
+	AS_HELP_STRING([--with-proj=DIR],
+		[proj library is installed in DIR]),
+	have_proj="$withval")
+if test "x$have_proj" != xno ; then
+	case "$have_proj" in
+	auto|yes)
+		;;
+	*)
+		PROJ_INCS="-I$have_proj/include"
+		PROJ_LIBS="-L$have_proj/lib -lproj"
+		;;
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
+	LDFLAGS="$LDFLAGS $PROJ_LIBS"
+	AC_CHECK_HEADER(proj_api.h,
+		AC_CHECK_LIB(proj, pj_init_plus, 
+			AC_DEFINE(HAVE_PROJ, 1, [Define if the proj library exists]), 
+			[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([-lproj library not found]); fi
+			have_proj=no; why_have_proj="(proj library not found)" ], ),
+		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
+		have_proj=no; why_have_proj="(proj_api.h header not found)" ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	if test "x$have_proj" = "xyes" -o "x$have_proj" = "xauto"; then
+	    PROJ_INCS=
+	    PROJ_LIBS="-lproj"
+	fi
+fi
+AC_SUBST(PROJ_INCS)
+AC_SUBST(PROJ_LIBS)
+AM_CONDITIONAL(HAVE_PROJ, test x"$have_proj" != xno)
+
+
 # samtools, only used by sql
 org_have_samtools="auto"
 have_samtools=$org_have_samtools
@@ -2465,7 +2506,8 @@ AC_ARG_WITH(geos,
 	have_geos="$withval")
 case "$enable_geom" in
 yes|auto)
-	GEOS_VERSION_REQUIRED_MIN=3.0.0
+	# geos >= 3.4.0 required for (a.o.) GEOSDelaunayTriangulation()
+	GEOS_VERSION_REQUIRED_MIN=3.4.0
 	GEOS_CONFIG=''
 	if test "x$have_geos" != xno; then
 		case "$have_geos" in
@@ -2620,6 +2662,13 @@ no)
 	why_have_liblas="(lidar module is disabled)"
 	;;
 esac
+case "$enable_lidar" in
+no)	LIBLAS_RPM=without;;
+*)	LIBLAS_RPM=with;;
+esac
+# this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
+AC_SUBST(LIBLAS_RPM)
+
 AC_SUBST(LIBLAS_INCS)
 AC_SUBST(LIBLAS_LIBS)
 AC_MSG_CHECKING(['enable lidar: $enable_lidar'])
@@ -3463,6 +3512,7 @@ for comp in \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
+	'proj         ' \
 	'pthread      ' \
 	'python2      ' \
 	'python3      ' \

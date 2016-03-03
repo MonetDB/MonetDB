@@ -57,7 +57,7 @@ Ready.
 % clob # type
 % 641 # length
 function user.s2_1(A0:bte,A1:str):void;
-    X_189:void := querylog.define("explain select\n nation,\n o_year,\n sum(amount) as sum_profit\nfrom\n (\n select\n n_name as nation,\n extract(year from o_orderdate) as o_year,\n l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n from\n part,\n supplier,\n lineitem,\n partsupp,\n orders,\n nation\n where\n s_suppkey = l_suppkey\n and ps_suppkey = l_suppkey\n and ps_partkey = l_partkey\n and p_partkey = l_partkey\n and o_orderkey = l_orderkey\n and s_nationkey = n_nationkey\n and p_name like \\'%green%\\'\n ) as profit\ngroup by\n nation,\n o_year\norder by\n nation,\n o_year desc;","sequential_pipe",123);
+    X_189:void := querylog.define("explain select\n nation,\n o_year,\n sum(amount) as sum_profit\nfrom\n (\n select\n n_name as nation,\n extract(year from o_orderdate) as o_year,\n l_extendedprice * (1 - l_discount) - ps_supplycost * l_quantity as amount\n from\n part,\n supplier,\n lineitem,\n partsupp,\n orders,\n nation\n where\n s_suppkey = l_suppkey\n and ps_suppkey = l_suppkey\n and ps_partkey = l_partkey\n and p_partkey = l_partkey\n and o_orderkey = l_orderkey\n and s_nationkey = n_nationkey\n and p_name like \\'%green%\\'\n ) as profit\ngroup by\n nation,\n o_year\norder by\n nation,\n o_year desc;","sequential_pipe",121);
     X_155 := bat.new(nil:oid,nil:str);
     X_163 := bat.append(X_155,"sys.profit");
     X_171 := bat.append(X_163,"sys.profit");

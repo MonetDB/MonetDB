@@ -1,0 +1,141 @@
+#HAVE_GEOM?regression_load2D
+#HAVE_GEOM?regression_load3D
+#HAVE_GEOM?regression_load4D
+#HAVE_GEOM?regression_drop
+
+#HAVE_GEOM?binary #Unknown Types: CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, MULTICURVE, MULTISURFACE, TRIANGLE, TIN
+		#Unknown Functions: st_force3dz, st_force3dm, st_force4d, st_orderingequals
+		#It cannot handle EMPTY geometries in COPY INTO table FROM file commands
+
+#HAVE_GEOM?regress #Uknown Types: POINTM, CIRCULARSTRING, COMPOUNDCURVE, CURVEPOLYGON, TRIANGLE, TIN, MULTISURFACE, MULTICURVE
+		#Unknown Operators: <<, >>
+		#Uknown Functions: box3d, geometry, postgis_dropbbox, st_m, st_multi, st_force_3dm, st_force_3dz, st_force_4d, st_force_collection, st_asbinary(geometry,char), st_collectionextract 
+
+#HAVE_GEOM?regress_index #gist index is not supported
+#
+#HAVE_GEOM?regress_selectivity #generate_series does not work and other postGIS specific functions
+
+#HAVE_GEOM?lwgeom_regress #Unknown Fnctions: ST_extent, ST_NDims, ST_mem_size, ST_Force2d, ST_Force3dz, ST_Force4d, ST_Force3dm, ST_force3dz
+
+#HAVE_GEOM?regress_lrs #Unknown Functions: st_locatealong, st_locatebetween, ST_LineLocatePoint, st_geomfromewkt, st_linesubstring, st_lineinterpolatepoint
+
+#HAVE_GEOM?removepoint #Unknown Functions: st_removepoint
+
+#HAVE_GEOM?setpoint #Unknown Functions: st_setpoint
+
+#HAVE_GEOM?simplify #Unknown FUnctions: st_simplify
+
+#HAVE_GEOM?snaptogrid #Unknown Functions: st_snaptogrid
+
+#HAVE_GEOM?summary #Unknown Functions: st_summary
+
+#HAVE_GEOM?affine #Unknown Functions: ST_snapToGrid, st_scale, st_rotate, st_rotatez, st_rotatey, st_rotatex, st_transscale, box2d
+
+#HAVE_GEOM?empty #ST_DWithin(geometry, empty, tolerance) = true BUT ST_Within(geometry, empty) = false
+		#ST_Intersection(empty, empty) AND ST_ExteriorRing(empty) => TIMEOUT
+		#ST_NumGeometries(empty), ST_NRings(empty), ST_Geometry(N(empty, 1) => PostGIS:(0,0,empty) - MonetDB(1,1,null) => Both incosistent (no geometry but then returns and One return but then it does not return)
+		#MBR(empty) => segmentation fault
+
+#HAVE_GEOM?measures #Unknown Functions: st_perimeter2d, st_3dperimeter, st_3dlength, st_shortestline, st_maxdistance, st_3ddistance, st_length_spheroid
+
+#HAVE_GEOM?legacy #It is PostGIS specific to make sure that it is compatible with oldre PostGIS versions
+
+#HAVE_GEOM?long_xact #Tests PostGIS transactions
+
+#HAVE_GEOM?ctors #Unknown Functions: st_3dmakebox
+	#ST_MakeLine gives different results compared to PostGIS
+
+#HAVE_GEOM?sql-mm-serialize #Uses types that are not recognised. Additionaly, the EWKT in binary is not recognised (segmentation fault)
+#HAVE_GEOM?sql-mm-circularstring #Unknown Types: CIRCULARSTRING - Unknown Functions: st_ndims, box2d, st_curvetoline
+#HAVE_GEOM?sql-mm-compoundcurve #UnknownTypes: COMPOUNDCURVE - Uknown Functions: st_ndims, st_asbinary(geometry,char), decode(char,char)
+#HAVE_GEOM?sql-mm-curvepoly #UnknownTypes: CURVEPOLYGON - Uknown Functions: st_ndims, st_asbinary(geometry,char), decode(char,char)
+#HAVE_GEOM?sql-mm-general #Unknown Functions: st_hasarc, st_linetocurve
+#HAVE_GEOM?sql-mm-multicurve #Unknown Type: MULTICURVE - Uknown Functions: st_ndims
+#HAVE_GEOM?sql-mm-multisurface #Unknown Type: MULTISURFACE - Uknown Functions: st_ndims
+
+#HAVE_GEOM?polyhedralsurface #Unknown Type: POLYHEDRALSURFACE
+
+#HAVE_GEOM?polygonize #Unknown Function: st_polygonize
+
+#HAVE_GEOM?geography #At the moment, MonetDB does not handle geographies 
+
+#HAVE_GEOM?out_geometry #Unknown Functions:  st_asgml, st_askml, st_assvg, st_asgeojson
+
+#HAVE_GEOM?out_geography #At the moment, MonetDB does not handle geographies
+
+#HAVE_GEOM?in_geohash #Unknown Functions: st_box2dfromgeohash, st_geomfromgeohash, st_pointfromgeohash 
+
+#HAVE_GEOM?in_gml #Unknown Functions: st_geomfromgml, st_asgml
+
+#HAVE_GEOM?in_kml #Unknown Functions: st_geomfromkml, st_askml
+
+#HAVE_GEOM?iscollection #Uknown Functions: st_iscollection 
+
+#HAVE_GEOM?regress_ogc #Unknown Functions: st_buffer(geometry, int, int), st_snaptogrid, st_relate(geometry, geometry), box3d, st_polygonize, st_linemerge
+			#segmentation fault at select 'ST_NumGeometries', ST_NumGeometries(ST_GeomFromText('LINESTRING(0 0, 1 1)'));
+
+HAVE_GEOM?regress_ogc_cover
+
+#HAVE_GEOM?regress_ogc_prep #Unknown Functions: st_containsproperly
+
+#HAVE_GEOM?regress_bdpoly #Unknown Functions: st_buildarea, ST_BdMPolyFromText
+
+#HAVE_GEOM?regress_proj #Unknown Functions: st_snaptogrid
+
+#HAVE_GEOM?regress_management #Functions not applicable in MOnetDB
+
+HAVE_GEOM?dump #Unknown Types: TRIANGLE, TIN (queries for those types commented out)
+
+HAVE_GEOM?dumppoints #Uknown Types: TRIANGLE, TIN, CURVEPOLYGON (queries for these types commented out)
+
+HAVE_GEOM?boundary #Uknown Types: TRIANGLE (queries for these types commented out)
+
+#HAVE_GEOM?wmsservers #Not applicable to MonetDB (?)
+
+#HAVE_GEOM?wkt #Unknown Functions: st_orderingequals
+
+#HAVE_GEOM?wkb #Unknown Functions: st_asbinary(char,char), encode, st_orderingequals
+
+#HAVE_GEOM?tickets #Unknown Functions: st_locate_along_measure, round, st_asgml, ST_Shift_Longitude, st_linetocurve, st_forcecollection, st_multi, st_curvetoline, st_snaptogrid, st_asewkb(geometry,char), ST_AsSVG, st_linecrossingdirection, ST_GeographyFromText, geography, ...
+	#Unknown Types: CIRCULARSTRING, COMPOUNDCURVE
+
+#HAVE_GEOM?typmod #Unknwown Types: circularstring, compoundcurve, curvepolygon, geography, multicurve, multisurface, polyhedralsurface, tin, triangle
+
+#HAVE_GEOM?remove_repeated_points #Unknown Functions: #st_removerepeatedpoints
+
+#HAVE_GEOM?split #Unknown Functions: #st_split
+
+#HAVE_GEOM?relate #Unknown Functions: st_relate(char,char)
+
+#HAVE_GEOM?bestsrid #Unknown Functions: _st_bestsrid
+
+#HAVE_GEOM?concave_hull #Unknown Functions: st_concavehull
+
+#HAVE_GEOM?hausdorff #Unknown Functions: st_hausdorffdistance
+
+#HAVE_GEOM?regress_buffer_params #Unknown Functions: ST_SnapToGrid, st_buffer(geometry, dbl, ...);
+
+#HAVE_GEOM?offsetcurve #Unknown Functions: ST_OffsetCurve, ST_SnapToGrid
+
+#HAVE_GEOM?relatematch #Unknown Functions: st_relatematch
+
+#HAVE_GEOM?isvaliddetail #Unknown Functions: st_isvaliddetail 
+
+#HAVE_GEOM?sharedpaths #Unknown Functions: st_sharedpaths
+
+#HAVE_GEOM?snap #Unknown Functions: st_snap 
+
+#HAVE_GEOM?node #Unknown Functions: st_node 
+
+#HAVE_GEOM?unaryunion #Unknown Functions: st_unaryunion 
+
+#HAVE_GEOM?clean #Unknown Functions: st_isvaliddetail, st_makevalid
+		#It reads from stdin EWKB kai EWKT which is a format introduced and supported by PostGIS
+
+#HAVE_GEOM?relate_bnr #Unknown Functions: ST_Relate(geometry, geometry, int) 
+
+HAVE_GEOM?delaunaytriangles #unknown Types : TIN (removed tests that need to output TIN)
+
+#HAVE_GEOM?in_geojson #Unknown Functions: st_geomfromgeojson, st_asgeojson
+
+HAVE_GEOM?removeTmpFiles

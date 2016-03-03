@@ -59,9 +59,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 298 # length
+% 297 # length
 function user.s3_1():void;
-    X_147:void := querylog.define("explain select\n s_suppkey,\n s_name,\n s_address,\n s_phone,\n total_revenue\nfrom\n supplier,\n revenue0\nwhere\n s_suppkey = supplier_no\n and total_revenue = (\n select\n max(total_revenue)\n from\n revenue0\n )\norder by\n s_suppkey;","sequential_pipe",101);
+    X_147:void := querylog.define("explain select\n s_suppkey,\n s_name,\n s_address,\n s_phone,\n total_revenue\nfrom\n supplier,\n revenue0\nwhere\n s_suppkey = supplier_no\n and total_revenue = (\n select\n max(total_revenue)\n from\n revenue0\n )\norder by\n s_suppkey;","sequential_pipe",99);
     X_102 := bat.new(nil:oid,nil:str);
     X_110 := bat.append(X_102,"sys.supplier");
     X_118 := bat.append(X_110,"sys.supplier");
@@ -141,24 +141,22 @@ function user.s3_1():void;
     X_74 := algebra.projection(C_73,X_46);
     (X_75,r1_153,r2_153) := algebra.subsort(X_74,false,false);
     X_78 := algebra.projection(r1_153,X_74);
-    X_158:bat[:oid] := algebra.projectionpath(r1_153,C_73);
-    X_157:bat[:oid] := algebra.projectionpath(X_158,X_42,C_2);
     X_79:bat[:str] := sql.bind(X_1,"sys","supplier","s_name",0);
     (C_81,r1_159) := sql.bind(X_1,"sys","supplier","s_name",2);
     X_83:bat[:str] := sql.bind(X_1,"sys","supplier","s_name",1);
     X_84 := sql.delta(X_79,C_81,r1_159,X_83);
-    X_85:bat[:str] := algebra.projectionpath(X_157,X_84);
+    X_85:bat[:str] := algebra.projectionpath(r1_153,C_73,X_42,C_2,X_84);
     X_86:bat[:str] := sql.bind(X_1,"sys","supplier","s_address",0);
     (C_88,r1_169) := sql.bind(X_1,"sys","supplier","s_address",2);
     X_90:bat[:str] := sql.bind(X_1,"sys","supplier","s_address",1);
     X_91 := sql.delta(X_86,C_88,r1_169,X_90);
-    X_92:bat[:str] := algebra.projectionpath(X_157,X_91);
+    X_92:bat[:str] := algebra.projectionpath(r1_153,C_73,X_42,C_2,X_91);
     X_93:bat[:str] := sql.bind(X_1,"sys","supplier","s_phone",0);
     (C_95,r1_179) := sql.bind(X_1,"sys","supplier","s_phone",2);
     X_97:bat[:str] := sql.bind(X_1,"sys","supplier","s_phone",1);
     X_98 := sql.delta(X_93,C_95,r1_179,X_97);
-    X_99:bat[:str] := algebra.projectionpath(X_157,X_98);
-    X_100:bat[:hge] := algebra.projectionpath(X_158,X_68);
+    X_99:bat[:str] := algebra.projectionpath(r1_153,C_73,X_42,C_2,X_98);
+    X_100:bat[:hge] := algebra.projectionpath(r1_153,C_73,X_68);
     sql.resultSet(X_137,X_139,X_141,X_143,X_145,X_78,X_85,X_92,X_99,X_100);
 end user.s3_1;
 #drop view revenue0;

@@ -27,21 +27,20 @@ Ready.
 # 15:36:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
 # 15:36:19 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
-    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] ALGsubselect1 5 <- 1 6 7 8 9 10 
-    l:int := calc.+(24:int,27:int);     	#[4] CMDvarADDsignal 16 <- 13 15 
-    l3:int := calc.+(l:int,24:int);     	#[5] CMDvarADDsignal 18 <- 16 13 
-end user.foo;                           	#[6]  
-function user.foo():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    c:bat[:int] := bat.new(:oid,:int);  	#[2] CMDBATnew 4 <- 2 3 
-    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] ALGsubselect1 5 <- 1 6 7 8 9 10 
-    l:int := calc.+(24:int,27:int);     	#[4] CMDvarADDsignal 16 <- 13 15 
-    l3:int := calc.+(l:int,24:int);     	#[5] CMDvarADDsignal 18 <- 16 13 
-end user.foo;                           	#[6]  
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] (0) ALGsubselect1 5 <- 1 6 7 8 9 10 
+    l:int := calc.+(24:int,27:int);     	#[4] (0) CMDvarADDsignal 16 <- 13 15 
+    l3:int := calc.+(l:int,24:int);     	#[5] (0) CMDvarADDsignal 18 <- 16 13 
+end user.foo;                           	#[6] (0)  
+function user.foo():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    c:bat[:int] := bat.new(:oid,:int);  	#[2] (0) CMDBATnew 4 <- 2 3 
+    d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[3] (0) ALGsubselect1 5 <- 1 6 7 8 9 10 
+    l:int := calc.+(24:int,27:int);     	#[4] (0) CMDvarADDsignal 16 <- 13 15 
+    l3:int := calc.+(l:int,24:int);     	#[5] (0) CMDvarADDsignal 18 <- 16 13 
+end user.foo;                           	#[6] (0)  
 
 # 15:36:19 >  
 # 15:36:19 >  "Done."
