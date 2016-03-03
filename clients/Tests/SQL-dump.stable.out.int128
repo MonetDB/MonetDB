@@ -4711,7 +4711,7 @@ COPY 4285 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4959	1032	"res_0"	"timestamptz"	7	0	0	0
 4960	1033	"res_0"	"time"	7	0	0	0
 4961	1034	"res_0"	"timestamp"	7	0	0	0
-4962	1035	"res_0"	"month_interval"	32	0	0	0
+4962	1035	"res_0"	"int"	32	0	0	0
 4963	1035	"arg_1"	"date"	0	0	1	1
 4964	1035	"arg_2"	"date"	0	0	1	2
 4965	1036	"res_0"	"sec_interval"	13	0	0	0

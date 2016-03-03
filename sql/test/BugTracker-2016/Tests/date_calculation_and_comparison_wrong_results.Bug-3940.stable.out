@@ -71,7 +71,7 @@ Ready.
 #SELECT (dat2-dat1), (dat2-dat1) < 10 FROM foo;
 % sys.L1,	sys.L1 # table_name
 % L1,	<_sql_sub_dat2 # name
-% month_interval,	boolean # type
+% int,	boolean # type
 % 2,	5 # length
 [ 1,	true	]
 [ 0,	true	]
