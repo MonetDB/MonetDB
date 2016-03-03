@@ -65,21 +65,40 @@ BLOOMsize(BUN cnt) {
 	return m;
 }
 
+static void bloom_stats(BAT b, Bloomfilter *bloom) {
+	BUN on = 0, off=0;
+	size_t i, j;
+	unsigned char *filter = (unsigned char *) bloom->filter->base;
+
+
+	for (i=0; i < bloom->bytes; i++)
+		for (j=0;j<8;j++)
+			if (filter[i] & (1 << j))
+				on++;
+			else
+				off++;
+	fprintf(stderr, "#BATbloom(b=%s#" BUNFMT ") %s: bits on = " BUNFMT ", bits off = " BUNFMT "\n",
+	        BATgetId(b), BATcount(b), b->T->heap.filename on, off);
+}
+
 #define BLOOM_BUILD(TYPE)							\
 do {										\
 	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);		\
 	BUN p;									\
-	BUN key,hv,x,y,z;							\
+	BUN key,mv,hv,x,y,z;							\
 	for (p=0; p<cnt; p++) {							\
 		key = (BUN) col[p];						\
 		hash_init(key, x,y,z);						\
 		next_hash(hv, x,y,z);						\
-		filter[quotient8(hv)] |= (1 << remainder8(hv));			\
+		mv = modulor(hv,bloom->mask);					\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
 		next_hash(hv, x,y,z);						\
-		filter[quotient8(hv)] |= (1 << remainder8(hv));			\
+		mv = modulor(hv,bloom->mask);					\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
 		if (bloom->kfunc == 3) {					\
 			next_hash(hv, x,y,z);					\
-			filter[quotient8(hv)] |= (1 << remainder8(hv));		\
+			mv = modulor(hv,bloom->mask);				\
+			filter[quotient8(mv)] |= (1 << remainder8(mv));		\
 		}								\
 	}									\
 } while (0)
@@ -105,7 +124,7 @@ BATbloom(BAT *b)
 		break;
 	default:		/* type not supported */
 		/* doesn't look enough like base type: do nothing */
-		GDKerror("BATbloom: unsupported type\n");
+		/* GDKerror("BATbloom: unsupported type\n"); */
 		return GDK_FAIL;
 	}
 
@@ -120,9 +139,9 @@ BATbloom(BAT *b)
 
 	if (b->T->bloom == NULL) {
 		BUN cnt;
-		size_t bytes;
 		Bloomfilter *bloom;
-		char *filter;
+		unsigned char *filter;
+		size_t i;
 
 		bloom = (Bloomfilter *) GDKzalloc(sizeof(Bloomfilter));
 		if (bloom == NULL) {
@@ -144,16 +163,16 @@ BATbloom(BAT *b)
 		     (ATOMbasetype(b->T->type) == TYPE_sht && (bloom->mbits = (1 << 16))) ) {
 			bloom->kfunc = 1;
 			bloom->mask = bloom->mbits-1;
-			bytes = quotient8(bloom->mbits);
+			bloom->bytes = quotient8(bloom->mbits);
 		} else {
 			bloom->mbits = BLOOMsize(cnt);
 			/* 2 functions if the ratio is close to 3, 3 otherwise */
 			bloom->kfunc = bloom->mbits/cnt == 3 ? 2 : 3;
 			bloom->mask = bloom->mbits-1;
-			bytes = quotient8(bloom->mbits) + 1;
+			bloom->bytes = quotient8(bloom->mbits) + 1;
 		}
 
-		if (HEAPalloc(bloom->filter, bytes, 1) != GDK_SUCCEED) {
+		if (HEAPalloc(bloom->filter, bloom->bytes, 1) != GDK_SUCCEED) {
 			GDKerror("#BATbloom: memory allocation error");
 			GDKfree(bloom->filter);
 			GDKfree(bloom);
@@ -163,12 +182,15 @@ BATbloom(BAT *b)
 
 		ALGODEBUG fprintf(stderr, "#BATbloom(b=%s#" BUNFMT ") %s: "
 				"create bloom filter: mbits = " BUNFMT ", ratio = " BUNFMT
-				"kfunc = %d, bytes = " BUNFMT "\n", BATgetId(b),
+				", kfunc = %d, bytes = " BUNFMT "\n", BATgetId(b),
 				BATcount(b), b->T->heap.filename,
 				bloom->mbits,  bloom->mbits/BATcount(b),
-				bloom->kfunc, quotient8(bloom->mbits));
+				bloom->kfunc, bloom->bytes);
 
 		filter = (unsigned char *) bloom->filter->base;
+
+		for (i=0; i < bloom->bytes; i++)
+			filter[i] = 0;
 
 		switch (ATOMbasetype(b->T->type)) {
 		case TYPE_bte:
@@ -209,19 +231,44 @@ BATbloom(BAT *b)
 
 	t1 = GDKusec();
 
-	ALGODEBUG fprintf(stderr, "#BATbloom: bloom construction " LLFMT " usec\n", t1 - t0);
-	//print_stats(b, t1-t0);
-
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 
-	assert(b->batCapacity >= BATcount(b));
+	ALGODEBUG fprintf(stderr, "#BATbloom: bloom construction " LLFMT " usec\n", t1 - t0);
+	ALGODEBUG bloom_stats(b, b->T->bloom);
+
 	return GDK_SUCCEED;
 }
 
+inline
+int BLOOMask(BUN v, Bloomfilter *bloom)
+{
+	BUN hv,mv,x,y,z;
+	int ret = 0;
 
+	const unsigned char *filter = (unsigned char *) bloom->filter->base;
+	if (bloom->kfunc == 1) {
+		return filter[quotient8(v)] & (1 << remainder8(v));
+	}
+
+	hash_init(v, x,y,z);
+	next_hash(hv, x,y,z);
+	mv = modulor(hv, bloom->mask);
+	ret = filter[quotient8(mv)] & (1 << remainder8(mv));
+	if (ret) {
+		next_hash(hv, x,y,z);
+		mv = modulor(hv, bloom->mask);
+		ret = (filter[quotient8(mv)] & (1 << remainder8(mv)));
+		if (bloom->kfunc == 3 && ret) {
+			next_hash(hv, x,y,z);
+			mv = modulor(hv, bloom->mask);
+			ret = (filter[quotient8(mv)] & (1 << remainder8(mv)));
+		}
+	}
+
+	return ret;
+}
 
 #if 0
-
 static void
 BLOOMremove(BAT *b)
 {

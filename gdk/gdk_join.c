@@ -2606,13 +2606,18 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 #define HASHJOIN(TYPE, WIDTH)						\
 	do {								\
 		BUN hashnil = HASHnil(hsh);				\
+		BUN yes = 0, no = 0, false_positive = 0;		\
 		for (lo = lstart - BUNfirst(l) + l->hseqbase;		\
 		     lstart < lend;					\
 		     lo++) {						\
+			int ask;					\
 			v = FVALUE(l, lstart);				\
 			lstart++;					\
 			nr = 0;						\
-			if (*(const TYPE*)v != TYPE##_nil) {		\
+			ask = BLOOMask((BUN) (*(TYPE*)v), r->T->bloom);	\
+			no++;						\
+			if (*(const TYPE*)v != TYPE##_nil && ask) {	\
+				yes++; no--;				\
 				for (rb = HASHget##WIDTH(hsh, hash_##TYPE(hsh, v)); \
 				     rb != hashnil;			\
 				     rb = HASHgetlink##WIDTH(hsh, rb))	\
@@ -2623,6 +2628,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 					}				\
 			}						\
 			if (nr == 0) {					\
+				if (ask) false_positive++;		\
 				lskipped = BATcount(r1) > 0;		\
 			} else {					\
 				if (lskipped) {				\
@@ -2636,6 +2642,11 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 					r1->trevsorted = 0;		\
 			}						\
 		}							\
+		fprintf(stderr,"#BATbloom(b=%s#" BUNFMT ") %s: "	\
+				"ask bloom filter: yes = " BUNFMT ", no = " BUNFMT \
+				", probes = " BUNFMT ", false positives = " BUNFMT "\n", \
+				BATgetId(r), BATcount(r), r->T->heap.filename, \
+				yes, no, lo, false_positive );		\
 	} while (0)
 
 static gdk_return
@@ -2766,6 +2777,11 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	nrcand = (BUN) (rcandend - rcand);
 	hsh = r->T->hash;
 	t = ATOMbasetype(r->ttype);
+
+	/* check for bloom filter on right */
+	if (!BATcheckbloom(r)) {
+		BATbloom(r);
+	}
 
 	if (lcand == NULL && rcand == NULL && lvars == NULL &&
 	    !nil_matches && !nil_on_miss && !semi && !only_misses &&
@@ -3974,8 +3990,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		/* both sorted */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
 	} else if (lhash && rhash) {
-		/* both have hash, smallest on right */ /* TODO: swap = lcount > rcount (small side left)*/
-		swap = lcount < rcount;
+		/* both have hash, smallest on left (TODO) */
+		swap = lcount > rcount;
 		reason = "both have hash";
 	} else if (lhash) {
 		/* only left has hash, swap */
