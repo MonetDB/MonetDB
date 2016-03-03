@@ -1,9 +1,20 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Mar  3 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Implemented method DatabaseMetaData.getUDTs(). It used to return an empty
+  resultset. Now it returns the User Defined Types such as inet, json, url and uuid.
+
+* Thu Feb 18 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected the returned table types in DatabaseMetaData.getTableTypes().
+  It now returns all 14 table types (as stored in sys.table_types) instead
+  of the previously 8 hardcoded table types.
+  For old MonetDB servers which do not contain the sys.table_types table,
+  the old behavior is retained.
+
 * Thu Feb 11 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Implemented methods getProcedures() and getProcedureColumns()
-  in DatabaseMetadata.java. They used to return an empty resultset.
+- Implemented methods DatabaseMetadata.getProcedures() and
+  DatabaseMetadata.getProcedureColumns(). They used to return an empty resultset.
   Now they return the expected Procedures and ProcedureColumns.
   Also getProcedureColumns() now returns a resultset with all 20 columns
   instead of 13 columns previously.

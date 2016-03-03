@@ -3032,10 +3032,25 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Return user defined types in a schema
-	 * Probably not possible within MonetDB
+	 * Retrieves a description of the user-defined types (UDTs) defined in a particular schema.
+	 * Schema-specific UDTs may have type JAVA_OBJECT, STRUCT, or DISTINCT.
+	 * Only types matching the catalog, schema, type name and type criteria are returned.
+	 * They are ordered by DATA_TYPE, TYPE_CAT, TYPE_SCHEM and TYPE_NAME.
+	 * The type name parameter may be a fully-qualified name. In this case, the catalog and schemaPattern parameters are ignored.
 	 *
-	 * @throws SQLException if I made a Boo-Boo
+	 * Each type description has the following columns:
+	 *
+	 * 1 TYPE_CAT String => the type's catalog (may be null)
+	 * 2 TYPE_SCHEM String => type's schema (may be null)
+	 * 3 TYPE_NAME String => type name
+	 * 4 CLASS_NAME String => Java class name
+	 * 5 DATA_TYPE int => type value defined in java.sql.Types. One of JAVA_OBJECT, STRUCT, or DISTINCT
+	 * 6 REMARKS String => explanatory comment on the type
+	 * 7 BASE_TYPE short => type code of the source type of a DISTINCT type or the type that implements the
+	 *   user-generated reference type of the SELF_REFERENCING_COLUMN of a structured type as defined
+	 *   in java.sql.Types (null if DATA_TYPE is not DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED) 
+	 *
+	 * @throws SQLException
 	 */
 	@Override
 	public ResultSet getUDTs(
@@ -3045,12 +3060,47 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		int[] types
 	) throws SQLException
 	{
-		String query =
-			"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
-			"'java.lang.Object' AS \"CLASS_NAME\", 0 AS \"DATA_TYPE\", " +
-			"'' AS \"REMARKS\", 0 AS \"BASE_TYPE\" WHERE 1 = 0";
+		StringBuilder query = new StringBuilder(990);
+		query.append("SELECT cast(null as char(1)) AS \"TYPE_CAT\", ")
+			.append("\"schemas\".\"name\" AS \"TYPE_SCHEM\", ")
+			.append("\"types\".\"sqlname\" AS \"TYPE_NAME\", ")
+			.append("CASE \"types\".\"sqlname\"")
+				// next 4 UDTs are known
+				.append(" WHEN 'inet' THEN 'nl.cwi.monetdb.jdbc.types.INET'")
+				.append(" WHEN 'json' THEN 'java.lang.String'")
+				.append(" WHEN 'url'  THEN 'nl.cwi.monetdb.jdbc.types.URL'")
+				.append(" WHEN 'uuid' THEN 'java.lang.String'")
+				.append(" ELSE 'java.lang.Object' END AS \"CLASS_NAME\", ")
+			.append("CAST(CASE WHEN \"types\".\"sqlname\" IN ('inet', 'json', 'url', 'uuid') THEN ").append(Types.JAVA_OBJECT)
+				.append(" ELSE ").append(Types.STRUCT).append(" END AS int) AS \"DATA_TYPE\", ")
+			.append("\"types\".\"systemname\" AS \"REMARKS\", ")
+			.append("cast(null as smallint) AS \"BASE_TYPE\" ")
+			.append("FROM sys.types JOIN sys.schemas ON types.schema_id = schemas.id ")
+			// exclude the built-in types (I assume they always have id <= 99 and eclass < 15)
+			.append("WHERE \"types\".\"id\" > 99 AND \"types\".\"eclass\" >= 15");
 
-		return executeMetaDataQuery(query);
+		if (catalog != null && catalog.length() > 0) {
+			query.append(" AND \"TYPE_CAT\" ").append(composeMatchPart(catalog));
+		}
+		if (schemaPattern != null) {
+			query.append(" AND \"TYPE_SCHEM\" ").append(composeMatchPart(schemaPattern));
+		}
+		if (typeNamePattern != null) {
+			query.append(" AND \"TYPE_NAME\" ").append(composeMatchPart(typeNamePattern));
+		}
+		if (types != null && types.length > 0) {
+			query.append(" AND \"DATA_TYPE\" IN (");
+			for (int i = 0; i < types.length; i++) {
+				if (i > 0) {
+					query.append(", ");
+				}
+				query.append(types[i]);
+			}
+			query.append(")");
+		}
+		query.append(" ORDER BY \"DATA_TYPE\", \"TYPE_SCHEM\", \"TYPE_NAME\"");
+
+		return executeMetaDataQuery(query.toString());
 	}
 
 
