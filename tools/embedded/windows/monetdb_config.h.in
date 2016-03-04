@@ -306,9 +306,6 @@
 
 /* Define to 1 if you have the `llabs' function. */
 #define HAVE_LLABS 1
-#if _MSC_VER <= 1500
-#define llabs _abs64
-#endif
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1

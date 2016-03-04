@@ -43,7 +43,7 @@ s|@CC@|gcc|
 s|@CCDEPMODE@||
 s|@cfitsio_CFLAGS@||
 s|@cfitsio_LIBS@||
-s|@CFLAGS@|-m64 -O3 -I"%RINCLUDE%"|
+s|@CFLAGS@|-m%BITS% -O3 -I"%RINCLUDE%"|
 s|@CLASSPATH@||
 s|@compilercall@||
 s|@configure_input@||

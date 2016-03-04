@@ -711,10 +711,11 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
+#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
-
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
+#endif
 	return 0;
 }
 

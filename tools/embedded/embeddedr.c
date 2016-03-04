@@ -67,6 +67,9 @@ SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp, SEXP sequentialsexp) {
 		return ScalarLogical(0);
 	}
 
+#if defined(WIN32) && !defined(_WIN64)
+	warning("MonetDBLite running in a 32-Bit Windows. This is not recommended.");
+#endif
 	res = monetdb_startup((char*) CHAR(STRING_ELT(dbdirsexp, 0)),
 		LOGICAL(silentsexp)[0], LOGICAL(sequentialsexp)[0]);
 
