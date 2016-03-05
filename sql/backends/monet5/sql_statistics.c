@@ -38,6 +38,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int argc = pci->argc;
 	int width = 0;
 	int minmax = *getArgReference_int(stk, pci, 1);
+	int sfnd = 0, tfnd = 0, cfnd = 0;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -69,6 +70,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (sch && strcmp(sch, b->name))
 			continue;
+		sfnd = 1;
 		if (s->tables.set)
 			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 				sql_base *bt = ntab->data;
@@ -76,6 +78,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
+				tfnd = 1;
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;
@@ -90,6 +93,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (col && strcmp(bc->name, col))
 							continue;
 						snprintf(dquery, 8192, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+						cfnd = 1;
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
@@ -162,5 +166,11 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(query);
 	GDKfree(maxval);
 	GDKfree(minval);
+	if (sch && !sfnd)
+		throw(SQL, "analyze", "Schema '%s' does not exist", sch);
+	if (tbl && !tfnd)
+		throw(SQL, "analyze", "Table '%s' does not exist", tbl);
+	if (col && !cfnd)
+		throw(SQL, "analyze", "Column '%s' does not exist", col);
 	return MAL_SUCCEED;
 }
