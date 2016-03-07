@@ -2781,6 +2781,11 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	/* check for bloom filter on right */
 	if (!BATcheckbloom(r)) {
 		BATbloom(r);
+		fprintf(stderr,"#hashjoin(b=%s#" BUNFMT ") %s: bloom filter not found, created.\n",
+				BATgetId(r), BATcount(r), r->T->heap.filename);
+	} else {
+		fprintf(stderr,"#hashjoin(b=%s#" BUNFMT ") %s: bloom filter found.\n",
+				BATgetId(r), BATcount(r), r->T->heap.filename);
 	}
 
 	if (lcand == NULL && rcand == NULL && lvars == NULL &&
