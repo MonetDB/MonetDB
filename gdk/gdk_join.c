@@ -2642,7 +2642,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 					r1->trevsorted = 0;		\
 			}						\
 		}							\
-		fprintf(stderr,"#BATbloom(b=%s#" BUNFMT ") %s: "	\
+		fprintf(stderr,"#hashjoin(b=%s#" BUNFMT ") %s: "	\
 				"ask bloom filter: yes = " BUNFMT ", no = " BUNFMT \
 				", probes = " BUNFMT ", false positives = " BUNFMT "\n", \
 				BATgetId(r), BATcount(r), r->T->heap.filename, \

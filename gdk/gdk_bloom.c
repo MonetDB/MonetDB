@@ -183,7 +183,7 @@ BATbloom(BAT *b)
 
 		ALGODEBUG fprintf(stderr, "#BATbloom(b=%s#" BUNFMT ") %s: "
 				"create bloom filter: mbits = " BUNFMT ", ratio = " BUNFMT
-				", kfunc = %d, bytes = %lu\n", BATgetId(b),
+				", kfunc = %d, bytes = " SZFMT "\n", BATgetId(b),
 				BATcount(b), b->T->heap.filename,
 				bloom->mbits,  bloom->mbits/BATcount(b),
 				bloom->kfunc, bloom->bytes);
