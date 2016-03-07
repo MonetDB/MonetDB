@@ -240,6 +240,7 @@ BATbloom(BAT *b)
 	return GDK_SUCCEED;
 }
 
+inline
 int BLOOMask(BUN v, Bloomfilter *bloom)
 {
 	BUN hv,mv,x,y,z;
