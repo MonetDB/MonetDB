@@ -3990,8 +3990,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		/* both sorted */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
 	} else if (lhash && rhash) {
-		/* both have hash, smallest on left (TODO) */
-		swap = lcount > rcount;
+		/* both have hash, smallest on right */
+		swap = lcount < rcount;
 		reason = "both have hash";
 	} else if (lhash) {
 		/* only left has hash, swap */

@@ -56,7 +56,7 @@ BLOOMsize(BUN cnt) {
 	m++;
 
 	/* double it */
-	m <<= 1;
+	m <<= 3;
 
 	/* if m is almost 2*cnt, double again */
 	if (m / cnt == 2)
@@ -95,11 +95,12 @@ do {										\
 		next_hash(hv, x,y,z);						\
 		mv = modulor(hv,bloom->mask);					\
 		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
-		if (bloom->kfunc == 3) {					\
-			next_hash(hv, x,y,z);					\
-			mv = modulor(hv,bloom->mask);				\
-			filter[quotient8(mv)] |= (1 << remainder8(mv));		\
-		}								\
+		next_hash(hv, x,y,z);						\
+		mv = modulor(hv,bloom->mask);					\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
+		next_hash(hv, x,y,z);						\
+		mv = modulor(hv,bloom->mask);					\
+		filter[quotient8(mv)] |= (1 << remainder8(mv));			\
 	}									\
 } while (0)
 
@@ -258,10 +259,15 @@ int BLOOMask(BUN v, Bloomfilter *bloom)
 		next_hash(hv, x,y,z);
 		mv = modulor(hv, bloom->mask);
 		ret = (filter[quotient8(mv)] & (1 << remainder8(mv)));
-		if (bloom->kfunc == 3 && ret) {
+		if (ret) {
 			next_hash(hv, x,y,z);
 			mv = modulor(hv, bloom->mask);
 			ret = (filter[quotient8(mv)] & (1 << remainder8(mv)));
+			if (ret) {
+				next_hash(hv, x,y,z);
+				mv = modulor(hv, bloom->mask);
+				ret = (filter[quotient8(mv)] & (1 << remainder8(mv)));
+			}
 		}
 	}
 
