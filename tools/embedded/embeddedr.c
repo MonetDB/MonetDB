@@ -14,9 +14,7 @@
 
 int embedded_r_rand(void) {
 	int ret;
-	GetRNGstate();
-	ret = (int) lround(unif_rand() * RAND_MAX);
-	PutRNGstate();
+	ret = (int) (unif_rand() * RAND_MAX);
 	return ret;
 }
 
@@ -27,9 +25,12 @@ int embedded_r_rand(void) {
 SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 	res_table* output = NULL;
 	char notreally = LOGICAL(notreallys)[0];
-	char* err = monetdb_query(R_ExternalPtrAddr(connsexp),
+	char* err = NULL;
+	GetRNGstate();
+	err = monetdb_query(R_ExternalPtrAddr(connsexp),
 			(char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
 	if (err) { // there was an error
+		PutRNGstate();
 		return ScalarString(mkCharCE(err, CE_UTF8));
 	}
 	if (output && output->nr_cols > 0) {
@@ -46,6 +47,7 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 			}
 			if (!(varvalue = bat_to_sexp(b))) {
 				UNPROTECT(i + 3);
+				PutRNGstate();
 				return ScalarString(mkCharCE("Conversion error", CE_UTF8));
 			}
 			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
@@ -55,8 +57,10 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 		monetdb_cleanup_result(R_ExternalPtrAddr(connsexp), output);
 		SET_NAMES(retlist, names);
 		UNPROTECT(ncols + 2);
+		PutRNGstate();
 		return retlist;
 	}
+	PutRNGstate();
 	return ScalarLogical(1);
 }
 
@@ -70,9 +74,10 @@ SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp, SEXP sequentialsexp) {
 #if defined(WIN32) && !defined(_WIN64)
 	warning("MonetDBLite running in a 32-Bit Windows. This is not recommended.");
 #endif
+	GetRNGstate();
 	res = monetdb_startup((char*) CHAR(STRING_ELT(dbdirsexp, 0)),
 		LOGICAL(silentsexp)[0], LOGICAL(sequentialsexp)[0]);
-
+	PutRNGstate();
 	if (!res) {
 		return ScalarLogical(1);
 	}  else {
@@ -94,6 +99,7 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 	if (!IS_CHARACTER(schemasexp) || !IS_CHARACTER(namesexp)) {
 		return ScalarInteger(-1);
 	}
+	GetRNGstate();
 	schema = CHAR(STRING_ELT(schemasexp, 0));
 	name = CHAR(STRING_ELT(namesexp, 0));
 	col_ct = LENGTH(tabledatasexp);
@@ -125,6 +131,7 @@ SEXP monetdb_append_R(SEXP connsexp, SEXP schemasexp, SEXP namesexp, SEXP tabled
 	msg = monetdb_append(R_ExternalPtrAddr(connsexp), schema, name, ad, col_ct);
 
 	wrapup:
+		PutRNGstate();
 		if (t_column_names) {
 			GDKfree(t_column_names);
 		}

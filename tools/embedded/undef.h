@@ -23,10 +23,8 @@ extern FILE* embedded_stderr;
 #define stderr embedded_stderr
 #endif
 
-/* disabled for now because it crashes stuff
 #ifdef HAVE_EMBEDDED_R
 #define srand(seed) ((void) (seed))
 extern int embedded_r_rand(void);
 #define rand embedded_r_rand
 #endif
-*/
