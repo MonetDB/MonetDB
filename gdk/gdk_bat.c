@@ -318,6 +318,11 @@ BATattach(int tt, const char *heapfile, int role)
 	BATkey(bn, TRUE);
 	BATsetcapacity(bn, cap);
 	BATsetcount(bn, cap);
+	/*
+	 * Unless/until we invest in a scan to check that there indeed
+	 * are no NIL values, we cannot safely assume there are none.
+	 */
+	bn->T->nonil = 0;
 	if (cap > 1) {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;

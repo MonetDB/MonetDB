@@ -206,7 +206,7 @@ tr_find_table( sql_trans *tr, sql_table *t)
 			nt = find_sql_table_id(s, t->base.id);
 		else
 			nt = find_sql_table(s, t->base.name);
-		assert(nt->base.id == t->base.id);
+		assert(!nt || nt->base.id == t->base.id);
 		tr = tr->parent;
 	}
 	return nt;
