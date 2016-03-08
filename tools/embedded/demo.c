@@ -8,6 +8,9 @@
 /*
  configure & install MonetDB as follows:
 
+hg update embedded
+./bootstrap
+
 ./configure --prefix=/tmp/embedded-install --enable-embedded \
 --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
@@ -17,11 +20,13 @@
 make -j clean install
 
 then build this file as follows:
+gcc tools/embedded/demo.c -Wl,-all_load \
+`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | tr "\n" " "` \
+-Imonetdb5/mal -Igdk -Icommon/stream -Icommon/options -I. -I sql/backends/monet5 -Isql/include \
+-Imonetdb5/modules/atoms -Isql/server -Isql/common -Isql/storage -Iclients/mapilib \
+-Imonetdb5/modules/mal  -g  -lz -lpcre -liconv
 
-gcc demo.c -I../../monetdb5/mal -I../../gdk -I../../common/stream -I../../common/options \
--I../../ -I ../../sql/backends/monet5 -I../../sql/include -I../../monetdb5/modules/atoms \
--I../../sql/server -I ../../sql/common -I../../sql/storage -I../../clients/mapilib \
--I../../monetdb5/modules/mal -lembedded -lbat -L/tmp/embedded-install/lib -g
+./a.out
 
 */
 
@@ -31,7 +36,7 @@ int main() {
 	res_table* result = NULL;
 
 	// we want to get rid of first argument, this is why we want to inline mal/sql scripts and have fat library
-	err = monetdb_startup("/dev/null", "/tmp/embedded-dbfarm", 1);
+	err = monetdb_startup("/tmp/embedded-dbfarm", 1, 0);
 	if (err != NULL) {
 		fprintf(stderr, "Init fail: %s\n", err);
 		return -1;

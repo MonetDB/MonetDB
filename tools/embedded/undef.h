@@ -9,7 +9,7 @@
 #undef HAVE_NETCDF
 #undef HAVE_SAMTOOLS
 
-#ifdef HAVE_EMBEDDED
+#ifdef HAVE_EMBEDDED_R
 extern FILE* embedded_stdout;
 extern FILE* embedded_stderr;
 
@@ -21,9 +21,7 @@ extern FILE* embedded_stderr;
 #define stdout embedded_stdout
 #undef stderr
 #define stderr embedded_stderr
-#endif
 
-#ifdef HAVE_EMBEDDED_R
 #define srand(seed) ((void) (seed))
 extern int embedded_r_rand(void);
 #define rand embedded_r_rand
