@@ -835,11 +835,11 @@ setMethod("isIdCurrent", signature(dbObj="MonetDBResult"), def=function(dbObj, .
   .Deprecated("dbIsValid")
    dbIsValid(dbObj)
 })
+
 setMethod("isIdCurrent", signature(dbObj="MonetDBConnection"), def=function(dbObj, ...) {
   .Deprecated("dbIsValid")
    dbIsValid(dbObj)
 })
-
 
 if (is.null(getGeneric("initExtension"))) setGeneric("initExtension", function(dbObj, ...) standardGeneric("initExtension"))
 setMethod("initExtension", signature(dbObj="MonetDBConnection"), def=function(dbObj, ...) {

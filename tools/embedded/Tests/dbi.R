@@ -52,7 +52,7 @@ test_that("import export", {
 	expect_true(res@env$success)
 	expect_equal(dbColumnInfo(res)[[1,1]], "Species")
 	expect_equal(dbColumnInfo(res)[[2,1]], "Sepal.Width")
-	expect_equal(dbGetInfo(res)$row.count, 150)
+	expect_equal(dbGetRowCount(res), 150)
 	expect_equal(res@env$info$rows, 150)
 
 	data2 <- dbFetch(res,-1)

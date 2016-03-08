@@ -207,6 +207,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 		if (execute) {
 			MalBlkPtr mb = c->curprg->def;
+			if (!output)
+				sql->out = NULL;	/* no output stream */
 			msg = runMAL(c, mb, 0, 0);
 			MSresetInstructions(mb, oldstop);
 			freeVariables(c, mb, NULL, oldvtop);

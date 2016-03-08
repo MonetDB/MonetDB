@@ -69,7 +69,7 @@ stopifnot(identical(res@env$success,TRUE))
 stopifnot(dbColumnInfo(res)[[1,1]] == "Species")
 stopifnot(dbColumnInfo(res)[[2,1]] == "Sepal.Width")
 
-stopifnot(dbGetInfo(res)$row.count == 150 && res@env$info$rows == 150)
+stopifnot(dbGetRowCount(res) == 150 && res@env$info$rows == 150)
 
 data <- dbFetch(res,10)
 

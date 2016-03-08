@@ -38,7 +38,7 @@ Ready.
 % .L1,	.L2,	.L2 # table_name
 % L1,	L2,	test_single_value # name
 % int,	int,	int # type
-% 1,	1,	11 # length
+% 1,	1,	1 # length
 [ 1,	0,	NULL	]
 #select test(true);
 % .L # table_name
