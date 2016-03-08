@@ -40,6 +40,11 @@
 
 //#define _RAPI_DEBUG_
 
+// this macro blows up mmath.h pragmas
+#ifdef warning
+# undef warning
+#endif
+
 /* we need the BAT-SEXP-BAT conversion in two places, here and in tools/embedded */
 #include "converters.c.h"
 

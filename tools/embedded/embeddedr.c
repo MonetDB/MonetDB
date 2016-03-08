@@ -72,7 +72,7 @@ SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp, SEXP sequentialsexp) {
 	}
 
 #if defined(WIN32) && !defined(_WIN64)
-	warning("MonetDBLite running in a 32-Bit Windows. This is not recommended.");
+	Rf_warning("MonetDBLite running in a 32-Bit Windows. This is not recommended.");
 #endif
 	GetRNGstate();
 	res = monetdb_startup((char*) CHAR(STRING_ELT(dbdirsexp, 0)),
