@@ -28,7 +28,7 @@ static int prev_oid = 0;
 static int nr_sessions = 0;
 static int transactions = 0;
 sql_trans *gtrans = NULL;
-list *active_transactions = NULL;
+list *active_sessions = NULL;
 int store_nr_active = 0;
 store_type active_store_type = store_bat;
 int store_readonly = 0;
@@ -1385,7 +1385,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, const char
 
 	sequences_init();
 	gtrans = tr = create_trans(sa, stk);
-	active_transactions = sa_list(sa); 
+	active_sessions = sa_list(sa); 
 
 	store_readonly = readonly;
 	store_singleuser = singleuser;
@@ -5270,7 +5270,7 @@ sql_trans_begin(sql_session *s)
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
 	store_nr_active ++;
-	list_append(active_transactions, tr); 
+	list_append(active_sessions, s); 
 	s->status = 0;
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#sql trans begin (%d)\n", tr->schema_number);
@@ -5286,7 +5286,7 @@ sql_trans_end(sql_session *s)
 #endif
 	s->active = 0;
 	s->auto_commit = s->ac_on_commit;
-	list_remove_data(active_transactions, s->tr);
+	list_remove_data(active_sessions, s);
 	store_nr_active --;
-	assert(list_length(active_transactions) == store_nr_active);
+	assert(list_length(active_sessions) == store_nr_active);
 }

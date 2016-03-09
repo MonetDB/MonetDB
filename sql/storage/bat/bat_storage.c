@@ -15,6 +15,13 @@
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
+static sql_trans *
+oldest_active_transaction(void)
+{
+	sql_session *s = active_sessions->h->data;
+	return s->tr;
+}
+
 sql_delta *
 timestamp_delta( sql_delta *d, int ts)
 {
@@ -2087,7 +2094,7 @@ tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
-	sql_trans *oldest = active_transactions->h->data;
+	sql_trans *oldest = oldest_active_transaction();
 	int ok = LOG_OK;
 	node *n, *m;
 
