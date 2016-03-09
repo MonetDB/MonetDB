@@ -247,6 +247,24 @@ load_keycolumn(sql_trans *tr, sql_key *k, oid rid)
 	assert(kc->c);
 }
 
+static void *
+find_key( sql_trans *tr, sql_table *t, sqlid rkey)
+{
+	node *n, *m;
+
+	if ((n = list_find(t->s->keys, &rkey, (fcmp) &key_cmp))){
+		return n->data;
+	}
+	for (n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data;
+
+		if ((m = list_find(s->keys, &rkey, (fcmp) &key_cmp))){
+			return m->data;
+		}
+	}
+	return NULL;
+}
+			
 static sql_key *
 load_key(sql_trans *tr, sql_table *t, oid rid)
 {
@@ -309,12 +327,11 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 	if (ktype == fkey) {
 		sql_fkey *fk = (sql_fkey *) nk;
 		sqlid rkey;
+		sql_ukey *uk = NULL;
 
 		v = table_funcs.column_find_value(tr, find_sql_column(keys, "rkey"), rid);
  		rkey = *(sqlid *)v; 		_DELETE(v);
-		if ((n = list_find(t->s->keys, &rkey, (fcmp) &key_cmp))){
-			sql_ukey *uk = n->data;
-
+		if ((uk = find_key(tr, t, rkey)) != NULL) {
 			fk->rkey = uk;
 			if (!uk->keys)
 				uk->keys = list_new(tr->sa, NULL);
@@ -329,13 +346,12 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 
 		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
 			sqlid fkey;
+			sql_fkey *fk;
 
 			v = table_funcs.column_find_value(tr, find_sql_column(keys, "id"), rid);
 			fkey = *(sqlid *)v; 	_DELETE(v);
 
-			if ((n = list_find(t->s->keys, &fkey, (fcmp)&key_cmp))){
-				sql_fkey *fk = n->data;
-
+			if ((fk = find_key(tr, t, fkey)) != NULL) {
 				if (!uk->keys)
 					uk->keys = list_new(tr->sa, NULL);
 				if (!list_find(uk->keys, &fk->k.base.id, (fcmp) &key_cmp))
