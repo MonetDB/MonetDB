@@ -2051,14 +2051,10 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	if (BUNlast(db) > db->batInserted || cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 
-		/* For large deletes write the new deletes bat */
-		if (BATcount(db) > SNAPSHOT_MINSIZE) {
-			temp_destroy(tdb->dbid);
-			tdb->dbid = fdb->dbid;
-		} else {
-			append_inserted(odb, db);
-			temp_destroy(fdb->dbid);
-		}
+		append_inserted(odb, db);
+		BATcommit(odb);
+		temp_destroy(fdb->dbid);
+
 		fdb->dbid = 0;
 		tdb->cnt = fdb->cnt;
 		bat_destroy(odb);
