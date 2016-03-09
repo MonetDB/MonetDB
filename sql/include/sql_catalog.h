@@ -162,6 +162,7 @@ typedef struct sql_base {
 	int rtime;
 	int allocated;
 	int flag;
+	int refcnt;
 	sqlid id;
 	char *name;
 } sql_base;
@@ -362,6 +363,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
+	struct sql_idx *po;	/* the outer transactions idx */
 	void *data;
 } sql_idx;
 
@@ -439,6 +441,7 @@ typedef struct sql_column {
 	char *max;
 
 	struct sql_table *t;
+	struct sql_column *po;	/* the outer transactions column */
 	void *data;
 } sql_column;
 
@@ -485,6 +488,7 @@ typedef struct sql_table {
 	void *data;
 	struct sql_schema *s;
 	struct sql_table *p;	/* The table is part of this merge table */
+	struct sql_table *po;	/* the outer transactions table */
 } sql_table;
 
 typedef struct res_col {

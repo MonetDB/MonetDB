@@ -899,30 +899,16 @@ count_del(sql_trans *tr, sql_table *t)
 	return d->cnt;
 }
 
-static sql_column *
-find_col( sql_trans *tr, char *sname, char *tname, char *cname )
-{
-	sql_schema *s = find_sql_schema(tr, sname);
-	sql_table *t = NULL;
-	sql_column *c = NULL;
-
-	if (s) 
-		t = find_sql_table(s, tname);
-	if (t) 
-		c = find_sql_column(t, cname);
-	return c;
-}
-
 static int
 sorted_col(sql_trans *tr, sql_column *col)
 {
 	int sorted = 0;
 
-	/* fallback to central bat */
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
-	if (tr && tr->parent && !col->data) 
-		col = find_col(tr->parent, col->t->s->base.name, col->t->base.name, col->base.name);
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po) 
+		col = col->po; 
 
 	if (col && col->data) {
 		BAT *b = bind_col(tr, col, QUICK);
@@ -941,12 +927,8 @@ double_elim_col(sql_trans *tr, sql_column *col)
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 	/* fallback to central bat */
-	if (tr && tr->parent && !col->data) {
-		col = find_col(tr->parent, 
-			col->t->s->base.name, 
-			col->t->base.name,
-			col->base.name);
-	}
+	if (tr && tr->parent && !col->data && col->po) 
+		col = col->po;
 
 	if (col && col->data) {
 		BAT *b = bind_col(tr, col, QUICK);
@@ -958,7 +940,6 @@ double_elim_col(sql_trans *tr, sql_column *col)
 	}
 	return de;
 }
-
 
 static int
 load_delta(sql_delta *bat, int bid, int type)
@@ -2346,7 +2327,7 @@ log_table(sql_trans *tr, sql_table *ft)
 	node *n;
 
 	assert(tr->parent == gtrans);
-	if (ft->base.allocated)
+	if (ft->base.wtime && ft->base.allocated)
 		ok = tr_log_dbat(tr, ft->data, ft->cleared);
 	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
 		sql_column *cc = n->data;
