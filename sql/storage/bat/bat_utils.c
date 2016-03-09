@@ -184,27 +184,36 @@ bat_utils_init(void)
 sql_table *
 tr_find_table( sql_trans *tr, sql_table *t)
 {
-	(void)tr;
-	if (t->po)
-		return t->po;
+	while (t && t->po && !t->base.allocated && tr)  {
+		t = t->po;
+		tr = tr->parent;
+	}
+	if (t->data)
+		return t;
 	return NULL;
 }
 
 sql_column *
 tr_find_column( sql_trans *tr, sql_column *c)
 {
-	(void)tr;
-	if (c->po)
-		return c->po;
+	while (c && c->po && !c->base.allocated && tr)  {
+		c = c->po;
+		tr = tr->parent;
+	}
+	if (c->data)
+		return c;
 	return NULL;
 }
 
 sql_idx *
 tr_find_idx( sql_trans *tr, sql_idx *i)
 {
-	(void)tr;
-	if (i->po)
-		return i->po;
+	while (i && i->po && !i->base.allocated && tr)  {
+		i = i->po;
+		tr = tr->parent;
+	}
+	if (i->data)
+		return i;
 	return NULL;
 }
 
