@@ -206,7 +206,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 static void *
 column_find_value(sql_trans *tr, sql_column *c, oid rid)
 {
-	BUN q;
+	BUN q = BUN_NONE;
 	BAT *b;
 	void *res = NULL;
 
