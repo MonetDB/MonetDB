@@ -216,10 +216,44 @@ mvc_trans(mvc *m)
 	store_unlock();
 }
 
+static sql_trans *
+sql_trans_deref( sql_trans *tr ) 
+{
+	node *n, *m, *o;
+
+	for ( n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data;
+
+		if (s->tables.set)
+		for ( m = s->tables.set->h; m; m = m->next) {
+			sql_table *t = m->data;
+
+			if (t->po) 
+				t->po = t->po->po;
+
+			if (t->columns.set)
+			for ( o = t->columns.set->h; o; o = o->next) {
+				sql_column *c = o->data;
+
+				if (c->po) 
+					c->po = c->po->po;
+			}
+			if (t->idxs.set)
+			for ( o = t->idxs.set->h; o; o = o->next) {
+				sql_idx *i = o->data;
+
+				if (i->po) 
+					i->po = i->po->po;
+			}
+		}
+	}
+	return tr->parent;
+}
+
 int
 mvc_commit(mvc *m, int chain, const char *name)
 {
-	sql_trans *cur, *tr = m->session->tr;
+	sql_trans *cur, *tr = m->session->tr, *ctr;
 	int ok = SQL_OK;//, wait = 0;
 
 	assert(tr);
@@ -253,11 +287,15 @@ build up the hash (not copied in the trans dup)) */
 	}
 
 	/* first release all intermediate savepoints */
-	cur = tr;
+	ctr = cur = tr;
 	tr = tr->parent;
 	if (tr->parent) {
 		store_lock();
 		while (tr->parent != NULL && ok == SQL_OK) {
+			/* first free references to tr objects, ie
+			 * c->po = c->po->po etc
+			 */
+			ctr = sql_trans_deref(ctr);
 			tr = sql_trans_destroy(tr);
 		}
 		store_unlock();

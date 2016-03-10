@@ -1,0 +1,22 @@
+stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 10:57:11 >  
+# 10:57:11 >  "./wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare.sh" "wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare"
+# 10:57:11 >  
+
+
+# 10:57:11 >  
+# 10:57:11 >  cp /net/rome.da.cwi.nl/export/scratch2/manegold/_s2_/manegold/.rig./scratch0/Monet/HG/Jul2015/source/MonetDB/sql/test/BugTracker-2016/Tests/noNULLtinyintBAT.bin /net/rome.da.cwi.nl/export/scratch2/manegold/_s1_/manegold/Monet/HG/Jul2015/prefix/--disable-debug_--enable-assert_--enable-optimize/mTests/sql/test/BugTracker-2016
+# 10:57:11 >  
+
+
+# 10:57:11 >  
+# 10:57:11 >  cp /net/rome.da.cwi.nl/export/scratch2/manegold/_s2_/manegold/.rig./scratch0/Monet/HG/Jul2015/source/MonetDB/sql/test/BugTracker-2016/Tests/NULLtinyintBAT.bin   /net/rome.da.cwi.nl/export/scratch2/manegold/_s1_/manegold/Monet/HG/Jul2015/prefix/--disable-debug_--enable-assert_--enable-optimize/mTests/sql/test/BugTracker-2016
+# 10:57:11 >  
+
+
+# 10:57:11 >  
+# 10:57:11 >  "Done."
+# 10:57:11 >  
+

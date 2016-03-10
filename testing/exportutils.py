@@ -45,10 +45,10 @@ def preprocess(data):
         res = defre.match(line)
         if res is not None:
             name, args, body = res.groups()
-            args = tuple(map(lambda x: x.strip(), args.split(',')))
+            args = tuple([x.strip() for x in args.split(',')])
             if len(args) == 1 and args[0] == '':
                 args = ()       # empty argument list
-            if not defines.has_key(name) or not defines[name][1].strip():
+            if name not in defines or not defines[name][1].strip():
                 defines[name] = (args, body)
         else:
             changed = True
@@ -82,7 +82,7 @@ def replace(line, defines, tried):
             bd = body
             changed = True
             if len(args) > 0:
-                pars = map(lambda x: x.strip(), res.groups())
+                pars = [x.strip() for x in res.groups()]
                 pat = r'\b(?:'
                 sep = ''
                 for arg, par in zip(args, pars):
@@ -95,7 +95,7 @@ def replace(line, defines, tried):
                 while res2 is not None:
                     arg = res2.group(0)
                     if bd[res2.start(0)-1:res2.start(0)] == '#' and \
-                       bd[res2.start(0)-2:res2.start(0)] <> '##':
+                       bd[res2.start(0)-2:res2.start(0)] != '##':
                         # replace #ARG by stringified replacement
                         pos = res2.start(0) + len(repl[arg]) + 1
                         bd = bd[:res2.start(0)-1] + '"' + repl[arg] + '"' + bd[res2.end(0):]

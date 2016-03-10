@@ -42,13 +42,13 @@ Ready.
 #select median(departure_date) - min(departure_date) from voyages;
 % sys.L2 # table_name
 % sql_sub_L1 # name
-% month_interval # type
+% int # type
 % 11 # length
 [ NULL	]
 #select max(departure_date) - min(departure_date) from voyages;
 % sys.L2 # table_name
 % sql_sub_L1 # name
-% month_interval # type
+% int # type
 % 11 # length
 [ NULL	]
 #drop table voyages;

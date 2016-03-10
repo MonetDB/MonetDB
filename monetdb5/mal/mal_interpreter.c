@@ -823,8 +823,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* If needed recycle intermediate result */
 				if (pci->recycle > 0) 
 					RECYCLEexit(cntxt, mb, stk, pci, &runtimeProfile);
-				if ( cntxt->idx > 1 )
-					MALresourceFairness(GDKusec()- mb->starttime);
 
 				/* general garbage collection */
 				if (ret == MAL_SUCCEED && garbageControl(pci)) {

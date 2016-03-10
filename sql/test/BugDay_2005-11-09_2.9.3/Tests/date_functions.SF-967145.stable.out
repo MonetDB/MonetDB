@@ -27,13 +27,13 @@ Ready.
 #select current_date - current_date;
 % .L # table_name
 % sql_sub_current_date # name
-% month_interval # type
+% int # type
 % 1 # length
 [ 0	]
 #select current_date() - current_date();
 % .L # table_name
 % sql_sub_current_date # name
-% month_interval # type
+% int # type
 % 1 # length
 [ 0	]
 

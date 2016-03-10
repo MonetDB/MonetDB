@@ -119,9 +119,9 @@ elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s
 
 def mFilter (FILE, IGNORE) :
     fin = open(FILE, "rU")
-    LINE = fin.readline().replace('\r','')
+    LINE = fin.readline()
     while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
-        LINE = fin.readline().replace('\r','')
+        LINE = fin.readline()
     fin.close()
     if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
         WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE, re.MULTILINE).groups()

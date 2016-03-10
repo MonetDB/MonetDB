@@ -1,0 +1,164 @@
+stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 10:45:15 >  
+# 10:45:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35242" "--set" "mapi_usock=/var/tmp/mtest-32364/.s.monetdb.35242" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/manegold/_/Monet/HG/Jul2015/prefix/--disable-debug_--enable-assert_--enable-optimize/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 10:45:15 >  
+
+# MonetDB 5 server v11.21.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.da.cwi.nl:35242/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32364/.s.monetdb.35242
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 10:45:16 >  
+# 10:45:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32364" "--port=35242"
+# 10:45:16 >  
+
+#start transaction;
+#create table "noNULLtinyint" (x tinyint);
+#copy binary into "noNULLtinyint" from ('/net/rome.da.cwi.nl/export/scratch2/manegold/_s2_/manegold/.rig./scratch0/Monet/HG/Jul2015/source/MonetDB/sql/test/BugTracker-2016/Tests/noNULLtinyintBAT.bin');
+[ 3	]
+#select * from "noNULLtinyint";
+% sys.noNULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#select count(*), count(x) from "noNULLtinyint";
+% sys.L1,	sys.L2 # table_name
+% L1,	L2 # name
+% wrd,	wrd # type
+% 1,	1 # length
+[ 3,	3	]
+#select * from "noNULLtinyint" where x is null;
+% sys.noNULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+#select * from "noNULLtinyint" where x is not null;
+% sys.noNULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#insert into "noNULLtinyint" values (null);
+[ 1	]
+#select * from "noNULLtinyint";
+% sys.noNULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+[ NULL	]
+#select count(*), count(x) from "noNULLtinyint";
+% sys.L1,	sys.L2 # table_name
+% L1,	L2 # name
+% wrd,	wrd # type
+% 1,	1 # length
+[ 4,	3	]
+#select * from "noNULLtinyint" where x is null;
+% sys.noNULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#select * from "noNULLtinyint" where x is not null;
+% sys.noNULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#create table "NULLtinyint" (x tinyint);
+#copy binary into "NULLtinyint" from ('/net/rome.da.cwi.nl/export/scratch2/manegold/_s2_/manegold/.rig./scratch0/Monet/HG/Jul2015/source/MonetDB/sql/test/BugTracker-2016/Tests/NULLtinyintBAT.bin');
+[ 3	]
+#select * from "NULLtinyint";
+% sys.NULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ NULL	]
+[ 2	]
+#select count(*), count(x) from "NULLtinyint";
+% sys.L1,	sys.L2 # table_name
+% L1,	L2 # name
+% wrd,	wrd # type
+% 1,	1 # length
+[ 3,	2	]
+#select * from "NULLtinyint" where x is null;
+% sys.NULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+#select * from "NULLtinyint" where x is not null;
+% sys.NULLtinyint # table_name
+% x # name
+% tinyint # type
+% 1 # length
+[ 0	]
+[ 2	]
+#rollback;
+
+# 10:45:16 >  
+# 10:45:16 >  "Done."
+# 10:45:16 >  
+
