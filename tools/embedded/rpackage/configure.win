@@ -12,8 +12,7 @@ fi
 # patch sedscript for build/install/library paths
 sed -e "s|%BITS%|$BITS|" -e "s|%PREFIX%|${R_PACKAGE_DIR}/libs|" -e "s|%SRCDIR%|$SRC|" -e "s|%RINCLUDE%|${R_HOME}/include|" src/tools/embedded/windows/sedscript.tpl > src/tools/embedded/windows/sedscript
 
-# FIXME
-cp src/tools/embedded/windows/monetdb_config.h.in src/
+cp src/NT/monetdb_config.h.in src/
 
 # pmc stands for "poor man's configure", it does something similar using the sedscript
 sh src/tools/embedded/windows/pmc.sh

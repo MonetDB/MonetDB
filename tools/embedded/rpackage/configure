@@ -4,29 +4,28 @@ cd src
 CFLAGS="-I$R_INCLUDE_DIR" ./configure --enable-embedded --enable-embedded-r \
 --disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
 --disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
---without-perl --without-python2 --without-python3 --without-rubygem --without-unixodbc \
+--without-openssl --without-uuid --without-curl --without-bz2 --without-lzma --without-libxml2 \
+--without-perl --without-python2 --without-python3 --without-unixodbc \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
 --enable-optimize --enable-silent-rules --disable-assert --disable-strict --disable-int128
 
-# Dirty hack, normally R would call make, but we need to also glue everything together. 
-# So we do it ourselves instead and then render the MonetDB makefile inert.
-make -j
-
-echo -e "dummytarget:\n\ttrue\n" > Makefile
-
-# and finally put the embedded library where R expects it
-RDYNLIB=$R_PACKAGE_DIR/libs/libmonetdb5.so
-
-mkdir -p $R_PACKAGE_DIR/libs
-OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.o" | tr "\n" " "`
+# check whether clang or gcc
+LD_PACK_START=-Wl,--whole-archive
+LD_PACK_END=-Wl,--no-whole-archive
 gcc -v 2>&1 | grep LLVM
-if [ $? != 0 ]; then
-	$R_HOME/bin/R CMD SHLIB --output $RDYNLIB -Wl,--whole-archive $OFILES -Wl,--no-whole-archive -lz -lpcre
-else # clang linker does not like --whole-archive
-	$R_HOME/bin/R CMD SHLIB --output $RDYNLIB -Wl,-all_load $OFILES -lz -lpcre
+if [ $? == 0 ]; then
+	LD_PACK_START=-Wl,-all_load
+	LD_PACK_END=
 fi
+
+echo '
+
+libmonetdb5.so:
+	$(R_HOME)/bin/R CMD SHLIB --output $@ '$LD_PACK_START' `find $(SUBDIRS) -name "*.o" | xargs echo` '$LD_PACK_END' -lz -lpcre
+
+all: $(BUILT_SOURCES) monetdb_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive libmonetdb5.so
+
+' >> Makefile
+
 cd ..
-if [ ! -f $RDYNLIB ]; then
-	echo "configure/build failure"
-    exit -1
-fi
