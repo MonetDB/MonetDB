@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Tue Sep  8 2015 Martin Kersten <mk@cwi.nl>
-- Fixed potential crash in MAL debugger when accessing BATs by
-  index. Functionality dropped as it is also a security leak.
-

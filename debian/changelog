@@ -1,3 +1,37 @@
+monetdb (11.21.15) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3549: bulk string operations very slow
+  * BZ#3908: LEFT JOIN with OR conditions triggers assertion
+  * BZ#3909: Incorrect column name in OR condition of LEFT JOIN crashes
+    mserver
+  * BZ#3910: COPY INTO table (column1, column2) got wrong result
+  * BZ#3912: When table/column names conflicts, data ends in multiple
+    tables!
+  * BZ#3918: MonetDB.R version 1.0.1 incorrectly constructs the batfile
+    script
+  * BZ#3919: Table conflict when the table name and fields are identical
+  * BZ#3921: Creating a table from a complex query crashes mserver or
+    triggers assertion
+  * BZ#3922: AVG( column ) returns NaN rather than Inf when column
+    contains Inf
+  * BZ#3928: When killing a virtual machine, sql_logs/sql/log is empty
+  * BZ#3930: Wrong typecast on character columns in prepared statements
+    when using Umlaute
+  * BZ#3932: CASE expressions with constants are not evaluated correctly
+  * BZ#3933: replace "exit" by "throw new Exception"
+  * BZ#3937: bad BAT properties with binary copy into and NULL values
+  * BZ#3940: Date calculation and comparison produce wrong result
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 10 Mar 2016 09:31:09 +0100
+
+monetdb (11.21.15) unstable; urgency=low
+
+  * monetdb5: Fixed potential crash in MAL debugger when accessing BATs by
+    index. Functionality dropped as it is also a security leak.
+
+ -- Martin Kersten <mk@cwi.nl>  Tue, 5 Jan 2016 09:31:09 +0100
+
 monetdb (11.21.13) unstable; urgency=low
 
   * Rebuilt.
