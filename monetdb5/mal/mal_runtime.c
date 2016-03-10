@@ -19,10 +19,9 @@
 #include "mal_profiler.h"
 #include "mal_listing.h"
 #include "mal_authorize.h"
+#include "mal_resource.h"
 #include "mal_private.h"
 
-#define heapinfo(X) ((X) && (X)->base ? (X)->free: 0)
-#define hashinfo(X) ( (X)? heapinfo((X)->heap):0)
 
 // Keep a queue of running queries
 QueryQueue QRYqueue;
@@ -155,6 +154,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 {
 	int tid = THRgettid();
 
+	assert(pci);
 	/* keep track on the instructions taken in progress */
 	cntxt->active = TRUE;
 	if( tid < THREADS){
@@ -166,8 +166,12 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 	/* always collect the MAL instruction execution time */
 	gettimeofday(&pci->clock,NULL);
 	prof->ticks = GDKusec();
+
+	/* keep track of actual running instructions over BATs */
+	if( isaBatType(getArgType(mb, pci, 0)) )
+		(void) ATOMIC_INC(mal_running, mal_runningLock);
+
 	/* emit the instruction upon start as well */
-	
 	if(malProfileMode > 0)
 		profilerEvent(mb, stk, pci, TRUE, cntxt->username);
 }
@@ -185,6 +189,9 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	}
 
 	assert(pci);
+	if( isaBatType(getArgType(mb, pci, 0)) )
+		(void) ATOMIC_DEC(mal_running, mal_runningLock);
+
 	assert(prof);
 	/* always collect the MAL instruction execution time */
 	pci->ticks = GDKusec() - prof->ticks;
@@ -203,6 +210,9 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 			malProfileMode = 1;
 	}
 	cntxt->active = FALSE;
+	/* reduce threads of non-admin long running transaction if needed */
+	if ( cntxt->idx > 1 )
+		MALresourceFairness(GDKusec()- mb->starttime);
 }
 
 /*
@@ -218,9 +228,9 @@ getBatSpace(BAT *b){
 	lng space=0;
 	if( b == NULL)
 		return 0;
-	if( b->T) space += heapinfo(&b->T->heap); 
-	if( b->T->vheap) space += heapinfo(b->T->vheap); 
-	if(b->T) space += hashinfo(b->T->hash); 
+	space += BATcount(b) * b->T->width;
+	if( b->T->vheap) space += heapinfo(b->T->vheap, abs(b->batCacheid)); 
+	if(b->T) space += hashinfo(b->T->hash, abs(b->batCacheid)); 
 	space += IMPSimprintsize(b);
 	return space;
 }
