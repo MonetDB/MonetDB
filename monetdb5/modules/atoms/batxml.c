@@ -28,7 +28,7 @@
 #include <gdk.h>
 #include "ctype.h"
 #include <string.h>
-#if defined(HAVE_LIBXML) && !defined(HAVE_EMBEDDED)
+#ifdef HAVE_LIBXML
 #include <libxml/parser.h>
 #endif
 #include "mal_interpreter.h"
@@ -62,7 +62,7 @@ batxml_export str BATXMLgroup(xml *ret, const bat *bid);
 batxml_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
 batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 
-#if defined(HAVE_LIBXML) && !defined(HAVE_EMBEDDED)
+#ifdef HAVE_LIBXML
 
 #define prepareResult(X,Y,tpe,Z,free)							\
 	do {														\
