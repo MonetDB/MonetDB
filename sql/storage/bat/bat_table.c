@@ -19,6 +19,8 @@ _delta_cands(sql_trans *tr, sql_table *t)
 	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
 	size_t nr = store_funcs.count_col(tr, c, 1);
 
+	if (!tids)
+		return NULL;
 	tids->H->seq = 0;
 	tids->T->seq = 0;
 	BATsetcount(tids, (BUN) nr);
@@ -31,9 +33,12 @@ _delta_cands(sql_trans *tr, sql_table *t)
 	tids->H->dense = 1;
 
 	if (store_funcs.count_del(tr, t)) {
-		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
-		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
-		bat_destroy(d);
+		BAT *d, *diff = NULL;
+
+		if ((d = store_funcs.bind_del(tr, t, RD_INS)) != NULL) {
+			diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+			bat_destroy(d);
+		}
 		bat_destroy(tids);
 		tids = diff;
 	}
@@ -60,7 +65,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 }
 
 static BAT *
-delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
+delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 {
 	/* return full normalized column bat
 	 * 	b := b.copy()
@@ -70,7 +75,8 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 	BAT *r, *b, *ui, *uv, *i = temp_descriptor(bat->ibid);
 	int needcopy = 1;
 
-(void)tr;
+	if (!i)
+		return NULL;
 	r = i; 
 	if (temp) 
 		return r;
@@ -91,7 +97,7 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 	if (bat->uibid && bat->ucnt) {
 		ui = temp_descriptor(bat->uibid);
 		uv = temp_descriptor(bat->uvbid);
-		if (BATcount(ui)) {
+		if (ui && BATcount(ui)) {
 			if (needcopy) {
 				assert(b->htype == TYPE_void);
 				r = COLcopy(b, b->ttype, 1, TRANSIENT); 
@@ -110,11 +116,11 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 }
 
 static BAT *
-delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
+delta_full_bat( sql_column *c, sql_delta *bat, int temp)
 {
 	if (!store_initialized && bat->cached) 
 		return bat->cached;
-	return delta_full_bat_( tr, c, bat, temp);
+	return delta_full_bat_( c, bat, temp);
 }
 
 static BAT *
@@ -124,7 +130,7 @@ full_column(sql_trans *tr, sql_column *c)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
 	}
-	return delta_full_bat(tr, c, c->data, isTemp(c));
+	return delta_full_bat(c, c->data, isTemp(c));
 }
 
 static void
@@ -146,8 +152,12 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	sql_column *n = NULL;
 
 	s = delta_cands(tr, c->t);
+	if (!s)
+		return oid_nil;
 	va_start(va, value);
 	b = full_column(tr, c);
+	if (!b)
+		return oid_nil;
 	if ((n = va_arg(va, sql_column *)) == NULL) {
 		if (BAThash(b, 0) == GDK_SUCCEED) {
 			BATiter cni = bat_iterator(b);
@@ -166,6 +176,8 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		return rid;
 	}
 	r = BATselect(b, s, value, NULL, 1, 0, 0);
+	if (!r)
+		return oid_nil;
 	bat_destroy(s);
 	s = r;
 	full_destroy(c, b);
@@ -174,7 +186,11 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		c = n;
 
 		b = full_column(tr, c);
+		if (!b)
+			return oid_nil;
 		r = BATselect(b, s, value, NULL, 1, 0, 0);
+		if (!r)
+			return oid_nil;
 		bat_destroy(s);
 		s = r;
 		full_destroy(c, b);
@@ -191,12 +207,13 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 static void *
 column_find_value(sql_trans *tr, sql_column *c, oid rid)
 {
-	BUN q;
+	BUN q = BUN_NONE;
 	BAT *b;
 	void *res = NULL;
 
 	b = full_column(tr, c);
-	q = BUNfnd(BATmirror(b), (ptr) &rid);
+	if (b)
+		q = BUNfnd(BATmirror(b), (ptr) &rid);
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;

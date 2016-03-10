@@ -6,12 +6,6 @@
 
 import sys, os, getopt, string, re
 
-try:
-    True
-except NameError:
-    # provide values for old Python versions
-    False, True = 0, 1
-
 class Error(Exception):
     """Bad option."""
     pass

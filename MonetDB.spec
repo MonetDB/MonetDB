@@ -102,9 +102,9 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
+License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -984,6 +984,34 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Mar 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.15-20160310
+- Rebuilt.
+- BZ#3549: bulk string operations very slow
+- BZ#3908: LEFT JOIN with OR conditions triggers assertion
+- BZ#3909: Incorrect column name in OR condition of LEFT JOIN crashes
+  mserver
+- BZ#3910: COPY INTO table (column1, column2) got wrong result
+- BZ#3912: When table/column names conflicts, data ends in multiple
+  tables!
+- BZ#3918: MonetDB.R version 1.0.1 incorrectly constructs the batfile
+  script
+- BZ#3919: Table conflict when the table name and fields are identical
+- BZ#3921: Creating a table from a complex query crashes mserver or
+  triggers assertion
+- BZ#3922: AVG( column ) returns NaN rather than Inf when column
+  contains Inf
+- BZ#3928: When killing a virtual machine, sql_logs/sql/log is empty
+- BZ#3930: Wrong typecast on character columns in prepared statements
+  when using Umlaute
+- BZ#3932: CASE expressions with constants are not evaluated correctly
+- BZ#3933: replace "exit" by "throw new Exception"
+- BZ#3937: bad BAT properties with binary copy into and NULL values
+- BZ#3940: Date calculation and comparison produce wrong result
+
+* Tue Jan  5 2016 Martin Kersten <mk@cwi.nl> - 11.21.15-20160310
+- monetdb5: Fixed potential crash in MAL debugger when accessing BATs by
+  index. Functionality dropped as it is also a security leak.
+
 * Tue Jan 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.13-20160105
 - Rebuilt.
 - BZ#2014: 'null' from copy into gets wrong

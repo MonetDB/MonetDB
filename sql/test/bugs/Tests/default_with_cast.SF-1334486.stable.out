@@ -22,7 +22,7 @@ Ready.
 #select cast(now() as date) - d from t;
 % .L1 # table_name
 % current_timestamp # name
-% month_interval # type
+% int # type
 % 1 # length
 [ 0	]
 

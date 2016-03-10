@@ -882,7 +882,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 		return -1;
 	mod = sql_func_mod(s->op4.funcval->func);
 	fimp = sql_func_imp(s->op4.funcval->func);
-	fimp = strconcat(fimp, "subjoin");
+	fimp = sa_strconcat(sql->mvc->sa, fimp, "subjoin");
 
 	/* dump left and right operands */
 	_dumpstmt(sql, mb, s->op1);
@@ -1457,7 +1457,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					mod = sql_func_mod(f);
 					fimp = sql_func_imp(f);
-					fimp = strconcat(fimp, "subselect");
+					fimp = sa_strconcat(sql->mvc->sa, fimp, "subselect");
 					q = newStmt(mb, mod, convertOperator(fimp));
 					// push pointer to the SQL structure into the MAL call
 					// allows getting argument names for example

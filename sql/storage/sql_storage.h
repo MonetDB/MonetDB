@@ -34,7 +34,7 @@ typedef enum store_type {
 #define STORE_READONLY (store_readonly)
 
 extern sql_trans *gtrans;
-extern list *active_transactions;
+extern list *active_sessions;
 extern int store_nr_active;
 extern store_type active_store_type;
 extern int store_readonly;
