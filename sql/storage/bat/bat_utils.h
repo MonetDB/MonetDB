@@ -40,7 +40,6 @@ extern BAT *e_BAT(int type);
 extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
 extern void bat_utils_init(void);
 
-extern sql_schema * tr_find_schema( sql_trans *tr, sql_schema *s);
 extern sql_table * tr_find_table( sql_trans *tr, sql_table *t);
 extern sql_column * tr_find_column( sql_trans *tr, sql_column *c);
 extern sql_idx * tr_find_idx( sql_trans *tr, sql_idx *i);
