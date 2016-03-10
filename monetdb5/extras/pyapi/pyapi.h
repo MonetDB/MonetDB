@@ -72,7 +72,7 @@
 #endif
 
 #ifdef _PYAPI_WARNINGS_
-bool option_warning;
+extern bool option_warning;
 #define WARNING_MESSAGE(...) {           \
     if (option_warning) {                \
     fprintf(stderr, __VA_ARGS__);        \
