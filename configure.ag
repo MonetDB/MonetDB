@@ -10,7 +10,7 @@ dnl Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.21.15], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
+AC_INIT([MonetDB], [11.21.16], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -124,7 +124,7 @@ case "$CC" in
 	;;
 esac
 
-AC_DEFINE(MONETDB_RELEASE, "Jul2015-SP3", [Release name or "unreleased"])
+AC_DEFINE(MONETDB_RELEASE, "unreleased", [Release name or "unreleased"])
 
 dft_gdk=yes
 AC_ARG_ENABLE(gdk,
