@@ -2,7 +2,7 @@ ll <- NULL
 if (Sys.getenv("TSTTRGDIR") != "") {
 	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
 }
-library(MonetDB.R,quietly=T,lib.loc=ll)
+library(DBI)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -18,8 +18,8 @@ options(monetdb.profile=F)
 tname <- "monetdbtest"
 
 
-drv <- dbDriver("MonetDB")
-stopifnot(identical(dbGetInfo(drv)$name,"MonetDBDriver"))
+drv <- MonetDB.R::MonetDB()
+stopifnot(identical(dbGetInfo(drv)$name, "MonetDBDriver"))
 
 con <- conn <- dbConnect(drv, port=dbport, dbname=dbname, wait=T)
 stopifnot(identical(class(con)[[1]],"MonetDBConnection"))
@@ -37,10 +37,10 @@ stopifnot(identical(dbExistsTable(con,tname),FALSE))
 
 
 # test raw handling
-dbSendUpdate(con,"CREATE TABLE monetdbtest (a varchar(10),b integer,c blob)")
+MonetDB.R::dbSendUpdate(con,"CREATE TABLE monetdbtest (a varchar(10),b integer,c blob)")
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
-dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('one',1,'1111')")
-dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('two',2,'22222222')")
+MonetDB.R::dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('one',1,'1111')")
+MonetDB.R::dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('two',2,'22222222')")
 stopifnot(identical(dbGetQuery(con,"SELECT count(*) FROM monetdbtest")[[1]],2L))
 stopifnot(identical(dbReadTable(con,tname)[[3]],list(charToRaw("1111"),charToRaw("22222222"))))
 dbRemoveTable(con,tname)
@@ -62,7 +62,7 @@ stopifnot(identical(dim(iris),dim(iris2)))
 # then manually
 res <- dbSendQuery(con,"SELECT \"Species\", \"Sepal.Width\" FROM monetdbtest")
 stopifnot(dbIsValid(res))
-stopifnot(isIdCurrent(res))
+stopifnot(MonetDB.R::isIdCurrent(res))
 stopifnot(identical(class(res)[[1]],"MonetDBResult"))
 stopifnot(identical(res@env$success,TRUE))
 
@@ -95,8 +95,8 @@ tf <- tempfile()
 write.table(iris,tf,sep=",",row.names=FALSE)
 tname2 <- "Need to quote this table name"
 tname3 <- "othermethod"
-monetdb.read.csv(con,tf,tname)
-monetdb.read.csv(con,tf,tname2)
+MonetDB.R::monetdb.read.csv(con,tf,tname)
+MonetDB.R::monetdb.read.csv(con,tf,tname2)
 dbWriteTable(con, tname3, tf)
 
 ###
@@ -161,7 +161,7 @@ dbWriteTable(conn,tname,mtcars,append=F,overwrite=F,insert=T)
 dbRemoveTable(conn,tname)
 
 # info
-stopifnot(identical("MonetDBDriver", dbGetInfo(MonetDB.R())$name))
+stopifnot(identical("MonetDBDriver", dbGetInfo(MonetDB.R::MonetDB.R())$name))
 stopifnot(identical("MonetDBConnection", dbGetInfo(conn)$name))
 
 # transactions...
@@ -186,7 +186,7 @@ sq <- dbSendQuery(conn,"CREATE TABLE monetdbtest (a string)")
 sq <- dbSendQuery(conn,"INSERT INTO monetdbtest VALUES ('Роман Mühleisen')")
 stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
 sq <- dbSendQuery(conn,"DELETE FROM monetdbtest")
-dbSendUpdate(conn, "INSERT INTO monetdbtest (a) VALUES (?)", "Роман Mühleisen")
+MonetDB.R::dbSendUpdate(conn, "INSERT INTO monetdbtest (a) VALUES (?)", "Роман Mühleisen")
 stopifnot(identical("Роман Mühleisen", dbGetQuery(conn,"SELECT a FROM monetdbtest")$a[[1]]))
 dbRollback(conn)
 

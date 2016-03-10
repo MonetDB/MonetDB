@@ -2,7 +2,7 @@ ll <- NULL
 if (Sys.getenv("TSTTRGDIR") != "") {
 	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
 }
-library(MonetDB.R,quietly=T,lib.loc=ll)
+library(DBI, quietly = T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -17,7 +17,7 @@ options(monetdb.profile=F)
 
 tname <- "monetdbtest"
 
-con <- dbConnect(MonetDB(), port=dbport, dbname=dbname, wait=T)
+con <- dbConnect(MonetDB.R::MonetDB(), port=dbport, dbname=dbname, wait=T)
 stopifnot(dbIsValid(con))
 
 #options(monetdb.debug.query=T)
@@ -55,7 +55,7 @@ print(length(predictions))
 # make sure we bubble up the error
 haderror <- FALSE
 tryCatch({
-	res <- mdbapply(con,tname,function(d) {
+	res <- MonetDB.R::mdbapply(con,tname,function(d) {
 	  stop("i am an error")
 	})
 }, error=function(e) {

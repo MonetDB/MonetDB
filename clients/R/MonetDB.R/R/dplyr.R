@@ -1,11 +1,10 @@
 src_monetdb <- function(dbname="demo", host = "localhost", port = 50000L, user = "monetdb",
   password = "monetdb", con = FALSE, ...) {
-  if (!inherits(con, "MonetDBConnection") || !dbIsValid(con)) {
-    con <- dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
+  if (!inherits(con, "MonetDBConnection") || !DBI::dbIsValid(con)) {
+    con <- DBI::dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
       user = user, password = password, ...)
   }
-  requireNamespace("dplyr")
-  dplyr::src_sql("monetdb", con, info = dbGetInfo(con))
+  dplyr::src_sql("monetdb", con, info = DBI::dbGetInfo(con))
 }
 
 src_translate_env.src_monetdb <- function(x) {
@@ -38,7 +37,7 @@ sample_n.tbl_monetdb <- function(x, size, replace = FALSE, weight = NULL) {
     stop("Sorry, replace and weight are not supported for MonetDB tables. \
       Consider collect()'ing first.")
   }
-  dbGetQuery(x$src$con, dplyr::build_sql(x$query$sql, " SAMPLE ", as.integer(size)))
+  DBI::dbGetQuery(x$src$con, dplyr::build_sql(x$query$sql, " SAMPLE ", as.integer(size)))
 }
 
 sample_frac.tbl_monetdb <- function(tbl, frac=1, replace = FALSE, weight = NULL) {
@@ -54,11 +53,11 @@ sample_frac.tbl_monetdb <- function(tbl, frac=1, replace = FALSE, weight = NULL)
 
 db_query_fields.MonetDBConnection <- function(con, sql, ...) {
   # prepare gives us column info without actually running a query. Nice.
-  dbGetQuery(con, dplyr::build_sql("PREPARE SELECT * FROM ", sql))$column
+  DBI::dbGetQuery(con, dplyr::build_sql("PREPARE SELECT * FROM ", sql))$column
 }
 
 db_query_fields.MonetDBEmbeddedConnection <- function(con, sql, ...) {
-  names(dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql), notreally=T))
+  names(DBI::dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql), notreally=T))
 }
 
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
@@ -70,15 +69,15 @@ db_query_rows.MonetDBEmbeddedConnection <- function(con, sql, ...) {
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {
-  dbWriteTable(con,dbQuoteIdentifier(con,table),values,
-    append=T,transaction=F,csvdump=T)
+  DBI::dbWriteTable(con, DBI::dbQuoteIdentifier(con, table), values,
+    append=T, transaction=F, csvdump=T)
 }
 
 db_save_query.MonetDBConnection <- function(con, sql, name, temporary = TRUE,
                                             ...) {
   tt_sql <- dplyr::build_sql("CREATE TEMPORARY TABLE ", dplyr::ident(name), " AS ",
     sql, " WITH DATA ON COMMIT PRESERVE ROWS", con = con)
-  dbGetQuery(con, tt_sql)
+  DBI::dbGetQuery(con, tt_sql)
   name
 }
 

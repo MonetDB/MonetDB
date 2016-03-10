@@ -8,11 +8,8 @@ ff <- textConnection("asdf", open="w")
 # so if things go south it might be a good idea to uncomment the cat(dd) below
 dd <- capture.output( suppressMessages ( {
 
-library(MonetDB.R,quietly=T,lib.loc=ll)
-library(dplyr,quietly=T)
-library(Lahman,quietly=T)
-
-options(monetdb.profile=F)
+library(dplyr, quietly = T)
+library(Lahman, quietly = T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -23,19 +20,10 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 
-# old way
-if (exists("lahman_monetdb")) {
-	# overwrite all args because lahman_monetdb sets a default arg in the first pos.
-	dps <- lahman_monetdb(host="localhost", dbname=dbname, port=dbport ,
-		user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
-# new way
-} else {
-	dps <- src_monetdb(dbname=dbname, port=dbport)
-	copy_lahman(dps)
-}
-}))
+dps <- MonetDB.R::src_monetdb(dbname=dbname, port=dbport)
+copy_lahman(dps)
 
-#cat(dd)
+}))
 
 # the remainder is pretty much the example from the manpage.
 
@@ -140,7 +128,7 @@ print(nrow(aa))
 
 
 
-dbRemoveTable(dps$con, "mtcars")
+DBI::dbRemoveTable(dps$con, "mtcars")
 
 
 print("SUCCESS")

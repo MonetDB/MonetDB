@@ -21,7 +21,7 @@ setMethod("dbGetInfo", "MonetDBDriver", def=function(dbObj, ...)
   list(name="MonetDBDriver", 
        driver.version=utils::packageVersion("MonetDB.R"), 
        DBI.version=utils::packageVersion("DBI"), 
-       client.version="NA", 
+       client.version=NA, 
        max.connections=125) # R can only handle 128 connections, three of which are pre-allocated
 )
 

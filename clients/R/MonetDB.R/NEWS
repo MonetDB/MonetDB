@@ -1,7 +1,7 @@
 1.0.1
 - added isIdCurrent for improved compatibility with RSQLite
 - new option monetdb.log.query allows export of dbSendQuery statements to file
-
+- no longer depends on DBI but imports it
 
 1.0.0
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
