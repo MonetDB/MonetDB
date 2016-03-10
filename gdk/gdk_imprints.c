@@ -243,6 +243,7 @@ BATcheckimprints(BAT *b)
 					imprints->imprints->parentid = b->batCacheid;
 					b->T->imprints = imprints;
 					ALGODEBUG fprintf(stderr, "#BATcheckimprints: reusing persisted imprints %d\n", b->batCacheid);
+					IDXACCESS fprintf(stderr, "[%d] #BATcheckimprints: loaded persistent imprints\n", b->batCacheid);
 					MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
 					return 1;
 				}
@@ -493,6 +494,7 @@ BATimprints(BAT *b)
 
 	t1 = GDKusec();
 	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", t1 - t0);
+	IDXACCESS fprintf(stderr, "[%d] #BATimprints: created imprints\n", b->batCacheid);
 
 	MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
 	/* BBPUnfix tries to get the imprints lock which might lead to a deadlock

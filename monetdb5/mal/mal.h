@@ -69,6 +69,7 @@ mal_export int have_hge;
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
+#define GRPindexes (IDXACCMASK)
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
@@ -97,7 +98,7 @@ mal_export void mserver_reset(void);
 #define LIST_INPUT      1       /* echo original input */
 #define LIST_MAL_NAME   2       /* show variable name */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_VALUE  8		/* list bat tuple count */
+#define LIST_MAL_VALUE  8       /* list bat tuple count */
 #define LIST_MAL_PROPS 16       /* show variable properties */
 #define LIST_MAL_MAPI  32       /* output Mapi compatible output */
 #define LIST_MAL_REMOTE  64       /* output MAL for remote execution */

@@ -432,11 +432,15 @@ do {									\
 #define scanloop(NAME,CAND,TEST)					\
 do {									\
 	ALGODEBUG fprintf(stderr,					\
-			  "#BATselect(b=%s#"BUNFMT",s=%s%s,anti=%d): " \
+			  "#BATselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "	\
 			  "%s %s\n", BATgetId(b), BATcount(b),		\
 			  s ? BATgetId(s) : "NULL",			\
 			  s && BATtdense(s) ? "(dense)" : "",		\
 			  anti, #NAME, #TEST);				\
+	IDXACCESS fprintf(stderr,					\
+			  "[%d]%s #BATselect: using imprints\n",	\
+			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,	\
+			  VIEWtparent(b)?"*":" ");			\
 	if (BATcapacity(bn) < maximum) {				\
 		while (p < q) {						\
 			CAND;						\
@@ -559,7 +563,7 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 				(TYPE *)Tloc(parent,0)+BUNfirst(parent)); \
 		BBPunfix(parent->batCacheid);				\
 	} else {							\
-		imprints= b->T->imprints;				\
+		imprints = b->T->imprints;				\
 		basesrc = (const TYPE *) Tloc(b, BUNfirst(b));		\
 	}								\
 	END;								\
@@ -1846,6 +1850,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 *  ii) it is not an equi-select, and
 			 * iii) is not var-sized.
 			 */
+			IDXACCESS fprintf(stderr,
+			                  "[%d] #BATselect: use imprints %s\n",
+			                  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
+			                  VIEWtparent(b)?BATgetId(b):"\b");
+
 			use_imprints = 1;
 		}
 		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti,

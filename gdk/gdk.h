@@ -475,6 +475,8 @@
 #define XPROPMASK	(1<<23)
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
+#define IDXACCMASK	(1<<23)
+#define IDXACCESS	if (GDKdebug & IDXACCMASK)
 
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
