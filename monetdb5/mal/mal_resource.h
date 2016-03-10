@@ -11,7 +11,7 @@
 
 #include "mal_interpreter.h"
 #include "gdk_atomic.h"
-mal_export ATOMIC_TYPE mal_running;
+mal_export volatile ATOMIC_TYPE mal_running;
 #ifdef ATOMIC_LOCK
 mal_export MT_Lock mal_runningLock;
 #endif
