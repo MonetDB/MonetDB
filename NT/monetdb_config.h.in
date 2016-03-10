@@ -22,12 +22,6 @@
 #ifndef _SEEN_MONETDB_CONFIG_H
 #define _SEEN_MONETDB_CONFIG_H 1
 
-#ifdef __MINGW32__
-/* for now, compiling with mingw implies we're compiling for embedded */
-#define HAVE_EMBEDDED 1
-#define HAVE_EMBEDDED_R 1
-#endif
-
 /* Prevent pollution through excessive inclusion of include files by
  * Windows.h. */
 #ifndef WIN32_LEAN_AND_MEAN
@@ -1136,5 +1130,10 @@ typedef __uint128_t uhge;
 
 #define PTRFMT		"%p"
 #define PTRFMTCAST
+
+#ifdef HAVE_EMBEDDED_R
+#define _MSC_EXTENSIONS 1
+#undef HAVE_CTIME_R
+#endif
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

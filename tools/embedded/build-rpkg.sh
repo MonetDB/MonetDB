@@ -38,7 +38,7 @@ cp sourcetree/NT/monetdb_config.h.in rpackage/src/tools/embedded/windows/
  
 export R_INCLUDE_DIR=`R CMD config --cppflags | sed s/^-I//`
 
-# # inline mal/sql scripts, we need R with the stringr package for that
+# # inline mal/sql scripts
 # python sourcetree/tools/embedded/inline.py dummytarget/libs/monetdb5/ rpackage/src/monetdb5/mal/mal_init_inline.h
 
 mkdir -p rpackage/src/monetdb5/extras/rapi
