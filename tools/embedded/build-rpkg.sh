@@ -34,6 +34,7 @@ find . -name "Makefile.in" -exec sed -i -e "s/lt~obsolete\.m4/lt-obsolete\.m4/g"
 cd ..
 mv sourcetree/tools/embedded/rpackage .
 rsync -av --exclude-from sourcetree/tools/embedded/pkg-excludes sourcetree/ rpackage/src
+cp sourcetree/NT/monetdb_config.h.in rpackage/src/tools/embedded/windows/
  
 export R_INCLUDE_DIR=`R CMD config --cppflags | sed s/^-I//`
 
