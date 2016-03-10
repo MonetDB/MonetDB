@@ -194,7 +194,7 @@ MALresourceFairness(lng usec)
 	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
 
 	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && mal_running > (size_t) GDKnr_threads && rss > MEMORY_THRESHOLD) {
+	while (clk > DELAYUNIT && users > 1 && mal_running > GDKnr_threads && rss > MEMORY_THRESHOLD) {
 		if ( delayed++ == 0){
 				PARDEBUG mnstr_printf(GDKstdout, "#delay initial ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
 				PARDEBUG mnstr_flush(GDKstdout);
