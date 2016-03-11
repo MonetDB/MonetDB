@@ -16,6 +16,6 @@
 
 #undef ssize_t
 
-typedef unsigned char bool;
+#define bool unsigned char
 
 #endif

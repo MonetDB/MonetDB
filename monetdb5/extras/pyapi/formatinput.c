@@ -326,12 +326,12 @@ char* FormatCode(char* code, char **args, size_t argcount, size_t tabwidth, PyOb
             } else if (code[i] == '\t') {
                 initial_spaces += tabwidth;
             } else {
-                // Statement starts here
-                seen_statement = true;
                 // Look through the indentation_levels array to find the level of the statement
                 // from the amount of initial spaces
                 bool placed = false;
-                int level = 0;
+                size_t level = 0;
+                // Statement starts here
+                seen_statement = true;
                 for(j = 0; j < indentation_count; j++) {
                     if (initial_spaces == indentation_levels[j]) {
                         level = j;

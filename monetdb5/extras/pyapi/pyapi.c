@@ -127,6 +127,7 @@ static bool python_call_active = false;
 
 // This #define creates a new BAT with the internal data and mask from a Numpy array, without copying the data
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
+#ifdef HAVE_FORK
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = BATnew(TYPE_void, TYPE_##mtpe, 0, TRANSIENT);                                                             \
         BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                   \
@@ -170,6 +171,44 @@ static bool python_call_active = false;
         /*Take over the data from the numpy array*/                                                                     \
         if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
     }
+#else
+#define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
+        bat = BATnew(TYPE_void, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                   \
+        bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
+        /*Change nil values to the proper values, if they exist*/                                                       \
+        if (mask != NULL)                                                                                               \
+        {                                                                                                               \
+            for (iu = 0; iu < ret->count; iu++)                                                                         \
+            {                                                                                                           \
+                if (mask[index_offset * ret->count + iu] == TRUE)                                                       \
+                {                                                                                                       \
+                    (*(mtpe*)(&data[(index_offset * ret->count + iu) * ret->memory_size])) = mtpe##_nil;                \
+                    bat->T->nil = 1;                                                                                    \
+                }                                                                                                       \
+            }                                                                                                           \
+        }                                                                                                               \
+        bat->T->nonil = 1 - bat->T->nil;                                                                                \
+        /*When we create a BAT a small part of memory is allocated, free it*/                                           \
+        GDKfree(bat->T->heap.base);                                                                                     \
+        bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
+        bat->T->heap.size = ret->count * ret->memory_size;                                                              \
+        bat->T->heap.free = bat->T->heap.size;  /*There are no free places in the array*/                               \
+        /*If index_offset > 0, we are mapping part of a multidimensional array.*/                                       \
+        /*The entire array will be cleared when the part with index_offset=0 is freed*/                                 \
+        /*So we set this part of the mapping to 'NOWN'*/                                                                \
+        if (index_offset > 0) bat->T->heap.storage = STORE_NOWN;                                                        \
+        else {                                                                                                          \
+            bat->T->heap.storage = batstore;                                                                            \
+        }                                                                                                               \
+        bat->T->heap.newstorage = STORE_MEM;                                                                            \
+        bat->S->count = ret->count;                                                                                     \
+        bat->S->capacity = ret->count;                                                                                  \
+        bat->S->copiedtodisk = false;                                                                                   \
+        /*Take over the data from the numpy array*/                                                                     \
+        if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
+    }
+#endif
 
 // This #define converts a Numpy Array to a BAT by copying the internal data to the BAT. It assumes the BAT 'bat' is already created with the proper size.
 // This should only be used with integer data that can be cast. It assumes the Numpy Array has an internal array of type 'mtpe_from', and the BAT has an internal array of type 'mtpe_to'.

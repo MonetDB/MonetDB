@@ -15,7 +15,6 @@
 #define _TYPE_CONVERSION_
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <stddef.h>
 
 #include "pyapi.h"
