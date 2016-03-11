@@ -43,4 +43,10 @@ headers_autoload = {
 	SOURCES = 50_pyapi.mal
 }
 
+locate_python_bat = {
+	EXT = bat
+	DIR = prefix
+	SOURCES = pyapi_locatepython.bat
+}
+
 EXTRA_DIST_DIR = Tests
