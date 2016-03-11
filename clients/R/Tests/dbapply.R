@@ -13,7 +13,6 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 options(monetdb.insert.splitsize=10)
-options(monetdb.profile=F)
 
 tname <- "monetdbtest"
 
@@ -32,19 +31,19 @@ data(mtcars)
 dbWriteTable(con,tname,mtcars, overwrite=T)
 stopifnot(identical(TRUE, dbExistsTable(con,tname)))
 
-res <- mdbapply(con, tname, function(d) {
+res <- MonetDB.R::mdbapply(con, tname, function(d) {
 	d$mpg
 })
 stopifnot(identical(res, mtcars$mpg))
 
-res <- mdbapply(con, tname, function(d) {
+res <- MonetDB.R::mdbapply(con, tname, function(d) {
 	min(d$mpg)
 })
 stopifnot(identical(res, min(mtcars$mpg)))
 
 # model fitting / in-db application
 fitted <- lm(mpg~., data=mtcars) 
-predictions <- mdbapply(con, tname, function(d) {
+predictions <- MonetDB.R::mdbapply(con, tname, function(d) {
   predict(fitted, newdata=data.frame(d, stringsAsFactors=T))
 })
 
@@ -66,7 +65,7 @@ stopifnot(haderror)
 print(haderror)
 
 # run simple test again to make sure the error did dbRollback() and we are consistent
-res <- mdbapply(con, tname, function(d) {
+res <- MonetDB.R::mdbapply(con, tname, function(d) {
 	d$mpg
 })
 stopifnot(identical(res, mtcars$mpg))
@@ -74,7 +73,7 @@ stopifnot(identical(res, mtcars$mpg))
 print(length(res))
 
 # additional parameters 
-res <- mdbapply(con,tname,function(d, n, m) {
+res <- MonetDB.R::mdbapply(con,tname,function(d, n, m) {
   n+m
 }, 20, 22)
 

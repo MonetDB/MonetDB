@@ -34,12 +34,11 @@
 }
 \examples{
 \dontrun{
-conn <- dbConnect(MonetDB.R(), "monetdb://localhost/demo")
-dbListTables(conn)
-data(iris)
+library(DBI)
+conn <- dbConnect(MonetDB.R::MonetDB(), dbname = "demo")
 dbWriteTable(conn, "iris", iris)
-dbGetQuery(conn, "SELECT COUNT(*) FROM iris;")
+dbListTables(conn)
+dbGetQuery(conn, "SELECT COUNT(*) FROM iris")
 d <- dbReadTable(conn, "iris")
-
 }}
 \keyword{interface}

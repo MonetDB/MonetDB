@@ -440,6 +440,7 @@ reserved_monetdb_keywords <- sort(unique(toupper(c(.SQL92Keywords,
 
 # quoting
 quoteIfNeeded <- function(conn, x, warn=T, ...) {
+  x <- as.character(x)
   chars <- !grepl("^[a-z_][a-z0-9_]*$", x, perl=T) & !grepl("^\"[^\"]*\"$", x, perl=T)
   if (any(chars) && warn) {
     message("Identifier(s) ", paste("\"", x[chars],"\"", collapse=", ", sep=""), " contain uppercase or reserved SQL characters and need(s) to be quoted in queries.")

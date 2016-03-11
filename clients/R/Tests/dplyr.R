@@ -9,7 +9,6 @@ ff <- textConnection("asdf", open="w")
 dd <- capture.output( suppressMessages ( {
 
 library(dplyr, quietly = T)
-library(Lahman, quietly = T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -18,7 +17,6 @@ if (length(args) > 0)
 	dbport <- args[[1]]
 if (length(args) > 1) 
 	dbname <- args[[2]]
-
 
 dps <- MonetDB.R::src_monetdb(dbname=dbname, port=dbport)
 copy_lahman(dps)
@@ -97,7 +95,7 @@ print(nrow(sample_n(player_info, 24L)))
 print(nrow(head(sample_frac(player_info, .5), n=25L)))
 
 
-dbWriteTable(dps$con, "mtcars", mtcars)
+DBI::dbWriteTable(dps$con, "mtcars", mtcars)
 my_tbl <- tbl(dps, "mtcars") 
 
 # https://github.com/hadley/dplyr/issues/1165

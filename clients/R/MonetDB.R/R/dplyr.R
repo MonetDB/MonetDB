@@ -4,6 +4,10 @@ src_monetdb <- function(dbname="demo", host = "localhost", port = 50000L, user =
     con <- DBI::dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
       user = user, password = password, ...)
   }
+  pkgname <- "MonetDB.R"
+  if (!(pkgname %in% loadedNamespaces())) {
+    attachNamespace(pkgname)
+  }
   dplyr::src_sql("monetdb", con, info = DBI::dbGetInfo(con))
 }
 
@@ -65,7 +69,7 @@ db_query_rows.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_query_rows.MonetDBEmbeddedConnection <- function(con, sql, ...) {
-  attr(dbGetQuery(con, sql, notreally=T), "__rows")
+  attr(DBI::dbGetQuery(con, sql, notreally=T), "__rows")
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {
