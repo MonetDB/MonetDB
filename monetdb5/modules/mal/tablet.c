@@ -862,7 +862,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 		if (i < attrs - 1)
 			s = mycpstr(s, task->csep);
 	}
-	strcat(line, task->rsep);
+	strcpy(s, task->rsep);
 	return line;
 }
 
