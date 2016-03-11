@@ -63,6 +63,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_0C3EBFF35EB44A65AD6DA13F68C65091"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_0C663F8F9CD74DE2A56C520C4E893AA2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -376,6 +382,12 @@
         "Entry"
         {
         "MsmKey" = "8:_655A10DAB27B4649B16EA35487EB0E10"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_65D35AA50DB344A2AC099FA016E15FDB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -903,6 +915,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_F0F821BC36DF43D6995913C0FBD3229D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_F1689DACAA5C43CB86670F0E0EA00904"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -928,6 +946,12 @@
         "Entry"
         {
         "MsmKey" = "8:_FA57445D98D74D0A9F27375664BB9724"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FAC0070236CB43BDA74CCAB9668F2BF4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1158,6 +1182,26 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\autoload\\01_calc.mal"
             "TargetName" = "8:01_calc.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0C3EBFF35EB44A65AD6DA13F68C65091"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\autoload\\50_pyapi.mal"
+            "TargetName" = "8:50_pyapi.mal"
             "Tag" = "8:"
             "Folder" = "8:_A4A821D237B943CFACE8D54F3F3971E3"
             "Condition" = "8:"
@@ -2220,6 +2264,26 @@
             "TargetName" = "8:stream_socket.h"
             "Tag" = "8:"
             "Folder" = "8:_989FA9CE087440658DD935632B4A7B5A"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_65D35AA50DB344A2AC099FA016E15FDB"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\lib_pyapi.dll"
+            "TargetName" = "8:lib_pyapi.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3954,6 +4018,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F0F821BC36DF43D6995913C0FBD3229D"
+            {
+            "SourcePath" = "8:pyapi_locatepython.bat"
+            "TargetName" = "8:pyapi_locatepython.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F1689DACAA5C43CB86670F0E0EA00904"
             {
             "SourcePath" = "8:lib\\monetdb5\\sql_aggr_bte.mal"
@@ -4040,6 +4124,26 @@
             "TargetName" = "8:20_vacuum.sql"
             "Tag" = "8:"
             "Folder" = "8:_7F962DDBDF894636B6CAFE6FE4887567"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FAC0070236CB43BDA74CCAB9668F2BF4"
+            {
+            "SourcePath" = "8:lib\\monetdb5\\pyapi.mal"
+            "TargetName" = "8:pyapi.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4953,7 +5057,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x86_x64.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC100_CRT_x64.msm"
                 "Properties"
                 {
                 }
