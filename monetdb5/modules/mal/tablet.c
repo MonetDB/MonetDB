@@ -894,14 +894,19 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
 		err = SQLload_error(task, idx, task->as->nr_attrs);
 		if (task->rowerror) {
+			size_t slen = mystrlen(s);
+			char *scpy = GDKmalloc(slen + 1);
+			if (scpy)
+				mycpstr(scpy, s);
 			MT_lock_set(&errorlock, "insert_val");
 			col++;
 			BUNappend(task->cntxt->error_row, &row, FALSE);
 			BUNappend(task->cntxt->error_fld, &col, FALSE);
 			BUNappend(task->cntxt->error_msg, buf, FALSE);
 			BUNappend(task->cntxt->error_input, err, FALSE);
-			snprintf(buf, BUFSIZ, "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, s);
 			buf[BUFSIZ-1]=0;
+			snprintf(buf, sizeof(buf), "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, scpy ? scpy : buf);
+			GDKfree(scpy);
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
 			task->rowerror[idx]++;
