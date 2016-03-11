@@ -164,7 +164,7 @@ MALadmission(lng argclaim, lng hotclaim)
  * By keeping the query start time in the client record we can delay
  * them when resource stress occurs.
  */
-ATOMIC_TYPE mal_running;
+volatile ATOMIC_TYPE mal_running;
 #ifdef ATOMIC_LOCK
 MT_Lock mal_runningLock MT_LOCK_INITIALIZER("mal_runningLock");
 #endif
@@ -194,7 +194,7 @@ MALresourceFairness(lng usec)
 	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
 
 	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && mal_running > GDKnr_threads && rss > MEMORY_THRESHOLD) {
+	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {
 		if ( delayed++ == 0){
 				PARDEBUG mnstr_printf(GDKstdout, "#delay initial ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
 				PARDEBUG mnstr_flush(GDKstdout);
@@ -218,7 +218,7 @@ MALresourceFairness(lng usec)
 size_t
 MALrunningThreads(void)
 {
-	return mal_running;
+	return ATOMIC_GET(mal_running, mal_runningLock);
 }
 
 void
