@@ -93,6 +93,7 @@ BATcheckorderidx(BAT *b)
 					close(fd);
 					b->torderidx = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
+					IDXACCESS fprintf(stderr, "[%d] #BATcheckorderidx: loaded persistent order idx\n", b->batCacheid);
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 					return 1;
 				}
@@ -201,6 +202,9 @@ BATorderidx(BAT *b, int stable)
 	b->torderidx = m;
 
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+
+	IDXACCESS fprintf(stderr, "[%d] #BATorderidx: created order idx\n", b->batCacheid);
+
 	return GDK_SUCCEED;
 }
 
@@ -417,6 +421,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	b->batDirtydesc = TRUE;
 	b->torderidx = m;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+	IDXACCESS fprintf(stderr, "[%d] #GDKmergeidx: merged order idx\n", b->batCacheid);
 	return GDK_SUCCEED;
 }
 
