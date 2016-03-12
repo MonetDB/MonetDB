@@ -226,7 +226,7 @@ ALGminany(ptr result, const bat *bid)
 							  "atom '%s' cannot be ordered linearly",
 							  ATOMname(b->ttype));
 	} else {
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmin(b, NULL);
 		} else {
 			p = BATmin(b, result);
@@ -254,7 +254,7 @@ ALGmaxany(ptr result, const bat *bid)
 							  "atom '%s' cannot be ordered linearly",
 							  ATOMname(b->ttype));
 	} else {
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmax(b, NULL);
 		} else {
 			p = BATmax(b, result);
