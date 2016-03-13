@@ -1782,14 +1782,17 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 
 	(void)rel;
 	if (tableref->token == SQL_NAME) {
+		dlist *name = tableref->data.lval->h->data.lval;
 		sql_rel *temp_table = NULL;
-		char *sname = qname_schema(tableref->data.lval->h->data.lval);
+		char *sname = qname_schema(name);
 		sql_schema *s = NULL;
-		tname = qname_table(tableref->data.lval->h->data.lval);
+		tname = qname_table(name);
+
+		if (dlist_length(name) > 2)
+			return sql_error(sql, 02, "3F000!SELECT: only a schema and table name expected");
 
 		if (sname && !(s=mvc_bind_schema(sql,sname)))
 			return sql_error(sql, 02, "3F000!SELECT: no such schema '%s'", sname);
-		/* TODO: search path */
 		if (!t && !sname) {
 			t = stack_find_table(sql, tname);
 			if (!t && sql->use_views) 
