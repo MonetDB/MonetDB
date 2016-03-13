@@ -579,7 +579,11 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		/* alter add index */
 		for (n = t->idxs.nelm; n; n = n->next) {
 			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i);
+
+			if (i->type == ordered_idx) 
+				printf("TODO call create ordered index code\n");
+			else
+				mvc_copy_idx(sql, nt, i);
 		}
 	}
 	if (t->keys.set) {
