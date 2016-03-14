@@ -1,0 +1,42 @@
+stdout of test 'rank_rewrite.Bug-3890` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 09:01:51 >  
+# 09:01:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37726" "--set" "mapi_usock=/var/tmp/mtest-11216/.s.monetdb.37726" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 09:01:51 >  
+
+# MonetDB 5 server v11.21.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37726/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11216/.s.monetdb.37726
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.8'
+# Finished reading the write-ahead log 'sql_logs/sql/log.8'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:01:52 >  
+# 09:01:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11216" "--port=37726"
+# 09:01:52 >  
+
+#CREATE TABLE x(a1 string);
+#INSERT INTO x VALUES ('aa'),('bb'),('cc'),('aa');
+[ 4	]
+#CREATE VIEW y AS SELECT row_number() OVER(ORDER BY a1) AS a1, a1 AS a2 FROM (SELECT a1 FROM x GROUP BY a1) AS t;
+#drop view y;
+#drop table x;
+
+# 09:01:52 >  
+# 09:01:52 >  "Done."
+# 09:01:52 >  
+
