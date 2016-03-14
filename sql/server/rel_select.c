@@ -2852,7 +2852,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				sql_rel *z = NULL, *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
-				if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
+				if (l && IS_ANY(st->type->eclass)){
+					l = rel_check_type(sql, exp_subtype(r), l, type_equal);
+					if (l)
+						st = exp_subtype(l);
+				}
+				if (!l || !r || !(r=rel_check_type(sql, st, r, type_equal))) {
 					rel_destroy(right);
 					return NULL;
 				}
@@ -3790,7 +3795,35 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 
 			r = exp_aggr1(sql->sa, r, zero_or_one, 0, 0, CARD_ATOM, 0);
 		}
-		return exp_binop(sql->sa, l, r, f);
+		/* bind types of l and r */
+		t1 = exp_subtype(l);
+		t2 = exp_subtype(r);
+		if (IS_ANY(t1->type->eclass) || IS_ANY(t2->type->eclass)) {
+			sql_exp *ol = l;
+			sql_exp *or = r;
+
+			if (IS_ANY(t1->type->eclass) && IS_ANY(t2->type->eclass)) {
+				sql_subtype *s = sql_bind_localtype("str");
+				l = rel_check_type(sql, s, l, type_equal);
+				r = rel_check_type(sql, s, r, type_equal);
+			} else if (IS_ANY(t1->type->eclass)) {
+				l = rel_check_type(sql, t2, l, type_equal);
+			} else {
+				r = rel_check_type(sql, t1, r, type_equal);
+			}
+			if (l && r) 
+				return exp_binop(sql->sa, l, r, f);
+			
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			f = NULL;
+
+			l = ol;
+			r = or;
+		}
+		if (f)
+			return exp_binop(sql->sa, l, r, f);
 	} else {
 		sql_exp *ol = l;
 		sql_exp *or = r;
