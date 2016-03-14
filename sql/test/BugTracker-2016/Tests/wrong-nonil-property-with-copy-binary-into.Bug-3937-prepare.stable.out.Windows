@@ -1,0 +1,19 @@
+stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 10:57:11 >  
+# 10:57:11 >  "./wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare.sh" "wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare"
+# 10:57:11 >  
+
+
+#  2:51:24.68 >copy "C:\monettesting\Mic-Windows2012-i386-assert-propcheck-9e6293cee17a-Jul2015\MonetDB\sql\test\BugTracker-2016\Tests\noNULLtinyintBAT.bin" "C:\monettesting\Mic-Windows2012-i386-assert-propcheck-9e6293cee17a-Jul2015\tests\sql\mTests\sql\test\BugTracker-2016" 
+        1 file(s) copied.
+
+#  2:51:24.68 >copy "C:\monettesting\Mic-Windows2012-i386-assert-propcheck-9e6293cee17a-Jul2015\MonetDB\sql\test\BugTracker-2016\Tests\NULLtinyintBAT.bin"   "C:\monettesting\Mic-Windows2012-i386-assert-propcheck-9e6293cee17a-Jul2015\tests\sql\mTests\sql\test\BugTracker-2016" 
+        1 file(s) copied.
+
+
+# 10:57:11 >  
+# 10:57:11 >  "Done."
+# 10:57:11 >  
+

@@ -1277,6 +1277,11 @@ MTIMEtimestamp2timestamp(timestamp *ret, const timestamp *src)
 static BAT *timezone_name = NULL;
 static BAT *timezone_def = NULL;
 
+void MTIMEreset(void) {
+	timezone_name = NULL;
+	timezone_def = NULL;
+}
+
 str
 MTIMEprelude(void *ret)
 {

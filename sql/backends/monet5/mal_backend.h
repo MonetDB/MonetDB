@@ -27,7 +27,7 @@
 typedef enum output_format {
 	OFMT_CSV  = 	0,
 	OFMT_JSON =	1,
-	OFMT_NONE = 2
+	OFMT_NONE = 3
 } ofmt;
 
 typedef struct backend {

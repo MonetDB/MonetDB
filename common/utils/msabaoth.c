@@ -30,6 +30,7 @@
 #include <time.h>
 #include <string.h> /* for getting error messages */
 #include <assert.h>
+#include <stddef.h>
 
 #include "msabaoth.h"
 #include "mutils.h"
@@ -93,6 +94,35 @@ getDBPath(char *pathbuf, size_t size, const char *extra)
 	return(NULL);
 }
 
+static inline int
+msab_isuuid(const char *restrict s)
+{
+	int hyphens = 0;
+
+	/* correct length */
+	if (strlen(s) != 36)
+		return 0;
+
+	/* hyphens at correct locations */
+	if (s[8] != '-' ||
+		s[13] != '-' ||
+		s[18] != '-' ||
+		s[23] != '-')
+		return 0;
+	/* only hexadecimals and hypens */
+	while (*s) {
+		if (!('a' <= *s && *s <= 'f') && !('0' <= *s && *s <= '9')) {
+			if (*s == '-')
+				hyphens++;
+			else
+				return 0;
+		}
+		s++;
+	}
+	/* correct number of hyphens */
+	return hyphens == 4;
+}
+
 /**
  * Initialises this Sabaoth instance to use the given dbfarm and dbname.
  * dbname may be NULL to indicate that there is no active database.  The
@@ -102,6 +132,8 @@ static void
 msab_init(const char *dbfarm, const char *dbname)
 {
 	size_t len;
+	DIR *d;
+	char *tmp;
 
 	assert(dbfarm != NULL);
 
@@ -133,6 +165,39 @@ msab_init(const char *dbfarm, const char *dbname)
 		_sabaoth_internal_dbname = NULL;
 	} else {
 		_sabaoth_internal_dbname = strdup(dbname);
+	}
+
+	/* clean out old UUID files in case the database crashed in a
+	 * previous incarnation */
+	if (_sabaoth_internal_dbname != NULL &&
+		(tmp = malloc(strlen(_sabaoth_internal_dbfarm) + strlen(_sabaoth_internal_dbname) + 2)) != NULL) {
+		sprintf(tmp, "%s%c%s", _sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
+		if ((d = opendir(tmp)) != NULL) {
+			struct dbe {
+				struct dbe *next;
+				char path[FLEXIBLE_ARRAY_MEMBER];
+			} *dbe = NULL, *db;
+			struct dirent *e;
+			len = offsetof(struct dbe, path) + strlen(tmp) + 2;
+			while ((e = readdir(d)) != NULL) {
+				if (msab_isuuid(e->d_name) &&
+					(db = malloc(strlen(e->d_name) + len)) != NULL) {
+					db->next = dbe;
+					dbe = db;
+					sprintf(db->path, "%s%c%s", tmp, DIR_SEP, e->d_name);
+				}
+			}
+			closedir(d);
+			/* unlink in a separate loop after reading the directory,
+			 * so as to not have any interference */
+			while (dbe != NULL) {
+				unlink(dbe->path);
+				db = dbe;
+				dbe = dbe->next;
+				free(db);
+			}
+		}
+		free(tmp);
 	}
 }
 void

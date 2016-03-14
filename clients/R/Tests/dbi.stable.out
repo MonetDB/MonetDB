@@ -52,9 +52,10 @@ Ready.
 [1] TRUE
 [1] TRUE
 [1] TRUE
-[1] 150
-[1] 150
+[1] TRUE
 [1] "\"Need to quote this table name\"" "monetdbtest"                      
+[3] "othermethod"                      
+[1] TRUE
 [1] TRUE
 [1] TRUE
 [1] TRUE
@@ -62,6 +63,9 @@ Ready.
 [1] TRUE
 [1] TRUE
 [1] FALSE
+[1] TRUE
+[1] TRUE
+[1] TRUE
 [1] TRUE
 [1] TRUE
 [1] TRUE

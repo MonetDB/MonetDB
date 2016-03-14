@@ -52,6 +52,7 @@ res_col *
 res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *val)
 {
 	res_col *c = t->cols + t->cur_col;
+	BAT *b;
 
 	if (!sql_find_subtype(&c->type, typename, digits, scale)) 
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
@@ -61,13 +62,28 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->p = NULL;
 	c->mtype = mtype;
 	if (mtype == TYPE_bat) {
-		BAT *b = (BAT*)val;
-
-		c->b = b->batCacheid;
-		bat_incref(c->b);
-	} else {
-		c->p = ATOMdup(mtype, val);
+		b = (BAT*)val;
+	} else { // wrap scalar values in BATs for result consistency
+		b = BATnew(TYPE_void, mtype, 0, TRANSIENT);
+		assert (b != NULL);
+		BUNappend(b, val, FALSE);
+		BATsetcount(b, 1);
+		BATseqbase(b, 0);
+		BATsettrivprop(b);
+		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
+		if (!t->order) {
+			oid zero = 0;
+			BAT *o = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
+			BUNappend(o, &zero, FALSE);
+			BATsetcount(o, 1);
+			BATseqbase(o, 0);
+			BATsettrivprop(o);
+			t->order = o->batCacheid;
+			bat_incref(t->order);
+		}
 	}
+	c->b = b->batCacheid;
+	bat_incref(c->b);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
 	return c;

@@ -1,6 +1,6 @@
 %define name MonetDB
 %define version 11.22.0
-%{!?buildno: %define buildno %(date +%Y%m%d)}
+%{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -102,9 +102,9 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
+License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP3/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -134,15 +134,6 @@ BuildRequires: python-devel
 BuildRequires: python3-devel
 %endif
 BuildRequires: readline-devel
-# On RedHat Enterprise Linux and derivatives (CentOS, Scientific
-# Linux), the rubygem-activerecord package is not available (also not
-# in the Extra Packages for Enterprise Linux EPEL), so it makes no
-# sense providing our ruby packages.
-%if %{?rhel:0}%{!?rhel:1}
-BuildRequires: ruby
-BuildRequires: rubygems
-BuildRequires: rubygems-devel
-%endif
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
@@ -401,33 +392,6 @@ program.
 %files client-perl
 %defattr(-,root,root)
 %{perl_vendorlib}/*
-
-%if %{?rhel:0}%{!?rhel:1}
-%package -n rubygem-monetdb-sql
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Obsoletes: %{name}-client-ruby
-BuildArch: noarch
-
-%description -n rubygem-monetdb-sql
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Ruby
-program.
-
-%files -n rubygem-monetdb-sql
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
-%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
-%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
-%endif
 
 %package client-tests
 Summary: MonetDB Client tests package
@@ -988,8 +952,6 @@ developer, but if you do want to test, this is the package you need.
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
-	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
-	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
@@ -1022,6 +984,34 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Mar 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.15-20160310
+- Rebuilt.
+- BZ#3549: bulk string operations very slow
+- BZ#3908: LEFT JOIN with OR conditions triggers assertion
+- BZ#3909: Incorrect column name in OR condition of LEFT JOIN crashes
+  mserver
+- BZ#3910: COPY INTO table (column1, column2) got wrong result
+- BZ#3912: When table/column names conflicts, data ends in multiple
+  tables!
+- BZ#3918: MonetDB.R version 1.0.1 incorrectly constructs the batfile
+  script
+- BZ#3919: Table conflict when the table name and fields are identical
+- BZ#3921: Creating a table from a complex query crashes mserver or
+  triggers assertion
+- BZ#3922: AVG( column ) returns NaN rather than Inf when column
+  contains Inf
+- BZ#3928: When killing a virtual machine, sql_logs/sql/log is empty
+- BZ#3930: Wrong typecast on character columns in prepared statements
+  when using Umlaute
+- BZ#3932: CASE expressions with constants are not evaluated correctly
+- BZ#3933: replace "exit" by "throw new Exception"
+- BZ#3937: bad BAT properties with binary copy into and NULL values
+- BZ#3940: Date calculation and comparison produce wrong result
+
+* Tue Jan  5 2016 Martin Kersten <mk@cwi.nl> - 11.21.15-20160310
+- monetdb5: Fixed potential crash in MAL debugger when accessing BATs by
+  index. Functionality dropped as it is also a security leak.
+
 * Tue Jan 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.13-20160105
 - Rebuilt.
 - BZ#2014: 'null' from copy into gets wrong

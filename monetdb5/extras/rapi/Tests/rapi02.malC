@@ -62,6 +62,8 @@ bat.append(bhge,1714636915:hge);
 rhge:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bhge);
 io.print(rhge);
 
+into:int := rapi.eval(nil:ptr, "42L");
+io.print(into);
 
 # floating point
 
@@ -92,7 +94,8 @@ bat.append(bstr,nil:str);
 rstr:bat[:oid,:int] := rapi.eval(nil:ptr,"nchar(arg1)",bstr);
 io.print(rstr);
 
-
+so:str := rapi.eval(nil:ptr,"'asdf'");
+io.print(so);
 
 # output types testing
 

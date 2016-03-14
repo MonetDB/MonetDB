@@ -1,6 +1,6 @@
 monetdb.server.start <-
   function( bat.file ){
-    
+    .Deprecated("Consider using MonetDBLite")
     if ( .Platform$OS.type == "unix" ) {
       if( !file.exists( bat.file ) ) stop( paste( bat.file , "does not exist. Run monetdb.server.setup() to create a batch file." ) )
       
@@ -67,40 +67,32 @@ monetdb.server.start <-
     
   }
 
-
-monetdb.server.stop <-
-  function( correct.pid, wait=TRUE ){
-    
-    if ( .Platform$OS.type == "unix" ) {
-      system(paste0("kill ",correct.pid))  
-      waittime <- 2
-      if (!wait) return(TRUE)
-      Sys.sleep(.5)
-      repeat {
-        psout <- system(paste0("ps ax | grep \"^", correct.pid, ".*mserver5\""), ignore.stdout=T) 
-        if (psout != 0) break
-        message("Waiting ",waittime,"s for server shutdown (ESC or CTRL+C to abort)")
-        Sys.sleep(waittime)
-        waittime <- waittime * 2
-      }
-    } 
-    
-    if ( .Platform$OS.type == "windows" ) {
-      
-      # write the taskkill command line
-      taskkill.cmd <- 
-        paste( 
-          "taskkill" , 
-          "/PID" , 
-          correct.pid ,
-          "/F"
-        )
-      
-      # kill the same process that was loaded
-      system( taskkill.cmd )
-      
-    }
+# oh the humanity
+monetdb.server.stop <- function(correct.pid, wait=TRUE){
+  .Deprecated("monetdb.server.shutdown")
+  if (length(correct.pid) != 1) {
+    stop("Need single pid, got ", correct.pid)
   }
+  correct.pid <- as.integer(correct.pid)
+  if (.Platform$OS.type == "windows")
+    system(paste0("taskkill /F /PID ", correct.pid))
+  else
+    system(paste0("kill ", correct.pid))
+  waittime <- 2
+  if (!wait) return(TRUE)
+  Sys.sleep(.5)
+  repeat {
+    stillrunning <- F
+    if (.Platform$OS.type == "windows")
+      stillrunning <- grepl("mserver5", system2('tasklist', c('/FI "PID eq ', correct.pid, '" /FO CSV'), stdout=T)[2])
+    else
+      stillrunning <- system(paste0("ps ax | grep \"^", correct.pid, ".*mserver5\""), ignore.stdout=T) == 0
+    if (!stillrunning) break
+    message("Waiting ", waittime, "s for server shutdown (ESC or CTRL+C to abort)")
+    Sys.sleep(waittime)
+    waittime <- waittime * 2
+  }
+}
 
 monetdb.server.setup <-
   function( 
@@ -121,9 +113,9 @@ monetdb.server.setup <-
     # cannot be accessed at the same time
     dbport = 50000
   ){
-
+   .Deprecated("Consider using MonetDBLite")
     # switch all slashes to match windows
-    monetdb.program.path <- normalizePath( monetdb.program.path , mustWork = FALSE )
+    monetdb.program.path <- normalizePath(getOption("monetdb.programpath.override", monetdb.program.path), mustWork = FALSE)
     # remove trailing slash from paths, otherwise the server won't start
     monetdb.program.path <- gsub("\\\\$|/$", "", monetdb.program.path)
     database.directory <- normalizePath( database.directory , mustWork = FALSE )
@@ -157,7 +149,7 @@ monetdb.server.setup <-
     # create the dbfarm's directory
     dir.create( dbfl )
     if ( .Platform$OS.type == "windows" ) {
-      bfl <- paste0(bfl,".bat")
+      bfl <- paste0(bfl, ".bat")
 
       # first find the alleged path of mclient.exe
       mcl <- file.path( monetdb.program.path , "bin" )
@@ -169,63 +161,23 @@ monetdb.server.setup <-
       bat.contents <-
         c(
           '@echo off' ,
-          
           'setlocal' ,
-          
-          'rem figure out the folder name' ,
           paste0( 'set MONETDB=' , monetdb.program.path ) ,
-          
-          'rem extend the search path with our EXE and DLL folders' ,
-          'rem we depend on pthreadVC2.dll having been copied to the lib folder' ,
           'set PATH=%MONETDB%\\bin;%MONETDB%\\lib;%MONETDB%\\lib\\MonetDB5;%PATH%' ,
-          
-          'rem prepare the arguments to mserver5 to tell it where to put the dbfarm' ,
-          
-          'if "%APPDATA%" == "" goto usevar' ,
-          'rem if the APPDATA variable does exist, put the database there' ,
-          paste0( 'set MONETDBDIR=' , database.directory , '\\' ) ,
-          paste0( 'set MONETDBFARM="--dbpath=' , dbfl , '"' ) ,
-          'goto skipusevar' ,
-          ':usevar' ,
-          'rem if the APPDATA variable does not exist, put the database in the' ,
-          'rem installation folder (i.e. default location, so no command line argument)' ,
-          'set MONETDBDIR=%MONETDB%\\var\\MonetDB5' ,
-          'set MONETDBFARM=' ,
-          ':skipusevar' ,
-          
-          'rem the SQL log directory used to be in %MONETDBDIR%, but we now' ,
-          'rem prefer it inside the dbfarm, so move it there' ,
-          
-          'if not exist "%MONETDBDIR%\\sql_logs" goto skipmove' ,
           paste0( 
-            'for /d %%i in ("%MONETDBDIR%"\\sql_logs\\*) do move "%%i" "%MONETDBDIR%\\' ,
-            dbname , 
-            '"\\%%~ni\\sql_logs'
-          ) ,
-          'rmdir "%MONETDBDIR%\\sql_logs"' ,
-          ':skipmove' ,
-          
-          'rem start the real server' ,
-          paste0( 
-            '"%MONETDB%\\bin\\mserver5.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %* --set mapi_port=' ,
-            dbport 
-          ) ,
-          
+            '"%MONETDB%\\bin\\mserver5.exe" --daemon=yes --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" "--dbpath=',dbfl,'" %* --set mapi_port=' , dbport) ,
           'if ERRORLEVEL 1 pause' ,
-          
           'endlocal'
-          
-        )
-      
+        ) 
     }
     
     if ( .Platform$OS.type == "unix" ) { # create shell script
       bfl <- paste0(bfl,".sh")
       bat.contents <- c('#!/bin/sh',
-                        paste0( ifelse(monetdb.program.path=="","",paste0(monetdb.program.path,"/")) ,
-                                'mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
-                                dbport, " --daemon yes > /dev/null &" 
-                        ),paste0("echo $! > ",database.directory,"/mserver5.started.from.R.pid"))
+        paste0( ifelse(monetdb.program.path=="","",paste0(monetdb.program.path,"/")) ,
+                'mserver5 --set prefix=',monetdb.program.path,' --set exec_prefix=',monetdb.program.path,' --dbpath ',paste0(database.directory,"/",dbname),' --set mapi_port=' ,
+                dbport, " --daemon yes >> ",paste0(database.directory,"_",dbname,".log")," 2&>1 &" 
+        ),paste0("echo $! > ",database.directory,"/mserver5.started.from.R.pid"))
     }
     
     # write the .bat contents to a file on the local disk
@@ -238,8 +190,7 @@ monetdb.server.setup <-
   }
 
 
-monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhost", port=50000L, 
-                                                      timeout=86400L) {
+monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhost", port=50000L, timeout=86400L) {
   
   rawstr <- .monetdbd.command(passphrase, host, port, timeout)
   lines <- strsplit(rawstr, "\n", fixed=T)[[1]] # split by newline, first line is "=OK", so skip
@@ -279,4 +230,21 @@ monetdbd.liststatus <- monetdb.liststatus <- function(passphrase, host="localhos
   dbdf$scenarios <- gsub("'", ", ", dbdf$scenarios, fixed=T)
   
   return(dbdf[order(dbdf$dbname), ])
+}
+
+monetdb.server.getpid <- function (con) {
+  as.integer(dbGetQuery(con, "select value from env() where name='monet_pid'")[[1]])
+}
+
+# this is somewhat evil, no admin rights required to kill server. Even works on closed connections.
+monetdb.server.shutdown <- function(con) {
+  .Deprecated("Consider using MonetDBLite")
+  stopifnot(inherits(con, "MonetDBConnection"))
+  # reconnect with MAL scenario
+  newparms <- con@connenv$params
+  newparms$language <- "mal"
+  newconn <- do.call("dbConnect", newparms)
+  # construct and call MAL function that calls mal_exit()
+  .mapiWrite(newconn@connenv$socket, "pattern exit():void address mal_exit; user.exit();\n")
+  invisible(TRUE)
 }

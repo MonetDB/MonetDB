@@ -144,12 +144,14 @@ BZ_LIBS = "$(LIBBZIP2)\lib\libbz2$(DEBUGLIB).lib"
 BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
+!IFDEF HAVE_LIBXML
 # This is the location of the libxml2 library
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(zlib_LIBS) $(ICONV_LIBS)
+!ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
@@ -160,10 +162,6 @@ GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i$(GEOSDEBUGLIB).lib
 GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
 !ENDIF
 GEOS_INCS = -I$(LIBGEOS)\include
-
-!IFNDEF RUBY_DIR
-RUBY_DIR = lib\ruby\gems\1.9.1
-!ENDIF
 
 !IFDEF HAVE_LIBR
 # This is the location of the R library
@@ -418,11 +416,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_RUBYGEM
-	$(ECHO) HAVE_RUBYGEM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_RUBYGEM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SAMTOOLS
 	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -478,7 +471,6 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \
 	"PYTHON3=$(PYTHON3)" \
 	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
-	"RUBY_DIR=$(RUBY_DIR)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \
 	"builtby=%USER%@%COMPUTERNAME%" \

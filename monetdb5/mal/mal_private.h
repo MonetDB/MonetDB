@@ -16,8 +16,6 @@
 /* FREECLIENT is defined in the same file as Client */
 __hidden void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
-__hidden Client MCforkClient(Client c)
-	__attribute__((__visibility__("hidden")));
 __hidden int MCreadClient(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden void MCpopClientInput(Client c)
@@ -117,3 +115,7 @@ __hidden mal_export void mal_runtime_reset(void)
 __hidden mal_export void mal_scenario_reset(void)
 	__attribute__((__visibility__("hidden")));
 
+extern volatile ATOMIC_TYPE mal_running;
+#ifdef ATOMIC_LOCK
+extern MT_Lock mal_runningLock;
+#endif

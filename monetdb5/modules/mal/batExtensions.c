@@ -183,13 +183,9 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == 0)
 		throw(MAL,"bat.single","Could not create it");
 	BATseqbase(b, 0);
-    if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
-        if (u == 0 || *(str*)u == 0)
-            u = (ptr) str_nil;
-        else
-            u = (ptr) *(str *)u;
-    }
-	BUNappend(b,u, FALSE);
+	if (ATOMextern(b->ttype))
+            	u = (ptr) *(str *)u;
+	BUNappend(b, u, FALSE);
 	BBPincref(*ret = b->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }

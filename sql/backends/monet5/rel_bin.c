@@ -46,7 +46,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 			const char *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			printf("%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			fprintf(stderr, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }
@@ -541,7 +541,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (s && grp)
 			s = stmt_project(sql->sa, ext, s);
 		if (!s && right) {
-			printf("could not find %s.%s\n", (char*)e->l, (char*)e->r);
+			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 		}

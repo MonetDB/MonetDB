@@ -47,11 +47,6 @@ end user.foo;
 % int # type
 % 3 # length
 [ 123	]
-% sys.simplet # table_name
-% i # name
-% int # type
-% 3 # length
-[ 123	]
 
 # 23:37:35 >  
 # 23:37:35 >  "Done."

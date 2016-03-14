@@ -246,8 +246,9 @@ bl_destroy(void)
 
 	bat_logger = NULL;
 	if (l) {
-		logger_exit(l);
-		logger_destroy(l);
+		// FIXME: either of those corrupts stuff
+		//logger_exit(l);
+		//logger_destroy(l);
 	}
 }
 

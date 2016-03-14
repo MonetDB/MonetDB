@@ -1,0 +1,31 @@
+#!/bin/sh
+cd src
+
+CFLAGS="-I$R_INCLUDE_DIR" ./configure --enable-embedded --enable-embedded-r \
+--disable-fits --disable-geom --disable-rintegration --disable-gsl --disable-netcdf \
+--disable-jdbc --disable-merocontrol --disable-odbc --disable-console --disable-microhttpd \
+--without-openssl --without-uuid --without-curl --without-bz2 --without-lzma --without-libxml2 \
+--without-perl --without-python2 --without-python3 --without-unixodbc \
+--without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
+--enable-optimize --enable-silent-rules --disable-assert --disable-strict --disable-int128
+
+# check whether clang or gcc
+LD_PACK_START=-Wl,--whole-archive
+LD_PACK_END=-Wl,--no-whole-archive
+gcc -v 2>&1 | grep LLVM
+if [ $? == 0 ]; then
+	LD_PACK_START=-Wl,-all_load
+	LD_PACK_END=
+fi
+
+echo '
+
+libmonetdb5.so:
+	$(R_HOME)/bin/R CMD SHLIB --output $@ '$LD_PACK_START' `find $(SUBDIRS) -name "*.o" | xargs echo` '$LD_PACK_END' -lz -lpcre
+
+all: $(BUILT_SOURCES) monetdb_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive libmonetdb5.so
+
+' >> Makefile
+
+cd ..

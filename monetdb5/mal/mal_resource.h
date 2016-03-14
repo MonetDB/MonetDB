@@ -10,10 +10,11 @@
 #define _MAL_RESOURCE_H
 
 #include "mal_interpreter.h"
+#include "gdk_atomic.h"
 
-#define TIMESLICE  2000000 /* usec */
+#define TIMESLICE  (3 * 60 * 1000 * 1000) /* usec , 3 minute high priority */
 #define DELAYUNIT 2 /* ms delay in parallel processing decisions */
-#define MAX_DELAYS 1000 /* never wait forever */
+#define MAX_DELAYS 1000 /* never wait more then 2000 ms */
 
 //#define heapinfo(X,Id)	(((X) && (X)->base && ((X)->parentid == 0 || (X)->parentid == Id)) ? (X)->free : 0)
 #define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
@@ -23,6 +24,8 @@
 #ifdef USE_MAL_ADMISSION
 mal_export int MALadmission(lng argclaim, lng hotclaim);
 #endif
+
+#define FAIRNESS_THRESHOLD MAX_DELAYS * DELAYUNIT
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
 mal_export void MALresourceFairness(lng usec);

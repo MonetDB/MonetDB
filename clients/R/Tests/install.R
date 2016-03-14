@@ -7,6 +7,7 @@ if (basedir == "" || srcdir == "") {
 builddir   <- file.path(basedir, "rbuilddir")
 installdir <- file.path(basedir, "rlibdir")
 dir.create(builddir)
+if (file.exists(installdir)) unlink(installdir, recursive=T)
 dir.create(installdir)
 file.copy(from=file.path(srcdir, "..", "MonetDB.R"), to=builddir, recursive=T)
 dd <- capture.output(suppressMessages( {

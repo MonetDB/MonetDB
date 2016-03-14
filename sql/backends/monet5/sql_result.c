@@ -1868,7 +1868,7 @@ mvc_export_result(backend *b, stream *s, int res_id)
 
 	if (!s || !t)
 		return 0;
-	
+
 	/* Proudly supporting SQLstatementIntern's output flag */
 	if (b->output_format == OFMT_NONE) {
 		return 0;
@@ -1881,9 +1881,8 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (!json) {
 		mvc_export_head(b, s, res_id, TRUE);
 	}
+	assert(t->order);
 
-	if (!t->order)
-		return mvc_export_row(b, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;
