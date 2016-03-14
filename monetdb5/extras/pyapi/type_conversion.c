@@ -99,7 +99,7 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
         PyLongObject *p = (PyLongObject*) ptr;                                                                   \
         inttpe h = 0;                                                                                              \
         inttpe prev = 0;                                                                                           \
-        size_t i = Py_SIZE(p);                                                                                      \
+        ssize_t i = Py_SIZE(p);                                                                                      \
         int sign = i < 0 ? -1 : 1;                                                                               \
         i *= sign;                                                                                               \
         while (--i >= 0) {                                                                                       \
@@ -130,7 +130,7 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)              \
     bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
     { \
-        size_t i = maxsize - 1; \
+        ssize_t i = maxsize - 1; \
         tpe factor = 1; \
         if (i < 0) i = strlen(ptr) - 1; \
         *value = 0;  \
