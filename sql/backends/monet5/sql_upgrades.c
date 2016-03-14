@@ -1204,8 +1204,8 @@ sql_update_jun2016(Client c)
 
 	/* change to 99_system.sql: correct invalid FK schema ids, set them to schema id 2000 (the "sys" schema) */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"UPDATE sys.types     SET schema_id = 2000 WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n"
-			"UPDATE sys.functions SET schema_id = 2000 WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n");
+			"UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n"
+			"UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
