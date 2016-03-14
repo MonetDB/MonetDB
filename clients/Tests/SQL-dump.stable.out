@@ -108,20 +108,59 @@ SYSTEM VIEW  sys.tables
 SYSTEM VIEW  sys.tablestoragemodel
 SYSTEM VIEW  sys.tracelog
 SYSTEM VIEW  sys.users
+SYSTEM FUNCTION  sys.<
+SYSTEM FUNCTION  sys.<=
+SYSTEM FUNCTION  sys.<>
+SYSTEM FUNCTION  sys.=
+SYSTEM FUNCTION  sys.>
+SYSTEM FUNCTION  sys.>=
 SYSTEM FUNCTION  sys.abbrev
+SYSTEM FUNCTION  sys.abs
+SYSTEM FUNCTION  sys.acos
 SYSTEM FUNCTION  sys.alpha
 SYSTEM FUNCTION  sys.analyze
+SYSTEM FUNCTION  sys.and
+SYSTEM FUNCTION  sys.ascii
+SYSTEM FUNCTION  sys.asin
+SYSTEM FUNCTION  sys.atan
+SYSTEM FUNCTION  sys.avg
 SYSTEM FUNCTION  sys.bbp
+SYSTEM FUNCTION  sys.bit_and
+SYSTEM FUNCTION  sys.bit_not
+SYSTEM FUNCTION  sys.bit_or
+SYSTEM FUNCTION  sys.bit_xor
 SYSTEM FUNCTION  sys.broadcast
+SYSTEM FUNCTION  sys.ceil
+SYSTEM FUNCTION  sys.ceiling
+SYSTEM FUNCTION  sys.char_length
+SYSTEM FUNCTION  sys.character_length
 SYSTEM FUNCTION  sys.chi2prob
 SYSTEM FUNCTION  sys.clearrejects
+SYSTEM FUNCTION  sys.code
 SYSTEM FUNCTION  sys.columnsize
+SYSTEM FUNCTION  sys.concat
 SYSTEM FUNCTION  sys.contains
+SYSTEM FUNCTION  sys.copyfrom
 SYSTEM FUNCTION  sys.corr
+SYSTEM FUNCTION  sys.cos
+SYSTEM FUNCTION  sys.cosh
+SYSTEM FUNCTION  sys.cot
+SYSTEM FUNCTION  sys.count
+SYSTEM FUNCTION  sys.count_no_nil
+SYSTEM FUNCTION  sys.curdate
+SYSTEM FUNCTION  sys.current_date
+SYSTEM FUNCTION  sys.current_time
+SYSTEM FUNCTION  sys.current_timestamp
+SYSTEM FUNCTION  sys.curtime
 SYSTEM FUNCTION  sys.date_to_str
+SYSTEM FUNCTION  sys.day
+SYSTEM FUNCTION  sys.dayofmonth
+SYSTEM FUNCTION  sys.dayofweek
+SYSTEM FUNCTION  sys.dayofyear
 SYSTEM FUNCTION  sys.db_users
 SYSTEM FUNCTION  sys.debug
 SYSTEM FUNCTION  sys.degrees
+SYSTEM FUNCTION  sys.dense_rank
 SYSTEM FUNCTION  sys.dependencies_columns_on_functions
 SYSTEM FUNCTION  sys.dependencies_columns_on_indexes
 SYSTEM FUNCTION  sys.dependencies_columns_on_keys
@@ -139,17 +178,25 @@ SYSTEM FUNCTION  sys.dependencies_tables_on_triggers
 SYSTEM FUNCTION  sys.dependencies_tables_on_views
 SYSTEM FUNCTION  sys.dependencies_views_on_functions
 SYSTEM FUNCTION  sys.dependencies_views_on_triggers
+SYSTEM FUNCTION  sys.diff
+SYSTEM FUNCTION  sys.difference
+SYSTEM FUNCTION  sys.editdistance
+SYSTEM FUNCTION  sys.editdistance2
 SYSTEM FUNCTION  sys.env
 SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.epoch
 SYSTEM FUNCTION  sys.evalalgebra
+SYSTEM FUNCTION  sys.exist
+SYSTEM FUNCTION  sys.exp
 SYSTEM FUNCTION  sys.fitsattach
 SYSTEM FUNCTION  sys.fitsload
+SYSTEM FUNCTION  sys.floor
 SYSTEM FUNCTION  sys.flush_log
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
 SYSTEM FUNCTION  sys.geometrytype
 SYSTEM FUNCTION  sys.get_type
+SYSTEM FUNCTION  sys.get_value_for
 SYSTEM FUNCTION  sys.getanchor
 SYSTEM FUNCTION  sys.getbasename
 SYSTEM FUNCTION  sys.getcontent
@@ -166,25 +213,64 @@ SYSTEM FUNCTION  sys.getroboturl
 SYSTEM FUNCTION  sys.getuser
 SYSTEM FUNCTION  sys.has_m
 SYSTEM FUNCTION  sys.has_z
+SYSTEM FUNCTION  sys.hash
 SYSTEM FUNCTION  sys.hashsize
 SYSTEM FUNCTION  sys.heapsize
 SYSTEM FUNCTION  sys.host
 SYSTEM FUNCTION  sys.hostmask
+SYSTEM FUNCTION  sys.hour
+SYSTEM FUNCTION  sys.identity
+SYSTEM FUNCTION  sys.ifthenelse
 SYSTEM FUNCTION  sys.ilike
 SYSTEM FUNCTION  sys.imprintsize
+SYSTEM FUNCTION  sys.in
+SYSTEM FUNCTION  sys.index
+SYSTEM FUNCTION  sys.insert
 SYSTEM FUNCTION  sys.internaltransform
 SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
+SYSTEM FUNCTION  sys.isnull
+SYSTEM FUNCTION  sys.lcase
+SYSTEM FUNCTION  sys.left
 SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
+SYSTEM FUNCTION  sys.length
+SYSTEM FUNCTION  sys.levenshtein
 SYSTEM FUNCTION  sys.like
 SYSTEM FUNCTION  sys.listdir
 SYSTEM FUNCTION  sys.listdirpat
+SYSTEM FUNCTION  sys.local_timezone
+SYSTEM FUNCTION  sys.localtime
+SYSTEM FUNCTION  sys.localtimestamp
+SYSTEM FUNCTION  sys.locate
+SYSTEM FUNCTION  sys.log
+SYSTEM FUNCTION  sys.log10
+SYSTEM FUNCTION  sys.lower
+SYSTEM FUNCTION  sys.lpad
+SYSTEM FUNCTION  sys.ltrim
 SYSTEM FUNCTION  sys.malfunctions
 SYSTEM FUNCTION  sys.masklen
+SYSTEM FUNCTION  sys.max
 SYSTEM FUNCTION  sys.mbr
+SYSTEM FUNCTION  sys.mbr_above
+SYSTEM FUNCTION  sys.mbr_below
+SYSTEM FUNCTION  sys.mbr_contained
+SYSTEM FUNCTION  sys.mbr_contains
+SYSTEM FUNCTION  sys.mbr_distance
+SYSTEM FUNCTION  sys.mbr_equal
+SYSTEM FUNCTION  sys.mbr_left
+SYSTEM FUNCTION  sys.mbr_overlap
+SYSTEM FUNCTION  sys.mbr_overlap_or_above
+SYSTEM FUNCTION  sys.mbr_overlap_or_below
+SYSTEM FUNCTION  sys.mbr_overlap_or_left
+SYSTEM FUNCTION  sys.mbr_overlap_or_right
+SYSTEM FUNCTION  sys.mbr_right
 SYSTEM FUNCTION  sys.md5
 SYSTEM FUNCTION  sys.median
+SYSTEM FUNCTION  sys.min
+SYSTEM FUNCTION  sys.minute
+SYSTEM FUNCTION  sys.mod
+SYSTEM FUNCTION  sys.month
 SYSTEM FUNCTION  sys.ms_round
 SYSTEM FUNCTION  sys.ms_str
 SYSTEM FUNCTION  sys.ms_stuff
@@ -194,10 +280,24 @@ SYSTEM FUNCTION  sys.netcdf_importvar
 SYSTEM FUNCTION  sys.netmask
 SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
+SYSTEM FUNCTION  sys.next_value_for
+SYSTEM FUNCTION  sys.not
+SYSTEM FUNCTION  sys.not_exist
+SYSTEM FUNCTION  sys.not_ilike
+SYSTEM FUNCTION  sys.not_like
+SYSTEM FUNCTION  sys.not_unique
+SYSTEM FUNCTION  sys.not_uniques
+SYSTEM FUNCTION  sys.octet_length
 SYSTEM FUNCTION  sys.optimizer_stats
 SYSTEM FUNCTION  sys.optimizers
+SYSTEM FUNCTION  sys.or
 SYSTEM FUNCTION  sys.password_hash
+SYSTEM FUNCTION  sys.patindex
 SYSTEM FUNCTION  sys.pause
+SYSTEM FUNCTION  sys.pi
+SYSTEM FUNCTION  sys.power
+SYSTEM FUNCTION  sys.prod
+SYSTEM FUNCTION  sys.qgramnormalize
 SYSTEM FUNCTION  sys.quantile
 SYSTEM FUNCTION  sys.querycache
 SYSTEM FUNCTION  sys.querylog
@@ -208,18 +308,48 @@ SYSTEM FUNCTION  sys.querylog_empty
 SYSTEM FUNCTION  sys.querylog_enable
 SYSTEM FUNCTION  sys.queue
 SYSTEM FUNCTION  sys.radians
+SYSTEM FUNCTION  sys.rand
+SYSTEM FUNCTION  sys.rank
 SYSTEM FUNCTION  sys.rejects
+SYSTEM FUNCTION  sys.repeat
+SYSTEM FUNCTION  sys.replace
+SYSTEM FUNCTION  sys.restart
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
+SYSTEM FUNCTION  sys.right
 SYSTEM FUNCTION  sys.right_shift
 SYSTEM FUNCTION  sys.right_shift_assign
+SYSTEM FUNCTION  sys.rotate_xor_hash
+SYSTEM FUNCTION  sys.round
+SYSTEM FUNCTION  sys.row_number
+SYSTEM FUNCTION  sys.rowid
+SYSTEM FUNCTION  sys.rpad
+SYSTEM FUNCTION  sys.rtrim
+SYSTEM FUNCTION  sys.scale_down
+SYSTEM FUNCTION  sys.scale_up
+SYSTEM FUNCTION  sys.second
 SYSTEM FUNCTION  sys.sessions
 SYSTEM FUNCTION  sys.setmasklen
 SYSTEM FUNCTION  sys.setsession
 SYSTEM FUNCTION  sys.settimeout
 SYSTEM FUNCTION  sys.shrink
 SYSTEM FUNCTION  sys.shutdown
+SYSTEM FUNCTION  sys.sign
+SYSTEM FUNCTION  sys.similarity
+SYSTEM FUNCTION  sys.sin
+SYSTEM FUNCTION  sys.sinh
+SYSTEM FUNCTION  sys.soundex
+SYSTEM FUNCTION  sys.space
+SYSTEM FUNCTION  sys.splitpart
+SYSTEM FUNCTION  sys.sql_add
+SYSTEM FUNCTION  sys.sql_div
+SYSTEM FUNCTION  sys.sql_max
+SYSTEM FUNCTION  sys.sql_min
+SYSTEM FUNCTION  sys.sql_mul
+SYSTEM FUNCTION  sys.sql_neg
+SYSTEM FUNCTION  sys.sql_sub
+SYSTEM FUNCTION  sys.sqrt
 SYSTEM FUNCTION  sys.st_area
 SYSTEM FUNCTION  sys.st_asbinary
 SYSTEM FUNCTION  sys.st_asewkt
@@ -322,16 +452,30 @@ SYSTEM FUNCTION  sys.storagemodelinit
 SYSTEM FUNCTION  sys.str_to_date
 SYSTEM FUNCTION  sys.str_to_time
 SYSTEM FUNCTION  sys.str_to_timestamp
+SYSTEM FUNCTION  sys.strings
+SYSTEM FUNCTION  sys.substring
+SYSTEM FUNCTION  sys.sum
+SYSTEM FUNCTION  sys.tan
+SYSTEM FUNCTION  sys.tanh
 SYSTEM FUNCTION  sys.text
 SYSTEM FUNCTION  sys.time_to_str
 SYSTEM FUNCTION  sys.times
 SYSTEM FUNCTION  sys.timestamp_to_str
 SYSTEM FUNCTION  sys.tracelog
+SYSTEM FUNCTION  sys.trim
+SYSTEM FUNCTION  sys.truncate
+SYSTEM FUNCTION  sys.ucase
+SYSTEM FUNCTION  sys.upper
 SYSTEM FUNCTION  sys.uuid
 SYSTEM FUNCTION  sys.vacuum
 SYSTEM FUNCTION  sys.var
 SYSTEM FUNCTION  sys.var_pop
 SYSTEM FUNCTION  sys.var_samp
+SYSTEM FUNCTION  sys.week
+SYSTEM FUNCTION  sys.weekofyear
+SYSTEM FUNCTION  sys.xor
+SYSTEM FUNCTION  sys.year
+SYSTEM FUNCTION  sys.zero_or_one
 SYSTEM FUNCTION  sys.zorder_decode_x
 SYSTEM FUNCTION  sys.zorder_decode_y
 SYSTEM FUNCTION  sys.zorder_encode
@@ -647,6 +791,9 @@ return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v
 create function dependencies_views_on_triggers()
 returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
 return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
+stringdiff
+stringdiff
+stringdiff
 CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
 create function sys.environment()
 	returns table ("name" string, value string)
@@ -754,6 +901,12 @@ create function "host" (p inet) returns clob
 	external name inet."host";
 create function "hostmask" (p inet) returns inet
 	external name inet."hostmask";
+ilike
+ilike
+ilike
+ilike
+ilike
+ilike
 create filter function "ilike"(val string, pat string, esc string) external name algebra."ilike";
 create filter function "ilike"(val string, pat string) external name algebra."ilike";
 create function sys.imprintsize(i bigint, nme string)
@@ -781,10 +934,31 @@ create function sys.isauuid(u uuid)
 returns uuid external name uuid."isaUUID";
 create function sys.isauuid(u string)
 returns uuid external name uuid."isaUUID";
+mbrLeft
+mbrLeft
+<<
+<<
+<<
+<<
+<<
+<<
+<<
+<<
+<<
+<<
 create function "left_shift"(i1 inet, i2 inet) returns boolean
 	external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean
 	external name inet."<<=";
+stringlength
+stringlength
+stringlength
+like
+like
+like
+like
+like
+like
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
 
@@ -970,6 +1144,18 @@ create procedure reuse(sys string, tab string)
 	external name sql.reuse;
 create function reverse(src string)
 returns string external name udf.reverse;
+mbrRight
+mbrRight
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
 create function "right_shift"(i1 inet, i2 inet) returns boolean
 	external name inet.">>";
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean
@@ -4536,7 +4722,7 @@ COPY 4547 RECORDS INTO "sys"."args" FROM stdin USING DELIMITERS '\t','\n','"';
 4985	1039	"res_0"	"timestamptz"	7	0	0	0
 4986	1040	"res_0"	"time"	7	0	0	0
 4987	1041	"res_0"	"timestamp"	7	0	0	0
-4988	1042	"res_0"	"month_interval"	32	0	0	0
+4988	1042	"res_0"	"int"	32	0	0	0
 4989	1042	"arg_1"	"date"	0	0	1	1
 4990	1042	"arg_2"	"date"	0	0	1	2
 4991	1043	"res_0"	"sec_interval"	13	0	0	0
@@ -6615,1239 +6801,1239 @@ CREATE TABLE "sys"."functions" (
 	"schema_id"   INTEGER
 );
 COPY 1616 RECORDS INTO "sys"."functions" FROM stdin USING DELIMITERS '\t','\n','"';
-30	"mbr_overlap"	"mbrOverlaps"	"geom"	0	1	false	false	false	0
-31	"mbr_overlap"	"mbrOverlaps"	"geom"	0	1	false	false	false	0
-32	"mbr_above"	"mbrAbove"	"geom"	0	1	false	false	false	0
-33	"mbr_above"	"mbrAbove"	"geom"	0	1	false	false	false	0
-34	"mbr_below"	"mbrBelow"	"geom"	0	1	false	false	false	0
-35	"mbr_below"	"mbrBelow"	"geom"	0	1	false	false	false	0
-36	"mbr_right"	"mbrRight"	"geom"	0	1	false	false	false	0
-37	"mbr_right"	"mbrRight"	"geom"	0	1	false	false	false	0
-38	"mbr_left"	"mbrLeft"	"geom"	0	1	false	false	false	0
-39	"mbr_left"	"mbrLeft"	"geom"	0	1	false	false	false	0
-40	"mbr_overlap_or_above"	"mbrOverlapOrAbove"	"geom"	0	1	false	false	false	0
-41	"mbr_overlap_or_above"	"mbrOverlapOrAbove"	"geom"	0	1	false	false	false	0
-42	"mbr_overlap_or_below"	"mbrOverlapOrBelow"	"geom"	0	1	false	false	false	0
-43	"mbr_overlap_or_below"	"mbrOverlapOrBelow"	"geom"	0	1	false	false	false	0
-44	"mbr_overlap_or_right"	"mbrOverlapOrRight"	"geom"	0	1	false	false	false	0
-45	"mbr_overlap_or_right"	"mbrOverlapOrRight"	"geom"	0	1	false	false	false	0
-46	"mbr_overlap_or_left"	"mbrOverlapOrLeft"	"geom"	0	1	false	false	false	0
-47	"mbr_overlap_or_left"	"mbrOverlapOrLeft"	"geom"	0	1	false	false	false	0
-48	"mbr_contains"	"mbrContains"	"geom"	0	1	false	false	false	0
-49	"mbr_contains"	"mbrContains"	"geom"	0	1	false	false	false	0
-50	"mbr_contained"	"mbrContained"	"geom"	0	1	false	false	false	0
-51	"mbr_contained"	"mbrContained"	"geom"	0	1	false	false	false	0
-52	"mbr_equal"	"mbrEqual"	"geom"	0	1	false	false	false	0
-53	"mbr_equal"	"mbrEqual"	"geom"	0	1	false	false	false	0
-54	"mbr_distance"	"mbrDistance"	"geom"	0	1	false	false	false	0
-55	"mbr_distance"	"mbrDistance"	"geom"	0	1	false	false	false	0
-56	"left_shift"	"mbrLeft"	"geom"	0	1	false	false	false	0
-57	"left_shift"	"mbrLeft"	"geom"	0	1	false	false	false	0
-58	"right_shift"	"mbrRight"	"geom"	0	1	false	false	false	0
-59	"right_shift"	"mbrRight"	"geom"	0	1	false	false	false	0
-61	"not_uniques"	"not_uniques"	"sql"	0	1	false	false	false	0
-62	"not_uniques"	"not_uniques"	"sql"	0	1	false	false	false	0
-63	"hash"	"hash"	"mkey"	0	1	false	false	false	0
-64	"rotate_xor_hash"	"rotate_xor_hash"	"calc"	0	1	false	false	false	0
-65	"="	"="	"calc"	0	1	false	false	false	0
-66	"<>"	"!="	"calc"	0	1	false	false	false	0
-67	"isnull"	"isnil"	"calc"	0	1	false	false	false	0
-68	">"	">"	"calc"	0	1	false	false	false	0
-69	">="	">="	"calc"	0	1	false	false	false	0
-70	"<"	"<"	"calc"	0	1	false	false	false	0
-71	"<="	"<="	"calc"	0	1	false	false	false	0
-75	"in"	"in"	"calc"	0	1	false	false	false	0
-76	"identity"	"identity"	"calc"	0	1	false	false	false	0
-77	"rowid"	"identity"	"calc"	0	1	false	false	false	0
-78	"rowid"	"rowid"	"calc"	0	1	false	false	false	0
-81	"sql_min"	"min"	"calc"	0	1	false	false	false	0
-82	"sql_max"	"max"	"calc"	0	1	false	false	false	0
-83	"ifthenelse"	"ifthenelse"	"calc"	0	1	false	false	false	0
-101	"mod"	"%"	"calc"	0	1	false	false	false	0
-102	"mod"	"%"	"calc"	0	1	false	false	false	0
-103	"mod"	"%"	"calc"	0	1	false	false	false	0
-104	"mod"	"%"	"calc"	0	1	false	false	false	0
-105	"mod"	"%"	"calc"	0	1	false	false	false	0
-106	"mod"	"%"	"calc"	0	1	false	false	false	0
-107	"mod"	"%"	"calc"	0	1	false	false	false	0
-108	"mod"	"%"	"calc"	0	1	false	false	false	0
-109	"mod"	"%"	"calc"	0	1	false	false	false	0
-110	"mod"	"%"	"calc"	0	1	false	false	false	0
-111	"mod"	"%"	"calc"	0	1	false	false	false	0
-112	"mod"	"%"	"calc"	0	1	false	false	false	0
-122	"diff"	"diff"	"sql"	0	6	false	false	false	0
-123	"diff"	"diff"	"sql"	0	6	false	false	false	0
-124	"rank"	"rank"	"sql"	0	6	false	false	false	0
-125	"dense_rank"	"dense_rank"	"sql"	0	6	false	false	false	0
-126	"row_number"	"row_number"	"sql"	0	6	false	false	false	0
-127	"and"	"and"	"calc"	0	1	false	false	false	0
-128	"or"	"or"	"calc"	0	1	false	false	false	0
-129	"xor"	"xor"	"calc"	0	1	false	false	false	0
-130	"not"	"not"	"calc"	0	1	false	false	false	0
-131	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-132	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-133	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-134	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-135	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-136	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-137	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-138	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-139	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-140	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-141	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-142	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-143	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-144	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-145	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-146	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-147	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-148	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-149	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-150	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-151	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-152	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-153	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-154	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-155	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-156	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-157	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-158	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-159	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-160	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-161	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-162	"abs"	"abs"	"calc"	0	1	false	false	false	0
-163	"sign"	"sign"	"calc"	0	1	false	false	false	0
-164	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-165	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-166	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-167	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-168	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-169	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-170	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-171	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-172	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-173	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-174	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-175	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-176	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-177	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-178	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-179	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-180	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-181	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-182	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-183	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-184	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-185	"abs"	"abs"	"calc"	0	1	false	false	false	0
-186	"sign"	"sign"	"calc"	0	1	false	false	false	0
-187	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-188	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-189	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-190	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-191	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-192	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-193	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-194	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-195	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-196	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-197	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-198	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-199	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-200	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-201	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-202	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-203	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-204	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-205	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-206	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-207	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-208	"abs"	"abs"	"calc"	0	1	false	false	false	0
-209	"sign"	"sign"	"calc"	0	1	false	false	false	0
-210	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-211	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-212	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-213	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-214	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-215	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-216	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-217	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-218	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-219	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-220	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-221	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-222	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-223	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-224	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-225	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-226	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-227	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-228	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-229	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-230	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-231	"abs"	"abs"	"calc"	0	1	false	false	false	0
-232	"sign"	"sign"	"calc"	0	1	false	false	false	0
-233	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-234	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-235	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-236	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-237	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-238	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-239	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-240	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-241	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-242	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-243	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-244	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-245	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-246	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-247	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-248	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-249	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-250	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-251	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-252	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-253	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-254	"abs"	"abs"	"calc"	0	1	false	false	false	0
-255	"sign"	"sign"	"calc"	0	1	false	false	false	0
-256	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-257	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-258	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-259	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-260	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-261	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-262	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-263	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-264	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-265	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-266	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-267	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-268	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-269	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-270	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-271	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-272	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-273	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-274	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-275	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-276	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-277	"abs"	"abs"	"calc"	0	1	false	false	false	0
-278	"sign"	"sign"	"calc"	0	1	false	false	false	0
-279	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-280	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-281	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-282	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-283	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-284	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-285	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-286	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-287	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-288	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-289	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-290	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-291	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-292	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-293	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-294	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-295	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-296	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-297	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-298	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-299	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-300	"abs"	"abs"	"calc"	0	1	false	false	false	0
-301	"sign"	"sign"	"calc"	0	1	false	false	false	0
-302	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-303	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-304	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-305	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-306	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-307	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-308	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-309	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-310	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-311	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-312	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-313	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-314	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-315	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-316	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-317	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-318	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-319	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-320	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-321	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-322	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-323	"abs"	"abs"	"calc"	0	1	false	false	false	0
-324	"sign"	"sign"	"calc"	0	1	false	false	false	0
-325	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-326	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-327	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-328	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-329	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-330	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-331	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-332	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-333	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-334	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-335	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-336	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-337	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-338	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-339	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-340	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-341	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-342	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-343	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-344	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-345	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-346	"abs"	"abs"	"calc"	0	1	false	false	false	0
-347	"sign"	"sign"	"calc"	0	1	false	false	false	0
-348	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-349	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-350	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-351	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-352	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-353	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-354	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-355	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-356	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-357	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-358	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-359	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-360	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-361	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-362	"bit_and"	"and"	"calc"	0	1	false	false	false	0
-363	"bit_or"	"or"	"calc"	0	1	false	false	false	0
-364	"bit_xor"	"xor"	"calc"	0	1	false	false	false	0
-365	"bit_not"	"not"	"calc"	0	1	false	false	false	0
-366	"left_shift"	"<<"	"calc"	0	1	false	false	false	0
-367	"right_shift"	">>"	"calc"	0	1	false	false	false	0
-368	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-369	"abs"	"abs"	"calc"	0	1	false	false	false	0
-370	"sign"	"sign"	"calc"	0	1	false	false	false	0
-371	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-372	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-373	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-374	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-375	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-376	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-377	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-378	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-379	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-380	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-381	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-382	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-383	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-384	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-385	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-386	"abs"	"abs"	"calc"	0	1	false	false	false	0
-387	"sign"	"sign"	"calc"	0	1	false	false	false	0
-388	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-389	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-390	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-391	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-392	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-393	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-394	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-395	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-396	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-397	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-398	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-399	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-400	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-401	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-402	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-403	"abs"	"abs"	"calc"	0	1	false	false	false	0
-404	"sign"	"sign"	"calc"	0	1	false	false	false	0
-405	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-406	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-407	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-408	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-409	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-410	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-411	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-412	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-413	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-414	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-415	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-416	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-417	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-418	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-419	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-420	"abs"	"abs"	"calc"	0	1	false	false	false	0
-421	"sign"	"sign"	"calc"	0	1	false	false	false	0
-422	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-423	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-424	"sql_sub"	"-"	"calc"	0	1	false	false	false	0
-425	"sql_add"	"+"	"calc"	0	1	false	false	false	0
-426	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-427	"sql_div"	"/"	"calc"	0	1	false	false	false	0
-428	"sql_neg"	"-"	"calc"	0	1	false	false	false	0
-429	"abs"	"abs"	"calc"	0	1	false	false	false	0
-430	"sign"	"sign"	"calc"	0	1	false	false	false	0
-431	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-432	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	0
-433	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-434	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-435	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-436	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-437	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-438	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-439	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-440	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-441	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-442	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-443	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-444	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-445	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-446	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-447	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-448	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-449	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-450	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-451	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-452	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-453	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-454	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-455	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-456	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-457	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-458	"sql_mul"	"*"	"calc"	0	1	false	false	false	0
-459	"round"	"round"	"sql"	0	1	false	false	false	0
-460	"round"	"round"	"sql"	0	1	false	false	false	0
-461	"round"	"round"	"sql"	0	1	false	false	false	0
-462	"round"	"round"	"sql"	0	1	false	false	false	0
-463	"round"	"round"	"sql"	0	1	false	false	false	0
-464	"round"	"round"	"sql"	0	1	false	false	false	0
-465	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-466	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-467	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-468	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-469	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-470	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-471	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-472	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-473	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-474	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-475	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-476	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-477	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-478	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-479	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-480	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-481	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-482	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-483	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-484	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-485	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-486	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-487	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-488	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-489	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-490	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-491	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-492	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-493	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-494	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-495	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-496	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-497	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-498	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-499	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-500	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-501	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-502	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-503	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-504	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-505	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-506	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-507	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-508	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-509	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-510	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-511	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-512	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-513	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-514	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-515	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-516	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-517	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-518	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-519	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-520	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-521	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-522	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-523	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-524	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-525	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-526	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-527	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-528	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-529	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-530	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-531	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-532	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-533	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-534	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-535	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-536	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-537	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-538	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-539	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-540	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-541	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-542	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-543	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-544	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-545	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-546	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-547	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-548	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-549	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-550	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-551	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-552	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-553	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-554	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-555	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-556	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-557	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-558	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-559	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-560	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-561	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-562	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-563	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-564	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-565	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-566	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-567	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-568	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-569	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-570	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-571	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-572	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-573	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-574	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-575	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-576	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-577	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-578	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-579	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-580	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-581	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-582	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-583	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-584	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-585	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-586	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-587	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-588	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-589	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-590	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-591	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-592	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-593	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-594	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-595	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-596	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-597	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-598	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-599	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-600	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-601	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-602	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-603	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-604	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-605	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-606	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-607	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-608	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-609	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-610	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-611	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-612	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-613	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-614	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-615	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-616	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-617	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-618	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-619	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-620	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-621	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-622	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-623	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-624	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-625	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-626	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-627	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-628	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-629	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-630	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-631	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-632	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-633	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-634	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-635	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-636	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-637	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-638	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-639	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-640	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-641	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-642	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-643	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-644	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-645	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-646	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-647	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-648	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-649	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-650	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-651	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-652	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-653	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-654	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-655	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-656	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-657	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-658	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-659	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-660	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-661	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-662	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-663	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-664	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-665	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-666	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-667	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-668	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-669	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-670	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-671	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-672	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-673	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-674	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-675	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-676	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-677	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-678	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-679	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-680	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-681	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-682	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-683	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-684	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-685	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-686	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-687	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-688	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-689	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-690	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-691	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-692	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-693	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-694	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-695	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-696	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-697	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-698	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-699	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-700	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-701	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-702	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-703	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-704	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-705	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-706	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-707	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-708	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-709	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-710	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-711	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-712	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-713	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-714	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-715	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-716	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-717	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-718	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-719	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-720	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-721	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-722	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-723	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-724	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-725	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-726	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-727	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-728	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-729	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-730	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-731	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-732	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-733	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-734	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-735	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-736	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-737	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-738	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-739	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-740	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-741	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-742	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-743	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-744	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-745	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-746	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-747	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-748	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-749	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-750	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-751	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-752	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-753	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-754	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-755	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-756	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-757	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-758	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-759	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-760	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-761	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-762	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-763	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-764	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-765	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-766	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-767	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-768	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-769	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-770	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-771	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-772	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-773	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-774	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-775	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-776	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-777	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-778	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-779	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-780	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-781	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-782	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-783	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-784	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-785	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-786	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-787	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-788	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-789	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-790	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-791	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-792	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-793	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-794	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-795	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-796	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-797	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-798	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-799	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-800	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-801	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-802	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-803	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-804	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-805	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-806	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-807	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-808	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-809	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-810	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-811	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-812	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-813	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-814	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-815	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-816	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-817	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-818	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-819	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-820	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-821	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-822	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-823	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-824	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-825	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-826	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-827	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-828	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-829	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-830	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-831	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-832	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-833	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-834	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-835	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-836	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-837	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-838	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-839	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-840	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-841	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-842	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-843	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-844	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-845	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-846	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-847	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-848	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-849	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-850	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-851	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-852	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-853	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-854	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-855	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-856	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-857	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-858	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-859	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-860	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-861	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-862	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-863	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-864	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-865	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-866	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-867	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-868	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-869	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-870	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-871	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-872	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-873	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-874	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-875	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-876	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-877	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-878	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-879	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-880	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-881	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-882	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-883	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-884	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-885	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-886	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-887	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-888	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-889	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-890	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-891	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-892	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-893	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-894	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-895	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-896	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-897	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-898	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-899	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-900	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-901	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-902	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-903	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-904	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-905	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-906	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-907	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-908	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-909	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-910	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-911	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-912	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-913	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-914	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-915	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-916	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-917	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-918	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-919	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-920	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-921	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-922	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-923	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-924	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-925	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-926	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-927	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-928	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-929	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-930	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-931	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-932	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-933	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-934	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-935	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-936	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-937	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-938	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-939	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-940	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-941	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-942	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-943	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-944	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-945	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-946	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-947	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-948	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-949	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-950	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-951	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-952	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-953	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-954	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-955	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-956	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-957	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-958	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-959	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-960	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-961	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-962	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-963	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-964	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-965	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-966	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-967	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-968	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-969	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-970	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-971	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-972	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-973	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-974	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-975	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-976	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-977	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-978	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-979	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-980	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-981	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-982	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-983	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-984	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-985	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-986	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-987	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-988	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-989	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-990	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-991	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-992	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-993	"scale_up"	"*"	"calc"	0	1	false	false	false	0
-994	"power"	"pow"	"mmath"	0	1	false	false	false	0
-995	"floor"	"floor"	"mmath"	0	1	false	false	false	0
-996	"ceil"	"ceil"	"mmath"	0	1	false	false	false	0
-997	"ceiling"	"ceil"	"mmath"	0	1	false	false	false	0
-998	"sin"	"sin"	"mmath"	0	1	false	false	false	0
-999	"cos"	"cos"	"mmath"	0	1	false	false	false	0
-1000	"tan"	"tan"	"mmath"	0	1	false	false	false	0
-1001	"asin"	"asin"	"mmath"	0	1	false	false	false	0
-1002	"acos"	"acos"	"mmath"	0	1	false	false	false	0
-1003	"atan"	"atan"	"mmath"	0	1	false	false	false	0
-1004	"atan"	"atan2"	"mmath"	0	1	false	false	false	0
-1005	"sinh"	"sinh"	"mmath"	0	1	false	false	false	0
-1006	"cot"	"cot"	"mmath"	0	1	false	false	false	0
-1007	"cosh"	"cosh"	"mmath"	0	1	false	false	false	0
-1008	"tanh"	"tanh"	"mmath"	0	1	false	false	false	0
-1009	"sqrt"	"sqrt"	"mmath"	0	1	false	false	false	0
-1010	"exp"	"exp"	"mmath"	0	1	false	false	false	0
-1011	"log"	"log"	"mmath"	0	1	false	false	false	0
-1012	"log10"	"log10"	"mmath"	0	1	false	false	false	0
-1013	"power"	"pow"	"mmath"	0	1	false	false	false	0
-1014	"floor"	"floor"	"mmath"	0	1	false	false	false	0
-1015	"ceil"	"ceil"	"mmath"	0	1	false	false	false	0
-1016	"ceiling"	"ceil"	"mmath"	0	1	false	false	false	0
-1017	"sin"	"sin"	"mmath"	0	1	false	false	false	0
-1018	"cos"	"cos"	"mmath"	0	1	false	false	false	0
-1019	"tan"	"tan"	"mmath"	0	1	false	false	false	0
-1020	"asin"	"asin"	"mmath"	0	1	false	false	false	0
-1021	"acos"	"acos"	"mmath"	0	1	false	false	false	0
-1022	"atan"	"atan"	"mmath"	0	1	false	false	false	0
-1023	"atan"	"atan2"	"mmath"	0	1	false	false	false	0
-1024	"sinh"	"sinh"	"mmath"	0	1	false	false	false	0
-1025	"cot"	"cot"	"mmath"	0	1	false	false	false	0
-1026	"cosh"	"cosh"	"mmath"	0	1	false	false	false	0
-1027	"tanh"	"tanh"	"mmath"	0	1	false	false	false	0
-1028	"sqrt"	"sqrt"	"mmath"	0	1	false	false	false	0
-1029	"exp"	"exp"	"mmath"	0	1	false	false	false	0
-1030	"log"	"log"	"mmath"	0	1	false	false	false	0
-1031	"log10"	"log10"	"mmath"	0	1	false	false	false	0
-1032	"pi"	"pi"	"mmath"	0	1	false	false	false	0
-1033	"rand"	"rand"	"mmath"	0	1	true	false	false	0
-1034	"rand"	"sqlrand"	"mmath"	0	1	true	false	false	0
-1035	"curdate"	"current_date"	"mtime"	0	1	false	false	false	0
-1036	"current_date"	"current_date"	"mtime"	0	1	false	false	false	0
-1037	"curtime"	"current_time"	"mtime"	0	1	false	false	false	0
-1038	"current_time"	"current_time"	"mtime"	0	1	false	false	false	0
-1039	"current_timestamp"	"current_timestamp"	"mtime"	0	1	false	false	false	0
-1040	"localtime"	"current_time"	"sql"	0	1	false	false	false	0
-1041	"localtimestamp"	"current_timestamp"	"sql"	0	1	false	false	false	0
-1042	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1043	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1044	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1045	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1046	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	0
-1047	"sql_sub"	"date_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1048	"sql_sub"	"date_sub_month_interval"	"mtime"	0	1	false	false	false	0
-1049	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1050	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1051	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1052	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	0
-1053	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	0
-1054	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	0
-1055	"sql_add"	"date_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1056	"sql_add"	"addmonths"	"mtime"	0	1	false	false	false	0
-1057	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1058	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	0
-1059	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1060	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	0
-1061	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1062	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	0
-1063	"local_timezone"	"local_timezone"	"mtime"	0	1	false	false	false	0
-1064	"year"	"year"	"mtime"	0	1	false	false	false	0
-1065	"month"	"month"	"mtime"	0	1	false	false	false	0
-1066	"day"	"day"	"mtime"	0	1	false	false	false	0
-1067	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1068	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1069	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1070	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1071	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1072	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1073	"year"	"year"	"mtime"	0	1	false	false	false	0
-1074	"month"	"month"	"mtime"	0	1	false	false	false	0
-1075	"day"	"day"	"mtime"	0	1	false	false	false	0
-1076	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1077	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1078	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1079	"year"	"year"	"mtime"	0	1	false	false	false	0
-1080	"month"	"month"	"mtime"	0	1	false	false	false	0
-1081	"day"	"day"	"mtime"	0	1	false	false	false	0
-1082	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1083	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1084	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	0
-1085	"year"	"year"	"mtime"	0	1	false	false	false	0
-1086	"month"	"month"	"mtime"	0	1	false	false	false	0
-1087	"day"	"day"	"mtime"	0	1	false	false	false	0
-1088	"hour"	"hours"	"mtime"	0	1	false	false	false	0
-1089	"minute"	"minutes"	"mtime"	0	1	false	false	false	0
-1090	"second"	"seconds"	"mtime"	0	1	false	false	false	0
-1091	"dayofyear"	"dayofyear"	"mtime"	0	1	false	false	false	0
-1092	"weekofyear"	"weekofyear"	"mtime"	0	1	false	false	false	0
-1093	"dayofweek"	"dayofweek"	"mtime"	0	1	false	false	false	0
-1094	"dayofmonth"	"day"	"mtime"	0	1	false	false	false	0
-1095	"week"	"weekofyear"	"mtime"	0	1	false	false	false	0
-1096	"next_value_for"	"next_value"	"sql"	0	1	true	false	false	0
-1097	"get_value_for"	"get_value"	"sql"	0	1	false	false	false	0
-1098	"restart"	"restart"	"sql"	0	1	false	false	false	0
-1099	"index"	"index"	"calc"	0	1	false	false	false	0
-1100	"index"	"index"	"calc"	0	1	false	false	false	0
-1101	"index"	"index"	"calc"	0	1	false	false	false	0
-1102	"strings"	"strings"	"calc"	0	1	false	false	false	0
-1103	"locate"	"locate"	"str"	0	1	false	false	false	0
-1104	"locate"	"locate"	"str"	0	1	false	false	false	0
-1105	"splitpart"	"splitpart"	"str"	0	1	false	false	false	0
-1106	"substring"	"substring"	"str"	0	1	false	false	false	0
-1107	"substring"	"substring"	"str"	0	1	false	false	false	0
-1108	"like"	"like"	"algebra"	0	1	false	false	false	0
-1109	"like"	"like"	"algebra"	0	1	false	false	false	0
-1110	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1111	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1112	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1113	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1114	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1115	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1116	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
-1117	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
-1118	"concat"	"+"	"calc"	0	1	false	false	false	0
-1119	"ascii"	"ascii"	"str"	0	1	false	false	false	0
-1120	"code"	"unicode"	"str"	0	1	false	false	false	0
-1121	"length"	"stringlength"	"str"	0	1	false	false	false	0
-1122	"right"	"stringright"	"str"	0	1	false	false	false	0
-1123	"left"	"stringleft"	"str"	0	1	false	false	false	0
-1124	"upper"	"toUpper"	"str"	0	1	false	false	false	0
-1125	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
-1126	"lower"	"toLower"	"str"	0	1	false	false	false	0
-1127	"lcase"	"toLower"	"str"	0	1	false	false	false	0
-1128	"trim"	"trim"	"str"	0	1	false	false	false	0
-1129	"trim"	"trim"	"str"	0	1	false	false	false	0
-1130	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1131	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1132	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1133	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1134	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1135	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1136	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1137	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1138	"insert"	"insert"	"str"	0	1	false	false	false	0
-1139	"replace"	"replace"	"str"	0	1	false	false	false	0
-1140	"repeat"	"repeat"	"str"	0	1	false	false	false	0
-1141	"space"	"space"	"str"	0	1	false	false	false	0
-1142	"char_length"	"length"	"str"	0	1	false	false	false	0
-1143	"character_length"	"length"	"str"	0	1	false	false	false	0
-1144	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
-1145	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
-1146	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
-1147	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
-1148	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
-1149	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
-1150	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
-1151	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1152	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1153	"index"	"index"	"calc"	0	1	false	false	false	0
-1154	"index"	"index"	"calc"	0	1	false	false	false	0
-1155	"index"	"index"	"calc"	0	1	false	false	false	0
-1156	"strings"	"strings"	"calc"	0	1	false	false	false	0
-1157	"locate"	"locate"	"str"	0	1	false	false	false	0
-1158	"locate"	"locate"	"str"	0	1	false	false	false	0
-1159	"splitpart"	"splitpart"	"str"	0	1	false	false	false	0
-1160	"substring"	"substring"	"str"	0	1	false	false	false	0
-1161	"substring"	"substring"	"str"	0	1	false	false	false	0
-1162	"like"	"like"	"algebra"	0	1	false	false	false	0
-1163	"like"	"like"	"algebra"	0	1	false	false	false	0
-1164	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1165	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1166	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1167	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1168	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1169	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1170	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
-1171	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
-1172	"concat"	"+"	"calc"	0	1	false	false	false	0
-1173	"ascii"	"ascii"	"str"	0	1	false	false	false	0
-1174	"code"	"unicode"	"str"	0	1	false	false	false	0
-1175	"length"	"stringlength"	"str"	0	1	false	false	false	0
-1176	"right"	"stringright"	"str"	0	1	false	false	false	0
-1177	"left"	"stringleft"	"str"	0	1	false	false	false	0
-1178	"upper"	"toUpper"	"str"	0	1	false	false	false	0
-1179	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
-1180	"lower"	"toLower"	"str"	0	1	false	false	false	0
-1181	"lcase"	"toLower"	"str"	0	1	false	false	false	0
-1182	"trim"	"trim"	"str"	0	1	false	false	false	0
-1183	"trim"	"trim"	"str"	0	1	false	false	false	0
-1184	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1185	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1186	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1187	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1188	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1189	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1190	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1191	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1192	"insert"	"insert"	"str"	0	1	false	false	false	0
-1193	"replace"	"replace"	"str"	0	1	false	false	false	0
-1194	"repeat"	"repeat"	"str"	0	1	false	false	false	0
-1195	"space"	"space"	"str"	0	1	false	false	false	0
-1196	"char_length"	"length"	"str"	0	1	false	false	false	0
-1197	"character_length"	"length"	"str"	0	1	false	false	false	0
-1198	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
-1199	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
-1200	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
-1201	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
-1202	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
-1203	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
-1204	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
-1205	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1206	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1207	"index"	"index"	"calc"	0	1	false	false	false	0
-1208	"index"	"index"	"calc"	0	1	false	false	false	0
-1209	"index"	"index"	"calc"	0	1	false	false	false	0
-1210	"strings"	"strings"	"calc"	0	1	false	false	false	0
-1211	"locate"	"locate"	"str"	0	1	false	false	false	0
-1212	"locate"	"locate"	"str"	0	1	false	false	false	0
-1213	"splitpart"	"splitpart"	"str"	0	1	false	false	false	0
-1214	"substring"	"substring"	"str"	0	1	false	false	false	0
-1215	"substring"	"substring"	"str"	0	1	false	false	false	0
-1216	"like"	"like"	"algebra"	0	1	false	false	false	0
-1217	"like"	"like"	"algebra"	0	1	false	false	false	0
-1218	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1219	"ilike"	"ilike"	"algebra"	0	1	false	false	false	0
-1220	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1221	"not_like"	"not_like"	"algebra"	0	1	false	false	false	0
-1222	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1223	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	0
-1224	"patindex"	"patindex"	"pcre"	0	1	false	false	false	0
-1225	"truncate"	"stringleft"	"str"	0	1	false	false	false	0
-1226	"concat"	"+"	"calc"	0	1	false	false	false	0
-1227	"ascii"	"ascii"	"str"	0	1	false	false	false	0
-1228	"code"	"unicode"	"str"	0	1	false	false	false	0
-1229	"length"	"stringlength"	"str"	0	1	false	false	false	0
-1230	"right"	"stringright"	"str"	0	1	false	false	false	0
-1231	"left"	"stringleft"	"str"	0	1	false	false	false	0
-1232	"upper"	"toUpper"	"str"	0	1	false	false	false	0
-1233	"ucase"	"toUpper"	"str"	0	1	false	false	false	0
-1234	"lower"	"toLower"	"str"	0	1	false	false	false	0
-1235	"lcase"	"toLower"	"str"	0	1	false	false	false	0
-1236	"trim"	"trim"	"str"	0	1	false	false	false	0
-1237	"trim"	"trim"	"str"	0	1	false	false	false	0
-1238	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1239	"ltrim"	"ltrim"	"str"	0	1	false	false	false	0
-1240	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1241	"rtrim"	"rtrim"	"str"	0	1	false	false	false	0
-1242	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1243	"lpad"	"lpad"	"str"	0	1	false	false	false	0
-1244	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1245	"rpad"	"rpad"	"str"	0	1	false	false	false	0
-1246	"insert"	"insert"	"str"	0	1	false	false	false	0
-1247	"replace"	"replace"	"str"	0	1	false	false	false	0
-1248	"repeat"	"repeat"	"str"	0	1	false	false	false	0
-1249	"space"	"space"	"str"	0	1	false	false	false	0
-1250	"char_length"	"length"	"str"	0	1	false	false	false	0
-1251	"character_length"	"length"	"str"	0	1	false	false	false	0
-1252	"octet_length"	"nbytes"	"str"	0	1	false	false	false	0
-1253	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	0
-1254	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	0
-1255	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	0
-1256	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	0
-1257	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	0
-1258	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	0
-1259	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1260	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	0
-1261	"copyfrom"	"copy_from"	"sql"	0	5	false	true	false	0
-1262	"copyfrom"	"importTable"	"sql"	0	5	false	true	false	0
-60	"not_unique"	"not_unique"	"sql"	0	3	false	false	false	0
-72	"zero_or_one"	"zero_or_one"	"sql"	0	3	false	false	false	0
-73	"exist"	"exist"	"aggr"	0	3	false	false	false	0
-74	"not_exist"	"not_exist"	"aggr"	0	3	false	false	false	0
-79	"min"	"min"	"aggr"	0	3	false	false	false	0
-80	"max"	"max"	"aggr"	0	3	false	false	false	0
-84	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-85	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-86	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-87	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-88	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-89	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-90	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-91	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-92	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-93	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-94	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-95	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-96	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-97	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-98	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-99	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-100	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-113	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-114	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-115	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-116	"prod"	"prod"	"aggr"	0	3	false	false	false	0
-117	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-118	"sum"	"sum"	"aggr"	0	3	false	false	false	0
-119	"avg"	"avg"	"aggr"	0	3	false	false	false	0
-120	"count_no_nil"	"count_no_nil"	"aggr"	0	3	false	false	false	0
-121	"count"	"count"	"aggr"	0	3	false	false	false	0
+30	"mbr_overlap"	"mbrOverlaps"	"geom"	0	1	false	false	false	2000
+31	"mbr_overlap"	"mbrOverlaps"	"geom"	0	1	false	false	false	2000
+32	"mbr_above"	"mbrAbove"	"geom"	0	1	false	false	false	2000
+33	"mbr_above"	"mbrAbove"	"geom"	0	1	false	false	false	2000
+34	"mbr_below"	"mbrBelow"	"geom"	0	1	false	false	false	2000
+35	"mbr_below"	"mbrBelow"	"geom"	0	1	false	false	false	2000
+36	"mbr_right"	"mbrRight"	"geom"	0	1	false	false	false	2000
+37	"mbr_right"	"mbrRight"	"geom"	0	1	false	false	false	2000
+38	"mbr_left"	"mbrLeft"	"geom"	0	1	false	false	false	2000
+39	"mbr_left"	"mbrLeft"	"geom"	0	1	false	false	false	2000
+40	"mbr_overlap_or_above"	"mbrOverlapOrAbove"	"geom"	0	1	false	false	false	2000
+41	"mbr_overlap_or_above"	"mbrOverlapOrAbove"	"geom"	0	1	false	false	false	2000
+42	"mbr_overlap_or_below"	"mbrOverlapOrBelow"	"geom"	0	1	false	false	false	2000
+43	"mbr_overlap_or_below"	"mbrOverlapOrBelow"	"geom"	0	1	false	false	false	2000
+44	"mbr_overlap_or_right"	"mbrOverlapOrRight"	"geom"	0	1	false	false	false	2000
+45	"mbr_overlap_or_right"	"mbrOverlapOrRight"	"geom"	0	1	false	false	false	2000
+46	"mbr_overlap_or_left"	"mbrOverlapOrLeft"	"geom"	0	1	false	false	false	2000
+47	"mbr_overlap_or_left"	"mbrOverlapOrLeft"	"geom"	0	1	false	false	false	2000
+48	"mbr_contains"	"mbrContains"	"geom"	0	1	false	false	false	2000
+49	"mbr_contains"	"mbrContains"	"geom"	0	1	false	false	false	2000
+50	"mbr_contained"	"mbrContained"	"geom"	0	1	false	false	false	2000
+51	"mbr_contained"	"mbrContained"	"geom"	0	1	false	false	false	2000
+52	"mbr_equal"	"mbrEqual"	"geom"	0	1	false	false	false	2000
+53	"mbr_equal"	"mbrEqual"	"geom"	0	1	false	false	false	2000
+54	"mbr_distance"	"mbrDistance"	"geom"	0	1	false	false	false	2000
+55	"mbr_distance"	"mbrDistance"	"geom"	0	1	false	false	false	2000
+56	"left_shift"	"mbrLeft"	"geom"	0	1	false	false	false	2000
+57	"left_shift"	"mbrLeft"	"geom"	0	1	false	false	false	2000
+58	"right_shift"	"mbrRight"	"geom"	0	1	false	false	false	2000
+59	"right_shift"	"mbrRight"	"geom"	0	1	false	false	false	2000
+61	"not_uniques"	"not_uniques"	"sql"	0	1	false	false	false	2000
+62	"not_uniques"	"not_uniques"	"sql"	0	1	false	false	false	2000
+63	"hash"	"hash"	"mkey"	0	1	false	false	false	2000
+64	"rotate_xor_hash"	"rotate_xor_hash"	"calc"	0	1	false	false	false	2000
+65	"="	"="	"calc"	0	1	false	false	false	2000
+66	"<>"	"!="	"calc"	0	1	false	false	false	2000
+67	"isnull"	"isnil"	"calc"	0	1	false	false	false	2000
+68	">"	">"	"calc"	0	1	false	false	false	2000
+69	">="	">="	"calc"	0	1	false	false	false	2000
+70	"<"	"<"	"calc"	0	1	false	false	false	2000
+71	"<="	"<="	"calc"	0	1	false	false	false	2000
+75	"in"	"in"	"calc"	0	1	false	false	false	2000
+76	"identity"	"identity"	"calc"	0	1	false	false	false	2000
+77	"rowid"	"identity"	"calc"	0	1	false	false	false	2000
+78	"rowid"	"rowid"	"calc"	0	1	false	false	false	2000
+81	"sql_min"	"min"	"calc"	0	1	false	false	false	2000
+82	"sql_max"	"max"	"calc"	0	1	false	false	false	2000
+83	"ifthenelse"	"ifthenelse"	"calc"	0	1	false	false	false	2000
+101	"mod"	"%"	"calc"	0	1	false	false	false	2000
+102	"mod"	"%"	"calc"	0	1	false	false	false	2000
+103	"mod"	"%"	"calc"	0	1	false	false	false	2000
+104	"mod"	"%"	"calc"	0	1	false	false	false	2000
+105	"mod"	"%"	"calc"	0	1	false	false	false	2000
+106	"mod"	"%"	"calc"	0	1	false	false	false	2000
+107	"mod"	"%"	"calc"	0	1	false	false	false	2000
+108	"mod"	"%"	"calc"	0	1	false	false	false	2000
+109	"mod"	"%"	"calc"	0	1	false	false	false	2000
+110	"mod"	"%"	"calc"	0	1	false	false	false	2000
+111	"mod"	"%"	"calc"	0	1	false	false	false	2000
+112	"mod"	"%"	"calc"	0	1	false	false	false	2000
+122	"diff"	"diff"	"sql"	0	6	false	false	false	2000
+123	"diff"	"diff"	"sql"	0	6	false	false	false	2000
+124	"rank"	"rank"	"sql"	0	6	false	false	false	2000
+125	"dense_rank"	"dense_rank"	"sql"	0	6	false	false	false	2000
+126	"row_number"	"row_number"	"sql"	0	6	false	false	false	2000
+127	"and"	"and"	"calc"	0	1	false	false	false	2000
+128	"or"	"or"	"calc"	0	1	false	false	false	2000
+129	"xor"	"xor"	"calc"	0	1	false	false	false	2000
+130	"not"	"not"	"calc"	0	1	false	false	false	2000
+131	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+132	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+133	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+134	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+135	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+136	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+137	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+138	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+139	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+140	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+141	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+142	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+143	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+144	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+145	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+146	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+147	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+148	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+149	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+150	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+151	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+152	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+153	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+154	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+155	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+156	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+157	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+158	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+159	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+160	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+161	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+162	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+163	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+164	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+165	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+166	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+167	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+168	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+169	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+170	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+171	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+172	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+173	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+174	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+175	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+176	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+177	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+178	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+179	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+180	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+181	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+182	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+183	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+184	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+185	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+186	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+187	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+188	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+189	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+190	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+191	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+192	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+193	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+194	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+195	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+196	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+197	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+198	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+199	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+200	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+201	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+202	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+203	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+204	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+205	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+206	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+207	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+208	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+209	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+210	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+211	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+212	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+213	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+214	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+215	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+216	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+217	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+218	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+219	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+220	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+221	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+222	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+223	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+224	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+225	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+226	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+227	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+228	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+229	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+230	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+231	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+232	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+233	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+234	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+235	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+236	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+237	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+238	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+239	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+240	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+241	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+242	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+243	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+244	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+245	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+246	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+247	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+248	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+249	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+250	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+251	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+252	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+253	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+254	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+255	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+256	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+257	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+258	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+259	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+260	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+261	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+262	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+263	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+264	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+265	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+266	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+267	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+268	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+269	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+270	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+271	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+272	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+273	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+274	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+275	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+276	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+277	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+278	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+279	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+280	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+281	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+282	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+283	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+284	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+285	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+286	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+287	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+288	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+289	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+290	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+291	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+292	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+293	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+294	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+295	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+296	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+297	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+298	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+299	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+300	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+301	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+302	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+303	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+304	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+305	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+306	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+307	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+308	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+309	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+310	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+311	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+312	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+313	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+314	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+315	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+316	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+317	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+318	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+319	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+320	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+321	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+322	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+323	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+324	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+325	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+326	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+327	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+328	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+329	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+330	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+331	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+332	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+333	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+334	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+335	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+336	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+337	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+338	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+339	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+340	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+341	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+342	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+343	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+344	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+345	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+346	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+347	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+348	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+349	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+350	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+351	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+352	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+353	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+354	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+355	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+356	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+357	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+358	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+359	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+360	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+361	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+362	"bit_and"	"and"	"calc"	0	1	false	false	false	2000
+363	"bit_or"	"or"	"calc"	0	1	false	false	false	2000
+364	"bit_xor"	"xor"	"calc"	0	1	false	false	false	2000
+365	"bit_not"	"not"	"calc"	0	1	false	false	false	2000
+366	"left_shift"	"<<"	"calc"	0	1	false	false	false	2000
+367	"right_shift"	">>"	"calc"	0	1	false	false	false	2000
+368	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+369	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+370	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+371	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+372	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+373	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+374	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+375	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+376	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+377	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+378	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+379	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+380	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+381	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+382	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+383	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+384	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+385	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+386	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+387	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+388	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+389	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+390	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+391	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+392	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+393	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+394	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+395	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+396	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+397	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+398	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+399	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+400	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+401	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+402	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+403	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+404	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+405	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+406	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+407	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+408	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+409	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+410	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+411	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+412	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+413	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+414	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+415	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+416	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+417	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+418	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+419	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+420	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+421	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+422	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+423	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+424	"sql_sub"	"-"	"calc"	0	1	false	false	false	2000
+425	"sql_add"	"+"	"calc"	0	1	false	false	false	2000
+426	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+427	"sql_div"	"/"	"calc"	0	1	false	false	false	2000
+428	"sql_neg"	"-"	"calc"	0	1	false	false	false	2000
+429	"abs"	"abs"	"calc"	0	1	false	false	false	2000
+430	"sign"	"sign"	"calc"	0	1	false	false	false	2000
+431	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+432	"scale_down"	"dec_round"	"sql"	0	1	false	false	false	2000
+433	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+434	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+435	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+436	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+437	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+438	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+439	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+440	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+441	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+442	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+443	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+444	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+445	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+446	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+447	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+448	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+449	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+450	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+451	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+452	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+453	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+454	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+455	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+456	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+457	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+458	"sql_mul"	"*"	"calc"	0	1	false	false	false	2000
+459	"round"	"round"	"sql"	0	1	false	false	false	2000
+460	"round"	"round"	"sql"	0	1	false	false	false	2000
+461	"round"	"round"	"sql"	0	1	false	false	false	2000
+462	"round"	"round"	"sql"	0	1	false	false	false	2000
+463	"round"	"round"	"sql"	0	1	false	false	false	2000
+464	"round"	"round"	"sql"	0	1	false	false	false	2000
+465	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+466	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+467	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+468	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+469	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+470	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+471	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+472	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+473	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+474	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+475	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+476	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+477	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+478	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+479	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+480	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+481	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+482	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+483	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+484	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+485	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+486	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+487	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+488	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+489	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+490	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+491	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+492	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+493	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+494	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+495	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+496	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+497	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+498	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+499	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+500	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+501	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+502	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+503	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+504	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+505	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+506	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+507	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+508	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+509	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+510	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+511	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+512	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+513	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+514	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+515	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+516	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+517	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+518	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+519	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+520	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+521	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+522	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+523	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+524	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+525	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+526	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+527	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+528	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+529	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+530	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+531	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+532	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+533	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+534	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+535	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+536	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+537	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+538	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+539	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+540	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+541	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+542	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+543	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+544	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+545	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+546	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+547	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+548	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+549	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+550	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+551	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+552	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+553	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+554	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+555	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+556	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+557	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+558	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+559	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+560	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+561	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+562	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+563	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+564	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+565	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+566	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+567	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+568	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+569	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+570	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+571	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+572	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+573	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+574	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+575	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+576	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+577	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+578	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+579	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+580	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+581	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+582	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+583	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+584	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+585	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+586	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+587	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+588	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+589	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+590	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+591	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+592	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+593	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+594	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+595	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+596	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+597	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+598	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+599	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+600	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+601	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+602	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+603	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+604	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+605	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+606	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+607	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+608	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+609	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+610	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+611	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+612	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+613	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+614	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+615	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+616	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+617	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+618	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+619	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+620	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+621	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+622	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+623	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+624	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+625	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+626	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+627	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+628	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+629	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+630	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+631	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+632	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+633	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+634	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+635	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+636	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+637	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+638	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+639	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+640	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+641	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+642	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+643	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+644	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+645	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+646	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+647	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+648	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+649	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+650	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+651	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+652	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+653	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+654	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+655	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+656	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+657	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+658	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+659	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+660	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+661	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+662	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+663	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+664	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+665	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+666	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+667	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+668	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+669	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+670	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+671	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+672	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+673	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+674	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+675	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+676	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+677	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+678	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+679	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+680	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+681	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+682	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+683	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+684	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+685	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+686	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+687	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+688	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+689	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+690	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+691	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+692	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+693	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+694	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+695	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+696	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+697	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+698	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+699	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+700	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+701	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+702	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+703	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+704	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+705	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+706	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+707	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+708	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+709	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+710	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+711	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+712	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+713	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+714	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+715	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+716	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+717	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+718	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+719	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+720	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+721	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+722	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+723	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+724	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+725	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+726	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+727	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+728	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+729	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+730	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+731	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+732	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+733	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+734	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+735	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+736	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+737	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+738	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+739	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+740	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+741	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+742	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+743	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+744	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+745	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+746	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+747	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+748	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+749	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+750	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+751	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+752	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+753	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+754	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+755	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+756	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+757	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+758	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+759	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+760	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+761	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+762	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+763	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+764	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+765	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+766	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+767	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+768	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+769	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+770	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+771	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+772	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+773	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+774	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+775	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+776	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+777	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+778	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+779	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+780	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+781	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+782	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+783	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+784	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+785	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+786	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+787	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+788	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+789	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+790	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+791	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+792	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+793	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+794	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+795	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+796	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+797	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+798	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+799	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+800	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+801	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+802	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+803	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+804	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+805	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+806	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+807	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+808	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+809	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+810	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+811	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+812	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+813	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+814	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+815	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+816	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+817	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+818	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+819	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+820	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+821	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+822	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+823	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+824	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+825	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+826	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+827	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+828	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+829	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+830	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+831	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+832	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+833	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+834	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+835	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+836	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+837	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+838	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+839	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+840	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+841	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+842	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+843	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+844	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+845	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+846	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+847	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+848	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+849	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+850	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+851	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+852	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+853	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+854	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+855	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+856	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+857	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+858	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+859	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+860	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+861	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+862	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+863	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+864	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+865	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+866	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+867	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+868	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+869	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+870	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+871	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+872	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+873	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+874	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+875	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+876	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+877	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+878	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+879	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+880	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+881	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+882	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+883	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+884	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+885	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+886	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+887	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+888	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+889	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+890	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+891	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+892	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+893	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+894	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+895	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+896	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+897	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+898	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+899	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+900	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+901	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+902	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+903	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+904	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+905	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+906	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+907	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+908	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+909	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+910	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+911	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+912	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+913	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+914	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+915	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+916	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+917	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+918	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+919	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+920	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+921	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+922	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+923	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+924	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+925	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+926	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+927	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+928	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+929	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+930	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+931	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+932	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+933	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+934	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+935	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+936	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+937	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+938	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+939	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+940	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+941	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+942	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+943	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+944	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+945	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+946	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+947	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+948	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+949	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+950	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+951	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+952	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+953	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+954	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+955	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+956	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+957	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+958	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+959	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+960	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+961	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+962	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+963	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+964	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+965	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+966	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+967	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+968	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+969	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+970	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+971	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+972	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+973	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+974	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+975	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+976	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+977	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+978	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+979	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+980	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+981	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+982	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+983	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+984	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+985	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+986	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+987	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+988	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+989	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+990	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+991	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+992	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+993	"scale_up"	"*"	"calc"	0	1	false	false	false	2000
+994	"power"	"pow"	"mmath"	0	1	false	false	false	2000
+995	"floor"	"floor"	"mmath"	0	1	false	false	false	2000
+996	"ceil"	"ceil"	"mmath"	0	1	false	false	false	2000
+997	"ceiling"	"ceil"	"mmath"	0	1	false	false	false	2000
+998	"sin"	"sin"	"mmath"	0	1	false	false	false	2000
+999	"cos"	"cos"	"mmath"	0	1	false	false	false	2000
+1000	"tan"	"tan"	"mmath"	0	1	false	false	false	2000
+1001	"asin"	"asin"	"mmath"	0	1	false	false	false	2000
+1002	"acos"	"acos"	"mmath"	0	1	false	false	false	2000
+1003	"atan"	"atan"	"mmath"	0	1	false	false	false	2000
+1004	"atan"	"atan2"	"mmath"	0	1	false	false	false	2000
+1005	"sinh"	"sinh"	"mmath"	0	1	false	false	false	2000
+1006	"cot"	"cot"	"mmath"	0	1	false	false	false	2000
+1007	"cosh"	"cosh"	"mmath"	0	1	false	false	false	2000
+1008	"tanh"	"tanh"	"mmath"	0	1	false	false	false	2000
+1009	"sqrt"	"sqrt"	"mmath"	0	1	false	false	false	2000
+1010	"exp"	"exp"	"mmath"	0	1	false	false	false	2000
+1011	"log"	"log"	"mmath"	0	1	false	false	false	2000
+1012	"log10"	"log10"	"mmath"	0	1	false	false	false	2000
+1013	"power"	"pow"	"mmath"	0	1	false	false	false	2000
+1014	"floor"	"floor"	"mmath"	0	1	false	false	false	2000
+1015	"ceil"	"ceil"	"mmath"	0	1	false	false	false	2000
+1016	"ceiling"	"ceil"	"mmath"	0	1	false	false	false	2000
+1017	"sin"	"sin"	"mmath"	0	1	false	false	false	2000
+1018	"cos"	"cos"	"mmath"	0	1	false	false	false	2000
+1019	"tan"	"tan"	"mmath"	0	1	false	false	false	2000
+1020	"asin"	"asin"	"mmath"	0	1	false	false	false	2000
+1021	"acos"	"acos"	"mmath"	0	1	false	false	false	2000
+1022	"atan"	"atan"	"mmath"	0	1	false	false	false	2000
+1023	"atan"	"atan2"	"mmath"	0	1	false	false	false	2000
+1024	"sinh"	"sinh"	"mmath"	0	1	false	false	false	2000
+1025	"cot"	"cot"	"mmath"	0	1	false	false	false	2000
+1026	"cosh"	"cosh"	"mmath"	0	1	false	false	false	2000
+1027	"tanh"	"tanh"	"mmath"	0	1	false	false	false	2000
+1028	"sqrt"	"sqrt"	"mmath"	0	1	false	false	false	2000
+1029	"exp"	"exp"	"mmath"	0	1	false	false	false	2000
+1030	"log"	"log"	"mmath"	0	1	false	false	false	2000
+1031	"log10"	"log10"	"mmath"	0	1	false	false	false	2000
+1032	"pi"	"pi"	"mmath"	0	1	false	false	false	2000
+1033	"rand"	"rand"	"mmath"	0	1	true	false	false	2000
+1034	"rand"	"sqlrand"	"mmath"	0	1	true	false	false	2000
+1035	"curdate"	"current_date"	"mtime"	0	1	false	false	false	2000
+1036	"current_date"	"current_date"	"mtime"	0	1	false	false	false	2000
+1037	"curtime"	"current_time"	"mtime"	0	1	false	false	false	2000
+1038	"current_time"	"current_time"	"mtime"	0	1	false	false	false	2000
+1039	"current_timestamp"	"current_timestamp"	"mtime"	0	1	false	false	false	2000
+1040	"localtime"	"current_time"	"sql"	0	1	false	false	false	2000
+1041	"localtimestamp"	"current_timestamp"	"sql"	0	1	false	false	false	2000
+1042	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	2000
+1043	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	2000
+1044	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	2000
+1045	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	2000
+1046	"sql_sub"	"diff"	"mtime"	0	1	false	false	false	2000
+1047	"sql_sub"	"date_sub_msec_interval"	"mtime"	0	1	false	false	false	2000
+1048	"sql_sub"	"date_sub_month_interval"	"mtime"	0	1	false	false	false	2000
+1049	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	2000
+1050	"sql_sub"	"time_sub_msec_interval"	"mtime"	0	1	false	false	false	2000
+1051	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	2000
+1052	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	2000
+1053	"sql_sub"	"timestamp_sub_msec_interval"	"mtime"	0	1	false	false	false	2000
+1054	"sql_sub"	"timestamp_sub_month_interval"	"mtime"	0	1	false	false	false	2000
+1055	"sql_add"	"date_add_msec_interval"	"mtime"	0	1	false	false	false	2000
+1056	"sql_add"	"addmonths"	"mtime"	0	1	false	false	false	2000
+1057	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	2000
+1058	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	2000
+1059	"sql_add"	"timestamp_add_msec_interval"	"mtime"	0	1	false	false	false	2000
+1060	"sql_add"	"timestamp_add_month_interval"	"mtime"	0	1	false	false	false	2000
+1061	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	2000
+1062	"sql_add"	"time_add_msec_interval"	"mtime"	0	1	false	false	false	2000
+1063	"local_timezone"	"local_timezone"	"mtime"	0	1	false	false	false	2000
+1064	"year"	"year"	"mtime"	0	1	false	false	false	2000
+1065	"month"	"month"	"mtime"	0	1	false	false	false	2000
+1066	"day"	"day"	"mtime"	0	1	false	false	false	2000
+1067	"hour"	"hours"	"mtime"	0	1	false	false	false	2000
+1068	"minute"	"minutes"	"mtime"	0	1	false	false	false	2000
+1069	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	2000
+1070	"hour"	"hours"	"mtime"	0	1	false	false	false	2000
+1071	"minute"	"minutes"	"mtime"	0	1	false	false	false	2000
+1072	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	2000
+1073	"year"	"year"	"mtime"	0	1	false	false	false	2000
+1074	"month"	"month"	"mtime"	0	1	false	false	false	2000
+1075	"day"	"day"	"mtime"	0	1	false	false	false	2000
+1076	"hour"	"hours"	"mtime"	0	1	false	false	false	2000
+1077	"minute"	"minutes"	"mtime"	0	1	false	false	false	2000
+1078	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	2000
+1079	"year"	"year"	"mtime"	0	1	false	false	false	2000
+1080	"month"	"month"	"mtime"	0	1	false	false	false	2000
+1081	"day"	"day"	"mtime"	0	1	false	false	false	2000
+1082	"hour"	"hours"	"mtime"	0	1	false	false	false	2000
+1083	"minute"	"minutes"	"mtime"	0	1	false	false	false	2000
+1084	"second"	"sql_seconds"	"mtime"	0	1	false	false	false	2000
+1085	"year"	"year"	"mtime"	0	1	false	false	false	2000
+1086	"month"	"month"	"mtime"	0	1	false	false	false	2000
+1087	"day"	"day"	"mtime"	0	1	false	false	false	2000
+1088	"hour"	"hours"	"mtime"	0	1	false	false	false	2000
+1089	"minute"	"minutes"	"mtime"	0	1	false	false	false	2000
+1090	"second"	"seconds"	"mtime"	0	1	false	false	false	2000
+1091	"dayofyear"	"dayofyear"	"mtime"	0	1	false	false	false	2000
+1092	"weekofyear"	"weekofyear"	"mtime"	0	1	false	false	false	2000
+1093	"dayofweek"	"dayofweek"	"mtime"	0	1	false	false	false	2000
+1094	"dayofmonth"	"day"	"mtime"	0	1	false	false	false	2000
+1095	"week"	"weekofyear"	"mtime"	0	1	false	false	false	2000
+1096	"next_value_for"	"next_value"	"sql"	0	1	true	false	false	2000
+1097	"get_value_for"	"get_value"	"sql"	0	1	false	false	false	2000
+1098	"restart"	"restart"	"sql"	0	1	false	false	false	2000
+1099	"index"	"index"	"calc"	0	1	false	false	false	2000
+1100	"index"	"index"	"calc"	0	1	false	false	false	2000
+1101	"index"	"index"	"calc"	0	1	false	false	false	2000
+1102	"strings"	"strings"	"calc"	0	1	false	false	false	2000
+1103	"locate"	"locate"	"str"	0	1	false	false	false	2000
+1104	"locate"	"locate"	"str"	0	1	false	false	false	2000
+1105	"splitpart"	"splitpart"	"str"	0	1	false	false	false	2000
+1106	"substring"	"substring"	"str"	0	1	false	false	false	2000
+1107	"substring"	"substring"	"str"	0	1	false	false	false	2000
+1108	"like"	"like"	"algebra"	0	1	false	false	false	2000
+1109	"like"	"like"	"algebra"	0	1	false	false	false	2000
+1110	"ilike"	"ilike"	"algebra"	0	1	false	false	false	2000
+1111	"ilike"	"ilike"	"algebra"	0	1	false	false	false	2000
+1112	"not_like"	"not_like"	"algebra"	0	1	false	false	false	2000
+1113	"not_like"	"not_like"	"algebra"	0	1	false	false	false	2000
+1114	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	2000
+1115	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	2000
+1116	"patindex"	"patindex"	"pcre"	0	1	false	false	false	2000
+1117	"truncate"	"stringleft"	"str"	0	1	false	false	false	2000
+1118	"concat"	"+"	"calc"	0	1	false	false	false	2000
+1119	"ascii"	"ascii"	"str"	0	1	false	false	false	2000
+1120	"code"	"unicode"	"str"	0	1	false	false	false	2000
+1121	"length"	"stringlength"	"str"	0	1	false	false	false	2000
+1122	"right"	"stringright"	"str"	0	1	false	false	false	2000
+1123	"left"	"stringleft"	"str"	0	1	false	false	false	2000
+1124	"upper"	"toUpper"	"str"	0	1	false	false	false	2000
+1125	"ucase"	"toUpper"	"str"	0	1	false	false	false	2000
+1126	"lower"	"toLower"	"str"	0	1	false	false	false	2000
+1127	"lcase"	"toLower"	"str"	0	1	false	false	false	2000
+1128	"trim"	"trim"	"str"	0	1	false	false	false	2000
+1129	"trim"	"trim"	"str"	0	1	false	false	false	2000
+1130	"ltrim"	"ltrim"	"str"	0	1	false	false	false	2000
+1131	"ltrim"	"ltrim"	"str"	0	1	false	false	false	2000
+1132	"rtrim"	"rtrim"	"str"	0	1	false	false	false	2000
+1133	"rtrim"	"rtrim"	"str"	0	1	false	false	false	2000
+1134	"lpad"	"lpad"	"str"	0	1	false	false	false	2000
+1135	"lpad"	"lpad"	"str"	0	1	false	false	false	2000
+1136	"rpad"	"rpad"	"str"	0	1	false	false	false	2000
+1137	"rpad"	"rpad"	"str"	0	1	false	false	false	2000
+1138	"insert"	"insert"	"str"	0	1	false	false	false	2000
+1139	"replace"	"replace"	"str"	0	1	false	false	false	2000
+1140	"repeat"	"repeat"	"str"	0	1	false	false	false	2000
+1141	"space"	"space"	"str"	0	1	false	false	false	2000
+1142	"char_length"	"length"	"str"	0	1	false	false	false	2000
+1143	"character_length"	"length"	"str"	0	1	false	false	false	2000
+1144	"octet_length"	"nbytes"	"str"	0	1	false	false	false	2000
+1145	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	2000
+1146	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	2000
+1147	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	2000
+1148	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	2000
+1149	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	2000
+1150	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	2000
+1151	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	2000
+1152	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	2000
+1153	"index"	"index"	"calc"	0	1	false	false	false	2000
+1154	"index"	"index"	"calc"	0	1	false	false	false	2000
+1155	"index"	"index"	"calc"	0	1	false	false	false	2000
+1156	"strings"	"strings"	"calc"	0	1	false	false	false	2000
+1157	"locate"	"locate"	"str"	0	1	false	false	false	2000
+1158	"locate"	"locate"	"str"	0	1	false	false	false	2000
+1159	"splitpart"	"splitpart"	"str"	0	1	false	false	false	2000
+1160	"substring"	"substring"	"str"	0	1	false	false	false	2000
+1161	"substring"	"substring"	"str"	0	1	false	false	false	2000
+1162	"like"	"like"	"algebra"	0	1	false	false	false	2000
+1163	"like"	"like"	"algebra"	0	1	false	false	false	2000
+1164	"ilike"	"ilike"	"algebra"	0	1	false	false	false	2000
+1165	"ilike"	"ilike"	"algebra"	0	1	false	false	false	2000
+1166	"not_like"	"not_like"	"algebra"	0	1	false	false	false	2000
+1167	"not_like"	"not_like"	"algebra"	0	1	false	false	false	2000
+1168	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	2000
+1169	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	2000
+1170	"patindex"	"patindex"	"pcre"	0	1	false	false	false	2000
+1171	"truncate"	"stringleft"	"str"	0	1	false	false	false	2000
+1172	"concat"	"+"	"calc"	0	1	false	false	false	2000
+1173	"ascii"	"ascii"	"str"	0	1	false	false	false	2000
+1174	"code"	"unicode"	"str"	0	1	false	false	false	2000
+1175	"length"	"stringlength"	"str"	0	1	false	false	false	2000
+1176	"right"	"stringright"	"str"	0	1	false	false	false	2000
+1177	"left"	"stringleft"	"str"	0	1	false	false	false	2000
+1178	"upper"	"toUpper"	"str"	0	1	false	false	false	2000
+1179	"ucase"	"toUpper"	"str"	0	1	false	false	false	2000
+1180	"lower"	"toLower"	"str"	0	1	false	false	false	2000
+1181	"lcase"	"toLower"	"str"	0	1	false	false	false	2000
+1182	"trim"	"trim"	"str"	0	1	false	false	false	2000
+1183	"trim"	"trim"	"str"	0	1	false	false	false	2000
+1184	"ltrim"	"ltrim"	"str"	0	1	false	false	false	2000
+1185	"ltrim"	"ltrim"	"str"	0	1	false	false	false	2000
+1186	"rtrim"	"rtrim"	"str"	0	1	false	false	false	2000
+1187	"rtrim"	"rtrim"	"str"	0	1	false	false	false	2000
+1188	"lpad"	"lpad"	"str"	0	1	false	false	false	2000
+1189	"lpad"	"lpad"	"str"	0	1	false	false	false	2000
+1190	"rpad"	"rpad"	"str"	0	1	false	false	false	2000
+1191	"rpad"	"rpad"	"str"	0	1	false	false	false	2000
+1192	"insert"	"insert"	"str"	0	1	false	false	false	2000
+1193	"replace"	"replace"	"str"	0	1	false	false	false	2000
+1194	"repeat"	"repeat"	"str"	0	1	false	false	false	2000
+1195	"space"	"space"	"str"	0	1	false	false	false	2000
+1196	"char_length"	"length"	"str"	0	1	false	false	false	2000
+1197	"character_length"	"length"	"str"	0	1	false	false	false	2000
+1198	"octet_length"	"nbytes"	"str"	0	1	false	false	false	2000
+1199	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	2000
+1200	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	2000
+1201	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	2000
+1202	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	2000
+1203	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	2000
+1204	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	2000
+1205	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	2000
+1206	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	2000
+1207	"index"	"index"	"calc"	0	1	false	false	false	2000
+1208	"index"	"index"	"calc"	0	1	false	false	false	2000
+1209	"index"	"index"	"calc"	0	1	false	false	false	2000
+1210	"strings"	"strings"	"calc"	0	1	false	false	false	2000
+1211	"locate"	"locate"	"str"	0	1	false	false	false	2000
+1212	"locate"	"locate"	"str"	0	1	false	false	false	2000
+1213	"splitpart"	"splitpart"	"str"	0	1	false	false	false	2000
+1214	"substring"	"substring"	"str"	0	1	false	false	false	2000
+1215	"substring"	"substring"	"str"	0	1	false	false	false	2000
+1216	"like"	"like"	"algebra"	0	1	false	false	false	2000
+1217	"like"	"like"	"algebra"	0	1	false	false	false	2000
+1218	"ilike"	"ilike"	"algebra"	0	1	false	false	false	2000
+1219	"ilike"	"ilike"	"algebra"	0	1	false	false	false	2000
+1220	"not_like"	"not_like"	"algebra"	0	1	false	false	false	2000
+1221	"not_like"	"not_like"	"algebra"	0	1	false	false	false	2000
+1222	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	2000
+1223	"not_ilike"	"not_ilike"	"algebra"	0	1	false	false	false	2000
+1224	"patindex"	"patindex"	"pcre"	0	1	false	false	false	2000
+1225	"truncate"	"stringleft"	"str"	0	1	false	false	false	2000
+1226	"concat"	"+"	"calc"	0	1	false	false	false	2000
+1227	"ascii"	"ascii"	"str"	0	1	false	false	false	2000
+1228	"code"	"unicode"	"str"	0	1	false	false	false	2000
+1229	"length"	"stringlength"	"str"	0	1	false	false	false	2000
+1230	"right"	"stringright"	"str"	0	1	false	false	false	2000
+1231	"left"	"stringleft"	"str"	0	1	false	false	false	2000
+1232	"upper"	"toUpper"	"str"	0	1	false	false	false	2000
+1233	"ucase"	"toUpper"	"str"	0	1	false	false	false	2000
+1234	"lower"	"toLower"	"str"	0	1	false	false	false	2000
+1235	"lcase"	"toLower"	"str"	0	1	false	false	false	2000
+1236	"trim"	"trim"	"str"	0	1	false	false	false	2000
+1237	"trim"	"trim"	"str"	0	1	false	false	false	2000
+1238	"ltrim"	"ltrim"	"str"	0	1	false	false	false	2000
+1239	"ltrim"	"ltrim"	"str"	0	1	false	false	false	2000
+1240	"rtrim"	"rtrim"	"str"	0	1	false	false	false	2000
+1241	"rtrim"	"rtrim"	"str"	0	1	false	false	false	2000
+1242	"lpad"	"lpad"	"str"	0	1	false	false	false	2000
+1243	"lpad"	"lpad"	"str"	0	1	false	false	false	2000
+1244	"rpad"	"rpad"	"str"	0	1	false	false	false	2000
+1245	"rpad"	"rpad"	"str"	0	1	false	false	false	2000
+1246	"insert"	"insert"	"str"	0	1	false	false	false	2000
+1247	"replace"	"replace"	"str"	0	1	false	false	false	2000
+1248	"repeat"	"repeat"	"str"	0	1	false	false	false	2000
+1249	"space"	"space"	"str"	0	1	false	false	false	2000
+1250	"char_length"	"length"	"str"	0	1	false	false	false	2000
+1251	"character_length"	"length"	"str"	0	1	false	false	false	2000
+1252	"octet_length"	"nbytes"	"str"	0	1	false	false	false	2000
+1253	"soundex"	"soundex"	"txtsim"	0	1	false	false	false	2000
+1254	"difference"	"stringdiff"	"txtsim"	0	1	false	false	false	2000
+1255	"editdistance"	"editdistance"	"txtsim"	0	1	false	false	false	2000
+1256	"editdistance2"	"editdistance2"	"txtsim"	0	1	false	false	false	2000
+1257	"similarity"	"similarity"	"txtsim"	0	1	false	false	false	2000
+1258	"qgramnormalize"	"qgramnormalize"	"txtsim"	0	1	false	false	false	2000
+1259	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	2000
+1260	"levenshtein"	"levenshtein"	"txtsim"	0	1	false	false	false	2000
+1261	"copyfrom"	"copy_from"	"sql"	0	5	false	true	false	2000
+1262	"copyfrom"	"importTable"	"sql"	0	5	false	true	false	2000
+60	"not_unique"	"not_unique"	"sql"	0	3	false	false	false	2000
+72	"zero_or_one"	"zero_or_one"	"sql"	0	3	false	false	false	2000
+73	"exist"	"exist"	"aggr"	0	3	false	false	false	2000
+74	"not_exist"	"not_exist"	"aggr"	0	3	false	false	false	2000
+79	"min"	"min"	"aggr"	0	3	false	false	false	2000
+80	"max"	"max"	"aggr"	0	3	false	false	false	2000
+84	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+85	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+86	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+87	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+88	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+89	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+90	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+91	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+92	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+93	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+94	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+95	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+96	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+97	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+98	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+99	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+100	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+113	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+114	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+115	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+116	"prod"	"prod"	"aggr"	0	3	false	false	false	2000
+117	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+118	"sum"	"sum"	"aggr"	0	3	false	false	false	2000
+119	"avg"	"avg"	"aggr"	0	3	false	false	false	2000
+120	"count_no_nil"	"count_no_nil"	"aggr"	0	3	false	false	false	2000
+121	"count"	"count"	"aggr"	0	3	false	false	false	2000
 5702	"env"	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;"	"sql"	2	5	false	false	false	2000
 5705	"var"	"CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;"	"sql"	2	5	false	false	false	2000
 5711	"db_users"	"CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;"	"sql"	2	5	false	false	false	2000
@@ -10079,36 +10265,36 @@ CREATE TABLE "sys"."types" (
 	"schema_id"  INTEGER
 );
 COPY 34 RECORDS INTO "sys"."types" FROM stdin USING DELIMITERS '\t','\n','"';
-0	"void"	"any"	0	0	0	0	0
-1	"bat"	"table"	0	0	0	1	0
-2	"ptr"	"ptr"	0	0	0	1	0
-3	"bit"	"boolean"	1	0	2	2	0
-4	"str"	"char"	0	0	0	3	0
-5	"str"	"varchar"	0	0	0	4	0
-6	"str"	"clob"	0	0	0	4	0
-7	"oid"	"oid"	63	0	2	6	0
-8	"bte"	"tinyint"	8	1	2	7	0
-9	"sht"	"smallint"	16	1	2	7	0
-10	"int"	"int"	32	1	2	7	0
-11	"lng"	"bigint"	64	1	2	7	0
-12	"wrd"	"wrd"	64	1	2	7	0
-13	"bte"	"decimal"	2	1	10	10	0
-14	"sht"	"decimal"	4	1	10	10	0
-15	"int"	"decimal"	9	1	10	10	0
-16	"lng"	"decimal"	19	1	10	10	0
-17	"flt"	"real"	24	2	2	11	0
-18	"dbl"	"double"	53	2	2	11	0
-19	"int"	"month_interval"	32	0	2	8	0
-20	"lng"	"sec_interval"	13	1	10	9	0
-21	"daytime"	"time"	7	0	0	12	0
-22	"daytime"	"timetz"	7	1	0	12	0
-23	"date"	"date"	0	0	0	13	0
-24	"timestamp"	"timestamp"	7	0	0	14	0
-25	"timestamp"	"timestamptz"	7	1	0	14	0
-26	"sqlblob"	"blob"	0	0	0	5	0
-27	"wkb"	"geometry"	0	0	0	15	0
-28	"wkba"	"geometrya"	0	0	0	16	0
-29	"mbr"	"mbr"	0	0	0	16	0
+0	"void"	"any"	0	0	0	0	2000
+1	"bat"	"table"	0	0	0	1	2000
+2	"ptr"	"ptr"	0	0	0	1	2000
+3	"bit"	"boolean"	1	0	2	2	2000
+4	"str"	"char"	0	0	0	3	2000
+5	"str"	"varchar"	0	0	0	4	2000
+6	"str"	"clob"	0	0	0	4	2000
+7	"oid"	"oid"	63	0	2	6	2000
+8	"bte"	"tinyint"	8	1	2	7	2000
+9	"sht"	"smallint"	16	1	2	7	2000
+10	"int"	"int"	32	1	2	7	2000
+11	"lng"	"bigint"	64	1	2	7	2000
+12	"wrd"	"wrd"	64	1	2	7	2000
+13	"bte"	"decimal"	2	1	10	10	2000
+14	"sht"	"decimal"	4	1	10	10	2000
+15	"int"	"decimal"	9	1	10	10	2000
+16	"lng"	"decimal"	19	1	10	10	2000
+17	"flt"	"real"	24	2	2	11	2000
+18	"dbl"	"double"	53	2	2	11	2000
+19	"int"	"month_interval"	32	0	2	8	2000
+20	"lng"	"sec_interval"	13	1	10	9	2000
+21	"daytime"	"time"	7	0	0	12	2000
+22	"daytime"	"timetz"	7	1	0	12	2000
+23	"date"	"date"	0	0	0	13	2000
+24	"timestamp"	"timestamp"	7	0	0	14	2000
+25	"timestamp"	"timestamptz"	7	1	0	14	2000
+26	"sqlblob"	"blob"	0	0	0	5	2000
+27	"wkb"	"geometry"	0	0	0	15	2000
+28	"wkba"	"geometrya"	0	0	0	16	2000
+29	"mbr"	"mbr"	0	0	0	16	2000
 5758	"url"	"url"	0	0	0	16	2000
 5858	"inet"	"inet"	0	0	0	16	2000
 7207	"json"	"json"	0	0	0	16	2000
