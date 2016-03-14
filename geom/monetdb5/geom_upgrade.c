@@ -120,10 +120,50 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 	BATiter cti, cdi, csi;
 	char *s = "sys", n[64];
 	BUN p,q;
-	char *nt[] = {"types_id", "types_systemname", "types_sqlname", "types_digits", "types_scale", "types_radix", "types_eclass", "types_schema_id"};
-	unsigned char ntt[] = {TYPE_int, TYPE_str, TYPE_str, TYPE_int, TYPE_int, TYPE_int, TYPE_int, TYPE_int};
-	char *nf[] = {"functions_id", "functions_name", "functions_func", "functions_mod", "functions_language", "functions_type", "functions_side_effect", "functions_varres", "functions_vararg", "functions_schema_id"};
-	unsigned char nft[] = {TYPE_int, TYPE_str, TYPE_str, TYPE_str, TYPE_int, TYPE_int, TYPE_bit, TYPE_bit, TYPE_bit, TYPE_int};
+	char *nt[] = {
+		"types_id",
+		"types_systemname",
+		"types_sqlname",
+		"types_digits",
+		"types_scale",
+		"types_radix",
+		"types_eclass",
+		"types_schema_id"
+	};
+	unsigned char ntt[] = {
+		TYPE_int,
+		TYPE_str,
+		TYPE_str,
+		TYPE_int,
+		TYPE_int,
+		TYPE_int,
+		TYPE_int,
+		TYPE_int
+	};
+	char *nf[] = {
+		"functions_id",
+		"functions_name",
+		"functions_func",
+		"functions_mod",
+		"functions_language",
+		"functions_type",
+		"functions_side_effect",
+		"functions_varres",
+		"functions_vararg",
+		"functions_schema_id"
+	};
+	unsigned char nft[] = {
+		TYPE_int,
+		TYPE_str,
+		TYPE_str,
+		TYPE_str,
+		TYPE_int,
+		TYPE_int,
+		TYPE_bit,
+		TYPE_bit,
+		TYPE_bit,
+		TYPE_int
+	};
 	BAT *tt[8], *ttn[8], *ff[10], *ffn[10];
 	BATiter tti[8], ffi[10];
 	int val, maxid, i;
@@ -4529,7 +4569,12 @@ geom_sql_upgrade(int olddb)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name in ("
 			"'contains', 'geometrytype', 'getproj4', 'get_type', "
-			"'has_m', 'has_z', 'internaltransform', 'mbr', "
+			"'has_m', 'has_z', 'internaltransform', 'left_shift', "
+			"'mbr', 'mbr_above', 'mbr_below', 'mbr_contained', "
+			"'mbr_contains', 'mbr_distance', 'mbr_equal', "
+			"'mbr_left', 'mbr_overlap', 'mbr_overlap_or_above', "
+			"'mbr_overlap_or_below', 'mbr_overlap_or_left', "
+			"'mbr_overlap_or_right', 'mbr_right', 'right_shift', "
 			"'st_area', 'st_asbinary', 'st_asewkt', 'st_astext', "
 			"'st_bdmpolyfromtext', 'st_bdpolyfromtext', "
 			"'st_boundary', 'st_buffer', 'st_centroid', "
