@@ -4973,7 +4973,6 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		sname = qname_schema(window_function->data.lval);
 	} else { /* window aggr function */
 		dnode *n = window_function->data.lval->h;
-		assert(0);
 		aname = qname_fname(n->data.lval);
 		sname = qname_schema(n->data.lval);
 	}
