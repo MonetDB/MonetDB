@@ -16,8 +16,6 @@
 /* FREECLIENT is defined in the same file as Client */
 __hidden void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
-__hidden Client MCforkClient(Client c)
-	__attribute__((__visibility__("hidden")));
 __hidden int MCreadClient(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden void MCpopClientInput(Client c)

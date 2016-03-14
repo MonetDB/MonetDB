@@ -17,7 +17,9 @@
 # include <uuid/uuid.h>
 #endif
 #ifndef HAVE_UUID
+#ifdef HAVE_OPENSSL
 # include <openssl/rand.h>
+#endif
 #endif
 
 /**
@@ -41,8 +43,8 @@ generateUUID(void)
 	/* try to do some pseudo interesting stuff, and stash it in the
 	 * format of a UUID to at least return some uniform answer */
 	char out[37];
+#ifdef HAVE_OPENSSL
 	unsigned char randbuf[16];
-
 	if (RAND_bytes(randbuf, 16) >= 0) {
 		snprintf(out, sizeof(out),
 			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
@@ -52,6 +54,7 @@ generateUUID(void)
 			 randbuf[8], randbuf[9], randbuf[10], randbuf[11],
 			 randbuf[12], randbuf[13], randbuf[14], randbuf[15]);
 	} else {
+#endif
 		/* generate something like this:
 		 * cefa7a9c-1dd2-11b2-8350-880020adbeef
 		 * ("%08x-%04x-%04x-%04x-%012x") */
@@ -61,7 +64,9 @@ generateUUID(void)
 			 rand() % 65536, rand() % 65536,
 			 rand() % 65536, rand() % 65536,
 			 rand() % 65536, rand() % 65536);
+#ifdef HAVE_OPENSSL
 	}
+#endif
 #endif
 	return strdup(out);
 }

@@ -1,11 +1,11 @@
 stderr of test 'simpleSQL` in directory 'sql/backends/monet5` itself:
 
 
-# 23:37:35 >  
-# 23:37:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30175" "--set" "mapi_usock=/var/tmp/mtest-28801/.s.monetdb.30175" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_backends_monet5" "simpleSQL.mal"
-# 23:37:35 >  
+# 11:36:51 >  
+# 11:36:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37368" "--set" "mapi_usock=/var/tmp/mtest-33376/.s.monetdb.37368" "--set" "monet_prompt=" "--forcemito" "--dbpath=/tmp/fuckit/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes"
+# 11:36:51 >  
 
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /tmp/fuckit/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,38 +17,19 @@ stderr of test 'simpleSQL` in directory 'sql/backends/monet5` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 30175
-# cmdline opt 	mapi_usock = /var/tmp/mtest-28801/.s.monetdb.30175
+# cmdline opt 	mapi_port = 37368
+# cmdline opt 	mapi_usock = /var/tmp/mtest-33376/.s.monetdb.37368
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_dbpath = /tmp/fuckit/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 13:03:24 >  
-# 13:03:24 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-21282" "--port=38130"
-# 13:03:24 >  
+# 11:36:52 >  
+# 11:36:52 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-33376" "--port=37368"
+# 11:36:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21282/.s.monetdb.38130
-QUERY = #execute simple SQL queries from MAL 
-        function foo();
-        sql.init();
-        sql.eval("select 1;",true);
-        
-        sql.eval("create table simpleT(i integer);");
-        sql.eval("insert into simpleT values(123);");
-        
-        sql.eval("select * from simpleT;");
-        sql.eval("select * from simpleT;",false);
-        sql.eval("drop table simpleT;");
-        
-        #cause an error
-        sql.eval("select 1;",false);
-        end foo;
-        mdb.list("user","foo");
-        user.foo();
-ERROR = !SQLException:sql.exportValue:failed
 
-# 13:03:24 >  
-# 13:03:24 >  "Done."
-# 13:03:24 >  
+# 11:36:52 >  
+# 11:36:52 >  "Done."
+# 11:36:52 >  
 

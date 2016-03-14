@@ -69,6 +69,7 @@ malOpenSource(str file)
 	return fd;
 }
 
+#ifndef HAVE_EMBEDDED
 /*
  * The malLoadScript routine merely reads the contents of a file into
  * the input buffer of the client. It is typically used in situations
@@ -97,6 +98,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
 	return MAL_SUCCEED;
 }
+#endif
 
 /*
  * Beware that we have to isolate the execution of the source file
@@ -154,6 +156,10 @@ malLoadScript(Client c, str name, bstream **fdin)
 	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
 
+
+#ifdef HAVE_EMBEDDED
+extern char* mal_init_inline;
+#endif
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
@@ -181,9 +187,28 @@ malInclude(Client c, str name, int listing)
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
-
 	c->fdin = NULL;
 
+#ifdef HAVE_EMBEDDED
+	(void) filename;
+	(void) p;
+	{
+		size_t mal_init_len = strlen(mal_init_inline);
+		buffer* mal_init_buf = buffer_create(mal_init_len);
+		stream* mal_init_stream = buffer_rastream(mal_init_buf, name);
+		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
+		c->srcFile = name;
+		c->yycur = 0;
+		c->bak = NULL;
+		c->fdin = bstream_create(mal_init_stream, mal_init_len);
+		bstream_next(c->fdin);
+		parseMAL(c, c->curprg, 1);
+		free(mal_init_buf);
+		free(mal_init_stream);
+		free(c->fdin);
+		c->fdin = NULL;
+	}
+#else
 	if ((filename = malResolveFile(name)) != NULL) {
 		name = filename;
 		do {
@@ -193,13 +218,9 @@ malInclude(Client c, str name, int listing)
 			c->srcFile = filename;
 			c->yycur = 0;
 			c->bak = NULL;
-			if ((s = malLoadScript(c, filename, &c->fdin)) == 0) {
+			if ((s = malLoadScript(c, filename, &c->fdin)) == MAL_SUCCEED) {
 				parseMAL(c, c->curprg, 1);
 				bstream_destroy(c->fdin);
-/*
-				mnstr_printf(c->fdout,"\n# file %s\n",name);
-				printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
-*/
 			} else {
 				GDKfree(s); // not interested in error here
 				s = MAL_SUCCEED;
@@ -210,7 +231,7 @@ malInclude(Client c, str name, int listing)
 		GDKfree(name);
 		c->fdin = NULL;
 	}
-
+#endif
 	restoreClient;
 	return s;
 }

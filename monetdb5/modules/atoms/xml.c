@@ -17,10 +17,10 @@
 #include "monetdb_config.h"
 #include "xml.h"
 #include "mal_interpreter.h"
-
+#ifdef HAVE_LIBXML
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
-
+#endif
 /* The xml atom is used to represent XML data.  It is implemented as a
    subtype of str.  The first character of the string representation
    indicates the type of XML data.  There are three possibilities:
@@ -29,6 +29,7 @@
    * A - XML name/attribute pair.
 */
 
+#ifdef HAVE_LIBXML
 size_t
 XMLquotestring(const char *s, char *buf, size_t len)
 {
@@ -675,4 +676,130 @@ XMLtoString(str *s, int *len, xml src)
 	return *len;
 }
 
+#else
 
+#define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
+
+int XMLfromString(str src, int *len, xml *x) {
+	(void) src;
+	(void) len;
+	(void) x;
+	return -1;
+}
+int XMLtoString(str *s, int *len, xml src) {
+	(void) s;
+	(void) len;
+	(void) src;
+	return -1;
+}
+str XMLxml2str(str *s, xml *x) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLstr2xml(xml *x, str *s) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLxmltext(str *s, xml *x) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLxml2xml(xml *x, xml *s) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLdocument(xml *x, str *s) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLcontent(xml *x, str *s) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLisdocument(bit *x, str *s) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLcomment(xml *x, str *s) {
+	(void) s;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLpi(xml *x, str *target, str *s) {
+	(void) s;
+	(void) target;
+	(void) x;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLroot(xml *x, xml *v, str *version, str *standalone) {
+	(void) x;
+	(void) v;
+	(void) version;
+	(void) standalone;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLparse(xml *x, str *doccont, str *s, str *option) {
+	(void) x;
+	(void) doccont;
+	(void) s;
+	(void) option;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLattribute(xml *ret, str *name, str *val) {
+	(void) ret;
+	(void) name;
+	(void) val;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
+	(void) ret;
+	(void) name;
+	(void) nspace;
+	(void) attr;
+	(void) val;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLelementSmall(xml *ret, str *name, xml *val) {
+	(void) ret;
+	(void) name;
+	(void) val;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLconcat(xml *ret, xml *left, xml *right) {
+	(void) ret;
+	(void) left;
+	(void) right;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	return GDKstrdup(NO_LIBXML_FATAL);
+}
+size_t XMLquotestring(const char *s, char *buf, size_t len) {
+	(void) s;
+	(void) buf;
+	(void) len;
+	return 0;
+}
+size_t XMLunquotestring(const char **p, char q, char *buf) {
+	(void) p;
+	(void) q;
+	(void) buf;
+	return 0;
+}
+str XMLprelude(void *ret) {
+	(void) ret;
+	return MAL_SUCCEED; /* to not break init */
+}
+
+#endif

@@ -715,10 +715,11 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
+#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
-
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
+#endif
 	return 0;
 }
 
@@ -947,10 +948,9 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 #endif
 
 void *
-mdlopen(const char *library, int mode)
+mdlopen(const char *file, int mode)
 {
-	(void) mode;
-	return GetModuleHandle(library);
+	return dlopen(file, mode);
 }
 
 void *

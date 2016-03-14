@@ -1,17 +1,35 @@
+1.0.1
+- added isIdCurrent for improved compatibility with RSQLite
+- new option monetdb.log.query allows export of dbSendQuery statements to file
+- no longer depends on DBI but imports it. Preferred way of constructing connections: library(DBI); con <- dbConnect(MonetDB.R::MonetDB(), ...)
+
 1.0.0
 - Added support for esoteric data types such as MONTH_INTERVAL (Thanks, Roman)
 - Cleaned up SQL to R type mapping (we had this twice)
 - Now creating actual R integers if data fits
 - dbWriteTable now quotes table/column names if necessary, and outputs warnings if it did
 - New mdbapply function to automatically create and run embedded R functions in MonetDB
-- Fixes for dplyr backend (Thanks, Anthony)
+- Fixes for dplyr backend
 - Fix for case when query only returns a prompt (CALL ..., Thanks, Roman)
 - Fix for empty result set on dbGetQuery(), no longer returning NULL (Thanks, Fabian)
-- Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey (Thanks, Anthony)
-- Added col.names argument to monet.read.csv()
+- Fix for dbConnect(), it ignored the url parameter somehow, which broke some sqlsurvey
 - Added lower.case.names argument to monet.read.csv() in case users want to avoid quoting (a bit)
 - Fix for dbConnect() that should be more robust to invalid connections
 - Cleaned up quoting behavior in dbListTables(), dbRemoveTable() etc.
+- Now re-establishing connection if interrupt (CMD-C or ESC) occurs
+- Fixed a bug in monetdb.read.csv for multiple CSV files without headers
+- Added transactions to monetdb.read.csv so no empty tables are left over
+- Removed nrows parameter to monetdb.read.csv
+- Added col.names argument to monetdb.read.csv
+- dplyr src_monetdb now has a con parameter to pass an existing DBI connection
+- Fixed a bug when running in a non-UTF8 locale (Thanks, Marcis)
+- Fixed a bug when dbWriteTable would not adhere to transactional semantics
+- Fixed != comparisions in dplyr (Thanks, David)
+- Support for running MonetDB in embedded mode (MonetDBLite)
+- Support for monetdblite:/some/path URLs in dbConnect()
+- Fixed an off-by-one error in type conversion (Thanks, Kirill)
+- Wait support for monetdb.server.stop on Windows 
+- dbWriteTable now invokes monetdb.read.csv when called with a character vector as value argument
 
 0.9.7
 - Fixed crash on Windows (Sorry, everyone)

@@ -367,7 +367,7 @@ MT_init(void)
 	if (_MT_pagesize <= 0)
 		_MT_pagesize = 4096;	/* default */
 
-#ifdef _MSC_VER
+#ifdef WIN32
 	{
 		MEMORYSTATUSEX memStatEx;
 
@@ -1096,8 +1096,10 @@ GDKinit(opt *set, int setlen)
 #endif
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
+#ifndef __MINGW32__ // MinGW does not have these
 	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
 	_set_error_mode(_OUT_TO_STDERR);
+#endif
 #endif
 	/* now try to lock the database */
 	GDKlockHome();
@@ -1296,7 +1298,7 @@ GDKreset(int status)
 	MT_lock_unset(&GDKthreadLock);
 
 	if (status == 0) {
-		/* they had there chance, now kill them */
+		/* they had their chance, now kill them */
 		MT_lock_set(&GDKthreadLock);
 		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 			if (t->pid) {
@@ -1351,7 +1353,9 @@ GDKreset(int status)
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
+#ifndef HAVE_EMBEDDED
 	MT_global_exit(status);
+#endif
 }
 
 void
@@ -1394,29 +1398,24 @@ static void
 GDKlockHome(void)
 {
 	int fd;
+	struct stat st;
+	str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
+	char GDKdirStr[PATHLENGTH];
 
 	assert(GDKlockFile == NULL);
-	/*
-	 * Go there and obtain the global database lock.
-	 */
-	if (chdir(GDKdbpathStr) < 0) {
-		char GDKdirStr[PATHLENGTH];
+	assert(GDKdbpathStr != NULL);
 
-		/* The DIR_SEP at the end of the path is needed for a
-		 * successful call to GDKcreatedir */
-		snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
-		if (GDKcreatedir(GDKdirStr) != GDK_SUCCEED)
-			GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
-		if (chdir(GDKdbpathStr) < 0)
-			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
-		IODEBUG fprintf(stderr, "#GDKlockHome: created directory %s\n", GDKdbpathStr);
+	snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
+	/*
+	 * Obtain the global database lock.
+	 */
+	if (stat(GDKdbpathStr, &st) < 0 && GDKcreatedir(GDKdirStr) != GDK_SUCCEED) {
+		GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
 	}
-	if ((fd = MT_lockf(GDKLOCK, F_TLOCK, 4, 1)) < 0) {
+	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
 		GDKfatal("GDKlockHome: Database lock '%s' denied\n", GDKLOCK);
 	}
-
 	/* now we have the lock on the database */
-
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
 		GDKfatal("GDKlockHome: Could not open %s\n", GDKLOCK);
@@ -1435,15 +1434,19 @@ GDKlockHome(void)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", GDKLOCK);
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
+	GDKfree(gdklockpath);
 }
+
 
 static void
 GDKunlockHome(void)
 {
 	if (GDKlockFile) {
-		MT_lockf(GDKLOCK, F_ULOCK, 4, 1);
+		str gdklockpath = GDKfilepath(0, NULL, GDKLOCK, NULL);
+		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
 		fclose(GDKlockFile);
 		GDKlockFile = 0;
+		GDKfree(gdklockpath);
 	}
 }
 
@@ -1658,6 +1661,10 @@ GDKclrerr(void)
 		*buf = 0;
 }
 
+jmp_buf GDKfataljump;
+str GDKfatalmsg;
+bit GDKfataljumpenable = 0;
+
 /* coverity[+kill] */
 void
 GDKfatal(const char *format, ...)
@@ -1679,25 +1686,30 @@ GDKfatal(const char *format, ...)
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
-	fputs(message, stderr);
-	fputs("\n", stderr);
-	fflush(stderr);
+	if (!GDKfataljumpenable) {
+		fputs(message, stderr);
+		fputs("\n", stderr);
+		fflush(stderr);
 
-	/*
-	 * Real errors should be saved in the lock file for post-crash
-	 * inspection.
-	 */
-	if (GDKexiting()) {
-		fflush(stdout);
-		MT_exit_thread(1);
-		/* exit(1); */
-	} else {
-		GDKlog("%s", message);
-#ifdef COREDUMP
-		abort();
-#else
-		GDKexit(1);
-#endif
+		/*
+		 * Real errors should be saved in the log file for post-crash
+		 * inspection.
+		 */
+		if (GDKexiting()) {
+			fflush(stdout);
+			MT_exit_thread(1);
+			/* exit(1); */
+		} else {
+			GDKlog("%s", message);
+	#ifdef COREDUMP
+			abort();
+	#else
+			GDKexit(1);
+	#endif
+		}
+	} else { // in embedded mode, we really don't want to kill our host
+		GDKfatalmsg = GDKstrdup(message);
+		longjmp(GDKfataljump, 42);
 	}
 }
 

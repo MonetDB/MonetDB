@@ -51,7 +51,7 @@
 * is executed within the client context specified. This leads to context juggling.
 */
 str
-SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result)
+SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
 	int status = 0;
 	int err = 0;
@@ -85,6 +85,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
+	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
+	m->qc = NULL;
 
 	/* create private allocator */
 	m->sa = NULL;
@@ -95,13 +97,17 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	be = sql;
 	sql = backend_create(m, c);
 	sql->output_format = be->output_format;
+	if (!output) {
+		sql->output_format = OFMT_NONE;
+	}
+	// and do it again
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
-		m->reply_size = -2; /* do not cleanup, result tables */
+		m->reply_size = -2; /* do not clean up result tables */
 
-	/* mimick a client channel on which the query text is received */
+	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, *expr, len);
@@ -201,9 +207,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 
 		if (execute) {
 			MalBlkPtr mb = c->curprg->def;
-
 			if (!output)
-				sql->out = NULL;	/* no output */
+				sql->out = NULL;	/* no output stream */
 			msg = runMAL(c, mb, 0, 0);
 			MSresetInstructions(mb, oldstop);
 			freeVariables(c, mb, NULL, oldvtop);

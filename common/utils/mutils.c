@@ -434,35 +434,6 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 
 #endif
 
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
-
-/* Obtain a backtrace and print it to stdout. */
-void
-print_trace (void)
-{
-	void *array[10];
-	size_t size;
-	char **strings;
-	size_t i;
-
-	size = backtrace (array, 10);
-	strings = backtrace_symbols (array, size);
-
-	printf ("Obtained " SZFMT " stack frames.\n", size);
-
-	for (i = 0; i < size; i++)
-		printf ("%s\n", strings[i]);
-
-	free (strings);
-}
-#else
-void
-print_trace(void)
-{
-	printf("back traces are not supported on this platform\n");
-}
-#endif
-
 #ifndef PATH_MAX
 # define PATH_MAX 1024
 #endif
@@ -472,7 +443,7 @@ get_bin_path(void)
 {
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
-#if defined(_MSC_VER)		/* Windows */
+#ifdef WIN32
 	if (GetModuleFileName(NULL, _bin_path,
 			      (DWORD) sizeof(_bin_path)) != 0)
 		return _bin_path;

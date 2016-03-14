@@ -10,6 +10,7 @@
 #define _GDK_UTILS_H_
 
 #include <monet_options.h>
+#include <setjmp.h>
 
 gdk_export BAT *GDKkey;
 gdk_export BAT *GDKval;
@@ -85,14 +86,25 @@ gdk_export int GDKinit(opt *set, int setlen);
  * takes care of this.
  */
 gdk_export int GDKnr_threads;
-
+#ifndef HAVE_EMBEDDED
 __declspec(noreturn) gdk_export void GDKexit(int status)
 	__attribute__((__noreturn__));
+#else
+gdk_export void GDKexit(int status);
+#endif
 gdk_export int GDKexiting(void);
 
 gdk_export void GDKregister(MT_Id pid);
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
 gdk_export const char *GDKversion(void);
+
+gdk_export gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);
+
+// these are used in embedded mode to jump out of GDKfatal
+gdk_export jmp_buf GDKfataljump;
+gdk_export str GDKfatalmsg;
+gdk_export bit GDKfataljumpenable;
+
 
 #endif /* _GDK_UTILS_H_ */
