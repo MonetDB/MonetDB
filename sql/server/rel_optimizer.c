@@ -1967,6 +1967,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		list *l = e->l, *nl = NULL;
 	        sql_exp *ne = NULL;
 
+		if (e->type == e_func && exp_unsafe(e))
+			return NULL;
 		if (!l) {
 			return e;
 		} else {

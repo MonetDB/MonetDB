@@ -1292,6 +1292,8 @@ exp_unsafe( sql_exp *e)
 				return 1;			
 		}
 	}
+	if (e->type == e_func && e->r)  /* rank and friends are unsafe */
+		return 1;			
 	return 0;
 }
 
