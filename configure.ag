@@ -3645,20 +3645,22 @@ echo "    largest decimal type: ${hge_digits} digits"
 echo
 
 dnl give some hints to the user
-case "`make -v 2>&1`" in
-'GNU Make '*)
-	;;
-*)
-	echo "'make' not found in PATH or not GNU Make."
-	case "`gmake -v 2>&1`" in
+if test "x$enable_embedded_r" == xno; then
+	case "`make -v 2>&1`" in
 	'GNU Make '*)
-		echo "Please use 'gmake' to build MonetDB."
 		;;
 	*)
-		echo "'gmake' not found in PATH or not GNU Make."
-		echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+		echo "'make' not found in PATH or not GNU Make."
+		case "`gmake -v 2>&1`" in
+		'GNU Make '*)
+			echo "Please use 'gmake' to build MonetDB."
+			;;
+		*)
+			echo "'gmake' not found in PATH or not GNU Make."
+			echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+			;;
+		esac
+		echo
 		;;
 	esac
-	echo
-	;;
-esac
+fi

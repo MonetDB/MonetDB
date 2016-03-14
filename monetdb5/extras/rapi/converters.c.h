@@ -118,24 +118,24 @@ static SEXP bat_to_sexp(BAT* b) {
 							sexp_ptrs[offset] = mkCharCE(t, CE_UTF8);
 						}
 					}
-					STRING_ELT(varvalue, j++) = sexp_ptrs[offset];
+					SET_STRING_ELT(varvalue, j++, sexp_ptrs[offset]);
 				}
 				GDKfree(sexp_ptrs);
 			}
 			else {
 				if (b->T->nonil) {
 					BATloop(b, p, q) {
-						STRING_ELT(varvalue, j++) = mkCharCE(
-							(const char *) BUNtail(li, p), CE_UTF8);
+						SET_STRING_ELT(varvalue, j++, mkCharCE(
+							(const char *) BUNtail(li, p), CE_UTF8));
 					}
 				}
 				else {
 					BATloop(b, p, q) {
 						const char *t = (const char *) BUNtail(li, p);
 						if (strcmp(t, str_nil) == 0) {
-							STRING_ELT(varvalue, j++) = NA_STRING;
+							SET_STRING_ELT(varvalue, j++, NA_STRING);
 						} else {
-							STRING_ELT(varvalue, j++) = mkCharCE(t, CE_UTF8);
+							SET_STRING_ELT(varvalue, j++, mkCharCE(t, CE_UTF8));
 						}
 					}
 				}

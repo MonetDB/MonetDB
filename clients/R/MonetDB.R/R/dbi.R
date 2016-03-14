@@ -94,7 +94,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   }
 
   if (embedded != FALSE) {
-    if (!require("MonetDBLite", character.only=T)) {
+    if (!requireNamespace("MonetDBLite", quietly=T)) {
       stop("MonetDBLite package required for embedded mode")
     }
     MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
