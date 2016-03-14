@@ -18,6 +18,7 @@
 
 #define EC_MAX 		17
 #define EC_ANY	 	0
+#define IS_ANY(e)	(e==EC_ANY)
 #define EC_TABLE 	1
 #define EC_BIT 		2
 #define EC_CHAR 	3

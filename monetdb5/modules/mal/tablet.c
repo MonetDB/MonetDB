@@ -862,7 +862,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 		if (i < attrs - 1)
 			s = mycpstr(s, task->csep);
 	}
-	strcat(line, task->rsep);
+	strcpy(s, task->rsep);
 	return line;
 }
 
@@ -871,6 +871,10 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
  * the null-replacement string then we grab the underlying nil.
  * If the string starts with the quote identified from SQL, we locate the tail
  * and interpret the body.
+ *
+ * If inserting fails, we return -1; if the value cannot be parsed, we
+ * return -1 if besteffort is not set, otherwise we return 0, but in
+ * either case an entry is added to the error table.
  */
 static inline int
 SQLinsert_val(READERtask *task, int col, int idx)
@@ -889,26 +893,39 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	} else
 		adt = fmt->frstr(fmt, fmt->adt, s);
 
+	/* col is zero-based, but for error messages it needs to be
+	 * one-based, and from here on, we only use col anymore to produce
+	 * error messages */
+	col++;
+
 	if (adt == NULL) {
 		lng row = task->cnt + idx + 1;
-		snprintf(buf, BUFSIZ, "'%s' expected", fmt->type);
+		snprintf(buf, sizeof(buf), "'%s' expected", fmt->type);
 		err = SQLload_error(task, idx, task->as->nr_attrs);
 		if (task->rowerror) {
+			size_t slen = mystrlen(s);
+			char *scpy = GDKmalloc(slen + 1);
+			if (scpy)
+				mycpstr(scpy, s);
 			MT_lock_set(&errorlock);
-			col++;
-			BUNappend(task->cntxt->error_row, &row, FALSE);
-			BUNappend(task->cntxt->error_fld, &col, FALSE);
-			BUNappend(task->cntxt->error_msg, buf, FALSE);
-			BUNappend(task->cntxt->error_input, err, FALSE);
-			snprintf(buf, BUFSIZ, "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, s);
-			buf[BUFSIZ-1]=0;
+			snprintf(buf, sizeof(buf), "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, scpy ? scpy : buf);
+			GDKfree(scpy);
+			buf[sizeof(buf)-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
 			task->rowerror[idx]++;
 			task->errorcnt++;
+			if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
+				BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
+				BUNappend(task->cntxt->error_msg, buf, FALSE) != GDK_SUCCEED ||
+				BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED) {
+				GDKfree(err);
+				task->besteffort = 0; /* no longer best effort */
+				return -1;
+			}
 			MT_lock_unset(&errorlock);
 		}
-		ret = -1 * (task->besteffort == 0);
+		ret = -!task->besteffort; /* yep, two unary operators ;-) */
 		GDKfree(err);
 		/* replace it with a nil */
 		adt = fmt->nildata;
@@ -926,10 +943,11 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		err = SQLload_error(task, idx,task->as->nr_attrs);
 		BUNappend(task->cntxt->error_input, err, FALSE);
 		GDKfree(err);
-		task->rowerror[row - 1]++;
+		task->rowerror[idx]++;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock);
 	}
+	task->besteffort = 0;		/* no longer best effort */
 	return -1;
 }
 
@@ -951,9 +969,8 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (i = 0; i < task->top[task->cur]; i++) {
-		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0){
-			if(task->besteffort == 0)
-				return -1;
+		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0) {
+			return -1;
 		}
 	}
 
@@ -1135,7 +1152,7 @@ SQLworker(void *arg)
 					if (SQLload_parse_line(task, j) < 0) {
 						task->errorcnt++;
 						// early break unless best effort
-						if(task->besteffort == 0)
+						if (!task->besteffort)
 							break;
 					}
 				}
@@ -1146,7 +1163,8 @@ SQLworker(void *arg)
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
 					t0 = GDKusec();
-					SQLworker_column(task, task->cols[i] - 1);
+					if (SQLworker_column(task, task->cols[i] - 1) < 0)
+						break;
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
 					task->wtime += t0;
@@ -1612,7 +1630,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mnstr_printf(GDKout, "#Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",
 				 threads, csep, rsep, quote);
 #endif
-	memset((char *) ptask, 0, MAXWORKERS * sizeof(READERtask));
+	memset(ptask, 0, sizeof(ptask));
 
 	if (task == 0) {
 		//SQLload file error
@@ -1808,9 +1826,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		tio = t1 - tio;
 
 		/* await completion of the BAT updates */
-		if (res == 0 && task->top[task->cur])
-			for (j = 0; j < threads; j++)
+		if (res == 0 && task->top[task->cur]) {
+			for (j = 0; j < threads; j++) {
 				MT_sema_down(&ptask[j].reply);
+				if (ptask[j].errorcnt > 0 && !ptask[j].besteffort) {
+					res = -1;
+					best = 0;
+				}
+			}
+		}
 
 		/* trim the BATs discarding error tuples */
 #define trimerrors(TYPE)												\
@@ -1882,6 +1906,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			task->errorcnt = 0;
 		}
 
+		if (res < 0) {
+			/* producer should stop */
+			task->maxrow = cnt;
+			task->state = ENDOFCOPY;
+		}
 		MT_sema_up(&task->producer);
 	}
 #ifdef _DEBUG_TABLET_
@@ -1915,10 +1944,12 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	mnstr_printf(GDKout, "#Activate sync on disk \n");
 #endif
 	// activate the workers to sync the BATs to disk
-	for (j = 0; j < threads; j++) {
-		// stage three, update the BATs
-		ptask[j].state = SYNCBAT;
-		MT_sema_up(&ptask[j].sema);
+	if (res == 0) {
+		for (j = 0; j < threads; j++) {
+			// stage three, update the BATs
+			ptask[j].state = SYNCBAT;
+			MT_sema_up(&ptask[j].sema);
+		}
 	}
 
 	if (!task->ateof || cnt < task->maxrow) {
@@ -1928,9 +1959,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		MT_sema_up(&task->producer);
 	}
 	MT_join_thread(task->tid);
-	// await completion of the BAT syncs
-	for (j = 0; j < threads; j++)
-		MT_sema_down(&ptask[j].reply);
+	if (res == 0) {
+		// await completion of the BAT syncs
+		for (j = 0; j < threads; j++)
+			MT_sema_down(&ptask[j].reply);
+	}
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Activate endofcopy\n");
