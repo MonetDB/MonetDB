@@ -2546,7 +2546,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
-inline int
+static inline int
 binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 {
 	BUN mid;
@@ -2606,18 +2606,13 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 #define HASHJOIN(TYPE, WIDTH)						\
 	do {								\
 		BUN hashnil = HASHnil(hsh);				\
-		BUN yes = 0, no = 0, false_positive = 0;		\
 		for (lo = lstart - BUNfirst(l) + l->hseqbase;		\
 		     lstart < lend;					\
 		     lo++) {						\
-			int ask;					\
 			v = FVALUE(l, lstart);				\
 			lstart++;					\
 			nr = 0;						\
-			ask = BLOOMask((BUN) (*(TYPE*)v), r->T->bloom);	\
-			no++;						\
-			if (*(const TYPE*)v != TYPE##_nil && ask) {	\
-				yes++; no--;				\
+			if (*(const TYPE*)v != TYPE##_nil) {		\
 				for (rb = HASHget##WIDTH(hsh, hash_##TYPE(hsh, v)); \
 				     rb != hashnil;			\
 				     rb = HASHgetlink##WIDTH(hsh, rb))	\
@@ -2628,7 +2623,6 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 					}				\
 			}						\
 			if (nr == 0) {					\
-				if (ask) false_positive++;		\
 				lskipped = BATcount(r1) > 0;		\
 			} else {					\
 				if (lskipped) {				\
@@ -2642,11 +2636,6 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 					r1->trevsorted = 0;		\
 			}						\
 		}							\
-		ALGODEBUG fprintf(stderr,"#hashjoin(b=%s#" BUNFMT ") %s: "	\
-				"ask bloom filter: yes = " BUNFMT ", no = " BUNFMT \
-				", probes = " BUNFMT ", false positives = " BUNFMT "\n", \
-				BATgetId(r), BATcount(r), r->T->heap.filename, \
-				yes, no, lo, false_positive );		\
 	} while (0)
 
 static gdk_return
@@ -2777,18 +2766,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	nrcand = (BUN) (rcandend - rcand);
 	hsh = r->T->hash;
 	t = ATOMbasetype(r->ttype);
-
-	/* check for bloom filter on right */
-	if (!BATcheckbloom(r)) {
-		BATbloom(r);
-		ALGODEBUG
-			fprintf(stderr,"#hashjoin(b=%s#" BUNFMT ") %s: bloom filter not found, created.\n",
-				BATgetId(r), BATcount(r), r->T->heap.filename);
-	} else {
-		ALGODEBUG
-			fprintf(stderr,"#hashjoin(b=%s#" BUNFMT ") %s: bloom filter found.\n",
-				BATgetId(r), BATcount(r), r->T->heap.filename);
-	}
 
 	if (lcand == NULL && rcand == NULL && lvars == NULL &&
 	    !nil_matches && !nil_on_miss && !semi && !only_misses &&
