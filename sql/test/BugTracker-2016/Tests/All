@@ -14,3 +14,4 @@ wrong-nonil-property-with-copy-binary-into.Bug-3937
 stream_table_crash.Bug-3952
 null_in_null.Bug-3900
 rank_rewrite.Bug-3890
+HAVE_LIBBZ2?min-max-uuid-column-wrong-results.Bug-3953
