@@ -44,8 +44,8 @@ mutils_export char *dirname(char *path);
 
 #endif
 
-#ifndef S_IRUSR
-/* if one doesn't exist, presumably they all don't exist */
+#ifndef S_IWGRP
+/* if one doesn't exist, presumably they all don't exist - Not so on MinGW */
 #define S_IRUSR 0000400		/* read permission, owner */
 #define S_IWUSR 0000200		/* write permission, owner */
 #define S_IRGRP 0000040		/* read permission, group */

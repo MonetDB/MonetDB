@@ -11,10 +11,6 @@
 
 #include "mal_interpreter.h"
 #include "gdk_atomic.h"
-mal_export volatile ATOMIC_TYPE mal_running;
-#ifdef ATOMIC_LOCK
-mal_export MT_Lock mal_runningLock;
-#endif
 
 #define TIMESLICE  (3 * 60 * 1000 * 1000) /* usec , 3 minute high priority */
 #define DELAYUNIT 2 /* ms delay in parallel processing decisions */

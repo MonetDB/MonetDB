@@ -94,7 +94,7 @@ gdk_export int MT_join_thread(MT_Id t);
 /*
  * @- MT Lock API
  */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef HANDLE pthread_mutex_t;
 typedef void *pthread_mutexattr_t;
 gdk_export void pthread_mutex_init(pthread_mutex_t *,
@@ -290,7 +290,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 /*
  * @- MT Semaphore API
  */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 
 typedef HANDLE pthread_sema_t;
 gdk_export void pthread_sema_init(pthread_sema_t *s, int flag, int nresources);

@@ -400,7 +400,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 				    PTRFMTCAST ((char *) old_address + *new_size),
 				    old_size - *new_size);
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): munmap() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
-			return NULL;
+			/* even though the system call failed, we
+			 * don't need to propagate the error up: the
+			 * address should still work in the same way
+			 * as it did before */
+			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
 			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
@@ -711,10 +715,11 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
+#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
-
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
+#endif
 	return 0;
 }
 
@@ -943,10 +948,9 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 #endif
 
 void *
-mdlopen(const char *library, int mode)
+mdlopen(const char *file, int mode)
 {
-	(void) mode;
-	return GetModuleHandle(library);
+	return dlopen(file, mode);
 }
 
 void *

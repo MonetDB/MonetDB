@@ -1702,6 +1702,7 @@ stmt_array(sql_allocator *sa, stmt *s)
 	return res;
 }
 
+#ifndef HAVE_EMBEDDED
 static void
 print_stmt(sql_allocator *sa, stmt *s)
 {
@@ -1795,3 +1796,4 @@ print_tree(sql_allocator *sa, stmt *s)
 	print_stmts(sa, stmts);
 	clear_stmts(stmts);
 }
+#endif

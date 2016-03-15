@@ -60,6 +60,7 @@ gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 
 /* global calls */
 gdk_export void BBPaddfarm(const char *dirname, int rolemask);
+gdk_export void BBPresetfarms(void);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);

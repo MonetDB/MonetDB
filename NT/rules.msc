@@ -6,7 +6,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-VERSION=11.22.0
+VERSION=11.24.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -144,12 +144,14 @@ BZ_LIBS = "$(LIBBZIP2)\lib\libbz2$(DEBUGLIB).lib"
 BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
+!IFDEF HAVE_LIBXML
 # This is the location of the libxml2 library
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(zlib_LIBS) $(ICONV_LIBS)
+!ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)

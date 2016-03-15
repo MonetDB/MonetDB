@@ -851,7 +851,7 @@ AUTHverifyPassword(str *passwd)
 		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 				MONETDB5_PASSWDHASH);
 	}
-
+	len++; // required in case all the checks above are false
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
 			throw(MAL, "verifyPassword",

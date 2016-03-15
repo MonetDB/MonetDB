@@ -97,7 +97,7 @@ GDKcreatedir(const char *dir)
 	DIR *dirp;
 
 	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
-
+	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= PATHLENGTH) {
 		GDKerror("GDKcreatedir: directory name too long\n");
 		return GDK_FAIL;
@@ -106,7 +106,11 @@ GDKcreatedir(const char *dir)
 	/* skip initial /, if any */
 	for (r = strchr(path + 1, DIR_SEP); r; r = strchr(r, DIR_SEP)) {
 		*r = 0;
-		if (mkdir(path, 0755) < 0) {
+		if (
+#ifdef WIN32
+			strlen(path) > 3 &&
+#endif
+			mkdir(path, 0755) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
 				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);
@@ -130,12 +134,13 @@ GDKcreatedir(const char *dir)
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
-	DIR *dirp = opendir(dirname);
+	str dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL);
+	DIR *dirp = opendir(dirnamestr);
 	char *path;
 	struct dirent *dent;
 	int ret;
 
-	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirname);
+	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirnamestr);
 
 	if (dirp == NULL)
 		return GDK_SUCCEED;
@@ -152,11 +157,11 @@ GDKremovedir(int farmid, const char *dirname)
 		GDKfree(path);
 	}
 	closedir(dirp);
-	ret = rmdir(dirname);
+	ret = rmdir(dirnamestr);
 	if (ret < 0)
-		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirname);
-	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirname, ret);
-
+		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
+	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirnamestr, ret);
+	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 

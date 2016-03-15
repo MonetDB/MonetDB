@@ -75,6 +75,10 @@
 #define LOG_CLEAR	9
 #define LOG_SEQ		10
 
+#ifdef HAVE_EMBEDDED
+#define printf(fmt,...) ((void) 0)
+#endif
+
 static char *log_commands[] = {
 	NULL,
 	"LOG_START",
@@ -895,14 +899,12 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
-	char *path = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), NULL, filename, NULL);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
 	}
 
-	lg->log = open_rstream(path);
-	GDKfree(path);
+	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || mnstr_errnr(lg->log)) {
@@ -920,8 +922,10 @@ logger_readlog(logger *lg, char *filename)
 		return 1;
 	}
 	t0 = time(NULL);
-	printf("# Start reading the write-ahead log '%s'\n", filename);
-	fflush(stdout);
+	if (lg->debug & 1) {
+		printf("# Start reading the write-ahead log '%s'\n", filename);
+		fflush(stdout);
+	}
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
@@ -1020,8 +1024,10 @@ logger_readlog(logger *lg, char *filename)
 	while (tr)
 		tr = tr_abort(lg, tr);
 	t0 = time(NULL);
-	printf("# Finished reading the write-ahead log '%s'\n", filename);
-	fflush(stdout);
+	if (lg->debug & 1) {
+		printf("# Finished reading the write-ahead log '%s'\n", filename);
+		fflush(stdout);
+	}
 	return LOG_OK;
 }
 
@@ -1313,24 +1319,27 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 	int id = LOG_SID;
 	FILE *fp;
 	char bak[PATHLENGTH];
+	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	snprintf(filename, PATHLENGTH, "%s%s", lg->dir, LOGFILE);
+	filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL);
+	snprintf(filename, PATHLENGTH, "%s", filenamestr);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
+	GDKfree(filenamestr);
 
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
+	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
 		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 			logger_fatal("logger_new: cannot move log.bak "
 				     "file back.\n", 0, 0, 0);
 	}
-	fp = GDKfileopen(farmid, NULL, filename, NULL, "r");
+	fp = fopen(filename, "r");
 
 	snprintf(bak, sizeof(bak), "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1835,7 +1844,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->read32bitoid = 0;
 #endif
 
-	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
+	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;
@@ -1934,19 +1943,20 @@ logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
 {
 	logger *lg;
-
-	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
-	fflush(stdout);
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
-
 	if (!lg)
-		return NULL;
+			return NULL;
+	if (lg->debug & 1) {
+		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
+		fflush(stdout);
+	}
 	if (logger_open(lg) == LOG_ERR) {
 		logger_destroy(lg);
-
 		return NULL;
 	}
-	printf("# Finished processing logs %s/%s\n",fn,logdir);
+	if (lg->debug & 1) {
+		printf("# Finished processing logs %s/%s\n",fn,logdir);
+	}
 	GDKsetenv("recovery","finished");
 	fflush(stdout);
 	if (lg->changes &&
@@ -1965,11 +1975,11 @@ logger *
 logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg;
-
-	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
-	fflush(stdout);
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, local_logdir);
-
+	if (lg->debug & 1) {
+		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
+		fflush(stdout);
+	}
 	return lg;
 }
 
@@ -2531,8 +2541,9 @@ static char zeros[DBLKSZ] = { 0 };
 static gdk_return
 pre_allocate(logger *lg)
 {
+	// FIXME: this causes serious issues on Windows at least with MinGW
+#ifndef WIN32
 	lng p;
-
 	if (mnstr_fgetpos(lg->log, &p) != 0)
 		return GDK_FAIL;
 	if (p + DBLKSZ > lg->end) {
@@ -2557,6 +2568,9 @@ pre_allocate(logger *lg)
 		if (mnstr_fsetpos(lg->log, s) < 0)
 			return GDK_FAIL;
 	}
+#else
+	(void) lg;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -2594,6 +2608,7 @@ log_tend(logger *lg)
 	l.flag = LOG_END;
 	l.tid = lg->tid;
 	l.nr = lg->tid;
+
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) == LOG_ERR ||
 	    mnstr_flush(lg->log) ||

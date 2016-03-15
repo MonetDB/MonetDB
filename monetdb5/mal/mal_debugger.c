@@ -413,12 +413,15 @@ retryRead:
 				cntxt->fdin->pos = cntxt->fdin->len;
 				goto retryRead;
 			}
-		} else if (cntxt == mal_clients) {
+		}
+#ifndef HAVE_EMBEDDED
+		else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
 			r = readConsole(cntxt);
 			if (r <= 0)
 				break;
 		}
+#endif
 		b = CURRENT(cntxt);
 
 		/* terminate the line with zero */

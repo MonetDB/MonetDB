@@ -9,6 +9,7 @@ INCLUDES = \
 	../../../common/stream \
 	../../../gdk \
 	../../mal \
+	../../modules/kernel \
 	../../../sql/include \
 	$(libr_CFLAGS)
 
@@ -17,7 +18,7 @@ MTSAFE
 lib__rapi = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = rapi.c rapi.h
+	SOURCES = rapi.c rapi.h converters.c.h
 	XDEPS = $(libr_LIBDEP)
 	LIBS = ../../tools/libmonetdb5 \
 	../../../gdk/libbat \
