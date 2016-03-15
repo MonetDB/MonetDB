@@ -497,9 +497,9 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 
-	if (ATOMvarsized(type)) {
+	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
-			BUNappend(bn, stk->stk[getArg(p,i)].val.sval, TRUE);
+			BUNappend(bn, stk->stk[getArg(p,i)].val.pval, TRUE);
 	} else {
 		for(i = first; i < p->argc; i++)
 			BUNappend(bn, getArgReference(stk, p, i), TRUE);
