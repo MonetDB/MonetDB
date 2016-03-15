@@ -256,7 +256,7 @@ class Connection(object):
         while count > 0:
             recv = self.socket.recv(count)
             if len(recv) == 0:
-                raise OperationalError("Server closed connection")
+                raise socket.error("Server closed connection")
             count -= len(recv)
             result.write(recv)
         return result.getvalue()
