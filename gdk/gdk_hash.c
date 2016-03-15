@@ -87,6 +87,17 @@ HASHclear(Hash *h)
 	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
 }
 
+static int
+log2mask(BUN m) {
+	int n = 0;
+
+	while (m) {
+		m >>= 1;
+		n++;
+	}
+	return n;
+}
+
 #define HASH_VERSION		1
 #define HASH_HEADER_SIZE	5 /* nr of size_t fields in header */
 
@@ -104,6 +115,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 		return NULL;
 	h->lim = size;
 	h->mask = mask - 1;
+	h->n = log2mask(mask);
 	h->width = width;
 	switch (width) {
 	case BUN2:
@@ -230,6 +242,7 @@ BATcheckhash(BAT *b)
 					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
 					h->mask = (BUN) (hdata[2] - 1);
+					h->n = log2mask(h->mask+1);
 					h->heap = hp;
 					h->width = (int) hdata[3];
 					switch (h->width) {
@@ -254,6 +267,8 @@ BATcheckhash(BAT *b)
 					b->T->hash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+					IDXACCESS fprintf(stderr, "[%4d->%4d]:%s (" BUNFMT ") #BATcheckhash: load persistent hash index (ms=" LLFMT
+					                          ")\n", b->batCacheid,-VIEWtparent(b), "type", BATcount(b), GDKusec() - t);
 					return 1;
 				}
 				GDKfree(h);
@@ -514,9 +529,10 @@ BAThash(BAT *b, BUN masksize)
 		b->T->hash = h;
 		t1 = GDKusec();
 		ALGODEBUG fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", t1 - t0);
-		ALGODEBUG HASHcollisions(b, b->T->hash);
+		HASHcollisions(b, b->T->hash);
 	}
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+	IDXACCESS fprintf(stderr, "[%4d->%4d]:%s (" BUNFMT ") #BAThash: create hash index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b), "type", BATcount(b), t1 - t0);
 	return GDK_SUCCEED;
 }
 

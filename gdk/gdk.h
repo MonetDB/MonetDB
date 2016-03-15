@@ -671,6 +671,7 @@ typedef struct {
 	BUN nil;		/* nil representation */
 	BUN lim;		/* collision list size */
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
+	int n;			/* the power of 2 (aka log_2(mask+1)) */
 	void *Hash;		/* hash table */
 	void *Link;		/* collision list */
 	Heap *heap;		/* heap where the hash is stored */
