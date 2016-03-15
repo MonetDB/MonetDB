@@ -4,6 +4,7 @@ if (basedir != "") {
 } else {
 	library(MonetDBLite)
 }
+library(DBI)
 library(MonetDB.R)
 library(testthat)
 dbdir <- tempdir()

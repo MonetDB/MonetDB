@@ -2,9 +2,9 @@
 #set -x
 
 STAGEDIR=/tmp/monetdb-embedded-stage
-RPKG=MonetDBLite_0.2.0.tar.gz
-OSXPKG=MonetDBLite_0.2.0.tgz
-WINPKG=MonetDBLite_0.2.0.zip
+RPKG=MonetDBLite_0.2.1.tar.gz
+OSXPKG=MonetDBLite_0.2.1.tgz
+WINPKG=MonetDBLite_0.2.1.zip
 
 rm -rf $STAGEDIR
 

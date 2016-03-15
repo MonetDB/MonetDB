@@ -1,6 +1,7 @@
 library(testthat)
 library(MonetDB.R)
 library(dplyr)
+library(DBI)
 
 library(Lahman)
 data(Batting)

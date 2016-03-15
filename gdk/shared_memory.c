@@ -57,15 +57,15 @@ str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***r
     size = (maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
     if (size == 0)
         size = GDK_mmap_pagesize; */
-    fd = GDKfdlocate(NOFARM, address, "wb", "tmp");
+    path = GDKfilepath(0, BATDIR, address, "tmp");
+    if (path == NULL) {
+        return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
+    }
+    fd = GDKfdlocate(0, path, "wb", "tmp");
     if (fd < 0) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfdlocate(NOFARM, %s, \"wb\", NULL)", address);
+        return createException(MAL, "shared_memory.get", "Failure in GDKfdlocate(0, %s, \"wb\", NULL)", address);
     }
     close(fd);
-    path = GDKfilepath(NOFARM, BATDIR, address, "tmp");
-    if (path == NULL) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(NOFARM, "BATDIR",%s,\"tmp\")", address);
-    }
     if (GDKextend(path, size) != GDK_SUCCEED) {
         return createException(MAL, "shared_memory.get", "Failure in GDKextend(%s,%zu)", path, size);
     }
@@ -88,9 +88,9 @@ str release_mmap_memory(void *ptr, size_t size, size_t id) {
     if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
         return createException(MAL, "shared_memory.get", "Failure in GDKmunmap(%p, %zu)", ptr, size);
     }
-    path = GDKfilepath(NOFARM, BATDIR, address, "tmp");
+    path = GDKfilepath(0, BATDIR, address, "tmp");
     if (path == NULL) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(NOFARM, "BATDIR",%s,\"tmp\")", address);
+        return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
     }
     ret = remove(path);
     GDKfree(path);

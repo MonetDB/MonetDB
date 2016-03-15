@@ -4,10 +4,6 @@ src_monetdb <- function(dbname="demo", host = "localhost", port = 50000L, user =
     con <- DBI::dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
       user = user, password = password, ...)
   }
-  pkgname <- "MonetDB.R"
-  if (!(pkgname %in% loadedNamespaces())) {
-    attachNamespace(pkgname)
-  }
   dplyr::src_sql("monetdb", con, info = DBI::dbGetInfo(con))
 }
 
@@ -26,6 +22,8 @@ src_translate_env.src_monetdb <- function(x) {
     )
   )
 }
+
+src_desc <- function(x) UseMethod("src_desc")
 
 src_desc.src_monetdb <- function(x) {
   paste0("MonetDB ",x$info$monet_version, " (",x$info$monet_release, ")")

@@ -10,6 +10,9 @@ dd <- capture.output( suppressMessages ( {
 
 library(dplyr, quietly = T)
 
+# FIXME: this should no longer be required 
+library(MonetDB.R, quietly = T)
+
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
 dbname <- "mTests_clients_R"

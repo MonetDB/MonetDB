@@ -10,7 +10,7 @@
 #endif
 
 CREATE_SQL_FUNCTION_PTR(void,res_table_destroy,(res_table*));
-CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern_ext,(Client, str *, str, int, bit, res_table **, bit));
+CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern,(Client, str *, str, int, bit, res_table **));
 
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
@@ -240,7 +240,7 @@ void _connection_cleanup_result(void* output)
 char* _connection_query(Client cntxt, char* query, res_table** result) {
     str res = MAL_SUCCEED;
     Client c = cntxt;
-    res = (*SQLstatementIntern_ext_ptr)(c, &query, "name", 1, 0, result, 1);
+    res = (*SQLstatementIntern_ptr)(c, &query, "name", 1, 0, result);
     return res;
 }
 
@@ -267,7 +267,7 @@ void _connection_init(void)
     import_array();
 
     LOAD_SQL_FUNCTION_PTR(res_table_destroy);
-    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern_ext);
+    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
 
     if (PyType_Ready(&Py_ConnectionType) < 0)
         return;
