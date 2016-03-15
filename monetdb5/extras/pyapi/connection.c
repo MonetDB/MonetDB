@@ -1,7 +1,7 @@
 
 #include "connection.h"
 #include "type_conversion.h"
-#include "shared_memory.h"
+#include "interprocess.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K

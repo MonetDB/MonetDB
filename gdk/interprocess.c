@@ -1,5 +1,5 @@
 
-#include "shared_memory.h"
+#include "interprocess.h"
 
 #ifdef HAVE_FORK
 
@@ -59,19 +59,19 @@ str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***r
         size = GDK_mmap_pagesize; */
     fd = GDKfdlocate(0, address, "wb", "tmp");
     if (fd < 0) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfdlocate(0, %s, \"wb\", NULL)", address);
+        return createException(MAL, "interprocess.get", "Failure in GDKfdlocate(0, %s, \"wb\", NULL)", address);
     }
     path = GDKfilepath(0, BATDIR, address, "tmp");
     if (path == NULL) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
+        return createException(MAL, "interprocess.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
     }
     close(fd);
     if (GDKextend(path, size) != GDK_SUCCEED) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKextend(%s,%zu)", path, size);
+        return createException(MAL, "interprocess.get", "Failure in GDKextend(%s,%zu)", path, size);
     }
     ptr = GDKmmap(path, mod, size);
     if (ptr == NULL) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKmmap(%s, %d, %zu)", path, mod, size);
+        return createException(MAL, "interprocess.get", "Failure in GDKmmap(%s, %d, %zu)", path, mod, size);
     }
     GDKfree(path);
     if (return_ptr != NULL) (*return_ptr)[id_offset] = ptr;
@@ -86,17 +86,17 @@ str release_mmap_memory(void *ptr, size_t size, size_t id) {
     int ret;
     snprintf_mmap_file(address, 100, id);
     if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKmunmap(%p, %zu)", ptr, size);
+        return createException(MAL, "interprocess.get", "Failure in GDKmunmap(%p, %zu)", ptr, size);
     }
     path = GDKfilepath(0, BATDIR, address, "tmp");
     if (path == NULL) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
+        return createException(MAL, "interprocess.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
     }
     ret = remove(path);
     GDKfree(path);
     if (ret < 0) {
         perror(strerror(errno));
-        return createException(MAL, "shared_memory.get", "Failure in remove(%s)", path);
+        return createException(MAL, "interprocess.get", "Failure in remove(%s)", path);
     }
     return MAL_SUCCEED;
 }

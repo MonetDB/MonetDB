@@ -11,7 +11,7 @@
 
 #include "unicode.h"
 #include "pytypes.h"
-#include "shared_memory.h"
+#include "interprocess.h"
 #include "type_conversion.h"
 #include "formatinput.h"
 
@@ -431,7 +431,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *s
 //! [CONVERT_BAT] Step 2: It converts the input BATs into Numpy Arrays
 //! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as arguments
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
-//! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into Shared memory [SHARED_MEMORY] and exit, then Step 4 is executed by the main process
+//! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
 str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
     sql_func * sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
     str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
