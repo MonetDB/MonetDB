@@ -139,6 +139,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define FNV_INIT 0x811c9dc5
 #endif
 
+#define NO_FNV_OPT
+
 static inline BUN fnvhash_int(const void *v) {
 	unsigned int v_int = *(unsigned int *) v;
 	BUN r = FNV_INIT;
@@ -150,7 +152,16 @@ static inline BUN fnvhash_int(const void *v) {
 	while (octets--) {
 		r ^= (v_int & 0xff);
 		v_int >>= 8;
+#ifdef NO_FNV_OPT
 		r *= FNV_PRIME;
+#else
+#if SIZEOF_BUN == 8
+		r += (r << 1) + (r << 4) + (r << 5) +
+		     (r << 7) + (r << 8) + (r << 40);
+#else
+		r += (r<<1) + (r<<4) + (r<<7) + (r<<8) + (r<<24);
+#endif
+#endif
 	}
 	return r;
 }
@@ -162,7 +173,16 @@ static inline BUN fnvhash_lng(const void *v) {
 	while (octets--) {
 		r ^= (v_int & 0xff);
 		v_int >>= 8;
+#ifdef NO_FNV_OPT
 		r *= FNV_PRIME;
+#else
+#if SIZEOF_BUN == 8
+		r += (r << 1) + (r << 4) + (r << 5) +
+		     (r << 7) + (r << 8) + (r << 40);
+#else
+		r += (r<<1) + (r<<4) + (r<<7) + (r<<8) + (r<<24);
+#endif
+#endif
 	}
 	return r;
 }
