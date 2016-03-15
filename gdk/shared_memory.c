@@ -57,13 +57,13 @@ str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***r
     size = (maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
     if (size == 0)
         size = GDK_mmap_pagesize; */
+    fd = GDKfdlocate(0, address, "wb", "tmp");
+    if (fd < 0) {
+        return createException(MAL, "shared_memory.get", "Failure in GDKfdlocate(0, %s, \"wb\", NULL)", address);
+    }
     path = GDKfilepath(0, BATDIR, address, "tmp");
     if (path == NULL) {
         return createException(MAL, "shared_memory.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
-    }
-    fd = GDKfdlocate(0, path, "wb", "tmp");
-    if (fd < 0) {
-        return createException(MAL, "shared_memory.get", "Failure in GDKfdlocate(0, %s, \"wb\", NULL)", address);
     }
     close(fd);
     if (GDKextend(path, size) != GDK_SUCCEED) {
