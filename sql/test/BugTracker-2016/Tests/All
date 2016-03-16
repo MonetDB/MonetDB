@@ -16,3 +16,4 @@ null_in_null.Bug-3900
 rank_rewrite.Bug-3890
 HAVE_LIBBZ2?min-max-uuid-column-wrong-results.Bug-3953
 update_crash.Bug-3954
+group_distinct_quantile.Bug-3927

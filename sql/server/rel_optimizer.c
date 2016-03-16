@@ -4552,7 +4552,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 
 	/* check if each aggr is, rewritable (max,min,sum,count) 
 	 *  			  and only has one argument */
-	for (n = gbes->h; n; n = n->next) {
+	for (n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		sql_subaggr *af = e->f;
 
