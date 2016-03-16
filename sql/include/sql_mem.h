@@ -15,25 +15,22 @@
 #define SQL_ERR 0
 
 #ifdef WIN32
-#ifndef LIBSQLSERVER
-#define sql_export extern __declspec(dllimport)
-#else
+#if defined(LIBSQLSERVER) || defined(LIBSQLCOMMON) || defined(LIBBATSTORE) || defined(LIBSTORE)
 #define sql_export extern __declspec(dllexport)
-#endif
-#ifndef LIBSQLCOMMON
-#define sqlcommon_export extern __declspec(dllimport)
-#else
 #define sqlcommon_export extern __declspec(dllexport)
-#endif
-#ifndef LIBBATSTORE
-#define sqlbat_export extern __declspec(dllimport)
-#else
 #define sqlbat_export extern __declspec(dllexport)
+#define sqlstore_export extern __declspec(dllexport)
+#else
+#define sql_export extern __declspec(dllimport)
+#define sqlcommon_export extern __declspec(dllimport)
+#define sqlbat_export extern __declspec(dllimport)
+#define sqlstore_export extern __declspec(dllimport)
 #endif
 #else
 #define sql_export extern
 #define sqlcommon_export extern
 #define sqlbat_export extern
+#define sqlstore_export extern
 #endif
 
 #define MNEW( type ) (type*)GDKmalloc(sizeof(type) )
