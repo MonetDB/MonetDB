@@ -1615,6 +1615,62 @@ sql_update_jul2015(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_epoch(Client c, mvc *m)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+	sql_subtype tp;
+	int n = 0;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	sql_find_subtype(&tp, "bigint", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
+	}
+	sql_find_subtype(&tp, "int", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(sec INT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
+	}
+	sql_find_subtype(&tp, "timestamp", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(ts TIMESTAMP) returns INT external name timestamp.\"epoch\";\n");
+	}
+	sql_find_subtype(&tp, "timestamptz", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
+	}
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	assert(pos < bufsize);
+	if (n) {
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1712,5 +1768,11 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
+	}
+
+	/* add missing epoch functions */
+	if ((err = sql_update_epoch(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		GDKfree(err);
 	}
 }
