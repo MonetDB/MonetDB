@@ -9,19 +9,10 @@ CFLAGS="-I$R_INCLUDE_DIR" ./configure --enable-embedded --enable-embedded-r \
 --without-samtools --without-sphinxclient --without-geos --without-samtools --without-readline \
 --enable-optimize --enable-silent-rules --disable-assert --disable-strict --disable-int128
 
-# check whether clang or gcc
-LD_PACK_START=-Wl,--whole-archive
-LD_PACK_END=-Wl,--no-whole-archive
-gcc -v 2>&1 | grep LLVM
-if [ $? -eq 0 ]; then
-	LD_PACK_START=-Wl,-all_load
-	LD_PACK_END=
-fi
-
 echo '
 
 libmonetdb5.so:
-	$(R_HOME)/bin/R CMD SHLIB --output $@ '$LD_PACK_START' `find $(SUBDIRS) -name "*.o" | xargs echo` '$LD_PACK_END' -lz -lpcre
+	$(R_HOME)/bin/R CMD SHLIB -lz -lpcre -o $@ `find $(SUBDIRS) -name "*.o" | xargs echo` 
 
 all: $(BUILT_SOURCES) monetdb_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive && $(MAKE) $(AM_MAKEFLAGS) libmonetdb5.so
