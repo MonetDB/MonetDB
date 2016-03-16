@@ -106,6 +106,8 @@ License: MPLv2.0
 URL: http://www.monetdb.org/
 Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP3/%{name}-%{version}.tar.bz2
 
+# we need systemd for the _unitdir macro to exist
+BuildRequires: systemd
 BuildRequires: bison
 BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
