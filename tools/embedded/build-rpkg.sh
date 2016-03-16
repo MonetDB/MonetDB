@@ -53,7 +53,7 @@ then
     exit 1
 fi
 
-export MAKEFLAGS="-j 8"
+export MAKEFLAGS="-j"
 
 R CMD INSTALL --build $STAGEDIR/$RPKG && \
 R CMD INSTALL $STAGEDIR/$OSXPKG && \
