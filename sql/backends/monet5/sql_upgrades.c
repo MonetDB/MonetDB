@@ -1133,6 +1133,34 @@ sql_update_jun2016(Client c)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function degrees to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function radians to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on procedure times to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_date to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function date_to_str to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_time to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function time_to_str to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_timestamp to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function timestamp_to_str to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(BIGINT) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(INT) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(TIMESTAMP) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(TIMESTAMP WITH TIME ZONE) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_STUFF to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_TRUNC to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_ROUND to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_STR to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function alpha to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_encode to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_decode_x to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_decode_y to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function rejects to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function md5 to public;\n");
+
 #if 0
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_openstream(host string, port int);");
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_stethoscope(ticks int);");
