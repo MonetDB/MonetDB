@@ -29,10 +29,10 @@ stderr of test 'create_misc` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = INSERT INTO tenk2 SELECT * FROM tenk1;
-ERROR = !INSERT INTO: UNIQUE constraint 'tenk2.tenk2_unique2_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !INSERT INTO: UNIQUE constraint 'tenk2.tenk2_unique1_unique' violated
+MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = CREATE TABLE Bprime AS
         SELECT *
         --   INTO TABLE Bprime
