@@ -967,6 +967,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 				if (!v) {
 					sql->errstr[0] = 0;
 					sql->session->status = status;
+					rel_val = NULL;
 					if (single) {
 						v = rel_value_exp(sql, &r, a, sql_sel, ek);
 					} else if (!rel_val && r) {
