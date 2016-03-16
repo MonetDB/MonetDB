@@ -148,7 +148,7 @@
 /* #undef HAVE_FDATASYNC */
 
 /* Define to 1 if you have the <fenv.h> header file. */
-#if !defined(_MSV_VER) || _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_FENV_H 1
 #endif
 
@@ -240,7 +240,7 @@
 #define HAVE_IO_H 1
 
 /* Define to 1 if you have the `isinf' function. */
-#if !defined(_MSV_VER) || _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ISINF 1
 #endif
 
@@ -309,7 +309,7 @@
 
 /* Define to 1 if you have the `llabs' function. */
 #define HAVE_LLABS 1
-#if defined(_MSV_VER) && _MSC_VER <= 1500
+#if defined(_MSC_VER) && _MSC_VER <= 1500
 #define llabs _abs64
 #endif
 
@@ -460,7 +460,7 @@
 /* #undef HAVE_RLIMIT_H */
 
 /* Define to 1 if you have the `round' function. */
-#if !defined(_MSV_VER) || _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ROUND 1
 #endif
 
