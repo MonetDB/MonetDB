@@ -80,15 +80,15 @@ stderr of test 'null_as_string_errors` in directory 'sql/test/copy` itself:
 # 21:02:57 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:57 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-21189/.s.monetdb.32700
+MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,NULL,NULL
 ERROR = !Failed to import table line 1 field 1 'int' expected in 'NULL'
-MAPI  = (monetdb) /var/tmp/mtest-21189/.s.monetdb.32700
+MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,zero,0
 ERROR = !Failed to import table line 1 field 1 'int' expected in 'NULL'
-MAPI  = (monetdb) /var/tmp/mtest-21189/.s.monetdb.32700
+MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         2,two,NULL
 ERROR = !Failed to import table line 1 field 3 'decimal(5,2)' expected in 'NULL'

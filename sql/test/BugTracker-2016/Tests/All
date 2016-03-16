@@ -17,3 +17,6 @@ rank_rewrite.Bug-3890
 HAVE_LIBBZ2?min-max-uuid-column-wrong-results.Bug-3953
 update_crash.Bug-3954
 group_distinct_quantile.Bug-3927
+merge_project.Bug-3955
+decimal_vs_integer.Bug-3941
+foreign_key.Bug-3938
