@@ -74,14 +74,16 @@ project (
 | | | | | | | group by (
 | | | | | | | | join (
 | | | | | | | | | project (
-| | | | | | | | | | semijoin (
-| | | | | | | | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX  ] COUNT ,
-| | | | | | | | | | | project (
-| | | | | | | | | | | | select (
-| | | | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_name NOT NULL ] COUNT 
-| | | | | | | | | | | | ) [ (char[part.p_name NOT NULL] as part.p_name) FILTER like (char "forest%", char "") ]
-| | | | | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  as L11.L10 ]
-| | | | | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  = L11.L10 NOT NULL HASHCOL  ]
+| | | | | | | | | | project (
+| | | | | | | | | | | semijoin (
+| | | | | | | | | | | | table(sys.partsupp) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX  ] COUNT ,
+| | | | | | | | | | | | project (
+| | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | table(sys.part) [ part.p_partkey NOT NULL HASHCOL , part.p_name NOT NULL ] COUNT 
+| | | | | | | | | | | | | ) [ (char[part.p_name NOT NULL] as part.p_name) FILTER like (char "forest%", char "") ]
+| | | | | | | | | | | | ) [ part.p_partkey NOT NULL HASHCOL  as L11.L10 ]
+| | | | | | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL  = L11.L10 NOT NULL HASHCOL  ]
+| | | | | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX  ]
 | | | | | | | | | ) [ partsupp.ps_partkey NOT NULL HASHCOL , partsupp.ps_suppkey NOT NULL, partsupp.ps_availqty NOT NULL, partsupp.%partsupp_ps_partkey_ps_suppkey_pkey NOT NULL HASHIDX , sys.identity(partsupp.ps_partkey NOT NULL HASHCOL ) HASHCOL  as L17.L17 ],
 | | | | | | | | | select (
 | | | | | | | | | | table(sys.lineitem) [ lineitem.l_partkey NOT NULL as L16.l_partkey, lineitem.l_suppkey NOT NULL as L16.l_suppkey, lineitem.l_quantity NOT NULL as L16.l_quantity, lineitem.l_shipdate NOT NULL as L16.l_shipdate ] COUNT 
