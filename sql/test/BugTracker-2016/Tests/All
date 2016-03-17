@@ -11,6 +11,7 @@ case-with-string-Bug.3932
 date_calculation_and_comparison_wrong_results.Bug-3940
 wrong-nonil-property-with-copy-binary-into.Bug-3937-prepare
 wrong-nonil-property-with-copy-binary-into.Bug-3937
+column_alias_in_where_clause.Bug-3947
 catalog_name_qualifier.Bug-3948
 stream_table_crash.Bug-3952
 null_in_null.Bug-3900
