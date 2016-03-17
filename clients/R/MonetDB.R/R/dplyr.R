@@ -78,7 +78,7 @@ db_query_fields.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_query_fields.MonetDBEmbeddedConnection <- function(con, sql, ...) {
-  names(DBI::dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql), notreally=T))
+  names(DBI::dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql), execute = F))
 }
 
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
@@ -86,7 +86,7 @@ db_query_rows.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_query_rows.MonetDBEmbeddedConnection <- function(con, sql, ...) {
-  attr(DBI::dbGetQuery(con, sql, notreally=T), "__rows")
+  attr(DBI::dbGetQuery(con, sql, resultconvert = F), "__rows")
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {

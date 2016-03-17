@@ -12,7 +12,7 @@ libfilename <- "libmonetdb5"
 
 classname <- "monetdb_embedded_connection"
 
-monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
+monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE, sequential=TRUE) {
 	dir <- normalizePath(as.character(dir), mustWork=F)
 	quiet <- as.logical(quiet)
 	if (length(dir) != 1) {
@@ -26,7 +26,7 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	}
 	if (!monetdb_embedded_env$is_started) {
 		res <- .Call("monetdb_startup_R", dir, quiet, 
-			getOption('monetdb.squential', FALSE), PACKAGE=libfilename)
+			getOption('monetdb.squential', sequential), PACKAGE=libfilename)
 	} else {
 		if (dir != monetdb_embedded_env$started_dir) {
 			stop("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ", restart R).")
@@ -41,21 +41,25 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE) {
 	invisible(TRUE)
 }
 
-monetdb_embedded_query <- function(conn, query, notreally=FALSE) {
+monetdb_embedded_query <- function(conn, query, execute=TRUE, resultconvert=TRUE) {
 	query <- as.character(query)
 	if (length(query) != 1) {
 		stop("Need a single query as parameter.")
 	}
-	notreally <- as.logical(notreally)
-	if (length(notreally) != 1) {
-		stop("Need a single noreally flag as parameter.")
+	execute <- as.logical(execute)
+	if (length(execute) != 1) {
+		stop("Need a single execute flag as parameter.")
+	}
+	resultconvert <- as.logical(resultconvert)
+	if (length(resultconvert) != 1) {
+		stop("Need a single resultconvert flag as parameter.")
 	}
 	if (!inherits(conn, classname)) {
 		stop("Invalid connection")
 	}
 	# make sure the query is terminated
 	query <- paste(query, "\n;", sep="")
-	res <- .Call("monetdb_query_R", conn, query, notreally, PACKAGE=libfilename)
+	res <- .Call("monetdb_query_R", conn, query, execute, resultconvert, PACKAGE=libfilename)
 
 	resp <- list()
 	if (is.character(res)) { # error
@@ -68,7 +72,6 @@ monetdb_embedded_query <- function(conn, query, notreally=FALSE) {
 	if (is.list(res)) {
 		resp$type <- 1 # Q_TABLE
 		attr(res, "row.names") <- c(NA_integer_, length(res[[1]]))
-		attr(res, "__rows") <- NULL
   		class(res) <- "data.frame"
 		names(res) <- gsub("\\", "", names(res), fixed=T)
 		resp$tuples <- res

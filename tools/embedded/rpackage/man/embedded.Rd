@@ -15,7 +15,7 @@ Low-level API for MonetDBLite. \code{DBI}/\code{dplyr} frontends for these funct
 \usage{
 monetdb_embedded_startup(dir=tempdir(), quiet=TRUE)
 monetdb_embedded_connect()
-monetdb_embedded_query(conn, query, notreally=FALSE)
+monetdb_embedded_query(conn, query, execute = TRUE, resultconvert = TRUE)
 monetdb_embedded_append(conn, table, tdata, schema="sys")
 monetdb_embedded_disconnect(conn)
 monetdb_embedded_shutdown()
@@ -25,7 +25,8 @@ monetdb_embedded_shutdown()
    \item{quiet}{Suppress MonetDB startup messages?}
    \item{conn}{Connection as obtained by calling \code{monetdb_embedded_connect()}}
    \item{query}{SQL query, DDL statement or transaction statement}
-   \item{notreally}{Skip result conversion?}
+   \item{execute}{Actually execute query?}
+   \item{resultconvert}{Convert results to R vectors?}
    \item{table}{Database table name}
    \item{tdata}{\code{data.frame} with columns matching the schema of \code{table}}
   \item{schema}{Schema name}

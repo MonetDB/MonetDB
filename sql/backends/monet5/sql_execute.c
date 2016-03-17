@@ -23,6 +23,7 @@
 #include "sql_env.h"
 #include "sql_mvc.h"
 #include "sql_execute.h"
+#include "rel_exp.h"
 #include "mal_debugger.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -214,6 +215,35 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			freeVariables(c, mb, NULL, oldvtop);
 		}
 		sqlcleanup(m, 0);
+
+		/* construct a mock result set to determine schema */
+		if (!execute && result) {
+			/* 'inspired' by mvc_export_prepare() */
+			node *n;
+			size_t ncol = 0;
+			res_table *res;
+			if (is_topn(r->op))
+				r = r->l;
+			if (r && is_project(r->op) && r->exps) {
+				for (n = r->exps->h; n; n = n->next) ncol++;
+				res = res_table_create(m->session->tr, 42, ncol, 1, NULL, NULL);
+				for (n = r->exps->h; n; n = n->next) {
+					const char *name, *rname;
+					sql_exp *e = n->data;
+					sql_subtype *t = exp_subtype(e);
+					name = e->name;
+					if (!name && e->type == e_column && e->r)
+						name = e->r;
+					rname = e->rname;
+					if (!rname && e->type == e_column && e->l)
+						rname = e->l;
+					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
+							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
+				}
+				*result = res;
+			}
+		}
+
 		if (!execute) {
 			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 			c->glb = oldglb;
@@ -224,6 +254,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 #endif
 		assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 		c->glb = oldglb;
+
+
 	}
 	if (m->results && result) { /* return all results sets */
 		*result = m->results;
