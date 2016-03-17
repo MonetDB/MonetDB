@@ -2313,20 +2313,18 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 	/**
 	 * Get a description of a table's columns that are automatically
-	 * updated when any value in a row is updated.	They are
-	 * unordered.
+	 * updated when any value in a row is updated. They are unordered.
 	 *
 	 * <P>Each column description has the following columns:
 	 *	<OL>
 	 *	<LI><B>SCOPE</B> short => is not used
 	 *	<LI><B>COLUMN_NAME</B> String => column name
-	 *	<LI><B>DATA_TYPE</B> short => SQL data type from java.sql.Types
+	 *	<LI><B>DATA_TYPE</B> int => SQL data type from java.sql.Types
 	 *	<LI><B>TYPE_NAME</B> String => Data source dependent type name
 	 *	<LI><B>COLUMN_SIZE</B> int => precision
 	 *	<LI><B>BUFFER_LENGTH</B> int => length of column value in bytes
-	 *	<LI><B>DECIMAL_DIGITS</B> short  => scale
-	 *	<LI><B>PSEUDO_COLUMN</B> short => is this a pseudo column
-	 *		like an Oracle ROWID
+	 *	<LI><B>DECIMAL_DIGITS</B> short => scale
+	 *	<LI><B>PSEUDO_COLUMN</B> short => is this a pseudo column like an Oracle ROWID
 	 *		<UL>
 	 *		<LI> versionColumnUnknown - may or may not be pseudo column
 	 *		<LI> versionColumnNotPseudo - is NOT a pseudo column
@@ -2347,26 +2345,19 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String table
 	) throws SQLException
 	{
-		// I don't know of columns which update themselves, except maybe on the
-		// system tables
+		// MonetDB currently does not have columns which update themselves, so return an empty ResultSet
+		String query =
+		"SELECT CAST(null as smallint) AS \"SCOPE\", " +
+			"CAST(null as varchar(1)) AS \"COLUMN_NAME\", " +
+			"CAST(null as int) AS \"DATA_TYPE\", " +
+			"CAST(null as varchar(1)) AS \"TYPE_NAME\", " +
+			"CAST(null as int) AS \"COLUMN_SIZE\", " +
+			"CAST(null as int) AS \"BUFFER_LENGTH\", " +
+			"CAST(null as smallint) AS \"DECIMAL_DIGITS\", " +
+			"CAST(null as smallint) AS \"PSEUDO_COLUMN\" " +
+		"WHERE 1 = 0";
 
-		final String columns[] = {
-			"SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
-			"BUFFER_LENGTH", "DECIMAL_DIGITS", "PSEUDO_COLUMN"
-		};
-
-		final String types[] = {
-			"int", "varchar", "int", "varchar", "int",
-			"int", "int", "int"
-		};
-
-		final String[][] results = new String[0][columns.length];
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		return executeMetaDataQuery(query);
 	}
 
 	/**
