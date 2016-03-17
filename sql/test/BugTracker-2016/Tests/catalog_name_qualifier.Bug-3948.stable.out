@@ -1,0 +1,147 @@
+stdout of test 'catalog_name_qualifier.Bug-3948` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 11:57:27 >  
+# 11:57:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31222" "--set" "mapi_usock=/var/tmp/mtest-9756/.s.monetdb.31222" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 11:57:27 >  
+
+# MonetDB 5 server v11.23.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31222/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9756/.s.monetdb.31222
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 11:57:27 >  
+# 11:57:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9756" "--port=31222"
+# 11:57:27 >  
+
+#select * from dependency_types where dependency_type_id IN (1, 2);
+% sys.dependency_types,	sys.dependency_types # table_name
+% dependency_type_id,	dependency_type_name # name
+% smallint,	varchar # type
+% 1,	6 # length
+[ 1,	"SCHEMA"	]
+[ 2,	"TABLE"	]
+#select * from sys.dependency_types where dependency_type_id IN (1, 2);
+% sys.dependency_types,	sys.dependency_types # table_name
+% dependency_type_id,	dependency_type_name # name
+% smallint,	varchar # type
+% 1,	6 # length
+[ 1,	"SCHEMA"	]
+[ 2,	"TABLE"	]
+#select * from table_types where table_type_id IN (0, 1);
+% sys.table_types,	sys.table_types # table_name
+% table_type_id,	table_type_name # name
+% smallint,	varchar # type
+% 1,	5 # length
+[ 0,	"TABLE"	]
+[ 1,	"VIEW"	]
+#select * from sys.table_types where table_type_id IN (0, 1);
+% sys.table_types,	sys.table_types # table_name
+% table_type_id,	table_type_name # name
+% smallint,	varchar # type
+% 1,	5 # length
+[ 0,	"TABLE"	]
+[ 1,	"VIEW"	]
+#set schema tmp;
+#create temporary table tmp.t3948 (c1 int) ON COMMIT PRESERVE ROWS;
+#insert into tmp.t3948 values (10), (20);
+[ 2	]
+#select * from tmp.t3948;
+% tmp.t3948 # table_name
+% c1 # name
+% int # type
+% 2 # length
+[ 10	]
+[ 20	]
+#select * from t3948;
+% tmp.t3948 # table_name
+% c1 # name
+% int # type
+% 2 # length
+[ 10	]
+[ 20	]
+#drop table tmp.t3948;
+#set schema sys;
+#create table sys.t3948 (c1 int);
+#insert into sys.t3948 values (10), (20);
+[ 2	]
+#select * from sys.t3948;
+% sys.t3948 # table_name
+% c1 # name
+% int # type
+% 2 # length
+[ 11	]
+[ 21	]
+#select * from t3948;
+% sys.t3948 # table_name
+% c1 # name
+% int # type
+% 2 # length
+[ 11	]
+[ 21	]
+#drop table sys.t3948;
+#select * from dependencies_tables_on_views();
+% .,	.,	. # table_name
+% sch,	usr,	dep_type # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
+#select * from sys.dependencies_tables_on_views();
+% .,	.,	. # table_name
+% sch,	usr,	dep_type # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
+
+# 11:57:28 >  
+# 11:57:28 >  "Done."
+# 11:57:28 >  
+
