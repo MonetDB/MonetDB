@@ -3288,7 +3288,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		scope of a reference attribute (<code>null</code> if DATA_TYPE isn't REF)
 	 *	<LI><B>SCOPE_TABLE</B> String => table name that is the scope of a
 	 *		reference attribute (<code>null</code> if the DATA_TYPE isn't REF)
-	 * <LI><B>SOURCE_DATA_TYPE</B> short => source type of a distinct type or user-generated
+	 * 	<LI><B>SOURCE_DATA_TYPE</B> short => source type of a distinct type or user-generated
 	 *		Ref type,SQL type from java.sql.Types (<code>null</code> if DATA_TYPE
 	 *		isn't DISTINCT or user-generated REF)
 	 *	</OL>
@@ -3317,7 +3317,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		String query =
-			"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
+		"SELECT cast(null as char(1)) AS \"TYPE_CAT\", '' AS \"TYPE_SCHEM\", '' AS \"TYPE_NAME\", " +
 			"'' AS \"ATTR_NAME\", '' AS \"ATTR_TYPE_NAME\", 0 AS \"ATTR_SIZE\", " +
 			"0 AS \"DECIMAL_DIGITS\", 0 AS \"NUM_PREC_RADIX\", 0 AS \"NULLABLE\", " +
 			"'' AS \"REMARKS\", '' AS \"ATTR_DEF\", 0 AS \"SQL_DATA_TYPE\", " +
@@ -3754,8 +3754,29 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * or hidden columns may not always be stored within a table and are
 	 * not visible in a ResultSet unless they are specified in the
 	 * query's outermost SELECT list.  Pseudo or hidden columns may not
-	 * necessarily be able to be modified.  If there are no pseudo or
-	 * hidden columns, an empty ResultSet is returned.
+	 * necessarily be able to be modified.
+	 * If there are no pseudo or hidden columns, an empty ResultSet is returned.
+	 *
+	 * Only column descriptions matching the catalog, schema, table and column name criteria are returned.
+	 * They are ordered by TABLE_CAT,TABLE_SCHEM, TABLE_NAME and COLUMN_NAME.
+	 *
+	 * Each column description has the following columns:
+	 *
+	 *  1. TABLE_CAT String => table catalog (may be null)
+	 *  2. TABLE_SCHEM String => table schema (may be null)
+	 *  3. TABLE_NAME String => table name
+	 *  4. COLUMN_NAME String => column name
+	 *  5. DATA_TYPE int => SQL type from java.sql.Types
+	 *  6. COLUMN_SIZE int => column size.
+	 *  7. DECIMAL_DIGITS int => the number of fractional digits. Null is returned for data types where DECIMAL_DIGITS is not applicable.
+	 *  8. NUM_PREC_RADIX int => Radix (typically either 10 or 2)
+	 *  9. COLUMN_USAGE String => The allowed usage for the column. The value returned will correspond to the enum name returned by PseudoColumnUsage.name()
+	 * 10. REMARKS String => comment describing column (may be null)
+	 * 11. CHAR_OCTET_LENGTH int => for char types the maximum number of bytes in the column
+	 * 12. IS_NULLABLE String => ISO rules are used to determine the nullability for a column.
+	 *         YES --- if the column can include NULLs
+	 *         NO --- if the column cannot include NULLs
+	 *         empty string --- if the nullability for the column is unknown
 	 *
 	 * @param catalog a catalog name
 	 * @param schemaPattern a schema name pattern
@@ -3772,43 +3793,23 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			String columnNamePattern)
 		throws SQLException
 	{
-		String[] columns, types;
-		String[][] results;
+		// MonetDB currently does not support pseudo or hidden columns, so return an empty ResultSet
+		String query =
+		"SELECT CAST(null as char(1)) AS \"TABLE_CAT\", " +
+			"CAST(null as varchar(1)) AS \"TABLE_SCHEM\", " +
+			"CAST(null as varchar(1)) AS \"TABLE_NAME\", " +
+			"CAST(null as varchar(1)) AS \"COLUMN_NAME\", " +
+			"CAST(null as int) AS \"DATA_TYPE\", " +
+			"CAST(null as int) AS \"COLUMN_SIZE\", " +
+			"CAST(null as int) AS \"DECIMAL_DIGITS\", " +
+			"CAST(null as int) AS \"NUM_PREC_RADIX\", " +
+			"CAST(null as varchar(1)) AS \"COLUMN_USAGE\", " +
+			"CAST(null as varchar(1)) AS \"REMARKS\", " +
+			"CAST(null as int) AS \"CHAR_OCTET_LENGTH\", " +
+			"CAST(null as varchar(3)) AS \"IS_NULLABLE\" " +
+		"WHERE 1 = 0";
 
-		columns = new String[12];
-		types = new String[12];
-		results = new String[12][0];
-
-		columns[0] = "TABLE_CAT";
-		types[0] = "varchar";
-		columns[1] = "TABLE_SCHEM";
-		types[1] = "varchar";
-		columns[2] = "TABLE_NAME";
-		types[2] = "varchar";
-		columns[3] = "COLUMN_NAME";
-		types[3] = "varchar";
-		columns[4] = "DATA_TYPE";
-		types[4] = "int";
-		columns[5] = "COLUMN_SIZE";
-		types[5] = "int";
-		columns[6] = "DECIMAL_DIGITS";
-		types[6] = "int";
-		columns[7] = "NUM_PREC_RADIX";
-		types[7] = "int";
-		columns[8] = "COLUMN_USAGE";
-		types[8] = "varchar";
-		columns[9] = "REMARKS";
-		types[9] = "varchar";
-		columns[10] = "CHAR_OCTET_LENGTH";
-		types[10] = "int";
-		columns[11] = "IS_NULLABLE";
-		types[11] = "varchar";
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		return executeMetaDataQuery(query);
 	}
 
 	/**
