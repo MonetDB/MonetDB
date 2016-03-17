@@ -129,7 +129,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #endif
 
 
-/* FNV hash */
+/* FNV1a hash */
 
 #if SIZEOF_BUN == 8
 #define FNV_PRIME 0x100000001b3ULL
@@ -142,16 +142,13 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define NO_FNV_OPT
 
 static inline BUN fnvhash_int(const void *v) {
-	unsigned int v_int = *(unsigned int *) v;
+	unsigned int v_uint = *(unsigned int *) v;
 	BUN r = FNV_INIT;
-#if SIZEOF_INT == 8
-	int octets = 8;
-#else
-	int octets = 4;
-#endif
+	size_t octets = sizeof(unsigned int);
+
 	while (octets--) {
-		r ^= (v_int & 0xff);
-		v_int >>= 8;
+		r ^= (v_uint & 0xff);
+		v_uint >>= 8;
 #ifdef NO_FNV_OPT
 		r *= FNV_PRIME;
 #else
@@ -167,12 +164,13 @@ static inline BUN fnvhash_int(const void *v) {
 }
 
 static inline BUN fnvhash_lng(const void *v) {
-	ulng v_int = *(ulng *) v;
+	ulng v_ulng = *(ulng *) v;
 	BUN r = FNV_INIT;
-	int octets = 8;
+	size_t octets = sizeof(ulng);
+
 	while (octets--) {
-		r ^= (v_int & 0xff);
-		v_int >>= 8;
+		r ^= (v_ulng & 0xff);
+		v_ulng >>= 8;
 #ifdef NO_FNV_OPT
 		r *= FNV_PRIME;
 #else
@@ -187,9 +185,11 @@ static inline BUN fnvhash_lng(const void *v) {
 	return r;
 }
 
-#define hash_int2(H,R)	((H)->n > 32 ? ((BUN) ((R) >> (H)->n) ^ ((R) & (H)->mask)) : ((BUN) ((((R) >> (H)->n) ^ (R)) & (H)->mask)))
-#define hash_int(H,V)	hash_int2(H, fnvhash_int(V))
-#define hash_lng(H,V)	hash_int2(H, fnvhash_lng(V))
+#define fnv_mask(H,R)	((H)->n > 32 ? ((BUN) ((R) >> (H)->n) ^ ((R) & (H)->mask)) : ((BUN) ((((R) >> (H)->n) ^ (R)) & (H)->mask)))
+#define fnv_int(H,V)	fnv_mask(H, fnvhash_int(V))
+#define fnv_lng(H,V)	fnv_mask(H, fnvhash_lng(V))
+
+/* end of FNV1a hash */
 
 #define mix_bte(X)	((unsigned int) (unsigned char) (X))
 #define mix_sht(X)	((unsigned int) (unsigned short) (X))
@@ -208,9 +208,9 @@ static inline BUN fnvhash_lng(const void *v) {
 #define heap_hash_any(hp,H,V)	((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
 #define hash_bte(H,V)	(assert(((H)->mask & 0xFF) == 0xFF), (BUN) mix_bte(*(const unsigned char*) (V)))
 #define hash_sht(H,V)	(assert(((H)->mask & 0xFFFF) == 0xFFFF), (BUN) mix_sht(*(const unsigned short*) (V)))
-/*#define hash_int(H,V)	((BUN) mix_int(*(const unsigned int *) (V)) & (H)->mask)*/
+#define hash_int(H,V)	((BUN) mix_int(*(const unsigned int *) (V)) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-/*#define hash_lng(H,V)	((BUN) mix_lng(*(const ulng *) (V)) & (H)->mask)*/
+#define hash_lng(H,V)	((BUN) mix_lng(*(const ulng *) (V)) & (H)->mask)
 #ifdef HAVE_HGE
 #define hash_hge(H,V)	((BUN) mix_hge(*(const uhge *) (V)) & (H)->mask)
 #endif

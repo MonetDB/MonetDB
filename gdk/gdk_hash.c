@@ -267,8 +267,8 @@ BATcheckhash(BAT *b)
 					b->T->hash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-					IDXACCESS fprintf(stderr, "[%4d->%4d]:%s (" BUNFMT ") #BATcheckhash: load persistent hash index (ms=" LLFMT
-					                          ")\n", b->batCacheid,-VIEWtparent(b), "type", BATcount(b), GDKusec() - t);
+					IDXACCESS fprintf(stderr, "[%d,%d]:%c (" BUNFMT ") #BATcheckhash: load persistent hash index (ms=" LLFMT
+					                          ")\n", b->batCacheid,-VIEWtparent(b), b->T->type, BATcount(b), GDKusec() - t);
 					return 1;
 				}
 				GDKfree(h);
@@ -532,7 +532,7 @@ BAThash(BAT *b, BUN masksize)
 		ALGODEBUG HASHcollisions(b, b->T->hash);
 	}
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-	IDXACCESS fprintf(stderr, "[%4d->%4d]:%s (" BUNFMT ") #BAThash: create hash index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b), "type", BATcount(b), t1 - t0);
+	IDXACCESS fprintf(stderr, "[%d,%d]:%c (" BUNFMT ") #BAThash: create hash index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->T->type, BATcount(b), t1 - t0);
 	return GDK_SUCCEED;
 }
 
