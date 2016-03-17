@@ -2672,19 +2672,24 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Get a description of all the standard SQL types supported by
+	 * Get a description of all the SQL data types supported by
 	 * this database. They are ordered by DATA_TYPE and then by how
 	 * closely the data type maps to the corresponding JDBC SQL type.
+	 * 
+	 * If the database supports SQL distinct types, then getTypeInfo() will
+	 * return a single row with a TYPE_NAME of DISTINCT and a DATA_TYPE of Types.DISTINCT.
+	 * If the database supports SQL structured types, then getTypeInfo() will
+	 * return a single row with a TYPE_NAME of STRUCT and a DATA_TYPE of Types.STRUCT.
+	 * If SQL distinct or structured types are supported, then information on
+	 * the individual types may be obtained from the getUDTs() method.
 	 *
 	 * <P>Each type description has the following columns:
 	 *	<OL>
 	 *	<LI><B>TYPE_NAME</B> String => Type name
-	 *	<LI><B>DATA_TYPE</B> short => SQL data type from java.sql.Types
+	 *	<LI><B>DATA_TYPE</B> int => SQL data type from java.sql.Types
 	 *	<LI><B>PRECISION</B> int => maximum precision
-	 *	<LI><B>LITERAL_PREFIX</B> String => prefix used to quote a literal
-	 *		(may be null)
-	 *	<LI><B>LITERAL_SUFFIX</B> String => suffix used to quote a literal
-	 *  (may be null)
+	 *	<LI><B>LITERAL_PREFIX</B> String => prefix used to quote a literal (may be null)
+	 *	<LI><B>LITERAL_SUFFIX</B> String => suffix used to quote a literal (may be null)
 	 *	<LI><B>CREATE_PARAMS</B> String => parameters used in creating
 	 *		the type (may be null)
 	 *	<LI><B>NULLABLE</B> short => can you use NULL for this type?
@@ -2719,49 +2724,39 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public ResultSet getTypeInfo() throws SQLException {
-/*
-# id,   	systemname, sqlname,        digits, scale,  radix,  module_id # name
-[ 1004729,  "bat",      "table",        0,      0,      0,      0       ]
-[ 1004730,  "bit",      "boolean",      0,      0,      2,      0       ]
-[ 1004731,  "str",      "char",         0,      0,      0,      0       ]
-[ 1004732,  "str",      "varchar",      0,      0,      0,      0       ]
-[ 1004733,  "str",      "clob",         0,      0,      0,      0       ]
-[ 1004734,  "oid",      "oid",          9,      0,      10,     0       ]
-...
-*/
-		String query =
-			"SELECT \"sqlname\" AS \"TYPE_NAME\", " +
-				"cast(" + MonetDriver.getSQLTypeMap("\"sqlname\"") + " " +
-				"AS smallint) AS \"DATA_TYPE\", " +
-				"\"digits\" AS \"PRECISION\", " +
-				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('" +
-				escapeQuotes("'") + "' AS char) " +
-					"ELSE cast(NULL AS char) END AS char) AS \"LITERAL_PREFIX\", " +
-				"cast(CASE WHEN \"systemname\" = 'str' THEN cast('" +
-				escapeQuotes("'") + "' AS char) " +
-					"ELSE cast(NULL AS char) END AS char) AS \"LITERAL_SUFFIX\", " +
-				"cast(NULL AS varchar(1)) AS \"CREATE_PARAMS\", " +
-				"cast(CASE WHEN \"systemname\" = 'oid' THEN " + DatabaseMetaData.typeNoNulls + " " +
-					"ELSE " + DatabaseMetaData.typeNullable + " END AS smallint) AS \"NULLABLE\", " +
-				"false AS \"CASE_SENSITIVE\", " +
-				"cast(CASE \"systemname\" WHEN 'table' THEN " + DatabaseMetaData.typePredNone + " " +
-					"WHEN 'str' THEN " + DatabaseMetaData.typePredChar + " " +
-					"WHEN 'sqlblob' THEN " + DatabaseMetaData.typePredChar + " " +
-					"ELSE " + DatabaseMetaData.typePredBasic + " " +
-				"END AS smallint) AS SEARCHABLE, " +
-				"false AS \"UNSIGNED_ATTRIBUTE\", " +
-				"CASE \"sqlname\" WHEN 'decimal' THEN true " +
-					"ELSE false END AS \"FIXED_PREC_SCALE\", " +
-				"false AS \"AUTO_INCREMENT\", " +
-				"\"systemname\" AS \"LOCAL_TYPE_NAME\", " + 
-				"0 AS \"MINIMUM_SCALE\", " +
-				"18 AS \"MAXIMUM SCALE\", " +
-				"cast(NULL AS int) AS \"SQL_DATA_TYPE\", " +
-				"cast(NULL AS int) AS \"SQL_DATETIME_SUB\", " +
-				"\"radix\" AS \"NUM_PREC_RADIX\" " +
-			"FROM \"sys\".\"types\"";
-			
-		return executeMetaDataQuery(query);
+		StringBuilder query = new StringBuilder(2300);
+		query.append("SELECT \"sqlname\" AS \"TYPE_NAME\", " +
+			"cast(").append(MonetDriver.getSQLTypeMap("\"sqlname\"")).append(" AS int) AS \"DATA_TYPE\", " +
+			"\"digits\" AS \"PRECISION\", " +	// note that when radix is 2 the precision shows the number of bits
+			"cast(CASE WHEN \"systemname\" IN ('str', 'inet', 'json', 'url', 'uuid') THEN ''''" +
+			" ELSE NULL END AS varchar(2)) AS \"LITERAL_PREFIX\", " +
+			"cast(CASE WHEN \"systemname\" IN ('str', 'inet', 'json', 'url', 'uuid') THEN ''''" +
+			" ELSE NULL END AS varchar(2)) AS \"LITERAL_SUFFIX\", " +
+			"CASE WHEN \"sqlname\" IN ('char', 'varchar', 'binary', 'varbinary') THEN 'max length'" +
+			" WHEN \"sqlname\" IN ('decimal', 'sec_interval', 'timestamp', 'timestamptz') THEN 'precision'" +
+			" ELSE NULL END AS \"CREATE_PARAMS\", " +
+			"cast(CASE WHEN \"systemname\" = 'oid' THEN ").append(DatabaseMetaData.typeNoNulls)
+			.append(" ELSE ").append(DatabaseMetaData.typeNullable).append(" END AS smallint) AS \"NULLABLE\", " +
+			"CASE WHEN \"systemname\" IN ('str', 'json', 'url') THEN true ELSE false END AS \"CASE_SENSITIVE\", " +
+			"cast(CASE \"systemname\" WHEN 'table' THEN ").append(DatabaseMetaData.typePredNone)
+			.append(" WHEN 'str' THEN ").append(DatabaseMetaData.typePredChar)
+			.append(" WHEN 'sqlblob' THEN ").append(DatabaseMetaData.typePredChar)
+			.append(" ELSE ").append(DatabaseMetaData.typePredBasic).append(" END AS smallint) AS \"SEARCHABLE\", " +
+			"false AS \"UNSIGNED_ATTRIBUTE\", " +
+			"CASE \"sqlname\" WHEN 'decimal' THEN true ELSE false END AS \"FIXED_PREC_SCALE\", " +
+			"false AS \"AUTO_INCREMENT\", " +
+			"\"systemname\" AS \"LOCAL_TYPE_NAME\", " +
+			"cast(0 AS smallint) AS \"MINIMUM_SCALE\", " +
+			"cast(CASE WHEN \"sqlname\" = 'decimal' AND \"systemname\" = 'lng' THEN 18" +
+			" WHEN \"sqlname\" = 'decimal' AND \"systemname\" = 'hge' THEN 38" +
+			" WHEN \"sqlname\" IN ('sec_interval', 'timestamp', 'timestamptz') THEN 9 ELSE 0 END AS smallint) AS \"MAXIMUM_SCALE\", " +
+			"cast(NULL AS int) AS \"SQL_DATA_TYPE\", " +
+			"cast(NULL AS int) AS \"SQL_DATETIME_SUB\", " +
+			"\"radix\" AS \"NUM_PREC_RADIX\" " +
+		"FROM \"sys\".\"types\" " +
+		"ORDER BY \"DATA_TYPE\", \"sqlname\", \"id\"");
+
+		return executeMetaDataQuery(query.toString());
 	}
 
 	/**

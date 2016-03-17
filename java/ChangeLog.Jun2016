@@ -2,6 +2,12 @@
 # This file is updated with Maddlog
 
 * Thu Mar 17 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved DatabaseMetaData.getTypeInfo(). It now returns better information
+  on LITERAL_PREFIX, LITERAL_SUFFIX, CREATE_PARAMS, CASE_SENSITIVE,
+  FIXED_PREC_SCALE and MAXIMUM_SCALE for some data types. Also the returned rows
+  are now ordered by DATA_TYPE, TYPE_NAME, PRECISION as required by the specs.
+  Also corrected output column names "searchable" into "SEARCHABLE" and
+  "MAXIMUM SCALE" into "MAXIMUM_SCALE" to match the JDBC specification.
 - Corrected DatabaseMetaData.getPseudoColumns(). It used to return 12 empty rows.
   Now it returns no rows as MonetDB does not have pseudo columns.
 
