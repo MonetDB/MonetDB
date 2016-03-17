@@ -3079,7 +3079,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			  r2 && r2->tdense ? "-dense" : "",
 			  r2 && r2->tkey & 1 ? "-key" : "",
 			  GDKusec() - t0);
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #hashjoin: hash join l=[%d,%d]:%d (" BUNFMT ") (ms=" LLFMT
+	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #hashjoin: hash join l=[%d,%d]:%d (" BUNFMT ") (usec " LLFMT
 	                  ")\n", r->batCacheid,-VIEWtparent(r), r->ttype, BATcount(r), l->batCacheid,-VIEWtparent(l), l->ttype, BATcount(l), GDKusec() - t0);
 	return GDK_SUCCEED;
 

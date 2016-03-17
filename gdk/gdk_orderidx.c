@@ -93,7 +93,7 @@ BATcheckorderidx(BAT *b)
 					close(fd);
 					b->torderidx = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
-					IDXACCESS fprintf(stderr, "[%d,%d]:%c (" BUNFMT ") #BATcheckorderidx: load persistent order index (ms=" LLFMT
+					IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BATcheckorderidx: load persistent order index (usec " LLFMT
 					                          ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), GDKusec() - t);
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 					return 1;
@@ -206,7 +206,7 @@ BATorderidx(BAT *b, int stable)
 	t1 = GDKusec();
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BATorderidx: create order index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), t1 - t0);
+	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BATorderidx: create order index (usec " LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), t1 - t0);
 
 	return GDK_SUCCEED;
 }
@@ -427,7 +427,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	b->torderidx = m;
 	t1 = GDKusec();
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #GDKmergeidx: merge order index (ms=" LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), t1 - t0);
+	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #GDKmergeidx: merge order index (usec " LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), t1 - t0);
 	return GDK_SUCCEED;
 }
 
