@@ -2774,8 +2774,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Get a description of a table's indices and statistics. They are
-	 * ordered by NON_UNIQUE, TYPE, INDEX_NAME, and ORDINAL_POSITION.
+	 * Retrieves a description of the given table's indices and statistics.
+	 * They are ordered by NON_UNIQUE, TYPE, INDEX_NAME, and ORDINAL_POSITION.
 	 *
 	 * <P>Each index column description has the following columns:
 	 *	<OL>
@@ -2833,106 +2833,71 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		boolean approximate
 	) throws SQLException
 	{
-		String query =
-			"SELECT * FROM ( " +
-			"SELECT cast(null as char(1)) AS \"TABLE_CAT\", " +
-				"\"idxs\".\"name\" AS \"INDEX_NAME\", " +
-				"\"tables\".\"name\" AS \"TABLE_NAME\", " +
-				"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
-				"CASE WHEN \"keys\".\"name\" IS NULL THEN true ELSE false END AS \"NON_UNIQUE\", " +
-				"CASE \"idxs\".\"type\" WHEN 0 THEN " + DatabaseMetaData.tableIndexHashed + " ELSE " + DatabaseMetaData.tableIndexOther + " END AS \"TYPE\", " +
-				"\"objects\".\"nr\" AS \"ORDINAL_POSITION\", " +
-				"\"columns\".\"name\" as \"COLUMN_NAME\", " +
-				"cast(null AS varchar(1)) AS \"INDEX_QUALIFIER\", " +
-				"cast(null AS varchar(1)) AS \"ASC_OR_DESC\", " +
-				"0 AS \"PAGES\", " +
-				"cast(null AS varchar(1)) AS \"FILTER_CONDITION\" " +
-			"FROM \"sys\".\"idxs\" AS \"idxs\" LEFT JOIN \"sys\".\"keys\" AS \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
-				"\"sys\".\"schemas\" AS \"schemas\", " +
-				"\"sys\".\"objects\" AS \"objects\", " +
-				"\"sys\".\"columns\" AS \"columns\", " +
-				"\"sys\".\"tables\" AS \"tables\" " +
-			"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
-				"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
-				"AND \"idxs\".\"id\" = \"objects\".\"id\" " +
-				"AND \"tables\".\"id\" = \"columns\".\"table_id\" " +
-				"AND \"objects\".\"name\" = \"columns\".\"name\" " +
-				"AND (\"keys\".\"type\" IS NULL OR \"keys\".\"type\" = 1) " +
-			") AS jdbcquery " +
-				"WHERE 1 = 1 ";
+		String table_row_count = "0";
 
+		if (!approximate && schema != null && table != null && schema.length() > 0 && table.length() > 0) {
+			// we need the exact cardinality for one specific fully qualified table
+			ResultSet count = null;
+			try {
+				count = executeMetaDataQuery("SELECT COUNT(*) FROM \"" + schema + "\".\"" + table + "\"");
+				if (count != null && count.next()) {
+					String count_value = count.getString(1);
+					if (count_value != null && count_value.length() > 0)
+						table_row_count = count_value;
+				}
+			} catch (SQLException e) {
+				// ignore
+			} finally {
+				if (count != null) {
+					try {
+						count.close();
+					} catch (SQLException e) { /* ignore */ }
+				}
+			}
+		}
+
+		StringBuilder query = new StringBuilder(1250);
+		query.append(
+		"SELECT CAST(null AS char(1)) AS \"TABLE_CAT\", " +
+			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
+			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
+			"CASE WHEN \"keys\".\"name\" IS NULL THEN true ELSE false END AS \"NON_UNIQUE\", " +
+			"CAST(null AS varchar(1)) AS \"INDEX_QUALIFIER\", " +
+			"\"idxs\".\"name\" AS \"INDEX_NAME\", " +
+			"CASE \"idxs\".\"type\" WHEN 0 THEN ").append(DatabaseMetaData.tableIndexHashed).append(" ELSE ").append(DatabaseMetaData.tableIndexOther).append(" END AS \"TYPE\", " +
+			"CAST(\"objects\".\"nr\" AS smallint) AS \"ORDINAL_POSITION\", "+
+			"\"columns\".\"name\" AS \"COLUMN_NAME\", " +
+			"CAST(null AS varchar(1)) AS \"ASC_OR_DESC\", " +	// sort sequence currently not supported in keys or indexes in MonetDB
+			"CAST(").append(table_row_count).append(" AS int) AS \"CARDINALITY\", " +
+			"CAST(0 AS int) AS \"PAGES\", " +
+			"CAST(null AS varchar(1)) AS \"FILTER_CONDITION\" " +
+		"FROM \"sys\".\"idxs\" AS \"idxs\" LEFT JOIN \"sys\".\"keys\" AS \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
+			"\"sys\".\"schemas\" AS \"schemas\", " +
+			"\"sys\".\"objects\" AS \"objects\", " +
+			"\"sys\".\"columns\" AS \"columns\", " +
+			"\"sys\".\"tables\" AS \"tables\" " +
+		"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
+			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
+			"AND \"idxs\".\"id\" = \"objects\".\"id\" " +
+			"AND \"tables\".\"id\" = \"columns\".\"table_id\" " +
+			"AND \"objects\".\"name\" = \"columns\".\"name\" " +
+			"AND (\"keys\".\"type\" IS NULL OR \"keys\".\"type\" = 1)");
+
+		if (catalog != null && catalog.length() > 0) {
+			query.append(" AND \"TABLE_CAT\" ").append(composeMatchPart(catalog));
+		}
 		if (schema != null) {
-			query += "AND \"TABLE_SCHEM\" ILIKE '" + escapeQuotes(schema) + "' ";
+			query.append(" AND \"schemas\".\"name\" ").append(composeMatchPart(schema));
 		}
 		if (table != null) {
-			query += "AND \"TABLE_NAME\" ILIKE '" + escapeQuotes(table) + "' ";
+			query.append(" AND \"tables\".\"name\" ").append(composeMatchPart(table));
 		}
 		if (unique) {
-			query += "AND \"NON_UNIQUE\" = false ";
+			query.append(" AND \"keys\".\"name\" IS NOT NULL");
 		}
+		query.append(" ORDER BY \"NON_UNIQUE\", \"TYPE\", \"INDEX_NAME\", \"ORDINAL_POSITION\"");
 
-		query += "ORDER BY \"NON_UNIQUE\", \"TYPE\", \"INDEX_NAME\", \"ORDINAL_POSITION\"";
-
-		final String columns[] = {
-			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
-			"INDEX_QUALIFIER", "INDEX_NAME", "TYPE", "ORDINAL_POSITION",
-			"COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES",
-			"FILTER_CONDITION"
-		};
-
-		final String types[] = {
-			"varchar", "varchar", "varchar", "boolean",
-			"varchar", "varchar", "int", "int",
-			"varchar", "varchar", "int", "int", "varchar"
-		};
-
-		ArrayList<String[]> tmpRes = new ArrayList<String[]>();
-
-		Statement sub = null;
-		if (!approximate) sub = con.createStatement();
-
-		ResultSet rs = executeMetaDataQuery(query);
-		try {
-			while (rs.next()) {
-				String[] result = new String[13];
-				result[0]  = null;
-				result[1]  = rs.getString("table_schem");
-				result[2]  = rs.getString("table_name");
-				result[3]  = rs.getString("non_unique");
-				result[4]  = rs.getString("index_qualifier");
-				result[5]  = rs.getString("index_name");
-				result[6]  = rs.getString("type");
-				result[7]  = rs.getString("ordinal_position");
-				result[8]  = rs.getString("column_name");
-				result[9]  = rs.getString("asc_or_desc");
-				result[10] = "0";
-				if (!approximate && sub != null) {
-					/* issue a separate count query for each table its index to get the exact cardinality */
-					ResultSet count = sub.executeQuery("SELECT COUNT(*) FROM \"" + result[1] + "\".\"" + result[2] + "\"");
-					if (count != null) {
-						if (count.next()) {
-							result[10] = count.getString(1);
-						}
-						count.close();
-					}
-				}
-				result[11] = rs.getString("pages");
-				result[12] = rs.getString("filter_condition");
-				tmpRes.add(result);
-			}
-
-			if (sub != null) sub.close();
-		} finally {
-			rs.close();
-		}
-
-		String[][] results = tmpRes.toArray(new String[tmpRes.size()][]);
-
-		try {
-			return new MonetVirtualResultSet(columns, types, results);
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
+		return executeMetaDataQuery(query.toString());
 	}
 
 	//== 1.2 methods (JDBC 2)
