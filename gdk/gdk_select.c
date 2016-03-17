@@ -1468,7 +1468,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
-		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))
+		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
+		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3)
 		{
 			use_orderidx = 1;
 			if (view) {
