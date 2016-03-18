@@ -52,7 +52,6 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP querysexp, SEXP executesexp, SEXP resul
 			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
 			SET_VECTOR_ELT(retlist, i, varvalue);
 		}
-
 		monetdb_cleanup_result(R_ExternalPtrAddr(connsexp), output);
 		SET_NAMES(retlist, names);
 		UNPROTECT(ncols + 2);

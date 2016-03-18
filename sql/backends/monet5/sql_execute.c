@@ -219,12 +219,12 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		/* construct a mock result set to determine schema */
 		if (!execute && result) {
 			/* 'inspired' by mvc_export_prepare() */
-			node *n;
-			size_t ncol = 0;
-			res_table *res;
 			if (is_topn(r->op))
 				r = r->l;
 			if (r && is_project(r->op) && r->exps) {
+				node *n;
+				int ncol = 0;
+				res_table *res;
 				for (n = r->exps->h; n; n = n->next) ncol++;
 				res = res_table_create(m->session->tr, 42, ncol, 1, NULL, NULL);
 				for (n = r->exps->h; n; n = n->next) {
