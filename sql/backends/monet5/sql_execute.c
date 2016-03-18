@@ -206,14 +206,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
 
-		if (execute) {
-			MalBlkPtr mb = c->curprg->def;
-			if (!output)
-				sql->out = NULL;	/* no output stream */
-			msg = runMAL(c, mb, 0, 0);
-			MSresetInstructions(mb, oldstop);
-			freeVariables(c, mb, NULL, oldvtop);
-		}
+		if (!output)
+			sql->out = NULL;	/* no output stream */
+		if (execute)
+			msg = runMAL(c, c->curprg->def, 0, 0);
+
+		MSresetInstructions(c->curprg->def, oldstop);
+		freeVariables(c, c->curprg->def, NULL, oldvtop);
+
 		sqlcleanup(m, 0);
 
 		/* construct a mock result set to determine schema */
@@ -226,7 +226,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 				int ncol = 0;
 				res_table *res;
 				for (n = r->exps->h; n; n = n->next) ncol++;
-				res = res_table_create(m->session->tr, 42, ncol, 1, NULL, NULL);
+				res = res_table_create(m->session->tr, m->result_id++, ncol, 1, NULL, NULL);
 				for (n = r->exps->h; n; n = n->next) {
 					const char *name, *rname;
 					sql_exp *e = n->data;
@@ -254,7 +254,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 #endif
 		assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 		c->glb = oldglb;
-
 
 	}
 	if (m->results && result) { /* return all results sets */

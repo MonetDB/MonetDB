@@ -171,7 +171,6 @@ char* monetdb_query(void* conn, char* query, char execute, void** result) {
 	} else {
 		res = SQLstatementIntern(c, &query, "name", execute, 0, (res_table **) result);
 	}
-
 	SQLautocommit(c, m);
 	return res;
 }
