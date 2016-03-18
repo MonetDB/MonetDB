@@ -1,0 +1,87 @@
+stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade` itself:
+
+
+# 16:53:30 >  
+# 16:53:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39660" "--set" "mapi_usock=/var/tmp/mtest-30908/.s.monetdb.39660" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb-upgrade" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:53:30 >  
+
+# MonetDB 5 server v11.21.16 (hg id: c20b591c1c70+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_emptydb-upgrade', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:39660/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30908/.s.monetdb.39660
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+Running database upgrade commands:
+set schema "sys";
+create function sys.fuse(one bigint, two bigint)
+returns hugeint
+external name udf.fuse;
+create function sys.generate_series(first hugeint, last hugeint)
+returns table (value hugeint)
+external name generator.series;
+create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
+returns table (value hugeint)
+external name generator.series;
+create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE
+    external name "aggr"."stdev";
+create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE
+    external name "aggr"."stdevp";
+create aggregate sys.var_samp(val HUGEINT) returns DOUBLE
+    external name "aggr"."variance";
+create aggregate sys.var_pop(val HUGEINT) returns DOUBLE
+    external name "aggr"."variancep";
+create aggregate sys.median(val HUGEINT) returns HUGEINT
+    external name "aggr"."median";
+create aggregate sys.quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+    external name "aggr"."quantile";
+create aggregate sys.corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT
+    external name "aggr"."corr";
+create function json.filter(js json, name hugeint)
+returns json
+external name json.filter;
+drop view sys.tablestoragemodel;
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+  sum(columnsize) as columnsize,
+  sum(heapsize) as heapsize,
+  sum(hashes) as hashes,
+  sum(imprints) as imprints,
+  sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
+update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.types values(6701, 'hge', 'hugeint', 128, 1, 2, 6, 0);
+insert into sys.types values(6702, 'hge', 'decimal', 39, 1, 10, 8, 0);
+update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';
+set schema "sys";
+
+
+# 16:19:08 >  
+# 16:19:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27430" "--port=38597"
+# 16:19:08 >  
+
+#select 1;
+% .L # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+
+# 16:53:31 >  
+# 16:53:31 >  "Done."
+# 16:53:31 >  
+

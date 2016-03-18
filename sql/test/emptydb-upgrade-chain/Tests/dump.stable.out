@@ -1,0 +1,54 @@
+stdout of test 'dump` in directory 'sql/test/emptydb-upgrade-chain` itself:
+
+
+# 16:42:35 >  
+# 16:42:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31377" "--set" "mapi_usock=/var/tmp/mtest-18658/.s.monetdb.31377" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb-upgrade-chain" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:42:35 >  
+
+# MonetDB 5 server v11.21.16 (hg id: c20b591c1c70+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_emptydb-upgrade-chain', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:31377/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18658/.s.monetdb.31377
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_178:bat[:oid,:str]{horigin=1} := mal.multiplex("sql":str,"password":str,X_170:bat[:oid,:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_179:bat[:oid,:str]{horigin=2} := mal.multiplex("sql":str,"password":str,X_171:bat[:oid,:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_180:bat[:oid,:str]{horigin=3} := mal.multiplex("sql":str,"password":str,X_172:bat[:oid,:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_181:bat[:oid,:str]{horigin=4} := mal.multiplex("sql":str,"password":str,X_173:bat[:oid,:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_240:bat[:oid,:lng]{horigin=1} := mal.multiplex("sql":str,"get_value":str,X_236:bat[:oid,:str],X_228:bat[:oid,:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_241:bat[:oid,:lng]{horigin=2} := mal.multiplex("sql":str,"get_value":str,X_237:bat[:oid,:str],X_229:bat[:oid,:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_242:bat[:oid,:lng]{horigin=3} := mal.multiplex("sql":str,"get_value":str,X_238:bat[:oid,:str],X_230:bat[:oid,:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_243:bat[:oid,:lng]{horigin=4} := mal.multiplex("sql":str,"get_value":str,X_239:bat[:oid,:str],X_231:bat[:oid,:str]);
+
+# 16:42:35 >  
+# 16:42:35 >  "/usr/bin/python2" "dump.SQL.py" "dump"
+# 16:42:35 >  
+
+START TRANSACTION;
+COMMIT;
+
+# 16:42:35 >  
+# 16:42:35 >  "Done."
+# 16:42:35 >  
+
