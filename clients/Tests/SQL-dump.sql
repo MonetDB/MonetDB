@@ -52,7 +52,7 @@
 \dSv sys.tracelog
 \dSv sys.users
 
--- select distinct '\\dSf ' || s.name || '.' || f.name from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id order and s.name = 'sys' by s.name, f.name;
+-- select distinct '\\dSf ' || s.name || '.' || f.name from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id and s.name = 'sys' order by s.name, f.name;
 \dSf sys.Intersect
 \dSf sys.Union
 \dSf sys.abbrev
