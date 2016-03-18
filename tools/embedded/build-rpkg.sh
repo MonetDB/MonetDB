@@ -1,7 +1,8 @@
 #!/bin/sh
-#set -x
+if [ -z $STAGEDIR ]; then
+	STAGEDIR=/tmp/monetdb-embedded-stage
+fi
 
-STAGEDIR=/tmp/monetdb-embedded-stage
 RPKG=MonetDBLite_0.2.1.tar.gz
 OSXPKG=MonetDBLite_0.2.1.tgz
 WINPKG=MonetDBLite_0.2.1.zip
