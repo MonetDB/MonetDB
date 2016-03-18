@@ -23,7 +23,7 @@ cd $STAGEDIR/sourcetree
 echo "SUBDIRS = embedded" > tools/Makefile.ag
 echo "SUBDIRS = mapilib" > clients/Makefile.ag
 echo "SUBDIRS = mal modules optimizer scheduler tools" > monetdb5/Makefile.ag
-echo "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = configure configure.ac configure.ag libversions rpm.mk.in\nheaders_config = {\nDIR = includedir/monetdb\nHEADERS = h\nSOURCES = monetdb_config.h\n}\n" > Makefile.ag
+echo -e "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = configure configure.ac configure.ag libversions rpm.mk.in\nheaders_config = {\nDIR = includedir/monetdb\nHEADERS = h\nSOURCES = monetdb_config.h\n}\n" > Makefile.ag
 sed -i -e '/^SUBDIRS = .*$/d' sql/backends/monet5/Makefile.ag
 sed -i -e 's/sql_parser\.y/sql_parser.tab.h sql_parser.tab.c/' sql/server/Makefile.ag
 
