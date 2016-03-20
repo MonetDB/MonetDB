@@ -1,0 +1,75 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2016 MonetDB B.V.
+# All Rights Reserved.
+
+## Process this file with automake to produce Makefile.in
+
+INCLUDES = .. \
+	../../../include \
+	../../../common \
+	../../../storage \
+	../../../server \
+	../../../../monetdb5/modules/atoms \
+	../../../../monetdb5/modules/kernel \
+	../../../../monetdb5/mal \
+	../../../../monetdb5/modules/mal \
+	../../../../monetdb5/optimizer \
+	../../../../clients/mapilib \
+	../../../../common/options \
+	../../../../common/stream \
+	../../../../gdk
+
+lib__iot = {
+	MODULE
+	DIR = libdir/monetdb5
+	SEP = _
+	SOURCES =  \
+		  iot.c \
+		  basket.c \
+		  receptor.c \
+		  petrinet.c 
+#		  emitter.c 
+
+	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+		../../../../gdk/libbat 
+}
+
+scripts_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = basket.mal \
+		  iot.mal \
+		  petrinet.mal \
+		  receptor.mal 
+#		  emitter.mal \
+}
+
+scripts_sql = {
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 50_iot.sql 
+}
+
+headers_iotautoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 50_iot.mal
+}
+
+EXTRA_DIST = 50_iot.mal 50_iot.sql basket.mal basket.h iot.mal iot.h  petrinet.mal petrinet.h receptor.mal receptor.h
+#	emitter.mal emitter.h 
+
+EXTRA_DIST_DIR = Tests

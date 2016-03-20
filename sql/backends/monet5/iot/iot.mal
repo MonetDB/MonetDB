@@ -1,0 +1,78 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2016 MonetDB B.V.
+# All Rights Reserved.
+
+module iot;
+
+pattern query(qry:str)
+address IOTquery
+comment "Add a new continuous query.";
+
+pattern query(name:str,def:str)
+address IOTquery
+comment "Add a new continuous query.";
+
+pattern pause(nme:str):void
+address IOTpause
+comment "Pause a specific query";
+
+pattern resume(nme:str):void
+address IOTresume
+comment "(Re)start a query";
+
+pattern stop(nme:str):void
+address IOTstop
+comment "Remove a query";
+
+pattern pause()
+address IOTpause
+comment "Pause all queries";
+
+pattern resume()
+address IOTresume
+comment "Resume all queries.";
+
+pattern stop():void
+address IOTstop
+comment "Stop all continuous queries.";
+
+command dump()
+address IOTdump
+comment "Dump iot status ";
+
+command baskets()(sch:bat[:str],nme:bat[:str], threshold:bat[:int], winsize:bat[:int], winstride:bat[:int], timeslice:bat[:int], 
+timestride:bat[:int], beat:bat[:int], seen:bat[:timestamp], events:bat[:int])
+address BSKTtable
+comment "Inspect the iot baskets";
+
+command receptors()(sch:bat[:str],nme:bat[:str], host:bat[:str], port:bat[:int], protocol:bat[:str], mode:bat[:str],
+status:bat[:str], seen:bat[:timestamp], cycles:bat[:int], received:bat[:int], pending:bat[:int])
+address RCtable
+comment "Inspect the receptors";
+
+command emitters()(sch:bat[:str],nme:bat[:str], host:bat[:str], port:bat[:int], protocol:bat[:str], mode:bat[:str],
+status:bat[:str], seen:bat[:timestamp], cycles:bat[:int], sent:bat[:int], pending:bat[:int])
+address EMtable
+comment "Inspect the emitters";
+
+command queries()(nme:bat[:str], status:bat[:str], seen:bat[:timestamp], cycles:bat[:int], events:bat[:int], time:bat[:lng], error:bat[:str], def:bat[:str])
+address PNtable
+comment "Return a table with queries registered";
+
+command errors()(nme:bat[:str],error:bat[:str])
+address BSKTtableerrors
+comment "Return a table the erroneous events";
+

@@ -1,0 +1,74 @@
+
+## Use: nmake -f makefile.msc install
+
+# Nothing much configurable below
+
+TOPDIR = .\..\..\..\..
+srcdir = $(TOPDIR)\..\sql\backends\monet5\iot
+!INCLUDE $(TOPDIR)\..\NT\rules.msc
+all: all-msc
+check: check-msc
+install: install-msc
+INCLUDES = -I$(srcdir) "-I.." -I$(srcdir)\.. "-I..\..\..\include" -I$(srcdir)\..\..\..\include "-I..\..\..\common" -I$(srcdir)\..\..\..\common "-I..\..\..\storage" -I$(srcdir)\..\..\..\storage "-I..\..\..\server" -I$(srcdir)\..\..\..\server "-I..\..\..\..\monetdb5\modules\atoms" -I$(srcdir)\..\..\..\..\monetdb5\modules\atoms "-I..\..\..\..\monetdb5\modules\kernel" -I$(srcdir)\..\..\..\..\monetdb5\modules\kernel "-I..\..\..\..\monetdb5\mal" -I$(srcdir)\..\..\..\..\monetdb5\mal "-I..\..\..\..\monetdb5\modules\mal" -I$(srcdir)\..\..\..\..\monetdb5\modules\mal "-I..\..\..\..\monetdb5\optimizer" -I$(srcdir)\..\..\..\..\monetdb5\optimizer "-I..\..\..\..\clients\mapilib" -I$(srcdir)\..\..\..\..\clients\mapilib "-I..\..\..\..\common\options" -I$(srcdir)\..\..\..\..\common\options "-I..\..\..\..\common\stream" -I$(srcdir)\..\..\..\..\common\stream "-I..\..\..\..\gdk" -I$(srcdir)\..\..\..\..\gdk
+EXTRA_DIST_DIR =  Tests
+basket.mal: "$(srcdir)\basket.mal"
+	$(INSTALL) "$(srcdir)\basket.mal" "basket.mal"
+iot.mal: "$(srcdir)\iot.mal"
+	$(INSTALL) "$(srcdir)\iot.mal" "iot.mal"
+petrinet.mal: "$(srcdir)\petrinet.mal"
+	$(INSTALL) "$(srcdir)\petrinet.mal" "petrinet.mal"
+receptor.mal: "$(srcdir)\receptor.mal"
+	$(INSTALL) "$(srcdir)\receptor.mal" "receptor.mal"
+50_iot.sql: "$(srcdir)\50_iot.sql"
+	$(INSTALL) "$(srcdir)\50_iot.sql" "50_iot.sql"
+50_iot.mal: "$(srcdir)\50_iot.mal"
+	$(INSTALL) "$(srcdir)\50_iot.mal" "50_iot.mal"
+lib_iot.dll:  ..\..\..\..\monetdb5\tools\libmonetdb5.lib ..\..\..\..\gdk\libbat.lib
+lib_iot_LIBS = ..\..\..\..\monetdb5\tools\libmonetdb5.lib ..\..\..\..\gdk\libbat.lib
+lib_iot_OBJS = iot.obj basket.obj receptor.obj petrinet.obj
+lib_iot_DEPS = $(lib_iot_OBJS)
+lib_iot.lib: lib_iot.dll
+lib_iot.dll: $(lib_iot_DEPS) 
+	python "$(TOPDIR)\..\NT\wincompile.py" $(CC) $(CFLAGS) -LD -Felib_iot.dll @<< /link @<<
+$(lib_iot_OBJS)
+<<
+$(lib_iot_LIBS)
+<<
+	if exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) "lib_iot.dll" ".libs\lib_iot.dll"
+
+iot.obj: "$(srcdir)\iot.c" "$(srcdir)\iot.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_prelude.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_support.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_function.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_scenario.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_builder.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_pipes.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_iot.h" "$(srcdir)\..\sql_optimizer.h" "$(srcdir)\..\sql_gencode.h"
+	$(CC) $(CFLAGS) $(iot_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIBIOT -Fo"iot.obj" -c "$(srcdir)\iot.c"
+petrinet.obj: "$(srcdir)\petrinet.c" "$(srcdir)\iot.h" "$(srcdir)\petrinet.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_builder.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_support.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_function.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_scenario.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_builder.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_prelude.h"
+	$(CC) $(CFLAGS) $(petrinet_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIBIOT -Fo"petrinet.obj" -c "$(srcdir)\petrinet.c"
+basket.obj: "$(srcdir)\basket.c" "$(srcdir)\..\..\..\..\gdk\gdk.h" "$(srcdir)\iot.h" "$(srcdir)\basket.h" "$(srcdir)\receptor.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_instruction.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_type.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal.h" "$(srcdir)\..\..\..\..\monetdb5\mal\..\..\gdk\gdk.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_stack.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_namespace.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_errors.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_exception.h" "$(srcdir)\..\..\..\..\monetdb5\mal\mal_builder.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_support.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_function.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_scenario.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\..\mal\mal_builder.h" "$(srcdir)\..\..\..\..\monetdb5\optimizer\opt_prelude.h"
+	$(CC) $(CFLAGS) $(basket_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIBIOT -Fo"basket.obj" -c "$(srcdir)\basket.c"
+receptor.obj: "$(srcdir)\receptor.c" "$(srcdir)\receptor.h"
+	$(CC) $(CFLAGS) $(receptor_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIBIOT -Fo"receptor.obj" -c "$(srcdir)\receptor.c"
+all-msc: "lib_iot.dll" "basket.mal" "iot.mal" "petrinet.mal" "receptor.mal" "50_iot.sql" "50_iot.mal"
+check-msc: all-msc "petrinet.mal" "iot.mal" "basket.mal" "50_iot.sql" "receptor.mal" "50_iot.mal" "lib_iot.dll"
+install-msc: install-exec install-data
+install-exec:  "install_petrinet.mal" "install_iot.mal" "install_basket.mal" "install_50_iot.sql" "install_receptor.mal" "install_50_iot.mal" "install_lib_iot" 
+install_petrinet.mal: "petrinet.mal" "$(libdir)\monetdb5"
+	$(INSTALL) "petrinet.mal" "$(libdir)\monetdb5\petrinet.mal"
+install_iot.mal: "iot.mal" "$(libdir)\monetdb5"
+	$(INSTALL) "iot.mal" "$(libdir)\monetdb5\iot.mal"
+install_basket.mal: "basket.mal" "$(libdir)\monetdb5"
+	$(INSTALL) "basket.mal" "$(libdir)\monetdb5\basket.mal"
+install_50_iot.sql: "50_iot.sql" "$(libdir)\monetdb5\createdb"
+	$(INSTALL) "50_iot.sql" "$(libdir)\monetdb5\createdb\50_iot.sql"
+install_receptor.mal: "receptor.mal" "$(libdir)\monetdb5"
+	$(INSTALL) "receptor.mal" "$(libdir)\monetdb5\receptor.mal"
+install_50_iot.mal: "50_iot.mal" "$(libdir)\monetdb5\autoload"
+	$(INSTALL) "50_iot.mal" "$(libdir)\monetdb5\autoload\50_iot.mal"
+install_lib_iot: "lib_iot.dll" "$(libdir)\monetdb5"
+	$(INSTALL) "lib_iot.dll" "$(libdir)\monetdb5\lib_iot.dll"
+	$(INSTALL) "lib_iot.lib" "$(libdir)\monetdb5\lib_iot.lib"
+"$(libdir)\monetdb5":
+	if not exist "$(libdir)\monetdb5" $(MKDIR) "$(libdir)\monetdb5"
+"$(libdir)\monetdb5\createdb":
+	if not exist "$(libdir)\monetdb5\createdb" $(MKDIR) "$(libdir)\monetdb5\createdb"
+"$(libdir)\monetdb5\autoload":
+	if not exist "$(libdir)\monetdb5\autoload" $(MKDIR) "$(libdir)\monetdb5\autoload"
+install-data:

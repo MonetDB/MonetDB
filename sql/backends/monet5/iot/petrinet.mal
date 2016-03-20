@@ -1,0 +1,79 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2016 MonetDB B.V.
+# All Rights Reserved.
+
+module petrinet;
+
+pattern source(sch:str, tbl:str, col:str...)
+address PNsource
+comment "Announce an input basket column structure";
+
+pattern target(sch:str, tbl:str, col:str...)
+address PNtarget
+comment "Announce an target basket column structure";
+
+pattern types(sch:str, tbl:str, coltype:str...)
+address PNtype
+comment "Announce a basket type structure";
+
+pattern register(mod:str, fcn:str)
+address PNregister
+comment "Add a continous MAL query to the Petri net. It will analyse
+the MAL block to determine the input/output dependencies. ";
+
+pattern pause(mod:str, fcn:str)
+address PNpause
+comment "Pause the Petri net controller";
+
+pattern pause()
+address PNpause
+comment "Pause the Petri net controller";
+
+pattern resume()
+address PNresume
+comment "Resume the interpretation";
+
+pattern resume(mod:str, fcn:str)
+address PNresume
+comment "Resume the interpretation";
+
+pattern stop()
+address PNstop
+comment "Stop the Petri net controller";
+
+pattern stop(mod:str,fcn:str)
+address PNstop
+comment "Stop the Petri net controller";
+
+pattern drop()
+address PNdrop
+comment "Remove all transitions from the Petri net controller";
+
+pattern drop(mod:str,fcn:str)
+address PNdrop
+comment "Remove a transitions from the Petri net controller";
+
+pattern analyse(mod:str, fcn:str)
+address PNanalyseWrapper
+comment "Check the input/output relationship";
+
+command queries() (mod:bat[:str],fcn:bat[:str], status:bat[:str],lastrun:bat[:timestamp],cycles:bat[:int], events:bat[:int],time:bat[:lng],error:bat[:str])
+address PNtable
+comment "Inspect the iot queries";
+
+command iot.petrinet()
+address PNdump
+comment "Show the status of the Petri net";
