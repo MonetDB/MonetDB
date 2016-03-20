@@ -34,7 +34,9 @@ static lng
 SQLgetSpace(mvc *m, MalBlkPtr mb)
 {
 	sql_trans *tr = m->session->tr;
-	lng space = 0, i; 
+	lng space = 0, i,j; 
+	InstrPtr q;
+	int last = 2;
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -56,7 +58,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb)
 			if (f == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t) && !isStream(i->t))) {
 					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
 					if (b) {
 						space += getBatSpace(b);
@@ -67,11 +69,33 @@ SQLgetSpace(mvc *m, MalBlkPtr mb)
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
-				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+				if (c && (!isRemote(c->t) && !isMergeTable(c->t)) && !isStream(c->t)) {
 					BAT *b = store_funcs.bind_col(tr, c, RDONLY);
 					if (b) {
 						space += getBatSpace(b);
 						BBPunfix(b->batCacheid);
+					}
+				}
+				if( c && isStream(c->t)){
+					setModuleId(p, iotRef);
+					p->argc = 5;
+					delArgument(p,1);
+					// stream information does not have to inlined.
+					for(j= 1; j < last; j++){
+						p = getInstrPtr(mb,j);
+						if(p ==0)
+							break;
+						if(p &&  getModuleId(p) == iotRef && getFunctionId(p) == registerRef &&
+							strcmp(sname, getVarConstant(mb,getArg(p,1)).val.sval) == 0 &&
+							strcmp(tname, getVarConstant(mb,getArg(p,2)).val.sval) == 0 )
+								break;	// already registered
+					}
+					if( j == last || p == 0){
+						q= newStmt(mb,iotRef,registerRef);
+						q= pushStr(mb,q, sname);
+						q= pushStr(mb,q, tname);
+						moveInstruction(mb, mb->stop - 1, 1);
+						last ++;
 					}
 				}
 			}
