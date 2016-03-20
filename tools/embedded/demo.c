@@ -42,7 +42,7 @@ int main() {
 		return -1;
 	}
 	conn = monetdb_connect();
-	err = monetdb_query(conn, "SELECT * FROM tables;", (void**) &result);
+	err = monetdb_query(conn, "SELECT * FROM tables;", 1, (void**) &result);
 	if (err != NULL) {
 		fprintf(stderr, "Query fail: %s\n", err);
 		return -2;

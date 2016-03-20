@@ -22,13 +22,12 @@ int embedded_r_rand(void) {
 /* we need the BAT-SEXP-BAT conversion in two places, here and in RAPI */
 #include "converters.c.h"
 
-SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
+SEXP monetdb_query_R(SEXP connsexp, SEXP querysexp, SEXP executesexp, SEXP resultconvertsexp) {
 	res_table* output = NULL;
-	char notreally = LOGICAL(notreallys)[0];
 	char* err = NULL;
 	GetRNGstate();
 	err = monetdb_query(R_ExternalPtrAddr(connsexp),
-			(char*)CHAR(STRING_ELT(query, 0)), (void**)&output);
+			(char*)CHAR(STRING_ELT(querysexp, 0)), LOGICAL(executesexp)[0], (void**)&output);
 	if (err) { // there was an error
 		PutRNGstate();
 		return ScalarString(mkCharCE(err, CE_UTF8));
@@ -42,7 +41,7 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 			Rf_ScalarReal(BATcount(BATdescriptor(output->cols[0].b))));
 		for (i = 0; i < ncols; i++) {
 			BAT* b = BATdescriptor(output->cols[i].b);
-			if (notreally) {
+			if (!LOGICAL(resultconvertsexp)[0]) {
 				BATsetcount(b, 0); // hehe
 			}
 			if (!(varvalue = bat_to_sexp(b))) {
@@ -53,7 +52,6 @@ SEXP monetdb_query_R(SEXP connsexp, SEXP query, SEXP notreallys) {
 			SET_STRING_ELT(names, i, mkCharCE(output->cols[i].name, CE_UTF8));
 			SET_VECTOR_ELT(retlist, i, varvalue);
 		}
-
 		monetdb_cleanup_result(R_ExternalPtrAddr(connsexp), output);
 		SET_NAMES(retlist, names);
 		UNPROTECT(ncols + 2);

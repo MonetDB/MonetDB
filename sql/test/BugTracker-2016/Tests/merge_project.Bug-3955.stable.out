@@ -1,0 +1,91 @@
+stdout of test 'merge_project.Bug-3955` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 14:00:09 >  
+# 14:00:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36744" "--set" "mapi_usock=/var/tmp/mtest-23806/.s.monetdb.36744" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 14:00:09 >  
+
+# MonetDB 5 server v11.21.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36744/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23806/.s.monetdb.36744
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.10'
+# Finished reading the write-ahead log 'sql_logs/sql/log.10'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:00:10 >  
+# 14:00:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23806" "--port=36744"
+# 14:00:10 >  
+
+#start transaction;
+#create table input_double (a1 string, a2 double, prob double);
+#INSERT INTO input_double VALUES ('latitude',52.0,1.0);
+[ 1	]
+#INSERT INTO input_double VALUES ('longitude',5.1,1.0);
+[ 1	]
+#CREATE TABLE v(a1 int, a2 point, prob double);
+#insert into v values(0,sys.point(50,4),1);
+[ 1	]
+#insert into v values(1,sys.point(51,5),1);
+[ 1	]
+#insert into v values(2,sys.point(52,6),1);
+[ 1	]
+#CREATE VIEW p AS 
+#SELECT sys.point(a1,a2) AS a1, prob AS prob 
+#FROM (
+#	  SELECT tmp_2.a2 AS a1, tmp_3.a2 AS a2, tmp_2.prob * tmp_3.prob AS prob 
+#	  FROM 
+#	    (SELECT a2, prob FROM input_double WHERE a1 = 'latitude') AS tmp_2,
+#	    (SELECT a2, prob FROM input_double WHERE a1 = 'longitude') AS tmp_3
+#) AS tmp;
+#CREATE VIEW r AS 
+#SELECT a1 AS a1, sys.distance(a2,a3) AS prob 
+#FROM (
+#	  SELECT v.a1 AS a1, v.a2 AS a2, p.a1 AS a3, v.prob * p.prob AS prob 
+#	  FROM v,p
+#) AS tmp;
+#plan select * from r;
+% .plan # table_name
+% rel # name
+% clob # type
+% 83 # length
+project (
+| project (
+| | project (
+| | | crossproduct (
+| | | | table(sys.v) [ v.a1, v.a2 ] COUNT ,
+| | | | project (
+| | | | | crossproduct (
+| | | | | | project (
+| | | | | | | select (
+| | | | | | | | table(sys.input_double) [ input_double.a1, input_double.a2 ] COUNT 
+| | | | | | | ) [ input_double.a1 = clob "latitude" ]
+| | | | | | ) [ input_double.a2 as tmp_2.a2 ],
+| | | | | | project (
+| | | | | | | select (
+| | | | | | | | table(sys.input_double) [ input_double.a1, input_double.a2 ] COUNT 
+| | | | | | | ) [ input_double.a1 = clob "longitude" ]
+| | | | | | ) [ input_double.a2 as tmp_3.a2 ]
+| | | | | ) [  ]
+| | | | ) [ sys.point(tmp_2.a2 as tmp.a1, tmp_3.a2 as tmp.a2) as L.a1 ]
+| | | ) [  ]
+| | ) [ v.a1, v.a2, L.a1 as p.a1 ]
+| ) [ v.a1 as L.a1, sys.distance(v.a2 as tmp.a2, p.a1 as tmp.a3) as L.prob ]
+) [ L.a1 as r.a1, L.prob as r.prob ]
+
+# 14:00:10 >  
+# 14:00:10 >  "Done."
+# 14:00:10 >  
+

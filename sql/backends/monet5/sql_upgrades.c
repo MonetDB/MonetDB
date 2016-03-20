@@ -1121,6 +1121,62 @@ sql_update_jul2015(Client c)
 }
 
 static str
+sql_update_epoch(Client c, mvc *m)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	mvc *sql = ((backend*) c->sqlcontext)->mvc;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+	sql_subtype tp;
+	int n = 0;
+
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	sql_find_subtype(&tp, "bigint", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
+	}
+	sql_find_subtype(&tp, "int", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(sec INT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
+	}
+	sql_find_subtype(&tp, "timestamp", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(ts TIMESTAMP) returns INT external name timestamp.\"epoch\";\n");
+	}
+	sql_find_subtype(&tp, "timestamptz", 0, 0);
+	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+		n++;
+		pos += snprintf(buf + pos, bufsize - pos, "\
+create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
+	}
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	assert(pos < bufsize);
+	if (n) {
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
 sql_update_jun2016(Client c)
 {
 	size_t bufsize = 25000, pos = 0;
@@ -1132,6 +1188,34 @@ sql_update_jun2016(Client c)
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function degrees to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function radians to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on procedure times to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_date to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function date_to_str to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_time to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function time_to_str to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_timestamp to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function timestamp_to_str to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(BIGINT) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(INT) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(TIMESTAMP) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(TIMESTAMP WITH TIME ZONE) to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_STUFF to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_TRUNC to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_ROUND to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_STR to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function alpha to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_encode to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_decode_x to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_decode_y to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function rejects to public;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function md5 to public;\n");
 
 #if 0
 	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_openstream(host string, port int);");
@@ -1319,6 +1403,12 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
+	}
+
+	/* add missing epoch functions */
+	if ((err = sql_update_epoch(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		GDKfree(err);
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);

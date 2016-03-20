@@ -18,6 +18,33 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+grant execute on filter function "like"(string, string, string) to public;
+grant execute on filter function "ilike"(string, string, string) to public;
+grant execute on filter function "like"(string, string) to public;
+grant execute on filter function "ilike"(string, string) to public;
+grant execute on function degrees to public;
+grant execute on function radians to public;
+grant execute on procedure times to public;
+grant execute on function str_to_date to public;
+grant execute on function date_to_str to public;
+grant execute on function str_to_time to public;
+grant execute on function time_to_str to public;
+grant execute on function str_to_timestamp to public;
+grant execute on function timestamp_to_str to public;
+grant execute on function sys."epoch"(BIGINT) to public;
+grant execute on function sys."epoch"(INT) to public;
+grant execute on function sys."epoch"(TIMESTAMP) to public;
+grant execute on function sys."epoch"(TIMESTAMP WITH TIME ZONE) to public;
+grant execute on function MS_STUFF to public;
+grant execute on function MS_TRUNC to public;
+grant execute on function MS_ROUND to public;
+grant execute on function MS_STR to public;
+grant execute on function alpha to public;
+grant execute on function zorder_encode to public;
+grant execute on function zorder_decode_x to public;
+grant execute on function zorder_decode_y to public;
+grant execute on function rejects to public;
+grant execute on function md5 to public;
 create function sys."storage"( sname string)
 returns table (
     "schema" string,

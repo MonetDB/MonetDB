@@ -97,7 +97,8 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
     if (!requireNamespace("MonetDBLite", quietly=T)) {
       stop("MonetDBLite package required for embedded mode")
     }
-    MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE))
+    MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE), 
+      getOption("monetdb.sequential", TRUE))
     connenv <- new.env(parent=emptyenv())
     connenv$conn <- MonetDBLite::monetdb_embedded_connect()
     connenv$open <- TRUE
@@ -331,7 +332,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBConnection", statement="characte
 
 # This one does all the work in this class
 setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="character"),  
-          def=function(conn, statement, ..., list=NULL, notreally=F) {   
+          def=function(conn, statement, ..., list=NULL, execute = T, resultconvert = T) {   
   if (!conn@connenv$open) {
     stop("This connection was closed.")
   }
@@ -344,7 +345,7 @@ setMethod("dbSendQuery", signature(conn="MonetDBEmbeddedConnection", statement="
   if(!is.null(log_file <- getOption("monetdb.log.query", NULL)))
     cat(c(statement, ";\n"), file = log_file, sep="", append = TRUE)
   startt <- Sys.time()
-  resp <- MonetDBLite::monetdb_embedded_query(conn@connenv$conn, statement, notreally)
+  resp <- MonetDBLite::monetdb_embedded_query(conn@connenv$conn, statement, execute, resultconvert)
   takent <- round(as.numeric(Sys.time() - startt), 2)
   env <- new.env(parent=emptyenv())
   if (resp$type == Q_TABLE) {
