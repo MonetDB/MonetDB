@@ -1,9 +1,0 @@
-function hello();
-	io.print("helloworld");
-	alarm.sleep(2);
-end hello;
-
-petrinet.register("user","hello");
-
-(mod:bat[:str],fcn:bat[:str], status:bat[:str],lastrun:bat[:timestamp],cycles:bat[:int], events:bat[:int],time:bat[:lng],error:bat[:str]):= petrinet.queries();
-io.print(mod,fcn, status,lastrun,cycles, events,time,error);
