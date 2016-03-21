@@ -107,7 +107,7 @@ typedef struct table_functions {
 	rids_diff_fptr rids_diff;
 } table_functions; 
 
-extern table_functions table_funcs;
+sqlstore_export table_functions table_funcs;
 
 /* delta table setup (ie readonly col + ins + upd + del)
 -- binds for column,idx (rdonly, inserts, updates) and delets
@@ -263,7 +263,7 @@ typedef struct store_functions {
 	del_fptr del;
 } store_functions;
 
-extern store_functions store_funcs;
+sqlstore_export store_functions store_funcs;
 
 typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version, int keep_persisted_log_files);
 typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int catalog_version, const char *slave_logdir);
@@ -304,7 +304,7 @@ typedef struct logger_functions {
 	log_sequence_fptr log_sequence;
 } logger_functions;
 
-extern logger_functions logger_funcs;
+sqlstore_export logger_functions logger_funcs;
 
 /* we need to add an interface for result_tables later */
 

@@ -75,7 +75,7 @@ Ready.
 % .L,	.L # table_name
 % One,	"Simple default" # name
 % char,	tinyint # type
-% 6,	4 # length
+% 6,	1 # length
 [ "<NULL>",	NULL	]
 #SELECT '3' AS "One",
 #  CASE

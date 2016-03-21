@@ -1,6 +1,16 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Mar 17 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved DatabaseMetaData.getTypeInfo(). It now returns better information
+  on LITERAL_PREFIX, LITERAL_SUFFIX, CREATE_PARAMS, CASE_SENSITIVE,
+  FIXED_PREC_SCALE and MAXIMUM_SCALE for some data types. Also the returned rows
+  are now ordered by DATA_TYPE, TYPE_NAME, PRECISION as required by the specs.
+  Also corrected output column names "searchable" into "SEARCHABLE" and
+  "MAXIMUM SCALE" into "MAXIMUM_SCALE" to match the JDBC specification.
+- Corrected DatabaseMetaData.getPseudoColumns(). It used to return 12 empty rows.
+  Now it returns no rows as MonetDB does not have pseudo columns.
+
 * Thu Mar  3 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Implemented method DatabaseMetaData.getClientProperties(). It used to always
   return a resultset with 4 completely empty rows.  It now returns a
@@ -30,8 +40,8 @@
 
 * Thu Jan 28 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Method getFunctions() in DatabaseMetadata used to throw an SQLException:
-  SELECT: no such column 'functions.sql' This has been corrected.
-  It now returns a resultset as requested.
+   SELECT: no such column 'functions.sql'
+  This has been corrected. It now returns a resultset as requested.
 - The resultsets of DatabaseMetadata methods now no longer return a
   value for the *_CAT columns as MonetDB does not support Catalogs.
 

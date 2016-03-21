@@ -1,7 +1,8 @@
 #!/bin/sh
-#set -x
+if [ -z $STAGEDIR ]; then
+	STAGEDIR=/tmp/monetdb-embedded-stage
+fi
 
-STAGEDIR=/tmp/monetdb-embedded-stage
 RPKG=MonetDBLite_0.2.1.tar.gz
 OSXPKG=MonetDBLite_0.2.1.tgz
 WINPKG=MonetDBLite_0.2.1.zip
@@ -19,10 +20,10 @@ cp sql_parser.tab.c sql_parser.tab.h $STAGEDIR/sourcetree/sql/server/
 cd $STAGEDIR/sourcetree
 
 # patch build system to only include things we need
-echo "SUBDIRS = embedded" > tools/Makefile.ag
-echo "SUBDIRS = mapilib" > clients/Makefile.ag
-echo "SUBDIRS = mal modules optimizer scheduler tools" > monetdb5/Makefile.ag
-echo "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = configure configure.ac configure.ag libversions rpm.mk.in\nheaders_config = {\nDIR = includedir/monetdb\nHEADERS = h\nSOURCES = monetdb_config.h\n}\n" > Makefile.ag
+printf "SUBDIRS = embedded" > tools/Makefile.ag
+printf "SUBDIRS = mapilib" > clients/Makefile.ag
+printf "SUBDIRS = mal modules optimizer scheduler tools" > monetdb5/Makefile.ag
+printf "SUBDIRS = buildtools common clients gdk monetdb5 sql tools\nEXTRA_DIST = configure configure.ac configure.ag libversions rpm.mk.in\nheaders_config = {\nDIR = includedir/monetdb\nHEADERS = h\nSOURCES = monetdb_config.h\n}\n" > Makefile.ag
 sed -i -e '/^SUBDIRS = .*$/d' sql/backends/monet5/Makefile.ag
 sed -i -e 's/sql_parser\.y/sql_parser.tab.h sql_parser.tab.c/' sql/server/Makefile.ag
 

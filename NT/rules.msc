@@ -282,6 +282,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF BITS64OID32
+	$(ECHO) BITS64OID32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF CROSS_COMPILING
 	$(ECHO) CROSS_COMPILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

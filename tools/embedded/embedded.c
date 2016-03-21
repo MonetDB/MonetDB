@@ -126,7 +126,7 @@ char* monetdb_startup(char* dbdir, char silent, char sequential) {
 
 	// we do not want to jump after this point, since we cannot do so between threads
 	// sanity check, run a SQL query
-	sqres = monetdb_query(c, "SELECT * FROM tables;", &res);
+	sqres = monetdb_query(c, "SELECT * FROM tables;", 1, &res);
 	if (sqres != NULL) {
 		monetdb_embedded_initialized = false;
 		retval = sqres;
@@ -139,7 +139,7 @@ cleanup:
 	return retval;
 }
 
-char* monetdb_query(void* conn, char* query, void** result) {
+char* monetdb_query(void* conn, char* query, char execute, void** result) {
 	str res = MAL_SUCCEED;
 	Client c = (Client) conn;
 	mvc* m;
@@ -169,9 +169,8 @@ char* monetdb_query(void* conn, char* query, void** result) {
 	else if (m->session->status < 0 && m->session->auto_commit == 0){
 		res = GDKstrdup("Current transaction is aborted (please ROLLBACK)");
 	} else {
-		res = SQLstatementIntern(c, &query, "name", 1, 0, (res_table **) result);
+		res = SQLstatementIntern(c, &query, "name", execute, 0, (res_table **) result);
 	}
-
 	SQLautocommit(c, m);
 	return res;
 }
