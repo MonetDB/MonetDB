@@ -24,10 +24,44 @@ clt.stdin.write("select distinct '\\\\dSf ' || s.name || '.\"' || f.name || '\"'
 out, err = clt.communicate()
 out = out.replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
 
-# add queries to dump thye system tables, but avoid dumping IDs since
+sys.stdout.write(out)
+sys.stderr.write(err)
+
+clt = process.client('sql', interactive = True,
+                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+
+out, err = clt.communicate(out)
+
+# do some normalization of the output:
+# remove SQL comments and empty lines
+out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags = re.M)
+out = re.sub('[\t ]*--.*', '', out)
+out = re.sub(r'/\*.*?\*/[\n\t ]*', '', out, flags = re.DOTALL)
+
+wsre = re.compile('[\n\t ]+')
+pos = 0
+nout = ''
+for res in re.finditer(r'\bbegin\b.*?\bend\b[\n\t ]*;', out, flags = re.DOTALL | re.IGNORECASE):
+    nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
+    pos = res.end(0)
+nout += out[pos:]
+out = nout
+
+pos = 0
+nout = ''
+for res in re.finditer(r'(?<=\n)(?:create|select)\b.*?;', out, flags = re.DOTALL | re.IGNORECASE):
+    nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
+    pos = res.end(0)
+nout += out[pos:]
+out = nout
+
+sys.stdout.write(out)
+sys.stderr.write(err)
+
+# add queries to dump the system tables, but avoid dumping IDs since
 # they are too volatile, and if it makes sense, dump an identifier
 # from a referenced table
-out += '''
+out = '''
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
@@ -76,7 +110,6 @@ select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where 
 '''
 
 sys.stdout.write(out)
-sys.stderr.write(err)
 
 clt = process.client('sql', interactive = True,
                    stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
@@ -85,9 +118,8 @@ out, err = clt.communicate(out)
 
 # do some normalization of the output:
 # remove SQL comments, collapse multiple white space into a single space
-out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags = re.M)
-out = re.sub(r'(?:\\n|\\t| )+', ' ', re.sub(r'--.*?(?:\\n)+', '', out))
-out = re.sub('[\t ]*--.*', '', out)
+out = re.sub(r'--.*?(?:\\n)+', '', out)
+out = re.sub(r'(?:\\n|\\t| )+', ' ', out)
 
 sys.stdout.write(out)
 sys.stderr.write(err)

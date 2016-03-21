@@ -287,52 +287,6 @@ Ready.
 \dSf sys."zorder_decode_x"
 \dSf sys."zorder_decode_y"
 \dSf sys."zorder_encode"
-
--- schemas
-select name, authorization, owner, system from sys.schemas order by name;
--- _tables
-select s.name, t.name, t.query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
--- _columns
-select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
--- functions
-select s.name, f.name, f.func, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, f.func;
--- args
-select f.name, a.name, a.type, a.type_digits, a.type_scale, a.inout, a.number from sys.args a left outer join sys.functions f on a.func_id = f.id order by f.name, a.func_id, a.number;
--- auths
-select name, grantor from sys.auths;
--- connections (expect empty)
-select server, port, db, db_alias, user, password, language from sys.connections order by server, port;
--- db_user_info
-select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
--- dependencies
-select count(*) from sys.dependencies;
--- idxs
-select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
--- keys
-with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
--- objects
-select name, nr from sys.objects order by name, nr;
--- privileges
---  tables
-select t.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
---  columns
-select t.name, c.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
---  functions
-select f.name, a.name, p.privileges, g.name, p.grantable from sys.functions f, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by f.name, a.name;
--- sequences
-select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
--- statistics (expect empty)
-select count(*) from sys.statistics;
--- storagemodelinput (expect empty)
-select count(*) from sys.storagemodelinput;
--- systemfunctions
-select f.name from sys.systemfunctions s left outer join sys.functions f on s.function_id = f.id order by f.name;
--- triggers
-select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
--- types
-select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
--- user_role
-select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
 SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  json
 SYSTEM SCHEMA  sys
@@ -549,634 +503,169 @@ CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "sys";
 CREATE SCHEMA "tmp";
-CREATE TABLE "bam"."export" (
-	"qname" CHARACTER LARGE OBJECT NOT NULL,
-	"flag" SMALLINT NOT NULL,
-	"rname" CHARACTER LARGE OBJECT NOT NULL,
-	"pos" INTEGER NOT NULL,
-	"mapq" SMALLINT NOT NULL,
-	"cigar" CHARACTER LARGE OBJECT NOT NULL,
-	"rnext" CHARACTER LARGE OBJECT NOT NULL,
-	"pnext" INTEGER NOT NULL,
-	"tlen" INTEGER NOT NULL,
-	"seq" CHARACTER LARGE OBJECT NOT NULL,
-	"qual" CHARACTER LARGE OBJECT NOT NULL
-);
-CREATE TABLE "bam"."files" (
-	"file_id" BIGINT NOT NULL,
-	"file_location" CHARACTER LARGE OBJECT NOT NULL,
-	"dbschema" SMALLINT NOT NULL,
-	"format_version" VARCHAR(7),
-	"sorting_order" VARCHAR(10),
-	"comments" CHARACTER LARGE OBJECT,
-	CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id")
-);
-CREATE TABLE "bam"."pg" (
-	"id" CHARACTER LARGE OBJECT NOT NULL,
-	"file_id" BIGINT NOT NULL,
-	"pn" CHARACTER LARGE OBJECT,
-	"cl" CHARACTER LARGE OBJECT,
-	"pp" CHARACTER LARGE OBJECT,
-	"vn" CHARACTER LARGE OBJECT,
-	CONSTRAINT "pg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"),
-	CONSTRAINT "pg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id")
-);
-CREATE TABLE "bam"."rg" (
-	"id" CHARACTER LARGE OBJECT NOT NULL,
-	"file_id" BIGINT NOT NULL,
-	"cn" CHARACTER LARGE OBJECT,
-	"ds" CHARACTER LARGE OBJECT,
-	"dt" TIMESTAMP,
-	"fo" CHARACTER LARGE OBJECT,
-	"ks" CHARACTER LARGE OBJECT,
-	"lb" CHARACTER LARGE OBJECT,
-	"pg" CHARACTER LARGE OBJECT,
-	"pi" INTEGER,
-	"pl" CHARACTER LARGE OBJECT,
-	"pu" CHARACTER LARGE OBJECT,
-	"sm" CHARACTER LARGE OBJECT,
-	CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"),
-	CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id")
-);
-CREATE TABLE "bam"."sq" (
-	"sn" CHARACTER LARGE OBJECT NOT NULL,
-	"file_id" BIGINT NOT NULL,
-	"ln" INTEGER,
-	"as" INTEGER,
-	"m5" CHARACTER LARGE OBJECT,
-	"sp" CHARACTER LARGE OBJECT,
-	"ur" CHARACTER LARGE OBJECT,
-	CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id"),
-	CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id")
-);
-CREATE TABLE "sys"."_columns" (
-	"id"          INTEGER,
-	"name"        VARCHAR(1024),
-	"type"        VARCHAR(1024),
-	"type_digits" INTEGER,
-	"type_scale"  INTEGER,
-	"table_id"    INTEGER,
-	"default"     VARCHAR(2048),
-	"null"        BOOLEAN,
-	"number"      INTEGER,
-	"storage"     VARCHAR(2048)
-);
-CREATE TABLE "sys"."_tables" (
-	"id"            INTEGER,
-	"name"          VARCHAR(1024),
-	"schema_id"     INTEGER,
-	"query"         VARCHAR(2048),
-	"type"          SMALLINT,
-	"system"        BOOLEAN,
-	"commit_action" SMALLINT,
-	"access"        SMALLINT
-);
-CREATE TABLE "sys"."args" (
-	"id"          INTEGER,
-	"func_id"     INTEGER,
-	"name"        VARCHAR(256),
-	"type"        VARCHAR(1024),
-	"type_digits" INTEGER,
-	"type_scale"  INTEGER,
-	"inout"       TINYINT,
-	"number"      INTEGER
-);
-CREATE TABLE "sys"."auths" (
-	"id"      INTEGER,
-	"name"    VARCHAR(1024),
-	"grantor" INTEGER
-);
-CREATE TABLE "sys"."connections" (
-	"id"       INTEGER,
-	"server"   CHAR(1024),
-	"port"     INTEGER,
-	"db"       CHAR(64),
-	"db_alias" CHAR(1024),
-	"user"     CHAR(1024),
-	"password" CHAR(1024),
-	"language" CHAR(1024)
-);
-CREATE TABLE "sys"."db_user_info" (
-	"name"           VARCHAR(1024),
-	"fullname"       VARCHAR(2048),
-	"default_schema" INTEGER
-);
-CREATE TABLE "sys"."dependencies" (
-	"id"          INTEGER,
-	"depend_id"   INTEGER,
-	"depend_type" SMALLINT
-);
-CREATE TABLE "sys"."dependency_types" (
-	"dependency_type_id" SMALLINT NOT NULL,
-	"dependency_type_name" VARCHAR(15) NOT NULL,
-	CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"),
-	CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name")
-);
-CREATE TABLE "sys"."functions" (
-	"id"          INTEGER,
-	"name"        VARCHAR(256),
-	"func"        VARCHAR(8196),
-	"mod"         VARCHAR(8196),
-	"language"    INTEGER,
-	"type"        INTEGER,
-	"side_effect" BOOLEAN,
-	"varres"      BOOLEAN,
-	"vararg"      BOOLEAN,
-	"schema_id"   INTEGER
-);
-CREATE TABLE "sys"."idxs" (
-	"id"       INTEGER,
-	"table_id" INTEGER,
-	"type"     INTEGER,
-	"name"     VARCHAR(1024)
-);
-CREATE TABLE "sys"."keys" (
-	"id"       INTEGER,
-	"table_id" INTEGER,
-	"type"     INTEGER,
-	"name"     VARCHAR(1024),
-	"rkey"     INTEGER,
-	"action"   INTEGER
-);
-CREATE TABLE "sys"."keywords" (
-	"keyword" VARCHAR(40) NOT NULL,
-	CONSTRAINT "keywords_keyword_pkey" PRIMARY KEY ("keyword")
-);
-CREATE TABLE "sys"."netcdf_attrs" (
-	"obj_name" VARCHAR(256),
-	"att_name" VARCHAR(256),
-	"att_type" VARCHAR(64),
-	"value" CHARACTER LARGE OBJECT,
-	"file_id" INTEGER,
-	"gr_name" VARCHAR(256)
-);
-CREATE TABLE "sys"."netcdf_dims" (
-	"dim_id" INTEGER,
-	"file_id" INTEGER,
-	"name" VARCHAR(64),
-	"length" INTEGER
-);
-CREATE TABLE "sys"."netcdf_files" (
-	"file_id" INTEGER,
-	"location" CHAR(256)
-);
-CREATE TABLE "sys"."netcdf_vardim" (
-	"var_id" INTEGER,
-	"dim_id" INTEGER,
-	"file_id" INTEGER,
-	"dimpos" INTEGER
-);
-CREATE TABLE "sys"."netcdf_vars" (
-	"var_id" INTEGER,
-	"file_id" INTEGER,
-	"name" VARCHAR(64),
-	"vartype" VARCHAR(64),
-	"ndim" INTEGER,
-	"coord_dim_id" INTEGER
-);
-CREATE TABLE "sys"."objects" (
-	"id"   INTEGER,
-	"name" VARCHAR(1024),
-	"nr"   INTEGER
-);
-CREATE TABLE "sys"."privileges" (
-	"obj_id"     INTEGER,
-	"auth_id"    INTEGER,
-	"privileges" INTEGER,
-	"grantor"    INTEGER,
-	"grantable"  INTEGER
-);
-CREATE TABLE "sys"."schemas" (
-	"id"            INTEGER,
-	"name"          VARCHAR(1024),
-	"authorization" INTEGER,
-	"owner"         INTEGER,
-	"system"        BOOLEAN
-);
-CREATE TABLE "sys"."sequences" (
-	"id"        INTEGER,
-	"schema_id" INTEGER,
-	"name"      VARCHAR(256),
-	"start"     BIGINT,
-	"minvalue"  BIGINT,
-	"maxvalue"  BIGINT,
-	"increment" BIGINT,
-	"cacheinc"  BIGINT,
-	"cycle"     BOOLEAN
-);
-CREATE TABLE "sys"."statistics" (
-	"column_id" INTEGER,
-	"type"   CHARACTER LARGE OBJECT,
-	"width"  INTEGER,
-	"stamp"  TIMESTAMP,
-	"sample" BIGINT,
-	"count"  BIGINT,
-	"unique" BIGINT,
-	"nils"   BIGINT,
-	"minval" CHARACTER LARGE OBJECT,
-	"maxval" CHARACTER LARGE OBJECT,
-	"sorted" BOOLEAN
-);
-CREATE TABLE "sys"."storagemodelinput" (
-	"schema"    CHARACTER LARGE OBJECT,
-	"table"     CHARACTER LARGE OBJECT,
-	"column"    CHARACTER LARGE OBJECT,
-	"type"      CHARACTER LARGE OBJECT,
-	"typewidth" INTEGER,
-	"count"     BIGINT,
-	"distinct"  BIGINT,
-	"atomwidth" INTEGER,
-	"reference" BOOLEAN,
-	"sorted"    BOOLEAN
-);
-CREATE TABLE "sys"."systemfunctions" (
-	"function_id" INTEGER
-);
-CREATE TABLE "sys"."table_types" (
-	"table_type_id" SMALLINT NOT NULL,
-	"table_type_name" VARCHAR(25) NOT NULL,
-	CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"),
-	CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name")
-);
-CREATE TABLE "sys"."triggers" (
-	"id"          INTEGER,
-	"name"        VARCHAR(1024),
-	"table_id"    INTEGER,
-	"time"        SMALLINT,
-	"orientation" SMALLINT,
-	"event"       SMALLINT,
-	"old_name"    VARCHAR(1024),
-	"new_name"    VARCHAR(1024),
-	"condition"   VARCHAR(2048),
-	"statement"   VARCHAR(2048)
-);
-CREATE TABLE "sys"."types" (
-	"id"         INTEGER,
-	"systemname" VARCHAR(256),
-	"sqlname"    VARCHAR(1024),
-	"digits"     INTEGER,
-	"scale"      INTEGER,
-	"radix"      INTEGER,
-	"eclass"     INTEGER,
-	"schema_id"  INTEGER
-);
-CREATE TABLE "sys"."user_role" (
-	"login_id" INTEGER,
-	"role_id"  INTEGER
-);
-CREATE TABLE "tmp"."_columns" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"type" VARCHAR(1024),
-	"type_digits" INTEGER,
-	"type_scale" INTEGER,
-	"table_id" INTEGER,
-	"default" VARCHAR(2048),
-	"null" BOOLEAN,
-	"number" INTEGER,
-	"storage" VARCHAR(2048)
-);
-CREATE TABLE "tmp"."_tables" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"schema_id" INTEGER,
-	"query" VARCHAR(2048),
-	"type" SMALLINT,
-	"system" BOOLEAN,
-	"commit_action" SMALLINT,
-	"access" SMALLINT
-);
-CREATE TABLE "tmp"."idxs" (
-	"id" INTEGER,
-	"table_id" INTEGER,
-	"type" INTEGER,
-	"name" VARCHAR(1024)
-);
-CREATE TABLE "tmp"."keys" (
-	"id" INTEGER,
-	"table_id" INTEGER,
-	"type" INTEGER,
-	"name" VARCHAR(1024),
-	"rkey" INTEGER,
-	"action" INTEGER
-);
-CREATE TABLE "tmp"."objects" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"nr" INTEGER
-);
-CREATE TABLE "tmp"."triggers" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"table_id" INTEGER,
-	"time" SMALLINT,
-	"orientation" SMALLINT,
-	"event" SMALLINT,
-	"old_name" VARCHAR(1024),
-	"new_name" VARCHAR(1024),
-	"condition" VARCHAR(2048),
-	"statement" VARCHAR(2048)
-);
+CREATE TABLE "bam"."export" ("qname" CHARACTER LARGE OBJECT NOT NULL, "flag" SMALLINT NOT NULL, "rname" CHARACTER LARGE OBJECT NOT NULL, "pos" INTEGER NOT NULL, "mapq" SMALLINT NOT NULL, "cigar" CHARACTER LARGE OBJECT NOT NULL, "rnext" CHARACTER LARGE OBJECT NOT NULL, "pnext" INTEGER NOT NULL, "tlen" INTEGER NOT NULL, "seq" CHARACTER LARGE OBJECT NOT NULL, "qual" CHARACTER LARGE OBJECT NOT NULL);
+CREATE TABLE "bam"."files" ("file_id" BIGINT NOT NULL, "file_location" CHARACTER LARGE OBJECT NOT NULL, "dbschema" SMALLINT NOT NULL, "format_version" VARCHAR(7), "sorting_order" VARCHAR(10), "comments" CHARACTER LARGE OBJECT, CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id"));
+CREATE TABLE "bam"."pg" ("id" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "pn" CHARACTER LARGE OBJECT, "cl" CHARACTER LARGE OBJECT, "pp" CHARACTER LARGE OBJECT, "vn" CHARACTER LARGE OBJECT, CONSTRAINT "pg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"), CONSTRAINT "pg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
+CREATE TABLE "bam"."rg" ("id" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "cn" CHARACTER LARGE OBJECT, "ds" CHARACTER LARGE OBJECT, "dt" TIMESTAMP, "fo" CHARACTER LARGE OBJECT, "ks" CHARACTER LARGE OBJECT, "lb" CHARACTER LARGE OBJECT, "pg" CHARACTER LARGE OBJECT, "pi" INTEGER, "pl" CHARACTER LARGE OBJECT, "pu" CHARACTER LARGE OBJECT, "sm" CHARACTER LARGE OBJECT, CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"), CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
+CREATE TABLE "bam"."sq" ("sn" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "ln" INTEGER, "as" INTEGER, "m5" CHARACTER LARGE OBJECT, "sp" CHARACTER LARGE OBJECT, "ur" CHARACTER LARGE OBJECT, CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id"), CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
+CREATE TABLE "sys"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
+CREATE TABLE "sys"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(2048), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
+CREATE TABLE "sys"."args" ("id" INTEGER, "func_id" INTEGER, "name" VARCHAR(256), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "inout" TINYINT, "number" INTEGER);
+CREATE TABLE "sys"."auths" ("id" INTEGER, "name" VARCHAR(1024), "grantor" INTEGER);
+CREATE TABLE "sys"."connections" ("id" INTEGER, "server" CHAR(1024), "port" INTEGER, "db" CHAR(64), "db_alias" CHAR(1024), "user" CHAR(1024), "password" CHAR(1024), "language" CHAR(1024));
+CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER);
+CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
+CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
+CREATE TABLE "sys"."functions" ("id" INTEGER, "name" VARCHAR(256), "func" VARCHAR(8196), "mod" VARCHAR(8196), "language" INTEGER, "type" INTEGER, "side_effect" BOOLEAN, "varres" BOOLEAN, "vararg" BOOLEAN, "schema_id" INTEGER);
+CREATE TABLE "sys"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
+CREATE TABLE "sys"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
+CREATE TABLE "sys"."keywords" ("keyword" VARCHAR(40) NOT NULL, CONSTRAINT "keywords_keyword_pkey" PRIMARY KEY ("keyword"));
+CREATE TABLE "sys"."netcdf_attrs" ("obj_name" VARCHAR(256), "att_name" VARCHAR(256), "att_type" VARCHAR(64), "value" CHARACTER LARGE OBJECT, "file_id" INTEGER, "gr_name" VARCHAR(256));
+CREATE TABLE "sys"."netcdf_dims" ("dim_id" INTEGER, "file_id" INTEGER, "name" VARCHAR(64), "length" INTEGER);
+CREATE TABLE "sys"."netcdf_files" ("file_id" INTEGER, "location" CHAR(256));
+CREATE TABLE "sys"."netcdf_vardim" ("var_id" INTEGER, "dim_id" INTEGER, "file_id" INTEGER, "dimpos" INTEGER);
+CREATE TABLE "sys"."netcdf_vars" ("var_id" INTEGER, "file_id" INTEGER, "name" VARCHAR(64), "vartype" VARCHAR(64), "ndim" INTEGER, "coord_dim_id" INTEGER);
+CREATE TABLE "sys"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
+CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privileges" INTEGER, "grantor" INTEGER, "grantable" INTEGER);
+CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
+CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
+CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN);
+CREATE TABLE "sys"."storagemodelinput" ("schema" CHARACTER LARGE OBJECT, "table" CHARACTER LARGE OBJECT, "column" CHARACTER LARGE OBJECT, "type" CHARACTER LARGE OBJECT, "typewidth" INTEGER, "count" BIGINT, "distinct" BIGINT, "atomwidth" INTEGER, "reference" BOOLEAN, "sorted" BOOLEAN);
+CREATE TABLE "sys"."systemfunctions" ("function_id" INTEGER);
+CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
+CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
+CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" VARCHAR(1024), "digits" INTEGER, "scale" INTEGER, "radix" INTEGER, "eclass" INTEGER, "schema_id" INTEGER);
+CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
+CREATE TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
+CREATE TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(2048), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
+CREATE TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
+CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
+CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
+CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.environment as select * from sys.environment();
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
-create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
-from sys.querylog_catalog() qd, sys.querylog_calls() ql
-where qd.id = ql.id and qd.owner = user;
+create view sys.querylog_history as select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io from sys.querylog_catalog() qd, sys.querylog_calls() ql where qd.id = ql.id and qd.owner = user;
 create view sys.queue as select * from sys.queue();
 create view sys.rejects as select * from sys.rejects();
 create view sys.sessions as select * from sys.sessions();
 create view sys."storage" as select * from sys."storage"();
 create view sys.storagemodel as select * from sys.storagemodel();
-SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 /* system table/view */ ELSE (CASE WHEN "commit_action" = 0 THEN "type" /* table/view */ ELSE "type" + 20 /* global temp table */ END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 /* local temp table */ AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";
-create view sys.tablestoragemodel
-as select "schema","table",max(count) as "count",
-	sum(columnsize) as columnsize,
-	sum(heapsize) as heapsize,
-	sum(hashes) as hashes,
-	sum(imprints) as imprints,
-	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
-from sys.storagemodel() group by "schema","table";
+SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 ELSE (CASE WHEN "commit_action" = 0 THEN "type" ELSE "type" + 20 END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";
+create view sys.tablestoragemodel as select "schema","table",max(count) as "count", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashes, sum(imprints) as imprints, sum(case when sorted = false then 8 * count else 0 end) as auxiliary from sys.storagemodel() group by "schema","table";
 create view sys.tracelog as select * from sys.tracelog();
 SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;
 create function "Intersect"(a geometry, b geometry) returns boolean external name geom."Intersect";
 create function "Union"(a geometry, b geometry) returns geometry external name geom."Union";
-create function "abbrev" (p inet) returns clob
-	external name inet."abbrev";
-create function alpha(pdec double, pradius double)
-returns double external name sql.alpha;
-create procedure sys.analyze(minmax int, "sample" bigint)
-external name sql.analyze;
-create procedure sys.analyze(minmax int, "sample" bigint, sch string)
-external name sql.analyze;
-create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string)
-external name sql.analyze;
-create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
-external name sql.analyze;
+create function "abbrev" (p inet) returns clob external name inet."abbrev";
+create function alpha(pdec double, pradius double) returns double external name sql.alpha;
+create procedure sys.analyze(minmax int, "sample" bigint) external name sql.analyze;
+create procedure sys.analyze(minmax int, "sample" bigint, sch string) external name sql.analyze;
+create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string) external name sql.analyze;
+create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string) external name sql.analyze;
 create function area(g geometry) returns float external name geom."Area";
 create function astext(g geometry) returns string external name geom."AsText";
-create function sys.bbp () 
-	returns table (id int, name string, htype string, 
-		ttype string, count bigint, refcnt int, lrefcnt int, 
-		location string, heat int, dirty string, 
-		status string, kind string) 
-	external name bbp.get;
+create function sys.bbp () returns table (id int, name string, htype string, ttype string, count bigint, refcnt int, lrefcnt int, location string, heat int, dirty string, status string, kind string) external name bbp.get;
 create function boundary(g geometry) returns geometry external name geom."Boundary";
-create function "broadcast" (p inet) returns inet 
-	external name inet."broadcast";
+create function "broadcast" (p inet) returns inet external name inet."broadcast";
 create function buffer(a geometry, distance float) returns geometry external name geom."Buffer";
-create function sys.chi2prob(chi2 double, datapoints double)
-returns double external name gsl."chi2prob";
-create procedure sys.clearrejects()
-external name sql.copy_rejects_clear;
-create function sys.columnsize(nme string, i bigint, d bigint)
-returns bigint
-begin
-	case
-	when nme = 'boolean' then return i;
-	when nme = 'char' then return 2*i;
-	when nme = 'smallint' then return 2 * i;
-	when nme = 'int'	 then return 4 * i;
-	when nme = 'bigint'	 then return 8 * i;
-	when nme = 'hugeint'	 then return 16 * i;
-	when nme = 'timestamp' then return 8 * i;
-	when  nme = 'varchar' then
-		case
-		when cast(d as bigint) << 8 then return i;
-		when cast(d as bigint) << 16 then return 2 * i;
-		when cast(d as bigint) << 32 then return 4 * i;
-		else return 8 * i;
-		end case;
-	else return 8 * i;
-	end case;
-end;
+create function sys.chi2prob(chi2 double, datapoints double) returns double external name gsl."chi2prob";
+create procedure sys.clearrejects() external name sql.copy_rejects_clear;
+create function sys.columnsize(nme string, i bigint, d bigint) returns bigint begin case when nme = 'boolean' then return i; when nme = 'char' then return 2*i; when nme = 'smallint' then return 2 * i; when nme = 'int' then return 4 * i; when nme = 'bigint' then return 8 * i; when nme = 'hugeint' then return 16 * i; when nme = 'timestamp' then return 8 * i; when nme = 'varchar' then case when cast(d as bigint) << 8 then return i; when cast(d as bigint) << 16 then return 2 * i; when cast(d as bigint) << 32 then return 4 * i; else return 8 * i; end case; else return 8 * i; end case; end;
 create function contains(a geometry, b geometry) returns boolean external name geom."Contains";
 create function contains(a geometry, x double, y double) returns boolean external name geom."Contains";
 create function convexhull(a geometry) returns geometry external name geom."ConvexHull";
-create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint
-	external name "aggr"."corr";
-create aggregate corr(e1 smallint, e2 smallint) returns smallint
-	external name "aggr"."corr";
-create aggregate corr(e1 integer, e2 integer) returns integer
-	external name "aggr"."corr";
-create aggregate corr(e1 wrd, e2 wrd) returns wrd
-	external name "aggr"."corr";
-create aggregate corr(e1 bigint, e2 bigint) returns bigint
-	external name "aggr"."corr";
-create aggregate corr(e1 real, e2 real) returns real
-	external name "aggr"."corr";
-create aggregate corr(e1 double, e2 double) returns double
-	external name "aggr"."corr";
+create aggregate corr(e1 tinyint, e2 tinyint) returns tinyint external name "aggr"."corr";
+create aggregate corr(e1 smallint, e2 smallint) returns smallint external name "aggr"."corr";
+create aggregate corr(e1 integer, e2 integer) returns integer external name "aggr"."corr";
+create aggregate corr(e1 wrd, e2 wrd) returns wrd external name "aggr"."corr";
+create aggregate corr(e1 bigint, e2 bigint) returns bigint external name "aggr"."corr";
+create aggregate corr(e1 real, e2 real) returns real external name "aggr"."corr";
+create aggregate corr(e1 double, e2 double) returns double external name "aggr"."corr";
 create function crosses(a geometry, b geometry) returns boolean external name geom."Crosses";
-create function date_to_str(d date, format string) returns string
-	external name mtime."date_to_str";
-CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;
-create function degrees(r double) 
-returns double
-	return r*180/pi();
-create function dependencies_columns_on_functions()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);
-create function dependencies_columns_on_indexes()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));
-create function dependencies_columns_on_keys()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);
-create function dependencies_columns_on_triggers()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);
-create function dependencies_columns_on_views()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
-create function dependencies_functions_on_functions()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);
-create function dependencies_functions_os_triggers()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);
-create function dependencies_keys_on_foreignkeys()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);
-create function dependencies_owners_on_schemas()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);
-create function dependencies_schemas_on_users()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);
-create function dependencies_tables_on_foreignkeys()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);
-create function dependencies_tables_on_functions()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);
-create function dependencies_tables_on_indexes()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);
-create function dependencies_tables_on_triggers()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));
-create function dependencies_tables_on_views()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
-create function dependencies_views_on_functions()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);
-create function dependencies_views_on_triggers()
-returns table (sch varchar(100), usr varchar(100), dep_type varchar(32))
-return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
+create function date_to_str(d date, format string) returns string external name mtime."date_to_str";
+CREATE FUNCTION db_users () RETURNS TABLE(name varchar(2048)) EXTERNAL NAME sql.db_users;
+create function degrees(r double) returns double return r*180/pi();
+create function dependencies_columns_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);
+create function dependencies_columns_on_indexes() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));
+create function dependencies_columns_on_keys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);
+create function dependencies_columns_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);
+create function dependencies_columns_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
+create function dependencies_functions_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);
+create function dependencies_functions_os_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);
+create function dependencies_keys_on_foreignkeys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);
+create function dependencies_owners_on_schemas() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);
+create function dependencies_schemas_on_users() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);
+create function dependencies_tables_on_foreignkeys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);
+create function dependencies_tables_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);
+create function dependencies_tables_on_indexes() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);
+create function dependencies_tables_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));
+create function dependencies_tables_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
+create function dependencies_views_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);
+create function dependencies_views_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
 create function difference(a geometry, b geometry) returns geometry external name geom."Difference";
 create function dimension(g geometry) returns integer external name geom."Dimension";
 create function disjoint(a geometry, b geometry) returns boolean external name geom."Disjoint";
 create function distance(a geometry, b geometry) returns float external name geom."Distance";
-CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
+CREATE FUNCTION env () RETURNS TABLE(name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
 create function envelope(g geometry) returns geometry external name geom."Envelope";
-create function sys.environment()
-	returns table ("name" string, value string)
-	external name sql.sql_environment;
-create function sys."epoch"(sec bigint) returns timestamp
-	external name timestamp."epoch";
-create function sys."epoch"(sec int) returns timestamp
-	external name timestamp."epoch";
-create function sys."epoch"(ts timestamp) returns int
-	external name timestamp."epoch";
-create function sys."epoch"(ts timestamp with time zone) returns int
-	external name timestamp."epoch";
+create function sys.environment() returns table ("name" string, value string) external name sql.sql_environment;
+create function sys."epoch"(sec bigint) returns timestamp external name timestamp."epoch";
+create function sys."epoch"(sec int) returns timestamp external name timestamp."epoch";
+create function sys."epoch"(ts timestamp) returns int external name timestamp."epoch";
+create function sys."epoch"(ts timestamp with time zone) returns int external name timestamp."epoch";
 create function equals(a geometry, b geometry) returns boolean external name geom."Equals";
-create procedure sys.evalalgebra( ra_stmt string, opt bool)
-	external name sql."evalAlgebra";
+create procedure sys.evalalgebra(ra_stmt string, opt bool) external name sql."evalAlgebra";
 create procedure fitsattach(fname string) external name fits.attach;
 create procedure fitsload(tname string) external name fits.load;
-create function fuse(one tinyint, two tinyint)
-returns smallint external name udf.fuse;
-create function fuse(one smallint, two smallint)
-returns integer external name udf.fuse;
-create function fuse(one integer, two integer)
-returns bigint external name udf.fuse;
-create function sys.generate_series(first tinyint, last tinyint)
-returns table (value tinyint)
-external name generator.series;
-create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)
-returns table (value tinyint)
-external name generator.series;
-create function sys.generate_series(first smallint, last smallint)
-returns table (value smallint)
-external name generator.series;
-create function sys.generate_series(first smallint, last smallint, stepsize smallint)
-returns table (value smallint)
-external name generator.series;
-create function sys.generate_series(first int, last int)
-returns table (value int)
-external name generator.series;
-create function sys.generate_series(first int, last int, stepsize int)
-returns table (value int)
-external name generator.series;
-create function sys.generate_series(first bigint, last bigint)
-returns table (value bigint)
-external name generator.series;
-create function sys.generate_series(first bigint, last bigint, stepsize bigint)
-returns table (value bigint)
-external name generator.series;
-create function sys.generate_series(first real, last real, stepsize real)
-returns table (value real)
-external name generator.series;
-create function sys.generate_series(first double, last double, stepsize double)
-returns table (value double)
-external name generator.series;
-create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))
-returns table (value decimal(10,2))
-external name generator.series;
-create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
-returns table (value timestamp)
-external name generator.series;
+create function fuse(one tinyint, two tinyint) returns smallint external name udf.fuse;
+create function fuse(one smallint, two smallint) returns integer external name udf.fuse;
+create function fuse(one integer, two integer) returns bigint external name udf.fuse;
+create function sys.generate_series(first tinyint, last tinyint) returns table (value tinyint) external name generator.series;
+create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint) returns table (value tinyint) external name generator.series;
+create function sys.generate_series(first smallint, last smallint) returns table (value smallint) external name generator.series;
+create function sys.generate_series(first smallint, last smallint, stepsize smallint) returns table (value smallint) external name generator.series;
+create function sys.generate_series(first int, last int) returns table (value int) external name generator.series;
+create function sys.generate_series(first int, last int, stepsize int) returns table (value int) external name generator.series;
+create function sys.generate_series(first bigint, last bigint) returns table (value bigint) external name generator.series;
+create function sys.generate_series(first bigint, last bigint, stepsize bigint) returns table (value bigint) external name generator.series;
+create function sys.generate_series(first real, last real, stepsize real) returns table (value real) external name generator.series;
+create function sys.generate_series(first double, last double, stepsize double) returns table (value double) external name generator.series;
+create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2)) returns table (value decimal(10,2)) external name generator.series;
+create function sys.generate_series(first timestamp, last timestamp, stepsize interval second) returns table (value timestamp) external name generator.series;
 create function geomcollectionfromtext(wkt string, srid smallint) returns multipolygon external name geom."GeomCollectionFromText";
 create function geometrytypeid(g geometry) returns integer external name geom."GeometryTypeId";
 create function geomfromtext(wkt string, srid smallint) returns geometry external name geom."GeomFromText";
-create function getanchor( theurl url ) returns string 
-	external name url."getAnchor";
-create function getbasename(theurl url) returns string       
-	external name url."getBasename";
-create function getcontent(theurl url)   returns string       
-	external name url."getContent";
-create function getcontext(theurl url)   returns string       
-	external name url."getContext";
-create function getdomain(theurl url) returns string       
-	external name url."getDomain";
-create function getextension(theurl url) returns string       
-	external name url."getExtension";
-create function getfile(theurl url) returns string       
-	external name url."getFile";
-create function gethost(theurl url)   returns string       
-	external name url."getHost";
-create function getport(theurl url) returns string       
-	external name url."getPort";
-create function getprotocol(theurl url) returns string       
-	external name url."getProtocol";
-create function getquery(theurl url) returns string       
-	external name url."getQuery";
-create function getroboturl(theurl url) returns string       
-	external name url."getRobotURL";
-create function getuser(theurl url) returns string       
-	external name url."getUser";
-create function sys.hashsize(b boolean, i bigint)
-returns bigint
-begin
-	if  b = true
-	then
-		return 8 * i;
-	end if;
-	return 0;
-end;
-create function sys.heapsize(tpe string, i bigint, w int)
-returns bigint
-begin
-	if  tpe <> 'varchar' and tpe <> 'clob'
-	then
-		return 0;
-	end if;
-	return 10240 + i * w;
-end;
-create function "host" (p inet) returns clob
-	external name inet."host";
-create function "hostmask" (p inet) returns inet
-	external name inet."hostmask";
+create function getanchor(theurl url) returns string external name url."getAnchor";
+create function getbasename(theurl url) returns string external name url."getBasename";
+create function getcontent(theurl url) returns string external name url."getContent";
+create function getcontext(theurl url) returns string external name url."getContext";
+create function getdomain(theurl url) returns string external name url."getDomain";
+create function getextension(theurl url) returns string external name url."getExtension";
+create function getfile(theurl url) returns string external name url."getFile";
+create function gethost(theurl url) returns string external name url."getHost";
+create function getport(theurl url) returns string external name url."getPort";
+create function getprotocol(theurl url) returns string external name url."getProtocol";
+create function getquery(theurl url) returns string external name url."getQuery";
+create function getroboturl(theurl url) returns string external name url."getRobotURL";
+create function getuser(theurl url) returns string external name url."getUser";
+create function sys.hashsize(b boolean, i bigint) returns bigint begin if b = true then return 8 * i; end if; return 0; end;
+create function sys.heapsize(tpe string, i bigint, w int) returns bigint begin if tpe <> 'varchar' and tpe <> 'clob' then return 0; end if; return 10240 + i * w; end;
+create function "host" (p inet) returns clob external name inet."host";
+create function "hostmask" (p inet) returns inet external name inet."hostmask";
 create filter function "ilike"(val string, pat string, esc string) external name algebra."ilike";
 create filter function "ilike"(val string, pat string) external name algebra."ilike";
-create function sys.imprintsize(i bigint, nme string)
-returns bigint
-begin
-	if nme = 'boolean'
-		or nme = 'tinyint'
-		or nme = 'smallint'
-		or nme = 'int'	
-		or nme = 'bigint'	
-		or nme = 'hugeint'	
-		or nme = 'decimal'	
-		or nme = 'date'
-		or nme = 'timestamp'
-		or nme = 'real'
-		or nme = 'double'
-	then
-		return cast( i * 0.12 as bigint);
-	end if ;
-	return 0;
-end;
+create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;
 create function intersection(a geometry, b geometry) returns geometry external name geom."Intersection";
-create function isaurl(theurl url) returns bool
-	external name url."isaURL";
-create function sys.isauuid(u uuid)
-returns uuid external name uuid."isaUUID";
-create function sys.isauuid(u string)
-returns uuid external name uuid."isaUUID";
+create function isaurl(theurl url) returns bool external name url."isaURL";
+create function sys.isauuid(u uuid) returns uuid external name uuid."isaUUID";
+create function sys.isauuid(u string) returns uuid external name uuid."isaUUID";
 create function isempty(g geometry) returns boolean external name geom."IsEmpty";
 create function issimple(g geometry) returns boolean external name geom."IsSimple";
-create function "left_shift"(i1 inet, i2 inet) returns boolean
-	external name inet."<<";
-create function "left_shift_assign"(i1 inet, i2 inet) returns boolean
-	external name inet."<<=";
+create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
+create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
 create function length(g geometry) returns float external name geom."Length";
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
@@ -1185,413 +674,194 @@ create function linefromtext(wkt string, srid smallint) returns linestring exter
 
 create procedure listdir(dirname string) external name fits.listdir;
 create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;
-create function "masklen" (p inet) returns int
-	external name inet."masklen";
+create function "masklen" (p inet) returns int external name inet."masklen";
 create function mbr (g geometry) returns mbr external name geom.mbr;
 create function mbroverlaps(a mbr, b mbr) returns boolean external name geom."mbroverlaps";
-create function sys.md5(v string)
-returns string external name clients.md5sum;
-create aggregate median(val tinyint) returns tinyint
-	external name "aggr"."median";
-create aggregate median(val smallint) returns smallint
-	external name "aggr"."median";
-create aggregate median(val integer) returns integer
-	external name "aggr"."median";
-create aggregate median(val wrd) returns wrd
-	external name "aggr"."median";
-create aggregate median(val bigint) returns bigint
-	external name "aggr"."median";
-create aggregate median(val decimal) returns decimal
- 	external name "aggr"."median";
-create aggregate median(val real) returns real
-	external name "aggr"."median";
-create aggregate median(val double) returns double
-	external name "aggr"."median";
-create aggregate median(val date) returns date
-	external name "aggr"."median";
-create aggregate median(val time) returns time
-	external name "aggr"."median";
-create aggregate median(val timestamp) returns timestamp
-	external name "aggr"."median";
+create function sys.md5(v string) returns string external name clients.md5sum;
+create aggregate median(val tinyint) returns tinyint external name "aggr"."median";
+create aggregate median(val smallint) returns smallint external name "aggr"."median";
+create aggregate median(val integer) returns integer external name "aggr"."median";
+create aggregate median(val wrd) returns wrd external name "aggr"."median";
+create aggregate median(val bigint) returns bigint external name "aggr"."median";
+create aggregate median(val decimal) returns decimal external name "aggr"."median";
+create aggregate median(val real) returns real external name "aggr"."median";
+create aggregate median(val double) returns double external name "aggr"."median";
+create aggregate median(val date) returns date external name "aggr"."median";
+create aggregate median(val time) returns time external name "aggr"."median";
+create aggregate median(val timestamp) returns timestamp external name "aggr"."median";
 create function mlinefromtext(wkt string, srid smallint) returns multilinestring external name geom."MultiLineFromText";
 create function mpointfromtext(wkt string, srid smallint) returns multipoint external name geom."MultiPointFromText";
 create function mpolyfromtext(wkt string, srid smallint) returns multipolygon external name geom."MultiPolyFromText";
-create function ms_round(num double, prc int, truncat int)
-returns double
-begin
-	if (truncat = 0)
-		then return round(num, prc);
-		else return ms_trunc(num, prc);
-	end if;
-end;
-create function ms_str(num float, prc int, truncat int)
-returns string
-begin
-        return cast(num as string);
-end;
-create function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32))
-returns varchar(32)
-begin
-	declare res varchar(32), aux varchar(32);
-	declare ofset int;
-
-    if ( st < 0 or st > length(s1))
-        then return '';
-    end if;
-
-    set ofset = 1;
-    set res = substring(s1,ofset,st-1);
-    set res = res || s3;
-    set ofset = st + len;
-    set aux = substring(s1,ofset,length(s1)-ofset+1);
-	set res = res || aux;
-	return res;
-end;
-create function ms_trunc(num double, prc int)
-returns double
-external name sql.ms_trunc;
-create procedure netcdf_attach(fname varchar(256))
-    external name netcdf.attach;
-create procedure netcdf_importvar(fid integer, varnname varchar(256))
-    external name netcdf.importvariable;
-create function "netmask" (p inet) returns inet
-	external name inet."netmask";
-create function "network" (p inet) returns inet
-	external name inet."network";
-create function newurl(protocol string, hostname string, "port" int, file string) 
-	returns url       
-	external name url."new";
-create function newurl(protocol string, hostname string, file string) 
-	returns url 
-	external name url."new";
-create function sys.optimizer_stats () 
-	returns table (rewrite string, count int) 
-	external name sql.dump_opt_stats;
-create function sys.optimizers () 
-	returns table (name string, def string, status string)
-	external name sql.optimizers;
+create function ms_round(num double, prc int, truncat int) returns double begin if (truncat = 0) then return round(num, prc); else return ms_trunc(num, prc); end if; end;
+create function ms_str(num float, prc int, truncat int) returns string begin return cast(num as string); end;
+create function ms_stuff(s1 varchar(32), st int, len int, s3 varchar(32)) returns varchar(32) begin declare res varchar(32), aux varchar(32); declare ofset int; if (st < 0 or st > length(s1)) then return ''; end if; set ofset = 1; set res = substring(s1,ofset,st-1); set res = res || s3; set ofset = st + len; set aux = substring(s1,ofset,length(s1)-ofset+1); set res = res || aux; return res; end;
+create function ms_trunc(num double, prc int) returns double external name sql.ms_trunc;
+create procedure netcdf_attach(fname varchar(256)) external name netcdf.attach;
+create procedure netcdf_importvar(fid integer, varnname varchar(256)) external name netcdf.importvariable;
+create function "netmask" (p inet) returns inet external name inet."netmask";
+create function "network" (p inet) returns inet external name inet."network";
+create function newurl(protocol string, hostname string, "port" int, file string) returns url external name url."new";
+create function newurl(protocol string, hostname string, file string) returns url external name url."new";
+create function sys.optimizer_stats () returns table (rewrite string, count int) external name sql.dump_opt_stats;
+create function sys.optimizers () returns table (name string, def string, status string) external name sql.optimizers;
 create function overlaps(a geometry, b geometry) returns boolean external name geom."Overlaps";
-create function sys.password_hash (username string) 
-	returns string 
-	external name sql.password;
-create procedure sys.pause(tag int)
-external name sql.sysmon_pause;
-create procedure sys.pause(tag bigint)
-external name sql.sysmon_pause;
+create function sys.password_hash (username string) returns string external name sql.password;
+create procedure sys.pause(tag int) external name sql.sysmon_pause;
+create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
 create function point(x double,y double) returns point external name geom.point;
 create function pointfromtext(wkt string, srid smallint) returns point external name geom."PointFromText";
 create function polyfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
 create function polygonfromtext(wkt string, srid smallint) returns polygon external name geom."PolyFromText";
 create procedure profiler_openstream(host string, port int) external name profiler."openStream";
 create procedure profiler_stethoscope(ticks int) external name profiler.stethoscope;
-create aggregate quantile(val tinyint, q double) returns tinyint
- 	external name "aggr"."quantile";
-create aggregate quantile(val smallint, q double) returns smallint
- 	external name "aggr"."quantile";
-create aggregate quantile(val integer, q double) returns integer
- 	external name "aggr"."quantile";
-create aggregate quantile(val wrd, q double) returns wrd
-	external name "aggr"."quantile";
-create aggregate quantile(val bigint, q double) returns bigint
-	external name "aggr"."quantile";
-create aggregate quantile(val decimal, q double) returns decimal
- 	external name "aggr"."quantile";
-create aggregate quantile(val real, q double) returns real
-	external name "aggr"."quantile";
-create aggregate quantile(val double, q double) returns double
-	external name "aggr"."quantile";
-create aggregate quantile(val date, q double) returns date
-	external name "aggr"."quantile";
-create aggregate quantile(val time, q double) returns time
-	external name "aggr"."quantile";
-create aggregate quantile(val timestamp, q double) returns timestamp
-	external name "aggr"."quantile";
-create function sys.querycache() 
-	returns table (query string, count int) 
-	external name sql.dump_cache;
-create procedure sys.querylog(filename string) 
-	external name sql.logfile;
-create function sys.querylog_calls()
-returns table(
-	id oid,
-	"start" timestamp,
-	"stop" timestamp,
-	arguments string,
-	tuples wrd,
-	run bigint,
-	ship bigint,
-	cpu int,
-	io int
-)
-external name sql.querylog_calls;
-create function sys.querylog_catalog()
-returns table(
-	id oid,
-	owner string,
-	defined timestamp,
-	query string,
-	pipe string,
-	"plan" string,
-	mal int,
-	optimize bigint
-)
-external name sql.querylog_catalog;
-create procedure sys.querylog_disable()
-external name sql.querylog_disable;
-create procedure sys.querylog_empty()
-external name sql.querylog_empty;
-create procedure sys.querylog_enable()
-external name sql.querylog_enable;
-create procedure sys.querylog_enable(threshold smallint)
-external name sql.querylog_enable_threshold;
-create function sys.queue()
-returns table(
-	qtag bigint,
-	"user" string,
-	started timestamp,
-	estimate timestamp,
-	progress int,
-	status string,
-	tag oid,
-	query string
-)
-external name sql.sysmon_queue;
-create function radians(d double) 
-returns double
-	return d*pi()/180;
-create function sys.rejects()
-returns table(
-	rowid bigint,
-	fldid int,
-	"message" string,
-	"input" string
-)
-external name sql.copy_rejects;
+create aggregate quantile(val tinyint, q double) returns tinyint external name "aggr"."quantile";
+create aggregate quantile(val smallint, q double) returns smallint external name "aggr"."quantile";
+create aggregate quantile(val integer, q double) returns integer external name "aggr"."quantile";
+create aggregate quantile(val wrd, q double) returns wrd external name "aggr"."quantile";
+create aggregate quantile(val bigint, q double) returns bigint external name "aggr"."quantile";
+create aggregate quantile(val decimal, q double) returns decimal external name "aggr"."quantile";
+create aggregate quantile(val real, q double) returns real external name "aggr"."quantile";
+create aggregate quantile(val double, q double) returns double external name "aggr"."quantile";
+create aggregate quantile(val date, q double) returns date external name "aggr"."quantile";
+create aggregate quantile(val time, q double) returns time external name "aggr"."quantile";
+create aggregate quantile(val timestamp, q double) returns timestamp external name "aggr"."quantile";
+create function sys.querycache() returns table (query string, count int) external name sql.dump_cache;
+create procedure sys.querylog(filename string) external name sql.logfile;
+create function sys.querylog_calls() returns table(id oid, "start" timestamp, "stop" timestamp, arguments string, tuples wrd, run bigint, ship bigint, cpu int, io int) external name sql.querylog_calls;
+create function sys.querylog_catalog() returns table(id oid, owner string, defined timestamp, query string, pipe string, "plan" string, mal int, optimize bigint) external name sql.querylog_catalog;
+create procedure sys.querylog_disable() external name sql.querylog_disable;
+create procedure sys.querylog_empty() external name sql.querylog_empty;
+create procedure sys.querylog_enable() external name sql.querylog_enable;
+create procedure sys.querylog_enable(threshold smallint) external name sql.querylog_enable_threshold;
+create function sys.queue() returns table(qtag bigint, "user" string, started timestamp, estimate timestamp, progress int, status string, tag oid, query string) external name sql.sysmon_queue;
+create function radians(d double) returns double return d*pi()/180;
+create function sys.rejects() returns table(rowid bigint, fldid int, "message" string, "input" string) external name sql.copy_rejects;
 create function relate(a geometry, b geometry, pattern string) returns boolean external name geom."Relate";
-create procedure sys.resume(tag int)
-external name sql.sysmon_resume;
-create procedure sys.resume(tag bigint)
-external name sql.sysmon_resume;
-create procedure reuse(sys string, tab string)
-	external name sql.reuse;
-create function reverse(src string)
-returns string external name udf.reverse;
-create function "right_shift"(i1 inet, i2 inet) returns boolean
-	external name inet.">>";
-create function "right_shift_assign"(i1 inet, i2 inet) returns boolean
-	external name inet.">>=";
-create function sys.sessions()
-returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
-external name sql.sessions;
-create function "setmasklen" (p inet, mask int) returns inet
-	external name inet."setmasklen";
-create procedure sys.setsession("timeout" bigint)
-	external name sql.setsession;
-create procedure sys.settimeout("query" bigint)
-	external name sql.settimeout;
-create procedure sys.settimeout("query" bigint, "session" bigint)
-	external name sql.settimeout;
-create procedure shrink(sys string, tab string)
-	external name sql.shrink;
-create procedure sys.shutdown(delay tinyint) 
-external name sql.shutdown;
-create procedure sys.shutdown(delay tinyint, force bool) 
-external name sql.shutdown;
+create procedure sys.resume(tag int) external name sql.sysmon_resume;
+create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
+create procedure reuse(sys string, tab string) external name sql.reuse;
+create function reverse(src string) returns string external name udf.reverse;
+create function "right_shift"(i1 inet, i2 inet) returns boolean external name inet.">>";
+create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
+create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;
+create function "setmasklen" (p inet, mask int) returns inet external name inet."setmasklen";
+create procedure sys.setsession("timeout" bigint) external name sql.setsession;
+create procedure sys.settimeout("query" bigint) external name sql.settimeout;
+create procedure sys.settimeout("query" bigint, "session" bigint) external name sql.settimeout;
+create procedure shrink(sys string, tab string) external name sql.shrink;
+create procedure sys.shutdown(delay tinyint) external name sql.shutdown;
+create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;
 create function srid(g geometry) returns integer external name geom."SRID";
-create aggregate stddev_pop(val tinyint) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val smallint) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val integer) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val wrd) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val bigint) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val real) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val double) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val date) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val time) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_pop(val timestamp) returns double
-	external name "aggr"."stdevp";
-create aggregate stddev_samp(val tinyint) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val smallint) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val integer) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val wrd) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val bigint) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val real) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val double) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val date) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val time) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val timestamp) returns double
-	external name "aggr"."stdev";
-create procedure sys.stop(tag int)
-external name sql.sysmon_stop;
-create procedure sys.stop(tag bigint)
-external name sql.sysmon_stop;
-create function sys."storage"()
-returns table (
-	"schema" string,
-	"table" string,
-	"column" string,
-	"type" string,
-	"mode" string,
-	location string,
-	"count" bigint,
-	typewidth int,
-	columnsize bigint,
-	heapsize bigint,
-	hashes bigint,
-	phash boolean,
-	imprints bigint,
-	sorted boolean
-)
-external name sql."storage";
-create function sys.storagemodel()
-returns table (
-	"schema" string,
-	"table" string,
-	"column" string,
-	"type" string,
-	"count"	bigint,
-	columnsize bigint,
-	heapsize bigint,
-	hashes bigint,
-	imprints bigint,
-	sorted boolean)
-begin
-	return select i."schema", i."table", i."column", i."type", i."count",
-	columnsize(i."type", i.count, i."distinct"),
-	heapsize(i."type", i."distinct", i."atomwidth"),
-	hashsize(i."reference", i."count"),
-	imprintsize(i."count",i."type"),
-	i.sorted
-	from sys.storagemodelinput i;
-end;
-create procedure sys.storagemodelinit()
-begin
-	delete from sys.storagemodelinput;
-
-	insert into sys.storagemodelinput
-	select x."schema", x."table", x."column", x."type", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys."storage"() x;
-
-	update sys.storagemodelinput
-	set reference = true
-	where concat(concat("schema","table"), "column") in (
-		select concat( concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name" )
-		from	"sys"."keys" as    "fkkey",
-				"sys"."objects" as "fkkeycol",
-				"sys"."tables" as  "fktable",
-				"sys"."schemas" as "fkschema"
-		where   "fktable"."id" = "fkkey"."table_id"
-			and "fkkey"."id" = "fkkeycol"."id"
-			and "fkschema"."id" = "fktable"."schema_id"
-			and "fkkey"."rkey" > -1);
-
-	update sys.storagemodelinput
-	set "distinct" = "count"
-	where "type" = 'varchar' or "type"='clob';
-end;
-create function str_to_date(s string, format string) returns date
-	external name mtime."str_to_date";
-create function str_to_time(s string, format string) returns time
-	external name mtime."str_to_time";
-create function str_to_timestamp(s string, format string) returns timestamp
-	external name mtime."str_to_timestamp";
+create aggregate stddev_pop(val tinyint) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val smallint) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val integer) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val wrd) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val bigint) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val real) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val double) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val date) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val time) returns double external name "aggr"."stdevp";
+create aggregate stddev_pop(val timestamp) returns double external name "aggr"."stdevp";
+create aggregate stddev_samp(val tinyint) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val smallint) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val integer) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val wrd) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val bigint) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val real) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val double) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val date) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val time) returns double external name "aggr"."stdev";
+create aggregate stddev_samp(val timestamp) returns double external name "aggr"."stdev";
+create procedure sys.stop(tag int) external name sql.sysmon_stop;
+create procedure sys.stop(tag bigint) external name sql.sysmon_stop;
+create function sys."storage"() returns table ("schema" string, "table" string, "column" string, "type" string, "mode" string, location string, "count" bigint, typewidth int, columnsize bigint, heapsize bigint, hashes bigint, phash boolean, imprints bigint, sorted boolean) external name sql."storage";
+create function sys.storagemodel() returns table ("schema" string, "table" string, "column" string, "type" string, "count" bigint, columnsize bigint, heapsize bigint, hashes bigint, imprints bigint, sorted boolean) begin return select i."schema", i."table", i."column", i."type", i."count", columnsize(i."type", i.count, i."distinct"), heapsize(i."type", i."distinct", i."atomwidth"), hashsize(i."reference", i."count"), imprintsize(i."count",i."type"), i.sorted from sys.storagemodelinput i; end;
+create procedure sys.storagemodelinit() begin delete from sys.storagemodelinput; insert into sys.storagemodelinput select x."schema", x."table", x."column", x."type", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys."storage"() x; update sys.storagemodelinput set reference = true where concat(concat("schema","table"), "column") in (select concat(concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name") from "sys"."keys" as "fkkey", "sys"."objects" as "fkkeycol", "sys"."tables" as "fktable", "sys"."schemas" as "fkschema" where "fktable"."id" = "fkkey"."table_id" and "fkkey"."id" = "fkkeycol"."id" and "fkschema"."id" = "fktable"."schema_id" and "fkkey"."rkey" > -1); update sys.storagemodelinput set "distinct" = "count" where "type" = 'varchar' or "type"='clob'; end;
+create function str_to_date(s string, format string) returns date external name mtime."str_to_date";
+create function str_to_time(s string, format string) returns time external name mtime."str_to_time";
+create function str_to_timestamp(s string, format string) returns timestamp external name mtime."str_to_timestamp";
 create function symdifference(a geometry, b geometry) returns geometry external name geom."SymDifference";
-create function "text" (p inet) returns clob
-	external name inet."text";
-create function time_to_str(d time, format string) returns string
-	external name mtime."time_to_str";
-create procedure times()
-external name sql.times;
-create function timestamp_to_str(d timestamp, format string) returns string
-	external name mtime."timestamp_to_str";
+create function "text" (p inet) returns clob external name inet."text";
+create function time_to_str(d time, format string) returns string external name mtime."time_to_str";
+create procedure times() external name sql.times;
+create function timestamp_to_str(d timestamp, format string) returns string external name mtime."timestamp_to_str";
 create function touches(a geometry, b geometry) returns boolean external name geom."Touches";
-create function sys.tracelog() 
-	returns table (
-		event integer,
-		clk varchar(20),
-		pc varchar(50),
-		thread int,
-		ticks bigint,
-		rrsmb bigint,
-		vmmb bigint,
-		reads bigint,
-		writes bigint,
-		minflt bigint,
-		majflt bigint,
-		nvcsw bigint,
-		stmt string
-	)
-	external name sql.dump_trace;
-create function sys.uuid()
-returns uuid external name uuid."new";
-create procedure vacuum(sys string, tab string)
-	external name sql.vacuum;
-CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;
-create aggregate var_pop(val tinyint) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val smallint) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val integer) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val wrd) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val bigint) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val real) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val double) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val date) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val time) returns double
-	external name "aggr"."variancep";
-create aggregate var_pop(val timestamp) returns double
-	external name "aggr"."variancep";
-create aggregate var_samp(val tinyint) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val smallint) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val integer) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val wrd) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val bigint) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val real) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val double) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val date) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val time) returns double
-	external name "aggr"."variance";
-create aggregate var_samp(val timestamp) returns double
-	external name "aggr"."variance";
+create function sys.tracelog() returns table (event integer, clk varchar(20), pc varchar(50), thread int, ticks bigint, rrsmb bigint, vmmb bigint, reads bigint, writes bigint, minflt bigint, majflt bigint, nvcsw bigint, stmt string) external name sql.dump_trace;
+create function sys.uuid() returns uuid external name uuid."new";
+create procedure vacuum(sys string, tab string) external name sql.vacuum;
+CREATE FUNCTION var() RETURNS TABLE(name varchar(1024)) EXTERNAL NAME sql.sql_variables;
+create aggregate var_pop(val tinyint) returns double external name "aggr"."variancep";
+create aggregate var_pop(val smallint) returns double external name "aggr"."variancep";
+create aggregate var_pop(val integer) returns double external name "aggr"."variancep";
+create aggregate var_pop(val wrd) returns double external name "aggr"."variancep";
+create aggregate var_pop(val bigint) returns double external name "aggr"."variancep";
+create aggregate var_pop(val real) returns double external name "aggr"."variancep";
+create aggregate var_pop(val double) returns double external name "aggr"."variancep";
+create aggregate var_pop(val date) returns double external name "aggr"."variancep";
+create aggregate var_pop(val time) returns double external name "aggr"."variancep";
+create aggregate var_pop(val timestamp) returns double external name "aggr"."variancep";
+create aggregate var_samp(val tinyint) returns double external name "aggr"."variance";
+create aggregate var_samp(val smallint) returns double external name "aggr"."variance";
+create aggregate var_samp(val integer) returns double external name "aggr"."variance";
+create aggregate var_samp(val wrd) returns double external name "aggr"."variance";
+create aggregate var_samp(val bigint) returns double external name "aggr"."variance";
+create aggregate var_samp(val real) returns double external name "aggr"."variance";
+create aggregate var_samp(val double) returns double external name "aggr"."variance";
+create aggregate var_samp(val date) returns double external name "aggr"."variance";
+create aggregate var_samp(val time) returns double external name "aggr"."variance";
+create aggregate var_samp(val timestamp) returns double external name "aggr"."variance";
 create function within(a geometry, b geometry) returns boolean external name geom."Within";
 create function x(g geometry) returns double external name geom."X";
 create function y(g geometry) returns double external name geom."Y";
-create function zorder_decode_x(z oid) returns integer
-    external name zorder.decode_x;
-create function zorder_decode_y(z oid) returns integer
-    external name zorder.decode_y;
-create function zorder_encode(x integer, y integer) returns oid
-    external name zorder.encode;
+create function zorder_decode_x(z oid) returns integer external name zorder.decode_x;
+create function zorder_decode_y(z oid) returns integer external name zorder.decode_y;
+create function zorder_encode(x integer, y integer) returns oid external name zorder.encode;
+
+-- schemas
+select name, authorization, owner, system from sys.schemas order by name;
+-- _tables
+select s.name, t.name, t.query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
+-- _columns
+select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
+-- functions
+select s.name, f.name, f.func, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, f.func;
+-- args
+select f.name, a.name, a.type, a.type_digits, a.type_scale, a.inout, a.number from sys.args a left outer join sys.functions f on a.func_id = f.id order by f.name, a.func_id, a.number;
+-- auths
+select name, grantor from sys.auths;
+-- connections (expect empty)
+select server, port, db, db_alias, user, password, language from sys.connections order by server, port;
+-- db_user_info
+select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
+-- dependencies
+select count(*) from sys.dependencies;
+-- idxs
+select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
+-- keys
+with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
+-- objects
+select name, nr from sys.objects order by name, nr;
+-- privileges
+--  tables
+select t.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
+--  columns
+select t.name, c.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
+--  functions
+select f.name, a.name, p.privileges, g.name, p.grantable from sys.functions f, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by f.name, a.name;
+-- sequences
+select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
+-- statistics (expect empty)
+select count(*) from sys.statistics;
+-- storagemodelinput (expect empty)
+select count(*) from sys.storagemodelinput;
+-- systemfunctions
+select f.name from sys.systemfunctions s left outer join sys.functions f on s.function_id = f.id order by f.name;
+-- triggers
+select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
+-- types
+select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
+-- user_role
+select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
 #select name, authorization, owner, system from sys.schemas order by name;
 % sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % name,	authorization,	owner,	system # name
