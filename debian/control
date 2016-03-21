@@ -9,7 +9,7 @@ Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 # http://www.debian.org/doc/debian-policy/ch-relationships.html
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.0.0),
- libgsl0-dev, libpcre3-dev, libreadline-gplv2-dev | libreadline-dev,
+ libgsl0-dev, libpcre3-dev, libreadline-dev,
  libssl-dev, libxml2-dev, perl, pkg-config, python, python3,
  unixodbc-dev, uuid-dev, zlib1g-dev,
  liblas-c-dev
