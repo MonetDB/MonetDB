@@ -85,8 +85,9 @@ out, err = clt.communicate(out)
 
 # do some normalization of the output:
 # remove SQL comments, collapse multiple white space into a single space
-import re
+out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags = re.M)
 out = re.sub(r'(?:\\n|\\t| )+', ' ', re.sub(r'--.*?(?:\\n)+', '', out))
+out = re.sub('[\t ]*--.*', '', out)
 
 sys.stdout.write(out)
 sys.stderr.write(err)
