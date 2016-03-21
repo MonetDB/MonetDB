@@ -39,7 +39,6 @@
 #include "opt_garbageCollector.h"
 #include "opt_generator.h"
 #include "opt_inline.h"
-#include "opt_iot.h"
 #include "opt_projectionpath.h"
 #include "opt_matpack.h"
 #include "opt_json.h"
@@ -76,7 +75,6 @@ struct{
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
 	{"generator", &OPTgeneratorImplementation},
 	{"inline", &OPTinlineImplementation},
-	{"iot", &OPTiotImplementation},
 	{"projectionpath", &OPTprojectionpathImplementation},
 	{"matpack", &OPTmatpackImplementation},
 	{"json", &OPTjsonImplementation},

@@ -271,7 +271,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		}
 	} while (qot && cnt++ < mb->stop);
 	mb->optimize= GDKusec() - clk;
-	if (cnt > mb->stop)
+	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
 }
@@ -569,10 +569,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) != groupRef )
 		return TRUE;
 
-	if ( getModuleId(p) == iotRef){
-		if( getFunctionId(p) == registerRef)
-			return TRUE;
-	}
 	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	if ( getModuleId(p) == recycleRef)

@@ -73,10 +73,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		}
 		if (blockStart(p) )
 			depth++;
-		
-		pushInstruction(mb, p);
 		if ( p->token == ENDsymbol)
 			break;
+		
+		pushInstruction(mb, p);
 		n = mb->stop-1;
 		for (j = 0; j < p->argc; j++) {
 			if (getEndLifespan(span,getArg(p,j)) == i && isaBatType(getArgType(mb, p, j)) ){
@@ -103,6 +103,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			}
 		}
 	}
+	assert(p);
+	assert( p->token == ENDsymbol);
+	pushInstruction(mb, p);
 	for (i++; i < limit; i++) 
 		pushInstruction(mb, old[i]);
 	for (; i < slimit; i++) 

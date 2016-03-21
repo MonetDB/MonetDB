@@ -7,7 +7,9 @@
  */
 
 /*
- * M.L. Kersten
+ * @f opt_pipes
+ * @a M.L. Kersten
+ * @-
  * The default SQL optimizer pipeline can be set per server.  See the
  * optpipe setting in monetdb(1) when using merovingian.  During SQL
  * initialization, the optimizer pipeline is checked against the
@@ -221,34 +223,6 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
  */
-	{"iot_pipe",
-	 "optimizer.inline();"
-	 "optimizer.candidates();"
-	 "optimizer.remap();"
-	 "optimizer.iot();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.evaluate();"
-	 "optimizer.aliases();"
-	 "optimizer.pushselect();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.aliases();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.projectionpath();"
-	 "optimizer.deadcode();"
-	 "optimizer.reorder();"
-	 "optimizer.reduce();"
-	 "optimizer.matpack();"
-	 "optimizer.dataflow();"
-	 "optimizer.querylog();"
-	 "optimizer.multiplex();"
-	 "optimizer.generator();"
-	 "optimizer.profiler();"
-	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
 /* sentinel */
 	{NULL, NULL, NULL, NULL, NULL, 0}
 };
