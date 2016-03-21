@@ -44,13 +44,6 @@ pattern optimizer.volcano(mod:str, fcn:str):str
 address OPTwrapper
 comment "Simulate volcano style execution";
 
-#opt_iot
-pattern optimizer.iot():str
-address OPTwrapper;
-pattern optimizer.iot(mod:str, fcn:str):str 
-address OPTwrapper
-comment "Simulate iot style execution";
-
 #opt_constants
 pattern optimizer.constants():str
 address OPTwrapper;
