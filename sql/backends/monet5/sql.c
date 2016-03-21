@@ -1915,7 +1915,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (*sname && strcmp(*sname, str_nil) != 0)
 		throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
-	throw(SQL, "sql.bind", "Unable to find %s.%s(%s) partition %d", *sname, *tname, *cname, *access);
+	throw(SQL, "sql.bind", "unable to find %s(%s)", *tname, *cname);
 }
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
