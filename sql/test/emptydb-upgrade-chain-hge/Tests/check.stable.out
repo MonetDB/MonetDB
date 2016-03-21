@@ -1,58 +1,33 @@
-stdout of test 'SQL-dump` in directory 'clients` itself:
+stdout of test 'check` in directory 'sql/test/emptydb-upgrade-chain-hge` itself:
 
 
-# 15:01:36 >  
-# 15:01:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34237" "--set" "mapi_usock=/var/tmp/mtest-13451/.s.monetdb.34237" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_clients" "--set" "mal_listing=0"
-# 15:01:36 >  
+# 12:41:42 >  
+# 12:41:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38686" "--set" "mapi_usock=/var/tmp/mtest-29963/.s.monetdb.38686" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb-upgrade-chain-hge" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 12:41:42 >  
 
-# MonetDB 5 server v11.17.0 (hg id: 51cced809df4)
+# MonetDB 5 server v11.21.16 (hg id: 3d106269871b+)
 # This is an unreleased version
-# Serving database 'mTests_clients', using 8 threads
+# Serving database 'mTests_sql_test_emptydb-upgrade-chain-hge', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.591 GiB available main-memory.
+# Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:38686/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29963/.s.monetdb.38686
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_compress.sql
-# loading sql script: 18_dictionary.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
 
-# 11:17:07 >  
-# 11:17:07 >  "/usr/bin/python2" "SQL-dump.SQL.py" "SQL-dump"
-# 11:17:07 >  
+# 12:41:42 >  
+# 12:41:42 >  "/usr/bin/python2" "check.SQL.py" "check"
+# 12:41:42 >  
 
 \dn
 \dt
@@ -64,16 +39,10 @@ Ready.
 \dSv
 \dSs
 \dSf
-\dn bam
 \dn json
 \dn profiler
 \dn sys
 \dn tmp
-\dSt bam.export
-\dSt bam.files
-\dSt bam.pg
-\dSt bam.rg
-\dSt bam.sq
 \dSt sys._columns
 \dSt sys._tables
 \dSt sys.args
@@ -86,11 +55,6 @@ Ready.
 \dSt sys.idxs
 \dSt sys.keys
 \dSt sys.keywords
-\dSt sys.netcdf_attrs
-\dSt sys.netcdf_dims
-\dSt sys.netcdf_files
-\dSt sys.netcdf_vardim
-\dSt sys.netcdf_vars
 \dSt sys.objects
 \dSt sys.privileges
 \dSt sys.schemas
@@ -130,7 +94,6 @@ Ready.
 \dSf sys."analyze"
 \dSf sys."bbp"
 \dSf sys."broadcast"
-\dSf sys."chi2prob"
 \dSf sys."clearrejects"
 \dSf sys."columnsize"
 \dSf sys."contains"
@@ -160,8 +123,6 @@ Ready.
 \dSf sys."environment"
 \dSf sys."epoch"
 \dSf sys."evalalgebra"
-\dSf sys."fitsattach"
-\dSf sys."fitsload"
 \dSf sys."flush_log"
 \dSf sys."fuse"
 \dSf sys."generate_series"
@@ -195,8 +156,6 @@ Ready.
 \dSf sys."left_shift"
 \dSf sys."left_shift_assign"
 \dSf sys."like"
-\dSf sys."listdir"
-\dSf sys."listdirpat"
 \dSf sys."malfunctions"
 \dSf sys."masklen"
 \dSf sys."mbr"
@@ -206,8 +165,6 @@ Ready.
 \dSf sys."ms_str"
 \dSf sys."ms_stuff"
 \dSf sys."ms_trunc"
-\dSf sys."netcdf_attach"
-\dSf sys."netcdf_importvar"
 \dSf sys."netmask"
 \dSf sys."network"
 \dSf sys."newurl"
@@ -398,9 +355,8 @@ select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g
 select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
-SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  json
-SYSTEM SCHEMA  profiler
+SYSTEM SCHEMA profiler
 SYSTEM SCHEMA  sys
 SYSTEM SCHEMA  tmp
 SYSTEM TABLE  sys._columns
@@ -415,16 +371,11 @@ SYSTEM TABLE  sys.functions
 SYSTEM TABLE  sys.idxs
 SYSTEM TABLE  sys.keys
 SYSTEM TABLE  sys.keywords
-SYSTEM TABLE  sys.netcdf_attrs
-SYSTEM TABLE  sys.netcdf_dims
-SYSTEM TABLE  sys.netcdf_files
-SYSTEM TABLE  sys.netcdf_vardim
-SYSTEM TABLE  sys.netcdf_vars
 SYSTEM TABLE  sys.objects
 SYSTEM TABLE  sys.privileges
 SYSTEM TABLE  sys.schemas
 SYSTEM TABLE  sys.sequences
-SYSTEM TABLE  sys.spatial_ref_sys
+SYSTEM TABLE sys.spatial_ref_sys
 SYSTEM TABLE  sys.statistics
 SYSTEM TABLE  sys.storagemodelinput
 SYSTEM TABLE  sys.systemfunctions
@@ -434,7 +385,7 @@ SYSTEM TABLE  sys.types
 SYSTEM TABLE  sys.user_role
 SYSTEM VIEW  sys.columns
 SYSTEM VIEW  sys.environment
-SYSTEM VIEW  sys.geometry_columns
+SYSTEM VIEW sys.geometry_columns
 SYSTEM VIEW  sys.optimizers
 SYSTEM VIEW  sys.querylog_calls
 SYSTEM VIEW  sys.querylog_catalog
@@ -448,60 +399,59 @@ SYSTEM VIEW  sys.tables
 SYSTEM VIEW  sys.tablestoragemodel
 SYSTEM VIEW  sys.tracelog
 SYSTEM VIEW  sys.users
-SYSTEM FUNCTION  sys.<
-SYSTEM FUNCTION  sys.<=
-SYSTEM FUNCTION  sys.<>
-SYSTEM FUNCTION  sys.=
-SYSTEM FUNCTION  sys.>
-SYSTEM FUNCTION  sys.>=
+SYSTEM FUNCTION sys.<
+SYSTEM FUNCTION sys.<=
+SYSTEM FUNCTION sys.<>
+SYSTEM FUNCTION sys.=
+SYSTEM FUNCTION sys.>
+SYSTEM FUNCTION sys.>=
 SYSTEM FUNCTION  sys.abbrev
-SYSTEM FUNCTION  sys.abs
-SYSTEM FUNCTION  sys.acos
+SYSTEM FUNCTION sys.abs
+SYSTEM FUNCTION sys.acos
 SYSTEM FUNCTION  sys.alpha
 SYSTEM FUNCTION  sys.analyze
-SYSTEM FUNCTION  sys.and
-SYSTEM FUNCTION  sys.ascii
-SYSTEM FUNCTION  sys.asin
-SYSTEM FUNCTION  sys.atan
-SYSTEM FUNCTION  sys.avg
+SYSTEM FUNCTION sys.and
+SYSTEM FUNCTION sys.ascii
+SYSTEM FUNCTION sys.asin
+SYSTEM FUNCTION sys.atan
+SYSTEM FUNCTION sys.avg
 SYSTEM FUNCTION  sys.bbp
-SYSTEM FUNCTION  sys.bit_and
-SYSTEM FUNCTION  sys.bit_not
-SYSTEM FUNCTION  sys.bit_or
-SYSTEM FUNCTION  sys.bit_xor
+SYSTEM FUNCTION sys.bit_and
+SYSTEM FUNCTION sys.bit_not
+SYSTEM FUNCTION sys.bit_or
+SYSTEM FUNCTION sys.bit_xor
 SYSTEM FUNCTION  sys.broadcast
-SYSTEM FUNCTION  sys.ceil
-SYSTEM FUNCTION  sys.ceiling
-SYSTEM FUNCTION  sys.char_length
-SYSTEM FUNCTION  sys.character_length
-SYSTEM FUNCTION  sys.charindex
-SYSTEM FUNCTION  sys.chi2prob
+SYSTEM FUNCTION sys.ceil
+SYSTEM FUNCTION sys.ceiling
+SYSTEM FUNCTION sys.char_length
+SYSTEM FUNCTION sys.character_length
+SYSTEM FUNCTION sys.charindex
 SYSTEM FUNCTION  sys.clearrejects
-SYSTEM FUNCTION  sys.code
+SYSTEM FUNCTION sys.code
 SYSTEM FUNCTION  sys.columnsize
-SYSTEM FUNCTION  sys.concat
+SYSTEM FUNCTION sys.concat
 SYSTEM FUNCTION  sys.contains
-SYSTEM FUNCTION  sys.copyfrom
+SYSTEM FUNCTION sys.copyfrom
 SYSTEM FUNCTION  sys.corr
-SYSTEM FUNCTION  sys.cos
-SYSTEM FUNCTION  sys.cosh
-SYSTEM FUNCTION  sys.cot
-SYSTEM FUNCTION  sys.count
-SYSTEM FUNCTION  sys.count_no_nil
-SYSTEM FUNCTION  sys.curdate
-SYSTEM FUNCTION  sys.current_date
-SYSTEM FUNCTION  sys.current_time
-SYSTEM FUNCTION  sys.current_timestamp
-SYSTEM FUNCTION  sys.curtime
+SYSTEM FUNCTION sys.cos
+SYSTEM FUNCTION sys.cosh
+SYSTEM FUNCTION sys.cot
+SYSTEM FUNCTION sys.count
+SYSTEM FUNCTION sys.count_no_nil
+SYSTEM FUNCTION sys.curdate
+SYSTEM FUNCTION sys.current_date
+SYSTEM FUNCTION sys.current_time
+SYSTEM FUNCTION sys.current_timestamp
+SYSTEM FUNCTION sys.curtime
 SYSTEM FUNCTION  sys.date_to_str
-SYSTEM FUNCTION  sys.day
-SYSTEM FUNCTION  sys.dayofmonth
-SYSTEM FUNCTION  sys.dayofweek
-SYSTEM FUNCTION  sys.dayofyear
+SYSTEM FUNCTION sys.day
+SYSTEM FUNCTION sys.dayofmonth
+SYSTEM FUNCTION sys.dayofweek
+SYSTEM FUNCTION sys.dayofyear
 SYSTEM FUNCTION  sys.db_users
-SYSTEM FUNCTION  sys.debug
+SYSTEM FUNCTION sys.debug
 SYSTEM FUNCTION  sys.degrees
-SYSTEM FUNCTION  sys.dense_rank
+SYSTEM FUNCTION sys.dense_rank
 SYSTEM FUNCTION  sys.dependencies_columns_on_functions
 SYSTEM FUNCTION  sys.dependencies_columns_on_indexes
 SYSTEM FUNCTION  sys.dependencies_columns_on_keys
@@ -519,25 +469,23 @@ SYSTEM FUNCTION  sys.dependencies_tables_on_triggers
 SYSTEM FUNCTION  sys.dependencies_tables_on_views
 SYSTEM FUNCTION  sys.dependencies_views_on_functions
 SYSTEM FUNCTION  sys.dependencies_views_on_triggers
-SYSTEM FUNCTION  sys.diff
+SYSTEM FUNCTION sys.diff
 SYSTEM FUNCTION  sys.difference
-SYSTEM FUNCTION  sys.editdistance
-SYSTEM FUNCTION  sys.editdistance2
+SYSTEM FUNCTION sys.editdistance
+SYSTEM FUNCTION sys.editdistance2
 SYSTEM FUNCTION  sys.env
 SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.epoch
 SYSTEM FUNCTION  sys.evalalgebra
-SYSTEM FUNCTION  sys.exist
-SYSTEM FUNCTION  sys.exp
-SYSTEM FUNCTION  sys.fitsattach
-SYSTEM FUNCTION  sys.fitsload
-SYSTEM FUNCTION  sys.floor
-SYSTEM FUNCTION  sys.flush_log
+SYSTEM FUNCTION sys.exist
+SYSTEM FUNCTION sys.exp
+SYSTEM FUNCTION sys.floor
+SYSTEM FUNCTION sys.flush_log
 SYSTEM FUNCTION  sys.fuse
 SYSTEM FUNCTION  sys.generate_series
-SYSTEM FUNCTION  sys.geometrytype
-SYSTEM FUNCTION  sys.get_type
-SYSTEM FUNCTION  sys.get_value_for
+SYSTEM FUNCTION sys.geometrytype
+SYSTEM FUNCTION sys.get_type
+SYSTEM FUNCTION sys.get_value_for
 SYSTEM FUNCTION  sys.getanchor
 SYSTEM FUNCTION  sys.getbasename
 SYSTEM FUNCTION  sys.getcontent
@@ -547,98 +495,94 @@ SYSTEM FUNCTION  sys.getextension
 SYSTEM FUNCTION  sys.getfile
 SYSTEM FUNCTION  sys.gethost
 SYSTEM FUNCTION  sys.getport
-SYSTEM FUNCTION  sys.getproj4
+SYSTEM FUNCTION sys.getproj4
 SYSTEM FUNCTION  sys.getprotocol
 SYSTEM FUNCTION  sys.getquery
 SYSTEM FUNCTION  sys.getroboturl
 SYSTEM FUNCTION  sys.getuser
-SYSTEM FUNCTION  sys.has_m
-SYSTEM FUNCTION  sys.has_z
-SYSTEM FUNCTION  sys.hash
+SYSTEM FUNCTION sys.has_m
+SYSTEM FUNCTION sys.has_z
+SYSTEM FUNCTION sys.hash
 SYSTEM FUNCTION  sys.hashsize
 SYSTEM FUNCTION  sys.heapsize
 SYSTEM FUNCTION  sys.host
 SYSTEM FUNCTION  sys.hostmask
-SYSTEM FUNCTION  sys.hour
-SYSTEM FUNCTION  sys.identity
-SYSTEM FUNCTION  sys.ifthenelse
+SYSTEM FUNCTION sys.hour
+SYSTEM FUNCTION sys.identity
+SYSTEM FUNCTION sys.ifthenelse
 SYSTEM FUNCTION  sys.ilike
 SYSTEM FUNCTION  sys.imprintsize
-SYSTEM FUNCTION  sys.in
-SYSTEM FUNCTION  sys.index
-SYSTEM FUNCTION  sys.insert
-SYSTEM FUNCTION  sys.internaltransform
+SYSTEM FUNCTION sys.in
+SYSTEM FUNCTION sys.index
+SYSTEM FUNCTION sys.insert
+SYSTEM FUNCTION sys.internaltransform
 SYSTEM FUNCTION  sys.isaurl
 SYSTEM FUNCTION  sys.isauuid
-SYSTEM FUNCTION  sys.isnull
-SYSTEM FUNCTION  sys.lcase
-SYSTEM FUNCTION  sys.left
+SYSTEM FUNCTION sys.isnull
+SYSTEM FUNCTION sys.lcase
+SYSTEM FUNCTION sys.left
 SYSTEM FUNCTION  sys.left_shift
 SYSTEM FUNCTION  sys.left_shift_assign
 SYSTEM FUNCTION  sys.length
-SYSTEM FUNCTION  sys.levenshtein
+SYSTEM FUNCTION sys.levenshtein
 SYSTEM FUNCTION  sys.like
-SYSTEM FUNCTION  sys.listdir
-SYSTEM FUNCTION  sys.listdirpat
-SYSTEM FUNCTION  sys.local_timezone
-SYSTEM FUNCTION  sys.localtime
-SYSTEM FUNCTION  sys.localtimestamp
-SYSTEM FUNCTION  sys.locate
-SYSTEM FUNCTION  sys.log
-SYSTEM FUNCTION  sys.log10
-SYSTEM FUNCTION  sys.lower
-SYSTEM FUNCTION  sys.lpad
-SYSTEM FUNCTION  sys.ltrim
-SYSTEM FUNCTION  sys.malfunctions
+SYSTEM FUNCTION sys.local_timezone
+SYSTEM FUNCTION sys.localtime
+SYSTEM FUNCTION sys.localtimestamp
+SYSTEM FUNCTION sys.locate
+SYSTEM FUNCTION sys.log
+SYSTEM FUNCTION sys.log10
+SYSTEM FUNCTION sys.lower
+SYSTEM FUNCTION sys.lpad
+SYSTEM FUNCTION sys.ltrim
+SYSTEM FUNCTION sys.malfunctions
 SYSTEM FUNCTION  sys.masklen
-SYSTEM FUNCTION  sys.max
+SYSTEM FUNCTION sys.max
 SYSTEM FUNCTION  sys.mbr
-SYSTEM FUNCTION  sys.mbr_above
-SYSTEM FUNCTION  sys.mbr_below
-SYSTEM FUNCTION  sys.mbr_contained
-SYSTEM FUNCTION  sys.mbr_contains
-SYSTEM FUNCTION  sys.mbr_distance
-SYSTEM FUNCTION  sys.mbr_equal
-SYSTEM FUNCTION  sys.mbr_left
-SYSTEM FUNCTION  sys.mbr_overlap
-SYSTEM FUNCTION  sys.mbr_overlap_or_above
-SYSTEM FUNCTION  sys.mbr_overlap_or_below
-SYSTEM FUNCTION  sys.mbr_overlap_or_left
-SYSTEM FUNCTION  sys.mbr_overlap_or_right
-SYSTEM FUNCTION  sys.mbr_right
+SYSTEM FUNCTION sys.mbr_above
+SYSTEM FUNCTION sys.mbr_below
+SYSTEM FUNCTION sys.mbr_contained
+SYSTEM FUNCTION sys.mbr_contains
+SYSTEM FUNCTION sys.mbr_distance
+SYSTEM FUNCTION sys.mbr_equal
+SYSTEM FUNCTION sys.mbr_left
+SYSTEM FUNCTION sys.mbr_overlap
+SYSTEM FUNCTION sys.mbr_overlap_or_above
+SYSTEM FUNCTION sys.mbr_overlap_or_below
+SYSTEM FUNCTION sys.mbr_overlap_or_left
+SYSTEM FUNCTION sys.mbr_overlap_or_right
+SYSTEM FUNCTION sys.mbr_right
 SYSTEM FUNCTION  sys.md5
 SYSTEM FUNCTION  sys.median
-SYSTEM FUNCTION  sys.min
-SYSTEM FUNCTION  sys.minute
-SYSTEM FUNCTION  sys.mod
-SYSTEM FUNCTION  sys.month
+SYSTEM FUNCTION sys.min
+SYSTEM FUNCTION sys.minute
+SYSTEM FUNCTION sys.mod
+SYSTEM FUNCTION sys.month
 SYSTEM FUNCTION  sys.ms_round
 SYSTEM FUNCTION  sys.ms_str
 SYSTEM FUNCTION  sys.ms_stuff
 SYSTEM FUNCTION  sys.ms_trunc
-SYSTEM FUNCTION  sys.netcdf_attach
-SYSTEM FUNCTION  sys.netcdf_importvar
 SYSTEM FUNCTION  sys.netmask
 SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
-SYSTEM FUNCTION  sys.next_value_for
-SYSTEM FUNCTION  sys.not
-SYSTEM FUNCTION  sys.not_exist
-SYSTEM FUNCTION  sys.not_ilike
-SYSTEM FUNCTION  sys.not_like
-SYSTEM FUNCTION  sys.not_unique
-SYSTEM FUNCTION  sys.not_uniques
-SYSTEM FUNCTION  sys.octet_length
+SYSTEM FUNCTION sys.next_value_for
+SYSTEM FUNCTION sys.not
+SYSTEM FUNCTION sys.not_exist
+SYSTEM FUNCTION sys.not_ilike
+SYSTEM FUNCTION sys.not_like
+SYSTEM FUNCTION sys.not_unique
+SYSTEM FUNCTION sys.not_uniques
+SYSTEM FUNCTION sys.octet_length
 SYSTEM FUNCTION  sys.optimizer_stats
 SYSTEM FUNCTION  sys.optimizers
-SYSTEM FUNCTION  sys.or
+SYSTEM FUNCTION sys.or
 SYSTEM FUNCTION  sys.password_hash
-SYSTEM FUNCTION  sys.patindex
+SYSTEM FUNCTION sys.patindex
 SYSTEM FUNCTION  sys.pause
-SYSTEM FUNCTION  sys.pi
-SYSTEM FUNCTION  sys.power
-SYSTEM FUNCTION  sys.prod
-SYSTEM FUNCTION  sys.qgramnormalize
+SYSTEM FUNCTION sys.pi
+SYSTEM FUNCTION sys.power
+SYSTEM FUNCTION sys.prod
+SYSTEM FUNCTION sys.qgramnormalize
 SYSTEM FUNCTION  sys.quantile
 SYSTEM FUNCTION  sys.querycache
 SYSTEM FUNCTION  sys.querylog
@@ -649,141 +593,141 @@ SYSTEM FUNCTION  sys.querylog_empty
 SYSTEM FUNCTION  sys.querylog_enable
 SYSTEM FUNCTION  sys.queue
 SYSTEM FUNCTION  sys.radians
-SYSTEM FUNCTION  sys.rand
-SYSTEM FUNCTION  sys.rank
+SYSTEM FUNCTION sys.rand
+SYSTEM FUNCTION sys.rank
 SYSTEM FUNCTION  sys.rejects
-SYSTEM FUNCTION  sys.repeat
-SYSTEM FUNCTION  sys.replace
-SYSTEM FUNCTION  sys.restart
+SYSTEM FUNCTION sys.repeat
+SYSTEM FUNCTION sys.replace
+SYSTEM FUNCTION sys.restart
 SYSTEM FUNCTION  sys.resume
 SYSTEM FUNCTION  sys.reuse
 SYSTEM FUNCTION  sys.reverse
-SYSTEM FUNCTION  sys.right
+SYSTEM FUNCTION sys.right
 SYSTEM FUNCTION  sys.right_shift
 SYSTEM FUNCTION  sys.right_shift_assign
-SYSTEM FUNCTION  sys.rotate_xor_hash
-SYSTEM FUNCTION  sys.round
-SYSTEM FUNCTION  sys.row_number
-SYSTEM FUNCTION  sys.rowid
-SYSTEM FUNCTION  sys.rpad
-SYSTEM FUNCTION  sys.rtrim
-SYSTEM FUNCTION  sys.scale_down
-SYSTEM FUNCTION  sys.scale_up
-SYSTEM FUNCTION  sys.second
+SYSTEM FUNCTION sys.rotate_xor_hash
+SYSTEM FUNCTION sys.round
+SYSTEM FUNCTION sys.row_number
+SYSTEM FUNCTION sys.rowid
+SYSTEM FUNCTION sys.rpad
+SYSTEM FUNCTION sys.rtrim
+SYSTEM FUNCTION sys.scale_down
+SYSTEM FUNCTION sys.scale_up
+SYSTEM FUNCTION sys.second
 SYSTEM FUNCTION  sys.sessions
 SYSTEM FUNCTION  sys.setmasklen
 SYSTEM FUNCTION  sys.setsession
 SYSTEM FUNCTION  sys.settimeout
 SYSTEM FUNCTION  sys.shrink
 SYSTEM FUNCTION  sys.shutdown
-SYSTEM FUNCTION  sys.sign
-SYSTEM FUNCTION  sys.similarity
-SYSTEM FUNCTION  sys.sin
-SYSTEM FUNCTION  sys.sinh
-SYSTEM FUNCTION  sys.soundex
-SYSTEM FUNCTION  sys.space
-SYSTEM FUNCTION  sys.splitpart
-SYSTEM FUNCTION  sys.sql_add
-SYSTEM FUNCTION  sys.sql_div
-SYSTEM FUNCTION  sys.sql_max
-SYSTEM FUNCTION  sys.sql_min
-SYSTEM FUNCTION  sys.sql_mul
-SYSTEM FUNCTION  sys.sql_neg
-SYSTEM FUNCTION  sys.sql_sub
-SYSTEM FUNCTION  sys.sqrt
-SYSTEM FUNCTION  sys.st_area
-SYSTEM FUNCTION  sys.st_asbinary
-SYSTEM FUNCTION  sys.st_asewkt
-SYSTEM FUNCTION  sys.st_astext
-SYSTEM FUNCTION  sys.st_bdmpolyfromtext
-SYSTEM FUNCTION  sys.st_bdpolyfromtext
-SYSTEM FUNCTION  sys.st_boundary
-SYSTEM FUNCTION  sys.st_buffer
-SYSTEM FUNCTION  sys.st_centroid
-SYSTEM FUNCTION  sys.st_collect
-SYSTEM FUNCTION  sys.st_contains
-SYSTEM FUNCTION  sys.st_convexhull
-SYSTEM FUNCTION  sys.st_coorddim
-SYSTEM FUNCTION  sys.st_coveredby
-SYSTEM FUNCTION  sys.st_covers
-SYSTEM FUNCTION  sys.st_crosses
-SYSTEM FUNCTION  sys.st_delaunaytriangles
-SYSTEM FUNCTION  sys.st_difference
-SYSTEM FUNCTION  sys.st_dimension
-SYSTEM FUNCTION  sys.st_disjoint
-SYSTEM FUNCTION  sys.st_distance
-SYSTEM FUNCTION  sys.st_dump
-SYSTEM FUNCTION  sys.st_dumppoints
-SYSTEM FUNCTION  sys.st_dwithin
-SYSTEM FUNCTION  sys.st_endpoint
-SYSTEM FUNCTION  sys.st_envelope
-SYSTEM FUNCTION  sys.st_equals
-SYSTEM FUNCTION  sys.st_exteriorring
-SYSTEM FUNCTION  sys.st_force2d
-SYSTEM FUNCTION  sys.st_force3d
-SYSTEM FUNCTION  sys.st_geomcollfromtext
-SYSTEM FUNCTION  sys.st_geometryfromtext
-SYSTEM FUNCTION  sys.st_geometryn
-SYSTEM FUNCTION  sys.st_geometrytype
-SYSTEM FUNCTION  sys.st_geomfromtext
-SYSTEM FUNCTION  sys.st_interiorringn
-SYSTEM FUNCTION  sys.st_interiorrings
-SYSTEM FUNCTION  sys.st_intersection
-SYSTEM FUNCTION  sys.st_intersects
-SYSTEM FUNCTION  sys.st_isclosed
-SYSTEM FUNCTION  sys.st_isempty
-SYSTEM FUNCTION  sys.st_isring
-SYSTEM FUNCTION  sys.st_issimple
-SYSTEM FUNCTION  sys.st_isvalid
-SYSTEM FUNCTION  sys.st_isvalidreason
-SYSTEM FUNCTION  sys.st_length
-SYSTEM FUNCTION  sys.st_length2d
-SYSTEM FUNCTION  sys.st_linefromtext
-SYSTEM FUNCTION  sys.st_makebox2d
-SYSTEM FUNCTION  sys.st_makeenvelope
-SYSTEM FUNCTION  sys.st_makeline
-SYSTEM FUNCTION  sys.st_makepoint
-SYSTEM FUNCTION  sys.st_makepointm
-SYSTEM FUNCTION  sys.st_makepolygon
-SYSTEM FUNCTION  sys.st_mlinefromtext
-SYSTEM FUNCTION  sys.st_mpointfromtext
-SYSTEM FUNCTION  sys.st_mpolyfromtext
-SYSTEM FUNCTION  sys.st_npoints
-SYSTEM FUNCTION  sys.st_nrings
-SYSTEM FUNCTION  sys.st_numgeometries
-SYSTEM FUNCTION  sys.st_numinteriorring
-SYSTEM FUNCTION  sys.st_numinteriorrings
-SYSTEM FUNCTION  sys.st_numpatches
-SYSTEM FUNCTION  sys.st_numpoints
-SYSTEM FUNCTION  sys.st_overlaps
-SYSTEM FUNCTION  sys.st_patchn
-SYSTEM FUNCTION  sys.st_point
-SYSTEM FUNCTION  sys.st_pointfromtext
-SYSTEM FUNCTION  sys.st_pointn
-SYSTEM FUNCTION  sys.st_pointonsurface
-SYSTEM FUNCTION  sys.st_polygon
-SYSTEM FUNCTION  sys.st_polygonfromtext
-SYSTEM FUNCTION  sys.st_relate
-SYSTEM FUNCTION  sys.st_segmentize
-SYSTEM FUNCTION  sys.st_setexteriorring
-SYSTEM FUNCTION  sys.st_setsrid
-SYSTEM FUNCTION  sys.st_srid
-SYSTEM FUNCTION  sys.st_startpoint
-SYSTEM FUNCTION  sys.st_symdifference
-SYSTEM FUNCTION  sys.st_touches
-SYSTEM FUNCTION  sys.st_transform
-SYSTEM FUNCTION  sys.st_translate
-SYSTEM FUNCTION  sys.st_union
-SYSTEM FUNCTION  sys.st_within
-SYSTEM FUNCTION  sys.st_wkbtosql
-SYSTEM FUNCTION  sys.st_wkttosql
-SYSTEM FUNCTION  sys.st_x
-SYSTEM FUNCTION  sys.st_xmax
-SYSTEM FUNCTION  sys.st_xmin
-SYSTEM FUNCTION  sys.st_y
-SYSTEM FUNCTION  sys.st_ymax
-SYSTEM FUNCTION  sys.st_ymin
-SYSTEM FUNCTION  sys.st_z
+SYSTEM FUNCTION sys.sign
+SYSTEM FUNCTION sys.similarity
+SYSTEM FUNCTION sys.sin
+SYSTEM FUNCTION sys.sinh
+SYSTEM FUNCTION sys.soundex
+SYSTEM FUNCTION sys.space
+SYSTEM FUNCTION sys.splitpart
+SYSTEM FUNCTION sys.sql_add
+SYSTEM FUNCTION sys.sql_div
+SYSTEM FUNCTION sys.sql_max
+SYSTEM FUNCTION sys.sql_min
+SYSTEM FUNCTION sys.sql_mul
+SYSTEM FUNCTION sys.sql_neg
+SYSTEM FUNCTION sys.sql_sub
+SYSTEM FUNCTION sys.sqrt
+SYSTEM FUNCTION sys.st_area
+SYSTEM FUNCTION sys.st_asbinary
+SYSTEM FUNCTION sys.st_asewkt
+SYSTEM FUNCTION sys.st_astext
+SYSTEM FUNCTION sys.st_bdmpolyfromtext
+SYSTEM FUNCTION sys.st_bdpolyfromtext
+SYSTEM FUNCTION sys.st_boundary
+SYSTEM FUNCTION sys.st_buffer
+SYSTEM FUNCTION sys.st_centroid
+SYSTEM FUNCTION sys.st_collect
+SYSTEM FUNCTION sys.st_contains
+SYSTEM FUNCTION sys.st_convexhull
+SYSTEM FUNCTION sys.st_coorddim
+SYSTEM FUNCTION sys.st_coveredby
+SYSTEM FUNCTION sys.st_covers
+SYSTEM FUNCTION sys.st_crosses
+SYSTEM FUNCTION sys.st_delaunaytriangles
+SYSTEM FUNCTION sys.st_difference
+SYSTEM FUNCTION sys.st_dimension
+SYSTEM FUNCTION sys.st_disjoint
+SYSTEM FUNCTION sys.st_distance
+SYSTEM FUNCTION sys.st_dump
+SYSTEM FUNCTION sys.st_dumppoints
+SYSTEM FUNCTION sys.st_dwithin
+SYSTEM FUNCTION sys.st_endpoint
+SYSTEM FUNCTION sys.st_envelope
+SYSTEM FUNCTION sys.st_equals
+SYSTEM FUNCTION sys.st_exteriorring
+SYSTEM FUNCTION sys.st_force2d
+SYSTEM FUNCTION sys.st_force3d
+SYSTEM FUNCTION sys.st_geomcollfromtext
+SYSTEM FUNCTION sys.st_geometryfromtext
+SYSTEM FUNCTION sys.st_geometryn
+SYSTEM FUNCTION sys.st_geometrytype
+SYSTEM FUNCTION sys.st_geomfromtext
+SYSTEM FUNCTION sys.st_interiorringn
+SYSTEM FUNCTION sys.st_interiorrings
+SYSTEM FUNCTION sys.st_intersection
+SYSTEM FUNCTION sys.st_intersects
+SYSTEM FUNCTION sys.st_isclosed
+SYSTEM FUNCTION sys.st_isempty
+SYSTEM FUNCTION sys.st_isring
+SYSTEM FUNCTION sys.st_issimple
+SYSTEM FUNCTION sys.st_isvalid
+SYSTEM FUNCTION sys.st_isvalidreason
+SYSTEM FUNCTION sys.st_length
+SYSTEM FUNCTION sys.st_length2d
+SYSTEM FUNCTION sys.st_linefromtext
+SYSTEM FUNCTION sys.st_makebox2d
+SYSTEM FUNCTION sys.st_makeenvelope
+SYSTEM FUNCTION sys.st_makeline
+SYSTEM FUNCTION sys.st_makepoint
+SYSTEM FUNCTION sys.st_makepointm
+SYSTEM FUNCTION sys.st_makepolygon
+SYSTEM FUNCTION sys.st_mlinefromtext
+SYSTEM FUNCTION sys.st_mpointfromtext
+SYSTEM FUNCTION sys.st_mpolyfromtext
+SYSTEM FUNCTION sys.st_npoints
+SYSTEM FUNCTION sys.st_nrings
+SYSTEM FUNCTION sys.st_numgeometries
+SYSTEM FUNCTION sys.st_numinteriorring
+SYSTEM FUNCTION sys.st_numinteriorrings
+SYSTEM FUNCTION sys.st_numpatches
+SYSTEM FUNCTION sys.st_numpoints
+SYSTEM FUNCTION sys.st_overlaps
+SYSTEM FUNCTION sys.st_patchn
+SYSTEM FUNCTION sys.st_point
+SYSTEM FUNCTION sys.st_pointfromtext
+SYSTEM FUNCTION sys.st_pointn
+SYSTEM FUNCTION sys.st_pointonsurface
+SYSTEM FUNCTION sys.st_polygon
+SYSTEM FUNCTION sys.st_polygonfromtext
+SYSTEM FUNCTION sys.st_relate
+SYSTEM FUNCTION sys.st_segmentize
+SYSTEM FUNCTION sys.st_setexteriorring
+SYSTEM FUNCTION sys.st_setsrid
+SYSTEM FUNCTION sys.st_srid
+SYSTEM FUNCTION sys.st_startpoint
+SYSTEM FUNCTION sys.st_symdifference
+SYSTEM FUNCTION sys.st_touches
+SYSTEM FUNCTION sys.st_transform
+SYSTEM FUNCTION sys.st_translate
+SYSTEM FUNCTION sys.st_union
+SYSTEM FUNCTION sys.st_within
+SYSTEM FUNCTION sys.st_wkbtosql
+SYSTEM FUNCTION sys.st_wkttosql
+SYSTEM FUNCTION sys.st_x
+SYSTEM FUNCTION sys.st_xmax
+SYSTEM FUNCTION sys.st_xmin
+SYSTEM FUNCTION sys.st_y
+SYSTEM FUNCTION sys.st_ymax
+SYSTEM FUNCTION sys.st_ymin
+SYSTEM FUNCTION sys.st_z
 SYSTEM FUNCTION  sys.stddev_pop
 SYSTEM FUNCTION  sys.stddev_samp
 SYSTEM FUNCTION  sys.stop
@@ -793,99 +737,38 @@ SYSTEM FUNCTION  sys.storagemodelinit
 SYSTEM FUNCTION  sys.str_to_date
 SYSTEM FUNCTION  sys.str_to_time
 SYSTEM FUNCTION  sys.str_to_timestamp
-SYSTEM FUNCTION  sys.strings
-SYSTEM FUNCTION  sys.substr
-SYSTEM FUNCTION  sys.substring
-SYSTEM FUNCTION  sys.sum
-SYSTEM FUNCTION  sys.tan
-SYSTEM FUNCTION  sys.tanh
+SYSTEM FUNCTION sys.strings
+SYSTEM FUNCTION sys.substr
+SYSTEM FUNCTION sys.substring
+SYSTEM FUNCTION sys.sum
+SYSTEM FUNCTION sys.tan
+SYSTEM FUNCTION sys.tanh
 SYSTEM FUNCTION  sys.text
 SYSTEM FUNCTION  sys.time_to_str
 SYSTEM FUNCTION  sys.times
 SYSTEM FUNCTION  sys.timestamp_to_str
 SYSTEM FUNCTION  sys.tracelog
-SYSTEM FUNCTION  sys.trim
-SYSTEM FUNCTION  sys.truncate
-SYSTEM FUNCTION  sys.ucase
-SYSTEM FUNCTION  sys.upper
+SYSTEM FUNCTION sys.trim
+SYSTEM FUNCTION sys.truncate
+SYSTEM FUNCTION sys.ucase
+SYSTEM FUNCTION sys.upper
 SYSTEM FUNCTION  sys.uuid
 SYSTEM FUNCTION  sys.vacuum
 SYSTEM FUNCTION  sys.var
 SYSTEM FUNCTION  sys.var_pop
 SYSTEM FUNCTION  sys.var_samp
-SYSTEM FUNCTION  sys.week
-SYSTEM FUNCTION  sys.weekofyear
-SYSTEM FUNCTION  sys.xor
-SYSTEM FUNCTION  sys.year
-SYSTEM FUNCTION  sys.zero_or_one
+SYSTEM FUNCTION sys.week
+SYSTEM FUNCTION sys.weekofyear
+SYSTEM FUNCTION sys.xor
+SYSTEM FUNCTION sys.year
+SYSTEM FUNCTION sys.zero_or_one
 SYSTEM FUNCTION  sys.zorder_decode_x
 SYSTEM FUNCTION  sys.zorder_decode_y
 SYSTEM FUNCTION  sys.zorder_encode
-CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "profiler" AUTHORIZATION "monetdb";
 CREATE SCHEMA "sys";
 CREATE SCHEMA "tmp";
-CREATE TABLE "bam"."export" (
-	"qname" CHARACTER LARGE OBJECT NOT NULL,
-	"flag" SMALLINT NOT NULL,
-	"rname" CHARACTER LARGE OBJECT NOT NULL,
-	"pos" INTEGER NOT NULL,
-	"mapq" SMALLINT NOT NULL,
-	"cigar" CHARACTER LARGE OBJECT NOT NULL,
-	"rnext" CHARACTER LARGE OBJECT NOT NULL,
-	"pnext" INTEGER NOT NULL,
-	"tlen" INTEGER NOT NULL,
-	"seq" CHARACTER LARGE OBJECT NOT NULL,
-	"qual" CHARACTER LARGE OBJECT NOT NULL
-);
-CREATE TABLE "bam"."files" (
-	"file_id" BIGINT NOT NULL,
-	"file_location" CHARACTER LARGE OBJECT NOT NULL,
-	"dbschema" SMALLINT NOT NULL,
-	"format_version" VARCHAR(7),
-	"sorting_order" VARCHAR(10),
-	"comments" CHARACTER LARGE OBJECT,
-	CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id")
-);
-CREATE TABLE "bam"."pg" (
-	"id" CHARACTER LARGE OBJECT NOT NULL,
-	"file_id" BIGINT NOT NULL,
-	"pn" CHARACTER LARGE OBJECT,
-	"cl" CHARACTER LARGE OBJECT,
-	"pp" CHARACTER LARGE OBJECT,
-	"vn" CHARACTER LARGE OBJECT,
-	CONSTRAINT "pg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"),
-	CONSTRAINT "pg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id")
-);
-CREATE TABLE "bam"."rg" (
-	"id" CHARACTER LARGE OBJECT NOT NULL,
-	"file_id" BIGINT NOT NULL,
-	"cn" CHARACTER LARGE OBJECT,
-	"ds" CHARACTER LARGE OBJECT,
-	"dt" TIMESTAMP,
-	"fo" CHARACTER LARGE OBJECT,
-	"ks" CHARACTER LARGE OBJECT,
-	"lb" CHARACTER LARGE OBJECT,
-	"pg" CHARACTER LARGE OBJECT,
-	"pi" INTEGER,
-	"pl" CHARACTER LARGE OBJECT,
-	"pu" CHARACTER LARGE OBJECT,
-	"sm" CHARACTER LARGE OBJECT,
-	CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"),
-	CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id")
-);
-CREATE TABLE "bam"."sq" (
-	"sn" CHARACTER LARGE OBJECT NOT NULL,
-	"file_id" BIGINT NOT NULL,
-	"ln" INTEGER,
-	"as" INTEGER,
-	"m5" CHARACTER LARGE OBJECT,
-	"sp" CHARACTER LARGE OBJECT,
-	"ur" CHARACTER LARGE OBJECT,
-	CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id"),
-	CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id")
-);
 CREATE TABLE "sys"."_columns" (
 	"id"          INTEGER,
 	"name"        VARCHAR(1024),
@@ -944,8 +827,8 @@ CREATE TABLE "sys"."dependencies" (
 	"depend_type" SMALLINT
 );
 CREATE TABLE "sys"."dependency_types" (
-	"dependency_type_id" SMALLINT NOT NULL,
-	"dependency_type_name" VARCHAR(15) NOT NULL,
+	"dependency_type_id"   SMALLINT      NOT NULL,
+	"dependency_type_name" VARCHAR(15)   NOT NULL,
 	CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"),
 	CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name")
 );
@@ -976,40 +859,8 @@ CREATE TABLE "sys"."keys" (
 	"action"   INTEGER
 );
 CREATE TABLE "sys"."keywords" (
-	"keyword" VARCHAR(40) NOT NULL,
+	"keyword" VARCHAR(40)   NOT NULL,
 	CONSTRAINT "keywords_keyword_pkey" PRIMARY KEY ("keyword")
-);
-CREATE TABLE "sys"."netcdf_attrs" (
-	"obj_name" VARCHAR(256),
-	"att_name" VARCHAR(256),
-	"att_type" VARCHAR(64),
-	"value" CHARACTER LARGE OBJECT,
-	"file_id" INTEGER,
-	"gr_name" VARCHAR(256)
-);
-CREATE TABLE "sys"."netcdf_dims" (
-	"dim_id" INTEGER,
-	"file_id" INTEGER,
-	"name" VARCHAR(64),
-	"length" INTEGER
-);
-CREATE TABLE "sys"."netcdf_files" (
-	"file_id" INTEGER,
-	"location" CHAR(256)
-);
-CREATE TABLE "sys"."netcdf_vardim" (
-	"var_id" INTEGER,
-	"dim_id" INTEGER,
-	"file_id" INTEGER,
-	"dimpos" INTEGER
-);
-CREATE TABLE "sys"."netcdf_vars" (
-	"var_id" INTEGER,
-	"file_id" INTEGER,
-	"name" VARCHAR(64),
-	"vartype" VARCHAR(64),
-	"ndim" INTEGER,
-	"coord_dim_id" INTEGER
 );
 CREATE TABLE "sys"."objects" (
 	"id"   INTEGER,
@@ -1051,16 +902,16 @@ CREATE TABLE "sys"."spatial_ref_sys" (
 );
 CREATE TABLE "sys"."statistics" (
 	"column_id" INTEGER,
-	"type"   CHARACTER LARGE OBJECT,
-	"width"  INTEGER,
-	"stamp"  TIMESTAMP,
-	"sample" BIGINT,
-	"count"  BIGINT,
-	"unique" BIGINT,
-	"nils"   BIGINT,
-	"minval" CHARACTER LARGE OBJECT,
-	"maxval" CHARACTER LARGE OBJECT,
-	"sorted" BOOLEAN
+	"type"      CHARACTER LARGE OBJECT,
+	"width"     INTEGER,
+	"stamp"     TIMESTAMP,
+	"sample"    BIGINT,
+	"count"     BIGINT,
+	"unique"    BIGINT,
+	"nils"      BIGINT,
+	"minval"    CHARACTER LARGE OBJECT,
+	"maxval"    CHARACTER LARGE OBJECT,
+	"sorted"    BOOLEAN
 );
 CREATE TABLE "sys"."storagemodelinput" (
 	"schema"    CHARACTER LARGE OBJECT,
@@ -1078,8 +929,8 @@ CREATE TABLE "sys"."systemfunctions" (
 	"function_id" INTEGER
 );
 CREATE TABLE "sys"."table_types" (
-	"table_type_id" SMALLINT NOT NULL,
-	"table_type_name" VARCHAR(25) NOT NULL,
+	"table_type_id"   SMALLINT      NOT NULL,
+	"table_type_name" VARCHAR(25)   NOT NULL,
 	CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"),
 	CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name")
 );
@@ -1110,57 +961,57 @@ CREATE TABLE "sys"."user_role" (
 	"role_id"  INTEGER
 );
 CREATE TABLE "tmp"."_columns" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"type" VARCHAR(1024),
+	"id"          INTEGER,
+	"name"        VARCHAR(1024),
+	"type"        VARCHAR(1024),
 	"type_digits" INTEGER,
-	"type_scale" INTEGER,
-	"table_id" INTEGER,
-	"default" VARCHAR(2048),
-	"null" BOOLEAN,
-	"number" INTEGER,
-	"storage" VARCHAR(2048)
+	"type_scale"  INTEGER,
+	"table_id"    INTEGER,
+	"default"     VARCHAR(2048),
+	"null"        BOOLEAN,
+	"number"      INTEGER,
+	"storage"     VARCHAR(2048)
 );
 CREATE TABLE "tmp"."_tables" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"schema_id" INTEGER,
-	"query" VARCHAR(2048),
-	"type" SMALLINT,
-	"system" BOOLEAN,
+	"id"            INTEGER,
+	"name"          VARCHAR(1024),
+	"schema_id"     INTEGER,
+	"query"         VARCHAR(2048),
+	"type"          SMALLINT,
+	"system"        BOOLEAN,
 	"commit_action" SMALLINT,
-	"access" SMALLINT
+	"access"        SMALLINT
 );
 CREATE TABLE "tmp"."idxs" (
-	"id" INTEGER,
+	"id"       INTEGER,
 	"table_id" INTEGER,
-	"type" INTEGER,
-	"name" VARCHAR(1024)
+	"type"     INTEGER,
+	"name"     VARCHAR(1024)
 );
 CREATE TABLE "tmp"."keys" (
-	"id" INTEGER,
+	"id"       INTEGER,
 	"table_id" INTEGER,
-	"type" INTEGER,
-	"name" VARCHAR(1024),
-	"rkey" INTEGER,
-	"action" INTEGER
+	"type"     INTEGER,
+	"name"     VARCHAR(1024),
+	"rkey"     INTEGER,
+	"action"   INTEGER
 );
 CREATE TABLE "tmp"."objects" (
-	"id" INTEGER,
+	"id"   INTEGER,
 	"name" VARCHAR(1024),
-	"nr" INTEGER
+	"nr"   INTEGER
 );
 CREATE TABLE "tmp"."triggers" (
-	"id" INTEGER,
-	"name" VARCHAR(1024),
-	"table_id" INTEGER,
-	"time" SMALLINT,
+	"id"          INTEGER,
+	"name"        VARCHAR(1024),
+	"table_id"    INTEGER,
+	"time"        SMALLINT,
 	"orientation" SMALLINT,
-	"event" SMALLINT,
-	"old_name" VARCHAR(1024),
-	"new_name" VARCHAR(1024),
-	"condition" VARCHAR(2048),
-	"statement" VARCHAR(2048)
+	"event"       SMALLINT,
+	"old_name"    VARCHAR(1024),
+	"new_name"    VARCHAR(1024),
+	"condition"   VARCHAR(2048),
+	"statement"   VARCHAR(2048)
 );
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.environment as select * from sys.environment();
@@ -1186,7 +1037,7 @@ create view sys.optimizers as select * from sys.optimizers();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
 from sys.querylog_catalog() qd, sys.querylog_calls() ql
 where qd.id = ql.id and qd.owner = user;
 create view sys.queue as select * from sys.queue();
@@ -1217,16 +1068,14 @@ create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string
 external name sql.analyze;
 create procedure sys.analyze(minmax int, "sample" bigint, sch string, tbl string, col string)
 external name sql.analyze;
-create function sys.bbp () 
-	returns table (id int, name string, 
-		ttype string, count bigint, refcnt int, lrefcnt int, 
-		location string, heat int, dirty string, 
-		status string, kind string) 
+create function sys.bbp ()
+ returns table (id int, name string, 
+		ttype string, count bigint, refcnt int, lrefcnt int,
+		location string, heat int, dirty string,
+		status string, kind string)
 	external name bbp.get;
-create function "broadcast" (p inet) returns inet 
+create function "broadcast" (p inet) returns inet
 	external name inet."broadcast";
-create function sys.chi2prob(chi2 double, datapoints double)
-returns double external name gsl."chi2prob";
 create procedure sys.clearrejects()
 external name sql.copy_rejects_clear;
 create function sys.columnsize(nme string, i bigint, d bigint)
@@ -1236,9 +1085,9 @@ begin
 	when nme = 'boolean' then return i;
 	when nme = 'char' then return 2*i;
 	when nme = 'smallint' then return 2 * i;
-	when nme = 'int'	 then return 4 * i;
-	when nme = 'bigint'	 then return 8 * i;
-	when nme = 'hugeint'	 then return 16 * i;
+	when nme = 'int' then return 4 * i;
+	when nme = 'bigint' then return 8 * i;
+	when nme = 'hugeint' then return 16 * i;
 	when nme = 'timestamp' then return 8 * i;
 	when  nme = 'varchar' then
 		case
@@ -1265,14 +1114,12 @@ create aggregate corr(e1 real, e2 real) returns real
 	external name "aggr"."corr";
 create aggregate corr(e1 double, e2 double) returns double
 	external name "aggr"."corr";
-create aggregate corr(e1 hugeint, e2 hugeint) returns hugeint
-	external name "aggr"."corr";
 create function date_to_str(d date, format string) returns string
 	external name mtime."date_to_str";
 CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;
 create function sys.debug(debug int) returns integer
  external name mdb."setDebug";
-create function degrees(r double) 
+create function degrees(r double)
 returns double
 	return r*180/pi();
 create function dependencies_columns_on_functions()
@@ -1340,8 +1187,6 @@ create function sys."epoch"(ts timestamp with time zone) returns int
 	external name timestamp."epoch";
 create procedure sys.evalalgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
-create procedure fitsattach(fname string) external name fits.attach;
-create procedure fitsload(tname string) external name fits.load;
 create procedure sys.flush_log ()
  external name sql."flush_log";
 create function fuse(one tinyint, two tinyint)
@@ -1350,8 +1195,6 @@ create function fuse(one smallint, two smallint)
 returns integer external name udf.fuse;
 create function fuse(one integer, two integer)
 returns bigint external name udf.fuse;
-create function fuse(one bigint, two bigint)
-returns hugeint external name udf.fuse;
 create function sys.generate_series(first tinyint, last tinyint)
 returns table (value tinyint)
 external name generator.series;
@@ -1388,43 +1231,37 @@ external name generator.series;
 create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)
 returns table (value timestamp)
 external name generator.series;
-create function sys.generate_series(first hugeint, last hugeint)
-returns table (value hugeint)
-external name generator.series;
-create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
-returns table (value hugeint)
-external name generator.series;
 create function geometrytype(geom geometry) returns string external name geom."GeometryType1";
 create function get_type(info integer, format integer) returns string external name geom."getType";
-create function getanchor( theurl url ) returns string 
+create function getanchor( theurl url ) returns string
 	external name url."getAnchor";
-create function getbasename(theurl url) returns string       
+create function getbasename(theurl url) returns string
 	external name url."getBasename";
-create function getcontent(theurl url)   returns string       
+create function getcontent(theurl url)   returns string
 	external name url."getContent";
-create function getcontext(theurl url)   returns string       
+create function getcontext(theurl url)   returns string
 	external name url."getContext";
-create function getdomain(theurl url) returns string       
+create function getdomain(theurl url) returns string
 	external name url."getDomain";
-create function getextension(theurl url) returns string       
+create function getextension(theurl url) returns string
 	external name url."getExtension";
-create function getfile(theurl url) returns string       
+create function getfile(theurl url) returns string
 	external name url."getFile";
-create function gethost(theurl url)   returns string       
+create function gethost(theurl url)   returns string
 	external name url."getHost";
-create function getport(theurl url) returns string       
+create function getport(theurl url) returns string
 	external name url."getPort";
 create function getproj4(srid_in integer) returns string 
 begin
  return select proj4text from spatial_ref_sys where srid=srid_in; 
 end;
-create function getprotocol(theurl url) returns string       
+create function getprotocol(theurl url) returns string
 	external name url."getProtocol";
-create function getquery(theurl url) returns string       
+create function getquery(theurl url) returns string
 	external name url."getQuery";
-create function getroboturl(theurl url) returns string       
+create function getroboturl(theurl url) returns string
 	external name url."getRobotURL";
-create function getuser(theurl url) returns string       
+create function getuser(theurl url) returns string
 	external name url."getUser";
 create function has_m(info integer) returns integer external name geom."hasM";
 create function has_z(info integer) returns integer external name geom."hasZ";
@@ -1465,10 +1302,10 @@ begin
 	if nme = 'boolean'
 		or nme = 'tinyint'
 		or nme = 'smallint'
-		or nme = 'int'	
-		or nme = 'bigint'	
-		or nme = 'hugeint'	
-		or nme = 'decimal'	
+		or nme = 'int'
+		or nme = 'bigint'
+		or nme = 'hugeint'
+		or nme = 'decimal'
 		or nme = 'date'
 		or nme = 'timestamp'
 		or nme = 'real'
@@ -1497,8 +1334,6 @@ mbrLeft
 <<
 <<
 <<
-<<
-<<
 create function "left_shift"(i1 inet, i2 inet) returns boolean
 	external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean
@@ -1511,10 +1346,6 @@ like
 like
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
-
-
-create procedure listdir(dirname string) external name fits.listdir;
-create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;
 create function sys.malfunctions()
  returns table("signature" string, "address" string, "comment" string)
  external name "manual"."functions";
@@ -1534,7 +1365,7 @@ create aggregate median(val wrd) returns wrd
 create aggregate median(val bigint) returns bigint
 	external name "aggr"."median";
 create aggregate median(val decimal) returns decimal
- 	external name "aggr"."median";
+	external name "aggr"."median";
 create aggregate median(val real) returns real
 	external name "aggr"."median";
 create aggregate median(val double) returns double
@@ -1544,8 +1375,6 @@ create aggregate median(val date) returns date
 create aggregate median(val time) returns time
 	external name "aggr"."median";
 create aggregate median(val timestamp) returns timestamp
-	external name "aggr"."median";
-create aggregate median(val hugeint) returns hugeint
 	external name "aggr"."median";
 create function ms_round(num double, prc int, truncat int)
 returns double
@@ -1581,45 +1410,41 @@ end;
 create function ms_trunc(num double, prc int)
 returns double
 external name sql.ms_trunc;
-create procedure netcdf_attach(fname varchar(256))
-    external name netcdf.attach;
-create procedure netcdf_importvar(fid integer, varnname varchar(256))
-    external name netcdf.importvariable;
 create function "netmask" (p inet) returns inet
 	external name inet."netmask";
 create function "network" (p inet) returns inet
 	external name inet."network";
-create function newurl(protocol string, hostname string, "port" int, file string) 
-	returns url       
+create function newurl(protocol string, hostname string, "port" int, file string)
+	returns url
 	external name url."new";
-create function newurl(protocol string, hostname string, file string) 
-	returns url 
+create function newurl(protocol string, hostname string, file string)
+	returns url
 	external name url."new";
-create function sys.optimizer_stats () 
-	returns table (rewrite string, count int) 
+create function sys.optimizer_stats ()
+	returns table (rewrite string, count int)
 	external name sql.dump_opt_stats;
-create function sys.optimizers () 
+create function sys.optimizers ()
 	returns table (name string, def string, status string)
 	external name sql.optimizers;
-create function sys.password_hash (username string) 
-	returns string 
+create function sys.password_hash (username string)
+	returns string
 	external name sql.password;
 create procedure sys.pause(tag int)
 external name sql.sysmon_pause;
 create procedure sys.pause(tag bigint)
 external name sql.sysmon_pause;
 create aggregate quantile(val tinyint, q double) returns tinyint
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val smallint, q double) returns smallint
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val integer, q double) returns integer
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val wrd, q double) returns wrd
 	external name "aggr"."quantile";
 create aggregate quantile(val bigint, q double) returns bigint
 	external name "aggr"."quantile";
 create aggregate quantile(val decimal, q double) returns decimal
- 	external name "aggr"."quantile";
+	external name "aggr"."quantile";
 create aggregate quantile(val real, q double) returns real
 	external name "aggr"."quantile";
 create aggregate quantile(val double, q double) returns double
@@ -1630,12 +1455,10 @@ create aggregate quantile(val time, q double) returns time
 	external name "aggr"."quantile";
 create aggregate quantile(val timestamp, q double) returns timestamp
 	external name "aggr"."quantile";
-create aggregate quantile(val hugeint, q double) returns hugeint
-	external name "aggr"."quantile";
-create function sys.querycache() 
-	returns table (query string, count int) 
+create function sys.querycache()
+	returns table (query string, count int)
 	external name sql.dump_cache;
-create procedure sys.querylog(filename string) 
+create procedure sys.querylog(filename string)
 	external name sql.logfile;
 create function sys.querylog_calls()
 returns table(
@@ -1682,7 +1505,7 @@ returns table(
 	query string
 )
 external name sql.sysmon_queue;
-create function radians(d double) 
+create function radians(d double)
 returns double
 	return d*pi()/180;
 create function sys.rejects()
@@ -1713,8 +1536,6 @@ mbrRight
 >>
 >>
 >>
->>
->>
 create function "right_shift"(i1 inet, i2 inet) returns boolean
 	external name inet.">>";
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean
@@ -1732,9 +1553,9 @@ create procedure sys.settimeout("query" bigint, "session" bigint)
 	external name sql.settimeout;
 create procedure shrink(sys string, tab string)
 	external name sql.shrink;
-create procedure sys.shutdown(delay tinyint) 
+create procedure sys.shutdown(delay tinyint)
 external name sql.shutdown;
-create procedure sys.shutdown(delay tinyint, force bool) 
+create procedure sys.shutdown(delay tinyint, force bool)
 external name sql.shutdown;
 create function st_area(geom geometry) returns double external name geom."Area";
 create function st_asbinary(geom geometry) returns string external name geom."AsBinary";
@@ -1896,8 +1717,6 @@ create aggregate stddev_pop(val time) returns double
 	external name "aggr"."stdevp";
 create aggregate stddev_pop(val timestamp) returns double
 	external name "aggr"."stdevp";
-create aggregate stddev_pop(val hugeint) returns double
-	external name "aggr"."stdevp";
 create aggregate stddev_samp(val tinyint) returns double
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val smallint) returns double
@@ -1917,8 +1736,6 @@ create aggregate stddev_samp(val date) returns double
 create aggregate stddev_samp(val time) returns double
 	external name "aggr"."stdev";
 create aggregate stddev_samp(val timestamp) returns double
-	external name "aggr"."stdev";
-create aggregate stddev_samp(val hugeint) returns double
 	external name "aggr"."stdev";
 create procedure sys.stop(tag int)
 external name sql.sysmon_stop;
@@ -2002,7 +1819,7 @@ returns table (
 	"table" string,
 	"column" string,
 	"type" string,
-	"count"	bigint,
+	"count" bigint,
 	columnsize bigint,
 	heapsize bigint,
 	hashes bigint,
@@ -2055,7 +1872,7 @@ create procedure times()
 external name sql.times;
 create function timestamp_to_str(d timestamp, format string) returns string
 	external name mtime."timestamp_to_str";
-create function sys.tracelog() 
+create function sys.tracelog()
 	returns table (
  event integer, 
  clk varchar(20), 
@@ -2097,8 +1914,6 @@ create aggregate var_pop(val time) returns double
 	external name "aggr"."variancep";
 create aggregate var_pop(val timestamp) returns double
 	external name "aggr"."variancep";
-create aggregate var_pop(val hugeint) returns double
-	external name "aggr"."variancep";
 create aggregate var_samp(val tinyint) returns double
 	external name "aggr"."variance";
 create aggregate var_samp(val smallint) returns double
@@ -2119,8 +1934,6 @@ create aggregate var_samp(val time) returns double
 	external name "aggr"."variance";
 create aggregate var_samp(val timestamp) returns double
 	external name "aggr"."variance";
-create aggregate var_samp(val hugeint) returns double
-	external name "aggr"."variance";
 create function zorder_decode_x(z oid) returns integer
     external name zorder.decode_x;
 create function zorder_decode_y(z oid) returns integer
@@ -2132,7 +1945,6 @@ create function zorder_encode(x integer, y integer) returns oid
 % name,	authorization,	owner,	system # name
 % varchar,	int,	int,	boolean # type
 % 8,	1,	1,	5 # length
-[ "bam",	3,	3,	true	]
 [ "json",	3,	3,	true	]
 [ "profiler",	3,	3,	true	]
 [ "sys",	2,	3,	true	]
@@ -2142,11 +1954,6 @@ create function zorder_encode(x integer, y integer) returns oid
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 3,	17,	613,	1,	5,	1,	1 # length
-[ "bam",	"export",	NULL,	0,	true,	0,	0	]
-[ "bam",	"files",	NULL,	0,	true,	0,	0	]
-[ "bam",	"pg",	NULL,	0,	true,	0,	0	]
-[ "bam",	"rg",	NULL,	0,	true,	0,	0	]
-[ "bam",	"sq",	NULL,	0,	true,	0,	0	]
 [ "sys",	"_columns",	NULL,	0,	true,	0,	0	]
 [ "sys",	"_tables",	NULL,	0,	true,	0,	0	]
 [ "sys",	"args",	NULL,	0,	true,	0,	0	]
@@ -2162,11 +1969,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"idxs",	NULL,	0,	true,	0,	0	]
 [ "sys",	"keys",	NULL,	0,	true,	0,	0	]
 [ "sys",	"keywords",	NULL,	0,	true,	0,	0	]
-[ "sys",	"netcdf_attrs",	NULL,	0,	true,	0,	0	]
-[ "sys",	"netcdf_dims",	NULL,	0,	true,	0,	0	]
-[ "sys",	"netcdf_files",	NULL,	0,	true,	0,	0	]
-[ "sys",	"netcdf_vardim",	NULL,	0,	true,	0,	0	]
-[ "sys",	"netcdf_vars",	NULL,	0,	true,	0,	0	]
 [ "sys",	"objects",	NULL,	0,	true,	0,	0	]
 [ "sys",	"optimizers",	"create view sys.optimizers as select * from sys.optimizers();",	1,	true,	0,	0	]
 [ "sys",	"privileges",	NULL,	0,	true,	0,	0	]
@@ -2278,23 +2080,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "dependency_types",	"dependency_type_name",	"varchar",	15,	0,	NULL,	false,	1,	NULL	]
 [ "environment",	"name",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "environment",	"value",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
-[ "export",	"qname",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "export",	"flag",	"smallint",	16,	0,	NULL,	false,	1,	NULL	]
-[ "export",	"rname",	"clob",	0,	0,	NULL,	false,	2,	NULL	]
-[ "export",	"pos",	"int",	32,	0,	NULL,	false,	3,	NULL	]
-[ "export",	"mapq",	"smallint",	16,	0,	NULL,	false,	4,	NULL	]
-[ "export",	"cigar",	"clob",	0,	0,	NULL,	false,	5,	NULL	]
-[ "export",	"rnext",	"clob",	0,	0,	NULL,	false,	6,	NULL	]
-[ "export",	"pnext",	"int",	32,	0,	NULL,	false,	7,	NULL	]
-[ "export",	"tlen",	"int",	32,	0,	NULL,	false,	8,	NULL	]
-[ "export",	"seq",	"clob",	0,	0,	NULL,	false,	9,	NULL	]
-[ "export",	"qual",	"clob",	0,	0,	NULL,	false,	10,	NULL	]
-[ "files",	"file_id",	"bigint",	64,	0,	NULL,	false,	0,	NULL	]
-[ "files",	"file_location",	"clob",	0,	0,	NULL,	false,	1,	NULL	]
-[ "files",	"dbschema",	"smallint",	16,	0,	NULL,	false,	2,	NULL	]
-[ "files",	"format_version",	"varchar",	7,	0,	NULL,	true,	3,	NULL	]
-[ "files",	"sorting_order",	"varchar",	10,	0,	NULL,	true,	4,	NULL	]
-[ "files",	"comments",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "functions",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "functions",	"name",	"varchar",	256,	0,	NULL,	true,	1,	NULL	]
 [ "functions",	"func",	"varchar",	8196,	0,	NULL,	true,	2,	NULL	]
@@ -2309,7 +2094,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "geometry_columns",	"f_table_schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "geometry_columns",	"f_table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
 [ "geometry_columns",	"f_geometry_column",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
-[ "geometry_columns",	"coord_dimension",	"hugeint",	128,	0,	NULL,	true,	4,	NULL	]
+[ "geometry_columns",	"coord_dimension",	"bigint",	64,	0,	NULL,	true,	4,	NULL	]
 [ "geometry_columns",	"srid",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "geometry_columns",	"type",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
 [ "idxs",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -2333,28 +2118,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "keys",	"action",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "keys",	"action",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "keywords",	"keyword",	"varchar",	40,	0,	NULL,	false,	0,	NULL	]
-[ "netcdf_attrs",	"obj_name",	"varchar",	256,	0,	NULL,	true,	0,	NULL	]
-[ "netcdf_attrs",	"att_name",	"varchar",	256,	0,	NULL,	true,	1,	NULL	]
-[ "netcdf_attrs",	"att_type",	"varchar",	64,	0,	NULL,	true,	2,	NULL	]
-[ "netcdf_attrs",	"value",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "netcdf_attrs",	"file_id",	"int",	32,	0,	NULL,	true,	4,	NULL	]
-[ "netcdf_attrs",	"gr_name",	"varchar",	256,	0,	NULL,	true,	5,	NULL	]
-[ "netcdf_dims",	"dim_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "netcdf_dims",	"file_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "netcdf_dims",	"name",	"varchar",	64,	0,	NULL,	true,	2,	NULL	]
-[ "netcdf_dims",	"length",	"int",	32,	0,	NULL,	true,	3,	NULL	]
-[ "netcdf_files",	"file_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "netcdf_files",	"location",	"char",	256,	0,	NULL,	true,	1,	NULL	]
-[ "netcdf_vardim",	"var_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "netcdf_vardim",	"dim_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "netcdf_vardim",	"file_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "netcdf_vardim",	"dimpos",	"int",	32,	0,	NULL,	true,	3,	NULL	]
-[ "netcdf_vars",	"var_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "netcdf_vars",	"file_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "netcdf_vars",	"name",	"varchar",	64,	0,	NULL,	true,	2,	NULL	]
-[ "netcdf_vars",	"vartype",	"varchar",	64,	0,	NULL,	true,	3,	NULL	]
-[ "netcdf_vars",	"ndim",	"int",	32,	0,	NULL,	true,	4,	NULL	]
-[ "netcdf_vars",	"coord_dim_id",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "objects",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "objects",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "objects",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
@@ -2364,12 +2127,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "optimizers",	"name",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "optimizers",	"def",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "optimizers",	"status",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "pg",	"id",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "pg",	"file_id",	"bigint",	64,	0,	NULL,	false,	1,	NULL	]
-[ "pg",	"pn",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "pg",	"cl",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
-[ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "privileges",	"auth_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "privileges",	"privileges",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2420,19 +2177,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "rejects",	"fldid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "rejects",	"message",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "rejects",	"input",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "rg",	"id",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "rg",	"file_id",	"bigint",	64,	0,	NULL,	false,	1,	NULL	]
-[ "rg",	"cn",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "rg",	"ds",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "rg",	"dt",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
-[ "rg",	"fo",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
-[ "rg",	"ks",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
-[ "rg",	"lb",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
-[ "rg",	"pg",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
-[ "rg",	"pi",	"int",	32,	0,	NULL,	true,	9,	NULL	]
-[ "rg",	"pl",	"clob",	0,	0,	NULL,	true,	10,	NULL	]
-[ "rg",	"pu",	"clob",	0,	0,	NULL,	true,	11,	NULL	]
-[ "rg",	"sm",	"clob",	0,	0,	NULL,	true,	12,	NULL	]
 [ "schemas",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "schemas",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "schemas",	"authorization",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2458,13 +2202,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "spatial_ref_sys",	"auth_srid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "spatial_ref_sys",	"srtext",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
 [ "spatial_ref_sys",	"proj4text",	"varchar",	2048,	0,	NULL,	true,	4,	NULL	]
-[ "sq",	"sn",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "sq",	"file_id",	"bigint",	64,	0,	NULL,	false,	1,	NULL	]
-[ "sq",	"ln",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "sq",	"as",	"int",	32,	0,	NULL,	true,	3,	NULL	]
-[ "sq",	"m5",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
-[ "sq",	"sp",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
-[ "sq",	"ur",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
 [ "statistics",	"column_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "statistics",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "statistics",	"width",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2525,11 +2262,11 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "tablestoragemodel",	"schema",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "tablestoragemodel",	"table",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "tablestoragemodel",	"count",	"bigint",	64,	0,	NULL,	true,	2,	NULL	]
-[ "tablestoragemodel",	"columnsize",	"hugeint",	128,	0,	NULL,	true,	3,	NULL	]
-[ "tablestoragemodel",	"heapsize",	"hugeint",	128,	0,	NULL,	true,	4,	NULL	]
-[ "tablestoragemodel",	"hashes",	"hugeint",	128,	0,	NULL,	true,	5,	NULL	]
-[ "tablestoragemodel",	"imprints",	"hugeint",	128,	0,	NULL,	true,	6,	NULL	]
-[ "tablestoragemodel",	"auxiliary",	"hugeint",	128,	0,	NULL,	true,	7,	NULL	]
+[ "tablestoragemodel",	"columnsize",	"bigint",	64,	0,	NULL,	true,	3,	NULL	]
+[ "tablestoragemodel",	"heapsize",	"bigint",	64,	0,	NULL,	true,	4,	NULL	]
+[ "tablestoragemodel",	"hashes",	"bigint",	64,	0,	NULL,	true,	5,	NULL	]
+[ "tablestoragemodel",	"imprints",	"bigint",	64,	0,	NULL,	true,	6,	NULL	]
+[ "tablestoragemodel",	"auxiliary",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "tracelog",	"event",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "tracelog",	"clk",	"varchar",	20,	0,	NULL,	true,	1,	NULL	]
 [ "tracelog",	"pc",	"varchar",	50,	0,	NULL,	true,	2,	NULL	]
@@ -2581,19 +2318,7 @@ create function zorder_encode(x integer, y integer) returns oid
 % name,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
 % 8,	35,	816,	9,	1,	1,	5,	5,	5 # length
-[ "bam",	"bam_drop_file",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	1,	2,	true,	false,	false	]
-[ "bam",	"bam_export",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	1,	2,	true,	false,	false	]
-[ "bam",	"bam_flag",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	1,	1,	false,	false,	false	]
-[ "bam",	"bam_loader_file",	"create procedure bam.bam_loader_file(bam_file string, dbschema smallint) external name bam.bam_loader_file;",	"bam",	1,	2,	true,	false,	false	]
-[ "bam",	"bam_loader_files",	"create procedure bam.bam_loader_files(bam_files string, dbschema smallint) external name bam.bam_loader_files;",	"bam",	1,	2,	true,	false,	false	]
-[ "bam",	"bam_loader_repos",	"create procedure bam.bam_loader_repos(bam_repos string, dbschema smallint) external name bam.bam_loader_repos;",	"bam",	1,	2,	true,	false,	false	]
-[ "bam",	"reverse_qual",	"create function bam.reverse_qual(qual string) returns string external name bam.reverse_qual;",	"bam",	1,	1,	false,	false,	false	]
-[ "bam",	"reverse_seq",	"create function bam.reverse_seq(seq string) returns string external name bam.reverse_seq;",	"bam",	1,	1,	false,	false,	false	]
-[ "bam",	"sam_export",	"create procedure bam.sam_export(output_path string) external name bam.sam_export;",	"bam",	1,	2,	true,	false,	false	]
-[ "bam",	"seq_char",	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string) returns char(1) external name bam.seq_char;",	"bam",	1,	1,	false,	false,	false	]
-[ "bam",	"seq_length",	"create function bam.seq_length(cigar string) returns int external name bam.seq_length;",	"bam",	1,	1,	false,	false,	false	]
 [ "json",	"filter",	"create function json.filter(js json, name bigint) returns json external name json.filter;",	"json",	1,	1,	false,	false,	false	]
-[ "json",	"filter",	"create function json.filter(js json, name hugeint) returns json external name json.filter;",	"json",	1,	1,	false,	false,	false	]
 [ "json",	"filter",	"create function json.filter(js json, name integer) returns json external name json.filter;",	"json",	1,	1,	false,	false,	false	]
 [ "json",	"filter",	"create function json.filter(js json, name tinyint) returns json external name json.filter;",	"json",	1,	1,	false,	false,	false	]
 [ "json",	"filter",	"create function json.filter(js json, pathexpr string) returns json external name json.filter;",	"json",	1,	1,	false,	false,	false	]
@@ -2641,8 +2366,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"abs",	"abs",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"abs",	"abs",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"abs",	"abs",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"abs",	"abs",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"abs",	"abs",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"acos",	"acos",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"acos",	"acos",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"alpha",	"create function alpha(pdec double, pradius double) returns double external name sql.alpha;",	"sql",	1,	1,	false,	false,	false	]
@@ -2672,10 +2395,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"bit_and",	"and",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_and",	"and",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_and",	"and",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_and",	"and",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_and",	"and",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_not",	"not",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_not",	"not",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_not",	"not",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_not",	"not",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_not",	"not",	"calc",	0,	1,	false,	false,	false	]
@@ -2696,10 +2415,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"bit_or",	"or",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_or",	"or",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_or",	"or",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_or",	"or",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_or",	"or",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_xor",	"xor",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"bit_xor",	"xor",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_xor",	"xor",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_xor",	"xor",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"bit_xor",	"xor",	"calc",	0,	1,	false,	false,	false	]
@@ -2727,7 +2442,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"charindex",	"locate",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"chi2prob",	"create function sys.chi2prob(chi2 double, datapoints double) returns double external name gsl.\"chi2prob\";",	"gsl",	1,	1,	false,	false,	false	]
 [ "sys",	"clearrejects",	"create procedure sys.clearrejects() external name sql.copy_rejects_clear;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"code",	"unicode",	"str",	0,	1,	false,	false,	false	]
@@ -2741,7 +2455,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"copyfrom",	"importTable",	"sql",	0,	5,	false,	true,	false	]
 [ "sys",	"corr",	"create aggregate corr(e1 bigint, e2 bigint) returns bigint external name \"aggr\".\"corr\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"corr",	"create aggregate corr(e1 double, e2 double) returns double external name \"aggr\".\"corr\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"corr",	"create aggregate corr(e1 hugeint, e2 hugeint) returns hugeint external name \"aggr\".\"corr\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"corr",	"create aggregate corr(e1 integer, e2 integer) returns integer external name \"aggr\".\"corr\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"corr",	"create aggregate corr(e1 real, e2 real) returns real external name \"aggr\".\"corr\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"corr",	"create aggregate corr(e1 smallint, e2 smallint) returns smallint external name \"aggr\".\"corr\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -2810,12 +2523,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"exist",	"exist",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"exp",	"exp",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"exp",	"exp",	"mmath",	0,	1,	false,	false,	false	]
-[ "sys",	"fitsattach",	"create procedure fitsattach(fname string) external name fits.attach;",	"fits",	1,	2,	true,	false,	false	]
-[ "sys",	"fitsload",	"create procedure fitsload(tname string) external name fits.load;",	"fits",	1,	2,	true,	false,	false	]
 [ "sys",	"floor",	"floor",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"floor",	"floor",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"flush_log",	"create procedure sys.flush_log () external name sql.\"flush_log\";",	"sql",	1,	2,	true,	false,	false	]
-[ "sys",	"fuse",	"create function fuse(one bigint, two bigint) returns hugeint external name udf.fuse;",	"udf",	1,	1,	false,	false,	false	]
 [ "sys",	"fuse",	"create function fuse(one integer, two integer) returns bigint external name udf.fuse;",	"udf",	1,	1,	false,	false,	false	]
 [ "sys",	"fuse",	"create function fuse(one smallint, two smallint) returns integer external name udf.fuse;",	"udf",	1,	1,	false,	false,	false	]
 [ "sys",	"fuse",	"create function fuse(one tinyint, two tinyint) returns smallint external name udf.fuse;",	"udf",	1,	1,	false,	false,	false	]
@@ -2823,8 +2533,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"generate_series",	"create function sys.generate_series(first bigint, last bigint, stepsize bigint) returns table (value bigint) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
 [ "sys",	"generate_series",	"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2)) returns table (value decimal(10,2)) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
 [ "sys",	"generate_series",	"create function sys.generate_series(first double, last double, stepsize double) returns table (value double) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
-[ "sys",	"generate_series",	"create function sys.generate_series(first hugeint, last hugeint) returns table (value hugeint) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
-[ "sys",	"generate_series",	"create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint) returns table (value hugeint) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
 [ "sys",	"generate_series",	"create function sys.generate_series(first int, last int) returns table (value int) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
 [ "sys",	"generate_series",	"create function sys.generate_series(first int, last int, stepsize int) returns table (value int) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
 [ "sys",	"generate_series",	"create function sys.generate_series(first real, last real, stepsize real) returns table (value real) external name generator.series;",	"generator",	1,	5,	false,	false,	false	]
@@ -2907,8 +2615,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"left_shift",	"<<",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"<<",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"<<",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"left_shift",	"<<",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"left_shift",	"<<",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"create function \"left_shift\"(i1 inet, i2 inet) returns boolean external name inet.\"<<\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"mbrLeft",	"geom",	0,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"mbrLeft",	"geom",	0,	1,	false,	false,	false	]
@@ -2930,8 +2636,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"like",	"like",	"algebra",	0,	1,	false,	false,	false	]
 [ "sys",	"like",	"like",	"algebra",	0,	1,	false,	false,	false	]
 [ "sys",	"like",	"like",	"algebra",	0,	1,	false,	false,	false	]
-[ "sys",	"listdir",	"create procedure listdir(dirname string) external name fits.listdir;",	"fits",	1,	2,	true,	false,	false	]
-[ "sys",	"listdirpat",	"create procedure listdirpat(dirname string,pat string) external name fits.listdirpattern;",	"fits",	1,	2,	true,	false,	false	]
 [ "sys",	"local_timezone",	"local_timezone",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"localtime",	"current_time",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"localtimestamp",	"current_timestamp",	"sql",	0,	1,	false,	false,	false	]
@@ -2995,7 +2699,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"median",	"create aggregate median(val date) returns date external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"median",	"create aggregate median(val decimal) returns decimal external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"median",	"create aggregate median(val double) returns double external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"median",	"create aggregate median(val hugeint) returns hugeint external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"median",	"create aggregate median(val integer) returns integer external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"median",	"create aggregate median(val real) returns real external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"median",	"create aggregate median(val smallint) returns smallint external name \"aggr\".\"median\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -3021,8 +2724,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"mod",	"%",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"mod",	"%",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"mod",	"%",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"mod",	"%",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"mod",	"%",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"month",	"month",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"month",	"month",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"month",	"month",	"mtime",	0,	1,	false,	false,	false	]
@@ -3031,8 +2732,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"ms_str",	"create function ms_str(num float, prc int, truncat int) returns string begin return cast(num as string); end;",	"user",	2,	1,	false,	false,	false	]
 [ "sys",	"ms_stuff",	"create function ms_stuff( s1 varchar(32), st int, len int, s3 varchar(32)) returns varchar(32) begin declare res varchar(32), aux varchar(32); declare ofset int; if ( st < 0 or st > length(s1)) then return ''; end if; set ofset = 1; set res = substring(s1,ofset,st-1); set res = res || s3; set ofset = st + len; set aux = substring(s1,ofset,length(s1)-ofset+1); set res = res || aux; return res; end;",	"user",	2,	1,	false,	false,	false	]
 [ "sys",	"ms_trunc",	"create function ms_trunc(num double, prc int) returns double external name sql.ms_trunc;",	"sql",	1,	1,	false,	false,	false	]
-[ "sys",	"netcdf_attach",	"create procedure netcdf_attach(fname varchar(256)) external name netcdf.attach;",	"netcdf",	1,	2,	true,	false,	false	]
-[ "sys",	"netcdf_importvar",	"create procedure netcdf_importvar(fid integer, varnname varchar(256)) external name netcdf.importvariable;",	"netcdf",	1,	2,	true,	false,	false	]
 [ "sys",	"netmask",	"create function \"netmask\" (p inet) returns inet external name inet.\"netmask\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"network",	"create function \"network\" (p inet) returns inet external name inet.\"network\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"newurl",	"create function newurl(protocol string, hostname string, \"port\" int, file string) returns url external name url.\"new\";",	"url",	1,	1,	false,	false,	false	]
@@ -3080,8 +2779,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"prod",	"prod",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"prod",	"prod",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"prod",	"prod",	"aggr",	0,	3,	false,	false,	false	]
-[ "sys",	"prod",	"prod",	"aggr",	0,	3,	false,	false,	false	]
-[ "sys",	"prod",	"prod",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"qgramnormalize",	"qgramnormalize",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"qgramnormalize",	"qgramnormalize",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"qgramnormalize",	"qgramnormalize",	"txtsim",	0,	1,	false,	false,	false	]
@@ -3089,7 +2786,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"quantile",	"create aggregate quantile(val date, q double) returns date external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"quantile",	"create aggregate quantile(val decimal, q double) returns decimal external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"quantile",	"create aggregate quantile(val double, q double) returns double external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"quantile",	"create aggregate quantile(val hugeint, q double) returns hugeint external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"quantile",	"create aggregate quantile(val integer, q double) returns integer external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"quantile",	"create aggregate quantile(val real, q double) returns real external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"quantile",	"create aggregate quantile(val smallint, q double) returns smallint external name \"aggr\".\"quantile\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -3135,14 +2831,11 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"right_shift",	">>",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"right_shift",	">>",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"right_shift",	">>",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"right_shift",	">>",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"right_shift",	">>",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"right_shift",	"create function \"right_shift\"(i1 inet, i2 inet) returns boolean external name inet.\">>\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"right_shift",	"mbrRight",	"geom",	0,	1,	false,	false,	false	]
 [ "sys",	"right_shift",	"mbrRight",	"geom",	0,	1,	false,	false,	false	]
 [ "sys",	"right_shift_assign",	"create function \"right_shift_assign\"(i1 inet, i2 inet) returns boolean external name inet.\">>=\";",	"inet",	1,	1,	false,	false,	false	]
 [ "sys",	"rotate_xor_hash",	"rotate_xor_hash",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"round",	"round",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"round",	"round",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"round",	"round",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"round",	"round",	"sql",	0,	1,	false,	false,	false	]
@@ -3178,106 +2871,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"scale_down",	"dec_round",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"scale_down",	"dec_round",	"sql",	0,	1,	false,	false,	false	]
 [ "sys",	"scale_down",	"dec_round",	"sql",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_down",	"dec_round",	"sql",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_down",	"dec_round",	"sql",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"scale_up",	"*",	"calc",	0,	1,	false,	false,	false	]
@@ -3848,8 +3441,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"sign",	"sign",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sign",	"sign",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sign",	"sign",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sign",	"sign",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sign",	"sign",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"similarity",	"similarity",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"similarity",	"similarity",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"similarity",	"similarity",	"txtsim",	0,	1,	false,	false,	false	]
@@ -3866,12 +3457,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"splitpart",	"splitpart",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"splitpart",	"splitpart",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"splitpart",	"splitpart",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_add",	"+",	"calc",	0,	1,	false,	false,	false	]
@@ -3918,17 +3503,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"sql_add",	"timestamp_add_month_interval",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_add",	"timestamp_add_msec_interval",	"mtime",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_add",	"timestamp_add_msec_interval",	"mtime",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_div",	"/",	"calc",	0,	1,	false,	false,	false	]
@@ -4053,35 +3627,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_mul",	"*",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
@@ -4096,14 +3641,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_neg",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
-[ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"sql_sub",	"-",	"calc",	0,	1,	false,	false,	false	]
@@ -4277,7 +3814,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"stddev_pop",	"create aggregate stddev_pop(val bigint) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_pop",	"create aggregate stddev_pop(val date) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_pop",	"create aggregate stddev_pop(val double) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"stddev_pop",	"create aggregate stddev_pop(val hugeint) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_pop",	"create aggregate stddev_pop(val integer) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_pop",	"create aggregate stddev_pop(val real) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_pop",	"create aggregate stddev_pop(val smallint) returns double external name \"aggr\".\"stdevp\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -4288,7 +3824,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val bigint) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val date) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val double) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"stddev_samp",	"create aggregate stddev_samp(val hugeint) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val integer) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val real) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"stddev_samp",	"create aggregate stddev_samp(val smallint) returns double external name \"aggr\".\"stdev\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -4335,8 +3870,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"sum",	"sum",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"sum",	"sum",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"sum",	"sum",	"aggr",	0,	3,	false,	false,	false	]
-[ "sys",	"sum",	"sum",	"aggr",	0,	3,	false,	false,	false	]
-[ "sys",	"sum",	"sum",	"aggr",	0,	3,	false,	false,	false	]
 [ "sys",	"tan",	"tan",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"tan",	"tan",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"tanh",	"tanh",	"mmath",	0,	1,	false,	false,	false	]
@@ -4367,7 +3900,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"var_pop",	"create aggregate var_pop(val bigint) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_pop",	"create aggregate var_pop(val date) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_pop",	"create aggregate var_pop(val double) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"var_pop",	"create aggregate var_pop(val hugeint) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_pop",	"create aggregate var_pop(val integer) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_pop",	"create aggregate var_pop(val real) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_pop",	"create aggregate var_pop(val smallint) returns double external name \"aggr\".\"variancep\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -4378,7 +3910,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"var_samp",	"create aggregate var_samp(val bigint) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val date) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val double) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
-[ "sys",	"var_samp",	"create aggregate var_samp(val hugeint) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val integer) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val real) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
 [ "sys",	"var_samp",	"create aggregate var_samp(val smallint) returns double external name \"aggr\".\"variance\";",	"aggr",	1,	3,	false,	false,	false	]
@@ -4434,18 +3965,14 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "abs",	"arg_1",	"bigint",	64,	0,	1,	1	]
 [ "abs",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "abs",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "abs",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "abs",	"arg_1",	"hugeint",	128,	0,	1,	1	]
 [ "abs",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "abs",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "abs",	"res_0",	"decimal",	4,	0,	0,	0	]
 [ "abs",	"arg_1",	"decimal",	4,	0,	1,	1	]
 [ "abs",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "abs",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "abs",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "abs",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "abs",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "abs",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "abs",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "abs",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "abs",	"res_0",	"real",	24,	0,	0,	0	]
 [ "abs",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "abs",	"res_0",	"double",	53,	0,	0,	0	]
@@ -4500,18 +4027,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "atan",	"arg_2",	"double",	53,	0,	1,	2	]
 [ "avg",	"res",	"double",	53,	0,	0,	0	]
 [ "avg",	"arg",	"double",	53,	0,	1,	1	]
-[ "bam_drop_file",	"file_id",	"bigint",	64,	0,	1,	0	]
-[ "bam_drop_file",	"dbschema",	"smallint",	16,	0,	1,	1	]
-[ "bam_export",	"output_path",	"clob",	0,	0,	1,	0	]
-[ "bam_flag",	"result",	"boolean",	1,	0,	0,	0	]
-[ "bam_flag",	"flag",	"smallint",	16,	0,	1,	1	]
-[ "bam_flag",	"name",	"clob",	0,	0,	1,	2	]
-[ "bam_loader_file",	"bam_file",	"clob",	0,	0,	1,	0	]
-[ "bam_loader_file",	"dbschema",	"smallint",	16,	0,	1,	1	]
-[ "bam_loader_files",	"bam_files",	"clob",	0,	0,	1,	0	]
-[ "bam_loader_files",	"dbschema",	"smallint",	16,	0,	1,	1	]
-[ "bam_loader_repos",	"bam_repos",	"clob",	0,	0,	1,	0	]
-[ "bam_loader_repos",	"dbschema",	"smallint",	16,	0,	1,	1	]
 [ "bbp",	"id",	"int",	32,	0,	0,	0	]
 [ "bbp",	"name",	"clob",	0,	0,	0,	1	]
 [ "bbp",	"ttype",	"clob",	0,	0,	0,	2	]
@@ -4541,9 +4056,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_and",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "bit_and",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "bit_and",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "bit_and",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "bit_and",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "bit_and",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "bit_and",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "bit_and",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "bit_and",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -4553,12 +4065,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_and",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "bit_and",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "bit_and",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "bit_and",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "bit_and",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "bit_and",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "bit_and",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "bit_and",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "bit_and",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "bit_and",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "bit_and",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "bit_and",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "bit_not",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "bit_not",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "bit_not",	"res_0",	"tinyint",	8,	0,	0,	0	]
@@ -4571,18 +4080,14 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_not",	"arg_1",	"bigint",	64,	0,	1,	1	]
 [ "bit_not",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "bit_not",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "bit_not",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "bit_not",	"arg_1",	"hugeint",	128,	0,	1,	1	]
 [ "bit_not",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "bit_not",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "bit_not",	"res_0",	"decimal",	4,	0,	0,	0	]
 [ "bit_not",	"arg_1",	"decimal",	4,	0,	1,	1	]
 [ "bit_not",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "bit_not",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "bit_not",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "bit_not",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "bit_not",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "bit_not",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "bit_not",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "bit_not",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "bit_or",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "bit_or",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "bit_or",	"arg_2",	"oid",	63,	0,	1,	2	]
@@ -4601,9 +4106,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_or",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "bit_or",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "bit_or",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "bit_or",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "bit_or",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "bit_or",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "bit_or",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "bit_or",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "bit_or",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -4613,12 +4115,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_or",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "bit_or",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "bit_or",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "bit_or",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "bit_or",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "bit_or",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "bit_or",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "bit_or",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "bit_or",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "bit_or",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "bit_or",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "bit_or",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "bit_xor",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "bit_xor",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "bit_xor",	"arg_2",	"oid",	63,	0,	1,	2	]
@@ -4637,9 +4136,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_xor",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "bit_xor",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "bit_xor",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "bit_xor",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "bit_xor",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "bit_xor",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "bit_xor",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "bit_xor",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "bit_xor",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -4649,12 +4145,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_xor",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "bit_xor",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "bit_xor",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "bit_xor",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "bit_xor",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "bit_xor",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "bit_xor",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "bit_xor",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "bit_xor",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "bit_xor",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "bit_xor",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "bit_xor",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "broadcast",	"result",	"inet",	0,	0,	0,	0	]
 [ "broadcast",	"p",	"inet",	0,	0,	1,	1	]
 [ "ceil",	"res_0",	"real",	24,	0,	0,	0	]
@@ -4698,9 +4191,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "charindex",	"arg_1",	"clob",	0,	0,	1,	1	]
 [ "charindex",	"arg_2",	"clob",	0,	0,	1,	2	]
 [ "charindex",	"arg_3",	"int",	32,	0,	1,	3	]
-[ "chi2prob",	"result",	"double",	53,	0,	0,	0	]
-[ "chi2prob",	"chi2",	"double",	53,	0,	1,	1	]
-[ "chi2prob",	"datapoints",	"double",	53,	0,	1,	2	]
 [ "code",	"res_0",	"char",	0,	0,	0,	0	]
 [ "code",	"arg_1",	"int",	32,	0,	1,	1	]
 [ "code",	"res_0",	"varchar",	0,	0,	0,	0	]
@@ -4758,9 +4248,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "corr",	"result",	"double",	53,	0,	0,	0	]
 [ "corr",	"e1",	"double",	53,	0,	1,	1	]
 [ "corr",	"e2",	"double",	53,	0,	1,	2	]
-[ "corr",	"result",	"hugeint",	128,	0,	0,	0	]
-[ "corr",	"e1",	"hugeint",	128,	0,	1,	1	]
-[ "corr",	"e2",	"hugeint",	128,	0,	1,	2	]
 [ "cos",	"res_0",	"real",	24,	0,	0,	0	]
 [ "cos",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "cos",	"res_0",	"double",	53,	0,	0,	0	]
@@ -4921,11 +4408,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "filter",	"result",	"json",	0,	0,	0,	0	]
 [ "filter",	"js",	"json",	0,	0,	1,	1	]
 [ "filter",	"name",	"bigint",	64,	0,	1,	2	]
-[ "filter",	"result",	"json",	0,	0,	0,	0	]
-[ "filter",	"js",	"json",	0,	0,	1,	1	]
-[ "filter",	"name",	"hugeint",	128,	0,	1,	2	]
-[ "fitsattach",	"fname",	"clob",	0,	0,	1,	0	]
-[ "fitsload",	"tname",	"clob",	0,	0,	1,	0	]
 [ "floor",	"res_0",	"real",	24,	0,	0,	0	]
 [ "floor",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "floor",	"res_0",	"double",	53,	0,	0,	0	]
@@ -4939,9 +4421,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "fuse",	"result",	"bigint",	64,	0,	0,	0	]
 [ "fuse",	"one",	"int",	32,	0,	1,	1	]
 [ "fuse",	"two",	"int",	32,	0,	1,	2	]
-[ "fuse",	"result",	"hugeint",	128,	0,	0,	0	]
-[ "fuse",	"one",	"bigint",	64,	0,	1,	1	]
-[ "fuse",	"two",	"bigint",	64,	0,	1,	2	]
 [ "generate_series",	"value",	"tinyint",	8,	0,	0,	0	]
 [ "generate_series",	"first",	"tinyint",	8,	0,	1,	1	]
 [ "generate_series",	"last",	"tinyint",	8,	0,	1,	2	]
@@ -4986,13 +4465,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "generate_series",	"first",	"timestamp",	7,	0,	1,	1	]
 [ "generate_series",	"last",	"timestamp",	7,	0,	1,	2	]
 [ "generate_series",	"stepsize",	"sec_interval",	13,	0,	1,	3	]
-[ "generate_series",	"value",	"hugeint",	128,	0,	0,	0	]
-[ "generate_series",	"first",	"hugeint",	128,	0,	1,	1	]
-[ "generate_series",	"last",	"hugeint",	128,	0,	1,	2	]
-[ "generate_series",	"value",	"hugeint",	128,	0,	0,	0	]
-[ "generate_series",	"first",	"hugeint",	128,	0,	1,	1	]
-[ "generate_series",	"last",	"hugeint",	128,	0,	1,	2	]
-[ "generate_series",	"stepsize",	"hugeint",	128,	0,	1,	3	]
 [ "geometrytype",	"result",	"clob",	0,	0,	0,	0	]
 [ "geometrytype",	"geom",	"geometry",	0,	0,	1,	1	]
 [ "get_type",	"result",	"clob",	0,	0,	0,	0	]
@@ -5205,9 +4677,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "left_shift",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "left_shift",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "left_shift",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "left_shift",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "left_shift",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "left_shift",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "left_shift",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "left_shift",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "left_shift",	"arg_2",	"int",	32,	0,	1,	2	]
@@ -5217,11 +4686,8 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "left_shift",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "left_shift",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "left_shift",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "left_shift",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "left_shift",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "left_shift",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "left_shift",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "left_shift",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "left_shift",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "left_shift",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "left_shift",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "left_shift",	"result",	"boolean",	1,	0,	0,	0	]
 [ "left_shift",	"i1",	"inet",	0,	0,	1,	1	]
@@ -5290,9 +4756,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "like",	"esc",	"clob",	0,	0,	1,	2	]
 [ "like",	"val",	"clob",	0,	0,	1,	0	]
 [ "like",	"pat",	"clob",	0,	0,	1,	1	]
-[ "listdir",	"dirname",	"clob",	0,	0,	1,	0	]
-[ "listdirpat",	"dirname",	"clob",	0,	0,	1,	0	]
-[ "listdirpat",	"pat",	"clob",	0,	0,	1,	1	]
 [ "local_timezone",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "localtime",	"res_0",	"time",	7,	0,	0,	0	]
 [ "localtimestamp",	"res_0",	"timestamp",	7,	0,	0,	0	]
@@ -5478,8 +4941,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "median",	"val",	"time",	1,	0,	1,	1	]
 [ "median",	"result",	"timestamp",	7,	0,	0,	0	]
 [ "median",	"val",	"timestamp",	7,	0,	1,	1	]
-[ "median",	"result",	"hugeint",	128,	0,	0,	0	]
-[ "median",	"val",	"hugeint",	128,	0,	1,	1	]
 [ "min",	"res",	"any",	0,	0,	0,	0	]
 [ "min",	"arg",	"any",	0,	0,	1,	1	]
 [ "minute",	"res_0",	"int",	32,	0,	0,	0	]
@@ -5510,9 +4971,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "mod",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "mod",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "mod",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "mod",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "mod",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "mod",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "mod",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "mod",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "mod",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -5522,12 +4980,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "mod",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "mod",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "mod",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "mod",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "mod",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "mod",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "mod",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "mod",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "mod",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "mod",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "mod",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "mod",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "mod",	"res_0",	"real",	24,	0,	0,	0	]
 [ "mod",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "mod",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -5558,9 +5013,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "ms_trunc",	"result",	"double",	53,	0,	0,	0	]
 [ "ms_trunc",	"num",	"double",	53,	0,	1,	1	]
 [ "ms_trunc",	"prc",	"int",	32,	0,	1,	2	]
-[ "netcdf_attach",	"fname",	"varchar",	256,	0,	1,	0	]
-[ "netcdf_importvar",	"fid",	"int",	32,	0,	1,	0	]
-[ "netcdf_importvar",	"varnname",	"varchar",	256,	0,	1,	1	]
 [ "netmask",	"result",	"inet",	0,	0,	0,	0	]
 [ "netmask",	"p",	"inet",	0,	0,	1,	1	]
 [ "network",	"result",	"inet",	0,	0,	0,	0	]
@@ -5667,26 +5119,22 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "power",	"res_0",	"double",	53,	0,	0,	0	]
 [ "power",	"arg_1",	"double",	53,	0,	1,	1	]
 [ "power",	"arg_2",	"double",	53,	0,	1,	2	]
-[ "prod",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "prod",	"res",	"bigint",	64,	0,	0,	0	]
 [ "prod",	"arg",	"tinyint",	8,	0,	1,	1	]
-[ "prod",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "prod",	"res",	"bigint",	64,	0,	0,	0	]
 [ "prod",	"arg",	"smallint",	16,	0,	1,	1	]
-[ "prod",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "prod",	"res",	"bigint",	64,	0,	0,	0	]
 [ "prod",	"arg",	"int",	32,	0,	1,	1	]
-[ "prod",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "prod",	"res",	"bigint",	64,	0,	0,	0	]
 [ "prod",	"arg",	"bigint",	64,	0,	1,	1	]
-[ "prod",	"res",	"hugeint",	128,	0,	0,	0	]
-[ "prod",	"arg",	"hugeint",	128,	0,	1,	1	]
-[ "prod",	"res",	"decimal",	39,	0,	0,	0	]
+[ "prod",	"res",	"decimal",	19,	0,	0,	0	]
 [ "prod",	"arg",	"decimal",	2,	0,	1,	1	]
-[ "prod",	"res",	"decimal",	39,	0,	0,	0	]
+[ "prod",	"res",	"decimal",	19,	0,	0,	0	]
 [ "prod",	"arg",	"decimal",	4,	0,	1,	1	]
-[ "prod",	"res",	"decimal",	39,	0,	0,	0	]
+[ "prod",	"res",	"decimal",	19,	0,	0,	0	]
 [ "prod",	"arg",	"decimal",	9,	0,	1,	1	]
-[ "prod",	"res",	"decimal",	39,	0,	0,	0	]
-[ "prod",	"arg",	"decimal",	18,	0,	1,	1	]
-[ "prod",	"res",	"decimal",	39,	0,	0,	0	]
-[ "prod",	"arg",	"decimal",	39,	0,	1,	1	]
+[ "prod",	"res",	"decimal",	19,	0,	0,	0	]
+[ "prod",	"arg",	"decimal",	19,	0,	1,	1	]
 [ "prod",	"res",	"real",	24,	0,	0,	0	]
 [ "prod",	"arg",	"real",	24,	0,	1,	1	]
 [ "prod",	"res",	"double",	53,	0,	0,	0	]
@@ -5729,9 +5177,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "quantile",	"q",	"double",	53,	0,	1,	2	]
 [ "quantile",	"result",	"timestamp",	7,	0,	0,	0	]
 [ "quantile",	"val",	"timestamp",	7,	0,	1,	1	]
-[ "quantile",	"q",	"double",	53,	0,	1,	2	]
-[ "quantile",	"result",	"hugeint",	128,	0,	0,	0	]
-[ "quantile",	"val",	"hugeint",	128,	0,	1,	1	]
 [ "quantile",	"q",	"double",	53,	0,	1,	2	]
 [ "querycache",	"query",	"clob",	0,	0,	0,	0	]
 [ "querycache",	"count",	"int",	32,	0,	0,	1	]
@@ -5806,10 +5251,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "reuse",	"tab",	"clob",	0,	0,	1,	1	]
 [ "reverse",	"result",	"clob",	0,	0,	0,	0	]
 [ "reverse",	"src",	"clob",	0,	0,	1,	1	]
-[ "reverse_qual",	"result",	"clob",	0,	0,	0,	0	]
-[ "reverse_qual",	"qual",	"clob",	0,	0,	1,	1	]
-[ "reverse_seq",	"result",	"clob",	0,	0,	0,	0	]
-[ "reverse_seq",	"seq",	"clob",	0,	0,	1,	1	]
 [ "right",	"res_0",	"char",	0,	0,	0,	0	]
 [ "right",	"arg_1",	"char",	0,	0,	1,	1	]
 [ "right",	"arg_2",	"int",	32,	0,	1,	2	]
@@ -5843,9 +5284,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "right_shift",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "right_shift",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "right_shift",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "right_shift",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "right_shift",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "right_shift",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "right_shift",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "right_shift",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "right_shift",	"arg_2",	"int",	32,	0,	1,	2	]
@@ -5855,11 +5293,8 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "right_shift",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "right_shift",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "right_shift",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "right_shift",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "right_shift",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "right_shift",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "right_shift",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "right_shift",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "right_shift",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "right_shift",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "right_shift",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "right_shift",	"result",	"boolean",	1,	0,	0,	0	]
 [ "right_shift",	"i1",	"inet",	0,	0,	1,	1	]
@@ -5880,11 +5315,8 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "round",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "round",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "round",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "round",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "round",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "round",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "round",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "round",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "round",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "round",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "round",	"arg_2",	"tinyint",	8,	0,	1,	2	]
 [ "round",	"res_0",	"real",	24,	0,	0,	0	]
 [ "round",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -5938,7 +5370,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "rtrim",	"res_0",	"clob",	0,	0,	0,	0	]
 [ "rtrim",	"arg_1",	"clob",	0,	0,	1,	1	]
 [ "rtrim",	"arg_2",	"clob",	0,	0,	1,	2	]
-[ "sam_export",	"output_path",	"clob",	0,	0,	1,	0	]
 [ "scale_down",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "scale_down",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "scale_down",	"arg_2",	"oid",	63,	0,	1,	2	]
@@ -5957,9 +5388,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_down",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "scale_down",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_down",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "scale_down",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_down",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_down",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "scale_down",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "scale_down",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_down",	"arg_2",	"tinyint",	8,	0,	1,	2	]
@@ -5969,12 +5397,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_down",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "scale_down",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_down",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "scale_down",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "scale_down",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "scale_down",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "scale_down",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_down",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "scale_down",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_down",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "scale_down",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "scale_down",	"res_0",	"real",	24,	0,	0,	0	]
 [ "scale_down",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "scale_down",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -6005,9 +5430,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
@@ -6017,12 +5439,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -6054,9 +5473,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"oid",	63,	0,	1,	2	]
 [ "scale_up",	"res_0",	"oid",	63,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"oid",	63,	0,	1,	2	]
-[ "scale_up",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"oid",	63,	0,	1,	2	]
 [ "scale_up",	"res_0",	"oid",	63,	0,	0,	0	]
@@ -6066,10 +5482,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"oid",	63,	0,	1,	2	]
 [ "scale_up",	"res_0",	"oid",	63,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"oid",	63,	0,	1,	2	]
-[ "scale_up",	"res_0",	"oid",	63,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"oid",	63,	0,	1,	2	]
 [ "scale_up",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6129,9 +5542,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
 [ "scale_up",	"res_0",	"tinyint",	8,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "scale_up",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
 [ "scale_up",	"res_0",	"tinyint",	8,	0,	0,	0	]
@@ -6141,10 +5551,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
 [ "scale_up",	"res_0",	"tinyint",	8,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "scale_up",	"res_0",	"tinyint",	8,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"tinyint",	8,	0,	1,	2	]
 [ "scale_up",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6204,9 +5611,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"smallint",	16,	0,	1,	2	]
 [ "scale_up",	"res_0",	"smallint",	16,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"smallint",	16,	0,	1,	2	]
-[ "scale_up",	"res_0",	"smallint",	16,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"smallint",	16,	0,	1,	2	]
 [ "scale_up",	"res_0",	"smallint",	16,	0,	0,	0	]
@@ -6216,10 +5620,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"smallint",	16,	0,	1,	2	]
 [ "scale_up",	"res_0",	"smallint",	16,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"smallint",	16,	0,	1,	2	]
-[ "scale_up",	"res_0",	"smallint",	16,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"smallint",	16,	0,	1,	2	]
 [ "scale_up",	"res_0",	"smallint",	16,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6279,9 +5680,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"int",	32,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "scale_up",	"res_0",	"int",	32,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"int",	32,	0,	0,	0	]
@@ -6291,10 +5689,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"int",	32,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "scale_up",	"res_0",	"int",	32,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"int",	32,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6354,9 +5749,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"bigint",	64,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"bigint",	64,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"bigint",	64,	0,	0,	0	]
@@ -6366,10 +5758,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"bigint",	64,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"bigint",	64,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"bigint",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"bigint",	64,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6429,9 +5818,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
@@ -6441,10 +5827,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
 [ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6485,81 +5868,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"mbr",	0,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"oid",	63,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"tinyint",	8,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"smallint",	16,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"int",	32,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"bigint",	64,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	4,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"double",	53,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"time",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"timetz",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"date",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"timestamp",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"timestamptz",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"blob",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"geometry",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"geometrya",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "scale_up",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"mbr",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -6579,9 +5887,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
@@ -6591,10 +5896,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	2,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6654,9 +5956,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	4,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	4,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	4,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	4,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	4,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	4,	0,	0,	0	]
@@ -6666,10 +5965,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	4,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	4,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	4,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	4,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	4,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	4,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6729,9 +6025,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
@@ -6741,10 +6034,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
 [ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -6785,156 +6075,75 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"mbr",	0,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"oid",	63,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"tinyint",	8,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"smallint",	16,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"int",	32,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"bigint",	64,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	4,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"double",	53,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"time",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"timetz",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"date",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"timestamp",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"timestamptz",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"blob",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"geometry",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"geometrya",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "scale_up",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"mbr",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"oid",	63,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"tinyint",	8,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"smallint",	16,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"int",	32,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"bigint",	64,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	4,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"double",	53,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"time",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"timetz",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"date",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"timestamp",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"timestamptz",	7,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"blob",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"geometry",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"geometrya",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "scale_up",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"mbr",	0,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "scale_up",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -6954,9 +6163,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
 [ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
-[ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
 [ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
@@ -6966,10 +6172,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
 [ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
-[ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"real",	24,	0,	1,	2	]
 [ "scale_up",	"res_0",	"real",	24,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7029,9 +6232,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"double",	53,	0,	1,	2	]
 [ "scale_up",	"res_0",	"double",	53,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"double",	53,	0,	1,	2	]
-[ "scale_up",	"res_0",	"double",	53,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"double",	53,	0,	1,	2	]
 [ "scale_up",	"res_0",	"double",	53,	0,	0,	0	]
@@ -7041,10 +6241,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"double",	53,	0,	1,	2	]
 [ "scale_up",	"res_0",	"double",	53,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"double",	53,	0,	1,	2	]
-[ "scale_up",	"res_0",	"double",	53,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"double",	53,	0,	1,	2	]
 [ "scale_up",	"res_0",	"double",	53,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7104,9 +6301,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"month_interval",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"month_interval",	32,	0,	1,	2	]
-[ "scale_up",	"res_0",	"month_interval",	32,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"month_interval",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"month_interval",	32,	0,	0,	0	]
@@ -7116,10 +6310,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"month_interval",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"month_interval",	32,	0,	1,	2	]
-[ "scale_up",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"month_interval",	32,	0,	1,	2	]
 [ "scale_up",	"res_0",	"month_interval",	32,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7179,9 +6370,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"sec_interval",	13,	0,	1,	2	]
 [ "scale_up",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"sec_interval",	13,	0,	1,	2	]
-[ "scale_up",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"sec_interval",	13,	0,	1,	2	]
 [ "scale_up",	"res_0",	"sec_interval",	13,	0,	0,	0	]
@@ -7191,10 +6379,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"sec_interval",	13,	0,	1,	2	]
 [ "scale_up",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"sec_interval",	13,	0,	1,	2	]
-[ "scale_up",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"sec_interval",	13,	0,	1,	2	]
 [ "scale_up",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7254,9 +6439,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"time",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"time",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"time",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"time",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"time",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"time",	7,	0,	0,	0	]
@@ -7266,10 +6448,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"time",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"time",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"time",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"time",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"time",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"time",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7329,9 +6508,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timetz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timetz",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"timetz",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"timetz",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timetz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timetz",	7,	0,	0,	0	]
@@ -7341,10 +6517,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timetz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timetz",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"timetz",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"timetz",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timetz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timetz",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7404,9 +6577,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"date",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"date",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"date",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"date",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"date",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"date",	0,	0,	0,	0	]
@@ -7416,10 +6586,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"date",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"date",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"date",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"date",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"date",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"date",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7479,9 +6646,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamp",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamp",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"timestamp",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"timestamp",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamp",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamp",	7,	0,	0,	0	]
@@ -7491,10 +6655,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamp",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamp",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"timestamp",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"timestamp",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamp",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamp",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7554,9 +6715,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamptz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamptz",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"timestamptz",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"timestamptz",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamptz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamptz",	7,	0,	0,	0	]
@@ -7566,10 +6724,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamptz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamptz",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"timestamptz",	7,	0,	1,	2	]
-[ "scale_up",	"res_0",	"timestamptz",	7,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"timestamptz",	7,	0,	1,	2	]
 [ "scale_up",	"res_0",	"timestamptz",	7,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7629,9 +6784,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"blob",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"blob",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"blob",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"blob",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"blob",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"blob",	0,	0,	0,	0	]
@@ -7641,10 +6793,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"blob",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"blob",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"blob",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"blob",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"blob",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"blob",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7704,9 +6853,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometry",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometry",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"geometry",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"geometry",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometry",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometry",	0,	0,	0,	0	]
@@ -7716,10 +6862,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometry",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometry",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"geometry",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"geometry",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometry",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometry",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7779,9 +6922,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometrya",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometrya",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"geometrya",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"geometrya",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometrya",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometrya",	0,	0,	0,	0	]
@@ -7791,10 +6931,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometrya",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometrya",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"geometrya",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"geometrya",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"geometrya",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"geometrya",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7854,9 +6991,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"mbr",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"mbr",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"mbr",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"mbr",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"mbr",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"mbr",	0,	0,	0,	0	]
@@ -7866,10 +7000,7 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_up",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"mbr",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"mbr",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "scale_up",	"arg_2",	"mbr",	0,	0,	1,	2	]
-[ "scale_up",	"res_0",	"mbr",	0,	0,	0,	0	]
-[ "scale_up",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "scale_up",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "scale_up",	"arg_2",	"mbr",	0,	0,	1,	2	]
 [ "scale_up",	"res_0",	"mbr",	0,	0,	0,	0	]
 [ "scale_up",	"arg_1",	"real",	24,	0,	1,	1	]
@@ -7920,13 +7051,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "second",	"arg_1",	"timestamptz",	7,	0,	1,	1	]
 [ "second",	"res_0",	"int",	32,	0,	0,	0	]
 [ "second",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "seq_char",	"result",	"char",	1,	0,	0,	0	]
-[ "seq_char",	"ref_pos",	"int",	32,	0,	1,	1	]
-[ "seq_char",	"alg_seq",	"clob",	0,	0,	1,	2	]
-[ "seq_char",	"alg_pos",	"int",	32,	0,	1,	3	]
-[ "seq_char",	"alg_cigar",	"clob",	0,	0,	1,	4	]
-[ "seq_length",	"result",	"int",	32,	0,	0,	0	]
-[ "seq_length",	"cigar",	"clob",	0,	0,	1,	1	]
 [ "sessions",	"user",	"clob",	0,	0,	0,	0	]
 [ "sessions",	"login",	"timestamp",	7,	0,	0,	1	]
 [ "sessions",	"sessiontimeout",	"bigint",	64,	0,	0,	2	]
@@ -7962,17 +7086,13 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "sign",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
-[ "sign",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "sign",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "sign",	"arg_1",	"decimal",	4,	0,	1,	1	]
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "sign",	"arg_1",	"decimal",	9,	0,	1,	1	]
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
-[ "sign",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
-[ "sign",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "sign",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
 [ "sign",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "sign",	"res_0",	"tinyint",	8,	0,	0,	0	]
@@ -8076,15 +7196,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_add",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_add",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_add",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "sql_add",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_add",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_add",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "sql_add",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "sql_add",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "sql_add",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -8112,24 +7223,15 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_add",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_add",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_add",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_add",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_add",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_add",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "sql_add",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_add",	"res_0",	"month_interval",	32,	0,	0,	0	]
 [ "sql_add",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_add",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_add",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_add",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_add",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_add",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_add",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_add",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_add",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "sql_add",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_add",	"res_0",	"real",	24,	0,	0,	0	]
 [ "sql_add",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "sql_add",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -8208,21 +7310,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_div",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "sql_div",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "sql_div",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "sql_div",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"smallint",	16,	0,	1,	2	]
-[ "sql_div",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "sql_div",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "sql_div",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"wrd",	64,	0,	1,	2	]
 [ "sql_div",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "sql_div",	"arg_2",	"oid",	63,	0,	1,	2	]
@@ -8277,15 +7364,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_div",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_div",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "sql_div",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_div",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_div",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "sql_div",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "sql_div",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -8313,24 +7391,15 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_div",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_div",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_div",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_div",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_div",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "sql_div",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_div",	"res_0",	"month_interval",	32,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_div",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_div",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_div",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_div",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_div",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_div",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_div",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "sql_div",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_div",	"res_0",	"real",	24,	0,	0,	0	]
 [ "sql_div",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "sql_div",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -8391,21 +7460,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_mul",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"wrd",	64,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"smallint",	16,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"wrd",	64,	0,	1,	2	]
 [ "sql_mul",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"oid",	63,	0,	1,	2	]
@@ -8460,15 +7514,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_mul",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "sql_mul",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -8496,24 +7541,15 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_mul",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_mul",	"res_0",	"month_interval",	32,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_mul",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_mul",	"res_0",	"real",	24,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -8574,102 +7610,48 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_mul",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"decimal",	4,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"tinyint",	8,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"smallint",	16,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"smallint",	16,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"int",	32,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"decimal",	2,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"decimal",	2,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"decimal",	4,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"decimal",	4,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_mul",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_mul",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	18,	0,	0,	0	]
+[ "sql_mul",	"res_0",	"decimal",	19,	0,	0,	0	]
 [ "sql_mul",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"tinyint",	8,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"tinyint",	8,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"smallint",	16,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"smallint",	16,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"int",	32,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"int",	32,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"bigint",	64,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"bigint",	64,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	2,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	2,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	4,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	4,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_mul",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_mul",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sql_mul",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "sql_mul",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_neg",	"res_0",	"oid",	63,	0,	0,	0	]
 [ "sql_neg",	"arg_1",	"oid",	63,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"tinyint",	8,	0,	0,	0	]
@@ -8682,18 +7664,14 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_neg",	"arg_1",	"bigint",	64,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"wrd",	64,	0,	0,	0	]
 [ "sql_neg",	"arg_1",	"wrd",	64,	0,	1,	1	]
-[ "sql_neg",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_neg",	"arg_1",	"hugeint",	128,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "sql_neg",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"decimal",	4,	0,	0,	0	]
 [ "sql_neg",	"arg_1",	"decimal",	4,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"decimal",	9,	0,	0,	0	]
 [ "sql_neg",	"arg_1",	"decimal",	9,	0,	1,	1	]
-[ "sql_neg",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_neg",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sql_neg",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_neg",	"arg_1",	"decimal",	39,	0,	1,	1	]
+[ "sql_neg",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_neg",	"arg_1",	"decimal",	19,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"real",	24,	0,	0,	0	]
 [ "sql_neg",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "sql_neg",	"res_0",	"double",	53,	0,	0,	0	]
@@ -8756,15 +7734,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_sub",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_sub",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_sub",	"arg_2",	"wrd",	64,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"hugeint",	128,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"hugeint",	128,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"hugeint",	128,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"hugeint",	128,	0,	1,	2	]
 [ "sql_sub",	"res_0",	"decimal",	2,	0,	0,	0	]
 [ "sql_sub",	"arg_1",	"decimal",	2,	0,	1,	1	]
 [ "sql_sub",	"arg_2",	"decimal",	2,	0,	1,	2	]
@@ -8792,24 +7761,15 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_sub",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_sub",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
 [ "sql_sub",	"arg_2",	"decimal",	9,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"decimal",	18,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"decimal",	18,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_sub",	"res_0",	"decimal",	19,	0,	0,	0	]
+[ "sql_sub",	"arg_1",	"decimal",	19,	0,	1,	1	]
+[ "sql_sub",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_sub",	"res_0",	"month_interval",	32,	0,	0,	0	]
 [ "sql_sub",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"decimal",	18,	0,	1,	2	]
+[ "sql_sub",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_sub",	"res_0",	"sec_interval",	13,	0,	0,	0	]
 [ "sql_sub",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"decimal",	18,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"decimal",	39,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"decimal",	39,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"month_interval",	32,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"month_interval",	32,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"decimal",	39,	0,	1,	2	]
-[ "sql_sub",	"res_0",	"sec_interval",	13,	0,	0,	0	]
-[ "sql_sub",	"arg_1",	"sec_interval",	13,	0,	1,	1	]
-[ "sql_sub",	"arg_2",	"decimal",	39,	0,	1,	2	]
+[ "sql_sub",	"arg_2",	"decimal",	19,	0,	1,	2	]
 [ "sql_sub",	"res_0",	"real",	24,	0,	0,	0	]
 [ "sql_sub",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "sql_sub",	"arg_2",	"real",	24,	0,	1,	2	]
@@ -9202,8 +8162,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "stddev_pop",	"val",	"time",	1,	0,	1,	1	]
 [ "stddev_pop",	"result",	"double",	53,	0,	0,	0	]
 [ "stddev_pop",	"val",	"timestamp",	7,	0,	1,	1	]
-[ "stddev_pop",	"result",	"double",	53,	0,	0,	0	]
-[ "stddev_pop",	"val",	"hugeint",	128,	0,	1,	1	]
 [ "stddev_samp",	"result",	"double",	53,	0,	0,	0	]
 [ "stddev_samp",	"val",	"tinyint",	8,	0,	1,	1	]
 [ "stddev_samp",	"result",	"double",	53,	0,	0,	0	]
@@ -9224,8 +8182,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "stddev_samp",	"val",	"time",	1,	0,	1,	1	]
 [ "stddev_samp",	"result",	"double",	53,	0,	0,	0	]
 [ "stddev_samp",	"val",	"timestamp",	7,	0,	1,	1	]
-[ "stddev_samp",	"result",	"double",	53,	0,	0,	0	]
-[ "stddev_samp",	"val",	"hugeint",	128,	0,	1,	1	]
 [ "stop",	"tag",	"int",	32,	0,	1,	0	]
 [ "stop",	"tag",	"bigint",	64,	0,	1,	0	]
 [ "storage",	"schema",	"clob",	0,	0,	0,	0	]
@@ -9357,28 +8313,24 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "substring",	"arg_1",	"clob",	0,	0,	1,	1	]
 [ "substring",	"arg_2",	"int",	32,	0,	1,	2	]
 [ "substring",	"arg_3",	"int",	32,	0,	1,	3	]
-[ "sum",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "sum",	"res",	"bigint",	64,	0,	0,	0	]
 [ "sum",	"arg",	"tinyint",	8,	0,	1,	1	]
-[ "sum",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "sum",	"res",	"bigint",	64,	0,	0,	0	]
 [ "sum",	"arg",	"smallint",	16,	0,	1,	1	]
-[ "sum",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "sum",	"res",	"bigint",	64,	0,	0,	0	]
 [ "sum",	"arg",	"int",	32,	0,	1,	1	]
-[ "sum",	"res",	"hugeint",	128,	0,	0,	0	]
+[ "sum",	"res",	"bigint",	64,	0,	0,	0	]
 [ "sum",	"arg",	"bigint",	64,	0,	1,	1	]
-[ "sum",	"res",	"hugeint",	128,	0,	0,	0	]
-[ "sum",	"arg",	"hugeint",	128,	0,	1,	1	]
 [ "sum",	"res",	"wrd",	64,	0,	0,	0	]
 [ "sum",	"arg",	"wrd",	64,	0,	1,	1	]
-[ "sum",	"res",	"decimal",	39,	0,	0,	0	]
+[ "sum",	"res",	"decimal",	19,	0,	0,	0	]
 [ "sum",	"arg",	"decimal",	2,	0,	1,	1	]
-[ "sum",	"res",	"decimal",	39,	0,	0,	0	]
+[ "sum",	"res",	"decimal",	19,	0,	0,	0	]
 [ "sum",	"arg",	"decimal",	4,	0,	1,	1	]
-[ "sum",	"res",	"decimal",	39,	0,	0,	0	]
+[ "sum",	"res",	"decimal",	19,	0,	0,	0	]
 [ "sum",	"arg",	"decimal",	9,	0,	1,	1	]
-[ "sum",	"res",	"decimal",	39,	0,	0,	0	]
-[ "sum",	"arg",	"decimal",	18,	0,	1,	1	]
-[ "sum",	"res",	"decimal",	39,	0,	0,	0	]
-[ "sum",	"arg",	"decimal",	39,	0,	1,	1	]
+[ "sum",	"res",	"decimal",	19,	0,	0,	0	]
+[ "sum",	"arg",	"decimal",	19,	0,	1,	1	]
 [ "sum",	"res",	"real",	24,	0,	0,	0	]
 [ "sum",	"arg",	"real",	24,	0,	1,	1	]
 [ "sum",	"res",	"double",	53,	0,	0,	0	]
@@ -9491,8 +8443,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "var_pop",	"val",	"time",	1,	0,	1,	1	]
 [ "var_pop",	"result",	"double",	53,	0,	0,	0	]
 [ "var_pop",	"val",	"timestamp",	7,	0,	1,	1	]
-[ "var_pop",	"result",	"double",	53,	0,	0,	0	]
-[ "var_pop",	"val",	"hugeint",	128,	0,	1,	1	]
 [ "var_samp",	"result",	"double",	53,	0,	0,	0	]
 [ "var_samp",	"val",	"tinyint",	8,	0,	1,	1	]
 [ "var_samp",	"result",	"double",	53,	0,	0,	0	]
@@ -9513,8 +8463,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "var_samp",	"val",	"time",	1,	0,	1,	1	]
 [ "var_samp",	"result",	"double",	53,	0,	0,	0	]
 [ "var_samp",	"val",	"timestamp",	7,	0,	1,	1	]
-[ "var_samp",	"result",	"double",	53,	0,	0,	0	]
-[ "var_samp",	"val",	"hugeint",	128,	0,	1,	1	]
 [ "week",	"res_0",	"int",	32,	0,	0,	0	]
 [ "week",	"arg_1",	"date",	0,	0,	1,	1	]
 [ "weekofyear",	"res_0",	"int",	32,	0,	0,	0	]
@@ -9563,7 +8511,7 @@ create function zorder_encode(x integer, y integer) returns oid
 % L1 # name
 % wrd # type
 % 3 # length
-[ 314	]
+[ 287	]
 #select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
 % .t,	.i,	.i # table_name
 % name,	name,	type # name
@@ -9571,33 +8519,19 @@ create function zorder_encode(x integer, y integer) returns oid
 % 16,	44,	1 # length
 [ "dependency_types",	"dependency_types_dependency_type_id_pkey",	0	]
 [ "dependency_types",	"dependency_types_dependency_type_name_unique",	0	]
-[ "files",	"files_pkey_file_id",	0	]
 [ "keywords",	"keywords_keyword_pkey",	0	]
-[ "pg",	"pg_fkey_file_id",	1	]
-[ "pg",	"pg_pkey_id_file_id",	0	]
-[ "rg",	"rg_fkey_file_id",	1	]
-[ "rg",	"rg_pkey_id_file_id",	0	]
 [ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	0	]
-[ "sq",	"sq_fkey_file_id",	1	]
-[ "sq",	"sq_pkey_sn_file_id",	0	]
 [ "table_types",	"table_types_table_type_id_pkey",	0	]
 [ "table_types",	"table_types_table_type_name_unique",	0	]
 #with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
 % .x,	.x,	.x,	.y,	.x # table_name
 % tname,	kname,	type,	kname,	action # name
 % varchar,	varchar,	int,	varchar,	int # type
-% 16,	44,	1,	18,	3 # length
+% 16,	44,	1,	0,	2 # length
 [ "dependency_types",	"dependency_types_dependency_type_id_pkey",	0,	NULL,	-1	]
 [ "dependency_types",	"dependency_types_dependency_type_name_unique",	1,	NULL,	-1	]
-[ "files",	"files_pkey_file_id",	0,	NULL,	-1	]
 [ "keywords",	"keywords_keyword_pkey",	0,	NULL,	-1	]
-[ "pg",	"pg_fkey_file_id",	2,	"files_pkey_file_id",	514	]
-[ "pg",	"pg_pkey_id_file_id",	0,	NULL,	-1	]
-[ "rg",	"rg_fkey_file_id",	2,	"files_pkey_file_id",	514	]
-[ "rg",	"rg_pkey_id_file_id",	0,	NULL,	-1	]
 [ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	0,	NULL,	-1	]
-[ "sq",	"sq_fkey_file_id",	2,	"files_pkey_file_id",	514	]
-[ "sq",	"sq_pkey_sn_file_id",	0,	NULL,	-1	]
 [ "table_types",	"table_types_table_type_id_pkey",	0,	NULL,	-1	]
 [ "table_types",	"table_types_table_type_name_unique",	1,	NULL,	-1	]
 #select name, nr from sys.objects order by name, nr;
@@ -9609,28 +8543,8 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "dependency_type_id",	0	]
 [ "dependency_type_name",	0	]
 [ "dependency_type_name",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "id",	0	]
-[ "id",	0	]
-[ "id",	0	]
-[ "id",	0	]
 [ "keyword",	0	]
 [ "keyword",	0	]
-[ "sn",	0	]
-[ "sn",	0	]
 [ "srid",	0	]
 [ "srid",	0	]
 [ "table_type_id",	0	]
@@ -9741,8 +8655,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "abs"	]
 [ "abs"	]
 [ "abs"	]
-[ "abs"	]
-[ "abs"	]
 [ "acos"	]
 [ "acos"	]
 [ "alpha"	]
@@ -9761,12 +8673,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "atan"	]
 [ "atan"	]
 [ "avg"	]
-[ "bam_drop_file"	]
-[ "bam_export"	]
-[ "bam_flag"	]
-[ "bam_loader_file"	]
-[ "bam_loader_files"	]
-[ "bam_loader_repos"	]
 [ "bbp"	]
 [ "bit_and"	]
 [ "bit_and"	]
@@ -9778,10 +8684,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_and"	]
 [ "bit_and"	]
 [ "bit_and"	]
-[ "bit_and"	]
-[ "bit_and"	]
-[ "bit_not"	]
-[ "bit_not"	]
 [ "bit_not"	]
 [ "bit_not"	]
 [ "bit_not"	]
@@ -9802,10 +8704,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "bit_or"	]
 [ "bit_or"	]
 [ "bit_or"	]
-[ "bit_or"	]
-[ "bit_or"	]
-[ "bit_xor"	]
-[ "bit_xor"	]
 [ "bit_xor"	]
 [ "bit_xor"	]
 [ "bit_xor"	]
@@ -9833,7 +8731,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "charindex"	]
 [ "charindex"	]
 [ "charindex"	]
-[ "chi2prob"	]
 [ "clearrejects"	]
 [ "code"	]
 [ "code"	]
@@ -9845,7 +8742,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "contains"	]
 [ "copyfrom"	]
 [ "copyfrom"	]
-[ "corr"	]
 [ "corr"	]
 [ "corr"	]
 [ "corr"	]
@@ -9920,18 +8816,12 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "filter"	]
 [ "filter"	]
 [ "filter"	]
-[ "filter"	]
-[ "fitsattach"	]
-[ "fitsload"	]
 [ "floor"	]
 [ "floor"	]
 [ "flush_log"	]
 [ "fuse"	]
 [ "fuse"	]
 [ "fuse"	]
-[ "fuse"	]
-[ "generate_series"	]
-[ "generate_series"	]
 [ "generate_series"	]
 [ "generate_series"	]
 [ "generate_series"	]
@@ -10029,8 +8919,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "left_shift"	]
 [ "left_shift"	]
 [ "left_shift"	]
-[ "left_shift"	]
-[ "left_shift"	]
 [ "left_shift_assign"	]
 [ "length"	]
 [ "length"	]
@@ -10050,8 +8938,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "like"	]
 [ "like"	]
 [ "like"	]
-[ "listdir"	]
-[ "listdirpat"	]
 [ "local_timezone"	]
 [ "localtime"	]
 [ "localtimestamp"	]
@@ -10122,15 +9008,12 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "median"	]
 [ "median"	]
 [ "median"	]
-[ "median"	]
 [ "min"	]
 [ "minute"	]
 [ "minute"	]
 [ "minute"	]
 [ "minute"	]
 [ "minute"	]
-[ "mod"	]
-[ "mod"	]
 [ "mod"	]
 [ "mod"	]
 [ "mod"	]
@@ -10151,8 +9034,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "ms_str"	]
 [ "ms_stuff"	]
 [ "ms_trunc"	]
-[ "netcdf_attach"	]
-[ "netcdf_importvar"	]
 [ "netmask"	]
 [ "network"	]
 [ "newurl"	]
@@ -10202,12 +9083,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "prod"	]
 [ "prod"	]
 [ "prod"	]
-[ "prod"	]
-[ "prod"	]
 [ "qgramnormalize"	]
 [ "qgramnormalize"	]
 [ "qgramnormalize"	]
-[ "quantile"	]
 [ "quantile"	]
 [ "quantile"	]
 [ "quantile"	]
@@ -10244,13 +9122,9 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "resume"	]
 [ "reuse"	]
 [ "reverse"	]
-[ "reverse_qual"	]
-[ "reverse_seq"	]
 [ "right"	]
 [ "right"	]
 [ "right"	]
-[ "right_shift"	]
-[ "right_shift"	]
 [ "right_shift"	]
 [ "right_shift"	]
 [ "right_shift"	]
@@ -10272,7 +9146,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "round"	]
 [ "round"	]
 [ "round"	]
-[ "round"	]
 [ "row_number"	]
 [ "rowid"	]
 [ "rowid"	]
@@ -10288,7 +9161,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "rtrim"	]
 [ "rtrim"	]
 [ "rtrim"	]
-[ "sam_export"	]
 [ "scale_down"	]
 [ "scale_down"	]
 [ "scale_down"	]
@@ -10303,106 +9175,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "scale_down"	]
 [ "scale_down"	]
 [ "scale_down"	]
-[ "scale_down"	]
-[ "scale_down"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
-[ "scale_up"	]
 [ "scale_up"	]
 [ "scale_up"	]
 [ "scale_up"	]
@@ -10951,8 +9723,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "second"	]
 [ "second"	]
 [ "second"	]
-[ "seq_char"	]
-[ "seq_length"	]
 [ "sessions"	]
 [ "setheartbeat"	]
 [ "setmasklen"	]
@@ -10978,8 +9748,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sign"	]
 [ "sign"	]
 [ "sign"	]
-[ "sign"	]
-[ "sign"	]
 [ "similarity"	]
 [ "similarity"	]
 [ "similarity"	]
@@ -11042,23 +9810,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_add"	]
 [ "sql_add"	]
 [ "sql_add"	]
-[ "sql_add"	]
-[ "sql_add"	]
-[ "sql_add"	]
-[ "sql_add"	]
-[ "sql_add"	]
-[ "sql_add"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
-[ "sql_div"	]
 [ "sql_div"	]
 [ "sql_div"	]
 [ "sql_div"	]
@@ -11183,35 +9934,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_mul"	]
 [ "sql_mul"	]
 [ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
 [ "sql_neg"	]
 [ "sql_neg"	]
 [ "sql_neg"	]
@@ -11226,14 +9948,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sql_neg"	]
 [ "sql_neg"	]
 [ "sql_neg"	]
-[ "sql_neg"	]
-[ "sql_neg"	]
-[ "sql_sub"	]
-[ "sql_sub"	]
-[ "sql_sub"	]
-[ "sql_sub"	]
-[ "sql_sub"	]
-[ "sql_sub"	]
 [ "sql_sub"	]
 [ "sql_sub"	]
 [ "sql_sub"	]
@@ -11415,8 +10129,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "stddev_pop"	]
 [ "stddev_pop"	]
 [ "stddev_pop"	]
-[ "stddev_pop"	]
-[ "stddev_samp"	]
 [ "stddev_samp"	]
 [ "stddev_samp"	]
 [ "stddev_samp"	]
@@ -11454,8 +10166,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "substring"	]
 [ "substring"	]
 [ "substring"	]
-[ "sum"	]
-[ "sum"	]
 [ "sum"	]
 [ "sum"	]
 [ "sum"	]
@@ -11513,8 +10223,6 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "var_pop"	]
 [ "var_pop"	]
 [ "var_pop"	]
-[ "var_pop"	]
-[ "var_samp"	]
 [ "var_samp"	]
 [ "var_samp"	]
 [ "var_samp"	]
@@ -11545,7 +10253,7 @@ create function zorder_encode(x integer, y integer) returns oid
 % .s,	.t,	.t,	.t,	.t,	.t,	.t # table_name
 % name,	systemname,	sqlname,	digits,	scale,	radix,	eclass # name
 % varchar,	varchar,	varchar,	int,	int,	int,	int # type
-% 3,	9,	14,	3,	1,	2,	2 # length
+% 3,	9,	14,	2,	1,	2,	2 # length
 [ "sys",	"bat",	"table",	0,	0,	0,	1	]
 [ "sys",	"bit",	"boolean",	1,	0,	2,	2	]
 [ "sys",	"bte",	"decimal",	2,	1,	10,	10	]
@@ -11555,15 +10263,13 @@ create function zorder_encode(x integer, y integer) returns oid
 [ "sys",	"daytime",	"timetz",	7,	1,	0,	12	]
 [ "sys",	"dbl",	"double",	53,	2,	2,	11	]
 [ "sys",	"flt",	"real",	24,	2,	2,	11	]
-[ "sys",	"hge",	"decimal",	39,	1,	10,	10	]
-[ "sys",	"hge",	"hugeint",	128,	1,	2,	7	]
 [ "sys",	"inet",	"inet",	0,	0,	0,	16	]
 [ "sys",	"int",	"decimal",	9,	1,	10,	10	]
 [ "sys",	"int",	"int",	32,	1,	2,	7	]
 [ "sys",	"int",	"month_interval",	32,	0,	2,	8	]
 [ "sys",	"json",	"json",	0,	0,	0,	16	]
 [ "sys",	"lng",	"bigint",	64,	1,	2,	7	]
-[ "sys",	"lng",	"decimal",	18,	1,	10,	10	]
+[ "sys",	"lng",	"decimal",	19,	1,	10,	10	]
 [ "sys",	"lng",	"sec_interval",	13,	1,	10,	9	]
 [ "sys",	"mbr",	"mbr",	0,	0,	0,	16	]
 [ "sys",	"oid",	"oid",	63,	0,	2,	6	]
@@ -11588,7 +10294,7 @@ create function zorder_encode(x integer, y integer) returns oid
 % varchar,	varchar # type
 % 0,	0 # length
 
-# 15:15:20 >  
-# 15:15:20 >  "Done."
-# 15:15:20 >  
+# 12:41:47 >  
+# 12:41:47 >  "Done."
+# 12:41:47 >  
 
