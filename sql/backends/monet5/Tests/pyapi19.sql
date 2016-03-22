@@ -73,21 +73,21 @@ ROLLBACK;
 START TRANSACTION;
 # try multiple columns of different types
 
-CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k double, l float, m hugeint, n bigint, o STRING, p DECIMAL) LANGUAGE P
+CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL) LANGUAGE P
 {
     result = dict();
     result['i'] = numpy.arange(100000, 0, -1);
     result['j'] = numpy.arange(100000, 0 , -1);
     result['k'] = numpy.arange(100000);
     result['l'] = numpy.arange(100000, 0 , -1);
-    result['m'] = numpy.arange(100000);
+    result['m'] = numpy.tile(numpy.arange(100), 1000)
     result['n'] = numpy.arange(100000, 0 , -1);
     result['o'] = numpy.arange(100000);
     result['p'] = numpy.arange(100000);
     return result
 };
 
-CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k double, l float, m hugeint, n bigint, o STRING, p DECIMAL) LANGUAGE PYTHON_MAP
+CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL) LANGUAGE PYTHON_MAP
 {
     res = _conn.execute('SELECT * FROM pyapi19_integers;')
     return res
