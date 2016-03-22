@@ -113,6 +113,12 @@ static BAT *getBBPdescriptor(bat i, int lock);
 static gdk_return BBPbackup(BAT *b, bit subcommit);
 static gdk_return BBPdir(int cnt, bat *subcommit);
 
+#ifdef HAVE_HGE
+/* start out by saying we have no hge, but as soon as we've seen one,
+ * we'll always say we do have it */
+static int havehge = 0;
+#endif
+
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
 #ifdef ATOMIC_LOCK
@@ -722,6 +728,10 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	/* silently convert chr columns to bte */
 	if (strcmp(type, "chr") == 0)
 		strcpy(type, "bte");
+#ifdef HAVE_HGE
+	else if (strcmp(type, "hge") == 0)
+		havehge = 1;
+#endif
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
@@ -1331,7 +1341,11 @@ static gdk_return
 BBPdir_header(FILE *f, int n)
 {
 	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\n",
-		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID, SIZEOF_MAX_INT) < 0 ||
+		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
+#ifdef HAVE_HGE
+		    havehge ? SIZEOF_HGE :
+#endif
+		    SIZEOF_LNG) < 0 ||
 	    OIDwrite(f) < 0 ||
 	    fprintf(f, " BBPsize=%d\n", n) < 0 ||
 	    ferror(f))
@@ -1871,6 +1885,11 @@ BBPinsert(BATstore *bs)
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
+
+#ifdef HAVE_HGE
+	if (bs->T.type == TYPE_hge)
+		havehge = 1;
+#endif
 
 	if (BBP_bak(i) == NULL) {
 		s = BBPtmpname(dirname, 64, i);
