@@ -1,0 +1,12 @@
+stderr of test 'package` in directory 'sql/test/emptydb-upgrade-chain` itself:
+
+
+# 15:45:24 >  
+# 15:45:24 >  "/usr/bin/python2" "package.py" "package"
+# 15:45:24 >  
+
+
+# 15:45:24 >  
+# 15:45:24 >  "Done."
+# 15:45:24 >  
+

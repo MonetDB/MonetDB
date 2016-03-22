@@ -4257,7 +4257,7 @@ def main(argv) :
                 remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
             fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
             fl = open(fn+"lst","w")
-            Failure = [[] for i in range(len(FAILURES))]
+            Failure = [[] for i in FAILURES]
             for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
                 fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                     tt,
