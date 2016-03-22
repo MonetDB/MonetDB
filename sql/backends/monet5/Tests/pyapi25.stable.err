@@ -31,7 +31,7 @@ stderr of test 'pyapi25` in directory 'sql/backends/monet5` itself:
 # 12:40:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21450" "--port=30737"
 # 12:40:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-22812/.s.monetdb.39136
+MAPI  = (monetdb) /var/tmp/mtest-14818/.s.monetdb.37353
 QUERY = SELECT * FROM pyapi25errortable();
 ERROR = !SELECT: no such table 'hopefullynonexistanttable'
         !SELECT: no such table 'hopefullynonexistanttable'

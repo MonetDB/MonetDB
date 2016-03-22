@@ -51,7 +51,6 @@ SELECT * FROM mytable; # 10000, 20000, 30000, 40000 (*10 for every thread, 4 thr
 
 # store stuff in a parallel query
 # we compute the mean in parallel, then store the mean of every thread in the table
-# I should probably find a way to force mtest to run with 8 threads, because the result will differ on machines without exactly 8 cores
 CREATE TABLE pyapi25medians(mean DOUBLE);
 
 CREATE FUNCTION pyapi25randomtable() returns TABLE(d DOUBLE) LANGUAGE PYTHON
@@ -64,14 +63,28 @@ CREATE FUNCTION pyapi25mediancompute(d DOUBLE) RETURNS DOUBLE
 language PYTHON_MAP
 {
     mean = numpy.mean(d)
-    _conn.execute('INSERT INTO pyapi25medians (mean) VALUES (' + str(mean) + ');')
+    _conn.execute('INSERT INTO pyapi25medians (mean) VALUES (%g);' % mean)
     return 1
+};
+
+# to verify that the output is correct, we check if the mean stored in pyapi25medians is within an epsilon of the actual mean of the data
+CREATE FUNCTION pyapi25checker(d DOUBLE) RETURNS BOOL LANGUAGE PYTHON {
+    actual_mean = numpy.mean(d)
+    numpy.random.seed(33)
+    expected_mean = numpy.mean(numpy.random.rand(1000000))
+    if numpy.abs(expected_mean - actual_mean) < 0.1:
+        print("Great success!")
+        return(True)
+    else:
+        print("Incorrect mean %g: expected %g" % (actual_mean, expected_mean))
+        print("Values:", d)
+        return(False)
 };
 
 CREATE TABLE randomtable AS SELECT * FROM pyapi25randomtable() WITH DATA;
 
 SELECT pyapi25mediancompute(d) FROM randomtable;
-SELECT * FROM pyapi25medians ORDER BY mean;
+SELECT pyapi25checker(mean) FROM pyapi25medians;
 
 # test error in parallel SQL query
 
