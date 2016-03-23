@@ -148,7 +148,7 @@ TMcommit(void)
  * @- TMsubcommit
  *
  * Create a new checkpoint that is equal to the previous, with the
- * expection that for the passed list of batnames, the current state
+ * exception that for the passed list of batnames, the current state
  * will be reflected in the new checkpoint.
  *
  * On the bats in this list we assume exclusive access during the

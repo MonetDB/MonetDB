@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "bat_utils.h"
+#include "mal.h"		/* for have_hge */
 
 void
 bat_destroy(BAT *b)
@@ -175,7 +176,11 @@ bat_utils_init(void)
 	int t;
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]) {
+		if (t != TYPE_bat && BATatoms[t].name[0]
+#ifdef HAVE_HGE
+		    && (have_hge || t != TYPE_hge)
+#endif
+		) {
 			ebats[t] = bat_new(TYPE_void, t, 0, TRANSIENT);
 			bat_set_access(ebats[t], BAT_READ);
 		}
