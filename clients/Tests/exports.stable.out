@@ -1178,7 +1178,6 @@ str CMDscience_bat_flt_sqrt(bat *ret, const bat *bid);
 str CMDscience_bat_flt_tan(bat *ret, const bat *bid);
 str CMDscience_bat_flt_tanh(bat *ret, const bat *bid);
 str CMDsetHeartbeat(void *res, int *ev);
-str CMDsetName(str *rname, const bat *b, str *name);
 str CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDsetProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
