@@ -31,6 +31,9 @@ comment "bpp";
 command getName( b:bat[:any_1]):str
 address CMDbbpName
 comment "Map a BAT into its internal name";
+command setName( b:bat[:any_1], n:str):str
+address CMDsetName
+comment "Rename a BAT";
 command getCount() :bat[:lng] 	
 address CMDbbpCount
 comment "Create a BAT with the cardinalities of all known BATs";
