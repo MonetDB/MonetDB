@@ -482,3 +482,15 @@ str CMDbbp(bat *ID, bat *NS, bat *HT, bat *TT, bat *CNT, bat *REFCNT, bat *LREFC
 	return MAL_SUCCEED;
 }
 
+str
+CMDsetName(str *rname, const bat *bid, str *name)
+{
+	BAT *b;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
+	}
+	BBPrename(b->batCacheid, *name);
+	*rname = GDKstrdup(*name);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
