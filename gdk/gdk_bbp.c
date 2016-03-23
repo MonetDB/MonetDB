@@ -987,10 +987,12 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->heap.newstorage = (storage_t) storage;
 	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
 	col->heap.dirty = 0;
-	if (bbpversion <= GDKLIBRARY_INET_COMPARE && strcmp(type, "inet") == 0) {
+	if (bbpversion <= GDKLIBRARY_INET_COMPARE &&
+	    strcmp(type, "inet") == 0) {
 		/* don't trust ordering information on inet columns */
 		col->sorted = 0;
 		col->revsorted = 0;
+		col->nosorted = col->norevsorted = 0;
 	}
 	if (col->heap.free > col->heap.size)
 		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
@@ -1050,7 +1052,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted, deleted, first, count, capacity;
+		lng inserted = 0, deleted = 0, first, count, capacity;
 		unsigned short map_head, map_tail, map_hheap, map_theap;
 		int Hhashash, Thashash;
 
@@ -1062,14 +1064,23 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			*s = 0;
 		}
 
-		if (sscanf(buf,
+		if (bbpversion <= GDKLIBRARY_INSERTED ?
+		    sscanf(buf,
 			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &inserted, &deleted, &first,
 			   &count, &capacity, &map_head, &map_tail, &map_hheap,
 			   &map_theap,
-			   &nread) < 16)
+			   &nread) < 16 :
+			sscanf(buf,
+			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %hu %hu %hu %hu"
+			   "%n",
+			   &batid, &status, headname, tailname, filename,
+			   &lastused, &properties, &first,
+			   &count, &capacity, &map_head, &map_tail, &map_hheap,
+			   &map_theap,
+			   &nread) < 14)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1107,10 +1118,10 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->S.persistence = PERSISTENT;
 		bs->S.copiedtodisk = 1;
 		bs->S.restricted = (properties & 0x06) >> 1;
-		bs->S.inserted = (BUN) inserted;
-		bs->S.deleted = (BUN) deleted;
 		bs->S.first = (BUN) first;
 		bs->S.count = (BUN) count;
+		bs->S.inserted = bs->S.first + bs->S.count;
+		bs->S.deleted = bs->S.first;
 		bs->S.capacity = (BUN) capacity;
 
 		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
@@ -1193,7 +1204,8 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_64_BIT_INT &&
-	    bbpversion != GDKLIBRARY_OLDWKB) {
+	    bbpversion != GDKLIBRARY_OLDWKB &&
+	    bbpversion != GDKLIBRARY_INSERTED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1543,7 +1555,7 @@ new_bbpentry(FILE *fp, bat i)
 #endif
 
 	if (fprintf(fp, SSZFMT " %d %s %s %s %d %d " BUNFMT " " BUNFMT " "
-		    BUNFMT " " BUNFMT " " BUNFMT " %d %d %d %d", /* BAT info */
+		    BUNFMT " %d %d %d %d", /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
@@ -1551,8 +1563,6 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->S.restricted << 1,
-		    BBP_desc(i)->S.inserted,
-		    BBP_desc(i)->S.deleted,
 		    BBP_desc(i)->S.first,
 		    BBP_desc(i)->S.count,
 		    BBP_desc(i)->S.capacity,

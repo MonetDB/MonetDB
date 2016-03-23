@@ -896,7 +896,8 @@ typedef struct {
 #define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
 #define GDKLIBRARY_SORTEDPOS	061030	/* version where we can't trust no(rev)sorted */
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
-#define GDKLIBRARY		061032
+#define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
+#define GDKLIBRARY		061033
 
 typedef struct BAT {
 	/* static bat properties */
