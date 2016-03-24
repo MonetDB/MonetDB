@@ -1257,8 +1257,6 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 
 	if (v == NULL)
 		return NULL;
-	if (tailtype == TYPE_oid && *(const oid*) v == oid_nil)
-		tailtype = TYPE_void;
 	bn = BATnew(TYPE_void, tailtype, n, role);
 	if (bn == NULL)
 		return NULL;
