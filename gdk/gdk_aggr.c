@@ -505,9 +505,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no sums, so return bat aligned with g with
 		 * nil in the tail */
-		bn = BATconstant(tp, ATOMnilptr(tp), ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	}
 
 	if ((e == NULL ||
@@ -518,7 +516,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	bn = BATconstant(tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	bn = BATconstant(0, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -1161,9 +1159,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(tp, ATOMnilptr(tp), ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	}
 
 	if ((e == NULL ||
@@ -1174,7 +1170,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	bn = BATconstant(tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	bn = BATconstant(0, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -1450,20 +1446,18 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no averages, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		if (bn == NULL) {
 			GDKerror("BATgroupavg: failed to create BAT\n");
 			return GDK_FAIL;
 		}
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		if (cntsp) {
 			wrd zero = 0;
-			if ((*cntsp = BATconstant(TYPE_wrd, &zero, ngrp, TRANSIENT)) == NULL) {
+			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &zero, ngrp, TRANSIENT)) == NULL) {
 				GDKerror("BATgroupavg: failed to create BAT\n");
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(*cntsp, ngrp == 0 ? 0 : min);
 		}
 		*bnp = bn;
 		return GDK_SUCCEED;
@@ -1478,11 +1472,10 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			return GDK_FAIL;
 		if (cntsp) {
 			wrd one = 1;
-			if ((*cntsp = BATconstant(TYPE_wrd, &one, ngrp, TRANSIENT)) == NULL) {
+			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &one, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(*cntsp, ngrp == 0 ? 0 : min);
 		}
 		*bnp = bn;
 		return GDK_SUCCEED;
@@ -1828,9 +1821,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 		/* trivial: no products, so return bat aligned with g
 		 * with zero in the tail */
 		wrd zero = 0;
-		bn = BATconstant(TYPE_wrd, &zero, ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &zero, ngrp, TRANSIENT);
 	}
 
 	bn = BATnew(TYPE_void, TYPE_wrd, ngrp, TRANSIENT);
@@ -1948,9 +1939,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		/* trivial: no products, so return bat aligned with g
 		 * with zero in the tail */
 		wrd zero = 0;
-		bn = BATconstant(TYPE_wrd, &zero, ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &zero, ngrp, TRANSIENT);
 	}
 
 	bn = BATnew(TYPE_void, TYPE_wrd, ngrp, TRANSIENT);
@@ -2343,9 +2332,7 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no minimums, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(TYPE_oid, &oid_nil, ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_oid, &oid_nil, ngrp, TRANSIENT);
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, ngrp, TRANSIENT);
@@ -2510,9 +2497,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no values, thus also no quantiles,
 		 * so return bat aligned with e with nil in the tail */
-		bn = BATconstant(tp, ATOMnilptr(tp), ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	}
 
 	if (s) {
@@ -2836,9 +2821,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 	}
 
 	if ((e == NULL ||
@@ -2847,9 +2830,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		/* trivial: singleton groups, so all results are equal
 		 * to zero (population) or nil (sample) */
 		dbl v = issample ? dbl_nil : 0;
-		bn = BATconstant(TYPE_dbl, &v, ngrp, TRANSIENT);
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
-		return bn;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
 	}
 
 	delta = GDKmalloc(ngrp * sizeof(dbl));

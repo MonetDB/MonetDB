@@ -1510,7 +1510,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				list[3] = b2->batCacheid;
 				list[4] = n2->batCacheid;
 				logger_switch_bat(b, b2, fn, "catalog_bid");
-				logger_switch_bat(n, n2, fn, "catalog_bid");
+				logger_switch_bat(n, n2, fn, "catalog_nme");
 				bi = bat_iterator(b);
 				ni = bat_iterator(n);
 				BATloop(b, p, q) {
