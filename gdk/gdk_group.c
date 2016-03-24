@@ -437,7 +437,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo) {
 			wrd one = 1;
 
-			hn = BATconstant(TYPE_wrd, &one, BATcount(b), TRANSIENT);
+			hn = BATconstant(0, TYPE_wrd, &one, BATcount(b), TRANSIENT);
 			if (hn == NULL)
 				goto error;
 			*histo = hn;
@@ -459,14 +459,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 			ngrp = 0;
-			gn = BATconstant(TYPE_oid, &ngrp, BATcount(b), TRANSIENT);
+			gn = BATconstant(b->hseqbase, TYPE_oid, &ngrp, BATcount(b), TRANSIENT);
 			if (gn == NULL)
 				goto error;
-			BATseqbase(gn, b->hseqbase);
 			*groups = gn;
 			if (extents) {
 				ngrp = gn->hseqbase;
-				en = BATconstant(TYPE_void, &ngrp, 1, TRANSIENT);
+				en = BATconstant(0, TYPE_void, &ngrp, 1, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				BATseqbase(BATmirror(en), ngrp);
@@ -475,7 +474,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if (histo) {
 				wrd cnt = (wrd) BATcount(b);
 
-				hn = BATconstant(TYPE_wrd, &cnt, 1, TRANSIENT);
+				hn = BATconstant(0, TYPE_wrd, &cnt, 1, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;

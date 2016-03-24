@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Mar 24 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATconst.  Use BATconstant instead.
+- Changed BATconstant.  It now has a new first argument with the seqbase
+  for the head column.
+
 * Thu Jan 14 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed BATmmap.  It was no longer used.
 

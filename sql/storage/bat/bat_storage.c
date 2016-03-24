@@ -1080,7 +1080,7 @@ copyBat (bat i, int type, oid seq)
 	if (!i)
 		return i;
 	tb = temp_descriptor(i);
-	b = BATconst(tb, type, ATOMnilptr(type), PERSISTENT);
+	b = BATconstant(tb->hseqbase, type, ATOMnilptr(type), BATcount(tb), PERSISTENT);
 	bat_destroy(tb);
 	if (isVIEW(b)) {
 		tb = COLcopy(b, b->ttype, TRUE, PERSISTENT);
