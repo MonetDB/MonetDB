@@ -1445,7 +1445,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 				list[3] = b2->batCacheid;
 				list[4] = n2->batCacheid;
 				logger_switch_bat(b, b2, fn, "catalog_bid");
-				logger_switch_bat(n, n2, fn, "catalog_bid");
+				logger_switch_bat(n, n2, fn, "catalog_nme");
 				bi = bat_iterator(b);
 				ni = bat_iterator(n);
 				BATloop(b, p, q) {
