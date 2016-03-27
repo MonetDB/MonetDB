@@ -22,3 +22,4 @@ group_distinct_quantile.Bug-3927
 merge_project.Bug-3955
 decimal_vs_integer.Bug-3941
 foreign_key.Bug-3938
+invalidcolumns.Bug-3968
