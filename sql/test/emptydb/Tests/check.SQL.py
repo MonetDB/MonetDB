@@ -107,6 +107,12 @@ select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g
 select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
+-- keywords
+select keyword from sys.keywords order by keyword;
+-- table_types
+select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
+-- dependency_types
+select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
 '''
 
 sys.stdout.write(out)
