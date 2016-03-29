@@ -117,51 +117,32 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 	/* Do the updates needed for the new geom module */
 	BAT *ct, *cnt, *cd, *cnd, *cs, *cns;
 	BATiter cti, cdi, csi;
-	char *s = "sys", n[64];
+	const char *s = "sys";
+	char n[64];
 	BUN p,q;
-	char *nt[] = {
-		"types_id",
-		"types_systemname",
-		"types_sqlname",
-		"types_digits",
-		"types_scale",
-		"types_radix",
-		"types_eclass",
-		"types_schema_id"
-	};
-	unsigned char ntt[] = {
-		TYPE_int,
-		TYPE_str,
-		TYPE_str,
-		TYPE_int,
-		TYPE_int,
-		TYPE_int,
-		TYPE_int,
-		TYPE_int
-	};
-	char *nf[] = {
-		"functions_id",
-		"functions_name",
-		"functions_func",
-		"functions_mod",
-		"functions_language",
-		"functions_type",
-		"functions_side_effect",
-		"functions_varres",
-		"functions_vararg",
-		"functions_schema_id"
-	};
-	unsigned char nft[] = {
-		TYPE_int,
-		TYPE_str,
-		TYPE_str,
-		TYPE_str,
-		TYPE_int,
-		TYPE_int,
-		TYPE_bit,
-		TYPE_bit,
-		TYPE_bit,
-		TYPE_int
+	const struct {
+		char *name;
+		int type;
+	} nt[] = {
+		{"types_id", TYPE_int},
+		{"types_systemname", TYPE_str},
+		{"types_sqlname", TYPE_str},
+		{"types_digits", TYPE_int},
+		{"types_scale", TYPE_int},
+		{"types_radix", TYPE_int},
+		{"types_eclass", TYPE_int},
+		{"types_schema_id", TYPE_int}
+	}, nf[] = {
+		{"functions_id", TYPE_int},
+		{"functions_name", TYPE_str},
+		{"functions_func", TYPE_str},
+		{"functions_mod", TYPE_str},
+		{"functions_language", TYPE_int},
+		{"functions_type", TYPE_int},
+		{"functions_side_effect", TYPE_bit},
+		{"functions_varres", TYPE_bit},
+		{"functions_vararg", TYPE_bit},
+		{"functions_schema_id", TYPE_int}
 	};
 	BAT *tt[8], *ttn[8], *ff[10], *ffn[10];
 	BATiter tti[8], ffi[10];
@@ -269,12 +250,12 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 	}
 
 	/* If this is a new database add the geometry type and the mbr type */
-	/* If this is an old database add the new geometrya type and update the mbr type */
+	/* If this is an old database add the new geometry type and update the mbr type */
 	for (i = 0; i < 8; i++) {
-		if (!(tt[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nt[i])))))
+		if (!(tt[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nt[i].name)))))
 			return 0;
 		tti[i] = bat_iterator(tt[i]);
-		if (!(ttn[i] = BATnew(TYPE_void, ntt[i], BATcount(tt[i]), PERSISTENT)))
+		if (!(ttn[i] = BATnew(TYPE_void, nt[i].type, BATcount(tt[i]), PERSISTENT)))
 			return 0;
 		BATseqbase(ttn[i], tt[i]->hseqbase);
 	}
@@ -336,15 +317,15 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 
 
 	for (i = 0; i < 8; i++) 
-		if (!list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i])))
+		if (!list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i].name)))
 			return 0;
 
 	/* Add the new functions */
 	for (i = 0; i < 10; i++) {
-		if (!(ff[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nf[i])))))
+		if (!(ff[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nf[i].name)))))
 			return 0;
 		ffi[i] = bat_iterator(ff[i]);
-		if (!(ffn[i] = BATnew(TYPE_void, nft[i], BATcount(ff[i]), PERSISTENT)))
+		if (!(ffn[i] = BATnew(TYPE_void, nf[i].type, BATcount(ff[i]), PERSISTENT)))
 			return 0;
 		BATseqbase(ffn[i], ff[i]->hseqbase);
 	}
@@ -401,7 +382,7 @@ do {							\
 	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
 #undef GEOM_UPGRADE_STORE_FUNC
 	for (i = 0; i < 10; i++) 
-		if (!list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i])))
+		if (!list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i].name)))
 			return 0;
 	
 	for (ii = 0; ii < ul->count; ii++) {
