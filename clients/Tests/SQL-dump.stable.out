@@ -862,6 +862,12 @@ select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g
 select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
+-- keywords
+select keyword from sys.keywords order by keyword;
+-- table_types
+select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
+-- dependency_types
+select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
 #select name, authorization, owner, system from sys.schemas order by name;
 % sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % name,	authorization,	owner,	system # name
@@ -8040,6 +8046,155 @@ select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where 
 % name,	name # name
 % varchar,	varchar # type
 % 0,	0 # length
+#select keyword from sys.keywords order by keyword;
+% sys.keywords # table_name
+% keyword # name
+% varchar # type
+% 14 # length
+[ "ADMIN"	]
+[ "AFTER"	]
+[ "AGGREGATE"	]
+[ "ALWAYS"	]
+[ "ASYMMETRIC"	]
+[ "ATOMIC"	]
+[ "AUTO_INCREMENT"	]
+[ "BEFORE"	]
+[ "BIGINT"	]
+[ "BIGSERIAL"	]
+[ "BINARY"	]
+[ "BLOB"	]
+[ "CALL"	]
+[ "CHAIN"	]
+[ "CLOB"	]
+[ "COMMITTED"	]
+[ "COPY"	]
+[ "CORR"	]
+[ "CUME_DIST"	]
+[ "CURRENT_ROLE"	]
+[ "CYCLE"	]
+[ "DATABASE"	]
+[ "DELIMITERS"	]
+[ "DENSE_RANK"	]
+[ "DO"	]
+[ "EACH"	]
+[ "ELSEIF"	]
+[ "ENCRYPTED"	]
+[ "EVERY"	]
+[ "EXCLUDE"	]
+[ "FOLLOWING"	]
+[ "FUNCTION"	]
+[ "GENERATED"	]
+[ "IF"	]
+[ "ILIKE"	]
+[ "INCREMENT"	]
+[ "LAG"	]
+[ "LEAD"	]
+[ "LIMIT"	]
+[ "LOCALTIME"	]
+[ "LOCALTIMESTAMP"	]
+[ "LOCKED"	]
+[ "MAXVALUE"	]
+[ "MEDIAN"	]
+[ "MEDIUMINT"	]
+[ "MERGE"	]
+[ "MINVALUE"	]
+[ "NEW"	]
+[ "NOCYCLE"	]
+[ "NOMAXVALUE"	]
+[ "NOMINVALUE"	]
+[ "NOW"	]
+[ "OFFSET"	]
+[ "OLD"	]
+[ "OTHERS"	]
+[ "OVER"	]
+[ "PARTITION"	]
+[ "PERCENT_RANK"	]
+[ "PLAN"	]
+[ "PRECEDING"	]
+[ "PROD"	]
+[ "QUANTILE"	]
+[ "RANGE"	]
+[ "RANK"	]
+[ "RECORDS"	]
+[ "REFERENCING"	]
+[ "REMOTE"	]
+[ "RENAME"	]
+[ "REPEATABLE"	]
+[ "REPLICA"	]
+[ "RESTART"	]
+[ "RETURN"	]
+[ "RETURNS"	]
+[ "ROWS"	]
+[ "ROW_NUMBER"	]
+[ "SAMPLE"	]
+[ "SAVEPOINT"	]
+[ "SCHEMA"	]
+[ "SEQUENCE"	]
+[ "SERIAL"	]
+[ "SERIALIZABLE"	]
+[ "SIMPLE"	]
+[ "START"	]
+[ "STATEMENT"	]
+[ "STDIN"	]
+[ "STDOUT"	]
+[ "STREAM"	]
+[ "STRING"	]
+[ "SYMMETRIC"	]
+[ "TIES"	]
+[ "TINYINT"	]
+[ "TRIGGER"	]
+[ "UNBOUNDED"	]
+[ "UNCOMMITTED"	]
+[ "UNENCRYPTED"	]
+[ "WHILE"	]
+[ "XMLAGG"	]
+[ "XMLATTRIBUTES"	]
+[ "XMLCOMMENT"	]
+[ "XMLCONCAT"	]
+[ "XMLDOCUMENT"	]
+[ "XMLELEMENT"	]
+[ "XMLFOREST"	]
+[ "XMLNAMESPACES"	]
+[ "XMLPARSE"	]
+[ "XMLPI"	]
+[ "XMLQUERY"	]
+[ "XMLSCHEMA"	]
+[ "XMLTEXT"	]
+[ "XMLVALIDATE"	]
+#select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
+% sys.table_types,	sys.table_types # table_name
+% table_type_id,	table_type_name # name
+% smallint,	varchar # type
+% 2,	22 # length
+[ 0,	"TABLE"	]
+[ 1,	"VIEW"	]
+[ 3,	"MERGE TABLE"	]
+[ 4,	"STREAM TABLE"	]
+[ 5,	"REMOTE TABLE"	]
+[ 6,	"REPLICA TABLE"	]
+[ 10,	"SYSTEM TABLE"	]
+[ 11,	"SYSTEM VIEW"	]
+[ 20,	"GLOBAL TEMPORARY TABLE"	]
+[ 30,	"LOCAL TEMPORARY TABLE"	]
+#select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
+% sys.dependency_types,	sys.dependency_types # table_name
+% dependency_type_id,	dependency_type_name # name
+% smallint,	varchar # type
+% 2,	10 # length
+[ 1,	"SCHEMA"	]
+[ 2,	"TABLE"	]
+[ 3,	"COLUMN"	]
+[ 4,	"KEY"	]
+[ 5,	"VIEW"	]
+[ 6,	"USER"	]
+[ 7,	"FUNCTION"	]
+[ 8,	"TRIGGER"	]
+[ 9,	"OWNER"	]
+[ 10,	"INDEX"	]
+[ 11,	"FKEY"	]
+[ 12,	"SEQUENCE"	]
+[ 13,	"PROCEDURE"	]
+[ 14,	"BE_DROPPED"	]
 
 # 11:22:34 >  
 # 11:22:34 >  "Done."
