@@ -1312,6 +1312,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 #endif
 	}
 	h->free += pad + len + extralen;
+	h->dirty = 1;
 
 	/* maintain hash table */
 	pos -= extralen;

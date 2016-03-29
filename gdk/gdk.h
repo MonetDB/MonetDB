@@ -1239,6 +1239,7 @@ gdk_export bte ATOMelmshift(int sz);
 	do {							\
 		assert((b)->HT->width == (s));			\
 		(b)->HT->heap.free += (s);			\
+		(b)->HT->heap.dirty |= (s) != 0;		\
 		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
 	} while (0)
 #define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
