@@ -780,6 +780,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			bn->H->heap.free = 0;
 			bn->T->heap.free = bunstocopy * sizeof(oid);
+			bn->T->heap.dirty |= bunstocopy > 0;
 			while (bunstocopy--) {
 				*dst++ = cur;
 				cur += inc;
@@ -790,6 +791,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			bn->H->heap.free = 0;
 			bn->T->heap.free = bunstocopy * Tsize(bn);
+			bn->T->heap.dirty |= bunstocopy > 0;
 			memcpy(Tloc(bn, 0), Tloc(b, p), bn->T->heap.free);
 		}
 		/* copy all properties (size+other) from the source bat */
