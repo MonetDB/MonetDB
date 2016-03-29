@@ -853,12 +853,6 @@ create function sys.hashsize(b boolean, i bigint) returns bigint begin if b = tr
 create function sys.heapsize(tpe string, i bigint, w int) returns bigint begin if tpe <> 'varchar' and tpe <> 'clob' then return 0; end if; return 10240 + i * w; end;
 create function "host" (p inet) returns clob external name inet."host";
 create function "hostmask" (p inet) returns inet external name inet."hostmask";
-ilike
-ilike
-ilike
-ilike
-ilike
-ilike
 create filter function "ilike"(val string, pat string, esc string) external name algebra."ilike";
 create filter function "ilike"(val string, pat string) external name algebra."ilike";
 create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;
@@ -866,26 +860,8 @@ create function internaltransform(geom geometry, srid_src integer, srid_dest int
 create function isaurl(theurl url) returns bool external name url."isaURL";
 create function sys.isauuid(u uuid) returns uuid external name uuid."isaUUID";
 create function sys.isauuid(u string) returns uuid external name uuid."isaUUID";
-mbrLeft
-mbrLeft
-<<
-<<
-<<
-<<
-<<
-<<
-<<
-<<
-<<
-<<
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
-like
-like
-like
-like
-like
-like
 create filter function "like"(val string, pat string, esc string) external name algebra."like";
 create filter function "like"(val string, pat string) external name algebra."like";
 create function sys.malfunctions() returns table("signature" string, "address" string, "comment" string) external name "manual"."functions";
@@ -942,18 +918,6 @@ create procedure sys.resume(tag int) external name sql.sysmon_resume;
 create procedure sys.resume(tag bigint) external name sql.sysmon_resume;
 create procedure reuse(sys string, tab string) external name sql.reuse;
 create function reverse(src string) returns string external name udf.reverse;
-mbrRight
-mbrRight
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
 create function "right_shift"(i1 inet, i2 inet) returns boolean external name inet.">>";
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
 create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;

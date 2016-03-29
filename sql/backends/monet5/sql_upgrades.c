@@ -1217,16 +1217,69 @@ sql_update_jun2016(Client c)
 	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function rejects to public;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function md5 to public;\n");
 
-#if 0
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_openstream(host string, port int);");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure profiler_stethoscope(ticks int);");
-	pos += snprintf(buf + pos, bufsize - pos, "create schema profiler;"
-		"create procedure profiler.start() external name profiler.\"start\";"
-		"create procedure profiler.stop() external name profiler.stop;"
-		"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;"
-		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;"
-		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;");
-#endif
+	/* 16_tracelog.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.profiler_openstream(string, int);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.profiler_stethoscope(int);\n");
+
+	/* 25_debug.sql */
+	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp();\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create function sys.bbp()\n"
+		"returns table (id int, name string,\n"
+		"ttype string, count bigint, refcnt int, lrefcnt int,\n"
+		"location string, kind string)\n"
+		"external name bbp.get;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create function sys.malfunctions()\n"
+		"returns table(\"signature\" string, \"address\" string, \"comment\" string)\n"
+		"external name \"manual\".\"functions\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create procedure sys.flush_log ()\n"
+		"external name sql.\"flush_log\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create function sys.debug(debug int) returns integer\n"
+		"external name mdb.\"setDebug\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"insert into sys.systemfunctions (select id from sys.functions where name in ('bbp', 'malfunctions', 'flush_log', 'debug') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
+	/* 46_profiler.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create schema profiler;\n"
+		"create procedure profiler.start() external name profiler.\"start\";\n"
+		"create procedure profiler.stop() external name profiler.stop;\n"
+		"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;\n"
+		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;\n"
+		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"update sys.schemas set system = true where name = 'profiler';\n"
+		"insert into sys.systemfunctions (select id from sys.functions where name in ('start', 'stop', 'setheartbeat', 'setpoolsize', 'setstream') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
+
+	/* 51_sys_schema_extensions.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+		"delete from sys.keywords;\n"
+		"insert into sys.keywords values\n"
+		"('ADD'), ('ADMIN'), ('AFTER'), ('AGGREGATE'), ('ALL'), ('ALTER'), ('ALWAYS'), ('AND'), ('ANY'), ('ASC'), ('ASYMMETRIC'), ('ATOMIC'), ('AUTO_INCREMENT'),\n"
+		"('BEFORE'), ('BEGIN'), ('BEST'), ('BETWEEN'), ('BIGINT'), ('BIGSERIAL'), ('BINARY'), ('BLOB'), ('BY'),\n"
+		"('CALL'), ('CASCADE'), ('CASE'), ('CAST'), ('CHAIN'), ('CHAR'), ('CHARACTER'), ('CHECK'), ('CLOB'), ('COALESCE'), ('COMMIT'), ('COMMITTED'), ('CONSTRAINT'), ('CONVERT'), ('COPY'), ('CORRESPONDING'), ('CREATE'), ('CROSS'), ('CURRENT'), ('CURRENT_DATE'), ('CURRENT_ROLE'), ('CURRENT_TIME'), ('CURRENT_TIMESTAMP'), ('CURRENT_USER'),\n"
+		"('DAY'), ('DEC'), ('DECIMAL'), ('DECLARE'), ('DEFAULT'), ('DELETE'), ('DELIMITERS'), ('DESC'), ('DO'), ('DOUBLE'), ('DROP'),\n"
+		"('EACH'), ('EFFORT'), ('ELSE'), ('ELSEIF'), ('ENCRYPTED'), ('END'), ('ESCAPE'), ('EVERY'), ('EXCEPT'), ('EXCLUDE'), ('EXISTS'), ('EXTERNAL'), ('EXTRACT'),\n"
+		"('FALSE'), ('FLOAT'), ('FOLLOWING'), ('FOR'), ('FOREIGN'), ('FROM'), ('FULL'), ('FUNCTION'),\n"
+		"('GENERATED'), ('GLOBAL'), ('GRANT'), ('GROUP'),\n"
+		"('HAVING'), ('HOUR'), ('HUGEINT'),\n"
+		"('IDENTITY'), ('IF'), ('ILIKE'), ('IN'), ('INDEX'), ('INNER'), ('INSERT'), ('INT'), ('INTEGER'), ('INTERSECT'), ('INTO'), ('IS'), ('ISOLATION'),\n"
+		"('JOIN'),\n"
+		"('LEFT'), ('LIKE'), ('LIMIT'), ('LOCAL'), ('LOCALTIME'), ('LOCALTIMESTAMP'), ('LOCKED'),\n"
+		"('MEDIUMINT'), ('MERGE'), ('MINUTE'), ('MONTH'),\n"
+		"('NATURAL'), ('NEW'), ('NEXT'), ('NOCYCLE'), ('NOMAXVALUE'), ('NOMINVALUE'), ('NOT'), ('NOW'), ('NULL'), ('NULLIF'), ('NUMERIC'),\n"
+		"('OF'), ('OFFSET'), ('OLD'), ('ON'), ('ONLY'), ('OPTION'), ('OR'), ('ORDER'), ('OTHERS'), ('OUTER'), ('OVER'),\n"
+		"('PARTIAL'), ('PARTITION'), ('POSITION'), ('PRECEDING'), ('PRESERVE'), ('PRIMARY'), ('PRIVILEGES'), ('PROCEDURE'), ('PUBLIC'),\n"
+		"('RANGE'), ('READ'), ('REAL'), ('RECORDS'), ('REFERENCES'), ('REFERENCING'), ('REMOTE'), ('RENAME'), ('REPEATABLE'), ('REPLICA'), ('RESTART'), ('RESTRICT'), ('RETURN'), ('RETURNS'), ('REVOKE'), ('RIGHT'), ('ROLLBACK'), ('ROWS'),\n"
+		"('SAMPLE'), ('SAVEPOINT'), ('SECOND'), ('SELECT'), ('SEQUENCE'), ('SERIAL'), ('SERIALIZABLE'), ('SESSION_USER'), ('SET'), ('SIMPLE'), ('SMALLINT'), ('SOME'), ('SPLIT_PART'), ('STDIN'), ('STDOUT'), ('STORAGE'), ('STREAM'), ('STRING'), ('SUBSTRING'), ('SYMMETRIC'),\n"
+		"('THEN'), ('TIES'), ('TINYINT'), ('TO'), ('TRANSACTION'), ('TRIGGER'), ('TRUE'),\n"
+		"('UNBOUNDED'), ('UNCOMMITTED'), ('UNENCRYPTED'), ('UNION'), ('UNIQUE'), ('UPDATE'), ('USER'), ('USING'),\n"
+		"('VALUES'), ('VARCHAR'), ('VARYING'), ('VIEW'),\n"
+		"('WHEN'), ('WHERE'), ('WHILE'), ('WITH'), ('WORK'), ('WRITE'),\n"
+		"('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');\n");
 
 	// Add the new storage inspection functions.
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1290,10 +1343,14 @@ sql_update_jun2016(Client c)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'storage' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
-	/* change to 99_system.sql: correct invalid FK schema ids, set them to schema id 2000 (the "sys" schema) */
+	/* change to 99_system.sql: correct invalid FK schema ids, set
+	 * them to schema id 2000 (the "sys" schema) */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n"
+			"UPDATE sys.types SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n"
 			"UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
