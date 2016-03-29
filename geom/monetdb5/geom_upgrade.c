@@ -66,7 +66,7 @@ list_extend(ulist **ul)
 }
 
 static int
-list_add(ulist **ul, BAT *ob, BAT *nb, char *n) 
+list_add(ulist **ul, BAT *ob, BAT *nb, const char *n)
 {
 	char *nn;
 	if ((nn =  GDKstrdup(n)) == NULL)
@@ -96,13 +96,13 @@ mkLower(char *s)
 static char *
 toLower(const char *s)
 {
-        char *r = GDKstrdup((char*)s);
+        char *r = GDKstrdup(s);
 
         return r ? mkLower(r) : NULL;
 }
 
 static char *
-N( char *buf, char *pre, char *schema, char *post)
+N( char *buf, const char *pre, const char *schema, const char *post)
 {
 	if (pre)
 		snprintf(buf, 64, "%s_%s_%s", pre, schema, post);
@@ -192,7 +192,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		BATseqbase(cns, cs->hseqbase);
 
 		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
-			char *type = BUNtail(cti, p);
+			const char *type = BUNtail(cti, p);
 			char *ltype = toLower(type);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);
@@ -280,8 +280,8 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 	}
 	maxid = 0;
 	for(p=BUNfirst(tt[0]), q=BUNlast(tt[0]); p<q; p++) {
-		char *systemname = BUNtail(tti[1], p);
-		char *sqlname = BUNtail(tti[2], p);
+		const char *systemname = BUNtail(tti[1], p);
+		const char *sqlname = BUNtail(tti[2], p);
 		for (i = 0; i <= 5; i++)
 			BUNappend(ttn[i], BUNtail(tti[i], p), TRUE);
 		if (strcmp(systemname, "mbr") == 0) {
