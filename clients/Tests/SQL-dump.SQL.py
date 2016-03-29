@@ -62,14 +62,16 @@ sys.stderr.write(err)
 # they are too volatile, and if it makes sense, dump an identifier
 # from a referenced table
 out = '''
+-- helper function
+create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
-select s.name, t.name, t.query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
+select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- functions
-select s.name, f.name, f.func, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, f.func;
+select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
 -- args
 select f.name, a.name, a.type, a.type_digits, a.type_scale, a.inout, a.number from sys.args a left outer join sys.functions f on a.func_id = f.id order by f.name, a.func_id, a.number;
 -- auths
@@ -113,6 +115,8 @@ select keyword from sys.keywords order by keyword;
 select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
 -- dependency_types
 select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
+-- drop helper function
+drop function pcre_replace(string, string, string, string);
 '''
 
 sys.stdout.write(out)
@@ -121,11 +125,6 @@ clt = process.client('sql', interactive = True,
                    stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 out, err = clt.communicate(out)
-
-# do some normalization of the output:
-# remove SQL comments, collapse multiple white space into a single space
-out = re.sub(r'--.*?(?:\\n)+', '', out)
-out = re.sub(r'(?:\\n|\\t| )+', ' ', out)
 
 sys.stdout.write(out)
 sys.stderr.write(err)
