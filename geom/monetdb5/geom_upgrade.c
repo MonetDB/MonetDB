@@ -69,9 +69,8 @@ static int
 list_add(ulist **ul, BAT *ob, BAT *nb, char *n) 
 {
 	char *nn;
-	if ((nn =  GDKmalloc(sizeof(char)*strlen(n))) == NULL)
+	if ((nn =  GDKstrdup(n)) == NULL)
 		return 0;
-	strcpy(nn, n);
 	if ((*ul)->count == (*ul)->capacity)
 		if (!list_extend(ul))
 			return 0;
@@ -194,66 +193,68 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 
 		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
 			char *type = BUNtail(cti, p);
+			char *ltype = toLower(type);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);
 
-			if (strcmp(toLower(type), "point") == 0) {
+			if (strcmp(ltype, "point") == 0) {
 				type = "geometry";
 				digits = wkbPoint_mdb << 2;
 				scale = 0; // in the past we did not save the srid
-			} else if (strcmp(toLower(type), "linestring") == 0) {
+			} else if (strcmp(ltype, "linestring") == 0) {
 				type = "geometry";
 				digits = wkbLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "curve") == 0) {
+			} else if (strcmp(ltype, "curve") == 0) {
 				type = "geometry";
 				digits = wkbLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "linearring") == 0) {
+			} else if (strcmp(ltype, "linearring") == 0) {
 				type = "geometry";
 				digits = wkbLinearRing_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "polygon") == 0) {
+			} else if (strcmp(ltype, "polygon") == 0) {
 				type = "geometry";
 				digits = wkbPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "surface") == 0) {
+			} else if (strcmp(ltype, "surface") == 0) {
 				type = "geometry";
 				digits = wkbPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multipoint") == 0) {
+			} else if (strcmp(ltype, "multipoint") == 0) {
 				type = "geometry";
 				digits = wkbMultiPoint_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multilinestring") == 0) {
+			} else if (strcmp(ltype, "multilinestring") == 0) {
 				type = "geometry";
 				digits = wkbMultiLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multicurve") == 0) {
+			} else if (strcmp(ltype, "multicurve") == 0) {
 				type = "geometry";
 				digits = wkbMultiLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multipolygon") == 0) {
+			} else if (strcmp(ltype, "multipolygon") == 0) {
 				type = "geometry";
 				digits = wkbMultiPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multisurface") == 0) {
+			} else if (strcmp(ltype, "multisurface") == 0) {
 				type = "geometry";
 				digits = wkbMultiPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "geomcollection") == 0) {
+			} else if (strcmp(ltype, "geomcollection") == 0) {
 				type = "geometry";
 				digits = wkbGeometryCollection_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
+			} else if (strcmp(ltype, "geometrycollection") == 0) {
 				type = "geometry";
 				digits = wkbGeometryCollection_mdb << 2;
 				scale = 0;
-			}  else if (strcmp(toLower(type), "geometry") == 0) {
+			}  else if (strcmp(ltype, "geometry") == 0) {
 				type = "geometry";
 				digits = 0;
 				scale = 0;
 			}
+			GDKfree(ltype);
 
 			BUNappend(cnt, type, TRUE);
 			BUNappend(cnd, &digits, TRUE);
