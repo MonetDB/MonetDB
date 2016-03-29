@@ -917,10 +917,13 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 			oid inc = (cur != oid_nil);
 
 			bn->H->heap.free = bn->T->heap.free = 0;
-			if (ht)
+			if (ht) {
 				bn->H->heap.free = bunstocopy * sizeof(oid);
-			else
+				bn->H->heap.dirty |= bunstocopy > 0;
+			} else {
 				bn->T->heap.free = bunstocopy * sizeof(oid);
+				bn->T->heap.dirty |= bunstocopy > 0;
+			}
 			while (bunstocopy--) {
 				*dst++ = cur;
 				cur += inc;
@@ -932,9 +935,11 @@ BATcopy(BAT *b, int ht, int tt, int writable, int role)
 			bn->H->heap.free = bn->T->heap.free = 0;
 			if (ht) {
 				bn->H->heap.free = bunstocopy * Hsize(bn);
+				bn->H->heap.dirty |= bunstocopy > 0;
 				memcpy(Hloc(bn, 0), Hloc(b, p), bn->H->heap.free);
 			} else {
 				bn->T->heap.free = bunstocopy * Tsize(bn);
+				bn->T->heap.dirty |= bunstocopy > 0;
 				memcpy(Tloc(bn, 0), Tloc(b, p), bn->T->heap.free);
 			}
 		}
