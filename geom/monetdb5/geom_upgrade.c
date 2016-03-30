@@ -100,32 +100,14 @@ geom_catalog_upgrade(void *lg, int olddb)
 	const char *s = "sys";
 	char n[64];
 	BUN p,q;
-	const struct {
-		char *name;
-		int type;
-	} nf[] = {
-		{"functions_id", TYPE_int},
-		{"functions_name", TYPE_str},
-		{"functions_func", TYPE_str},
-		{"functions_mod", TYPE_str},
-		{"functions_language", TYPE_int},
-		{"functions_type", TYPE_int},
-		{"functions_side_effect", TYPE_bit},
-		{"functions_varres", TYPE_bit},
-		{"functions_vararg", TYPE_bit},
-		{"functions_schema_id", TYPE_int}
-	};
-	BAT *ff[10], *ffn[10];
-	BATiter ffi[10];
-	int val, maxid, i;
 	size_t ii;
-	bit bval;
 	ulist *ul;
-	if ((ul = list_init(32)) == NULL)
-		return 0;
 
 	if (olddb) {
 		/* Update the catalog to use the new geometry types */
+		if ((ul = list_init(32)) == NULL)
+			return 0;
+
 		ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
 		cti = bat_iterator(ct);
 		cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
@@ -216,82 +198,17 @@ geom_catalog_upgrade(void *lg, int olddb)
 		    !list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale")))
 			return 0;
 
+		for (ii = 0; ii < ul->count; ii++) {
+			BATsetaccess(ul->elements[ii].nb, BAT_READ);
+			logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n);
+			if (ul->elements[ii].ob)
+				BBPunfix(ul->elements[ii].ob->batCacheid);
+		}
+		list_delete(ul);
 	}
 
 	/* Note that the new GEOM types are added to sys.types in
 	 * sql_update_geom() in sql_upgrades.c */
-
-	/* Add the new functions */
-	for (i = 0; i < 10; i++) {
-		if (!(ff[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nf[i].name)))))
-			return 0;
-		ffi[i] = bat_iterator(ff[i]);
-		if (!(ffn[i] = BATnew(TYPE_void, nf[i].type, BATcount(ff[i]), PERSISTENT)))
-			return 0;
-		BATseqbase(ffn[i], ff[i]->hseqbase);
-	}
-	maxid = 0;
-	for(p=BUNfirst(ff[0]), q=BUNlast(ff[0]); p<q; p++) {
-		for (i = 0; i < 10; i++)
-			BUNappend(ffn[i], BUNtail(ffi[i], p), TRUE);
-		maxid = maxid < *(int*)BUNtail(ffi[0], p) ? *(int*)BUNtail(ffi[0], p) : maxid;
-	}
-
-#define GEOM_UPGRADE_STORE_FUNC(ba, id, name, mod, sqlname) 	\
-do {							\
-	val = id;					\
-	BUNappend(ba[0], &val, TRUE);			\
-	BUNappend(ba[1], name, TRUE);			\
-	BUNappend(ba[2], sqlname, TRUE);		\
-	BUNappend(ba[3], mod, TRUE);			\
-	val = 0; BUNappend(ba[4], &val, TRUE);		\
-	val = 1; BUNappend(ba[5], &val, TRUE);		\
-	bval = false; BUNappend(ba[6], &bval, TRUE);	\
-	bval = false; BUNappend(ba[7], &bval, TRUE);	\
-	bval = false; BUNappend(ba[8], &bval, TRUE);	\
-	val = 0; BUNappend(ba[9], &val, TRUE);		\
-} while (0)
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap", "geom", "mbrOverlaps");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap", "geom", "mbrOverlaps");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_above", "geom", "mbrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_above", "geom", "mbrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_below", "geom", "mbrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_below", "geom", "mbrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_right", "geom", "mbrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_right", "geom", "mbrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_left", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_left", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contains", "geom", "mbrContains");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contains", "geom", "mbrContains");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contained", "geom", "mbrContained");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contained", "geom", "mbrContained");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_equal", "geom", "mbrEqual");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_equal", "geom", "mbrEqual");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_distance", "geom", "mbrDistance");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_distance", "geom", "mbrDistance");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "left_shift", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "left_shift", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
-#undef GEOM_UPGRADE_STORE_FUNC
-	for (i = 0; i < 10; i++) 
-		if (!list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i].name)))
-			return 0;
-	
-	for (ii = 0; ii < ul->count; ii++) {
-		BATsetaccess(ul->elements[ii].nb, BAT_READ);
-		logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n);
-		if (ul->elements[ii].ob) BBPunfix(ul->elements[ii].ob->batCacheid);
-	}
-	list_delete(ul);
 
 	return 1;
 }
@@ -4449,6 +4366,8 @@ geom_sql_upgrade(int olddb)
 
 	pos += snprintf(buf + pos, bufsize - pos, "\n\n");
 
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name in ("
 			"'contains', 'geometrytype', 'getproj4', 'get_type', "
