@@ -26,6 +26,37 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+delete from sys.types where id < 2000;
+insert into sys.types values (0, 'void', 'any', 0, 0, 0, 0, 2000);
+insert into sys.types values (1, 'bat', 'table', 0, 0, 0, 1, 2000);
+insert into sys.types values (2, 'ptr', 'ptr', 0, 0, 0, 1, 2000);
+insert into sys.types values (3, 'bit', 'boolean', 1, 0, 2, 2, 2000);
+insert into sys.types values (4, 'str', 'char', 0, 0, 0, 3, 2000);
+insert into sys.types values (5, 'str', 'varchar', 0, 0, 0, 4, 2000);
+insert into sys.types values (6, 'str', 'clob', 0, 0, 0, 4, 2000);
+insert into sys.types values (7, 'oid', 'oid', 63, 0, 2, 6, 2000);
+insert into sys.types values (8, 'bte', 'tinyint', 8, 1, 2, 7, 2000);
+insert into sys.types values (9, 'sht', 'smallint', 16, 1, 2, 7, 2000);
+insert into sys.types values (10, 'int', 'int', 32, 1, 2, 7, 2000);
+insert into sys.types values (11, 'lng', 'bigint', 64, 1, 2, 7, 2000);
+insert into sys.types values (12, 'wrd', 'wrd', 64, 1, 2, 7, 2000);
+insert into sys.types values (13, 'bte', 'decimal', 2, 1, 10, 10, 2000);
+insert into sys.types values (14, 'sht', 'decimal', 4, 1, 10, 10, 2000);
+insert into sys.types values (15, 'int', 'decimal', 9, 1, 10, 10, 2000);
+insert into sys.types values (16, 'lng', 'decimal', 19, 1, 10, 10, 2000);
+insert into sys.types values (17, 'flt', 'real', 24, 2, 2, 11, 2000);
+insert into sys.types values (18, 'dbl', 'double', 53, 2, 2, 11, 2000);
+insert into sys.types values (19, 'int', 'month_interval', 32, 0, 2, 8, 2000);
+insert into sys.types values (20, 'lng', 'sec_interval', 13, 1, 10, 9, 2000);
+insert into sys.types values (21, 'daytime', 'time', 7, 0, 0, 12, 2000);
+insert into sys.types values (22, 'daytime', 'timetz', 7, 1, 0, 12, 2000);
+insert into sys.types values (23, 'date', 'date', 0, 0, 0, 13, 2000);
+insert into sys.types values (24, 'timestamp', 'timestamp', 7, 0, 0, 14, 2000);
+insert into sys.types values (25, 'timestamp', 'timestamptz', 7, 1, 0, 14, 2000);
+insert into sys.types values (26, 'sqlblob', 'blob', 0, 0, 0, 5, 2000);
+insert into sys.types values (27, 'wkb', 'geometry', 0, 0, 0, 15, 2000);
+insert into sys.types values (28, 'wkba', 'geometrya', 0, 0, 0, 16, 2000);
+insert into sys.types values (29, 'mbr', 'mbr', 0, 0, 0, 16, 2000);
 grant execute on filter function "like"(string, string, string) to public;
 grant execute on filter function "ilike"(string, string, string) to public;
 grant execute on filter function "like"(string, string) to public;
@@ -4274,6 +4305,10 @@ COPY 3911 RECORDS INTO spatial_ref_sys FROM STDIN USING DELIMITERS '|','\n','\''
 
 insert into sys.systemfunctions (select id from sys.functions where name in ('contains', 'geometrytype', 'getproj4', 'get_type', 'has_m', 'has_z', 'internaltransform', 'left_shift', 'mbr', 'mbr_above', 'mbr_below', 'mbr_contained', 'mbr_contains', 'mbr_distance', 'mbr_equal', 'mbr_left', 'mbr_overlap', 'mbr_overlap_or_above', 'mbr_overlap_or_below', 'mbr_overlap_or_left', 'mbr_overlap_or_right', 'mbr_right', 'right_shift', 'st_area', 'st_asbinary', 'st_asewkt', 'st_astext', 'st_bdmpolyfromtext', 'st_bdpolyfromtext', 'st_boundary', 'st_buffer', 'st_centroid', 'st_collect', 'st_contains', 'st_contains', 'st_convexhull', 'st_coorddim', 'st_coveredby', 'st_covers', 'st_crosses', 'st_delaunaytriangles', 'st_difference', 'st_dimension', 'st_disjoint', 'st_distance', 'st_distance', 'st_dump', 'st_dumppoints', 'st_dwithin', 'st_endpoint', 'st_envelope', 'st_equals', 'st_equals', 'st_exteriorring', 'st_force2d', 'st_force3d', 'st_geomcollfromtext', 'st_geomcollfromtext', 'st_geometryfromtext', 'st_geometryfromtext', 'st_geometryn', 'st_geometrytype', 'st_geomfromtext', 'st_geomfromtext', 'st_interiorringn', 'st_interiorrings', 'st_intersection', 'st_intersects', 'st_isclosed', 'st_isempty', 'st_isring', 'st_issimple', 'st_isvalid', 'st_isvalidreason', 'st_length', 'st_length2d', 'st_linefromtext', 'st_linefromtext', 'st_makebox2d', 'st_makeenvelope', 'st_makeenvelope', 'st_makeline', 'st_makepoint', 'st_makepoint', 'st_makepoint', 'st_makepointm', 'st_makepolygon', 'st_mlinefromtext', 'st_mlinefromtext', 'st_mpointfromtext', 'st_mpointfromtext', 'st_mpolyfromtext', 'st_mpolyfromtext', 'st_npoints', 'st_nrings', 'st_numgeometries', 'st_numinteriorring', 'st_numinteriorrings', 'st_numpatches', 'st_numpoints', 'st_overlaps', 'st_overlaps', 'st_patchn', 'st_point', 'st_pointfromtext', 'st_pointfromtext', 'st_pointn', 'st_pointonsurface', 'st_polygon', 'st_polygonfromtext', 'st_polygonfromtext', 'st_relate', 'st_segmentize', 'st_setexteriorring', 'st_setsrid', 'st_srid', 'st_startpoint', 'st_symdifference', 'st_touches', 'st_transform', 'st_translate', 'st_translate', 'st_union', 'st_within', 'st_wkbtosql', 'st_wkttosql', 'st_x', 'st_xmax', 'st_xmax', 'st_xmin', 'st_xmin', 'st_y', 'st_ymax', 'st_ymax', 'st_ymin', 'st_ymin', 'st_z') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 update _tables set system = true where name in ('geometry_columns', 'spatial_ref_sys') and schema_id = (select id from schemas where name = 'sys');
+delete from sys.types where systemname in ('mbr', 'wkb', 'wkba');
+insert into sys.types values (27, 'wkb', 'geometry', 0, 0, 0, 15, 2000);
+insert into sys.types values (28, 'wkba', 'geometrya', 0, 0, 0, 16, 2000);
+insert into sys.types values (29, 'mbr', 'mbr', 0, 0, 0, 16, 2000);
 set schema "sys";
 
 

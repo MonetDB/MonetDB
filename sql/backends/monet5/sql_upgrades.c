@@ -710,12 +710,17 @@ sql_update_hugeint(Client c)
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));\n"
 			"update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.types values(%d, 'hge', 'hugeint', 128, 1, 2, 6, 0);\n", store_next_oid());
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.types values(%d, 'hge', 'decimal', 39, 1, 10, 8, 0);\n", store_next_oid());
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.types set digits = 18 where systemname = 'lng' and sqlname = 'decimal';\n");
+	{
+		node *n;
+		sql_type *t;
+
+		for (n = types->h; n; n = n->next) {
+			t = n->data;
+			if (t->base.id < 2000 &&
+			    strcmp(t->base.name, "hge") == 0)
+				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : 0);
+		}
+	}
 
 	{
 		char *msg;
@@ -1184,10 +1189,22 @@ sql_update_jun2016(Client c)
 	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
+	node *n;
+	sql_schema *s;
 
+	s = mvc_bind_schema(((backend*) c->sqlcontext)->mvc, "sys");
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where id < 2000;\n");
+	for (n = types->h; n; n = n->next) {
+		sql_type *t = n->data;
+
+		if (t->base.id < 2000) {
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
+		}
+	}
 
 	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string, string) to public;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string, string) to public;\n");
@@ -1387,6 +1404,21 @@ sql_update_geom(Client c, int olddb)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
 	GDKfree(geomupgrade);
+	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where systemname in ('mbr', 'wkb', 'wkba');\n");
+	{
+		node *n;
+		sql_type *t;
+		sql_schema *s = mvc_bind_schema(((backend*) c->sqlcontext)->mvc, "sys");
+
+		for (n = types->h; n; n = n->next) {
+			t = n->data;
+			if (t->base.id < 2000 &&
+			    (strcmp(t->base.name, "mbr") == 0 ||
+			     strcmp(t->base.name, "wkb") == 0 ||
+			     strcmp(t->base.name, "wkba") == 0))
+				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
+		}
+	}
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
@@ -1480,18 +1512,23 @@ SQLupgrades(Client c, mvc *m)
 	 * exist any more at the "sys" schema (i.e., the first part of
 	 * the upgrade has been completed succesfully), then move on
 	 * to the second part */
-	if (find_sql_type(mvc_bind_schema(m, "sys"), "point") &&
-	   (find_sql_type(mvc_bind_schema(m, "sys"), "geometry") == NULL)) {
+	if (find_sql_type(mvc_bind_schema(m, "sys"), "point") != NULL) {
+		/* type sys.point exists: this is an old geom-enabled
+		 * database */
 		if ((err = sql_update_geom(c, 1)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
-	} else if (geomsqlfix_get() != NULL &&
-		   !sql_find_subtype(&tp, "geometry", 0, 0)) {
-		// the geom module is loaded but the database is not geom-enabled
-		if ((err = sql_update_geom(c, 0)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			GDKfree(err);
+	} else if (geomsqlfix_get() != NULL) {
+		/* the geom module is loaded... */
+		sql_find_subtype(&tp, "clob", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"),
+				   "st_wkttosql", &tp, NULL, F_FUNC)) {
+			/* ... but the database is not geom-enabled */
+			if ((err = sql_update_geom(c, 0)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				GDKfree(err);
+			}
 		}
 	}
 }

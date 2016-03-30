@@ -225,14 +225,14 @@ bl_postversion( void *lg)
 		} else if (!geomUpgrade && geomcatalogfix_get() != NULL) {
 			// The catalog knew nothing about geometries but the geom module is loaded
 			// Add geom functionality
-			(*(geomcatalogfix_get()))(lg, (int)EC_GEOM, (int)EC_EXTERNAL, 0);
+			(*(geomcatalogfix_get()))(lg, 0);
 		} else if (geomUpgrade && geomcatalogfix_get() == NULL) {
 			// The catalog needs to be updated but the geom module has not been loaded
 			// The case is prohibited by the sanity check performed during initialization
 			GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
 		} else if (geomUpgrade && geomcatalogfix_get() != NULL) {
 			// The catalog needs to be updated and the geom module has been loaded
-			(*(geomcatalogfix_get()))(lg, (int)EC_GEOM, (int)EC_EXTERNAL, 1);
+			(*(geomcatalogfix_get()))(lg, 1);
 		}
 	}
 }

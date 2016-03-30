@@ -92,7 +92,7 @@ N( char *buf, const char *pre, const char *schema, const char *post)
 }
 
 int
-geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
+geom_catalog_upgrade(void *lg, int olddb)
 {
 	/* Do the updates needed for the new geom module */
 	BAT *ct, *cnt, *cd, *cnd, *cs, *cns;
@@ -103,16 +103,7 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 	const struct {
 		char *name;
 		int type;
-	} nt[] = {
-		{"types_id", TYPE_int},
-		{"types_systemname", TYPE_str},
-		{"types_sqlname", TYPE_str},
-		{"types_digits", TYPE_int},
-		{"types_scale", TYPE_int},
-		{"types_radix", TYPE_int},
-		{"types_eclass", TYPE_int},
-		{"types_schema_id", TYPE_int}
-	}, nf[] = {
+	} nf[] = {
 		{"functions_id", TYPE_int},
 		{"functions_name", TYPE_str},
 		{"functions_func", TYPE_str},
@@ -124,8 +115,8 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		{"functions_vararg", TYPE_bit},
 		{"functions_schema_id", TYPE_int}
 	};
-	BAT *tt[8], *ttn[8], *ff[10], *ffn[10];
-	BATiter tti[8], ffi[10];
+	BAT *ff[10], *ffn[10];
+	BATiter ffi[10];
 	int val, maxid, i;
 	size_t ii;
 	bit bval;
@@ -227,76 +218,8 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 
 	}
 
-	/* If this is a new database add the geometry type and the mbr type */
-	/* If this is an old database add the new geometry type and update the mbr type */
-	for (i = 0; i < 8; i++) {
-		if (!(tt[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nt[i].name)))))
-			return 0;
-		tti[i] = bat_iterator(tt[i]);
-		if (!(ttn[i] = BATnew(TYPE_void, nt[i].type, BATcount(tt[i]), PERSISTENT)))
-			return 0;
-		BATseqbase(ttn[i], tt[i]->hseqbase);
-	}
-	maxid = 0;
-	for(p=BUNfirst(tt[0]), q=BUNlast(tt[0]); p<q; p++) {
-		const char *systemname = BUNtail(tti[1], p);
-		const char *sqlname = BUNtail(tti[2], p);
-		for (i = 0; i <= 5; i++)
-			BUNappend(ttn[i], BUNtail(tti[i], p), TRUE);
-		if (strcmp(systemname, "mbr") == 0) {
-			val = EC_EXTERNAL;
-			BUNappend(ttn[6], &val, TRUE);
-			val = 0;
-			BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
-		} else if (strcmp(systemname, "wkb") == 0) {
-			val = EC_GEOM;
-			BUNappend(ttn[6], &val, TRUE);
-			if (strcmp(sqlname, "geometry") == 0 ) {
-				val = 0;
-				BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
-			} else
-				BUNappend(ttn[7], BUNtail(tti[7], p), TRUE);
-		} else {
-			BUNappend(ttn[6], BUNtail(tti[6], p), TRUE);
-			BUNappend(ttn[7], BUNtail(tti[7], p), TRUE);
-		}
-		maxid = maxid < *(int*)BUNtail(tti[0], p) ? *(int*)BUNtail(tti[0], p) : maxid;
-	}
-
-	if (!olddb) {
-		val = ++maxid;
-		BUNappend(ttn[0], &val, TRUE);
-		BUNappend(ttn[1], "mbr", TRUE);
-		BUNappend(ttn[2], "mbr", TRUE);
-		val = 0; BUNappend(ttn[3], &val, TRUE);
-		val = 0; BUNappend(ttn[4], &val, TRUE);
-		val = 0; BUNappend(ttn[5], &val, TRUE);
-		val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
-		val = 0; BUNappend(ttn[7], &val, TRUE);
-		val = ++maxid;
-		BUNappend(ttn[0], &val, TRUE);
-		BUNappend(ttn[1], "wkb", TRUE);
-		BUNappend(ttn[2], "geometry", TRUE);
-		val = 0; BUNappend(ttn[3], &val, TRUE);
-		val = 0; BUNappend(ttn[4], &val, TRUE);
-		val = 0; BUNappend(ttn[5], &val, TRUE);
-		val = EC_GEOM; BUNappend(ttn[6], &val, TRUE);
-		val = 0; BUNappend(ttn[7], &val, TRUE);
-	}
-	val = ++maxid;
-	BUNappend(ttn[0], &val, TRUE);
-	BUNappend(ttn[1], "wkba", TRUE);
-	BUNappend(ttn[2], "geometrya", TRUE);
-	val = 0; BUNappend(ttn[3], &val, TRUE);
-	val = 0; BUNappend(ttn[4], &val, TRUE);
-	val = 0; BUNappend(ttn[5], &val, TRUE);
-	val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
-	val = 0; BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
-
-
-	for (i = 0; i < 8; i++) 
-		if (!list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i].name)))
-			return 0;
+	/* Note that the new GEOM types are added to sys.types in
+	 * sql_update_geom() in sql_upgrades.c */
 
 	/* Add the new functions */
 	for (i = 0; i < 10; i++) {
