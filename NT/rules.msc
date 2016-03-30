@@ -274,18 +274,20 @@ create_winconfig_conds_new_py:
 	$(ECHO) # > "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF BITS32
 	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF BITS64
 	$(ECHO) BITS64_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF BITS64OID32
+!IFDEF MONET_OID32
 	$(ECHO) BITS64OID32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!ELSE
+	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !ENDIF
 !IFDEF CROSS_COMPILING
 	$(ECHO) CROSS_COMPILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
