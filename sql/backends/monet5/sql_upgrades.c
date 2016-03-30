@@ -644,7 +644,7 @@ sql_update_hugeint(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.fuse(one bigint, two bigint)\n"
+			"create function fuse(one bigint, two bigint)\n"
 			"returns hugeint\n"
 			"external name udf.fuse;\n");
 
@@ -660,19 +660,19 @@ sql_update_hugeint(Client c, mvc *sql)
 
 	/* 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE\n"
+			"create aggregate stddev_samp(val HUGEINT) returns DOUBLE\n"
 			"    external name \"aggr\".\"stdev\";\n"
-			"create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE\n"
+			"create aggregate stddev_pop(val HUGEINT) returns DOUBLE\n"
 			"    external name \"aggr\".\"stdevp\";\n"
-			"create aggregate sys.var_samp(val HUGEINT) returns DOUBLE\n"
+			"create aggregate var_samp(val HUGEINT) returns DOUBLE\n"
 			"    external name \"aggr\".\"variance\";\n"
-			"create aggregate sys.var_pop(val HUGEINT) returns DOUBLE\n"
+			"create aggregate var_pop(val HUGEINT) returns DOUBLE\n"
 			"    external name \"aggr\".\"variancep\";\n"
-			"create aggregate sys.median(val HUGEINT) returns HUGEINT\n"
+			"create aggregate median(val HUGEINT) returns HUGEINT\n"
 			"    external name \"aggr\".\"median\";\n"
-			"create aggregate sys.quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
+			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
 			"    external name \"aggr\".\"quantile\";\n"
-			"create aggregate sys.corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT\n"
+			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT\n"
 			"    external name \"aggr\".\"corr\";\n");
 
 	/* 40_json_hge.sql */
@@ -1256,10 +1256,11 @@ sql_update_jun2016(Client c, mvc *sql)
 	/* 25_debug.sql */
 	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp();\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-		"create function sys.bbp()\n"
+		"create function sys.bbp ()\n"
 		"returns table (id int, name string,\n"
-		"ttype string, count bigint, refcnt int, lrefcnt int,\n"
-		"location string, kind string)\n"
+		"ttype string, count BIGINT, refcnt int, lrefcnt int,\n"
+		"location string, heat int, dirty string,\n"
+		"status string, kind string)\n"
 		"external name bbp.get;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 		"create function sys.malfunctions()\n"

@@ -18,7 +18,7 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
-create function sys.fuse(one bigint, two bigint)
+create function fuse(one bigint, two bigint)
 returns hugeint
 external name udf.fuse;
 create function sys.generate_series(first hugeint, last hugeint)
@@ -27,19 +27,19 @@ external name generator.series;
 create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
 returns table (value hugeint)
 external name generator.series;
-create aggregate sys.stddev_samp(val HUGEINT) returns DOUBLE
+create aggregate stddev_samp(val HUGEINT) returns DOUBLE
     external name "aggr"."stdev";
-create aggregate sys.stddev_pop(val HUGEINT) returns DOUBLE
+create aggregate stddev_pop(val HUGEINT) returns DOUBLE
     external name "aggr"."stdevp";
-create aggregate sys.var_samp(val HUGEINT) returns DOUBLE
+create aggregate var_samp(val HUGEINT) returns DOUBLE
     external name "aggr"."variance";
-create aggregate sys.var_pop(val HUGEINT) returns DOUBLE
+create aggregate var_pop(val HUGEINT) returns DOUBLE
     external name "aggr"."variancep";
-create aggregate sys.median(val HUGEINT) returns HUGEINT
+create aggregate median(val HUGEINT) returns HUGEINT
     external name "aggr"."median";
-create aggregate sys.quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
     external name "aggr"."quantile";
-create aggregate sys.corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT
     external name "aggr"."corr";
 create function json.filter(js json, name hugeint)
 returns json
@@ -5637,10 +5637,11 @@ grant execute on function md5 to public;
 drop procedure sys.profiler_openstream(string, int);
 drop procedure sys.profiler_stethoscope(int);
 drop function sys.bbp();
-create function sys.bbp()
+create function sys.bbp ()
 returns table (id int, name string,
-ttype string, count bigint, refcnt int, lrefcnt int,
-location string, kind string)
+ttype string, count BIGINT, refcnt int, lrefcnt int,
+location string, heat int, dirty string,
+status string, kind string)
 external name bbp.get;
 create function sys.malfunctions()
 returns table("signature" string, "address" string, "comment" string)
