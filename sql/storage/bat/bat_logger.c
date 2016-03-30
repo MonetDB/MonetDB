@@ -70,7 +70,7 @@ bl_postversion( void *lg)
 		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-        	BATseqbase(tne, te->hseqbase);
+		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(tei, p);
 			char *name = BUNtail(tni, p);
@@ -102,7 +102,7 @@ bl_postversion( void *lg)
 		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-        	BATseqbase(tne, te->hseqbase);
+		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(tei, p);
 			char *name = BUNtail(tni, p);
@@ -134,7 +134,7 @@ bl_postversion( void *lg)
 			b1 = BATnew(TYPE_void, TYPE_sht, BATcount(b), PERSISTENT);
 			if (!b1)
 				return;
-        		BATseqbase(b1, b->hseqbase);
+			BATseqbase(b1, b->hseqbase);
 
 			bi = bat_iterator(b);
 			for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -172,7 +172,7 @@ bl_postversion( void *lg)
 		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-        	BATseqbase(tne, te->hseqbase);
+		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(bi, p);
 
