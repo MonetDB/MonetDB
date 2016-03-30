@@ -3228,7 +3228,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *be;
 	BAT **b = NULL;
-	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
+	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL, *fn = NULL;
 	ssize_t len = 0;
 	str filename = NULL, cs;
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
@@ -3287,6 +3287,15 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!fname) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 	} else {
+		len = strlen((char *) (*fname));
+		if ((fn = GDKmalloc(len + 1)) == NULL) {
+			GDKfree(ns);
+			GDKfree(tsep);
+			GDKfree(rsep);
+			GDKfree(ssep);
+			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+		}
+		GDKstrFromStr(fn, (unsigned char*)*fname, len);
 		/* convert UTF-8 encoded file name to the character set of our
 	 	 * own locale before passing it on to the system call */
 		if ((msg = STRcodeset(&cs)) != MAL_SUCCEED) {
@@ -3296,8 +3305,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(ns);
 			return msg;
 		}
-		msg = STRIconv(&filename, fname, &utf8, &cs);
+		msg = STRIconv(&filename, (char**)&fn, &utf8, &cs);
 		GDKfree(cs);
+		GDKfree(fn);
 		if (msg != MAL_SUCCEED) {
 			GDKfree(tsep);
 			GDKfree(rsep);
@@ -3307,6 +3317,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		ss = open_rastream(filename);
+		GDKfree(filename);
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);
 			if (ss)
@@ -3316,7 +3327,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(ssep);
 			GDKfree(ns);
 			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
-			GDKfree(filename);
 			return msg;
 		}
 #if SIZEOF_VOID_P == 4
@@ -3333,7 +3343,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 			bstream_destroy(s);
 		}
-		GDKfree(filename);
 	}
 	GDKfree(tsep);
 	GDKfree(rsep);
