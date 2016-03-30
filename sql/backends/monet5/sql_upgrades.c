@@ -24,9 +24,8 @@
 
 /* Because of a difference of computing hash values for single vs bulk operators we need to drop and recreate all constraints/indices */
 static str
-sql_update_oct2014_2(Client c)
+sql_update_oct2014_2(Client c, mvc *sql)
 {
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	size_t bufsize = 8192*2, pos = 0, recreate = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	res_table *fresult = NULL, *presult = NULL, *iresult = NULL;
@@ -216,11 +215,10 @@ sql_update_oct2014_2(Client c)
 }
 
 static str
-sql_update_oct2014(Client c)
+sql_update_oct2014(Client c, mvc *sql)
 {
 	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 	sql_table *t;
@@ -501,16 +499,15 @@ sql_update_oct2014(Client c)
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	if (err == MAL_SUCCEED)
-		return sql_update_oct2014_2(c);
+		return sql_update_oct2014_2(c, sql);
 	return err;		/* usually MAL_SUCCEED */
 }
 
 static str
-sql_update_oct2014_sp1(Client c)
+sql_update_oct2014_sp1(Client c, mvc *sql)
 {
 	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 
@@ -555,11 +552,10 @@ sql_update_oct2014_sp1(Client c)
 }
 
 static str
-sql_update_oct2014_sp2(Client c)
+sql_update_oct2014_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 
@@ -586,20 +582,13 @@ sql_update_oct2014_sp2(Client c)
 	assert(pos < bufsize);
 
 	{
-		char *msg;
-		mvc *sql = NULL;
+		sql_schema *s;
 
-		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
-			GDKfree(msg);
-		} else {
-			sql_schema *s;
+		if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+			sql_table *t;
 
-			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
-				sql_table *t;
-
-				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
-					t->system = 0;
-			}
+			if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+				t->system = 0;
 		}
 	}
 
@@ -610,11 +599,10 @@ sql_update_oct2014_sp2(Client c)
 }
 
 static str
-sql_update_oct2014_sp3(Client c)
+sql_update_oct2014_sp3(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 
@@ -643,11 +631,10 @@ sql_update_oct2014_sp3(Client c)
 
 #ifdef HAVE_HGE
 static str
-sql_update_hugeint(Client c)
+sql_update_hugeint(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 
@@ -723,20 +710,13 @@ sql_update_hugeint(Client c)
 	}
 
 	{
-		char *msg;
-		mvc *sql = NULL;
+		sql_schema *s;
 
-		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
-			GDKfree(msg);
-		} else {
-			sql_schema *s;
+		if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+			sql_table *t;
 
-			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
-				sql_table *t;
-
-				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
-					t->system = 0;
-			}
+			if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+				t->system = 0;
 		}
 	}
 
@@ -754,11 +734,10 @@ sql_update_hugeint(Client c)
 #endif
 
 static str
-sql_update_jul2015(Client c)
+sql_update_jul2015(Client c, mvc *sql)
 {
 	size_t bufsize = 15360, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 
@@ -1080,36 +1059,29 @@ sql_update_jul2015(Client c)
 			"update sys._tables set system = true where name in ('dependency_types', 'keywords', 'querylog_calls', 'querylog_catalog', 'querylog_history', 'rejects', 'statistics', 'storage', 'storagemodel', 'tables', 'tablestoragemodel', 'table_types', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	{
-		char *msg;
-		mvc *sql = NULL;
+		sql_schema *s;
 
-		if ((msg = getSQLContext(c, c->curprg->def, &sql, NULL)) != MAL_SUCCEED) {
-			GDKfree(msg);
-		} else {
-			sql_schema *s;
+		if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
+			sql_table *t;
 
-			if ((s = mvc_bind_schema(sql, "sys")) != NULL) {
-				sql_table *t;
-
-				if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "querylog_catalog")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "statistics")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "tables")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
-					t->system = 0;
-				if ((t = mvc_bind_table(sql, s, "tracelog")) != NULL)
-					t->system = 0;
-			}
+			if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "querylog_catalog")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "statistics")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "tables")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+				t->system = 0;
+			if ((t = mvc_bind_table(sql, s, "tracelog")) != NULL)
+				t->system = 0;
 		}
 	}
 
@@ -1130,36 +1102,36 @@ sql_update_epoch(Client c, mvc *m)
 {
 	size_t bufsize = 1000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	ValRecord *schvar = stack_get_var(m, "current_schema");
 	char *schema = NULL;
 	sql_subtype tp;
 	int n = 0;
+	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
 		n++;
 		pos += snprintf(buf + pos, bufsize - pos, "\
 create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
 	}
 	sql_find_subtype(&tp, "int", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
 		n++;
 		pos += snprintf(buf + pos, bufsize - pos, "\
 create function sys.\"epoch\"(sec INT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
 	}
 	sql_find_subtype(&tp, "timestamp", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
 		n++;
 		pos += snprintf(buf + pos, bufsize - pos, "\
 create function sys.\"epoch\"(ts TIMESTAMP) returns INT external name timestamp.\"epoch\";\n");
 	}
 	sql_find_subtype(&tp, "timestamptz", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "epoch", &tp, NULL, F_FUNC)) {
+	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
 		n++;
 		pos += snprintf(buf + pos, bufsize - pos, "\
 create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
@@ -1182,17 +1154,16 @@ create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external 
 }
 
 static str
-sql_update_jun2016(Client c)
+sql_update_jun2016(Client c, mvc *sql)
 {
 	size_t bufsize = 25000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 	node *n;
 	sql_schema *s;
 
-	s = mvc_bind_schema(((backend*) c->sqlcontext)->mvc, "sys");
+	s = mvc_bind_schema(sql, "sys");
 	if (schvar)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
@@ -1382,15 +1353,16 @@ sql_update_jun2016(Client c)
 }
 
 static str
-sql_update_geom(Client c, int olddb)
+sql_update_geom(Client c, mvc *sql, int olddb)
 {
 	size_t bufsize, pos = 0;
 	char *buf, *err = NULL;
 	char *geomupgrade;
-	mvc *sql = ((backend*) c->sqlcontext)->mvc;
 	ValRecord *schvar = stack_get_var(sql, "current_schema");
 	char *schema = NULL;
 	geomsqlfix_fptr fixfunc;
+	node *n;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
 
 	if ((fixfunc = geomsqlfix_get()) == NULL)
 		return NULL;
@@ -1404,21 +1376,18 @@ sql_update_geom(Client c, int olddb)
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
 	GDKfree(geomupgrade);
-	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where systemname in ('mbr', 'wkb', 'wkba');\n");
-	{
-		node *n;
-		sql_type *t;
-		sql_schema *s = mvc_bind_schema(((backend*) c->sqlcontext)->mvc, "sys");
 
-		for (n = types->h; n; n = n->next) {
-			t = n->data;
-			if (t->base.id < 2000 &&
-			    (strcmp(t->base.name, "mbr") == 0 ||
-			     strcmp(t->base.name, "wkb") == 0 ||
-			     strcmp(t->base.name, "wkba") == 0))
-				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
-		}
+	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where systemname in ('mbr', 'wkb', 'wkba');\n");
+	for (n = types->h; n; n = n->next) {
+		sql_type *t = n->data;
+
+		if (t->base.id < 2000 &&
+		    (strcmp(t->base.name, "mbr") == 0 ||
+		     strcmp(t->base.name, "wkb") == 0 ||
+		     strcmp(t->base.name, "wkba") == 0))
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
+
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		free(schema);
@@ -1436,28 +1405,29 @@ SQLupgrades(Client c, mvc *m)
 {
 	sql_subtype tp;
 	char *err;
+	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	/* if function sys.md5(str) does not exist, we need to
 	 * update */
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "md5", &tp, NULL, F_FUNC)) {
-		if ((err = sql_update_oct2014(c)) !=NULL) {
+	if (!sql_bind_func(m->sa, s, "md5", &tp, NULL, F_FUNC)) {
+		if ((err = sql_update_oct2014(c, m)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
 	}
 	/* if table returning function sys.environment() does not
 	 * exist, we need to update from oct2014->sp1 */
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "environment", NULL, NULL, F_UNION)) {
-		if ((err = sql_update_oct2014_sp1(c)) !=NULL) {
+	if (!sql_bind_func(m->sa, s, "environment", NULL, NULL, F_UNION)) {
+		if ((err = sql_update_oct2014_sp1(c, m)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
 	}
 	/* if sys.tablestoragemodel.auxillary exists, we need
 	 * to update (note, the proper spelling is auxiliary) */
-	if (mvc_bind_column(m, mvc_bind_table(m, mvc_bind_schema(m, "sys"), "tablestoragemodel"), "auxillary")) {
-		if ((err = sql_update_oct2014_sp2(c)) !=NULL) {
+	if (mvc_bind_column(m, mvc_bind_table(m, s, "tablestoragemodel"), "auxillary")) {
+		if ((err = sql_update_oct2014_sp2(c, m)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1465,9 +1435,9 @@ SQLupgrades(Client c, mvc *m)
 
 	/* if function sys.<<(inet,inet) does not exist, we need to
 	 * update */
-	sql_init_subtype(&tp, find_sql_type(mvc_bind_schema(m, "sys"), "inet"), 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "left_shift", &tp, &tp, F_FUNC)) {
-		if ((err = sql_update_oct2014_sp3(c)) !=NULL) {
+	sql_init_subtype(&tp, find_sql_type(s, "inet"), 0, 0);
+	if (!sql_bind_func(m->sa, s, "left_shift", &tp, &tp, F_FUNC)) {
+		if ((err = sql_update_oct2014_sp3(c, m)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1476,8 +1446,8 @@ SQLupgrades(Client c, mvc *m)
 #ifdef HAVE_HGE
 	if (have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_aggr(m->sa, mvc_bind_schema(m, "sys"), "var_pop", &tp)) {
-			if ((err = sql_update_hugeint(c)) != NULL) {
+		if (!sql_bind_aggr(m->sa, s, "var_pop", &tp)) {
+			if ((err = sql_update_hugeint(c, m)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
@@ -1487,8 +1457,8 @@ SQLupgrades(Client c, mvc *m)
 
 	/* add missing features needed beyond Oct 2014 */
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "like", &tp, &tp, F_FILT)) {
-		if ((err = sql_update_jul2015(c)) !=NULL) {
+	if (!sql_bind_func(m->sa, s, "like", &tp, &tp, F_FILT)) {
+		if ((err = sql_update_jul2015(c, m)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1501,8 +1471,8 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"), "storage", &tp, NULL, F_UNION)) {
-		if ((err = sql_update_jun2016(c)) !=NULL) {
+	if (!sql_bind_func(m->sa, s, "storage", &tp, NULL, F_UNION)) {
+		if ((err = sql_update_jun2016(c, m)) !=NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
@@ -1512,20 +1482,20 @@ SQLupgrades(Client c, mvc *m)
 	 * exist any more at the "sys" schema (i.e., the first part of
 	 * the upgrade has been completed succesfully), then move on
 	 * to the second part */
-	if (find_sql_type(mvc_bind_schema(m, "sys"), "point") != NULL) {
+	if (find_sql_type(s, "point") != NULL) {
 		/* type sys.point exists: this is an old geom-enabled
 		 * database */
-		if ((err = sql_update_geom(c, 1)) != NULL) {
+		if ((err = sql_update_geom(c, m, 1)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
 	} else if (geomsqlfix_get() != NULL) {
 		/* the geom module is loaded... */
 		sql_find_subtype(&tp, "clob", 0, 0);
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m, "sys"),
-				   "st_wkttosql", &tp, NULL, F_FUNC)) {
+		if (!sql_bind_func(m->sa, s, "st_wkttosql",
+				   &tp, NULL, F_FUNC)) {
 			/* ... but the database is not geom-enabled */
-			if ((err = sql_update_geom(c, 0)) != NULL) {
+			if ((err = sql_update_geom(c, m, 0)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				GDKfree(err);
 			}
