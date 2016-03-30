@@ -81,7 +81,15 @@ select server, port, db, db_alias, user, password, language from sys.connections
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
-select count(*) from sys.dependencies;
+select s1.name, f1.name, s2.name, f2.name from sys.dependencies d, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
+select s1.name, t.name, s2.name, f.name from sys.dependencies d, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
+select s1.name, t.name, c.name, s2.name, f.name from sys.dependencies d, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
+select s1.name, f1.name, s2.name, t2.name from schemas s1, functions f1, schemas s2, _tables t2, dependencies d where d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
+select s1.name, t1.name, s2.name, t2.name from schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name from schemas s1, _tables t1, _columns c1, schemas s2, _tables t2, dependencies d where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name from dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name from dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
+select t.systemname, t.sqlname, s.name, f.name from types t, functions f, schemas s, dependencies d where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
 select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
 -- keys
