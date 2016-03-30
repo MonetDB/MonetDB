@@ -601,6 +601,14 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 	return l;
 }
 
+static int
+arg_cmp(void *A, void *N) 
+{
+	sql_arg *a = A;
+	char *name = N;
+	return strcmp(a->name, name);
+}
+
 static list *
 result_type(mvc *sql, symbol *res) 
 {
@@ -616,6 +624,9 @@ result_type(mvc *sql, symbol *res)
 
 		for(;n; n = n->next->next) {
 			sql_subtype *ct = &n->next->data.typeval;
+
+			if (list_find(types, n->data.sval, &arg_cmp) != NULL)
+				return sql_error(sql, ERR_AMBIGUOUS, "CREATE FUNC: identifier '%s' ambiguous", n->data.sval);
 
 		       	a = sql_create_arg(sql->sa, n->data.sval, ct, ARG_OUT);
 			list_append(types, a);

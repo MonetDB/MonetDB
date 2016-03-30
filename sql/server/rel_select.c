@@ -23,8 +23,6 @@
 #include "mal.h"		/* for have_hge */
 #endif
 
-#define ERR_AMBIGUOUS		050000
-
 sql_rel *
 rel_dup(sql_rel *r)
 {
