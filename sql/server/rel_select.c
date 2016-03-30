@@ -1566,9 +1566,26 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs,
 	return rel_compare_exp_(sql, rel, ls, rs, esc, type, 0);
 }
 
+static const char *
+compare_aggr_op( char *compare, int quantifier) 
+{
+	if (quantifier == 0)
+		return "zero_or_one";
+	switch(compare[0]) {
+	case '<':
+		if (compare[1] == '>')
+			return "all";
+		return "min";
+	case '>':
+		return "max";
+	default:
+		return "all";
+	}
+}
+
 static sql_rel *
 rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
-		char *compare_op, int f, exp_kind k)
+		char *compare_op, int f, exp_kind k, int quantifier)
 {
 	sql_exp *rs = NULL, *rs2 = NULL, *ls;
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -1614,8 +1631,8 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 			if (r) {
 				rs = rel_lastexp(sql, r);
 
-				if (f == sql_sel && r->card > CARD_ATOM) {
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
+				if (f == sql_sel && r->card > CARD_ATOM && quantifier != 1) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, compare_aggr_op(compare_op, quantifier), exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 
 					/* group by the right of the apply */
@@ -1632,8 +1649,8 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 				/* if single value (independed of relations), rewrite */
 				if (is_project(r->op) && !r->l && r->exps && list_length(r->exps) == 1) {
 					return rel_compare_exp(sql, rel, ls, r->exps->h->data, compare_op, NULL, k.reduce);
-				} else { 
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
+				} else if (quantifier != 1) { 
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, compare_aggr_op(compare_op, quantifier), exp_subtype(rs));
 
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
 				}
@@ -2112,12 +2129,17 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_COMPARE:
 	{
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->next->data.sym;
-		char *compare_op = sc->data.lval->h->next->data.sval;
+		dnode *n = sc->data.lval->h;
+		symbol *lo = n->data.sym;
+		symbol *ro = n->next->next->data.sym;
+		char *compare_op = n->next->data.sval;
+		int quantifier = 0;
 		/* currently we don't handle the (universal and existential)
 		   quantifiers (all and any/some) */
-		return rel_compare(sql, rel, lo, ro, NULL, compare_op, f, ek);
+		if (n->next->next->next)
+			quantifier = n->next->next->next->data.i_val + 1; 
+		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
+		return rel_compare(sql, rel, lo, ro, NULL, compare_op, f, ek, quantifier);
 	}
 	/* Set Member ship */
 	case SQL_IN:

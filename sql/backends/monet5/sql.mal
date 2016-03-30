@@ -396,6 +396,25 @@ inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], 
 	return zero_or_one := b;
 end sql.subzero_or_one;
 
+command all( col:bat[:any_1]) :any_1
+address SQLall
+comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+
+# todo implement = all aggregator (ie keep last value and compare status)
+inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
+	(g,e,h) := group.subgroup(gp);
+	m := aggr.max(h);
+	c0 := calc.isnil(m);
+	c01 := calc.not(c0);
+	c1 := calc.>(m,1:wrd);
+	c11 := calc.and(c01,c1);
+	ms := calc.str(m); 
+	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
+	msg1 := str.+(msg, ">1)");
+	sql.assert(c11, msg1);
+	return all := b;
+end sql.all;
+
 command not_unique( b:bat[:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
