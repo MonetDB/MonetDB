@@ -73,7 +73,48 @@ select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null
 -- functions
 select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
 -- args
-select f.name, a.name, a.type, a.type_digits, a.type_scale, a.inout, a.number from sys.args a left outer join sys.functions f on a.func_id = f.id order by f.name, a.func_id, a.number;
+'''
+# generate a monster query to get all functions with all their
+# arguments on a single row of a table
+
+# maximum number of arguments used in any standard function (also
+# determines the number of joins in the query and the number of
+# columns in the result):
+MAXARGS = 16
+# columns of the args table we're interested in
+args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
+
+out += "with\n"
+for i in range(1, MAXARGS + 1):
+    out += "arg%d (id" % i
+    for j in range(1, i + 1):
+        for k in ['id'] + args:
+            out += ", %s%d" % (k, j)
+    out += ") as (select "
+    if i == 1:
+        out += "f.id"
+        for k in ['id'] + args:
+            out += ", a%d.%s" % (i, k)
+        out += " from sys.functions f left outer join args a%d on a%d.func_id = f.id" % (i, i)
+    else:
+        out += "arg%d.*" % (i - 1)
+        for k in ['id'] + args:
+            out += ", a%d.%s" % (i, k)
+        out += " from arg%d left outer join args a%d on a%d.func_id = arg%d.id" % (i - 1, i, i, i - 1)
+    out += " and a%d.number = %d)" % (i, i)
+    if i < MAXARGS:
+        out += ","
+    out += "\n"
+out += "select s.name, f.name"
+for i in range(1, MAXARGS):
+    for k in args:
+        out += ", arg%d.%s%d" % (MAXARGS, k, i)
+out += " from arg%d, sys.schemas s, sys.functions f where s.id = f.schema_id and f.id = arg%d.id order by s.name, f.name" % (MAXARGS, MAXARGS)
+for i in range(1, MAXARGS):
+    for k in args:
+        out += ", arg%d.%s%d" % (MAXARGS, k, i)
+out += ";"
+out += '''
 -- auths
 select name, grantor from sys.auths;
 -- connections (expect empty)
@@ -81,15 +122,15 @@ select server, port, db, db_alias, user, password, language from sys.connections
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
-select s1.name, f1.name, s2.name, f2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from sys.dependencies d, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
-select s1.name, t.name, s2.name, f.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from sys.dependencies d, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
-select s1.name, t.name, c.name, s2.name, f.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from sys.dependencies d, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
-select s1.name, f1.name, s2.name, t2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from schemas s1, functions f1, schemas s2, _tables t2, dependencies d where d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
-select s1.name, t1.name, s2.name, t2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
-select s1.name, t1.name, c1.name, s2.name, t2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from schemas s1, _tables t1, _columns c1, schemas s2, _tables t2, dependencies d where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
-select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
-select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
-select t.systemname, t.sqlname, s.name, f.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from types t, functions f, schemas s, dependencies d where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
+select s1.name, f1.name, s2.name, f2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), sys.dependencies d, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.depend_type = dt.id and d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
+select s1.name, t.name, s2.name, f.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), sys.dependencies d, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.depend_type = dt.id and d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
+select s1.name, t.name, c.name, s2.name, f.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), sys.dependencies d, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.depend_type = dt.id and d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
+select s1.name, f1.name, s2.name, t2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), schemas s1, functions f1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
+select s1.name, t1.name, s2.name, t2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), schemas s1, _tables t1, _columns c1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
+select t.systemname, t.sqlname, s.name, f.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), types t, functions f, schemas s, dependencies d where d.depend_type = dt.id and d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
 select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
 -- keys
@@ -97,6 +138,8 @@ with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, 
 -- objects
 select name, nr from sys.objects order by name, nr;
 -- privileges
+--  schemas
+select s.name, u.name from sys.schemas s, sys.users u where s.id = u.default_schema order by s.name, u.name;
 --  tables
 select t.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
 --  columns
