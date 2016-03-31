@@ -66,12 +66,11 @@ list_extend(ulist **ul)
 }
 
 static int
-list_add(ulist **ul, BAT *ob, BAT *nb, char *n) 
+list_add(ulist **ul, BAT *ob, BAT *nb, const char *n)
 {
 	char *nn;
-	if ((nn =  GDKmalloc(sizeof(char)*strlen(n))) == NULL)
+	if ((nn =  GDKstrdup(n)) == NULL)
 		return 0;
-	strcpy(nn, n);
 	if ((*ul)->count == (*ul)->capacity)
 		if (!list_extend(ul))
 			return 0;
@@ -83,27 +82,7 @@ list_add(ulist **ul, BAT *ob, BAT *nb, char *n)
 }
 
 static char *
-mkLower(char *s)
-{
-	char *r = s;
-
-	while (*s) {
-		*s = (char) tolower(*s);
-		s++;
-	}
-	return r;
-}
-
-static char *
-toLower(const char *s)
-{
-        char *r = GDKstrdup((char*)s);
-
-        return r ? mkLower(r) : NULL;
-}
-
-static char *
-N( char *buf, char *pre, char *schema, char *post)
+N( char *buf, const char *pre, const char *schema, const char *post)
 {
 	if (pre)
 		snprintf(buf, 64, "%s_%s_%s", pre, schema, post);
@@ -113,68 +92,22 @@ N( char *buf, char *pre, char *schema, char *post)
 }
 
 int
-geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
+geom_catalog_upgrade(void *lg, int olddb)
 {
 	/* Do the updates needed for the new geom module */
 	BAT *ct, *cnt, *cd, *cnd, *cs, *cns;
 	BATiter cti, cdi, csi;
-	char *s = "sys", n[64];
+	const char *s = "sys";
+	char n[64];
 	BUN p,q;
-	char *nt[] = {
-		"types_id",
-		"types_systemname",
-		"types_sqlname",
-		"types_digits",
-		"types_scale",
-		"types_radix",
-		"types_eclass",
-		"types_schema_id"
-	};
-	unsigned char ntt[] = {
-		TYPE_int,
-		TYPE_str,
-		TYPE_str,
-		TYPE_int,
-		TYPE_int,
-		TYPE_int,
-		TYPE_int,
-		TYPE_int
-	};
-	char *nf[] = {
-		"functions_id",
-		"functions_name",
-		"functions_func",
-		"functions_mod",
-		"functions_language",
-		"functions_type",
-		"functions_side_effect",
-		"functions_varres",
-		"functions_vararg",
-		"functions_schema_id"
-	};
-	unsigned char nft[] = {
-		TYPE_int,
-		TYPE_str,
-		TYPE_str,
-		TYPE_str,
-		TYPE_int,
-		TYPE_int,
-		TYPE_bit,
-		TYPE_bit,
-		TYPE_bit,
-		TYPE_int
-	};
-	BAT *tt[8], *ttn[8], *ff[10], *ffn[10];
-	BATiter tti[8], ffi[10];
-	int val, maxid, i;
 	size_t ii;
-	bit bval;
 	ulist *ul;
-	if ((ul = list_init(32)) == NULL)
-		return 0;
 
 	if (olddb) {
 		/* Update the catalog to use the new geometry types */
+		if ((ul = list_init(32)) == NULL)
+			return 0;
+
 		ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
 		cti = bat_iterator(ct);
 		cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
@@ -193,63 +126,63 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		BATseqbase(cns, cs->hseqbase);
 
 		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
-			char *type = BUNtail(cti, p);
+			const char *type = BUNtail(cti, p);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);
 
-			if (strcmp(toLower(type), "point") == 0) {
+			if (strcasecmp(type, "point") == 0) {
 				type = "geometry";
 				digits = wkbPoint_mdb << 2;
 				scale = 0; // in the past we did not save the srid
-			} else if (strcmp(toLower(type), "linestring") == 0) {
+			} else if (strcasecmp(type, "linestring") == 0) {
 				type = "geometry";
 				digits = wkbLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "curve") == 0) {
+			} else if (strcasecmp(type, "curve") == 0) {
 				type = "geometry";
 				digits = wkbLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "linearring") == 0) {
+			} else if (strcasecmp(type, "linearring") == 0) {
 				type = "geometry";
 				digits = wkbLinearRing_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "polygon") == 0) {
+			} else if (strcasecmp(type, "polygon") == 0) {
 				type = "geometry";
 				digits = wkbPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "surface") == 0) {
+			} else if (strcasecmp(type, "surface") == 0) {
 				type = "geometry";
 				digits = wkbPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multipoint") == 0) {
+			} else if (strcasecmp(type, "multipoint") == 0) {
 				type = "geometry";
 				digits = wkbMultiPoint_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multilinestring") == 0) {
+			} else if (strcasecmp(type, "multilinestring") == 0) {
 				type = "geometry";
 				digits = wkbMultiLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multicurve") == 0) {
+			} else if (strcasecmp(type, "multicurve") == 0) {
 				type = "geometry";
 				digits = wkbMultiLineString_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multipolygon") == 0) {
+			} else if (strcasecmp(type, "multipolygon") == 0) {
 				type = "geometry";
 				digits = wkbMultiPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "multisurface") == 0) {
+			} else if (strcasecmp(type, "multisurface") == 0) {
 				type = "geometry";
 				digits = wkbMultiPolygon_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "geomcollection") == 0) {
+			} else if (strcasecmp(type, "geomcollection") == 0) {
 				type = "geometry";
 				digits = wkbGeometryCollection_mdb << 2;
 				scale = 0;
-			} else if (strcmp(toLower(type), "geometrycollection") == 0) {
+			} else if (strcasecmp(type, "geometrycollection") == 0) {
 				type = "geometry";
 				digits = wkbGeometryCollection_mdb << 2;
 				scale = 0;
-			}  else if (strcmp(toLower(type), "geometry") == 0) {
+			}  else if (strcasecmp(type, "geometry") == 0) {
 				type = "geometry";
 				digits = 0;
 				scale = 0;
@@ -265,150 +198,17 @@ geom_catalog_upgrade(void *lg, int EC_GEOM, int EC_EXTERNAL, int olddb)
 		    !list_add(&ul, cs, cns, N(n, NULL, s, "_columns_type_scale")))
 			return 0;
 
-	}
-
-	/* If this is a new database add the geometry type and the mbr type */
-	/* If this is an old database add the new geometrya type and update the mbr type */
-	for (i = 0; i < 8; i++) {
-		if (!(tt[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nt[i])))))
-			return 0;
-		tti[i] = bat_iterator(tt[i]);
-		if (!(ttn[i] = BATnew(TYPE_void, ntt[i], BATcount(tt[i]), PERSISTENT)))
-			return 0;
-		BATseqbase(ttn[i], tt[i]->hseqbase);
-	}
-	maxid = 0;
-	for(p=BUNfirst(tt[0]), q=BUNlast(tt[0]); p<q; p++) {
-		char *systemname = BUNtail(tti[1], p);
-		char *sqlname = BUNtail(tti[2], p);
-		for (i = 0; i <= 5; i++)
-			BUNappend(ttn[i], BUNtail(tti[i], p), TRUE);
-		if (strcmp(systemname, "mbr") == 0) {
-			val = EC_EXTERNAL;
-			BUNappend(ttn[6], &val, TRUE);
-			val = 0;
-			BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
-		} else if (strcmp(systemname, "wkb") == 0) {
-			val = EC_GEOM;
-			BUNappend(ttn[6], &val, TRUE);
-			if (strcmp(sqlname, "geometry") == 0 ) {
-				val = 0;
-				BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
-			} else
-				BUNappend(ttn[7], BUNtail(tti[7], p), TRUE);
-		} else {
-			BUNappend(ttn[6], BUNtail(tti[6], p), TRUE);
-			BUNappend(ttn[7], BUNtail(tti[7], p), TRUE);
+		for (ii = 0; ii < ul->count; ii++) {
+			BATsetaccess(ul->elements[ii].nb, BAT_READ);
+			logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n);
+			if (ul->elements[ii].ob)
+				BBPunfix(ul->elements[ii].ob->batCacheid);
 		}
-		maxid = maxid < *(int*)BUNtail(tti[0], p) ? *(int*)BUNtail(tti[0], p) : maxid;
+		list_delete(ul);
 	}
 
-	if (!olddb) {
-		val = ++maxid;
-		BUNappend(ttn[0], &val, TRUE);
-		BUNappend(ttn[1], "mbr", TRUE);
-		BUNappend(ttn[2], "mbr", TRUE);
-		val = 0; BUNappend(ttn[3], &val, TRUE);
-		val = 0; BUNappend(ttn[4], &val, TRUE);
-		val = 0; BUNappend(ttn[5], &val, TRUE);
-		val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
-		val = 0; BUNappend(ttn[7], &val, TRUE);
-		val = ++maxid;
-		BUNappend(ttn[0], &val, TRUE);
-		BUNappend(ttn[1], "wkb", TRUE);
-		BUNappend(ttn[2], "geometry", TRUE);
-		val = 0; BUNappend(ttn[3], &val, TRUE);
-		val = 0; BUNappend(ttn[4], &val, TRUE);
-		val = 0; BUNappend(ttn[5], &val, TRUE);
-		val = EC_GEOM; BUNappend(ttn[6], &val, TRUE);
-		val = 0; BUNappend(ttn[7], &val, TRUE);
-	}
-	val = ++maxid;
-	BUNappend(ttn[0], &val, TRUE);
-	BUNappend(ttn[1], "wkba", TRUE);
-	BUNappend(ttn[2], "geometrya", TRUE);
-	val = 0; BUNappend(ttn[3], &val, TRUE);
-	val = 0; BUNappend(ttn[4], &val, TRUE);
-	val = 0; BUNappend(ttn[5], &val, TRUE);
-	val = EC_EXTERNAL; BUNappend(ttn[6], &val, TRUE);
-	val = 0; BUNappend(ttn[7], &val, TRUE); // the new types use schema_id=0
-
-
-	for (i = 0; i < 8; i++) 
-		if (!list_add(&ul, tt[i], ttn[i], N(n, NULL, s, nt[i])))
-			return 0;
-
-	/* Add the new functions */
-	for (i = 0; i < 10; i++) {
-		if (!(ff[i] = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, nf[i])))))
-			return 0;
-		ffi[i] = bat_iterator(ff[i]);
-		if (!(ffn[i] = BATnew(TYPE_void, nft[i], BATcount(ff[i]), PERSISTENT)))
-			return 0;
-		BATseqbase(ffn[i], ff[i]->hseqbase);
-	}
-	maxid = 0;
-	for(p=BUNfirst(ff[0]), q=BUNlast(ff[0]); p<q; p++) {
-		for (i = 0; i < 10; i++)
-			BUNappend(ffn[i], BUNtail(ffi[i], p), TRUE);
-		maxid = maxid < *(int*)BUNtail(ffi[0], p) ? *(int*)BUNtail(ffi[0], p) : maxid;
-	}
-
-#define GEOM_UPGRADE_STORE_FUNC(ba, id, name, mod, sqlname) 	\
-do {							\
-	val = id;					\
-	BUNappend(ba[0], &val, TRUE);			\
-	BUNappend(ba[1], name, TRUE);			\
-	BUNappend(ba[2], sqlname, TRUE);		\
-	BUNappend(ba[3], mod, TRUE);			\
-	val = 0; BUNappend(ba[4], &val, TRUE);		\
-	val = 1; BUNappend(ba[5], &val, TRUE);		\
-	bval = false; BUNappend(ba[6], &bval, TRUE);	\
-	bval = false; BUNappend(ba[7], &bval, TRUE);	\
-	bval = false; BUNappend(ba[8], &bval, TRUE);	\
-	val = 0; BUNappend(ba[9], &val, TRUE);		\
-} while (0)
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap", "geom", "mbrOverlaps");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap", "geom", "mbrOverlaps");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_above", "geom", "mbrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_above", "geom", "mbrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_below", "geom", "mbrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_below", "geom", "mbrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_right", "geom", "mbrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_right", "geom", "mbrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_left", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_left", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_above", "geom", "mbrOverlapOrAbove");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_below", "geom", "mbrOverlapOrBelow");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_right", "geom", "mbrOverlapOrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_overlap_or_left", "geom", "mbrOverlapOrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contains", "geom", "mbrContains");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contains", "geom", "mbrContains");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contained", "geom", "mbrContained");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_contained", "geom", "mbrContained");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_equal", "geom", "mbrEqual");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_equal", "geom", "mbrEqual");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_distance", "geom", "mbrDistance");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "mbr_distance", "geom", "mbrDistance");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "left_shift", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "left_shift", "geom", "mbrLeft");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
-	GEOM_UPGRADE_STORE_FUNC(ffn, ++maxid, "right_shift", "geom", "mbrRight");
-#undef GEOM_UPGRADE_STORE_FUNC
-	for (i = 0; i < 10; i++) 
-		if (!list_add(&ul, ff[i], ffn[i], N(n, NULL, s, nf[i])))
-			return 0;
-	
-	for (ii = 0; ii < ul->count; ii++) {
-		BATsetaccess(ul->elements[ii].nb, BAT_READ);
-		logger_add_bat(lg, ul->elements[ii].nb, ul->elements[ii].n);
-		if (ul->elements[ii].ob) BBPunfix(ul->elements[ii].ob->batCacheid);
-	}
-	list_delete(ul);
+	/* Note that the new GEOM types are added to sys.types in
+	 * sql_update_geom() in sql_upgrades.c */
 
 	return 1;
 }
@@ -4566,6 +4366,8 @@ geom_sql_upgrade(int olddb)
 
 	pos += snprintf(buf + pos, bufsize - pos, "\n\n");
 
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name in ("
 			"'contains', 'geometrytype', 'getproj4', 'get_type', "

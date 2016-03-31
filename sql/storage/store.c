@@ -1085,7 +1085,7 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		char arg_nme[] = "arg_0";
 
 		if (f->s)
-			 table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se,&f->varres, &f->vararg, &f->s->base.id);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id);
 		else
 			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &zero);
 

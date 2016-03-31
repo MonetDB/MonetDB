@@ -232,11 +232,10 @@ BATproject(BAT *l, BAT *r)
 		/* trivial: all values are nil */
 		const void *nil = ATOMnilptr(r->ttype);
 
-		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
+		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
 				 nil, BATcount(l), TRANSIENT);
 		if (bn == NULL)
 			return NULL;
-		BATseqbase(bn, l->hseqbase);
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
 			bn->tdense = 1;
@@ -535,9 +534,7 @@ BATprojectchain(BAT **bats)
 		/* somewhere on the way we encountered a void-nil BAT */
 		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, size "BUNFMT", type %s, all nil\n", n, cnt, ATOMname(tpe));
 		GDKfree(ba);
-		bn = BATconstant(tpe == TYPE_oid ? TYPE_void : tpe, nil, cnt, TRANSIENT);
-		BATseqbase(bn, hseq);
-		return bn;
+		return BATconstant(hseq, tpe == TYPE_oid ? TYPE_void : tpe, nil, cnt, TRANSIENT);
 	}
 	if (i == 1) {
 		/* only dense-tailed BATs before last: we can return a

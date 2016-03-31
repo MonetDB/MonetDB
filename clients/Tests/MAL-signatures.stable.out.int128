@@ -40205,7 +40205,7 @@ command bbp.getIndex(b:bat[:any_2]):int
 address CMDbbpgetIndex;
 comment Retrieve the index in the BBP
 
-command bbp.setName(b:bat[:oid,:any_1],n:str):str 
+command bbp.setName(b:bat[:any_1],n:str):str 
 address CMDsetName;
 comment Rename a BAT
 

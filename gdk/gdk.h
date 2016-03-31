@@ -896,7 +896,8 @@ typedef struct {
 #define GDKLIBRARY_64_BIT_INT	061027	/* version that had no 128-bit integer option, yet */
 #define GDKLIBRARY_SORTEDPOS	061030	/* version where we can't trust no(rev)sorted */
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
-#define GDKLIBRARY		061032
+#define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
+#define GDKLIBRARY		061033
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1217,6 +1218,7 @@ gdk_export bte ATOMelmshift(int sz);
 	do {							\
 		assert((b)->HT->width == (s));			\
 		(b)->HT->heap.free += (s);			\
+		(b)->HT->heap.dirty |= (s) != 0;		\
 		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
 	} while (0)
 #define tfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, T)
@@ -2967,8 +2969,7 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
-gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt, int role);
-gdk_export BAT *BATconst(BAT *l, int tt, const void *val, int role);
+gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, int role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr);
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
