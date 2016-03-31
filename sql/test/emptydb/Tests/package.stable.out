@@ -1,0 +1,12 @@
+stdout of test 'package` in directory 'sql/test/emptydb` itself:
+
+
+# 15:45:10 >  
+# 15:45:10 >  "/usr/bin/python2" "package.py" "package"
+# 15:45:10 >  
+
+
+# 15:45:10 >  
+# 15:45:10 >  "Done."
+# 15:45:10 >  
+

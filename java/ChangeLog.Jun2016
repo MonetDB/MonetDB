@@ -1,6 +1,11 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Mar 24 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected DatabaseMetaData.getSchemas() by returning 2 instead of 3 columns.
+- Improved DatabaseMetaData.getColumns() by returning two additional
+  columns: IS_AUTOINCREMENT and IS_GENERATEDCOLUMN.
+
 * Thu Mar 17 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved DatabaseMetaData.getTypeInfo(). It now returns better information
   on LITERAL_PREFIX, LITERAL_SUFFIX, CREATE_PARAMS, CASE_SENSITIVE,

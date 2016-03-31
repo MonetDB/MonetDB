@@ -1,3 +1,29 @@
+monetdb (11.21.17) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#2972: SQL URL functionality contains errors
+  * BZ#3881: Server crashes on bulk load
+  * BZ#3890: Window function + group by in subselect, rel2bin_project:
+    Assertion `0' failed
+  * BZ#3891: MonetDB crashes when executing SQL with window function
+  * BZ#3900: null handling in some sql statements is incorrect
+  * BZ#3906: Multi-column 1-N table-function with mitosis produces different
+    column counts
+  * BZ#3917: Date difference returns month_interval instead of day_interval
+  * BZ#3938: Wrong error message on violating foreign key constraint
+  * BZ#3941: Wrong coercion priority
+  * BZ#3948: SQL: select * from sys.sys.table_name; is accepted but should
+    return an error
+  * BZ#3951: extern table_funcs not visible from Windows DLL for extensions
+    like vaults (crashes)
+  * BZ#3952: Stream table gives segfault
+  * BZ#3953: MIN/MAX of a UUID column produces wrong results
+  * BZ#3954: Consolidate table assertion error
+  * BZ#3955: (incorrect) MAL loop instead of manifold triggered by simple
+    change in target list
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Mar 2016 09:25:15 +0100
+
 monetdb (11.21.15) unstable; urgency=low
 
   * Rebuilt.

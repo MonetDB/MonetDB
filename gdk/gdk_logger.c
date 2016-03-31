@@ -1185,11 +1185,40 @@ bm_tids(BAT *b, BAT *d)
 }
 
 
+static void
+logger_fatal(const char *format, const char *arg1, const char *arg2, const char *arg3)
+{
+	char *buf;
+
+	GDKfatal(format, arg1, arg2, arg3);
+	GDKlog(format, arg1, arg2, arg3);
+	if ((buf = GDKerrbuf) != NULL) {
+		fprintf(stderr, "%s", buf);
+		fflush(stderr);
+	}
+	GDKexit(1);
+}
+
+static void
+logger_switch_bat( BAT *old, BAT *new, const char *fn, const char *name)
+{
+	char bak[BUFSIZ];
+
+	if (BATmode(old, TRANSIENT) != GDK_SUCCEED)
+		logger_fatal("Logger_new: cannot convert old %s to transient", name, 0, 0);
+	snprintf(bak, sizeof(bak), "tmp_%o", old->batCacheid);
+	if (BBPrename(old->batCacheid, bak) != 0)
+		logger_fatal("Logger_new: cannot rename old %s", name, 0, 0);
+	snprintf(bak, sizeof(bak), "%s_%s", fn, name);
+	if (BBPrename(new->batCacheid, bak) != 0)
+		logger_fatal("Logger_new: cannot rename new %s", name, 0, 0);
+}
+
 static gdk_return
-bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *dcatalog, BAT *extra, int debug)
+bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *dcatalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	BUN nn = 4 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
+	BUN nn = 6 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
 	bat *n = GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
@@ -1227,20 +1256,30 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	n[i++] = abs(catalog_nme->batCacheid);
 	n[i++] = abs(dcatalog->batCacheid);
 	assert((BUN) i <= nn);
-	if (BATcount(dcatalog) && catalog_bid == list_bid && catalog_nme == list_nme) {
-		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog);
+	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
+		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
 
-		bids = BATproject(tids, catalog_bid);
-		nmes = BATproject(tids, catalog_nme);
+		bids = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		nmes = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
+		b = BATproject(tids, catalog_bid);
+		BATappend(bids, b, TRUE);
+		logbat_destroy(b);
+		b = BATproject(tids, catalog_nme);
+		BATappend(nmes, b, TRUE);
+		logbat_destroy(b);
 		logbat_destroy(tids);
-		BATclear(catalog_bid, TRUE);
-		BATclear(catalog_nme, TRUE);
 		BATclear(dcatalog, TRUE);
 
-		BATappend(catalog_bid, bids, FALSE);
-		BATappend(catalog_nme, nmes, FALSE);
-		logbat_destroy(bids);
-		logbat_destroy(nmes);
+		logger_switch_bat(catalog_bid, bids, lg->fn, "catalog_bid");
+		logger_switch_bat(catalog_nme, nmes, lg->fn, "catalog_nme");
+		n[i++] = bids->batCacheid;
+		n[i++] = nmes->batCacheid;
+
+		logbat_destroy(lg->catalog_bid);
+		logbat_destroy(lg->catalog_nme);
+
+		lg->catalog_bid = catalog_bid = bids;
+		lg->catalog_nme = catalog_nme = nmes;
 	}
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);
@@ -1250,20 +1289,6 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	if (res != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");
 	return res;
-}
-
-static void
-logger_fatal(const char *format, const char *arg1, const char *arg2, const char *arg3)
-{
-	char *buf;
-
-	GDKfatal(format, arg1, arg2, arg3);
-	GDKlog(format, arg1, arg2, arg3);
-	if ((buf = GDKerrbuf) != NULL) {
-		fprintf(stderr, "%s", buf);
-		fflush(stderr);
-	}
-	GDKexit(1);
 }
 
 /* Set the logdir path, add a dbfarm if needed.
@@ -1429,7 +1454,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		}
 		fp = NULL;
 
-		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
+		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
 			unlink(filename);
 			goto error;
@@ -1484,22 +1509,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
 				list[3] = b2->batCacheid;
 				list[4] = n2->batCacheid;
-				if (BATmode(b, TRANSIENT) != GDK_SUCCEED)
-					logger_fatal("logger_load: cannot convert old catalog_bid to transient", 0, 0, 0);
-				if (BATmode(n, TRANSIENT) != GDK_SUCCEED)
-					logger_fatal("logger_load: cannot convert old catalog_nme to transient", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "tmp_%o", b->batCacheid);
-				if (BBPrename(b->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename old catalog_bid", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "tmp_%o", n->batCacheid);
-				if (BBPrename(n->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename old catalog_nme", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
-				if (BBPrename(b2->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename new catalog_bid", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
-				if (BBPrename(n2->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename new catalog_nme", 0, 0, 0);
+				logger_switch_bat(b, b2, fn, "catalog_bid");
+				logger_switch_bat(n, n2, fn, "catalog_nme");
 				bi = bat_iterator(b);
 				ni = bat_iterator(n);
 				BATloop(b, p, q) {
@@ -1593,7 +1604,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
 
-		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
+		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
 			logger_fatal("Logger_new: commit failed", 0, 0, 0);
 	} else {
 		bat seqs_id = logger_find_bat(lg, "seqs_id");
@@ -2601,7 +2612,7 @@ log_tend(logger *lg)
 			fprintf(stderr, "!ERROR: log_tend: semijoin failed\n");
 			return LOG_ERR;
 		}
-		res = bm_subcommit(bids, NULL, lg->snapshots_bid,
+		res = bm_subcommit(lg, bids, NULL, lg->snapshots_bid,
 				   lg->snapshots_tid, lg->dsnapshots, NULL, lg->debug);
 		BBPunfix(bids->batCacheid);
 	}
@@ -2759,7 +2770,7 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
-	res = bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, n, lg->debug);
+	res = bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, n, lg->debug);
 	BBPreclaim(n);
 	BATclear(lg->freed, FALSE);
 	BATcommit(lg->freed);

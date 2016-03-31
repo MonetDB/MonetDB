@@ -866,15 +866,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 		    (b->T->type == TYPE_void && b->T->seq != oid_nil)) {
 			bit zero = 0;
 
-			bn = BATconstant(TYPE_bit, &zero, cnt, TRANSIENT);
-			BATseqbase(bn, b->H->seq);
-			return bn;
+			return BATconstant(b->H->seq, TYPE_bit, &zero, cnt, TRANSIENT);
 		} else if (b->T->type == TYPE_void && b->T->seq == oid_nil) {
 			bit one = 1;
 
-			bn = BATconstant(TYPE_bit, &one, cnt, TRANSIENT);
-			BATseqbase(bn, b->H->seq);
-			return bn;
+			return BATconstant(b->H->seq, TYPE_bit, &one, cnt, TRANSIENT);
 		}
 	}
 
@@ -12740,7 +12736,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 				      b->T->seq >= hi->T->seq &&
 				      b->T->seq <= lo->T->seq));
 
-		return BATconst(b, TYPE_bit, &res, TRANSIENT);
+		return BATconstant(b->hseqbase, TYPE_bit, &res, BATcount(b), TRANSIENT);
 	}
 
 	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,

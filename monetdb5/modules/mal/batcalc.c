@@ -1366,19 +1366,19 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bit v = *getArgReference_bit(stk, pci, 1);
 		if (v ==  bit_nil) {
 			if (b1 != NULL)
-				bn = BATconst(b1, b1->ttype, ATOMnilptr(b1->ttype), TRANSIENT);
+				bn = BATconstant(b1->hseqbase, b1->ttype, ATOMnilptr(b1->ttype), BATcount(b1), TRANSIENT);
 			else
-				bn = BATconst(b2, b2->ttype, ATOMnilptr(b2->ttype), TRANSIENT);
+				bn = BATconstant(b2->hseqbase, b2->ttype, ATOMnilptr(b2->ttype), BATcount(b2), TRANSIENT);
 		} else if (v) {
 			if (b1 != NULL)
 				bn = COLcopy(b1, b1->ttype, 0, TRANSIENT);
 			else
-				bn = BATconst(b2, b2->ttype, VALptr(&stk->stk[getArg(pci, 2)]), TRANSIENT);
+				bn = BATconstant(b2->hseqbase, b2->ttype, VALptr(&stk->stk[getArg(pci, 2)]), BATcount(b2), TRANSIENT);
 		} else {
 			if (b2 != NULL)
 				bn = COLcopy(b2, b2->ttype, 0, TRANSIENT);
 			else
-				bn = BATconst(b1, b1->ttype, VALptr(&stk->stk[getArg(pci, 3)]), TRANSIENT);
+				bn = BATconstant(b1->hseqbase, b1->ttype, VALptr(&stk->stk[getArg(pci, 3)]), BATcount(b1), TRANSIENT);
 		}
 	}
 	if (b)

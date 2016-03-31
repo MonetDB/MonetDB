@@ -113,6 +113,12 @@ static BAT *getBBPdescriptor(bat i, int lock);
 static gdk_return BBPbackup(BAT *b, bit subcommit);
 static gdk_return BBPdir(int cnt, bat *subcommit);
 
+#ifdef HAVE_HGE
+/* start out by saying we have no hge, but as soon as we've seen one,
+ * we'll always say we do have it */
+static int havehge = 0;
+#endif
+
 #define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
 #ifdef ATOMIC_LOCK
@@ -944,6 +950,10 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	/* silently convert chr columns to bte */
 	if (strcmp(type, "chr") == 0)
 		strcpy(type, "bte");
+#ifdef HAVE_HGE
+	else if (strcmp(type, "hge") == 0)
+		havehge = 1;
+#endif
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
@@ -987,10 +997,12 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->heap.newstorage = (storage_t) storage;
 	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
 	col->heap.dirty = 0;
-	if (bbpversion <= GDKLIBRARY_INET_COMPARE && strcmp(type, "inet") == 0) {
+	if (bbpversion <= GDKLIBRARY_INET_COMPARE &&
+	    strcmp(type, "inet") == 0) {
 		/* don't trust ordering information on inet columns */
 		col->sorted = 0;
 		col->revsorted = 0;
+		col->nosorted = col->norevsorted = 0;
 	}
 	if (col->heap.free > col->heap.size)
 		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
@@ -1050,7 +1062,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted, deleted, first, count, capacity;
+		lng inserted = 0, deleted = 0, first, count, capacity;
 		unsigned short map_head, map_tail, map_hheap, map_theap;
 		int Hhashash, Thashash;
 
@@ -1062,14 +1074,23 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			*s = 0;
 		}
 
-		if (sscanf(buf,
+		if (bbpversion <= GDKLIBRARY_INSERTED ?
+		    sscanf(buf,
 			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &inserted, &deleted, &first,
 			   &count, &capacity, &map_head, &map_tail, &map_hheap,
 			   &map_theap,
-			   &nread) < 16)
+			   &nread) < 16 :
+			sscanf(buf,
+			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %hu %hu %hu %hu"
+			   "%n",
+			   &batid, &status, headname, tailname, filename,
+			   &lastused, &properties, &first,
+			   &count, &capacity, &map_head, &map_tail, &map_hheap,
+			   &map_theap,
+			   &nread) < 14)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1107,10 +1128,10 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->S.persistence = PERSISTENT;
 		bs->S.copiedtodisk = 1;
 		bs->S.restricted = (properties & 0x06) >> 1;
-		bs->S.inserted = (BUN) inserted;
-		bs->S.deleted = (BUN) deleted;
 		bs->S.first = (BUN) first;
 		bs->S.count = (BUN) count;
+		bs->S.inserted = bs->S.first + bs->S.count;
+		bs->S.deleted = bs->S.first;
 		bs->S.capacity = (BUN) capacity;
 
 		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
@@ -1193,7 +1214,8 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_64_BIT_INT &&
-	    bbpversion != GDKLIBRARY_OLDWKB) {
+	    bbpversion != GDKLIBRARY_OLDWKB &&
+	    bbpversion != GDKLIBRARY_INSERTED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1543,7 +1565,7 @@ new_bbpentry(FILE *fp, bat i)
 #endif
 
 	if (fprintf(fp, SSZFMT " %d %s %s %s %d %d " BUNFMT " " BUNFMT " "
-		    BUNFMT " " BUNFMT " " BUNFMT " %d %d %d %d", /* BAT info */
+		    BUNFMT " %d %d %d %d", /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
@@ -1551,8 +1573,6 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->S.restricted << 1,
-		    BBP_desc(i)->S.inserted,
-		    BBP_desc(i)->S.deleted,
 		    BBP_desc(i)->S.first,
 		    BBP_desc(i)->S.count,
 		    BBP_desc(i)->S.capacity,
@@ -1578,7 +1598,11 @@ static gdk_return
 BBPdir_header(FILE *f, int n)
 {
 	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\n",
-		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID, SIZEOF_MAX_INT) < 0 ||
+		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
+#ifdef HAVE_HGE
+		    havehge ? SIZEOF_HGE :
+#endif
+		    SIZEOF_LNG) < 0 ||
 	    OIDwrite(f) < 0 ||
 	    fprintf(f, " BBPsize=%d\n", n) < 0 ||
 	    ferror(f)) {
@@ -2113,6 +2137,11 @@ BBPinsert(BATstore *bs)
 	BBP_desc(i) = NULL;
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
+
+#ifdef HAVE_HGE
+	if (bs->T.type == TYPE_hge)
+		havehge = 1;
+#endif
 
 	if (BBP_bak(i) == NULL) {
 		s = BBPtmpname(dirname, 64, i);
@@ -3595,8 +3624,8 @@ BBPprepare(bit subcommit)
 }
 
 static gdk_return
-do_backup(const char *srcdir, const char *nme, const char *extbase,
-	  Heap *h, int tp, int dirty, bit subcommit)
+do_backup(const char *srcdir, const char *nme, const char *ext,
+	  Heap *h, int dirty, bit subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
 
@@ -3604,10 +3633,11 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 	  * protection); however, if we're backing up for subcommit
 	  * and a backup already exists in the main backup directory
 	  * (see GDKupgradevarheap), move the file */
-	if (subcommit && file_exists(h->farmid, BAKDIR, nme, extbase)) {
-		if (file_move(h->farmid, BAKDIR, SUBDIR, nme, extbase) != GDK_SUCCEED)
+	if (subcommit && file_exists(h->farmid, BAKDIR, nme, ext)) {
+		if (file_move(h->farmid, BAKDIR, SUBDIR, nme, ext) != GDK_SUCCEED)
 			return GDK_FAIL;
-	} else if (h->storage != STORE_MMAP) {
+	}
+	if (h->storage != STORE_MMAP) {
 		/* STORE_PRIV saves into X.new files. Two cases could
 		 * happen. The first is when a valid X.new exists
 		 * because of an access change or a previous
@@ -3617,23 +3647,34 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 		 * X.new files (after a crash). To protect against
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
-		char ext[16];
+		char extnew[16];
 		gdk_return mvret = GDK_SUCCEED;
 
-		if (h->filename && h->newstorage == STORE_PRIV)
-			snprintf(ext, sizeof(ext), "%s.new", extbase);
-		else
-			snprintf(ext, sizeof(ext), "%s", extbase);
-		if (tp && dirty && !file_exists(h->farmid, BAKDIR, nme, ext)) {
-			/* file will be saved (is dirty), move the old
-			 * image into backup */
-			mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
-		} else if (subcommit && tp &&
-			   (dirty || file_exists(h->farmid, BAKDIR, nme, ext))) {
-			/* file is clean. move the backup into the
-			 * subcommit dir (commit should eliminate
-			 * backup) */
-			mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, ext);
+		snprintf(extnew, sizeof(extnew), "%s.new", ext);
+		if (dirty &&
+		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
+		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
+			/* if the heap is dirty and there is no heap
+			 * file (with or without .new extension) in
+			 * the BAKDIR, move the heap (preferably with
+			 * .new extension) to the correct backup
+			 * directory */
+			if (file_exists(h->farmid, srcdir, nme, extnew))
+				mvret = heap_move(h, srcdir,
+						  subcommit ? SUBDIR : BAKDIR,
+						  nme, extnew);
+			else
+				mvret = heap_move(h, srcdir,
+						  subcommit ? SUBDIR : BAKDIR,
+						  nme, ext);
+		} else if (subcommit) {
+			/* if subcommit, wqe may need to move an
+			 * already made backup from BAKDIR to
+			 * SUBSIR */
+			if (file_exists(h->farmid, BAKDIR, nme, extnew))
+				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, extnew);
+			else if (file_exists(h->farmid, BAKDIR, nme, ext))
+				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, ext);
 		}
 		/* there is a situation where the move may fail,
 		 * namely if this heap was not supposed to be existing
@@ -3680,20 +3721,20 @@ BBPbackup(BAT *b, bit subcommit)
 	nme[sizeof(nme) - 1] = 0;
 	srcdir[s - srcdir] = 0;
 
-	if (do_backup(srcdir, nme, "head", &b->H->heap, b->htype,
+	if (b->htype != TYPE_void &&
+	    do_backup(srcdir, nme, "head", &b->H->heap,
 		      b->batDirty || b->H->heap.dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
-	if (do_backup(srcdir, nme, "tail", &b->T->heap, b->ttype,
+	if (b->ttype != TYPE_void &&
+	    do_backup(srcdir, nme, "tail", &b->T->heap,
 		      b->batDirty || b->T->heap.dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->H->vheap &&
 	    do_backup(srcdir, nme, "hheap", b->H->vheap,
-		      b->htype && b->hvarsized,
 		      b->batDirty || b->H->vheap->dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->T->vheap &&
 	    do_backup(srcdir, nme, "theap", b->T->vheap,
-		      b->ttype && b->tvarsized,
 		      b->batDirty || b->T->vheap->dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	GDKfree(srcdir);

@@ -1304,7 +1304,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		"SELECT f.func "
 		"FROM sys.schemas s, "
 		     "sys.functions f "
-		"WHERE f.language  < 3 AND "
+		"WHERE f.language BETWEEN 1 AND 2 AND "
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
@@ -1450,6 +1450,24 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "t.system = FALSE AND "
 		      "p.grantor = g.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
+	const char *function_grants =
+		"SELECT s.name, f.name, a.name, "
+		       "CASE p.privileges "
+			    "WHEN 1 THEN 'SELECT' "
+			    "WHEN 2 THEN 'UPDATE' "
+			    "WHEN 4 THEN 'INSERT' "
+			    "WHEN 8 THEN 'DELETE' "
+			    "WHEN 16 THEN 'EXECUTE' "
+			    "WHEN 32 THEN 'GRANT' END, "
+		       "g.name, p.grantable "
+		"FROM sys.schemas s, sys.functions f, "
+		     "sys.auths a, sys.privileges p, sys.auths g "
+		"WHERE s.id = f.schema_id AND "
+		      "f.id = p.obj_id AND "
+		      "p.auth_id = a.id AND "
+		      "p.grantor = g.id "
+		      "%s"	/* and f.id not in systemfunctions */
+		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name "
 		"FROM sys.schemas s, "
@@ -1954,6 +1972,38 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		}
 		mnstr_printf(toConsole, "GRANT %s(\"%s\") ON \"%s\" TO \"%s\"",
 			     priv, cname, tname, aname);
+		if (strcmp(grantable, "1") == 0)
+			mnstr_printf(toConsole, " WITH GRANT OPTION");
+		mnstr_printf(toConsole, ";\n");
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+
+	snprintf(query, sizeof(query), function_grants,
+		 has_systemfunctions(mid) ? "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) " : "");
+	if ((hdl = mapi_query(mid, query)) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+
+	while (mapi_fetch_row(hdl) != 0) {
+		char *schema = mapi_fetch_field(hdl, 0);
+		char *fname = mapi_fetch_field(hdl, 1);
+		char *aname = mapi_fetch_field(hdl, 2);
+		char *priv = mapi_fetch_field(hdl, 3);
+		char *grantable = mapi_fetch_field(hdl, 5);
+
+		if (sname != NULL && strcmp(schema, sname) != 0)
+			continue;
+		if (curschema == NULL || strcmp(schema, curschema) != 0) {
+			if (curschema)
+				free(curschema);
+			curschema = strdup(schema);
+			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
+				     curschema);
+		}
+		mnstr_printf(toConsole, "GRANT %s ON \"%s\" TO \"%s\"",
+			     priv, fname, aname);
 		if (strcmp(grantable, "1") == 0)
 			mnstr_printf(toConsole, " WITH GRANT OPTION");
 		mnstr_printf(toConsole, ";\n");

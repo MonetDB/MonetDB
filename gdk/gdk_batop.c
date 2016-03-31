@@ -1068,16 +1068,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					goto error;
 				BATsetcount(gn, BATcount(b));
 				BATseqbase(BATmirror(gn), 0);
+				BATseqbase(gn, 0);
 			} else {
 				/* single group */
 				const oid *o = 0;
 				assert(BATcount(b) == 1 ||
 				       (BATtordered(b) && BATtrevordered(b)));
-				gn = BATconstant(TYPE_oid, &o, BATcount(b), TRANSIENT);
+				gn = BATconstant(0, TYPE_oid, &o, BATcount(b), TRANSIENT);
 				if (gn == NULL)
 					goto error;
 			}
-			BATseqbase(gn, 0);
 			*groups = gn;
 		}
 		return GDK_SUCCEED;
@@ -1246,10 +1246,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	return GDK_FAIL;
 }
 
-/* return a new BAT of length n with a dense head and the constant v
- * in the tail */
+/* return a new BAT of length n with a dense head with seqbase hseq,
+ * and the constant v in the tail */
 BAT *
-BATconstant(int tailtype, const void *v, BUN n, int role)
+BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 {
 	BAT *bn;
 	void *restrict p;
@@ -1304,28 +1304,12 @@ BATconstant(int tailtype, const void *v, BUN n, int role)
 	bn->trevsorted = 1;
 	bn->T->nonil = !bn->T->nil;
 	bn->T->key = BATcount(bn) <= 1;
-	BATseqbase(bn, 0);
+	BATseqbase(bn, hseq);
 	return bn;
 
   bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
-}
-
-/* return a new bat which is aligned with b and with the constant v in
- * the tail */
-BAT *
-BATconst(BAT *b, int tailtype, const void *v, int role)
-{
-	BAT *bn;
-
-	BATcheck(b, "BATconst", NULL);
-	bn = BATconstant(tailtype, v, BATcount(b), role);
-	if (bn == NULL)
-		return NULL;
-	BATseqbase(bn, b->hseqbase);
-
-	return bn;
 }
 
 /*

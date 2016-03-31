@@ -595,6 +595,10 @@ HEAPfree(Heap *h, int remove)
 			if (path && unlink(path) < 0 && errno != ENOENT)
 				perror(path);
 			GDKfree(path);
+			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
+			if (path && unlink(path) < 0 && errno != ENOENT)
+				perror(path);
+			GDKfree(path);
 		}
 		GDKfree(h->filename);
 		h->filename = NULL;
