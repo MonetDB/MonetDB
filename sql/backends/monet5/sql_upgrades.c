@@ -705,7 +705,7 @@ sql_update_hugeint(Client c, mvc *sql)
 			t = n->data;
 			if (t->base.id < 2000 &&
 			    strcmp(t->base.name, "hge") == 0)
-				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : 0);
+				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : 0);
 		}
 	}
 
@@ -1175,7 +1175,7 @@ sql_update_jun2016(Client c, mvc *sql)
 		if (t->base.id >= 2000)
 			continue;
 
-		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
+		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
 	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.functions where id < 2000;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.args where func_id not in (select id from sys.functions);\n");
@@ -1430,7 +1430,7 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 		    (strcmp(t->base.name, "mbr") == 0 ||
 		     strcmp(t->base.name, "wkb") == 0 ||
 		     strcmp(t->base.name, "wkba") == 0))
-			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %d, %d, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
 
 	if (schema) {
