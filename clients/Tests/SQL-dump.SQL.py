@@ -62,14 +62,16 @@ sys.stderr.write(err)
 # they are too volatile, and if it makes sense, dump an identifier
 # from a referenced table
 out = '''
+-- helper function
+create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
-select s.name, t.name, t.query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
+select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- functions
-select s.name, f.name, f.func, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, f.func;
+select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, f.type, f.side_effect, f.varres, f.vararg from sys.functions f left outer join sys.schemas s on f.schema_id = s.id order by s.name, f.name, query;
 -- args
 select f.name, a.name, a.type, a.type_digits, a.type_scale, a.inout, a.number from sys.args a left outer join sys.functions f on a.func_id = f.id order by f.name, a.func_id, a.number;
 -- auths
@@ -79,7 +81,15 @@ select server, port, db, db_alias, user, password, language from sys.connections
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
-select count(*) from sys.dependencies;
+select s1.name, f1.name, s2.name, f2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from sys.dependencies d, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
+select s1.name, t.name, s2.name, f.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from sys.dependencies d, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
+select s1.name, t.name, c.name, s2.name, f.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from sys.dependencies d, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
+select s1.name, f1.name, s2.name, t2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from schemas s1, functions f1, schemas s2, _tables t2, dependencies d where d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
+select s1.name, t1.name, s2.name, t2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from schemas s1, _tables t1, _columns c1, schemas s2, _tables t2, dependencies d where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
+select t.systemname, t.sqlname, s.name, f.name, case d.depend_type when 1 then 'SCHEMA_DEPENDENCY' when 2 then 'TABLE_DEPENDENCY' when 3 then 'COLUMN_DEPENDENCY' when 4 then 'KEY_DEPENDENCY' when 5 then 'VIEW_DEPENDENCY' when 6 then 'USER_DEPENDENCY' when 7 then 'FUNC_DEPENDENCY' when 8 then 'TRIGGER_DEPENDENCY' when 9 then 'OWNER_DEPENDENCY' when 10 then 'INDEX_DEPENDENCY' when 11 then 'FKEY_DEPENDENCY' when 12 then 'SEQ_DEPENDENCY' when 13 then 'PROC_DEPENDENCY' when 14 then 'BEDROPPED_DEPENDENCY' when 15 then 'TYPE_DEPENDENCY' end from types t, functions f, schemas s, dependencies d where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
 select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
 -- keys
@@ -107,6 +117,14 @@ select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g
 select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
+-- keywords
+select keyword from sys.keywords order by keyword;
+-- table_types
+select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
+-- dependency_types
+select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
+-- drop helper function
+drop function pcre_replace(string, string, string, string);
 '''
 
 sys.stdout.write(out)
@@ -115,11 +133,6 @@ clt = process.client('sql', interactive = True,
                    stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 out, err = clt.communicate(out)
-
-# do some normalization of the output:
-# remove SQL comments, collapse multiple white space into a single space
-out = re.sub(r'--.*?(?:\\n)+', '', out)
-out = re.sub(r'(?:\\n|\\t| )+', ' ', out)
 
 sys.stdout.write(out)
 sys.stderr.write(err)

@@ -1115,6 +1115,7 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->name = sql_message("%s_%s_%s", c->t->s->base.name, c->t->base.name, c->base.name);
 
 	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
+		c->base.wtime = 0;
 		return load_bat(bat, type);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
@@ -1185,6 +1186,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->name = sql_message("%s_%s@%s", ni->t->s->base.name, ni->t->base.name, ni->base.name);
 
 	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
+		ni->base.wtime = 0;
 		return load_bat(bat, type);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
@@ -1258,8 +1260,10 @@ create_del(sql_trans *tr, sql_table *t)
 	if (t->base.flag == TR_OLD && !isTempTable(t)) {
 		log_bid bid = logger_find_bat(bat_logger, bat->dname);
 
-		if (bid)
+		if (bid) {
+			t->base.wtime = 0;
 			return load_dbat(bat, bid);
+		}
 		ok = LOG_ERR;
 	} else if (bat->dbid && !isTempTable(t)) {
 		return ok;

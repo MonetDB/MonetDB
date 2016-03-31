@@ -1304,7 +1304,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		"SELECT f.func "
 		"FROM sys.schemas s, "
 		     "sys.functions f "
-		"WHERE f.language  < 3 AND "
+		"WHERE f.language BETWEEN 1 AND 2 AND "
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
