@@ -2785,8 +2785,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			" ELSE NULL END AS varchar(2)) AS \"LITERAL_PREFIX\", " +
 			"cast(CASE WHEN \"systemname\" IN ('str', 'inet', 'json', 'url', 'uuid') THEN ''''" +
 			" ELSE NULL END AS varchar(2)) AS \"LITERAL_SUFFIX\", " +
-			"CASE WHEN \"sqlname\" IN ('char', 'varchar', 'binary', 'varbinary') THEN 'max length'" +
-			" WHEN \"sqlname\" IN ('decimal', 'sec_interval', 'timestamp', 'timestamptz') THEN 'precision'" +
+			"CASE WHEN \"sqlname\" IN ('char', 'varchar') THEN 'max length'" +
+			" WHEN \"sqlname\" = 'decimal' THEN 'precision, scale'" +
+			" WHEN \"sqlname\" IN ('time', 'timetz', 'timestamp', 'timestamptz', 'sec_interval') THEN 'precision'" +
 			" ELSE NULL END AS \"CREATE_PARAMS\", " +
 			"cast(CASE WHEN \"systemname\" = 'oid' THEN ").append(DatabaseMetaData.typeNoNulls)
 			.append(" ELSE ").append(DatabaseMetaData.typeNullable).append(" END AS smallint) AS \"NULLABLE\", " +
