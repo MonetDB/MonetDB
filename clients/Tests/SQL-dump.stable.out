@@ -415,6 +415,7 @@ SYSTEM FUNCTION  sys.>=
 SYSTEM FUNCTION  sys.abbrev
 SYSTEM FUNCTION  sys.abs
 SYSTEM FUNCTION  sys.acos
+SYSTEM FUNCTION  sys.all
 SYSTEM FUNCTION  sys.alpha
 SYSTEM FUNCTION  sys.analyze
 SYSTEM FUNCTION  sys.and
@@ -1775,6 +1776,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"abs",	"abs",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"acos",	"acos",	"mmath",	0,	1,	false,	false,	false	]
 [ "sys",	"acos",	"acos",	"mmath",	0,	1,	false,	false,	false	]
+[ "sys",	"all",	"all",	"sql",	0,	3,	false,	false,	false	]
 [ "sys",	"alpha",	"create function alpha(pdec double, pradius double) returns double external name sql.alpha;",	"sql",	1,	1,	false,	false,	false	]
 [ "sys",	"analyze",	"create procedure sys.analyze(minmax int, \"sample\" bigint) external name sql.analyze;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"analyze",	"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string) external name sql.analyze;",	"sql",	1,	2,	true,	false,	false	]
@@ -3400,6 +3402,8 @@ drop function pcre_replace(string, string, string, string);
 [ "acos",	"arg_1",	"real",	24,	0,	1,	1	]
 [ "acos",	"res_0",	"double",	53,	0,	0,	0	]
 [ "acos",	"arg_1",	"double",	53,	0,	1,	1	]
+[ "all",	"res",	"any",	0,	0,	0,	0	]
+[ "all",	"arg",	"any",	0,	0,	1,	1	]
 [ "alpha",	"result",	"double",	53,	0,	0,	0	]
 [ "alpha",	"pdec",	"double",	53,	0,	1,	1	]
 [ "alpha",	"pradius",	"double",	53,	0,	1,	2	]
@@ -8492,6 +8496,7 @@ drop function pcre_replace(string, string, string, string);
 [ "abs"	]
 [ "acos"	]
 [ "acos"	]
+[ "all"	]
 [ "alpha"	]
 [ "analyze"	]
 [ "analyze"	]
