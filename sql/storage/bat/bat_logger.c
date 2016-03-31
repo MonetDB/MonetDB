@@ -206,7 +206,8 @@ bl_postversion( void *lg)
 		}
 		bat_destroy(te);
 
-		// test whether the catalog contains information regarding geometry types
+		/* test whether the catalog contains information
+		 * regarding geometry types */
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
 		bi = bat_iterator(b);
 		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -218,7 +219,8 @@ bl_postversion( void *lg)
 		}
 		bat_destroy(b);
 
-		// test whether the catalog contains information about geometry columns
+		/* test whether the catalog contains information about
+		 * geometry columns */
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
 		bi = bat_iterator(b);
 		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -242,18 +244,23 @@ bl_postversion( void *lg)
 		bat_destroy(b);
 
 		if (!geomUpgrade && geomcatalogfix_get() == NULL) {
-			// The catalog knew nothing about geometries and the geom module is not loaded
-			// Do nothing
+			/* The catalog knew nothing about geometries
+			 * and the geom module is not loaded:
+			 * Do nothing */
 		} else if (!geomUpgrade && geomcatalogfix_get() != NULL) {
-			// The catalog knew nothing about geometries but the geom module is loaded
-			// Add geom functionality
+			/* The catalog knew nothing about geometries
+			 * but the geom module is loaded:
+			 * Add geom functionality */
 			(*(geomcatalogfix_get()))(lg, 0);
 		} else if (geomUpgrade && geomcatalogfix_get() == NULL) {
-			// The catalog needs to be updated but the geom module has not been loaded
-			// The case is prohibited by the sanity check performed during initialization
+			/* The catalog needs to be updated but the
+			 * geom module has not been loaded.
+			 * The case is prohibited by the sanity check
+			 * performed during initialization */
 			GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
 		} else if (geomUpgrade && geomcatalogfix_get() != NULL) {
-			// The catalog needs to be updated and the geom module has been loaded
+			/* The catalog needs to be updated and the
+			 * geom module has been loaded */
 			(*(geomcatalogfix_get()))(lg, 1);
 		}
 	}
