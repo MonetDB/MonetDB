@@ -1,6 +1,14 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Mar 31 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected DatabaseMetaData methods which accept a catalog filter argument.
+  Those methods will now filter the results on the specified catalog name,
+  whereas previously the catalog filter argument was ignored.
+- Corrected output of column KEY_SEQ of DatabaseMetaData methods:
+  getPrimaryKeys(), getImportedKeys(), getExportedKeys() and
+  getCrossReference(). It now starts at 1 instead of 0 previously.
+
 * Thu Mar 24 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected DatabaseMetaData.getSchemas() by returning 2 instead of 3 columns.
 - Improved DatabaseMetaData.getColumns() by returning two additional
