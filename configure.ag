@@ -2373,17 +2373,29 @@ if test "x$enable_pyintegration" != xno; then
 	else
 		libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
 		libpy_LIBS=`$PYCMD --ldflags`
-		have_libpy=yes
-		AC_DEFINE(HAVE_LIBPY, 1, [Define if we can link to python])
-		AC_SUBST(libpy_CFLAGS, $libpy_CFLAGS)
-		AC_SUBST(libpy_LIBS, $libpy_LIBS)
-		PANDAS=`$PYTHON_CMD -c "import pandas; print 1"`
-		if [test "x$PANDAS" = x1]; then
-			have_libpandas=yes
-		fi
-		SCIPY=`$PYTHON_CMD -c "import scipy; print 1"`
-		if [test "x$SCIPY" = x1]; then
-			have_libscipy=yes
+		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))"`
+		if [test "x$HAVEPYTHONHEADER" = xTrue]; then
+			have_libpy=yes
+			AC_DEFINE(HAVE_LIBPY, 1, [Define if we can link to python])
+			AC_SUBST(libpy_CFLAGS, $libpy_CFLAGS)
+			AC_SUBST(libpy_LIBS, $libpy_LIBS)
+			PANDAS=`$PYTHON_CMD -c "import pandas; print(True)"`
+			if [test "x$PANDAS" = xTrue]; then
+				have_libpandas=yes
+			fi
+			SCIPY=`$PYTHON_CMD -c "import scipy; print(True)"`
+			if [test "x$SCIPY" = xTrue]; then
+				have_libscipy=yes
+			fi
+		else
+		  	if test "x$enable_pyintegration" = xyes; then
+				AC_MSG_ERROR([Python.h not found])
+			else
+				have_libpy="no"
+			 	why_have_libpy="Python.h not found"
+				enable_pyintegration=no
+				disable_pyintegration="Python.h not found"
+			fi
 		fi
 	fi
 fi
