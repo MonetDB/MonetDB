@@ -63,7 +63,7 @@ int PyAPIEnabled(void) {
 struct _AggrParams{
     PyInput **pyinput_values;
     void ****split_bats;
-    lng **group_counts;
+    size_t **group_counts;
     str **args;
     PyObject **connection;
     PyObject **function;
@@ -374,7 +374,7 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
 
 #define NP_SPLIT_BAT(tpe) {                                                       \
     tpe ***ptr = (tpe***)split_bats;                                              \
-    lng *temp_indices;                                                            \
+    size_t *temp_indices;                                                         \
     tpe *batcontent = (tpe*)basevals;                                             \
     /* allocate space for split BAT */                                            \
     for(group_it = 0; group_it < group_count; group_it++) {                       \
@@ -1060,8 +1060,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             // parallel aggregation, we run the function once for every group in parallel
             BAT *aggr_group = NULL, *group_first_occurrence = NULL;
             size_t group_count, elements, element_it, group_it;
-            lng *group_counts = NULL;
-            lng *group_current_index = NULL;
+            size_t *group_counts = NULL;
             lng *aggr_group_arr = NULL;
             void ***split_bats = NULL;
             int named_columns = unnamedArgs - (pci->retc + 2);
@@ -1141,7 +1140,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                         case TYPE_str:
                         {
                             PyObject ****ptr = (PyObject****)split_bats;
-                            lng *temp_indices;
+                            size_t *temp_indices;
                             PyObject **batcontent = (PyObject**)PyArray_DATA((PyArrayObject*)input.result);
                             // allocate space for split BAT
                             for(group_it = 0; group_it < group_count; group_it++) {
@@ -1238,9 +1237,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             PyList_SetItem(pResult, 0, aggr_result);
 
 aggrwrapup:
-            if (group_current_index != NULL) {
-                GDKfree(group_current_index);
-            }
             if (group_counts != NULL) {
                 GDKfree(group_counts);
             }
@@ -1886,7 +1882,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
         goto wrapup;
     }
 
-    VERBOSE_MESSAGE("- Loading a BAT of type %s (%d) [Size: %lu]\n", BatType_Format(inp->bat_type), inp->bat_type, inp->count);
+    VERBOSE_MESSAGE("- Loading a BAT of type %s (%d) [Size: %zu]\n", BatType_Format(inp->bat_type), inp->bat_type, inp->count);
 
     switch (inp->bat_type) {
     case TYPE_bte:
@@ -2103,7 +2099,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
         {
             int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
             for (j = 0; j < count; j++) {
-                mask_data[j] = (*atomcmp)(BUNtail(bi, BUNfirst(b) + j), nil) == 0;
+                mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(BUNfirst(b) + j)), nil) == 0;
                 found_nil = found_nil || mask_data[j];
             }
             break;
@@ -2449,7 +2445,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                 utf8_string[utf8string_minlength + ret->memory_size] = '\0';
             }
 
-            b = BATnew(TYPE_void, TYPE_str, ret->count, TRANSIENT);
+            b = BATnew(TYPE_void, TYPE_str, (BUN) ret->count, TRANSIENT);
             BATseqbase(b, seqbase); b->T->nil = 0; b->T->nonil = 1;
             b->tkey = 0; b->tsorted = 0; b->trevsorted = 0;
             VERBOSE_MESSAGE("- Collecting return values of type %s.\n", PyType_Format(ret->result_type));
@@ -2573,7 +2569,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
             GDKfree(utf8_string);
 
             b->T->nonil = 1 - b->T->nil;
-            BATsetcount(b, ret->count);
+            BATsetcount(b, (BUN) ret->count);
             BATsettrivprop(b);
             break;
         }

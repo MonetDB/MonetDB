@@ -16,6 +16,8 @@
 
 #undef ssize_t
 
+#ifndef bool
 #define bool unsigned char
+#endif
 
 #endif
