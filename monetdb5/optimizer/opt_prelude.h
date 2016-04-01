@@ -94,7 +94,6 @@ opt_export  str hashRef;
 opt_export  str identityRef;
 opt_export  str ifthenelseRef;
 opt_export  str inplaceRef;
-opt_export  str insertRef;
 opt_export  str intRef;
 opt_export  str ioRef;
 opt_export  str iteratorRef;
