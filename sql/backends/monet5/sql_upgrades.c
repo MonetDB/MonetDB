@@ -1168,6 +1168,7 @@ sql_update_jun2016(Client c, mvc *sql)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.dependencies where id < 2000;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where id < 2000;\n");
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;

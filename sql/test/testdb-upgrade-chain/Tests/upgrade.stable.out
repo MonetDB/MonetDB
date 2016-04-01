@@ -21,6 +21,7 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 Ready.
 Running database upgrade commands:
 set schema "sys";
+delete from sys.dependencies where id < 2000;
 delete from sys.types where id < 2000;
 insert into sys.types values (0, 'void', 'any', 0, 0, 0, 0, 2000);
 insert into sys.types values (1, 'bat', 'table', 0, 0, 0, 1, 2000);
