@@ -51293,6 +51293,11 @@ pattern sql.argRecord():str
 address SQLargRecord;
 comment Glue together the calling sequence
 
+inline function sql.all(b:bat[:any_1],gp:bat[:oid],gpe:bat[:oid],no_nil:bit):bat[:any_1];
+command sql.all(col:bat[:any_1]):any_1 
+address SQLall;
+comment if col contains exactly one value return this. Incase of more raise an exception else return nil
+
 pattern sql.affectedRows(mvc:int,nr:wrd):int 
 address mvc_affected_rows_wrap;
 comment export the number of affected rows by the current query
