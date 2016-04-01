@@ -252,7 +252,7 @@ id_cmp(int *id1, int *id2)
 static list *
 cond_append(list *l, int *id)
 {
-	if (!list_find(l, id, (fcmp) &id_cmp))
+	if (*id >= 2000 && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);
 	return l;
 }

@@ -112,6 +112,7 @@ norm_out = (
 
 # match "table_name" SQL table header line to normalize "(sys)?.L[0-9]*" to "(sys)?."
 table_name = re.compile(r'^%.*[\t ](|sys)\.L[0-9]*[, ].*# table_name$')
+name = re.compile(r'^%.*[\t ]L[0-9]*[, ].*# name$')
 
 attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
 elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
@@ -183,6 +184,11 @@ def mFilter (FILE, IGNORE) :
         elif table_name.match(iline):
             # normalize "(sys)?.L[0-9]*" to "(sys)?." in "table_name" line of SQL table header
             oline = re.sub(r'([ \t])(|sys)(\.)L[0-9]*([, ])', r'\1\2\3\4', iline)
+            # keep original line for reference as comment (i.e., ignore diffs, if any)
+            xline = iline.replace('%','#',1)
+        elif name.match(iline):
+            # normalize "L[0-9]*" to "L" in "name" line of SQL table header
+            oline = re.sub(r'([ \t])L[0-9]*([, ])', r'\1L\2', iline)
             # keep original line for reference as comment (i.e., ignore diffs, if any)
             xline = iline.replace('%','#',1)
         else:
