@@ -106,7 +106,17 @@ module batmmath;
 	command atan2(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 	address CMDscience_bat_cst_atan2_flt;
 	
+	command atan2(x:dbl,y:bat[:oid,:dbl]):bat[:oid,:dbl] 
+	address CMDscience_cst_bat_atan2_dbl;
+	command atan2(x:flt,y:bat[:oid,:flt]):bat[:oid,:flt] 
+	address CMDscience_cst_bat_atan2_flt;
+	
 	command pow(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
 	address CMDscience_bat_cst_pow_dbl;
 	command pow(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
 	address CMDscience_bat_cst_pow_flt;
+	
+	command pow(x:dbl,y:bat[:oid,:dbl]):bat[:oid,:dbl] 
+	address CMDscience_cst_bat_pow_dbl;
+	command pow(x:flt,y:bat[:oid,:flt]):bat[:oid,:flt] 
+	address CMDscience_cst_bat_pow_flt;

@@ -1168,6 +1168,7 @@ sql_update_jun2016(Client c, mvc *sql)
 		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.dependencies where id < 2000;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where id < 2000;\n");
 	for (n = types->h; n; n = n->next) {
 		sql_type *t = n->data;
@@ -1192,15 +1193,15 @@ sql_update_jun2016(Client c, mvc *sql)
 		if (f->res) {
 			for (m = f->res->h; m; m = m->next, number++) {
 				a = m->data;
-				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'res_%d', '%s', %d, %d, %d, %d);\n", store_next_oid(), f->base.id, number, a->type.type->sqlname, a->type.digits, a->type.scale, a->inout, number);
+				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'res_%d', '%s', %u, %u, %d, %d);\n", store_next_oid(), f->base.id, number, a->type.type->sqlname, a->type.digits, a->type.scale, a->inout, number);
 			}
 		}
 		for (m = f->ops->h; m; m = m->next, number++) {
 			a = m->data;
 			if (a->name)
-				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, '%s', '%s', %d, %d, %d, %d);\n", store_next_oid(), f->base.id, a->name, a->type.type->sqlname, a->type.digits, a->type.scale, a->inout, number);
+				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, '%s', '%s', %u, %u, %d, %d);\n", store_next_oid(), f->base.id, a->name, a->type.type->sqlname, a->type.digits, a->type.scale, a->inout, number);
 			else
-				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'arg_%d', '%s', %d, %d, %d, %d);\n", store_next_oid(), f->base.id, number, a->type.type->sqlname, a->type.digits, a->type.scale, a->inout, number);
+				pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'arg_%d', '%s', %u, %u, %d, %d);\n", store_next_oid(), f->base.id, number, a->type.type->sqlname, a->type.digits, a->type.scale, a->inout, number);
 		}
 	}
 	for (n = aggrs->h; n; n = n->next) {
@@ -1212,11 +1213,11 @@ sql_update_jun2016(Client c, mvc *sql)
 
 		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.functions values (%d, '%s', '%s', '%s', %d, %d, false, %s, %s, %d);\n", aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, FUNC_LANG_INT, aggr->type, aggr->varres ? "true" : "false", aggr->vararg ? "true" : "false", aggr->s ? aggr->s->base.id : s->base.id);
 		arg = aggr->res->h->data;
-		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'res', '%s', %d, %d, %d, 0);\n", store_next_oid(), aggr->base.id, arg->type.type->sqlname, arg->type.digits, arg->type.scale, arg->inout);
+		pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'res', '%s', %u, %u, %d, 0);\n", store_next_oid(), aggr->base.id, arg->type.type->sqlname, arg->type.digits, arg->type.scale, arg->inout);
 		if (aggr->ops->h) {
 			arg = aggr->ops->h->data;
 
-			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'arg', '%s', %d, %d, %d, 1);\n", store_next_oid(), aggr->base.id, arg->type.type->sqlname, arg->type.digits, arg->type.scale, arg->inout);
+			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.args values (%d, %d, 'arg', '%s', %u, %u, %d, 1);\n", store_next_oid(), aggr->base.id, arg->type.type->sqlname, arg->type.digits, arg->type.scale, arg->inout);
 		}
 	}
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.systemfunctions (select id from sys.functions where id < 2000 and id not in (select function_id from sys.systemfunctions));\n");

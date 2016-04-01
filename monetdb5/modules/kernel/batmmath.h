@@ -53,6 +53,10 @@ scienceDef(floor)
 
 batmmath_export str CMDscience_bat_cst_atan2_dbl(bat *ret, const bat *bid, const dbl *d);
 batmmath_export str CMDscience_bat_cst_atan2_flt(bat *ret, const bat *bid, const flt *d);
+batmmath_export str CMDscience_cst_bat_atan2_dbl(bat *ret, const dbl *d, const bat *bid);
+batmmath_export str CMDscience_cst_bat_atan2_flt(bat *ret, const flt *d, const bat *bid);
 batmmath_export str CMDscience_bat_cst_pow_dbl(bat *ret, const bat *bid, const dbl *d);
 batmmath_export str CMDscience_bat_cst_pow_flt(bat *ret, const bat *bid, const flt *d);
+batmmath_export str CMDscience_cst_bat_pow_dbl(bat *ret, const dbl *d, const bat *bid);
+batmmath_export str CMDscience_cst_bat_pow_flt(bat *ret, const flt *d, const bat *bid);
 #endif  /* _BATMATH_H */

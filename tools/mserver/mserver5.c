@@ -499,7 +499,7 @@ main(int argc, char **av)
 		}
 	}
 	if (!dbpath) {
-		dbpath = absolute_path(".");
+		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 	}
 	if (dbextra) {
 		BBPaddfarm(dbpath, 1 << PERSISTENT);

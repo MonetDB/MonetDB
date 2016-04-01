@@ -3198,6 +3198,10 @@ command batstr.unicodeAt(s:bat[:str],index:bat[:int]):bat[:int]
 address STRbatWChrAt;
 comment get a unicode character (as an int) from a string position.
 
+command batmmath.atan2(x:flt,y:bat[:flt]):bat[:flt] 
+address CMDscience_cst_bat_atan2_flt;
+command batmmath.atan2(x:dbl,y:bat[:dbl]):bat[:dbl] 
+address CMDscience_cst_bat_atan2_dbl;
 command batmmath.atan2(x:bat[:flt],y:flt):bat[:flt] 
 address CMDscience_bat_cst_atan2_flt;
 command batmmath.atan2(x:bat[:dbl],y:dbl):bat[:dbl] 
@@ -3254,6 +3258,10 @@ command batmmath.log(x:bat[:flt]):bat[:flt]
 address CMDscience_bat_flt_log;
 command batmmath.log(x:bat[:dbl]):bat[:dbl] 
 address CMDscience_bat_dbl_log;
+command batmmath.pow(x:flt,y:bat[:flt]):bat[:flt] 
+address CMDscience_cst_bat_pow_flt;
+command batmmath.pow(x:dbl,y:bat[:dbl]):bat[:dbl] 
+address CMDscience_cst_bat_pow_dbl;
 command batmmath.pow(x:bat[:flt],y:flt):bat[:flt] 
 address CMDscience_bat_cst_pow_flt;
 command batmmath.pow(x:bat[:dbl],y:dbl):bat[:dbl] 
