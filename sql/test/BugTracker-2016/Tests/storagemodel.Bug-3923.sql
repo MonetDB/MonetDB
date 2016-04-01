@@ -1,7 +1,8 @@
 -- platform dependent script test.
 create table bug3923(i integer);
 
-select * from storage() where "table"= '_tables';
+-- skip columns location, count, columnsize.
+select "schema", "table", "column", "type", "mode", typewidth, heapsize, hashes, phash, imprints, sorted from storage() where "table"= '_tables';
 
 call storagemodelinit();
 update storagemodelinput set "count" =10000 where "table" ='bug3923';
