@@ -68,7 +68,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				getFunctionId(p) == bindidxRef || 
 				getFunctionId(p)== tidRef ||
 				getFunctionId(p)== appendRef ||
-				getFunctionId(p)== updateRef 
+				getFunctionId(p)== updateRef ||
+				getFunctionId(p)== deleteRef
 			){
 				setArg(p,p->retc,mvcvar);
 			}
