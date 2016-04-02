@@ -104,15 +104,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					/* insert scalars */
 					newRows(1,1, (c1 +1),1);
 				}
-			} else if (getFunctionId(p) == deleteRef){
-				if( isaBatType(getArgType(mb,p,2)) ){
-					/* delete BAT */
-					newRows(1, 2, (c2 >= c1 ? 1 : c1 - c2), 1);
-				} else {
-					/* insert scalars */
-					newRows(1, 1, (c1 <= 1 ? 1 : c1 - 1), 1);
-				}
-			}
+			} 
 		} else if (getModuleId(p)==groupRef) {
 			if (getFunctionId(p) ==subgroupRef ) {
 				newRows(1,1,( c1 / 10+1),0);
