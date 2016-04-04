@@ -1,7 +1,7 @@
 # initialization of BATs on the stack
 # caused a problem when executed in interactve mode
 function foo();
-RKA:= bat.new(:int,1048576);
+RKA:bat[:int]:= bat.new(:int,1048576);
 bat.append(RKA,360:int);
 io.print(RKA);
 

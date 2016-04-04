@@ -30,7 +30,7 @@ stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 # 23:12:08 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23626" "--port=30565"
 # 23:12:08 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7799/.s.monetdb.33721
+MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.30153
 QUERY = # let connect figure out itself how to connect to the running db
         uri := sabaoth.getLocalConnectionURI();
         conn:str := remote.connect(uri, "monetdb", "monetdb");
