@@ -186,12 +186,14 @@ int
 BATcheckimprints(BAT *b)
 {
 	int ret;
+	lng t;
 
 	if (VIEWtparent(b)) {
 		assert(b->T->imprints == NULL);
 		b = BBPdescriptor(-VIEWtparent(b));
 	}
 
+	t = GDKusec();
 	MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)));
 	if (b->T->imprints == (Imprints *) 1) {
 		Imprints *imprints;
@@ -244,7 +246,9 @@ BATcheckimprints(BAT *b)
 					b->T->imprints = imprints;
 					ALGODEBUG fprintf(stderr, "#BATcheckimprints: reusing persisted imprints %d\n", b->batCacheid);
 					MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
-					IDXACCESS fprintf(stderr, "[%d] #BATcheckimprints: loaded persistent imprints\n", b->batCacheid);
+					IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BATcheckimprints: load persistent imprints index (usec " LLFMT
+					                          ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), GDKusec() - t);
+
 					return 1;
 				}
 				GDKfree(imprints);

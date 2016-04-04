@@ -63,7 +63,6 @@ BATcheckorderidx(BAT *b)
 	assert(b->batCacheid > 0);
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
-	t = GDKusec() - t;
 	if (b->torderidx == (Heap *) 1) {
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
