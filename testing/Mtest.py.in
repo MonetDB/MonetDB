@@ -1781,6 +1781,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             ('.SQL.py.in',    '.SQL.py', 'python', 'SQL'),
             ('.mal',          '.mal',    'mal',    ''),
             ('.mal.src',      '.mal',    'mal',    ''),
+            ('.mal.in',       '.mal',    'mal',    ''),
             ('_s00.mal',      '.mal',    'malXs',  ''),
             ('_s00.mal.src',  '.mal',    'malXs',  ''),
             ('_s00.mal.in',   '.mal',    'malXs',  ''),
