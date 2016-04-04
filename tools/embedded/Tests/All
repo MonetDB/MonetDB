@@ -1,5 +1,5 @@
-NATIVE_WIN32?install-binary
-install-source
-deps-test
-lowlevel
-dbi
+HAVE_LIBR&NATIVE_WIN32?install-binary
+HAVE_LIBR?install-source
+HAVE_LIBR?deps-test
+HAVE_LIBR?lowlevel
+HAVE_LIBR?dbi
