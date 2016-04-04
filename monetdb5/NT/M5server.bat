@@ -41,9 +41,9 @@ rmdir "%MONETDBDIR%\sql_logs"
 
 set MONETDBPYTHONUDF="embedded_py=false"
 
-if exist pyapi_locatepython.bat(
-    call pyapi_locatepython.bat
-)
+if not exist "pyapi_locatepython.bat" goto skippython
+call pyapi_locatepython.bat
+:skippython
 
 rem start the real server
 "%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set %MONETDBPYTHONUDF% --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*
