@@ -1772,37 +1772,16 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         tests = (
             # file extention  EXT        CALL      SERVER
             ('.py',           '.py',     'python', ''),
-            ('.py.src',       '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
-            ('.MAL.py.src',   '.MAL.py', 'python', 'MAL'),
-            ('.MAL.py.in',    '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.SQL.py.src',   '.SQL.py', 'python', 'SQL'),
-            ('.SQL.py.in',    '.SQL.py', 'python', 'SQL'),
             ('.mal',          '.mal',    'mal',    ''),
-            ('.mal.src',      '.mal',    'mal',    ''),
-            ('.mal.in',       '.mal',    'mal',    ''),
             ('_s00.mal',      '.mal',    'malXs',  ''),
-            ('_s00.mal.src',  '.mal',    'malXs',  ''),
-            ('_s00.mal.in',   '.mal',    'malXs',  ''),
             ('.malC',         '.malC',   'malC',   'MAL'),
-            ('.malC.src',     '.malC',   'malC',   'MAL'),
-            ('.malC.in',      '.malC',   'malC',   'MAL'),
             ('_s00.malC',     '.malC',   'malCXs', 'MAL'),
-            ('_s00.malC.src', '.malC',   'malCXs', 'MAL'),
-            ('_s00.malC.in',  '.malC',   'malCXs', 'MAL'),
             ('_p00.malC',     '.malC',   'malCXp', 'MAL'),
-            ('_p00.malC.src', '.malC',   'malCXp', 'MAL'),
-            ('_p00.malC.in',  '.malC',   'malCXp', 'MAL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
-            ('.sql.src',      '.sql',    'sql',    'SQL'),
-            ('.sql.in',       '.sql',    'sql',    'SQL'),
             ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
-            ('_s00.sql.src',  '.sql',    'sqlXs',  'SQL'),
-            ('_s00.sql.in',   '.sql',    'sqlXs',  'SQL'),
             ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
-            ('_p00.sql.src',  '.sql',    'sqlXp',  'SQL'),
-            ('_p00.sql.in',   '.sql',    'sqlXp',  'SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             #TODO:
             # ('.java',         '.java',   'Java',   'SQL'),
@@ -1811,7 +1790,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             # ('.odmg',         '.odmg',   'odmg',   'SQL'),
         )
         for tst, ext, cll, srv in tests:
-            if os.path.isfile(TST + tst):
+            if os.path.isfile(TST + tst) or \
+               os.path.isfile(TST + tst + '.src') or \
+               os.path.isfile(TST + tst + '.in'):
                 EXT = ext
                 CALL = cll
                 SERVER = srv
