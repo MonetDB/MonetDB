@@ -1748,6 +1748,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     elem = None
     reason = None               # reason for skipping (if any)
     links = []                  # symlinks we make
+    threads = None              # set if we override number of threads
 
     TX = 0
     EXT = CALL = SERVER = ""
@@ -1878,7 +1879,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
-                if (env['TST_THREADS'] == cond[8:]) == negate:
+                if env['GDK_NR_THREADS'] == '0':
+                    threads = cond[8:]
+                elif (env['TST_THREADS'] == cond[8:]) == negate:
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
@@ -2062,7 +2065,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2686,7 +2689,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2759,6 +2762,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     Srvr.remove('--forcemito')
                 except ValueError:
                     pass
+            if threads is not None:
+                for i in range(len(Srvr)):
+                    if Srvr[i].startswith('gdk_nr_threads='):
+                        Srvr[i] = 'gdk_nr_threads=%s' % threads
+                        break
             Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
             if env.get('MULTIFARM'):
                 Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
