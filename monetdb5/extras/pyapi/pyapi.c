@@ -202,8 +202,8 @@ static bool python_call_active = false;
             bat->T->heap.storage = batstore;                                                                            \
         }                                                                                                               \
         bat->T->heap.newstorage = STORE_MEM;                                                                            \
-        bat->S->count = ret->count;                                                                                     \
-        bat->S->capacity = ret->count;                                                                                  \
+        bat->S->count = (BUN) ret->count;                                                                                     \
+        bat->S->capacity = (BUN) ret->count;                                                                                  \
         bat->S->copiedtodisk = false;                                                                                   \
         /*Take over the data from the numpy array*/                                                                     \
         if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
@@ -337,7 +337,7 @@ static bool python_call_active = false;
                 CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_CMEM);                                                                                                    \
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
-            bat = BATnew(TYPE_void, TYPE_##mtpe, ret->count, TRANSIENT);                                                                                       \
+            bat = BATnew(TYPE_void, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                       \
             BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                                                      \
             if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
 Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
@@ -367,7 +367,7 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
                     goto wrapup;                                                                                                                               \
             }                                                                                                                                                  \
             bat->T->nonil = 1 - bat->T->nil;                                                                                                                   \
-            BATsetcount(bat, ret->count);                                                                                                                      \
+            BATsetcount(bat, (BUN) ret->count);                                                                                                                      \
             BATsettrivprop(bat);                                                                                                                               \
         }                                                                                                                                                      \
     }
