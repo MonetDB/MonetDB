@@ -3287,7 +3287,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!fname) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, *sz, *offset, *locked, *besteffort);
 	} else {
-		len = strlen((char *) (*fname));
+		len = strlen(*fname);
 		if ((fn = GDKmalloc(len + 1)) == NULL) {
 			GDKfree(ns);
 			GDKfree(tsep);
@@ -3307,8 +3307,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		msg = STRIconv(&filename, (char**)&fn, &utf8, &cs);
 		GDKfree(cs);
-		GDKfree(fn);
 		if (msg != MAL_SUCCEED) {
+			GDKfree(fn);
 			GDKfree(tsep);
 			GDKfree(rsep);
 			GDKfree(ssep);
@@ -3326,9 +3326,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(rsep);
 			GDKfree(ssep);
 			GDKfree(ns);
-			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", filename, strerror(errnr));
+			msg = createException(IO, "sql.copy_from", "could not open file '%s': %s", fn, strerror(errnr));
+			GDKfree(fn);
 			return msg;
 		}
+		GDKfree(fn);
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
 #else
