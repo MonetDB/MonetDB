@@ -3027,6 +3027,12 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
+	
+	/* first try aggregate */
+	f = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
+	if (f)
+		return _rel_aggr(sql, rel, 0, s, fname, l->next->data.lval->h, fs);
+
 	f = bind_func_(sql, s, fname, tl, type);
 	if (f) {
 		return exp_op(sql->sa, exps, f);
