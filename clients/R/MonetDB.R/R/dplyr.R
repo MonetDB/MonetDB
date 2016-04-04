@@ -4,7 +4,26 @@ src_monetdb <- function(dbname="demo", host = "localhost", port = 50000L, user =
     con <- DBI::dbConnect(MonetDB.R(), dbname = dbname , host = host, port = port,
       user = user, password = password, ...)
   }
-  dplyr::src_sql("monetdb", con, info = DBI::dbGetInfo(con))
+  s <- dplyr::src_sql("monetdb", con, info = DBI::dbGetInfo(con))
+
+  # this is a (dirty) hack so we don't need to depend on dplyr
+  dplyrMt <- getNamespace("dplyr")$.__S3MethodsTable__.
+
+  dplyrMt[["src_translate_env.src_monetdb"]]           <- src_translate_env.src_monetdb
+  dplyrMt[["src_desc.src_monetdb"]]                    <- src_desc.src_monetdb
+  dplyrMt[["tbl.src_monetdb"]]                         <- tbl.src_monetdb
+  dplyrMt[["db_query_fields.MonetDBConnection"]]       <- db_query_fields.MonetDBEmbeddedConnection
+  dplyrMt[["db_query_rows.MonetDBConnection"]]         <- db_query_rows.MonetDBConnection
+  dplyrMt[["db_query_rows.MonetDBEmbeddedConnection"]] <- db_query_rows.MonetDBEmbeddedConnection
+  dplyrMt[["db_save_query.MonetDBConnection"]]         <- db_save_query.MonetDBConnection
+  dplyrMt[["db_insert_into.MonetDBConnection"]]        <- db_insert_into.MonetDBConnection
+  dplyrMt[["db_create_index.MonetDBConnection"]]       <- db_create_index.MonetDBConnection
+  dplyrMt[["db_analyze.MonetDBConnection"]]            <- db_analyze.MonetDBConnection
+  dplyrMt[["sql_subquery.MonetDBConnection"]]          <- sql_subquery.MonetDBConnection
+  dplyrMt[["sample_n.tbl_monetdb"]]                    <- sample_n.tbl_monetdb
+  dplyrMt[["sample_frac.tbl_monetdb"]]                 <- sample_frac.tbl_monetdb
+
+  s
 }
 
 src_translate_env.src_monetdb <- function(x) {
@@ -59,7 +78,7 @@ db_query_fields.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_query_fields.MonetDBEmbeddedConnection <- function(con, sql, ...) {
-  names(DBI::dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql), notreally=T))
+  names(DBI::dbGetQuery(con, dplyr::build_sql("SELECT * FROM ", sql), execute = F))
 }
 
 db_query_rows.MonetDBConnection <- function(con, sql, ...) {
@@ -67,7 +86,7 @@ db_query_rows.MonetDBConnection <- function(con, sql, ...) {
 }
 
 db_query_rows.MonetDBEmbeddedConnection <- function(con, sql, ...) {
-  attr(DBI::dbGetQuery(con, sql, notreally=T), "__rows")
+  attr(DBI::dbGetQuery(con, sql, resultconvert = F), "__rows")
 }
 
 db_insert_into.MonetDBConnection <- function(con, table, values, ...) {

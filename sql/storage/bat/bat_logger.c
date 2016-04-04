@@ -70,7 +70,7 @@ bl_postversion( void *lg)
 		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-        	BATseqbase(tne, te->hseqbase);
+		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(tei, p);
 			char *name = BUNtail(tni, p);
@@ -102,7 +102,7 @@ bl_postversion( void *lg)
 		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-        	BATseqbase(tne, te->hseqbase);
+		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(tei, p);
 			char *name = BUNtail(tni, p);
@@ -134,7 +134,7 @@ bl_postversion( void *lg)
 			b1 = BATnew(TYPE_void, TYPE_sht, BATcount(b), PERSISTENT);
 			if (!b1)
 				return;
-        		BATseqbase(b1, b->hseqbase);
+			BATseqbase(b1, b->hseqbase);
 
 			bi = bat_iterator(b);
 			for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -160,11 +160,54 @@ bl_postversion( void *lg)
 	if (catalog_version <= CATALOG_JUL2015) {
 		BAT *b;
 		BATiter bi;
+		BAT *te, *tne;
 		BUN p,q;
 		char geomUpgrade = 0;
 		char *s = "sys", n[64];
 
-		// test whether the catalog contains information regarding geometry types
+		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		if (te == NULL)
+			return;
+		bi = bat_iterator(te);
+		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
+		if (!tne)
+			return;
+		BATseqbase(tne, te->hseqbase);
+		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+			int eclass = *(int*)BUNtail(bi, p);
+
+			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
+				eclass++;		/* shift up */
+			BUNappend(tne, &eclass, TRUE);
+		}
+		BATsetaccess(tne, BAT_READ);
+		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
+		bat_destroy(te);
+
+		/* in the past, the args.inout column may have been
+		 * incorrectly upgraded to a bit instead of a bte
+		 * column */
+		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "args_inout")));
+		if (te == NULL)
+			return;
+		if (te->ttype == TYPE_bit) {
+			bi = bat_iterator(te);
+			tne = BATnew(TYPE_void, TYPE_bte, BATcount(te), PERSISTENT);
+			if (!tne)
+				return;
+			BATseqbase(tne, te->hseqbase);
+			for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+				bte inout = (bte) *(bit*)BUNtail(bi, p);
+
+				BUNappend(tne, &inout, TRUE);
+			}
+			BATsetaccess(tne, BAT_READ);
+			logger_add_bat(lg, tne, N(n, NULL, s, "args_inout"));
+		}
+		bat_destroy(te);
+
+		/* test whether the catalog contains information
+		 * regarding geometry types */
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
 		bi = bat_iterator(b);
 		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -176,7 +219,8 @@ bl_postversion( void *lg)
 		}
 		bat_destroy(b);
 
-		// test whether the catalog contains information about geometry columns
+		/* test whether the catalog contains information about
+		 * geometry columns */
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
 		bi = bat_iterator(b);
 		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
@@ -200,19 +244,24 @@ bl_postversion( void *lg)
 		bat_destroy(b);
 
 		if (!geomUpgrade && geomcatalogfix_get() == NULL) {
-			// The catalog knew nothing about geometries and the geom module is not loaded
-			// Do nothing
+			/* The catalog knew nothing about geometries
+			 * and the geom module is not loaded:
+			 * Do nothing */
 		} else if (!geomUpgrade && geomcatalogfix_get() != NULL) {
-			// The catalog knew nothing about geometries but the geom module is loaded
-			// Add geom functionality
-			(*(geomcatalogfix_get()))(lg, (int)EC_GEOM, (int)EC_EXTERNAL, 0);
+			/* The catalog knew nothing about geometries
+			 * but the geom module is loaded:
+			 * Add geom functionality */
+			(*(geomcatalogfix_get()))(lg, 0);
 		} else if (geomUpgrade && geomcatalogfix_get() == NULL) {
-			// The catalog needs to be updated but the geom module has not been loaded
-			// The case is prohibited by the sanity check performed during initialization
+			/* The catalog needs to be updated but the
+			 * geom module has not been loaded.
+			 * The case is prohibited by the sanity check
+			 * performed during initialization */
 			GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
 		} else if (geomUpgrade && geomcatalogfix_get() != NULL) {
-			// The catalog needs to be updated and the geom module has been loaded
-			(*(geomcatalogfix_get()))(lg, (int)EC_GEOM, (int)EC_EXTERNAL, 1);
+			/* The catalog needs to be updated and the
+			 * geom module has been loaded */
+			(*(geomcatalogfix_get()))(lg, 1);
 		}
 	}
 }

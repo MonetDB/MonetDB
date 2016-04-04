@@ -645,9 +645,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		else
 			res = OP(b1->T->seq, b2->T->seq);
 
-		bn = BATconstant(TYPE_TPE, &res, cnt, TRANSIENT);
-		BATseqbase(bn, b1->hseqbase);
-		return bn;
+		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
 	}
 
 	bn = BATcalcop_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->batFirst), ATOMbasetype(b1->T->type), 1,

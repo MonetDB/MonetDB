@@ -69,7 +69,7 @@ stderr of test 'load_stdin_incorrect_line_nr` in directory 'sql/test/copy` itsel
 # 17:35:33 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33038 
 # 17:35:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7656/.s.monetdb.37934
+MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', '\n';
         1
         bla

@@ -96,7 +96,6 @@ str hashRef;
 str identityRef;
 str ifthenelseRef;
 str inplaceRef;
-str insertRef;
 str intRef;
 str ioRef;
 str iteratorRef;
@@ -311,7 +310,6 @@ void optimizerInit(void)
 	identityRef = putName("identity",8);
 	ifthenelseRef = putName("ifthenelse",10);
 	inplaceRef = putName("inplace",7);
-	insertRef = putName("insert",6);
 	intRef = putName("int",3);
 	ioRef = putName("io",2);
 	iteratorRef = putName("iterator",8);

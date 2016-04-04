@@ -16,7 +16,7 @@
 #include <Rdefines.h>
 #include "embedded.h"
 
-SEXP monetdb_query_R(SEXP connsexp, SEXP querysexp, SEXP notreally);
+SEXP monetdb_query_R(SEXP connsexp, SEXP querysexp, SEXP executesexp, SEXP resultconvertsexp);
 SEXP monetdb_startup_R(SEXP dbdirsexp, SEXP silentsexp, SEXP sequentialsexp);
 SEXP monetdb_append_R(SEXP connsexp, SEXP schemaname, SEXP tablename, SEXP tabledata);
 SEXP monetdb_connect_R(void);

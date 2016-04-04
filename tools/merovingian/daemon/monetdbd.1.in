@@ -108,7 +108,7 @@ calling environment, until given a stop signal.
 Sends a stop signal to the
 .I monetdbd
 process responsible for the given dbfarm.
-.IP
+.TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> \fIdbfarm\fP
 Prints the requested properties, or all known properties, for the given
 dbfarm.  For each property, its value is printed.  Some properties

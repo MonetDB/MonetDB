@@ -5030,8 +5030,10 @@ var_t wkbPUT(Heap *h, var_t *bun, wkb *val) {
 
 	*bun = HEAP_malloc(h, wkb_size(val->len));
 	base = h->base;
-	if (*bun)
+	if (*bun) {
 		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
+		h->dirty = 1;
+	}
 	return *bun;
 }
 
@@ -5378,8 +5380,10 @@ var_t wkbaPUT(Heap *h, var_t *bun, wkba *val) {
 
 	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
 	base = h->base;
-	if (*bun)
+	if (*bun) {
 		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkba_size(val->itemsNum));
+		h->dirty = 1;
+	}
 	return *bun;
 }
 

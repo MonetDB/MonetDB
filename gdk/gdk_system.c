@@ -432,6 +432,7 @@ MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
 	(void) sigdelset(new_mask, SIGQUIT);
 	(void) sigdelset(new_mask, SIGALRM);	/* else sleep doesn't work */
+	(void) sigdelset(new_mask, SIGPROF);
 	(void) pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
 }
 #endif

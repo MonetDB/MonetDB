@@ -83,8 +83,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else if (getModuleId(p) == batstrRef) {
 				newRows(1,1, c1,0);
 		} else if (getModuleId(p) == batRef) {
-			if (getFunctionId(p) == appendRef ||
-				   getFunctionId(p) == insertRef ){
+			if (getFunctionId(p) == appendRef ){
 				/*
 				 * Updates are a little more complicated, because you have to
 				 * propagate changes in the expected size up the expression tree.
@@ -113,9 +112,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					/* insert scalars */
 					newRows(1, 1, (c1 <= 1 ? 1 : c1 - 1), 1);
 				}
-			} else if (getFunctionId(p) == insertRef){
-				newRows(1,1,( c1 + 1),0); /* faked */
-			}
+			} 
 		} else if (getModuleId(p)==groupRef) {
 			if (getFunctionId(p) ==subgroupRef ) {
 				newRows(1,1,( c1 / 10+1),0);

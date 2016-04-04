@@ -1157,7 +1157,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
     env['TSTSRCDIR'] = TSTSRCDIR
-    env['UTSTSRCDIR'] = 'file:' + url(TSTSRCDIR)
+    env['UTSTSRCDIR'] = 'file://' + url(TSTSRCDIR)
     env['TSTTRGDIR'] = TSTTRGDIR
     if TSTDIR == os.curdir:
         env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
@@ -1859,6 +1859,26 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         reason = "as previous hugeint chained release database is not available"
                         elem = SkipTest(env, TST, EXT, reason, length)
                         break
+                elif cond == 'PREVRELEMPTY':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrelempty.zip')):
+                        reason = "as previous empty release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond == 'PREVHGERELEMPTY':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerelempty.zip')):
+                        reason = "as previous hugeint empty release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond == 'PREVCHAINRELEMPTY':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrelempty.zip')):
+                        reason = "as previous chained empty release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond == 'PREVHGECHAINRELEMPTY':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrelempty.zip')):
+                        reason = "as previous hugeint chained empty release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
                 elif cond.startswith('THREADS='):
                     if (env['TST_THREADS'] == cond[8:]) == negate:
                         reason = "as number of threads is wrong"
@@ -1927,6 +1947,26 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             elif cond == 'PREVHGECHAINREL':
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
                     reason = "as previous hugeint chained release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVRELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrelempty.zip')):
+                    reason = "as previous empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVHGERELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerelempty.zip')):
+                    reason = "as previous hugeint empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVCHAINRELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrelempty.zip')):
+                    reason = "as previous chained empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVHGECHAINRELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrelempty.zip')):
+                    reason = "as previous hugeint chained empty release database is not available"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
@@ -4217,7 +4257,7 @@ def main(argv) :
                 remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
             fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
             fl = open(fn+"lst","w")
-            Failure = [[] for i in range(len(FAILURES))]
+            Failure = [[] for i in FAILURES]
             for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
                 fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                     tt,

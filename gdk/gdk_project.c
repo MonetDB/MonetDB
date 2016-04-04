@@ -232,11 +232,10 @@ BATproject(BAT *l, BAT *r)
 		/* trivial: all values are nil */
 		const void *nil = ATOMnilptr(r->ttype);
 
-		bn = BATconstant(r->ttype == TYPE_oid ? TYPE_void : r->ttype,
+		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
 				 nil, BATcount(l), TRANSIENT);
 		if (bn == NULL)
 			return NULL;
-		BATseqbase(bn, l->hseqbase);
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
 			bn->tdense = 1;
@@ -457,56 +456,65 @@ BATprojectchain(BAT **bats)
 		assert(BAThdense(b));
 		if (!b->T->nonil)
 			nonil = 0; /* not guaranteed without nils */
-		if (n > 0 && ba[i-1].vals == NULL) {
-			/* previous BAT was dense-tailed: we will
-			 * combine it with this one */
-			i--;
-			assert(off == 0);
-			if (tseq + ba[i].cnt > b->hseqbase + BATcount(b)) {
-				if (tseq > b->hseqbase + BATcount(b))
-					ba[i].cnt = 0;
-				else
-					ba[i].cnt = b->hseqbase + BATcount(b) - tseq;
-			}
-			if (BATtdense(b)) {
-				if (tseq > b->hseqbase) {
-					tseq = tseq - b->hseqbase + b->tseqbase;
-				} else if (tseq < b->hseqbase) {
-					if (b->hseqbase - tseq > ba[i].cnt) {
+		if (!allnil) {
+			if (n > 0 && ba[i-1].vals == NULL) {
+				/* previous BAT was dense-tailed: we will
+				 * combine it with this one */
+				i--;
+				assert(off == 0);
+				if (tseq + ba[i].cnt > b->hseqbase + BATcount(b)) {
+					if (tseq > b->hseqbase + BATcount(b))
 						ba[i].cnt = 0;
+					else
+						ba[i].cnt = b->hseqbase + BATcount(b) - tseq;
+				}
+				if (BATtdense(b)) {
+					if (tseq > b->hseqbase) {
+						tseq = tseq - b->hseqbase + b->tseqbase;
+					} else if (tseq < b->hseqbase) {
+						if (b->hseqbase - tseq > ba[i].cnt) {
+							ba[i].cnt = 0;
+						} else {
+							ba[i].hlo += b->hseqbase - tseq;
+							ba[i].cnt -= b->hseqbase - tseq;
+							tseq = b->tseqbase;
+						}
 					} else {
-						ba[i].hlo += b->hseqbase - tseq;
-						ba[i].cnt -= b->hseqbase - tseq;
 						tseq = b->tseqbase;
 					}
 				} else {
-					tseq = b->tseqbase;
-				}
-			} else {
-				if (tseq > b->hseqbase) {
-					off = tseq - b->hseqbase;
-				} else if (tseq < b->hseqbase) {
-					if (b->hseqbase - tseq > ba[i].cnt) {
-						ba[i].cnt = 0;
-					} else {
-						ba[i].hlo += b->hseqbase - tseq;
-						ba[i].cnt -= b->hseqbase - tseq;
+					if (tseq > b->hseqbase) {
+						off = tseq - b->hseqbase;
+					} else if (tseq < b->hseqbase) {
+						if (b->hseqbase - tseq > ba[i].cnt) {
+							ba[i].cnt = 0;
+						} else {
+							ba[i].hlo += b->hseqbase - tseq;
+							ba[i].cnt -= b->hseqbase - tseq;
+						}
 					}
+					if (b->ttype == TYPE_void &&
+					    b->tseqbase == oid_nil) {
+						tseq = oid_nil;
+						allnil = 1;
+					} else
+						ba[i].vals = (const oid *) Tloc(b, BUNfirst(b) + off);
 				}
-				ba[i].vals = (const oid *) Tloc(b, BUNfirst(b) + off);
-			}
-		} else {
-			ba[i].hlo = b->hseqbase;
-			ba[i].cnt = BATcount(b);
-			off = 0;
-			if (BATtdense(b)) {
-				tseq = b->tseqbase;
-				ba[i].vals = NULL;
-				if (b->tseqbase == oid_nil)
-					allnil = 1;
 			} else {
-				tseq = oid_nil;
-				ba[i].vals = (const oid *) Tloc(b, BUNfirst(b));
+				ba[i].hlo = b->hseqbase;
+				ba[i].cnt = BATcount(b);
+				off = 0;
+				if (BATtdense(b)) {
+					tseq = b->tseqbase;
+					ba[i].vals = NULL;
+				} else {
+					tseq = oid_nil;
+					if (b->ttype == TYPE_void &&
+					    b->tseqbase == oid_nil)
+						allnil = 1;
+					else
+						ba[i].vals = (const oid *) Tloc(b, BUNfirst(b));
+				}
 			}
 		}
 		ba[i].b = b;
@@ -521,31 +529,28 @@ BATprojectchain(BAT **bats)
 	assert(n >= 1);		/* not too few inputs */
 	b = bats[-2];		/* the last BAT in the list (bats[-1]==NULL) */
 	tpe = b->ttype;		/* its type */
-	if (i == 1) {
-		/* only dense-tailed BATs before last: we can return a
-		 * slice and manipulate offsets and head seqbase */
-		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, size "BUNFMT", type %s, using BATslice("BUNFMT","BUNFMT")\n", n, cnt, ATOMname(tpe), off, off + cnt);
-		if (BATtdense(b)) {
-			bn = BATdense(hseq, tseq, cnt);
-		} else {
-			bn = BATslice(b, off, off + cnt);
-			if (bn == NULL) {
-				GDKfree(ba);
-				return NULL;
-			}
-			BATseqbase(bn, hseq);
-			if (bn->ttype == TYPE_void)
-				BATseqbase(BATmirror(bn), tseq);
-		}
-		GDKfree(ba);
-		return bn;
-	}
 	nil = ATOMnilptr(tpe);
 	if (allnil) {
 		/* somewhere on the way we encountered a void-nil BAT */
 		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, size "BUNFMT", type %s, all nil\n", n, cnt, ATOMname(tpe));
-		bn = BATconstant(tpe, nil, cnt, TRANSIENT);
 		GDKfree(ba);
+		return BATconstant(hseq, tpe == TYPE_oid ? TYPE_void : tpe, nil, cnt, TRANSIENT);
+	}
+	if (i == 1) {
+		/* only dense-tailed BATs before last: we can return a
+		 * slice and manipulate offsets and head seqbase */
+		ALGODEBUG fprintf(stderr, "#BATprojectchain with %d BATs, size "BUNFMT", type %s, using BATslice("BUNFMT","BUNFMT")\n", n, cnt, ATOMname(tpe), off, off + cnt);
+		GDKfree(ba);
+		if (BATtdense(b)) {
+			bn = BATdense(hseq, tseq, cnt);
+		} else {
+			bn = BATslice(b, off, off + cnt);
+			if (bn == NULL)
+				return NULL;
+			BATseqbase(bn, hseq);
+			if (bn->ttype == TYPE_void)
+				BATseqbase(BATmirror(bn), tseq);
+		}
 		return bn;
 	}
 	ALGODEBUG fprintf(stderr, "#BATprojectchain with %d (%d) BATs, size "BUNFMT", type %s\n", n, i, cnt, ATOMname(tpe));

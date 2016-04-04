@@ -2209,6 +2209,37 @@ exps_share_expensive_exp( list *exps, list *shared )
 	return 0;
 }
 
+static int ambigious_ref( list *exps, sql_exp *e);
+static int
+ambigious_refs( list *exps, list *refs) 
+{
+	node *n;
+
+	for(n=refs->h; n; n = n->next) {
+		if (ambigious_ref(exps, n->data))
+			return 1;
+	}
+	return 0;
+}
+
+static int
+ambigious_ref( list *exps, sql_exp *e) 
+{
+	sql_exp *ne = NULL;
+
+	if (e->type == e_column) {
+		if (e->l) 
+			ne = exps_bind_column2(exps, e->l, e->r);
+		if (!ne && !e->l)
+			ne = exps_bind_column(exps, e->r, NULL);
+		if (ne && e != ne) 
+			return 1;
+	}
+	if (e->type == e_func) 
+		return ambigious_refs(exps, e->l);
+	return 0;
+}
+
 /* merge 2 projects into the lower one */
 static sql_rel *
 rel_merge_projects(int *changes, mvc *sql, sql_rel *rel) 
@@ -2232,20 +2263,18 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data, *ne = NULL;
 
 			/* We do not handle expressions pointing back in the list */
-			if (e->type == e_column) {
-				if (e->l) 
-					ne = exps_bind_column2(exps, e->l, e->r);
-				if (!ne && !e->l)
-					ne = exps_bind_column(exps, e->r, NULL);
-				if (ne && e != ne) {
-					all = 0;
-					break;
-				} else {
-					ne = NULL;
-				}
+			if (ambigious_ref(exps, e)) {
+				all = 0;
+				break;
 			}
 			ne = exp_push_down_prj(sql, e, prj, prj->l);
-			if (ne && ne->type == e_column) { /* check if the refered alias name isn't used twice */
+			/* check if the refered alias name isn't used twice */
+			if (ne && ambigious_ref(rel->exps, ne)) {
+				all = 0;
+				break;
+			}
+			/*
+			if (ne && ne->type == e_column) { 
 				sql_exp *nne = NULL;
 
 				if (ne->l)
@@ -2257,6 +2286,7 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 					break;
 				}
 			}
+			*/
 			if (ne) {
 				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 				list_append(rel->exps, ne);
@@ -4552,7 +4582,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 
 	/* check if each aggr is, rewritable (max,min,sum,count) 
 	 *  			  and only has one argument */
-	for (n = gbes->h; n; n = n->next) {
+	for (n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		sql_subaggr *af = e->f;
 

@@ -92,9 +92,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	
 			if (se)
 				pushInstruction(mb,p);
-			else 
+			else {
 				freeInstruction(p);
-			actions += se > 0;
+				actions ++;
+			}
 		}
 	for(; i<slimit; i++)
 		if( old[i])

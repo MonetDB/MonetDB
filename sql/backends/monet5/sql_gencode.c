@@ -2364,7 +2364,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (r < 0)
 				return -1;
-			q = newStmt(mb, mod, "delete");
+			q = newStmt(mb, mod, deleteRef);
 			q = pushArgument(mb, q, sql->mvc_var);
 			if (q == NULL)
 				return -1;

@@ -47,7 +47,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
 	defineQuery = copyInstruction(defineQuery);
-	setFunctionId(defineQuery, insertRef);
+	setFunctionId(defineQuery, appendRef);
 	getArg(defineQuery,0) = newTmpVariable(mb,TYPE_any);
 	defineQuery->token = ASSIGNsymbol;
 	setModuleId(defineQuery,querylogRef);

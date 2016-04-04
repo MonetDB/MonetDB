@@ -7,5 +7,5 @@
 
 * Sat Jan 23 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented a systemd configuration file for a monetdbd.service
-  on Fedora.
+  on systems that support it (Fedora, newer Ubuntu).
 

@@ -505,7 +505,11 @@ main(int argc, char **av)
 		}
 	}
 	if (!dbpath) {
-		dbpath = absolute_path(".");
+		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
+	}
+	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
+		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
+		exit(1);
 	}
 	if (dbextra) {
 		BBPaddfarm(dbpath, 1 << PERSISTENT);

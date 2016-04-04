@@ -1080,7 +1080,7 @@ copyBat (bat i, int type, oid seq)
 	if (!i)
 		return i;
 	tb = temp_descriptor(i);
-	b = BATconst(tb, type, ATOMnilptr(type), PERSISTENT);
+	b = BATconstant(tb->hseqbase, type, ATOMnilptr(type), BATcount(tb), PERSISTENT);
 	bat_destroy(tb);
 	if (isVIEW(b)) {
 		tb = COLcopy(b, b->ttype, TRUE, PERSISTENT);
@@ -1115,6 +1115,7 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->name = sql_message("%s_%s_%s", c->t->s->base.name, c->t->base.name, c->base.name);
 
 	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
+		c->base.wtime = 0;
 		return load_bat(bat, type);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
@@ -1185,6 +1186,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->name = sql_message("%s_%s@%s", ni->t->s->base.name, ni->t->base.name, ni->base.name);
 
 	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
+		ni->base.wtime = 0;
 		return load_bat(bat, type);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
@@ -1258,8 +1260,10 @@ create_del(sql_trans *tr, sql_table *t)
 	if (t->base.flag == TR_OLD && !isTempTable(t)) {
 		log_bid bid = logger_find_bat(bat_logger, bat->dname);
 
-		if (bid)
+		if (bid) {
+			t->base.wtime = 0;
 			return load_dbat(bat, bid);
+		}
 		ok = LOG_ERR;
 	} else if (bat->dbid && !isTempTable(t)) {
 		return ok;
@@ -1660,7 +1664,7 @@ BATcleanProps( BAT *b )
 }
 
 static int 
-gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
+gtr_update_delta( sql_trans *tr, sql_delta *cbat)
 {
 	int ok = LOG_OK;
 	BAT *ins, *cur;
@@ -1672,7 +1676,6 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
-		(*changes)++;
 		assert(cur->T->heap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
 		cbat->cnt = cbat->ibase = BATcount(cur);
@@ -1687,7 +1690,6 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 		BAT *uv = temp_descriptor(cbat->uvbid);
 		/* any updates */
 		if (BUNlast(ui) > BUNfirst(ui)) {
-			(*changes)++;
 			void_replace_bat(cur, ui, uv, TRUE);
 			temp_destroy(cbat->uibid);
 			temp_destroy(cbat->uvbid);
@@ -1707,7 +1709,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 }
 
 static int
-gtr_update_dbat(sql_dbat *d, int *changes)
+gtr_update_dbat(sql_dbat *d)
 {
 	int ok = LOG_OK;
 	BAT *idb;
@@ -1720,7 +1722,6 @@ gtr_update_dbat(sql_dbat *d, int *changes)
 	if (BUNlast(idb) > idb->batInserted) {
 		BAT *cdb = temp_descriptor(dbid);
 
-		(*changes)++;
 		append_inserted(cdb, idb);
 		bat_destroy(cdb);
 	}
@@ -1730,73 +1731,63 @@ gtr_update_dbat(sql_dbat *d, int *changes)
 
 
 static int
-gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
+gtr_update_table(sql_trans *tr, sql_table *t)
 {
 	int ok = LOG_OK;
 	node *n;
 
-	gtr_update_dbat(t->data, tchanges);
+	if (!t->base.wtime)
+		return ok;
+	gtr_update_dbat(t->data);
 	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
-		int changes = 0;
 		sql_column *c = n->data;
 
 		if (!c->base.wtime) 
 			continue;
-		ok = gtr_update_delta(tr, c->data, &changes);
-		if (changes)
-			c->base.wtime = tr->wstime;
-		(*tchanges) |= changes;
+		ok = gtr_update_delta(tr, c->data);
+		c->base.wtime = 0;
 	}
 	if (ok == LOG_OK && t->idxs.set) {
 		for (n = t->idxs.set->h; ok == LOG_OK && n; n = n->next) {
-			int changes = 0;
 			sql_idx *ci = n->data;
 
 			/* some indices have no bats */
 			if (!ci->base.wtime)
 				continue;
 
-			ok = gtr_update_delta(tr, ci->data, &changes);
-			if (changes)
-				ci->base.wtime = tr->wstime;
-			(*tchanges) |= changes;
+			ok = gtr_update_delta(tr, ci->data);
+			ci->base.wtime = 0;
 		}
 	}
-	if (*tchanges)
-		t->base.wtime = tr->wstime;
+	t->base.wtime = 0;
 	return ok;
 }
 
-typedef int (*gtr_update_table_fptr)( sql_trans *tr, sql_table *t, int *changes);
+typedef int (*gtr_update_table_fptr)( sql_trans *tr, sql_table *t);
 
 static int
 _gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f)
 {
-	int ok = LOG_OK, tchanges = 0;
+	int ok = LOG_OK;
 	node *sn;
 
 	for(sn = tr->schemas.set->h; sn && ok == LOG_OK; sn = sn->next) {
-		int schanges = 0;
 		sql_schema *s = sn->data;
 		
-		if (!isTempSchema(s) && s->tables.set) {
+		if (!isTempSchema(s) && s->tables.set && s->base.wtime) {
 			node *n;
 			for (n = s->tables.set->h; n && ok == LOG_OK; n = n->next) {
-				int changes = 0;
 				sql_table *t = n->data;
 
 				if (isTable(t) && isGlobal(t))
-					ok = gtr_update_table_f(tr, t, &changes);
-				schanges |= changes;
+					ok = gtr_update_table_f(tr, t);
 			}
 		}
-		if (schanges){
-			s->base.wtime = tr->wstime;
-			tchanges ++;
-		}
+		if (gtr_update_table_f == gtr_update_table)
+			s->base.wtime = 0;
 	}
-	if (tchanges)
-		tr->wtime = tr->wstime;
+	if (gtr_update_table_f == gtr_update_table)
+		tr->wtime = 0;
 	return LOG_OK;
 }
 
@@ -1834,12 +1825,11 @@ gtr_minmax_col( sql_trans *tr, sql_column *c)
 }
 
 static int
-gtr_minmax_table(sql_trans *tr, sql_table *t, int *changes)
+gtr_minmax_table(sql_trans *tr, sql_table *t)
 {
 	int ok = LOG_OK;
 	node *n;
 
-	(void)changes;
 	if (t->access > TABLE_WRITABLE) {
 		for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
 			sql_column *c = n->data;

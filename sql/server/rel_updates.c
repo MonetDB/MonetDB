@@ -964,6 +964,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 					sql->errstr[0] = 0;
 					sql->session->status = status;
 					if (single) {
+						rel_val = NULL;
 						v = rel_value_exp(sql, &r, a, sql_sel, ek);
 					} else if (!rel_val && r) {
 						r = rel_subquery(sql, r, a, ek, APPLY_LOJ);

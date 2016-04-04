@@ -489,13 +489,17 @@ isProcedure(MalBlkPtr mb, InstrPtr p)
 
 int
 isUpdateInstruction(InstrPtr p){
-	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
-	   (getFunctionId(p) == insertRef ||
-		getFunctionId(p) == inplaceRef ||
+	if ( getModuleId(p) == sqlRef &&
+	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == deleteRef ))
+		getFunctionId(p) == replaceRef ))
+			return TRUE;
+	if ( getModuleId(p) == batRef &&
+	   ( getFunctionId(p) == inplaceRef ||
+		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == updateRef ||
+		getFunctionId(p) == replaceRef ))
 			return TRUE;
 	return FALSE;
 }

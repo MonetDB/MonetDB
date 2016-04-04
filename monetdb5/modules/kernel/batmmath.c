@@ -128,6 +128,50 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
+}																		\
+																		\
+str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
+									   const bat *bid)					\
+{																		\
+	BAT *b, *bn;														\
+	TYPE *o, *p, *q;													\
+																		\
+	if ((b = BATdescriptor(*bid)) == NULL) {							\
+		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
+	}																	\
+	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
+	o = (TYPE *) Tloc(bn, BUNfirst(bn));								\
+	p = (TYPE *) Tloc(b, BUNfirst(b));									\
+	q = (TYPE *) Tloc(b, BUNlast(b));									\
+																		\
+	errno = 0;															\
+	feclearexcept(FE_ALL_EXCEPT);										\
+	if (b->T->nonil) {													\
+		for (; p < q; o++, p++)											\
+			*o = FUNC##SUFF(*d, *p);									\
+	} else {															\
+		for (; p < q; o++, p++)											\
+			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
+	}																	\
+	if (errno != 0 ||													\
+		fetestexcept(FE_INVALID | FE_DIVBYZERO |						\
+					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {				\
+		int e = errno;													\
+		BBPunfix(bn->batCacheid);										\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s",				\
+			  strerror(e));												\
+	}																	\
+	BATsetcount(bn, BATcount(b));										\
+	bn->tsorted = 0;													\
+	bn->trevsorted = 0;													\
+	bn->T->nil = b->T->nil;												\
+	bn->T->nonil = b->T->nonil;											\
+	BATkey(BATmirror(bn),0);											\
+	if (!(bn->batDirty&2))												\
+		BATsetaccess(bn, BAT_READ);										\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	BBPunfix(b->batCacheid);											\
+	return MAL_SUCCEED;													\
 }
 
 #define scienceImpl(Operator)					\

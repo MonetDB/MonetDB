@@ -3207,7 +3207,7 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 		if (i->key && constraint) {
 			stmt *ckeys = sql_insert_key(sql, newl, i->key, is, pin);
 
-			list_prepend(l, ckeys);
+			list_append(l, ckeys);
 		}
 		if (!insert)
 			insert = is;
@@ -3221,9 +3221,9 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
-	l = list_append(l, stmt_list(sql->sa, newl));
 	if (constraint)
 		sql_insert_check_null(sql, t, newl, l);
+	l = list_append(l, stmt_list(sql->sa, newl));
 	if (!sql_insert_triggers(sql, t, l)) 
 		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (insert->op1->nrcols == 0) {
