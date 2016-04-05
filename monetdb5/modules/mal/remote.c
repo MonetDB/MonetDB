@@ -871,7 +871,8 @@ str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, tmp;
-	int i, len, buflen;
+	int i;
+	size_t len, buflen;
 	connection c= NULL;
 	char *qbuf;
 	MapiHdl mhdl;
