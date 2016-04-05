@@ -854,8 +854,11 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
 		errno = 0;
-		d = strtod(src, &pe);
-		p = pe;
+		d = strtod(p, &pe);
+		if (p == pe)
+			p = src; /* nothing converted */
+		else
+			p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
 #ifdef isfinite
@@ -917,8 +920,11 @@ fltFromStr(const char *src, int *len, flt **dst)
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
 		errno = 0;
-		f = strtof(src, &pe);
-		p = pe;
+		f = strtof(p, &pe);
+		if (p == pe)
+			p = src; /* nothing converted */
+		else
+			p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #else /* no strtof, try sscanf */

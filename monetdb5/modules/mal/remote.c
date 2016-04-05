@@ -862,9 +862,10 @@ str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, tmp;
-	int i, len;
+	int i;
+	size_t len, buflen;
 	connection c= NULL;
-	char qbuf[BUFSIZ+1];	/* FIXME: make this dynamic */
+	char *qbuf;
 	MapiHdl mhdl;
 
 	(void)cntxt;
@@ -892,38 +893,56 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
+	assert(pci->argc - pci->retc >= 3); /* conn, mod, func, ... */
+
+	len = 0;
+	/* count how big a buffer we need */
+	len += 2 * (pci->retc > 1);
+	for (i = 0; i < pci->retc; i++) {
+		len += 2 * (i > 0);
+		len += strlen(*getArgReference_str(stk, pci, i));
+	}
+	len += strlen(mod) + strlen(func) + 6;
+	for (i = 3; i < pci->argc - pci->retc; i++) {
+		len += 2 * (i > 3);
+		len += strlen(*getArgReference_str(stk, pci, pci->retc + i));
+	}
+	len += 2;
+	buflen = len + 1;
+	if ((qbuf = GDKmalloc(buflen)) == NULL)
+		throw(MAL, "remote.exec", MAL_MALLOC_FAIL);
+
 	len = 0;
 
-	/* use previous defined remote objects to keep result */
 	if (pci->retc > 1)
 		qbuf[len++] = '(';
 	for (i = 0; i < pci->retc; i++)
-		len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
+		len += snprintf(&qbuf[len], buflen - len, "%s%s",
 				(i > 0 ? ", " : ""), *getArgReference_str(stk, pci, i));
 
-	if (pci->retc > 1 && len < BUFSIZ)
+	if (pci->retc > 1)
 		qbuf[len++] = ')';
 
 	/* build the function invocation string in qbuf */
-	len += snprintf(&qbuf[len], BUFSIZ - len, " := %s.%s(", mod, func);
+	len += snprintf(&qbuf[len], buflen - len, " := %s.%s(", mod, func);
 
 	/* handle the arguments to the function */
-	assert(pci->argc - pci->retc >= 3); /* conn, mod, func, ... */
 
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
 	for (i = 3; i < pci->argc - pci->retc; i++) {
-		len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
+		len += snprintf(&qbuf[len], buflen - len, "%s%s",
 				(i > 3 ? ", " : ""),
 				*(getArgReference_str(stk, pci, pci->retc + i)));
 	}
 
 	/* finish end execute the invocation string */
-	len += snprintf(&qbuf[len], BUFSIZ - len, ");");
+	len += snprintf(&qbuf[len], buflen - len, ");");
 #ifdef _DEBUG_REMOTE
 	mnstr_printf(cntxt->fdout,"#remote.exec:%s:%s\n",c->name,qbuf);
 #endif
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
+	GDKfree(qbuf);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 	MT_lock_unset(&c->lock);

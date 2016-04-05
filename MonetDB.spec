@@ -104,7 +104,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP4/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 BuildRequires: systemd
@@ -986,6 +986,20 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Apr 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
+- Rebuilt.
+- BZ#3905: MonetDB doesn't handle ANY/SOME/ALL operator correctly
+- BZ#3929: R aggregate not recognized when using 3 or more parameters
+- BZ#3965: Not possible to quote/escape single quote character in the
+  name of the file to load.
+- BZ#3968: Missing double use of column names
+
+* Mon Apr  4 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
+- gdk: Fixed a bug that caused various instances where old data returned or
+  where crashes occurred.  The problem was that internally data wasn't
+  always marked dirty when it was being changed, causiing later processing
+  to not deal with the changed data correctly.
+
 * Thu Mar 24 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.17-20160324
 - Rebuilt.
 - BZ#2972: SQL URL functionality contains errors

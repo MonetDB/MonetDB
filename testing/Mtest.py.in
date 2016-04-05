@@ -1752,6 +1752,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     elem = None
     reason = None               # reason for skipping (if any)
     links = []                  # symlinks we make
+    threads = None              # set if we override number of threads
 
     TX = 0
     EXT = CALL = SERVER = ""
@@ -1771,149 +1772,44 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".SQL"+xS[1]
         CALL = "other"
         SERVER = "SQL"
-    elif os.path.isfile(TST+".py")            or  os.path.isfile(TST+".py.src"):
-        EXT = ".py"
-        CALL = "python"
-    elif os.path.isfile(TST+".MAL"+".py")     or  os.path.isfile(TST+".MAL"+".py.src")     or  os.path.isfile(TST+".MAL"+".py.in"):
-        EXT = ".MAL.py"
-        CALL = "python"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
-        EXT = ".SQL.py"
-        CALL = "python"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
-        EXT = ".mal"
-        CALL = "mal"
-    elif os.path.isfile(TST+"_s00.mal")       or  os.path.isfile(TST+"_s00.mal.src")       or  os.path.isfile(TST+"_s00.mal.in"):
-        EXT = ".mal"
-        CALL = "malXs"
-    elif os.path.isfile(TST+".malC")          or  os.path.isfile(TST+".malC.src")          or  os.path.isfile(TST+".malC.in"):
-        EXT = ".malC"
-        CALL = "malC"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+"_s00.malC")      or  os.path.isfile(TST+"_s00.malC.src")      or  os.path.isfile(TST+"_s00.malC.in"):
-        EXT = ".malC"
-        CALL = "malCXs"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+"_p00.malC")      or  os.path.isfile(TST+"_p00.malC.src")      or  os.path.isfile(TST+"_p00.malC.in"):
-        EXT = ".malC"
-        CALL = "malCXp"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+".sql")           or  os.path.isfile(TST+".sql.src")           or  os.path.isfile(TST+".sql.in"):
-        EXT = ".sql"
-        CALL = "sql"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+"_s00.sql")       or  os.path.isfile(TST+"_s00.sql.src")       or  os.path.isfile(TST+"_s00.sql.in"):
-        EXT = ".sql"
-        CALL = "sqlXs"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+"_p00.sql")       or  os.path.isfile(TST+"_p00.sql.src")       or  os.path.isfile(TST+"_p00.sql.in"):
-        EXT = ".sql"
-        CALL = "sqlXp"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+".R"):
-        EXT = ".R"
-        CALL = "R"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+".rb")            or  os.path.isfile(TST+".rb.src")            or  os.path.isfile(TST+".rb.in"):
-        EXT = ".rb"
-        CALL = "ruby"
-        SERVER = "SQL"
-
-        #TODO:
-        #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
-        #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
-        #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
-        #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
-        os.chdir(TSTTRGDIR)
-        i = TST.rfind('.')
-        if i > 0:
-            return RunTest(env, TST[:i], BusyPorts, COND, oktests, length)
-        EXT = CALL = SERVER = ""
-        if COND:
-            for cond in COND.split('&'):
-                if cond.startswith('!'):
-                    negate = True
-                    cond = cond[1:]
-                else:
-                    negate = False
-                if cond == 'PREVREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
-                        reason = "as previous release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVHGEREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerel.zip')):
-                        reason = "as previous hugeint release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVCHAINREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
-                        reason = "as previous chained release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVHGECHAINREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
-                        reason = "as previous hugeint chained release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVRELEMPTY':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrelempty.zip')):
-                        reason = "as previous empty release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVHGERELEMPTY':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerelempty.zip')):
-                        reason = "as previous hugeint empty release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVCHAINRELEMPTY':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrelempty.zip')):
-                        reason = "as previous chained empty release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVHGECHAINRELEMPTY':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrelempty.zip')):
-                        reason = "as previous hugeint chained empty release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond.startswith('THREADS='):
-                    if (env['TST_THREADS'] == cond[8:]) == negate:
-                        reason = "as number of threads is wrong"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond.startswith('THREADS<='):
-                    if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
-                        reason = "as number of threads is wrong"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond.startswith('THREADS>='):
-                    if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
-                        reason = "as number of threads is wrong"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond not in CONDITIONALS:
-                    reason = "as conditional '%s' is unknown." % cond
-                    elem = SkipTest(env, TST, EXT, reason, length)
-                    break
-                elif (not CONDITIONALS[cond]) != negate:
-                    if negate:
-                        reason = "as conditional '%s' holds." % cond
-                    else:
-                        reason = "as conditional '%s' does not hold." % cond
-                    elem = SkipTest(env, TST, EXT, reason, length)
-                    break
-        if reason:
-            pass
-        elif os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`")
+        tests = (
+            # file extention  EXT        CALL      SERVER
+            ('.py',           '.py',     'python', ''),
+            ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
+            ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+            ('.mal',          '.mal',    'mal',    ''),
+            ('_s00.mal',      '.mal',    'malXs',  ''),
+            ('.malC',         '.malC',   'malC',   'MAL'),
+            ('_s00.malC',     '.malC',   'malCXs', 'MAL'),
+            ('_p00.malC',     '.malC',   'malCXp', 'MAL'),
+            ('.sql',          '.sql',    'sql',    'SQL'),
+            ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
+            ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
+            ('.R',            '.R',      'R',      'SQL'),
+            ('.rb',           '.rb',     'ruby',   'SQL'),
+            #TODO:
+            # ('.java',         '.java',   'Java',   'SQL'),
+            # ('_s00.java',     '.java',   'JavaXs', 'SQL'),
+            # ('_p00.java',     '.java',   'JavaXp', 'SQL'),
+            # ('.odmg',         '.odmg',   'odmg',   'SQL'),
+        )
+        for tst, ext, cll, srv in tests:
+            if os.path.isfile(TST + tst) or \
+               os.path.isfile(TST + tst + '.src') or \
+               os.path.isfile(TST + tst + '.in'):
+                EXT = ext
+                CALL = cll
+                SERVER = srv
+                break
+        else:
+            if os.name == "nt":
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`"
             #TODO:
             #elif os.name == "posix":
-        else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`")
-        return TX,Failed,Failed,elem,reason,links
+            else:
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`"
+            return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
@@ -1970,7 +1866,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
-                if (env['TST_THREADS'] == cond[8:]) == negate:
+                if env['GDK_NR_THREADS'] == '0':
+                    threads = cond[8:]
+                elif (env['TST_THREADS'] == cond[8:]) == negate:
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
@@ -2154,7 +2052,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2783,7 +2681,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2856,6 +2754,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     Srvr.remove('--forcemito')
                 except ValueError:
                     pass
+            if threads is not None:
+                for i in range(len(Srvr)):
+                    if Srvr[i].startswith('gdk_nr_threads='):
+                        Srvr[i] = 'gdk_nr_threads=%s' % threads
+                        break
             Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
             if env.get('MULTIFARM'):
                 Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
