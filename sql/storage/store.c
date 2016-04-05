@@ -1710,7 +1710,11 @@ store_manager(void)
 		}
 
 		MT_lock_set(&bs_lock);
-        	if (GDKexiting() || (!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+        	if (GDKexiting()) {
+            		MT_lock_unset(&bs_lock);
+            		return;
+        	}
+        	if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
             		MT_lock_unset(&bs_lock);
             		continue;
         	}
@@ -1718,7 +1722,7 @@ store_manager(void)
         	while (store_nr_active) { /* find a moment to flush */
             		MT_lock_unset(&bs_lock);
 			if (GDKexiting())
-				continue;
+				return;
             		MT_sleep_ms(timeout);
             		MT_lock_set(&bs_lock);
         	}
