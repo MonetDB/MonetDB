@@ -1677,11 +1677,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					const oid *rcand = (const oid *) Tloc((s), 0);
 
 					for (i = low; i < high; i++) {
-						if (vwl <= *rs &&
-						    *rs < vwh &&
-						    binsearchcand(rcand, 0, s->batCount, *rbn)) {
-							*rbn++ = *rs;
-							cnt++;
+						if (vwl <= *rs && *rs < vwh) {
+							if (binsearchcand(rcand, 0, s->batCount, *rs)) {
+								*rbn++ = *rs;
+								cnt++;
+							}
 						}
 						rs++;
 					}
