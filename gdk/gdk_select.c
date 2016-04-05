@@ -1455,9 +1455,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* If there is an order index or it is a view and the parent has an ordered
 	 * index, and the bat is not tsorted or trevstorted then use the order
 	 * index.
+	 * And there is no cand list or if there is one, it is dense.
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
 	    !(b->tsorted || b->trevsorted) &&
+	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
 	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(abs(VIEWtparent(b)), 0)))))
 	{
@@ -1675,6 +1677,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				if (s && !BATtdense(s)) {
 					const oid *rcand = (const oid *) Tloc((s), 0);
+					assert("should not use orderidx with non dense cand list, too expensive");
 
 					for (i = low; i < high; i++) {
 						if (vwl <= *rs && *rs < vwh) {
