@@ -86,7 +86,7 @@ def freeport():
     sock.close()
     return port
 
-ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql/benchmarks/ssbm/Tests')
+ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql', 'benchmarks', 'ssbm', 'Tests')
 ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
 tmpdir = tempfile.mkdtemp()
 
@@ -110,7 +110,7 @@ for lines in range(0, len(inputData), linesperslice):
     outputStr = '\n'.join(outputData)
     if outputStr[-1] != '\n':
         outputStr += '\n'
-    outputFile = open(os.path.join(lineorderdir, 'split-' + str(i)), 'w')
+    outputFile = open(os.path.join(lineorderdir, 'split-%d' % i), 'w')
     outputFile.write(outputStr)
     outputFile.close()
     i += 1
@@ -121,14 +121,14 @@ def worker_load(workerrec):
     c = workerrec['conn'].cursor()
     stable = shardtable + workerrec['tpf']
 
-    screateq = 'create table ' + stable + ' ' + shardedtabledef;
-    sloadq = 'copy into ' + stable + ' from \'' + workerrec['split'] + '\''
+    screateq = 'create table %s %s' % (stable, shardedtabledef)
+    sloadq = 'copy into %s from \'%s\'' % (stable, workerrec['split'].replace('\\', '\\\\'))
     c.execute(screateq)
     c.execute(sloadq)
 
     rtable = repltable + workerrec['tpf']
-    rcreateq = 'create table ' + rtable  + ' '+ replicatedtabledef
-    rloadq = 'copy into ' + rtable + ' from \'' + workerrec['repldata'] + '\''
+    rcreateq = 'create table %s %s' % (rtable, replicatedtabledef)
+    rloadq = 'copy into %s from \'%s\'' % (rtable, workerrec['repldata'].replace('\\', '\\\\'))
     c.execute(rcreateq)
     c.execute(rloadq)
 
@@ -136,16 +136,16 @@ def worker_load(workerrec):
 workers = []
 for i in range(nworkers):
     workerport = freeport()
-    workerdbname = 'worker_' + str(i)
+    workerdbname = 'worker_%d' % i
     workerrec = {
         'no'       : i,
         'port'     : workerport,
         'dbname'   : workerdbname,
         'dbfarm'   : os.path.join(tmpdir, workerdbname),
-        'mapi'     : 'mapi:monetdb://localhost:'+str(workerport)+'/' + workerdbname,
+        'mapi'     : 'mapi:monetdb://localhost:%d/%s' % (workerport, workerdbname),
         'split'    : loadsplits[i],
         'repldata' : os.path.join(ssbmdatapath, 'date.tbl'),
-        'tpf'      : '_' + str(i)
+        'tpf'      : '_%d' % i
     }
     workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
     workerrec['conn'] = monetdb.sql.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
@@ -161,24 +161,24 @@ c.execute("""
 COPY INTO SUPPLIER  FROM 'PWD/supplier.tbl';
 COPY INTO CUSTOMER  FROM 'PWD/customer.tbl';
 COPY INTO PART      FROM 'PWD/part.tbl';
-""".replace('PWD', ssbmdatapath))
+""".replace('PWD', ssbmdatapath.replace('\\', '\\\\')))
 
 # wait until they are finished loading
 for workerrec in workers:
     workerrec['loadthread'].join()
 
 # glue everything together on the master
-mtable = 'create merge table ' + shardtable + ' ' + shardedtabledef
+mtable = 'create merge table %s %s' % (shardtable, shardedtabledef)
 c.execute(mtable)
-rptable = 'create replica table ' +  repltable + ' ' + replicatedtabledef
+rptable = 'create replica table %s %s' % (repltable, replicatedtabledef)
 c.execute(rptable)
 for workerrec in workers:
-    rtable = 'create remote table ' +  shardtable + workerrec['tpf'] + ' ' + shardedtabledef + ' on \'' + workerrec['mapi'] + '\''
-    atable = 'alter table ' + shardtable + ' add table ' + shardtable + workerrec['tpf'];
+    rtable = 'create remote table %s%s %s on \'%s\'' % (shardtable, workerrec['tpf'], shardedtabledef, workerrec['mapi'])
+    atable = 'alter table %s add table %s%s' % (shardtable, shardtable, workerrec['tpf'])
     c.execute(rtable)
     c.execute(atable)
-    rtable = 'create remote table ' +  repltable + workerrec['tpf'] + ' ' + replicatedtabledef + ' on \'' + workerrec['mapi'] + '\''
-    atable = 'alter table ' + repltable + ' add table ' + repltable + workerrec['tpf'];
+    rtable = 'create remote table %s%s %s on \'%s\'' % (repltable, workerrec['tpf'], replicatedtabledef, workerrec['mapi'])
+    atable = 'alter table %s add table %s%s' % (repltable, repltable, workerrec['tpf'])
     c.execute(rtable)
     c.execute(atable)
 
@@ -190,7 +190,7 @@ print str(c.fetchall()[0][0]) + ' rows in mergetable'
 queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
 queries.sort()
 for q in queries:
-    print '# Running Q' +os.path.basename(q).replace('.sql','')
+    print '# Running Q %s' % os.path.basename(q).replace('.sql','')
     mc = process.client('sql', stdin=open(q), dbname='master', host='localhost', port=masterport, stdout=process.PIPE, stderr=process.PIPE, log=1)
     out, err = mc.communicate()
     sys.stdout.write(out)
