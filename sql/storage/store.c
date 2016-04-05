@@ -1632,7 +1632,11 @@ store_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock, "store_manager");
-		if (GDKexiting() || logger_funcs.changes() < 1000000) {
+		if (GDKexiting()) {
+			MT_lock_unset(&bs_lock, "store_manager");
+			return;
+		}
+		if (logger_funcs.changes() < 1000000) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
 		}
@@ -1640,7 +1644,7 @@ store_manager(void)
 			MT_lock_unset(&bs_lock, "store_manager");
 			MT_sleep_ms(50);
 			if (GDKexiting())
-				continue;
+				return;
 			MT_lock_set(&bs_lock, "store_manager");
 		}
 		logging = 1;
