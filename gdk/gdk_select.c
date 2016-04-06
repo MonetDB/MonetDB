@@ -1211,7 +1211,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	int hval, lval, equi, t, lnil, hash;
 	bat parent;
 	const void *nil;
-	BAT *bn;
+	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	union {
 		bte v_bte;
@@ -1634,9 +1634,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		(((b->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		   || (parent != 0 &&
-		       /* temporarily misuse bn */
-		       (bn = BBPquickdesc(abs(parent),0)) != NULL &&
-		       bn->batPersistence == PERSISTENT)
+		       (tmp = BBPquickdesc(abs(parent),0)) != NULL &&
+		       tmp->batPersistence == PERSISTENT)
 #endif
 			  ) &&
 		 (size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
@@ -1723,9 +1722,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
 		     (parent != 0 &&
-		      /* temporarily misuse bn */
-		      (bn = BBPquickdesc(abs(parent),0)) != NULL &&
-		      bn->batPersistence == PERSISTENT))) {
+		      (tmp = BBPquickdesc(abs(parent),0)) != NULL &&
+		      tmp->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
 			 *  ii) it is not an equi-select, and
