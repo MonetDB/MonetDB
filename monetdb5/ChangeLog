@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Apr  6 2016 Martin Kersten <mk@cwi.nl>
+- Keep a collection of full traces Each time the SQL user applies
+  the TRACE option, the full json trace is retained within the
+  <dbpath>/<dbname>/sql_traces
+
