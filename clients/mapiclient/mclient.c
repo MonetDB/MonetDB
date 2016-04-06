@@ -2011,6 +2011,7 @@ doFileBulk(Mapi mid, stream *fp)
 			if (hdl == NULL)
 				break;	/* nothing more to do */
 			buf[0] = 0;
+			length = 0; /* handle error like EOF */
 		} else {
 			buf[length] = 0;
 			if (strlen(buf) < (size_t) length) {
@@ -3046,13 +3047,16 @@ main(int argc, char **argv)
 			break;
 #ifdef HAVE_ICONV
 		case 'E':
+			assert(optarg);
 			encoding = optarg;
 			break;
 #endif
 		case 'L':
+			assert(optarg);
 			logfile = strdup(optarg);
 			break;
 		case 'l':
+			assert(optarg);
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
 			    strcmp(optarg, "sq") == 0 ||
@@ -3075,15 +3079,18 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'n':
+			assert(optarg);
 			nullstring = optarg;
 			break;
 		case 'u':
+			assert(optarg);
 			if (user)
 				free(user);
 			user = strdup(optarg);
 			user_set_as_flag = 1;
 			break;
 		case 'f':
+			assert(optarg);
 			if (output != NULL)
 				free(output);
 			output = strdup(optarg);	/* output format */
@@ -3105,9 +3112,11 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'h':
+			assert(optarg);
 			host = optarg;
 			break;
 		case 'p':
+			assert(optarg);
 			port = atoi(optarg);
 			break;
 		case 'D':
@@ -3117,20 +3126,25 @@ main(int argc, char **argv)
 			useinserts = 1;
 			break;
 		case 'd':
+			assert(optarg);
 			dbname = optarg;
 			break;
 		case 's':
+			assert(optarg);
 			command = optarg;
 			break;
 		case 'w':
+			assert(optarg);
 			pagewidth = atoi(optarg);
 			pagewidthset = pagewidth != 0;
 			break;
 		case 'r':
+			assert(optarg);
 			rowsperpage = atoi(optarg);
 			break;
 #ifdef HAVE_POPEN
 		case '|':
+			assert(optarg);
 			pager = optarg;
 			break;
 #endif
