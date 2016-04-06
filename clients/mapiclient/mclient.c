@@ -24,7 +24,6 @@
 #include "mapi.h"
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <errno.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -2939,6 +2938,7 @@ main(int argc, char **argv)
 	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
+	FILE *fp = NULL;
 	int trace = 0;
 	int dump = 0;
 	int useinserts = 0;
@@ -2950,7 +2950,6 @@ main(int argc, char **argv)
 	int option_index = 0;
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
-	struct stat statb;
 	char user_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
@@ -3211,7 +3210,7 @@ main(int argc, char **argv)
 	has_fileargs = optind != argc;
 
 	if (dbname == NULL && has_fileargs &&
-	    (stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode))) {
+	    (fp = fopen(argv[optind], "r")) == NULL) {
 		dbname = argv[optind];
 		optind++;
 		has_fileargs = optind != argc;
@@ -3353,10 +3352,10 @@ main(int argc, char **argv)
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
-			FILE *fp;
 			stream *s;
 
-			if ((fp = fopen(argv[optind], "r")) == NULL) {
+			if (fp == NULL &&
+			    (fp = fopen(argv[optind], "r")) == NULL) {
 				fprintf(stderr, "%s: cannot open\n", argv[optind]);
 				c |= 1;
 			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
@@ -3366,6 +3365,7 @@ main(int argc, char **argv)
 				c |= doFile(mid, s, useinserts, interactive, save_history);
 				close_stream(s);
 			}
+			fp = NULL;
 			optind++;
 		}
 	} else if (command && mapi_get_active(mid))
