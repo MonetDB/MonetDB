@@ -1680,9 +1680,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					assert("should not use orderidx with non dense cand list, too expensive");
 
 					for (i = low; i < high; i++) {
-						if (vwl <= *rs && *rs < vwh) {
-							if (binsearchcand(rcand, 0, s->batCount, *rs)) {
-								*rbn++ = *rs;
+						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
+							if (binsearchcand(rcand, 0, s->batCount, ((*rs)&BUN_UNMSK))) {
+								*rbn++ = ((*rs)&BUN_UNMSK);
 								cnt++;
 							}
 						}
@@ -1699,9 +1699,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 							vwh = s->tseqbase + BATcount(s);
 					}
 					for (i = low; i < high; i++) {
-						if (vwl <= *rs &&
-						    *rs < vwh) {
-							*rbn++ = *rs;
+						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
+							*rbn++ = ((*rs)&BUN_UNMSK);
 							cnt++;
 						}
 						rs++;

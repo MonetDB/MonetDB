@@ -210,22 +210,58 @@ BATorderidx(BAT *b, int stable)
 	return GDK_SUCCEED;
 }
 
-#define BINARY_MERGE(TYPE)						\
+#define UNARY_MERGE(TYPE)						\
 	do {								\
 		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
-		while (p0 < q0 && p1 < q1) {				\
-			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) { \
-				*mv++ = *p0++;				\
-			} else {					\
-				*mv++ = *p1++;				\
+		while (p < q) {						\
+			*mv = *p++;					\
+			if (p < q && v[*mv - b->hseqbase] != v[*p - b->hseqbase]) { \
+				*mv |= BUN_MSK;				\
 			}						\
+			mv++;						\
 		}							\
-		while (p0 < q0) {					\
-			*mv++ = *p0++;					\
-		}							\
-		while (p1 < q1) {					\
-			*mv++ = *p1++;					\
-		}							\
+		*(mv-1) |= BUN_MSK;					\
+	} while (0)
+
+#define BINARY_MERGE(TYPE)									\
+	do {											\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));					\
+		while (p0 < q0 && p1 < q1) {							\
+			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) {			\
+				*mv = *p0++;							\
+				if (p0 < q0 && v[*mv - b->hseqbase] != v[*p0 - b->hseqbase]) {	\
+					*mv |= BUN_MSK;						\
+				}								\
+				mv++;								\
+			} else {								\
+				*mv++ = *p1++;							\
+				if (p1 < q1 && v[*mv - b->hseqbase] != v[*p1 - b->hseqbase]) {	\
+					*mv |= BUN_MSK;						\
+				}								\
+				mv++;								\
+			}									\
+		}										\
+		if (p0 < q0 && v[*(mv-1) - b->hseqbase] != v[*p0 - b->hseqbase]) {		\
+			*(mv-1) |= BUN_MSK;							\
+		}										\
+		while (p0 < q0) {								\
+			*mv = *p0++;								\
+			if (p0 < q0 && v[*mv - b->hseqbase] != v[*p0 - b->hseqbase]) {		\
+				*mv |= BUN_MSK;							\
+			}									\
+			mv++;									\
+		}										\
+		if (p1 < q1 && v[*(mv-1) - b->hseqbase] != v[*p1 - b->hseqbase]) {		\
+			*(mv-1) |= BUN_MSK;							\
+		}										\
+		while (p1 < q1) {								\
+			*mv = *p1++;								\
+			if (p1 < q1 && v[*mv - b->hseqbase] != v[*p1 - b->hseqbase]) {		\
+				*mv |= BUN_MSK;							\
+			}									\
+			mv++;									\
+		}										\
+		*(mv-1) |= BUN_MSK;								\
 	} while(0)
 
 #define swap(X,Y,TMP)  (TMP)=(X);(X)=(Y);(Y)=(TMP)
@@ -258,37 +294,50 @@ BATorderidx(BAT *b, int stable)
 		} while (cur != min);					\
 	} while (0)
 
-#define NWAY_MERGE(TYPE)						\
-	do {								\
-		TYPE *minhp, t;						\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
-		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) { \
-			goto bailout;					\
-		}							\
-		/* init min heap */					\
-		for (i = 0; i < n_ar; i++) {				\
-			minhp[i] = v[*p[i] - b->hseqbase];		\
-		}							\
-		for (i = n_ar/2; i >=0 ; i--) {				\
-			HEAPIFY(i);					\
-		}							\
-		/* merge */						\
-		while (n_ar > 1) {					\
-			*mv++ = *(p[0])++;				\
-			if (p[0] < q[0]) {				\
-				minhp[0] = v[*p[0] - b->hseqbase];	\
-			} else {					\
-				swap(minhp[0], minhp[n_ar-1], t);	\
-				swap(p[0], p[n_ar-1], t_oid);		\
-				swap(q[0], q[n_ar-1], t_oid);		\
-				n_ar--;					\
-			}						\
-			HEAPIFY(0);					\
-		}							\
-		while (p[0] < q[0]) {					\
-			*mv++ = *(p[0])++;				\
-		}							\
-		GDKfree(minhp);						\
+#define NWAY_MERGE(TYPE)									\
+	do {											\
+		TYPE *minhp, t;									\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));					\
+		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {			\
+			goto bailout;								\
+		}										\
+		/* init min heap */								\
+		for (i = 0; i < n_ar; i++) {							\
+			minhp[i] = v[*p[i] - b->hseqbase];					\
+		}										\
+		for (i = n_ar/2; i >=0 ; i--) {							\
+			HEAPIFY(i);								\
+		}										\
+		/* merge */									\
+		while (n_ar > 1) {								\
+			*mv = *(p[0])++;							\
+			if (p[0] < q[0] && v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {	\
+				*mv |= BUN_MSK;							\
+			}									\
+			mv++;									\
+			if (p[0] < q[0]) {							\
+				minhp[0] = v[*p[0] - b->hseqbase];				\
+				HEAPIFY(0);							\
+			} else {								\
+				swap(minhp[0], minhp[n_ar-1], t);				\
+				swap(p[0], p[n_ar-1], t_oid);					\
+				swap(q[0], q[n_ar-1], t_oid);					\
+				n_ar--;								\
+				HEAPIFY(0);							\
+				if (v[*(mv-1) - b->hseqbase] != v[*p[0] - b->hseqbase]) {	\
+					*(mv-1) |= BUN_MSK;					\
+				}								\
+			}									\
+		}										\
+		while (p[0] < q[0]) {								\
+			*mv = *(p[0])++;							\
+			if (p[0] < q[0] && v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {	\
+				*mv |= BUN_MSK;							\
+			}									\
+			mv++;									\
+		}										\
+		*(mv-1) |= BUN_MSK;								\
+		GDKfree(minhp);									\
 	} while (0)
 
 gdk_return
@@ -328,10 +377,31 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	*mv++ = (oid) BATcount(b);
 
 	if (n_ar == 1) {
+		const oid *restrict p, *q;
 		/* One oid order bat, nothing to merge */
 		assert(BATcount(a[0]) == BATcount(b));
 		assert(VIEWtparent(a[0]) == -b->batCacheid && a[0]->torderidx);
-		memcpy(mv, (oid *) a[0]->torderidx->base + ORDERIDXOFF, BATcount(b) * SIZEOF_OID);
+		p = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
+		q = p + BATcount(a[0]);
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte: UNARY_MERGE(bte); break;
+		case TYPE_sht: UNARY_MERGE(sht); break;
+		case TYPE_int: UNARY_MERGE(int); break;
+		case TYPE_lng: UNARY_MERGE(lng); break;
+#ifdef HAVE_HGE
+		case TYPE_hge: UNARY_MERGE(hge); break;
+#endif
+		case TYPE_flt: UNARY_MERGE(flt); break;
+		case TYPE_dbl: UNARY_MERGE(dbl); break;
+		case TYPE_str:
+		default:
+			/* TODO: support strings, date, timestamps etc. */
+			assert(0);
+			HEAPfree(m, 1);
+			GDKfree(m);
+			MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+			return GDK_FAIL;
+		}
 	} else if (n_ar == 2) {
 		/* sort merge with 1 comparison per BUN */
 		const oid *restrict p0, *restrict p1, *q0, *q1;
