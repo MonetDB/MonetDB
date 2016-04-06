@@ -49,12 +49,9 @@ str geom_2_geom_bat(bat* outBAT_id, bat* inBAT_id, int* columnType, int* columnS
 		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i + BUNfirst(inBAT));
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) { //check type
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batcalc.wkb", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
 		GDKfree(outWKB);
@@ -104,13 +101,9 @@ str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe) {
 
 		inWKB = (char*) BUNtail(inBAT_iter, p);
 		if ((err = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbFromText", "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outSingle,TRUE); //add the result to the new BAT
 		GDKfree(outSingle);
@@ -161,12 +154,9 @@ str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx) 
 
 		inMBR = (mbr*) BUNtail(inBAT_iter, p);
 		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outDbl,TRUE);
 	}
@@ -216,13 +206,9 @@ static str WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = (*func)(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			str msg = createException(MAL, name, "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outSingle,TRUE); //add the result to the new BAT
 		GDKfree(outSingle);
@@ -282,13 +268,9 @@ static str WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(wkb**, wkb**)
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = (*func)(&outSingle, &inWKB)) != MAL_SUCCEED) {
-			str msg = createException(MAL, name, "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outSingle,TRUE); //add the result to the new BAT
 		GDKfree(outSingle);
@@ -345,13 +327,9 @@ static str WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = (*func)(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			str msg = createException(MAL, name, "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outSingle,TRUE); //add the result to the new BAT
 		GDKfree(outSingle);
@@ -407,13 +385,9 @@ static str WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(bit*, wkb**),
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = (*func)(&outSingle, &inWKB)) != MAL_SUCCEED) {
-			str msg = createException(MAL, name, "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outSingle,TRUE); //add the result to the new BAT
 	}
@@ -481,13 +455,9 @@ static str WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func)(int*, wkb**),
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = (*func)(&outSingle, &inWKB)) != MAL_SUCCEED) {
-			str msg = createException(MAL, name, "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outSingle,TRUE); //add the result to the new BAT
 	}
@@ -545,13 +515,9 @@ static str WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int* flag, str (*f
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = (*func)(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			str msg = createException(MAL, name, "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outSingle,TRUE); //add the result to the new BAT
 	}
@@ -609,13 +575,9 @@ str wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int* flag) {
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			str msg = createException(MAL, "batgeom.wkbGetCoordinate", "%s", err);
-			GDKfree(err);
-
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outSingle,TRUE); //add the result to the new BAT
 	}
@@ -670,18 +632,13 @@ str wkbBox2D_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	bBAT_iter = bat_iterator(bBAT);
 
 	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
-		str err = NULL;
 		mbr *outSingle;
 
 		wkb *aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		if ((err = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
+		if ((ret = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPunfix(outBAT->batCacheid);	
-
-			ret = createException(MAL, "batgeom.wkbBox2D", "%s", err);
-			GDKfree(err);
-			
 			goto clean;
 		}
 		BUNappend(outBAT,outSingle,TRUE); //add the result to the outBAT
@@ -736,18 +693,13 @@ str wkbContains_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	bBAT_iter = bat_iterator(bBAT);
 
 	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
-		str err = NULL;
 		bit outBIT;
 
 		wkb *aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		wkb *bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		if ((err = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
-			BBPunfix(outBAT->batCacheid);	
-
-			ret = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			
+		if ((ret = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
+			BBPunfix(outBAT->batCacheid);
 			goto clean;
 		}
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
@@ -771,18 +723,18 @@ str wkbContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
+		throw(MAL, "batgeom.Contains", "Problem retrieving BAT");
 	}
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
+		throw(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
+		throw(MAL, "batgeom.Contains", "Error creating new BAT");
 	}
 	
 	//set the first idx of the output BAT equal to that of the aBAT
@@ -797,12 +749,9 @@ str wkbContains_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id) {
 		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
 
 		if ((err = wkbContains(&outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
 	}
@@ -821,18 +770,18 @@ str wkbContains_bat_geom(bat* outBAT_id, bat* inBAT_id, wkb** geomWKB) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		return createException(MAL, "batgeom.Contains", "Problem retrieving BAT");
+		throw(MAL, "batgeom.Contains", "Problem retrieving BAT");
 	}
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "The BAT must have dense head");
+		throw(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Contains", "Error creating new BAT");
+		throw(MAL, "batgeom.Contains", "Error creating new BAT");
 	}
 	
 	//set the first idx of the output BAT equal to that of the aBAT
@@ -847,12 +796,9 @@ str wkbContains_bat_geom(bat* outBAT_id, bat* inBAT_id, wkb** geomWKB) {
 		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
 
 		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Contains", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&outBIT,TRUE); //add the result to the outBAT
 	}
@@ -894,12 +840,9 @@ str wkbFromWKB_bat(bat* outBAT_id, bat* inBAT_id) {
 	for (i = 0; i < BATcount(inBAT); i++) { //iterate over all valid elements
 		str err = NULL;
 		if ((err = wkbFromWKB(&outWKB, &inWKB[i])) != MAL_SUCCEED) { 
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.wkb", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
 		GDKfree(outWKB);
@@ -968,7 +911,6 @@ str wkbMakePoint_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, bat* zBAT_id, b
 		mBAT_iter = bat_iterator(mBAT);
 
 	for (i = BUNfirst(xBAT); i < BATcount(xBAT); i++) { 
-		str err = NULL;
 		wkb *pointWKB = NULL;
 
 		double x = *((double*) BUNtail(xBAT_iter, i + BUNfirst(xBAT)));
@@ -981,12 +923,9 @@ str wkbMakePoint_bat(bat* outBAT_id, bat* xBAT_id, bat* yBAT_id, bat* zBAT_id, b
 		if(mBAT)
 			m = *((double*) BUNtail(mBAT_iter, i + BUNfirst(mBAT)));
 
-		if ((err = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) { //check
+		if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) { //check
 			BBPunfix(outBAT->batCacheid);	
 
-			ret = createException(MAL, "batgeom.MakePoint", "%s", err);
-			GDKfree(err);
-			
 			goto clean;
 		}
 		BUNappend(outBAT,pointWKB,TRUE); //add the result to the outBAT
@@ -1018,18 +957,18 @@ str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		return createException(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
+		throw(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
 	}
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.SetSRID", "The BAT must have dense head");
+		throw(MAL, "batgeom.SetSRID", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.SetSRID", "Error creating new BAT");
+		throw(MAL, "batgeom.SetSRID", "Error creating new BAT");
 	}
 	
 	//set the first idx of the output BAT equal to that of the input BAT
@@ -1044,12 +983,9 @@ str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid) {
 		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
 
 		if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) { //set SRID
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.SetSRID", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outWKB,TRUE); //add the point to the new BAT
 		GDKfree(outWKB);
@@ -1098,18 +1034,14 @@ str wkbDistance_bat(bat* outBAT_id, bat *aBAT_id, bat *bBAT_id) {
 	bBAT_iter = bat_iterator(bBAT);
 
 	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
-		str err = NULL;
 		double distanceVal = 0;
 
 		wkb* aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
 		wkb* bWKB = (wkb*) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
 
-		if ((err = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) { //check	
+		if ((ret = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) { //check	
 			BBPunfix(outBAT->batCacheid);	
 
-			ret = createException(MAL, "batgeom.Distance", "%s", err);
-			GDKfree(err);
-			
 			goto clean;
 		}
 		BUNappend(outBAT,&distanceVal,TRUE); //add the result to the outBAT
@@ -1134,18 +1066,18 @@ str wkbDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id) {
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		return createException(MAL, "batgeom.Distance", "Problem retrieving BAT");
+		throw(MAL, "batgeom.Distance", "Problem retrieving BAT");
 	}
 	
 	if ( !BAThdense(inBAT) ) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Distance", "The BAT must have dense head");
+		throw(MAL, "batgeom.Distance", "The BAT must have dense head");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		return createException(MAL, "batgeom.Distance", "Error creating new BAT");
+		throw(MAL, "batgeom.Distance", "Error creating new BAT");
 	}
 	//set the first idx of the output BAT equal to that of the aBAT
 	BATseqbase(outBAT, inBAT->hseqbase);
@@ -1159,12 +1091,9 @@ str wkbDistance_geom_bat(bat* outBAT_id, wkb** geomWKB, bat* inBAT_id) {
 		wkb *inWKB = (wkb*) BUNtail(inBAT_iter, p);
 
 		if ((err = wkbDistance(&distanceVal, geomWKB, &inWKB)) != MAL_SUCCEED) { //check
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.Distance", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,&distanceVal,TRUE); //add the result to the outBAT
 	}
@@ -1235,14 +1164,11 @@ str wkbFilter_bat(bat* aBATfiltered_id, bat* bBATfiltered_id, bat* aBAT_id, bat*
 		
 		//check the containment of the MBRs
 		if((err = mbrOverlaps_wkb(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
 			BBPunfix(aBATfiltered->batCacheid);
 			BBPunfix(bBATfiltered->batCacheid);
-			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		if(outBIT) {
 			BUNappend(aBATfiltered,aWKB, TRUE); //add the result to the aBAT
@@ -1306,12 +1232,9 @@ str wkbFilter_geom_bat(bat* BATfiltered_id, wkb** geomWKB, bat* BAToriginal_id) 
 
 	//create the MBR of the geom
 	if((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
-		str msg;
 		BBPunfix(BAToriginal->batCacheid);
 		BBPunfix(BATfiltered->batCacheid);
-		msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
-		GDKfree(err);
-		return msg;
+		return err;
 	}
 
 	for (i = BUNfirst(BAToriginal); i < BATcount(BAToriginal); i++) { 
@@ -1323,25 +1246,19 @@ str wkbFilter_geom_bat(bat* BATfiltered_id, wkb** geomWKB, bat* BAToriginal_id) 
 
 		//create the MBR for each geometry in the BAT
 		if((err = wkbMBR(&MBRoriginal, &WKBoriginal)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(BAToriginal->batCacheid);
 			BBPunfix(BATfiltered->batCacheid);
-			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
-			GDKfree(err);
 			GDKfree(geomMBR);
-			return msg;
+			return err;
 		}
 		
 		//check the containment of the MBRs
 		if((err = mbrOverlaps(&outBIT, &geomMBR, &MBRoriginal)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(BAToriginal->batCacheid);
 			BBPunfix(BATfiltered->batCacheid);
-			msg = createException(MAL, "batgeom.wkbFilter", "%s", err);
-			GDKfree(err);
 			GDKfree(geomMBR);
 			GDKfree(MBRoriginal);
-			return msg;
+			return err;
 		}
 
 		if(outBIT) {
@@ -1403,12 +1320,9 @@ str wkbMBR_bat(bat* outBAT_id, bat* inBAT_id) {
 
 		inWKB = (wkb*) BUNtail(inBAT_iter, p);
 		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
-			str msg;
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			msg = createException(MAL, "batgeom.mbr", "%s", err);
-			GDKfree(err);
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outMBR,TRUE); //add the point to the new BAT
 		GDKfree(outMBR);
@@ -1430,11 +1344,7 @@ str wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int* coordinateIdx) 
 	int inBAT_mbr_id = 0; //the id of the bat with the mbrs
 
 	if((err = wkbMBR_bat(&inBAT_mbr_id, inBAT_id)) != MAL_SUCCEED) {
-		str msg;
-		msg = createException(MAL, "batgeom.coordinateFromMBR", "%s", err);
-		GDKfree(err);
-		return msg;
-
+		return err;
 	}
 
 	//call the bulk version of wkbCoordinateFromMBR
@@ -1452,26 +1362,26 @@ str wkbMakeLine_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 			BBPunfix(aBAT->batCacheid);	
 		if(bBAT)
 			BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.MakeLine", "Problem retrieving BATs");
+		throw(MAL, "batgeom.MakeLine", "Problem retrieving BATs");
 	}
 
 	//check if the BATs are dense and aligned
 	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
 		BBPunfix(aBAT->batCacheid);	
 		BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.MakeLine", "BATs must have dense heads");
+		throw(MAL, "batgeom.MakeLine", "BATs must have dense heads");
 	}
 	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
 		BBPunfix(aBAT->batCacheid);	
 		BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.MakeLine", "BATs must be aligned");
+		throw(MAL, "batgeom.MakeLine", "BATs must be aligned");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);	
 		BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.MakeLine", "Error creating new BAT");
+		throw(MAL, "batgeom.MakeLine", "Error creating new BAT");
 	}
 
 	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
@@ -1482,7 +1392,7 @@ str wkbMakeLine_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 	bBAT_iter = bat_iterator(bBAT);
 
 	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
-		str err = NULL, msg = NULL;
+		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
@@ -1492,11 +1402,7 @@ str wkbMakeLine_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 			BBPunfix(outBAT->batCacheid);	
 			BBPunfix(aBAT->batCacheid);	
 			BBPunfix(bBAT->batCacheid);	
-
-			msg = createException(MAL, "batgeom.MakeLine", "%s", err);
-			GDKfree(err);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outWKB,TRUE); //add the result to the outBAT
 		GDKfree(outWKB);
@@ -1521,26 +1427,26 @@ str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 			BBPunfix(aBAT->batCacheid);	
 		if(bBAT)
 			BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.Union", "Problem retrieving BATs");
+		throw(MAL, "batgeom.Union", "Problem retrieving BATs");
 	}
 
 	//check if the BATs are dense and aligned
 	if( !BAThdense(aBAT) || !BAThdense(bBAT) ) {
 		BBPunfix(aBAT->batCacheid);	
 		BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.Union", "BATs must have dense heads");
+		throw(MAL, "batgeom.Union", "BATs must have dense heads");
 	}
 	if( aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT) ) {
 		BBPunfix(aBAT->batCacheid);	
 		BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.Union", "BATs must be aligned");
+		throw(MAL, "batgeom.Union", "BATs must be aligned");
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);	
 		BBPunfix(bBAT->batCacheid);	
-		return createException(MAL, "batgeom.Union", "Error creating new BAT");
+		throw(MAL, "batgeom.Union", "Error creating new BAT");
 	}
 
 	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
@@ -1551,7 +1457,7 @@ str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 	bBAT_iter = bat_iterator(bBAT);
 
 	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) { 
-		str err = NULL, msg = NULL;
+		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
 		aWKB = (wkb*) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
@@ -1561,11 +1467,7 @@ str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id) {
 			BBPunfix(outBAT->batCacheid);	
 			BBPunfix(aBAT->batCacheid);	
 			BBPunfix(bBAT->batCacheid);	
-
-			msg = createException(MAL, "batgeom.Union", "%s", err);
-			GDKfree(err);
-			
-			return msg;
+			return err;
 		}
 		BUNappend(outBAT,outWKB,TRUE); //add the result to the outBAT
 		GDKfree(outWKB);
