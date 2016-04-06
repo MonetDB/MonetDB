@@ -3601,16 +3601,19 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 		for (n = exps->h; n; n = n->next) { 
 			sql_exp *e = n->data;
 			if (e->type == e_cmp && !e->f && !is_complex_exp(e->flag)) {
+				sql_rel *nr = NULL;
 				sql_exp *re = e->r, *ne = rel_find_exp(r, re);
 
 				if (ne && ne->card >= CARD_AGGR) /* possibly changed because of apply rewrites */
 					re->card = ne->card;
 
 				if (re->card >= CARD_AGGR) {
-					rel->l = rel_push_join(sql, r, e->l, re, NULL, e);
+					nr = rel_push_join(sql, r, e->l, re, NULL, e);
 				} else {
-					rel->l = rel_push_select(sql, r, e->l, e);
+					nr = rel_push_select(sql, r, e->l, e);
 				}
+				if (nr)
+					rel->l = nr;
 				/* only pushed down selects are counted */
 				if (r == rel->l) {
 					(*changes)++;
@@ -7464,7 +7467,19 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			r->r = r->l;
 			r->l = rel;
 			rel = r; 
-		} else { /* both used or unused */
+		} else if (rused && lused) { /* both used */
+			sql_rel *la = rel, *ra = rel_create(sql->sa);
+
+			ra->l = la->l;
+			ra->op = la->op;
+			ra->flag = la->flag;
+			la->r = r->l;
+			ra->r = r->r;
+
+			r->l = la;
+			r->r = ra;
+			rel = r; 
+		} else { /* both unused */
 			int flag = rel->flag;
 			node *n;
 			/* rewrite apply into join (later use flag, loj, join or exists (which is antijoin)) */
