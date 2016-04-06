@@ -14,3 +14,4 @@ update_crash.Bug-3954
 merge_project.Bug-3955
 decimal_vs_integer.Bug-3941
 foreign_key.Bug-3938
+rename_exps.Bug-3974

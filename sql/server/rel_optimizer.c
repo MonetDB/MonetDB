@@ -1711,7 +1711,32 @@ rel_no_rename_exps( list *exps )
 static void
 rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 {
+	int pos = 0;
 	node *n, *m;
+
+	/* check if a column uses an alias earlier in the list */
+	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next, pos++) {
+		sql_exp *e2 = m->data;
+
+		if (e2->type == e_column) {
+			sql_exp *ne = NULL;
+
+			if (e2->l) 
+				ne = exps_bind_column2(exps2, e2->l, e2->r);
+			if (!ne && !e2->l)
+				ne = exps_bind_column(exps2, e2->r, NULL);
+			if (ne) {
+				int p = list_position(exps2, ne);
+
+				if (p < pos) {
+					ne = list_fetch(exps1, p);
+					if (e2->l)
+						e2->l = exp_relname(ne);
+					e2->r = exp_name(ne);
+				}
+			}
+		}
+	}
 
 	assert(list_length(exps1) == list_length(exps2)); 
 	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
