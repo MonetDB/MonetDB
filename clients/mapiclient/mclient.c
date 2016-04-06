@@ -1987,7 +1987,7 @@ static int
 doFileBulk(Mapi mid, stream *fp)
 {
 	char *buf = NULL;
-	size_t length;
+	ssize_t length;
 	MapiHdl hdl = mapi_get_active(mid);
 	MapiMsg rc = MOK;
 	size_t bufsize = 0;
@@ -2014,7 +2014,7 @@ doFileBulk(Mapi mid, stream *fp)
 			buf[0] = 0;
 		} else {
 			buf[length] = 0;
-			if (strlen(buf) < length) {
+			if (strlen(buf) < (size_t) length) {
 				fprintf(stderr, "NULL byte in input\n");
 				errseen = 1;
 				break;
@@ -2027,7 +2027,7 @@ doFileBulk(Mapi mid, stream *fp)
 		}
 
 		assert(hdl != NULL);
-		mapi_query_part(hdl, buf, length);
+		mapi_query_part(hdl, buf, (size_t) length);
 		CHECK_RESULT(mid, hdl, continue, buf);
 
 		/* if not at EOF, make sure there is a newline in the

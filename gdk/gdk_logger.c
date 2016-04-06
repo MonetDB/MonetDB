@@ -852,13 +852,14 @@ logger_open(logger *lg)
 	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
-	GDKfree(filename);
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) {
 		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
+		GDKfree(filename);
 		return LOG_ERR;
 	}
+	GDKfree(filename);
 	if ((bid = logger_find_bat(lg, "seqs_id")) != 0) {
 		int dbg = GDKdebug;
 		BAT *b;
@@ -1734,7 +1735,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		 * what we expect, the conversion was apparently done
 		 * already, and so we can delete the file. */
 
-		/* Do not do conversion logger is shared/read-only */
+		/* Do not do conversion if logger is shared/read-only */
 		if (!lg->shared) {
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
 			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
@@ -1746,6 +1747,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				/* read the current log id without disturbing
 				 * the file pointer */
 				off = ftell(fp);
+				if (off < 0) /* should never happen */
+					goto error;
 				if (fscanf(fp, "%d", &curid) != 1)
 					curid = -1; /* shouldn't happen? */
 				fseek(fp, off, SEEK_SET);
@@ -2227,12 +2230,13 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
-		goto error;
+		return LOG_ERR;
 	}
 
 	if (check_version(lg, fp) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);
-		goto error;
+		fclose(fp);
+		return LOG_ERR;
 	}
 
 	/* read the last id */
@@ -2242,15 +2246,8 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 			fprintf(stderr, "#logger_read_last_transaction_id last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 	}
-
+	fclose(fp);
 	return lid;
-
-  error:
-	if (fp)
-		fclose(fp);
-	if (lg)
-		GDKfree(lg);
-	return LOG_ERR;
 }
 
 int

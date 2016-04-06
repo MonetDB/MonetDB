@@ -134,16 +134,21 @@ GDKcreatedir(const char *dir)
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
-	str dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL);
-	DIR *dirp = opendir(dirnamestr);
+	str dirnamestr;
+	DIR *dirp;
 	char *path;
 	struct dirent *dent;
 	int ret;
 
+	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
+		return GDK_FAIL;
+
 	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirnamestr);
 
-	if (dirp == NULL)
+	if ((dirp = opendir(dirnamestr)) == NULL) {
+		GDKfree(dirnamestr);
 		return GDK_SUCCEED;
+	}
 	while ((dent = readdir(dirp)) != NULL) {
 		if (dent->d_name[0] == '.' &&
 		    (dent->d_name[1] == 0 ||
