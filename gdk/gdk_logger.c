@@ -2067,13 +2067,19 @@ logger_exit(logger *lg)
 
 		if (fflush(fp) < 0 ||
 #if defined(_MSC_VER)
-		    _commit(_fileno(fp)) < 0 ||
+		    _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
-		    fdatasync(fileno(fp)) < 0 ||
+		    fdatasync(fileno(fp)) < 0
 #elif defined(HAVE_FSYNC)
-		    fsync(fileno(fp)) < 0 ||
+		    fsync(fileno(fp)) < 0
 #endif
-		    fclose(fp) < 0) {
+			) {
+			(void) fclose(fp);
+			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
+				filename);
+			return LOG_ERR;
+		}
+		if (fclose(fp) < 0) {
 			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
 			return LOG_ERR;
