@@ -1337,7 +1337,7 @@ wkbPointOnSurface(wkb **resWKB, wkb **geomWKB)
 }
 
 static str
-dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, char *path)
+dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
 {
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
@@ -1349,26 +1349,26 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 
 		(*lvl)++;
 
-		newPath = (char *) GDKmalloc((pathLength + lvlDigitsNum + 1) * sizeof(char));
-		strcpy(newPath, path);
-		sprintf(newPath + pathLength, "%u", *lvl);
+		newPath = GDKmalloc(pathLength + lvlDigitsNum + 1);
+		sprintf(newPath, "%s%u", path, *lvl);
 	} else {
 		//remove the comma at the end of the path
 		pathLength--;
-		newPath = (char *) GDKmalloc((pathLength + 1) * sizeof(char));
+		newPath = GDKmalloc(pathLength + 1);
 		strncpy(newPath, path, pathLength);
 		newPath[pathLength] = '\0';
 	}
 	BUNappend(idBAT, newPath, TRUE);
 	BUNappend(geomBAT, singleWKB, TRUE);
+	GDKfree(newPath);
 	GDKfree(singleWKB);
 
 	return MAL_SUCCEED;
 }
 
-static str dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path);
+static str dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
 static str
-dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path)
+dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int i;
 	const GEOSGeometry *multiGeometry = NULL;
@@ -1387,13 +1387,13 @@ dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
 
-		newPath = (char *) GDKmalloc((pathLength + lvlDigitsNum + extraLength + 1) * sizeof(char));
-		strcpy(newPath, path);
-		lvlDigitsNum = sprintf(newPath + pathLength, "%u", lvl);
-		strcpy(newPath + pathLength + lvlDigitsNum, extraStr);
+		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
-		if ((err = dumpGeometriesGeometry(idBAT, geomBAT, multiGeometry, newPath)) !=MAL_SUCCEED) {
+		err = dumpGeometriesGeometry(idBAT, geomBAT, multiGeometry, newPath);
+		GDKfree(newPath);
+		if (err != MAL_SUCCEED) {
 			idBAT = NULL;
 			geomBAT = NULL;
 			return err;
@@ -1403,7 +1403,7 @@ dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 }
 
 static str
-dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path)
+dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1442,7 +1442,6 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 	GEOSGeom geosGeometry;
 	unsigned int geometriesNum;
 	str err;
-	char *path = NULL;
 
 	if (wkb_isnil(*geomWKB)) {
 
@@ -1485,9 +1484,7 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 	}
 	BATseqbase(geomBAT, 0);
 
-	path = (char *) GDKmalloc(sizeof(char));
-	path[0] = '\0';
-	if ((err = dumpGeometriesGeometry(idBAT, geomBAT, geosGeometry, path)) !=MAL_SUCCEED) {
+	if ((err = dumpGeometriesGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
 		return err;
 	}
 
@@ -1497,7 +1494,7 @@ wkbDump(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 }
 
 static str
-dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, char *path)
+dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
 {
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
@@ -1506,19 +1503,19 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 
 	(*lvl)++;
 
-	newPath = (char *) GDKmalloc((pathLength + lvlDigitsNum + 1) * sizeof(char));
-	strcpy(newPath, path);
-	sprintf(newPath + pathLength, "%u", *lvl);
+	newPath = GDKmalloc(pathLength + lvlDigitsNum + 1);
+	sprintf(newPath, "%s%u", path, *lvl);
 
 	BUNappend(idBAT, newPath, TRUE);
 	BUNappend(geomBAT, pointWKB, TRUE);
+	GDKfree(newPath);
 	GDKfree(pointWKB);
 
 	return MAL_SUCCEED;
 }
 
 static str
-dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path)
+dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int pointsNum = 0;
 	str err;
@@ -1553,14 +1550,14 @@ dumpPointsLineString(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 }
 
 static str
-dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, char *path)
+dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
 {
 	const GEOSGeometry *exteriorRingGeometry;
 	int numInteriorRings = 0, i = 0;
 	str err;
 	int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
-	char *newPath = NULL;
+	char *newPath;
 	char *extraStr = ",";
 	int extraLength = 1;
 
@@ -1575,14 +1572,13 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 
 	(*lvl)++;
 
-	newPath = (char *) GDKmalloc((pathLength + lvlDigitsNum + extraLength + 1) * sizeof(char));
-	strcpy(newPath, path);
-	lvlDigitsNum = sprintf(newPath + pathLength, "%u", *lvl);
-	strcpy(newPath + pathLength + lvlDigitsNum, extraStr);
-
+	newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+	sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
 	//get the points in the exterior ring
-	if ((err = dumpPointsLineString(idBAT, geomBAT, exteriorRingGeometry, newPath)) !=MAL_SUCCEED) {
+	err = dumpPointsLineString(idBAT, geomBAT, exteriorRingGeometry, newPath);
+	GDKfree(newPath);
+	if (err != MAL_SUCCEED) {
 		idBAT = NULL;
 		geomBAT = NULL;
 		return err;
@@ -1599,13 +1595,12 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 		(*lvl)++;
 		lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 
+		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+		sprintf(newPath, "%s%u%s", path, *lvl, extraStr);
 
-		newPath = (char *) GDKmalloc((pathLength + lvlDigitsNum + extraLength + 1) * sizeof(char));
-		strcpy(newPath, path);
-		lvlDigitsNum = sprintf(newPath + pathLength, "%u", *lvl);
-		strcpy(newPath + pathLength + lvlDigitsNum, extraStr);
-
-		if ((err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath)) !=MAL_SUCCEED) {
+		err = dumpPointsLineString(idBAT, geomBAT, GEOSGetInteriorRingN(geosGeometry, i), newPath);
+		GDKfree(newPath);
+		if (err != MAL_SUCCEED) {
 			idBAT = NULL;
 			geomBAT = NULL;
 			return err;
@@ -1615,9 +1610,9 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	return MAL_SUCCEED;
 }
 
-static str dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path);
+static str dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
 static str
-dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path)
+dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int geometriesNum, i;
 	const GEOSGeometry *multiGeometry = NULL;
@@ -1636,13 +1631,13 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 		lvl++;
 
-		newPath = (char *) GDKmalloc((pathLength + lvlDigitsNum + extraLength + 1) * sizeof(char));
-		strcpy(newPath, path);
-		lvlDigitsNum = sprintf(newPath + pathLength, "%u", lvl);
-		strcpy(newPath + pathLength + lvlDigitsNum, extraStr);
+		newPath = GDKmalloc(pathLength + lvlDigitsNum + extraLength + 1);
+		sprintf(newPath, "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
-		if ((err = dumpPointsGeometry(idBAT, geomBAT, multiGeometry, newPath)) !=MAL_SUCCEED) {
+		err = dumpPointsGeometry(idBAT, geomBAT, multiGeometry, newPath);
+		GDKfree(newPath);
+		if (err != MAL_SUCCEED) {
 			idBAT = NULL;
 			geomBAT = NULL;
 			return err;
@@ -1653,7 +1648,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 }
 
 static str
-dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, char *path)
+dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1685,7 +1680,6 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 	int check = 0;
 	int pointsNum;
 	str err;
-	char *path = NULL;
 
 	if (wkb_isnil(*geomWKB)) {
 
@@ -1731,9 +1725,7 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 	}
 	BATseqbase(geomBAT, 0);
 
-	path = (char *) GDKmalloc(sizeof(char));
-	path[0] = '\0';
-	if ((err = dumpPointsGeometry(idBAT, geomBAT, geosGeometry, path)) !=MAL_SUCCEED) {
+	if ((err = dumpPointsGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
 		return err;
 	}
 
@@ -4289,8 +4281,11 @@ wkbMBR(mbr **geomMBR, wkb **geomWKB)
 
 	GEOSGeom_destroy(geosGeometry);
 
-	if (mbr_isnil(*geomMBR))
+	if (*geomMBR == NULL || mbr_isnil(*geomMBR)) {
+		GDKfree(*geomMBR);
+		*geomMBR = NULL;
 		throw(MAL, "wkb.mbr", "Failed to create mbr");
+	}
 
 	return MAL_SUCCEED;
 }
