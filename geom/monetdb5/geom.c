@@ -246,9 +246,9 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 	/* iterate over the interiorRing and transform each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
 	for (i = 0; i < numInteriorRings; i++) {
-		ret = transformLinearRing(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
+		ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
 		if (ret != MAL_SUCCEED) {
-			GDKfree(*transformedInteriorRingGeometries);
+			GDKfree(transformedInteriorRingGeometries);
 			*transformedGeometry = NULL;
 			return ret;
 		}
@@ -602,8 +602,8 @@ forceDimPolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, in
 	/* iterate over the interiorRing and translate each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
 	for (i = 0; i < numInteriorRings; i++) {
-		if ((ret = forceDimLinearRing(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), dim)) != MAL_SUCCEED) {
-			GDKfree(*transformedInteriorRingGeometries);
+		if ((ret = forceDimLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dim)) != MAL_SUCCEED) {
+			GDKfree(transformedInteriorRingGeometries);
 			*outGeometry = NULL;
 			return ret;
 		}
@@ -911,8 +911,8 @@ segmentizePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, 
 	//iterate over the interiorRing and segmentize each one of them
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
 	for (i = 0; i < numInteriorRings; i++) {
-		if ((err = segmentizeLineString(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), sz, 1)) != MAL_SUCCEED) {
-			GDKfree(*transformedInteriorRingGeometries);
+		if ((err = segmentizeLineString(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), sz, 1)) != MAL_SUCCEED) {
+			GDKfree(transformedInteriorRingGeometries);
 			*outGeometry = NULL;
 			return err;
 		}
@@ -1178,8 +1178,8 @@ translatePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, d
 	/* iterate over the interiorRing and translate each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
 	for (i = 0; i < numInteriorRings; i++) {
-		if ((err = translateLinearRing(&(transformedInteriorRingGeometries[i]), GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
-			GDKfree(*transformedInteriorRingGeometries);
+		if ((err = translateLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
+			GDKfree(transformedInteriorRingGeometries);
 			*outGeometry = NULL;
 			return err;
 		}
