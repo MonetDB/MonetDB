@@ -906,10 +906,12 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 	(void) be;
 	if (onoff) {
-		(void) newStmt(mb, "profiler", "starttrace");
+		q= newStmt(mb, "profiler", "starttrace");
+		q= pushStr(mb,q,"sql_traces");
 		initTrace();
 	} else {
-		(void) newStmt(mb, "profiler", "stoptrace");
+		q= newStmt(mb, "profiler", "stoptrace");
+		q= pushStr(mb,q,"sql_traces");
 		/* cook a new resultSet instruction */
 		resultset = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(resultset, sqlRef);
