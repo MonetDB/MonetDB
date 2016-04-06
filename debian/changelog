@@ -13,7 +13,7 @@ monetdb (11.21.19) unstable; urgency=low
 
   * gdk: Fixed a bug that caused various instances where old data returned or
     where crashes occurred.  The problem was that internally data wasn't
-    always marked dirty when it was being changed, causiing later processing
+    always marked dirty when it was being changed, causing later processing
     to not deal with the changed data correctly.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 4 Apr 2016 11:29:47 +0200
