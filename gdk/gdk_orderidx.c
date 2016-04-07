@@ -210,17 +210,17 @@ BATorderidx(BAT *b, int stable)
 	return GDK_SUCCEED;
 }
 
-#define UNARY_MERGE(TYPE)						\
-	do {								\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
-		while (p < q) {						\
-			*mv = *p++;					\
-			if (p < q && v[*mv - b->hseqbase] != v[*p - b->hseqbase]) { \
-				*mv |= BUN_MSK;				\
-			}						\
-			mv++;						\
-		}							\
-		*(mv-1) |= BUN_MSK;					\
+#define UNARY_MERGE(TYPE)									\
+	do {											\
+		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));					\
+		while (p < q) {									\
+			*mv = *p++;								\
+			if (p < q && v[*mv - b->hseqbase] != v[*p - b->hseqbase]) {		\
+				*mv |= BUN_MSK;							\
+			}									\
+			mv++;									\
+		}										\
+		*(mv-1) |= BUN_MSK;								\
 	} while (0)
 
 #define BINARY_MERGE(TYPE)									\
@@ -234,7 +234,7 @@ BATorderidx(BAT *b, int stable)
 				}								\
 				mv++;								\
 			} else {								\
-				*mv++ = *p1++;							\
+				*mv = *p1++;							\
 				if (p1 < q1 && v[*mv - b->hseqbase] != v[*p1 - b->hseqbase]) {	\
 					*mv |= BUN_MSK;						\
 				}								\
@@ -269,29 +269,29 @@ BATorderidx(BAT *b, int stable)
 #define left_child(X)  (2*(X)+1)
 #define right_child(X) (2*(X)+2)
 
-#define HEAPIFY(X)							\
-	do {								\
-		int cur, min = X, chld;					\
-		do {							\
-			cur = min;					\
-			if ((chld = left_child(cur)) < n_ar &&		\
-			    (minhp[chld] < minhp[min] ||		\
-			     (minhp[chld] == minhp[min] &&		\
-			      *p[cur] < *p[min]))) {			\
-				min = chld;				\
-			}						\
-			if ((chld = right_child(cur)) < n_ar &&		\
-			    (minhp[chld] < minhp[min] ||		\
-			     (minhp[chld] == minhp[min] &&		\
-			      *p[cur] < *p[min]))) {			\
-				min = chld;				\
-			}						\
-			if (min != cur) {				\
-				swap(minhp[cur], minhp[min], t);	\
-				swap(p[cur], p[min], t_oid);		\
-				swap(q[cur], q[min], t_oid);		\
-			}						\
-		} while (cur != min);					\
+#define HEAPIFY(X)										\
+	do {											\
+		int cur, min = X, chld;								\
+		do {										\
+			cur = min;								\
+			if ((chld = left_child(cur)) < n_ar &&					\
+			    (minhp[chld] < minhp[min] ||					\
+			     (minhp[chld] == minhp[min] &&					\
+			      *p[cur] < *p[min]))) {						\
+				min = chld;							\
+			}									\
+			if ((chld = right_child(cur)) < n_ar &&					\
+			    (minhp[chld] < minhp[min] ||					\
+			     (minhp[chld] == minhp[min] &&					\
+			      *p[cur] < *p[min]))) {						\
+				min = chld;							\
+			}									\
+			if (min != cur) {							\
+				swap(minhp[cur], minhp[min], t);				\
+				swap(p[cur], p[min], t_oid);					\
+				swap(q[cur], q[min], t_oid);					\
+			}									\
+		} while (cur != min);								\
 	} while (0)
 
 #define NWAY_MERGE(TYPE)									\
