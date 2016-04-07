@@ -100,8 +100,6 @@ geom_export str wkbFromWKB(wkb **w, wkb **src);
  * because we decided that it is easire to carry around
  * the SRID */
  
-/* gets a GEOSGeometry and creates a WKB */
-geom_export wkb* geos2wkb(const GEOSGeometry* geosGeometry);
 /* gets a GEOSGeometry and returns the mbr of it 
  * works only for 2D geometries */
 geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
