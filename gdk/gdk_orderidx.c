@@ -322,12 +322,24 @@ BATorderidx(BAT *b, int stable)
 			HEAPIFY(i);								\
 		}										\
 		/* merge */									\
+		*mv++ = *(p[0])++;								\
+		if (p[0] < q[0]) {								\
+			minhp[0] = v[*p[0] - b->hseqbase];					\
+			HEAPIFY(0);								\
+		} else {									\
+			swap(minhp[0], minhp[n_ar-1], t);					\
+			swap(p[0], p[n_ar-1], t_oid);						\
+			swap(q[0], q[n_ar-1], t_oid);						\
+			n_ar--;									\
+			HEAPIFY(0);								\
+		}										\
 		while (n_ar > 1) {								\
 			*mv = *(p[0])++;							\
+			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {			\
+				*(mv-1) |= BUN_MSK;						\
+			}									\
+			mv++;									\
 			if (p[0] < q[0]) {							\
-				if (v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {		\
-					*mv |= BUN_MSK;						\
-				}								\
 				minhp[0] = v[*p[0] - b->hseqbase];				\
 				HEAPIFY(0);							\
 			} else {								\
@@ -336,16 +348,12 @@ BATorderidx(BAT *b, int stable)
 				swap(q[0], q[n_ar-1], t_oid);					\
 				n_ar--;								\
 				HEAPIFY(0);							\
-				if (v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {		\
-					*mv |= BUN_MSK;						\
-				}								\
 			}									\
-			mv++;									\
 		}										\
 		while (p[0] < q[0]) {								\
 			*mv = *(p[0])++;							\
-			if (p[0] < q[0] && v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {	\
-				*mv |= BUN_MSK;							\
+			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {			\
+				*(mv-1) |= BUN_MSK;						\
 			}									\
 			mv++;									\
 		}										\
