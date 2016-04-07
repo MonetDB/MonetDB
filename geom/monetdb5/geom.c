@@ -161,7 +161,7 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ pr
 		ret = transformCoordSeq(i, coordinatesNum, proj4_src, proj4_dst, gcs_old, gcs_new);
 		if (ret != MAL_SUCCEED) {
 			GEOSCoordSeq_destroy(*gcs_new);
-			gcs_new = NULL;
+			*gcs_new = NULL;
 			return ret;
 		}
 	}
@@ -204,6 +204,11 @@ transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geos
 	/* create the geometry from the coordinates sequence */
 	*transformedGeometry = GEOSGeom_createLinearRing(coordSeq);
 
+	GEOSCoordSeq_destroy(coordSeq);
+
+	if (*transformedGeometry == NULL)
+		throw(MAL, "geom.wkbTransform", "GEOSGeom_createLinearRing failed");
+
 	return ret;
 }
 
@@ -239,9 +244,16 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 
 	/* iterate over the interiorRing and transform each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+	if (transformedInteriorRingGeometries == NULL) {
+		*transformedGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		throw(MAL, "geom.wkbTransform", MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < numInteriorRings; i++) {
 		ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
 		if (ret != MAL_SUCCEED) {
+			while (--i >= 0)
+				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
 			GDKfree(transformedInteriorRingGeometries);
 			*transformedGeometry = NULL;
 			return ret;
@@ -250,7 +262,14 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 	}
 
 	*transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	return MAL_SUCCEED;
+	if (*transformedGeometry == NULL) {
+		for (i = 0; i < numInteriorRings; i++)
+			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+		ret = createException(MAL, "geom.wkbTransform", "GEOSGeom_createPolygon failed");
+	}
+	GDKfree(transformedInteriorRingGeometries);
+
+	return ret;
 }
 
 static str
@@ -271,16 +290,16 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 
 		switch (subGeometryType) {
 		case wkbPoint_mdb:
-			ret = transformPoint(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
+			ret = transformPoint(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
 			break;
 		case wkbLineString_mdb:
-			ret = transformLineString(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
+			ret = transformLineString(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
 			break;
 		case wkbLinearRing_mdb:
-			ret = transformLinearRing(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst);
+			ret = transformLinearRing(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst);
 			break;
 		case wkbPolygon_mdb:
-			ret = transformPolygon(&(transformedMultiGeometries[i]), multiGeometry, proj4_src, proj4_dst, srid);
+			ret = transformPolygon(&transformedMultiGeometries[i], multiGeometry, proj4_src, proj4_dst, srid);
 			break;
 		default:
 			transformedMultiGeometries[i] = NULL;
@@ -593,8 +612,15 @@ forceDimPolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, in
 
 	/* iterate over the interiorRing and translate each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+	if (transformedInteriorRingGeometries == NULL) {
+		*outGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		throw(MAL, "geom.ForceDim", MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < numInteriorRings; i++) {
 		if ((ret = forceDimLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dim)) != MAL_SUCCEED) {
+			while (--i >= 0)
+				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
 			GDKfree(transformedInteriorRingGeometries);
 			*outGeometry = NULL;
 			return ret;
@@ -602,7 +628,14 @@ forceDimPolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, in
 	}
 
 	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	return MAL_SUCCEED;
+	if (*outGeometry == NULL) {
+		for (i = 0; i < numInteriorRings; i++)
+			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+		ret = createException(MAL, "geom.ForceDim", "GEOSGeom_createPolygon failed");
+	}
+	GDKfree(transformedInteriorRingGeometries);
+
+	return ret;
 }
 
 static str forceDimGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim);
@@ -902,8 +935,15 @@ segmentizePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, 
 	}
 	//iterate over the interiorRing and segmentize each one of them
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+	if (transformedInteriorRingGeometries == NULL) {
+		*outGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < numInteriorRings; i++) {
 		if ((err = segmentizeLineString(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), sz, 1)) != MAL_SUCCEED) {
+			while (--i >= 0)
+				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
 			GDKfree(transformedInteriorRingGeometries);
 			*outGeometry = NULL;
 			return err;
@@ -911,7 +951,14 @@ segmentizePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, 
 	}
 
 	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	return MAL_SUCCEED;
+	if (*outGeometry == NULL) {
+		for (i = 0; i < numInteriorRings; i++)
+			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+		err = createException(MAL, "geom.Segmentize", "GEOSGeom_createPolygon failed");
+	}
+	GDKfree(transformedInteriorRingGeometries);
+
+	return err;
 }
 
 static str segmentizeGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, double sz);
@@ -930,7 +977,7 @@ segmentizeMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeom
 		str err;
 		const GEOSGeometry *multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 
-		if ((err = segmentizeGeometry(&(transformedMultiGeometries[i]), multiGeometry, sz)) != MAL_SUCCEED) {
+		if ((err = segmentizeGeometry(&transformedMultiGeometries[i], multiGeometry, sz)) != MAL_SUCCEED) {
 			GDKfree(*transformedMultiGeometries);
 			*outGeometry = NULL;
 
@@ -1167,8 +1214,15 @@ translatePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, d
 
 	/* iterate over the interiorRing and translate each one of them */
 	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+	if (transformedInteriorRingGeometries == NULL) {
+		*outGeometry = NULL;
+		GEOSGeom_destroy(transformedExteriorRingGeometry);
+		throw(MAL, "geom.Translate", MAL_MALLOC_FAIL);
+	}
 	for (i = 0; i < numInteriorRings; i++) {
 		if ((err = translateLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
+			while (--i >= 0)
+				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
 			GDKfree(transformedInteriorRingGeometries);
 			*outGeometry = NULL;
 			return err;
@@ -1176,7 +1230,14 @@ translatePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, d
 	}
 
 	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	return MAL_SUCCEED;
+	if (*outGeometry == NULL) {
+		for (i = 0; i < numInteriorRings; i++)
+			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+		err = createException(MAL, "geom.Translate", "GEOSGeom_createPolygon failed");
+	}
+	GDKfree(transformedInteriorRingGeometries);
+
+	return err;
 }
 
 static str translateGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, double dx, double dy, double dz);
@@ -1195,7 +1256,7 @@ translateMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeome
 		str err;
 		const GEOSGeometry *multiGeometry = GEOSGetGeometryN(geosGeometry, i);
 
-		if ((err = translateGeometry(&(transformedMultiGeometries[i]), multiGeometry, dx, dy, dz)) != MAL_SUCCEED) {
+		if ((err = translateGeometry(&transformedMultiGeometries[i], multiGeometry, dx, dy, dz)) != MAL_SUCCEED) {
 			GDKfree(*transformedMultiGeometries);
 			*outGeometry = NULL;
 
@@ -1939,7 +2000,7 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	*toArray = (wkba *) GDKmalloc(wkba_size(items));
 
 	for (i = 0; i < items; i++) {
-		size_t parsedBytes = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &((*toArray)->data[i]), srid);
+		size_t parsedBytes = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid);
 		skipBytes += parsedBytes;
 	}
 
@@ -2401,6 +2462,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 			internalGeometry = wkb2geos(linestringsWKB[i]);
 			if (!internalGeometry) {
 				*geomWKB = NULL;
+				GDKfree(internalGeometries);
 				throw(MAL, "geom.MLineStringToPolygon", "Error in wkb2geos");
 			}
 
@@ -2417,6 +2479,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 			*geomWKB = NULL;
 			throw(MAL, "geom.MLineStringToPolygon", "Error creating Polygon from LinearRing");
 		}
+		GDKfree(internalGeometries);
 		//check of the created polygon is valid
 		if (GEOSisValid(finalGeometry) != 1) {
 			//suppress the GEOS message
@@ -2424,7 +2487,6 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 				GDKerrbuf[0] = '\0';
 
 			GEOSGeom_destroy(finalGeometry);
-			GDKfree(internalGeometries);
 
 			*geomWKB = NULL;
 			throw(MAL, "geom.MLineStringToPolygon", "The provided MultiLineString does not create a valid Polygon");
@@ -2435,7 +2497,6 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 		*geomWKB = geos2wkb(finalGeometry);
 
 		GEOSGeom_destroy(finalGeometry);
-		GDKfree(internalGeometries);
 	} else if (*flag == 1) {
 		*geomWKB = NULL;
 		throw(MAL, "geom.MLineStringToPolygon", "Multipolygon from string has not been defined");
