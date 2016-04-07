@@ -213,10 +213,13 @@ BATorderidx(BAT *b, int stable)
 #define UNARY_MERGE(TYPE)									\
 	do {											\
 		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));					\
+		if (p < q) {									\
+			*mv++ = *p++;								\
+		}										\
 		while (p < q) {									\
 			*mv = *p++;								\
-			if (p < q && v[*mv - b->hseqbase] != v[*p - b->hseqbase]) {		\
-				*mv |= BUN_MSK;							\
+			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {			\
+				*(mv-1) |= BUN_MSK;						\
 			}									\
 			mv++;									\
 		}										\
@@ -226,38 +229,48 @@ BATorderidx(BAT *b, int stable)
 #define BINARY_MERGE(TYPE)									\
 	do {											\
 		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));					\
+		if (p0 < q0 && p1 < q1) {							\
+			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) {			\
+				*mv++ = *p0++;							\
+			} else {								\
+				*mv++ = *p1++;							\
+			}									\
+		} else if (p0 < q0) {								\
+			assert(p1 == q1);							\
+			*mv++ = *p0++;								\
+		} else if (p1 < q1) {								\
+			assert(p0 == q0);							\
+			*mv++ = *p1++;								\
+		} else {									\
+			assert(p0 == q0 && p1 == q1);						\
+			break;									\
+		}										\
 		while (p0 < q0 && p1 < q1) {							\
 			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) {			\
 				*mv = *p0++;							\
-				if (p0 < q0 && v[*mv - b->hseqbase] != v[*p0 - b->hseqbase]) {	\
-					*mv |= BUN_MSK;						\
+				if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {		\
+					*(mv-1) |= BUN_MSK;					\
 				}								\
 				mv++;								\
 			} else {								\
 				*mv = *p1++;							\
-				if (p1 < q1 && v[*mv - b->hseqbase] != v[*p1 - b->hseqbase]) {	\
-					*mv |= BUN_MSK;						\
+				if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {		\
+					*(mv-1) |= BUN_MSK;					\
 				}								\
 				mv++;								\
 			}									\
 		}										\
-		if (p0 < q0 && v[*(mv-1) - b->hseqbase] != v[*p0 - b->hseqbase]) {		\
-			*(mv-1) |= BUN_MSK;							\
-		}										\
 		while (p0 < q0) {								\
 			*mv = *p0++;								\
-			if (p0 < q0 && v[*mv - b->hseqbase] != v[*p0 - b->hseqbase]) {		\
-				*mv |= BUN_MSK;							\
+			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {			\
+				*(mv-1) |= BUN_MSK;						\
 			}									\
 			mv++;									\
 		}										\
-		if (p1 < q1 && v[*(mv-1) - b->hseqbase] != v[*p1 - b->hseqbase]) {		\
-			*(mv-1) |= BUN_MSK;							\
-		}										\
 		while (p1 < q1) {								\
 			*mv = *p1++;								\
-			if (p1 < q1 && v[*mv - b->hseqbase] != v[*p1 - b->hseqbase]) {		\
-				*mv |= BUN_MSK;							\
+			if (v[*mv - b->hseqbase] != v[*(mv-1) - b->hseqbase]) {			\
+				*(mv-1) |= BUN_MSK;						\
 			}									\
 			mv++;									\
 		}										\
@@ -311,11 +324,10 @@ BATorderidx(BAT *b, int stable)
 		/* merge */									\
 		while (n_ar > 1) {								\
 			*mv = *(p[0])++;							\
-			if (p[0] < q[0] && v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {	\
-				*mv |= BUN_MSK;							\
-			}									\
-			mv++;									\
 			if (p[0] < q[0]) {							\
+				if (v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {		\
+					*mv |= BUN_MSK;						\
+				}								\
 				minhp[0] = v[*p[0] - b->hseqbase];				\
 				HEAPIFY(0);							\
 			} else {								\
@@ -324,10 +336,11 @@ BATorderidx(BAT *b, int stable)
 				swap(q[0], q[n_ar-1], t_oid);					\
 				n_ar--;								\
 				HEAPIFY(0);							\
-				if (v[*(mv-1) - b->hseqbase] != v[*p[0] - b->hseqbase]) {	\
-					*(mv-1) |= BUN_MSK;					\
+				if (v[*mv - b->hseqbase] != v[*p[0] - b->hseqbase]) {		\
+					*mv |= BUN_MSK;						\
 				}								\
 			}									\
+			mv++;									\
 		}										\
 		while (p[0] < q[0]) {								\
 			*mv = *(p[0])++;							\
