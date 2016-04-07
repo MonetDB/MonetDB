@@ -1211,7 +1211,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	int hval, lval, equi, t, lnil, hash;
 	bat parent;
 	const void *nil;
-	BAT *bn;
+	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 	union {
 		bte v_bte;
@@ -1634,7 +1634,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		(((b->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		   || (parent != 0 &&
-		       BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT)
+		       (tmp = BBPquickdesc(abs(parent),0)) != NULL &&
+		       tmp->batPersistence == PERSISTENT)
 #endif
 			  ) &&
 		 (size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
@@ -1721,7 +1722,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
 		     (parent != 0 &&
-		      BBPquickdesc(abs(parent),0)->batPersistence == PERSISTENT))) {
+		      (tmp = BBPquickdesc(abs(parent),0)) != NULL &&
+		      tmp->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
 			 *  ii) it is not an equi-select, and
@@ -1827,6 +1829,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	wrd off = 0;
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which column is sorted */
+	BAT *tmp;
 
 	assert(BAThdense(l));
 	assert(BAThdense(rl));
@@ -2032,7 +2035,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	} else if ((BATcount(rl) > 2 ||
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
-		     BBPquickdesc(abs(VIEWtparent(l)), 0)->batPersistence == PERSISTENT) ||
+		     (tmp = BBPquickdesc(abs(VIEWtparent(l)), 0)) != NULL &&
+		     tmp->batPersistence == PERSISTENT) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column

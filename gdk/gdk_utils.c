@@ -883,7 +883,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 			GDKfatal("fatal\n");
 		else
 			GDKerror("GDKreallocmax: failed for "
-				 SZFMT " bytes", newsize);
+				 SZFMT " bytes", size);
 	}
 	return ptr;
 }

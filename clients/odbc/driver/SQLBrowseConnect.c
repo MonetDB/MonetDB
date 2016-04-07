@@ -164,8 +164,11 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 			/* if not set from InConnectionString argument
 			 * or environment, look in profile */
 			n = SQLGetPrivateProfileString(dsn, "logfile", "", buf, sizeof(buf), "odbc.ini");
-			if (n > 0 && buf[0])
+			if (n > 0 && buf[0]) {
+				if (ODBCdebug)
+					free((void *) ODBCdebug); /* discard const */
 				ODBCdebug = strdup(buf);
+			}
 		}
 #endif
 	}

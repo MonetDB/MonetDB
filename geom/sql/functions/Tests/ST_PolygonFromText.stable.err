@@ -61,25 +61,25 @@ QUERY = insert into polygons_tbl values (st_linefromtext('linestring(10 10 10, 2
 ERROR = !column needs geometry(18, 4326) and value is geometry(10, 4326)
 MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=1;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
+ERROR = !Geometry not type '4: POLYGON' but '1: POINT' instead
+MAPI  = (monetdb) /var/tmp/mtest-22668/.s.monetdb.30723
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=2;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '2: LINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
+ERROR = !Geometry not type '4: POLYGON' but '2: LINESTRING' instead
+MAPI  = (monetdb) /var/tmp/mtest-22668/.s.monetdb.30723
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=4;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '5: MULTIPOINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
+ERROR = !Geometry not type '4: POLYGON' but '5: MULTIPOINT' instead
+MAPI  = (monetdb) /var/tmp/mtest-22668/.s.monetdb.30723
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=5;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '6: MULTILINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
+ERROR = !Geometry not type '4: POLYGON' but '6: MULTILINESTRING' instead
+MAPI  = (monetdb) /var/tmp/mtest-22668/.s.monetdb.30723
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=6;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '7: MULTIPOLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
+ERROR = !Geometry not type '4: POLYGON' but '7: MULTIPOLYGON' instead
+MAPI  = (monetdb) /var/tmp/mtest-22668/.s.monetdb.30723
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=7;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '7: MULTIPOLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
+ERROR = !Geometry not type '4: POLYGON' but '7: MULTIPOLYGON' instead
+MAPI  = (monetdb) /var/tmp/mtest-22668/.s.monetdb.30723
 QUERY = select st_polygonfromtext(geom) from geometriesTxt WHERE id=8;
-ERROR = !SQLException:wkb.FromText:Geometry not type '4: POLYGON' but '8: GEOMETRYCOLLECTION' instead
+ERROR = !Geometry not type '4: POLYGON' but '8: GEOMETRYCOLLECTION' instead
 
 # 15:46:17 >  
 # 15:46:17 >  "Done."
