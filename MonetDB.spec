@@ -997,7 +997,7 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 * Mon Apr  4 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
 - gdk: Fixed a bug that caused various instances where old data returned or
   where crashes occurred.  The problem was that internally data wasn't
-  always marked dirty when it was being changed, causiing later processing
+  always marked dirty when it was being changed, causing later processing
   to not deal with the changed data correctly.
 
 * Thu Mar 24 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.17-20160324
