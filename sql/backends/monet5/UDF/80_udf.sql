@@ -8,8 +8,8 @@
 
 
 -- Reverse a string
-create function reverse(src string)
-returns string external name udf.reverse;
+create function reverse(src integer)
+returns double external name udf.reverse;
 
 
 -- fuse two (1-byte) tinyint values into one (2-byte) smallint value

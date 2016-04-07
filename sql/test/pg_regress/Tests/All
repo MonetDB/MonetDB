@@ -13,7 +13,7 @@ varchar
 text
 int2
 int4
-int8
+THREADS=1?int8
 oid
 float4
 float8

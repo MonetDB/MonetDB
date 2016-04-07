@@ -15,46 +15,16 @@
 /* actual implementation */
 /* all non-exported functions must be declared static */
 static char *
-UDFreverse_(char **ret, const char *src)
+UDFreverse_(dbl *ret, const int src)
 {
-	size_t len = 0;
-	char *dst = NULL;
-
-	/* assert calling sanity */
-	assert(ret != NULL);
-
-	/* handle NULL pointer and NULL value */
-	if (src == NULL || strcmp(src, str_nil) == 0) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			throw(MAL, "udf.reverse",
-			      "failed to create copy of str_nil");
-
-		return MAL_SUCCEED;
-	}
-
-	/* allocate result string */
-	len = strlen(src);
-	*ret = dst = GDKmalloc(len + 1);
-	if (dst == NULL)
-		throw(MAL, "udf.reverse",
-		      "failed to allocate string of length " SZFMT, len + 1);
-
-	/* copy characters from src to dst in reverse order */
-	dst[len] = 0;
-	while (len > 0)
-		*dst++ = src[--len];
-
+	*ret = sqrt(src);
 	return MAL_SUCCEED;
 }
 
 /* MAL wrapper */
 char *
-UDFreverse(char **ret, const char **arg)
+UDFreverse(dbl *ret, const int *arg)
 {
-	/* assert calling sanity */
-	assert(ret != NULL && arg != NULL);
-
 	return UDFreverse_ ( ret, *arg );
 }
 
@@ -69,9 +39,7 @@ UDFreverse(char **ret, const char **arg)
 static char *
 UDFBATreverse_(BAT **ret, BAT *src)
 {
-	BATiter li;
 	BAT *bn = NULL;
-	BUN p = 0, q = 0;
 
 	/* assert calling sanity */
 	assert(ret != NULL);
@@ -81,44 +49,28 @@ UDFBATreverse_(BAT **ret, BAT *src)
 		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
 
 	/* check tail type */
-	if (src->ttype != TYPE_str) {
+	if (src->ttype != TYPE_int) {
 		throw(MAL, "batudf.reverse",
-		      "tail-type of input BAT must be TYPE_str");
+		      "tail-type of input BAT must be TYPE_int");
 	}
 
 	/* allocate void-headed result BAT */
-	bn = BATnew(TYPE_void, TYPE_str, BATcount(src), TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(src), TRANSIENT);
 	if (bn == NULL) {
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, src->hseqbase);
 
-	/* create BAT iterator */
-	li = bat_iterator(src);
+	{
+		size_t i;
+		int *ptr = (int*) src->T->heap.base;
+		dbl *res = (dbl*) bn->T->heap.base;
 
-	/* the core of the algorithm, expensive due to malloc/frees */
-	BATloop(src, p, q) {
-		char *tr = NULL, *err = NULL;
-
-		const char *t = (const char *) BUNtail(li, p);
-
-		/* revert tail value */
-		err = UDFreverse_(&tr, t);
-		if (err != MAL_SUCCEED) {
-			/* error -> bail out */
-			BBPunfix(bn->batCacheid);
-			return err;
+		for(i = 0; i < BATcount(src); i++) {
+			res[i] = sqrt(ptr[i]);
 		}
-
-		/* assert logical sanity */
-		assert(tr != NULL);
-
-		/* append reversed tail in result BAT */
-		BUNappend(bn, tr, FALSE);
-
-		/* free memory allocated in UDFreverse_() */
-		GDKfree(tr);
 	}
+	BATsetcount(bn, BATcount(src));
 
 	*ret = bn;
 

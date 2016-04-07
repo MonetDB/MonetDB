@@ -7,7 +7,7 @@
 # scalar MAL signatures
 module udf;
 
-command reverse(ra1:str):str
+command reverse(ra1:int):dbl
 address UDFreverse
 comment "Reverse a string";
 
@@ -15,7 +15,7 @@ comment "Reverse a string";
 # BAT MAL signatures
 module batudf;
 
-command reverse(b:bat[:str]):bat[:str]
+command reverse(b:bat[:int]):bat[:dbl]
 address UDFBATreverse
 comment "Reverse a BAT of strings";
 
