@@ -29,7 +29,7 @@
 
 /* export MAL wrapper functions */
 
-udf_export char * UDFreverse(dbl *ret, const int *arg);
+udf_export char * UDFreverse(char **ret, const char **arg);
 udf_export char * UDFBATreverse(bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */
