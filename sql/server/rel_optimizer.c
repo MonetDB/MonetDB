@@ -1777,8 +1777,8 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 				if (p < pos) {
 					ne = list_fetch(exps1, p);
 					if (e2->l)
-						e2->l = exp_relname(ne);
-					e2->r = exp_name(ne);
+						e2->l = (void *) exp_relname(ne);
+					e2->r = (void *) exp_name(ne);
 				}
 			}
 		}
