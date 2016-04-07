@@ -76,7 +76,6 @@ transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_ds
 	if (pj_is_latlong(proj4_src))
 		degrees2radians(&x, &y, &z);
 
-
 	pj_transform(proj4_src, proj4_dst, 1, 0, &x, &y, &z);
 
 	errorNum = pj_get_errno_ref();
@@ -87,20 +86,16 @@ transformCoordSeq(int idx, int coordinatesNum, projPJ proj4_src, projPJ proj4_ds
 			throw(MAL, "geom.wkbTransform", "Couldn't transform point (%f %f): %s\n", x, y, pj_strerrno(*errorNum));
 	}
 
-
 	/* check if the destination reference system is geographic and change
 	 * the destination coordinates from radians to degrees */
 	if (pj_is_latlong(proj4_dst))
 		radians2degrees(&x, &y, &z);
-
 
 	GEOSCoordSeq_setX(*gcs_new, idx, x);
 	GEOSCoordSeq_setY(*gcs_new, idx, y);
 
 	if (coordinatesNum > 2)
 		GEOSCoordSeq_setZ(*gcs_new, idx, z);
-
-
 
 	return MAL_SUCCEED;
 }
@@ -170,7 +165,6 @@ transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, projPJ pr
 			return ret;
 		}
 	}
-
 
 	return MAL_SUCCEED;
 }
@@ -320,7 +314,6 @@ projFromStr(char *projStr)
 	char *str;
 	projPJ result;
 
-
 	if (projStr == NULL)
 		return NULL;
 
@@ -380,7 +373,6 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 		throw(MAL, "geom.wkbTransform", "Could not find in spatial_ref_sys srid %d\n", *srid_dst);
 	proj4_src = /*pj_init_plus */ projFromStr(*proj4_src_str);
 	proj4_dst = /*pj_init_plus */ projFromStr(*proj4_dst_str);
-
 
 	if (*geomWKB == NULL) {
 		pj_free(proj4_src);
@@ -1010,7 +1002,6 @@ wkbSegmentize(wkb **outWKB, wkb **geomWKB, dbl *sz)
 	return MAL_SUCCEED;
 }
 
-
 //gets a coord seq and moves it dx, dy, dz
 static str
 translateCoordSeq(int idx, int coordinatesNum, double dx, double dy, double dz, const GEOSCoordSequence *gcs_old, GEOSCoordSequence **gcs_new)
@@ -1146,7 +1137,6 @@ translateLinearRing(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry
 	return MAL_SUCCEED;
 }
 
-
 static str
 translatePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, double dx, double dy, double dz)
 {
@@ -1242,8 +1232,6 @@ translateGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, 
 	}
 }
 
-
-
 str
 wkbTranslate(wkb **outWKB, wkb **geomWKB, dbl *dx, dbl *dy, dbl *dz)
 {
@@ -1302,7 +1290,6 @@ wkbDelaunayTriangles(wkb **outWKB, wkb **geomWKB, dbl *tolerance, int *flag)
 
 	return MAL_SUCCEED;
 }
-
 
 str
 wkbPointOnSurface(wkb **resWKB, wkb **geomWKB)
@@ -1560,7 +1547,6 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	char *newPath;
 	char *extraStr = ",";
 	int extraLength = 1;
-
 
 	//get the exterior ring of the polygon
 	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
@@ -1961,8 +1947,6 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	return (int) skipBytes;
 }
 
-
-
 /* create the WKB out of the GEOSGeometry
  * It makes sure to make all checks before returning
  * the input geosGeometry should not be altered by this function*/
@@ -2063,10 +2047,6 @@ mbrFromGeos(const GEOSGeom geosGeometry)
 	GEOSGeom_destroy(envelope);
 	return geomMBR;
 }
-
-
-
-
 
 //Returns the wkb in a hex representation */
 static char hexit[] = "0123456789ABCDEF";
@@ -2169,14 +2149,6 @@ wkbFromBinary(wkb **geomWKB, char **inStr)
 	return MAL_SUCCEED;
 }
 
-
-
-
-
-
-
-
-
 str
 mbrFromMBR(mbr **w, mbr **src)
 {
@@ -2262,7 +2234,6 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 			char *sridIntToString = NULL;
 			size_t len2 = 0;
 			int digitsNum = 10;	//MAX_INT = 2,147,483,647
-
 
 			//count the number of digits in srid
 			int tmp = (*geomWKB)->srid;
@@ -2563,7 +2534,6 @@ wkbBasicInt(int *out, wkb *geom, int (*func) (const GEOSGeometry *), const char 
 	}
 	return ret;
 }
-
 
 /* returns the type of the geometry as a string*/
 str
@@ -3120,7 +3090,6 @@ numPointsGeometry(unsigned int *out, const GEOSGeometry *geosGeometry)
 	}
 }
 
-
 /* Returns the number of points in a geometry */
 str
 wkbNumPoints(int *out, wkb **geom, int *check)
@@ -3528,7 +3497,6 @@ wkbIsRing(bit *out, wkb **geomWKB)
 	return MAL_SUCCEED;
 }
 
-
 str
 wkbIsSimple(bit *out, wkb **geomWKB)
 {
@@ -3682,7 +3650,6 @@ wkbDistance(dbl *out, wkb **a, wkb **b)
 {
 	GEOSGeom ga = wkb2geos(*a);
 	GEOSGeom gb = wkb2geos(*b);
-
 
 	if (!ga && gb) {
 		GEOSGeom_destroy(gb);
@@ -4918,7 +4885,6 @@ wkbIsnil(bit *r, wkb **v)
 	return MAL_SUCCEED;
 }
 
-
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.
  */
@@ -4988,7 +4954,6 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 	assert(dstStrLen <= GDK_int_max);
 	return (int) dstStrLen;
 }
-
 
 int
 wkbFROMSTR(char *geomWKT, int *len, wkb **geomWKB)
@@ -5095,8 +5060,6 @@ wkbDEL(Heap *h, var_t *index)
 	HEAP_free(h, *index);
 }
 
-
-
 int
 wkbLENGTH(wkb *p)
 {
@@ -5110,7 +5073,6 @@ wkbHEAP(Heap *heap, size_t capacity)
 {
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
-
 
 /***********************************************/
 /************* mbr type functions **************/
@@ -5305,7 +5267,6 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 
 	sprintf(itemsNumStr, "%d", items);
 	dataSize = strlen(itemsNumStr);
-
 
 	//reserve space for an array with pointers to the partial strings, i.e. for each wkbTOSTR
 	partialStrs = (char **) GDKzalloc(items * sizeof(char **));
@@ -5667,7 +5628,6 @@ wkbContains_point_bat(bat *out, wkb **a, bat *point_x, bat *point_y)
 	int *holes_n = NULL, j;
 	wkb *geom = NULL;
 	str msg = NULL;
-
 
 	str err = NULL;
 	str geom_str = NULL;
