@@ -210,7 +210,7 @@ public class SQLExporter extends Exporter {
 			pk.add(cols.getString("PKCOLUMN_NAME").intern());
 
 			while ((next = cols.next()) &&
-				cols.getInt("KEY_SEQ") != 0)
+				cols.getInt("KEY_SEQ") != 1)
 			{
 				fk.add(cols.getString("FKCOLUMN_NAME").intern());
 				pk.add(cols.getString("PKCOLUMN_NAME").intern());
