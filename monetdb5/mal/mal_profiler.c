@@ -527,9 +527,28 @@ startProfiler(void)
 }
 
 /* SQL queries can be traced without obstructing the stream */
+/* A hard limit is currently imposed */
+#define MAXTRACEFILES 50
+static int offlinestore = 0;
+static int tracecounter = 0;
 str
-startTrace(void)
+startTrace(str path)
 {
+	char buf[PATHLENGTH];
+
+	if( path && eventstream == NULL){
+		// create a file to keep the events, unless we
+		// already have a profiler stream
+		MT_lock_set(&mal_profileLock );
+		if(eventstream == NULL && offlinestore ==0){
+			snprintf(buf,PATHLENGTH,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
+			(void) mkdir(buf,0755);
+			snprintf(buf,PATHLENGTH,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			eventstream = open_wastream(buf);
+			offlinestore++;
+		}
+		MT_lock_unset(&mal_profileLock );
+	}
 	malProfileMode = 1;
 	sqlProfiling = TRUE;
 	clearTrace();
@@ -537,8 +556,16 @@ startTrace(void)
 }
 
 str
-stopTrace(void)
+stopTrace(str path)
 {
+	MT_lock_set(&mal_profileLock );
+	if( path &&  offlinestore){
+		(void) close_stream(eventstream);
+		eventstream = 0;
+		offlinestore =0;
+	}
+	MT_lock_unset(&mal_profileLock );
+	
 	malProfileMode = eventstream != NULL;
 	sqlProfiling = FALSE;
 	return MAL_SUCCEED;

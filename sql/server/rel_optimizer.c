@@ -19,6 +19,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
+#include "mtime.h"
 
 #define new_func_list(sa) sa_list(sa)
 #define new_col_list(sa) sa_list(sa)
@@ -6856,14 +6857,14 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 		if (emax->data.val.shval < cmin->data.val.shval || emin->data.val.shval > cmax->data.val.shval)
 			return 0;
 	}
-	if (t->type->localtype == TYPE_int) {
+	if (t->type->localtype == TYPE_int || t->type->localtype == TYPE_date) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);
 
 		if (emax->data.val.ival < cmin->data.val.ival || emin->data.val.ival > cmax->data.val.ival)
 			return 0;
 	}
-	if (t->type->localtype == TYPE_lng) {
+	if (t->type->localtype == TYPE_lng || t->type->localtype == TYPE_timestamp) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);
 
