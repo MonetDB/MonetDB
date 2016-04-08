@@ -115,7 +115,7 @@ typedef struct wkb {
 
 typedef struct wkba {
 	int itemsNum; //the number of wkbs
-	wkb* data[]; //the wkbs
+	wkb* data[FLEXIBLE_ARRAY_MEMBER]; //the wkbs
 } wkba;
 
 typedef struct {

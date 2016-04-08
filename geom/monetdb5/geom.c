@@ -1936,17 +1936,27 @@ geom_2_geom(wkb **resWKB, wkb **valueWKB, int *columnType, int *columnSRID)
 
 	int valueSRID = (*valueWKB)->srid;
 
+	if (wkb_isnil(*valueWKB)) {
+		*resWKB = wkbNULLcopy();
+		if (*resWKB == NULL)
+			throw(MAL, "calc.wkb", MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*valueWKB);
+	if (geosGeometry == NULL)
+		throw(MAL, "calc.wkb", "wkb2geos failed");
+
 	/* get the number of coordinates the geometry has */
 	geoCoordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
 	/* get the type of the geometry */
-	(valueType) = (GEOSGeomTypeId(geosGeometry) + 1) << 2;
+	valueType = (GEOSGeomTypeId(geosGeometry) + 1) << 2;
 
 	if (geoCoordinatesNum > 2)
-		(valueType) += (1 << 1);
+		valueType += (1 << 1);
 	if (geoCoordinatesNum > 3)
-		(valueType) += 1;
+		valueType += 1;
 
 	if (valueSRID != *columnSRID || valueType != *columnType)
 		throw(MAL, "calc.wkb", "column needs geometry(%d, %d) and value is geometry(%d, %d)\n", *columnType, *columnSRID, valueType, valueSRID);
@@ -2024,7 +2034,7 @@ geom_epilogue(void *ret)
 static int
 mbr_isnil(mbr *m)
 {
-	if (!m || m->xmin == flt_nil || m->ymin == flt_nil || m->xmax == flt_nil || m->ymax == flt_nil)
+	if (m == NULL || m->xmin == flt_nil || m->ymin == flt_nil || m->xmax == flt_nil || m->ymax == flt_nil)
 		return 1;
 	return 0;
 }
@@ -2047,71 +2057,87 @@ wkba_size(int items)
 
 	if (items == ~0)
 		items = 0;
-	size = sizeof(wkba) + items * sizeof(wkb *);
+	size = (var_t) (offsetof(wkba, data) + items * sizeof(wkb *));
 	assert(size <= VAR_MAX);
 
 	return size;
 }
 
+#ifndef HAVE_STRNCASECMP
+static int
+strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	int c1, c2;
+
+	while (n > 0) {
+		c1 = (unsigned char) *s1++;
+		c2 = (unsigned char) *s2++;
+		if (c1 == 0)
+			return -c2;
+		if (c2 == 0)
+			return c1;
+		if (c1 != c2 && tolower(c1) != tolower(c2))
+			return tolower(c1) - tolower(c2);
+		n--;
+	}
+	return 0;
+}
+#endif
+
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
-static int
-wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid)
+static str
+wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nread)
 {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
-	char *polyhedralSurface = "POLYHEDRALSURFACE";
-	char *multiPolygon = "MULTIPOLYGON";
-	char *geoType;
-	size_t typeSize = 0;
+	const char *polyhedralSurface = "POLYHEDRALSURFACE";
+	const char *multiPolygon = "MULTIPOLYGON";
 	char *geomWKT_original = NULL;
 	size_t parsedCharacters = 0;
 
+	*nread = 0;
+	*geomWKB = NULL;
 	if (strcmp(geomWKT, str_nil) == 0) {
 		*geomWKB = wkbNULLcopy();
-		return 0;
+		if (*geomWKB == NULL)
+			throw(MAL, "wkb.FromText", MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
 	}
 	//check whether the representation is binary (hex)
 	if (geomWKT[0] == '0') {
 		str ret = wkbFromBinary(geomWKB, &geomWKT);
 
 		if (ret != MAL_SUCCEED)
-			return 0;
-		return (int) strlen(geomWKT);
+			return ret;
+		*nread = strlen(geomWKT);
+		return MAL_SUCCEED;
 	}
 	//check whether the geometry type is polyhedral surface
 	//geos cannot handle this type of geometry but since it is
 	//a special type of multipolygon I just change the type before
 	//continuing. Of course this means that isValid for example does
 	//not work correctly.
-	typeSize = strlen(polyhedralSurface);
-	geoType = (char *) GDKmalloc((typeSize + 1) * sizeof(char));
-	memcpy(geoType, geomWKT, typeSize);
-	geoType[typeSize] = '\0';
-	if (strcasecmp(geoType, polyhedralSurface) == 0) {
+	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface);
 		geomWKT_original = geomWKT;
-		geomWKT = (char *) GDKmalloc((sizeOfInfo + strlen(multiPolygon) + 1) * sizeof(char));
+		geomWKT = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
 		strcpy(geomWKT, multiPolygon);
 		memcpy(geomWKT + strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
 		geomWKT[sizeOfInfo + strlen(multiPolygon)] = '\0';
 	}
-	GDKfree(geoType);
 	////////////////////////// UP TO HERE ///////////////////////////
 
 	WKT_reader = GEOSWKTReader_create();
 	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT);
 	GEOSWKTReader_destroy(WKT_reader);
 
-	if (geosGeometry == NULL) {
-		*geomWKB = wkbNULLcopy();
-		return 0;
-	}
+	if (geosGeometry == NULL)
+		throw(MAL, "wkb.FromText", "GEOSWKTReader_read failed");
 
 	if (GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
-		*geomWKB = wkbNULLcopy();
-		return 0;
+		throw(MAL, "wkb.FromText", "GEOSGeomTypeId failed");
 	}
 
 	GEOSSetSRID(geosGeometry, srid);
@@ -2122,6 +2148,8 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid)
 	 * want to get the wkb out of it */
 	*geomWKB = geos2wkb(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
+	if (*geomWKB == NULL)
+		throw(MAL, "wkb.FromText", "geos2wkb failed");
 
 	*len = (int) wkb_size((*geomWKB)->len);
 
@@ -2132,7 +2160,8 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid)
 
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
-	return (int) parsedCharacters;
+	*nread = parsedCharacters;
+	return MAL_SUCCEED;
 }
 
 static int
@@ -2150,7 +2179,12 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	*toArray = (wkba *) GDKmalloc(wkba_size(items));
 
 	for (i = 0; i < items; i++) {
-		size_t parsedBytes = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid);
+		size_t parsedBytes;
+		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
+		if (err != MAL_SUCCEED) {
+			GDKfree(err);
+			return 0;
+		}
 		skipBytes += parsedBytes;
 	}
 
@@ -2332,7 +2366,7 @@ str
 wkbFromBinary(wkb **geomWKB, char **inStr)
 {
 	size_t strLength = 0, wkbLength = 0, i;
-	char *s;
+	wkb *w;
 
 	strLength = strlen(*inStr);
 
@@ -2340,22 +2374,22 @@ wkbFromBinary(wkb **geomWKB, char **inStr)
 	assert(wkbLength <= GDK_int_max);
 //fprintf(stderr, "wkb length = %zd\n", wkbLength);
 
-	s = (char *) GDKmalloc(wkbLength);
+	w = GDKmalloc(wkb_size(wkbLength));
+	if (w == NULL)
+		throw(MAL, "geom.FromBinary", MAL_MALLOC_FAIL);
 
 	//compute the value for s
 	for (i = 0; i < strLength; i += 2) {
 		char firstHalf = (decit((*inStr)[i]) << 4) & 0xf0;	//make sure that only the four most significant bits may be 1
 		char secondHalf = decit((*inStr)[i + 1]) & 0xf;	//make sure that only the four least significant bits may be 1
-		s[i / 2] = firstHalf | secondHalf;	//concatenate the two halves to create the final byte
-//fprintf(stderr, "(%zd, %zd) First: %c - Second: %c ==> Final: %c (%d)\n", i, i/2, (*inStr)[i], (*inStr)[i+1], s[i/2], (int)s[i/2]);
+		w->data[i / 2] = firstHalf | secondHalf;	//concatenate the two halves to create the final byte
+//fprintf(stderr, "(%zd, %zd) First: %c - Second: %c ==> Final: %c (%d)\n", i, i/2, (*inStr)[i], (*inStr)[i+1], w->data[i/2], (int)w->data[i/2]);
 	}
 //fprintf(stderr, "wkb size = %zd\n", wkb_size(wkbLength));
 
-	*geomWKB = GDKmalloc(wkb_size(wkbLength));
-	(*geomWKB)->len = (int) wkbLength;
-	(*geomWKB)->srid = 0;
-	memcpy(&(*geomWKB)->data, s, wkbLength);
-	GDKfree(s);
+	w->len = (int) wkbLength;
+	w->srid = 0;
+	*geomWKB = w;
 
 	return MAL_SUCCEED;
 }
@@ -2363,7 +2397,9 @@ wkbFromBinary(wkb **geomWKB, char **inStr)
 str
 mbrFromMBR(mbr **w, mbr **src)
 {
-	*w = (mbr *) GDKmalloc(sizeof(mbr));
+	*w = GDKmalloc(sizeof(mbr));
+	if (*w == NULL)
+		throw(MAL, "calc.mbr", MAL_MALLOC_FAIL);
 
 	**w = **src;
 	return MAL_SUCCEED;
@@ -2372,28 +2408,30 @@ mbrFromMBR(mbr **w, mbr **src)
 str
 wkbFromWKB(wkb **w, wkb **src)
 {
-	*w = (wkb *) GDKmalloc(wkb_size((*src)->len));
+	*w = GDKmalloc(wkb_size((*src)->len));
+	if (*w == NULL)
+		throw(MAL, "calc.wkb", MAL_MALLOC_FAIL);
 
 	if (wkb_isnil(*src)) {
 		**w = *wkbNULL();
 	} else {
 		(*w)->len = (*src)->len;
 		(*w)->srid = (*src)->srid;
-		memcpy(&(*w)->data, &(*src)->data, (*src)->len);
+		memcpy((*w)->data, (*src)->data, (*src)->len);
 	}
 	return MAL_SUCCEED;
 }
 
 /* creates a wkb from the given textual representation */
-/*int* tpe is needed to verify that the type of the FromText function used is the
+/* int* tpe is needed to verify that the type of the FromText function used is the
  * same with the type of the geometry created from the wkt representation */
 str
 wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 {
 	int len = 0;
 	int te = 0;
-	char *errbuf = NULL;
-	str ex;
+	str err;
+	size_t parsedBytes;
 
 	*geomWKB = NULL;
 	if (strcmp(*geomWKT, str_nil) == 0) {
@@ -2401,86 +2439,55 @@ wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 			throw(MAL, "wkb.FromText", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	if (wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid) && (wkb_isnil(*geomWKB) || *tpe == 0 || *tpe == wkbGeometryCollection_mdb || ((te = ((*((*geomWKB)->data + 1) & 0x0f))) + (*tpe > 2)) == *tpe)) {
+	err = wkbFROMSTR_withSRID(*geomWKT, &len, geomWKB, *srid, &parsedBytes);
+	if (err != MAL_SUCCEED)
+		return err;
+
+	if (wkb_isnil(*geomWKB) || *tpe == 0 || *tpe == wkbGeometryCollection_mdb || ((te = ((*((*geomWKB)->data + 1) & 0x0f))) + (*tpe > 2)) == *tpe) {
 		return MAL_SUCCEED;
 	}
 
-	if (*geomWKB == NULL) {
-		if ((*geomWKB = wkbNULLcopy()) == NULL)
-			throw(MAL, "wkb.FromText", MAL_MALLOC_FAIL);
-	}
+	GDKfree(*geomWKB);
+	*geomWKB = NULL;
 
 	te += (te > 2);
 	if (*tpe > 0 && te != *tpe)
 		throw(SQL, "wkb.FromText", "Geometry not type '%d: %s' but '%d: %s' instead", *tpe, geom_type2str(*tpe, 0), te, geom_type2str(te, 0));
-	errbuf = GDKerrbuf;
-	if (errbuf) {
-		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
-			errbuf += 8;
-	} else {
-		errbuf = "cannot parse string";
-	}
-
-	ex = createException(MAL, "wkb.FromText", "%s", errbuf);
-
-	if (GDKerrbuf)
-		GDKerrbuf[0] = '\0';
-	return ex;
+	throw(MAL, "wkb.FromText", "%s", "cannot parse string");
 }
 
-/*create textual representation of the wkb */
+/* create textual representation of the wkb */
 str
 wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 {
 	int len = 0;
 	char *wkt = NULL;
+	const char *sridTxt = "SRID:";
+	size_t len2 = 0;
 
-	if (wkbTOSTR(&wkt, &len, *geomWKB)) {
-		if (!withSRID || *withSRID == 0) {	//accepting NULL withSRID to make easier the internal use of it
-			*txt = GDKstrdup(wkt);
-			if (*txt == NULL) {
-				GDKfree(wkt);
-				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
-			}
-		} else {
-			char *sridTxt = "SRID:";
-			char *sridIntToString = NULL;
-			size_t len2 = 0;
-			int digitsNum = 10;	//MAX_INT = 2,147,483,647
+	if (wkbTOSTR(&wkt, &len, *geomWKB) == 0)
+		throw(MAL, "geom.wkbAsText", "Failed to create Text from Well Known Format");
 
-			//count the number of digits in srid
-			int tmp = (*geomWKB)->srid;
-			if (tmp < 0)
-				throw(MAL, "geom.wkbAsText", "Negative SRID");
-
-			sridIntToString = GDKmalloc(digitsNum + 1);
-			if (sridIntToString == NULL) {
-				GDKfree(wkt);
-				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
-			}
-			digitsNum = sprintf(sridIntToString, "%d", (*geomWKB)->srid);
-
-			len2 = strlen(wkt) + strlen(sridIntToString) + strlen(sridTxt) + 2;
-			*txt = GDKmalloc(len2);
-			if (*txt == NULL) {
-				GDKfree(wkt);
-				GDKfree(sridIntToString);
-				throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
-			}
-
-			memcpy(*txt, sridTxt, strlen(sridTxt));
-			memcpy(*txt + strlen(sridTxt), sridIntToString, strlen(sridIntToString));
-			(*txt)[strlen(sridTxt) + strlen(sridIntToString)] = ';';
-			memcpy(*txt + strlen(sridTxt) + strlen(sridIntToString) + 1, wkt, strlen(wkt));
-			(*txt)[len2 - 1] = '\0';
-
-			GDKfree(sridIntToString);
-		}
-
-		GDKfree(wkt);
+	if (withSRID == NULL || *withSRID == 0) {	//accepting NULL withSRID to make internal use of it easier
+		*txt = wkt;
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "geom.wkbAsText", "Failed to create Text from Well Known Format");
+
+	if ((*geomWKB)->srid < 0)
+		throw(MAL, "geom.wkbAsText", "Negative SRID");
+
+	/* 10 for maximum number of digits to represent an INT */
+	len2 = strlen(wkt) + 10 + strlen(sridTxt) + 2;
+	*txt = GDKmalloc(len2);
+	if (*txt == NULL) {
+		GDKfree(wkt);
+		throw(MAL, "geom.wkbAsText", MAL_MALLOC_FAIL);
+	}
+
+	snprintf(*txt, len2, "%s%d;%s", sridTxt, (*geomWKB)->srid, wkt);
+
+	GDKfree(wkt);
+	return MAL_SUCCEED;
 }
 
 str
@@ -5185,7 +5192,15 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 int
 wkbFROMSTR(char *geomWKT, int *len, wkb **geomWKB)
 {
-	return wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0);
+	size_t parsedBytes;
+	str err;
+
+	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
+	if (err != MAL_SUCCEED) {
+		GDKfree(err);
+		return 0;
+	}
+	return (int) parsedBytes;
 }
 
 BUN
