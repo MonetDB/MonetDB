@@ -677,7 +677,12 @@ int isTopn(InstrPtr p){
 
 int isSlice(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == subsliceRef);
+		getFunctionId(p) == subsliceRef); 
+}
+
+int isSample(InstrPtr p){
+	return (getModuleId(p) == sampleRef &&
+		getFunctionId(p) == subuniformRef);
 }
 
 int isOrderby(InstrPtr p){
