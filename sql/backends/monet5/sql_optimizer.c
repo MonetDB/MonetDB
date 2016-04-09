@@ -115,8 +115,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg)
 		GDKfree(msg);	/* what to do with an error? */
-	/* point queries do not require mitosis and dataflow */
-	if (be->mvc->point_query) {
+	if (be->mvc->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
 			if (q->token == ENDsymbol)
