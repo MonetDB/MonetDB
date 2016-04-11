@@ -14,7 +14,7 @@
 #include "sfcgal.h"
 
 char *
-msfcgal_version(char **ret)
+geom_sfcgal_version(char **ret)
 {
 	*ret = GDKstrdup(sfcgal_version());
 

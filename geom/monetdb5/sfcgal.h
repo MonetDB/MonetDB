@@ -38,4 +38,4 @@
 #define geom_export extern
 #endif
 
-geom_export char * msfcgal_version(char **ret);
+geom_export char * geom_sfcgal_version(char **ret);

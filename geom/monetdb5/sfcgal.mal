@@ -6,6 +6,6 @@
 
 module sfcgal;
 
-command version() :str address msfcgal_version
+command version() :str address geom_sfcgal_version
 comment "Returns the version number of the SFCGAL library";
 
