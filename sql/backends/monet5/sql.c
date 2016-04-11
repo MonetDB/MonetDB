@@ -33,6 +33,7 @@
 #include <rel_bin.h>
 #include <bbp.h>
 #include <opt_pipes.h>
+#include <orderidx.h>
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
@@ -496,8 +497,31 @@ table_has_updates(sql_trans *tr, sql_table *t)
 	return cnt;
 }
 
+static BAT *
+mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
+{
+	sql_trans *tr = m->session->tr;
+	BAT *b = NULL;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		return NULL;
+	c = mvc_bind_column(m, t, cname);
+	if (c == NULL)
+		return NULL;
+
+	b = store_funcs.bind_col(tr, c, access);
+	return b;
+}
+
 static str
-alter_table(mvc *sql, char *sname, sql_table *t)
+alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
@@ -580,10 +604,13 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		for (n = t->idxs.nelm; n; n = n->next) {
 			sql_idx *i = n->data;
 
-			if (i->type == ordered_idx) 
-				printf("TODO call create ordered index code\n");
-			else
-				mvc_copy_idx(sql, nt, i);
+			if (i->type == ordered_idx) {
+				sql_kc *ic = i->columns->h->data;
+				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
+				BBPunfix(b->batCacheid);
+			}
+			mvc_copy_idx(sql, nt, i);
 		}
 	}
 	if (t->keys.set) {
@@ -708,7 +735,7 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 }
 
 static str
-drop_index(mvc *sql, char *sname, char *iname)
+drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 {
 	sql_schema *s = NULL;
 	sql_idx *i = NULL;
@@ -721,6 +748,12 @@ drop_index(mvc *sql, char *sname, char *iname)
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_message("42000!DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
+		if (i->type == ordered_idx) {
+			sql_kc *ic = i->columns->h->data;
+			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
+			OIDXdropImplementation(cntxt, b);
+			BBPunfix(b->batCacheid);
+		}
 		mvc_drop_idx(sql, s, i);
 	}
 	return NULL;
@@ -1269,7 +1302,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_ALTER_TABLE:{
 		sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-		msg = alter_table(sql, sname, t);
+		msg = alter_table(cntxt, sql, sname, t);
 		break;
 	}
 	case DDL_CREATE_TYPE:{
@@ -1397,7 +1430,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_DROP_INDEX:{
 		char *iname = *getArgReference_str(stk, pci, 3);
-		msg = drop_index(sql, sname, iname);
+		msg = drop_index(cntxt, sql, sname, iname);
 		break;
 	}
 	case DDL_DROP_FUNCTION:{
@@ -1760,29 +1793,6 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	throw(SQL, "sql.restart", "sequence %s not found", *sname);
-}
-
-static BAT *
-mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
-{
-	sql_trans *tr = m->session->tr;
-	BAT *b = NULL;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	sql_column *c = NULL;
-
-	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
-		return NULL;
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		return NULL;
-	c = mvc_bind_column(m, t, cname);
-	if (c == NULL)
-		return NULL;
-
-	b = store_funcs.bind_col(tr, c, access);
-	return b;
 }
 
 static BAT *
