@@ -97,7 +97,7 @@ typedef struct mvc {
 	int argc;
 	int argmax;
 	struct symbol *sym;
-	int point_query;	/* mark when a query is a point query */
+	int no_mitosis;		/* run query without mitosis */
 
 	int user_id;
 	int role_id;
