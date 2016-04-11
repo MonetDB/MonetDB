@@ -4,17 +4,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-headers_sql = {
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 40_geom.sql
-}
+module sfcgal;
 
-headers_sql_sfcgal = {
-	COND = HAVE_SFCGAL
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 41_sfcgal.sql
-}
+command version() :str address msfcgal_version
+comment "Returns the version number of the SFCGAL library";
 
-EXTRA_DIST_DIR = Tests

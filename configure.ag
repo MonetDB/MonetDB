@@ -218,6 +218,22 @@ no-auto)
 	;;
 esac
 
+dft_sfcgal=auto
+AC_ARG_ENABLE(sfcgal,
+	AS_HELP_STRING([--enable-sfcgal],
+		[enable support for SFCGAL based functionality (default=auto)]),
+	have_sfcgal=$enableval,
+	have_sfcgal=$dft_sfcgal)
+case "$enable_geom-$have_sfcgal" in
+no-yes)
+	AC_MSG_ERROR([SFCGAL-based functionality requires the geom module])
+	;;
+no-auto)
+	have_sfcgal=no
+	disable_sfcgal="(SFCGAL based functionality requires the geom module)"
+	;;
+esac
+
 dft_embedded=no
 AC_ARG_ENABLE(embedded,
 	AS_HELP_STRING([--enable-embedded],
@@ -2764,6 +2780,56 @@ if test "x$have_gdal" = xno; then
 fi
 AM_CONDITIONAL(HAVE_SHP, test x"$have_shp" != xno )
 
+
+org_have_sfcgallib=auto
+have_sfcgallib=$org_have_sfcgallib
+SFCGAL_INCS=''
+SFCGAL_LIBS=''
+AC_ARG_WITH(sfcgal,
+	AS_HELP_STRING([--with-sfcgal=DIR],
+				   [SFCGAL library is installed in DIR]),
+				   have_sfcgallib="$withval")
+case "$have_sfcgal" in
+yes|auto)
+	if test "x$have_sfcgallib" != xno; then
+		case "$have_sfcgallib" in
+		yes|auto)
+			XPATH="$PATH"
+				;;
+		*)
+			XPATH="$have_sfcgallib/bin"
+			have_sfcgallib=yes
+			;;
+		esac
+		AC_PATH_PROG(SFCGAL_CONFIG,sfcgal-config,,$XPATH)
+		if test "x$SFCGAL_CONFIG" = x; then
+			if test "x$have_sfcgallib" = "xyes" ; then
+				AC_MSG_ERROR([sfcgal-config not found in $XPATH])
+			else
+				have_sfcgallib=no
+				why_have_sfcgal="(sfcgal-config not found)"
+			fi
+		fi
+	fi
+	if test "x$have_sfcgallib" != xno; then
+		SFCGAL_INCS="`$SFCGAL_CONFIG --cflags`"
+		SFCGAL_LIBS="`$SFCGAL_CONFIG --libs`"
+	fi
+	if test "x$have_sfcgallib" = xno; then
+		if test "x$enable_sfcgal" = xyes; then
+			AC_MSG_ERROR([SFCGAL library required for SFCGAL-based functionality])
+		fi
+		# no sfcgal library, so don't compile sfcgal-based functionality
+		have_sfcgal=no
+		disable_sfcgal=${why_have_sfcgal:-"(SFCGAL library required)"}
+	fi
+	;;
+esac
+AM_CONDITIONAL(HAVE_SFCGAL, test x"$have_sfcgal" != xno )
+AC_SUBST(SFCGAL_INCS)
+AC_SUBST(SFCGAL_LIBS)
+
+
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
 if test x"$have_atomic_ops" = x"yes" ; then
@@ -3613,6 +3679,7 @@ for comp in \
 	'python3      ' \
 	'readline     ' \
 	'samtools     ' \
+	'sfcgal       ' \
 	'shp          ' \
 	'sphinxclient ' \
 	'unixodbc     ' \

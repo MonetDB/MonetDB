@@ -10,7 +10,8 @@ INCLUDES = ../lib \
            ../../common/stream \
            ../../common/options \
            ../../monetdb5/mal \
-           $(GEOS_INCS) $(PROJ_INCS)
+           $(GEOS_INCS) $(PROJ_INCS) \
+           $(SFCGAL_INCS)
 
 lib__geom = {
 	MODULE
@@ -35,4 +36,30 @@ headers_autoload = {
 	SOURCES = 30_geom.mal
 }
 
-EXTRA_DIST = 30_geom.mal geom.mal
+lib__sfcgal = {
+	COND = HAVE_SFCGAL
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = sfcgal.h sfcgal.c
+	LIBS = ../lib/libgeom \
+		   ../../gdk/libbat \
+	       ../../common/stream/libstream \
+	       ../../monetdb5/tools/libmonetdb5 \
+	       $(SFCGAL_LIBS)
+}
+
+headers_mal_sfcgal = {
+	COND = HAVE_SFCGAL
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = sfcgal.mal
+}
+
+headers_autoload_sfcgal = {
+	COND = HAVE_SFCGAL
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 31_sfcgal.mal
+}
+
+EXTRA_DIST = 30_geom.mal 31_geom.mal geom.mal

@@ -371,6 +371,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_SFCGAL
+	$(ECHO) HAVE_SFCGAL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_SFCGAL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_MONETDB5
 	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
