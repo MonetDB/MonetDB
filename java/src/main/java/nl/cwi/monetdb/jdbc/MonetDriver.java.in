@@ -123,7 +123,8 @@ final public class MonetDriver implements Driver {
 		info = props;
 
 		// url should be of style jdbc:monetdb://<host>/<database>
-		if (!acceptsURL(url)) return null;
+		if (!acceptsURL(url))
+			throw new SQLException("Invalid URL: it does not start with: " + MONETURL, "08M26");
 
 		// remove leading "jdbc:" so the rest is a valid hierarchical URI
 		URI uri;
@@ -133,26 +134,31 @@ final public class MonetDriver implements Driver {
 			throw new SQLException(e.toString(), "08M26");
 		}
 
-		if (uri.getHost() == null) throw
-			new SQLException("Invalid URL: no hostname given or " +
-					"unparsable in '" + url + "'", "08M26");
-		info.put("host", uri.getHost());
-		if (uri.getPort() > 0)
-			info.put("port", "" + uri.getPort());
+		String uri_host = uri.getHost();
+		if (uri_host == null)
+			throw new SQLException("Invalid URL: no hostname given or unparsable in '" + url + "'", "08M26");
+		info.put("host", uri_host);
+
+		int uri_port = uri.getPort();
+		if (uri_port > 0)
+			info.put("port", "" + uri_port);
 
 		// check the database
-		if (uri.getPath() != null && uri.getPath().length() != 0 &&
-				!uri.getPath().substring(1).trim().equals(""))
-		{
-			info.put("database", uri.getPath().substring(1));
+		String uri_path = uri.getPath();
+		if (uri_path != null && uri_path.length() != 0) {
+			uri_path = uri_path.substring(1);
+			if (!uri_path.trim().equals(""))
+				info.put("database", uri_path);
 		}
 
-		if (uri.getQuery() != null) {
+		String uri_query = uri.getQuery();
+		if (uri_query != null) {
 			// handle additional arguments
-			String args[] = uri.getQuery().split("&");
+			String args[] = uri_query.split("&");
 			for (int i = 0; i < args.length; i++) {
 				tmp = args[i].indexOf("=");
-				if (tmp > 0) info.put(args[i].substring(0, tmp), args[i].substring(tmp + 1));
+				if (tmp > 0)
+					info.put(args[i].substring(0, tmp), args[i].substring(tmp + 1));
 			}
 		}
 
@@ -203,12 +209,12 @@ final public class MonetDriver implements Driver {
 
 		DriverPropertyInfo prop = new DriverPropertyInfo("user", info.getProperty("user"));
 		prop.required = true;
-		prop.description = "The username to use when authenticating on the database";
+		prop.description = "The user loginname to use when authenticating on the database server";
 		props.add(prop);
 
 		prop = new DriverPropertyInfo("password", info.getProperty("password"));
 		prop.required = true;
-		prop.description = "The password to use when authenticating on the database";
+		prop.description = "The password to use when authenticating on the database server";
 		props.add(prop);
 
 		prop = new DriverPropertyInfo("debug", "false");
@@ -218,7 +224,7 @@ final public class MonetDriver implements Driver {
 
 		prop = new DriverPropertyInfo("logfile", "");
 		prop.required = false;
-		prop.description = "The filename to write the debug log to.  Only takes effect if debug is set to true.  If the file exists, an incrementing number is added, till the filename is unique.";
+		prop.description = "The filename to write the debug log to. Only takes effect if debug is set to true. If the file exists, an incrementing number is added, till the filename is unique.";
 		props.add(prop);
 
 		prop = new DriverPropertyInfo("language", "sql");
@@ -243,7 +249,7 @@ final public class MonetDriver implements Driver {
 
 		prop = new DriverPropertyInfo("so_timeout", "0");
 		prop.required = false;
-		prop.description = "Defines the maximum time to wait in milliseconds on a blocking read socket call (this corresponds to the Connection.setNetworkTimeout() method introduced in JDBC 4.1)";
+		prop.description = "Defines the maximum time to wait in milliseconds on a blocking read socket call"; // this corresponds to the Connection.setNetworkTimeout() method introduced in JDBC 4.1
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];
@@ -274,10 +280,11 @@ final public class MonetDriver implements Driver {
 
 	//== end methods of interface driver
 
-	/** A Map containing the mapping between MonetDB types and Java SQL types */
+
+	/** A static Map containing the mapping between MonetDB types and Java SQL types */
 	/* use SELECT sqlname, * FROM sys.types order by 1, id; to view all MonetDB types */
 	/* see http://docs.oracle.com/javase/7/docs/api/java/sql/Types.html to view all supported java SQL types */
-	static java.util.Map<String, Integer> typeMap = new java.util.HashMap<String, Integer>();
+	private static java.util.Map<String, Integer> typeMap = new java.util.HashMap<String, Integer>();
 	static {
 		// fill the typeMap once
 		typeMap.put("bigint", Integer.valueOf(Types.BIGINT));
@@ -301,7 +308,9 @@ final public class MonetDriver implements Driver {
 		typeMap.put("time", Integer.valueOf(Types.TIME));
 		typeMap.put("timestamp", Integer.valueOf(Types.TIMESTAMP));
 		typeMap.put("timestamptz", Integer.valueOf(Types.TIMESTAMP));
+// new in Java 8: Types.TIMESTAMP_WITH_TIMEZONE (value 2014). Can't use it yet as we compile for java 7
 		typeMap.put("timetz", Integer.valueOf(Types.TIME));
+// new in Java 8: Types.TIME_WITH_TIMEZONE (value 2013). Can't use it yet as we compile for java 7
 		typeMap.put("tinyint", Integer.valueOf(Types.TINYINT));
 		typeMap.put("url", Integer.valueOf(Types.VARCHAR));
 		typeMap.put("uuid", Integer.valueOf(Types.VARCHAR));
@@ -318,7 +327,7 @@ final public class MonetDriver implements Driver {
 	 */
 	static int getJavaType(String type) {
 		// match the column type on a java.sql.Types constant
-		Integer tp = typeMap.get(type.toLowerCase());
+		Integer tp = typeMap.get(type);
 		if (tp != null) {
 			return tp.intValue();
 		} else {
@@ -331,22 +340,27 @@ final public class MonetDriver implements Driver {
 
 	/**
 	 * Returns a String usable in an SQL statement to map the server types
-	 * to values of java.sql.Types using the global type map.  The returned
-	 * string will be a SQL CASE x statement where the x is replaced with
-	 * the given string.
+	 * to values of java.sql.Types using the global static type map.
+	 * The returned string will be a SQL CASE x statement where the x is
+	 * replaced with the given column name (or expression) string.
 	 *
 	 * @param column a String representing the value that should be evaluated
 	 *               in the SQL CASE statement
 	 * @return a SQL CASE statement
 	 */
+	private static String TypeMapppingSQL = null;	// cache to optimise getSQLTypeMap()
 	static String getSQLTypeMap(String column) {
-		// TODO: StringBuilder?...
-		String ret = "CASE " + column;
- 		for (Entry<String, Integer> entry : typeMap.entrySet()) {
-			ret += " WHEN '" + entry.getKey() + "' THEN " + entry.getValue().toString();
- 		}
-		ret += " ELSE " + Types.OTHER + " END";
-		return ret;
+		if (TypeMapppingSQL == null) {
+			// first time, compose TypeMappping SQL string
+			StringBuilder val = new StringBuilder((typeMap.size() * (7 + 7 + 7 + 4)) + 14);
+	 		for (Entry<String, Integer> entry : typeMap.entrySet()) {
+				val.append(" WHEN '").append(entry.getKey()).append("' THEN ").append(entry.getValue().toString());
+	 		}
+			val.append(" ELSE ").append(Types.OTHER).append(" END");
+			// as the typeMap is static, cache this SQL part for all next calls
+			TypeMapppingSQL = val.toString();
+		}
+		return "CASE " + column + TypeMapppingSQL;
 	}
 
 	/**
