@@ -13,15 +13,15 @@ IF defined ValueName (
     set LOCALPYTHONHOME=%ValueValue%
     set LOCALPYTHONPATH=%ValueValue%Lib
 ) ELSE (
-    @echo "%KEY_NAME%\%VALUE_NAME% not found."
+    @echo %KEY_NAME%\%VALUE_NAME% not found.
 )
 
 IF defined LOCALPYTHONHOME (
     endlocal & (
         set PYTHONHOME=%LOCALPYTHONHOME%
         set PYTHONPATH=%LOCALPYTHONPATH%
-        set MONETDBPYTHONUDF="embedded_py=true"
-        set PATH=%LOCALPYTHONHOME%;%PATH%
+        set MONETDBPYTHONUDF=embedded_py=true
+        set "PATH=%LOCALPYTHONHOME%;%PATH%"
     )
 ) ELSE (
     @echo MonetDB/Python Disabled: Python 2.7 installation not found.
