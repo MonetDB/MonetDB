@@ -2069,7 +2069,7 @@ logger_exit(logger *lg)
 		}
 
 		if (fflush(fp) < 0 ||
-#if defined(_MSC_VER)
+#if defined(WIN32)
 		    _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
 		    fdatasync(fileno(fp)) < 0
