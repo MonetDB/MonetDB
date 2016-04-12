@@ -21,7 +21,7 @@ IF defined LOCALPYTHONHOME (
         set PYTHONHOME=%LOCALPYTHONHOME%
         set PYTHONPATH=%LOCALPYTHONPATH%
         set MONETDBPYTHONUDF="embedded_py=true"
-        set PATH="%PYTHONHOME%;%PATH%"
+        set PATH=%LOCALPYTHONHOME%;%PATH%
     )
 ) ELSE (
     @echo MonetDB/Python Disabled: Python 2.7 installation not found.
