@@ -222,6 +222,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		} else {						\
 			BUN _c = HASHprobe((b)->T->hash, (v));		\
 			HASHputall((b)->T->hash, (i), _c);		\
+			(b)->T->hash->heap->dirty = TRUE;		\
 		}							\
 	} while (0)
 
@@ -229,6 +230,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {					\
 		BUN _c = hash_oid(h,v);		\
 		HASHputall(h,i,_c);		\
+		(h)->heap->dirty = TRUE;	\
 	} while (0)
 
 /* Functions to perform a binary search on a sorted BAT.
