@@ -2608,7 +2608,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 
 		if (sec > BBPLASTUSED(BBP_lastused(i)))
 			BBP_lastused(i) = sec;
-	} else if (b && (BBP_status(i) & BBPTMP)) {
+	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
 		 * available anymore */
