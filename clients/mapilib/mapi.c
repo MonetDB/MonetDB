@@ -2635,7 +2635,7 @@ mapi_reconnect(Mapi mid)
 		hash = strchr(serverhash, ':');
 		if (hash) {
 			*hash = '\0';
-			rest = hash + 1;
+			/* rest = hash + 1; -- rest of string ignored */
 		}
 		hash = NULL;
 		/* hash password, if not already */

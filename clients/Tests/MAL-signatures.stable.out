@@ -40411,6 +40411,18 @@ pattern scheduler.srvpool():int
 address SRVPOOLscheduler;
 comment Run a program block in parallel.
 
+pattern shp.attach(filename:str):void 
+address SHPattach;
+comment Register an ESRI Shapefile in the vault catalog
+
+pattern shp.import(fileid:int,po:wkb):void 
+address SHPpartialimport;
+comment Partially import an ESRI Shapefile with given id into the vault
+
+pattern shp.import(fileid:int):void 
+address SHPimport;
+comment Import an ESRI Shapefile with given id into the vault
+
 function sphinx.sphinx_searchIndexLimit(q:str,i:str,l:int):bat[:lng];
 function sphinx.sphinx_searchIndex(q:str,i:str):bat[:lng];
 function sphinx.sphinx_search(q:str):bat[:lng];

@@ -49,19 +49,6 @@ static char THRprintbuf[BUFSIZ];
 #define chdir _chdir
 #endif
 
-#ifdef NDEBUG
-#ifndef NVALGRIND
-#define NVALGRIND NDEBUG
-#endif
-#endif
-
-#if defined(__GNUC__) && defined(HAVE_VALGRIND)
-#include <valgrind.h>
-#else
-#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)
-#define VALGRIND_FREELIKE_BLOCK(addr, rzB)
-#endif
-
 static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
 static void GDKunlockHome(void);
 
@@ -883,7 +870,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 			GDKfatal("fatal\n");
 		else
 			GDKerror("GDKreallocmax: failed for "
-				 SZFMT " bytes", newsize);
+				 SZFMT " bytes", size);
 	}
 	return ptr;
 }
@@ -939,9 +926,6 @@ GDKmmap(const char *path, int mode, size_t len)
 		}
 	}
 	if (ret != NULL) {
-		/* since mmap directly have content we say it's zero-ed
-		 * memory */
-		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 		meminc(len);
 	}
 	return ret;
@@ -954,7 +938,6 @@ GDKmunmap(void *addr, size_t size)
 	int ret;
 
 	ret = MT_munmap(addr, size);
-	VALGRIND_FREELIKE_BLOCK(addr, 0);
 	if (ret == 0)
 		memdec(size);
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;

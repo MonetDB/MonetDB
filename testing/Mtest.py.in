@@ -1331,7 +1331,7 @@ def ApproveOutput (env, TST) :
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
             f = open(patch + '.0', 'w')
-            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
+            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-I^MAPI *=', '-U0',
                                   stableOUTPUT, testOUTPUT],
                                  stdout = f, universal_newlines = True)
             proc.wait()
