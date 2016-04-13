@@ -1,0 +1,37 @@
+stderr of test 'join-with-references-2sides-crashes.Bug-3980` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 17:35:32 >  
+# 17:35:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36625" "--set" "mapi_usock=/var/tmp/mtest-18131/.s.monetdb.36625" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 17:35:32 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/zhang/monet-install/Jul2015/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36625
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18131/.s.monetdb.36625
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_BugTracker-2016
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:35:33 >  
+# 17:35:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18131" "--port=36625"
+# 17:35:33 >  
+
+
+# 17:35:34 >  
+# 17:35:34 >  "Done."
+# 17:35:34 >  
+
