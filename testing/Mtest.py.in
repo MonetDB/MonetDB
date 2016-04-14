@@ -185,7 +185,7 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 if res is not None:
                     ttywidth = int(res.group(1))
             if ttywidth < 60:
-                # rediculously narrow tty, ignore value
+                # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
 import string                   # for whitespace
