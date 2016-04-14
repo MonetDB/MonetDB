@@ -2,7 +2,7 @@ start transaction;
 
 
 create table "noNULLtinyint" (x tinyint);
-copy binary into "noNULLtinyint" from ('$TSTTRGDIR/noNULLtinyintBAT.bin');
+copy binary into "noNULLtinyint" from ('$QTSTTRGDIR/noNULLtinyintBAT.bin');
 
 select * from "noNULLtinyint";
 select count(*), count(x) from "noNULLtinyint";
@@ -18,7 +18,7 @@ select * from "noNULLtinyint" where x is not null;
 
 
 create table "NULLtinyint" (x tinyint);
-copy binary into "NULLtinyint" from ('$TSTTRGDIR/NULLtinyintBAT.bin');
+copy binary into "NULLtinyint" from ('$QTSTTRGDIR/NULLtinyintBAT.bin');
 
 select * from "NULLtinyint";
 select count(*), count(x) from "NULLtinyint";
