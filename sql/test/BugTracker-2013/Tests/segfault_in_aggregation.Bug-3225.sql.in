@@ -1,5 +1,5 @@
 create table t3225 ("eId" BIGINT, "timeInsert" TIMESTAMP, "uId" BIGINT);
-copy into t3225 from '$TSTSRCDIR/segfault_in_aggregation.Bug-3225.data' USING DELIMITERS '\t','\n';
+copy into t3225 from '$QTSTSRCDIR/segfault_in_aggregation.Bug-3225.data' USING DELIMITERS '\t','\n';
 select "eId", count(*) from t3225 where "uId" = 312459 group by "eId";
 select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000761 group by "eId";
 select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000763 group by "eId";
