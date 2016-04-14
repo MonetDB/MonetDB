@@ -193,6 +193,13 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 # rediculously narrow tty, ignore value
                 ttywidth = 0
 
+if os.name == 'nt':
+    p = os.path.join(sys.prefix, 'Lib')
+    if 'PYTHONPATH' in os.environ:
+        p = os.environ['PYTHONPATH'] + os.pathsep + p
+    os.environ['PYTHONPATH'] = p
+    os.environ['PYTHONHOME'] = sys.prefix
+
 import string                   # for whitespace
 def splitcommand(cmd):
     '''Like string.split, except take quotes into account.'''
