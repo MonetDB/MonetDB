@@ -3519,12 +3519,23 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
+		const char *fname = *getArgReference_str(stk, pci, i);
+		size_t flen = strlen(fname);
+		char *fn;
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
 			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
-		f = fopen(*getArgReference_str(stk, pci, i), "r");
-		if (f == NULL)
-			throw(SQL, "sql", "Failed to open file %s", *getArgReference_str(stk, pci, i));
+		fn = GDKmalloc(flen + 1);
+		GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
+		if (fn == NULL)
+			throw(SQL, "sql", MAL_MALLOC_FAIL);
+		f = fopen(fn, "r");
+		if (f == NULL) {
+			msg = createException(SQL, "sql", "Failed to open file %s", fn);
+			GDKfree(fn);
+			return msg;
+		}
+		GDKfree(fn);
 		fclose(f);
 	}
 
