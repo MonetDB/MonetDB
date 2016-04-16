@@ -41,6 +41,12 @@ Ready.
 % timestamp # type
 % 26 # length
 [ 2016-04-12 09:32:40.000000	]
+#SELECT epoch(CAST(1460453860-300 AS INTERVAL SECOND));
+% .L1 # table_name
+% sql_sub_single_value # name
+% timestamp # type
+% 26 # length
+[ 2016-04-12 09:32:40.000000	]
 
 # 13:17:29 >  
 # 13:17:29 >  "Done."
