@@ -4900,9 +4900,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 
 				if (is_column(e->type) && exp_is_atom(e)) {
 					list_append(exps, e);
-				} else if (e->type == e_column /*||
-					   e->type == e_func ||
-					   e->type == e_convert*/) {
+				} else if (e->type == e_column) {
 					if (e->name && e->name[0] == 'L')
 						return rel;
 					list_append(exps, e);

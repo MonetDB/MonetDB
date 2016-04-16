@@ -338,6 +338,18 @@ rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 	return path;
 }
 
+static void
+exps_has_nil(list *exps)
+{
+	node *m;
+
+	for (m = exps->h; m; m = m->next) {
+		sql_exp *e = m->data;
+
+		set_has_nil(e);
+	}
+}
+
 list *
 rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 {
@@ -354,8 +366,12 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 	case op_full:
 	case op_apply:
 		exps = rel_projections(sql, rel->l, tname, settname, intern );
+		if (rel->op == op_full || rel->op == op_right)
+			exps_has_nil(exps);
 		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
 			rexps = rel_projections(sql, rel->r, tname, settname, intern );
+			if (rel->op == op_full || rel->op == op_left)
+				exps_has_nil(rexps);
 			exps = list_merge( exps, rexps, (fdup)NULL);
 		}
 		return exps;
@@ -979,23 +995,6 @@ rel_sample(sql_allocator *sa, sql_rel *l, list *exps )
 	return rel;
 }
 
-static char * 
-rel_get_name( sql_rel *rel )
-{
-	switch(rel->op) {
-	case op_table:
-		if (rel->r) 
-			return exp_name(rel->r);
-		return NULL;
-	case op_basetable: 
-		return NULL;
-	default:
-		if (rel->l)
-			return rel_get_name(rel->l);
-	}
-	return NULL;
-}
-
 /* ls is the left expression of the select, rs is a simple atom, e is the
    select expression.
  */
@@ -1025,8 +1024,7 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 		    lrel->op != op_left)
 			break;
 		/* pushing through left head of a left join is allowed */
-		if (lrel->op == op_left && (
-					!n->next || lrel->l != n->next->data))
+		if (lrel->op == op_left && (!n->next || lrel->l != n->next->data))
 			break;
 		p = lrel;
 	}
@@ -1040,11 +1038,8 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 		if (p && p != lrel) {
 			assert(p->op == op_join || p->op == op_left || is_semi(p->op));
 			if (p->l == lrel) {
-				assert(p->l != n);
 				p->l = n;
 			} else {
-				assert(p->op == op_join && p->r == lrel);
-				assert(p->r != n);
 				p->r = n;
 			}
 		} else {
@@ -1160,24 +1155,6 @@ static sql_rel * rel_joinquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_crossquery(mvc *sql, sql_rel *rel, symbol *q);
 static sql_rel * rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *sq);
 
-void
-rel_add_intern(mvc *sql, sql_rel *rel)
-{
-	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
-		list *prjs = rel_projections(sql, rel->l, NULL, 1, 1);
-		node *n;
-	
-		for(n=prjs->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (is_intern(e)) {
-				append(rel->exps, e);
-				n->data = NULL;
-			}
-		}
-	}
-}
-
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 {
@@ -1216,7 +1193,6 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			}
 		}
 	}
-	rel_add_intern(sql, sq);
 	return sq;
 }
 
@@ -2431,7 +2407,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
 	if (exps_card(r) <= CARD_ATOM /*&& exp_is_atom(rs) */) {
-		if (exps_card(l) == exps_card(r))  /* bin compare op */
+		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
@@ -2512,7 +2488,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 	}
 	if (rs->card <= CARD_ATOM && exp_is_atom(rs) && 
 	   (!rs2 || (rs2->card <= CARD_ATOM && exp_is_atom(rs2)))) {
-		if (ls->card == rs->card && !rs2)  /* bin compare op */
+		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
@@ -5850,26 +5826,6 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 
 		if (!rel)
 			return rel;
-		if (l_nil || r_nil) { /* add projection for correct NOT NULL */
-			list *outexps = new_exp_list(sql->sa), *exps;
-			node *m;
-
-			exps = rel_projections(sql, t1, rel_get_name(t1), 1, 1);
-			for (m = exps->h; m; m = m->next) {
-				sql_exp *ls = m->data;
-				if (l_nil)
-					set_has_nil(ls);
-				append(outexps, ls);
-			}
-			exps = rel_projections(sql, t2, rel_get_name(t2), 1, 1);
-			for (m = exps->h; m; m = m->next) {
-				sql_exp *rs = m->data;
-				if (r_nil)
-					set_has_nil(rs);
-				append(outexps, rs);
-			}
-			rel = rel_project(sql->sa, rel, outexps);
-		}
 	} else if (js) {	/* using */
 		char rname[16], *rnme;
 		dnode *n = js->data.lval->h;

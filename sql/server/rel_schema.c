@@ -349,6 +349,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rsname, rtname);
 			return res;
 		}
+		if (list_length(rk->columns) != 1) {
+			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			return res;
+		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
@@ -943,6 +947,25 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	}
 	/*return NULL;*/ /* never reached as all branches of the above if() end with return ... */
 }
+
+static void
+rel_add_intern(mvc *sql, sql_rel *rel)
+{
+	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
+		list *prjs = rel_projections(sql, rel->l, NULL, 1, 1);
+		node *n;
+	
+		for(n=prjs->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (is_intern(e)) {
+				append(rel->exps, e);
+				n->data = NULL;
+			}
+		}
+	}
+}
+
 
 static sql_rel *
 rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent)
