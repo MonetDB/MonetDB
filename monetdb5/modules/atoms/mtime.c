@@ -2651,23 +2651,6 @@ MTIMEepoch2int(int *ret, const timestamp *t)
 }
 
 str
-MTIMEtimestamp(timestamp *ret, const int *sec)
-{
-	timestamp t;
-	lng l;
-	str e;
-
-	if (*sec == int_nil) {
-		*ret = *timestamp_nil;
-		return MAL_SUCCEED;
-	}
-	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
-		return e;
-	l = ((lng) *sec) * 1000;
-	return MTIMEtimestamp_add(ret, &t, &l);
-}
-
-str
 MTIMEtimestamplng(timestamp *ret, const lng *sec)
 {
 	timestamp t;
@@ -2680,8 +2663,15 @@ MTIMEtimestamplng(timestamp *ret, const lng *sec)
 	}
 	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
 		return e;
-	l = ((lng) *sec);
+	l = ((lng) *sec) * 1000;
 	return MTIMEtimestamp_add(ret, &t, &l);
+}
+
+str
+MTIMEtimestamp(timestamp *ret, const int *sec)
+{
+	const lng s = *sec;
+	return MTIMEtimestamplng(ret, &s);
 }
 
 str
