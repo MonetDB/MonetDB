@@ -19,3 +19,4 @@ join-with-references-2sides-crashes.Bug-3980
 memory-consumption-query-PLAN-25joins.Bug-3972
 leftjoin.Bug-3981
 subcorr-missing.Bug-3978
+epoch.Bug-3979
