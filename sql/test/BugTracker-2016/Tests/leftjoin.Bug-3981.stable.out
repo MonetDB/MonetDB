@@ -1,0 +1,54 @@
+stdout of test 'leftjoin.Bug-3981` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 09:59:13 >  
+# 09:59:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31439" "--set" "mapi_usock=/var/tmp/mtest-9363/.s.monetdb.31439" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 09:59:13 >  
+
+# MonetDB 5 server v11.21.18
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31439/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9363/.s.monetdb.31439
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.12'
+# Finished reading the write-ahead log 'sql_logs/sql/log.12'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:59:13 >  
+# 09:59:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9363" "--port=31439"
+# 09:59:13 >  
+
+#SELECT *
+#FROM (
+#	    SELECT 'apple' as fruit
+#	    UNION ALL SELECT 'banana'
+#) a
+#JOIN (
+#	    SELECT 'apple' as fruit
+#	    UNION ALL SELECT 'banana'
+#) b ON a.fruit=b.fruit
+#LEFT JOIN (
+#	    SELECT 1 as isyellow
+#) c ON b.fruit='banana';
+% .a,	.b,	.c # table_name
+% fruit,	fruit,	isyellow # name
+% char,	char,	tinyint # type
+% 6,	6,	1 # length
+[ "banana",	"banana",	1	]
+[ "apple",	"apple",	NULL	]
+
+# 09:59:13 >  
+# 09:59:13 >  "Done."
+# 09:59:13 >  
+
