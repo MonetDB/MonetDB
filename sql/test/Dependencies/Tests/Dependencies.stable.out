@@ -398,9 +398,7 @@ Dependencies between database objects
 % sys.f,	sys.tri,	.L # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 5,	12,	11 # length
-[ "<>",	"trigger_test",	"DEP_TRIGGER"	]
-[ "count",	"trigger_test",	"DEP_TRIGGER"	]
+% 0,	0,	11 # length
 #SELECT k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id;
 % sys.k,	sys.fk,	.L # table_name
 % name,	name,	single_value # name
