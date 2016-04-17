@@ -108,12 +108,13 @@ function user.s2_1{autoCommit=true}(A0:str):void;
     X_74:bat[:oid,:wrd]  := aggr.subcount(X_63,X_71,r1_77,true);
     (X_75,r1_81,r2_81) := group.subgroupdone(X_74);
     X_78 := algebra.leftfetchjoin(r1_81,X_74);
-    X_79:bat[:oid,:wrd]  := aggr.subcount(X_75,X_75,r1_81,false);
-    (X_81,r1_87,r2_87) := algebra.subsort(X_79,true,false);
-    (X_84,r1_90,r2_90) := algebra.subsort(X_78,r1_87,r2_87,true,false);
-    X_87 := algebra.leftfetchjoin(r1_90,X_78);
-    X_88 := algebra.leftfetchjoin(r1_90,X_79);
-    sql.resultSet(X_107,X_109,X_111,X_112,X_113,X_87,X_88);
+    X_80:bat[:oid,:wrd] := aggr.subcount(X_75,X_75,r1_81,false);
+    X_79 := bat.setKey(X_78,true);
+    (X_82,r1_88,r2_88) := algebra.subsort(X_80,true,false);
+    (X_85,r1_91,r2_91) := algebra.subsort(X_79,r1_88,r2_88,true,false);
+    X_88 := algebra.leftfetchjoin(r1_91,X_79);
+    X_89 := algebra.leftfetchjoin(r1_91,X_80);
+    sql.resultSet(X_109,X_111,X_113,X_114,X_115,X_88,X_89);
 end user.s2_1;
 
 # 22:53:28 >  

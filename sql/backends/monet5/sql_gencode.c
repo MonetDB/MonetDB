@@ -1714,15 +1714,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				if (cmp == cmp_project)
+				if (cmp == cmp_project) {
 					q = newStmt1(mb, algebraRef, "leftfetchjoin");
-				else
+				} else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+				if (cmp == cmp_project && s->key) {
+					q = newStmt1(mb, batRef, "setKey");
+					q = pushArgument(mb, q, s->nr);
+					q = pushBit(mb, q, TRUE);
+					s->nr = getDestVar(q);
+				}
 				return s->nr;
 			}
 

@@ -912,7 +912,7 @@ stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 	s->op1 = op1;
 	s->op2 = op2;
 	s->flag = cmptype;
-	s->key = op1->key;
+	s->key = 0;
 	s->nrcols = 2;
 	return s;
 }

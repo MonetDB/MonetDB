@@ -52,22 +52,22 @@ Ready.
 % clob # type
 % 460 # length
 function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
-    X_113:void := querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe",65);
-    X_87 := bat.new(nil:oid,nil:str);
-    X_95 := bat.append(X_87,"sys.orders");
-    X_104 := bat.append(X_95,"sys.L1");
-    X_90 := bat.new(nil:oid,nil:str);
-    X_97 := bat.append(X_90,"o_orderpriority");
-    X_106 := bat.append(X_97,"order_count");
+    X_114:void := querylog.define("explain select\n\to_orderpriority,\n\tcount(*) as order_count\nfrom\n\torders\nwhere\n\to_orderdate >= date \\'1993-07-01\\'\n\tand o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n\tand exists (\n\t\tselect\n\t\t\t*\n\t\tfrom\n\t\t\tlineitem\n\t\twhere\n\t\t\tl_orderkey = o_orderkey\n\t\t\tand l_commitdate < l_receiptdate\n\t)\ngroup by\n\to_orderpriority\norder by\n\to_orderpriority;","sequential_pipe",66);
+    X_88 := bat.new(nil:oid,nil:str);
+    X_96 := bat.append(X_88,"sys.orders");
+    X_105 := bat.append(X_96,"sys.L1");
     X_91 := bat.new(nil:oid,nil:str);
-    X_98 := bat.append(X_91,"char");
-    X_108 := bat.append(X_98,"wrd");
-    X_92 := bat.new(nil:oid,nil:int);
-    X_100 := bat.append(X_92,15);
-    X_110 := bat.append(X_100,64);
-    X_94 := bat.new(nil:oid,nil:int);
-    X_102 := bat.append(X_94,0);
-    X_112 := bat.append(X_102,0);
+    X_98 := bat.append(X_91,"o_orderpriority");
+    X_107 := bat.append(X_98,"order_count");
+    X_92 := bat.new(nil:oid,nil:str);
+    X_99 := bat.append(X_92,"char");
+    X_109 := bat.append(X_99,"wrd");
+    X_93 := bat.new(nil:oid,nil:int);
+    X_101 := bat.append(X_93,15);
+    X_111 := bat.append(X_101,64);
+    X_95 := bat.new(nil:oid,nil:int);
+    X_103 := bat.append(X_95,0);
+    X_113 := bat.append(X_103,0);
     X_5 := sql.mvc();
     X_6:bat[:oid,:oid]  := sql.tid(X_5,"sys","orders");
     X_9:bat[:oid,:date]  := sql.bind(X_5,"sys","orders","o_orderdate",0);
@@ -110,11 +110,12 @@ function user.s2_1{autoCommit=true}(A0:date,A1:date,A2:int):void;
     X_74:bat[:oid,:str] := algebra.leftfetchjoinPath(X_65,X_20,X_6,X_73);
     (X_75,r1_84,r2_84) := group.subgroupdone(X_74);
     X_78 := algebra.leftfetchjoin(r1_84,X_74);
-    X_83:bat[:oid,:wrd]  := aggr.subcount(X_75,X_75,r1_84,false);
-    (X_79,r1_88,r2_88) := algebra.subsort(X_78,false,false);
-    X_82 := algebra.leftfetchjoin(r1_88,X_78);
-    X_85 := algebra.leftfetchjoin(r1_88,X_83);
-    sql.resultSet(X_104,X_106,X_108,X_110,X_112,X_82,X_85);
+    X_85:bat[:oid,:wrd] := aggr.subcount(X_75,X_75,r1_84,false);
+    X_79 := bat.setKey(X_78,true);
+    (X_80,r1_89,r2_89) := algebra.subsort(X_79,false,false);
+    X_84 := algebra.leftfetchjoin(r1_89,X_79);
+    X_86 := algebra.leftfetchjoin(r1_89,X_85);
+    sql.resultSet(X_105,X_107,X_109,X_111,X_113,X_84,X_86);
 end user.s2_1;
 
 # 22:53:26 >  
