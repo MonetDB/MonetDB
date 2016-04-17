@@ -2636,8 +2636,11 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 			aggrstmt = list_find_column(sql->sa, l, aggrexp->l, aggrexp->r);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(sql->sa, gbexps, aggrexp->l, aggrexp->r);
-			if (aggrstmt && groupby)
+			if (aggrstmt && groupby) {
 				aggrstmt = stmt_project(sql->sa, ext, aggrstmt);
+				if (list_length(gbexps) == 1) 
+					aggrstmt->key = 1;
+			}
 		}
 
 		if (!aggrstmt)

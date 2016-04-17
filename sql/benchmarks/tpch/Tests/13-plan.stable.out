@@ -48,21 +48,19 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 227 # length
+% 225 # length
 project (
 | group by (
 | | project (
 | | | group by (
-| | | | project (
-| | | | | left outer join (
-| | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT ,
-| | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_comment NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
-| | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey, (char[orders.o_comment NOT NULL] as orders.o_comment) ! FILTER like (char "%special%requests%", char "") ]
-| | | | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey HASHCOL  ]
-| | | ) [ customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , sys.count no nil (orders.o_orderkey HASHCOL ) as L1.L1 ]
-| | ) [ L1 as c_orders.c_count ]
-| ) [ c_orders.c_count ] [ c_orders.c_count, sys.count() NOT NULL as L2.L2 ]
-) [ c_orders.c_count, L2 NOT NULL as L2.custdist ] [ L2.custdist NOT NULL, c_orders.c_count ]
+| | | | left outer join (
+| | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT ,
+| | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_comment NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey, (char[orders.o_comment NOT NULL] as orders.o_comment) ! FILTER like (char "%special%requests%", char "") ]
+| | | ) [ customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , sys.count no nil (orders.o_orderkey NOT NULL HASHCOL ) NOT NULL as L1.L1 ]
+| | ) [ L1 NOT NULL as c_orders.c_count ]
+| ) [ c_orders.c_count NOT NULL ] [ c_orders.c_count NOT NULL, sys.count() NOT NULL as L2.L2 ]
+) [ c_orders.c_count NOT NULL, L2 NOT NULL as L2.custdist ] [ L2.custdist NOT NULL, c_orders.c_count NOT NULL ]
 
 # 22:46:32 >  
 # 22:46:32 >  "Done."
