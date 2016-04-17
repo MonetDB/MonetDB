@@ -130,7 +130,7 @@ __hidden void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emerg
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
+__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 	__attribute__((__visibility__("hidden")));
 __hidden int GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__visibility__("hidden")));

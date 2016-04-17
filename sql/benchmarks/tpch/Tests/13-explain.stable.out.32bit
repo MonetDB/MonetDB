@@ -108,12 +108,13 @@ function user.s2_1(A0:str):void;
     X_64:bat[:wrd] := aggr.subcount(X_55,X_61,r1_75,true);
     (X_65,r1_79,r2_79) := group.subgroupdone(X_64);
     X_68 := algebra.projection(r1_79,X_64);
-    X_69:bat[:wrd] := aggr.subcount(X_65,X_65,r1_79,false);
-    (X_70,r1_84,r2_84) := algebra.subsort(X_69,true,false);
-    (X_73,r1_87,r2_87) := algebra.subsort(X_68,r1_84,r2_84,true,false);
-    X_76 := algebra.projection(r1_87,X_68);
-    X_77 := algebra.projection(r1_87,X_69);
-    sql.resultSet(X_94,X_96,X_98,X_99,X_100,X_76,X_77);
+    X_70:bat[:wrd] := aggr.subcount(X_65,X_65,r1_79,false);
+    X_69 := bat.setKey(X_68,true);
+    (X_71,r1_85,r2_85) := algebra.subsort(X_70,true,false);
+    (X_74,r1_88,r2_88) := algebra.subsort(X_69,r1_85,r2_85,true,false);
+    X_77 := algebra.projection(r1_88,X_69);
+    X_78 := algebra.projection(r1_88,X_70);
+    sql.resultSet(X_95,X_97,X_99,X_100,X_101,X_77,X_78);
 end user.s2_1;
 
 # 22:53:28 >  

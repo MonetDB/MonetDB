@@ -4900,7 +4900,7 @@ exps_remove_dictexps(mvc *sql, list *exps, sql_rel *r)
 static sql_rel *
 rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (is_join(rel->op)) {
+	if (is_join(rel->op) && !is_outerjoin(rel->op)) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		int lconst = 0, rconst = 0;
@@ -5035,9 +5035,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		   		/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
-				} else if (e->type == e_column /*||
-					   e->type == e_func ||
-					   e->type == e_convert*/) {
+				} else if (e->type == e_column) {
 					if (e->name && e->name[0] == 'L')
 						return rel;
 					list_append(exps, e);
@@ -5059,9 +5057,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		   		/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_left(rel->op) || is_full(rel->op))) {
 					list_append(exps, e);
-				} else if (e->type == e_column /*||
-					   e->type == e_func ||
-					   e->type == e_convert*/) {
+				} else if (e->type == e_column) {
 					if (e->name && e->name[0] == 'L')
 						return rel;
 					list_append(exps, e);

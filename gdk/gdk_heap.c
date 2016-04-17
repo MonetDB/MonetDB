@@ -713,7 +713,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	HEAPDEBUG {
 		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->newstorage, h->free, h->size);
 	}
-	return GDKsave(h->farmid, nme, ext, h->base, h->free, store);
+	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, TRUE);
 }
 
 gdk_return
