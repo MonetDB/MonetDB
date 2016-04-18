@@ -31,29 +31,37 @@ stderr of test 'path` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring((1 2),(3 4))');
-ERROR = !ParseException: Expected number but encountered '('
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring([(0 0), (3 0), (4 5), (1 6)]');
-ERROR = !ParseException: Expected number but encountered word: '['
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered word: '['
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring((1,2),(3,4))');
-ERROR = !ParseException: Expected number but encountered '('
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring([1 2, 3 4])');
-ERROR = !ParseException: Expected number but encountered word: '[1'
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered word: '[1'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring([11 12, 13 14])');
-ERROR = !ParseException: Expected number but encountered word: '[11'
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered word: '[11'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring((11 12, 13 14))');
-ERROR = !ParseException: Expected number but encountered '('
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring([(,2),(3,4)])');
-ERROR = !ParseException: Expected number but encountered word: '['
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered word: '['
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO PATH_TBL VALUES ('linestring([(1,2),(3,4))');
-ERROR = !ParseException: Expected number but encountered word: '['
-MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered word: '['
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = SELECT '' AS count, f1 AS open_path FROM PATH_TBL_VW WHERE isopen(f1);
 ERROR = !SELECT: no such unary operator 'isopen(geometry)'
 MAPI  = (monetdb) /var/tmp/mtest-6648/.s.monetdb.37642
