@@ -19,7 +19,6 @@ extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
 extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f);
 extern sql_exp *rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f);
 
-extern void rel_add_intern(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 

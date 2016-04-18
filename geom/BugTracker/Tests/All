@@ -1,7 +1,7 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
-HAVE_GEOM?X_crash.SF-1971632
+HAVE_GEOM&THREADS=1?X_crash.SF-1971632
 HAVE_GEOM?copy_into_crash.SF-1975402
 HAVE_GEOM?copy_into_mbr.3492
 

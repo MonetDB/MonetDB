@@ -1,0 +1,53 @@
+stdout of test 'subcorr-missing.Bug-3978` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 13:04:44 >  
+# 13:04:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39477" "--set" "mapi_usock=/var/tmp/mtest-20295/.s.monetdb.39477" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 13:04:44 >  
+
+# MonetDB 5 server v11.21.18
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39477/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20295/.s.monetdb.39477
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.13'
+# Finished reading the write-ahead log 'sql_logs/sql/log.13'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 13:04:45 >  
+# 13:04:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20295" "--port=39477"
+# 13:04:45 >  
+
+#create table x( i int, j int, id int);
+#insert into x values (1,1,1);
+[ 1	]
+#insert into x values (2,2,2);
+[ 1	]
+#insert into x values (2,2,1);
+[ 1	]
+#insert into x values (2,2,2);
+[ 1	]
+#select corr(i,j) from x group by id;
+% sys.L1 # table_name
+% L1 # name
+% int # type
+% 1 # length
+[ 0	]
+[ 0	]
+#drop table x;
+
+# 13:04:45 >  
+# 13:04:45 >  "Done."
+# 13:04:45 >  
+

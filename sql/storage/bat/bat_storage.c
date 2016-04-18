@@ -1885,15 +1885,13 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		return ok;
 	}
 	ins = temp_descriptor(cbat->ibid);
-	if (0 && unique)
-		BATkey(BATmirror(cur), TRUE);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
 		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
 
-			if (0 && unique)
+			if (unique)
 				BATkey(BATmirror(newcur), TRUE);
 			temp_destroy(cbat->bid);
 			temp_destroy(obat->bid);
@@ -1972,8 +1970,6 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 	if (obat->bid)
 		cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(obat->ibid);
-	if (0 && unique)
-		BATkey(BATmirror(cur), TRUE);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
 		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
@@ -1981,7 +1977,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			BAT *newcur = ins;
 			bat id = obat->bid;
 
-			if (0 && unique)
+			if (unique)
 				BATkey(BATmirror(newcur), TRUE);
 			obat->bid = obat->ibid;
 			obat->ibid = id;

@@ -235,6 +235,8 @@ Ready.
 \dSf sys."setmasklen"
 \dSf sys."setsession"
 \dSf sys."settimeout"
+\dSf sys."shpattach"
+\dSf sys."shpload"
 \dSf sys."shrink"
 \dSf sys."shutdown"
 \dSf sys."st_area"
@@ -629,6 +631,8 @@ SYSTEM FUNCTION  sys.sessions
 SYSTEM FUNCTION  sys.setmasklen
 SYSTEM FUNCTION  sys.setsession
 SYSTEM FUNCTION  sys.settimeout
+SYSTEM FUNCTION  sys.shpattach
+SYSTEM FUNCTION  sys.shpload
 SYSTEM FUNCTION  sys.shrink
 SYSTEM FUNCTION  sys.shutdown
 SYSTEM FUNCTION  sys.sign
@@ -1008,6 +1012,9 @@ create function "setmasklen" (p inet, mask int) returns inet external name inet.
 create procedure sys.setsession("timeout" bigint) external name sql.setsession;
 create procedure sys.settimeout("query" bigint) external name sql.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint) external name sql.settimeout;
+create procedure shpattach(fname string) external name shp.attach;
+create procedure shpload(fid integer) external name shp.load;
+create procedure shpload(fid integer, filter geometry) external name shp.import;
 create procedure shrink(sys string, tab string) external name sql.shrink;
 create procedure sys.shutdown(delay tinyint) external name sql.shutdown;
 create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;
@@ -2992,6 +2999,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"setsession",	"create procedure sys.setsession(\"timeout\" bigint) external name sql.setsession;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint) external name sql.settimeout;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"settimeout",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name sql.settimeout;",	"sql",	1,	2,	true,	false,	false	]
+[ "sys",	"shpattach",	"create procedure shpattach(fname string) external name shp.attach;",	"shp",	1,	2,	true,	false,	false	]
+[ "sys",	"shpload",	"create procedure shpload(fid integer) external name shp.load;",	"shp",	1,	2,	true,	false,	false	]
+[ "sys",	"shpload",	"create procedure shpload(fid integer, filter geometry) external name shp.import;",	"shp",	1,	2,	true,	false,	false	]
 [ "sys",	"shrink",	"create procedure shrink(sys string, tab string) external name sql.shrink;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"shutdown",	"create procedure sys.shutdown(delay tinyint) external name sql.shutdown;",	"sql",	1,	2,	true,	false,	false	]
 [ "sys",	"shutdown",	"create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;",	"sql",	1,	2,	true,	false,	false	]
@@ -4817,6 +4827,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"setsession",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"settimeout",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"settimeout",	"session",	"bigint",	64,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"shpattach",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"shpload",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"shpload",	"filter",	"geometry",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"shrink",	"tab",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"shutdown",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"shutdown",	"force",	"boolean",	1,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5406,55 +5419,12 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.f2,	.dt # table_name
 % name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	17,	3,	31,	20 # length
-[ "sys",	"=",	"sys",	"columnsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"left_shift",	"sys",	"columnsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"columnsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"pi",	"sys",	"degrees",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_div",	"sys",	"degrees",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"degrees",	"FUNC_DEPENDENCY"	]
-[ "sys",	"=",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
-[ "sys",	"hash",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
-[ "sys",	"rotate_xor_hash",	"sys",	"dependencies_columns_on_indexes",	"FUNC_DEPENDENCY"	]
-[ "sys",	"=",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
-[ "sys",	"hash",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
-[ "sys",	"rotate_xor_hash",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_neg",	"sys",	"dependencies_columns_on_keys",	"FUNC_DEPENDENCY"	]
-[ "sys",	"zero_or_one",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
-[ "sys",	"=",	"sys",	"hashsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"hashsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"<>",	"sys",	"heapsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"and",	"sys",	"heapsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_add",	"sys",	"heapsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"heapsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"=",	"sys",	"imprintsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"or",	"sys",	"imprintsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"imprintsize",	"FUNC_DEPENDENCY"	]
-[ "sys",	"=",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
-[ "sys",	"isnull",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
+% 3,	17,	3,	13,	20 # length
 [ "sys",	"ms_trunc",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
-[ "sys",	"not",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
-[ "sys",	"or",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
-[ "sys",	"round",	"sys",	"ms_round",	"FUNC_DEPENDENCY"	]
-[ "sys",	"<",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	">",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"concat",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"length",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"or",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_add",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_add",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_sub",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"substring",	"sys",	"ms_stuff",	"FUNC_DEPENDENCY"	]
-[ "sys",	"pi",	"sys",	"radians",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_div",	"sys",	"radians",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"radians",	"FUNC_DEPENDENCY"	]
 [ "sys",	"st_numgeometries",	"sys",	"st_numpatches",	"FUNC_DEPENDENCY"	]
 [ "sys",	"st_geometryn",	"sys",	"st_patchn",	"FUNC_DEPENDENCY"	]
 [ "sys",	"getproj4",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
 [ "sys",	"internaltransform",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
-[ "sys",	"isnull",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
-[ "sys",	"not",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
-[ "sys",	"or",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
 [ "sys",	"st_srid",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
 [ "sys",	"columnsize",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"hashsize",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
@@ -5625,8 +5595,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
-[ "sys",	"sql_add",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
-[ "sys",	"sql_add",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"optimizers",	"sys",	"optimizers",	"VIEW_DEPENDENCY"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_calls",	"VIEW_DEPENDENCY"	]
 [ "sys",	"querylog_catalog",	"sys",	"querylog_catalog",	"VIEW_DEPENDENCY"	]
@@ -5637,14 +5605,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"sessions",	"sys",	"sessions",	"VIEW_DEPENDENCY"	]
 [ "sys",	"storage",	"sys",	"storage",	"VIEW_DEPENDENCY"	]
 [ "sys",	"storagemodel",	"sys",	"storagemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"=",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"ifthenelse",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"isnull",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"max",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"sql_mul",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
 [ "sys",	"storagemodel",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"sum",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
-[ "sys",	"sum",	"sys",	"tablestoragemodel",	"VIEW_DEPENDENCY"	]
 [ "sys",	"tracelog",	"sys",	"tracelog",	"VIEW_DEPENDENCY"	]
 #select s1.name, t1.name, s2.name, t2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
 % sys.s1,	sys.t1,	sys.s2,	sys.t2,	.dt # table_name
@@ -7162,6 +7123,9 @@ drop function pcre_replace(string, string, string, string);
 [ "setstream"	]
 [ "settimeout"	]
 [ "settimeout"	]
+[ "shpattach"	]
+[ "shpload"	]
+[ "shpload"	]
 [ "shrink"	]
 [ "shutdown"	]
 [ "shutdown"	]

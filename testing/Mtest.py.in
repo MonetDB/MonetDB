@@ -190,7 +190,7 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 if res is not None:
                     ttywidth = int(res.group(1))
             if ttywidth < 60:
-                # rediculously narrow tty, ignore value
+                # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
 import string                   # for whitespace
@@ -1331,7 +1331,7 @@ def ApproveOutput (env, TST) :
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
             f = open(patch + '.0', 'w')
-            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
+            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-I^MAPI *=', '-U0',
                                   stableOUTPUT, testOUTPUT],
                                  stdout = f, universal_newlines = True)
             proc.wait()

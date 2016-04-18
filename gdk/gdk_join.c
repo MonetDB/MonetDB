@@ -644,7 +644,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r1->T->width = 0;
 					r1->T->shift = 0;
 					r1->tdense = 0;
-					BATextend(r1, cnt - (hi - lo));
+					if (BATextend(r1, cnt - (hi - lo)) != GDK_SUCCEED)
+						goto bailout;
 					BATsetcount(r1, cnt - (hi - lo));
 					BATseqbase(BATmirror(r1), lo == seq ? hi : seq);
 				} else {
@@ -910,6 +911,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			APPEND(r1, i + seq);
 		} else if (nil_on_miss) {
 			APPEND(r1, i + seq);
+			assert(r2 != NULL); /* help Coverity */
 			APPEND(r2, oid_nil);
 			r2->T->nil = 1;
 			r2->T->nonil = 0;

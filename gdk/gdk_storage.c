@@ -134,16 +134,21 @@ GDKcreatedir(const char *dir)
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
-	str dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL);
-	DIR *dirp = opendir(dirnamestr);
+	str dirnamestr;
+	DIR *dirp;
 	char *path;
 	struct dirent *dent;
 	int ret;
 
+	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
+		return GDK_FAIL;
+
 	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirnamestr);
 
-	if (dirp == NULL)
+	if ((dirp = opendir(dirnamestr)) == NULL) {
+		GDKfree(dirnamestr);
 		return GDK_SUCCEED;
+	}
 	while ((dent = readdir(dirp)) != NULL) {
 		if (dent->d_name[0] == '.' &&
 		    (dent->d_name[1] == 0 ||
@@ -387,14 +392,14 @@ GDKextend(const char *fn, size_t size)
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 gdk_return
-GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
+GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 {
 	int err = 0;
 
-	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
+	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	if (mode == STORE_MMAP) {
-		if (size && MT_msync(buf, size) < 0)
+		if (dosync && size && MT_msync(buf, size) < 0)
 			err = -1;
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
@@ -436,7 +441,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 						(unsigned) MIN(1 << 30, size),
 						ret);
 			}
-			if (!(GDKdebug & FORCEMITOMASK) &&
+			if (dosync && !(GDKdebug & FORCEMITOMASK) &&
 #if defined(NATIVE_WIN32)
 			    _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)

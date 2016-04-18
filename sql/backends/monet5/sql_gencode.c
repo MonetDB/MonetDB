@@ -1834,6 +1834,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+				if (cmp == cmp_project && s->key) {
+					q = newStmt(mb, batRef, "setKey");
+					q = pushArgument(mb, q, s->nr);
+					q = pushBit(mb, q, TRUE);
+					s->nr = getDestVar(q);
+				}
 				return s->nr;
 			}
 
@@ -2115,7 +2121,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			} else {
-
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
 				

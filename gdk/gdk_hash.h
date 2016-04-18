@@ -290,6 +290,7 @@ static inline BUN fnvhash_lng(const void *v) {
 		} else {						\
 			BUN _c = HASHprobe((b)->T->hash, (v));		\
 			HASHputall((b)->T->hash, (i), _c);		\
+			(b)->T->hash->heap->dirty = TRUE;		\
 		}							\
 	} while (0)
 
