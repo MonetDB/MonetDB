@@ -87,17 +87,6 @@ HASHclear(Hash *h)
 	memset(h->Hash, 0xFF, (h->mask + 1) * h->width);
 }
 
-static int
-log2mask(BUN m) {
-	int n = 0;
-
-	while (m) {
-		m >>= 1;
-		n++;
-	}
-	return n;
-}
-
 #define HASH_VERSION		1
 #define HASH_HEADER_SIZE	5 /* nr of size_t fields in header */
 
@@ -115,7 +104,6 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 		return NULL;
 	h->lim = size;
 	h->mask = mask - 1;
-	h->n = log2mask(mask);
 	h->width = width;
 	switch (width) {
 	case BUN2:
@@ -242,7 +230,6 @@ BATcheckhash(BAT *b)
 					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
 					h->mask = (BUN) (hdata[2] - 1);
-					h->n = log2mask(h->mask+1);
 					h->heap = hp;
 					h->width = (int) hdata[3];
 					switch (h->width) {
