@@ -115,6 +115,14 @@ static int pyapiInitialized = FALSE;
 static bool python_call_active = false;
 #endif
 
+#ifdef WIN32
+static bool enable_zerocopy_input = true;
+static bool enable_zerocopy_output = false;
+#else
+static bool enable_zerocopy_input = true;
+static bool enable_zerocopy_output = true;
+#endif
+
 #define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
         if (copy) {                                                                                                                 \
             vararray = PyArray_EMPTY(1, elements, nptpe, 0);                        \
@@ -994,7 +1002,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         if (pyinput_values[i - (pci->retc + 2)].scalar) {
             result_array = PyArrayObject_FromScalar(&pyinput_values[i - (pci->retc + 2)], &msg);
         } else {
-            result_array = PyMaskedArray_FromBAT(&pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg, false);
+            result_array = PyMaskedArray_FromBAT(&pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg, !enable_zerocopy_input);
         }
         if (result_array == NULL) {
             if (msg == MAL_SUCCEED) {
@@ -1462,7 +1470,7 @@ returnvalues:
             bat_type = PyType_ToBat(ret->result_type);
         }
 
-        b = PyObject_ConvertToBAT(ret, sql_subtype, bat_type, i, seqbase, &msg, false);
+        b = PyObject_ConvertToBAT(ret, sql_subtype, bat_type, i, seqbase, &msg, !enable_zerocopy_output);
         if (b == NULL) {
             goto wrapup;
         }
