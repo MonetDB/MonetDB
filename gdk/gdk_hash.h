@@ -128,69 +128,6 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
-
-/* FNV1a hash */
-
-#if SIZEOF_BUN == 8
-#define FNV_PRIME 0x100000001b3ULL
-#define FNV_INIT 0xcbf29ce484222325ULL
-#else
-#define FNV_PRIME 0x01000193
-#define FNV_INIT 0x811c9dc5
-#endif
-
-#define NO_FNV_OPT
-
-static inline BUN fnvhash_int(const void *v) {
-	unsigned int v_uint = *(unsigned int *) v;
-	BUN r = FNV_INIT;
-	size_t octets = sizeof(unsigned int);
-
-	while (octets--) {
-		r ^= (v_uint & 0xff);
-		v_uint >>= 8;
-#ifdef NO_FNV_OPT
-		r *= FNV_PRIME;
-#else
-#if SIZEOF_BUN == 8
-		r += (r << 1) + (r << 4) + (r << 5) +
-		     (r << 7) + (r << 8) + (r << 40);
-#else
-		r += (r<<1) + (r<<4) + (r<<7) + (r<<8) + (r<<24);
-#endif
-#endif
-	}
-	return r;
-}
-
-static inline BUN fnvhash_lng(const void *v) {
-	ulng v_ulng = *(ulng *) v;
-	BUN r = FNV_INIT;
-	size_t octets = sizeof(ulng);
-
-	while (octets--) {
-		r ^= (v_ulng & 0xff);
-		v_ulng >>= 8;
-#ifdef NO_FNV_OPT
-		r *= FNV_PRIME;
-#else
-#if SIZEOF_BUN == 8
-		r += (r << 1) + (r << 4) + (r << 5) +
-		     (r << 7) + (r << 8) + (r << 40);
-#else
-		r += (r<<1) + (r<<4) + (r<<7) + (r<<8) + (r<<24);
-#endif
-#endif
-	}
-	return r;
-}
-
-#define fnv_mask(H,R)	((H)->n > 32 ? ((BUN) ((R) >> (H)->n) ^ ((R) & (H)->mask)) : ((BUN) ((((R) >> (H)->n) ^ (R)) & (H)->mask)))
-#define fnv_int(H,V)	fnv_mask(H, fnvhash_int(V))
-#define fnv_lng(H,V)	fnv_mask(H, fnvhash_lng(V))
-
-/* end of FNV1a hash */
-
 #define mix_bte(X)	((unsigned int) (unsigned char) (X))
 #define mix_sht(X)	((unsigned int) (unsigned short) (X))
 #define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
