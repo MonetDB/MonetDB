@@ -23,8 +23,7 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
-	orderidxheap,
-	bloomheap
+	orderidxheap
 };
 
 /*
@@ -60,10 +59,6 @@ __hidden int BATcheckimprints(BAT *b)
 __hidden gdk_return BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckorderidx(BAT *b)
-	__attribute__((__visibility__("hidden")));
-__hidden int BATcheckbloom(BAT *b)
-	__attribute__((__visibility__("hidden")));
-__hidden int BLOOMask(BUN v, Bloomfilter *bloom)
 	__attribute__((__visibility__("hidden")));
 
 __hidden BATstore *BATcreatedesc(int tt, int heapnames, int role)
@@ -245,14 +240,6 @@ struct Imprints {
 	void *dict;		/* pointer into imprints heap (dictionary)    */
 	BUN impcnt;		/* counter for imprints                       */
 	BUN dictcnt;		/* counter for cache dictionary               */
-};
-
-struct Bloomfilter {
-	BUN mbits;
-	int kfunc;
-	lng mask;
-	size_t bytes;
-	Heap *filter;
 };
 
 typedef struct {
