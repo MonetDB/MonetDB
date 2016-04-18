@@ -489,3 +489,7 @@ cleanup_engine:
 	c->glb = oldglb;
 	return msg;
 }
+
+void SQLdestroyResult(res_table *destroy) {
+	res_table_destroy(destroy);
+}

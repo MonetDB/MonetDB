@@ -15,5 +15,6 @@ sql5_export str SQLstatementIntern(Client c, str *expr, str nme, bit execute, bi
 sql5_export str SQLexecutePrepared(Client c, backend *be, cq *q);
 sql5_export str SQLengineIntern(Client c, backend *be);
 sql5_export str SQLrecompile(Client c, backend *be);
+sql5_export void SQLdestroyResult(res_table *destroy);
 
 #endif /* _SQL_EXECUTE_H_ */

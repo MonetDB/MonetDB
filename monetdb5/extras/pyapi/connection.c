@@ -9,7 +9,7 @@
 #define PyString_FromString PyUnicode_FromString
 #endif
 
-CREATE_SQL_FUNCTION_PTR(void,res_table_destroy,(res_table*));
+CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult,(res_table*));
 CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern,(Client, str *, str, int, bit, res_table **));
 
 static PyObject *
@@ -234,7 +234,7 @@ PyTypeObject Py_ConnectionType = {
 
 void _connection_cleanup_result(void* output) 
 {
-    (*res_table_destroy_ptr)((res_table*) output);
+    (*SQLdestroyResult_ptr)((res_table*) output);
 }
 
 char* _connection_query(Client cntxt, char* query, res_table** result) {
@@ -266,8 +266,8 @@ void _connection_init(void)
 {
     import_array();
 
-    LOAD_SQL_FUNCTION_PTR(res_table_destroy);
-    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
+    LOAD_SQL_FUNCTION_PTR(SQLdestroyResult, "lib_sql.dll");
+    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern, "lib_sql.dll");
 
     if (PyType_Ready(&Py_ConnectionType) < 0)
         return;

@@ -107,8 +107,8 @@ pyapi_export void* lookup_function(char *func, char* library);
     typedef retval (*fcnname##_ptr_tpe)params;                   \
     fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
-#define LOAD_SQL_FUNCTION_PTR(fcnname)                                   \
-    fcnname##_ptr = (fcnname##_ptr_tpe) lookup_function(#fcnname, "sql");        \
+#define LOAD_SQL_FUNCTION_PTR(fcnname,libname)                                   \
+    fcnname##_ptr = (fcnname##_ptr_tpe) lookup_function(#fcnname, libname);        \
     if (fcnname##_ptr == NULL) {                                         \
         WARNING_MESSAGE("Failed to load function %s", #fcnname);                       \
     }

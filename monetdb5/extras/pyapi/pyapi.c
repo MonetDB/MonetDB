@@ -1623,18 +1623,20 @@ str
                 return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
             }
             PyEval_SaveThread();
-            LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(batwrd_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
-            LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp);
-            LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
-            LOAD_SQL_FUNCTION_PTR(batstr_2_date);
-            LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
-            LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast);
+            LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batwrd_dec2_dbl, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl, "lib_sql.dll");
+#ifdef HAVE_HGE
+            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
+#endif
+            LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batstr_2_date, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng, "lib_sql.dll");
+            LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast, "lib_sql.dll");
             pyapiInitialized++;
         }
         MT_lock_unset(&pyapiLock);
