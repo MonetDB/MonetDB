@@ -2858,13 +2858,14 @@ wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum)
 	}
 
 	gcs = GEOSGeom_getCoordSeq(geosGeometry);
-	GEOSGeom_destroy(geosGeometry);
 
 	if (gcs == NULL) {
+		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.wkbGetCoordinate", "GEOSGeom_getCoordSeq failed");
 	}
 
 	GEOSCoordSeq_getOrdinate(gcs, 0, *dimNum, out);
+	GEOSGeom_destroy(geosGeometry);
 	/* gcs shouldn't be freed, it's internal to the GEOSGeom */
 
 	return MAL_SUCCEED;
