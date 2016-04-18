@@ -246,6 +246,9 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	/* imprints are shared, but the check is dynamic */
 	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
+	/* Order OID index */
+	bn->H->orderidx = NULL;
+	bn->T->orderidx = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	return bn;
 }
@@ -291,6 +294,7 @@ BATmaterialize(BAT *b)
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	OIDXdestroy(b);
 
 	b->T->heap.filename = NULL;
 	if (HEAPalloc(&b->T->heap, cnt, sizeof(oid)) != GDK_SUCCEED) {
@@ -578,6 +582,7 @@ VIEWdestroy(BAT *b)
 	/* remove any leftover private hash structures */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	OIDXdestroy(b);
 	VIEWunlink(b);
 
 	b->H->heap.base = NULL;

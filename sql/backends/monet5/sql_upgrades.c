@@ -881,8 +881,11 @@ sql_update_jul2015(Client c, mvc *sql)
 			"    table_type_name VARCHAR(25) NOT NULL UNIQUE);\n"
 
 			"INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES\n"
+			"-- values from sys._tables.type:  0=Table, 1=View, 2=Generated, 3=Merge, etc.\n"
 			"  (0, 'TABLE'), (1, 'VIEW'), /* (2, 'GENERATED'), */ (3, 'MERGE TABLE'), (4, 'STREAM TABLE'), (5, 'REMOTE TABLE'), (6, 'REPLICA TABLE'),\n"
+			"-- synthetically constructed system obj variants (added 10 to sys._tables.type value when sys._tables.system is true).\n"
 			"  (10, 'SYSTEM TABLE'), (11, 'SYSTEM VIEW'),\n"
+			"-- synthetically constructed temporary variants (added 20 or 30 to sys._tables.type value depending on values of temporary and commit_action).\n"
 			"  (20, 'GLOBAL TEMPORARY TABLE'),\n"
 			"  (30, 'LOCAL TEMPORARY TABLE');\n"
 
@@ -891,6 +894,7 @@ sql_update_jul2015(Client c, mvc *sql)
 			"    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);\n"
 
 			"INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES\n"
+			"-- values taken from sql_catalog.h\n"
 			"  (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),\n"
 			"  (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED');\n");
 
@@ -925,7 +929,8 @@ sql_update_jul2015(Client c, mvc *sql)
 			"  hashes bigint,\n"
 			"  phash boolean,\n"
 			"  imprints bigint,\n"
-			"  sorted boolean\n"
+			"  sorted boolean,\n"
+			"  orderidx bigint\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 
@@ -1006,14 +1011,15 @@ sql_update_jul2015(Client c, mvc *sql)
 			"  heapsize bigint,\n"
 			"  hashes bigint,\n"
 			"  imprints bigint,\n"
-			"  sorted boolean)\n"
+			"  sorted boolean,"
+			"  orderidx bigint)\n"
 			"begin\n"
 			"  return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\",\n"
 			"  columnsize(I.\"type\", I.count, I.\"distinct\"),\n"
 			"  heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),\n"
 			"  hashsize(I.\"reference\", I.\"count\"),\n"
 			"  imprintsize(I.\"count\",I.\"type\"),\n"
-			"  I.sorted\n"
+			"  I.sorted, I.orderidx\n"
 			"  from sys.storagemodelinput I;\n"
 			"end;\n"
 
@@ -1053,6 +1059,53 @@ sql_update_jul2015(Client c, mvc *sql)
 			"create procedure sys.analyze(minmax int, \"sample\" bigint, sch string, tbl string, col string)\n"
 			"external name sql.analyze;\n");
 
+	/* 15_querylog update the querylog table definition */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.querylog_history;\n"
+			"drop view sys.querylog_calls;\n"
+			"drop function sys.querylog_calls;\n"
+			"create function sys.querylog_calls()\n"
+			"returns table(\n"
+			"    id oid,\n"
+			"    \"start\" timestamp,\n"
+			"    \"stop\" timestamp,\n"
+			"    arguments string,\n"
+			"    tuples wrd,\n"
+			"    run bigint,\n"
+			"    ship bigint,\n"
+			"    cpu int,\n"
+			"    io int\n"
+			") external name sql.querylog_calls;\n"
+			"create view sys.querylog_calls as select * from sys.querylog_calls();\n"
+			"create view sys.querylog_history as\n"
+			"select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n"
+			"from sys.querylog_catalog() qd, sys.querylog_calls() ql\n"
+			"where qd.id = ql.id and qd.owner = user;\n");
+
+
+	/* 16_tracelog update the tracelog table definition */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.tracelog;\n"
+			"drop function sys.tracelog;\n"
+			"create function sys.tracelog()\n"
+			"returns table (\n"
+			"  event integer,\n"
+			"  clk varchar(20),\n"
+			"  pc varchar(50),\n"
+			"  thread int,\n"
+			"  ticks bigint,\n"
+			"  rrsMB bigint,\n"
+			"  vmMB bigint,\n"
+			"  reads bigint,\n"
+			"  writes bigint,\n"
+			"  minflt bigint,\n"
+			"  majflt bigint,\n"
+			"  nvcsw bigint,\n"
+			"  stmt string\n"
+			"  ) external name sql.dump_trace;\n"
+			"create view sys.tracelog as select * from sys.tracelog();\n");
+
+
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('analyze', 'clearrejects', 'columnsize', 'epoch', 'ilike', 'imprintsize', 'like', 'profiler_openstream', 'profiler_stethoscope', 'querylog_calls', 'querylog_catalog', 'rejects', 'storage', 'storagemodel', 'storagemodelinit', 'str_to_time', 'str_to_timestamp', 'timestamp_to_str', 'time_to_str', 'tracelog') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 			"delete from systemfunctions where function_id not in (select id from functions);\n"
@@ -1084,6 +1137,11 @@ sql_update_jul2015(Client c, mvc *sql)
 				t->system = 0;
 		}
 	}
+
+	/* remove code from 19_cluster.sql script */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.cluster1;\n"
+			"drop procedure sys.cluster2;\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);

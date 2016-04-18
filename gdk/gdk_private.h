@@ -14,6 +14,7 @@
 
 #define DISABLE_PARENT_HASH 1
 /* #define PERSISTENTHASH 1 */
+#define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
 
@@ -21,7 +22,8 @@ enum heaptype {
 	offheap,
 	varheap,
 	hashheap,
-	imprintsheap
+	imprintsheap,
+	orderidxheap
 };
 
 /*
@@ -56,6 +58,9 @@ __hidden int BATcheckimprints(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
+__hidden int BATcheckorderidx(BAT *b)
+	__attribute__((__visibility__("hidden")));
+
 __hidden BATstore *BATcreatedesc(int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
@@ -192,6 +197,8 @@ __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
 	__attribute__((__visibility__("hidden")));
+__hidden void OIDXfree(BAT *b)
+	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, int rebuild)
@@ -207,6 +214,8 @@ __hidden void VIEWdestroy(BAT *b)
 __hidden gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *virtualize(BAT *bn)
+	__attribute__((__visibility__("hidden")));
+__hidden int binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));

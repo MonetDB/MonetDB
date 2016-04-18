@@ -2548,7 +2548,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
-static inline int
+inline int
 binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 {
 	BUN mid;

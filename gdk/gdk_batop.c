@@ -424,6 +424,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
+	OIDXdestroy(b);
 
 	/* append two void,void bats */
 	if (b->ttype == TYPE_void && BATtdense(b)) {

@@ -2428,6 +2428,10 @@ command algebra.not_like(s:str,pat:str):bit
 address PCREnotlike2;
 command algebra.not_like(s:str,pat:str,esc:str):bit 
 address PCREnotlike3;
+command algebra.orderidx(bv:bat[:any_1],stable:bit):bat[:any_1] 
+address OIDXorderidx;
+comment Create an order index
+
 pattern algebra.projectionpath(l:bat[:any]...):bat[:any] 
 address ALGprojectionpath;
 comment Routine to handle join paths.  The type analysis is rather tricky.
@@ -39939,6 +39943,10 @@ command bat.delete(b:bat[:any_1],h:oid):bat[:any_1]
 address BKCdelete;
 comment Delete BUN indicated by head value, exchanging with last BUN
 
+pattern bat.getorderidx(bv:bat[:any_1]):bat[:oid] 
+address OIDXgetorderidx;
+comment Return the order index if it exists
+
 command bat.getName(b:bat[:any_1]):str 
 address BKCgetBBPname;
 comment Gives back the logical name of a BAT.
@@ -39966,6 +39974,10 @@ comment Returns the current allocation size (in max number of elements) of a BAT
 command bat.getSize(b:bat[:any_1]):lng 
 address BKCgetSize;
 comment Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes         rounded to the memory page size (see bbp.getPageSize()).
+
+pattern bat.hasorderidx(bv:bat[:any_1]):bit 
+address OIDXhasorderidx;
+comment Return true if order index exists
 
 command bat.imprintsize(b:bat[:hge]):lng 
 address CMDBATimprintsize;
@@ -40063,6 +40075,18 @@ pattern bat.new(tt:any_1,size:int):bat[:any_1]
 address CMDBATnewColumn;
 pattern bat.new(tt:any_1):bat[:any_1] 
 address CMDBATnewColumn;
+pattern bat.orderidx(bv:bat[:any_1],l:bat[:any_1]...):void 
+address OIDXmerge;
+comment Consolidates the OID index arrangement
+
+pattern bat.orderidx(bv:bat[:any_1],pieces:int):void 
+address OIDXcreate;
+comment Introduces the OID index arrangement of ordered values
+
+pattern bat.orderidx(bv:bat[:any_1]):void 
+address OIDXcreate;
+comment Introduces the OID index arrangement of ordered values
+
 pattern bat.partition(b:bat[:any_1],pieces:int,n:int):bat[:any_1] 
 address CMDBATpartition2;
 comment Create the n-th slice over the BAT broken into several pieces.
@@ -51056,9 +51080,17 @@ command profiler.setheartbeat(b:int):void
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
 
+command profiler.stoptrace(path:str):void 
+address CMDstopTracePath;
+comment Stop collecting trace information
+
 command profiler.stoptrace():void 
 address CMDstopTrace;
 comment Stop collecting trace information
+
+command profiler.starttrace(path:str):void 
+address CMDstartTracePath;
+comment Start collecting trace information and keep around in 'path' directory
 
 command profiler.starttrace():void 
 address CMDstartTrace;
@@ -51071,6 +51103,10 @@ comment Stop offline performance profiling
 pattern profiler.start():void 
 address CMDstartProfiler;
 comment Start offline performance profiling
+
+pattern querylog.append(q:str,pipe:str,usr:str,tick:timestamp):void 
+address QLOGappend;
+comment Add a new query call to the query log
 
 pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;
@@ -51095,10 +51131,6 @@ comment Turn on the query logger
 command querylog.enable(threshold:int):void 
 address QLOGenableThreshold;
 comment Turn on the query logger
-
-pattern querylog.insert(q:str,pipe:str,usr:str,tick:timestamp):void 
-address QLOGinsert;
-comment Add a new query call to the query log
 
 command querylog.isset():int 
 address QLOGissetFcn;
@@ -51390,6 +51422,10 @@ pattern sql.copy_rejects_clear():void
 address COPYrejects_clear;
 pattern sql.copy_rejects() (rowid:bat[:lng],fldid:bat[:int],msg:bat[:str],inp:bat[:str]) 
 address COPYrejects;
+pattern sql.createorderindex(sch:str,tbl:str,col:str):void 
+address sql_createorderindex;
+comment Instantiate the order index on a column
+
 pattern sql.copy_from(t:ptr,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int,best:int):bat[:any]... 
 address mvc_import_table_wrap;
 comment Import a table from bstream s with the 	given tuple and seperators (sep/rsep)
@@ -51517,6 +51553,10 @@ comment round off the value v to nearests multiple of r
 command sql.dec_round(v:bte,r:bte):bte 
 address bte_dec_round_wrap;
 comment round off the value v to nearests multiple of r
+
+pattern sql.droporderindex(sch:str,tbl:str,col:str):void 
+address sql_droporderindex;
+comment Drop the order index on a column
 
 pattern sql.dump_trace() (event:bat[:int],clk:bat[:str],pc:bat[:str],thread:bat[:int],ticks:bat[:lng],rssMB:bat[:lng],vmMB:bat[:lng],reads:bat[:lng],writes:bat[:lng],minflt:bat[:lng],majflt:bat[:lng],nvcsw:bat[:lng],stmt:bat[:str]) 
 address dump_trace;
@@ -51785,19 +51825,19 @@ pattern sql.sysmon_pause(tag:sht):void
 address SYSMONpause;
 pattern sql.sysmon_queue() (qtag:bat[:lng],user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int],status:bat[:str],tag:bat[:oid],query:bat[:str]) 
 address SYSMONqueue;
-pattern sql.storage(sname:str,tname:str,cname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+pattern sql.storage(sname:str,tname:str,cname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit],orderidx:bat[:lng]) 
 address sql_storage;
 comment return a table with storage information for a particular column
 
-pattern sql.storage(sname:str,tname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+pattern sql.storage(sname:str,tname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit],orderidx:bat[:lng]) 
 address sql_storage;
 comment return a table with storage information for a particular table
 
-pattern sql.storage(sname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+pattern sql.storage(sname:str) (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit],orderidx:bat[:lng]) 
 address sql_storage;
 comment return a table with storage information for a particular schema 
 
-pattern sql.storage() (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit]) 
+pattern sql.storage() (schema:bat[:str],table:bat[:str],column:bat[:str],type:bat[:str],mode:bat[:str],location:bat[:str],count:bat[:lng],atomwidth:bat[:int],columnsize:bat[:lng],heap:bat[:lng],hashes:bat[:lng],phash:bat[:bit],imprints:bat[:lng],sorted:bat[:bit],orderidx:bat[:lng]) 
 address sql_storage;
 comment return a table with storage information 
 

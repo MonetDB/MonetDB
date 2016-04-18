@@ -4227,6 +4227,17 @@ BBPdiskscan(const char *parent)
 			delete = b == NULL;
 			if (!delete)
 				b->T->imprints = (Imprints *) 1;
+		} else if (strncmp(p + 1, "horderidx", 9) == 0) {
+			delete = TRUE;
+		} else if (strncmp(p + 1, "torderidx", 9) == 0) {
+#ifdef PERSISTENTIDX
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+			if (!delete)
+				b->T->orderidx = (Heap *) 1;
+#else
+			delete = TRUE;
+#endif
 		} else if (strncmp(p + 1, "priv", 4) != 0 &&
 			   strncmp(p + 1, "new", 3) != 0 &&
 			   strncmp(p + 1, "head", 4) != 0 &&

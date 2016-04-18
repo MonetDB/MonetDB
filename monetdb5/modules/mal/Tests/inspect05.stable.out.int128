@@ -21,9 +21,9 @@ stdout of test 'inspect05` in directory 'monetdb5/modules/mal` itself:
 
 Ready.
 
-# 09:46:13 >  
-# 09:46:13 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
-# 09:46:13 >  
+# 13:20:34 >  
+# 13:20:34 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-7343" "--port=33287"
+# 13:20:34 >  
 
 #--------------------------#
 # t	t	t	t	t  # name
@@ -89,7 +89,7 @@ Ready.
 [ 57@0,	"save",	"pattern",	"bat",	"(val:any_1):bat[:any_1] ",	"CMDBATsingle;"	]
 [ 58@0,	"save",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCsetImprints;"	]
 [ 59@0,	"setAccess",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCsetHash;"	]
-[ 60@0,	"setColumn",	"command",	"bat",	"(nme:str):bit ",	"BKCsave;"  ]
+[ 60@0,	"setColumn",	"command",	"bat",	"(nme:str):bit ",	"BKCsave;"	]
 [ 61@0,	"setColumn",	"command",	"bat",	"(nme:bat[:any_1]):void ",	"BKCsave2;"	]
 [ 62@0,	"setHash",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetPersistent;"	]
 [ 63@0,	"setImprints",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetTransient;"	]

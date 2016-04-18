@@ -175,6 +175,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	seq = b->hseqbase;
 	l = BUNfirst(b);
 	h = BUNlast(b);
+
 #ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(b)) {
 		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
@@ -432,7 +433,7 @@ do {									\
 #define scanloop(NAME,CAND,TEST)					\
 do {									\
 	ALGODEBUG fprintf(stderr,					\
-			  "#BATselect(b=%s#"BUNFMT",s=%s%s,anti=%d): " \
+			  "#BATselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "	\
 			  "%s %s\n", BATgetId(b), BATcount(b),		\
 			  s ? BATgetId(s) : "NULL",			\
 			  s && BATtdense(s) ? "(dense)" : "",		\
@@ -559,7 +560,7 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 				(TYPE *)Tloc(parent,0)+BUNfirst(parent)); \
 		BBPunfix(parent->batCacheid);				\
 	} else {							\
-		imprints= b->T->imprints;				\
+		imprints = b->T->imprints;				\
 		basesrc = (const TYPE *) Tloc(b, BUNfirst(b));		\
 	}								\
 	END;								\
@@ -598,6 +599,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 	(void) maximum;
 	(void) use_imprints;
+
 	if (equi) {
 		ALGODEBUG fprintf(stderr,
 				  "#BATselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
@@ -775,6 +777,7 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			  "fullscan equi strelim\n", BATgetId(b), BATcount(b),
 			  s ? BATgetId(s) : "NULL",
 			  s && BATtdense(s) ? "(dense)" : "", anti);
+
 	if ((pos = strLocate(b->T->vheap, tl)) == 0)
 		return 0;
 	assert(pos >= GDK_VAROFFSET);
@@ -1213,6 +1216,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	const void *nil;
 	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
+	oid vwl = 0, vwh = 0;
+	int use_orderidx = 0;
 	union {
 		bte v_bte;
 		sht v_sht;
@@ -1421,7 +1426,43 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (BATordered(b) || BATordered_rev(b)) {
+	/* If there is an order index or it is a view and the parent has an ordered
+	 * index, and the bat is not tsorted or trevstorted then use the order
+	 * index.
+	 * And there is no cand list or if there is one, it is dense.
+	 * TODO: we do not support anti-select with order index */
+	if (!anti &&
+	    !(b->tsorted || b->trevsorted) &&
+	    (!s || (s && BATtdense(s)))    &&
+	    (BATcheckorderidx(b) ||
+	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(abs(VIEWtparent(b)), 0)))))
+	{
+		BAT *view = NULL;
+		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
+			view = b;
+			b = BBPdescriptor(abs(VIEWtparent(b)));
+		}
+		/* Is query selective enough to use the ordered index ? */
+		/* TODO: Test if this heuristic works in practice */
+		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
+		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3)
+		{
+			use_orderidx = 1;
+			if (view) {
+				vwl = view->hseqbase;
+				vwh = vwl + view->batCount;
+			} else {
+				vwl = b->hseqbase;
+				vwh = vwl + b->batCount;
+			}
+		} else {
+			if (view) {
+				b = view;
+			}
+		}
+	}
+
+	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1480,7 +1521,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					high = SORTfndfirst(b, th);
 				high -= BUNfirst(b);
 			}
-		} else {
+		} else if (b->trevsorted) {
 			assert(b->trevsorted);
 			ALGODEBUG fprintf(stderr, "#BATselect(b=%s#" BUNFMT
 					  ",s=%s%s,anti=%d): reverse sorted\n",
@@ -1504,6 +1545,31 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				else
 					low = SORTfndlast(b, th);
 				low -= BUNfirst(b);
+			}
+		} else {
+			assert(use_orderidx);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s%s,anti=%d): orderidx\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL",
+					  s && BATtdense(s) ? "(dense)" : "",
+					  anti);
+			if (lval) {
+				if (li)
+					low = ORDERfndfirst(b, tl);
+				else
+					low = ORDERfndlast(b, tl);
+			} else {
+				/* skip over nils at start of column */
+				low = ORDERfndlast(b, nil);
+			}
+			low -= BUNfirst(b);
+			if (hval) {
+				if (hi)
+					high = ORDERfndlast(b, th);
+				else
+					high = ORDERfndfirst(b, th);
+				high -= BUNfirst(b);
 			}
 		}
 		if (anti) {
@@ -1557,15 +1623,74 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			}
 		} else {
-			/* match: [low..high) */
-			if (s) {
-				oid o = (oid) low + b->hseqbase;
-				low = SORTfndfirst(s, &o) - BUNfirst(s);
-				o = (oid) high + b->hseqbase;
-				high = SORTfndfirst(s, &o) - BUNfirst(s);
-				bn = doubleslice(s, 0, 0, low, high);
+			if (use_orderidx) {
+				BUN i;
+				BUN cnt = 0;
+				const oid *rs;
+				oid *rbn;
+
+				rs = (const oid *) b->torderidx->base + ORDERIDXOFF;
+				rs += low;
+				bn = BATnew(TYPE_void, TYPE_oid, high-low, TRANSIENT);
+				if (bn == NULL)
+					GDKerror("memory allocation error");
+
+				rbn = (oid *) Tloc((bn), 0);
+
+				if (s && !BATtdense(s)) {
+					const oid *rcand = (const oid *) Tloc((s), 0);
+					assert("should not use orderidx with non dense cand list, too expensive");
+
+					for (i = low; i < high; i++) {
+						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
+							if (binsearchcand(rcand, 0, s->batCount, ((*rs)&BUN_UNMSK))) {
+								*rbn++ = ((*rs)&BUN_UNMSK);
+								cnt++;
+							}
+						}
+						rs++;
+					}
+					BATsetcount(bn, cnt);
+
+				} else {
+					if (s) {
+						assert(BATtdense(s));
+						if (vwl < s->tseqbase)
+							vwl = s->tseqbase;
+						if (s->tseqbase + BATcount(s) < vwh)
+							vwh = s->tseqbase + BATcount(s);
+					}
+					for (i = low; i < high; i++) {
+						if (vwl <= ((*rs)&BUN_UNMSK) && ((*rs)&BUN_UNMSK) < vwh) {
+							*rbn++ = ((*rs)&BUN_UNMSK);
+							cnt++;
+						}
+						rs++;
+					}
+					BATsetcount(bn, cnt);
+				}
+
+				/* output must be sorted */
+				GDKqsort((oid *) Tloc(bn, BUNfirst(bn)), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+				bn->tsorted = 1;
+				bn->trevsorted = bn->batCount <= 1;
+				bn->tkey = 1;
+				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? BUNfirst(bn) : oid_nil;
+				bn->T->nil = 0;
+				bn->T->nonil = 1;
 			} else {
-				bn = BATdense(0, low + b->hseqbase, high - low);
+				/* match: [low..high) */
+				if (s) {
+					oid o = (oid) low + b->hseqbase;
+					low = SORTfndfirst(s, &o) - BUNfirst(s);
+					o = (oid) high + b->hseqbase;
+					high = SORTfndfirst(s, &o) - BUNfirst(s);
+					bn = doubleslice(s, 0, 0, low, high);
+				} else {
+					bn = doublerange(0, 0,
+						         low + b->hseqbase,
+						         high + b->hseqbase);
+				}
 			}
 		}
 		bn->hseqbase = 0;
