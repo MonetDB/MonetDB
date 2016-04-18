@@ -51083,9 +51083,17 @@ command profiler.setheartbeat(b:int):void
 address CMDsetHeartbeat;
 comment Set heart beat performance tracing
 
+command profiler.stoptrace(path:str):void 
+address CMDstopTracePath;
+comment Stop collecting trace information
+
 command profiler.stoptrace():void 
 address CMDstopTrace;
 comment Stop collecting trace information
+
+command profiler.starttrace(path:str):void 
+address CMDstartTracePath;
+comment Start collecting trace information and keep around in 'path' directory
 
 command profiler.starttrace():void 
 address CMDstartTrace;
@@ -51098,6 +51106,10 @@ comment Stop offline performance profiling
 pattern profiler.start():void 
 address CMDstartProfiler;
 comment Start offline performance profiling
+
+pattern querylog.append(q:str,pipe:str,usr:str,tick:timestamp):void 
+address QLOGappend;
+comment Add a new query call to the query log
 
 pattern querylog.call(tick1:timestamp,tick2:timestamp,arg:str,tuples:wrd,xtime:lng,rtime:lng,cpu:int,iowait:int):void 
 address QLOGcall;
@@ -51122,10 +51134,6 @@ comment Turn on the query logger
 command querylog.enable(threshold:int):void 
 address QLOGenableThreshold;
 comment Turn on the query logger
-
-pattern querylog.insert(q:str,pipe:str,usr:str,tick:timestamp):void 
-address QLOGinsert;
-comment Add a new query call to the query log
 
 command querylog.isset():int 
 address QLOGissetFcn;
