@@ -27,6 +27,7 @@ Ready.
 # 15:29:05 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"
 # 15:29:05 >  
 
+(mapi:monetdb://monetdb@localhost/worker_0) 'user.l1' undefined in:     rmt5_X_1_bat_int:bat[:int] := user.l1();
 
 # 15:29:06 >  
 # 15:29:06 >  "Done."
