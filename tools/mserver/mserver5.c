@@ -115,7 +115,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --transactions\n");
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
-	fprintf(stderr, "     --indexes\n");
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --trace\n");
@@ -272,7 +271,6 @@ main(int argc, char **av)
 		{ "trace", 2, 0, 't' },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
-		{ "indexes", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
 		{ "forcemito", 0, 0, 0 },
@@ -381,10 +379,6 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
 				grpdebug |= GRPalgorithms;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "indexes") == 0) {
-				grpdebug |= GRPindexes;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "optimizers") == 0) {
