@@ -92,8 +92,6 @@ BATcheckorderidx(BAT *b)
 					close(fd);
 					b->torderidx = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
-					IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BATcheckorderidx: load persistent order index (usec " LLFMT
-					                          ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), GDKusec() - t);
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 					return 1;
 				}
@@ -108,7 +106,7 @@ BATcheckorderidx(BAT *b)
 	}
 	ret = b->T->orderidx != NULL;
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckorderidx: already has orderidx %d, waited " LLFMT " usec\n", b->batCacheid, t);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckorderidx: already has orderidx %d, waited " LLFMT " usec\n", b->batCacheid, GDKusec() - t);
 	return ret;
 }
 
@@ -121,7 +119,6 @@ BATorderidx(BAT *b, int stable)
 	const char *nme;
 	oid seq;
 	BUN p, q;
-	lng t0 = 0, t1 = 0;
 
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
@@ -130,7 +127,6 @@ BATorderidx(BAT *b, int stable)
 		MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 		return GDK_SUCCEED;
 	}
-	t0 = GDKusec();
 	nme = BBP_physical(b->batCacheid);
 	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
@@ -202,10 +198,7 @@ BATorderidx(BAT *b, int stable)
 
 	b->batDirtydesc = TRUE;
 	b->torderidx = m;
-	t1 = GDKusec();
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #BATorderidx: create order index (usec " LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), t1 - t0);
 
 	return GDK_SUCCEED;
 }
@@ -369,7 +362,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	size_t nmelen;
 	oid *restrict mv;
 	const char *nme = BBP_physical(b->batCacheid);
-	lng t0 = 0, t1 = 0;
 
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
@@ -378,7 +370,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
 		return GDK_SUCCEED;
 	}
-	t0 = GDKusec();
 	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
@@ -515,9 +506,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 
 	b->batDirtydesc = TRUE;
 	b->torderidx = m;
-	t1 = GDKusec();
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #GDKmergeidx: merge order index (usec " LLFMT ")\n", b->batCacheid,-VIEWtparent(b), b->ttype, BATcount(b), t1 - t0);
 	return GDK_SUCCEED;
 }
 

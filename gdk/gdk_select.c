@@ -176,11 +176,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	l = BUNfirst(b);
 	h = BUNlast(b);
 
-	IDXACCESS fprintf(stderr,
-			  "[%d] #BATselect: hash select %s\n",
-			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-			  VIEWtparent(b)?BATgetId(b):"\b");
-
 #ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(b)) {
 		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
@@ -423,10 +418,6 @@ do {									\
 			  s ? BATgetId(s) : "NULL",			\
 			  s && BATtdense(s) ? "(dense)" : "",		\
 			  anti, #TEST);					\
-	IDXACCESS fprintf(stderr,					\
-			  "[%d] #BATselect: imprints select %s\n",	\
-			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,	\
-			  VIEWtparent(b)?BATgetId(b):"\b");		\
 	switch (imprints->bits) {					\
 	case 8:  checkMINMAX(8); impsmask(CAND,TEST,8); break;		\
 	case 16: checkMINMAX(16); impsmask(CAND,TEST,16); break;	\
@@ -447,10 +438,6 @@ do {									\
 			  s ? BATgetId(s) : "NULL",			\
 			  s && BATtdense(s) ? "(dense)" : "",		\
 			  anti, #NAME, #TEST);				\
-	IDXACCESS fprintf(stderr,					\
-			  "[%d] #BATselect: scan select %s\n",		\
-			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,	\
-			  VIEWtparent(b)?BATgetId(b):"\b");		\
 	if (BATcapacity(bn) < maximum) {				\
 		while (p < q) {						\
 			CAND;						\
@@ -613,10 +600,6 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	(void) maximum;
 	(void) use_imprints;
 
-	IDXACCESS fprintf(stderr,
-			  "[%d] #BATselect: scan select (any) %s\n",
-			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-			  VIEWtparent(b)?BATgetId(b):"\b");
 	if (equi) {
 		ALGODEBUG fprintf(stderr,
 				  "#BATselect(b=%s#"BUNFMT",s=%s%s,anti=%d): "
@@ -704,11 +687,6 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	(void) candlist;
 	(void) maximum;
 	(void) use_imprints;
-
-	IDXACCESS fprintf(stderr,
-			  "[%d] #BATselect: scan select (any) %s\n",
-			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-			  VIEWtparent(b)?BATgetId(b):"\b");
 
 	if (equi) {
 		ALGODEBUG fprintf(stderr,
@@ -799,10 +777,6 @@ fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			  "fullscan equi strelim\n", BATgetId(b), BATcount(b),
 			  s ? BATgetId(s) : "NULL",
 			  s && BATtdense(s) ? "(dense)" : "", anti);
-	IDXACCESS fprintf(stderr,
-			  "[%d] #BATselect: scan select (strings) %s\n",
-			  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-			  VIEWtparent(b)?BATgetId(b):"\b");
 
 	if ((pos = strLocate(b->T->vheap, tl)) == 0)
 		return 0;
@@ -1530,10 +1504,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  s ? BATgetId(s) : "NULL",
 					  s && BATtdense(s) ? "(dense)" : "",
 					  anti);
-			IDXACCESS fprintf(stderr,
-					  "[%d] #BATselect: sort select %s\n",
-					  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-					  VIEWtparent(b)?BATgetId(b):"\b");
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -1559,10 +1529,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  s ? BATgetId(s) : "NULL",
 					  s && BATtdense(s) ? "(dense)" : "",
 					  anti);
-			IDXACCESS fprintf(stderr,
-					  "[%d] #BATselect: reverse sort select %s\n",
-					  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-					  VIEWtparent(b)?BATgetId(b):"\b");
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -1588,10 +1554,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  s ? BATgetId(s) : "NULL",
 					  s && BATtdense(s) ? "(dense)" : "",
 					  anti);
-			IDXACCESS fprintf(stderr,
-					  "[%d] #BATselect: order idx select %s\n",
-					  VIEWtparent(b)?-VIEWtparent(b):b->batCacheid,
-					  VIEWtparent(b)?BATgetId(b):"\b");
 			if (lval) {
 				if (li)
 					low = ORDERfndfirst(b, tl);

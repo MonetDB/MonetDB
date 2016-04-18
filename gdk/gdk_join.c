@@ -2735,8 +2735,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		return nomatch(r1, r2, l, r, lstart, lend, lcand, lcandend,
 			       nil_on_miss, only_misses, "hashjoin", t0);
 
-	t0 = GDKusec();
-
 	rl = BUNfirst(r);
 #ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(r)) {
@@ -3081,8 +3079,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			  r2 && r2->tdense ? "-dense" : "",
 			  r2 && r2->tkey & 1 ? "-key" : "",
 			  GDKusec() - t0);
-	IDXACCESS fprintf(stderr, "[%d,%d]:%d (" BUNFMT ") #hashjoin: hash join l=[%d,%d]:%d (" BUNFMT ") (usec " LLFMT
-	                  ")\n", r->batCacheid,-VIEWtparent(r), r->ttype, BATcount(r), l->batCacheid,-VIEWtparent(l), l->ttype, BATcount(l), GDKusec() - t0);
 	return GDK_SUCCEED;
 
   bailout:
