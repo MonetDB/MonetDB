@@ -39975,21 +39975,17 @@ command bat.getSize(b:bat[:any_1]):lng
 address BKCgetSize;
 comment Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes         rounded to the memory page size (see bbp.getPageSize()).
 
-<<<<<<< local
 pattern bat.hasorderidx(bv:bat[:any_1]):bit 
 address OIDXhasorderidx;
 comment Return true if order index exists
 
-=======
 command bat.imprintsize(b:bat[:hge]):lng 
 address CMDBATimprintsize;
 command bat.imprints(b:bat[:hge]):void 
 address CMDBATimprints;
->>>>>>> other
 command bat.imprintsize(b:bat[:dbl]):lng 
 address CMDBATimprintsize;
 comment Return the storage size of the imprints index structure.
-
 command bat.imprintsize(b:bat[:flt]):lng 
 address CMDBATimprintsize;
 command bat.imprintsize(b:bat[:lng]):lng 
