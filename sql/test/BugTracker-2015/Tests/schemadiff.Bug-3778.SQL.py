@@ -88,9 +88,16 @@ try:
         c.execute(rtable)
         c.execute(atable)
 
-    c.execute("select * from " + shardtable + workers[0]['tpf'] )
-    print str(c.fetchall())
+    try:
+        c.execute("select * from " + shardtable + workers[0]['tpf'] )
+    except monetdb.sql.OperationalError as e:
+        print(e)
+    else:
+        print(str(c.fetchall()))
 
 finally:
+    masterproc.communicate()
+    for worker in workers:
+        workerrec['proc'].communicate()
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)
