@@ -390,7 +390,7 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
     temp_indices = GDKzalloc(sizeof(lng) * group_count);                          \
     for(element_it = 0; element_it < elements; element_it++) {                    \
         /*group of current element*/                                              \
-        lng group = aggr_group_arr[element_it];                                   \
+        oid group = aggr_group_arr[element_it];                                   \
         /*append current element to proper group*/                                \
         ptr[group][i][temp_indices[group]++] = batcontent[element_it];            \
     }                                                                             \
@@ -1156,7 +1156,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             temp_indices = GDKzalloc(sizeof(PyObject*) * group_count);
                             for(element_it = 0; element_it < elements; element_it++) {
                                 //group of current element
-                                lng group = aggr_group_arr[element_it]; 
+                                oid group = aggr_group_arr[element_it]; 
                                 //append current element to proper group
                                 ptr[group][i][temp_indices[group]++] = batcontent[element_it];
                             }
