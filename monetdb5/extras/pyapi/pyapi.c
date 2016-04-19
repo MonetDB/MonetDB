@@ -1067,7 +1067,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             BAT *aggr_group = NULL, *group_first_occurrence = NULL;
             size_t group_count, elements, element_it, group_it;
             size_t *group_counts = NULL;
-            lng *aggr_group_arr = NULL;
+            oid *aggr_group_arr = NULL;
             void ***split_bats = NULL;
             int named_columns = unnamedArgs - (pci->retc + 2);
             PyObject *aggr_result;
@@ -1090,7 +1090,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 goto aggrwrapup;
             }
 
-            aggr_group_arr = (lng*) aggr_group->T->heap.base;
+            aggr_group_arr = (oid*) aggr_group->T->heap.base;
             for(element_it = 0; element_it < elements; element_it++) {
                 group_counts[aggr_group_arr[element_it]]++;
             }
