@@ -50,5 +50,5 @@ rbit:bat[:oid,:int] := pyapi.eval(nil:ptr,"return(numpy.greater_equal(arg1, arg2
 io.print(rbit);
 
 # isclose(x, y, 10000000)
-rbit:bat[:oid,:int] := pyapi.eval(nil:ptr,"return(numpy.isclose(arg1, arg2, 10000000))",bint, bint2);
+rbit:bat[:oid,:int] := pyapi.eval(nil:ptr,"return(numpy.isclose(arg1, arg2, atol=10000000))",bint, bint2);
 io.print(rbit);
