@@ -44,6 +44,7 @@ headers_autoload = {
 }
 
 scripts_bat = {
+	COND = NATIVE_WIN32
 	EXT = bat
 	DIR = prefix
 	SOURCES = pyapi_locatepython.bat
