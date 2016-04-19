@@ -90,7 +90,7 @@ SELECT pyapi25checker(mean) FROM pyapi25medians;
 
 CREATE FUNCTION pyapi25errortable() returns TABLE(d DOUBLE) LANGUAGE PYTHON_MAP
 {
-    return _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
+    _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
     return 1
 };
 
