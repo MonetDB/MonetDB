@@ -11,7 +11,7 @@ CREATE AGGREGATE aggrmedian(val integer) RETURNS integer LANGUAGE P {
 		unique = numpy.unique(aggr_group)
 		x = numpy.zeros(shape=(unique.size))
 		for i in range(0,unique.size):
-			x[i] = numpy.median(val[aggr_group==unique[i]])
+			x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
 		return(x)
 	else:
 		return(numpy.median(val))
@@ -36,7 +36,7 @@ CREATE AGGREGATE aggrsum(val integer) RETURNS integer LANGUAGE P {
 	unique = numpy.unique(aggr_group)
 	x = numpy.zeros(shape=(unique.size))
 	for i in range(0, unique.size):
-		x[i] = numpy.sum(val[aggr_group==unique[i]])
+		x[i] = numpy.sum(val[numpy.where(aggr_group==unique[i])])
 	return x
 };
 
