@@ -254,9 +254,8 @@ static bool enable_zerocopy_output = true;
     {                                                                                                                                                 \
         for (iu = 0; iu < ret->count; iu++)                                                                                                           \
         {                                                                                                                                             \
-            if (!func((ptrtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size], ret->memory_size, &value))                                          \
-            {                                                                                                                                         \
-                msg = createException(MAL, "pyapi.eval", "Could not convert from type %s to type %s", PyType_Format(ret->result_type), #mtpe_to);     \
+            msg = func((ptrtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size], ret->memory_size, &value);                                \
+            if (msg != MAL_SUCCEED) {                                                                                                                 \
                 goto wrapup;                                                                                                                          \
             }                                                                                                                                         \
             ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = value;                                                                                        \
@@ -273,9 +272,8 @@ static bool enable_zerocopy_output = true;
             }                                                                                                                                         \
             else                                                                                                                                      \
             {                                                                                                                                         \
-                if (!func((ptrtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size], ret->memory_size, &value))                                      \
-                {                                                                                                                                     \
-                    msg = createException(MAL, "pyapi.eval", "Could not convert from type %s to type %s", PyType_Format(ret->result_type), #mtpe_to); \
+                msg = func((ptrtpe*)&data[(index_offset * ret->count + iu) * ret->memory_size], ret->memory_size, &value);                            \
+                if (msg != MAL_SUCCEED) {                                                                                                             \
                     goto wrapup;                                                                                                                      \
                 }                                                                                                                                     \
                 ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = value;                                                                                    \

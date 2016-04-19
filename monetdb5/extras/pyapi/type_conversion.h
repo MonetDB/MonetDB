@@ -27,15 +27,15 @@ bool string_copy(char * source, char* dest, size_t max_size, bool allow_unicode)
 //! Converts a hge to a string and writes it into the string "str"
 int hge_to_string(char *str, hge );
 //! Converts a base-10 string to a hge value
-bool str_to_hge(char *ptr, size_t maxsize, hge *value);
+str str_to_hge(char *ptr, size_t maxsize, hge *value);
 #if PY_MAJOR_VERSION >= 3
 //! Converts a base-10 utf32-encoded string to a hge value
-bool unicode_to_hge(char *utf32, size_t maxsize, hge *value);   
+str unicode_to_hge(char *utf32, size_t maxsize, hge *value);   
 #else
-bool unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);   
+str unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);   
 #endif 
 //! Converts a PyObject to a hge value
-bool pyobject_to_hge(PyObject **ptr, size_t maxsize, hge *value);
+str pyobject_to_hge(PyObject **ptr, size_t maxsize, hge *value);
 //! Create a PyLongObject from a hge integer
 PyObject *PyLong_FromHge(hge h);
 #endif
@@ -45,14 +45,14 @@ PyObject *PyLong_FromHge(hge h);
 #if PY_MAJOR_VERSION >= 3
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
-    bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
-    bool unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value);                  \
-    bool pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);     
+    str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
+    str unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value);                  \
+    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);     
 #else
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
-    bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
-    bool unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);                  \
-    bool pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);  
+    str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
+    str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);                  \
+    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);  
 #endif
 
 CONVERSION_FUNCTION_HEADER_FACTORY(bte)

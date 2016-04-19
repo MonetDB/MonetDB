@@ -91,9 +91,10 @@ PyObject *PyLong_FromHge(hge h)
 
 #ifndef IS_PY3K
 #define PY_TO_(type, inttpe)                                                                                             \
-bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)                                                                    \
+str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)                                                                    \
 {                                                                                                                \
     PyObject *ptr = *pyobj; \
+    str retval = MAL_SUCCEED; \
     (void) maxsize; \
     if (PyLong_CheckExact(ptr)) {                                                                                     \
         PyLongObject *p = (PyLongObject*) ptr;                                                                   \
@@ -106,18 +107,14 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
             prev = h; (void)prev;                                                                                \
             h = (h << PyLong_SHIFT) + p->ob_digit[i];                                                            \
             if ((h >> PyLong_SHIFT) != prev) {                                                                   \
-                printf("Overflow!\n");                                                                           \
-                return false;                                                                                    \
+                return GDKstrdup("Overflow when converting value.");                                                        \
             }                                                                                                    \
         }                                                                                                        \
         *value = (type)(h * sign);                                                                                       \
-        return true;                                                                                             \
     } else if (PyInt_CheckExact(ptr) || PyBool_Check(ptr)) {                                                          \
         *value = (type)((PyIntObject*)ptr)->ob_ival;                                                             \
-        return true;                                                                                             \
     } else if (PyFloat_CheckExact(ptr)) {                                                                             \
         *value = (type) ((PyFloatObject*)ptr)->ob_fval;                                                          \
-        return true;                                                                                             \
     } else if (PyString_CheckExact(ptr)) {                                                                            \
         return str_to_##type(((PyStringObject*)ptr)->ob_sval, -1, value);     \
     }  else if (PyByteArray_CheckExact(ptr)) {                                                                        \
@@ -125,10 +122,10 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
     } else if (PyUnicode_CheckExact(ptr)) {                                                                           \
         return unicode_to_##type(((PyUnicodeObject*)ptr)->str, -1, value);                                             \
     }                                                                                                            \
-    return false;                                                                                                \
+    return retval;                                                                                                \
 }
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)              \
-    bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
+    str str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
     { \
         ssize_t i = maxsize - 1; \
         tpe factor = 1; \
@@ -154,14 +151,14 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
                 case '\0': continue; \
                 default: \
                 { \
-                    return false; \
+                    return "Error converting string."; \
                 } \
             } \
             factor *= 10; \
         }  \
-        return true; \
+        return MAL_SUCCEED; \
     } \
-    bool unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value) \
+    str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value) \
     {                                                              \
         char utf8[255];                                            \
         utf32_to_utf8(0, 255, utf8, ptr);                          \
@@ -177,16 +174,19 @@ CONVERSION_FUNCTION_FACTORY(sht, sht)
 CONVERSION_FUNCTION_FACTORY(int, int)
 CONVERSION_FUNCTION_FACTORY(lng, lng)
 CONVERSION_FUNCTION_FACTORY(flt, lng)
-CONVERSION_FUNCTION_FACTORY(dbl, lng)
 
 #ifdef HAVE_HGE
 CONVERSION_FUNCTION_FACTORY(hge, hge)
+CONVERSION_FUNCTION_FACTORY(dbl, hge)
+#else
+CONVERSION_FUNCTION_FACTORY(dbl, lng)
 #endif
 #else
 #define PY_TO_(type, inttpe)                                                                                             \
-bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)                                                                    \
+str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)                                                                    \
 {                                                                                                                \
     PyObject *ptr = *pyobj; \
+    str retval = MAL_SUCCEED; \
     (void) maxsize; \
     if (PyLong_CheckExact(ptr)) {                                                                                     \
         PyLongObject *p = (PyLongObject*) ptr;                                                                   \
@@ -199,27 +199,23 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
             prev = h; (void)prev;                                                                                \
             h = (h << PyLong_SHIFT) + p->ob_digit[i];                                                            \
             if ((h >> PyLong_SHIFT) != prev) {                                                                   \
-                printf("Overflow!\n");                                                                           \
-                return false;                                                                                    \
+                return GDKstrdup("Overflow when converting value.");                                                        \
             }                                                                                                    \
         }                                                                                                        \
         *value = (type)(h * sign);                                                                                       \
-        return true;                                                                                             \
     } else if (PyBool_Check(ptr)) {                                                                              \
         *value = ptr == Py_True ? 1 : 0;                                                             \
-        return true;                                                                                             \
     } else if (PyFloat_CheckExact(ptr)) {                                                                             \
         *value = (type) ((PyFloatObject*)ptr)->ob_fval;                                                          \
-        return true;                                                                                             \
     } else if (PyUnicode_CheckExact(ptr)) {                                                                            \
         return str_to_##type(PyUnicode_AsUTF8(ptr), -1, value);     \
     }  else if (PyByteArray_CheckExact(ptr)) {                                                                        \
         return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, -1, value);\
     }                                                                                                            \
-    return false;                                                                                                \
+    return retval;                                                                                                \
 }
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)              \
-    bool str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
+    str str_to_##tpe(char *ptr, size_t maxsize, tpe *value) \
     { \
         int i = maxsize - 1; \
         tpe factor = 1; \
@@ -245,14 +241,14 @@ bool pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)          
                 case '\0': continue; \
                 default: \
                 { \
-                    return false; \
+                    return "Error converting string."; \
                 } \
             } \
             factor *= 10; \
         }  \
-        return true; \
+        return MAL_SUCCEED; \
     } \
-    bool unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value) { return str_to_##tpe(ptr, maxsize, value); }\
+    str unicode_to_##tpe(char *ptr, size_t maxsize, tpe *value) { return str_to_##tpe(ptr, maxsize, value); }\
     PY_TO_(tpe, inttpe);
 
 CONVERSION_FUNCTION_FACTORY(bte, bte)
