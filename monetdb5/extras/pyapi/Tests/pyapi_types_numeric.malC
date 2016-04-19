@@ -73,16 +73,6 @@ bat.append(blng,nil:lng);
 rlng:bat[:oid,:int] := pyapi.eval(nil:ptr,"return(arg1)",blng);
 io.print(rlng);
 
-# huge with null value
-bhge:= bat.new(:oid,:hge);
-bat.append(bhge,18044433428933534654634643698858345:hge);
-bat.append(bhge,895233278923448975389573895731:hge);
-bat.append(bhge,558372892789247104910348981249:hge);
-bat.append(bhge,23:hge);
-bat.append(bhge,nil:hge);
-rhge:bat[:oid,:hge] := pyapi.eval(nil:ptr,"return(arg1)",bhge);
-io.print(rhge);
-
 # float with null value
 bflt:= bat.new(:oid,:flt);
 bat.append(bflt,18042.89383:flt);

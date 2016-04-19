@@ -67,3 +67,6 @@ io.print(rint);
 rdbl:bat[:oid,:dbl] := pyapi.eval(nil:ptr,"return(arg1)",z);
 io.print(rdbl);
 
+# return very large PyLongObject numbers and convert them to double
+s:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "return(10000000000000000000000)");
+io.print(s);
