@@ -398,8 +398,14 @@ class MonetDBConnection
   def set_timezone()
     tz = Time.new
     tz_offset = tz.gmt_offset / @@HOUR
-      
-    if tz_offset <= 9 # verify minute count!
+
+    # verify minute count!
+    if tz_offset <= -10
+      tz_offset = "'" + tz_offset.to_s + ":00'"
+    elsif tz_offset < 0
+      tz_offset = -tz_offset
+      tz_offset = "'-0" + tz_offset.to_s + ":00'"
+    elsif tz_offset <= 9
       tz_offset = "'+0" + tz_offset.to_s + ":00'"
     else
       tz_offset = "'+" + tz_offset.to_s + ":00'"
