@@ -405,7 +405,7 @@ class MonetDBConnection
     elsif tz_offset < 0
       tz_offset = -tz_offset
       tz_offset = "'-0" + tz_offset.to_s + ":00'"
-    if tz_offset <= 9
+    elsif tz_offset <= 9
       tz_offset = "'+0" + tz_offset.to_s + ":00'"
     else
       tz_offset = "'+" + tz_offset.to_s + ":00'"
