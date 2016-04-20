@@ -31,37 +31,48 @@ stderr of test 'polygon` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0.0 0.0, 0.0 0.0))');
-ERROR = !IllegalArgumentException: Invalid number of points in LinearRing found 2 - must be 0 or >= 4
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !IllegalArgumentException: Invalid number of points in LinearRing found 2 - must be 0 or >= 4
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0.0 1.0, 1.0 1.0, 0.0 1.0))');
-ERROR = !IllegalArgumentException: Invalid number of points in LinearRing found 3 - must be 0 or >= 4
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !IllegalArgumentException: Invalid number of points in LinearRing found 3 - must be 0 or >= 4
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('(0.0 0.0');
-ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('(0,1,2)');
-ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('(0,1,2,3');
-ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('asdf');
-ERROR = !ParseException: Unknown type: 'ASDF'
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: 'ASDF'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON(0.0)');
-ERROR = !ParseException: Expected word but encountered number: '0'
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected word but encountered number: '0'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0.0 0.0)');
-ERROR = !IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !IllegalArgumentException: point array must contain 0 or >1 elements
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0,1,2))');
-ERROR = !ParseException: Expected number but encountered ','
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected number but encountered ','
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON((0 1, 2 3)');
-ERROR = !IllegalArgumentException: Points of LinearRing do not form a closed linestring
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !IllegalArgumentException: Points of LinearRing do not form a closed linestring
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POLYGON_TBL(f1) VALUES ('POLYGON(asdf)');
-ERROR = !ParseException: Expected 'Z', 'M', 'ZM', 'EMPTY' or '(' but encountered : 'ASDF'
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected 'Z', 'M', 'ZM', 'EMPTY' or '(' but encountered : 'ASDF'
 
 # 18:15:16 >  
 # 18:15:16 >  "Done."

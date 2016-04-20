@@ -34,26 +34,30 @@ QUERY = INSERT INTO POINT_TBL(f1) VALUES (1.0,2.0);
 ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'point_tbl'
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('asdfasdf');
-ERROR = !ParseException: Unknown type: 'ASDFASDF'
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: 'ASDFASDF'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint('asdfasdf'));
 ERROR = !SELECT: no such unary operator 'st_makepoint(char)'
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('10.0,10.0');
-ERROR = !ParseException: Expected word but encountered number: '10'
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Expected word but encountered number: '10'
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint('10.0,10.0'));
 ERROR = !SELECT: no such unary operator 'st_makepoint(char)'
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('(10.0 10.0)');
-ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint(10.0 10.0)));
 ERROR = !syntax error, unexpected INTNUM, expecting ')' or ',' in: "insert into point_tbl(f1) values (st_makepoint(10.0 10.0"
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = INSERT INTO POINT_TBL(f1) VALUES ('(10,0.10,0');
-ERROR = !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
+ERROR = !GEOSWKTReader_read failed
+        !ParseException: Unknown type: '('
+MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
 QUERY = INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint(10,0.10,0));
 ERROR = !column needs geometry(4, 0) and value is geometry(6, 0)
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
