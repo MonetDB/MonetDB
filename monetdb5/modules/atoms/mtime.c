@@ -2657,7 +2657,7 @@ MTIMEtimestamp(timestamp *ret, const int *sec)
 	lng l;
 	str e;
 
-	if (*sec == lng_nil) {
+	if (*sec == int_nil) {
 		*ret = *timestamp_nil;
 		return MAL_SUCCEED;
 	}
