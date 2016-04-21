@@ -684,43 +684,42 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public boolean getBoolean(int columnIndex) throws SQLException{
-		int dataType = getJavaType(types[columnIndex - 1]);
-		if (dataType == Types.TINYINT ||
-			dataType == Types.SMALLINT ||
-			dataType == Types.INTEGER ||
-			dataType == Types.BIGINT)
-		{
-			if (getLong(columnIndex) == 0L) {
-				return false;
-			} else {
+		switch (getJavaType(types[columnIndex - 1])) {
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+				if (getInt(columnIndex) == 0) {
+					return false;
+				}
 				return true;
-			}
-		} else if (dataType == Types.REAL ||
-			dataType == Types.FLOAT ||
-			dataType == Types.DOUBLE)
-		{
-			if (getDouble(columnIndex) == 0.0) {
-				return false;
-			} else {
+			case Types.BIGINT:
+				if (getLong(columnIndex) == 0L) {
+					return false;
+				}
 				return true;
-			}
-		} else if (dataType == Types.DECIMAL ||
-			dataType == Types.NUMERIC)
-		{
-			if (getBigDecimal(columnIndex).compareTo(new BigDecimal(0.0)) == 0) {
-				return false;
-			} else {
+			case Types.DOUBLE:
+			case Types.FLOAT:
+			case Types.REAL:
+				if (getDouble(columnIndex) == 0.0) {
+					return false;
+				}
 				return true;
-			}
-		} else if (dataType == Types.BIT ||
-			dataType == Types.BOOLEAN ||
-			dataType == Types.CHAR ||
-			dataType == Types.VARCHAR ||
-			dataType == Types.LONGVARCHAR)
-		{
-			return (Boolean.valueOf(getString(columnIndex))).booleanValue();
-		} else {
-			throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
+			case Types.DECIMAL:
+			case Types.NUMERIC:
+				if (getBigDecimal(columnIndex).compareTo(BigDecimal.ZERO) == 0) {
+					return false;
+				}
+				return true;
+			case Types.BOOLEAN:
+			case Types.BIT: // MonetDB doesn't use type BIT, it's here for completeness
+			case Types.CHAR:
+			case Types.VARCHAR:
+			case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+			case Types.CLOB:
+				// check if string value equals "true" (case insensitive) or not
+				return (Boolean.valueOf(getString(columnIndex))).booleanValue();
+			default:
+				throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
 		}
 	}
 
