@@ -1103,7 +1103,7 @@ SQLload_parse_line(READERtask *task, int idx)
 	}
 endofline:
 	/* check for too many values as well*/
-	if (*line && i == as->nr_attrs) {
+	if (line && *line && i == as->nr_attrs) {
 		errline = SQLload_error(task, idx, task->as->nr_attrs);
 		snprintf(errmsg, BUFSIZ, "Leftover data '%s'",line);
 		tablet_error(task, idx, (int) i, errmsg, errline);
@@ -1112,7 +1112,7 @@ endofline:
 	}
 #ifdef _DEBUG_TABLET_
 	if (error)
-		mnstr_printf(GDKout, "#line break failed %d:%s\n", idx, line);
+		mnstr_printf(GDKout, "#line break failed %d:%s\n", idx, line ? line : "EOF");
 #endif
 	return error ? -1 : 0;
 }
