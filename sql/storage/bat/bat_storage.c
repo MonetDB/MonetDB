@@ -1739,16 +1739,18 @@ gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
 	int ok = LOG_OK;
 	node *n;
 
+	if (t->base.wtime <= t->base.allocated)
+		return ok;
 	gtr_update_dbat(t->data, tchanges);
 	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
 		int changes = 0;
 		sql_column *c = n->data;
 
-		if (!c->base.wtime) 
+		if (!c->base.wtime || c->base.wtime <= c->base.allocated) 
 			continue;
 		ok = gtr_update_delta(tr, c->data, &changes);
 		if (changes)
-			c->base.wtime = tr->wstime;
+			c->base.allocated = c->base.wtime = tr->wstime;
 		(*tchanges) |= changes;
 	}
 	if (ok == LOG_OK && t->idxs.set) {
@@ -1757,17 +1759,17 @@ gtr_update_table(sql_trans *tr, sql_table *t, int *tchanges)
 			sql_idx *ci = n->data;
 
 			/* some indices have no bats */
-			if (!ci->base.wtime)
+			if (!ci->base.wtime || ci->base.wtime <= ci->base.allocated) 
 				continue;
 
 			ok = gtr_update_delta(tr, ci->data, &changes);
 			if (changes)
-				ci->base.wtime = tr->wstime;
+				ci->base.allocated = ci->base.wtime = tr->wstime;
 			(*tchanges) |= changes;
 		}
 	}
 	if (*tchanges)
-		t->base.wtime = tr->wstime;
+		t->base.allocated = t->base.wtime = tr->wstime;
 	return ok;
 }
 
@@ -1783,6 +1785,11 @@ _gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f)
 		int schanges = 0;
 		sql_schema *s = sn->data;
 		
+		if (s->base.wtime <= s->base.allocated && 
+			gtr_update_table_f == gtr_update_table)
+			continue;
+		if (!s->base.wtime)
+			continue;
 		if (!isTempSchema(s) && s->tables.set) {
 			node *n;
 			for (n = s->tables.set->h; n && ok == LOG_OK; n = n->next) {
@@ -1794,12 +1801,12 @@ _gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f)
 				schanges |= changes;
 			}
 		}
-		if (schanges){
-			s->base.wtime = tr->wstime;
+		if (schanges && gtr_update_table_f == gtr_update_table){
+			s->base.allocated = s->base.wtime = tr->wstime;
 			tchanges ++;
 		}
 	}
-	if (tchanges)
+	if (tchanges && gtr_update_table_f == gtr_update_table)
 		tr->wtime = tr->wstime;
 	return LOG_OK;
 }
