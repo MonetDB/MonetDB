@@ -1,0 +1,42 @@
+stderr of test 'ST_NumPoints` in directory 'geom/sql/functions` itself:
+
+
+# 09:53:35 >  
+# 09:53:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30630" "--set" "mapi_usock=/var/tmp/mtest-31357/.s.monetdb.30630" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 09:53:35 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/MonetDB-public/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30630
+# cmdline opt 	mapi_usock = /var/tmp/mtest-31357/.s.monetdb.30630
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_debug = 536870922
+
+# 09:53:35 >  
+# 09:53:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31357" "--port=30630"
+# 09:53:35 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-8056/.s.monetdb.39838
+QUERY = SELECT ST_NumPoints(ST_GeomFromText('polygon((77.29 29.07,77.42 29.26,77.27 29.31,77.29 29.07))'));
+ERROR = !Geometry "POLYGON ((77.29000000000001 29.07, 77.42 29.26, 77.27 29.31, 77.29000000000001 29.07))" not a LineString
+MAPI  = (monetdb) /var/tmp/mtest-8056/.s.monetdb.39838
+QUERY = select st_numPoints(st_mpointFromText('multipoint(1 2 3, 4 5 6, 7 8 9, 10 11 12)'));
+ERROR = !Geometry "MULTIPOINT Z (1 2 3, 4 5 6, 7 8 9, 10 11 12)" not a LineString
+
+# 09:53:35 >  
+# 09:53:35 >  "Done."
+# 09:53:35 >  
+

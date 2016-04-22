@@ -1,0 +1,40 @@
+stdout of test 'create_table_from_complex_query.Bug-3921` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 11:34:54 >  
+# 11:34:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37063" "--set" "mapi_usock=/var/tmp/mtest-21023/.s.monetdb.37063" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 11:34:54 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37063/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21023/.s.monetdb.37063
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.6'
+# Finished reading the write-ahead log 'sql_logs/sql/log.6'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:34:54 >  
+# 11:34:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21023" "--port=37063"
+# 11:34:54 >  
+
+#start transaction;
+#create table bug3921a (pde_id clob, bene_id clob, srvc_dt clob, prod_srvc_id clob, plan_cntrct_rec_id clob, plan_pbp_rec_num clob, qty_dspnsd_num double, days_suply_num double, drug_cvrg_stus_cd clob, ctstrphc_cvrg_cd clob, ptnt_pay_amt double, othr_troop_amt double, lics_amt double, plro_amt double, cvrd_d_plan_pd_amt double, ncvrd_plan_pd_amt double, tot_rx_cst_amt double, benefit_phase clob, ccw_pharmacy_id double, ccw_prscrbr_id double, pde_prscrbr_id_frmt_cd clob, formulary_id clob, frmlry_rx_id clob, rptd_gap_dscnt_num double, brnd_gnrc_cd clob, rx_c_cov double, rx_c_lics double, rx_c_tpc double, rx_c_tdc double, rx_c_oop double, rx_c_gdc double, rx_e_cov double, rx_e_lics double, rx_e_tpc double, rx_e_tdc double, rx_e_oop double, rx_e_gdc double, rx_o_cov double, rx_o_lics double, rx_o_tpc double, rx_o_tdc double, rx_o_oop double, rx_o_gdc double, rx_ce_cov double, rx_ce_lics double, rx_ce_tpc double, rx_ce_tdc double, rx_ce_oop double, rx_ce_gdc double, rx_co_cov double, rx_co_lics double, rx_co_tpc double, rx_co_tdc double, rx_co_oop double, rx_co_gdc double, rx_eo_cov double, rx_eo_lics double, rx_eo_tpc double, rx_eo_tdc double, rx_eo_oop double, rx_eo_gdc double, rx_ceo_cov double, rx_ceo_lics double, rx_ceo_tpc double, rx_ceo_tdc double, rx_ceo_oop double, rx_ceo_gdc double);
+#create table bug3921b as select bene_id ,CAST( COUNT( DISTINCT CASE WHEN drug_cvrg_stus_cd IN ('c') THEN ccw_prscrbr_id END ) AS DOUBLE ) as rx_c_pre,CAST( COUNT( DISTINCT CASE WHEN drug_cvrg_stus_cd IN ('c') THEN ccw_pharmacy_id END ) AS DOUBLE ) as rx_c_pha from bug3921a group by bene_id WITH DATA;
+#rollback;
+
+# 11:34:54 >  
+# 11:34:54 >  "Done."
+# 11:34:54 >  
+

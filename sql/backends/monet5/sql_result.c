@@ -866,8 +866,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
-				(best || !as.error)) {
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
+				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
 					TABLETdestroy_format(&as);
@@ -1869,6 +1869,10 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (!s || !t)
 		return 0;
 
+	/* Proudly supporting SQLstatementIntern's output flag */
+	if (b->output_format == OFMT_NONE) {
+		return 0;
+	}
 	/* we shouldn't have anything else but Q_TABLE here */
 	assert(t->query_type == Q_TABLE);
 	if (t->tsep)
@@ -1877,9 +1881,8 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	if (!json) {
 		mvc_export_head(b, s, res_id, TRUE);
 	}
+	assert(t->order);
 
-	if (!t->order)
-		return mvc_export_row(b, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;

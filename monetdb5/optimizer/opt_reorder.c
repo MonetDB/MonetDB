@@ -201,6 +201,66 @@ OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Nod
 	return 0;
 }
 
+/* SQL appends are collected to create a better dataflow block */
+/* alternatively, we should postpone all mcv-chained actions */
+static int
+OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,j,k=0, actions =0, last;
+	InstrPtr *old, *appends;
+	int limit;
+	(void) cntxt;
+	(void) stk;
+	(void) p;
+
+	appends =(InstrPtr*) GDKzalloc(mb->ssize * sizeof(InstrPtr));
+	if( appends == NULL)
+		return 0;
+	limit= mb->stop;
+	old = mb->stmt;
+	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+		GDKfree(appends);
+		return 0;
+	}
+	for( i=0; i<limit; i++){
+		if ( getModuleId(old[i]) == sqlRef && getFunctionId(old[i]) == appendRef){
+			last = i;
+		}
+	}
+	for( i=0; i<limit; i++){
+		if ( getModuleId(old[i]) == sqlRef && getFunctionId(old[i]) == appendRef){
+			// only postpone under strict conditions
+			assert( isVarConstant(mb,getArg(old[i],2)));
+			assert( isVarConstant(mb,getArg(old[i],3)));
+			assert( isVarConstant(mb,getArg(old[i],4)));
+			if( actions )
+				pushInstruction(mb, old[i]);
+			else {
+				if (k > 0 &&  getArg(old[i],1) == getArg(appends[k-1],0))
+					appends[k++]= old[i];
+				else {
+					for(j=0; j<k; j++)
+						pushInstruction(mb,appends[j]);
+					pushInstruction(mb, old[i]);
+					actions++;
+				}
+			}
+			continue;
+		}
+		if ( i == last){
+			actions++;
+			for(j=0; j<k; j++)
+				pushInstruction(mb,appends[j]);
+		}
+		pushInstruction(mb,old[i]);
+	}
+	for( ; i<limit; i++){
+		pushInstruction(mb,old[i]);
+	}
+	GDKfree(appends);
+	return actions;
+}
+
 int
 OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -275,5 +335,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	OPTremoveDep(dep, limit);
 	GDKfree(uselist);
 	GDKfree(old);
+	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
 	return 1;
 }

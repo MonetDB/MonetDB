@@ -99,7 +99,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-
 	if (h->filename == NULL || h->size < GDK_mmap_minsize) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->size, 0);
@@ -583,6 +582,10 @@ HEAPfree(Heap *h, int remove)
 			if (path && unlink(path) < 0 && errno != ENOENT)
 				perror(path);
 			GDKfree(path);
+			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
+			if (path && unlink(path) < 0 && errno != ENOENT)
+				perror(path);
+			GDKfree(path);
 		}
 		GDKfree(h->filename);
 		h->filename = NULL;
@@ -710,7 +713,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	HEAPDEBUG {
 		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->newstorage, h->free, h->size);
 	}
-	return GDKsave(h->farmid, nme, ext, h->base, h->free, store);
+	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, TRUE);
 }
 
 gdk_return

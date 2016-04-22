@@ -150,7 +150,7 @@ GDKlockstatistics(int what)
 }
 #endif
 
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 static struct winthread {
 	struct winthread *next;
 	HANDLE hdl;
@@ -432,6 +432,7 @@ MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
 	(void) sigdelset(new_mask, SIGQUIT);
 	(void) sigdelset(new_mask, SIGALRM);	/* else sleep doesn't work */
+	(void) sigdelset(new_mask, SIGPROF);
 	(void) pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
 }
 #endif

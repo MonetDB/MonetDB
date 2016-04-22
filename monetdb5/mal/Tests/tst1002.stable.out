@@ -12,13 +12,13 @@ Ready.
 # 15:35:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
 # 15:35:45 >  
 
-function user.foo():void;               	#[0]  0 
-    c:bat[:int] := bbp.bind("myfirstbat":str);	#[1] CMDbbpbind 1 <- 2 
-    io.print(c:bat[:int]);              	#[2] IOprint_val 3 <- 1 
-catch MALException:str;                 	#[3]  4 
-    io.printf("%s\n":str,MALException:str);	#[4] IOprintf 5 <- 6 4 
-exit MALException:str;                  	#[5]  4 
-end user.foo;                           	#[6]  
+function user.foo():void;               	#[0] (0)  0 
+    c:bat[:int] := bbp.bind("myfirstbat":str);	#[1] (0) CMDbbpbind 1 <- 2 
+    io.print(c:bat[:int]);              	#[2] (0) IOprint_val 3 <- 1 
+catch MALException:str;                 	#[3] (0)  4 
+    io.printf("%s\n":str,MALException:str);	#[4] (0) IOprintf 5 <- 6 4 
+exit MALException:str;                  	#[5] (0)  4 
+end user.foo;                           	#[6] (0)  
 MALException:bbp.bind:Object not found
 
 # 15:35:45 >  

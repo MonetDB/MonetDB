@@ -1,5 +1,6 @@
 [Unit]
-Description=MonetDB: the column store
+Description=MonetDB database server daemon
+Documentation=man:monetdbd https://www.monetdb.org/Documentation/monetdbd-man-page
 After=network.target
 
 [Service]
@@ -7,9 +8,12 @@ Type=forking
 User=monetdb
 Group=monetdb
 ExecStart=@Ebindir@/monetdbd start @Elocalstatedir@/monetdb5/dbfarm
-ExecStop=@Ebindir@/monetdbd stop @Elocalstatedir@/monetdb5/dbfarm
-Restart=always
-PIDFILE=@Erundir@/merovingian.pid
+# no ExecStop since "monetdbd stop ..." is asynchronous
+Restart=on-failure
+PIDFile=@Erundir@/merovingian.pid
+PrivateDevices=yes
+ProtectSystem=full
+ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target

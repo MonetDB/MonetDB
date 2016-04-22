@@ -1,0 +1,57 @@
+stdout of test 'update_crash.Bug-3954` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 09:50:14 >  
+# 09:50:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33995" "--set" "mapi_usock=/var/tmp/mtest-24151/.s.monetdb.33995" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 09:50:14 >  
+
+# MonetDB 5 server v11.21.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33995/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24151/.s.monetdb.33995
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.9'
+# Finished reading the write-ahead log 'sql_logs/sql/log.9'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 09:50:15 >  
+# 09:50:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24151" "--port=33995"
+# 09:50:15 >  
+
+#create table temp (t timestamp, sensor integer, val decimal(8,2)) ;
+#insert into temp values(timestamp '2016-03-13 08:58:14', 1, 23.4);
+[ 1	]
+#select * from temp;
+% sys.temp,	sys.temp,	sys.temp # table_name
+% t,	sensor,	val # name
+% timestamp,	int,	decimal # type
+% 26,	1,	10 # length
+[ 2016-03-13 08:58:14.000000,	1,	23.40	]
+#create table temp_aggregate(temp_total decimal(8,2), temp_count decimal(8,2));
+#insert into temp_aggregate values(0.0,0.0);
+[ 1	]
+#create procedure collect()
+#begin
+#	    update temp_aggregate
+#	        set temp_total = temp_total + (select sum(val) from temp),
+#		            temp_count = temp_count + (select count(*) from temp);
+#end;
+#drop  procedure collect;
+#drop table temp;
+#drop table temp_aggregate;
+
+# 09:50:15 >  
+# 09:50:15 >  "Done."
+# 09:50:15 >  
+

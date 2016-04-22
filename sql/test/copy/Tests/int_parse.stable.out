@@ -48,18 +48,8 @@ Ready.
 [ -4	]
 #delete from t_int;
 [ 2	]
-#select * from t_int;
-% sys.t_int # table_name
-% i # name
-% int # type
-% 1 # length
 #delete from t_int;
 [ 0	]
-#select * from t_int;
-% sys.t_int # table_name
-% i # name
-% int # type
-% 1 # length
 #delete from t_int;
 [ 0	]
 #drop table t_int;

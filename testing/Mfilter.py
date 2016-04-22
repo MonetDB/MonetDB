@@ -92,6 +92,8 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(\[ "avg\(sqrt\(n8\)\) == 1\.1",\s+)(1\.09999\d*|1\.10000\d*)(\s+\])\n',                                                                 # 9: 3
     # POLYGONs can be traversed in multiple directions
     r'^(\[.*POLYGON.*\(59\.0{16} 18\.0{16}, )(59\.0{16} 13\.0{16})(, 67\.0{16} 13\.0{16}, )(67\.0{16} 18\.0{16})(, 59\.0{16} 18\.0{16}\).*)',   # 10: 5
+    # test geom/BugTracker/Tests/X_crash.SF-1971632.* might produce different error messages, depending on evaluation order
+    r'^(ERROR = !MALException:geom.wkbGetCoordinate:Geometry ")(.*)(" not a Point)\n',                                                          # 11: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -105,10 +107,12 @@ norm_out = (
     None, "'Z', 'M', 'ZM', 'EMPTY' or '('", None,                                                       # 8: 3
     None, '1.1', None,                                                                                  # 9: 3
     None, '67.0000000000000000 18.0000000000000000', None, '59.0000000000000000 13.0000000000000000', None, # 10: 5
+    None, '...', None,                                                                                  # 11: 3
 )
 
 # match "table_name" SQL table header line to normalize "(sys)?.L[0-9]*" to "(sys)?."
 table_name = re.compile(r'^%.*[\t ](|sys)\.L[0-9]*[, ].*# table_name$')
+name = re.compile(r'^%.*[\t ]L[0-9]*[, ].*# name$')
 
 attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
 elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
@@ -116,9 +120,9 @@ elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s
 
 def mFilter (FILE, IGNORE) :
     fin = open(FILE, "rU")
-    LINE = fin.readline().replace('\r','')
+    LINE = fin.readline()
     while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
-        LINE = fin.readline().replace('\r','')
+        LINE = fin.readline()
     fin.close()
     if  len(LINE) >= 15  and  LINE[:15] in ("stdout of test ", "stderr of test "):
         WHAT, TST, TSTDIR = re.search("^std(out|err) of test .(.*). in directory .(.*). itself:", LINE, re.MULTILINE).groups()
@@ -180,6 +184,11 @@ def mFilter (FILE, IGNORE) :
         elif table_name.match(iline):
             # normalize "(sys)?.L[0-9]*" to "(sys)?." in "table_name" line of SQL table header
             oline = re.sub(r'([ \t])(|sys)(\.)L[0-9]*([, ])', r'\1\2\3\4', iline)
+            # keep original line for reference as comment (i.e., ignore diffs, if any)
+            xline = iline.replace('%','#',1)
+        elif name.match(iline):
+            # normalize "L[0-9]*" to "L" in "name" line of SQL table header
+            oline = re.sub(r'([ \t])L[0-9]*([, ])', r'\1L\2', iline)
             # keep original line for reference as comment (i.e., ignore diffs, if any)
             xline = iline.replace('%','#',1)
         else:

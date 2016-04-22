@@ -1,0 +1,7 @@
+CREATE TABLE test (c UUID);
+COPY 200000 RECORDS INTO test FROM '$QTSTSRCDIR/data-uuid.csv.bz2' DELIMITERS ',';
+SELECT MIN(c) AS mn, MAX(c) AS mx FROM test;
+SELECT MIN(c) AS mn, MAX(c) AS mx FROM test;
+SELECT MIN(c) AS mn, MAX(c) AS mx FROM test;
+DROP TABLE test;
+

@@ -82,13 +82,13 @@ dblCmp(const dbl *l, const dbl *r)
 static BUN
 bteHash(const bte *v)
 {
-	return (BUN) *(const unsigned char *) v;
+	return (BUN) mix_bte(*(const unsigned char *) v);
 }
 
 static BUN
 shtHash(const sht *v)
 {
-	return (BUN) *(const unsigned short *) v;
+	return (BUN) mix_sht(*(const unsigned short *) v);
 }
 
 static BUN
@@ -100,15 +100,14 @@ intHash(const int *v)
 static BUN
 lngHash(const lng *v)
 {
-	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1]);
+	return (BUN) mix_lng(*(const ulng *) v);
 }
 
 #ifdef HAVE_HGE
 static BUN
 hgeHash(const hge *v)
 {
-	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1] ^ \
-	                     ((const unsigned int *) v)[2] ^ ((const unsigned int *) v)[3]);
+	return (BUN) mix_hge(*(const uhge *) v);
 }
 #endif
 
@@ -854,8 +853,11 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
 		errno = 0;
-		d = strtod(src, &pe);
-		p = pe;
+		d = strtod(p, &pe);
+		if (p == pe)
+			p = src; /* nothing converted */
+		else
+			p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
 #ifdef isfinite
@@ -917,8 +919,11 @@ fltFromStr(const char *src, int *len, flt **dst)
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
 		errno = 0;
-		f = strtof(src, &pe);
-		p = pe;
+		f = strtof(p, &pe);
+		if (p == pe)
+			p = src; /* nothing converted */
+		else
+			p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #else /* no strtof, try sscanf */
@@ -1068,6 +1073,7 @@ strHeap(Heap *d, size_t cap)
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
 	if (HEAPalloc(d, size, 1) == GDK_SUCCEED) {
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		d->dirty = 1;
 		memset(d->base, 0, d->free);
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
 #ifndef NDEBUG
@@ -1316,6 +1322,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 #endif
 	}
 	h->free += pad + len + extralen;
+	h->dirty = 1;
 
 	/* maintain hash table */
 	pos -= extralen;

@@ -21,6 +21,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.Ref;
@@ -683,44 +684,43 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if there is no such column
 	 */
 	@Override
-	public boolean getBoolean(int columnIndex) throws SQLException{
-		int dataType = getJavaType(types[columnIndex - 1]);
-		if (dataType == Types.TINYINT ||
-			dataType == Types.SMALLINT ||
-			dataType == Types.INTEGER ||
-			dataType == Types.BIGINT)
-		{
-			if (getLong(columnIndex) == 0L) {
-				return false;
-			} else {
+	public boolean getBoolean(int columnIndex) throws SQLException {
+		switch (getJavaType(types[columnIndex - 1])) {
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+				if (getInt(columnIndex) == 0) {
+					return false;
+				}
 				return true;
-			}
-		} else if (dataType == Types.REAL ||
-			dataType == Types.FLOAT ||
-			dataType == Types.DOUBLE)
-		{
-			if (getDouble(columnIndex) == 0.0) {
-				return false;
-			} else {
+			case Types.BIGINT:
+				if (getLong(columnIndex) == 0L) {
+					return false;
+				}
 				return true;
-			}
-		} else if (dataType == Types.DECIMAL ||
-			dataType == Types.NUMERIC)
-		{
-			if (getBigDecimal(columnIndex).compareTo(new BigDecimal(0.0)) == 0) {
-				return false;
-			} else {
+			case Types.DOUBLE:
+			case Types.FLOAT:
+			case Types.REAL:
+				if (getDouble(columnIndex) == 0.0) {
+					return false;
+				}
 				return true;
-			}
-		} else if (dataType == Types.BIT ||
-			dataType == Types.BOOLEAN ||
-			dataType == Types.CHAR ||
-			dataType == Types.VARCHAR ||
-			dataType == Types.LONGVARCHAR)
-		{
-			return (Boolean.valueOf(getString(columnIndex))).booleanValue();
-		} else {
-			throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
+			case Types.DECIMAL:
+			case Types.NUMERIC:
+				if (getBigDecimal(columnIndex).compareTo(BigDecimal.ZERO) == 0) {
+					return false;
+				}
+				return true;
+			case Types.BOOLEAN:
+			case Types.BIT: // MonetDB doesn't use type BIT, it's here for completeness
+			case Types.CHAR:
+			case Types.VARCHAR:
+			case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+			case Types.CLOB:
+				// check if string value equals "true" (case insensitive) or not
+				return (Boolean.valueOf(getString(columnIndex))).booleanValue();
+			default:
+				throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
 		}
 	}
 
@@ -1082,11 +1082,63 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface
 		return new rsmdw() {
-			// for the more expensive methods, we provide a simple cache
-			// for the most expensive part; getting the ResultSet which
-			// contains the data
+			// for the more expensive methods (getPrecision(), getScale(), isNullable()), we provide a simple cache
+			// caches to store precision, scale and isNullable values from getColumns()
+			private boolean[] _is_fetched 	= new boolean[columns.length +1];
+			private int[] _precision 	= new int[columns.length +1];
+			private int[] _scale 		= new int[columns.length +1];
+			private int[] _isNullable 	= new int[columns.length +1];
+			private Connection conn = null;
 			private DatabaseMetaData dbmd = null;
-			private ResultSet[] colrs = new ResultSet[columns.length];
+
+			/**
+			 * A private method to fetch the precision, scale and isNuallble value for a fully qualified column.
+			 * As md.getColumns() is an expensive method we call it only once per column
+			 * and cache the precision, scale and isNullable values in the above array chaches.
+			 * Also we only call md.getColumns() when we have a non empty schema name and table name and column name.
+			 */
+			private void fetchColumnInfo(int column) throws SQLException
+			{
+				if (column <= 0 || column > columns.length)
+					throw new SQLException("No such column " + column, "M1M05");
+
+				_is_fetched[column] = true;
+				_precision[column] = 0;
+				_scale[column] = 0;
+				_isNullable[column] = columnNullableUnknown;
+
+				// we can only call dbmd.getColumns() when we have a specific schema name and table name and column name
+				String schName = getSchemaName(column);
+				if (schName != null && !"".equals(schName)) {
+					String tblName = getTableName(column);
+					if (tblName != null && !"".equals(tblName)) {
+						String colName = getColumnName(column);
+						if (colName != null && !"".equals(colName)) {
+							if (conn == null) {
+								// first time, get a Connection object and cache it for all next columns
+								conn = getStatement().getConnection();
+							}
+							if (conn != null && dbmd == null) {
+								// first time, get a MetaData object and cache it for all next columns
+								dbmd = conn.getMetaData();
+							}
+							if (dbmd != null) {
+								// for precision, scale and isNullable we query the information from data dictionary
+								ResultSet colInfo = dbmd.getColumns(null, schName, tblName, colName);
+								if (colInfo != null) {
+									// we expect exactly one row in the resultset
+									if (colInfo.next()) {
+										_precision[column] = colInfo.getInt(7);  // col 7 is "COLUMN_SIZE"
+										_scale[column] = colInfo.getInt(9);  // col 9 is "DECIMAL_DIGITS"
+										_isNullable[column] = colInfo.getInt(11);  // col 11 is "NULLABLE"
+									}
+									colInfo.close();  // close the resultset to release resources
+								}
+							}
+						}
+					}
+				}
+			}
 
 			/**
 			 * Returns the number of columns in this ResultSet object.
@@ -1099,8 +1151,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 
 			/**
-			 * Indicates whether the designated column is automatically
-			 * numbered, thus read-only.
+			 * Indicates whether the designated column is automatically numbered.
 			 * 
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
@@ -1119,15 +1170,21 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 
 			/**
-			 * Indicates whether a column's case matters. This holds for all
-			 * columns in MonetDB resultsets since the mapping is done case
-			 * insensitive, therefore this method will always return false.
+			 * Indicates whether a column's case matters.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
-			 * @returns false
+			 * @returns true for all character string columns else false
 			 */
 			@Override
-			public boolean isCaseSensitive(int column) {
+			public boolean isCaseSensitive(int column) throws SQLException {
+				switch (getColumnType(column)) {
+					case Types.CHAR:
+					case Types.VARCHAR:
+					case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+					case Types.CLOB:
+						return true;
+				}
+
 				return false;
 			}
 
@@ -1291,19 +1348,62 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getPrecision(int column) throws SQLException {
-				int precision = 0;
-				try {
-					ResultSet col = getColumnResultSet(column);
-
-					// the result has either zero or one results, as the
-					// schema, table and column should be unique...
-					if (col.next())
-						precision = col.getInt("COLUMN_SIZE");
-				} catch (NullPointerException npe) {
-					/* do nothing */
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
-
-				return precision;
+				if (_precision[column] == 0) {
+					// apparently no precision could be fetched
+					// use columnDisplaySize() value for variable length data types
+					switch (getColumnType(column)) {
+						case Types.CHAR:
+						case Types.VARCHAR:
+						case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+						case Types.CLOB:
+						case Types.BLOB:
+						case Types.NUMERIC:
+						case Types.DECIMAL:
+							_precision[column] = getColumnDisplaySize(column);
+							break;
+						case Types.TINYINT:
+							_precision[column] = 3;
+							break;
+						case Types.SMALLINT:
+							_precision[column] = 5;
+							break;
+						case Types.INTEGER:
+							_precision[column] = 10;
+							break;
+						case Types.BIGINT:
+							_precision[column] = 19;
+							break;
+						case Types.REAL:
+							_precision[column] = 7;
+							break;
+						case Types.FLOAT:
+						case Types.DOUBLE:
+							_precision[column] = 15;
+							break;
+						case Types.BIT: // MonetDB doesn't use type BIT, it's here for completeness
+							_precision[column] = 1;
+							break;
+						case Types.BOOLEAN:
+							_precision[column] = 5;
+							break;
+						case Types.DATE:
+							_precision[column] = 10;
+							break;
+						case Types.TIME:
+							_precision[column] = 8;
+							break;
+						case Types.TIMESTAMP:
+							_precision[column] = 19;
+							break;
+						default:
+							_precision[column] = 30;
+							break;
+					}
+				}
+				return _precision[column];
 			}
 
 			/**
@@ -1318,19 +1418,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getScale(int column) throws SQLException {
-				int scale = 0;
-				try {
-					ResultSet col = getColumnResultSet(column);
-
-					// the result has either zero or one results, as the
-					// schema, table and column should be unique...
-					if (col.next())
-						scale = col.getInt("DECIMAL_DIGITS");
-				} catch (NullPointerException npe) {
-					/* do nothing */
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
-
-				return scale;
+				return _scale[column];
 			}
 
 			/**
@@ -1340,30 +1431,20 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * an SQL query.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
-			 * @return scale
+			 * @return the nullability status of the given column; one of columnNoNulls, columnNullable or columnNullableUnknown
 			 * @throws SQLException if a database access error occurs
 			 */
 			@Override
 			public int isNullable(int column) throws SQLException {
-				int ret = columnNullableUnknown;
-				try {
-					ResultSet col = getColumnResultSet(column);
-
-					// the result has either zero or one results, as the
-					// schema, table and column should be unique...
-					if (col.next())
-						ret = col.getInt("NULLABLE");
-				} catch (NullPointerException npe) {
-					/* do nothing */
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
-
-				return ret;
+				return _isNullable[column];
 			}
 
 			/**
 			 * Gets the designated column's table's catalog name.
-			 * Because MonetDB handles only one catalog (dbfarm) at a
-			 * time, the current one is the one we deal with here.
+			 * MonetDB does not support the catalog naming concept as in: catalog.schema.table naming scheme
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the name of the catalog for the table in which the given
@@ -1371,11 +1452,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public String getCatalogName(int column) throws SQLException {
-				if (getTableName(column) != "") {
-					return getStatement().getConnection().getCatalog();
-				} else {
-					return "";
-				}
+				return null;	// MonetDB does NOT support catalogs
+
 			}
 
 			/**
@@ -1433,17 +1511,22 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			@Override
 			public String getColumnClassName(int column) throws SQLException {
 				try {
-					Class type;
-					Map map = getStatement().getConnection().getTypeMap();
-					if (map.containsKey(types[column - 1])) {
-						type = (Class)map.get(types[column - 1]);
-					} else {
-						type = getClassForType(getJavaType(types[column - 1]));
+					if (conn == null) {
+						// first time, get a Connection object and cache it for all next columns
+						conn = getStatement().getConnection();
 					}
-					if (type != null)
-						return type.getName();
-					throw new SQLException("column type mapping null: " +
-							types[column - 1], "M0M03");
+					if (conn != null) {
+						Class type = null;
+						Map map = conn.getTypeMap();
+						if (map != null && map.containsKey(types[column - 1])) {
+							type = (Class)map.get(types[column - 1]);
+						} else {
+							type = getClassForType(getJavaType(types[column - 1]));
+						}
+						if (type != null)
+							return type.getName();
+					}
+					throw new SQLException("column type mapping null: " + types[column - 1], "M0M03");
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				} catch (NullPointerException npe) {
@@ -1491,9 +1574,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public int getColumnType(int column) throws SQLException {
-				String type = getColumnTypeName(column);
-
-				return getJavaType(type);
+				return getJavaType(getColumnTypeName(column));
 			}
 
 			/**
@@ -1514,44 +1595,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				}
 			}
 
-			/**
-			 * Returns the Metadata ResultSet for the given column
-			 * number of this ResultSet.  If the column was previously
-			 * requested, a cached ResultSet is returned, otherwise it
-			 * is fetched using the DatabaseMetaData class.
-			 *
-			 * @param column the column index number starting from 1
-			 * @return Metadata ResultSet
-			 * @throws SQLException if a database error occurs, NullPointerException for a MonetVirtualResultSet
-			 */
-			private ResultSet getColumnResultSet(int column)
-				throws SQLException
-			{
-				if (column > columns.length || column <= 0) throw
-					new SQLException("No such column " + column, "M1M05");
-
-				if (colrs[column - 1] == null) {
-					if (dbmd == null) {
-						// Note: the next code will throw a NullPointerException when called
-						// for a MonetVirtualResultSet as getStatement() will return null
-						// it will be caught in the methods which call this private method.
-						dbmd = getStatement().getConnection().getMetaData();
-					}
-					ResultSet col = 
-						dbmd.getColumns(
-								null, /* this doesn't matter here... */
-								getSchemaName(column),
-								getTableName(column),
-								getColumnName(column)
-							);
-					colrs[column - 1] = col;
-				}
-
-				colrs[column - 1].beforeFirst();
-				return colrs[column - 1];
-			}
-		};
-	}
+		};	// end of new rsmdw()
+	}	// end of getMetaData()
 
 	/**
 	 * Gets the value of the designated column in the current row of this

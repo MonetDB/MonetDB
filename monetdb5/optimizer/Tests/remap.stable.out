@@ -29,15 +29,15 @@ Ready.
 # 11:30:41 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-24656" "--port=37417"
 # 11:30:41 >  
 
-function user.tst():void;               	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
+function user.tst():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
 # a correct call                        
-    z:bat[:int] := batcalc.+(b:bat[:int],1:int);	#[3] CMDbatADDsignal 5 <- 1 8 
-    f:bat[:bit] := batcalc.<(b:bat[:int],3:int);	#[4] CMDbatLT 9 <- 1 11 
-    f:bat[:bit] := batcalc.<(3:int,b:bat[:int]);	#[5] CMDbatLT 9 <- 12 1 
-    d:bat[:str] := bat.new(:oid,:str);  	#[6] CMDBATnew 13 <- 2 14 
-    a:bat[:bit] := batcalc.isnil(d:bat[:str]);	#[7] CMDbatISNIL 15 <- 13 
-end user.tst;                           	#[8]  
+    z:bat[:int] := batcalc.+(b:bat[:int],1:int);	#[3] (0) CMDbatADDsignal 5 <- 1 8 
+    f:bat[:bit] := batcalc.<(b:bat[:int],3:int);	#[4] (0) CMDbatLT 9 <- 1 11 
+    f:bat[:bit] := batcalc.<(3:int,b:bat[:int]);	#[5] (0) CMDbatLT 9 <- 12 1 
+    d:bat[:str] := bat.new(:oid,:str);  	#[6] (0) CMDBATnew 13 <- 2 14 
+    a:bat[:bit] := batcalc.isnil(d:bat[:str]);	#[7] (0) CMDbatISNIL 15 <- 13 
+end user.tst;                           	#[8] (0)  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

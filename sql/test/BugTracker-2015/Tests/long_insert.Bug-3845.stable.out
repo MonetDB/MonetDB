@@ -64,12 +64,8 @@ Ready.
 # 15:24:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9185" "--port=38083"
 # 15:24:32 >  
 
-#select debug(0); -- disable debug;
-% .L # table_name
-% debug_single_value # name
-% int # type
-% 9 # length
-[ 536870922	]
+#declare olddebug int;
+#set olddebug = debug(0); -- disable debug;
 #START TRANSACTION;
 #CREATE TABLE "attribute" (
 #  "AttributeId" int NOT NULL,

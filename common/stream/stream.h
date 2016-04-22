@@ -252,4 +252,6 @@ stream_export stream *callback_stream(
 	void (*destroy) (void *private),
 	const char *name);
 
+stream_export stream* stream_blackhole_create(void);
+
 #endif /*_STREAM_H_*/

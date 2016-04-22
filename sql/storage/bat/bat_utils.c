@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "bat_utils.h"
+#include "mal.h"		/* for have_hge */
 
 void
 bat_destroy(BAT *b)
@@ -175,70 +176,50 @@ bat_utils_init(void)
 	int t;
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]) {
+		if (t != TYPE_bat && BATatoms[t].name[0]
+#ifdef HAVE_HGE
+		    && (have_hge || t != TYPE_hge)
+#endif
+		) {
 			ebats[t] = bat_new(TYPE_void, t, 0, TRANSIENT);
 			bat_set_access(ebats[t], BAT_READ);
 		}
 	}
 }
 
-sql_schema *
-tr_find_schema( sql_trans *tr, sql_schema *s)
-{
-	sql_schema *ns = NULL;
-
-	while (!ns && tr) {
-	 	ns = find_sql_schema_id(tr, s->base.id);
-		tr = tr->parent;
-	}
-	return ns;
-}
-
 sql_table *
 tr_find_table( sql_trans *tr, sql_table *t)
 {
-	sql_table *nt = NULL;
-
-	while ((!nt || !nt->data) && tr) {
-		sql_schema *s = tr_find_schema( tr, t->s);
-
-		if (list_length(s->tables.set) < HASH_MIN_SIZE)
-			nt = find_sql_table_id(s, t->base.id);
-		else
-			nt = find_sql_table(s, t->base.name);
-		assert(nt->base.id == t->base.id);
+	while (t && t->po && !t->base.allocated && tr)  {
+		t = t->po;
 		tr = tr->parent;
 	}
-	return nt;
+	if (t->data)
+		return t;
+	return NULL;
 }
 
 sql_column *
 tr_find_column( sql_trans *tr, sql_column *c)
 {
-	sql_column *nc = NULL;
-
-	while ((!nc || !nc->data) && tr) {
-		sql_table *t =  tr_find_table(tr, c->t);
-		node *n = cs_find_id(&t->columns, c->base.id);
-		if (n)
-			nc = n->data;
+	while (c && c->po && !c->base.allocated && tr)  {
+		c = c->po;
 		tr = tr->parent;
 	}
-	return nc;
+	if (c->data)
+		return c;
+	return NULL;
 }
 
 sql_idx *
 tr_find_idx( sql_trans *tr, sql_idx *i)
 {
-	sql_idx *ni = NULL;
-
-	while ((!ni || !ni->data) && tr) {
-		sql_table *t =  tr_find_table(tr, i->t);
-		node *n = cs_find_id(&t->idxs, i->base.id);
-		if (n)
-			ni = n->data;
+	while (i && i->po && !i->base.allocated && tr)  {
+		i = i->po;
 		tr = tr->parent;
 	}
-	return ni;
+	if (i->data)
+		return i;
+	return NULL;
 }
 

@@ -74,18 +74,35 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return stopProfiler();
 }
 
+// called by the SQL front end.
 str
 CMDstartTrace(void *res)
 {
 	(void) res;
-	return startTrace();
+	return startTrace(0);
+}
+
+// if you haven't started the stethoscope
+// then the output is saved in a file 
+str
+CMDstartTracePath(void *res, str *path)
+{
+	(void) res;
+	return startTrace(*path);
 }
 
 str
 CMDstopTrace(void *res)
 {
 	(void) res;
-	return stopTrace();
+	return stopTrace(0);
+}
+
+str
+CMDstopTracePath(void *res, str *path)
+{
+	(void) res;
+	return stopTrace(*path);
 }
 
 str

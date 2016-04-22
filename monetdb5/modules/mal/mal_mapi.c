@@ -33,8 +33,9 @@
 #include <sys/types.h>
 #include <stream_socket.h>
 #include <mapi.h>
-#include <openssl/rand.h>		/* RAND_bytes() */
-
+#ifdef HAVE_OPENSSL
+# include <openssl/rand.h>		/* RAND_bytes() */
+#endif
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
 #else           /* UNIX specific */
@@ -62,6 +63,10 @@
 #define SOCKLEN int
 #endif
 
+#ifdef HAVE_EMBEDDED
+#define printf(fmt,...) ((void) 0)
+#endif
+
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -76,19 +81,25 @@ static void generateChallenge(str buf, int min, int max) {
 
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#endif
 		size = rand();
 	size = (size % (max - min)) + min;
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
 	} else {
+#endif
 		for (i = 0; i < size; i++) {
 			bte = rand();
 			bte %= 62;
 			buf[i] = seedChars[bte];
 		}
+#ifdef HAVE_OPENSSL
 	}
+#endif
 	buf[i] = '\0';
 }
 
@@ -376,6 +387,7 @@ error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }
 
+#ifndef HAVE_EMBEDDED
 /**
  * Small utility function to call the sabaoth marchConnection function
  * with the right arguments.  If the socket is bound to 0.0.0.0 the
@@ -445,6 +457,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	accept_any = GDKgetenv_istrue("mapi_open");
 	autosense = GDKgetenv_istrue("mapi_autosense");
+
+	/* early way out, we do not want to listen on any port when running in embedded mode */
+	if (GDKgetenv_istrue("mapi_disable")) {
+		return MAL_SUCCEED;
+	}
 
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 	if (psock == NULL)
@@ -658,6 +675,18 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		GDKfree(usockfile);
 	return MAL_SUCCEED;
 }
+#else
+str
+SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
+{
+	(void) Port;
+	(void) Usockfile;
+	(void) Maxusers;
+	throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": No MAPI server in embedded mode");
+}
+#endif // HAVE_EMBEDDED
+
+
 
 /*
  * @- Wrappers

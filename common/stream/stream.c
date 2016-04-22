@@ -829,7 +829,7 @@ file_fgetpos(stream *s, lng *p)
 
 	if (fp == NULL || p == NULL)
 		return -1;
-#if defined(NATIVE_WIN32) && _MSC_VER >= 1400	/* Visual Studio 2005 */
+#ifdef WIN32
 	*p = (lng) _ftelli64(fp);	/* returns __int64 */
 #else
 #ifdef HAVE_FSEEKO
@@ -849,7 +849,7 @@ file_fsetpos(stream *s, lng p)
 
 	if (fp == NULL)
 		return -1;
-#if defined(NATIVE_WIN32) && _MSC_VER >= 1400	/* Visual Studio 2005 */
+#ifdef WIN32
 	res = _fseeki64(fp, (__int64) p, SEEK_SET);
 #else
 #ifdef HAVE_FSEEKO
@@ -4631,4 +4631,35 @@ getFile(stream *s)
 	if (s->read != file_read)
 		return NULL;
 	return (FILE *) s->stream_data.p;
+}
+
+static ssize_t
+stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	s = (stream*)s;
+	buf = (const void*) buf;
+	elmsize = (size_t) elmsize;
+	return (ssize_t) cnt;
+}
+
+static void
+stream_blackhole_close(stream *s)
+{
+	s = (stream*)s;
+	// no resources to close
+}
+
+stream * stream_blackhole_create (void)
+{
+	stream *s;
+	if ((s = create_stream("blackhole")) == NULL) {
+		return NULL;
+	}
+
+	s->read = NULL;
+	s->write = stream_blackhole_write;
+	s->close = stream_blackhole_close;
+	s->flush = NULL;
+	s->access = ST_WRITE;
+	return s;
 }

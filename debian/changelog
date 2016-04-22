@@ -1,3 +1,83 @@
+monetdb (11.21.19) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3905: MonetDB doesn't handle ANY/SOME/ALL operator correctly
+  * BZ#3929: R aggregate not recognized when using 3 or more parameters
+  * BZ#3965: Not possible to quote/escape single quote character in the
+    name of the file to load.
+  * BZ#3968: Missing double use of column names
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 05 Apr 2016 11:29:47 +0200
+
+monetdb (11.21.19) unstable; urgency=low
+
+  * gdk: Fixed a bug that caused various instances where old data returned or
+    where crashes occurred.  The problem was that internally data wasn't
+    always marked dirty when it was being changed, causing later processing
+    to not deal with the changed data correctly.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 4 Apr 2016 11:29:47 +0200
+
+monetdb (11.21.17) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#2972: SQL URL functionality contains errors
+  * BZ#3881: Server crashes on bulk load
+  * BZ#3890: Window function + group by in subselect, rel2bin_project:
+    Assertion `0' failed
+  * BZ#3891: MonetDB crashes when executing SQL with window function
+  * BZ#3900: null handling in some sql statements is incorrect
+  * BZ#3906: Multi-column 1-N table-function with mitosis produces different
+    column counts
+  * BZ#3917: Date difference returns month_interval instead of day_interval
+  * BZ#3938: Wrong error message on violating foreign key constraint
+  * BZ#3941: Wrong coercion priority
+  * BZ#3948: SQL: select * from sys.sys.table_name; is accepted but should
+    return an error
+  * BZ#3951: extern table_funcs not visible from Windows DLL for extensions
+    like vaults (crashes)
+  * BZ#3952: Stream table gives segfault
+  * BZ#3953: MIN/MAX of a UUID column produces wrong results
+  * BZ#3954: Consolidate table assertion error
+  * BZ#3955: (incorrect) MAL loop instead of manifold triggered by simple
+    change in target list
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Mar 2016 09:25:15 +0100
+
+monetdb (11.21.15) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3549: bulk string operations very slow
+  * BZ#3908: LEFT JOIN with OR conditions triggers assertion
+  * BZ#3909: Incorrect column name in OR condition of LEFT JOIN crashes
+    mserver
+  * BZ#3910: COPY INTO table (column1, column2) got wrong result
+  * BZ#3912: When table/column names conflicts, data ends in multiple
+    tables!
+  * BZ#3918: MonetDB.R version 1.0.1 incorrectly constructs the batfile
+    script
+  * BZ#3919: Table conflict when the table name and fields are identical
+  * BZ#3921: Creating a table from a complex query crashes mserver or
+    triggers assertion
+  * BZ#3922: AVG( column ) returns NaN rather than Inf when column
+    contains Inf
+  * BZ#3928: When killing a virtual machine, sql_logs/sql/log is empty
+  * BZ#3930: Wrong typecast on character columns in prepared statements
+    when using Umlaute
+  * BZ#3932: CASE expressions with constants are not evaluated correctly
+  * BZ#3933: replace "exit" by "throw new Exception"
+  * BZ#3937: bad BAT properties with binary copy into and NULL values
+  * BZ#3940: Date calculation and comparison produce wrong result
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 10 Mar 2016 09:31:09 +0100
+
+monetdb (11.21.15) unstable; urgency=low
+
+  * monetdb5: Fixed potential crash in MAL debugger when accessing BATs by
+    index. Functionality dropped as it is also a security leak.
+
+ -- Martin Kersten <mk@cwi.nl>  Tue, 5 Jan 2016 09:31:09 +0100
+
 monetdb (11.21.13) unstable; urgency=low
 
   * Rebuilt.

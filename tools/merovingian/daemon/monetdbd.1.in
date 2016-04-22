@@ -108,7 +108,7 @@ calling environment, until given a stop signal.
 Sends a stop signal to the
 .I monetdbd
 process responsible for the given dbfarm.
-.IP
+.TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> \fIdbfarm\fP
 Prints the requested properties, or all known properties, for the given
 dbfarm.  For each property, its value is printed.  Some properties
@@ -168,6 +168,11 @@ setting should not be changed.
 This property specifies which TCP port
 .I monetdbd
 should listen to for connection requests.  Defaults to 50000.
+.TP
+.B listenaddr
+This property specifies an address that is allowed to connect to the server.
+The user can specify one IP(v6) address, or use the 0.0.0.0 notation to allow
+connections from everywhere. Defaults to localhost (127.0.0.1).
 .TP
 .B control
 For remote management of

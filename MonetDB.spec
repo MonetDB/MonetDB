@@ -1,6 +1,6 @@
 %define name MonetDB
-%define version 11.22.0
-%{!?buildno: %define buildno %(date +%Y%m%d)}
+%define version 11.24.0
+%{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -50,10 +50,23 @@
 %define with_geos 1
 %endif
 
+# On Fedora, the liblas library is available, and so we can require it
+# and build the lidar modules.  On RedHat Enterprise Linux and
+# derivatives (CentOS, Scientific Linux), the liblas library is not
+# available, even with EPEL available.
 %if %{?rhel:0}%{!?rhel:1}
-# If the _without_samtools macro is set, the MonetDB-bam-MonetDB5 RPM
-# will be created.  The macro can be set when using mock by passing it
-# the flag --without=samtools.
+# If the _without_lidar macro is not set, the MonetDB-lidar RPM will
+# be created.  The macro can be set when using mock by passing it the
+# flag --without=lidar.
+%if %{?_without_lidar:0}%{!?_without_lidar:1}
+%define with_lidar 1
+%endif
+%endif
+
+%if %{?rhel:0}%{!?rhel:1}
+# If the _without_samtools macro is not set, the MonetDB-bam-MonetDB5
+# RPM will be created.  The macro can be set when using mock by
+# passing it the flag --without=samtools.
 # Note that the samtools-devel RPM is not available on RedHat
 # Enterprise Linux and derivatives, even with EPEL availabe.
 # (Actually, at the moment of writing, samtools-devel is available in
@@ -89,10 +102,12 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
+License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP4/%{name}-%{version}.tar.bz2
 
+# we need systemd for the _unitdir macro to exist
+BuildRequires: systemd
 BuildRequires: bison
 BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
@@ -102,6 +117,11 @@ BuildRequires: cfitsio-devel
 BuildRequires: geos-devel >= 3.0.0
 %endif
 BuildRequires: gsl-devel
+%if %{?with_lidar:1}%{!?with_lidar:0}
+BuildRequires: liblas-devel gdal-devel libgeotiff-devel
+# Fedora 22 liblas-devel does not depend on liblas:
+BuildRequires: liblas
+%endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
 # BuildRequires: libmicrohttpd-devel
@@ -116,15 +136,6 @@ BuildRequires: python-devel
 BuildRequires: python3-devel
 %endif
 BuildRequires: readline-devel
-# On RedHat Enterprise Linux and derivatives (CentOS, Scientific
-# Linux), the rubygem-activerecord package is not available (also not
-# in the Extra Packages for Enterprise Linux EPEL), so it makes no
-# sense providing our ruby packages.
-%if %{?rhel:0}%{!?rhel:1}
-BuildRequires: ruby
-BuildRequires: rubygems
-BuildRequires: rubygems-devel
-%endif
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
@@ -384,33 +395,6 @@ program.
 %defattr(-,root,root)
 %{perl_vendorlib}/*
 
-%if %{?rhel:0}%{!?rhel:1}
-%package -n rubygem-monetdb-sql
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Obsoletes: %{name}-client-ruby
-BuildArch: noarch
-
-%description -n rubygem-monetdb-sql
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Ruby
-program.
-
-%files -n rubygem-monetdb-sql
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
-%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
-%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
-%endif
-
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
@@ -471,6 +455,28 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/createdb/*_geom.sql
 %{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib_geom.so
+%endif
+
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%package lidar
+Summary: MonetDB5 SQL support for working with LiDAR data
+Group: Applications/Databases
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+
+%description lidar
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains support for reading and writing LiDAR data.
+
+%files lidar
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_lidar.mal
+%{_libdir}/monetdb5/createdb/*_lidar.sql
+%{_libdir}/monetdb5/lidar.mal
+%{_libdir}/monetdb5/lib_lidar.so
 %endif
 
 %package gsl-MonetDB5
@@ -628,6 +634,9 @@ fi
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/lidar.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
@@ -641,6 +650,9 @@ fi
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
@@ -650,6 +662,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/lib_lidar.so
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/lib_rapi.so
 %endif
@@ -763,6 +778,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
+%endif
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
@@ -913,6 +931,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
+	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
@@ -928,14 +947,13 @@ developer, but if you do want to test, this is the package you need.
 	--with-bz2=yes \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-java=no \
+	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-perl=yes \
 	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
 	--with-readline=yes \
-	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
-	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
@@ -968,6 +986,71 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Apr 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
+- Rebuilt.
+- BZ#3905: MonetDB doesn't handle ANY/SOME/ALL operator correctly
+- BZ#3929: R aggregate not recognized when using 3 or more parameters
+- BZ#3965: Not possible to quote/escape single quote character in the
+  name of the file to load.
+- BZ#3968: Missing double use of column names
+
+* Mon Apr  4 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
+- gdk: Fixed a bug that caused various instances where old data returned or
+  where crashes occurred.  The problem was that internally data wasn't
+  always marked dirty when it was being changed, causing later processing
+  to not deal with the changed data correctly.
+
+* Thu Mar 24 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.17-20160324
+- Rebuilt.
+- BZ#2972: SQL URL functionality contains errors
+- BZ#3881: Server crashes on bulk load
+- BZ#3890: Window function + group by in subselect, rel2bin_project:
+  Assertion `0' failed
+- BZ#3891: MonetDB crashes when executing SQL with window function
+- BZ#3900: null handling in some sql statements is incorrect
+- BZ#3906: Multi-column 1-N table-function with mitosis produces different
+  column counts
+- BZ#3917: Date difference returns month_interval instead of day_interval
+- BZ#3938: Wrong error message on violating foreign key constraint
+- BZ#3941: Wrong coercion priority
+- BZ#3948: SQL: select * from sys.sys.table_name; is accepted but should
+  return an error
+- BZ#3951: extern table_funcs not visible from Windows DLL for extensions
+  like vaults (crashes)
+- BZ#3952: Stream table gives segfault
+- BZ#3953: MIN/MAX of a UUID column produces wrong results
+- BZ#3954: Consolidate table assertion error
+- BZ#3955: (incorrect) MAL loop instead of manifold triggered by simple
+  change in target list
+
+* Thu Mar 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.15-20160310
+- Rebuilt.
+- BZ#3549: bulk string operations very slow
+- BZ#3908: LEFT JOIN with OR conditions triggers assertion
+- BZ#3909: Incorrect column name in OR condition of LEFT JOIN crashes
+  mserver
+- BZ#3910: COPY INTO table (column1, column2) got wrong result
+- BZ#3912: When table/column names conflicts, data ends in multiple
+  tables!
+- BZ#3918: MonetDB.R version 1.0.1 incorrectly constructs the batfile
+  script
+- BZ#3919: Table conflict when the table name and fields are identical
+- BZ#3921: Creating a table from a complex query crashes mserver or
+  triggers assertion
+- BZ#3922: AVG( column ) returns NaN rather than Inf when column
+  contains Inf
+- BZ#3928: When killing a virtual machine, sql_logs/sql/log is empty
+- BZ#3930: Wrong typecast on character columns in prepared statements
+  when using Umlaute
+- BZ#3932: CASE expressions with constants are not evaluated correctly
+- BZ#3933: replace "exit" by "throw new Exception"
+- BZ#3937: bad BAT properties with binary copy into and NULL values
+- BZ#3940: Date calculation and comparison produce wrong result
+
+* Tue Jan  5 2016 Martin Kersten <mk@cwi.nl> - 11.21.15-20160310
+- monetdb5: Fixed potential crash in MAL debugger when accessing BATs by
+  index. Functionality dropped as it is also a security leak.
+
 * Tue Jan 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.13-20160105
 - Rebuilt.
 - BZ#2014: 'null' from copy into gets wrong

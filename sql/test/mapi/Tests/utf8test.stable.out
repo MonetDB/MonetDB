@@ -68,13 +68,13 @@ select * from utf8test
 % varchar # type
 % 32 # length
 [ "value without special characters"	]
-[ "funny characters: àáâãäå"	]
+[ "funny characters: Ã Ã¡Ã¢Ã£Ã¤Ã¥"	]
 select * from utf8test
 +----------------------------------+
 | s                                |
 +==================================+
 | value without special characters |
-| funny characters: àáâãäå         |
+| funny characters: Ã Ã¡Ã¢Ã£Ã¤Ã¥         |
 +----------------------------------+
 2 tuples
 % sys.utf8test # table_name

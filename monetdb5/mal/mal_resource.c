@@ -12,9 +12,6 @@
 #include "mal_resource.h"
 #include "mal_private.h"
 
-#define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
-#define hashinfo(X) if ((X) && (X) != (Hash *) 1 && (X)->mask) vol = (((X)->mask + cnt ) * (X)-> width); else vol = 0;
-
 /* MEMORY admission does not seem to have a major impact */
 lng memorypool = 0;      /* memory claimed by concurrent threads */
 int memoryclaims = 0;    /* number of threads active with expensive operations */
@@ -66,9 +63,8 @@ mal_resource_reset(void)
 lng
 getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 {
-	lng total = 0, vol = 0;
+	lng total = 0;
 	BAT *b;
-	BUN cnt;
 
 	(void)mb;
 	if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
@@ -79,15 +75,13 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
-		cnt = BATcount(b);
 
-		heapinfo(&b->T->heap); total += vol;
+		total += BATcount(b) * b->T->width;
 		// string heaps can be shared, consider them as space-less views
-		if ( b->T->vheap && b->T->vheap->parentid ){
-			heapinfo(b->T->vheap); total += vol;
-		}
-		hashinfo(b->T->hash); total += vol;
-		total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
+		total += heapinfo(b->T->vheap, abs(b->batCacheid)); 
+		total += hashinfo(b->T->hash, abs(d->batCacheid)); 
+		total += IMPSimprintsize(b);
+		//total = total > (lng)(MEMORY_THRESHOLD ) ? (lng)(MEMORY_THRESHOLD ) : total;
 		BBPunfix(b->batCacheid);
 	}
 	return total;
@@ -164,78 +158,77 @@ MALadmission(lng argclaim, lng hotclaim)
 }
 #endif
 
-/* Delay threads if too much competition arises and memory
- * becomes a scarce resource.
- * If in the mean time memory becomes free, or too many sleeping 
- * re-enable worker.
- * It may happen that all threads enter the wait state. So, keep
- * one running at all time 
+/* Delay threads if too much competition arises and memory becomes a scarce resource.
+ * If in the mean time memory becomes free, or too many sleeping re-enable worker.
+ * It may happen that all threads enter the wait state. So, keep one running at all time 
  * By keeping the query start time in the client record we can delay
  * them when resource stress occurs.
  */
-#include "gdk_atomic.h"
-static volatile ATOMIC_TYPE running;
+volatile ATOMIC_TYPE mal_running;
 #ifdef ATOMIC_LOCK
-static MT_Lock runningLock MT_LOCK_INITIALIZER("runningLock");
+MT_Lock mal_runningLock MT_LOCK_INITIALIZER("mal_runningLock");
 #endif
 
 void
 MALresourceFairness(lng usec)
 {
+#ifdef FAIRNESS_THRESHOLD
 	size_t rss;
-	unsigned int delay;
 	lng clk;
-	int threads;
 	int delayed= 0;
+	int users = 2;
 
+
+	if ( usec <= TIMESLICE)
+		return;
 	/* use GDKmem_cursize as MT_getrss() is too expensive */
 	rss = GDKmem_cursize();
 	/* ample of memory available*/
-	if ( rss < MEMORY_THRESHOLD && usec <= TIMESLICE)
+	if ( rss <= MEMORY_THRESHOLD )
 		return;
 
 	/* worker reporting time spent  in usec! */
 	clk =  usec / 1000;
 
-	if ( clk > DELAYUNIT ) {
-		PARDEBUG mnstr_printf(GDKstdout, "#delay initial "LLFMT"n", clk);
-		(void) ATOMIC_DEC(running, runningLock);
-		/* always keep one running to avoid all waiting  */
-		while (clk > 0 && running >= 2 && delayed < MAX_DELAYS) {
-			/* speed up wake up when we have memory */
-			if (rss < MEMORY_THRESHOLD )
-				break;
-			threads = GDKnr_threads > 0 ? GDKnr_threads : 1;
-			delay = (unsigned int) ( ((double)DELAYUNIT * running) / threads) + 1;
-			if (delay) {
-				if ( delayed++ == 0){
-						PARDEBUG mnstr_printf(GDKstdout, "#delay initial %u["LLFMT"] memory  "SZFMT"[%f]\n", delay, clk, rss, MEMORY_THRESHOLD );
-						PARDEBUG mnstr_flush(GDKstdout);
-				}
-				MT_sleep_ms(delay);
-				rss = GDKmem_cursize();
-			} else break;
-			clk -= DELAYUNIT;
+	/* cap the maximum penalty */
+	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
+
+	/* always keep one running to avoid all waiting  */
+	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {
+		if ( delayed++ == 0){
+				PARDEBUG mnstr_printf(GDKstdout, "#delay initial ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
+				PARDEBUG mnstr_flush(GDKstdout);
 		}
-		(void) ATOMIC_INC(running, runningLock);
+		if ( delayed == MAX_DELAYS){
+				PARDEBUG mnstr_printf(GDKstdout, "#delay abort ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
+				PARDEBUG mnstr_flush(GDKstdout);
+				break;
+		}
+		MT_sleep_ms(DELAYUNIT);
+		users= MCactiveClients(); // users excluding console
+		rss = GDKmem_cursize();
+		clk -= DELAYUNIT;
 	}
+#else
+(void) usec;
+#endif
 }
 
 // Get a hint on the parallel behavior
 size_t
 MALrunningThreads(void)
 {
-	return running;
+	return ATOMIC_GET(mal_running, mal_runningLock);
 }
 
 void
 initResource(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(runningLock);
+	ATOMIC_INIT(mal_runningLock);
 #ifdef USE_MAL_ADMISSION
 	MT_lock_init(&admissionLock, "admissionLock");
 #endif
 #endif
-	running = (ATOMIC_TYPE) GDKnr_threads;
+	mal_running = (ATOMIC_TYPE) GDKnr_threads;
 }

@@ -142,8 +142,9 @@ class Connection(object):
                 logger.info("redirect to monetdb://%s:%s/%s" %
                             (self.hostname, self.port, self.database))
                 self.socket.close()
-                self.connect(self.hostname, self.port, self.username,
-                             self.password, self.database, self.language)
+                self.connect(hostname=self.hostname, port=self.port,
+                             username=self.username, password=self.password,
+                             database=self.database, language=self.language)
 
             else:
                 raise ProgrammingError("unknown redirect: %s" % prompt)
@@ -256,7 +257,7 @@ class Connection(object):
         while count > 0:
             recv = self.socket.recv(count)
             if len(recv) == 0:
-                raise OperationalError("Server closed connection")
+                raise socket.error("Server closed connection")
             count -= len(recv)
             result.write(recv)
         return result.getvalue()

@@ -29,10 +29,10 @@ Ready.
 # 09:00:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21311" "--port=30157"
 # 09:00:01 >  
 
-function user.foo():void;               	#[0]  0 
-    raise PermissionDeniedException:int := 1234:int;	#[1]  1 <- 2 
-    io.print("should not come here\n":str);	#[2] IOprint_val 3 <- 4 
-end user.foo;                           	#[3]  
+function user.foo():void;               	#[0] (0)  0 
+    raise PermissionDeniedException:int := 1234:int;	#[1] (0)  1 <- 2 
+    io.print("should not come here\n":str);	#[2] (0) IOprint_val 3 <- 4 
+end user.foo;                           	#[3] (0)  
 
 # 09:00:01 >  
 # 09:00:01 >  "Done."

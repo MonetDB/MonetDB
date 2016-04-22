@@ -66,21 +66,8 @@ stderr of test 'schemadiff.Bug-3778` in directory 'sql/test/BugTracker-2015` its
 # cmdline opt 	mapi_port = 48845
 # cmdline opt 	gdk_dbpath = /tmp/tmpou_du0/worker_0/worker_0
 # cmdline opt 	gdk_debug = 536870922
-Traceback (most recent call last):
-  File "schemadiff.Bug-3778.SQL.py", line 85, in <module>
-    c.execute("select * from " + shardtable + workers[0]['tpf'] )
-  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/sql/cursors.py", line 158, in execute
-    block = self.connection.execute(query)
-  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/sql/connections.py", line 127, in execute
-    return self.command('s' + query + '\n;')
-  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/sql/connections.py", line 132, in command
-    return self.mapi.cmd(command)
-  File "/home/niels/scratch/monetdb/Linux-x86_64/lib/python2.7/site-packages/monetdb/mapi.py", line 178, in cmd
-    raise OperationalError(response[1:])
-monetdb.exceptions.OperationalError: (mapi:monetdb://monetdb@localhost/worker_0) 'user.l1' undefined in:     rmt5_X_1_bat_oid_int:bat[:oid,:int] := user.l1();
 
-!failed to open file: No such file or directory (/tmp/tmpou_du0/worker_0/worker_0/.uplog)!failed to open file: No such file or directory (/tmp/tmpou_du0/master/master/.uplog)
-# 12:53:25 >  
-# 12:53:25 >  "Done."
-# 12:53:25 >  
+# 11:56:09 >  
+# 11:56:09 >  "Done."
+# 11:56:09 >  
 

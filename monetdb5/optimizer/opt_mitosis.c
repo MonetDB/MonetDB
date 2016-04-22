@@ -196,6 +196,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			pushInstruction(mb, p);
 			continue;
 		}
+		r = getRowCnt(mb, getArg(p, 0));
+		if (r < rowcnt) {
+			pushInstruction(mb, p);
+			continue;
+		}
 		/* Don't split the (index) bat if we already have identified a range */
 		/* This will happen if we inline separately optimized routines */
 		if (p->argc > 7) {

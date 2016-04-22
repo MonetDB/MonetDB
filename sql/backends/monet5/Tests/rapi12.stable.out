@@ -20,7 +20,6 @@ stdout of test 'rapi12` in directory 'sql/backends/monet5` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup rapi.eval a bulk operator implementation is needed
 
 # 17:30:56 >  
 # 17:30:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16724" "--port=30368"

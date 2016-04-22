@@ -1,0 +1,55 @@
+stdout of test 'ST_IsEmpty` in directory 'geom/sql/functions` itself:
+
+
+# 13:55:10 >  
+# 13:55:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31132" "--set" "mapi_usock=/var/tmp/mtest-32588/.s.monetdb.31132" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 13:55:10 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:31132/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32588/.s.monetdb.31132
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:55:10 >  
+# 13:55:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32588" "--port=31132"
+# 13:55:10 >  
+
+#SELECT ST_IsEmpty(ST_GeomFromText('GEOMETRYCOLLECTION EMPTY'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT ST_IsEmpty(ST_GeomFromText('POLYGON((1 2, 3 4, 5 6, 1 2))'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT ST_IsEmpty(ST_GeomFromText('LINESTRING EMPTY'));
+% .L # table_name
+% st_geomfromtext_single_value # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT geom AS "GEOMETRY" FROM geometries WHERE ST_IsEmpty(geom);
+% sys.L # table_name
+% GEOMETRY # name
+% geometry # type
+% 0 # length
+[ "MULTIPOLYGON EMPTY"	]
+
+# 13:55:11 >  
+# 13:55:11 >  "Done."
+# 13:55:11 >  
+

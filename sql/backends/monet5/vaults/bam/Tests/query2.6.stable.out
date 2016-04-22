@@ -18,8 +18,6 @@ stdout of test 'query2.6` in directory 'sql/backends/monet5/vaults/bam` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-#WARNING To speedup calc.min a bulk operator implementation is needed
-#WARNING To speedup calc.min a bulk operator implementation is needed
 
 # 10:22:43 >  
 # 10:22:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"

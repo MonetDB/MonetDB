@@ -9,8 +9,6 @@
 #include "monetdb_config.h"
 #include "opt_inline.h"
 
-extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);
-
 static int
 isCorrectInline(MalBlkPtr mb){
 	/* make sure we have a simple inline function with a singe return */
@@ -24,6 +22,27 @@ isCorrectInline(MalBlkPtr mb){
 			retseen++;
 	}
 	return retseen <= 1;
+}
+
+
+static int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
+	Symbol s;
+	str mod,fcn;
+
+	mod = VALget(&getVar(mb, getArg(p, 1))->value);
+	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
+	if( (s= findSymbol(cntxt->nspace, mod,fcn)) ==0 )
+		return FALSE;
+	/*
+	 * Before we decide to propagate the inline request
+	 * to the multiplex operation, we check some basic properties
+	 * of the target function. Moreover, we apply the inline optimizer
+	 * to the target function as well.
+	 * This code should be protected against overflow due to recursive calls.
+	 * In general, this is a hard problem. For now, we just expand.
+	 */
+	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
+	return s->def->inlineProp;
 }
 
 
@@ -45,13 +64,13 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * Time for inlining functions that are used in multiplex operations.
 			 * They are produced by SQL compiler.
 			 */
-			if(isMultiplex(q) && OPTinlineMultiplex(cntxt,mb,q)){
-
-				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
-					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+			if (isMultiplex(q)) {
+				if (OPTinlineMultiplex(cntxt,mb,q)) {
+					OPTDEBUGinline {
+						mnstr_printf(cntxt->fdout,"#multiplex inline function\n");
+						printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+					}
 				}
-				mb->inlineProp = 1;
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
@@ -66,44 +85,8 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 					printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 				}
-			} else 
-			/*
-			 * Check if the local call is tagged as being inlined.
-			 */
-			if (q->blk->inlineProp ){
-				inlineMALblock(mb,i,q->blk);
-				i--;
-				actions++;
-				OPTDEBUGinline {
-					mnstr_printf(cntxt->fdout,"#inlined called at %d\n",i);
-					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-					printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
-				}
-			} 
+			}
 		}
 	}
 	return actions;
-}
-
-
-int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
-	Symbol s;
-	str mod,fcn;
-	int res;
-
-	mod = VALget(&getVar(mb, getArg(p, 1))->value);
-	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
-	if( (s= findSymbol(cntxt->nspace, mod,fcn)) ==0 )
-		return FALSE;
-	/*
-	 * Before we decide to propagate the inline request
-	 * to the multiplex operation, we check some basic properties
-	 * of the target function. Moreover, we apply the inline optimizer
-	 * to the target function as well.
-	 * This code should be protected against overflow due to recursive calls.
-	 * In general, this is a hard problem. For now, we just expand.
-	 */
-	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
-	res = s->def->inlineProp;
-	return res;
 }

@@ -29,260 +29,36 @@ Ready.
 # 15:36:11 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"
 # 15:36:11 >  
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information
-## Mil compiler Version 1.0)
-## Copyright (c) 1993-2001, CWI. All rights reserved.
-#
-## Predefined code segment
-##
-###line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
-##module(monettime,alarm);
-##
-##
-##
-#lzone:= mtime.timezone("GMT+1");
-#mtime.timezone_local(lzone);
-###line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
-### test the various ways to create rules
-#	rule_jan:= mtime.rule("1st MON from start of JAN@01:15");
-##var rule_jan := mtime.rule("1st MON from start of JAN@01:15");
-#	rule_mar:= mtime.rule("first WEDNE on or after march 10@01:15");
-##var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");
-#	rule_apr:= mtime.rule("last THU on or before aPr 1@01:15");
-##var rule_apr := mtime.rule("last THU on or before aPr 1@01:15");
-#	rule_may:= mtime.rule("MAY 26@01:15");
-##var rule_may := mtime.rule("MAY 26@01:15");
-#	rule_jun:= mtime.rule("2nd TUE from end of june@01:15");
-##var rule_jun := mtime.rule("2nd TUE from end of june@01:15");
-#	rule_jul:= mtime.rule(7,1,1,75);
-##var rule_jul := mtime.rule(7,1,1,75);
-#	rule_aug:= mtime.rule(8,-1,1,75);
-##var rule_aug := mtime.rule(8,-1,1,75);
-#	rule_sep:= mtime.rule(9,-10,3,75);
-##var rule_sep := mtime.rule(9,-10,3,75);
-#	rule_oct:= mtime.rule(10,31,0,75);
-##var rule_oct := mtime.rule(10,31,0,75);
-#	rule_nov:= mtime.rule(11,-10,-4,75);
-##var rule_nov := mtime.rule(11,-10,-4,75);
-### nil rules
-#	rule_dec:= mtime.rule(12,-31,0,75);
-##var rule_dec := mtime.rule(12,-31,0,75);
-#	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
-##var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
-## 
-#	rule_bat:= bat.new(:str,:zrule,10);
-##var rule_bat := bat.new(str,rule,10);
-#	bat.insert(rule_bat,"jan",rule_jan);
-#	bat.insert(rule_bat,"feb",rule_feb);
-#	bat.insert(rule_bat,"mar",rule_mar);
-#	bat.insert(rule_bat,"apr",rule_apr);
-##rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
-#	bat.insert(rule_bat,"may",rule_may);
-#	bat.insert(rule_bat,"jun",rule_jun);
-#	bat.insert(rule_bat,"jul",rule_jul);
-#	bat.insert(rule_bat,"aug",rule_aug);
-##rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
-#	bat.insert(rule_bat,"sep",rule_sep);
-#	bat.insert(rule_bat,"oct",rule_oct);
-#	bat.insert(rule_bat,"nov",rule_nov);
-#	bat.insert(rule_bat,"dec",rule_dec);
-##rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
-##
-##
-###line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
-### test the various ways to create timezones, using some of the above created rules
-#	tzone_00:= mtime.timezone("GMT");
-##var tzone_00 := mtime.timezone("GMT");
-#	tzone_01:= mtime.timezone("GMT+01:00");
-##var tzone_01 := mtime.timezone("GMT+01:00");
-#	tzone_02:= mtime.timezone("GMT+0100");
-##var tzone_02 := mtime.timezone("GMT+0100");
-#	tzone_03:= mtime.timezone(60,rule_oct,rule_mar);
-##var tzone_03 := mtime.timezone(60, rule_oct, rule_mar);
-#	tzone_04:= mtime.timezone(0,rule_jan,rule_aug);
-##var tzone_04 := mtime.timezone(0, rule_jan, rule_aug);
-#	tzone_05:= mtime.timezone(-97,rule_oct,rule_apr);
-##var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr);
-#	tzone_06:= mtime.timezone(-97,rule_may,rule_sep);
-##var tzone_06 := mtime.timezone(-97, rule_may, rule_sep);
-#	mc_a := calc.*(23,60);
-#	tzone_07:= mtime.timezone(mc_a,rule_apr,rule_nov);
-##var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov);
-#	nc_a := calc.*(-23,59);
-#	oc_a := calc.-(nc_a,59);
-#	tzone_08:= mtime.timezone(oc_a);
-##var tzone_08 := mtime.timezone((-23*59) - 59);
-#	tzone_09:= mtime.timezone(0);
-##var tzone_09 := mtime.timezone(0);
-#	tzone_10:= mtime.timezone(-60);
-##var tzone_10 := mtime.timezone(-60);
-#	pc_a := calc.*(23,60);
-#	qc_a := calc.+(pc_a,59);
-#	tzone_11:= mtime.timezone(qc_a);
-##var tzone_11 := mtime.timezone((23*60)+59);
-#	tzone_12:= mtime.timezone(60);
-##var tzone_12 := mtime.timezone(60);
-### nil tzones
-#	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
-##var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
-#	rc_a := calc.*(24,60);
-#	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
-##var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
-##
-##
-#	tzone_bat:= bat.new(:oid,:timezone);
-##var tzone_bat := bat.new(oid,tzone);
-#	bat.insert(tzone_bat,0@0,tzone_00);
-#	bat.insert(tzone_bat,1@0,tzone_01);
-#	bat.insert(tzone_bat,2@0,tzone_02);
-##tzone_bat.bat.insert(0@0, tzone_00).insert(1@0, tzone_01).insert(2@0, tzone_02);
-#	bat.insert(tzone_bat,3@0,tzone_03);
-#	bat.insert(tzone_bat,4@0,tzone_04);
-#	bat.insert(tzone_bat,5@0,tzone_05);
-##tzone_bat.bat.insert(3@0, tzone_03).insert(4@0, tzone_04).insert(5@0, tzone_05);
-#	bat.insert(tzone_bat,6@0,tzone_06);
-#	bat.insert(tzone_bat,7@0,tzone_07);
-#	bat.insert(tzone_bat,8@0,tzone_08);
-##tzone_bat.bat.insert(6@0, tzone_06).insert(7@0, tzone_07).insert(8@0, tzone_08);
-#	bat.insert(tzone_bat,9@0,tzone_09);
-#	bat.insert(tzone_bat,10@0,tzone_10);
-#	bat.insert(tzone_bat,11@0,tzone_11);
-##tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11);
-#	bat.insert(tzone_bat,12@0,tzone_12);
-#	bat.insert(tzone_bat,13@0,tzone_13);
-#	bat.insert(tzone_bat,15@0,tzone_15);
-##tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
-##
-##
-###line 614 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
-### test the various ways to create dates
-#	date_00:= mtime.date(2000,01,01);
-##var date_00 := date(2000,01,01);
-#	date_01:= mtime.date("5000-JAN-01");
-##var date_01 := date("5000-JAN-01");
-#	date_02:= mtime.date("1968-FEBR-29");
-##var date_02 := date("1968-FEBR-29");
-#	date_03:= mtime.date("1-MARCH-01");
-##var date_03 := date("1-MARCH-01");
-#	date_04:= mtime.date("-5867411-JAN-1");
-##var date_04 := date("-5867411-JAN-1");
-#	date_05:= mtime.date("-768/octobe/01");
-##var date_05 := date("-768/octobe/01");
-#	date_06:= mtime.date("5000\\novembe\\01");
-##var date_06 := date("5000\\novembe\\01");
-#	date_07:= mtime.date("-1999/jun/01");
-##var date_07 := date("-1999/jun/01");
-#	date_08:= mtime.date("2000-jul-14");
-##var date_08 := date("2000-jul-14");
-#	date_09:= mtime.date("1999-sept-01");
-##var date_09 := date("1999-sept-01");
-#	date_10:= mtime.date("1998-decemBeR-01");
-##var date_10 := date("1998-decemBeR-01");
-#	date_11:= mtime.date("1953 may                01");
-##var date_11 := date("1953 may                01");
-#	date_12:= mtime.date("5867411-DEC-31");
-##var date_12 := date("5867411-DEC-31");
-### nil dates
-#	date_13:= mtime.date(1996,13,1);
-##var date_13 := date(1996,13,1);
-#	date_14:= mtime.date("999999999999999999999-01-01");
-##var date_14 := date("999999999999999999999-01-01");
-#	date_15:= mtime.date("1999-JANUARI-01");
-##var date_15 := date("1999-JANUARI-01");
-#	date_16:= mtime.date("1999-FEBR-29");
-##var date_16 := date("1999-FEBR-29");
-#	date_17:= mtime.date("-1-DECEMBER-0");
-##var date_17 := date("-1-DECEMBER-0");
-#	date_18:= mtime.date("5000\novembe\31");
-##var date_18 := date("5000\novembe\31");
-#	date_19:= mtime.date("nil");
-##var date_19 := date("nil");
-#	date_20:= mtime.date("1999-sept-31");
-##var date_20 := date("1999-sept-31");
-##
-#	date_bat:= bat.new(:oid,:date);
-##var date_bat := bat.new(oid,date);
-#	bat.insert(date_bat,0@0,date_00);
-#	bat.insert(date_bat,1@0,date_01);
-#	bat.insert(date_bat,2@0,date_02);
-##date_bat.bat.insert(0@0, date_00).insert(1@0, date_01).insert(2@0, date_02);
-#	bat.insert(date_bat,3@0,date_03);
-#	bat.insert(date_bat,4@0,date_04);
-#	bat.insert(date_bat,5@0,date_05);
-##date_bat.bat.insert(3@0, date_03).insert(4@0, date_04).insert(5@0, date_05);
-#	bat.insert(date_bat,6@0,date_06);
-#	bat.insert(date_bat,7@0,date_07);
-#	bat.insert(date_bat,8@0,date_08);
-##date_bat.bat.insert(6@0, date_06).insert(7@0, date_07).insert(8@0, date_08);
-#	bat.insert(date_bat,9@0,date_09);
-#	bat.insert(date_bat,10@0,date_10);
-#	bat.insert(date_bat,11@0,date_11);
-##date_bat.bat.insert(9@0, date_09).insert(10@0, date_10).insert(11@0, date_11);
-#	bat.insert(date_bat,12@0,date_12);
-#	bat.insert(date_bat,13@0,date_13);
-#	bat.insert(date_bat,14@0,date_14);
-##date_bat.bat.insert(12@0, date_12).insert(13@0, date_13).insert(14@0, date_14);
-#	bat.insert(date_bat,15@0,date_15);
-#	bat.insert(date_bat,16@0,date_16);
-#	bat.insert(date_bat,17@0,date_17);
-##date_bat.bat.insert(15@0, date_15).insert(16@0, date_16).insert(17@0, date_17);
-#	bat.insert(date_bat,18@0,date_18);
-#	bat.insert(date_bat,19@0,date_19);
-#	bat.insert(date_bat,20@0,date_20);
-##date_bat.bat.insert(18@0, date_18).insert(19@0, date_19).insert(20@0, date_20);
-##
-### test the operations on dates
-#	ne_a := bat.setColumn(date_bat,"date");
-##io.print(date_bat.bat.setColumn("date"),
-#	oe_a:bat[:oid,:int] := mal.multiplex("mtime","year",date_bat);
-#	pe_a := bat.setColumn(oe_a,"year");
-##      [year](date_bat).bat.setColumn("year"),
-#	qe_a:bat[:oid,:int] := mal.multiplex("mtime","day",date_bat);
-#	re_a := bat.setColumn(qe_a,"day");
-##      [day](date_bat).bat.setColumn("day"),
-#	se_a:bat[:oid,:int] := mal.multiplex("mtime","month",date_bat);
-#	te_a:bat[:oid,:str] := mal.multiplex("mtime","monthname",se_a);
-#	ue_a := bat.setColumn(te_a,"monthname");
-##      [monthname]([month](date_bat)).bat.setColumn("monthname"),
-#	ve_a:bat[:oid,:int] := mal.multiplex("mtime","month",date_bat);
-#	we_a:bat[:oid,:str] := mal.multiplex("mtime","monthname",ve_a);
-#	xe_a:bat[:oid,:int] := mal.multiplex("mtime","monthnum",we_a);
-#	ye_a := bat.setColumn(xe_a,"monthnum");
-#	io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");
-[ "print(date_bat,oe_a,qe_a,te_a,xe_a)" ]
-#---------------------------------------------------------------------------------#
-# h	date		year		day	monthname	monthnum		  # name
-# void	date		int		int	str		int		  # type
-#---------------------------------------------------------------------------------#
-[ 0@0,	  2000-01-01,	  2000,		  1,	  "january",	  1		  ]
-[ 1@0,	  5000-01-01,	  5000,		  1,	  "january",	  1		  ]
-[ 2@0,	  1968-02-29,	  1968,		  29,	  "february",	  2		  ]
-[ 3@0,	  1-03-01,	  1,		  1,	  "march",	  3		  ]
-[ 4@0,	  -5867411-01-01, -5867411,	  1,	  "january",	  1		  ]
-[ 5@0,	  -768-10-01,	  -768,		  1,	  "october",	  10		  ]
-[ 6@0,	  5000-11-01,	  5000,		  1,	  "november",	  11		  ]
-[ 7@0,	  -1999-06-01,	  -1999,	  1,	  "june",	  6		  ]
-[ 8@0,	  2000-07-14,	  2000,		  14,	  "july",	  7		  ]
-[ 9@0,	  1999-09-01,	  1999,		  1,	  "september",	  9		  ]
-[ 10@0,	  1998-12-01,	  1998,		  1,	  "december",	  12		  ]
-[ 11@0,	  1953-05-01,	  1953,		  1,	  "may",	  5		  ]
-[ 12@0,	  5867411-12-31,  5867411,	  31,	  "december",	  12		  ]
-[ 13@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 14@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 15@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 16@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 17@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 18@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 19@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ 20@0,	  nil,		  nil,		  nil,	  nil,		  nil		  ]
-[ "print(date_bat,date_addyears,df_a)" ]
-#-------------------------------------------------#
-# лллл;	date		min100y		diff	  # name
-# void	date		date		int	  # type
+[ "print(date_bat,oe_a,qe_a,te_a,xe_a)"	]
+#--------------------------#
+# t	date	year	day	monthname	monthnum  # name
+# void	date	int	int	str	int  # type
+#--------------------------#
+[ 0@0,	2000-01-01,	2000,	1,	"january",	1	]
+[ 1@0,	5000-01-01,	5000,	1,	"january",	1	]
+[ 2@0,	1968-02-29,	1968,	29,	"february",	2	]
+[ 3@0,	1-03-01,	1,	1,	"march",	3	]
+[ 4@0,	-5867411-01-01,	-5867411,	1,	"january",	1	]
+[ 5@0,	-768-10-01,	-768,	1,	"october",	10	]
+[ 6@0,	5000-11-01,	5000,	1,	"november",	11	]
+[ 7@0,	-1999-06-01,	-1999,	1,	"june",	6	]
+[ 8@0,	2000-07-14,	2000,	14,	"july",	7	]
+[ 9@0,	1999-09-01,	1999,	1,	"september",	9	]
+[ 10@0,	1998-12-01,	1998,	1,	"december",	12	]
+[ 11@0,	1953-05-01,	1953,	1,	"may",	5	]
+[ 12@0,	5867411-12-31,	5867411,	31,	"december",	12	]
+[ 13@0,	nil,	nil,	nil,	nil,	nil	]
+[ 14@0,	nil,	nil,	nil,	nil,	nil	]
+[ 15@0,	nil,	nil,	nil,	nil,	nil	]
+[ 16@0,	nil,	nil,	nil,	nil,	nil	]
+[ 17@0,	nil,	nil,	nil,	nil,	nil	]
+[ 18@0,	nil,	nil,	nil,	nil,	nil	]
+[ 19@0,	nil,	nil,	nil,	nil,	nil	]
+[ 20@0,	nil,	nil,	nil,	nil,	nil	]
+[ "print(date_bat,date_addyears,df_a)"	]
+#--------------------------#
+# t	date	min100y	diff  # name
+# void	date	date	int  # type
 #--------------------------#
 [ 0@0,	"2000-01-01",	"1900-01-01",	-36524	]
 [ 1@0,	"5000-01-01",	"4900-01-01",	-36524	]
@@ -297,18 +73,18 @@ Ready.
 [ 10@0,	"1998-12-01",	"1898-12-01",	-36524	]
 [ 11@0,	"1953-05-01",	"1853-05-01",	-36524	]
 [ 12@0,	"5867411-12-31",	"5867311-12-31",	-36524	]
-[ 13@0,	  nil,		  nil,		  nil	  ]
-[ 14@0,	  nil,		  nil,		  nil	  ]
-[ 15@0,	  nil,		  nil,		  nil	  ]
-[ 16@0,	  nil,		  nil,		  nil	  ]
-[ 17@0,	  nil,		  nil,		  nil	  ]
-[ 18@0,	  nil,		  nil,		  nil	  ]
-[ 19@0,	  nil,		  nil,		  nil	  ]
-[ 20@0,	  nil,		  nil,		  nil	  ]
-[ " print(date_bat,date_addmonths,if_a)" ]
-#---------------------------------------------------------#
-# лллллллл		date		plus1m		diff	  # name
-# void		date		date		int	  # type
+[ 13@0,	nil,	nil,	nil	]
+[ 14@0,	nil,	nil,	nil	]
+[ 15@0,	nil,	nil,	nil	]
+[ 16@0,	nil,	nil,	nil	]
+[ 17@0,	nil,	nil,	nil	]
+[ 18@0,	nil,	nil,	nil	]
+[ 19@0,	nil,	nil,	nil	]
+[ 20@0,	nil,	nil,	nil	]
+[ " print(date_bat,date_addmonths,if_a)"	]
+#--------------------------#
+# t	date	plus1m	diff  # name
+# void	date	date	int  # type
 #--------------------------#
 [ 0@0,	"2000-01-01",	"2000-02-01",	31	]
 [ 1@0,	"5000-01-01",	"5000-02-01",	31	]
@@ -323,14 +99,14 @@ Ready.
 [ 10@0,	"1998-12-01",	"1999-01-01",	31	]
 [ 11@0,	"1953-05-01",	"1953-06-01",	31	]
 [ 12@0,	"5867411-12-31",	nil,	nil	]
-[ 13@0,		  nil,		  nil,		  nil	  ]
-[ 14@0,		  nil,		  nil,		  nil	  ]
-[ 15@0,		  nil,		  nil,		  nil	  ]
-[ 16@0,		  nil,		  nil,		  nil	  ]
-[ 17@0,		  nil,		  nil,		  nil	  ]
-[ 18@0,		  nil,		  nil,		  nil	  ]
-[ 19@0,		  nil,		  nil,		  nil	  ]
-[ 20@0,		  nil,		  nil,		  nil	  ]
+[ 13@0,	nil,	nil,	nil	]
+[ 14@0,	nil,	nil,	nil	]
+[ 15@0,	nil,	nil,	nil	]
+[ 16@0,	nil,	nil,	nil	]
+[ 17@0,	nil,	nil,	nil	]
+[ 18@0,	nil,	nil,	nil	]
+[ 19@0,	nil,	nil,	nil	]
+[ 20@0,	nil,	nil,	nil	]
 
 # 23:31:31 >  
 # 23:31:31 >  Done.

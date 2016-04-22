@@ -178,9 +178,10 @@ SQLprelude(void *ret)
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
 		return (tmp);
+#ifndef HAVE_EMBEDDED
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
-
+#endif
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
 	tmp = msab_marchScenario(s->name);
@@ -414,6 +415,10 @@ SQLtrans(mvc *m)
 	}
 }
 
+#ifdef HAVE_EMBEDDED
+extern char* createdb_inline;
+#endif
+
 str
 SQLinitClient(Client c)
 {
@@ -460,6 +465,7 @@ SQLinitClient(Client c)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
+#ifndef HAVE_EMBEDDED
 	/* pass through credentials of the user if not console */
 	schema = monet5_user_set_def_schema(m, c->user);
 	if (!schema) {
@@ -467,6 +473,9 @@ SQLinitClient(Client c)
 		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
 	_DELETE(schema);
+#else
+	(void) schema;
+#endif
 
 	/*expect SQL text first */
 	be->language = 'S';
@@ -488,6 +497,31 @@ SQLinitClient(Client c)
 			SQLnewcatalog = 1;
 	}
 	if (SQLnewcatalog > 0) {
+#ifdef HAVE_EMBEDDED
+		(void) bfd;
+		(void) fd;
+		SQLnewcatalog = 0;
+		maybeupgrade = 0;
+		{
+			size_t createdb_len = strlen(createdb_inline);
+			buffer* createdb_buf = buffer_create(createdb_len);
+			stream* createdb_stream = buffer_rastream(createdb_buf, "createdb.sql");
+			bstream* createdb_bstream = bstream_create(createdb_stream, createdb_len);
+			buffer_init(createdb_buf, createdb_inline, createdb_len);
+			if (bstream_next(createdb_bstream) >= 0)
+				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
+			else
+				msg = createException(MAL, "createdb", "could not load inlined createdb script");
+
+			free(createdb_buf);
+			free(createdb_stream);
+			free(createdb_bstream);
+			if (m->sa)
+				sa_destroy(m->sa);
+			m->sa = NULL;
+		}
+
+#else
 		char path[PATHLENGTH];
 		str fullname;
 
@@ -536,6 +570,7 @@ SQLinitClient(Client c)
 			GDKfree(fullname);
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
+#endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
@@ -871,10 +906,12 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 
 	(void) be;
 	if (onoff) {
-		(void) newStmt(mb, "profiler", "starttrace");
+		q= newStmt(mb, "profiler", "starttrace");
+		q= pushStr(mb,q,"sql_traces");
 		initTrace();
 	} else {
-		(void) newStmt(mb, "profiler", "stoptrace");
+		q= newStmt(mb, "profiler", "stoptrace");
+		q= pushStr(mb,q,"sql_traces");
 		/* cook a new resultSet instruction */
 		resultset = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(resultset, sqlRef);

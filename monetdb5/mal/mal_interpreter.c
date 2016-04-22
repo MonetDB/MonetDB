@@ -541,7 +541,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
-			if (!mnstr_isalive(cntxt->fdin->s)) {
+			if (cntxt->fdin && !mnstr_isalive(cntxt->fdin->s)) {
 				cntxt->mode = FINISHCLIENT;
 				stkpc = stoppc;
 				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
@@ -638,12 +638,14 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 						if (isaBatType(t)) {
 							bat bid = stk->stk[a].val.bval;
+							BAT *_b = BATdescriptor(bid);
 							t = getColumnType(t);
 							assert(stk->stk[a].vtype == TYPE_bat);
 							assert(bid == 0 ||
 								   bid == bat_nil ||
 								   t == TYPE_any ||
-								   ATOMtype(BBP_cache(bid)->ttype) == ATOMtype(t));
+								   ATOMtype(_b->ttype) == ATOMtype(t));
+							if(_b) BBPunfix(bid);
 						} else {
 							assert(t == stk->stk[a].vtype);
 						}
@@ -820,8 +822,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* If needed recycle intermediate result */
 				if (pci->recycle > 0) 
 					RECYCLEexit(cntxt, mb, stk, pci, &runtimeProfile);
-				if ( cntxt->idx > 1 )
-					MALresourceFairness(GDKusec()- mb->starttime);
 
 				/* general garbage collection */
 				if (ret == MAL_SUCCEED && garbageControl(pci)) {

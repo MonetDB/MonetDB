@@ -61,16 +61,16 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
   
   # send payload and read response		
  
-  .mapiWrite(conObj@socket, msg)
-  resp <- .mapiRead(conObj@socket)
+  .mapiWrite(conObj@connenv$socket, msg)
+  resp <- .mapiRead(conObj@connenv$socket)
   
   # get deferred statements from deferred list and execute
   while (length(conObj@connenv$deferred) > 0) {
     # take element, execute, check response for prompt
     dmesg <- conObj@connenv$deferred[[1]]
     conObj@connenv$deferred[[1]] <- NULL
-    .mapiWrite(conObj@socket, dmesg)
-    dresp <- .mapiParseResponse(.mapiRead(conObj@socket))
+    .mapiWrite(conObj@connenv$socket, dmesg)
+    dresp <- .mapiParseResponse(.mapiRead(conObj@connenv$socket))
     if (dresp$type == MSG_MESSAGE) {
       conObj@connenv$lock <- 0
       warning(paste("II: Failed to execute deferred statement '", dmesg, "'. Server said: '", 
@@ -183,7 +183,8 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
     if (typeKey == Q_TABLE || typeKey == Q_PREPARE) {
       header <- .mapiParseHeader(lines[1])
       if (getOption("monetdb.debug.query", F)) message("QQ: Query result for query ", header$id, 
-                                                       " with ", header$rows, " rows and ", header$cols, " cols, ", header$index, " rows.")
+                                                       " with ", .mapiLongInt(header$rows), " rows and ", 
+                                                       header$cols, " cols, ", header$index, " rows.")
       
       env$type	<- Q_TABLE
       env$id		<- header$id
@@ -196,8 +197,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       env$lengths	<- .mapiParseTableHeader(lines[5])
       
       if (env$rows > 0) env$tuples <- lines[6:length(lines)]
-      
-      stopifnot(length(env$tuples) == header$index)
+
       return(env)
     }
     # Continuation of Q_TABLE without headers describing table structure
@@ -224,7 +224,7 @@ REPLY_SIZE    <- 100 # Apparently, -1 means unlimited, but we will start with a 
       
       env$type	<- Q_UPDATE
       env$id		<- header$id
-      
+      env$rows  <- 0
       return(env)			
     }
     

@@ -112,6 +112,7 @@ typedef struct stmt {
 	char nrcols;
 	char key;		/* key (aka all values are unique) */
 	char aggr;		/* aggregated */
+	char partition;		/* selected as mitosis candidate */
 
 	int flag;
 
@@ -120,8 +121,8 @@ typedef struct stmt {
 	const char *tname;
 	const char *cname;
 
-	int optimized;
-	struct stmt *rewritten;
+	int optimized;		/* used in dependency handling */
+	struct stmt *rewritten; /* used in multi-column result handling (gencode) */
 } stmt;
 
 extern int stmt_key(stmt *s);

@@ -215,6 +215,7 @@ scanner_init_keywords(void)
 	keywords_insert("OPTION", OPTION);
 	keywords_insert("OR", OR);
 	keywords_insert("ORDER", ORDER);
+	keywords_insert("ORDERED", ORDERED);
 	keywords_insert("OUTER", OUTER);
 	keywords_insert("OVER", OVER);
 	keywords_insert("PARTITION", PARTITION);
@@ -429,6 +430,40 @@ scanner_init_keywords(void)
 	keywords_insert("URI", URI);
 	keywords_insert("XMLAGG", XMLAGG);
 
+	/* keywords for opengis */
+	keywords_insert("GEOMETRY", GEOMETRY);
+
+	keywords_insert("POINT", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRING", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGON", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINT", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRING", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGON", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTION", GEOMETRYSUBTYPE);
+
+	keywords_insert("POINTZ", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRINGZ", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGONZ", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINTZ", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRINGZ", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGONZ", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTIONZ", GEOMETRYSUBTYPE);
+
+	keywords_insert("POINTM", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRINGM", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGONM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINTM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRINGM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGONM", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTIONM", GEOMETRYSUBTYPE);
+
+	keywords_insert("POINTZM", GEOMETRYSUBTYPE);
+	keywords_insert("LINESTRINGZM", GEOMETRYSUBTYPE);
+	keywords_insert("POLYGONZM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOINTZM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTILINESTRINGZM", GEOMETRYSUBTYPE);
+	keywords_insert("MULTIPOLYGONZM", GEOMETRYSUBTYPE);
+	keywords_insert("GEOMETRYCOLLECTIONZM", GEOMETRYSUBTYPE);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -463,12 +498,13 @@ scanner_query_processed(struct scanner *s)
 		s->rs->buf[s->rs->pos + s->yycur] = s->yybak;
 		s->yybak = 0;
 	}
-
-	s->rs->pos += s->yycur;
-	/* completely eat the query including white space after the ; */
-	while (s->rs->pos < s->rs->len &&
-	       (cur = s->rs->buf[s->rs->pos], iswspace(cur))) {
-		s->rs->pos++;
+	if (s->rs) {
+		s->rs->pos += s->yycur;
+		/* completely eat the query including white space after the ; */
+		while (s->rs->pos < s->rs->len &&
+			   (cur = s->rs->buf[s->rs->pos], iswspace(cur))) {
+			s->rs->pos++;
+		}
 	}
 	/*assert(s->rs->pos <= s->rs->len);*/
 	s->yycur = 0;
@@ -924,7 +960,6 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, cur);
 	case '~': /* binary not */
 	case '^': /* binary xor */
-	case '&': /* binary and */
 	case '*':
 	case '?':
 	case '%':
@@ -937,6 +972,25 @@ int scanner_symbol(mvc * c, int cur)
 	case ']':
 		lc->started = 1;
 		return scanner_token(lc, cur);
+	case '&':
+		lc->started = 1;
+		cur = scanner_getc(lc);
+		if(cur == '<') {
+			next = scanner_getc(lc);
+			if(next == '|') {
+				return scanner_token(lc, GEOM_OVERLAP_OR_BELOW);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				return scanner_token(lc, GEOM_OVERLAP_OR_LEFT);
+			}
+		} else if(cur == '>')
+			return scanner_token(lc, GEOM_OVERLAP_OR_RIGHT);
+		else if(cur == '&')
+			return scanner_token(lc, GEOM_OVERLAP);
+		else {/* binary and */
+			utf8_putchar(lc, cur); //put the char back
+			return scanner_token(lc, '&');
+		}
 	case '@':
 		lc->started = 1;
 		return scanner_token(lc, AT);
@@ -951,11 +1005,25 @@ int scanner_symbol(mvc * c, int cur)
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
-			cur = scanner_getc(lc);
-			if (cur == '=')
+			next = scanner_getc(lc);
+			if (next == '=') {
 				return scanner_token( lc, LEFT_SHIFT_ASSIGN);
-			utf8_putchar(lc, cur); 
-			return scanner_token( lc, LEFT_SHIFT);
+			} else if (next == '|') {
+				return scanner_token(lc, GEOM_BELOW);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				return scanner_token( lc, LEFT_SHIFT);
+			}
+		} else if(cur == '-') {
+			next = scanner_getc(lc);
+			if(next == '>') {
+				return scanner_token(lc, GEOM_DIST);
+			} else {
+				//put the characters back and fall in the next possible case
+				utf8_putchar(lc, next);
+				utf8_putchar(lc, cur);
+				return scanner_token( lc, COMPARISON);
+			}
 		} else {
 			utf8_putchar(lc, cur); 
 			return scanner_token( lc, COMPARISON);
@@ -991,6 +1059,24 @@ int scanner_symbol(mvc * c, int cur)
 		cur = scanner_getc(lc);
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);
+		} else if (cur == '&') {
+			next = scanner_getc(lc);
+			if(next == '>') {
+				return scanner_token(lc, GEOM_OVERLAP_OR_ABOVE);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				utf8_putchar(lc, cur); //put the char back
+				return scanner_token(lc, '|');
+			}
+		} else if (cur == '>') {
+			next = scanner_getc(lc);
+			if(next == '>') {
+				return scanner_token(lc, GEOM_ABOVE);
+			} else {
+				utf8_putchar(lc, next); //put the char back
+				utf8_putchar(lc, cur); //put the char back
+				return scanner_token(lc, '|');
+			}
 		} else {
 			utf8_putchar(lc, cur); 
 			return scanner_token(lc, '|');

@@ -40,51 +40,7 @@ newAssignment(MalBlkPtr mb)
 }
 
 InstrPtr
-newStmt(MalBlkPtr mb, char *module, char *name)
-{
-	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
-	if (q == NULL)
-		return NULL;
-	setModuleId(q, putName(module, strlen(module)));
-	setFunctionId(q, putName(name, strlen(name)));
-	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0) {
-		freeInstruction(q);
-		return NULL;
-	}
-	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
-	return q;
-}
-
-InstrPtr
-newStmt1(MalBlkPtr mb, str module, char *name)
-{
-	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
-	if (q == NULL)
-		return NULL;
-	setModuleId(q, putName(module, strlen(module)));
-	setFunctionId(q, putName(name, strlen(name)));
-	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0) {
-		freeInstruction(q);
-		return NULL;
-	}
-	pushInstruction(mb, q);
-	if (mb->errors) {
-		freeInstruction(q);
-		return NULL;
-	}
-	return q;
-}
-
-InstrPtr
-newStmt2(MalBlkPtr mb, str module, char *name)
+newStmt(MalBlkPtr mb, const char *module, const char *name)
 {
 	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
 
@@ -476,13 +432,15 @@ getStrConstant(MalBlkPtr mb, str val)
 	int _t;
 	ValRecord cst;
 
-	cst.vtype= TYPE_str;
-	if ((cst.val.sval= GDKstrdup(val)) == NULL) 
-		return -1;
-	cst.len= (int) strlen(cst.val.sval);
+	cst.vtype = TYPE_str;
+	cst.val.sval = val; 
+	cst.len = (int) strlen(val);
 	_t= fndConstant(mb, &cst, mb->vtop);
-	if( _t < 0)
+	if( _t < 0) {
+		if ((cst.val.sval= GDKstrdup(val)) == NULL) 
+			return -1;
 		_t = defConstant(mb, TYPE_str, &cst);
+	}
 	return _t;
 }
 

@@ -3,8 +3,8 @@
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 VERSIONINFO
-  FILEVERSION 11,22,0,1
-  PRODUCTVERSION 11,22,0,1
+  FILEVERSION 11,24,0,1
+  PRODUCTVERSION 11,24,0,1
   FILEFLAGSMASK 0x3fL
   FILEFLAGS 0
   FILEOS VOS_NT_WINDOWS32
@@ -18,7 +18,7 @@ BEGIN
       VALUE "Comments", "\0"
       VALUE "CompanyName", "MonetDB B.V.\0"
       VALUE "FileDescription", "MonetDB ODBC Driver DLL\0"
-      VALUE "FileVersion", "11.22.0\0"
+      VALUE "FileVersion", "11.24.0\0"
       //                    ^^^^^^^^
       // Maintained via vertoo. Please don't modify by hand!
       // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -28,7 +28,7 @@ BEGIN
       VALUE "OriginalFilename", "libMonetODBC.dll\0"
       VALUE "PrivateBuild", "\0"
       VALUE "ProductName", "MonetDB SQL Server\0"
-      VALUE "ProductVersion", "11.22.0\0"
+      VALUE "ProductVersion", "11.24.0\0"
       //                       ^^^^^^^^
       // Maintained via vertoo. Please don't modify by hand!
       // Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

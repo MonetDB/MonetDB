@@ -2,6 +2,7 @@ debian/tmp/usr/bin/monetdbd usr/bin
 debian/tmp/usr/bin/monetdb usr/bin
 debian/tmp/usr/lib/monetdb5/*.sql usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/autoload/??_sql.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/systemd/system/monetdbd.service lib/systemd/system
 # usr/lib/monetdb5/sql*.mal EXCEPT: sql*_hge.mal
 debian/tmp/usr/lib/monetdb5/sql.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sql_aggr_[!h]*.mal usr/lib/monetdb5

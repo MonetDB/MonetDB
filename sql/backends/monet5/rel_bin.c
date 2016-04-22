@@ -46,7 +46,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 			const char *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			printf("%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			fprintf(stderr, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }
@@ -541,7 +541,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		if (s && grp)
 			s = stmt_project(sql->sa, ext, s);
 		if (!s && right) {
-			printf("could not find %s.%s\n", (char*)e->l, (char*)e->r);
+			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 		}
@@ -770,6 +770,8 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 { 
 	stmt *sc = stmt_bat(sql->sa, c, RDONLY);
 
+	if (del)
+		sc->partition = del->partition;
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
@@ -777,6 +779,8 @@ stmt_col( mvc *sql, sql_column *c, stmt *del)
 		stmt *u = stmt_bat(sql->sa, c, RD_UPD_ID);
 		sc = stmt_project_delta(sql->sa, sc, u, i);
 		sc = stmt_project(sql->sa, del, sc);
+		if (del)
+			u->partition = del->partition;
 	} else if (del) { /* always handle the deletes */
 		sc = stmt_project(sql->sa, del, sc);
 	}
@@ -788,6 +792,8 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 { 
 	stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
 
+	if (del)
+		sc->partition = del->partition;
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
@@ -795,6 +801,8 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *del)
 		stmt *u = stmt_idxbat(sql->sa, i, RD_UPD_ID);
 		sc = stmt_project_delta(sql->sa, sc, u, ic);
 		sc = stmt_project(sql->sa, del, sc);
+		if (del)
+			u->partition = del->partition;
 	} else if (del) { /* always handle the deletes */
 		sc = stmt_project(sql->sa, del, sc);
 	}
@@ -1184,6 +1192,8 @@ rel2bin_basetable( mvc *sql, sql_rel *rel)
 	if (!t && c)
 		t = c->t;
        	dels = stmt_tid(sql->sa, t);
+	if (rel->flag == REL_PARTITION)
+		dels->partition = 1;
 
 	/* add aliases */
 	assert(rel->exps);
@@ -2626,8 +2636,11 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 			aggrstmt = list_find_column(sql->sa, l, aggrexp->l, aggrexp->r);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column(sql->sa, gbexps, aggrexp->l, aggrexp->r);
-			if (aggrstmt && groupby)
+			if (aggrstmt && groupby) {
 				aggrstmt = stmt_project(sql->sa, ext, aggrstmt);
+				if (list_length(gbexps) == 1) 
+					aggrstmt->key = 1;
+			}
 		}
 
 		if (!aggrstmt)
@@ -3197,7 +3210,7 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 		if (i->key && constraint) {
 			stmt *ckeys = sql_insert_key(sql, newl, i->key, is, pin);
 
-			list_prepend(l, ckeys);
+			list_append(l, ckeys);
 		}
 		if (!insert)
 			insert = is;
@@ -3211,9 +3224,9 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
-	l = list_append(l, stmt_list(sql->sa, newl));
 	if (constraint)
 		sql_insert_check_null(sql, t, newl, l);
+	l = list_append(l, stmt_list(sql->sa, newl));
 	if (!sql_insert_triggers(sql, t, l)) 
 		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (insert->op1->nrcols == 0) {

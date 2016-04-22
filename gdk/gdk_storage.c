@@ -97,7 +97,7 @@ GDKcreatedir(const char *dir)
 	DIR *dirp;
 
 	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
-
+	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= PATHLENGTH) {
 		GDKerror("GDKcreatedir: directory name too long\n");
 		return GDK_FAIL;
@@ -106,7 +106,11 @@ GDKcreatedir(const char *dir)
 	/* skip initial /, if any */
 	for (r = strchr(path + 1, DIR_SEP); r; r = strchr(r, DIR_SEP)) {
 		*r = 0;
-		if (mkdir(path, 0755) < 0) {
+		if (
+#ifdef WIN32
+			strlen(path) > 3 &&
+#endif
+			mkdir(path, 0755) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
 				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);
@@ -130,15 +134,21 @@ GDKcreatedir(const char *dir)
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
-	DIR *dirp = opendir(dirname);
+	str dirnamestr;
+	DIR *dirp;
 	char *path;
 	struct dirent *dent;
 	int ret;
 
-	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirname);
+	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
+		return GDK_FAIL;
 
-	if (dirp == NULL)
+	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirnamestr);
+
+	if ((dirp = opendir(dirnamestr)) == NULL) {
+		GDKfree(dirnamestr);
 		return GDK_SUCCEED;
+	}
 	while ((dent = readdir(dirp)) != NULL) {
 		if (dent->d_name[0] == '.' &&
 		    (dent->d_name[1] == 0 ||
@@ -152,11 +162,11 @@ GDKremovedir(int farmid, const char *dirname)
 		GDKfree(path);
 	}
 	closedir(dirp);
-	ret = rmdir(dirname);
+	ret = rmdir(dirnamestr);
 	if (ret < 0)
-		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirname);
-	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirname, ret);
-
+		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
+	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirnamestr, ret);
+	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -382,14 +392,14 @@ GDKextend(const char *fn, size_t size)
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 gdk_return
-GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
+GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 {
 	int err = 0;
 
-	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
+	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	if (mode == STORE_MMAP) {
-		if (size && MT_msync(buf, size) < 0)
+		if (dosync && size && MT_msync(buf, size) < 0)
 			err = -1;
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
@@ -431,7 +441,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 						(unsigned) MIN(1 << 30, size),
 						ret);
 			}
-			if (!(GDKdebug & FORCEMITOMASK) &&
+			if (dosync && !(GDKdebug & FORCEMITOMASK) &&
 #if defined(NATIVE_WIN32)
 			    _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
@@ -924,6 +934,7 @@ BATdelete(BAT *b)
 		b = loaded;
 		HASHdestroy(b);
 		IMPSdestroy(b);
+		OIDXdestroy(b);
 	}
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
 	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {

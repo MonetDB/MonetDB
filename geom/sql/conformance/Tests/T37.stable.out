@@ -1,0 +1,37 @@
+stdout of test 'T37` in directory 'geom/sql/conformance` itself:
+
+
+# 15:05:53 >  
+# 15:05:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33617" "--set" "mapi_usock=/var/tmp/mtest-29161/.s.monetdb.33617" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_conformance" "--set" "mal_listing=0"
+# 15:05:53 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_conformance', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:33617/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29161/.s.monetdb.33617
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:05:53 >  
+# 15:05:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29161" "--port=33617"
+# 15:05:53 >  
+
+#SELECT ST_Equals(boundary, ST_PolygonFromText('POLYGON( ( 67 13, 67 18, 59 18, 59 13, 67 13) )',101)) FROM named_places WHERE name = 'Goose Island';
+% sys.L # table_name
+% st_equals_boundary # name
+% boolean # type
+% 5 # length
+[ true	]
+
+# 15:05:53 >  
+# 15:05:53 >  "Done."
+# 15:05:53 >  
+

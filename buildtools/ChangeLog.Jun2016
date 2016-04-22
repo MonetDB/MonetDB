@@ -1,0 +1,11 @@
+# ChangeLog file for buildtools
+# This file is updated with Maddlog
+
+* Fri Feb 26 2016 Sjoerd Mullender <sjoerd@acm.org>
+- A new package MonetDB-lidar (Fedora) or libmonetdb5-server-lidar
+  (Debian/Ubuntu) has been created to work with LiDAR data.
+
+* Sat Jan 23 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a systemd configuration file for a monetdbd.service
+  on systems that support it (Fedora, newer Ubuntu).
+

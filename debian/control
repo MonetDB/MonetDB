@@ -9,9 +9,10 @@ Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 # http://www.debian.org/doc/debian-policy/ch-relationships.html
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.0.0),
- libgsl0-dev, libpcre3-dev, libreadline-gplv2-dev | libreadline-dev,
- libssl-dev, libxml2-dev, perl, pkg-config, python, python3, ruby,
- rubygems | libyaml-0-2, unixodbc-dev, uuid-dev, zlib1g-dev
+ libgsl0-dev, libpcre3-dev, libreadline-dev,
+ libssl-dev, libxml2-dev, perl, pkg-config, python, python3,
+ unixodbc-dev, uuid-dev, zlib1g-dev,
+ liblas-c-dev
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.0
@@ -155,18 +156,6 @@ Description: MonetDB perl client code
  This package contains the files needed to use MonetDB from a Perl
  program.
 
-Package: ruby-monetdb-client
-Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, libruby
-Description: MonetDB Ruby client module
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL frontend.
- .
- This package contains the files needed to use MonetDB from a Ruby
- program.
-
 Package: monetdb-client-testing
 Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc, monetdb5-server, perl-monetdb-client, php5-monetdb-client, python-monetdb, monetdb5-sql
@@ -192,6 +181,18 @@ Description: MonetDB5 SQL GIS support module
  .
  This package contains the GIS (Geographic Information System)
  extensions for MonetDB-SQL-server5.
+
+Package: libmonetdb5-server-lidar
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-sql
+Description: MonetDB5 SQL GIS support module
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL frontend.
+ .
+ This package contains support for reading and writing LiDAR data.
 
 Package: libmonetdb5-server-gsl
 Section: libs

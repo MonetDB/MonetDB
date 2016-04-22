@@ -200,6 +200,7 @@ stmt_create(sql_allocator *sa, st_type type)
 	s->key = 0;
 	s->aggr = 0;
 	s->nr = 0;
+	s->partition = 0;
 	s->optimized = -1;
 	s->rewritten = NULL;
 	s->tname = s->cname = NULL;
@@ -245,7 +246,7 @@ id_cmp(int *id1, int *id2)
 static list *
 cond_append(list *l, int *id)
 {
-	if (!list_find(l, id, (fcmp) &id_cmp))
+	if (*id >= 2000 && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);
 	return l;
 }
@@ -867,7 +868,7 @@ stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 	s->op1 = op1;
 	s->op2 = op2;
 	s->flag = cmptype;
-	s->key = op1->key;
+	s->key = 0;
 	s->nrcols = 2;
 	return s;
 }
@@ -1695,6 +1696,7 @@ stmt_array(sql_allocator *sa, stmt *s)
 	return res;
 }
 
+#ifndef HAVE_EMBEDDED
 static void
 print_stmt(sql_allocator *sa, stmt *s)
 {
@@ -1788,3 +1790,4 @@ print_tree(sql_allocator *sa, stmt *s)
 	print_stmts(sa, stmts);
 	clear_stmts(stmts);
 }
+#endif

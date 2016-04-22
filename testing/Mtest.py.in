@@ -56,7 +56,7 @@ else:
     RED = GREEN = PURPLE = BLACK = ''
 
 def ErrExit(msg):
-    print >> sys.stderr, msg
+    sys.stderr.write(msg + '\n')
     sys.exit(1)
 
 def _configure(str):
@@ -121,7 +121,7 @@ except ImportError:
         p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
         import MonetDBtesting.Mfilter as Mfilter
-        if os.environ.has_key('PYTHONPATH'):
+        if 'PYTHONPATH' in os.environ:
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
 
@@ -176,7 +176,8 @@ if isatty and os.isatty(sys.stdin.fileno()):
     else:
         try:
             proc = process.Popen(['stty', '-a'], stdout = process.PIPE,
-                                 stderr = process.PIPE)
+                                 stderr = process.PIPE,
+                                 universal_newlines = True)
         except OSError:
             pass
         else:
@@ -189,7 +190,7 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 if res is not None:
                     ttywidth = int(res.group(1))
             if ttywidth < 60:
-                # rediculously narrow tty, ignore value
+                # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
 import string                   # for whitespace
@@ -305,17 +306,19 @@ CONDITIONALS = {
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
+    'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
+    'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
+    'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
     'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
     'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
-    'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
     'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
     'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
     'HAVE_SQL'             : "@HAVE_SQL_FALSE@",
@@ -393,9 +396,7 @@ class Element(_Encode):
     def __str__(self):
         # string representation of the element with its children
         s = ['<%s' % self.tag]
-        attrlist = self.attrdict.items()
-        attrlist.sort()
-        for name, value in attrlist:
+        for name, value in sorted(self.attrdict.items()):
             s.append(' %s="%s"' % (name, self.encode(value, True)))
         if self.children or (not self.xml and not self.isempty):
             s.append('>')
@@ -426,9 +427,7 @@ class Element(_Encode):
                         '"http://www.w3.org/TR/html4/loose.dtd">\n')
         inline = self.tag.lower() in self.inline
         f.write('<%s' % self.tag)
-        attrlist = self.attrdict.items()
-        attrlist.sort()
-        for name, value in attrlist:
+        for name, value in sorted(self.attrdict.items()):
             f.write(' %s="%s"' % (name, self.encode(value, True)))
         if self.children or (not self.xml and not self.isempty):
             if not inline:
@@ -592,22 +591,26 @@ def startswithpath(str,pre) :
     return os.path.normcase(str[:len(pre)]) == os.path.normcase(pre)
 ### startswithpath(str,pre) #
 
-import urllib
 ##def path(str) :
 ##    return str.replace('/', os.sep)
-path = urllib.url2pathname
 ### path(str) #
-
 ##def url(str) :
 ##    return str.replace(os.sep, '/')
-url = urllib.pathname2url
 ### url(str) #
+if sys.version_info[0] == 2:
+    import urllib
+    path = urllib.url2pathname
+    url = urllib.pathname2url
+elif sys.version_info[0] == 3:
+    import urllib.request
+    path = urllib.request.url2pathname
+    url = urllib.request.pathname2url
 
 def try_open(path, mode) :
     try:
         f = open(path, mode)
-    except IOError, (IOerrNo, IOerrStr):
-        Warn("Opening file '%s' in mode '%s' failed with #%d: '%s'." % (path, mode, IOerrNo, IOerrStr))
+    except IOError as err:
+        Warn("Opening file '%s' in mode '%s' failed with #%d: '%s'." % (path, mode, err.errno, err.strerror))
         f = None
     return f
 ###  try_open(path, mode) #
@@ -1021,7 +1024,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
     td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
                            '%s_%s_body' % (DISTVER, TSTDIR),
                            'err', e))
-    if not env.has_key('_%s_BODY_' % TSTDIR)  or  \
+    if '_%s_BODY_' % TSTDIR not in env  or  \
        not env['_%s_BODY_' % TSTDIR][0]  or  \
        ( (not env['_%s_BODY_' % TSTDIR][1])  and  (o or e) ):
         if e and not o:
@@ -1038,7 +1041,7 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
     td = Element('td', {'class': 'header'})
     td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % DISTVER,
                            TSTDIR, diff))
-    if not env.has_key('__BODY_')  or  \
+    if '__BODY_' not in env  or  \
        not env['__BODY_'][0]  or  \
        ( (not env['__BODY_'][1])  and  diff ):
         env['__BODY_'] = ["%s/.index.html" % TSTDIR, diff]
@@ -1085,7 +1088,7 @@ def SkipTest(env, TST, EXT, REASON, length) :
                  Element('a', {'href': '.%s.SKIPPED' % TST,
                                'target': target},
                          Text('(skipped)')))
-    if not env.has_key('_%s_BODY_' % TSTDIR)  or  \
+    if '_%s_BODY_' % TSTDIR not in env  or  \
        not env['_%s_BODY_' % TSTDIR][0]  or  \
        not env['_%s_BODY_' % TSTDIR][1]:
         env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED" % TST, F_SKIP]
@@ -1154,7 +1157,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
     env['TSTSRCDIR'] = TSTSRCDIR
-    env['UTSTSRCDIR'] = 'file:' + url(TSTSRCDIR)
+    env['UTSTSRCDIR'] = 'file://' + url(TSTSRCDIR)
     env['TSTTRGDIR'] = TSTTRGDIR
     if TSTDIR == os.curdir:
         env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
@@ -1175,11 +1178,11 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
 
     #STDERR.flush()
     #for v in 'RELSRCDIR':
-    #       print v+" = "+str(env[v])
+    #       print(v+" = "+str(env[v]))
     #STDOUT.flush()
 
     if THISFILE == "Mtest.py":
-        if env.has_key('GDK_DBFARM'):
+        if 'GDK_DBFARM' in env:
             LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
             if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
                 try:
@@ -1205,7 +1208,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         body_bad = []
         oktests = []
         if not verbose and not quiet:
-            print '\nRunning in %s' % TSTDIR
+            print('\nRunning in %s' % TSTDIR)
         alllinks = []
         for TST,COND in testlist:
             os.environ['TST'] = TST
@@ -1224,7 +1227,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     body_good.append(bodyline)
                 else:
                     body_bad.append(bodyline)
-            if FtOut == F_OK and FtErr == F_OK:
+            if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                 oktests.append(TST)
             if global_timeout and start_time + global_timeout < time.time():
                 break
@@ -1321,22 +1324,22 @@ def ApproveOutput (env, TST) :
                     open(stableOUTPUT,"w").close()
 
             for d in ('TMPDIR', 'TMP', 'TEMP'):
-                if os.environ.has_key(d):
+                if d in os.environ:
                     patch = os.environ[d]
                     break
             else:
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
             f = open(patch + '.0', 'w')
-            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-U0',
+            proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-I^MAPI *=', '-U0',
                                   stableOUTPUT, testOUTPUT],
-                                 stdout = f)
+                                 stdout = f, universal_newlines = True)
             proc.wait()
             f.close()
             if os.path.getsize(patch + ".0"):
                 if not verbose:
                     oc = ''
-                print "Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc)
+                print("Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc))
 
                 f = open(patch + ".1", "wb")
                 for l in open(patch + ".0"):
@@ -1366,12 +1369,13 @@ def ApproveOutput (env, TST) :
                 patchcmd = ['patch']
                 if not verbose:
                     patchcmd.append('--quiet')
-                proc = process.Popen(patchcmd + [stableOUTPUT, patch + '.1'])
+                proc = process.Popen(patchcmd + [stableOUTPUT, patch + '.1'],
+                                     universal_newlines = True)
                 proc.wait()
                 f = open(patch, 'w')
                 proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
                                       stableOUTPUT],
-                                     stdout = f)
+                                     stdout = f, universal_newlines = True)
                 proc.wait()
                 f.close()
                 remove(stableOUTPUT + ".ORG")
@@ -1391,14 +1395,14 @@ def ApproveOutput (env, TST) :
                         elif f != thefile and test.match(f):
                             remove(os.path.join(dir or os.curdir, f + '.rej'))
                             remove(os.path.join(dir or os.curdir, f + '.orig'))
-                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch))
+                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch), universal_newlines = True)
                             proc.wait()
                             if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
                                 list.append(f)
                 if len(list) > 0:
                     Warn('There are other (specific) stable outputs for test\n%s for which patching failed:\n  %s\n\n  Look at the *.rej files in directory %s.' % (os.path.join(TSTDIR,'Tests',TST), str(list), os.path.join(TSTDIR,'Tests')))
             elif verbose:
-                print "No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM)
+                print("No differences detected between  %s and  stable.%s%s  that are not ignored by Mtest.py." % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM))
             remove(patch + ".0")
         elif verbose:
             i = TST.rfind('.')
@@ -1516,7 +1520,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     if procdebug:
-        print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
+        print('GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
@@ -1546,12 +1550,12 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if procdebug:
-            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
+            print('GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
         if procdebug:
-            print 'GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd)
+            print('GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd))
         raise
     returncode = returnCode(proc)
     if returncode is not None:
@@ -1659,7 +1663,7 @@ def CheckTests(env, TST, oktests):
         test = test.strip()
         if not test or test.startswith('#'):
             continue
-        if not test in oktests:
+        if test not in oktests:
             missing.append(test)
     return missing
 ### CheckTests(env, TST, oktests) #
@@ -1748,6 +1752,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     elem = None
     reason = None               # reason for skipping (if any)
     links = []                  # symlinks we make
+    threads = None              # set if we override number of threads
 
     TX = 0
     EXT = CALL = SERVER = ""
@@ -1767,129 +1772,44 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".SQL"+xS[1]
         CALL = "other"
         SERVER = "SQL"
-    elif os.path.isfile(TST+".py")            or  os.path.isfile(TST+".py.src"):
-        EXT = ".py"
-        CALL = "python"
-    elif os.path.isfile(TST+".MAL"+".py")     or  os.path.isfile(TST+".MAL"+".py.src")     or  os.path.isfile(TST+".MAL"+".py.in"):
-        EXT = ".MAL.py"
-        CALL = "python"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
-        EXT = ".SQL.py"
-        CALL = "python"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
-        EXT = ".mal"
-        CALL = "mal"
-    elif os.path.isfile(TST+"_s00.mal")       or  os.path.isfile(TST+"_s00.mal.src")       or  os.path.isfile(TST+"_s00.mal.in"):
-        EXT = ".mal"
-        CALL = "malXs"
-    elif os.path.isfile(TST+".malC")          or  os.path.isfile(TST+".malC.src")          or  os.path.isfile(TST+".malC.in"):
-        EXT = ".malC"
-        CALL = "malC"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+"_s00.malC")      or  os.path.isfile(TST+"_s00.malC.src")      or  os.path.isfile(TST+"_s00.malC.in"):
-        EXT = ".malC"
-        CALL = "malCXs"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+"_p00.malC")      or  os.path.isfile(TST+"_p00.malC.src")      or  os.path.isfile(TST+"_p00.malC.in"):
-        EXT = ".malC"
-        CALL = "malCXp"
-        SERVER = "MAL"
-    elif os.path.isfile(TST+".sql")           or  os.path.isfile(TST+".sql.src")           or  os.path.isfile(TST+".sql.in"):
-        EXT = ".sql"
-        CALL = "sql"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+"_s00.sql")       or  os.path.isfile(TST+"_s00.sql.src")       or  os.path.isfile(TST+"_s00.sql.in"):
-        EXT = ".sql"
-        CALL = "sqlXs"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+"_p00.sql")       or  os.path.isfile(TST+"_p00.sql.src")       or  os.path.isfile(TST+"_p00.sql.in"):
-        EXT = ".sql"
-        CALL = "sqlXp"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+".R"):
-        EXT = ".R"
-        CALL = "R"
-        SERVER = "SQL"
-    elif os.path.isfile(TST+".rb")            or  os.path.isfile(TST+".rb.src")            or  os.path.isfile(TST+".rb.in"):
-        EXT = ".rb"
-        CALL = "ruby"
-        SERVER = "SQL"
-
-        #TODO:
-        #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
-        #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
-        #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
-        #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
-        os.chdir(TSTTRGDIR)
-        i = TST.rfind('.')
-        if i > 0:
-            return RunTest(env, TST[:i], BusyPorts, COND, oktests, length)
-        EXT = CALL = SERVER = ""
-        if COND:
-            for cond in COND.split('&'):
-                if cond.startswith('!'):
-                    negate = True
-                    cond = cond[1:]
-                else:
-                    negate = False
-                if cond == 'PREVREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
-                        reason = "as previous release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVHGEREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerel.zip')):
-                        reason = "as previous hugeint release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVCHAINREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
-                        reason = "as previous chained release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond == 'PREVHGECHAINREL':
-                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrel.zip')):
-                        reason = "as previous hugeint chained release database is not available"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond.startswith('THREADS='):
-                    if (env['TST_THREADS'] == cond[8:]) == negate:
-                        reason = "as number of threads is wrong"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond.startswith('THREADS<='):
-                    if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
-                        reason = "as number of threads is wrong"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif cond.startswith('THREADS>='):
-                    if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
-                        reason = "as number of threads is wrong"
-                        elem = SkipTest(env, TST, EXT, reason, length)
-                        break
-                elif not CONDITIONALS.has_key(cond):
-                    reason = "as conditional '%s' is unknown." % cond
-                    elem = SkipTest(env, TST, EXT, reason, length)
-                    break
-                elif (not CONDITIONALS[cond]) != negate:
-                    if negate:
-                        reason = "as conditional '%s' holds." % cond
-                    else:
-                        reason = "as conditional '%s' does not hold." % cond
-                    elem = SkipTest(env, TST, EXT, reason, length)
-                    break
-        if reason:
-            pass
-        elif os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`")
+        tests = (
+            # file extention  EXT        CALL      SERVER
+            ('.py',           '.py',     'python', ''),
+            ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
+            ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+            ('.mal',          '.mal',    'mal',    ''),
+            ('_s00.mal',      '.mal',    'malXs',  ''),
+            ('.malC',         '.malC',   'malC',   'MAL'),
+            ('_s00.malC',     '.malC',   'malCXs', 'MAL'),
+            ('_p00.malC',     '.malC',   'malCXp', 'MAL'),
+            ('.sql',          '.sql',    'sql',    'SQL'),
+            ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
+            ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
+            ('.R',            '.R',      'R',      'SQL'),
+            ('.rb',           '.rb',     'ruby',   'SQL'),
+            #TODO:
+            # ('.java',         '.java',   'Java',   'SQL'),
+            # ('_s00.java',     '.java',   'JavaXs', 'SQL'),
+            # ('_p00.java',     '.java',   'JavaXp', 'SQL'),
+            # ('.odmg',         '.odmg',   'odmg',   'SQL'),
+        )
+        for tst, ext, cll, srv in tests:
+            if os.path.isfile(TST + tst) or \
+               os.path.isfile(TST + tst + '.src') or \
+               os.path.isfile(TST + tst + '.in'):
+                EXT = ext
+                CALL = cll
+                SERVER = srv
+                break
+        else:
+            if os.name == "nt":
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`"
             #TODO:
             #elif os.name == "posix":
-        else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`")
-        return TX,Failed,Failed,elem,reason,links
+            else:
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`"
+            return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
@@ -1925,8 +1845,30 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     reason = "as previous hugeint chained release database is not available"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
+            elif cond == 'PREVRELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrelempty.zip')):
+                    reason = "as previous empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVHGERELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgerelempty.zip')):
+                    reason = "as previous hugeint empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVCHAINRELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrelempty.zip')):
+                    reason = "as previous chained empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVHGECHAINRELEMPTY':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevhgechainrelempty.zip')):
+                    reason = "as previous hugeint chained empty release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
             elif cond.startswith('THREADS='):
-                if (env['TST_THREADS'] == cond[8:]) == negate:
+                if env['GDK_NR_THREADS'] == '0':
+                    threads = cond[8:]
+                elif (env['TST_THREADS'] == cond[8:]) == negate:
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
@@ -1940,7 +1882,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
-            elif not CONDITIONALS.has_key(cond):
+            elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
@@ -1996,7 +1938,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 try:
                     SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
                     links.append(os.path.join(TSTTRGDIR, f))
-                except IOError, (IOerrNo, IOerrStr):
+                except IOError as err:
                     if not env.get('NOCLEAN'):
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
                                % (os.path.join(RELSRCDIR, f), f, os.getcwd(), IOerrNo, IOerrStr))
@@ -2019,9 +1961,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 try:
                     SymlinkOrCopy(TSTSRC, TST + EXT)
                     links.append(TST + EXT)
-                except IOError, (IOerrNo, IOerrStr):
+                except IOError as err:
                     ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (TSTSRC, TST + EXT, os.getcwd(), IOerrNo, IOerrStr))
+                           % (TSTSRC, TST + EXT, os.getcwd(), err.errno, err.strerror))
             else:
                 reason = "as source file '%s` is missing." % TSTSRC
                 elem = SkipTest(env, TST, EXT+".src", reason, length)
@@ -2039,9 +1981,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     try:
                         SymlinkOrCopy(TSTSRC, ff[:-4])
                         links.append(ff[:-4])
-                    except IOError, (IOerrNo, IOerrStr):
+                    except IOError as err:
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (TSTSRC, ff[:-4], os.getcwd(), IOerrNo, IOerrStr))
+                               % (TSTSRC, ff[:-4], os.getcwd(), err.errno, err.strerror))
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
         test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
@@ -2110,7 +2052,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2221,22 +2163,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         try:
             STDOUT.flush()
-        except IOError, (IOerrNo, IOerrStr):
-            Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+        except IOError as err:
+            Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
 
         if env['exe']['Mtimeout'][0]:
             # reset timeout
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
             SetExecEnv(env['exe'],False)
 
-        try:
-            Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-            Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-            Mfilter.mFilter(TST+".test.err",par['IGNORE'])
-        except:
-            Warn("mFilter failed\n")
-            pass
+        Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+        Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+        Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+        Mfilter.mFilter(TST+".test.err",par['IGNORE'])
 
         if REV:
             d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
@@ -2299,10 +2237,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.test.out.FILTERED' % TST,
                         '%s.out.diff.html' % TST])
             if procdebug:
-                print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
+                print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
             proc = process.Popen(cmd, stdout = process.PIPE,
-                                 stderr = process.PIPE)
+                                 stderr = process.PIPE,
+                                 universal_newlines = True)
             proc.killed = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
@@ -2315,13 +2254,13 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     if err:
                         sys.stderr.write(err)
                 if procdebug:
-                    print 'RunTest: process exited "%s" (%s)\n' % \
-                        ('" "'.join(cmd), proc.returncode)
+                    print('RunTest: process exited "%s" (%s)\n' %
+                          ('" "'.join(cmd), proc.returncode))
             except KeyboardInterrupt:
                 t.cancel()
                 killProc(proc)
                 if procdebug:
-                    print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
+                    print('RunTest: process killed "%s"\n' % '" "'.join(cmd))
                 raise
             timedout = proc.killed
             ACCURACYout = ACCURACYout - 1
@@ -2335,7 +2274,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEout),
                         '%s.test.out.FILTERED' % TST])
-            proc = process.Popen(cmd)
+            proc = process.Popen(cmd, universal_newlines = True)
             proc.wait()
 
         diff_html = open('%s.err.diff.html' % TST,"w")
@@ -2366,10 +2305,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '%s.test.err.FILTERED' % TST,
                         '%s.err.diff.html' % TST])
             if procdebug:
-                print 'RunTest: starting process "%s"\n' % '" "'.join(cmd)
+                print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
             proc = process.Popen(cmd, stdout = process.PIPE,
-                                 stderr = process.PIPE)
+                                 stderr = process.PIPE,
+                                 universal_newlines = True)
             proc.killed = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
@@ -2382,13 +2322,13 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     if err:
                         sys.stderr.write(err)
                 if procdebug:
-                    print 'RunTest: process exited "%s" (%s)\n' % \
-                        ('" "'.join(cmd), proc.returncode)
+                    print('RunTest: process exited "%s" (%s)\n' %
+                          ('" "'.join(cmd), proc.returncode))
             except KeyboardInterrupt:
                 t.cancel()
                 killProc(proc)
                 if procdebug:
-                    print 'RunTest: process killed "%s"\n' % '" "'.join(cmd)
+                    print('RunTest: process killed "%s"\n' % '" "'.join(cmd))
                 raise
             timedout = proc.killed
             ACCURACYerr = ACCURACYerr - 1
@@ -2402,7 +2342,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                         '-U%s' % par['CONTEXT'],
                         '%s%s.FILTERED' % (TST, STABLEerr),
                         '%s.test.err.FILTERED' % TST])
-            proc = process.Popen(cmd)
+            proc = process.Popen(cmd, universal_newlines = True)
             proc.wait()
 
         FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
@@ -2470,12 +2410,16 @@ def CheckPort(port) :
     host = os.environ['HOST']
     try:
         S1.bind((host,port))
-    except socket.error, (Serrno,Serrstr):
+    except socket.error as err:
+        Serrno = err.errno
+        Serrstr = err.strerror
         S1.close();
         host = 'localhost'
         try:
             S0.bind((host,port))
-        except socket.error, (Serrno,Serrstr):
+        except socket.error as err:
+            Serrno = err.errno
+            Serrstr = err.strerror
             S0.close()
             busy = 1
 
@@ -2583,7 +2527,7 @@ def killProc(proc, outfile = None, cmd = None):
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except (ValueError, IOError):
-            print 'cannot write timeout message',cmd
+            print('cannot write timeout message ' + cmd)
     if os.name == "nt":
         sym = ''
         if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
@@ -2599,13 +2543,14 @@ def killProc(proc, outfile = None, cmd = None):
         if cdb:
             p = process.Popen([cdb, '-pv', '-p', str(proc.pid),
                                '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
-                              stdout = process.PIPE)
+                              stdout = process.PIPE, universal_newlines = True)
             out, err = p.communicate()
         else:
             out = ''
     else:
         try:
-            p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE)
+            p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE,
+                              universal_newlines = True)
             out, err = p.communicate()
         except:
             out = ''
@@ -2613,19 +2558,20 @@ def killProc(proc, outfile = None, cmd = None):
         try:
             outfile.write('\n%s\n' % out)
         except (ValueError, IOError):
-            print 'cannot write stack trace'
-            print out
+            print('cannot write stack trace')
+            print(out)
     proc.killed = True
     try:
         os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
         if procdebug:
-            print 'killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid)
+            print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
         p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                          stdout = process.PIPE, stderr = process.PIPE)
+                          stdout = process.PIPE, stderr = process.PIPE,
+                          universal_newlines = True)
         out, err = p.communicate()
         if procdebug:
-            print 'killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode)
+            print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
     except OSError:
         pass
 
@@ -2640,7 +2586,7 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     TestErr.flush()
 
     if procdebug:
-        print 'LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd)
+        print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
     setpgrp = True
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = SrvrOut,
                          stderr = TestErr, universal_newlines = True)
@@ -2657,8 +2603,8 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
         try:
             proc.stdin.write(TestInput)
             proc.stdin.flush()
-        except IOError, (IOerrNo, IOerrStr):
-            Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+        except IOError as err:
+            Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (err.errno, err.strerror))
 
     return proc, t
 ### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, SrvrOut) #
@@ -2684,9 +2630,10 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.write(Prompt(cmd))
     TestErr.flush()
     if procdebug:
-        print 'RunIt: starting process "%s"\n' % '" "'.join(cmd)
+        print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
+    proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut,
+                         stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
@@ -2696,12 +2643,12 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
         proc.communicate(input = TestInput)
         t.cancel()
         if procdebug:
-            print 'RunIt: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode)
+            print('RunIt: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, TestErr, cmd)
         if procdebug:
-            print 'RunIt: process killed "%s"\n' % '" "'.join(cmd)
+            print('RunIt: process killed "%s"\n' % '" "'.join(cmd))
         raise
     rc = returnCode(proc, TestErr)
     if rc == 'interrupt':
@@ -2728,13 +2675,13 @@ def mapi_ping(port,lang) :
             data = sock.recv(len)
             # we don't send
             return True
-        except socket.error, (Serrno,Serrstr):
+        except socket.error:
             pass
         time.sleep(wait)
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2761,8 +2708,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
     try:
         STDOUT.flush()
-    except IOError, (IOerrNo, IOerrStr):
-        Warn("Flushing STDOUT in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+    except IOError as err:
+        Warn("Flushing STDOUT in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
     TSTDB = env['TSTDB']
     exe = env['exe']
 
@@ -2807,6 +2754,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     Srvr.remove('--forcemito')
                 except ValueError:
                     pass
+            if threads is not None:
+                for i in range(len(Srvr)):
+                    if Srvr[i].startswith('gdk_nr_threads='):
+                        Srvr[i] = 'gdk_nr_threads=%s' % threads
+                        break
             Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
             if env.get('MULTIFARM'):
                 Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
@@ -2976,8 +2928,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     pSrvr.stdin.flush()
                     pSrvr.stdin.write(';\nio.printf("\\nDone..\\n");\n')
                     pSrvr.stdin.flush()
-                except IOError, (IOerrNo, IOerrStr):
-                    EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
+                except IOError as err:
+                    EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(err.errno)+": '"+err.strerror+"'. !"
                     EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
                 ln="dummy"
                 while 0 < len(ln) and not ln.startswith('Done..'):
@@ -2996,14 +2948,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     pass
                 try:
                     pSrvr.stdin.close()
-                except IOError, (IOerrNo, IOerrStr):
-                    Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+                except IOError as err:
+                    Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
 
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()
             pSrvrTimer.cancel()
             if procdebug:
-                print 'DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode)
+                print('DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.returncode))
             pSrvrTimer = None
             pSrvrCode = returnCode(pSrvr, SrvrErr)
 
@@ -3019,8 +2971,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 q = open(n,'r')
                 try:
                     TestOut.write(q.read())
-                except IOError, (IOerrNo, IOerrStr):
-                    Warn("Reading from input '%s' or writing to output '%s' failed with #%d: '%s'." % (q.name, TestOut.name, IOerrNo, IOerrStr))
+                except IOError as err:
+                    Warn("Reading from input '%s' or writing to output '%s' failed with #%d: '%s'." % (q.name, TestOut.name, err.errno, err.strerror))
                 except MemoryError:
                     Warn("Reading from input '%s' or writing to output '%s' failed with 'MemoryError'." % (q.name, TestOut.name))
                 TestOut.flush()
@@ -3092,7 +3044,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 def Check(command, input) :
     global setpgrp
     if procdebug:
-        print 'Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command)
+        print('Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command))
     setpgrp = True
     proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
@@ -3103,12 +3055,12 @@ def Check(command, input) :
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if procdebug:
-            print 'Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode)
+            print('Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode))
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc)
         if procdebug:
-            print 'Check: process killed "%s"\n' % '" "'.join(command)
+            print('Check: process killed "%s"\n' % '" "'.join(command))
         raise
     qOut = qOut.split('\n')
     qErr = qErr.split('\n')
@@ -3154,7 +3106,7 @@ def Check(command, input) :
 ### Check(command, input) #
 
 def CheckClassPath() :
-    if os.environ.has_key('CLASSPATH'):
+    if 'CLASSPATH' in os.environ:
         cp = os.environ['CLASSPATH']
         cpx = cp + os.pathsep
     else:
@@ -3170,7 +3122,7 @@ def CheckClassPath() :
         if os.path.isfile(p):
             f = os.path.basename(p)
             C = 'HAVE_%s' % f.upper().replace('.','_')
-            if not JARS.has_key(C):
+            if C not in JARS:
                 C = 'HAVE_MONETDBJDBC_JAR'
             if JARS[C].match(f):
                 CONDITIONALS[C] = '#'
@@ -3189,7 +3141,7 @@ def CheckClassPath() :
                             CONDITIONALS[C] = '#'
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
-                        if not JARS.has_key(C):
+                        if C not in JARS:
                             C = 'HAVE_MONETDBJDBC_JAR'
                         if not CONDITIONALS.get(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
@@ -3226,7 +3178,7 @@ def SetExecEnv(exe,verbose) :
         else:
             os.environ[V] = ""
         if verbose:
-            print "%s = %s : %s" % (V, exe[v][0], exe[v][1])
+            print("%s = %s : %s" % (V, exe[v][0], exe[v][1]))
     if verbose:
         STDOUT.flush()
 ### SetExecEnv(exe,procdebug) #
@@ -3272,17 +3224,17 @@ os.environ['CYGPATH_W'] = '@CYGPATH_W@'
 os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
 
 HOST = 'localhost'
-if os.environ.has_key('HOST'):
+if 'HOST' in os.environ:
     HOST = os.environ['HOST']
 #else:
 #    HOST = ''
 elif os.name != "nt":
     HOST = os.uname()[1]
-elif os.environ.has_key('COMPUTERNAME'):
+elif 'COMPUTERNAME' in os.environ:
     HOST = os.environ['COMPUTERNAME']
 ##else:
 ##    HOST = "WIN2000"
-if os.environ.has_key('DOMAIN'):
+if 'DOMAIN' in os.environ:
     HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
 else:
     HOST = HOST.split('.', 1)[0]
@@ -3297,13 +3249,13 @@ if os.name == "nt":
     RELEASE = "5.0"
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
-        print 'starting process "cmd" "/c" "ver" (inpipe,outpipe)\n'
+        print('starting process "cmd" "/c" "ver" (inpipe,outpipe)\n')
     proc = process.Popen('cmd /c ver', stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE,
                          universal_newlines = True)
     qOut, qErr = proc.communicate()
     if procdebug:
-        print 'process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode
+        print('process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode)
     for l in qOut.split('\n'):
         m = r.match(l.strip())
         if m and m.group(2):
@@ -3422,12 +3374,12 @@ os.environ['DIST'] = DIST
 os.environ['DISTVER'] = DISTVER
 os.environ['VERSION'] = VERSION
 
-if os.environ.has_key('COMPBITSOIDSLINK'):
+if 'COMPBITSOIDSLINK' in os.environ:
     COMPBITSOIDSLINK = os.environ['COMPBITSOIDSLINK']
 else:
     COMPBITSOIDSLINK = ""
 
-if os.environ.has_key('HTMLTITLE'):
+if 'HTMLTITLE' in os.environ:
     HTMLTITLE = os.environ['HTMLTITLE']
 else:
     HTMLTITLE = ""
@@ -3470,7 +3422,7 @@ def main(argv) :
     # get current environment
     env['HOST'] = os.environ['HOST']
     for v in vars:
-        if os.environ.has_key(v):
+        if v in os.environ:
             env[v] = os.environ[v]
             #TODO:
             # make sure, that PATHs are absolute
@@ -3700,7 +3652,7 @@ def main(argv) :
     if verbose:
         for v in par.keys():
             #os.environ[v] = par[v]
-            print"%s = %s" % (v, str(par[v]))
+            print("%s = %s" % (v, str(par[v])))
     STDOUT.flush()
     #env['par'] = par
 
@@ -3714,13 +3666,23 @@ def main(argv) :
 #         CONDITIONALS['HAVE_PHP'] = ''
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
-        proc = process.Popen(['ruby', '--version'], stdout = process.PIPE, stderr = process.PIPE)
+        proc = process.Popen(['ruby', '--version'],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
         ruby_out, ruby_err = proc.communicate()
         ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
         ruby_ver = ruby_reg.match(ruby_out)
         if ruby_ver and \
            100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
-            CONDITIONALS['HAVE_RUBY'] = '#'
+            # now check whether the monetdb-ruby gem is available
+            proc = process.Popen(['ruby', '-e', "require 'MonetDB'"],
+                                 stdout = process.PIPE, stderr = process.PIPE,
+                                 universal_newlines = True)
+            ruby_out, ruby_err = proc.communicate()
+            if proc.returncode == 0:
+                CONDITIONALS['HAVE_RUBY'] = '#'
+            else:
+                print('Ruby available, but MonetDB gem not available')
 #     else:
 #         CONDITIONALS['HAVE_RUBY'] = ''
     CheckClassPath()
@@ -3731,7 +3693,7 @@ def main(argv) :
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
-        if not env.has_key(v):
+        if v not in env:
             env[v] = eval(dft[v])
             #TODO:
             # make sure, that PATHs are absolute
@@ -3742,7 +3704,7 @@ def main(argv) :
             env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
         else:
             env['setMONETDB_MOD_PATH'] = ''
-        if env.has_key('DBG'):
+        if 'DBG' in env:
             env['setDBG'] = env['DBG']
         else:
             env['setDBG'] = ''
@@ -3788,7 +3750,9 @@ def main(argv) :
     BACK = os.getcwd()
     try:
         os.chdir(TSTSRCBASE)
-        proc = process.Popen(['hg', 'root'], stdout = process.PIPE)
+        proc = process.Popen(['hg', 'root'],
+                             stdout = process.PIPE, stderr = process.PIPE,
+                             universal_newlines = True)
         out, err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['MERCURIAL'] = '#' # True
@@ -3841,7 +3805,7 @@ def main(argv) :
 
     #STDERR.flush()
     #for v in 'RELSRCBASE':
-    #       print v+" = "+str(env[v])
+    #       print(v+" = "+str(env[v]))
     #STDOUT.flush()
 
     # inject vars that tell various languages where to find their libs
@@ -3851,20 +3815,6 @@ def main(argv) :
     env['PHP_INCPATH'] = _configure(os.path.join('@QXdatadir@', 'php'))
     env['BINDIR'] = _configure('@QXbindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
-    if CONDITIONALS.has_key('HAVE_RUBY')    and CONDITIONALS['HAVE_RUBY'] and \
-       CONDITIONALS.has_key('HAVE_RUBYGEM') and CONDITIONALS['HAVE_RUBYGEM']:
-        if os.environ.has_key('GEM_PATH'):
-            gem_path = os.environ['GEM_PATH']
-        else:
-            try:
-                proc = process.Popen(['gem', 'environment', 'gempath'], stdout = process.PIPE, stderr = process.PIPE)
-                gem_path, gem_err = proc.communicate()
-            except:
-                gem_path = ''
-        if gem_path:
-            gem_path = os.pathsep + gem_path
-        env['GEM_PATH'] = _configure(os.path.join('@QXprefix@', '@QXRUBY_DIR@')) + gem_path.strip()
-        vars_ = vars_ + ['GEM_PATH']
 
     # export and display env
     STDERR.flush()
@@ -3874,20 +3824,20 @@ def main(argv) :
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
-        if env.has_key(v):
+        if v in env:
             os.environ[v] = env[v]
             if verbose:
-                print "%s = %s" % (v, env[v])
+                print("%s = %s" % (v, env[v]))
     if verbose or testweb:
-        print "%s = %s" % ('PATH', os.environ['PATH'])
-        if os.environ.has_key('PYTHONPATH'):
-            print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
-        if os.environ.has_key('CLASSPATH'):
-            print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
+        print("%s = %s" % ('PATH', os.environ['PATH']))
+        if 'PYTHONPATH' in os.environ:
+            print("%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH']))
+        if 'CLASSPATH' in os.environ:
+            print("%s = %s" % ('CLASSPATH', os.environ['CLASSPATH']))
     if testweb:
-        for v in 'GEM_PATH', 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
-            if os.environ.has_key(v):
-                print "%s = %s" % (v, os.environ[v])
+        for v in 'PERL5LIB', 'PHP_INCPATH', 'BINDIR':
+            if v in os.environ:
+                print("%s = %s" % (v, os.environ[v]))
     STDOUT.flush()
 
     # add QUIET par to env
@@ -3904,21 +3854,21 @@ def main(argv) :
     #               bp = bp+os.pathsep+lp
     #       else:
     #               bp = lp
-    #if os.environ.has_key('PATH'):
+    #if 'PATH' in os.environ:
     #       if bp:
     #               bp = bp+os.pathsep+os.environ['PATH']
     #       else:
     #               bp = os.environ['PATH']
     #os.environ['PATH'] = bp
-    #print "PATH = "+bp
+    #print("PATH = "+bp)
     #if os.name == "posix":
-    #       if os.environ.has_key('LD_LIBRARY_PATH'):
+    #       if 'LD_LIBRARY_PATH' in os.environ:
     #               if lp:
     #                       lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
     #               else:
     #                       lp = os.environ['LD_LIBRARY_PATH']
     #       os.environ['LD_LIBRARY_PATH'] = lp
-    #       print "LD_LIBRARY_PATH = "+lp
+    #       print("LD_LIBRARY_PATH = "+lp)
 
     if not startswithpath(os.getcwd() + os.sep, TSTSRCBASE + os.sep):
         Warn("Current directory %s is no descendant of TSTSRCBASE=%s;" % (os.getcwd(), TSTSRCBASE))
@@ -3930,7 +3880,9 @@ def main(argv) :
     REV = opts.get('revision')
     if REV is None:             # no --revision option: try to find out
         try:
-            proc = process.Popen(['hg', 'id', '-i'], stdout = process.PIPE)
+            proc = process.Popen(['hg', 'id', '-i'],
+                                 stdout = process.PIPE,
+                                 universal_newlines = True)
             out, err = proc.communicate()
             if proc.returncode == 0:
                 REV = out.strip()
@@ -4141,11 +4093,11 @@ def main(argv) :
                 sys.exit(1)
             STDERR.flush()
             if verbose:
-                print "Bits: ", env['TST_BITS']
-                print "OIDs: ", env['TST_OIDS']
+                print("Bits: " + env['TST_BITS'])
+                print("OIDs: " + env['TST_OIDS'])
                 if env['TST_INT128']:
-                    print "Integers: 128bit"
-                print "Modules: ", env['TST_MODS']
+                    print("Integers: 128bit")
+                print("Modules: " + env['TST_MODS'])
             STDOUT.flush()
 
             port = int(env['MAPIPORT'])
@@ -4178,7 +4130,7 @@ def main(argv) :
             else:
                 tsts = "all tests"
             if verbose:
-                print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
+                print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
             t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts)
             if elem is not None:
                 if diff <= F_OK:
@@ -4187,7 +4139,7 @@ def main(argv) :
                     body_bad.append(elem)
         else:
             if verbose:
-                print "\nRunning all tests in directories %s.\n" % str(testdirs)
+                print("\nRunning all tests in directories %s.\n" % str(testdirs))
             for d in testdirs:
                 t, elem, diff = PerformDir(env, d, [], BusyPorts)
                 t_ = t_ + t
@@ -4208,7 +4160,7 @@ def main(argv) :
                 remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
             fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
             fl = open(fn+"lst","w")
-            Failure = [[] for i in range(len(FAILURES))]
+            Failure = [[] for i in FAILURES]
             for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
                 fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                     tt,
@@ -4334,14 +4286,14 @@ VALUES (%s, '%s', '%s', '%s',
                             what += "        %s\n" % f
             STDERR.flush()
             if Failed:
-                print """\
+                print("""\
 
  !ERROR:  Testing FAILED %s (%d out of %d tests failed)
 
 %s
-""" % (how, Failed, num_tests, what)
+""" % (how, Failed, num_tests, what))
                 if not testweb:
-                    print """\
+                    print("""\
  First, check the testing results in  %s  !
 
  Then, fix the problems by:
@@ -4350,7 +4302,7 @@ VALUES (%s, '%s', '%s', '%s',
   - approving test output by Mapprove.py (cf. Mapprove.py -?)
 
  After that, re-run Mtest.
-""" % os.path.join(TSTTRGBASE, TSTPREF, "index.html")
+""" % os.path.join(TSTTRGBASE, TSTPREF, "index.html"))
                 if jenkins:
                     sys.exit(0)
                 sys.exit(1)
@@ -4358,35 +4310,35 @@ VALUES (%s, '%s', '%s', '%s',
                 if quiet:
                     pass
                 elif verbose:
-                    print """\
+                    print("""\
 
  No differences encountered during testing.
 
  If necessary, you can checkin your modifications, now.
-"""
+""")
                 else:
-                    print "No differences encountered during testing."
+                    print("No differences encountered during testing.")
                 sys.exit(0)
 
         if THISFILE == "Mapprove.py":
             if not quiet:
-                print """\
+                print("""\
 
  First, run 'hg diff` to check what you have changed.
 
  Then, re-run Mtest.py.
-"""
+""")
             if t_:
                 if par['FORCE']:
-                    print """\
+                    print("""\
  In case (some of) the approved error messages are not correct/expected,
  re-run Mapprove.py without -f to skip their approval.
-"""
+""")
                 else:
-                    print """\
+                    print("""\
  In case (some of) the skipped error messages are correct/expected,
  re-run Mapprove.py with -f to force their approval.
-"""
+""")
     finally:
         # cleanup the place where we put our UNIX sockets
         if THISFILE == "Mtest.py" and SOCK:

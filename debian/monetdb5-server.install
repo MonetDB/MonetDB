@@ -1,24 +1,25 @@
 debian/tmp/usr/bin/mserver5 usr/bin
 debian/tmp/usr/lib/libmonetdb5.so.* usr/lib
 
-# usr/lib/monetdb5/lib_*.so EXCEPT: lib_{bam,geom,gsl,sql}.so
+# usr/lib/monetdb5/lib_*.so EXCEPT: lib_{bam,geom,gsl,lidar,sql}.so
 debian/tmp/usr/lib/monetdb5/lib_generator.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_lsst.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_opt_sql_append.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_udf.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_vault.so usr/lib/monetdb5
 
-# usr/lib/monetdb5/*.mal EXCEPT: bam.mal, geom.mal, gsl.mal, sql*.mal *_hge.mal
-debian/tmp/usr/lib/monetdb5/[!bgsu]*.mal usr/lib/monetdb5
+# usr/lib/monetdb5/*.mal EXCEPT: {bam,geom,gsl,lidar,sql*,*_hge}.mal
+debian/tmp/usr/lib/monetdb5/[!bglsu]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/ba[!m]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/b[!a]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/generator.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/g[!es]*.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/l[!i]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/s[!q]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/udf.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/u[!d]*.mal usr/lib/monetdb5
 
-# usr/lib/monetdb5/autoload/*.mal EXCEPT: *_bam.mal, *_geom.mal, *_gsl.mal, *_hge.mal *_sql.mal
+# usr/lib/monetdb5/autoload/*.mal EXCEPT: *_{bam,geom,gsl,hge,lidar,sql}.mal
 debian/tmp/usr/lib/monetdb5/autoload/??_batcalc.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/autoload/??_calc.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/autoload/??_generator.mal usr/lib/monetdb5/autoload

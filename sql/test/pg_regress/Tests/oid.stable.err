@@ -1,11 +1,11 @@
 stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 
 
-# 16:27:39 >  
-# 16:27:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30205" "--set" "mapi_usock=/var/tmp/mtest-19737/.s.monetdb.30205" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 16:27:39 >  
+# 13:47:46 >  
+# 13:47:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38887" "--set" "mapi_usock=/var/tmp/mtest-7019/.s.monetdb.38887" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 13:47:46 >  
 
-# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,62 +17,62 @@ stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 30205
-# cmdline opt 	mapi_usock = /var/tmp/mtest-19737/.s.monetdb.30205
+# cmdline opt 	mapi_port = 38887
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7019/.s.monetdb.38887
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-candidate/var/MonetDB/mTests_sql_test_pg_regress
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_pg_regress
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 16:27:39 >  
-# 16:27:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19737" "--port=30205"
-# 16:27:39 >  
+# 13:47:46 >  
+# 13:47:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7019" "--port=38887"
+# 13:47:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
 ERROR = !conversion of string 'asdfasd' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('99asdfasd');
 ERROR = !conversion of string '99asdfasd' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    d');
 ERROR = !conversion of string '5    d' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('    5d');
 ERROR = !conversion of string '    5d' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('5    5');
 ERROR = !conversion of string '5    5' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES (-10);   -- negative oids are not allowed in MonetDB, so this should fail
 ERROR = !overflow in conversion of -10 to oid.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES (-1040);   -- negative oids are not allowed in MonetDB, so this should fail
 ERROR = !overflow in conversion of -1040 to oid.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-1040');   -- negative oids are not allowed in MonetDB, so this should fail
 ERROR = !conversion of string '-1040' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES (' - 500');
 ERROR = !conversion of string ' - 500' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('32958209582039852935');
 ERROR = !conversion of string '32958209582039852935' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES (32958209582039852935);
 ERROR = !integer value too large or not a number (32958209582039852935) in: "insert into oid_tbl(f1) values (32958209582039852935"
         !syntax error, unexpected ')' in: ")"
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-23582358720398502385');
 ERROR = !conversion of string '-23582358720398502385' to type oid failed.
-MAPI  = (monetdb) /var/tmp/mtest-19737/.s.monetdb.30205
+MAPI  = (monetdb) /var/tmp/mtest-7019/.s.monetdb.38887
 QUERY = INSERT INTO OID_TBL(f1) VALUES (-23582358720398502385);
 ERROR = !integer value too large or not a number (23582358720398502385) in: "insert into oid_tbl(f1) values (-23582358720398502385"
         !syntax error, unexpected ')' in: ")"
 
-# 16:27:39 >  
-# 16:27:39 >  "Done."
-# 16:27:39 >  
+# 13:47:46 >  
+# 13:47:46 >  "Done."
+# 13:47:46 >  
 

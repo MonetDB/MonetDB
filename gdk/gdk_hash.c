@@ -250,6 +250,8 @@ BATcheckhash(BAT *b)
 					h->Link = hp->base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
+					hp->parentid = b->batCacheid;
+					hp->dirty = FALSE;
 					b->T->hash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
@@ -284,29 +286,30 @@ BAThashsync(void *arg)
 	Heap *hp = hs->hp;
 	int fd;
 	lng t0 = GDKusec();
+	const char *failed = " failed";
 
-	if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||
-	    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
-		BBPunfix(hs->id);
-		GDKfree(arg);
-		return;
-	}
-	((size_t *) hp->base)[0] |= 1 << 24;
-	if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
-		perror("write hash");
-	if (!(GDKdebug & FORCEMITOMASK)) {
+	if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED &&
+	    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+		((size_t *) hp->base)[0] |= 1 << 24;
+		if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
+			failed = ""; /* not failed */
+			if (!(GDKdebug & FORCEMITOMASK)) {
 #if defined(NATIVE_WIN32)
-		_commit(fd);
+				_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-		fdatasync(fd);
+				fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-		fsync(fd);
+				fsync(fd);
 #endif
+			}
+		} else {
+			perror("write hash");
+		}
+		close(fd);
 	}
-	close(fd);
 	BBPunfix(hs->id);
 	GDKfree(arg);
-	ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
+	ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 }
 #endif
 
@@ -343,6 +346,7 @@ BAThash(BAT *b, BUN masksize)
 			GDKfree(hp);
 			return GDK_FAIL;
 		}
+		hp->dirty = TRUE;
 		sprintf(hp->filename, "%s.%s", nme, ext);
 
 		/* cnt = 0, hopefully there is a proper capacity from
@@ -490,6 +494,7 @@ BAThash(BAT *b, BUN masksize)
 			}
 			break;
 		}
+		hp->parentid = b->batCacheid;
 #ifdef PERSISTENTHASH
 		if (BBP_status(b->batCacheid) & BBPEXISTING) {
 			MT_Id tid;
@@ -498,7 +503,12 @@ BAThash(BAT *b, BUN masksize)
 				BBPfix(b->batCacheid);
 				hs->id = b->batCacheid;
 				hs->hp = hp;
-				MT_create_thread(&tid, BAThashsync, hs, MT_THR_DETACHED);
+				if (MT_create_thread(&tid, BAThashsync, hs,
+						     MT_THR_DETACHED) < 0) {
+					/* couldn't start thread: clean up */
+					BBPunfix(b->batCacheid);
+					GDKfree(hs);
+				}
 			}
 		} else
 			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
@@ -600,6 +610,17 @@ HASHfree(BAT *b)
 		MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 		if (b->T->hash && b->T->hash != (Hash *) -1) {
 			if (b->T->hash != (Hash *) 1) {
+				if (b->T->hash->heap->storage == STORE_MEM &&
+				    b->T->hash->heap->dirty) {
+					GDKsave(b->T->hash->heap->farmid,
+						b->T->hash->heap->filename,
+						NULL,
+						b->T->hash->heap->base,
+						b->T->hash->heap->free,
+						STORE_MEM,
+						FALSE);
+					b->T->hash->heap->dirty = FALSE;
+				}
 				HEAPfree(b->T->hash->heap, 0);
 				GDKfree(b->T->hash->heap);
 				GDKfree(b->T->hash);

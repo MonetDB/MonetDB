@@ -2,9 +2,10 @@ import(DBI,digest,methods,codetools,utils)
 
 # export only driver constructor, everything else is DBI stuff..
 export(MonetDB,MonetR,MonetDBR,MonetDB.R)
+export(MonetDBLite,monetdblite,RMonetDBLite,rmonetdblite)
 export(monet.read.csv,monetdb.read.csv)
-# this one is not in the DBI
-exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,mdbapply)
+# those are not in the DBI
+exportMethods(dbSendUpdate,dbSendUpdateAsync,dbTransaction,mdbapply,isIdCurrent,initExtension)
 # shorthands
 export(mc,mq)
 useDynLib(MonetDB.R)
@@ -15,19 +16,9 @@ export(monetdb.server.start)
 export(monetdb.server.stop)
 export(monetdbd.liststatus)
 export(monetdb.liststatus)
+export(monetdb.server.shutdown)
+export(monetdb.server.getpid)
 
 # dplyr.R
 export(src_monetdb)
-export(src_translate_env.src_monetdb)
-export(src_desc.src_monetdb)
-export(tbl.src_monetdb)
-export(db_query_fields.MonetDBConnection)
-export(db_query_rows.MonetDBConnection)
-export(db_save_query.MonetDBConnection)
-export(db_insert_into.MonetDBConnection)
-export(db_create_index.MonetDBConnection)
-export(db_analyze.MonetDBConnection)
-export(sql_subquery.MonetDBConnection)
-export(monetdb_queryinfo) 
-export(sample_n.tbl_monetdb)
-export(sample_frac.tbl_monetdb)
+# rest of dplyr.R exported via hack in src_monetdb

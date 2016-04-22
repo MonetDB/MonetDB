@@ -139,4 +139,15 @@ gdk_export log_bid logger_add_bat(logger *lg, BAT *b, const char *name);
 gdk_export void logger_del_bat(logger *lg, log_bid bid);
 gdk_export log_bid logger_find_bat(logger *lg, const char *name);
 
+typedef int (*geomcatalogfix_fptr)(void *, int);
+gdk_export void geomcatalogfix_set(geomcatalogfix_fptr);
+gdk_export geomcatalogfix_fptr geomcatalogfix_get(void);
+
+typedef str (*geomsqlfix_fptr)(int);
+gdk_export void geomsqlfix_set(geomsqlfix_fptr);
+gdk_export geomsqlfix_fptr geomsqlfix_get(void);
+
+gdk_export void geomversion_set(void);
+gdk_export int geomversion_get(void);
+
 #endif /*_LOGGER_H_*/

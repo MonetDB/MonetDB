@@ -25,19 +25,19 @@ stdout of test 'tst304` in directory 'monetdb5/mal` itself:
 
 Ready.
 
-# 11:35:16 >  
-# 11:35:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-13954" "--port=38078"
-# 11:35:16 >  
+# 10:53:36 >  
+# 10:53:36 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-5303" "--port=30531"
+# 10:53:36 >  
 
-function user.foo():void;               	#[0]  0 
-    user.myException();                 	#[1]  1 
-    io.print("should not come here":str);	#[2] IOprint_val 2 <- 3 
+function user.foo():void;               	#[0] (0)  0 
+    user.myException();                 	#[1] (0)  1 
+    io.print("should not come here":str);	#[2] (0) IOprint_val 2 <- 3 
 #exception block;                       
-catch MALException:str;                 	#[4]  5 
-    io.printf("caught IllegalAccess\n":str);	#[5] IOprintf 6 <- 7 
-exit MALException:str;                  	#[6]  5 
-    io.print("done":str);               	#[7] IOprint_val 8 <- 9 
-end user.foo;                           	#[8]  
+catch MALException:str;                 	#[4] (0)  5 
+    io.printf("caught IllegalAccess\n":str);	#[5] (0) IOprintf 6 <- 7 
+exit MALException:str;                  	#[6] (0)  5 
+    io.print("done":str);               	#[7] (0) IOprint_val 8 <- 9 
+end user.foo;                           	#[8] (0)  
 caught IllegalAccess
 [ "done" ]
 

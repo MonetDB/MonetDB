@@ -10,7 +10,7 @@ dnl Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.60)
-AC_INIT([MonetDB], [11.22.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
+AC_INIT([MonetDB], [11.24.0], [info@monetdb.org], [MonetDB], [http://www.monetdb.org/])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -162,13 +162,13 @@ AC_ARG_ENABLE(netcdf,
 		[enable support for netcdf (default=auto)]),
 	enable_netcdf=$enableval,
 	enable_netcdf=$dft_netcdf)
-
+	
 dft_lidar=auto
 AC_ARG_ENABLE(lidar,
 	AS_HELP_STRING([--enable-lidar],
 		[enable support for LiDAR data (default=auto)]),
-	enable_lidar=$enableval,
-	enable_lidar=$dft_lidar)
+	have_lidar=$enableval,
+	have_lidar=$dft_lidar)
 
 dft_sql=yes
 AC_ARG_ENABLE(sql,
@@ -201,6 +201,48 @@ no-auto)
 	disable_geom="(geom module requires MonetDB5)"
 	;;
 esac
+
+dft_shp=auto
+AC_ARG_ENABLE(shp,
+	AS_HELP_STRING([--enable-shp],
+		[enable support for ESRI Shapefiles (default=auto)]),
+	have_shp=$enableval,
+	have_shp=$dft_shp)
+case "$enable_geom-$have_shp" in
+no-yes)
+	AC_MSG_ERROR([ESRI Shapefile vault requires the geom module])
+	;;
+no-auto)
+	have_shp=no
+	disable_shp="(ESRI Shapefile vault requires the geom module)"
+	;;
+esac
+
+dft_embedded=no
+AC_ARG_ENABLE(embedded,
+	AS_HELP_STRING([--enable-embedded],
+		[enable support for running MonetDB as a library (default=no)]),
+	enable_embedded=$enableval,
+	enable_embedded=$dft_embedded)
+AM_CONDITIONAL(HAVE_EMBEDDED, test x$enable_embedded != xno)
+
+if test "x$enable_embedded" != xno; then
+	AC_DEFINE(HAVE_EMBEDDED, 1, [Support for MonetDB as a library])
+fi
+AM_CONDITIONAL(HAVE_EMBEDDED, test x"$enable_embedded" != xno)
+
+dft_embedded_r=no
+AC_ARG_ENABLE(embedded-r,
+	AS_HELP_STRING([--enable-embedded-r],
+		[enable support for running MonetDB as a library for R (default=no)]),
+	enable_embedded_r=$enableval,
+	enable_embedded_r=$dft_embedded_r)
+AM_CONDITIONAL(HAVE_EMBEDDED_R, test x$enable_embedded_r != xno)
+
+if test "x$enable_embedded_r" != xno; then
+	AC_DEFINE(HAVE_EMBEDDED_R, 1, [Support for MonetDB as a library for R])
+fi
+AM_CONDITIONAL(HAVE_EMBEDDED_R, test x"$enable_embedded_R" != xno)
 
 dft_microhttpd=no
 AC_ARG_ENABLE(microhttpd,
@@ -1409,89 +1451,6 @@ if test "x$enable_testing" != xno ; then
 	fi
 fi
 
-RUBY=ruby
-AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
-have_rubygem_dir=auto
-AC_ARG_WITH(rubygem-dir,
-	AS_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
-	have_rubygem_dir="$withval")
-
-case "$have_rubygem_dir" in
-	no) ;;
-	*)
-		if test "x$RUBY" = xno; then
-			if test "x$have_rubygem_dir" != xauto; then
-				AC_MSG_ERROR([No Ruby executable found])
-			fi
-			have_rubygem_dir=no
-		else
-			case "$have_rubygem_dir" in
-				yes|auto)
-					AC_MSG_CHECKING([where rubygems are stored])
-					RUBY_DIR=
-					d=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['prefix']]" 2>/dev/null`
-					RUBY_DIR=`$RUBY -rrbconfig -e "puts RbConfig::CONFIG[['sitelibdir']]" 2>/dev/null | sed -e "s|^$d/||" -e 's/site_ruby/gems/'`
-					if test x"$RUBY_DIR" = x ; then
-						if test x"$have_rubygem_dir" != xauto; then
-							AC_MSG_ERROR([unable to determine rubygems location])
-						else
-							AC_MSG_RESULT([unable to determine rubygems location])
-							RUBY=no
-							have_rubygem_dir=no
-						fi
-					else
-						AC_MSG_RESULT([$RUBY_DIR])
-					fi
-					;;
-				*)
-					RUBY_DIR="$have_rubygem_dir"
-					;;
-			esac
-		fi
-		;;
-	*)
-		;;
-esac
-case "$RUBY_DIR" in
-${prefix}/*)
-	RUBY_DIR="`echo "$RUBY_DIR" | sed "s|^$prefix/||"`";;
-/*)	RUBY_DIR="${RUBY_DIR#/}";;
-esac
-AC_SUBST(RUBY_DIR)
-QRUBY_DIR="$RUBY_DIR"
-XRUBY_DIR="`$translatepath "$QRUBY_DIR"`"
-QXRUBY_DIR="`echo "$XRUBY_DIR" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QXRUBY_DIR)
-
-RUBYGEM=gem
-org_have_rubygem=auto
-have_rubygem=$org_have_rubygem
-AC_ARG_WITH(rubygem,
-	AS_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
-	have_rubygem="$withval")
-
-case "$have_rubygem" in
-	yes|no|auto)
-		;;
-	*)
-		RUBYGEM="$have_rubygem"
-		have_rubygem=yes
-		;;
-esac
-
-if test "x$have_rubygem" != xno; then
-	AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
-	if test "x$RUBYGEM" = xno; then
-		if test "x$have_rubygem" != xauto; then
-			AC_MSG_ERROR([No rubygem executable found])
-		fi
-		have_rubygem=no
-		why_have_rubygem="(no rubygem executable found)"
-	fi
-fi
-AC_SUBST(RUBYGEM)
-AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
-
 AC_PROG_YACC
 case "$YACC" in
 	bison*)
@@ -1505,12 +1464,17 @@ case "$YACC" in
 		fi
 	;;
 	*)
-		if test "x$enable_sql" = xyes; then
-			AC_MSG_ERROR([MonetDB/SQL requires bison])
-		fi
-		enable_sql=no
-		if test "x$disable_sql" = x; then
-			disable_sql="(MonetDB/SQL requires bison)"
+		# in embedded mode, we ship the bison-generated files
+		if test "x$enable_embedded" = xno; then
+			if test "x$enable_sql" = xyes; then
+				AC_MSG_ERROR([MonetDB/SQL requires bison])
+			fi
+			enable_sql=no
+			if test "x$disable_sql" = x; then
+				disable_sql="(MonetDB/SQL requires bison)"
+			fi
+		else
+			AC_MSG_WARN([ignoring missing bison in embedded configuration])
 		fi
 	;;
 esac
@@ -2064,59 +2028,78 @@ m4_ifndef([AM_ICONV],
 
 AM_ICONV
 
-dnl UUID: remember that most UNIX systems have uuid_* functions in their
-dnl       libc, not as separate library, such as from util-linux.  We
-dnl       can't just use pkg-config check because of that.
-save_LIBS="$LIBS"
-LIBS=
-AC_SEARCH_LIBS([uuid_generate], [uuid], [AC_DEFINE([HAVE_UUID], 1, [uuid])])
-UUID_LIBS="$LIBS"
-LIBS="$save_LIBS"
-AC_SUBST(UUID_LIBS)
+org_have_uuid=yes
+have_uuid=$org_have_uuid
+AC_ARG_WITH(uuid,
+	AS_HELP_STRING([--with-uuid],
+		[include UUID support (default=yes)]),
+	have_uuid=$withval)
+if test "x$have_uuid" != xno; then
+	dnl UUID: remember that most UNIX systems have uuid_* functions in their
+	dnl       libc, not as separate library, such as from util-linux.  We
+	dnl       can't just use pkg-config check because of that.
+	save_LIBS="$LIBS"
+	LIBS=
+	AC_SEARCH_LIBS([uuid_generate], [uuid], [AC_DEFINE([HAVE_UUID], 1, [uuid])])
+	UUID_LIBS="$LIBS"
+	LIBS="$save_LIBS"
+	AC_SUBST(UUID_LIBS)
+fi
+AM_CONDITIONAL(HAVE_UUID, test x"$have_uuid" != xno)
+
 
 dnl OpenSSL library
-dnl required for MonetDB5 (and SQL), optional otherwise
-PKG_CHECK_MODULES([openssl], [openssl],
-	[have_openssl=yes],
-	[have_openssl=no; why_have_openssl="(OpenSSL library not found)"])
-case "$enable_monetdb5-$have_openssl" in
-yes-no)
-	AC_MSG_ERROR([OpenSSL library not found but required for MonetDB5])
-	;;
-auto-no)
-	enable_monetdb5=no
-	if test "x$disable_monetdb5" = x; then
-		disable_monetdb5="(OpenSSL library not found but required for MonetDB5)"
+org_have_openssl=yes
+have_openssl=$org_have_openssl
+AC_ARG_WITH(openssl,
+	AS_HELP_STRING([--with-openssl],
+		[include OpenSSL support (default=yes)]),
+	have_openssl=$withval)
+if test "x$have_openssl" != xno; then
+	PKG_CHECK_MODULES([openssl], [openssl],
+			[have_openssl=yes],
+			[have_openssl=no; why_have_openssl="(OpenSSL library not found)"])
+	case "$enable_monetdb5-$have_openssl" in
+	yes-no)
+		AC_MSG_ERROR([OpenSSL library not found but required for MonetDB5])
+		;;
+	auto-no)
+		enable_monetdb5=no
+		if test "x$disable_monetdb5" = x; then
+			disable_monetdb5="(OpenSSL library not found but required for MonetDB5)"
+		fi
+		;;
+	*-yes)
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $openssl_LIBS"
+		AC_CHECK_FUNCS([MD5 RIPEMD160 SHA1 SHA224 SHA256 SHA384 SHA512])
+		LIBS="$save_LIBS"
+		if eval test \"x\$ac_cv_func_$MONETDB5_PASSWDHASH\" != x"yes"; then
+			case "$enable_monetdb5" in
+			yes)
+				AC_MSG_ERROR([OpenSSL library found but checksum algorithm required for MonetDB5 not found])
+				;;
+			auto)
+				enable_monetdb5=no
+				if test "x$disable_monetdb5" = x; then
+					disable_monetdb5="(OpenSSL library found but checksum algorithm required for MonetDB5 not found)"
+				fi
+				;;
+			*)
+				AC_MSG_WARN([OpenSSL library found but required checksum algorithm not found, so disabling])
+				;;
+			esac
+			have_openssl=no
+			why_have_openssl="(OpenSSL library found but required checksum algorithm not found)"
+		fi
+		;;
+	esac
+	if test x"$have_openssl" = x"yes"; then
+		AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 	fi
-	;;
-*-yes)
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $openssl_LIBS"
-	AC_CHECK_FUNCS([MD5 RIPEMD160 SHA1 SHA224 SHA256 SHA384 SHA512])
-	LIBS="$save_LIBS"
-	if eval test \"x\$ac_cv_func_$MONETDB5_PASSWDHASH\" != x"yes"; then
-		case "$enable_monetdb5" in
-		yes)
-			AC_MSG_ERROR([OpenSSL library found but checksum algorithm required for MonetDB5 not found])
-			;;
-		auto)
-			enable_monetdb5=no
-			if test "x$disable_monetdb5" = x; then
-				disable_monetdb5="(OpenSSL library found but checksum algorithm required for MonetDB5 not found)"
-			fi
-			;;
-		*)
-			AC_MSG_WARN([OpenSSL library found but required checksum algorithm not found, so disabling])
-			;;
-		esac
-		have_openssl=no
-		why_have_openssl="(OpenSSL library found but required checksum algorithm not found)"
-	fi
-	;;
-esac
-if test x"$have_openssl" = x"yes"; then
-	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 fi
+AM_CONDITIONAL(HAVE_OPENSSL, test x"$have_openssl" != xno)
+
 
 dnl PCRE library
 dnl required for MonetDB5 (and SQL), optional otherwise
@@ -2154,27 +2137,47 @@ auto-no)
 	;;
 esac
 
-
-PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"; why_have_libxml2="(libxml2 not found)"])
-case "$enable_monetdb5-$have_libxml2" in
-yes-no)
-	AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])
-	;;
-auto-no)
-	enable_monetdb5=no
-	if test "x$disable_monetdb5" = x; then
-		disable_monetdb5="(libxml2 library not found but required for MonetDB5)"
+org_have_libxml2=yes
+have_libxml2=$org_have_libxml2
+AC_ARG_WITH(libxml2,
+	AS_HELP_STRING([--with-libxml2],
+		[include libxml2 support (default=yes)]),
+	have_libxml2=$withval)
+if test "x$have_libxml2" != xno; then
+	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"; why_have_libxml2="(libxml2 not found)"])
+	case "$enable_monetdb5-$have_libxml2" in
+	yes-no)
+		AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])
+		;;
+	auto-no)
+		enable_monetdb5=no
+		if test "x$disable_monetdb5" = x; then
+			disable_monetdb5="(libxml2 library not found but required for MonetDB5)"
+		fi
+		;;
+	esac
+	if test x"$have_libxml2" = x"yes" ; then
+		AC_DEFINE(HAVE_LIBXML, 1, [Define if you have the xml library])
 	fi
-	;;
-esac
+fi
+AM_CONDITIONAL(HAVE_LIBXML, test x"$have_liblxml2" != xno)
 
 
-PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
-if test x"$have_curl" = x"yes" ; then
-	AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
-	AC_SUBST(PKG_CURL, libcurl)
+org_have_curl=yes
+have_curl=$org_have_curl
+AC_ARG_WITH(curl,
+	AS_HELP_STRING([--with-curl],
+		[include cURL support (default=yes)]),
+	have_curl=$withval)
+if test "x$have_curl" != xno; then
+	PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_have_curl="(libcurl not found)"])
+	if test x"$have_curl" = x"yes" ; then
+		AC_DEFINE(HAVE_CURL, 1, [Define if you have the cURL library])
+		AC_SUBST(PKG_CURL, libcurl)
+	fi
 fi
 AM_CONDITIONAL(HAVE_CURL, test x"$have_curl" != xno)
+
 
 PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_have_zlib="(zlib not found)"])
 if test x"$have_zlib" = x"no" ; then
@@ -2188,12 +2191,20 @@ if test x"$have_zlib" = x"yes" ; then
 fi
 AM_CONDITIONAL(HAVE_LIBZ, test x"$have_zlib" != xno)
 
-PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma="yes"], [have_liblzma="no"; why_have_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
-if test x"$have_liblzma" = x"yes" ; then
-	AC_SUBST(PKG_LIBLZMA, liblzma)
-fi
-if test x"$have_liblzma" = x"yes" ; then
-	AC_DEFINE(HAVE_LIBLZMA, 1, [Define if you have the lzma library])
+org_have_lzma=yes
+have_lzma=$org_have_lzma
+AC_ARG_WITH(lzma,
+	AS_HELP_STRING([--with-lzma],
+		[include lzma support (default=yes)]),
+	have_lzma=$withval)
+if test "x$have_lzma" != xno; then
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma="yes"], [have_liblzma="no"; why_have_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	if test x"$have_liblzma" = x"yes" ; then
+		AC_SUBST(PKG_LIBLZMA, liblzma)
+	fi
+	if test x"$have_liblzma" = x"yes" ; then
+		AC_DEFINE(HAVE_LIBLZMA, 1, [Define if you have the lzma library])
+	fi
 fi
 AM_CONDITIONAL(HAVE_LIBLZMA, test x"$have_liblzma" != xno)
 
@@ -2375,6 +2386,47 @@ else
 fi
 AM_CONDITIONAL(HAVE_ODBC, test x$have_unixodbc != xno)
 
+#proj only used in geom module
+org_have_proj="auto"
+have_proj=$org_have_proj
+PROJ_INCS=''
+PROJ_LIBS=''
+AC_ARG_WITH(proj,
+	AS_HELP_STRING([--with-proj=DIR],
+		[proj library is installed in DIR]),
+	have_proj="$withval")
+if test "x$have_proj" != xno ; then
+	case "$have_proj" in
+	auto|yes)
+		;;
+	*)
+		PROJ_INCS="-I$have_proj/include"
+		PROJ_LIBS="-L$have_proj/lib -lproj"
+		;;
+	esac
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
+	LDFLAGS="$LDFLAGS $PROJ_LIBS"
+	AC_CHECK_HEADER(proj_api.h,
+		AC_CHECK_LIB(proj, pj_init_plus, 
+			AC_DEFINE(HAVE_PROJ, 1, [Define if the proj library exists]), 
+			[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([-lproj library not found]); fi
+			have_proj=no; why_have_proj="(proj library not found)" ], ),
+		[ if test "x$have_proj" != xauto; then AC_MSG_ERROR([proj_api.h header not found]); fi
+		have_proj=no; why_have_proj="(proj_api.h header not found)" ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	if test "x$have_proj" = "xyes" -o "x$have_proj" = "xauto"; then
+	    PROJ_INCS=
+	    PROJ_LIBS="-lproj"
+	fi
+fi
+AC_SUBST(PROJ_INCS)
+AC_SUBST(PROJ_LIBS)
+AM_CONDITIONAL(HAVE_PROJ, test x"$have_proj" != xno)
+
+
 # samtools, only used by sql
 org_have_samtools="auto"
 have_samtools=$org_have_samtools
@@ -2465,7 +2517,8 @@ AC_ARG_WITH(geos,
 	have_geos="$withval")
 case "$enable_geom" in
 yes|auto)
-	GEOS_VERSION_REQUIRED_MIN=3.0.0
+	# geos >= 3.4.0 required for (a.o.) GEOSDelaunayTriangulation()
+	GEOS_VERSION_REQUIRED_MIN=3.4.0
 	GEOS_CONFIG=''
 	if test "x$have_geos" != xno; then
 		case "$have_geos" in
@@ -2557,7 +2610,7 @@ AC_ARG_WITH(liblas,
 	AS_HELP_STRING([--with-liblas=DIR],
 		[liblas library is installed in DIR]),
 	have_liblas="$withval")
-case "$enable_lidar" in
+case "$have_lidar" in
 yes|auto)
 	# liblas >= 1.8.0 required
 	LIBLAS_VERSION_REQUIRED_MIN=1.8.0
@@ -2604,30 +2657,112 @@ yes|auto)
 	fi
 	# if lidar is enabled and liblas was not found abort
 	if test "x$have_liblas" = xno; then
-		if test "x$enable_lidar" = xyes; then
+		if test "x$have_lidar" = xyes; then
 			AC_MSG_ERROR([liblas library required for lidar module])
 		fi
 		# no liblas, so don't compile lidar
-		enable_lidar=no
+		have_lidar=no
 		if test "x$disable_lidar" = x; then
 			disable_lidar=${why_have_liblas:-"(liblas library required for lidar module)"}
 		fi
 	fi
 	;;
 no)
-	enable_lidar=no
+	have_lidar=no
 	have_liblas=no
 	why_have_liblas="(lidar module is disabled)"
 	;;
 esac
+case "$have_lidar" in
+no)	LIBLAS_RPM=without;;
+*)	LIBLAS_RPM=with;;
+esac
+# this is only used in rpm.mk.in to maybe avoid building MonetDB-lidar
+AC_SUBST(LIBLAS_RPM)
+
 AC_SUBST(LIBLAS_INCS)
 AC_SUBST(LIBLAS_LIBS)
-AC_MSG_CHECKING(['enable lidar: $enable_lidar'])
+AC_MSG_CHECKING(['enable lidar: $have_lidar'])
 
-AM_CONDITIONAL(HAVE_LIDAR, test "x$enable_lidar" = xyes -o "x$enable_lidar" = xauto)
+AM_CONDITIONAL(HAVE_LIDAR, test "x$have_lidar" = xyes -o "x$have_lidar" = xauto)
 
-AC_MSG_CHECKING(['enable lidar: $enable_lidar'])
+AC_MSG_CHECKING(['enable lidar: $have_lidar'])
 
+# gdal
+org_have_gdal="auto"
+have_gdal=$org_have_gdal
+AC_ARG_WITH(gdal,
+	AS_HELP_STRING([--with-gdal=DIR],
+		[gdal library is installed in DIR]),
+		[have_gdal="$withval"], [have_gdal="auto"])
+# first autoconf for distributions that added a .pc file themselves (Fedora)
+if test "x$have_gdal" != xno; then
+	case "$have_gdal" in
+	auto|yes)
+		PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])
+		;;
+	*)
+		GDAL_CFLAGS="-I$have_gdal/include"
+		GDAL_LIBS="-L$have_gdal/lib"
+		;;
+	esac
+fi
+# try to detect it manually like upstream provides it
+if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
+	LDFLAGS="$LDFLAGS $GDAL_LIBS"
+	LIBS=""
+	found_gdal_h=yes
+	AC_CHECK_HEADER(gdal.h,,
+		AC_CHECK_HEADER(gdal/gdal.h,
+			[if test "x$GDAL_CFLAGS" = x; then
+				GDAL_CFLAGS="-I/usr/include/gdal"
+			else
+				GDAL_CFLAGS="$GDAL_CFLAGS/gdal"
+			fi
+			CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
+			[found_gdal_h=no]))
+	if test "x$found_gdal_h" = xyes; then
+		AC_CHECK_LIB(gdal, GDALAllRegister,
+			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
+				have_gdal=yes
+				LIBS="$LIBS -lgdal"],
+			[ if test "x$have_gdal" != xauto; then AC_MSG_ERROR([-lgdal library not found]); fi
+				have_gdal=no; why_have_gdal="(gdal library not found)" ],
+			[$MATH_LIBS])
+	else
+		if test "x$have_gdal" != xauto; then AC_MSG_ERROR([gdal.h header not found]); fi
+		have_gdal=no; why_have_gdal="(gdal.h header not found)"
+	fi
+	GDAL_LIBS="$GDAL_LIBS $LIBS"
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+	LIBS="$save_LIBS"
+	if test "x$have_gdal" != "xyes"; then
+		GDAL_CFLAGS=""
+		GDAL_LIBS=""
+	fi
+fi
+
+AC_SUBST(gdal_CFLAGS, $GDAL_CFLAGS)
+AC_SUBST(gdal_LIBS, $GDAL_LIBS)
+AM_CONDITIONAL(HAVE_GDAL, test x"$have_gdal" != xno)
+
+# if shp is enabled and gdal was not found abort
+if test "x$have_gdal" = xno; then
+	if test "x$have_shp" = xyes; then
+		AC_MSG_ERROR([gdal library required for ESRI Shapefile vault])
+	fi
+	# no gdal, so don't compile shp
+	have_shp=no
+	if test "x$disable_shp" = x; then
+		disable_shp=${why_have_shp:-"(gdal library required for ESRI Shapefile vault)"}
+	fi
+fi
+AM_CONDITIONAL(HAVE_SHP, test x"$have_shp" != xno )
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_have_atomic_ops="(atomic_ops library not found)"])
@@ -3056,6 +3191,7 @@ AM_CONDITIONAL(HAVE_GDK, test "x$enable_gdk" = xyes -o "x$enable_gdk" = xauto)
 AM_CONDITIONAL(HAVE_MONETDB5, test "x$enable_monetdb5" = xyes -o "x$enable_monetdb5" = xauto)
 AM_CONDITIONAL(HAVE_SQL, test "x$enable_sql" = xyes -o "x$enable_sql" = xauto)
 AM_CONDITIONAL(HAVE_GEOM, test "x$enable_geom" = xyes -o "x$enable_geom" = xauto)
+AM_CONDITIONAL(HAVE_EMBEDDED, test "x$enable_embedded" = xyes)
 AM_CONDITIONAL(HAVE_TESTING, test "x$enable_testing" = xyes -o "x$enable_testing" = xauto)
 AM_CONDITIONAL(HAVE_DEVELOPER, test "x$enable_developer" = xyes)
 
@@ -3230,6 +3366,7 @@ AH_BOTTOM([
 #endif
 
 #include <stdio.h>		/* NULL, printf etc. */
+
 #include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>		/* va_alist.. */
@@ -3369,6 +3506,11 @@ typedef lng ptrdiff_t;
 #define LIBXML_ATTR_ALLOC_SIZE(x)
 #endif
 
+/* These are required to make MonetDB's source tree CRAN-compliant */
+#ifdef HAVE_EMBEDDED_R
+#include "tools/embedded/undef.h"
+#endif
+
 #endif /* _SEEN_MONETDB_CONFIG_H */
 ])
 
@@ -3432,6 +3574,7 @@ for comp in \
 	'jdbc        ' \
 	'control     ' \
 	'testing     ' \
+	'embedded    ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3451,6 +3594,7 @@ for comp in \
 	'curl         ' \
 	'fits         ' \
 	'getaddrinfo  ' \
+	'gdal         ' \
 	'gsl          ' \
 	'java         ' \
 	'java_control ' \
@@ -3463,12 +3607,13 @@ for comp in \
 	'openssl      ' \
 	'pcre         ' \
 	'perl         ' \
+	'proj         ' \
 	'pthread      ' \
 	'python2      ' \
 	'python3      ' \
 	'readline     ' \
-	'rubygem      ' \
 	'samtools     ' \
+	'shp          ' \
 	'sphinxclient ' \
 	'unixodbc     ' \
 	'valgrind     ' \
@@ -3477,6 +3622,7 @@ for comp in \
 	eval "org=\$org_have_$comp"
 	eval "have=\$have_$comp"
 	eval "why=\$why_have_$comp"
+
 	case "$why-$have-$org" in
 		-no-no)	why="(by default)";;
 		-no-*)	why="(by command line option)";;
@@ -3499,20 +3645,22 @@ echo "    largest decimal type: ${hge_digits} digits"
 echo
 
 dnl give some hints to the user
-case "`make -v 2>&1`" in
-'GNU Make '*)
-	;;
-*)
-	echo "'make' not found in PATH or not GNU Make."
-	case "`gmake -v 2>&1`" in
+if test "x$enable_embedded_r" == xno; then
+	case "`make -v 2>&1`" in
 	'GNU Make '*)
-		echo "Please use 'gmake' to build MonetDB."
 		;;
 	*)
-		echo "'gmake' not found in PATH or not GNU Make."
-		echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+		echo "'make' not found in PATH or not GNU Make."
+		case "`gmake -v 2>&1`" in
+		'GNU Make '*)
+			echo "Please use 'gmake' to build MonetDB."
+			;;
+		*)
+			echo "'gmake' not found in PATH or not GNU Make."
+			echo "Please make sure you have GNU Make installed and use it to build MonetDB."
+			;;
+		esac
+		echo
 		;;
 	esac
-	echo
-	;;
-esac
+fi

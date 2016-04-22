@@ -13,7 +13,7 @@ varchar
 text
 int2
 int4
-int8
+THREADS=1?int8
 oid
 float4
 float8
@@ -27,7 +27,7 @@ strings_like
 numerology
 HAVE_GEOM?point
 #HAVE_GEOM?lseg   # lseg is NOT supported in MonetDB. lseg (Line Segment) is also not part of OpenGIS standard so exclude this test
-HAVE_GEOM?box     # box is not supported in MonetDB but it can be replaced with mbr (= minimum bounded rectangle)
+HAVE_GEOM&THREADS=1?box     # box is not supported in MonetDB but it can be replaced with mbr (= minimum bounded rectangle)
 HAVE_GEOM?path    # path is not supported in MonetDB but it can be replaced with linestring
 HAVE_GEOM?polygon
 #HAVE_GEOM?circle # circle is NOT supported in MonetDB. It is also not part of OpenGIS standard so exclude this test

@@ -19,10 +19,6 @@ stdout of test 'inlineFunction2` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.my a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"my":str,b:any,1:int);
-#WARNING To speedup user.my a bulk operator implementation is needed
-#    z:bat[:oid,:int] := mal.multiplex("user":str,"my":str,b:bat[:oid,:int],1:int);
 
 # 16:09:45 >  
 # 16:09:45 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32223" "--port=39816"

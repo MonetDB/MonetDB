@@ -13,6 +13,8 @@
 #include "sql_mvc.h"
 #include "sql_atom.h"
 
+#define ERR_AMBIGUOUS		050000
+
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
 

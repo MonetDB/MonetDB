@@ -115,7 +115,6 @@ void
 qc_destroy(qc *cache)
 {
 	cq *q, *n;
-
 	for (q = cache->q; q; q = n) {
 		n = q->next;
 

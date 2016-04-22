@@ -9,7 +9,7 @@ CREATE TABLE "t1" (
 );
 
 
-COPY 1025 RECORDS INTO t0  FROM '$TSTSRCDIR/updating_non-loaded_columns.SF-2864313.data' USING  DELIMITERS  '\t';
+COPY 1025 RECORDS INTO t0  FROM '$QTSTSRCDIR/updating_non-loaded_columns.SF-2864313.data' USING  DELIMITERS  '\t';
 select count(*) from t0;
 
 INSERT INTO t1 (d1) SELECT d0 FROM t0;

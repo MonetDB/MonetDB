@@ -142,7 +142,7 @@ ALGminany(ptr result, const bat *bid)
 							  "atom '%s' cannot be ordered linearly",
 							  ATOMname(b->ttype));
 	} else {
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmin(b, NULL);
 		} else {
 			p = BATmin(b, result);
@@ -170,7 +170,7 @@ ALGmaxany(ptr result, const bat *bid)
 							  "atom '%s' cannot be ordered linearly",
 							  ATOMname(b->ttype));
 	} else {
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmax(b, NULL);
 		} else {
 			p = BATmax(b, result);
@@ -1068,7 +1068,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"algebra.project","Scalar value expected");
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
+	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		*ret = bat_nil;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);

@@ -42,6 +42,20 @@
 # include <sys/user.h>
 #endif
 
+#ifdef NDEBUG
+#ifndef NVALGRIND
+#define NVALGRIND NDEBUG
+#endif
+#endif
+
+#if defined(__GNUC__) && defined(HAVE_VALGRIND)
+#include <valgrind.h>
+#else
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB)
+#endif
+
 #ifndef MAP_NORESERVE
 # define MAP_NORESERVE		MAP_PRIVATE
 #endif
@@ -356,6 +370,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		ret = NULL;
 	}
 	close(fd);
+	VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 	return ret;
 }
 
@@ -367,6 +382,7 @@ MT_munmap(void *p, size_t len)
 	if (ret < 0)
 		GDKsyserror("MT_munmap: munmap(" PTRFMT "," SZFMT ") failed\n",
 			    PTRFMTCAST p, len);
+	VALGRIND_FREELIKE_BLOCK(p, 0);
 #ifdef MMAP_DEBUG
 	fprintf(stderr, "#munmap(" PTRFMT "," SZFMT ") = %d\n", PTRFMTCAST p, len, ret);
 #endif
@@ -394,13 +410,18 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (*new_size < old_size) {
 #ifndef STATIC_CODE_ANALYSIS	/* hide this from static code analyzer */
 		/* shrink */
+		VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
 		if (munmap((char *) old_address + *new_size,
 			   old_size - *new_size) < 0) {
 			GDKsyserror("MT_mremap: munmap("PTRFMT","SZFMT") failed\n",
 				    PTRFMTCAST ((char *) old_address + *new_size),
 				    old_size - *new_size);
 			fprintf(stderr, "= %s:%d: MT_mremap(%s,"PTRFMT","SZFMT","SZFMT"): munmap() failed\n", __FILE__, __LINE__, path?path:"NULL", PTRFMTCAST old_address, old_size, *new_size);
-			return NULL;
+			/* even though the system call failed, we
+			 * don't need to propagate the error up: the
+			 * address should still work in the same way
+			 * as it did before */
+			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
 			fprintf(stderr, "#MT_mremap(%s): truncate failed\n", path);
@@ -438,6 +459,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			GDKsyserror("MT_mremap: mremap("PTRFMT","SZFMT","SZFMT") failed\n",
 				    PTRFMTCAST old_address, old_size,
 				    *new_size);
+#ifdef HAVE_VALGRIND
+		if (p == old_address) {
+			VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
+		} else {
+			VALGRIND_FREELIKE_BLOCK(old_address, 0);
+			VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
+		}
+#endif
 #else
 		/* try to map extension at end of current map */
 		p = mmap((char *) old_address + old_size, *new_size - old_size,
@@ -449,6 +478,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 				/* we got the requested address, make
 				 * sure we return the correct (old)
 				 * address */
+				VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
 				p = old_address;
 			} else {
 				/* we got some other address: discard
@@ -460,8 +490,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 				/* first create full mmap, then, if
 				 * successful, remove old mmap */
 				p = mmap(NULL, *new_size, prot, flags, fd, 0);
-				if (p != MAP_FAILED)
+				if (p != MAP_FAILED) {
+					VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
 					munmap(old_address, old_size);
+					VALGRIND_FREELIKE_BLOCK(old_address, 0);
+				}
 			}
 		}
 		if (p == MAP_FAILED)
@@ -490,6 +523,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 				/* we got the requested address, make
 				 * sure we return the correct (old)
 				 * address */
+				VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
 				p = old_address;
 			} else {
 				/* we got some other address: discard
@@ -513,6 +547,12 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						munmap(p, *new_size);
 						p = MAP_FAILED;
 					}
+#ifdef HAVE_VALGRIND
+					else {
+						VALGRIND_FREELIKE_BLOCK(old_size, 0);
+						VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
+					}
+#endif
 				}
 #else
 				p = MAP_FAILED;
@@ -525,9 +565,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					p = mmap(NULL, *new_size, prot, flags,
 						 fd, 0);
 					if (p != MAP_FAILED) {
+						VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 0);
 						memcpy(p, old_address,
 						       old_size);
 						munmap(old_address, old_size);
+						VALGRIND_FREELIKE_BLOCK(old_address, 0);
 					}
 					/* if it failed, try alternative */
 				}
@@ -599,8 +641,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					}
 					p = mmap(NULL, *new_size, prot, flags,
 						 fd, 0);
-					if (p != MAP_FAILED)
+					if (p != MAP_FAILED) {
+						VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
 						munmap(old_address, old_size);
+						VALGRIND_FREELIKE_BLOCK(old_address, 0);
+					}
 				}
 #endif	/* HAVE_MREMAP */
 			}
@@ -711,10 +756,11 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
+#ifdef _WIN64
 	PROCESS_MEMORY_COUNTERS ctr;
-
 	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
 		return ctr.WorkingSetSize;
+#endif
 	return 0;
 }
 
@@ -943,10 +989,9 @@ gettimeofday(struct timeval *tv, int *ignore_zone)
 #endif
 
 void *
-mdlopen(const char *library, int mode)
+mdlopen(const char *file, int mode)
 {
-	(void) mode;
-	return GetModuleHandle(library);
+	return dlopen(file, mode);
 }
 
 void *

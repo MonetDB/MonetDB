@@ -71,6 +71,7 @@ class _BufferedPipe:
         self._pipe = fd
         self._queue = queue.Queue()
         self._eof = False
+        self._empty = ''
         if waitfor is not None:
             self._wfq = queue.Queue()
         else:
@@ -88,12 +89,17 @@ class _BufferedPipe:
         s = 0
         w = 0
         skipqueue = []
+        first = True
         while True:
             if skipqueue:
                 c = skipqueue[0]
                 del skipqueue[0]
             else:
                 c = fh.read(1)
+                if first:
+                    if type(c) is type(b''):
+                        self._empty = b''
+                    first = False
                 if skip and c:
                     if c == skip[s]:
                         s += 1
@@ -158,7 +164,7 @@ class _BufferedPipe:
 
     def read(self, size = -1):
         if self._eof:
-            return ''
+            return self._empty
         if size < 0:
             self.close()
         ret = []
@@ -178,7 +184,7 @@ class _BufferedPipe:
             if not c:
                 self._eof = True
                 break                   # EOF
-        return ''.join(ret)
+        return self._empty.join(ret)
 
     def readline(self, size = -1):
         ret = []
@@ -187,9 +193,9 @@ class _BufferedPipe:
             ret.append(c)
             if size > 0:
                 size -= 1
-            if c == '\n' or c == '':
+            if c == '\n' or c == self._empty:
                 break
-        return ''.join(ret)
+        return self._empty.join(ret)
 
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
@@ -229,8 +235,8 @@ class Popen(subprocess.Popen):
 def client(lang, args = [], stdin = None, stdout = None, stderr = None,
            port = os.getenv('MAPIPORT'), dbname = os.getenv('TSTDB'), host = None,
            user = 'monetdb', passwd = 'monetdb', log = False,
-           interactive = None, echo = None,
-           input = None, communicate = False):
+           interactive = None, echo = None, format = None,
+           input = None, communicate = False, universal_newlines = True):
     '''Start a client process.'''
     if lang == 'mal':
         cmd = _mal_client[:]
@@ -252,6 +258,12 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
             cmd.remove('-e')
         elif '-e' not in cmd and echo:
             cmd.append('-e')
+    if format is not None:
+        for c in cmd:
+            if c.startswith('-f'):
+                cmd.remove(c)
+                break
+        cmd.append('-f' + format)
 
     env = None
 
@@ -269,9 +281,9 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         fd, fnam = tempfile.mkstemp(text = True)
         _dotmonetdbfile.append(fnam)
         if user is not None:
-            os.write(fd, 'user=%s\n' % user)
+            os.write(fd, ('user=%s\n' % user).encode('utf-8'))
         if passwd is not None:
-            os.write(fd, 'password=%s\n' % passwd)
+            os.write(fd, ('password=%s\n' % passwd).encode('utf-8'))
         os.close(fd)
         env['DOTMONETDBFILE'] = fnam
     if host is not None:
@@ -313,7 +325,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
               stderr = stderr,
               shell = False,
               env = env,
-              universal_newlines = True)
+              universal_newlines = universal_newlines)
     p.dotmonetdbfile = fnam
     if stdout == PIPE:
         p.stdout = _BufferedPipe(p.stdout)

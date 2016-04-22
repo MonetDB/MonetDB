@@ -1,0 +1,59 @@
+stdout of test 'mbr_overlap_or_below` in directory 'geom/sql/functions` itself:
+
+
+# 10:52:18 >  
+# 10:52:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39851" "--set" "mapi_usock=/var/tmp/mtest-4010/.s.monetdb.39851" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/alvanaki/INSTALL/MonetDB-public/var/MonetDB/mTests_geom_sql_Tests_functions" "--set" "mal_listing=0"
+# 10:52:18 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_geom_sql_Tests_functions', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.356 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sibuyan.da.cwi.nl:39851/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4010/.s.monetdb.39851
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:52:18 >  
+# 10:52:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"
+# 10:52:18 >  
+
+#create table tbl1 (id integer, geom geometry(linestring));
+#create table tbl2 (id integer, geom geometry(linestring));
+#insert into tbl1 values(1,st_geomfromtext('LINESTRING(6 0, 6 4)'));
+[ 1	]
+#insert into tbl2 values(2,st_geomfromtext('LINESTRING(0 0, 3 3)'));
+[ 1	]
+#insert into tbl2 values(3,st_geomfromtext('LINESTRING(0 1, 0 5)'));
+[ 1	]
+#insert into tbl2 values(4,st_geomfromtext('LINESTRING(1 2, 4 6)'));
+[ 1	]
+#SELECT tbl1.id, tbl2.id, mbr(tbl1.geom) &<| mbr(tbl2.geom) AS overlaps FROM tbl1, tbl2;
+% sys.tbl1,	sys.tbl2,	sys.L # table_name
+% id,	id,	overlaps # name
+% int,	int,	boolean # type
+% 1,	1,	5 # length
+[ 1,	2,	false	]
+[ 1,	3,	true	]
+[ 1,	4,	true	]
+#SELECT tbl1.id, tbl2.id, tbl1.geom &<| tbl2.geom AS overlaps FROM tbl1, tbl2;
+% sys.tbl1,	sys.tbl2,	sys.L # table_name
+% id,	id,	overlaps # name
+% int,	int,	boolean # type
+% 1,	1,	5 # length
+[ 1,	2,	false	]
+[ 1,	3,	true	]
+[ 1,	4,	true	]
+#drop table tbl1;
+#drop table tbl2;
+
+# 10:52:18 >  
+# 10:52:18 >  "Done."
+# 10:52:18 >  
+

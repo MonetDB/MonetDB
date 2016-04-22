@@ -24,21 +24,18 @@ stdout of test 'inline07` in directory 'monetdb5/optimizer` itself:
 # MonetDB/R   module loaded
 
 Ready.
-#WARNING To speedup user.foo a bulk operator implementation is needed
-#    z:bat[:oid,:dbl] := mal.multiplex("user":str,"foo":str,b:any,b:any);
 
 # 06:41:00 >  
 # 06:41:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:41:00 >  
 
-#	mdb.List("user","qry");
-inline function user.qry():void;        	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_12:dbl := aggr.sum(b:bat[:int]);  	#[3] CMDBATsum 12 <- 1 
-    X_13:bat[:dbl] := batcalc.+(b:bat[:int],X_12:dbl);	#[4] CMDbatADDsignal 13 <- 1 12 
-    z:bat[:dbl] := X_13:bat[:dbl];      	#[5]  6 <- 13 
-end user.qry;                           	#[6]  
+function user.qry():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
+    X_12:dbl := aggr.sum(b:bat[:int]);  	#[3] (0) CMDBATsum 12 <- 1 
+    X_13:bat[:dbl] := batcalc.+(b:bat[:int],X_12:dbl);	#[4] (0) CMDbatADDsignal 13 <- 1 12 
+    z:bat[:dbl] := X_13:bat[:dbl];      	#[5] (0)  6 <- 13 
+end user.qry;                           	#[6] (0)  
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

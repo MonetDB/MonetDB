@@ -6,7 +6,7 @@
 \alias{MonetR}
 
 \title{
-  DBI database connector and virtual data object for MonetDB
+  DBI database connector for MonetDB
 }
 \description{
   \code{MonetDB.R} creates a new DBI driver that can be used to connect and interact with MonetDB.
@@ -29,20 +29,16 @@
   \code{\link{monetdb.read.csv}} for database CSV import.
 }
 \seealso{
-  \code{\link[DBI]{dbConnect}} for documentation how to invoke the driver
-  
-%  \code{\link[MonetDB.R]{monet.frame}} for a \code{data.frame()}-like interface to the DB  
-  
+  \code{\link[DBI]{dbConnect}} for documentation how to invoke the driver  
   \code{\link[=control]{monetdb.server.setup}} to set up and start a local MonetDB server from R
 }
 \examples{
 \dontrun{
-conn <- dbConnect(MonetDB.R(), "monetdb://localhost/demo")
-dbListTables(conn)
-data(iris)
+library(DBI)
+conn <- dbConnect(MonetDB.R::MonetDB(), dbname = "demo")
 dbWriteTable(conn, "iris", iris)
-dbGetQuery(conn, "SELECT COUNT(*) FROM iris;")
+dbListTables(conn)
+dbGetQuery(conn, "SELECT COUNT(*) FROM iris")
 d <- dbReadTable(conn, "iris")
-
 }}
 \keyword{interface}

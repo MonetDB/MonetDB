@@ -55,7 +55,7 @@ Ready.
 % clob # type
 % 573 # length
 function user.s2_1(A0:bte,A1:str,A2:date,A3:date,A4:int):void;
-    X_180:void := querylog.define("explain select\n n_name,\n sum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n customer,\n orders,\n lineitem,\n supplier,\n nation,\n region\nwhere\n c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and l_suppkey = s_suppkey\n and c_nationkey = s_nationkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'ASIA\\'\n and o_orderdate >= date \\'1994-01-01\\'\n and o_orderdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n n_name\norder by\n revenue desc;","sequential_pipe",122);
+    X_180:void := querylog.define("explain select\n n_name,\n sum(l_extendedprice * (1 - l_discount)) as revenue\nfrom\n customer,\n orders,\n lineitem,\n supplier,\n nation,\n region\nwhere\n c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and l_suppkey = s_suppkey\n and c_nationkey = s_nationkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'ASIA\\'\n and o_orderdate >= date \\'1994-01-01\\'\n and o_orderdate < date \\'1994-01-01\\' + interval \\'1\\' year\ngroup by\n n_name\norder by\n revenue desc;","sequential_pipe",121);
     X_154 := bat.new(nil:oid,nil:str);
     X_162 := bat.append(X_154,"sys.nation");
     X_170 := bat.append(X_162,"sys.L1");
@@ -142,12 +142,12 @@ function user.s2_1(A0:bte,A1:str,A2:date,A3:date,A4:int):void;
     X_107 := algebra.projection(r1_130,X_106);
     X_110:bat[:str] := sql.bind(X_6,"sys","region","r_name",0);
     C_108:bat[:oid] := sql.tid(X_6,"sys","region");
-    C_193 := algebra.subselect(X_110,C_108,A1,A1,true,false,false);
+    C_195 := algebra.subselect(X_110,C_108,A1,A1,true,false,false);
     (C_112,r1_144) := sql.bind(X_6,"sys","region","r_name",2);
-    C_194 := algebra.subselect(r1_144,nil:bat[:oid],A1,A1,true,false,false);
+    C_196 := algebra.subselect(r1_144,nil:bat[:oid],A1,A1,true,false,false);
     X_114:bat[:str] := sql.bind(X_6,"sys","region","r_name",1);
-    C_195 := algebra.subselect(X_114,C_108,A1,A1,true,false,false);
-    C_115 := sql.subdelta(C_193,C_108,C_112,C_194,C_195);
+    C_197 := algebra.subselect(X_114,C_108,A1,A1,true,false,false);
+    C_115 := sql.subdelta(C_195,C_108,C_112,C_196,C_197);
     (X_116,r1_155) := algebra.subjoin(X_107,C_115,nil:BAT,nil:BAT,false,nil:lng);
     X_118 := algebra.projection(C_89,X_84);
     X_119:bat[:lng] := sql.bind(X_6,"sys","lineitem","l_extendedprice",0);

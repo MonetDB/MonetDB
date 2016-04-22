@@ -29,20 +29,20 @@ Ready.
 # 10:12:44 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-10076" "--port=33029"
 # 10:12:44 >  
 
-inline function user.qry():void;        	#[0]  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[2] BKCappend_val_wrap 4 <- 1 5 
-    X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] CMDbatADDsignal 14 <- 1 1 
-    X_15:int := mmath.rand();           	#[4] MATHrandint 15 
+function user.qry():void;               	#[0] (0)  0 
+    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
+    X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] (0) CMDbatADDsignal 14 <- 1 1 
+    X_15:int := mmath.rand();           	#[4] (0) MATHrandint 15 
 #                                       
-    X_14:bat[:int] := batcalc.*(X_14:bat[:int],X_15:int);	#[6] CMDbatMULsignal 14 <- 14 15 
-    z:bat[:int] := X_14:bat[:int];      	#[7]  6 <- 14 
-    X_20:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] CMDbatADDsignal 20 <- 1 10 
-    X_21:int := mmath.rand();           	#[9] MATHrandint 21 
+    X_14:bat[:int] := batcalc.*(X_14:bat[:int],X_15:int);	#[6] (0) CMDbatMULsignal 14 <- 14 15 
+    z:bat[:int] := X_14:bat[:int];      	#[7] (0)  6 <- 14 
+    X_20:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 20 <- 1 10 
+    X_21:int := mmath.rand();           	#[9] (0) MATHrandint 21 
 #                                       
-    X_20:bat[:int] := batcalc.*(X_20:bat[:int],X_21:int);	#[11] CMDbatMULsignal 20 <- 20 21 
-    z:bat[:int] := X_20:bat[:int];      	#[12]  6 <- 20 
-end user.qry;                           	#[13]  
+    X_20:bat[:int] := batcalc.*(X_20:bat[:int],X_21:int);	#[11] (0) CMDbatMULsignal 20 <- 20 21 
+    z:bat[:int] := X_20:bat[:int];      	#[12] (0)  6 <- 20 
+end user.qry;                           	#[13] (0)  
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

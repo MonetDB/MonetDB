@@ -1,0 +1,66 @@
+stderr of test 'catalog_name_qualifier.Bug-3948` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 11:57:27 >  
+# 11:57:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31222" "--set" "mapi_usock=/var/tmp/mtest-9756/.s.monetdb.31222" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 11:57:27 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31222
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9756/.s.monetdb.31222
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:57:27 >  
+# 11:57:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9756" "--port=31222"
+# 11:57:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.dependency_types where dependency_type_id IN (1, 2);
+ERROR = !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.sys.dependency_types;
+ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.table_types where table_type_id IN (0, 1);
+ERROR = !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.sys.table_types;
+ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from tmp.tmp.t3948;
+ERROR = !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from tmp.tmp.tmp.t3948;
+ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from tmp.tmp.tmp."
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.t3948;
+ERROR = !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.sys.t3948;
+ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.dependencies_tables_on_views();
+ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select * from sys.sys.dependencies_tables_on_views("
+MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+QUERY = select * from sys.sys.sys.dependencies_tables_on_views();
+ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+
+
+# 11:57:28 >  
+# 11:57:28 >  "Done."
+# 11:57:28 >  
+

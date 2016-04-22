@@ -36,7 +36,7 @@ libgeom_exit(void)
 int
 wkb_isnil(wkb *w)
 {
-	if (!w ||w->len == ~0)
+	if (!w || w->len == ~0)
 		return 1;
 	return 0;
 }
@@ -46,14 +46,19 @@ wkb_isnil(wkb *w)
  * Creates an mbr holding the lower left and upper right coordinates
  * of a GEOSGeom.
  */
+/*
 int
 getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 {
 	GEOSGeom envelope;
-	double xmin, ymin, xmax, ymax;
+	//int coordinatesNum  = 0; 
+	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
 
 	if (!geosGeometry || (envelope = GEOSEnvelope(geosGeometry)) == NULL)
 		return 0;
+
+	// get the number of coordinates the geometry has
+	//coordinatesNum = GEOSGeom_getCoordinateDimension(geosGeometry);
 
 	if (GEOSGeomTypeId(envelope) == GEOS_POINT) {
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
@@ -69,7 +74,7 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 		res->ymin = (float) ymin;
 		res->xmax = (float) xmin;
 		res->ymax = (float) ymin;
-	} else {		/* GEOSGeomTypeId(envelope) == GEOS_POLYGON */
+	} else {		// GEOSGeomTypeId(envelope) == GEOS_POLYGON
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 		const GEOSGeometry *ring = GEOSGetExteriorRing(envelope);
 #else
@@ -98,10 +103,28 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 	GEOSGeom_destroy(envelope);
 	return 1;
 }
+*/
+
+GEOSGeom
+wkb2geos(wkb *geomWKB)
+{
+	GEOSGeom geosGeometry;
+
+	if (wkb_isnil(geomWKB))
+		return NULL;
+
+	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) ((geomWKB)->data), (geomWKB)->len);
+
+	if (geosGeometry != NULL)
+		GEOSSetSRID(geosGeometry, (geomWKB)->srid);
+
+	return geosGeometry;
+}
 
 /* Function getMbrGeom
  * A wrapper for getMbrGeos on a geom_geometry.
  */
+/*
 int
 getMbrGeom(mbr *res, wkb *geom)
 {
@@ -114,25 +137,74 @@ getMbrGeom(mbr *res, wkb *geom)
 	}
 	return 0;
 }
+*/
 
 const char *
-geom_type2str(int t)
+geom_type2str(int t, int flag)
 {
-	switch (t) {
-	case wkbPoint:
-		return "Point";
-	case wkbLineString:
-		return "Line";
-	case wkbPolygon:
-		return "Polygon";
-	case wkbMultiPoint:
-		return "MultiPoint";
-	case wkbMultiLineString:
-		return "MultiLine";
-	case wkbMultiPolygon:
-		return "MultiPolygon";
-	case wkbGeometryCollection:
-		return "GeomCollection";
+	if (flag == 0) {
+		switch (t) {
+		//case wkbGeometry:
+		//      return "GEOMETRY";
+		case wkbPoint_mdb:
+			return "POINT";
+		case wkbLineString_mdb:
+			return "LINESTRING";
+		case wkbLinearRing_mdb:
+			return "LINEARRING";
+		case wkbPolygon_mdb:
+			return "POLYGON";
+		case wkbMultiPoint_mdb:
+			return "MULTIPOINT";
+		case wkbMultiLineString_mdb:
+			return "MULTILINESTRING";
+		case wkbMultiPolygon_mdb:
+			return "MULTIPOLYGON";
+		case wkbGeometryCollection_mdb:
+			return "GEOMETRYCOLLECTION";
+		}
+	} else if (flag == 1) {
+		switch (t) {
+		//case wkbGeometry:
+		//      return "ST_Geometry";
+		case wkbPoint_mdb:
+			return "ST_Point";
+		case wkbLineString_mdb:
+			return "ST_LineString";
+		case wkbLinearRing_mdb:
+			return "ST_LinearRing";
+		case wkbPolygon_mdb:
+			return "ST_Polygon";
+		case wkbMultiPoint_mdb:
+			return "ST_MultiPoint";
+		case wkbMultiLineString_mdb:
+			return "ST_MultiLinestring";
+		case wkbMultiPolygon_mdb:
+			return "ST_MultiPolygon";
+		case wkbGeometryCollection_mdb:
+			return "ST_GeometryCollection";
+		}
 	}
-	return "unknown";
+	return "UKNOWN";
 }
+
+
+/*
+str
+geomerty_2_geometry(wkb *res, wkb **geom, int *columnType, int *columnSRID, int *valueSRID)
+{
+
+	//char* geomStr;
+	//int len = 0;
+	//fprintf(stderr, "geometry_2_geometry\n");
+	//wkbTOSTR(&geomStr, &len, *geom);
+	if (*geom != NULL)
+		fprintf(stderr, "type:%d - wkbTOSTR cannot be seen at this point\n", *columnType);
+
+	if (res == NULL)
+		fprintf(stderr, "-> ");
+
+	fprintf(stderr, "%d vs %d\n", *columnSRID, *valueSRID);
+	return "0";
+}
+*/

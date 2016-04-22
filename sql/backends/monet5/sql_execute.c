@@ -23,6 +23,7 @@
 #include "sql_env.h"
 #include "sql_mvc.h"
 #include "sql_execute.h"
+#include "rel_exp.h"
 #include "mal_debugger.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -51,7 +52,7 @@
 * is executed within the client context specified. This leads to context juggling.
 */
 str
-SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_table **result)
+SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
 	int status = 0;
 	int err = 0;
@@ -85,6 +86,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	if (!o)
 		throw(SQL, "SQLstatement", "Out of memory");
 	*o = *m;
+	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
+	m->qc = NULL;
 
 	/* create private allocator */
 	m->sa = NULL;
@@ -95,13 +98,17 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 	be = sql;
 	sql = backend_create(m, c);
 	sql->output_format = be->output_format;
+	if (!output) {
+		sql->output_format = OFMT_NONE;
+	}
+	// and do it again
 	m->qc = NULL;
 	m->caching = 0;
 	m->user_id = m->role_id = USER_MONETDB;
 	if (result)
-		m->reply_size = -2; /* do not cleanup, result tables */
+		m->reply_size = -2; /* do not clean up result tables */
 
-	/* mimick a client channel on which the query text is received */
+	/* mimic a client channel on which the query text is received */
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, *expr, len);
@@ -199,16 +206,44 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
 
-		if (execute) {
-			MalBlkPtr mb = c->curprg->def;
+		if (!output)
+			sql->out = NULL;	/* no output stream */
+		if (execute)
+			msg = runMAL(c, c->curprg->def, 0, 0);
 
-			if (!output)
-				sql->out = NULL;	/* no output */
-			msg = runMAL(c, mb, 0, 0);
-			MSresetInstructions(mb, oldstop);
-			freeVariables(c, mb, NULL, oldvtop);
-		}
+		MSresetInstructions(c->curprg->def, oldstop);
+		freeVariables(c, c->curprg->def, NULL, oldvtop);
+
 		sqlcleanup(m, 0);
+
+		/* construct a mock result set to determine schema */
+		if (!execute && result) {
+			/* 'inspired' by mvc_export_prepare() */
+			if (is_topn(r->op))
+				r = r->l;
+			if (r && is_project(r->op) && r->exps) {
+				node *n;
+				int ncol = 0;
+				res_table *res;
+				for (n = r->exps->h; n; n = n->next) ncol++;
+				res = res_table_create(m->session->tr, m->result_id++, ncol, 1, NULL, NULL);
+				for (n = r->exps->h; n; n = n->next) {
+					const char *name, *rname;
+					sql_exp *e = n->data;
+					sql_subtype *t = exp_subtype(e);
+					name = e->name;
+					if (!name && e->type == e_column && e->r)
+						name = e->r;
+					rname = e->rname;
+					if (!rname && e->type == e_column && e->l)
+						rname = e->l;
+					res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
+							t->scale, t->type->localtype, ATOMnil(t->type->localtype));
+				}
+				*result = res;
+			}
+		}
+
 		if (!execute) {
 			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 			c->glb = oldglb;
@@ -219,6 +254,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output, res_ta
 #endif
 		assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
 		c->glb = oldglb;
+
 	}
 	if (m->results && result) { /* return all results sets */
 		*result = m->results;

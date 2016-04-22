@@ -402,34 +402,44 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 	return r;
 }
 
-static InstrPtr
-mat_apply3(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int mvar, int nvar, int ovar)
+static void
+mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mvar, int nvar, int ovar)
 {
-	int tpe, k;
-	InstrPtr r = NULL;
+	int k;
+	InstrPtr *r = NULL;
 
-	r = newInstruction(mb, ASSIGNsymbol);
-	setModuleId(r,matRef);
-	setFunctionId(r,packRef);
-	getArg(r, 0) = getArg(p,0);
-	tpe = getArgType(mb,p,0);
+	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	for(k=0; k < p->retc; k++) {
+		r[k] = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(r[k],matRef);
+		setFunctionId(r[k],packRef);
+		getArg(r[k],0) = getArg(p,k);
+	}
 
 	//printf("# %s.%s(%d,%d,%d)", getModuleId(p), getFunctionId(p), m, n, o);
 
-	for(k=1; k < mat[m].mi->argc; k++) {
+	for(k = 1; k < ml->v[m].mi->argc; k++) {
+		int l, tpe;
 		InstrPtr q = copyInstruction(p);
 
-		getArg(q, 0) = newTmpVariable(mb, tpe);
-		getArg(q, mvar) = getArg(mat[m].mi, k);
-		getArg(q, nvar) = getArg(mat[n].mi, k);
-		getArg(q, ovar) = getArg(mat[o].mi, k);
+		for(l=0; l < p->retc; l++) {
+			tpe = getArgType(mb,p,l);
+			getArg(q, l) = newTmpVariable(mb, tpe);
+		}
+		getArg(q, mvar) = getArg(ml->v[m].mi, k);
+		getArg(q, nvar) = getArg(ml->v[n].mi, k);
+		getArg(q, ovar) = getArg(ml->v[o].mi, k);
 		pushInstruction(mb, q);
-		setPartnr(ml, -1, getArg(q,0), k);
-		r = pushArgument(mb, r, getArg(q, 0));
+		for(l=0; l < p->retc; l++) {
+			setPartnr(ml, -1, getArg(q,l), k);
+			r[l] = pushArgument(mb, r[l], getArg(q, l));
+		}
 	}
-	return r;
+	for(k=0; k < p->retc; k++) {
+		mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1);
+		pushInstruction(mb, r[k]);
+	}
 }
-
 
 static void
 mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
@@ -1429,6 +1439,37 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 	}
 }
 
+static void
+mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
+{
+	int tpe = getArgType(mb,p,0), k, piv;
+	InstrPtr pck, q;
+
+	pck = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(pck, matRef);
+	setFunctionId(pck, packRef);
+	getArg(pck,0) = getArg(p,0);
+
+	for(k=1; k< ml->v[m].mi->argc; k++) {
+		q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,q->retc) = getArg(ml->v[m].mi,k);
+		pushInstruction(mb,q);
+		pck = pushArgument(mb, pck, getArg(q,0));
+	}
+
+	piv = ml->top;
+	mat_add_var(ml, pck, p, getArg(p,0), mat_slc, m, -1);
+	pushInstruction(mb,pck);
+
+	q = copyInstruction(p);
+	getArg(q,q->retc) = getArg(pck,0);
+	pushInstruction(mb,q);
+
+	ml->v[piv].packed = 1;
+	ml->v[piv].type = mat_slc;
+}
+
 int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
@@ -1566,6 +1607,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (match == 1 && bats == 1 && p->argc == 4 && isSlice(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			mat_topn(mb, p, &ml, m, -1, -1);
+			actions++;
+			continue;
+		}
+
+		if (match == 1 && bats == 1 && p->argc == 3 && isSample(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
+			mat_sample(mb, p, &ml, m);
 			actions++;
 			continue;
 		}
@@ -1726,8 +1773,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
 			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
-			if ((r = mat_apply3(&ml, mb, p, ml.v, m, n, o, fm, fn, fo)) != NULL)
-				mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p));
+			mat_apply3(mb, p, &ml, m, n, o, fm, fn, fo);
 			actions++;
 			continue;
 		}
@@ -1759,7 +1805,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
 				mat_pack(mb, ml.v, m);
-				actions++;
 			}
 		}
 		pushInstruction(mb, copyInstruction(p));

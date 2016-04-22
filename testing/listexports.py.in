@@ -8,7 +8,7 @@ import os
 import sys
 import re
 
-import exportutils
+from . import exportutils
 
 # sets of directories that end up in the same shared object
 dirlist = {

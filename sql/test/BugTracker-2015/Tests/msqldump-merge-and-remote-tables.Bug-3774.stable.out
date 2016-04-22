@@ -57,14 +57,6 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_143:bat[:oid,:str]{horigin=1} := mal.multiplex("sql":str,"password":str,X_139:bat[:oid,:str]);
-#WARNING To speedup sql.password a bulk operator implementation is needed
-#    X_144:bat[:oid,:str]{horigin=2} := mal.multiplex("sql":str,"password":str,X_140:bat[:oid,:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_198:bat[:oid,:lng]{horigin=1} := mal.multiplex("sql":str,"get_value":str,X_196:bat[:oid,:str],X_192:bat[:oid,:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_199:bat[:oid,:lng]{horigin=2} := mal.multiplex("sql":str,"get_value":str,X_197:bat[:oid,:str],X_193:bat[:oid,:str]);
 
 # 16:02:40 >  
 # 16:02:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-62075" "--port=33332"

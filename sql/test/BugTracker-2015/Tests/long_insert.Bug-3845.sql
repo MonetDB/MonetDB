@@ -1,5 +1,7 @@
+declare olddebug int;
+set olddebug = debug(0); -- disable debug;
+
 -- this works
-select debug(0); -- disable debug;
 
 START TRANSACTION;
 

@@ -20,6 +20,7 @@
 #include "mal_profiler.h"
 #include "mal_runtime.h"
 #include "mal_debugger.h"
+#include "mal_resource.h"
 
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -107,6 +108,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	str stmt, c;
 	char *tbuf;
 	str stmtq;
+	lng usec= GDKusec();
 
 
 	if( start) // show when instruction was started
@@ -133,7 +135,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	assert(clock.tv_usec >= 0 && clock.tv_usec < 1000000);
 	if( usrname)
 		logadd("\"user\":\"%s\",%s",usrname, prettify);
-	logadd("\"clk\":"LLFMT",%s",GDKusec(),prettify);
+	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":\"%s.%06ld\",%s", tbuf+11, (long)clock.tv_usec, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
@@ -231,7 +233,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 				}
 			}
 		}
-//#define MALARGUMENTDETAILS
+#define MALARGUMENTDETAILS
 #ifdef MALARGUMENTDETAILS
 		logadd("\"prereq\":%s],%s", prereq, prettify);
 #else
@@ -242,43 +244,66 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
  * The eventparser may assume this layout for ease of parsing
 {
 ... as above ...
-"result":{"index":0,"name":"X_41","value":"0@0","count":1,"type": "void" }
+"result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
 ...
-"argument":{"index":4,"value":"30","type": "int" }
+"argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
 }
+This information can be used to determine memory footprint and variable life times.
  */
 #ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
-		for( j=0; j< pci->argc; j++){
-			int tpe = getVarType(mb, getArg(pci,j));
-			str tname = getTypeName(tpe), cv;
+		if(mb){
+			logadd("\"ret\":[");
+			for( j=0; j< pci->argc; j++){
+				int tpe = getVarType(mb, getArg(pci,j));
+				str tname = 0, cv;
+				lng total = 0;
+				BUN cnt = 0;
+				bat bid=0;
+				str pret = ""; // or prettify
+				int p = getPC(mb,pci);
 
-			logadd("\"%s\":{", j< pci->retc?"result":"argument");
-			logadd("\"index\":\"%d\",", j);
-			if( !isVarConstant(mb, getArg(pci,j))){
-				logadd("\"name\":\"%s\",", getVarName(mb, getArg(pci,j)));
-			}
-			if( isaBatType(tpe) ){
-				BAT *d= BBPquickdesc(abs(stk->stk[getArg(pci,j)].val.ival),TRUE);
-				if( d)
-					logadd("\"count\":" BUNFMT",", BATcount(d));
+				if( j == pci->retc ){
+					logadd("],%s\"arg\":[",prettify);
+				} 
+				logadd("{");
+				logadd("\"index\":\"%d\",%s", j,pret);
+				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
+				if( isaBatType(tpe) ){
+					BAT *d= BATdescriptor( bid = abs(stk->stk[getArg(pci,j)].val.ival));
+					tname = getTypeName(getColumnType(tpe));
+					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
+					if( d) {
+						//if( isVIEW(d))
+							//bid = abs(VIEWtparent(d));
+						cnt = BATcount(d);
+						total += cnt * d->T->width;
+						total += heapinfo(d->T->vheap, abs(d->batCacheid)); 
+						total += hashinfo(d->T->hash, abs(d->batCacheid)); 
+						total += IMPSimprintsize(d);
+						BBPunfix(d->batCacheid);
+					} 
+					logadd("\"bid\":\"%d\",%s", bid,pret);
+					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
+					logadd("\"size\":" LLFMT",%s", total,pret);
+				} else{
+					tname = getTypeName(tpe);
+					logadd("\"type\":\"%s\",%s", tname,pret);
+					cv = 0;
+					VALformat(&cv, &stk->stk[getArg(pci,j)]);
+					stmtq = mal_quote(cv, strlen(cv));
+					logadd("\"value\":\"%s\",%s", stmtq,pret);
+					GDKfree(cv);
+					GDKfree(stmtq);
+				}
+				logadd("\"eol\":%d%s", p == getEndOfLife(mb,getArg(pci,j)) , pret);
 				GDKfree(tname);
-				tname = getTypeName(getColumnType(tpe));
-				logadd("\"type\":\"col[:%s]\"", tname);
-			} else{
-				cv = 0;
-				VALformat(&cv, &stk->stk[getArg(pci,j)]);
-				stmtq = mal_quote(cv, strlen(cv));
-				logadd("\"value\":\"%s\",", stmtq);
-				logadd("\"type\":\"%s\"", tname);
-				GDKfree(cv);
-				GDKfree(stmtq);
+				logadd("}%s%s", (j< pci->argc-1 && j != pci->retc -1?",":""), pret);
 			}
-			GDKfree(tname);
-			logadd("}%s%s", (j< pci->argc-1?",":""), prettify);
+			logadd("] %s",prettify); // end marker for arguments
 		}
-#endif
 	}
+#endif
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }
@@ -502,9 +527,28 @@ startProfiler(void)
 }
 
 /* SQL queries can be traced without obstructing the stream */
+/* A hard limit is currently imposed */
+#define MAXTRACEFILES 50
+static int offlinestore = 0;
+static int tracecounter = 0;
 str
-startTrace(void)
+startTrace(str path)
 {
+	char buf[PATHLENGTH];
+
+	if( path && eventstream == NULL){
+		// create a file to keep the events, unless we
+		// already have a profiler stream
+		MT_lock_set(&mal_profileLock );
+		if(eventstream == NULL && offlinestore ==0){
+			snprintf(buf,PATHLENGTH,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
+			(void) mkdir(buf,0755);
+			snprintf(buf,PATHLENGTH,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			eventstream = open_wastream(buf);
+			offlinestore++;
+		}
+		MT_lock_unset(&mal_profileLock );
+	}
 	malProfileMode = 1;
 	sqlProfiling = TRUE;
 	clearTrace();
@@ -512,8 +556,16 @@ startTrace(void)
 }
 
 str
-stopTrace(void)
+stopTrace(str path)
 {
+	MT_lock_set(&mal_profileLock );
+	if( path &&  offlinestore){
+		(void) close_stream(eventstream);
+		eventstream = 0;
+		offlinestore =0;
+	}
+	MT_lock_unset(&mal_profileLock );
+	
 	malProfileMode = eventstream != NULL;
 	sqlProfiling = FALSE;
 	return MAL_SUCCEED;

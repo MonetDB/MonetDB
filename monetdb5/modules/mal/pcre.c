@@ -736,8 +736,12 @@ str
 pcre_init(void *ret)
 {
 	(void) ret;
+#if defined(HAVE_EMBEDDED) && defined(WIN32)
+	// TODO: what should we do here?
+#else
 	pcre_malloc = my_pcre_malloc;
 	pcre_free = my_pcre_free;
+#endif
 	return NULL;
 }
 

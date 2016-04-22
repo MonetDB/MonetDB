@@ -112,10 +112,12 @@
 /* Define to 1 if you have the `ctime_r' function. */
 #define HAVE_CTIME_R 1
 
+#ifdef _MSC_VER
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 #define HAVE_CTIME_R3 1
 /* there is something very similar to ctime_r on Windows: */
 #define ctime_r(t,b,s)	(ctime_s(b,s,t) ? NULL : (b))
+#endif
 
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
@@ -146,7 +148,7 @@
 /* #undef HAVE_FDATASYNC */
 
 /* Define to 1 if you have the <fenv.h> header file. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_FENV_H 1
 #endif
 
@@ -157,7 +159,7 @@
 #define HAVE_FPCLASS 1		/* uses _fpclass, see mmath.c */
 
 /* Define to 1 if you have the `fpclassify' function. */
-#if _MSC_VER > 1600
+#if defined(_MSC_VER) && _MSC_VER > 1600
 #define HAVE_FPCLASSIFY 1
 #endif
 
@@ -172,7 +174,9 @@
 
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
+#ifdef _MSC_VER
 #define ftruncate(fd, sz)	(-(_chsize_s((fd), (__int64) (sz)) != 0))
+#endif
 
 /* Define if you use garbage collection */
 /* #undef HAVE_GC */
@@ -208,7 +212,9 @@
 /* #undef HAVE_GETTIMEOFDAY */
 
 /* Define to 1 if you have the `_get_timezone' function. */
+#ifdef _MSC_VER
 #define HAVE__GET_TIMEZONE 1
+#endif
 
 /* Define if you have the gsl library */
 /* #undef HAVE_GSL */
@@ -234,7 +240,7 @@
 #define HAVE_IO_H 1
 
 /* Define to 1 if you have the `isinf' function. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ISINF 1
 #endif
 
@@ -303,7 +309,7 @@
 
 /* Define to 1 if you have the `llabs' function. */
 #define HAVE_LLABS 1
-#if _MSC_VER <= 1500
+#if defined(_MSC_VER) && _MSC_VER <= 1500
 #define llabs _abs64
 #endif
 
@@ -319,10 +325,10 @@
 /* #undef HAVE_LOCKF */
 
 /* Define to 1 if the system has the type `long long'. */
-#if _MSC_VER > 1600 || (defined(__ICL) && __ICL >= 1010)
+#if (defined(_MSC_VER) && _MSC_VER > 1600) || (defined(__ICL) && __ICL >= 1010) || defined(__MINGW32__)
 #define HAVE_LONG_LONG 1
 #else
-#if _MSC_VER >= 1300
+#if defined(_MSC_VER) && _MSC_VER >= 1300
 /* Visual Studio .NET 2003 does have long long, but the printf %lld
  * format is interpreted the same as %ld, i.e. useless
  */
@@ -376,7 +382,7 @@
 /* #undef HAVE_NL_LANGINFO */
 
 /* Define to 1 if you have the `nextafterf' function. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_NEXTAFTERF 1
 #endif
 
@@ -413,6 +419,9 @@
 
 /* Define to 1 if you have the <procfs.h> header file. */
 /* #undef HAVE_PROCFS_H */
+
+/* Define if you have the proj library */
+/* #undef HAVE_PROJ */
 
 /* Define to 1 if you have the <pthread.h> header file. */
 /* #undef HAVE_PTHREAD_H */
@@ -451,7 +460,7 @@
 /* #undef HAVE_RLIMIT_H */
 
 /* Define to 1 if you have the `round' function. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ROUND 1
 #endif
 
@@ -522,7 +531,7 @@
 #define HAVE_STDDEF_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_STDINT_H 1
 #endif
 
@@ -539,7 +548,7 @@
 /* #undef HAVE_STRCASESTR */
 
 /* Define to 1 if you have the `strftime' function. */
-#if _MSC_VER >= 1500
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
 #define HAVE_STRFTIME 1
 #endif
 
@@ -568,24 +577,24 @@
 #define HAVE_STRTOD 1
 
 /* Define to 1 if you have the `strtof' function. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_STRTOF 1
 #endif
 
 #define strtok_r(t,d,c) strtok_s(t,d,c)
 
 /* Define to 1 if you have the `strtoll' function. */
-#if _MSC_VER >= 1300
+#if !defined(_MSC_VER) || _MSC_VER >= 1300
 #define HAVE_STRTOLL 1
-#if _MSC_VER <= 1600 && !defined(strtoll)
+#if defined(_MSC_VER) && _MSC_VER <= 1600 && !defined(strtoll)
 #define strtoll _strtoi64
 #endif
 #endif
 
 /* Define to 1 if you have the `strtoull' function. */
-#if _MSC_VER >= 1300
+#if !defined(_MSC_VER) || _MSC_VER >= 1300
 #define HAVE_STRTOULL 1
-#if _MSC_VER <= 1600 && !defined(strtoull)
+#if defined(_MSC_VER) && _MSC_VER <= 1600 && !defined(strtoull)
 #define strtoull _strtoui64
 #endif
 #endif
@@ -662,7 +671,7 @@
 #define HAVE_TIME_H 1
 
 /* Define to 1 if you have the `trunc' function. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_TRUNC 1
 #endif
 
@@ -690,8 +699,10 @@
 /* Define if you have valgrind installed and want to use it */
 /* #undef HAVE_VALGRIND */
 
+#ifdef _MSC_VER
 /* Define to 1 if you have the `_wfopen' function. */
 #define HAVE__WFOPEN 1
+#endif
 
 /* Define to 1 if you have the <winsock2.h> header file. */
 #define HAVE_WINSOCK2_H 1
@@ -700,7 +711,7 @@
 #define HAVE_WINSOCK_H 1
 
 /* Define to 1 if you have the <xmmintrin.h> header file. */
-#if _MSC_VER > 1600
+#if !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_XMMINTRIN_H 1
 #endif
 
@@ -802,13 +813,13 @@
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.22.0"
+#define PACKAGE_STRING "MonetDB 11.24.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.22.0"
+#define PACKAGE_VERSION "11.24.0"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
@@ -1000,7 +1011,7 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
 
-#if _MSC_VER < 1900
+#if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf c99_snprintf
 #define vsnprintf c99_vsnprintf
 
@@ -1044,7 +1055,7 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #define ssize_t int
 #endif
 
-#if _MSC_VER <= 1600
+#if defined(_MSC_VER) && _MSC_VER <= 1600
 /* no va_copy in win32 */
 #define va_copy(x,y) ((x) = (y))
 #endif
@@ -1119,5 +1130,10 @@ typedef __uint128_t uhge;
 
 #define PTRFMT		"%p"
 #define PTRFMTCAST
+
+#ifdef HAVE_EMBEDDED_R
+#define _MSC_EXTENSIONS 1
+#undef HAVE_CTIME_R
+#endif
 
 #endif /* _SEEN_MONETDB_CONFIG_H */
