@@ -26,10 +26,10 @@ def mal_include(filename):
         return ""
 
 def to_hex(s, n=1024):
-    result = ""
+    result = "{"
     for chunk in [s[i:i+n] for i in range(0, len(s), n)]:
-        result += "\\x" + "\\x".join("{:02x}".format(ord(c)) for c in chunk) +  "\\\n"
-    return "\\\n" + result
+        result += ",".join(str(ord(c)) for c in chunk) +  ",\n"
+    return "\n" + result + "0}"
 
 wd = os.getcwd()
 
@@ -37,7 +37,8 @@ os.chdir(sys.argv[1])
 s = mal_include("mal_init.mal")
 os.chdir(wd)
 outf = open("tools/embedded/inlined_scripts.c", "w")
-outf.write("char* mal_init_inline = \"" + to_hex(s) + "\";\n")
+outf.write("char mal_init_inline_arr[] = " + to_hex(s) + ";\n")
+outf.write("char* mal_init_inline = mal_init_inline_arr;\n")
 
 os.chdir(sys.argv[1])
 s = ""
@@ -48,5 +49,6 @@ for f in files:
         print(f)
         s += open(os.path.join("createdb", f)).read() + "\n"
 os.chdir(wd)
-outf.write("\nchar* createdb_inline = \"" + to_hex(s) + "\";\n")
+outf.write("\nchar createdb_inline_arr[] = " + to_hex(s) + ";\n")
+outf.write("char* createdb_inline = createdb_inline_arr;\n")
 
