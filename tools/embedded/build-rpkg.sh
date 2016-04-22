@@ -3,9 +3,9 @@ if [ -z $STAGEDIR ]; then
 	STAGEDIR=/tmp/monetdb-embedded-stage
 fi
 
-RPKG=MonetDBLite_0.2.2.tar.gz
-OSXPKG=MonetDBLite_0.2.2.tgz
-WINPKG=MonetDBLite_0.2.2.zip
+RPKG=MonetDBLite_0.2.3.tar.gz
+OSXPKG=MonetDBLite_0.2.3.tgz
+WINPKG=MonetDBLite_0.2.3.zip
 
 rm -rf $STAGEDIR
 

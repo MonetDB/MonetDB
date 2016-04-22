@@ -3451,8 +3451,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(ssep);
 			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 		}
+#if defined(HAVE_EMBEDDED) && defined(WIN32)
+		// fix single backslash file separator on windows
+		strcpy(fn, *fname);
+#else
 		GDKstrFromStr(fn, (unsigned char*)*fname, len);
-
+#endif
 		ss = open_rastream((const char *) fn);
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);

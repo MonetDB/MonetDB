@@ -2,15 +2,16 @@
 SRC=`pwd | sed -e 's|/cygdrive/||' -e 's|/|:/|'`"/src"
 
 # figure out bitness
+BITS=64
 if [ "$R_ARCH" = "/i386" ] 
 then
 	BITS=32
-else
-	BITS=64
 fi
 
+CC=`$R_CMD config CC`
+
 # patch sedscript for build/install/library paths
-sed -e "s|%BITS%|$BITS|" -e "s|%PREFIX%|${R_PACKAGE_DIR}/libs|" -e "s|%SRCDIR%|$SRC|" -e "s|%RINCLUDE%|${R_HOME}/include|" src/tools/embedded/windows/sedscript.tpl > src/tools/embedded/windows/sedscript
+sed -e "s|%CC%|$CC|" -e "s|%PREFIX%|${R_PACKAGE_DIR}/libs|" -e "s|%SRCDIR%|$SRC|" -e "s|%RINCLUDE%|${R_HOME}/include|" src/tools/embedded/windows/sedscript.tpl > src/tools/embedded/windows/sedscript
 
 # this is copied from NT/monetdb_config.h.in in the packaging script
 cp src/tools/embedded/windows/monetdb_config.h.in src/
@@ -26,7 +27,7 @@ cd src
 make -j
 OFILES=`find common clients/mapilib/ gdk monetdb5/mal monetdb5/modules monetdb5/optimizer sql tools/embedded -name "*.lo" | tr "\n" " "`
 
-gcc -shared -m$BITS -o libmonetdb5.dll $OFILES -lws2_32 -lpthread -lpsapi -Ltools/embedded/windows/pcre-8.37/libs/$R_ARCH/ -lpcre `R CMD config --ldflags`
+$CC -shared -o libmonetdb5.dll $OFILES -lws2_32 -lpthread -lpsapi -Ltools/embedded/windows/pcre-8.37/libs/$R_ARCH/ -lpcre `$R_CMD config --ldflags`
 
 cd ../
 mkdir -p $R_PACKAGE_DIR/libs/$R_ARCH/
