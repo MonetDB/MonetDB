@@ -511,6 +511,7 @@ str SRVPOOLexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	throw(MAL,"srvpool.exec","Unexpected call");
 }
 #else
+// this avoids a compiler warning w.r.t. empty compilation units.
 int SRVPOOLdummy = 42;
 #endif /* HAVE_MAPI */
 

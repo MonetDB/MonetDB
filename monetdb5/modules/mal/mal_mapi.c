@@ -1764,5 +1764,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	catchErrors("mapi.bind");
 	return MAL_SUCCEED;
 }
-
+#else
+// this avoids a compiler warning w.r.t. empty compilation units.
+int SERVERdummy = 42;
 #endif // HAVE_MAPI
