@@ -39,6 +39,8 @@
  * since the last call. For the time being we assume the connection remains in tact.
  *
  */
+#ifdef HAVE_MAPI
+
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mal_dataflow.h"
@@ -508,3 +510,7 @@ str SRVPOOLexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 	throw(MAL,"srvpool.exec","Unexpected call");
 }
+#else
+int SRVPOOLdummy = 42;
+#endif /* HAVE_MAPI */
+

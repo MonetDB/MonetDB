@@ -7,7 +7,7 @@
 INCLUDES = ../../common/options \
 		   ../../common/stream \
 		   ../../common/utils \
-		   ../../clients/mapilib \
+		   HAVE_MAPI?../../clients/mapilib \
 		   ../../gdk \
 		   $(READLINE_INCS) 
 MTSAFE

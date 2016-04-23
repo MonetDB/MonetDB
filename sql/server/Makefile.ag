@@ -9,7 +9,7 @@
 INCLUDES = ../include ../common ../storage \
 		   ../../monetdb5/mal \
 		   ../../monetdb5/extras/rapi \
-		   ../../clients/mapilib \
+		   HAVE_MAPI?../../clients/mapilib \
 		   ../../common/options \
 		   ../../common/stream \
 		   ../../gdk

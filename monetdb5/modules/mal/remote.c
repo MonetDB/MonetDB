@@ -67,6 +67,7 @@
  * Instead, we maintain a simple lock with each connection, which can be
  * used to issue a safe, but blocking get/put/exec/register request.
  */
+#ifdef HAVE_MAPI
 
 static connection conns = NULL;
 static unsigned char localtype = 0;
@@ -1340,3 +1341,4 @@ RMTisalive(int *ret, str *conn)
 	return MAL_SUCCEED;
 }
 
+#endif // HAVE_MAPI

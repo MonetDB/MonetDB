@@ -49,8 +49,6 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
-#include <mapi.h> /* for PROMPT1 */
-
 
 /*
  * This should be in src/mal/mal.h, as the function is implemented in

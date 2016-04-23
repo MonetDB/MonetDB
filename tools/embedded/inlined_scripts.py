@@ -2,13 +2,16 @@ import os
 import sys
 import re
 
+# these includes are skipped
+blacklist = ('remote', 'srvpool', 'mal_mapi', 'json', 'json_util', 'mcurl', 'xml', 'batxml', 'recycle', 'txtsim', 'tokenizer', 'zorder', '70_vault', '80_lsst', '80_udf', '23_skyserver', '24_zorder', '40_json', '80_udf')
+
 def mal_include(filename):
     if os.path.isdir(filename):
         files = os.listdir(filename)
         files.sort()
         ret = ""
         for f in files:
-            if f.endswith(".mal"):
+            if f.endswith(".mal") and not f.startswith(blacklist):
                 ret += mal_include(os.path.join(filename, f))
         return ret
     elif os.path.isfile(filename):
@@ -19,7 +22,8 @@ def mal_include(filename):
             match = re.search("include (\\w+);", content)
             if (match == None): break
             modname = match.groups(0)[0]
-            incfile = mal_include(modname + ".mal" if os.path.isfile(modname + ".mal") else modname)
+            if not modname.startswith(blacklist):
+                incfile = mal_include(modname + ".mal" if os.path.isfile(modname + ".mal") else modname)
             content = content[:match.start()] + incfile + content[match.end():]
         return content
     else:
@@ -45,7 +49,7 @@ s = ""
 files = os.listdir("createdb")
 files.sort()
 for f in files:
-    if f.endswith(".sql"):
+    if f.endswith(".sql") and not f.startswith(blacklist):
         print(f)
         s += open(os.path.join("createdb", f)).read() + "\n"
 os.chdir(wd)
