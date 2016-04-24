@@ -37,7 +37,6 @@
 #include "sql_readline.h"
 #include "sql_user.h"
 #include "sql_datetime.h"
-#include "sql_optimizer.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
