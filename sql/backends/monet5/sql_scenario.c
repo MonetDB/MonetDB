@@ -1216,7 +1216,7 @@ SQLparser(Client c)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (!(m->emod & (mod_explain | mod_debug | mod_trace | mod_dot)))
+		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {

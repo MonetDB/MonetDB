@@ -350,7 +350,6 @@ scanner_init_keywords(void)
 	keywords_insert("PLAN", SQL_PLAN);
 	keywords_insert("DEBUG", SQL_DEBUG);
 	keywords_insert("TRACE", SQL_TRACE);
-	keywords_insert("DOT", SQL_DOT);
 	keywords_insert("PREPARE", PREPARE);
 	keywords_insert("PREP", PREPARE);
 	keywords_insert("EXECUTE", EXECUTE);

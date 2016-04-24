@@ -60,7 +60,6 @@
 #define mod_debug 	1
 #define mod_trace 	2
 #define mod_explain 	4 
-#define mod_dot 	8 
 /* locked needs unlocking */
 #define mod_locked 	16 
 

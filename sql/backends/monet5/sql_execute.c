@@ -402,15 +402,6 @@ SQLengineIntern(Client c, backend *be)
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 		goto cleanup_engine;
 	}
-	if (m->emod & mod_dot) {
-		if (be->q && be->q->code)
-			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
-		else if (be->q)
-			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg->def)
-			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
-		goto cleanup_engine;
-	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
