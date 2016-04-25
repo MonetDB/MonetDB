@@ -1,5 +1,5 @@
 Package: MonetDBLite
-Version: 0.2.2
+Version: 0.2.3
 Title: In-Process Version of MonetDB for R
 Author: MonetDB Development Team
 Maintainer: Hannes Muehleisen <hannes@cwi.nl>

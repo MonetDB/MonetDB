@@ -729,7 +729,8 @@ fixsorted(void)
 					b = BATdescriptor(bid);
 					bi = bat_iterator(b);
 				}
-				if (ATOMcmp(b->ttype,
+				if (b == NULL ||
+				    ATOMcmp(b->ttype,
 					    BUNtail(bi, bs->T.nosorted - 1),
 					    BUNtail(bi, bs->T.nosorted)) <= 0) {
 					/* incorrect hint */
@@ -764,7 +765,8 @@ fixsorted(void)
 					b = BATdescriptor(bid);
 					bi = bat_iterator(b);
 				}
-				if (ATOMcmp(b->ttype,
+				if (b == NULL ||
+				    ATOMcmp(b->ttype,
 					    BUNtail(bi, bs->T.norevsorted - 1),
 					    BUNtail(bi, bs->T.norevsorted)) >= 0) {
 					/* incorrect hint */
@@ -2608,7 +2610,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 
 		if (sec > BBPLASTUSED(BBP_lastused(i)))
 			BBP_lastused(i) = sec;
-	} else if (b && (BBP_status(i) & BBPTMP)) {
+	} else if (b || (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
 		 * available anymore */
@@ -3935,10 +3937,9 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 gdk_return
 BBPrecover(int farmid)
 {
-	str bakdirpath = GDKfilepath(farmid, NULL, BAKDIR, NULL);
-	str leftdirpath = GDKfilepath(farmid, NULL, LEFTDIR, NULL);
-
-	DIR *dirp = opendir(bakdirpath);
+	str bakdirpath;
+	str leftdirpath;
+	DIR *dirp;
 	struct dirent *dent;
 	long_str path, dstpath;
 	bat i;
@@ -3947,7 +3948,17 @@ BBPrecover(int farmid)
 	int dirseen = FALSE;
 	str dstdir;
 
+	bakdirpath = GDKfilepath(farmid, NULL, BAKDIR, NULL);
+	leftdirpath = GDKfilepath(farmid, NULL, LEFTDIR, NULL);
+	if (bakdirpath == NULL || leftdirpath == NULL) {
+		GDKfree(bakdirpath);
+		GDKfree(leftdirpath);
+		return GDK_FAIL;
+	}
+	dirp = opendir(bakdirpath);
 	if (dirp == NULL) {
+		GDKfree(bakdirpath);
+		GDKfree(leftdirpath);
 		return GDK_SUCCEED;	/* nothing to do */
 	}
 	memcpy(dstpath, BATDIR, j);
@@ -3959,6 +3970,8 @@ BBPrecover(int farmid)
 	if (mkdir(leftdirpath, 0755) < 0 && errno != EEXIST) {
 		GDKsyserror("BBPrecover: cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
+		GDKfree(bakdirpath);
+		GDKfree(leftdirpath);
 		return GDK_FAIL;
 	}
 
@@ -4214,6 +4227,17 @@ BBPdiskscan(const char *parent)
 			delete = b == NULL;
 			if (!delete)
 				b->T->imprints = (Imprints *) 1;
+		} else if (strncmp(p + 1, "horderidx", 9) == 0) {
+			delete = TRUE;
+		} else if (strncmp(p + 1, "torderidx", 9) == 0) {
+#ifdef PERSISTENTIDX
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+			if (!delete)
+				b->T->orderidx = (Heap *) 1;
+#else
+			delete = TRUE;
+#endif
 		} else if (strncmp(p + 1, "priv", 4) != 0 &&
 			   strncmp(p + 1, "new", 3) != 0 &&
 			   strncmp(p + 1, "head", 4) != 0 &&

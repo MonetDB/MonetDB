@@ -18,6 +18,7 @@ headers_sql = {
 		15_querylog.sql \
 		16_tracelog.sql \
 		17_temporal.sql \
+		18_index.sql \
 		20_vacuum.sql \
 		21_dependency_functions.sql \
 		22_clients.sql \

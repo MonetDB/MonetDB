@@ -215,6 +215,7 @@ scanner_init_keywords(void)
 	keywords_insert("OPTION", OPTION);
 	keywords_insert("OR", OR);
 	keywords_insert("ORDER", ORDER);
+	keywords_insert("ORDERED", ORDERED);
 	keywords_insert("OUTER", OUTER);
 	keywords_insert("OVER", OVER);
 	keywords_insert("PARTITION", PARTITION);

@@ -7,7 +7,7 @@ except ImportError:
 TSTSRCBASE = os.environ['TSTSRCBASE']
 TSTDIR = os.environ['TSTDIR']
 SRCDIR = os.path.join(TSTSRCBASE,TSTDIR)
-DATADIR = os.path.join(SRCDIR,"SF-0.01") + os.sep.replace('\\', r'\\')
+DATADIR = (os.path.join(SRCDIR,"SF-0.01") + os.sep).replace('\\', r'\\')
 
 c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 for ln in open(os.path.join(SRCDIR,"load-sf-0.01.sql")):

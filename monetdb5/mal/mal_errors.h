@@ -129,4 +129,6 @@
 
 #define GDK_EXCEPTION "GDK reported error."
 #define MAL_DEPRECATED "Deprecated MAL operation."
+
+#define TYPE_NOT_SUPPORTED "Type is not supported"
 #endif /* MAL_ERRORS */

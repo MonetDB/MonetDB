@@ -8,7 +8,7 @@ stdout of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/Bu
 # MonetDB 5 server v11.23.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
@@ -39,10 +39,8 @@ Ready.
 # loading sql script: 26_sysmon.sql
 # loading sql script: 27_rejects.sql
 # loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
 # loading sql script: 41_md5sum.sql
 # loading sql script: 45_uuid.sql
 # loading sql script: 46_gsl.sql
@@ -54,10 +52,8 @@ Ready.
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
 # loading sql script: 85_bam.sql
 # loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
 # 12:19:54 >  
@@ -117,7 +113,7 @@ Ready.
 #SELECT a*b*b AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B" HAVING "A*B" IS NOT NULL ORDER BY -"A*B";
 % sys.L,	sys.t_alias # table_name
 % A*B,	C # name
-% hugeint,	varchar # type
+% bigint,	varchar # type
 % 3,	4 # length
 [ 100,	"tien"	]
 [ 44,	"elf"	]

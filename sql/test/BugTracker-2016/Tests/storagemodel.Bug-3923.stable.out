@@ -92,44 +92,44 @@ Ready.
 #update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
 [ 1	]
 #select * from storagemodel() where "table" = 'bug3923';
-% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
-% 3,	7,	1,	3,	5,	5,	1,	1,	4,	5 # length
-[ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true	]
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	orderidx # name
+% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint # type
+% 3,	7,	1,	3,	5,	5,	1,	1,	4,	5,	1 # length
+[ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true,	0	]
 #drop table bug3923;
 #create table bug3923(i integer);
 #select * from storage() where "table"= '_tables';
-% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
-% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean # type
-% 3,	7,	13,	8,	8,	6,	2,	2,	3,	5,	4,	5,	1,	5 # length
-[ "sys",	"_tables",	"id",	"int",	"writable",	"01/160",	58,	4,	232,	0,	2600,	false,	0,	false	]
-[ "sys",	"_tables",	"name",	"varchar",	"writable",	"01/161",	58,	8,	116,	9712,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"schema_id",	"int",	"writable",	"01/162",	58,	4,	232,	0,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	"01/163",	58,	45,	116,	11157,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"type",	"smallint",	"writable",	"01/164",	58,	2,	116,	0,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"system",	"boolean",	"writable",	"01/165",	58,	1,	58,	0,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	"01/166",	58,	2,	116,	0,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"access",	"smallint",	"writable",	"01/167",	58,	2,	116,	0,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"id",	"int",	"writable",	"02/237",	0,	4,	0,	0,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"name",	"varchar",	"writable",	"02/240",	0,	1,	0,	8192,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"schema_id",	"int",	"writable",	"02/241",	0,	4,	0,	0,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"query",	"varchar",	"writable",	"02/242",	0,	1,	0,	8192,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"type",	"smallint",	"writable",	"02/243",	0,	2,	0,	0,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"system",	"boolean",	"writable",	"02/244",	0,	1,	0,	0,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"commit_action",	"smallint",	"writable",	"02/245",	0,	2,	0,	0,	0,	false,	0,	true	]
-[ "tmp",	"_tables",	"access",	"smallint",	"writable",	"02/246",	0,	2,	0,	0,	0,	false,	0,	true	]
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	orderidx # name
+% clob,	clob,	clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	bigint # type
+% 3,	7,	13,	8,	8,	6,	2,	2,	3,	5,	4,	5,	1,	5,	1 # length
+[ "sys",	"_tables",	"id",	"int",	"writable",	"01/157",	58,	4,	232,	0,	2600,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"name",	"varchar",	"writable",	"01/160",	58,	8,	116,	9712,	0,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"schema_id",	"int",	"writable",	"01/161",	58,	4,	232,	0,	0,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	"01/162",	58,	45,	116,	11157,	0,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"type",	"smallint",	"writable",	"01/163",	58,	2,	116,	0,	0,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"system",	"boolean",	"writable",	"01/164",	58,	1,	58,	0,	0,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	"01/165",	58,	2,	116,	0,	0,	false,	0,	false,	0	]
+[ "sys",	"_tables",	"access",	"smallint",	"writable",	"01/166",	58,	2,	116,	0,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"id",	"int",	"writable",	"02/236",	0,	4,	0,	0,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"name",	"varchar",	"writable",	"02/237",	0,	1,	0,	8192,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"schema_id",	"int",	"writable",	"02/240",	0,	4,	0,	0,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"query",	"varchar",	"writable",	"02/241",	0,	1,	0,	8192,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"type",	"smallint",	"writable",	"02/242",	0,	2,	0,	0,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"system",	"boolean",	"writable",	"02/243",	0,	1,	0,	0,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"commit_action",	"smallint",	"writable",	"02/244",	0,	2,	0,	0,	0,	false,	0,	true,	0	]
+[ "tmp",	"_tables",	"access",	"smallint",	"writable",	"02/245",	0,	2,	0,	0,	0,	false,	0,	true,	0	]
 #update storagemodelinput set "count" =10000 where "table" ='bug3923';
 [ 1	]
 #update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
 [ 1	]
 #select * from storagemodel() where "table" = 'bug3923';
-% .,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
-% 3,	7,	1,	3,	5,	5,	1,	1,	4,	5 # length
-[ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true	]
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashes,	imprints,	sorted,	orderidx # name
+% clob,	clob,	clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	bigint # type
+% 3,	7,	1,	3,	5,	5,	1,	1,	4,	5,	1 # length
+[ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true,	0	]
 #drop table bug3923;
 
 # 23:38:44 >  

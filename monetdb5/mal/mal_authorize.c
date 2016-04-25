@@ -555,10 +555,10 @@ AUTHsetPassword(Client cntxt, str *username, str *passwd)
 str
 AUTHresolveUser(str *username, oid *uid)
 {
-	BUN p = *uid;
+	BUN p;
 	BATiter useri;
 
-	if (uid == NULL || *uid == oid_nil || *uid > BATcount(user))
+	if (uid == NULL || *uid == oid_nil || (p = (BUN) *uid) >= BATcount(user))
 		throw(ILLARG, "resolveUser", "userid should not be nil");
 
 	assert (username != NULL);
@@ -579,19 +579,17 @@ str
 AUTHgetUsername(str *username, Client cntxt) 
 {
 	BUN p;
-	oid id;
 	BATiter useri;
 
-	id = cntxt->user;
-	p = id;
+	p = (BUN) cntxt->user;
 
 	/* If you ask for a username using a client struct, and that user
 	 * doesn't exist, you seriously screwed up somehow.  If this
 	 * happens, it may be a security breach/attempt, and hence
 	 * terminating the entire system seems like the right thing to do to
 	 * me. */
-	if (p == BUN_NONE || id > BATcount(user))
-		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, id);
+	if (p == BUN_NONE || p >= BATcount(user))
+		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, cntxt->user);
 
 	useri = bat_iterator(user);
 	if ((*username = GDKstrdup( BUNtail(useri, p))) == NULL)

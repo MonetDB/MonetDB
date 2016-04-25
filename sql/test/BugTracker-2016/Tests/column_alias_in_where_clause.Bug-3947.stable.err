@@ -37,8 +37,14 @@ ERROR = !SELECT: identifier 'B' unknown
 MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
 QUERY = SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "C" LIKE '%en';
 ERROR = !SELECT: identifier 'C' unknown
-MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
-QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" = 'null';
+MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" = NULL;
+ERROR = !SELECT: identifier 'CAT' unknown
+MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL;
+ERROR = !SELECT: identifier 'CAT' unknown
+MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL or "CAT" = NULL;
 ERROR = !SELECT: identifier 'CAT' unknown
 
 # 12:19:54 >  

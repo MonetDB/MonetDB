@@ -1,0 +1,29 @@
+# create sorted oid arrangement 
+include orderidx;
+
+bv:= bat.new(:int);
+bat.append(bv,959217167 );
+bat.append(bv,1920220901 );
+bat.append(bv,1303856962 );
+bat.append(bv,1667896496 );
+bat.append(bv,1080090866 );
+bat.append(bv,527076325 );
+bat.append(bv,266430612 );
+bat.append(bv,1674978691 );
+bat.append(bv,1863672321 );
+bat.append(bv,58690783 );
+io.print(bv);
+
+bat.orderidx(bv,3);
+
+ord := bat.getorderidx(bv);
+
+io.print(ord);
+
+seq := algebra.projection(ord,bv);
+
+io.print(seq);
+
+(k,l):= algebra.subsort(bv,0:bit,1:bit);
+
+io.print(k,l);

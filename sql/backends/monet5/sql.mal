@@ -505,7 +505,8 @@ pattern storage()(
 	hashes:bat[:lng],
 	phash:bat[:bit],
 	imprints:bat[:lng],
-	sorted:bat[:bit])
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
 address sql_storage
 comment "return a table with storage information ";
 
@@ -523,7 +524,8 @@ pattern storage(sname:str)(
 	hashes:bat[:lng],
 	phash:bat[:bit],
 	imprints:bat[:lng],
-	sorted:bat[:bit])
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
 address sql_storage
 comment "return a table with storage information for a particular schema ";
 
@@ -541,7 +543,8 @@ pattern storage(sname:str, tname:str)(
 	hashes:bat[:lng],
 	phash:bat[:bit],
 	imprints:bat[:lng],
-	sorted:bat[:bit])
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
 address sql_storage
 comment "return a table with storage information for a particular table";
 
@@ -559,9 +562,18 @@ pattern storage(sname:str, tname:str, cname:str)(
 	hashes:bat[:lng],
 	phash:bat[:bit],
 	imprints:bat[:lng],
-	sorted:bat[:bit])
+	sorted:bat[:bit],
+	orderidx:bat[:lng])
 address sql_storage
 comment "return a table with storage information for a particular column";
+
+pattern createorderindex(sch:str,tbl:str,col:str)
+address sql_createorderindex
+comment "Instantiate the order index on a column";
+
+pattern droporderindex(sch:str,tbl:str,col:str)
+address sql_droporderindex
+comment "Drop the order index on a column";
 
 command calc.identity(:any_2) :oid 
 address SQLidentity

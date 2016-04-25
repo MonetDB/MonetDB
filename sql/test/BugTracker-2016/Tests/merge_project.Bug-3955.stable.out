@@ -79,10 +79,10 @@ project (
 | | | | | | | ) [ input_double.a1 = clob "longitude" ]
 | | | | | | ) [ input_double.a2 as tmp_3.a2 ]
 | | | | | ) [  ]
-| | | | ) [ sys.point(tmp_2.a2 as tmp.a1, tmp_3.a2 as tmp.a2) as L.a1 ]
+| | | | ) [ sys.st_point(tmp_2.a2 as tmp.a1, tmp_3.a2 as tmp.a2) as L.a1 ]
 | | | ) [  ]
 | | ) [ v.a1, v.a2, L.a1 as p.a1 ]
-| ) [ v.a1 as L.a1, sys.distance(v.a2 as tmp.a2, p.a1 as tmp.a3) as L.prob ]
+| ) [ v.a1 as L.a1, sys.st_distance(v.a2 as tmp.a2, p.a1 as tmp.a3) as L.prob ]
 ) [ L.a1 as r.a1, L.prob as r.prob ]
 
 # 14:00:10 >  
