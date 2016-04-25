@@ -64,7 +64,7 @@ QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /*
  * MAL functions can be optimized explicitly using the routines below.
- * Beware, the function names should be known as literalstrings, because
+ * Beware, the function names should be known as literal strings, because
  * you may not know the runtime situation.
 */
 

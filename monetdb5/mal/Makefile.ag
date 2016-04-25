@@ -9,6 +9,7 @@ INCLUDES = ../../common/options \
 		   ../../common/utils \
 		   HAVE_MAPI?../../clients/mapilib \
 		   ../../gdk \
+		   ../optimizer \
 		   $(READLINE_INCS) 
 MTSAFE
 

@@ -45,6 +45,22 @@ QOT_create(str hnme, str tnme, int tt)
 	return b;
 }
 
+static void QOTstatisticsSave(void) {
+	bat names[5];
+
+	if( qotStat[QOTnames] == NULL)
+		return;
+	MT_lock_set(&qotlock);
+	names[0] = 0;
+	names[1] = abs(qotStat[QOTnames]->batCacheid);
+	names[2] = abs(qotStat[QOTcalls]->batCacheid);
+	names[3] = abs(qotStat[QOTactions]->batCacheid);
+	names[4] = abs(qotStat[QOTtimings]->batCacheid);
+
+	TMsubcommit_list(names, 5);
+	MT_lock_unset(&qotlock);
+}
+
 static void QOTstatisticsInit(void){
 	oid o=0;
 	int i,j;
@@ -74,7 +90,7 @@ static void QOTstatisticsInit(void){
 	}
 	MT_lock_unset(&qotlock);
 	/* save them at least once */
-	QOTstatisticsExit();
+	QOTstatisticsSave();
 }
 
 void
@@ -150,19 +166,8 @@ QOTupdateStatistics(str nme, int actions, lng val)
 void
 QOTstatisticsExit(void)
 {
-	bat names[5];
-
-	if( qotStat[QOTnames] == NULL)
-		return;
-	MT_lock_set(&qotlock);
-	names[0] = 0;
-	names[1] = abs(qotStat[QOTnames]->batCacheid);
-	names[2] = abs(qotStat[QOTcalls]->batCacheid);
-	names[3] = abs(qotStat[QOTactions]->batCacheid);
-	names[4] = abs(qotStat[QOTtimings]->batCacheid);
-
-	TMsubcommit_list(names, 5);
-	MT_lock_unset(&qotlock);
+	QOTstatisticsSave();
+	qotStat[QOTnames] = NULL;
 }
 
 static int

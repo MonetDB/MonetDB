@@ -1350,7 +1350,9 @@ GDKexit(int status)
 	}
 	GDKprepareExit();
 	GDKreset(status);
+#ifndef HAVE_EMBEDDED
 	MT_exit_thread(-1);
+#endif
 }
 
 /*
