@@ -194,6 +194,7 @@ scanner_init_keywords(void)
 	keywords_insert("GROUP", sqlGROUP);
 	keywords_insert("HAVING", HAVING);
 	keywords_insert("ILIKE", ILIKE);
+	keywords_insert("IMPRINTS", IMPRINTS);
 	keywords_insert("IN", sqlIN);
 	keywords_insert("INNER", INNER);
 	keywords_insert("INTO", INTO);

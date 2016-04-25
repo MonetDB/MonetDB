@@ -31,7 +31,7 @@ returns table (
 	heapsize bigint,
 	hashes bigint,
 	phash boolean,
-	imprints bigint,
+	"imprints" bigint,
 	sorted boolean,
 	orderidx bigint
 )
@@ -54,7 +54,7 @@ returns table (
 	heapsize bigint,
 	hashes bigint,
 	phash boolean,
-	imprints bigint,
+	"imprints" bigint,
 	sorted boolean,
 	orderidx bigint
 )
@@ -74,7 +74,7 @@ returns table (
 	heapsize bigint,
 	hashes bigint,
 	phash boolean,
-	imprints bigint,
+	"imprints" bigint,
 	sorted boolean,
 	orderidx bigint
 )
@@ -94,7 +94,7 @@ returns table (
 	heapsize bigint,
 	hashes bigint,
 	phash boolean,
-	imprints bigint,
+	"imprints" bigint,
 	sorted boolean,
 	orderidx bigint
 )
@@ -222,7 +222,7 @@ returns table (
 	columnsize bigint,
 	heapsize bigint,
 	hashes bigint,
-	imprints bigint,
+	"imprints" bigint,
 	sorted boolean,
 	orderidx bigint)
 begin
@@ -244,6 +244,6 @@ as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
-	sum(imprints) as imprints,
+	sum("imprints") as "imprints",
 	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";

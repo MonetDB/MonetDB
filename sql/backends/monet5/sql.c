@@ -610,6 +610,12 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 			}
+			if (i->type == imprints_idx) {
+				sql_kc *ic = i->columns->h->data;
+				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				BATimprints(b);
+				BBPunfix(b->batCacheid);
+			}
 			mvc_copy_idx(sql, nt, i);
 		}
 	}
@@ -752,6 +758,12 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
 			OIDXdropImplementation(cntxt, b);
+			BBPunfix(b->batCacheid);
+		}
+		if (i->type == imprints_idx) {
+			sql_kc *ic = i->columns->h->data;
+			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
+			IMPSdestroy(b);
 			BBPunfix(b->batCacheid);
 		}
 		mvc_drop_idx(sql, s, i);
