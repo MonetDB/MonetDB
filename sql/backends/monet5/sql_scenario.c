@@ -1000,12 +1000,12 @@ SQLsetTrace(backend *be, Client cntxt, bit onoff)
 		/* add the ticks column */
 
 		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("usec",4));
+		q = pushStr(mb, q, putName("usec"));
 		resultset= pushArgument(mb,resultset, getArg(q,0));
 
 		/* add the stmt column */
 		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("stmt",4));
+		q = pushStr(mb, q, putName("stmt"));
 		resultset= pushArgument(mb,resultset, getArg(q,0));
 
 		pushInstruction(mb,resultset);
@@ -1266,7 +1266,7 @@ recompilequery:
 			m->sym = NULL;
 
 			/* register name in the namespace */
-			be->q->name = putName(be->q->name, strlen(be->q->name));
+			be->q->name = putName(be->q->name);
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace;
 		}

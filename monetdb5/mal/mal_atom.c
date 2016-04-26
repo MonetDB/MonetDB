@@ -29,7 +29,7 @@ static void setAtomName(InstrPtr pci)
 {
 	char buf[PATHLENGTH];
 	snprintf(buf, PATHLENGTH, "#%s", getFunctionId(pci));
-	setFunctionId(pci, putName(buf, strlen(buf)));
+	setFunctionId(pci, putName(buf));
 }
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci)

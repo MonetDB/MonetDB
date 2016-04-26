@@ -792,9 +792,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */
-	sym = findSymbol(cntxt->nspace,
-			putName(mod, strlen(mod)),
-			putName(fcn, strlen(fcn)));
+	sym = findSymbol(cntxt->nspace, putName(mod), putName(fcn));
 	if (sym == NULL)
 		throw(MAL, "remote.register", ILLEGAL_ARGUMENT ": no such function: %s.%s", mod, fcn);
 
