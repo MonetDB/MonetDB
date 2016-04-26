@@ -206,7 +206,7 @@ OPTbreadthfirst(Client cntxt, MalBlkPtr mb, int pc, int max, InstrPtr old[], Nod
 static int
 OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j,k=0, actions =0, last;
+	int i,j,k=0, actions =0, last=-1;
 	InstrPtr *old, *appends;
 	int limit;
 	(void) cntxt;
