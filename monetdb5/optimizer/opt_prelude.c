@@ -414,7 +414,7 @@ void optimizerInit(void)
 	subsliceRef = putName("subslice",8);
 	singleRef = putName("single",6);
 	sortRef = putName("sort",4);
-	sortReverseRef = putName("sortReverse",15);
+	sortReverseRef = putName("sortReverse",11);
 	sqlRef = putName("sql",3);
 	srvpoolRef = putName("srvpool",7);
 	streamsRef = putName("streams",7);
