@@ -1315,7 +1315,7 @@ recompilequery:
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			msg = createException(PARSE, "SQLparser", "Semantic errors");
+			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors");
 		}
 	}
       finalize:
