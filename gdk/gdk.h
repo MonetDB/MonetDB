@@ -2021,6 +2021,7 @@ gdk_export gdk_return BAThash(BAT *b, BUN masksize);
  */
 
 gdk_export gdk_return BATimprints(BAT *b);
+gdk_export void IMPSdestroy(BAT *b);
 gdk_export lng IMPSimprintsize(BAT *b);
 
 /* The ordered index structure */

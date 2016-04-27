@@ -19,11 +19,22 @@
 #include "sql_scenario.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
-#include "sql_optimizer.h"
+#include "sql_assert.h"
+#include "sql_execute.h"
 #include "sql_env.h"
 #include "sql_mvc.h"
-#include "sql_execute.h"
-#include "rel_exp.h"
+#include "sql_readline.h"
+#include "sql_user.h"
+#include <sql_optimizer.h>
+#include <sql_datetime.h>
+#include <rel_optimizer.h>
+#include <rel_partition.h>
+#include <rel_distribute.h>
+#include <rel_select.h>
+#include <rel_rel.h>
+#include <rel_exp.h>
+#include <rel_dump.h>
+#include <rel_bin.h>
 #include "mal_debugger.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -402,15 +413,6 @@ SQLengineIntern(Client c, backend *be)
 			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 		goto cleanup_engine;
 	}
-	if (m->emod & mod_dot) {
-		if (be->q && be->q->code)
-			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
-		else if (be->q)
-			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg->def)
-			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
-		goto cleanup_engine;
-	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
@@ -489,3 +491,121 @@ cleanup_engine:
 	c->glb = oldglb;
 	return msg;
 }
+
+/* a hook is provided to execute relational algebra expressions */
+str
+RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *expr = getArgReference_str(stk, pci, 1);
+	bit *opt = getArgReference_bit(stk, pci, 2);
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg;
+	sql_rel *rel;
+	list *refs;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!m->sa)
+		m->sa = sa_create();
+	refs = sa_list(m->sa);
+	rel = rel_read(m, *expr, &pos, refs);
+	if (rel) {
+		int oldvtop = cntxt->curprg->def->vtop;
+		int oldstop = cntxt->curprg->def->stop;
+		stmt *s;
+		MalStkPtr oldglb = cntxt->glb;
+
+		if (*opt)
+			rel = rel_optimizer(m, rel);
+		s = output_rel_bin(m, rel);
+		rel_destroy(rel);
+
+		MSinitClientPrg(cntxt, "user", "test");
+
+		/* generate MAL code */
+		backend_callinline(b, cntxt, s, 1);
+		addQueryToCache(cntxt);
+
+		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
+		if (!msg) {
+			resetMalBlk(cntxt->curprg->def, oldstop);
+			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
+			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
+		}
+		cntxt->glb = oldglb;
+	}
+	return msg;
+}
+
+str
+RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pos = 0;
+	str *mod = getArgReference_str(stk, pci, 1);
+	str *nme = getArgReference_str(stk, pci, 2);
+	str *expr = getArgReference_str(stk, pci, 3);
+	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
+	backend *b = NULL;
+	mvc *m = NULL;
+	str msg;
+	sql_rel *rel;
+	list *refs, *ops;
+	char buf[BUFSIZ];
+
+	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	if (!m->sa)
+		m->sa = sa_create();
+
+       	ops = sa_list(m->sa);
+	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
+	while (c && *c && !isspace(*c)) {
+		char *vnme = c, *tnme; 
+		char *p = strchr(++c, (int)' ');
+		int d,s,nr;
+		sql_subtype t;
+		atom *a;
+
+		*p++ = 0;
+		vnme = sa_strdup(m->sa, vnme);
+		nr = strtol(vnme+1, NULL, 10);
+		tnme = p;
+		p = strchr(p, (int)'(');
+		*p++ = 0;
+		tnme = sa_strdup(m->sa, tnme);
+
+		d = strtol(p, &p, 10);
+		p++; /* skip , */
+		s = strtol(p, &p, 10);
+		
+		sql_find_subtype(&t, tnme, d, s);
+		a = atom_general(m->sa, &t, NULL);
+		/* the argument list may have holes and maybe out of order, ie
+		 * done use sql_add_arg, but special numbered version
+		 * sql_set_arg(m, a, nr);
+		 * */
+		sql_set_arg(m, nr, a);
+		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
+		c = strchr(p, (int)',');
+		if (c)
+			c++;
+	}
+	refs = sa_list(m->sa);
+	rel = rel_read(m, *expr, &pos, refs);
+	if (!rel)
+		throw(SQL, "sql.register", "Cannot register %s", buf);
+	if (rel) {
+		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops), 0);
+		rel_destroy(rel);
+	}
+	sqlcleanup(m, 0);
+	return msg;
+}
+

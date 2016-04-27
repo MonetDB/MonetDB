@@ -610,6 +610,12 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 			}
+			if (i->type == imprints_idx) {
+				sql_kc *ic = i->columns->h->data;
+				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				BATimprints(b);
+				BBPunfix(b->batCacheid);
+			}
 			mvc_copy_idx(sql, nt, i);
 		}
 	}
@@ -752,6 +758,12 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
 			OIDXdropImplementation(cntxt, b);
+			BBPunfix(b->batCacheid);
+		}
+		if (i->type == imprints_idx) {
+			sql_kc *ic = i->columns->h->data;
+			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
+			IMPSdestroy(b);
 			BBPunfix(b->batCacheid);
 		}
 		mvc_drop_idx(sql, s, i);
@@ -5100,123 +5112,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*roidx = oidx->batCacheid);
 	return MAL_SUCCEED;
 }
-
-str
-RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int pos = 0;
-	str *expr = getArgReference_str(stk, pci, 1);
-	bit *opt = getArgReference_bit(stk, pci, 2);
-	backend *b = NULL;
-	mvc *m = NULL;
-	str msg;
-	sql_rel *rel;
-	list *refs;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (!m->sa)
-		m->sa = sa_create();
-	refs = sa_list(m->sa);
-	rel = rel_read(m, *expr, &pos, refs);
-	if (rel) {
-		int oldvtop = cntxt->curprg->def->vtop;
-		int oldstop = cntxt->curprg->def->stop;
-		stmt *s;
-		MalStkPtr oldglb = cntxt->glb;
-
-		if (*opt)
-			rel = rel_optimizer(m, rel);
-		s = output_rel_bin(m, rel);
-		rel_destroy(rel);
-
-		MSinitClientPrg(cntxt, "user", "test");
-
-		/* generate MAL code */
-		backend_callinline(b, cntxt, s, 1);
-		addQueryToCache(cntxt);
-
-		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
-		if (!msg) {
-			resetMalBlk(cntxt->curprg->def, oldstop);
-			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
-			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
-				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
-		}
-		cntxt->glb = oldglb;
-	}
-	return msg;
-}
-
-str
-RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int pos = 0;
-	str *mod = getArgReference_str(stk, pci, 1);
-	str *nme = getArgReference_str(stk, pci, 2);
-	str *expr = getArgReference_str(stk, pci, 3);
-	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
-	backend *b = NULL;
-	mvc *m = NULL;
-	str msg;
-	sql_rel *rel;
-	list *refs, *ops;
-	char buf[BUFSIZ];
-
-	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (!m->sa)
-		m->sa = sa_create();
-
-       	ops = sa_list(m->sa);
-	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
-	while (c && *c && !isspace(*c)) {
-		char *vnme = c, *tnme; 
-		char *p = strchr(++c, (int)' ');
-		int d,s,nr;
-		sql_subtype t;
-		atom *a;
-
-		*p++ = 0;
-		vnme = sa_strdup(m->sa, vnme);
-		nr = strtol(vnme+1, NULL, 10);
-		tnme = p;
-		p = strchr(p, (int)'(');
-		*p++ = 0;
-		tnme = sa_strdup(m->sa, tnme);
-
-		d = strtol(p, &p, 10);
-		p++; /* skip , */
-		s = strtol(p, &p, 10);
-		
-		sql_find_subtype(&t, tnme, d, s);
-		a = atom_general(m->sa, &t, NULL);
-		/* the argument list may have holes and maybe out of order, ie
-		 * done use sql_add_arg, but special numbered version
-		 * sql_set_arg(m, a, nr);
-		 * */
-		sql_set_arg(m, nr, a);
-		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
-		c = strchr(p, (int)',');
-		if (c)
-			c++;
-	}
-	refs = sa_list(m->sa);
-	rel = rel_read(m, *expr, &pos, refs);
-	if (!rel)
-		throw(SQL, "sql.register", "Cannot register %s", buf);
-	if (rel) {
-		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops), 0);
-		rel_destroy(rel);
-	}
-	sqlcleanup(m, 0);
-	return msg;
-}
-
 
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)

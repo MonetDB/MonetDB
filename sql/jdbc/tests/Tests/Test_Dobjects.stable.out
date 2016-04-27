@@ -102,7 +102,7 @@ as select "schema","table",max(count) as "count",
 	sum(columnsize) as columnsize,
 	sum(heapsize) as heapsize,
 	sum(hashes) as hashes,
-	sum(imprints) as imprints,
+ sum("imprints") as "imprints",
 	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
 from sys.storagemodel() group by "schema","table";	null	null	null	null	null	
 null	sys	tracelog	SYSTEM VIEW	create view sys.tracelog as select * from sys.tracelog();	null	null	null	null	null	

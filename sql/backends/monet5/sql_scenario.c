@@ -37,7 +37,6 @@
 #include "sql_readline.h"
 #include "sql_user.h"
 #include "sql_datetime.h"
-#include "sql_optimizer.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
@@ -1216,7 +1215,7 @@ SQLparser(Client c)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (!(m->emod & (mod_explain | mod_debug | mod_trace | mod_dot)))
+		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {

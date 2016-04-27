@@ -268,6 +268,7 @@ var_t HEAP_malloc(Heap *heap, size_t nbytes);
 gdk_return HEAPextend(Heap *h, size_t size, int mayshare);
 size_t HEAPmemsize(Heap *h);
 size_t HEAPvmsize(Heap *h);
+void IMPSdestroy(BAT *b);
 lng IMPSimprintsize(BAT *b);
 int MT_check_nr_cores(void);
 int MT_create_thread(MT_Id *t, void( *function)(void *), void *arg, enum MT_thr_detach d);
@@ -1566,6 +1567,7 @@ int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+int OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

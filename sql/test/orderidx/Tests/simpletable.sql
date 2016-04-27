@@ -2,12 +2,12 @@ create table xtmp1( i integer);
 insert into xtmp1 values (1),(2),(4),(0);
 select * from xtmp1;
 
-select schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx from storage where "table" = 'xtmp1';
+select schema, table, column, type, mode, count, hashes, phash, "imprints", sorted, orderidx from storage where "table" = 'xtmp1';
 alter table xtmp1 set READ ONLY;
 call createorderindex('sys','xtmp1','i');
 --create ordered index sys_xtmp1_i_oidx on xtmp1 (i);
 
-select schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx from storage where "table" = 'xtmp1';
+select schema, table, column, type, mode, count, hashes, phash, "imprints", sorted, orderidx from storage where "table" = 'xtmp1';
 
 select * from xtmp1 where i <0;
 select * from xtmp1 where i <1;
