@@ -42,6 +42,7 @@
 geom_export str geoHasZ(int* res, int* info);
 geom_export str geoHasM(int* res, int* info);
 geom_export str geoGetType(char** res, int* info, int* flag);
+geom_export str GEOSGeomGetZ(const GEOSGeometry *geom, double *z);
 
 geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
@@ -103,6 +104,7 @@ geom_export str wkbFromWKB(wkb **w, wkb **src);
 /* gets a GEOSGeometry and returns the mbr of it 
  * works only for 2D geometries */
 geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
+geom_export wkb* geos2wkb(const GEOSGeometry *geosGeometry);
 
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
@@ -170,6 +172,7 @@ geom_export str wkbEndPoint(wkb **out, wkb **geom);
 
 geom_export str wkbNumPoints(int *out, wkb **geom, int *check);
 geom_export str wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
+geom_export str numPointsGeometry(unsigned int *out, const GEOSGeometry* geosGeometry);
 
 geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
@@ -224,6 +227,8 @@ geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
+geom_export str wkbPolygonize(wkb **res, wkb **geom);
+geom_export str wkbSimplifyPreserveTopology(wkb **res, wkb **geom, float *tolerance);
 
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 
 
@@ -292,3 +297,29 @@ geom_export str wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int* coo
 
 geom_export int geom_catalog_upgrade(void *, int);
 geom_export str geom_sql_upgrade(int);
+
+/* To Export X3D and GeoJSON */
+#define OUT_MAX_DOUBLE_PRECISION 15
+#define OUT_MAX_DOUBLE 1E15
+#define OUT_SHOW_DIGS_DOUBLE 20
+#define OUT_MAX_DOUBLE_PRECISION 15
+#define OUT_MAX_DIGS_DOUBLE (OUT_SHOW_DIGS_DOUBLE + 2)
+#define GEOM_X3D_FLIP_XY         (1<<0)
+#define GEOM_X3D_USE_GEOCOORDS   (1<<1)
+#define X3D_USE_GEOCOORDS(x) ((x) & GEOM_X3D_USE_GEOCOORDS)
+
+
+typedef struct {
+    double xmin; 
+    double ymin; 
+    double zmin; 
+    double xmax; 
+    double ymax; 
+    double zmax; 
+} bbox3D;
+
+geom_export str bbox3DFromGeos(bbox3D **bbox, const GEOSGeom geosGeometry);
+geom_export char *geom_to_geojson(GEOSGeom geom, char *srs, int precision, int has_bbox);
+geom_export char *geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid);
+geom_export str wkbAsX3D(str *res, wkb **geom, int *maxDecDigits, int *options);
+geom_export str wkbAsGeoJson(str *res, wkb **geom, int *maxDecDigits, int *options);
