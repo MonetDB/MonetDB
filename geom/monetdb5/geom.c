@@ -15,8 +15,6 @@
 
 int TYPE_mbr;
 
-static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
-
 static inline int
 geometryHasZ(int info)
 {
@@ -1343,32 +1341,36 @@ translatePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, d
 		throw(MAL, "geom.Translate", "GEOSGetInteriorRingN failed.");
 	}
 
-	/* iterate over the interiorRing and translate each one of them */
-	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-	if (transformedInteriorRingGeometries == NULL) {
-		*outGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.Translate", MAL_MALLOC_FAIL);
-	}
-	for (i = 0; i < numInteriorRings; i++) {
-		if ((err = translateLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-			GDKfree(transformedInteriorRingGeometries);
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
-			*outGeometry = NULL;
-			return err;
-		}
-	}
+    /* iterate over the interiorRing and translate each one of them */
+    if (numInteriorRings) {
+        transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+        if (transformedInteriorRingGeometries == NULL) {
+            *outGeometry = NULL;
+            GEOSGeom_destroy(transformedExteriorRingGeometry);
+            throw(MAL, "geom.Translate", MAL_MALLOC_FAIL);
+        }
+        for (i = 0; i < numInteriorRings; i++) {
+            if ((err = translateLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dx, dy, dz)) != MAL_SUCCEED) {
+                while (--i >= 0)
+                    GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+                GDKfree(transformedInteriorRingGeometries);
+                GEOSGeom_destroy(transformedExteriorRingGeometry);
+                *outGeometry = NULL;
+                return err;
+            }
+        }
 
-	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	if (*outGeometry == NULL) {
-		for (i = 0; i < numInteriorRings; i++)
-			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-		err = createException(MAL, "geom.Translate", "GEOSGeom_createPolygon failed");
-	}
-	GDKfree(transformedInteriorRingGeometries);
-	GEOSGeom_destroy(transformedExteriorRingGeometry);
+        *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+        if (*outGeometry == NULL) {
+            for (i = 0; i < numInteriorRings; i++)
+                GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+            err = createException(MAL, "geom.Translate", "GEOSGeom_createPolygon failed");
+        }
+        GDKfree(transformedInteriorRingGeometries);
+        GEOSGeom_destroy(transformedExteriorRingGeometry);
+    } else {
+        *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, NULL, 0);
+    }
 
 	return err;
 }
@@ -1927,6 +1929,53 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 	return MAL_SUCCEED;
 }
 
+str wkbPolygonize(wkb** outWKB, wkb** geom){
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+	int i = 0, geometriesNum = GEOSGetNumGeometries(geosGeometry);
+	GEOSGeometry* outGeometry;
+	const GEOSGeometry **multiGeometry;
+
+	multiGeometry = malloc(sizeof(GEOSGeometry*) * geometriesNum);
+	for(i=0; i<geometriesNum; i++) {
+		multiGeometry[i] = GEOSGetGeometryN(geosGeometry, i);
+	}
+
+	if(!(outGeometry = GEOSPolygonize(multiGeometry, geometriesNum))) {
+		*outWKB = NULL;
+		for (i = 0; i < geometriesNum; i++) {
+			GEOSGeom_destroy((GEOSGeometry *)multiGeometry[i]);
+		}
+		return createException(MAL, "geom.Polygonize", "GEOSPolygonize failed");
+	}
+
+	for (i = 0; i < geometriesNum; i++) {
+		GEOSGeom_destroy((GEOSGeometry *)multiGeometry[i]);
+	}
+
+	*outWKB = geos2wkb(outGeometry);
+	GEOSGeom_destroy(outGeometry);
+
+	return MAL_SUCCEED;
+}
+
+str wkbSimplifyPreserveTopology(wkb** outWKB, wkb** geom, float* tolerance){
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+	GEOSGeometry* outGeometry;
+
+	if(!(outGeometry = GEOSTopologyPreserveSimplify(geosGeometry, *tolerance))) {
+		*outWKB = NULL;
+		GEOSGeom_destroy(geosGeometry);
+		return createException(MAL, "geom.SimplifyPreserveTopology", "GEOSSimplifyPreserveTopology failed");
+	}
+
+	GEOSGeom_destroy(geosGeometry);
+
+	*outWKB = geos2wkb(outGeometry);
+	GEOSGeom_destroy(outGeometry);
+
+	return MAL_SUCCEED;
+}
+
 str
 geom_2_geom(wkb **resWKB, wkb **valueWKB, int *columnType, int *columnSRID)
 {
@@ -2006,6 +2055,30 @@ geoGetType(char **res, int *info, int *flag)
 	if (*res == NULL)
 		throw(MAL, "geo.getType", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
+}
+
+str GEOSGeomGetZ(const GEOSGeometry *geom, double *z) {
+    const GEOSCoordSequence* gcs_new;
+    int type = GEOSGeomTypeId(geom)+1;
+    
+    if (type != wkbPoint_mdb) {
+		*z = dbl_nil;
+		return createException(MAL, "geom.GEOSGeomGetZ", "Geometry type should be POINT not %s", geom_type2str(type,0));
+    }
+
+    gcs_new = GEOSGeom_getCoordSeq(geom);	
+
+	if(gcs_new == NULL) {
+		*z = dbl_nil;
+		return createException(MAL, "geom.GEOSGeomGetZ", "GEOSGeom_getCoordSeq failed");
+	}
+
+    if(!GEOSCoordSeq_getZ(gcs_new, 0, z)) {
+		*z = dbl_nil;
+        return createException(MAL, "geom.GEOSGeomGetZ", "GEOSCoordSeq_getZ failed");
+    }
+
+    return MAL_SUCCEED;
 }
 
 /* initialize geos */
@@ -2196,7 +2269,7 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
  * It makes sure to make all checks before returning
  * the input geosGeometry should not be altered by this function
  * return NULL on error */
-static wkb *
+wkb *
 geos2wkb(const GEOSGeometry *geosGeometry)
 {
 	size_t wkbLen = 0;
@@ -2293,6 +2366,178 @@ mbrFromGeos(const GEOSGeom geosGeometry)
 	return geomMBR;
 }
 
+/* gets the bbox3D from the geometry */
+
+static str
+minMaxZLineString(double *zmin, double *zmax, const GEOSGeometry* geosGeometry) {
+	/* get the coordinates of the points comprising the geometry */
+	const GEOSCoordSequence* coordSeq = GEOSGeom_getCoordSeq(geosGeometry);
+    uint32_t i, npoints = 0;
+    double zval;
+    str err;
+
+	if(coordSeq == NULL)
+		return createException(MAL, "geom.MinMaxZ", "GEOSGeom_getCoordSeq failed");
+
+	/* get the number of points in the geometry */
+    if (!GEOSCoordSeq_getSize(coordSeq, &npoints)) {
+        *zmin = dbl_nil;
+        *zmax = dbl_nil;
+		return createException(MAL, "geom.MinMaxZ", "GEOSGeomGetNumPoints failed");
+    }
+
+    for (i = 0; i < npoints; i++) {
+        GEOSGeom point = (GEOSGeom) GEOSGetGeometryN(geosGeometry, i);
+        if((err = GEOSGeomGetZ(point, &zval)) != MAL_SUCCEED) {
+            str msg = createException(MAL, "geom.MinMaxZ", "%s", err);
+		    GDKfree(err);
+    		return msg;
+        }
+        if (zval <= *zmin)
+            *zmin = zval;
+        if (zval > *zmax)
+            *zmax = zval;
+    }
+
+	return MAL_SUCCEED;
+}
+
+static str minMaxZPolygon(double *zmin, double *zmax, const GEOSGeometry* geosGeometry) {
+	const GEOSGeometry* exteriorRingGeometry;
+	int numInteriorRings=0, i=0;
+	str err;
+
+	/* get the exterior ring of the polygon */
+	exteriorRingGeometry = GEOSGetExteriorRing(geosGeometry);
+	if(!exteriorRingGeometry) {
+		*zmin = dbl_nil;
+		*zmax = dbl_nil;
+		return createException(MAL, "geom.MinMaxZ","GEOSGetExteriorRing failed");
+	}
+	//get the zmin and zmax in the exterior ring
+	if((err = minMaxZLineString(zmin, zmax, exteriorRingGeometry)) != MAL_SUCCEED) {
+		str msg = createException(MAL, "geom.MinMaxZ", "%s", err);
+		*zmin = dbl_nil;
+		*zmax = dbl_nil;
+		GDKfree(err);
+		return msg;
+	}
+
+	//check the interior rings
+	numInteriorRings = GEOSGetNumInteriorRings(geosGeometry);
+	if (numInteriorRings == -1 ) {
+		*zmin = dbl_nil;
+		*zmax = dbl_nil;
+		return createException(MAL, "geom.MinMaxZ", "GEOSGetNumInteriorRings failed");
+	}
+	// iterate over the interiorRing and transform each one of them
+	for(i=0; i<numInteriorRings; i++) {
+		if((err = minMaxZLineString(zmin, zmax, GEOSGetInteriorRingN(geosGeometry, i))) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.MinMaxZ", "%s", err);
+		    *zmin = dbl_nil;
+    		*zmax = dbl_nil;
+			GDKfree(err);
+			return msg;
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str minMaxZGeometry(double * zmin, double *zmax, const GEOSGeometry *geosGeometry);
+static str minMaxZMultiGeometry(double *zmin, double *zmax, const GEOSGeometry *geosGeometry) {
+	int geometriesNum, i;
+	const GEOSGeometry *multiGeometry = NULL;
+	str err;
+
+	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+
+	for(i=0; i<geometriesNum; i++) {
+		multiGeometry = GEOSGetGeometryN(geosGeometry, i);
+		if((err = minMaxZGeometry(zmin, zmax, multiGeometry)) != MAL_SUCCEED) {
+			str msg = createException(MAL, "geom.MinMaxZ", "%s", err);
+			GDKfree(err);
+		    *zmin = dbl_nil;
+    		*zmax = dbl_nil;
+			return msg;
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+static
+str minMaxZGeometry(double * zmin, double *zmax, const GEOSGeometry *geosGeometry) {
+    int geometryType = GEOSGeomTypeId(geosGeometry)+1;
+    str err;
+
+    //check the type of the geometry
+    switch(geometryType) {
+        case wkbPoint_mdb:
+        case wkbLineString_mdb:
+        case wkbLinearRing_mdb:
+            if((err = minMaxZLineString(zmin, zmax, geosGeometry)) != MAL_SUCCEED){
+                str msg = createException(MAL, "geom.minMaxZ", "%s",err);
+                GDKfree(err);
+                return msg;
+            }
+            break;
+        case wkbPolygon_mdb:
+            if((err = minMaxZPolygon(zmin, zmax, geosGeometry)) != MAL_SUCCEED){
+                str msg = createException(MAL, "geom.minMaxZ", "%s",err);
+                GDKfree(err);
+                return msg;
+            }
+            break;
+        case wkbMultiPoint_mdb:
+        case wkbMultiLineString_mdb:
+        case wkbMultiPolygon_mdb:
+        case  wkbGeometryCollection_mdb:
+            if((err = minMaxZMultiGeometry(zmin, zmax, geosGeometry)) != MAL_SUCCEED){
+                str msg = createException(MAL, "geom.minMaxZ", "%s",err);
+                GDKfree(err);
+                return msg;
+            }
+            break;
+        default:
+            return createException(MAL, "geom.minMaxZ", "%s Unknown geometry type", geom_type2str(geometryType,0));
+    }
+
+    return MAL_SUCCEED;
+}
+
+str bbox3DFromGeos(bbox3D **out, const GEOSGeom geosGeometry) {
+    mbr* geomMBR;
+    double zmin=0, zmax=0;
+    bbox3D *bbox;
+    str err;
+
+    bbox = (bbox3D*) GDKmalloc(sizeof(bbox3D));
+
+    geomMBR = mbrFromGeos(geosGeometry);
+	if (mbr_isnil(geomMBR)){
+        str msg = createException(MAL, "geom.MinMaxZ", "Failed to create mbr");
+        return msg;
+    }
+    if((err = minMaxZGeometry(&zmin, &zmax, geosGeometry)) != MAL_SUCCEED) {
+        str msg = createException(MAL, "geom.MinMaxZ", "%s", err);
+        GDKfree(err);
+        zmin = dbl_nil;
+        zmax = dbl_nil;
+        return msg;
+    }
+
+    bbox->xmin = geomMBR->xmin;
+    bbox->ymin = geomMBR->ymin;
+    bbox->zmin = zmin;
+    bbox->xmax = geomMBR->xmax;
+    bbox->ymax = geomMBR->ymax;
+    bbox->zmax = zmax;
+
+    *out = bbox;
+    return MAL_SUCCEED;
+}
+ 
 //Returns the wkb in a hex representation */
 static char hexit[] = "0123456789ABCDEF";
 
@@ -3285,7 +3530,6 @@ numPointsPolygon(unsigned int *out, const GEOSGeometry *geosGeometry)
 	return MAL_SUCCEED;
 }
 
-static str numPointsGeometry(unsigned int *out, const GEOSGeometry *geosGeometry);
 static str
 numPointsMultiGeometry(unsigned int *out, const GEOSGeometry *geosGeometry)
 {
@@ -3309,7 +3553,7 @@ numPointsMultiGeometry(unsigned int *out, const GEOSGeometry *geosGeometry)
 	return MAL_SUCCEED;
 }
 
-static str
+str
 numPointsGeometry(unsigned int *out, const GEOSGeometry *geosGeometry)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
@@ -4427,11 +4671,14 @@ wkbGeometryN(wkb **out, wkb **geom, const int *geometryNum)
 		throw(MAL, "geom.GeometryN", "GEOSGetNumGeometries failed");
 	}
 	//geometry is not a multi geometry
+    /*
 	if (geometriesNum == 1) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.GeometryN", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
+    */
+
 	//no geometry at this position
 	if (geometriesNum < *geometryNum) {
 		if ((*out = wkbNULLcopy()) == NULL)
@@ -4551,6 +4798,57 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 
 	return MAL_SUCCEED;
 }
+
+#if 0
+str wkbBox3D(mbr** box, wkb** point1, wkb** point2) {
+    GEOSGeom point1_geom, point2_geom;
+    double xmin=0.0, ymin=0.0, zmin=0.0, xmax=0.0, ymax=0.0, zmax=0.0;
+
+    if(wkb_isnil(*point1) || wkb_isnil(*point2)) {
+        *box=mbr_nil;
+        return MAL_SUCCEED;
+    }
+
+    point1_geom = wkb2geos(*point1);
+    if((GEOSGeomTypeId(point1_geom)+1) != wkbPoint_mdb) {
+        GEOSGeom_destroy(point1_geom);
+        *box = mbr_nil;
+        throw(MAL, "geom.MakeBox3D", "Geometries should be points");
+    }
+
+    point2_geom = wkb2geos(*point2);
+    if((GEOSGeomTypeId(point2_geom)+1) != wkbPoint_mdb) {
+        GEOSGeom_destroy(point1_geom);
+        GEOSGeom_destroy(point2_geom);
+        *box = mbr_nil;
+        throw(MAL, "geom.MakeBox3D", "Geometries should be points");
+    }
+
+    if(GEOSGeomGetX(point1_geom, &xmin) == -1 ||
+       GEOSGeomGetY(point1_geom, &ymin) == -1 ||
+       GEOSGeomGetY(point1_geom, &zmin) == -1 ||
+       GEOSGeomGetX(point2_geom, &xmax) == -1 ||
+       GEOSGeomGetY(point2_geom, &ymax) == -1 ||
+       GEOSGeomGetY(point2_geom, &zmax) == -1) {
+
+        GEOSGeom_destroy(point1_geom);
+        GEOSGeom_destroy(point2_geom);
+        *box = mbr_nil;
+        throw(MAL, "geom.MakeBox3D", "Error in reading the points' coordinates");
+
+    }
+
+    *box = (mbr*) GDKmalloc(sizeof(mbr));
+    (*box)->xmin = (float) (xmin < xmax ? xmin : xmax);
+    (*box)->ymin = (float) (ymin < ymax ? ymin : ymax);
+    (*box)->zmin = (float) (zmin < zmax ? zmin : zmax);
+    (*box)->xmax = (float) (xmax > xmin ? xmax : xmin);
+    (*box)->ymax = (float) (ymax > ymin ? ymax : ymin);
+    (*box)->zmax = (float) (zmax > zmin ? zmax : zmin);
+
+    return MAL_SUCCEED;
+}
+#endif
 
 /*returns true if the two
  * 	mbrs overlap */
@@ -5989,3 +6287,85 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 	*out = TRUE;
 	return MAL_SUCCEED;
 }
+
+/* Exported from PostGIS */
+str
+wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
+{
+    static const char* default_defid = "x3d:"; /* default defid */
+    const char* defid = default_defid;
+	GEOSGeom geom = wkb2geos(*geomWKB);
+    int srid = (*geomWKB)->srid;
+
+    if (*option & GEOM_X3D_USE_GEOCOORDS) {
+        if (srid != 4326) {
+		    throw(MAL, "geom.wkbAsX3D", "Only SRID 4326 is supported for geocoordinates.");
+        }
+    }
+
+	if ( (*res = geom_to_x3d_3(geom, *maxDecDigits, *option, defid)) == NULL )
+		throw(MAL, "geom.wkbAsX3D", "Failed, XML returned is NULL!!!");
+	return MAL_SUCCEED;
+}
+
+str
+wkbAsGeoJson(str *res, wkb **geomWBK, int *maxDecDigits, int *option)
+{
+	GEOSGeom geom = wkb2geos(*geomWBK);
+    int has_bbox = 0;
+	char *srs = NULL;
+    int precision = DBL_DIG;
+    int srid = (*geomWBK)->srid;
+
+    if ( *maxDecDigits > DBL_DIG )
+        precision = DBL_DIG;
+    else if ( *maxDecDigits < 0 )
+        precision = 0;
+
+    if (*option) {
+        if (*option & 1)  
+            has_bbox = 1; 
+    }
+
+    if ( srid != 0 ) 
+    { 
+        if ( *option & 2 ) {
+			char* sridTxt = "SRID:";
+			char* sridIntToString = NULL;
+			size_t len2 = 0;
+			int digitsNum = 10; //MAX_INT = 2,147,483,647
+
+
+			//count the number of digits in srid
+			if(srid < 0)
+				throw(MAL, "geom.wkbAsGeoJson", "Negative SRID");
+
+			sridIntToString = GDKmalloc(digitsNum+1);
+			if(sridIntToString == NULL) {
+				throw(MAL, "geom.wkbAsGeoJson", MAL_MALLOC_FAIL);
+			}
+			digitsNum = sprintf(sridIntToString, "%d", srid);
+
+			len2 = strlen(sridIntToString)+strlen(sridTxt)+2;
+			srs = GDKmalloc(len2);
+			if(srs == NULL) {
+				GDKfree(sridIntToString);
+				throw(MAL, "geom.wkbAsGeoJson", MAL_MALLOC_FAIL);
+			}
+
+			memcpy(srs, sridTxt, strlen(sridTxt));
+			memcpy(srs+strlen(sridTxt), sridIntToString, strlen(sridIntToString));
+			(srs)[strlen(sridTxt)+strlen(sridIntToString)] = ';';
+			(srs)[len2-1] = '\0';
+
+			GDKfree(sridIntToString);
+        }
+        if ( *option & 4 ) 
+		    throw(MAL, "geom.wkbAsGeoJson", "Failed, SRID long version not supported!!!");
+    }
+
+	if ( (*res = geom_to_geojson(geom, srs, precision, has_bbox)) == NULL )
+		throw(MAL, "geom.wkbAsGeoJson", "Failed, GeoJson returned is NULL!!!");
+	return MAL_SUCCEED;
+}
+
