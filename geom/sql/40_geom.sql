@@ -4372,14 +4372,14 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 --CREATE FUNCTION ST_MakeValid RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MemUnion RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_MinimumBoundingCircle RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Polygonize RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Polygonize(gemo1 Geometry) RETURNS Geometry EXTERNAL NAME geom."Polygonize";
 --CREATE FUNCTION ST_Node RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_OffsetCurve RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_RemoveRepeatedPoints RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_SharedPaths RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Shift_Longitude RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Simplify RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_SimplifyPreserveTopology RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_SimplifyPreserveTopology(geom1 Geometry, tolerance real) RETURNS Geometry EXTERNAL NAME geom."SimplifyPreserveTopology";
 --CREATE FUNCTION ST_Split RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Union(geometry set geoms)?????
 --CREATE FUNCTION ST_UnaryUnion RETURNS EXTERNAL NAME
@@ -4456,3 +4456,5 @@ CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG G
 ---------------------------- Miscellaneous ------------------------------
 -------------------------------------------------------------------------
 CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
+CREATE FUNCTION ST_AsX3D(a Geometry, maxDecDigits int, options int) returns string external name geom."asX3D";
+CREATE FUNCTION ST_AsGeoJson(a Geometry, maxDecDigits int, options int) returns string external name geom."asGeoJson";
