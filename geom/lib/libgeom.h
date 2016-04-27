@@ -90,6 +90,9 @@ Type values:
 9 = MULTILINESTRING
 10 = MULTISURFACE
 11 = MULTIPOLYGON
+15 = POLYEHDRALSURFACE
+16 = TIN / TRIANGULATEDSURFACE
+17 = TRIANGLE
 
 */
 
@@ -102,7 +105,10 @@ typedef enum wkb_type {
 	wkbMultiPoint_mdb = 5,
 	wkbMultiLineString_mdb = 6,
 	wkbMultiPolygon_mdb = 7,
-	wkbGeometryCollection_mdb = 8
+	wkbGeometryCollection_mdb = 8,
+	wkbPolyehdralSurface_mdb = 15,
+	wkbTin_mdb = 16, //TriangulatedSurface
+	wkbTriangle_mdb = 17
 } wkb_type;
 
 libgeom_export const char *geom_type2str(int t, int flag);
@@ -140,7 +146,6 @@ libgeom_export int wkb_isnil(wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
 libgeom_export int getMbrGeom(mbr *res, wkb *geom);
 libgeom_export GEOSGeom wkb2geos(wkb* geomWKB);
-
 //libgeom_export str geomerty_2_geometry(wkb *res, wkb **geom, int* columnType, int* columnSRID, int* valueSRID);
 
 #endif /* LIBGEOM_H */
