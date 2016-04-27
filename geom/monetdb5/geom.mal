@@ -334,6 +334,10 @@ command Dump(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDump
 comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
+command Polygonize(a:wkb) :wkb address wkbPolygonize
+comment "Creates a GeometryCollection containing possible polygons formed from the constituent linework of a set of geometries.";
+command SimplifyPreserveTopology(a:wkb, t:flt) :wkb address wkbSimplifyPreserveTopology
+comment "Returns a \"simplified\" version of the given geometry using the Douglas-Peucker algorithm.";
 
 command Segmentize(g:wkb, sz:dbl) :wkb address wkbSegmentize
 comment "It creates a new geometry with all segments on it smaller or equal to sz";
@@ -783,9 +787,16 @@ comment "Called when inserting values to a table in order to check if the insert
 
 
 
-#module geom;
+module geom;
 #loading string without the need to use st_wkbtosql OR st_wkttosql
 function calc.wkb( wkt:str, srid:int, type:int ) :wkb;
         x := geom.FromText(wkt,0,0);
         return x;
 end wkb;
+
+#Exported from PostGis
+command asX3D(geom:wkb, maxDecDigits:int, options:int) :str address wkbAsX3D
+comment "Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML";
+
+command asGeoJson(geom:wkb, maxDecDigits:int, options:int) :str address wkbAsGeoJson
+comment "Return the geometry as a GeoJSON element.";
