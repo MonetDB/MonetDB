@@ -4,8 +4,17 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-module sfcgal;
+module geom;
 
 command version() :str address geom_sfcgal_version
 comment "Returns the version number of the SFCGAL library";
+
+command extrude(geo:wkb, x:dbl, y:dbl, z:dbl) : wkb address geom_sfcgal_extrude
+comment "Extrude a surface to a related volume"
+
+command straightSkeletion(geo:wkb) : wkb address geom_sfcgal_straightSkeleton
+comment "Compute a straight skeleton from a geometry"
+
+command tesselate(geo:wkb) : wkb address geom_sfcgal_tesselate
+comment "Perform surface Tesselation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS"
 
