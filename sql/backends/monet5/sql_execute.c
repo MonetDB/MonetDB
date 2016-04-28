@@ -448,29 +448,17 @@ cleanup_engine:
 	if (m->type == Q_SCHEMA)
 		qc_clean(m->qc);
 	if (msg) {
-		enum malexception type = getExceptionType(msg);
-		if (type == OPTIMIZER) {
-			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c, c->curprg->def, NULL, be->vtop);
-			be->language = oldlang;
-			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-			c->glb = oldglb;
-			if ( msg)
-				GDKfree(msg);
-			return SQLrecompile(c, be); // retry compilation
-		} else {
-			/* don't print exception decoration, just the message */
-			char *n = NULL;
-			char *o = msg;
-			while ((n = strchr(o, '\n')) != NULL) {
-				*n = '\0';
-				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
-				*n++ = '\n';
-				o = n;
-			}
-			if (*o != 0)
-				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+		/* don't print exception decoration, just the message */
+		char *n = NULL;
+		char *o = msg;
+		while ((n = strchr(o, '\n')) != NULL) {
+			*n = '\0';
+			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+			*n++ = '\n';
+			o = n;
 		}
+		if (*o != 0)
+			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		showErrors(c);
 		m->session->status = -10;
 	}

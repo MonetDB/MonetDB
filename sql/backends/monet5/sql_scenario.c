@@ -896,14 +896,16 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
  * of the query. 
  */
 static void
-SQLsetTrace(backend *be, Client cntxt, bit onoff)
+SQLsetTrace(Client cntxt, mvc *m, bit onoff)
 {
 	InstrPtr q, resultset;
 	InstrPtr tbls, cols, types, clen, scale;
 	MalBlkPtr mb = cntxt->curprg->def;
 	int k;
 
-	(void) be;
+	if ( m == 0 || !(m->emod & mod_trace))
+		return;
+
 	if (onoff) {
 		q= newStmt(mb, "profiler", "starttrace");
 		q= pushStr(mb,q,"sql_traces");
@@ -1034,7 +1036,8 @@ cachable(mvc *m, stmt *s)
 
 /*
  * The core part of the SQL interface, parse the query and
- * prepare the intermediate code.
+ * store away the template (non)optimized code in the query cache
+ * and the MAL module
  */
 
 str
@@ -1203,25 +1206,15 @@ SQLparser(Client c)
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
-		// look for outdated plans
-		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
-			msg = SQLCacheRemove(c, be->q->name);
-			qc_delete(be->mvc->qc, be->q);
-			be->q = NULL;
-			goto recompilequery;
-		}
-
-		if (m->emod & mod_debug)
-			SQLsetDebugger(c, m, TRUE);
-		if (m->emod & mod_trace)
-			SQLsetTrace(be, c, TRUE);
+		SQLsetDebugger(c, m, TRUE);
+		SQLsetTrace(c, m, TRUE);
 		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
 		stmt *s;
-recompilequery:
+
 		r = sql_symbol2relation(m, m->sym);
 		s = sql_relation2stmt(m, r);
 
@@ -1233,11 +1226,10 @@ recompilequery:
 		}
 		assert(s);
 
-		/* generate the MAL code */
-		if (m->emod & mod_trace)
-			SQLsetTrace(be, c, TRUE);
-		if (m->emod & mod_debug)
-			SQLsetDebugger(c, m, TRUE);
+		/* generate the MAL prelude codea in the query wrapper */
+		SQLsetTrace(c, m, TRUE);
+		SQLsetDebugger(c, m, TRUE);
+
 		if (!caching(m) || !cachable(m, s)) {
 			scanner_query_processed(&(m->scanner));
 			if (backend_callinline(be, c, s, 0) == 0) {
@@ -1246,7 +1238,6 @@ recompilequery:
 				err = 1;
 			}
 		} else {
-			/* generate a factory instantiation */
 			char *q = query_cleaned(QUERY(m->scanner));
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
@@ -1275,21 +1266,22 @@ recompilequery:
 	if (err)
 		m->session->status = -10;
 	if (err == 0) {
+		/* no parsing error encountered */
 		if (be->q) {
 			if (m->emode == m_prepare)
+				/* For prepared queries, return a table with result set structure*/
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
 			else if (m->emode == m_inplace) {
 				/* everything ready for a fast call */
-			} else {	/* call procedure generation (only in cache mode) */
+			} else {	
+				/* call procedure generation (only in cache mode) */
 				backend_call(be, c, be->q);
 			}
 		}
 
 		/* In the final phase we add any debugging control */
-		if (m->emod & mod_trace)
-			SQLsetTrace(be, c, FALSE);
-		if (m->emod & mod_debug)
-			SQLsetDebugger(c, m, FALSE);
+		SQLsetTrace(c, m, FALSE);
+		SQLsetDebugger(c, m, FALSE);
 
 		/*
 		 * During the execution of the query exceptions can be raised.
@@ -1322,37 +1314,6 @@ recompilequery:
 	if (msg)
 		sqlcleanup(m, 0);
 	return msg;
-}
-
-
-str
-SQLrecompile(Client c, backend *be)
-{
-	stmt *s;
-	mvc *m = be->mvc;
-	int oldvtop = c->curprg->def->vtop;
-	int oldstop = c->curprg->def->stop;
-	str msg;
-
-	msg = SQLCacheRemove(c, be->q->name);
-	if( msg )
-		GDKfree(msg);
-	s = sql_relation2stmt(m, be->q->rel);
-	be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
-	be->q->stk = 0;
-
-	pushEndInstruction(c->curprg->def);
-
-	chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
-	if (!be->q->code || c->curprg->def->errors) {
-		showErrors(c);
-		/* restore the state */
-		MSresetInstructions(c->curprg->def, oldstop);
-		freeVariables(c, c->curprg->def, c->glb, oldvtop);
-		c->curprg->def->errors = 0;
-		throw(SQL, "SQLrecompile", "M0M27!semantic errors");
-	}
-	return SQLengineIntern(c, be);
 }
 
 str

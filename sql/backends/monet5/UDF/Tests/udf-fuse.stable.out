@@ -44,11 +44,11 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 88 # length
-function user.s4_1(A0:sht,A1:sht):void;
+function user.s3_1(A0:sht,A1:sht):void;
     X_11:void := querylog.define("explain select fuse(1000,2000);","sequential_pipe",5);
     X_3:int := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","int",32,0,7,X_3);
-end user.s4_1;
+end user.s3_1;
 #select fuse(1000,2000);
 % .L # table_name
 % fuse_single_value # name
@@ -60,11 +60,11 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 94 # length
-function user.s6_1(A0:int,A1:int):void;
+function user.s4_1(A0:int,A1:int):void;
     X_11:void := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",5);
     X_3:lng := udf.fuse(A0,A1);
     sql.resultSet(".L","fuse_single_value","bigint",64,0,7,X_3);
-end user.s6_1;
+end user.s4_1;
 #select fuse(1000000,2000000);
 % .L # table_name
 % fuse_single_value # name
@@ -94,7 +94,7 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 97 # length
-function user.s14_1():void;
+function user.s8_1():void;
     X_41:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",27);
     X_24 := bat.new(nil:oid,nil:str);
     X_32 := bat.append(X_24,"sys.L");
@@ -120,13 +120,13 @@ function user.s14_1():void;
     X_21 := algebra.projection(C_2,X_20);
     X_22:bat[:sht] := batudf.fuse(X_14,X_21);
     sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_22);
-end user.s14_1;
+end user.s8_1;
 #explain select fuse(c,d) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
 % 97 # length
-function user.s15_1():void;
+function user.s9_1():void;
     X_41:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",27);
     X_24 := bat.new(nil:oid,nil:str);
     X_32 := bat.append(X_24,"sys.L");
@@ -152,13 +152,13 @@ function user.s15_1():void;
     X_21 := algebra.projection(C_2,X_20);
     X_22:bat[:int] := batudf.fuse(X_14,X_21);
     sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_22);
-end user.s15_1;
+end user.s9_1;
 #explain select fuse(e,f) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
 % 97 # length
-function user.s16_1():void;
+function user.s10_1():void;
     X_41:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",27);
     X_24 := bat.new(nil:oid,nil:str);
     X_32 := bat.append(X_24,"sys.L");
@@ -184,7 +184,7 @@ function user.s16_1():void;
     X_21 := algebra.projection(C_2,X_20);
     X_22:bat[:lng] := batudf.fuse(X_14,X_21);
     sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_22);
-end user.s16_1;
+end user.s10_1;
 #select fuse(a,b) from udf_fuse;
 % sys.L # table_name
 % fuse_a # name
