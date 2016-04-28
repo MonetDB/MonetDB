@@ -315,11 +315,12 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
-
+#ifdef _MSC_VER
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
 #define localtime_r(tp,tm)	localtime_s(tm,tp)
+#endif
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */

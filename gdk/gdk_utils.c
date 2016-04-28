@@ -1345,6 +1345,9 @@ void
 GDKexit(int status)
 {
 	if (GDKlockFile == NULL) {
+#ifdef HAVE_EMBEDDED
+		return;
+#endif
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 	}
