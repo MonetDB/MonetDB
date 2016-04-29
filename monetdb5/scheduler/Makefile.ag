@@ -6,7 +6,7 @@
 
 INCLUDES = ../mal ../optimizer \
 		   ../modules/atoms ../modules/mal ../modules/kernel \
-		   HAVE_MAPI?../../clients/mapilib \
+		   ../../clients/mapilib \
 		   ../../common/options \
 		   ../../common/stream \
 		   ../../common/utils \

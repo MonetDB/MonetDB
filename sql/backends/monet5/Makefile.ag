@@ -14,7 +14,6 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/optimizer \
 		   ../../../monetdb5/scheduler \
 		   ../../../monetdb5/extras/rapi \
-		   HAVE_MAPI?../../../clients/mapilib \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../common/utils \
