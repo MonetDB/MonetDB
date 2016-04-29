@@ -169,6 +169,11 @@ This property specifies which TCP port
 .I monetdbd
 should listen to for connection requests.  Defaults to 50000.
 .TP
+.B listenaddr
+This property specifies an address that is allowed to connect to the server.
+The user can specify one IP(v6) address, or use the 0.0.0.0 notation to allow
+connections from everywhere. Defaults to localhost (127.0.0.1).
+.TP
 .B control
 For remote management of
 .IR monetdbd ,

@@ -1,6 +1,10 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Apr 21 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Fixed resource leak in ResultSetMetaData. It created and cached a ResultSet
+  object for each column but never closed the ResultSet objects.
+
 * Thu Mar 31 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected DatabaseMetaData methods which accept a catalog filter argument.
   Those methods will now filter the results on the specified catalog name,

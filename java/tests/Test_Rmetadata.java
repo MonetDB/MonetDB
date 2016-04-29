@@ -34,7 +34,7 @@ public class Test_Rmetadata {
 
 			System.out.println("0. 4 columns:\t" + rsmd.getColumnCount());
 			for (int col = 1; col <= rsmd.getColumnCount(); col++) {
-				System.out.println("" + col + ".\t" + rsmd.getCatalogName(col));
+				System.out.println("Colnr " + col + ".");
 				System.out.println("\tclassname     " + rsmd.getColumnClassName(col));
 				System.out.println("\tdisplaysize   " + rsmd.getColumnDisplaySize(col));
 				System.out.println("\tlabel         " + rsmd.getColumnLabel(col));
@@ -43,6 +43,7 @@ public class Test_Rmetadata {
 				System.out.println("\ttypename      " + rsmd.getColumnTypeName(col));
 				System.out.println("\tprecision     " + rsmd.getPrecision(col));
 				System.out.println("\tscale         " + rsmd.getScale(col));
+				System.out.println("\tcatalogname   " + rsmd.getCatalogName(col));
 				System.out.println("\tschemaname    " + rsmd.getSchemaName(col));
 				System.out.println("\ttablename     " + rsmd.getTableName(col));
 				System.out.println("\tautoincrement " + rsmd.isAutoIncrement(col));

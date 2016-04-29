@@ -13,6 +13,7 @@
 */
 #ifndef _RUN_SRVPOOL
 #define _RUN_SRVPOOL
+#ifdef HAVE_MAPI
 #include "mal.h"
 #include "mal_instruction.h"
 #include "mal_client.h"
@@ -33,5 +34,6 @@ mpool_export str SRVPOOLreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 mpool_export str SRVPOOLconnect(str *c, str *dbname);
 mpool_export str SRVPOOLlocal(void *res, bit *flag);
 mpool_export str SRVsetServers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* HAVE_MAPI */
 #endif /* MAL_RUN_SRVPOOL */
 

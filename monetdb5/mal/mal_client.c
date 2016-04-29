@@ -49,8 +49,6 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
-#include <mapi.h> /* for PROMPT1 */
-
 
 /*
  * This should be in src/mal/mal.h, as the function is implemented in
@@ -337,7 +335,7 @@ MCforkClient(Client father)
 		son->promptlength = strlen(father->prompt);
 		/* reuse the scopes wherever possible */
 		if (son->nspace == 0)
-			son->nspace = newModule(NULL, putName("child", 5));
+			son->nspace = newModule(NULL, putName("child"));
 		son->nspace->outer = father->nspace->outer;
 	}
 	return son;
