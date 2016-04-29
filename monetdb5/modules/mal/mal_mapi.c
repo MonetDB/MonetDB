@@ -28,8 +28,8 @@
  * A cleaner and simplier interface for distributed processing is available in
  * the module remote.
  */
-#ifdef HAVE_MAPI
 #include "monetdb_config.h"
+#ifdef HAVE_MAPI
 #include "mal_mapi.h"
 #include <sys/types.h>
 #include <stream_socket.h>
