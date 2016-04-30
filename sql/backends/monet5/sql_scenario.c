@@ -866,131 +866,6 @@ SQLreader(Client c)
  * A future version may analyze the parameter settings in more detail.
  */
 
-/*
- * The trace operation collects the events in the BATs
- * and creates a secondary result set upon termination
- * of the query. 
- */
-static void
-SQLsetTrace(Client cntxt, mvc *m, bit onoff)
-{
-	InstrPtr q, resultset;
-	InstrPtr tbls, cols, types, clen, scale;
-	MalBlkPtr mb = cntxt->curprg->def;
-	int k;
-
-	if ( m == 0 || !(m->emod & mod_trace))
-		return;
-
-	if (onoff) {
-		q= newStmt(mb, "profiler", "starttrace");
-		q= pushStr(mb,q,"sql_traces");
-		initTrace();
-	} else {
-		q= newStmt(mb, "profiler", "stoptrace");
-		q= pushStr(mb,q,"sql_traces");
-		/* cook a new resultSet instruction */
-		resultset = newInstruction(mb,ASSIGNsymbol);
-		setModuleId(resultset, sqlRef);
-		setFunctionId(resultset, resultSetRef);
-	    getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
-
-
-		/* build table defs */
-		tbls = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(tbls,0), newBatType(TYPE_oid, TYPE_str));
-		tbls = pushType(mb, tbls, TYPE_oid);
-		tbls = pushType(mb, tbls, TYPE_str);
-		resultset= pushArgument(mb,resultset, getArg(tbls,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q,getArg(tbls,0));
-		q= pushStr(mb,q,".trace");
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q,k);
-		q= pushStr(mb,q,".trace");
-
-		/* build colum defs */
-		cols = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(cols,0), newBatType(TYPE_oid, TYPE_str));
-		cols = pushType(mb, cols, TYPE_oid);
-		cols = pushType(mb, cols, TYPE_str);
-		resultset= pushArgument(mb,resultset, getArg(cols,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q,getArg(cols,0));
-		q= pushStr(mb,q,"usec");
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(cols,0));
-		q= pushStr(mb,q,"statement");
-
-		/* build type defs */
-		types = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(types,0), newBatType(TYPE_oid, TYPE_str));
-		types = pushType(mb, types, TYPE_oid);
-		types = pushType(mb, types, TYPE_str);
-		resultset= pushArgument(mb,resultset, getArg(types,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(types,0));
-		q= pushStr(mb,q,"bigint");
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, k);
-		q= pushStr(mb,q,"clob");
-
-		/* build scale defs */
-		clen = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(clen,0), newBatType(TYPE_oid, TYPE_int));
-		clen = pushType(mb, clen, TYPE_oid);
-		clen = pushType(mb, clen, TYPE_int);
-		resultset= pushArgument(mb,resultset, getArg(clen,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(clen,0));
-		q= pushInt(mb,q,64);
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, k);
-		q= pushInt(mb,q,0);
-
-		/* build scale defs */
-		scale = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(scale,0), newBatType(TYPE_oid, TYPE_int));
-		scale = pushType(mb, scale, TYPE_oid);
-		scale = pushType(mb, scale, TYPE_int);
-		resultset= pushArgument(mb,resultset, getArg(scale,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(scale,0));
-		q= pushInt(mb,q,0);
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb, q, k);
-		q= pushInt(mb,q,0);
-
-		/* add the ticks column */
-
-		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("usec",4));
-		resultset= pushArgument(mb,resultset, getArg(q,0));
-
-		/* add the stmt column */
-		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("stmt",4));
-		resultset= pushArgument(mb,resultset, getArg(q,0));
-
-		pushInstruction(mb,resultset);
-	}
-}
-
 #define MAX_QUERY 	(64*1024*1024)
 
 static int
@@ -1188,7 +1063,6 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
-		SQLsetTrace(c, m, TRUE);
 		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
@@ -1206,9 +1080,6 @@ SQLparser(Client c)
 			goto finalize;
 		}
 		assert(s);
-
-		/* generate the MAL prelude code in the query wrapper */
-		SQLsetTrace(c, m, TRUE);
 
 		if (!caching(m) || !cachable(m, s)) {
 			/* Query template should not be cached */
@@ -1264,8 +1135,6 @@ SQLparser(Client c)
 			}
 		}
 
-		/* In the final phase we add any debugging control */
-		SQLsetTrace(c, m, FALSE);
 		pushEndInstruction(c->curprg->def);
 
 		/* check the query wrapper for errors */
