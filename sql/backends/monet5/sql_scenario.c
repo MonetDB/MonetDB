@@ -1020,7 +1020,9 @@ cachable(mvc *m, stmt *s)
 {
 	if (m->emode == m_prepare)
 		return 1;
-	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
+	if (m->emode == m_plan)
+		return 0;
+	if (m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
 	return 1;
@@ -1198,6 +1200,7 @@ SQLparser(Client c)
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+		/* query template was found in the query cache be */
 		SQLsetDebugger(c, m, TRUE);
 		SQLsetTrace(c, m, TRUE);
 		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
@@ -1255,6 +1258,7 @@ SQLparser(Client c)
 
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
+			/* unless a query modifier has been set, we directly call the cached plan */
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace;
 		}
@@ -1269,7 +1273,7 @@ SQLparser(Client c)
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
 			else if (m->emode == m_inplace) {
 				/* everything ready for a fast call */
-			} else {	
+			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
 				/* call procedure generation (only in cache mode) */
 				backend_call(be, c, be->q);
 			}
@@ -1282,6 +1286,8 @@ SQLparser(Client c)
 
 		/* check the query wrapper for errors */
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
+
+		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (opt && !c->curprg->def->errors ) {
 			str msg = optimizeQuery(c);
 
