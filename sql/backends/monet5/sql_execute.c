@@ -197,10 +197,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		if (backend_callinline(sql, c, s, 1) == 0)
-			addQueryToCache(c);
-		else
+		if( backend_callinline(be, c) < 0 ||
+			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
 			err = 1;
+		else
+			addQueryToCache(c);
 
 		if (err ||c->curprg->def->errors) {
 			/* restore the state */
@@ -514,11 +515,14 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		MSinitClientPrg(cntxt, "user", "test");
 
-		/* generate MAL code */
-		backend_callinline(b, cntxt, s, 1);
-		addQueryToCache(cntxt);
-
-		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
+		/* generate MAL code, ignoring any code generation error */
+		if(  backend_callinline(b, cntxt) < 0 ||
+			 backend_dumpstmt(b, cntxt->curprg->def, s, 1, 1) < 0)
+			msg = createException(SQL,"RAstatement","Program contains errors");
+		else {
+			addQueryToCache(cntxt);
+			msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
+		}
 		if (!msg) {
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);

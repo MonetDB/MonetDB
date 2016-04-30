@@ -46,7 +46,6 @@
 #include <rel_remote.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
 
 /*
  * @+ MAL code support
@@ -2756,7 +2755,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
  * by using the SQLstatment.
  */
 
-static int
+int
 backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 {
 	mvc *c = be->mvc;
@@ -2799,14 +2798,13 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 	return 0;
 }
 
+/* Generate the assignments of the query arguments to the query template*/
 int
-backend_callinline(backend *be, Client c, stmt *s, int add_end)
+backend_callinline(backend *be, Client c)
 {
 	mvc *m = be->mvc;
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
-
-	curInstr = getInstrPtr(curBlk, 0);
 
 	if (m->argc) {	
 		int argc = 0;
@@ -2832,8 +2830,6 @@ backend_callinline(backend *be, Client c, stmt *s, int add_end)
 			}
 		}
 	}
-	if (backend_dumpstmt(be, curBlk, s, 1, add_end) < 0)
-		return -1;
 	c->curprg->def = curBlk;
 	return 0;
 }

@@ -7,19 +7,11 @@
  */
 
 /*
- * @f sql_scenario
- * @t SQL catwalk management
- * @a N. Nes, M.L. Kersten
- * @+ SQL scenario
+ * (authors) N. Nes, M.L. Kersten
  * The SQL scenario implementation is a derivative of the MAL session scenario.
- *
- * It is also the first version that uses state records attached to
- * the client record. They are initialized as part of the initialization
- * phase of the scenario.
  *
  */
 /*
- * @+ Scenario routines
  * Before we are can process SQL statements the global catalog
  * should be initialized. Thereafter, each time a client enters
  * we update its context descriptor to denote an SQL scenario.
@@ -1226,18 +1218,22 @@ SQLparser(Client c)
 		}
 		assert(s);
 
-		/* generate the MAL prelude codea in the query wrapper */
+		/* generate the MAL prelude code in the query wrapper */
 		SQLsetTrace(c, m, TRUE);
 		SQLsetDebugger(c, m, TRUE);
 
 		if (!caching(m) || !cachable(m, s)) {
+			/* Query template should not be cached */
 			scanner_query_processed(&(m->scanner));
-			if (backend_callinline(be, c, s, 0) == 0) {
-				opt = 1;
-			} else {
+			err = 0;
+			if( backend_callinline(be, c) < 0 ||
+				backend_dumpstmt(be, c->curprg->def, s, 1, 0) < 0)
 				err = 1;
-			}
+			else opt = 1;
 		} else {
+			/* Add the query tree to the SQL query cache
+			 * and bake a MAL program for it.
+			 */
 			char *q = query_cleaned(QUERY(m->scanner));
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
@@ -1266,7 +1262,7 @@ SQLparser(Client c)
 	if (err)
 		m->session->status = -10;
 	if (err == 0) {
-		/* no parsing error encountered */
+		/* no parsing error encountered, finalize the code of the query wrapper */
 		if (be->q) {
 			if (m->emode == m_prepare)
 				/* For prepared queries, return a table with result set structure*/
@@ -1282,16 +1278,11 @@ SQLparser(Client c)
 		/* In the final phase we add any debugging control */
 		SQLsetTrace(c, m, FALSE);
 		SQLsetDebugger(c, m, FALSE);
-
-		/*
-		 * During the execution of the query exceptions can be raised.
-		 * The default action is to print them out at the end of the
-		 * query block.
-		 */
 		pushEndInstruction(c->curprg->def);
 
-		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
-		if (opt) {
+		/* check the query wrapper for errors */
+		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
+		if (opt && !c->curprg->def->errors ) {
 			str msg = optimizeQuery(c);
 
 			if (msg != MAL_SUCCEED) {
