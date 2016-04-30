@@ -220,8 +220,13 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 		if (!output)
 			sql->out = NULL;	/* no output stream */
-		if (execute)
-			msg = runMAL(c, c->curprg->def, 0, 0);
+		if (execute){
+			// first consider running in debug mode
+			if( m->emod & mod_debug)
+				msg = runMALDebugger(c, c->curprg->def);
+			 else
+				msg = runMAL(c, c->curprg->def, 0, 0);
+		}
 
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -442,7 +447,11 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = (str) runMAL(c, c->curprg->def, 0, 0);
+		// first consider running in debug mode
+		if( m->emod & mod_debug)
+			msg = runMALDebugger(c, c->curprg->def);
+		 else
+			msg = runMAL(c, c->curprg->def, 0, 0);
 	}
 
 cleanup_engine:
@@ -521,8 +530,12 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL,"RAstatement","Program contains errors");
 		else {
 			addQueryToCache(cntxt);
-			msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
-		}
+			// first consider running in debug mode
+			if( m->emod & mod_debug)
+				msg = runMALDebugger(cntxt, cntxt->curprg->def);
+			 else
+				msg = runMAL(cntxt, cntxt->curprg->def, 0, 0);
+			}
 		if (!msg) {
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);

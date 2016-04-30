@@ -865,22 +865,6 @@ SQLreader(Client c)
  * The current analysis is simple and fulfills our short-term needs.
  * A future version may analyze the parameter settings in more detail.
  */
-static void
-SQLsetDebugger(Client c, mvc *m, int onoff)
-{
-	if (m == 0 || !(m->emod & mod_debug))
-		return;
-	c->itrace = 'n';
-	if (onoff) {
-		newStmt(c->curprg->def, "mdb", "start");
-		c->debugOptimizer = TRUE;
-		c->curprg->def->keephistory = TRUE;
-	} else {
-		newStmt(c->curprg->def, "mdb", "stop");
-		c->debugOptimizer = FALSE;
-		c->curprg->def->keephistory = FALSE;
-	}
-}
 
 /*
  * The trace operation collects the events in the BATs
@@ -1018,13 +1002,16 @@ caching(mvc *m)
 static int
 cachable(mvc *m, stmt *s)
 {
-	if (m->emode == m_prepare)
+	if (m->emode == m_prepare)	/* prepared plans are always cached */
 		return 1;
-	if (m->emode == m_plan)
+	if (m->emode == m_plan)		/* we plan to display without execution */
 		return 0;
-	if (m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
-	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
+	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 		return 0;
+	/* we don't store empty sequences, nor queries with a large footprint */
+	if( (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
+		return 0;
+	/* remainders covers: m_execute, m_inplace, m_normal*/
 	return 1;
 }
 
@@ -1200,8 +1187,7 @@ SQLparser(Client c)
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
-		/* query template was found in the query cache be */
-		SQLsetDebugger(c, m, TRUE);
+		/* query template was found in the query cache */
 		SQLsetTrace(c, m, TRUE);
 		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
@@ -1223,7 +1209,6 @@ SQLparser(Client c)
 
 		/* generate the MAL prelude code in the query wrapper */
 		SQLsetTrace(c, m, TRUE);
-		SQLsetDebugger(c, m, TRUE);
 
 		if (!caching(m) || !cachable(m, s)) {
 			/* Query template should not be cached */
@@ -1281,7 +1266,6 @@ SQLparser(Client c)
 
 		/* In the final phase we add any debugging control */
 		SQLsetTrace(c, m, FALSE);
-		SQLsetDebugger(c, m, FALSE);
 		pushEndInstruction(c->curprg->def);
 
 		/* check the query wrapper for errors */
