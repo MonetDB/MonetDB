@@ -98,6 +98,7 @@ Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
     <antcall target="Test_Clargequery" />
     <antcall target="Test_Cmanycon" />
     <antcall target="Test_Cforkbomb" />
+    <antcall target="Test_CisValid" />
     <antcall target="Test_Creplysize" />
     <antcall target="Test_Csavepoints" />
     <antcall target="Test_Ctransaction" />
@@ -170,6 +171,12 @@ Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
   <target name="Test_Cforkbomb">
     <antcall target="test_class">
       <param name="test.class" value="Test_Cforkbomb" />
+    </antcall>
+  </target>
+
+  <target name="Test_CisValid">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_CisValid" />
     </antcall>
   </target>
 

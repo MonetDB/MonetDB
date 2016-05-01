@@ -795,14 +795,20 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		if (closed)
 			return false;
 		// ping db using select 1;
+		Statement stmt = null;
 		try {
-			Statement stmt = createStatement();
+			stmt = createStatement();
+			// the timeout parameter is ignored here, since
+			// MonetStatement.setQueryTimeout(timeout) is not supported.
 			stmt.executeQuery("SELECT 1");
 			stmt.close();
 			return true;
-		} catch (SQLException e) {
-			// close this connection
-			close();
+		} catch (Exception e) {
+			if (stmt != null) {
+				try {
+					stmt.close();
+				} catch (Exception e2) {}
+			}
 		}
 		return false;
 	}
