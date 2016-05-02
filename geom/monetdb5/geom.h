@@ -218,6 +218,8 @@ geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag)
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);
 
+geom_export str wkbAddPoint(wkb**, wkb**, wkb**);
+
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbTranslate(wkb**, wkb**, dbl*, dbl*, dbl*);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, dbl*, int*);
