@@ -272,8 +272,8 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		if (cmp == 0 && b->tkey == 0) {
 			/* shift over multiple equals */
 			if (use_orderidx) {
-				while (cur >= end && !(o[cur]&BUN_MSK)) {
-					cur--;
+				while (--cur >= end && !(o[cur]&BUN_MSK)) {
+					;
 				}
 				cur++;
 			} else {
