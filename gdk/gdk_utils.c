@@ -1345,12 +1345,17 @@ void
 GDKexit(int status)
 {
 	if (GDKlockFile == NULL) {
+#ifdef HAVE_EMBEDDED
+		return;
+#endif
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 	}
 	GDKprepareExit();
 	GDKreset(status);
+#ifndef HAVE_EMBEDDED
 	MT_exit_thread(-1);
+#endif
 }
 
 /*

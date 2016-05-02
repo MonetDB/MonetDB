@@ -7,6 +7,8 @@ if (basedir != "") {
 } else {
 	library(MonetDBLite)
 }
+dbdir <- file.path(tempdir(), "db1")
+dbdir2 <- file.path(tempdir(), "db2")
 
 test_that("db starts up", {
 	expect_error(monetdb_embedded_startup("/dev/null"))
@@ -166,7 +168,61 @@ test_that("the logger does not misbehave", {
 })
 
 
-test_that("shutdown does not crash stuff", {
+test_that("shutdown does work", {
+	monetdb_embedded_shutdown()
 	monetdb_embedded_shutdown()
 })
+
+
+test_that("starting up in same dir again works", {
+	monetdb_embedded_startup(dbdir)
+	con <- monetdb_embedded_connect()
+	monetdb_embedded_query(con, "CREATE TABLE foo1(a1 INTEGER)")
+	monetdb_embedded_query(con, "INSERT INTO foo1 VALUES(42)")
+	res <- monetdb_embedded_query(con, "SELECT a1 FROM foo1")
+	expect_equal(nrow(res$tuples), 1)
+	expect_equal(ncol(res$tuples), 1)
+	expect_equal(res$tuples$a1, 42)
+
+	monetdb_embedded_disconnect(con)
+	monetdb_embedded_shutdown()
+})
+
+
+
+test_that("connections from shut down db's dont work", {
+	monetdb_embedded_startup(dbdir)
+	con <- monetdb_embedded_connect()
+	monetdb_embedded_shutdown()
+	expect_equal(monetdb_embedded_query(con, "SELECT * FROM tables")$type, "!")
+	monetdb_embedded_disconnect(con)
+})
+
+
+test_that("db starts up in other directory", {
+	monetdb_embedded_startup(dbdir2)
+	con <- monetdb_embedded_connect()
+	expect_equal(monetdb_embedded_query(con, "SELECT * FROM foo1")$type, "!")
+	monetdb_embedded_query(con, "CREATE TABLE foo2(a2 INTEGER)")
+	monetdb_embedded_query(con, "INSERT INTO foo2 VALUES(84)")
+	res <- monetdb_embedded_query(con, "SELECT a2 FROM foo2")
+	expect_equal(nrow(res$tuples), 1)
+	expect_equal(ncol(res$tuples), 1)
+	expect_equal(res$tuples$a2, 84)
+
+	monetdb_embedded_disconnect(con)
+	monetdb_embedded_shutdown()
+})
+
+test_that("connections from previous run cannot be reused", {
+	monetdb_embedded_startup(dbdir)
+	con <- monetdb_embedded_connect()
+	monetdb_embedded_shutdown()
+	monetdb_embedded_startup(dbdir2)
+	expect_equal(monetdb_embedded_query(con, "SELECT * FROM tables")$type, "!")
+	monetdb_embedded_disconnect(con)
+	monetdb_embedded_shutdown()
+})
+
+
 

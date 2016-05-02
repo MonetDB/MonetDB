@@ -24,7 +24,6 @@
 #include <mal_exception.h>
 #include <mal_client.h>
 #include <mal_interpreter.h>
-#include <mapi.h>				/* for PROMPT1, PROMPT2 */
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)

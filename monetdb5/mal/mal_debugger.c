@@ -144,8 +144,8 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 		mdb->brkBlock[mdb->brkTop] = sym ? sym->def : mb;
 		mdb->brkPc[mdb->brkTop] = -1;
 		mdb->brkVar[mdb->brkTop] = -1;
-		mdb->brkMod[mdb->brkTop] = putName(modnme, strlen(modnme));
-		mdb->brkFcn[mdb->brkTop] = putName(fcnnme, strlen(fcnnme));
+		mdb->brkMod[mdb->brkTop] = putName(modnme);
+		mdb->brkFcn[mdb->brkTop] = putName(fcnnme);
 		fcnnme--;
 		*fcnnme = '.';
 		mdb->brkRequest[mdb->brkTop] = GDKstrdup(request);
@@ -255,8 +255,8 @@ int
 mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag)
 {
 	Symbol s;
-	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)),
-			putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme),
+			putName(fcnnme));
 	if (s == NULL)
 		return -1;
 	while (s) {
@@ -358,7 +358,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 			if( idx < 0)
 				return NULL;
 		}
-		fsym = findSymbolInModule(findModule(cntxt->nspace, putName(b, strlen(b))), fcnname + 1);
+		fsym = findSymbolInModule(findModule(cntxt->nspace, putName(b)), fcnname + 1);
 		*fcnname = '.';
 		if (h)
 			*h = '[';
@@ -517,7 +517,7 @@ retryRead:
 					*fcnname = 0;
 					fcnname++;
 				}
-				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				fsym = findModule(cntxt->nspace, putName(modname));
 
 				if (fsym == cntxt->nspace && strcmp(modname, "user")) {
 					mnstr_printf(out, "#module '%s' not found\n", modname);
@@ -587,7 +587,7 @@ retryRead:
 				modname = b;
 				fcnname = strchr(b, '.');
 				if (fcnname == NULL) {
-					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+					fsym = findModule(cntxt->nspace, putName(modname));
 					if (fsym == 0) {
 						mnstr_printf(out, "#%s module not found\n", modname);
 						continue;
@@ -603,7 +603,7 @@ retryRead:
 				}
 				*fcnname = 0;
 				fcnname++;
-				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				fsym = findModule(cntxt->nspace, putName(modname));
 				if (fsym == 0) {
 					mnstr_printf(out, "#%s module not found\n", modname);
 					continue;
@@ -875,7 +875,7 @@ retryRead:
 						continue;
 					}
 					/* optionally dump the complete module */
-					fsym = findModule(cntxt->nspace, putName(b, strlen(b)));
+					fsym = findModule(cntxt->nspace, putName(b));
 					if (fsym == 0) {
 						mnstr_printf(out, "#'%s' not found\n", b);
 						continue;

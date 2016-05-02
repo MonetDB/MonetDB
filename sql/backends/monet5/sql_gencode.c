@@ -444,7 +444,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	s = stmt_return(m->sa, s, 0);
 
 	backup = c->curprg;
-	c->curprg = newFunction(putName(mod, strlen(mod)), putName(name, strlen(name)), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -538,7 +538,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	/* create stub */
 	name[0] = old;
 	backup = c->curprg;
-	c->curprg = newFunction(putName(mod, strlen(mod)), putName(name, strlen(name)), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	name[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -588,7 +588,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 #define REL
 #ifndef REL
 	/* remote.register(q, "mod", "fcn"); */
-	p = newStmt(curBlk, remoteRef, putName("register", 8));
+	p = newStmt(curBlk, remoteRef, putName("register"));
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
@@ -599,7 +599,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	setFunctionId(p, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
-	p = pushStr(curBlk, p, putName("register", 8));
+	p = pushStr(curBlk, p, putName("register"));
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
@@ -2851,7 +2851,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	/* later we change this to a factory ? */
 	if (cq)
-		c->curprg = newFunction(userRef, putName(cq->name, strlen(cq->name)), FUNCTIONsymbol);
+		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
 	else
 		c->curprg = newFunction(userRef, "tmp", FUNCTIONsymbol);
 	if (c->curprg == NULL)
@@ -3068,7 +3068,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	assert(s);
 
 	backup = c->curprg;
-	c->curprg = newFunction(userRef, putName(f->base.name, strlen(f->base.name)), FUNCTIONsymbol);
+	c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);

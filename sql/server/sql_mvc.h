@@ -22,8 +22,7 @@
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
-
-#include <mapi.h>
+#include <sql_query.h>
 
 #define ERRSIZE 8192
 

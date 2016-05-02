@@ -29,6 +29,7 @@
  * the module remote.
  */
 #include "monetdb_config.h"
+#ifdef HAVE_MAPI
 #include "mal_mapi.h"
 #include <sys/types.h>
 #include <stream_socket.h>
@@ -61,10 +62,6 @@
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
-
-#ifdef HAVE_EMBEDDED
-#define printf(fmt,...) ((void) 0)
 #endif
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -387,7 +384,6 @@ error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }
 
-#ifndef HAVE_EMBEDDED
 /**
  * Small utility function to call the sabaoth marchConnection function
  * with the right arguments.  If the socket is bound to 0.0.0.0 the
@@ -675,18 +671,6 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		GDKfree(usockfile);
 	return MAL_SUCCEED;
 }
-#else
-str
-SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
-{
-	(void) Port;
-	(void) Usockfile;
-	(void) Maxusers;
-	throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": No MAPI server in embedded mode");
-}
-#endif // HAVE_EMBEDDED
-
-
 
 /*
  * @- Wrappers
@@ -1780,3 +1764,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	catchErrors("mapi.bind");
 	return MAL_SUCCEED;
 }
+#else
+// this avoids a compiler warning w.r.t. empty compilation units.
+int SERVERdummy = 42;
+#endif // HAVE_MAPI

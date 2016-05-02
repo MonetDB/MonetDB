@@ -2353,9 +2353,9 @@ Ready.
 % .cache,	.cache # table_name
 % query,	count # name
 % clob,	int # type
-% 130,	1 # length
+% 118,	4 # length
 [ "select * from querycache() cache;",	1	]
-[ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 2543.5363,9249.8762,9081.9249,5363.9249,8762.9081,8516.5131,5131.8516;",	1	]
+[ "insert into foo (foo1,foo2,foo3,foo4,foo5,foo6,foo7) select 3869.3905,null,9208.3881,null,9725.9208,435.9519,9519.435;",	2000	]
 #drop table foo;
 #commit;
 
