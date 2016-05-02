@@ -3029,6 +3029,7 @@ backend_create_r_func(backend *be, sql_func *f)
 	return 0;
 }
 
+/* Create the MAL block for a registered function and optimize it */
 static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
@@ -3143,6 +3144,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->unsafeProp = 1;
 	f->sa = sa;
 	m->sa = osa;
+	/* optimize the code */
+	optimizeQuery(c, c->curprg->def);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
