@@ -12,6 +12,7 @@ bat.append(bv,266430612 );
 bat.append(bv,1674978691 );
 bat.append(bv,1863672321 );
 bat.append(bv,58690783 );
+bat.setAccess(bv,"r");
 io.print(bv);
 
 bat.orderidx(bv,3);
