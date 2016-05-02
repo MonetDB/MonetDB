@@ -57,7 +57,8 @@ sfcgal_type_to_geom_type(int *res, sfcgal_geometry_type_t type)
 
         case SFCGAL_TYPE_TRIANGULATEDSURFACE:
         case SFCGAL_TYPE_TRIANGLE:
-            *res = wkbTin_mdb;
+            *res = wkbGeometryCollection_mdb;
+            //*res = wkbTin_mdb;
             break;
 
         default:
@@ -111,7 +112,7 @@ ring_from_sfcgal(GEOSGeom *res, const sfcgal_geometry_t* geom, int want3d)
 }
 
 str
-sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid)
+sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid, int flags)
 {
     uint32_t ngeoms, nshells, npoints;
     double point_x, point_y, point_z;
@@ -203,8 +204,8 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 *res = NULL;
                 break;
             }
-
-            npoints = sfcgal_linestring_num_points(geom);
+            
+            npoints = 4;
             //create the coordSeq for the new geometry
             if (!(outCoordSeq = GEOSCoordSeq_create(npoints, want3d ? 3 : 2))) {
                 *res = NULL;
@@ -216,23 +217,43 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 const sfcgal_geometry_t* pt = sfcgal_triangle_vertex(geom, (i%3));
                 point_x = sfcgal_point_x(pt);
                 point_y = sfcgal_point_y(pt);
-                GEOSCoordSeq_setX(outCoordSeq, i, point_x);
-                GEOSCoordSeq_setY(outCoordSeq, i, point_y);
+	            GEOSCoordSeq_setOrdinate(outCoordSeq, i, 0, point_x);
+	            GEOSCoordSeq_setOrdinate(outCoordSeq, i, 1, point_y);
 
                 if ( sfcgal_geometry_is_3d(geom)) {
                     point_z = sfcgal_point_z(pt);
-                    GEOSCoordSeq_setZ(outCoordSeq, i, point_z);
+	                GEOSCoordSeq_setOrdinate(outCoordSeq, i, 2, point_z);
                 } else if (want3d) {
                     point_z = 0.0;
-                    GEOSCoordSeq_setZ(outCoordSeq, i, point_z);
+	                GEOSCoordSeq_setOrdinate(outCoordSeq, i, 2, point_z);
                 }
 
             }
-            if (!(outGeometry = GEOSGeom_createLineString(outCoordSeq))) {
-                *res = NULL;
-                throw(MAL, "sfcgal_to_geom", "GEOSGeom_createLineString failed");
+
+            //Collection of Polygons
+            if (flags == 0) {
+                if (!(outGeometry = GEOSGeom_createLinearRing(outCoordSeq))) {
+                    *res = NULL;
+                    throw(MAL, "sfcgal_to_geom", "GEOSGeom_createLineString failed");
+                }
+                *res = GEOSGeom_createPolygon(outGeometry, NULL, 0);
             }
-            *res = outGeometry;
+
+            //Collection of MultiStrings
+            if (flags == 1) {
+                if (!(outGeometry = GEOSGeom_createLineString(outCoordSeq))) {
+                    *res = NULL;
+                    throw(MAL, "sfcgal_to_geom", "GEOSGeom_createLineString failed");
+                }
+                *res = outGeometry;
+            }
+            
+            //TIN
+            if (flags == 2) {
+                    *res = NULL;
+                    throw(MAL, "sfcgal_to_geom", "TIN format is not yet supported");
+            }
+
             break;
         case SFCGAL_TYPE_POLYGON:
             if (sfcgal_geometry_is_empty(geom)) {
@@ -739,10 +760,46 @@ geom_sfcgal_tesselate(wkb **res, wkb **geom)
     if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid) != MAL_SUCCEED) {
 		*res = NULL;
         //TODO: free ret
-		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
+		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
     }
 
 	*res = geos2wkb(outGeos);
 	return MAL_SUCCEED;
 }
 
+str
+geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom)
+{
+	sfcgal_geometry_t *outGeom, *inGeom;
+	GEOSGeom inGeos = wkb2geos(*geom), outGeos;
+    int srid;
+
+    if (wkbGetSRID(&srid, geom) != MAL_SUCCEED) {
+		*res = NULL;
+        //TODO: free ret
+		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");
+    }
+
+	if (geom_to_sfcgal(&inGeom, inGeos) != MAL_SUCCEED) {
+		*res = NULL;
+        //TODO: free ret
+		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");
+	}
+
+    //TODO
+	if (!(outGeom = sfcgal_geometry_triangulate_2dz(inGeom))) {
+		*res = NULL;
+        //TODO: free ret
+		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
+	}
+
+
+    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid) != MAL_SUCCEED) {
+		*res = NULL;
+        //TODO: free ret
+		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");
+    }
+
+	*res = geos2wkb(outGeos);
+	return MAL_SUCCEED;
+}
