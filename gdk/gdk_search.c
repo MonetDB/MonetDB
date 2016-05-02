@@ -128,10 +128,11 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	tp = ATOMbasetype(b->ttype);
 
 	if (use_orderidx) {
-		o = (const oid *) b->torderidx->base + ORDERIDXOFF;
-		if (o == NULL) {
-			GDKerror("#ORDERfindwhich: order idx not found\n");
+		if (b->torderidx == NULL ||
+		    b->torderidx->base == NULL) {
+			GDKerror("ORDERfindwhich: order idx not found\n");
 		}
+		o = (const oid *) b->torderidx->base + ORDERIDXOFF;
 		lo = 0;
 		hi = BATcount(b);
 	}
