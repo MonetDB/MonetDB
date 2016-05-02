@@ -15,7 +15,7 @@
 
 static sfcgal_geometry_t* sfcgal_from_geom(str *ret, const GEOSGeometry *geom, int type);
 static str geom_to_sfcgal(sfcgal_geometry_t **res, GEOSGeom geosGeometry);
-static str sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid);
+static str sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid, int flag);
 
 static str
 sfcgal_type_to_geom_type(int *res, sfcgal_geometry_type_t type)
@@ -112,7 +112,7 @@ ring_from_sfcgal(GEOSGeom *res, const sfcgal_geometry_t* geom, int want3d)
 }
 
 str
-sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid, int flags)
+sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid, int flag)
 {
     uint32_t ngeoms, nshells, npoints;
     double point_x, point_y, point_z;
@@ -231,7 +231,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
             }
 
             //Collection of Polygons
-            if (flags == 0) {
+            if (flag == 0) {
                 if (!(outGeometry = GEOSGeom_createLinearRing(outCoordSeq))) {
                     *res = NULL;
                     throw(MAL, "sfcgal_to_geom", "GEOSGeom_createLineString failed");
@@ -240,7 +240,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
             }
 
             //Collection of MultiStrings
-            if (flags == 1) {
+            if (flag == 1) {
                 if (!(outGeometry = GEOSGeom_createLineString(outCoordSeq))) {
                     *res = NULL;
                     throw(MAL, "sfcgal_to_geom", "GEOSGeom_createLineString failed");
@@ -249,7 +249,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
             }
             
             //TIN
-            if (flags == 2) {
+            if (flag == 2) {
                     *res = NULL;
                     throw(MAL, "sfcgal_to_geom", "TIN format is not yet supported");
             }
@@ -288,7 +288,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 for (i = 0; i < ngeoms; i++)
                 {
                     const sfcgal_geometry_t* g = sfcgal_geometry_collection_geometry_n(geom, i);
-                    if ( (ret = sfcgal_to_geom(&geoms[i], g, 0, srid)) != MAL_SUCCEED) {
+                    if ( (ret = sfcgal_to_geom(&geoms[i], g, 0, srid, flag)) != MAL_SUCCEED) {
                         //TODO: free what was allocated
                         *res = NULL;
                         return ret;
@@ -311,7 +311,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 for (i = 0; i < ngeoms; i++)
                 {
                     const sfcgal_geometry_t* g = sfcgal_polyhedral_surface_polygon_n( geom, i );
-                    if ( (ret = sfcgal_to_geom(&geoms[i], g, 0, srid)) != MAL_SUCCEED) {
+                    if ( (ret = sfcgal_to_geom(&geoms[i], g, 0, srid, flag)) != MAL_SUCCEED) {
                         //TODO: free what was allocated
                         *res = NULL;
                         return ret;
@@ -341,7 +341,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                     for (j = 0; j < ngeoms; j++)
                     {
                         const sfcgal_geometry_t* g = sfcgal_polyhedral_surface_polygon_n(shell, j);
-                        if ( (ret = sfcgal_to_geom(&geoms[k], g, 0, srid)) != MAL_SUCCEED) {
+                        if ( (ret = sfcgal_to_geom(&geoms[k], g, 0, srid, flag)) != MAL_SUCCEED) {
                             //TODO: free what was allocated
                             *res = NULL;
                             return ret;
@@ -366,7 +366,7 @@ sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int sr
                 for (i = 0; i < ngeoms; i++)
                 {
                     const sfcgal_geometry_t* g = sfcgal_triangulated_surface_triangle_n(geom, i);
-                    if ( (ret = sfcgal_to_geom(&geoms[i], g, 0, srid)) != MAL_SUCCEED) {
+                    if ( (ret = sfcgal_to_geom(&geoms[i], g, 0, srid, flag)) != MAL_SUCCEED) {
                         //TODO: free what was allocated
                         *res = NULL;
                         return ret;
@@ -689,7 +689,7 @@ geom_sfcgal_extrude(wkb **res, wkb **geom, double *ex, double *ey, double *ez)
 		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
 	}
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid) != MAL_SUCCEED) {
+    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0) != MAL_SUCCEED) {
 		*res = NULL;
         //TODO: free ret
 		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
@@ -723,7 +723,7 @@ geom_sfcgal_straightSkeleton(wkb **res, wkb **geom)
 		return createException(MAL, "geom.StraightSkeleton", "GEOSStraightSkeleton failed");
 	}
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid) != MAL_SUCCEED) {
+    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0) != MAL_SUCCEED) {
 		*res = NULL;
         //TODO: free ret
 		return createException(MAL, "geom.Extrude", "GEOSExtrude failed");
@@ -757,7 +757,7 @@ geom_sfcgal_tesselate(wkb **res, wkb **geom)
 		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
 	}
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid) != MAL_SUCCEED) {
+    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, 0) != MAL_SUCCEED) {
 		*res = NULL;
         //TODO: free ret
 		return createException(MAL, "geom.Tesselate", "GEOSTesselate failed");
@@ -768,7 +768,7 @@ geom_sfcgal_tesselate(wkb **res, wkb **geom)
 }
 
 str
-geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom)
+geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag)
 {
 	sfcgal_geometry_t *outGeom, *inGeom;
 	GEOSGeom inGeos = wkb2geos(*geom), outGeos;
@@ -794,7 +794,7 @@ geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom)
 	}
 
 
-    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid) != MAL_SUCCEED) {
+    if ( sfcgal_to_geom(&outGeos, outGeom, 0, srid, *flag) != MAL_SUCCEED) {
 		*res = NULL;
         //TODO: free ret
 		return createException(MAL, "geom.Triangulate2DZ", "GEOSTriangulate2DZ failed");

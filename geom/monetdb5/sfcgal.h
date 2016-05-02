@@ -42,5 +42,5 @@ geom_export char * geom_sfcgal_version(char **ret);
 geom_export str geom_sfcgal_extrude(wkb **res, wkb **geom, double *ex, double *ey, double *ez);
 geom_export str geom_sfcgal_straightSkeleton(wkb **res, wkb **geom);
 geom_export str geom_sfcgal_tesselate(wkb **res, wkb **geom);
-geom_export str geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flags);
+geom_export str geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag);
 

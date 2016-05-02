@@ -18,6 +18,6 @@ comment "Compute a straight skeleton from a geometry"
 command tesselate(geo:wkb) : wkb address geom_sfcgal_tesselate
 comment "Perform surface Tesselation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS"
 
-command triangulate2DZ(geo:wkb, flags:int) : wkb address geom_sfcgal_triangulate2DZ
+command triangulate2DZ(geo:wkb, flag:int) : wkb address geom_sfcgal_triangulate2DZ
 comment "Triangulates a geometry collection"
 
