@@ -482,6 +482,8 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	if (inline_func)
 		curBlk->inlineProp =1;
+	/* optimize the code */
+	optimizeQuery(c, c->curprg->def);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -699,7 +701,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushInstruction(curBlk, p);
 	pushEndInstruction(curBlk);
 
-	/* SQL function definitions meant f r inlineing should not be optimized before */
+	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
 	addQueryToCache(c);
 	if (backup)
@@ -2899,7 +2901,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		return NULL;
 
 	// Always keep the SQL query around for monitoring
-	// if (m->history || QLOGisset()) {
 	{
 		char *t, *tt;
 		InstrPtr q;

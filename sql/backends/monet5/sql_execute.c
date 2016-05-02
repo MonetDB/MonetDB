@@ -228,6 +228,10 @@ SQLrun(Client c, backend *be, mvc *m){
 	// This include template constants, BAT sizes.
 	optimizeQuery(c,mb);
 
+	if (m->emod & mod_explain) {
+		if (c->curprg->def)
+			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+	} else
 	if( m->emod & mod_debug)
 		msg = runMALDebugger(c, mb);
 	 else{
@@ -588,15 +592,6 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emod & mod_explain) {
-		if (be->q && be->q->code)
-			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_MAPI);
-		else if (be->q)
-			msg = createException(PARSE, "SQLparser", "%s", (*m->errstr) ? m->errstr : "39000!program contains errors");
-		else if (c->curprg->def)
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
-		goto cleanup_engine;
-	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
