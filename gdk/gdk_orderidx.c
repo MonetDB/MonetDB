@@ -392,7 +392,9 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		const oid *restrict p, *q;
 		/* One oid order bat, nothing to merge */
 		assert(BATcount(a[0]) == BATcount(b));
-		assert(VIEWtparent(a[0]) == -b->batCacheid && a[0]->torderidx);
+		assert((VIEWtparent(a[0]) == -b->batCacheid ||
+			VIEWtparent(a[0]) == VIEWtparent(b)) &&
+		       a[0]->torderidx);
 		p = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
 		q = p + BATcount(a[0]);
 		switch (ATOMstorage(b->ttype)) {
@@ -418,8 +420,12 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		/* sort merge with 1 comparison per BUN */
 		const oid *restrict p0, *restrict p1, *q0, *q1;
 		assert(BATcount(a[0]) + BATcount(a[1]) == BATcount(b));
-		assert(VIEWtparent(a[0]) == -b->batCacheid && a[0]->torderidx);
-		assert(VIEWtparent(a[1]) == -b->batCacheid && a[1]->torderidx);
+		assert((VIEWtparent(a[0]) == -b->batCacheid ||
+			VIEWtparent(a[0]) == VIEWtparent(b)) &&
+		       a[0]->torderidx);
+		assert((VIEWtparent(a[1]) == -b->batCacheid ||
+			VIEWtparent(a[1]) == VIEWtparent(b)) &&
+		       a[1]->torderidx);
 		p0 = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
 		p1 = (const oid *) a[1]->torderidx->base + ORDERIDXOFF;
 		q0 = p0 + BATcount(a[0]);
@@ -461,7 +467,9 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			return GDK_FAIL;
 		}
 		for (i = 0; i < n_ar; i++) {
-			assert(VIEWtparent(a[i]) == -b->batCacheid && a[i]->torderidx);
+			assert((VIEWtparent(a[i]) == -b->batCacheid ||
+				VIEWtparent(a[i]) == VIEWtparent(b)) &&
+			       a[i]->torderidx);
 			p[i] = (oid *) a[i]->torderidx->base + ORDERIDXOFF;
 			q[i] = p[i] + BATcount(a[i]);
 		}
