@@ -1059,14 +1059,10 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		m->emode = m_inplace;
+		//m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
-	/*
-		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
-			m->emode = m_inplace;
-	*/
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
