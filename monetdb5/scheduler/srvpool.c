@@ -39,6 +39,8 @@
  * since the last call. For the time being we assume the connection remains in tact.
  *
  */
+#ifdef HAVE_MAPI
+
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mal_dataflow.h"
@@ -346,7 +348,7 @@ SRVPOOLfind(Client cntxt, int srv, str qry){
 	for ( r= servers[srv].nxt; r; r= r->nxt)
 	if ( strcmp(qry, r->fcn)==0) {
 		/* double check on local user module as well */
-		sym = findSymbol(cntxt->nspace, userRef, putName(qry, strlen(qry)));
+		sym = findSymbol(cntxt->nspace, userRef, putName(qry));
 		if (sym == NULL) {
 			/* remove garbage */
 			if ( r->nxt) {
@@ -389,7 +391,7 @@ SRVPOOLregisterInternal(Client cntxt, str uri, str fname)
 				msg = RMTregisterInternal(cntxt, servers[srv].conn, userRef, fname);
 #ifdef DEBUG_RUN_SRVPOOL
 				if ( msg) {
-					Symbol sf = findSymbol(cntxt->nspace, userRef,putName(fname,strlen(fname)));
+					Symbol sf = findSymbol(cntxt->nspace, userRef,putName(fname));
 					if (sf){
 						mnstr_printf(cntxt->fdout,"#Failed to register\n");
 						printFunction(cntxt->fdout, sf->def, 0, LIST_MAL_DEBUG);
@@ -508,3 +510,8 @@ str SRVPOOLexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 	throw(MAL,"srvpool.exec","Unexpected call");
 }
+#else
+// this avoids a compiler warning w.r.t. empty compilation units.
+int SRVPOOLdummy = 42;
+#endif /* HAVE_MAPI */
+

@@ -1371,7 +1371,10 @@ store_load(void) {
 	types_init(sa, logger_debug);
 
 #define FUNC_OIDS 2000
+	// TODO: Niels: Are we fine running this twice?
+#ifndef HAVE_EMBEDDED
 	assert( store_oid <= FUNC_OIDS );
+#endif
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 

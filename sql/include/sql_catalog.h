@@ -358,6 +358,7 @@ typedef enum idx_type {
 	join_idx,
 	oph_idx,		/* order preserving hash */
 	no_idx,			/* no idx, ie no storage */
+	imprints_idx,
 	ordered_idx,
 	new_idx_types
 } idx_type;

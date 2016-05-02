@@ -466,7 +466,7 @@ openProfilerStream(stream *fd, int mode)
 	prevUsage = infoUsage;
 #endif
 	if (myname == 0){
-		myname = putName("profiler", 8);
+		myname = putName("profiler");
 		eventcounter = 0;
 		logjsonInternal(monet_characteristics);
 	}
@@ -514,7 +514,7 @@ startProfiler(void)
 	}
 	MT_lock_set(&mal_profileLock );
 	if (myname == 0){
-		myname = putName("profiler", 8);
+		myname = putName("profiler");
 		eventcounter = 0;
 	}
 	malProfileMode = 1;

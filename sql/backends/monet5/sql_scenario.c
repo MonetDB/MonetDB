@@ -7,19 +7,11 @@
  */
 
 /*
- * @f sql_scenario
- * @t SQL catwalk management
- * @a N. Nes, M.L. Kersten
- * @+ SQL scenario
+ * (authors) N. Nes, M.L. Kersten
  * The SQL scenario implementation is a derivative of the MAL session scenario.
- *
- * It is also the first version that uses state records attached to
- * the client record. They are initialized as part of the initialization
- * phase of the scenario.
  *
  */
 /*
- * @+ Scenario routines
  * Before we are can process SQL statements the global catalog
  * should be initialized. Thereafter, each time a client enters
  * we update its context descriptor to denote an SQL scenario.
@@ -37,7 +29,6 @@
 #include "sql_readline.h"
 #include "sql_user.h"
 #include "sql_datetime.h"
-#include "sql_optimizer.h"
 #include "mal_io.h"
 #include "mal_parser.h"
 #include "mal_builder.h"
@@ -874,145 +865,6 @@ SQLreader(Client c)
  * The current analysis is simple and fulfills our short-term needs.
  * A future version may analyze the parameter settings in more detail.
  */
-static void
-SQLsetDebugger(Client c, mvc *m, int onoff)
-{
-	if (m == 0 || !(m->emod & mod_debug))
-		return;
-	c->itrace = 'n';
-	if (onoff) {
-		newStmt(c->curprg->def, "mdb", "start");
-		c->debugOptimizer = TRUE;
-		c->curprg->def->keephistory = TRUE;
-	} else {
-		newStmt(c->curprg->def, "mdb", "stop");
-		c->debugOptimizer = FALSE;
-		c->curprg->def->keephistory = FALSE;
-	}
-}
-
-/*
- * The trace operation collects the events in the BATs
- * and creates a secondary result set upon termination
- * of the query. 
- */
-static void
-SQLsetTrace(backend *be, Client cntxt, bit onoff)
-{
-	InstrPtr q, resultset;
-	InstrPtr tbls, cols, types, clen, scale;
-	MalBlkPtr mb = cntxt->curprg->def;
-	int k;
-
-	(void) be;
-	if (onoff) {
-		q= newStmt(mb, "profiler", "starttrace");
-		q= pushStr(mb,q,"sql_traces");
-		initTrace();
-	} else {
-		q= newStmt(mb, "profiler", "stoptrace");
-		q= pushStr(mb,q,"sql_traces");
-		/* cook a new resultSet instruction */
-		resultset = newInstruction(mb,ASSIGNsymbol);
-		setModuleId(resultset, sqlRef);
-		setFunctionId(resultset, resultSetRef);
-	    getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
-
-
-		/* build table defs */
-		tbls = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(tbls,0), newBatType(TYPE_oid, TYPE_str));
-		tbls = pushType(mb, tbls, TYPE_oid);
-		tbls = pushType(mb, tbls, TYPE_str);
-		resultset= pushArgument(mb,resultset, getArg(tbls,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q,getArg(tbls,0));
-		q= pushStr(mb,q,".trace");
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q,k);
-		q= pushStr(mb,q,".trace");
-
-		/* build colum defs */
-		cols = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(cols,0), newBatType(TYPE_oid, TYPE_str));
-		cols = pushType(mb, cols, TYPE_oid);
-		cols = pushType(mb, cols, TYPE_str);
-		resultset= pushArgument(mb,resultset, getArg(cols,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q,getArg(cols,0));
-		q= pushStr(mb,q,"usec");
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(cols,0));
-		q= pushStr(mb,q,"statement");
-
-		/* build type defs */
-		types = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(types,0), newBatType(TYPE_oid, TYPE_str));
-		types = pushType(mb, types, TYPE_oid);
-		types = pushType(mb, types, TYPE_str);
-		resultset= pushArgument(mb,resultset, getArg(types,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(types,0));
-		q= pushStr(mb,q,"bigint");
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, k);
-		q= pushStr(mb,q,"clob");
-
-		/* build scale defs */
-		clen = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(clen,0), newBatType(TYPE_oid, TYPE_int));
-		clen = pushType(mb, clen, TYPE_oid);
-		clen = pushType(mb, clen, TYPE_int);
-		resultset= pushArgument(mb,resultset, getArg(clen,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(clen,0));
-		q= pushInt(mb,q,64);
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, k);
-		q= pushInt(mb,q,0);
-
-		/* build scale defs */
-		scale = newStmt(mb,batRef, newRef);
-		setVarType(mb, getArg(scale,0), newBatType(TYPE_oid, TYPE_int));
-		scale = pushType(mb, scale, TYPE_oid);
-		scale = pushType(mb, scale, TYPE_int);
-		resultset= pushArgument(mb,resultset, getArg(scale,0));
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb,q, getArg(scale,0));
-		q= pushInt(mb,q,0);
-		k= getArg(q,0);
-
-		q= newStmt(mb,batRef,appendRef);
-		q= pushArgument(mb, q, k);
-		q= pushInt(mb,q,0);
-
-		/* add the ticks column */
-
-		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("usec",4));
-		resultset= pushArgument(mb,resultset, getArg(q,0));
-
-		/* add the stmt column */
-		q = newStmt(mb, profilerRef, "getTrace");
-		q = pushStr(mb, q, putName("stmt",4));
-		resultset= pushArgument(mb,resultset, getArg(q,0));
-
-		pushInstruction(mb,resultset);
-	}
-}
 
 #define MAX_QUERY 	(64*1024*1024)
 
@@ -1025,17 +877,23 @@ caching(mvc *m)
 static int
 cachable(mvc *m, stmt *s)
 {
-	if (m->emode == m_prepare)
+	if (m->emode == m_prepare)	/* prepared plans are always cached */
 		return 1;
-	if (m->emode == m_plan || m->type == Q_TRANS ||	/*m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
-	    (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
+	if (m->emode == m_plan)		/* we plan to display without execution */
 		return 0;
+	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
+		return 0;
+	/* we don't store empty sequences, nor queries with a large footprint */
+	if( (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
+		return 0;
+	/* remainders covers: m_execute, m_inplace, m_normal*/
 	return 1;
 }
 
 /*
  * The core part of the SQL interface, parse the query and
- * prepare the intermediate code.
+ * store away the template (non)optimized code in the query cache
+ * and the MAL module
  */
 
 str
@@ -1204,25 +1062,14 @@ SQLparser(Client c)
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
-		// look for outdated plans
-		if ( OPTmitosisPlanOverdue(c, be->q->name) ){
-			msg = SQLCacheRemove(c, be->q->name);
-			qc_delete(be->mvc->qc, be->q);
-			be->q = NULL;
-			goto recompilequery;
-		}
-
-		if (m->emod & mod_debug)
-			SQLsetDebugger(c, m, TRUE);
-		if (m->emod & mod_trace)
-			SQLsetTrace(be, c, TRUE);
-		if (!(m->emod & (mod_explain | mod_debug | mod_trace | mod_dot)))
+		/* query template was found in the query cache */
+		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
 		stmt *s;
-recompilequery:
+
 		r = sql_symbol2relation(m, m->sym);
 		s = sql_relation2stmt(m, r);
 
@@ -1234,20 +1081,18 @@ recompilequery:
 		}
 		assert(s);
 
-		/* generate the MAL code */
-		if (m->emod & mod_trace)
-			SQLsetTrace(be, c, TRUE);
-		if (m->emod & mod_debug)
-			SQLsetDebugger(c, m, TRUE);
 		if (!caching(m) || !cachable(m, s)) {
+			/* Query template should not be cached */
 			scanner_query_processed(&(m->scanner));
-			if (backend_callinline(be, c, s, 0) == 0) {
-				opt = 1;
-			} else {
+			err = 0;
+			if( backend_callinline(be, c) < 0 ||
+				backend_dumpstmt(be, c->curprg->def, s, 1, 0) < 0)
 				err = 1;
-			}
+			else opt = 1;
 		} else {
-			/* generate a factory instantiation */
+			/* Add the query tree to the SQL query cache
+			 * and bake a MAL program for it.
+			 */
 			char *q = query_cleaned(QUERY(m->scanner));
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
@@ -1268,7 +1113,8 @@ recompilequery:
 			m->sym = NULL;
 
 			/* register name in the namespace */
-			be->q->name = putName(be->q->name, strlen(be->q->name));
+			be->q->name = putName(be->q->name);
+			/* unless a query modifier has been set, we directly call the cached plan */
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace;
 		}
@@ -1276,31 +1122,26 @@ recompilequery:
 	if (err)
 		m->session->status = -10;
 	if (err == 0) {
+		/* no parsing error encountered, finalize the code of the query wrapper */
 		if (be->q) {
 			if (m->emode == m_prepare)
+				/* For prepared queries, return a table with result set structure*/
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
 			else if (m->emode == m_inplace) {
 				/* everything ready for a fast call */
-			} else {	/* call procedure generation (only in cache mode) */
+			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
+				/* call procedure generation (only in cache mode) */
 				backend_call(be, c, be->q);
 			}
 		}
 
-		/* In the final phase we add any debugging control */
-		if (m->emod & mod_trace)
-			SQLsetTrace(be, c, FALSE);
-		if (m->emod & mod_debug)
-			SQLsetDebugger(c, m, FALSE);
-
-		/*
-		 * During the execution of the query exceptions can be raised.
-		 * The default action is to print them out at the end of the
-		 * query block.
-		 */
 		pushEndInstruction(c->curprg->def);
 
-		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
-		if (opt) {
+		/* check the query wrapper for errors */
+		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
+
+		/* in case we had produced a non-cachable plan, the optimizer should be called */
+		if (opt && !c->curprg->def->errors ) {
 			str msg = optimizeQuery(c);
 
 			if (msg != MAL_SUCCEED) {
@@ -1316,44 +1157,13 @@ recompilequery:
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			msg = createException(PARSE, "SQLparser", "Semantic errors");
+			msg = createException(PARSE, "SQLparser", "M0M27!Semantic errors");
 		}
 	}
       finalize:
 	if (msg)
 		sqlcleanup(m, 0);
 	return msg;
-}
-
-
-str
-SQLrecompile(Client c, backend *be)
-{
-	stmt *s;
-	mvc *m = be->mvc;
-	int oldvtop = c->curprg->def->vtop;
-	int oldstop = c->curprg->def->stop;
-	str msg;
-
-	msg = SQLCacheRemove(c, be->q->name);
-	if( msg )
-		GDKfree(msg);
-	s = sql_relation2stmt(m, be->q->rel);
-	be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
-	be->q->stk = 0;
-
-	pushEndInstruction(c->curprg->def);
-
-	chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);	/* resolve types */
-	if (!be->q->code || c->curprg->def->errors) {
-		showErrors(c);
-		/* restore the state */
-		MSresetInstructions(c->curprg->def, oldstop);
-		freeVariables(c, c->curprg->def, c->glb, oldvtop);
-		c->curprg->def->errors = 0;
-		throw(SQL, "SQLrecompile", "M0M27!semantic errors");
-	}
-	return SQLengineIntern(c, be);
 }
 
 str

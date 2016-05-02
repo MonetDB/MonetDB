@@ -67,6 +67,7 @@
  * Instead, we maintain a simple lock with each connection, which can be
  * used to issue a safe, but blocking get/put/exec/register request.
  */
+#ifdef HAVE_MAPI
 
 static connection conns = NULL;
 static unsigned char localtype = 0;
@@ -791,9 +792,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */
-	sym = findSymbol(cntxt->nspace,
-			putName(mod, strlen(mod)),
-			putName(fcn, strlen(fcn)));
+	sym = findSymbol(cntxt->nspace, putName(mod), putName(fcn));
 	if (sym == NULL)
 		throw(MAL, "remote.register", ILLEGAL_ARGUMENT ": no such function: %s.%s", mod, fcn);
 
@@ -1340,3 +1339,4 @@ RMTisalive(int *ret, str *conn)
 	return MAL_SUCCEED;
 }
 
+#endif // HAVE_MAPI

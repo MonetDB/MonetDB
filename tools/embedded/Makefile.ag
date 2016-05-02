@@ -26,7 +26,6 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../common/stream \
 		   ../../common/utils \
 		   ../../common/options \
-		   ../../clients/mapilib \
 		   ../../sql/include \
 		   ../../sql/server \
 		   ../../sql/common \

@@ -14,7 +14,6 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/optimizer \
 		   ../../../monetdb5/scheduler \
 		   ../../../monetdb5/extras/rapi \
-		   ../../../clients/mapilib \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../common/utils \
@@ -59,37 +58,6 @@ lib__sql = {
 		   $(READLINE_LIBS) $(PTHREAD_LIBS) \
 		   $(openssl_LIBS) $(MATH_LIBS)
 }
-
-
-# embedded is disabled, but keep building instructions for the moment we
-# like to revive this or someone whould like to build this for some reason
-#
-#lib_embeddedsql5 = {
-#	SOURCES = embeddedclient.c.in
-#	LIBS = ../../server/libsqlserver \
-#		   ../../storage/libstore \
-#		   ../../storage/bat/libbatstore \
-#		   ../../common/libsqlcommon \
-#		   ../../../monetdb5/tools/libmonetdb5 \
-#		   ../../../gdk/libbat \
-#		   ../../../clients/mapilib/libmapi \
-#		   ../../../common/stream/libstream \
-#		   $(READLINE_LIBS) $(PTHREAD_LIBS)
-#}
-#
-#bin_mbeddedsql5 = {
-#	SOURCES = prog.c
-#	LIBS = libembeddedsql5 \
-#		   ../../server/libsqlserver \
-#		   ../../storage/libstore \
-#		   ../../storage/bat/libbatstore \
-#		   ../../common/libsqlcommon \
-#		   ../../../monetdb5/tools/libmonetdb5 \
-#		   ../../../gdk/libbat \
-#		   ../../../clients/mapilib/libmapi \
-#		   ../../../common/stream/libstream \
-#		   $(READLINE_LIBS) $(PTHREAD_LIBS) $(curl_LIBS)
-#}
 
 headers_mal = {
 	HEADERS = mal

@@ -30,7 +30,7 @@ newSymbol(str nme, int kind)
 		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	cur->name = putName(nme, strlen(nme));
+	cur->name = putName(nme);
 	cur->kind = kind;
 	cur->peer = NULL;
 	cur->def = newMalBlk(kind == FUNCTIONsymbol?MAXVARS : MAXARG, kind == FUNCTIONsymbol? STMT_INCREMENT : 1);

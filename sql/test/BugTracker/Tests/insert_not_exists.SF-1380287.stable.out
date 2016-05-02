@@ -109,7 +109,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 15 # length
+% 31 # length
 [ "dropping kwTemp"	]
 #DROP TABLE kwTemp;
 #COMMIT;
@@ -131,7 +131,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 16 # length
+% 27 # length
 [ "dropping kwmTemp"	]
 #DROP TABLE kwmTemp;
 #COMMIT;

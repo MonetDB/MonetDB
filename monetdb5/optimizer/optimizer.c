@@ -64,7 +64,7 @@ QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /*
  * MAL functions can be optimized explicitly using the routines below.
- * Beware, the function names should be known as literalstrings, because
+ * Beware, the function names should be known as literal strings, because
  * you may not know the runtime situation.
 */
 
@@ -83,7 +83,7 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		modnme = getArgDefault(mb, pci, 1);
 		fcnnme = getArgDefault(mb, pci, 2);
 	}
-	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), fcnnme);
+	s = findSymbol(cntxt->nspace, putName(modnme), fcnnme);
 	if (s == NULL)
 		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
@@ -111,7 +111,7 @@ QOTshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 
-	s = findSymbol(cntxt->nspace,putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace,putName(modnme), putName(fcnnme));
 
 	if (s == NULL) {
 		char buf[1024];
@@ -140,7 +140,7 @@ QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mnstr_printf(cntxt->fdout,"#showPlan()\n");
 	removeInstruction(mb, p);
 	if( modnme ) {
-		s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+		s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 
 		if (s == NULL) {
 			char buf[1024];

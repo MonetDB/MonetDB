@@ -98,7 +98,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
       stop("MonetDBLite package required for embedded mode")
     }
     MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE), 
-      getOption("monetdb.sequential", TRUE))
+      getOption("monetdb.sequential", FALSE))
     connenv <- new.env(parent=emptyenv())
     connenv$conn <- MonetDBLite::monetdb_embedded_connect()
     connenv$open <- TRUE
@@ -143,7 +143,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   .mapiAuthenticate(connenv$socket, dbname, user, password, language=language)
   
   conn <- new("MonetDBConnection", connenv=connenv)
-  if (getOption("monetdb.sequential", F)) {
+  if (getOption("monetdb.sequential", FALSE)) {
     message("MonetDB: Switching to single-threaded query execution.")
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }

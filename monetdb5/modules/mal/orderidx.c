@@ -78,7 +78,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
-	snew = newFunction(putName("user", 4), putName(name, strlen(name)),
+	snew = newFunction(putName("user"), putName(name),
 	       FUNCTIONsymbol);
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
@@ -90,15 +90,15 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
 	pack = newInstruction(0, ASSIGNsymbol);
-	setModuleId(pack, putName("bat", 3));
-	setFunctionId(pack, putName("orderidx", 8));
+	setModuleId(pack, putName("bat"));
+	setFunctionId(pack, putName("orderidx"));
 	pack->argv[0] = newTmpVariable(smb, TYPE_void);
 	pack = pushArgument(smb, pack, arg);
 	setVarFixed(smb, getArg(pack, 0));
 
 	/* the costly part executed as a parallel block */
 	loopvar = newTmpVariable(smb, TYPE_bit);
-	q = newStmt(smb, putName("language", 8), putName("dataflow", 8));
+	q = newStmt(smb, putName("language"), putName("dataflow"));
 	q->barrier = BARRIERsymbol;
 	q->argv[0] = loopvar;
 
@@ -107,7 +107,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	o = 0;
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
-		q = newStmt(smb, putName("algebra", 7),putName("slice", 5));
+		q = newStmt(smb, putName("algebra"),putName("slice"));
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
 		q = pushArgument(smb, q, arg);
@@ -122,7 +122,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	}
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
-		q = newStmt(smb, putName("algebra",7), putName("orderidx", 8));
+		q = newStmt(smb, putName("algebra"), putName("orderidx"));
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
 		q = pushArgument(smb, q, pack->argv[2+i]);

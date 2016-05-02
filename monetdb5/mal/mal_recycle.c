@@ -108,12 +108,12 @@ void RECYCLEinit(void){
 	MT_lock_init(&recycleLock,"recycleLock");
 	ATOMIC_INIT(statementsLock);
 #endif
-	sqlRef = putName("sql",3);
-	bindRef = putName("bind",4);
-	bind_idxRef = putName("bind_idxbat",11);
-	subselectRef = putName("subselect",9);
-	thetasubselectRef = putName("thetasubselect",14);
-	likesubselectRef= putName("likesubselect",14);
+	sqlRef = putName("sql");
+	bindRef = putName("bind");
+	bind_idxRef = putName("bind_idxbat");
+	subselectRef = putName("subselect");
+	thetasubselectRef = putName("thetasubselect");
+	likesubselectRef= putName("likesubselect");
 	recycleCacheLimit=HARDLIMIT_STMT;
 }
 
