@@ -61,25 +61,18 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 115 # length
+% 118 # length
 function user.s4_1():void;
-    sql.mvc();
-    calc.ptr(nil);
-    calc.str("|");
-    calc.str("\\n");
-    calc.str(nil:str);
-    calc.str("null");
-    calc.str("/tmp/xyz");
-    calc.lng(-1);
-    calc.lng(0);
-    calc.int(0);
-    calc.int(0);
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(X_2,X_4,X_6,X_8,X_10,X_12,X_14,X_16,X_18,X_20);
-    sql.append(X_1,"sys","ttt","a",X_21);
-    sql.append(X_25,"sys","ttt","b",X_22);
-    sql.append(X_30,"sys","ttt","c",X_23);
-    aggr.count(X_23);
-    sql.affectedRows(X_33,X_35);
+    X_24:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",12);
+barrier X_34 := language.dataflow();
+    X_1 := sql.mvc();
+    (X_11:bat[:int],X_12:bat[:int],X_13:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0);
+exit X_34;
+    X_14 := sql.append(X_1,"sys","ttt","a",X_11);
+    X_18 := sql.append(X_14,"sys","ttt","b",X_12);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_13);
+    X_22 := aggr.count(X_13);
+    sql.affectedRows(X_20,X_22);
 end user.s4_1;
 #declare opt_pipe_name string;
 #set opt_pipe_name = ( select optimizer );
@@ -102,25 +95,18 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 115 # length
+% 118 # length
 function user.s12_1():void;
-    sql.mvc();
-    calc.ptr(nil);
-    calc.str("|");
-    calc.str("\\n");
-    calc.str(nil:str);
-    calc.str("null");
-    calc.str("/tmp/xyz");
-    calc.lng(-1);
-    calc.lng(0);
-    calc.int(0);
-    calc.int(0);
-    (X_21:bat[:int],X_22:bat[:int],X_23:bat[:int]) := sql.copy_from(X_2,X_4,X_6,X_8,X_10,X_12,X_14,X_16,X_18,X_20);
-    sql.append(X_1,"sys","ttt","a",X_21);
-    sql.append(X_25,"sys","ttt","b",X_22);
-    sql.append(X_30,"sys","ttt","c",X_23);
-    aggr.count(X_23);
-    sql.affectedRows(X_33,X_35);
+    X_24:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",12);
+barrier X_35 := language.dataflow();
+    X_1 := sql.mvc();
+    (X_11:bat[:int],X_12:bat[:int],X_13:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0);
+exit X_35;
+    X_14 := sql.append(X_1,"sys","ttt","a",X_11);
+    X_18 := sql.append(X_14,"sys","ttt","b",X_12);
+    X_22 := aggr.count(X_13);
+    X_20 := sql.append(X_18,"sys","ttt","c",X_13);
+    sql.affectedRows(X_20,X_22);
 end user.s12_1;
 #drop table ttt;
 

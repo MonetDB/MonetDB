@@ -1115,7 +1115,7 @@ SQLparser(Client c)
 			m->sym = NULL;
 
 			/* register name in the namespace */
-			be->q->name = putName(be->q->name, strlen(be->q->name));
+			be->q->name = putName(be->q->name);
 			/* unless a query modifier has been set, we directly call the cached plan 
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace;
@@ -1140,7 +1140,8 @@ SQLparser(Client c)
 
 		pushEndInstruction(c->curprg->def);
 		// Prepared query plans should be optimized
-		if(err == 0 && m->emode == m_prepare ) sqlJIToptimizer(c,be->q->code,be);
+		if(err == 0 && m->emode == m_prepare ) 
+			sqlJIToptimizer(c,c->curprg->def,be->mvc);
 
 		/* check the query wrapper for errors */
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);

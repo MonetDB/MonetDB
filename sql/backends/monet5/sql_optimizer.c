@@ -129,10 +129,10 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 }
 
 str
-sqlJIToptimizer(Client c, MalBlkPtr mb, backend *be)
+sqlJIToptimizer(Client c, MalBlkPtr mb, mvc *m)
 {
 	str msg;
-	str pipe = getSQLoptimizer(be->mvc);
+	str pipe = getSQLoptimizer(m);
 
 	addOptimizers(c, mb, pipe);
 	msg = optimizeMALBlock(c, mb);
@@ -182,7 +182,7 @@ optimizeQuery(Client c, MalBlkPtr mb)
 		}
 		return NULL;
 	}
-	return sqlJIToptimizer(c,mb,be);
+	return sqlJIToptimizer(c,mb,be->mvc);
 }
 
 void

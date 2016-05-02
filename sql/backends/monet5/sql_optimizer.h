@@ -15,7 +15,7 @@
 sql5_export str optimizeQuery(Client c,MalBlkPtr mb);
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
-sql5_export str sqlJIToptimizer(Client c, MalBlkPtr mb, backend *be);
+sql5_export str sqlJIToptimizer(Client c, MalBlkPtr mb, mvc *m);
 sql5_export void SQLsetAccessMode(Client c);
 sql5_export str getSQLoptimizer(mvc *m);
 sql5_export void addOptimizers(Client c, MalBlkPtr mb, char *pipe);

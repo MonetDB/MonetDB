@@ -703,6 +703,8 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
+	sqlJIToptimizer(c,c->curprg->def,m);
+
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
