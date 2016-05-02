@@ -48,7 +48,7 @@ Operation successful
 +--------------------------------------------------------------------------------------------------+
 | mal                                                                 |
 +==================================================================================================+
-| function user.s3_1():void;                                                                       |
+| function user.s2_1():void;                                                                       |
 |     X_41:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
 |     X_2:bat[:wrd] := bat.new(nil:oid,nil:wrd);                                                   |
 |     X_1 := sql.mvc();                                                                            |

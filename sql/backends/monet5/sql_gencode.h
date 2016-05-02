@@ -18,7 +18,8 @@
 #include <mal_function.h>
 
 sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
-sql5_export int backend_callinline(backend *be, Client c, stmt *s, int add_end);
+sql5_export int backend_callinline(backend *be, Client c);
+sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
 sql5_export void backend_call(backend *be, Client c, cq *q);
 sql5_export void initSQLreferences(void);
 sql5_export int monet5_resolve_function(ptr M, sql_func *f);

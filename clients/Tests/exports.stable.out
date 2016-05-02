@@ -1562,7 +1562,6 @@ int OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 int OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-int OPTmitosisPlanOverdue(Client cntxt, str fname);
 int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -2444,7 +2443,7 @@ str rsColumnRef;
 int rule_fromstr(const char *buf, int *len, rule **d);
 int rule_tostr(str *buf, int *len, const rule *r);
 str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
-str runMALDebugger(Client cntxt, Symbol s);
+str runMALDebugger(Client cntxt, MalBlkPtr mb);
 str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
 str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 str runScenario(Client c);

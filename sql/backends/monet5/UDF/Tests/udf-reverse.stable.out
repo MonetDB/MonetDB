@@ -83,7 +83,7 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 101 # length
-function user.s10_1():void;
+function user.s6_1():void;
     X_33:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22);
     X_17 := bat.new(nil:oid,nil:str);
     X_25 := bat.append(X_17,"sys.L");
@@ -104,7 +104,7 @@ function user.s10_1():void;
     X_14 := algebra.projection(C_2,X_13);
     X_15:bat[:str] := batudf.reverse(X_14);
     sql.resultSet(X_25,X_27,X_29,X_31,X_32,X_15);
-end user.s10_1;
+end user.s6_1;
 #select reverse(x) from udf_reverse;
 % sys.L # table_name
 % reverse_x # name

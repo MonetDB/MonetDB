@@ -15,7 +15,6 @@
 #define MINPARTCNT 100000	/* minimal record count per partition */
 
 opt_export int OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export int OPTmitosisPlanOverdue(Client cntxt, str fname);
 
 #define OPTDEBUGmitosis  if ( optDebug & ((lng)1 <<DEBUG_OPT_MITOSIS) )
 

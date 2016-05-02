@@ -62,6 +62,154 @@
 * The tricky part for this statement is to ensure that the SQL statement
 * is executed within the client context specified. This leads to context juggling.
 */
+
+/*
+ * The trace operation collects the events in the BATs
+ * and creates a secondary result set upon termination
+ * of the query. 
+ */
+static void
+SQLsetTrace(Client cntxt)
+{
+	InstrPtr q, resultset;
+	InstrPtr tbls, cols, types, clen, scale;
+	MalBlkPtr mb = cntxt->curprg->def;
+	int k;
+
+	startTrace("sql_traces");
+	initTrace();
+
+	for(k= mb->stop-1; k>0; k--)
+		if( getInstrPtr(mb,k)->token ==ENDsymbol)
+			break;
+	mb->stop=k;
+
+	q= newStmt(mb, "profiler", "stoptrace");
+	q= pushStr(mb,q,"sql_traces");
+	/* cook a new resultSet instruction */
+	resultset = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(resultset, sqlRef);
+	setFunctionId(resultset, resultSetRef);
+	getArg(resultset,0)= newTmpVariable(mb,TYPE_int);
+
+	/* build table defs */
+	tbls = newStmt(mb,batRef, newRef);
+	setVarType(mb, getArg(tbls,0), newBatType(TYPE_oid, TYPE_str));
+	tbls = pushType(mb, tbls, TYPE_oid);
+	tbls = pushType(mb, tbls, TYPE_str);
+	resultset= pushArgument(mb,resultset, getArg(tbls,0));
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q,getArg(tbls,0));
+	q= pushStr(mb,q,".trace");
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q,k);
+	q= pushStr(mb,q,".trace");
+
+	/* build colum defs */
+	cols = newStmt(mb,batRef, newRef);
+	setVarType(mb, getArg(cols,0), newBatType(TYPE_oid, TYPE_str));
+	cols = pushType(mb, cols, TYPE_oid);
+	cols = pushType(mb, cols, TYPE_str);
+	resultset= pushArgument(mb,resultset, getArg(cols,0));
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q,getArg(cols,0));
+	q= pushStr(mb,q,"usec");
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, getArg(cols,0));
+	q= pushStr(mb,q,"statement");
+
+	/* build type defs */
+	types = newStmt(mb,batRef, newRef);
+	setVarType(mb, getArg(types,0), newBatType(TYPE_oid, TYPE_str));
+	types = pushType(mb, types, TYPE_oid);
+	types = pushType(mb, types, TYPE_str);
+	resultset= pushArgument(mb,resultset, getArg(types,0));
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, getArg(types,0));
+	q= pushStr(mb,q,"bigint");
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, k);
+	q= pushStr(mb,q,"clob");
+
+	/* build scale defs */
+	clen = newStmt(mb,batRef, newRef);
+	setVarType(mb, getArg(clen,0), newBatType(TYPE_oid, TYPE_int));
+	clen = pushType(mb, clen, TYPE_oid);
+	clen = pushType(mb, clen, TYPE_int);
+	resultset= pushArgument(mb,resultset, getArg(clen,0));
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, getArg(clen,0));
+	q= pushInt(mb,q,64);
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, k);
+	q= pushInt(mb,q,0);
+
+	/* build scale defs */
+	scale = newStmt(mb,batRef, newRef);
+	setVarType(mb, getArg(scale,0), newBatType(TYPE_oid, TYPE_int));
+	scale = pushType(mb, scale, TYPE_oid);
+	scale = pushType(mb, scale, TYPE_int);
+	resultset= pushArgument(mb,resultset, getArg(scale,0));
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb,q, getArg(scale,0));
+	q= pushInt(mb,q,0);
+	k= getArg(q,0);
+
+	q= newStmt(mb,batRef,appendRef);
+	q= pushArgument(mb, q, k);
+	q= pushInt(mb,q,0);
+
+	/* add the ticks column */
+
+	q = newStmt(mb, profilerRef, "getTrace");
+	q = pushStr(mb, q, putName("usec",4));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
+
+	/* add the stmt column */
+	q = newStmt(mb, profilerRef, "getTrace");
+	q = pushStr(mb, q, putName("stmt",4));
+	resultset= pushArgument(mb,resultset, getArg(q,0));
+
+	pushInstruction(mb,resultset);
+	pushEndInstruction(mb);
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
+}
+
+static str
+SQLrun(Client c, mvc *m){
+	str msg= MAL_SUCCEED;
+	MalBlkPtr old;
+			
+	// first consider running in debug mode
+	if( m->emod & mod_debug)
+		msg = runMALDebugger(c, c->curprg->def);
+	 else{
+		if( m->emod & mod_trace){
+			c->curprg->def = copyMalBlk(old = c->curprg->def);
+			SQLsetTrace(c);
+			msg = runMAL(c, c->curprg->def, 0, 0);
+			stopTrace(0);
+			freeMalBlk(c->curprg->def);
+			c->curprg->def = old;
+		} else
+			msg = runMAL(c, c->curprg->def, 0, 0);
+	}
+	return msg;
+}
+
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
@@ -197,10 +345,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			goto endofcompile;
 		}
 		/* generate MAL code */
-		if (backend_callinline(sql, c, s, 1) == 0)
-			addQueryToCache(c);
-		else
+		if( backend_callinline(be, c) < 0 ||
+			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
 			err = 1;
+		else
+			addQueryToCache(c);
 
 		if (err ||c->curprg->def->errors) {
 			/* restore the state */
@@ -220,7 +369,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		if (!output)
 			sql->out = NULL;	/* no output stream */
 		if (execute)
-			msg = runMAL(c, c->curprg->def, 0, 0);
+			msg = SQLrun(c,m);
 
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -438,39 +587,26 @@ SQLengineIntern(Client c, backend *be)
 	 * in the context of a user global environment. We have a private
 	 * environment.
 	 */
-	if (MALcommentsOnly(c->curprg->def)) {
+	if (MALcommentsOnly(c->curprg->def)) 
 		msg = MAL_SUCCEED;
-	} else {
-		msg = (str) runMAL(c, c->curprg->def, 0, 0);
-	}
+	else 
+		msg = SQLrun(c,m);
 
 cleanup_engine:
 	if (m->type == Q_SCHEMA)
 		qc_clean(m->qc);
 	if (msg) {
-		enum malexception type = getExceptionType(msg);
-		if (type == OPTIMIZER) {
-			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c, c->curprg->def, NULL, be->vtop);
-			be->language = oldlang;
-			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-			c->glb = oldglb;
-			if ( msg)
-				GDKfree(msg);
-			return SQLrecompile(c, be); // retry compilation
-		} else {
-			/* don't print exception decoration, just the message */
-			char *n = NULL;
-			char *o = msg;
-			while ((n = strchr(o, '\n')) != NULL) {
-				*n = '\0';
-				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
-				*n++ = '\n';
-				o = n;
-			}
-			if (*o != 0)
-				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+		/* don't print exception decoration, just the message */
+		char *n = NULL;
+		char *o = msg;
+		while ((n = strchr(o, '\n')) != NULL) {
+			*n = '\0';
+			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+			*n++ = '\n';
+			o = n;
 		}
+		if (*o != 0)
+			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		showErrors(c);
 		m->session->status = -10;
 	}
@@ -494,7 +630,7 @@ cleanup_engine:
 
 /* a hook is provided to execute relational algebra expressions */
 str
-RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int pos = 0;
 	str *expr = getArgReference_str(stk, pci, 1);
@@ -505,39 +641,41 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_rel *rel;
 	list *refs;
 
-	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
+	if ((msg = getSQLContext(c, mb, &m, &b)) != NULL)
 		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
+	if ((msg = checkSQLContext(c)) != NULL)
 		return msg;
 	if (!m->sa)
 		m->sa = sa_create();
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	if (rel) {
-		int oldvtop = cntxt->curprg->def->vtop;
-		int oldstop = cntxt->curprg->def->stop;
+		int oldvtop = c->curprg->def->vtop;
+		int oldstop = c->curprg->def->stop;
 		stmt *s;
-		MalStkPtr oldglb = cntxt->glb;
+		MalStkPtr oldglb = c->glb;
 
 		if (*opt)
 			rel = rel_optimizer(m, rel);
 		s = output_rel_bin(m, rel);
 		rel_destroy(rel);
 
-		MSinitClientPrg(cntxt, "user", "test");
+		MSinitClientPrg(c, "user", "test");
 
-		/* generate MAL code */
-		backend_callinline(b, cntxt, s, 1);
-		addQueryToCache(cntxt);
-
-		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
+		/* generate MAL code, ignoring any code generation error */
+		if(  backend_callinline(b, c) < 0 ||
+			 backend_dumpstmt(b, c->curprg->def, s, 1, 1) < 0)
+			msg = createException(SQL,"RAstatement","Program contains errors");
+		else 
+			addQueryToCache(c);
+			SQLrun(c,m);
 		if (!msg) {
-			resetMalBlk(cntxt->curprg->def, oldstop);
-			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
-			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
+			resetMalBlk(c->curprg->def, oldstop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			if( !(c->glb == 0 || c->glb == oldglb))
 				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		}
-		cntxt->glb = oldglb;
+		c->glb = oldglb;
 	}
 	return msg;
 }
