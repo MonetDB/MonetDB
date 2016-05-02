@@ -1276,6 +1276,25 @@ sql_update_jun2016(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 		"insert into sys.systemfunctions (select id from sys.functions where name in ('bbp', 'malfunctions', 'flush_log', 'debug') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
+	/* 45_uuid.sql */
+	{
+		/* in previous updates, the functions
+		 * sys.isauuid(string) was not created, so we can't
+		 * always drop it here */
+		sql_subtype tp;
+		sql_find_subtype(&tp, "clob", 0, 0);
+		if (sql_bind_func(sql->sa, s, "isauuid", &tp, NULL, F_FUNC))
+			pos += snprintf(buf + pos, bufsize - pos,
+					"drop function sys.isaUUID(string);\n");
+	}
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.isaUUID(uuid);\n"
+			"create function sys.isaUUID(u uuid)\n"
+			"returns boolean begin return true; end;\n"
+			"create function sys.isaUUID(s string)\n"
+			"returns boolean external name uuid.\"isaUUID\";\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'isauuid' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
 	/* 46_profiler.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 		"create schema profiler;\n"

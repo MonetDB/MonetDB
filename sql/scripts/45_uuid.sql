@@ -14,7 +14,7 @@ create function sys.uuid()
 returns uuid external name uuid."new";
 
 create function sys.isaUUID(u uuid)
-returns uuid external name uuid."isaUUID";
+returns boolean begin return true; end;
 
-create function sys.isaUUID(u string)
-returns uuid external name uuid."isaUUID";
+create function sys.isaUUID(s string)
+returns boolean external name uuid."isaUUID";
