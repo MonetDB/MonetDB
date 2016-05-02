@@ -78,10 +78,15 @@ void mal_namespace_reset(void) {
 /*
  * Before a name is being stored we should check for its occurrence first.
  * The administration is initialized incrementally.
- * Beware, the routine getName relies on datastructure maintenance that
+ * Beware, the routine getName relies on data structure maintenance that
  * is conflict free.
  */
-str getName(const char *nme, size_t len)
+
+str getName(const char *nme) {
+	return getNameLen(nme, strlen(nme));
+}
+
+str getNameLen(const char *nme, size_t len)
 {
 	NamePtr n;
 	size_t l = len, key;
@@ -112,12 +117,16 @@ str getName(const char *nme, size_t len)
  */
 void delName(const char *nme, size_t len){
 	str n;
-	n= getName(nme,len);
+	n= getNameLen(nme,len);
 	if( nme[0]==0 || n == 0) return ;
 	/*Namespace garbage collection not available yet */
 }
 
-str putName(const char *nme, size_t len)
+str putName(const char *nme) {
+	return putNameLen(nme, strlen(nme));
+}
+
+str putNameLen(const char *nme, size_t len)
 {
 	size_t l,k;
 	int key;
@@ -125,7 +134,7 @@ str putName(const char *nme, size_t len)
 	str fnd;
 	NamePtr n;
 
-	fnd = getName(nme,len);
+	fnd = getNameLen(nme,len);
 	if ( fnd )
 		return fnd;
 
@@ -164,5 +173,5 @@ str putName(const char *nme, size_t len)
 		ehash[key] = n;
 	}
 	MT_lock_unset(&mal_namespaceLock);
-	return putName(nme, len);	/* just to be sure */
+	return putNameLen(nme, len);	/* just to be sure */
 }

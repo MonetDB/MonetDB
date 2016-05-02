@@ -829,105 +829,6 @@ def am_library(fd, var, libmap, am):
 
     am_deps(fd, libmap['DEPS'], am)
 
-def am_libs(fd, var, libsmap, am):
-
-    ld = "libdir"
-    if ("DIR" in libsmap):
-        ld = libsmap["DIR"][0] # use first name given
-    ld = am_translate_dir(ld, am)
-
-    sep = ""
-    if 'SEP' in libsmap:
-        sep = libsmap['SEP'][0]
-
-    scripts_ext = []
-    if 'SCRIPTS' in libsmap:
-        scripts_ext = libsmap['SCRIPTS']
-
-    if 'MTSAFE' in libsmap:
-        fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-
-    libnames = []
-    for libsrc in libsmap['SOURCES']:
-        SCRIPTS = []
-        libname, libext = split_filename(libsrc)
-        am['EXTRA_DIST'].append(libsrc)
-
-        libnames.append(sep+libname)
-
-# temporarily switched off, the scripts created by libtool cause problems
-# for so-so linking
-#    if libname + "_LIBS" in libsmap:
-#      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"], am))
-#    elif "LIBS" in libsmap:
-#      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"], am))
-        _libs = []
-        if libname + "_DLIBS" in libsmap:
-            _libs += libsmap[libname + "_DLIBS"]
-            fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"], am))
-
-        if "LIBS" in libsmap:
-            _libs += libsmap["LIBS"]
-        if "LDFLAGS" in libsmap:
-            _libs += libsmap["LDFLAGS"]
-        if 'VERSION' in libsmap:
-            version = ['-version-info', libsmap['VERSION'][0]]
-        elif 'MODULE' in libsmap:
-            version = ['-module', '-avoid-version']
-        else:
-            version = []
-        fd.write(am_additional_flags(libname, sep, "LIB", version, am))
-        if len(_libs) > 0:
-            fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
-
-        fullpref = "lib"+sep+libname+'_la'
-        nsrcs = "nodist_"+fullpref+"_SOURCES ="
-        srcs = "dist_"+fullpref+" ="
-        for target in libsmap['TARGETS']:
-            t, ext = split_filename(target)
-            if t == libname:
-                if ext in scripts_ext:
-                    if target not in SCRIPTS:
-                        SCRIPTS.append(target)
-                else:
-                    dist, src = am_find_srcs(target, libsmap['DEPS'], am, None)
-                    if src == libsrc:
-                        dist = True
-                    if dist:
-                        srcs = srcs + " " + src
-                    else:
-                        nsrcs = nsrcs + " " + src
-                if target[-2:] == '.o' and target in libsmap['DEPS']:
-                    am_dep(fd, target, libsmap['DEPS'][target], am, fullpref+"-")
-                    basename = target[:-2]
-                    fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) $(%s_CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, basename, fullpref, basename, basename, basename))
-        fd.write(nsrcs + "\n")
-        fd.write(srcs + "\n")
-
-        if len(SCRIPTS) > 0:
-            fd.write("%s_scripts = %s\n\n" % (libname, am_list2string(SCRIPTS, " ", "")))
-            am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
-            fd.write("all-local-%s: $(%s_scripts)\n" % (libname, libname))
-            am['ALL'].append(libname)
-
-        fd.write("%sdir = %s\n" % (libname, ld))
-        fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,libname.upper()))
-        am['LIBS'].append(('lib', libname, sep, ''))
-        am['InstallList'].append("\t"+ld+sep+libname+".so\n")
-
-    if 'HEADERS' in libsmap:
-        HDRS = []
-        hdrs_ext = libsmap['HEADERS']
-        for target in libsmap['DEPS'].keys():
-            t, ext = split_filename(target)
-            if ext in hdrs_ext:
-                am['HDRS'].append(target)
-                if ext not in automake_ext:
-                    am['EXTRA_DIST'].append(target)
-
-    am_find_ins(am, libsmap)
-    am_deps(fd, libsmap['DEPS'], am)
-
 def am_python_generic(fd, var, python, am, PYTHON):
     pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
     pynmre = re.compile('name *= *([\'"])([^\'"]+)\\1')
@@ -1083,7 +984,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'EXTRA_DIST_DIR': am_extra_dist_dir,
                 'EXTRA_HEADERS': am_extra_headers,
                 'LIBDIR': am_libdir,
-                'LIBS': am_libs,
                 'LIB': am_library,
                 'BINS': am_bins,
                 'BIN': am_binary,
@@ -1143,7 +1043,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     am['BUILT_SOURCES'] = []            # generated source files
     am['CLEAN'] = []                    # files to be cleaned with make clean
     am['EXTRA_DIST'] = []
-    am['LIBS'] = []                     # all libraries (am_libs and am_library)
+    am['LIBS'] = []                     # all libraries (am_library)
     am['NLIBS'] = []                    # all libraries which are not installed
     am['BINS'] = []
     am['NBINS'] = []

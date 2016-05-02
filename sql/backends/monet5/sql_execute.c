@@ -175,12 +175,12 @@ SQLsetTrace(Client cntxt)
 	/* add the ticks column */
 
 	q = newStmt(mb, profilerRef, "getTrace");
-	q = pushStr(mb, q, putName("usec",4));
+	q = pushStr(mb, q, putName("usec"));
 	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	/* add the stmt column */
 	q = newStmt(mb, profilerRef, "getTrace");
-	q = pushStr(mb, q, putName("stmt",4));
+	q = pushStr(mb, q, putName("stmt"));
 	resultset= pushArgument(mb,resultset, getArg(q,0));
 
 	pushInstruction(mb,resultset);

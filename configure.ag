@@ -218,6 +218,17 @@ no-auto)
 	;;
 esac
 
+dft_mapi=yes
+AC_ARG_ENABLE(mapi,
+	AS_HELP_STRING([--enable-mapi],
+		[Enable MAPI (default=yes)]),
+	enable_mapi=$enableval,
+	enable_mapi=$dft_mapi)
+AM_CONDITIONAL(HAVE_MAPI, test x$enable_mapi != xno)
+if test "x$enable_mapi" != xno; then
+	AC_DEFINE(HAVE_MAPI, 1, [Enable MAPI])
+fi
+
 dft_embedded=no
 AC_ARG_ENABLE(embedded,
 	AS_HELP_STRING([--enable-embedded],
@@ -225,11 +236,9 @@ AC_ARG_ENABLE(embedded,
 	enable_embedded=$enableval,
 	enable_embedded=$dft_embedded)
 AM_CONDITIONAL(HAVE_EMBEDDED, test x$enable_embedded != xno)
-
 if test "x$enable_embedded" != xno; then
 	AC_DEFINE(HAVE_EMBEDDED, 1, [Support for MonetDB as a library])
 fi
-AM_CONDITIONAL(HAVE_EMBEDDED, test x"$enable_embedded" != xno)
 
 dft_embedded_r=no
 AC_ARG_ENABLE(embedded-r,
@@ -238,11 +247,9 @@ AC_ARG_ENABLE(embedded-r,
 	enable_embedded_r=$enableval,
 	enable_embedded_r=$dft_embedded_r)
 AM_CONDITIONAL(HAVE_EMBEDDED_R, test x$enable_embedded_r != xno)
-
 if test "x$enable_embedded_r" != xno; then
 	AC_DEFINE(HAVE_EMBEDDED_R, 1, [Support for MonetDB as a library for R])
 fi
-AM_CONDITIONAL(HAVE_EMBEDDED_R, test x"$enable_embedded_R" != xno)
 
 dft_microhttpd=no
 AC_ARG_ENABLE(microhttpd,
@@ -3510,6 +3517,9 @@ typedef lng ptrdiff_t;
 #ifdef HAVE_EMBEDDED_R
 #include "tools/embedded/undef.h"
 #endif
+
+#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
+#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
 
 #endif /* _SEEN_MONETDB_CONFIG_H */
 ])

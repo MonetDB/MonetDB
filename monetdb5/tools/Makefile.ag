@@ -18,7 +18,7 @@ lib_monetdb5 = {
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../gdk/libbat \
-		../../clients/mapilib/libmapi \
+		HAVE_MAPI?../../clients/mapilib/libmapi \
 		../../common/stream/libstream \
 		../../common/utils/libmcrypt \
 		../../common/utils/libmuuid \

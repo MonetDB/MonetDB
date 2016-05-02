@@ -40,7 +40,7 @@ malBootstrap(void)
 
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
-	c->nspace = newModule(NULL, putName("user", 4));
+	c->nspace = newModule(NULL, putName("user"));
 	initLibraries();
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
@@ -113,7 +113,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		MSresetClientPrg(cntxt);
 		return;
 	}
-	cntxt->curprg = newFunction(putName("user", 4), putName(nme, strlen(nme)), FUNCTIONsymbol);
+	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	if (mod)
@@ -293,7 +293,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 		/* move this back !! */
 		if (c->nspace == 0) {
-			c->nspace = newModule(NULL, putName("user", 4));
+			c->nspace = newModule(NULL, putName("user"));
 			c->nspace->outer = mal_clients[0].nspace->outer;
 		}
 

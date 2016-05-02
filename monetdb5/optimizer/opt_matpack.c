@@ -20,7 +20,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
-	char *packIncrementRef = putName("packIncrement", 13);
+	char *packIncrementRef = putName("packIncrement");
 
 	(void) pci;
 	(void) cntxt;

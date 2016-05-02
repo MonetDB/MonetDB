@@ -2207,8 +2207,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp));
 #endif
 	}
+#ifdef HAVE_ICONV
 	if (encoding)
 		fp = iconv_rstream(fp, encoding, mnstr_name(fp));
+#endif
 
 	if (!interactive && !echoquery)
 		return doFileBulk(mid, fp);

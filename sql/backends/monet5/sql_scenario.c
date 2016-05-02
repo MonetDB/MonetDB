@@ -1113,7 +1113,7 @@ SQLparser(Client c)
 			m->sym = NULL;
 
 			/* register name in the namespace */
-			be->q->name = putName(be->q->name, strlen(be->q->name));
+			be->q->name = putName(be->q->name);
 			/* unless a query modifier has been set, we directly call the cached plan */
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace;

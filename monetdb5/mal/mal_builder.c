@@ -46,8 +46,8 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 
 	if (q == NULL)
 		return NULL;
-	setModuleId(q, putName(module, strlen(module)));
-	setFunctionId(q, putName(name, strlen(name)));
+	setModuleId(q, putName(module));
+	setFunctionId(q, putName(name));
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	if (getDestVar(q) < 0) {
 		freeInstruction(q);
@@ -88,8 +88,8 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 
 	if (q == NULL || mod == NULL || fcn == NULL)
 		return NULL;
-	setModuleId(q, putName(mod, strlen(mod)));
-	setFunctionId(q, putName(fcn, strlen(fcn)));
+	setModuleId(q, putName(mod));
+	setFunctionId(q, putName(fcn));
 	return q;
 }
 
@@ -631,8 +631,8 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 {
 	if (q == NULL)
 		return NULL;
-	getModuleId(q) = getName("bat",3);
-	getFunctionId(q) = getName("new",3);
+	getModuleId(q) = getName("bat");
+	getFunctionId(q) = getName("new");
 
 	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
 	q = pushArgument(mb, q, newTypeVariable(mb,getColumnType(tpe)));
