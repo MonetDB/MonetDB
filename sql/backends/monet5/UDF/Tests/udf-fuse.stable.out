@@ -27,11 +27,13 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 82 # length
+% 66 # length
 function user.s2_1(A0:bte,A1:bte):void;
-    X_11:void := querylog.define("explain select fuse(1,2);","sequential_pipe",5);
-    X_3:sht := udf.fuse(A0,A1);
-    sql.resultSet(".L","fuse_single_value","smallint",16,0,7,X_3);
+    sql.mvc();
+    A0;
+    A1;
+    X_6:sht := udf.fuse(X_4,X_5);
+    sql.resultSet(".L","fuse_single_value","smallint",16,0,7,X_6);
 end user.s2_1;
 #select fuse(1,2);
 % .L # table_name
@@ -43,11 +45,13 @@ end user.s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 88 # length
+% 70 # length
 function user.s3_1(A0:sht,A1:sht):void;
-    X_11:void := querylog.define("explain select fuse(1000,2000);","sequential_pipe",5);
-    X_3:int := udf.fuse(A0,A1);
-    sql.resultSet(".L","fuse_single_value","int",32,0,7,X_3);
+    sql.mvc();
+    A0;
+    A1;
+    X_6:int := udf.fuse(X_4,X_5);
+    sql.resultSet(".L","fuse_single_value","int",32,0,7,X_6);
 end user.s3_1;
 #select fuse(1000,2000);
 % .L # table_name
@@ -59,11 +63,13 @@ end user.s3_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 94 # length
+% 76 # length
 function user.s4_1(A0:int,A1:int):void;
-    X_11:void := querylog.define("explain select fuse(1000000,2000000);","sequential_pipe",5);
-    X_3:lng := udf.fuse(A0,A1);
-    sql.resultSet(".L","fuse_single_value","bigint",64,0,7,X_3);
+    sql.mvc();
+    A0;
+    A1;
+    X_6:lng := udf.fuse(X_4,X_5);
+    sql.resultSet(".L","fuse_single_value","bigint",64,0,7,X_6);
 end user.s4_1;
 #select fuse(1000000,2000000);
 % .L # table_name
@@ -93,97 +99,94 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 97 # length
+% 78 # length
 function user.s8_1():void;
-    X_41:void := querylog.define("explain select fuse(a,b) from udf_fuse;","sequential_pipe",27);
-    X_24 := bat.new(nil:oid,nil:str);
-    X_32 := bat.append(X_24,"sys.L");
-    X_27 := bat.new(nil:oid,nil:str);
-    X_34 := bat.append(X_27,"fuse_a");
-    X_28 := bat.new(nil:oid,nil:str);
-    X_36 := bat.append(X_28,"smallint");
-    X_29 := bat.new(nil:oid,nil:int);
-    X_38 := bat.append(X_29,16);
-    X_31 := bat.new(nil:oid,nil:int);
-    X_40 := bat.append(X_31,0);
-    X_1 := sql.mvc();
-    C_2:bat[:oid] := sql.tid(X_1,"sys","udf_fuse");
+    sql.mvc();
+    X_2:bat[:oid] := sql.tid(X_1,"sys","udf_fuse");
     X_5:bat[:bte] := sql.bind(X_1,"sys","udf_fuse","a",0);
-    (C_8,r1_8) := sql.bind(X_1,"sys","udf_fuse","a",2);
+    (X_8,r1_8) := sql.bind(X_1,"sys","udf_fuse","a",2);
     X_11:bat[:bte] := sql.bind(X_1,"sys","udf_fuse","a",1);
-    X_13 := sql.delta(X_5,C_8,r1_8,X_11);
-    X_14 := algebra.projection(C_2,X_13);
+    sql.delta(X_5,X_8,r1_8,X_11);
+    algebra.projection(X_2,X_13);
     X_15:bat[:bte] := sql.bind(X_1,"sys","udf_fuse","b",0);
-    (C_17,r1_17) := sql.bind(X_1,"sys","udf_fuse","b",2);
+    (X_17,r1_17) := sql.bind(X_1,"sys","udf_fuse","b",2);
     X_19:bat[:bte] := sql.bind(X_1,"sys","udf_fuse","b",1);
-    X_20 := sql.delta(X_15,C_17,r1_17,X_19);
-    X_21 := algebra.projection(C_2,X_20);
-    X_22:bat[:sht] := batudf.fuse(X_14,X_21);
-    sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_22);
+    sql.delta(X_15,X_17,r1_17,X_19);
+    algebra.projection(X_2,X_20);
+    X_22:bat[:sht] := mal.multiplex("udf","fuse",X_14,X_21);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:int);
+    bat.new(nil:oid,nil:int);
+    bat.append(X_26,"sys.L");
+    bat.append(X_29,"fuse_a");
+    bat.append(X_30,"smallint");
+    bat.append(X_31,16);
+    bat.append(X_33,0);
+    sql.resultSet(X_34,X_36,X_38,X_40,X_42,X_22);
 end user.s8_1;
 #explain select fuse(c,d) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
-% 97 # length
+% 78 # length
 function user.s9_1():void;
-    X_41:void := querylog.define("explain select fuse(c,d) from udf_fuse;","sequential_pipe",27);
-    X_24 := bat.new(nil:oid,nil:str);
-    X_32 := bat.append(X_24,"sys.L");
-    X_27 := bat.new(nil:oid,nil:str);
-    X_34 := bat.append(X_27,"fuse_c");
-    X_28 := bat.new(nil:oid,nil:str);
-    X_36 := bat.append(X_28,"int");
-    X_29 := bat.new(nil:oid,nil:int);
-    X_38 := bat.append(X_29,32);
-    X_31 := bat.new(nil:oid,nil:int);
-    X_40 := bat.append(X_31,0);
-    X_1 := sql.mvc();
-    C_2:bat[:oid] := sql.tid(X_1,"sys","udf_fuse");
+    sql.mvc();
+    X_2:bat[:oid] := sql.tid(X_1,"sys","udf_fuse");
     X_5:bat[:sht] := sql.bind(X_1,"sys","udf_fuse","c",0);
-    (C_8,r1_8) := sql.bind(X_1,"sys","udf_fuse","c",2);
+    (X_8,r1_8) := sql.bind(X_1,"sys","udf_fuse","c",2);
     X_11:bat[:sht] := sql.bind(X_1,"sys","udf_fuse","c",1);
-    X_13 := sql.delta(X_5,C_8,r1_8,X_11);
-    X_14 := algebra.projection(C_2,X_13);
+    sql.delta(X_5,X_8,r1_8,X_11);
+    algebra.projection(X_2,X_13);
     X_15:bat[:sht] := sql.bind(X_1,"sys","udf_fuse","d",0);
-    (C_17,r1_17) := sql.bind(X_1,"sys","udf_fuse","d",2);
+    (X_17,r1_17) := sql.bind(X_1,"sys","udf_fuse","d",2);
     X_19:bat[:sht] := sql.bind(X_1,"sys","udf_fuse","d",1);
-    X_20 := sql.delta(X_15,C_17,r1_17,X_19);
-    X_21 := algebra.projection(C_2,X_20);
-    X_22:bat[:int] := batudf.fuse(X_14,X_21);
-    sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_22);
+    sql.delta(X_15,X_17,r1_17,X_19);
+    algebra.projection(X_2,X_20);
+    X_22:bat[:int] := mal.multiplex("udf","fuse",X_14,X_21);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:int);
+    bat.new(nil:oid,nil:int);
+    bat.append(X_26,"sys.L");
+    bat.append(X_29,"fuse_c");
+    bat.append(X_30,"int");
+    bat.append(X_31,32);
+    bat.append(X_33,0);
+    sql.resultSet(X_34,X_36,X_38,X_40,X_42,X_22);
 end user.s9_1;
 #explain select fuse(e,f) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
-% 97 # length
+% 78 # length
 function user.s10_1():void;
-    X_41:void := querylog.define("explain select fuse(e,f) from udf_fuse;","sequential_pipe",27);
-    X_24 := bat.new(nil:oid,nil:str);
-    X_32 := bat.append(X_24,"sys.L");
-    X_27 := bat.new(nil:oid,nil:str);
-    X_34 := bat.append(X_27,"fuse_e");
-    X_28 := bat.new(nil:oid,nil:str);
-    X_36 := bat.append(X_28,"bigint");
-    X_29 := bat.new(nil:oid,nil:int);
-    X_38 := bat.append(X_29,64);
-    X_31 := bat.new(nil:oid,nil:int);
-    X_40 := bat.append(X_31,0);
-    X_1 := sql.mvc();
-    C_2:bat[:oid] := sql.tid(X_1,"sys","udf_fuse");
+    sql.mvc();
+    X_2:bat[:oid] := sql.tid(X_1,"sys","udf_fuse");
     X_5:bat[:int] := sql.bind(X_1,"sys","udf_fuse","e",0);
-    (C_8,r1_8) := sql.bind(X_1,"sys","udf_fuse","e",2);
+    (X_8,r1_8) := sql.bind(X_1,"sys","udf_fuse","e",2);
     X_11:bat[:int] := sql.bind(X_1,"sys","udf_fuse","e",1);
-    X_13 := sql.delta(X_5,C_8,r1_8,X_11);
-    X_14 := algebra.projection(C_2,X_13);
+    sql.delta(X_5,X_8,r1_8,X_11);
+    algebra.projection(X_2,X_13);
     X_15:bat[:int] := sql.bind(X_1,"sys","udf_fuse","f",0);
-    (C_17,r1_17) := sql.bind(X_1,"sys","udf_fuse","f",2);
+    (X_17,r1_17) := sql.bind(X_1,"sys","udf_fuse","f",2);
     X_19:bat[:int] := sql.bind(X_1,"sys","udf_fuse","f",1);
-    X_20 := sql.delta(X_15,C_17,r1_17,X_19);
-    X_21 := algebra.projection(C_2,X_20);
-    X_22:bat[:lng] := batudf.fuse(X_14,X_21);
-    sql.resultSet(X_32,X_34,X_36,X_38,X_40,X_22);
+    sql.delta(X_15,X_17,r1_17,X_19);
+    algebra.projection(X_2,X_20);
+    X_22:bat[:lng] := mal.multiplex("udf","fuse",X_14,X_21);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:str);
+    bat.new(nil:oid,nil:int);
+    bat.new(nil:oid,nil:int);
+    bat.append(X_26,"sys.L");
+    bat.append(X_29,"fuse_e");
+    bat.append(X_30,"bigint");
+    bat.append(X_31,64);
+    bat.append(X_33,0);
+    sql.resultSet(X_34,X_36,X_38,X_40,X_42,X_22);
 end user.s10_1;
 #select fuse(a,b) from udf_fuse;
 % sys.L # table_name

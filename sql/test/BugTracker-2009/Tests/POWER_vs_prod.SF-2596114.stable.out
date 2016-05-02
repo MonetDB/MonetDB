@@ -28,7 +28,7 @@ Ready.
 % mal # name
 % clob # type
 % 100 # length
-function user.s3_1(A0:dbl):void;
+function user.s3_1():void;
     X_35:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",22);
     X_18 := bat.new(nil:oid,nil:str);
     X_26 := bat.append(X_18,"sys.L");
@@ -47,7 +47,7 @@ function user.s3_1(A0:dbl):void;
     X_12:bat[:dbl] := sql.bind(X_2,"sys","sf_2596114","x",1);
     X_14 := sql.delta(X_6,C_9,r1_9,X_12);
     X_15 := algebra.projection(C_3,X_14);
-    X_16:bat[:dbl] := batmmath.pow(X_15,A0);
+    X_16:bat[:dbl] := batmmath.pow(X_15,2);
     sql.resultSet(X_26,X_28,X_30,X_32,X_34,X_16);
 end user.s3_1;
 #explain select x*x from SF_2596114;

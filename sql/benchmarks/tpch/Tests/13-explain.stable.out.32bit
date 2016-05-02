@@ -82,7 +82,7 @@ function user.s2_1(A0:str):void;
     X_30:bat[:str] := sql.bind(X_2,"sys","orders","o_comment",1);
     X_31 := sql.delta(X_26,C_28,r1_29,X_30);
     X_32:bat[:str] := algebra.projectionpath(r1_21,C_9,X_31);
-    C_34 := algebra.likesubselect(X_32,nil:BAT,A0,"",true);
+    C_34 := algebra.likesubselect(X_32,nil:BAT,"%special%requests%","",true);
     X_36:bat[:int] := sql.bind(X_2,"sys","orders","o_orderkey",0);
     (C_38,r1_43) := sql.bind(X_2,"sys","orders","o_orderkey",2);
     X_40:bat[:int] := sql.bind(X_2,"sys","orders","o_orderkey",1);

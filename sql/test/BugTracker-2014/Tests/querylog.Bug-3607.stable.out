@@ -85,15 +85,15 @@ Ready.
 % .querylog_calls,	.querylog_calls # table_name
 % arguments,	tuples # name
 % clob,	wrd # type
-% 23,	1 # length
-[ "user.s5_1(A0:bte):void;",	1	]
+% 17,	1 # length
+[ "user.s5_1():void;",	1	]
 [ "user.s6_1():void;",	5	]
 #select owner, query, pipe, plan, mal, arguments, tuples from sys.querylog_history;
 % .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
 % owner,	query,	pipe,	plan,	mal,	arguments,	tuples # name
 % clob,	clob,	clob,	clob,	int,	clob,	wrd # type
-% 7,	63,	12,	9,	2,	23,	1 # length
-[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	21,	"user.s5_1(A0:bte):void;",	1	]
+% 7,	63,	12,	9,	2,	17,	1 # length
+[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	21,	"user.s5_1():void;",	1	]
 [ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	53,	"user.s6_1():void;",	5	]
 [ "monetdb",	"select arguments, tuples from sys.querylog_calls;",	"default_pipe",	"user.s7_1",	38,	"user.s7_1():void;",	2	]
 #select * from sys.querylog_history;
