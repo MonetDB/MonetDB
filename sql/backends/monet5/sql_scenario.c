@@ -1063,8 +1063,10 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
+	/*
 		if (!(m->emod & (mod_explain | mod_debug | mod_trace )))
 			m->emode = m_inplace;
+	*/
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r;
@@ -1114,9 +1116,10 @@ SQLparser(Client c)
 
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			/* unless a query modifier has been set, we directly call the cached plan */
+			/* unless a query modifier has been set, we directly call the cached plan 
 			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace;
+			*/
 		}
 	}
 	if (err)
@@ -1124,10 +1127,10 @@ SQLparser(Client c)
 	if (err == 0) {
 		/* no parsing error encountered, finalize the code of the query wrapper */
 		if (be->q) {
-			if (m->emode == m_prepare)
+			if (m->emode == m_prepare){
 				/* For prepared queries, return a table with result set structure*/
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
-			else if (m->emode == m_inplace) {
+			} else if (m->emode == m_inplace) {
 				/* everything ready for a fast call */
 			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
 				/* call procedure generation (only in cache mode) */
@@ -1136,13 +1139,15 @@ SQLparser(Client c)
 		}
 
 		pushEndInstruction(c->curprg->def);
+		// Prepared query plans should be optimized
+		if(err == 0 && m->emode == m_prepare ) sqlJIToptimizer(c,be->q->code,be);
 
 		/* check the query wrapper for errors */
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
-		if (opt && !c->curprg->def->errors ) {
-			str msg = optimizeQuery(c);
+		if (opt ) {
+			str msg = optimizeQuery(c, c->curprg->def);
 
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);

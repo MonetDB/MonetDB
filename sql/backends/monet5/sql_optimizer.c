@@ -128,7 +128,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 		addtoMalBlkHistory(mb, "getStatistics");
 }
 
-static str
+str
 sqlJIToptimizer(Client c, MalBlkPtr mb, backend *be)
 {
 	str msg;
@@ -150,9 +150,8 @@ sqlJIToptimizer(Client c, MalBlkPtr mb, backend *be)
 }
 
 str
-optimizeQuery(Client c)
+optimizeQuery(Client c, MalBlkPtr mb)
 {
-	MalBlkPtr mb;
 	backend *be;
 	str msg = 0;
 
@@ -161,7 +160,6 @@ optimizeQuery(Client c)
 
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
-	mb = c->curprg->def;
 	chkProgram(c->fdout, c->nspace, mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "Optimize query\n");
@@ -190,14 +188,16 @@ optimizeQuery(Client c)
 void
 addQueryToCache(Client c)
 {
-	str msg = NULL;
+	//str msg = NULL;
 
 	insertSymbol(c->nspace, c->curprg);
-	msg = optimizeQuery(c);
+	/*
+	msg = optimizeQuery(c,c->curprg);
 	if (msg != MAL_SUCCEED) {
 		showScriptException(c->fdout, c->curprg->def, 0, MAL, "%s", msg);
 		GDKfree(msg);
 	}
+	*/
 }
 
 /*

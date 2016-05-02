@@ -38,6 +38,7 @@
 #include "mal_debugger.h"
 #include <mtime.h>
 #include "optimizer.h"
+#include "opt_inline.h"
 #include <unistd.h>
 
 /*
@@ -189,24 +190,58 @@ SQLsetTrace(Client cntxt)
 }
 
 static str
-SQLrun(Client c, mvc *m){
+SQLrun(Client c, backend *be, mvc *m){
 	str msg= MAL_SUCCEED;
-	MalBlkPtr old;
+	MalBlkPtr mc = 0, mb=c->curprg->def, old=mb;
+	InstrPtr p=0;
+	int i,j, retc;
+	ValPtr val;
 			
-	// first consider running in debug mode
+	// locate and inline the query template instruction
+	mb = copyMalBlk(c->curprg->def);
+	for ( i= 1; i < mb->stop;i++){
+		p=getInstrPtr(mb,i);
+		if( (p->token == FCNcall || p->token == FUNCTIONsymbol) && p->blk) {
+			mc= copyMalBlk(p->blk);
+			retc =p->retc;
+			freeMalBlk(mb);
+			mb= mc;
+			// declare the argument values as a constant
+			// We use the knowledge that the arguments are first on the stack
+			for (j = 0; j < m->argc; j++) {
+				sql_subtype *pt = be->q->params + j;
+				atom *arg = m->args[j];
+				
+				if (!atom_cast(arg, pt)) {
+					throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
+				}
+				val= (ValPtr) &arg->data;
+				VALcopy(&mb->var[j+retc]->value, val);
+				setVarConstant(mb, j+retc);
+				setVarFixed(mb, j+retc);
+			}
+			mb->stmt[0]->argc = 1;
+			break;
+		}
+	}
+	// JIT optimize the SQL query using all current information
+	// This include template constants, BAT sizes.
+	optimizeQuery(c,mb);
+
 	if( m->emod & mod_debug)
-		msg = runMALDebugger(c, c->curprg->def);
+		msg = runMALDebugger(c, mb);
 	 else{
 		if( m->emod & mod_trace){
-			c->curprg->def = copyMalBlk(old = c->curprg->def);
 			SQLsetTrace(c);
-			msg = runMAL(c, c->curprg->def, 0, 0);
+			msg = runMAL(c, mb, 0, 0);
 			stopTrace(0);
-			freeMalBlk(c->curprg->def);
-			c->curprg->def = old;
 		} else
-			msg = runMAL(c, c->curprg->def, 0, 0);
+			msg = runMAL(c, mb, 0, 0);
 	}
+
+	// release the resources
+	freeMalBlk(mb);
+	mb = old;
 	return msg;
 }
 
@@ -369,7 +404,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		if (!output)
 			sql->out = NULL;	/* no output stream */
 		if (execute)
-			msg = SQLrun(c,m);
+			msg = SQLrun(c,be,m);
 
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -590,7 +625,7 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def)) 
 		msg = MAL_SUCCEED;
 	else 
-		msg = SQLrun(c,m);
+		msg = SQLrun(c,be,m);
 
 cleanup_engine:
 	if (m->type == Q_SCHEMA)
@@ -668,7 +703,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL,"RAstatement","Program contains errors");
 		else 
 			addQueryToCache(c);
-			SQLrun(c,m);
+			SQLrun(c,b,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
