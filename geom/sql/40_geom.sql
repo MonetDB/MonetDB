@@ -4231,7 +4231,8 @@ CREATE FUNCTION ST_YMin(box mbr) RETURNS double EXTERNAL NAME geom."YMinFromMBR"
 -------------------------------------------------------------------------
 --------------------------- Geometry Editors ----------------------------
 -------------------------------------------------------------------------
-CREATE FUNCTION ST_AddPoint(geom Geometry, point Geometry) RETURNS Geometry EXTERNAL NAME geom."AddPoint"; 
+CREATE FUNCTION ST_AddPoint(geom Geometry, pt Geometry) RETURNS Geometry EXTERNAL NAME geom."AddPoint"; 
+CREATE FUNCTION ST_AddPoint(geom Geometry, pt Geometry, idx int) RETURNS Geometry EXTERNAL NAME geom."AddPointIdx"; 
 --CREATE FUNCTION ST_Affine RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_Force2D(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Force2D";
 CREATE FUNCTION ST_Force3D(geom Geometry) RETURNS Geometry EXTERNAL NAME geom."Force3D";

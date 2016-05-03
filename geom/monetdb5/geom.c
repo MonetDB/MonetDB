@@ -4712,16 +4712,20 @@ wkbNumGeometries(int *out, wkb **geom)
 }
 
 /* Add point to LineString */
-geom_export str wkbAddPoint(wkb** out, wkb** lineWKB, wkb** pointWKB) {
+str
+wkbAddPointIdx(wkb** out, wkb** lineWKB, wkb** pointWKB, int *idxPoint) {
     str ret = MAL_SUCCEED;
-    const GEOSCoordSequence *lineGCS;
+    const GEOSCoordSequence *gcs_old = NULL;
     GEOSCoordSeq gcs_new = NULL;
-    double x, y, z;
-    uint32_t lineDim, idx;
+    double px, py, pz, x, y, z;
+    uint32_t lineDim, numGeom, i, idx = 0, jump = 0;
     const GEOSGeometry *line;
     GEOSGeom point, outGeometry;
     line = wkb2geos(*lineWKB);
     point = wkb2geos(*pointWKB);
+
+    if (idxPoint)
+        idx = *idxPoint;
 
 	if ( ((GEOSGeomTypeId(line) + 1) != wkbLineString_mdb) && ((GEOSGeomTypeId(point) + 1) != wkbPoint_mdb)) {
         *out = NULL;
@@ -4729,19 +4733,13 @@ geom_export str wkbAddPoint(wkb** out, wkb** lineWKB, wkb** pointWKB) {
     }
 
 	//get the coordinate sequences of the LineString
-	if (!(lineGCS = GEOSGeom_getCoordSeq(line))) {
+	if (!(gcs_old = GEOSGeom_getCoordSeq(line))) {
 		*out = NULL;
 		throw(MAL, "geom.AddPoint", "GEOSGeom_getCoordSeq failed");
 	}
 
-	//create a copy of it
-	if ((gcs_new = GEOSCoordSeq_clone(lineGCS)) == NULL) {
-		*out = NULL;
-		throw(MAL, "geom.AddPoint", "GEOSCoordSeq_clone failed");
-	}
-
     //Get dimension of the LineString
-	if (GEOSCoordSeq_getDimensions(gcs_new, &lineDim) == 0) {
+	if (GEOSCoordSeq_getDimensions(gcs_old, &lineDim) == 0) {
 		*out = NULL;
 		throw(MAL, "geom.AddPoint", "GEOSGeom_getDimensions failed");
 	}
@@ -4751,24 +4749,54 @@ geom_export str wkbAddPoint(wkb** out, wkb** lineWKB, wkb** pointWKB) {
 		*out = NULL;
 		throw(MAL, "geom.AddPoint", "LineString and Point have different dimensions");
     }
-    
+
     //Get Coordinates from Point
-	if (GEOSGeomGetX(point, &x) == -1 || GEOSGeomGetY(point, &y) == -1 || GEOSGeomGetZ(point, &z) != MAL_SUCCEED) {
+	if (GEOSGeomGetX(point, &px) == -1 || GEOSGeomGetY(point, &py) == -1 || GEOSGeomGetZ(point, &pz) != MAL_SUCCEED) {
 		*out = NULL;
 		throw(MAL, "geom.AddPoint", "Error in reading the points' coordinates");
     }
 
 	/* get the number of points in the geometry */
-	GEOSCoordSeq_getSize(gcs_new, &idx);
+	GEOSCoordSeq_getSize(gcs_old, &numGeom);
 
-    //Add Point's coordinates
-	if (!GEOSCoordSeq_setX(gcs_new, idx, x))
-		throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setX failed");
-	if (!GEOSCoordSeq_setY(gcs_new, idx, y))
-		throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setY failed");
-	if (lineDim > 2)
-		if (!GEOSCoordSeq_setZ(gcs_new, idx, z))
-			throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setZ failed");
+	if ((gcs_new = GEOSCoordSeq_create(numGeom+1, lineDim)) == NULL) {
+		*out = NULL;
+		throw(MAL, "geom.AddPoint", "GEOSCoordSeq_create failed");
+	}
+
+    /* Add the rest of the points */        
+    for (i = 0; i < numGeom+1; i++) {
+        if (i == idx) {
+            //Add Point's coordinates
+            if (!GEOSCoordSeq_setX(gcs_new, i, px))
+                throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setX failed");
+            if (!GEOSCoordSeq_setY(gcs_new, i, py))
+                throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setY failed");
+            if (lineDim > 2)
+                if (!GEOSCoordSeq_setZ(gcs_new, i, pz))
+                    throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setZ failed");
+            /*You are doing a jump of one unit in the array indice*/
+            jump = 1;
+        } else {
+            if (!GEOSCoordSeq_getX(gcs_old, i-jump, &x))
+                throw(MAL, "geom.AddPoint", "GEOSCoordSeq_getX failed");
+
+            if (!GEOSCoordSeq_getY(gcs_old, i-jump, &y))
+                throw(MAL, "geom.AddPoint", "GEOSCoordSeq_getY failed");
+
+            if (!GEOSCoordSeq_setX(gcs_new, i, x))
+                throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setX failed");
+
+            if (!GEOSCoordSeq_setY(gcs_new, i, y))
+                throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setY failed");
+
+            if (lineDim > 2) {
+                GEOSCoordSeq_getZ(gcs_old, i-jump, &z);
+                if (!GEOSCoordSeq_setZ(gcs_new, i, z))
+                    throw(MAL, "geom.AddPoint", "GEOSCoordSeq_setZ failed");
+            }
+        }
+    }
 
     //Create new LineString
 	if (!(outGeometry = GEOSGeom_createLineString(gcs_new))) {
@@ -4782,6 +4810,10 @@ geom_export str wkbAddPoint(wkb** out, wkb** lineWKB, wkb** pointWKB) {
     return ret;
 }
 
+str
+wkbAddPoint(wkb** out, wkb** lineWKB, wkb** pointWKB) {
+    return wkbAddPointIdx(out, lineWKB, pointWKB, 0);
+}
 
 /* MBR */
 

@@ -325,7 +325,9 @@ comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTIO
 command NumGeometries(g:wkb) :int address wkbNumGeometries
 comment "Returns the number of geometries";
 command AddPoint(w:wkb, p:wkb) :wkb address wkbAddPoint
-comment "Adds a new point to a Linestring.";
+comment "Adds a new point to position 0 of a Linestring.";
+command AddPointIdx(w:wkb, p:wkb, idx:int) :wkb address wkbAddPointIdx
+comment "Adds a new point to position idx of a Linestring.";
 
 command Transform(g:wkb, srid_src:int, srid_dst:int, proj_src:str, proj_dest:str) :wkb address wkbTransform
 comment "Transforms a geometry from one srid to another";
