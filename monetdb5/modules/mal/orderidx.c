@@ -206,6 +206,8 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn;
 	bat *ret = getArgReference_bat(stk,pci,0);
 	bat bid = *getArgReference_bat(stk, pci, 1);
+	const oid *s, *se;
+	oid *d;
 
 	(void) cntxt;
 	(void) mb;
@@ -223,7 +225,11 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getorderidx", MAL_MALLOC_FAIL);
 	}
-	memcpy(Tloc(bn, BUNfirst(bn)), (const oid *) b->torderidx->base + ORDERIDXOFF, BATcount(b) * sizeof(oid));
+	s = (const oid *) b->torderidx->base + ORDERIDXOFF;
+	se = s + BATcount(b);
+	d = (oid *) Tloc(bn, BUNfirst(bn));
+	while (s < se)
+			 *d++ = *s++ & ~BUN_MSK;
 	BATsetcount(bn, BATcount(b));
 	BATseqbase(bn, 0);
 	bn->tkey = 1;
