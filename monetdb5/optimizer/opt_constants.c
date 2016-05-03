@@ -9,8 +9,7 @@
 /*
  * Constant Duplicate Removal
  * The compilers may generate an abundance of constants on
- * the stack. This simple optimizer re-organizes performs a complete
- * job to use constants only once.
+ * the stack. This simple optimizer merges them into a single reference.
  * This makes it easier to search for statement duplicates
  * and alias their variables.
  */
@@ -79,11 +78,12 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} 
 		} 
 
-	for (i = 0; i < mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for (k=0; k < p->argc; k++)
-			getArg(p,k) = alias[getArg(p,k)];
-	}
+	if( actions)
+		for (i = 0; i < mb->stop; i++){
+			p= getInstrPtr(mb,i);
+			for (k=0; k < p->argc; k++)
+				getArg(p,k) = alias[getArg(p,k)];
+		}
 	GDKfree(alias);
 	GDKfree(cst);
 	GDKfree(index);
