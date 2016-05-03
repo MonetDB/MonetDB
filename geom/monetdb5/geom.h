@@ -326,3 +326,5 @@ geom_export char *geom_to_geojson(GEOSGeom geom, char *srs, int precision, int h
 geom_export char *geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid);
 geom_export str wkbAsX3D(str *res, wkb **geom, int *maxDecDigits, int *options);
 geom_export str wkbAsGeoJson(str *res, wkb **geom, int *maxDecDigits, int *options);
+geom_export str wkbPatchToGeom(wkb **res, wkb **geom, dbl* px, dbl*py, dbl*pz);
+geom_export str wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz);

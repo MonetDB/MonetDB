@@ -4459,3 +4459,4 @@ CREATE FUNCTION ST_SimplifyPreserveTopology(geom1 Geometry, tolerance real) RETU
 CREATE FUNCTION Contains(a Geometry, x double, y double) RETURNS BOOLEAN external name geom."Contains";
 CREATE FUNCTION ST_AsX3D(a Geometry, maxDecDigits int, options int) returns string external name geom."asX3D";
 CREATE FUNCTION ST_AsGeoJson(a Geometry, maxDecDigits int, options int) returns string external name geom."asGeoJson";
+CREATE FUNCTION Patch_to_Geom(a Geometry, x double, y double, z double) RETURNS Geometry external name geom."PatchToGeom';

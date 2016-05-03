@@ -3225,7 +3225,7 @@ wkbMakePolygon(wkb **out, wkb **external, bat *internalBAT_id, int *srid)
 	linearRingGeometry = GEOSGeom_createLinearRing(coordSeq_copy);
 
 	//create a polygon using the linearRing
-	if (internalBAT_id == NULL && *internalBAT_id == 0) {
+	if (internalBAT_id != NULL && *internalBAT_id == bat_nil) {
 		geosGeometry = GEOSGeom_createPolygon(linearRingGeometry, NULL, 0);
 		if (geosGeometry == NULL) {
 			*out = NULL;
@@ -6473,3 +6473,22 @@ wkbAsGeoJson(str *res, wkb **geomWBK, int *maxDecDigits, int *option)
 	return MAL_SUCCEED;
 }
 
+str
+wkbPatchToGeom(wkb **res, wkb **geom, dbl* px, dbl*py, dbl*pz) {
+    (void) res;
+    (void) geom;
+    (void) px;
+    (void) py;
+    (void) pz;
+	return MAL_SUCCEED;
+}
+
+str
+wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz) {
+    (void) res;
+    (void) geom;
+    (void) px;
+    (void) py;
+    (void) pz;
+	return MAL_SUCCEED;
+}
