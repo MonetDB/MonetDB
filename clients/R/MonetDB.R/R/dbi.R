@@ -336,7 +336,7 @@ setMethod("dbWriteTable", "MonetDBConnection", def=function(conn, name, value, o
       tmp <- tempfile(fileext = ".csv")
       write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE,na="")
       dbSendQuery(conn, paste0("COPY ",format(nrow(value), scientific=FALSE)," RECORDS INTO ", qname,
-      " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
+      " FROM '", encodeString(tmp), "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
       file.remove(tmp) 
     } else {
       vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
@@ -651,14 +651,14 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, nrows=NA,
   
   if(header){
     for(i in seq_along(files)) {
-      thefile <- normalizePath(files[i])
+      thefile <- encodeString(normalizePath(files[i]))
       dbSendUpdate(conn, paste("COPY OFFSET 2 INTO", 
         tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
         na.strings[1], "'", sep=""), if(locked) "LOCKED"))
     }
   } else {
     for(i in seq_along(files)) {
-      thefile <- normalizePath(files[i])
+      thefile <- encodeString(normalizePath(files[i]))
       dbSendUpdate(conn, paste0("COPY INTO ", tablename, " FROM ", paste("'", thefile, "'", sep=""), 
         delimspec, "NULL as ", paste("'", na.strings[1], "'", sep=""), if(locked) " LOCKED "))
     }
