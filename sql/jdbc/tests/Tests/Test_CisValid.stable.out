@@ -1,0 +1,77 @@
+stdout of test 'Test_CisValid` in directory 'sql/jdbc/tests` itself:
+
+
+# 23:03:07 >  
+# 23:03:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36086" "--set" "mapi_usock=/var/tmp/mtest-9079/.s.monetdb.36086" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_jdbc_tests" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 23:03:07 >  
+
+# MonetDB 5 server v11.21.20
+# This is an unreleased version
+# Serving database 'mTests_sql_jdbc_tests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:36086/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9079/.s.monetdb.36086
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 23:03:08 >  
+# 23:03:08 >  "./Test_CisValid.SQL.sh" "Test_CisValid"
+# 23:03:08 >  
+
+
+# 23:03:08 >  
+# 23:03:08 >  java Test_CisValid "jdbc:monetdb://toulouse:36086/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 23:03:08 >  
+
+Validating connection: conn.isValid? false
+
+# 23:03:08 >  
+# 23:03:08 >  "Done."
+# 23:03:08 >  
+

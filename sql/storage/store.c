@@ -1367,7 +1367,6 @@ store_load(void) {
 	sqlid id = 0;
 
 	sa = sa_create();
-	MT_lock_unset(&bs_lock);
 	types_init(sa, logger_debug);
 
 #define FUNC_OIDS 2000
@@ -1616,6 +1615,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	}
 
 	/* create the initial store structure or re-load previous data */
+	MT_lock_unset(&bs_lock);
 	return store_load();
 }
 
@@ -1749,9 +1749,9 @@ store_manager(void)
 			/* re-set the store_oid */
 			store_oid = 0;
 			/* reload the store and the global transactions */
+			MT_lock_unset(&bs_lock);
 			res = store_load();
 			if (res < 0) {
-				MT_lock_unset(&bs_lock);
 				GDKfatal("shared write-ahead log store re-load failure");
 			}
 			MT_lock_set(&bs_lock);
