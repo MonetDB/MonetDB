@@ -5089,6 +5089,7 @@ non_reserved_word:
 |  TIME 	{ $$ = sa_strdup(SA, "time"); }
 |  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
 |  INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
+|  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
