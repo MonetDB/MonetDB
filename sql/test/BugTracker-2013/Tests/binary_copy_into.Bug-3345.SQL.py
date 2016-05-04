@@ -24,5 +24,6 @@ clt.stdin.write('copy binary into bug from \'%s\', \'%s\';\n' %
                  os.path.join(dst, 'n_regionkey.sorted').replace('\\', '\\\\')))
 
 out, err = clt.communicate()
-sys.stdout.write(out.replace(os.environ['TSTTRGBASE'],'${TSTTRGBASE}').replace('\\','/'))
-sys.stderr.write(err.replace(os.environ['TSTTRGBASE'],'${TSTTRGBASE}').replace('\\','/'))
+# normalize output
+sys.stdout.write(out.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
+sys.stderr.write(err.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
