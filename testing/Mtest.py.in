@@ -598,9 +598,12 @@ import urllib
 path = urllib.url2pathname
 ### path(str) #
 
-##def url(str) :
-##    return str.replace(os.sep, '/')
-url = urllib.pathname2url
+def url(str) :
+    url = urllib.pathname2url(str)
+    # on Windows, C:\tmp\foo becomes ///C:/tmp/foo, turn into /C:/tmp/foo
+    if url.startswith('///'):
+        url = url[2:]
+    return url
 ### url(str) #
 
 def try_open(path, mode) :
