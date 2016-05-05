@@ -70,11 +70,10 @@
  * of the query. 
  */
 static void
-SQLsetTrace(Client cntxt)
+SQLsetTrace(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr q, resultset;
 	InstrPtr tbls, cols, types, clen, scale;
-	MalBlkPtr mb = cntxt->curprg->def;
 	int k;
 
 	startTrace("sql_traces");
@@ -192,7 +191,7 @@ SQLsetTrace(Client cntxt)
 static str
 SQLrun(Client c, backend *be, mvc *m){
 	str msg= MAL_SUCCEED;
-	MalBlkPtr mc = 0, mb=c->curprg->def, old=mb;
+	MalBlkPtr mc = 0, mb=c->curprg->def;
 	InstrPtr p=0;
 	int i,j, retc;
 	ValPtr val;
@@ -228,6 +227,11 @@ SQLrun(Client c, backend *be, mvc *m){
 	// This include template constants, BAT sizes.
 	optimizeQuery(c,mb);
 
+	if( mb->errors){
+		freeMalBlk(mb);
+		return msg;
+	}
+
 	if (m->emod & mod_explain) {
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
@@ -236,7 +240,7 @@ SQLrun(Client c, backend *be, mvc *m){
 		msg = runMALDebugger(c, mb);
 	 else{
 		if( m->emod & mod_trace){
-			SQLsetTrace(c);
+			SQLsetTrace(c,mb);
 			msg = runMAL(c, mb, 0, 0);
 			stopTrace(0);
 		} else
@@ -245,7 +249,6 @@ SQLrun(Client c, backend *be, mvc *m){
 
 	// release the resources
 	freeMalBlk(mb);
-	mb = old;
 	return msg;
 }
 
