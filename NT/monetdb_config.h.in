@@ -1135,11 +1135,11 @@ typedef __uint128_t uhge;
 #ifdef HAVE_EMBEDDED_R
 #define _MSC_EXTENSIONS 1
 #undef HAVE_CTIME_R
-#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
-#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
 #else
 #define HAVE_MAPI 1
 #endif
 
+#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
+#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

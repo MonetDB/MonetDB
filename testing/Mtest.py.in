@@ -600,11 +600,21 @@ def startswithpath(str,pre) :
 if sys.version_info[0] == 2:
     import urllib
     path = urllib.url2pathname
-    url = urllib.pathname2url
+    def url(str) :
+        url = urllib.pathname2url(str)
+        # on Windows, C:\tmp\foo becomes ///C:/tmp/foo, turn into /C:/tmp/foo
+        if url.startswith('///'):
+            url = url[2:]
+        return url
 elif sys.version_info[0] == 3:
     import urllib.request
     path = urllib.request.url2pathname
-    url = urllib.request.pathname2url
+    def url(str) :
+        url = urllib.request.pathname2url(str)
+        # on Windows, C:\tmp\foo becomes ///C:/tmp/foo, turn into /C:/tmp/foo
+        if url.startswith('///'):
+            url = url[2:]
+        return url
 
 def try_open(path, mode) :
     try:
