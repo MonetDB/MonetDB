@@ -225,7 +225,7 @@ SQLrun(Client c, backend *be, mvc *m){
 	}
 	// JIT optimize the SQL query using all current information
 	// This include template constants, BAT sizes.
-	optimizeQuery(c,mb);
+	SQLoptimizeQuery(c,mb);
 
 	if( mb->errors){
 		freeMalBlk(mb);

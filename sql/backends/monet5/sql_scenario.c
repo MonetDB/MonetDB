@@ -1135,16 +1135,16 @@ SQLparser(Client c)
 		}
 
 		pushEndInstruction(c->curprg->def);
-		// Prepared query plans should be optimized
-		if(err == 0 && m->emode == m_prepare ) 
-			sqlJIToptimizer(c,c->curprg->def,be->mvc);
-
 		/* check the query wrapper for errors */
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
 
+		// Prepared query plans should be partially optimized
+		if(err == 0 && m->emode == m_prepare ) 
+			SQLoptimizeFunction(c,c->curprg->def,be->mvc);
+
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (opt ) {
-			str msg = optimizeQuery(c, c->curprg->def);
+			str msg = SQLoptimizeQuery(c, c->curprg->def);
 
 			if (msg != MAL_SUCCEED) {
 				sqlcleanup(m, err);

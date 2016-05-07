@@ -7,18 +7,11 @@
  */
 
 /*
- * @f sql_optimizer
- * @t SQL catalog management
- * @a N. Nes, M.L. Kersten
+ * N. Nes, M.L. Kersten
  */
 /*
  * The queries are stored in the user cache after they have been
  * type checked and optimized.
- * The Factory optimizer encapsulates the query with a re-entrance
- * structure. However, this structure is only effective if
- * quite some (expensive) instructions can be safed.
- * The current heuristic is geared at avoiding trivial
- * factory structures.
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
@@ -34,7 +27,7 @@ static lng
 SQLgetSpace(mvc *m, MalBlkPtr mb)
 {
 	sql_trans *tr = m->session->tr;
-	lng space = 0, i; 
+	lng size,space = 0, i; 
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -59,7 +52,16 @@ SQLgetSpace(mvc *m, MalBlkPtr mb)
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
 					if (b) {
-						space += getBatSpace(b);
+						space += (size =getBatSpace(b));
+						if( 0 && size == 0){
+							// replace with an empty dummy bat
+							clrFunction(p);
+							setModuleId(p, batRef);
+							setFunctionId(p, newRef);
+							p->argc =1;
+							p =pushType(mb,p, b->ttype);
+					
+						}
 						BBPunfix(b->batCacheid);
 					}
 				}
@@ -70,7 +72,15 @@ SQLgetSpace(mvc *m, MalBlkPtr mb)
 				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
 					BAT *b = store_funcs.bind_col(tr, c, RDONLY);
 					if (b) {
-						space += getBatSpace(b);
+						space += (size= getBatSpace(b));
+						if( 0 && size == 0){
+							// replace with an empty dummy bat
+							clrFunction(p);
+							setModuleId(p, batRef);
+							setFunctionId(p, newRef);
+							p->argc =1;
+							p =pushType(mb,p, b->ttype);
+						}
 						BBPunfix(b->batCacheid);
 					}
 				}
@@ -91,7 +101,7 @@ getSQLoptimizer(mvc *m)
 	return pipe;
 }
 
-void
+static void
 addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 {
 	int i;
@@ -129,7 +139,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 }
 
 str
-sqlJIToptimizer(Client c, MalBlkPtr mb, mvc *m)
+SQLoptimizeFunction(Client c, MalBlkPtr mb, mvc *m)
 {
 	str msg;
 	str pipe = getSQLoptimizer(m);
@@ -150,7 +160,7 @@ sqlJIToptimizer(Client c, MalBlkPtr mb, mvc *m)
 }
 
 str
-optimizeQuery(Client c, MalBlkPtr mb)
+SQLoptimizeQuery(Client c, MalBlkPtr mb)
 {
 	backend *be;
 	str msg = 0;
@@ -182,7 +192,7 @@ optimizeQuery(Client c, MalBlkPtr mb)
 		}
 		return NULL;
 	}
-	return sqlJIToptimizer(c,mb,be->mvc);
+	return SQLoptimizeFunction(c,mb,be->mvc);
 }
 
 void
@@ -191,38 +201,5 @@ addQueryToCache(Client c)
 	//str msg = NULL;
 
 	insertSymbol(c->nspace, c->curprg);
-	/*
-	msg = optimizeQuery(c,c->curprg);
-	if (msg != MAL_SUCCEED) {
-		showScriptException(c->fdout, c->curprg->def, 0, MAL, "%s", msg);
-		GDKfree(msg);
-	}
-	*/
 }
 
-/*
- * The default SQL optimizer performs a limited set of operations
- * that are known to be (reasonably) stable and effective.
- * Finegrained control over the optimizer steps is available thru
- * setting the corresponding SQL variable.
- *
- * This version simply runs through the MAL script and re-orders the instructions
- * into catalog operations, query graph, and result preparation.
- * This distinction is used to turn the function into a factory, which would
- * enable re-entry when used as a cache-optimized query.
- * The second optimization is move access mode changes on the base tables
- * to the front of the plan.
- *
- *
- */
-str
-SQLoptimizer(Client c)
-{
-	(void) c;
-#ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "SQLoptimizer\n");
-	printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_DEBUG);
-	mnstr_printf(GDKout, "done\n");
-#endif
-	return MAL_SUCCEED;
-}

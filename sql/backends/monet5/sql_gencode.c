@@ -483,7 +483,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	if (inline_func)
 		curBlk->inlineProp =1;
 	/* optimize the code */
-	optimizeQuery(c, c->curprg->def);
+	SQLoptimizeQuery(c, c->curprg->def);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
@@ -703,7 +703,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
-	sqlJIToptimizer(c,c->curprg->def,m);
+	SQLoptimizeFunction(c,c->curprg->def,m);
 
 	addQueryToCache(c);
 	if (backup)
@@ -3148,7 +3148,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	f->sa = sa;
 	m->sa = osa;
 	/* optimize the code */
-	optimizeQuery(c, c->curprg->def);
+	SQLoptimizeQuery(c, c->curprg->def);
 	addQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
