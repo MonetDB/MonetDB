@@ -23,8 +23,9 @@
 #include "sql_gencode.h"
 #include "opt_pipes.h"
 
+/* prepare is set when we can not optimize based on actual size */
 static lng 
-SQLgetSpace(mvc *m, MalBlkPtr mb)
+SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
 	lng size,space = 0, i; 
@@ -53,7 +54,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb)
 					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
 					if (b) {
 						space += (size =getBatSpace(b));
-						if( 0 && size == 0){
+						if( !prepare && size == 0){
 							// replace with an empty dummy bat
 							clrFunction(p);
 							setModuleId(p, batRef);
@@ -73,7 +74,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb)
 					BAT *b = store_funcs.bind_col(tr, c, RDONLY);
 					if (b) {
 						space += (size= getBatSpace(b));
-						if( 0 && size == 0){
+						if( !prepare && size == 0){
 							// replace with an empty dummy bat
 							clrFunction(p);
 							setModuleId(p, batRef);
@@ -102,7 +103,7 @@ getSQLoptimizer(mvc *m)
 }
 
 static void
-addOptimizers(Client c, MalBlkPtr mb, char *pipe)
+addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 {
 	int i;
 	InstrPtr q;
@@ -113,7 +114,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe)
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	space = SQLgetSpace(be->mvc, mb);
+	space = SQLgetSpace(be->mvc, mb, prepare);
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
@@ -144,7 +145,7 @@ SQLoptimizeFunction(Client c, MalBlkPtr mb, mvc *m)
 	str msg;
 	str pipe = getSQLoptimizer(m);
 
-	addOptimizers(c, mb, pipe);
+	addOptimizers(c, mb, pipe, TRUE);
 	msg = optimizeMALBlock(c, mb);
 	if (msg)
 		return msg;
@@ -164,9 +165,11 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 {
 	backend *be;
 	str msg = 0;
+	str pipe;
 
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
+	pipe = getSQLoptimizer(be->mvc);
 
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
@@ -192,11 +195,24 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		}
 		return NULL;
 	}
-	return SQLoptimizeFunction(c,mb,be->mvc);
+
+	addOptimizers(c, mb, pipe, FALSE);
+	msg = optimizeMALBlock(c, mb);
+	if (msg)
+		return msg;
+
+	/* time to execute the optimizers */
+	if (c->debug)
+		optimizerCheck(c, mb, "sql.baseline", -1, 0);
+#ifdef _SQL_OPTIMIZER_DEBUG
+	mnstr_printf(GDKout, "End Optimize Query\n");
+	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+#endif
+	return MAL_SUCCEED;
 }
 
 void
-addQueryToCache(Client c)
+SQLaddQueryToCache(Client c)
 {
 	//str msg = NULL;
 

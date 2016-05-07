@@ -484,7 +484,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 		curBlk->inlineProp =1;
 	/* optimize the code */
 	SQLoptimizeQuery(c, c->curprg->def);
-	addQueryToCache(c);
+	SQLaddQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
 	return 0;
@@ -705,7 +705,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	curBlk->inlineProp = 1;
 	SQLoptimizeFunction(c,c->curprg->def,m);
 
-	addQueryToCache(c);
+	SQLaddQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
 	name[0] = old;		/* make sure stub is called */
@@ -2928,7 +2928,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 	}
 	if (cq)
-		addQueryToCache(c);
+		SQLaddQueryToCache(c);
 
 	curPrg = c->curprg;
 	if (backup)
@@ -3149,7 +3149,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	m->sa = osa;
 	/* optimize the code */
 	SQLoptimizeQuery(c, c->curprg->def);
-	addQueryToCache(c);
+	SQLaddQueryToCache(c);
 	if (backup)
 		c->curprg = backup;
 	return 0;
