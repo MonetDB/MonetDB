@@ -7,7 +7,6 @@
  */
 
 /*
- * @- Word completion
  * Word completion recognizes the start of a line to issue a
  * list of valid SQL command options. Any other identifier
  * is considered a table name or column name.
@@ -16,7 +15,6 @@
  * Add readline functionality to the MAL console.
  * This means that the user has history access and some other
  * features to assemble a command before it is being interpreted.
- * @f sql_readline
  */
 #include "monetdb_config.h"
 #include "mal.h"
@@ -127,9 +125,6 @@ deinit_sql_readline(void)
 	}
 }
 
-/*
- * @-
- */
 #ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
 #endif
