@@ -1,6 +1,13 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl>
+- ResultSet.setFetchSize(): added a dumy implementation to get rid
+  of the SQLFeatureNotSupportedException. In MonetDB, it does not
+  make sense to set the fetch size of a result set. If one really
+  wants to set the fetch size, one should use Statement.setFetchSize()
+  instead.
+
 * Thu Apr 21 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Fixed resource leak in ResultSetMetaData. It created and cached a ResultSet
   object for each column but never closed the ResultSet objects.
