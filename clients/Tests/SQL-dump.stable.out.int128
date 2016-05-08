@@ -660,8 +660,7 @@ create filter function "ilike"(val string, pat string) external name algebra."il
 create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;
 create function intersection(a geometry, b geometry) returns geometry external name geom."Intersection";
 create function isaurl(theurl url) returns bool external name url."isaURL";
-create function sys.isauuid(u uuid) returns uuid external name uuid."isaUUID";
-create function sys.isauuid(u string) returns uuid external name uuid."isaUUID";
+create function sys.isauuid(u string) returns boolean external name uuid."isaUUID";
 create function isempty(g geometry) returns boolean external name geom."IsEmpty";
 create function issimple(g geometry) returns boolean external name geom."IsSimple";
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
@@ -2693,8 +2692,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"imprintsize",	"create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;",	"user",	2,	1,	false,	false,	false	]
 [ "sys",	"intersection",	"create function intersection(a geometry, b geometry) returns geometry external name geom.\"Intersection\";",	"geom",	1,	1,	false,	false,	false	]
 [ "sys",	"isaurl",	"create function isaurl(theurl url) returns bool external name url.\"isaURL\";",	"url",	1,	1,	false,	false,	false	]
-[ "sys",	"isauuid",	"create function sys.isauuid(u string) returns uuid external name uuid.\"isaUUID\";",	"uuid",	1,	1,	false,	false,	false	]
-[ "sys",	"isauuid",	"create function sys.isauuid(u uuid) returns uuid external name uuid.\"isaUUID\";",	"uuid",	1,	1,	false,	false,	false	]
+[ "sys",	"isauuid",	"create function sys.isauuid(u string) returns boolean external name uuid.\"isaUUID\";",	"uuid",	1,	1,	false,	false,	false	]
 [ "sys",	"isempty",	"create function isempty(g geometry) returns boolean external name geom.\"IsEmpty\";",	"geom",	1,	1,	false,	false,	false	]
 [ "sys",	"issimple",	"create function issimple(g geometry) returns boolean external name geom.\"IsSimple\";",	"geom",	1,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"create function \"left_shift\"(i1 inet, i2 inet) returns boolean external name inet.\"<<\";",	"inet",	1,	1,	false,	false,	false	]
@@ -3633,9 +3631,7 @@ drop function pcre_replace(string, string, string, string);
 [ "isarray",	"js",	"json",	0,	0,	1,	1	]
 [ "isaurl",	"result",	"boolean",	1,	0,	0,	0	]
 [ "isaurl",	"theurl",	"url",	0,	0,	1,	1	]
-[ "isauuid",	"result",	"uuid",	0,	0,	0,	0	]
-[ "isauuid",	"u",	"uuid",	0,	0,	1,	1	]
-[ "isauuid",	"result",	"uuid",	0,	0,	0,	0	]
+[ "isauuid",	"result",	"boolean",	1,	0,	0,	0	]
 [ "isauuid",	"u",	"clob",	0,	0,	1,	1	]
 [ "isempty",	"result",	"boolean",	1,	0,	0,	0	]
 [ "isempty",	"g",	"geometry",	0,	0,	1,	1	]
@@ -7589,7 +7585,6 @@ drop function pcre_replace(string, string, string, string);
 [ "isarray"	]
 [ "isarray"	]
 [ "isaurl"	]
-[ "isauuid"	]
 [ "isauuid"	]
 [ "isempty"	]
 [ "isnull"	]
