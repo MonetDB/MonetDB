@@ -1,3 +1,7 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl>
+- Fixed Connection.isValid(): this method should never attempt to
+  close the connection, even an error has occurred
+
