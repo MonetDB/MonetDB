@@ -121,7 +121,7 @@ tables
 % .L # table_name
 % single_value # name
 % char # type
-% 14 # length
+% 8 # length
 [ "ALL DONE"	]
 views
 functions

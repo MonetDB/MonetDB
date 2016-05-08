@@ -169,7 +169,11 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
 			sql_subtype *at = atom_type(a);
 
-			if (EC_VARCHAR(tp->type->eclass) && 
+			if (tp->type->eclass == EC_CHAR && 
+			    at->type->eclass == EC_CHAR &&
+			      (!tp->digits || tp->digits == at->digits)) 
+				continue;
+			if (tp->type->eclass == EC_STRING && 
 			    at->type->eclass == EC_CHAR &&
 			      (!tp->digits || tp->digits >= at->digits)) 
 				continue;
