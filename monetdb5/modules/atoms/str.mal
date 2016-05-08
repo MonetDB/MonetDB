@@ -24,10 +24,6 @@ command length( s:str ) :int
 address STRLength
 comment "Return the length of a string.";
 
-command stringlength( s:str ) :int
-address STRstringLength
-comment "Return the length of a right trimed string (SQL semantics).";
-
 command nbytes( s:str ) :int
 address STRBytes
 comment "Return the string length in bytes.";

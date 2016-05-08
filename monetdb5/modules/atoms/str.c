@@ -1500,18 +1500,6 @@ convertCase(BAT *from, BAT *to, str *res, const char *s, const char *malfunc)
 	throw(MAL, malfunc, "Allocation failed");
 }
 
-str
-STRSQLLength(int *res, const str *s)
-{
-	str r = NULL;
-	str msg;
-	if ((msg = STRRtrim(&r, s)) != MAL_SUCCEED)
-		return msg;
-	STRLength(res, &r);
-	GDKfree(r);
-	return MAL_SUCCEED;
-}
-
 /*
  * Here you find the wrappers around the version 4 library code
  * It also contains the direct implementation of the string
@@ -2550,15 +2538,3 @@ STRspace(str *ret, const int *l){
 	char buf[]= " ", *s= buf;
 	return STRrepeat(ret,&s,l);
 }
-
-str
-STRstringLength(int *res, const str *s)
-{
-	str r = NULL;
-	STRRtrim(&r, s);
-	STRLength(res, &r);
-	GDKfree(r);
-	return MAL_SUCCEED;
-}
-
-

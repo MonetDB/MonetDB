@@ -28,8 +28,6 @@ str_export str strEpilogue(void *ret);
 str_export str STRtostr(str *res, const str *src);
 str_export str STRConcat(str *res, const str *val1, const str *val2);
 str_export str STRLength(int *res, const str *arg1);
-/* length of rtrimed string, needed for sql */
-str_export str STRstringLength(int *res, const str *s);
 str_export str STRBytes(int *res, const str *arg1);
 str_export str STRTail(str *res, const str *arg1, const int *offset);
 str_export str STRSubString(str *res, const str *arg1, const int *offset, const int *length);
@@ -56,7 +54,6 @@ str_export str STRLpad2(str *res, const str *arg1, const int *len, const str *ar
 str_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
 str_export str STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g);
 
-str_export str STRSQLLength(int *res, const str *s);
 str_export str STRsubstringTail(str *ret, const str *s, const int *start);
 str_export str STRsubstring(str *ret, const str *s, const int *start, const int *l);
 str_export str STRlikewrap2(bit *ret, const str *s, const str *pat);

@@ -3484,10 +3484,6 @@ command batstr.startsWith(s:bat[:oid,:str],prefix:bat[:oid,:str]):bat[:oid,:bit]
 address STRbatPrefix;
 comment Prefix check.
 
-command batstr.stringlength(s:bat[:oid,:str]):bat[:oid,:int] 
-address STRbatstringLength;
-comment Return the length of a right trimed string.
-
 command batstr.trim(s:bat[:oid,:str],s2:bat[:oid,:str]):bat[:oid,:str] 
 address STRbatStrip2_bat;
 comment Strip characters in the second strings around the first strings.
@@ -52171,10 +52167,6 @@ comment Search for a substring. Returns	 position, -1 if not found.
 command str.startsWith(s:str,prefix:str):bit 
 address STRPrefix;
 comment Prefix check.
-
-command str.stringlength(s:str):int 
-address STRstringLength;
-comment Return the length of a right trimed string (SQL semantics).
 
 command str.string(s:str,offset:int,count:int):str 
 address STRSubString;

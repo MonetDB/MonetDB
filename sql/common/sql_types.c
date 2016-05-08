@@ -1626,7 +1626,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "concat", "calc", "+", *t, *t, *t, DIGITS_ADD);
 		sql_create_func(sa, "ascii", "str", "ascii", *t, NULL, INT, SCALE_NONE);
 		sql_create_func(sa, "code", "str", "unicode", INT, NULL, *t, SCALE_NONE);
-		sql_create_func(sa, "length", "str", "stringlength", *t, NULL, INT, SCALE_NONE);
+		sql_create_func(sa, "length", "str", "length", *t, NULL, INT, SCALE_NONE);
 		sql_create_func(sa, "right", "str", "stringright", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "left", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "upper", "str", "toUpper", *t, NULL, *t, SCALE_NONE);
