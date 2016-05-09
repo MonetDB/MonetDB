@@ -116,7 +116,7 @@ Colnr 5.
 	name          myclob
 	type          2005
 	typename      clob
-	precision     0
+	precision     11
 	scale         0
 	catalogname   null
 	schemaname    sys
