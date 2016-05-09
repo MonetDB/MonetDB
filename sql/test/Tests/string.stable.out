@@ -45,7 +45,7 @@ Ready.
 [ 0,	""	]
 [ 4,	"test"	]
 [ 0,	""	]
-[ 5,	" Test "	]
+[ 6,	" Test "	]
 #select substring(str from 2 for 8), str2 from stringtest;
 % sys.L1,	sys.stringtest # table_name
 % L1,	str2 # name

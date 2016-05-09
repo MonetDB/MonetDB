@@ -4173,7 +4173,7 @@ insert into sys.args values (10689, 1124, 'arg_1', 'char', 0, 0, 1, 1);
 insert into sys.functions values (1125, 'code', 'unicode', 'str', 0, 1, false, false, false, 2000);
 insert into sys.args values (10690, 1125, 'res_0', 'char', 0, 0, 0, 0);
 insert into sys.args values (10691, 1125, 'arg_1', 'int', 32, 0, 1, 1);
-insert into sys.functions values (1126, 'length', 'stringlength', 'str', 0, 1, false, false, false, 2000);
+insert into sys.functions values (1126, 'length', 'length', 'str', 0, 1, false, false, false, 2000);
 insert into sys.args values (10692, 1126, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (10693, 1126, 'arg_1', 'char', 0, 0, 1, 1);
 insert into sys.functions values (1127, 'right', 'stringright', 'str', 0, 1, false, false, false, 2000);
@@ -4405,7 +4405,7 @@ insert into sys.args values (10863, 1182, 'arg_1', 'varchar', 0, 0, 1, 1);
 insert into sys.functions values (1183, 'code', 'unicode', 'str', 0, 1, false, false, false, 2000);
 insert into sys.args values (10864, 1183, 'res_0', 'varchar', 0, 0, 0, 0);
 insert into sys.args values (10865, 1183, 'arg_1', 'int', 32, 0, 1, 1);
-insert into sys.functions values (1184, 'length', 'stringlength', 'str', 0, 1, false, false, false, 2000);
+insert into sys.functions values (1184, 'length', 'length', 'str', 0, 1, false, false, false, 2000);
 insert into sys.args values (10866, 1184, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (10867, 1184, 'arg_1', 'varchar', 0, 0, 1, 1);
 insert into sys.functions values (1185, 'right', 'stringright', 'str', 0, 1, false, false, false, 2000);
@@ -4637,7 +4637,7 @@ insert into sys.args values (11037, 1240, 'arg_1', 'clob', 0, 0, 1, 1);
 insert into sys.functions values (1241, 'code', 'unicode', 'str', 0, 1, false, false, false, 2000);
 insert into sys.args values (11038, 1241, 'res_0', 'clob', 0, 0, 0, 0);
 insert into sys.args values (11039, 1241, 'arg_1', 'int', 32, 0, 1, 1);
-insert into sys.functions values (1242, 'length', 'stringlength', 'str', 0, 1, false, false, false, 2000);
+insert into sys.functions values (1242, 'length', 'length', 'str', 0, 1, false, false, false, 2000);
 insert into sys.args values (11040, 1242, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (11041, 1242, 'arg_1', 'clob', 0, 0, 1, 1);
 insert into sys.functions values (1243, 'right', 'stringright', 'str', 0, 1, false, false, false, 2000);
@@ -4917,8 +4917,6 @@ create function sys.debug(debug int) returns integer
 external name mdb."setDebug";
 insert into sys.systemfunctions (select id from sys.functions where name in ('bbp', 'malfunctions', 'flush_log', 'debug') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 drop function sys.isaUUID(uuid);
-create function sys.isaUUID(u uuid)
-returns boolean begin return true; end;
 create function sys.isaUUID(s string)
 returns boolean external name uuid."isaUUID";
 insert into sys.systemfunctions (select id from sys.functions where name = 'isauuid' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
