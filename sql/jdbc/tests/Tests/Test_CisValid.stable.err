@@ -36,8 +36,8 @@ stderr of test 'Test_CisValid` in directory 'sql/jdbc/tests` itself:
 # 23:03:08 >  
 
 java.sql.SQLException: SELECT: no such table 'doesnotexist'
-	at nl.cwi.monetdb.jdbc.MonetConnection$ResponseList.executeQuery(MonetConnection.java:2603)
-	at nl.cwi.monetdb.jdbc.MonetConnection$ResponseList.processQuery(MonetConnection.java:2351)
+	at nl.cwi.monetdb.jdbc.MonetConnection$ResponseList.executeQuery(MonetConnection.java:2602)
+	at nl.cwi.monetdb.jdbc.MonetConnection$ResponseList.processQuery(MonetConnection.java:2350)
 	at nl.cwi.monetdb.jdbc.MonetStatement.internalExecute(MonetStatement.java:507)
 	at nl.cwi.monetdb.jdbc.MonetStatement.execute(MonetStatement.java:345)
 	at Test_CisValid.main(Test_CisValid.java:23)
