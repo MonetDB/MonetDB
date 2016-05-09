@@ -52,7 +52,6 @@ str_export str STRLpad2(str *res, const str *arg1, const int *len, const str *ar
 str_export str STRRpad2(str *res, const str *arg1, const int *len, const str *arg2);
 str_export str STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g);
 
-str_export str STRSQLLength(int *res, const str *s);
 str_export str STRsubstringTail(str *ret, const str *s, const int *start);
 str_export str STRsubstring(str *ret, const str *s, const int *start, const int *l);
 str_export str STRlikewrap2(bit *ret, const str *s, const str *pat);

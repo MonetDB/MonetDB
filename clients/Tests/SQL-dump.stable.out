@@ -936,7 +936,6 @@ create filter function "ilike"(val string, pat string) external name algebra."il
 create function sys.imprintsize(i bigint, nme string) returns bigint begin if nme = 'boolean' or nme = 'tinyint' or nme = 'smallint' or nme = 'int' or nme = 'bigint' or nme = 'hugeint' or nme = 'decimal' or nme = 'date' or nme = 'timestamp' or nme = 'real' or nme = 'double' then return cast(i * 0.12 as bigint); end if ; return 0; end;
 create function internaltransform(geom geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) returns geometry external name geom."Transform";
 create function isaurl(theurl url) returns bool external name url."isaURL";
-create function sys.isauuid(u uuid) returns boolean begin return true; end;
 create function sys.isauuid(s string) returns boolean external name uuid."isaUUID";
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
@@ -2033,7 +2032,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"internaltransform",	"create function internaltransform(geom geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) returns geometry external name geom.\"Transform\";",	"geom",	1,	1,	false,	false,	false	]
 [ "sys",	"isaurl",	"create function isaurl(theurl url) returns bool external name url.\"isaURL\";",	"url",	1,	1,	false,	false,	false	]
 [ "sys",	"isauuid",	"create function sys.isauuid(s string) returns boolean external name uuid.\"isaUUID\";",	"uuid",	1,	1,	false,	false,	false	]
-[ "sys",	"isauuid",	"create function sys.isauuid(u uuid) returns boolean begin return true; end;",	"user",	2,	1,	false,	false,	false	]
 [ "sys",	"isnull",	"isnil",	"calc",	0,	1,	false,	false,	false	]
 [ "sys",	"lcase",	"toLower",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"lcase",	"toLower",	"str",	0,	1,	false,	false,	false	]
@@ -2055,9 +2053,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"left_shift",	"mbrLeft",	"geom",	0,	1,	false,	false,	false	]
 [ "sys",	"left_shift",	"mbrLeft",	"geom",	0,	1,	false,	false,	false	]
 [ "sys",	"left_shift_assign",	"create function \"left_shift_assign\"(i1 inet, i2 inet) returns boolean external name inet.\"<<=\";",	"inet",	1,	1,	false,	false,	false	]
-[ "sys",	"length",	"stringlength",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"length",	"stringlength",	"str",	0,	1,	false,	false,	false	]
-[ "sys",	"length",	"stringlength",	"str",	0,	1,	false,	false,	false	]
+[ "sys",	"length",	"length",	"str",	0,	1,	false,	false,	false	]
+[ "sys",	"length",	"length",	"str",	0,	1,	false,	false,	false	]
+[ "sys",	"length",	"length",	"str",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
 [ "sys",	"levenshtein",	"levenshtein",	"txtsim",	0,	1,	false,	false,	false	]
@@ -3672,7 +3670,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"internaltransform",	"geom",	"geometry",	0,	0,	1,	"srid_src",	"int",	32,	0,	1,	"srid_dest",	"int",	32,	0,	1,	"proj4_src",	"clob",	0,	0,	1,	"proj4_dest",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isaurl",	"theurl",	"url",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isauuid",	"s",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"isauuid",	"u",	"uuid",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isnull",	"arg_1",	"any",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"lcase",	"arg_1",	"char",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"lcase",	"arg_1",	"clob",	0,	0,	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5319,7 +5316,6 @@ drop function pcre_replace(string, string, string, string);
 [ "inet",	"inet",	"sys",	"host",	"TYPE_DEPENDENCY"	]
 [ "inet",	"inet",	"sys",	"hostmask",	"TYPE_DEPENDENCY"	]
 [ "url",	"url",	"sys",	"isaurl",	"TYPE_DEPENDENCY"	]
-[ "uuid",	"uuid",	"sys",	"isauuid",	"TYPE_DEPENDENCY"	]
 [ "inet",	"inet",	"sys",	"left_shift",	"TYPE_DEPENDENCY"	]
 [ "inet",	"inet",	"sys",	"left_shift_assign",	"TYPE_DEPENDENCY"	]
 [ "inet",	"inet",	"sys",	"masklen",	"TYPE_DEPENDENCY"	]
@@ -5761,7 +5757,6 @@ drop function pcre_replace(string, string, string, string);
 [ "isarray"	]
 [ "isarray"	]
 [ "isaurl"	]
-[ "isauuid"	]
 [ "isauuid"	]
 [ "isnull"	]
 [ "isobject"	]

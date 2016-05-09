@@ -528,7 +528,7 @@ Ready.
 #SELECT 'unknown' || ' and unknown' AS "Concat unknown types";
 % .L # table_name
 % Concat unknown types # name
-% char # type
+% varchar # type
 % 19 # length
 [ "unknown and unknown" ]
 #SELECT cast('text' as text) || ' and unknown' AS "Concat text to unknown type";
@@ -540,8 +540,8 @@ Ready.
 #SELECT cast('characters' as char(20)) || ' and text' AS "Concat char to unknown type";
 % .L1 # table_name
 % Concat char to unknown type # name
-% char # type
-% 29 # length
+% varchar # type
+% 19 # length
 [ "characters and text" ]
 #SELECT cast('text' as text) || cast(' and characters' as char(20)) AS "Concat text to char";
 % .L2 # table_name
@@ -672,22 +672,22 @@ Ready.
 #SELECT replace('abcdef', 'de', '45') AS "abc45f";
 % .L # table_name
 % abc45f # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "abc45f" ]
 
 #SELECT replace('yabadabadoo', 'ba', '123') AS "ya123da123doo";
 % .L # table_name
 % ya123da123doo # name
-% char # type
-% 0 # length
+% varchar # type
+% 13 # length
 [ "ya123da123doo" ]
 
 #SELECT replace('yabadoo', 'bad', '') AS "yaoo";
 % .L # table_name
 % yaoo # name
-% char # type
-% 0 # length
+% varchar # type
+% 4 # length
 [ "yaoo" ]
 
 #select split_part('joeuser@mydatabase','@',1) AS "joeuser";

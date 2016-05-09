@@ -1289,8 +1289,6 @@ sql_update_jun2016(Client c, mvc *sql)
 	}
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function sys.isaUUID(uuid);\n"
-			"create function sys.isaUUID(u uuid)\n"
-			"returns boolean begin return true; end;\n"
 			"create function sys.isaUUID(s string)\n"
 			"returns boolean external name uuid.\"isaUUID\";\n"
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'isauuid' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
