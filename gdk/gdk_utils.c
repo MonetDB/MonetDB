@@ -1223,19 +1223,31 @@ GDKexiting(void)
 	return stopped;
 }
 
-void
-GDKprepareExit(void)
-{
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
-		return;
-	if (GDKvmtrim_id)
-		MT_join_thread(GDKvmtrim_id);
-}
-
 static struct serverthread {
 	struct serverthread *next;
 	MT_Id pid;
 } *serverthread;
+
+void
+GDKprepareExit(void)
+{
+	struct serverthread *st;
+
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
+		return;
+	if (GDKvmtrim_id)
+		MT_join_thread(GDKvmtrim_id);
+
+	MT_lock_set(&GDKthreadLock);
+	for (st = serverthread; st; st = serverthread) {
+		MT_lock_unset(&GDKthreadLock);
+		MT_join_thread(st->pid);
+		MT_lock_set(&GDKthreadLock);
+		serverthread = st->next;
+		GDKfree(st);
+	}
+	MT_lock_unset(&GDKthreadLock);
+}
 
 /* Register a thread that should be waited for in GDKreset.  The
  * thread must exit by itself when GDKexiting() returns true. */
