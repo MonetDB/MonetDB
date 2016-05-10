@@ -3658,6 +3658,8 @@ def main(argv) :
             par['SYSTEM'] = ''
         else:
             par['SYSTEM'] = a
+            # -S option implies --nopatch
+            par['NOPATCH'] = True
     for v in vars:
         a = opts.get(v)
         if a is not None:
