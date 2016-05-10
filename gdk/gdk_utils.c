@@ -1294,6 +1294,7 @@ GDKreset(int status)
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
+		int killed = 0;
 		MT_lock_set(&GDKthreadLock);
 		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 			if (t->pid) {
@@ -1302,6 +1303,7 @@ GDKreset(int status)
 				if (t->pid != pid) {
 					int e;
 
+					killed = 1;
 					e = MT_kill_thread(victim);
 					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
 					GDKnrofthreads --;
@@ -1310,10 +1312,10 @@ GDKreset(int status)
 		}
 		assert(GDKnrofthreads <= 1);
 		/* all threads ceased running, now we can clean up */
-#if 0
-		/* we can't clean up after killing threads */
-		BBPexit();
-#endif
+		if (!killed) {
+			/* we can't clean up after killing threads */
+			BBPexit();
+		}
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome();
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
