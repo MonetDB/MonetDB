@@ -2543,7 +2543,11 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                             } else if (PyUnicode_CheckExact(obj)) {
 #ifndef IS_PY3K
                                 Py_UNICODE *str = (Py_UNICODE*)((PyUnicodeObject*)obj)->str;
+#if Py_UNICODE_SIZE >= 4
                                 utf32_to_utf8(0, ((PyUnicodeObject*)obj)->length, utf8_string, str);
+#else
+                                ucs2_to_utf8(0, ((PyUnicodeObject*)obj)->length, utf8_string, str);
+#endif
 #else
                                 char *str = PyUnicode_AsUTF8(obj);
                                 if (!string_copy(str, utf8_string, strlen(str) + 1, true)) {

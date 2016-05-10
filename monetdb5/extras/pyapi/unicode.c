@@ -46,15 +46,13 @@ int utf8_length(unsigned char utf8_char)
     else return -1; //invalid utf8 character, the maximum value of the first byte is 0xf7
 }
 
-int utf32_char_to_utf8_char(size_t position, char *utf8_storage, Py_UNICODE utf32_char)
+int utf32_char_to_utf8_char(size_t position, char *utf8_storage, unsigned int utf32_char)
 {
     int utf8_size = 4;
     if      (utf32_char < 0x80)        utf8_size = 1;
     else if (utf32_char < 0x800)       utf8_size = 2;
-#if Py_UNICODE_SIZE >= 4
     else if (utf32_char < 0x10000)     utf8_size = 3;
     else if (utf32_char > 0x0010FFFF)  return -1; //utf32 character is out of legal range
-#endif
     
     switch(utf8_size)
     {
@@ -79,11 +77,34 @@ int utf32_char_to_utf8_char(size_t position, char *utf8_storage, Py_UNICODE utf3
     }
 }
 
-bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *utf32)
+bool ucs2_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *ucs2)
 {
     size_t i = 0;
     int position = 0;
     int shift;
+    for(i = 0; i < size; i++)
+    {
+        if (ucs2[offset + i] == 0) 
+        {
+            utf8_storage[position] = '\0';
+            return true;
+        }
+        shift = utf32_char_to_utf8_char(position, utf8_storage, ucs2[offset + i]);
+        if (shift < 0) return false;
+        position += shift;
+    }
+    utf8_storage[position] = '\0';
+    return true;
+}
+
+
+bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *utf32_input)
+{
+    size_t i = 0;
+    int position = 0;
+    int shift;
+    unsigned int *utf32 = (unsigned int*) utf32_input;
+
     for(i = 0; i < size; i++)
     {
         if (utf32[offset + i] == 0) 
@@ -100,6 +121,13 @@ bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNIC
     return true;
 }
 
+bool unicode_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *unicode) {
+#if Py_UNICODE_SIZE == 2
+    return ucs2_to_utf8(offset, size, utf8_storage, unicode);
+#else
+    return utf32_to_utf8(offset, size, utf8_storage, unicode);
+#endif
+}
 
 int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage, int offset, const unsigned char *utf8_char)
 {

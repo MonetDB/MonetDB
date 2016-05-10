@@ -43,6 +43,9 @@ int utf8_length(unsigned char utf8_char);
 */
 bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *utf32);
 
+bool ucs2_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *ucs2);
+
+bool unicode_to_utf8(size_t offset, size_t size, char *utf8_storage, const Py_UNICODE *unicode);
 //! Converts a utf8 string to a utf32 string, returns TRUE on success and FALSE on failure
 /* Arguments:
 	offset: The offset in the utf8 array in bytes
@@ -67,7 +70,7 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage, int offs
 	utf32_storage:
 	utf8_char:
 */
-int utf32_char_to_utf8_char(size_t position, char *utf8_storage, Py_UNICODE utf32_char);
+int utf32_char_to_utf8_char(size_t position, char *utf8_storage, unsigned int utf32_char);
 
 void _unicode_init(void);
 

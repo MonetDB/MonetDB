@@ -161,7 +161,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)           
     str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value) \
     {                                                              \
         char utf8[255];                                            \
-        utf32_to_utf8(0, 255, utf8, ptr);                          \
+        unicode_to_utf8(0, 255, utf8, ptr);                          \
         return str_to_##tpe(utf8, maxsize, value);                 \
     }                                                              \
     PY_TO_(tpe, inttpe);
