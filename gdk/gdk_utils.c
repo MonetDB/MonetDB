@@ -1300,7 +1300,10 @@ GDKreset(int status)
 				MT_Id victim = t->pid;
 
 				if (t->pid != pid) {
-					fprintf(stderr, "#GDKexit: killing thread %d\n", MT_kill_thread(victim));
+					int e;
+
+					e = MT_kill_thread(victim);
+					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
 					GDKnrofthreads --;
 				}
 			}
