@@ -1448,8 +1448,13 @@ BBPexit(void)
 						skipped = 1;
 						continue;
 					}
-					/* NIELS ?? Why reduce share count, it's done in VIEWdestroy !!
 					if (isVIEW(b)) {
+						/* "manually"
+						 * decrement parent
+						 * references, since
+						 * VIEWdestroy doesn't
+						 * (and can't here due
+						 * to locks) do it */
 						bat hp = VIEWhparent(b), tp = VIEWtparent(b);
 						bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
 						if (hp) {
@@ -1468,11 +1473,10 @@ BBPexit(void)
 							BBP_cache(vtp)->batSharecnt--;
 							--BBP_lrefs(vtp);
 						}
-					}*/
-					if (isVIEW(b))
 						VIEWdestroy(b);
-					else
+					} else {
 						BATfree(b);
+					}
 				}
 				BBPuncacheit(i, TRUE);
 				if (BBP_logical(i) != BBP_bak(i))
