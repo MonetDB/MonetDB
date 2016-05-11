@@ -1389,7 +1389,11 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
-	BBPdiskscan(GDKfilepath(0, NULL, BATDIR, NULL));
+	{
+		char *d = GDKfilepath(0, NULL, BATDIR, NULL);
+		BBPdiskscan(d);
+		GDKfree(d);
+	}
 
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
 	if (oidsize == SIZEOF_INT)
@@ -4065,6 +4069,7 @@ BBPrecover_subdir(void)
 	struct dirent *dent;
 	gdk_return ret = GDK_SUCCEED;
 
+	GDKfree(subdirpath);
 	if (dirp == NULL) {
 		return GDK_SUCCEED;	/* nothing to do */
 	}
@@ -4094,7 +4099,6 @@ BBPrecover_subdir(void)
 
 	if (ret != GDK_SUCCEED)
 		GDKerror("BBPrecover_subdir: recovery failed. Please check whether your disk is full or write-protected.\n");
-	GDKfree(subdirpath);
 	return ret;
 }
 
@@ -4323,10 +4327,19 @@ BBPatom_load(int atom)
 void
 gdk_bbp_reset(void)
 {
-	memset((char*) BBP, 0, sizeof(BBP));
+	int i;
+
+	while (BBPlimit > 0) {
+		BBPlimit -= BBPINIT;
+		assert(BBPlimit >= 0);
+		GDKfree(BBP[BBPlimit >> BBPINITLOG]);
+	}
+	memset(BBP, 0, sizeof(BBP));
 	BBPlimit = 0;
 	BBPsize = 0;
-	memset((char*) BBPfarms, 0, sizeof(BBPfarms));
+	for (i = 0; i < MAXFARMS; i++)
+		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */
+	memset(BBPfarms, 0, sizeof(BBPfarms));
 	BBP_hash = 0;
 	BBP_mask = 0;
 	stamp = 0;
@@ -4339,8 +4352,8 @@ gdk_bbp_reset(void)
 
 	locked_by = 0;
 	BBPunloadCnt = 0;
-	memset((char*) lastused, 0, sizeof(lastused));
-	memset((char*) bbptrim, 0, sizeof(bbptrim));
+	memset(lastused, 0, sizeof(lastused));
+	memset(bbptrim, 0, sizeof(bbptrim));
 	bbptrimfirst = BBPMAXTRIM;
 	bbptrimlast = 0;
 	bbptrimmax = BBPMAXTRIM;
