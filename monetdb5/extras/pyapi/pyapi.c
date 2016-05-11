@@ -350,21 +350,21 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
             switch(ret->result_type)                                                                                                                           \
             {                                                                                                                                                  \
-                case NPY_BOOL:       NP_COL_BAT_LOOP(bat, mtpe, bit); break;                                                                                   \
-                case NPY_BYTE:       NP_COL_BAT_LOOP(bat, mtpe, bte); break;                                                                                   \
-                case NPY_SHORT:      NP_COL_BAT_LOOP(bat, mtpe, sht); break;                                                                                   \
+                case NPY_BOOL:       NP_COL_BAT_LOOP(bat, mtpe, char); break;                                                                                   \
+                case NPY_BYTE:       NP_COL_BAT_LOOP(bat, mtpe, char); break;                                                                                   \
+                case NPY_SHORT:      NP_COL_BAT_LOOP(bat, mtpe, short); break;                                                                                   \
                 case NPY_INT:        NP_COL_BAT_LOOP(bat, mtpe, int); break;                                                                                   \
-                case NPY_LONG:                                                                                                                                 \
-                case NPY_LONGLONG:   NP_COL_BAT_LOOP(bat, mtpe, lng); break;                                                                                   \
+                case NPY_LONG:       NP_COL_BAT_LOOP(bat, mtpe, long); break;                                                                                   \
+                case NPY_LONGLONG:   NP_COL_BAT_LOOP(bat, mtpe, long long); break;                                                                                   \
                 case NPY_UBYTE:      NP_COL_BAT_LOOP(bat, mtpe, unsigned char); break;                                                                         \
                 case NPY_USHORT:     NP_COL_BAT_LOOP(bat, mtpe, unsigned short); break;                                                                        \
                 case NPY_UINT:       NP_COL_BAT_LOOP(bat, mtpe, unsigned int); break;                                                                          \
-                case NPY_ULONG:                                                                                                                                \
-                case NPY_ULONGLONG:  NP_COL_BAT_LOOP(bat, mtpe, unsigned long); break;                                                                         \
+                case NPY_ULONG:      NP_COL_BAT_LOOP(bat, mtpe, unsigned long); break;                                                                         \
+                case NPY_ULONGLONG:  NP_COL_BAT_LOOP(bat, mtpe, unsigned long long); break;                                                                         \
                 case NPY_FLOAT16:                                                                                                                              \
-                case NPY_FLOAT:      NP_COL_BAT_LOOP(bat, mtpe, flt); break;                                                                                   \
-                case NPY_DOUBLE:                                                                                                                               \
-                case NPY_LONGDOUBLE: NP_COL_BAT_LOOP(bat, mtpe, dbl); break;                                                                                   \
+                case NPY_FLOAT:      NP_COL_BAT_LOOP(bat, mtpe, float); break;                                                                                   \
+                case NPY_DOUBLE:     NP_COL_BAT_LOOP(bat, mtpe, double); break;                                                                                   \
+                case NPY_LONGDOUBLE: NP_COL_BAT_LOOP(bat, mtpe, long double); break;                                                                                   \
                 case NPY_STRING:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, str_to_##mtpe, char); break;                                                                    \
                 case NPY_UNICODE:    NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe, PythonUnicodeType); break;                                                                \
                 case NPY_OBJECT:     NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe, PyObject*); break;                                                               \
