@@ -37,7 +37,7 @@ ERROR = !SELECT: no such table 'hopefullynonexistanttable'
         !Python exception
         !
         !  1. def pyfun(_columns,_column_types,_conn):
-        !> 2.   return _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
+        !> 2.   _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
         !  3.   return 1
         !  4. 
         !SQL Query Failed: ParseException:SQLparser:42S02!SELECT: no such table 'hopefullynonexistanttable'
