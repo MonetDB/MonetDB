@@ -143,6 +143,7 @@ void mserver_reset(void)
 */
 	mal_factory_reset();
 	mal_dataflow_reset();
+	THRdel(mal_clients->mythread);
 	GDKreset(0);	// terminate all other threads
 	mal_client_reset();
 	mal_module_reset();
