@@ -1625,7 +1625,11 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	char *p;
 	int n;
 
+#ifndef NDEBUG
 	assert(subcommit != NULL);
+	for (n = 2; n < cnt; n++)
+		assert(subcommit[n - 1] < subcommit[n]);
+#endif
 
 	if ((nbbpf = GDKfilelocate(0, "BBP", "w", "dir")) == NULL)
 		return GDK_FAIL;

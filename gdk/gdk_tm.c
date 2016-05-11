@@ -183,6 +183,17 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
+	/* de-duplication of BAT ids in subcommit list
+	 * this is needed because of legacy reasons (database
+	 * upgrade) */
+	for (xx = 2; xx < cnt; xx++) {
+		if (subcommit[xx-1] == subcommit[xx]) {
+			int i;
+			cnt--;
+			for (i = xx; i < cnt; i++)
+				subcommit[i] = subcommit[i+1];
+		}
+	}
 	if (prelude(cnt, subcommit) == GDK_SUCCEED) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global
 		 * (sub-)commits */
