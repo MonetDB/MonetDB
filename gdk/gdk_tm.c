@@ -134,13 +134,13 @@ TMcommit(void)
 	gdk_return ret = GDK_FAIL;
 
 	/* commit with the BBP globally locked */
-	BBPlock("TMcommit");
+	BBPlock();
 	if (prelude(getBBPsize(), NULL) == GDK_SUCCEED &&
 	    BBPsync(getBBPsize(), NULL) == GDK_SUCCEED) {
 		epilogue(getBBPsize(), NULL);
 		ret = GDK_SUCCEED;
 	}
-	BBPunlock("TMcommit");
+	BBPunlock();
 	return ret;
 }
 
@@ -240,7 +240,7 @@ TMabort(void)
 {
 	int i;
 
-	BBPlock("TMabort");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPquickdesc(i, FALSE);
@@ -292,6 +292,6 @@ TMabort(void)
 		}
 		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMabort");
 	}
-	BBPunlock("TMabort");
+	BBPunlock();
 	GDKclrerr();
 }

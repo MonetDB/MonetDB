@@ -262,12 +262,11 @@ static int BBPunloadCnt = 0;
 static MT_Lock GDKunloadLock MT_LOCK_INITIALIZER("GDKunloadLock");
 
 void
-BBPlock(const char *nme)
+BBPlock(void)
 {
 	int i;
 
 	/* wait for all pending unloads to finish */
-	(void) nme;
 	MT_lock_set(&GDKunloadLock);
 	while (BBPunloadCnt > 0) {
 		MT_lock_unset(&GDKunloadLock);
@@ -288,11 +287,10 @@ BBPlock(const char *nme)
 }
 
 void
-BBPunlock(const char *nme)
+BBPunlock(void)
 {
 	int i;
 
-	(void) nme;
 	for (i = BBP_BATMASK; i >= 0; i--)
 		MT_lock_unset(&GDKswapLock(i));
 	for (i = BBP_THREADMASK; i >= 0; i--)
@@ -1297,7 +1295,7 @@ void
 BBPresetfarms(void)
 {
 	BBPexit();
-	BBPunlock("BBPexit");
+	BBPunlock();
 	BBPsize = 0;
 	if (BBPfarms[0].dirname != NULL) {
 		GDKfree((void*) BBPfarms[0].dirname);
@@ -1434,7 +1432,7 @@ BBPexit(void)
 	bat i;
 	int skipped;
 
-	BBPlock("BBPexit");	/* stop all threads ever touching more descriptors */
+	BBPlock();	/* stop all threads ever touching more descriptors */
 
 	/* free all memory (just for leak-checking in Purify) */
 	do {
@@ -4263,7 +4261,7 @@ BBPatom_drop(int atom)
 	const char *nme = ATOMname(atom);
 	int unknown = ATOMunknown_add(nme);
 
-	BBPlock("BBPatom_drop");
+	BBPlock();
 	for (i = 0; i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); i++) {
 		if (BBPvalid(i)) {
 			BATstore *b = BBP_desc(i);
@@ -4277,7 +4275,7 @@ BBPatom_drop(int atom)
 				b->B.ttype = unknown;
 		}
 	}
-	BBPunlock("BBPatom_drop");
+	BBPunlock();
 }
 
 void
@@ -4286,7 +4284,7 @@ BBPatom_load(int atom)
 	const char *nme;
 	int i, unknown;
 
-	BBPlock("BBPatom_load");
+	BBPlock();
 	nme = ATOMname(atom);
 	unknown = ATOMunknown_find(nme);
 	ATOMunknown_del(unknown);
@@ -4303,7 +4301,7 @@ BBPatom_load(int atom)
 				b->B.ttype = atom;
 		}
 	}
-	BBPunlock("BBPatom_load");
+	BBPunlock();
 }
 #endif
 
