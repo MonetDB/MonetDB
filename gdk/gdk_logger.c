@@ -2806,6 +2806,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name)
 	bid = b->batCacheid;
 	if (lg->debug & 1)
 		fprintf(stderr, "#create %s\n", name);
+	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);
 	BUNappend(lg->catalog_nme, name, FALSE);

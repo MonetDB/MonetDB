@@ -544,7 +544,7 @@
 				<key>BACKGROUND_PATH</key>
 				<dict>
 					<key>PATH</key>
-					<string>MonetDB logo.png</string>
+					<string>MonetDB_logo.png</string>
 					<key>PATH_TYPE</key>
 					<integer>1</integer>
 				</dict>

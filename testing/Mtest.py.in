@@ -2804,14 +2804,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 CollectIt(pSrvr.stdout, SrvrOut)
                 pSrvr.wait()
                 pSrvrTimer.cancel()
-                if returnCode(pSrvr) == 'error':
-                    time.sleep(120)
-                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                    ln="dummy"
-                    while 0 < len(ln) and not ln.startswith('Ready.'):
-                        ln=pSrvr.stdout.readline()
-                        SrvrOut.write(ln)
-                        SrvrOut.flush()
+                if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
+                    x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
+                    out, err = x.communicate()
+                    if out.count('TIME_WAIT') > 100:
+                        time.sleep(120)
+                        pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                        ln="dummy"
+                        while 0 < len(ln) and not ln.startswith('Ready.'):
+                            ln=pSrvr.stdout.readline()
+                            SrvrOut.write(ln)
+                            SrvrOut.flush()
                 if not ln.startswith('Ready.'):
                     ServerReady = False
 
@@ -2823,15 +2826,18 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     CollectIt(pSrvr.stdout, SrvrOut)
                     pSrvr.wait()
                     pSrvrTimer.cancel()
-                    if returnCode(pSrvr) == 'error':
-                        time.sleep(120)
-                        ServerReady = True
-                        pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                        ln="dummy"
-                        while 0 < len(ln) and not ln.startswith('Ready.'):
-                            ln=pSrvr.stdout.readline()
-                            SrvrOut.write(ln)
-                            SrvrOut.flush()
+                    if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
+                        x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
+                        out, err = x.communicate()
+                        if out.count('TIME_WAIT') > 100:
+                            time.sleep(120)
+                            ServerReady = True
+                            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                            ln="dummy"
+                            while 0 < len(ln) and not ln.startswith('Ready.'):
+                                ln=pSrvr.stdout.readline()
+                                SrvrOut.write(ln)
+                                SrvrOut.flush()
                     if not ln.startswith('Ready.'):
                         ServerReady = False
 
@@ -3652,6 +3658,8 @@ def main(argv) :
             par['SYSTEM'] = ''
         else:
             par['SYSTEM'] = a
+            # -S option implies --nopatch
+            par['NOPATCH'] = True
     for v in vars:
         a = opts.get(v)
         if a is not None:

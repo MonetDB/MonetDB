@@ -1,6 +1,5 @@
-ll <- NULL
 if (Sys.getenv("TSTTRGDIR") != "") {
-	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
+	.libPaths(c(.libPaths(), paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")))
 }
 ff <- textConnection("asdf", open="w")
 # hide output from connect and attach since it would blow up the test output

@@ -95,7 +95,7 @@ CMDbbpNames(bat *ret)
 		throw(MAL, "catalog.bbpNames", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpNames");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
@@ -104,7 +104,7 @@ CMDbbpNames(bat *ret)
 					BUNappend(b,  BBP_logical(-i), FALSE);
 			}
 		}
-	BBPunlock("CMDbbpNames");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","name");
 	return MAL_SUCCEED;
@@ -176,7 +176,7 @@ CMDbbpLocation(bat *ret)
 		throw(MAL, "catalog.bbpLocation", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpLocation");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
@@ -184,7 +184,7 @@ CMDbbpLocation(bat *ret)
 				BUNappend(b, buf, FALSE);
 			}
 		}
-	BBPunlock("CMDbbpLocation");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","location");
 	return MAL_SUCCEED;
@@ -203,7 +203,7 @@ CMDbbpHeat(bat *ret)
 		throw(MAL, "catalog.bbpHeat", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpHeat");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_cache(i) && !monet_modulesilent) {
@@ -216,7 +216,7 @@ CMDbbpHeat(bat *ret)
 				BUNappend(b, &zero, FALSE);
 			}
 		}
-	BBPunlock("CMDbbpHeat");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","heat");
 	return MAL_SUCCEED;
@@ -236,7 +236,7 @@ CMDbbpDirty(bat *ret)
 		throw(MAL, "catalog.bbpDirty", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpDirty");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
@@ -244,7 +244,7 @@ CMDbbpDirty(bat *ret)
 
 				BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			}
-	BBPunlock("CMDbbpDirty");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
@@ -264,7 +264,7 @@ CMDbbpStatus(bat *ret)
 		throw(MAL, "catalog.bbpStatus", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpStatus");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
@@ -272,7 +272,7 @@ CMDbbpStatus(bat *ret)
 
 				BUNappend(b, loc, FALSE);
 			}
-	BBPunlock("CMDbbpStatus");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
@@ -289,7 +289,7 @@ CMDbbpKind(bat *ret)
 		throw(MAL, "catalog.bbpKind", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpKind");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
@@ -302,7 +302,7 @@ CMDbbpKind(bat *ret)
 				if (mode)
 					BUNappend(b, mode, FALSE);
 			}
-	BBPunlock("CMDbbpKind");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","kind");
 	return MAL_SUCCEED;
@@ -319,14 +319,14 @@ CMDbbpRefCount(bat *ret)
 		throw(MAL, "catalog.bbpRefCount", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpRefCount");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_refs(i);
 
 			BUNappend(b, &refs, FALSE);
 		}
-	BBPunlock("CMDbbpRefCount");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","refcnt");
 	return MAL_SUCCEED;
@@ -343,14 +343,14 @@ CMDbbpLRefCount(bat *ret)
 		throw(MAL, "catalog.bbpLRefCount", MAL_MALLOC_FAIL);
 	BATseqbase(b,0);
 
-	BBPlock("CMDbbpLRefCount");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_lrefs(i);
 
 			BUNappend(b, &refs, FALSE);
 		}
-	BBPunlock("CMDbbpLRefCount");
+	BBPunlock();
 	if (!(b->batDirty&2)) BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"bbp","lrefcnt");
 	return MAL_SUCCEED;
