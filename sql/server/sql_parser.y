@@ -5160,7 +5160,8 @@ lngval:
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 19) {
 		  	$$ = strtoll(s,&end,10);
 		  } else {
@@ -5182,7 +5183,8 @@ intval:
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 10) {
 		  	$$ = strtol(s,&end,10);
 		  } else {

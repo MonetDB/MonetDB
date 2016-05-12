@@ -67,6 +67,10 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else
 			if (getFunctionId(p) == crossRef) {
 				newRows(1,2,((log((double) c1) + log((double) c2) > log(INT_MAX) ? INT_MAX : c1 * c2 +1)),0);
+				/* log sets errno if it cannot compute the log. This will then screw with code that checks errno */
+				if (errno == ERANGE || errno == EDOM) {
+					errno = 0;
+				}
 			}
 		} else if (getModuleId(p) == batcalcRef) {
 			if( getFunctionId(p) == ifthenelseRef) {
