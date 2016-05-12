@@ -397,19 +397,19 @@ public class SQLExporter extends Exporter {
 	 */
 	public void resultSetToTable(ResultSet rs) throws SQLException {
 		ResultSetMetaData md = rs.getMetaData();
-		// find the widths of the columns
+		// find the optimal display widths of the columns
 		int[] width = new int[md.getColumnCount()];
-		for (int j = 0; j < md.getColumnCount(); j++) {
-			if (md.getColumnDisplaySize(j + 1) == 0) {
-				width[j] = md.getColumnLabel(j + 1).length();
-			} else {
-				width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnLabel(j + 1).length());
-			}
-			if (md.isNullable(j + 1) != ResultSetMetaData.columnNoNulls) {
-				width[j] = Math.max("<NULL>".length(), width[j]);
-			}
+		boolean[] isSigned = new boolean[md.getColumnCount()];
+		for (int j = 0; j < width.length; j++) {
+			int coldisplaysize = md.getColumnDisplaySize(j + 1);
+			int collabellength = md.getColumnLabel(j + 1).length();
+			int maxwidth = (coldisplaysize > collabellength) ? coldisplaysize : collabellength;
+			// the minimum width should be 4 to represent: "NULL"
+			width[j] = (maxwidth > 4) ? maxwidth : 4;
+			isSigned[j] = md.isSigned(j + 1);
 		}
 
+		// print the header text
 		out.print("+");
 		for (int j = 0; j < width.length; j++)
 			out.print("-" + repeat('-', width[j]) + "-+");
@@ -417,7 +417,8 @@ public class SQLExporter extends Exporter {
 
 		out.print("|");
 		for (int j = 0; j < width.length; j++) {
-			out.print(" " + md.getColumnLabel(j + 1) + repeat(' ', width[j] - md.getColumnLabel(j + 1).length()) +  " |");
+			String colLabel = md.getColumnLabel(j + 1);
+			out.print(" " + colLabel + repeat(' ', width[j] - colLabel.length()) + " |");
 		}
 		out.println();
 
@@ -426,28 +427,38 @@ public class SQLExporter extends Exporter {
 			out.print("=" + repeat('=', width[j]) + "=+");
 		out.println();
 
+		// print the body text
 		int count = 0;
 		for (; rs.next(); count++) {
 			out.print("|");
 			for (int j = 0; j < width.length; j++) {
 				Object rdata = rs.getObject(j + 1);
 				String data;
-				if (rdata == null) {
-					data = "<NULL>";
+				if (rdata == null || rs.wasNull()) {
+					data = "NULL";
 				} else {
 					data = rdata.toString();
+					if (data == null)
+						data = "NULL";
 				}
-				if (md.isSigned(j + 1)) {
-					// we have a numeric type here
-					out.print(" " + repeat(' ', Math.max(width[j] - data.length(), 0)) + data +  " |");
+
+				int filler_length = width[j] - data.length();
+				if (filler_length <= 0) {
+					out.print(" " + data + " |");
 				} else {
-					// something else
-					out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
+					if (isSigned[j]) {
+						// we have a numeric type here, right align
+						out.print(" " + repeat(' ', filler_length) + data + " |");
+					} else {
+						// all other left align
+						out.print(" " + data + repeat(' ', filler_length) + " |");
+					}
 				}
 			}
 			out.println();
 		}
 
+		// print the footer text
 		out.print("+");
 		for (int j = 0; j < width.length; j++)
 			out.print("-" + repeat('-', width[j]) + "-+");
