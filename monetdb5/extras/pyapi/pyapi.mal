@@ -44,8 +44,6 @@ pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address PyAPIevalAggr
 comment "grouped aggregates through Python";
 
-
-
 module pyapimap;
 
 # The generic Python interface

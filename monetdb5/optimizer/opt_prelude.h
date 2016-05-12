@@ -167,6 +167,7 @@ opt_export  str queryRef;
 opt_export  str rapiRef;
 opt_export  str batrapiRef;
 opt_export  str pyapiRef;
+opt_export  str batpyapiRef;
 opt_export  str pyapimapRef;
 opt_export  str subeval_aggrRef;
 opt_export  str rankRef;
