@@ -814,3 +814,7 @@ command PatchToGeom(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:db
 address wkbPachToGeom_bat
 comment "Return the geometry with the z values rounded to the closest value at the vertexes.";
 
+module batgeom;
+command asX3D(geom:bat[:oid,:wkb], maxDecDigits:int, options:int) :bat[:oid,:str] address wkbAsX3D_bat
+comment "Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML";
+

@@ -1526,3 +1526,55 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	return MAL_SUCCEED;
 }
+
+/* sets the srid of the geometry - BULK version*/
+str
+wkbAsX3D_bat(bat *outBAT_id, bat *inBAT_id, int *maxDecDigits, int *options)
+{
+	BAT *outBAT = NULL, *inBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter inBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
+	}
+
+	if (!BAThdense(inBAT)) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, "batgeom.SetSRID", "The BAT must have dense head");
+	}
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, "batgeom.SetSRID", "Error creating new BAT");
+	}
+	//set the first idx of the output BAT equal to that of the input BAT
+	BATseqbase(outBAT, inBAT->hseqbase);
+
+	//iterator over the BATs
+	inBAT_iter = bat_iterator(inBAT);
+	BATloop(inBAT, p, q) {
+		str err = NULL;
+		str outWKB = NULL;
+
+		wkb *inWKB = (wkb *) BUNtail(inBAT_iter, p);
+
+		if ((err = wkbAsX3D(&outWKB, &inWKB, maxDecDigits, options)) != MAL_SUCCEED) {	//set SRID
+			BBPunfix(inBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
+			return err;
+		}
+        if (outWKB) {
+            BUNappend(outBAT, outWKB, TRUE);	//add the point to the new BAT
+            GDKfree(outWKB);
+            outWKB = NULL;
+        }
+	}
+
+	BBPunfix(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+

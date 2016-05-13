@@ -3813,7 +3813,7 @@ wkbNumRings(int *out, wkb **geom, int *exteriorRing)
 
 	//check if the geometry is empty
 	if ((ret = wkbIsEmpty(&empty, geom)) != MAL_SUCCEED) {
-		return ret;
+        return ret;
 	}
 	if (empty) {
 		//the geometry is empty
@@ -6396,10 +6396,22 @@ wkbContains_point(bit *out, wkb **a, dbl *point_x, dbl *point_y)
 str
 wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 {
+	str ret = MAL_SUCCEED;
     static const char* default_defid = "x3d:"; /* default defid */
     const char* defid = default_defid;
 	GEOSGeom geom = wkb2geos(*geomWKB);
     int srid = (*geomWKB)->srid;
+	bit empty;
+    
+    //check if the geometry is empty
+	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
+		return ret;
+	}
+	if (empty) {
+		//the geometry is empty
+		(*res) = NULL;
+		return MAL_SUCCEED;
+	}
 
     if (*option & GEOM_X3D_USE_GEOCOORDS) {
         if (srid != 4326) {
