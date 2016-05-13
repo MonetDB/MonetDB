@@ -315,11 +315,12 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
-
+#ifdef _MSC_VER
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
 #define localtime_r(tp,tm)	localtime_s(tm,tp)
+#endif
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */
@@ -1134,6 +1135,11 @@ typedef __uint128_t uhge;
 #ifdef HAVE_EMBEDDED_R
 #define _MSC_EXTENSIONS 1
 #undef HAVE_CTIME_R
+#else
+#define HAVE_MAPI 1
 #endif
+
+#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
+#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

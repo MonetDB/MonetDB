@@ -3146,10 +3146,6 @@ command batstr.startsWith(s:bat[:str],prefix:bat[:str]):bat[:bit]
 address STRbatPrefix;
 comment Prefix check.
 
-command batstr.stringlength(s:bat[:str]):bat[:int] 
-address STRbatstringLength;
-comment Return the length of a right trimed string.
-
 command batstr.trim(s:bat[:str],s2:bat[:str]):bat[:str] 
 address STRbatStrip2_bat;
 comment Strip characters in the second strings around the first strings.
@@ -31604,6 +31600,18 @@ pattern batcalc.ifthenelse(b:bat[:bit],v1:any_1,v2:any_1):bat[:any_1]
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
+pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],v2:any_1):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,v1:any_1,b2:bat[:any_1]):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],b2:bat[:any_1]):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
 pattern batcalc.int_noerror(b:bat[:str],s:bat[:oid]):bat[:int] 
 address CMDconvert_int;
 comment cast from str to int with candidates list
@@ -52075,10 +52083,6 @@ comment Search for a substring. Returns	 position, -1 if not found.
 command str.startsWith(s:str,prefix:str):bit 
 address STRPrefix;
 comment Prefix check.
-
-command str.stringlength(s:str):int 
-address STRSQLLength;
-comment Return the length of a right trimed string (SQL semantics).
 
 command str.string(s:str,offset:int,count:int):str 
 address STRSubString;

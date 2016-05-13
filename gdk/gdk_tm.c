@@ -134,13 +134,13 @@ TMcommit(void)
 	gdk_return ret = GDK_FAIL;
 
 	/* commit with the BBP globally locked */
-	BBPlock("TMcommit");
+	BBPlock();
 	if (prelude(getBBPsize(), NULL) == GDK_SUCCEED &&
 	    BBPsync(getBBPsize(), NULL) == GDK_SUCCEED) {
 		epilogue(getBBPsize(), NULL);
 		ret = GDK_SUCCEED;
 	}
-	BBPunlock("TMcommit");
+	BBPunlock();
 	return ret;
 }
 
@@ -183,6 +183,17 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
+	/* de-duplication of BAT ids in subcommit list
+	 * this is needed because of legacy reasons (database
+	 * upgrade) */
+	for (xx = 2; xx < cnt; xx++) {
+		if (subcommit[xx-1] == subcommit[xx]) {
+			int i;
+			cnt--;
+			for (i = xx; i < cnt; i++)
+				subcommit[i] = subcommit[i+1];
+		}
+	}
 	if (prelude(cnt, subcommit) == GDK_SUCCEED) {	/* save the new bats outside the lock */
 		/* lock just prevents BBPtrims, and other global
 		 * (sub-)commits */
@@ -240,7 +251,7 @@ TMabort(void)
 {
 	int i;
 
-	BBPlock("TMabort");
+	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
 			BAT *b = BBPquickdesc(i, FALSE);
@@ -292,6 +303,6 @@ TMabort(void)
 		}
 		BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMabort");
 	}
-	BBPunlock("TMabort");
+	BBPunlock();
 	GDKclrerr();
 }

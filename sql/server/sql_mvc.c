@@ -27,37 +27,37 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
 
-	logger_settings *log_settings = (struct logger_settings *) GDKmalloc(sizeof(struct logger_settings));
+	logger_settings log_settings;
 	/* Set the default WAL directory. "sql_logs" by default */
-	log_settings->logdir = "sql_logs";
+	log_settings.logdir = "sql_logs";
 	/* Get and pass on the WAL directory location, if set */
 	if (GDKgetenv("gdk_logdir") != NULL) {
-		log_settings->logdir = GDKgetenv("gdk_logdir");
+		log_settings.logdir = GDKgetenv("gdk_logdir");
 	}
 	/* Get and pass on the shared WAL directory location, if set */
-	log_settings->shared_logdir = GDKgetenv("gdk_shared_logdir");
+	log_settings.shared_logdir = GDKgetenv("gdk_shared_logdir");
 	/* Get and pass on the shared WAL drift threshold, if set.
 	 * -1 by default, meaning it should be ignored, since it is not set */
-	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
+	log_settings.shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
 	/* Get and pass on the flag how many WAL files should be preserved.
 	 * 0 by default - keeps only the current WAL file. */
-	log_settings->keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
+	log_settings.keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {
-		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
-		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings->keep_persisted_log_files);
-		if (log_settings->shared_logdir != NULL) {
-			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings->shared_logdir);
+		fprintf(stderr, "#mvc_init logdir %s\n", log_settings.logdir);
+		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings.keep_persisted_log_files);
+		if (log_settings.shared_logdir != NULL) {
+			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings.shared_logdir);
 		}
-		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings->shared_drift_threshold);
+		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings.shared_drift_threshold);
 	}
 	keyword_init();
 	scanner_init_keywords();
 
 
-	if ((first = store_init(debug, store, ro, su, log_settings, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, &log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}

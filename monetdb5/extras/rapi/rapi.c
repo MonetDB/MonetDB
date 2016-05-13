@@ -191,8 +191,11 @@ static char *RAPIinstalladdons(void) {
 	UNPROTECT(1);
 
 	// run rapi.R environment setup script
-	snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")",
-			 locate_file("rapi", ".R", 0));
+	{
+		char *f = locate_file("rapi", ".R", 0);
+		snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")", f);
+		GDKfree(f);
+	}
 #if DIR_SEP != '/'
 	{
 		char *p;

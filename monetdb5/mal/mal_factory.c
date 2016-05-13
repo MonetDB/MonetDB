@@ -361,7 +361,7 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			if (s == NULL){
 				throw(MAL, "factory.remove",
 					OPERATION_FAILED " SQL entry '%s' not found",
-					putName(nme, strlen(nme)));
+					putName(nme));
 			}
 			stk = pl->stk;
 			MSresetVariables(cntxt, pl->factory, stk, 0);

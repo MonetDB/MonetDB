@@ -5,9 +5,9 @@
  *
  * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
-
 #ifndef _REMOTE_DEF
 #define _REMOTE_DEF
+#ifdef HAVE_MAPI
 
 #include <mal.h>
 #include <mal_exception.h>
@@ -73,4 +73,6 @@ remote_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 remote_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 remote_export str RMTisalive(int *ret, str *conn);
+#endif /* HAVE_MAPI */
 #endif /* _REMOTE_DEF */
+

@@ -367,6 +367,8 @@ is_subtype(sql_subtype *sub, sql_subtype *super)
 	if (super->digits == 0 && super->type->eclass == EC_STRING && 
 	    (sub->type->eclass == EC_STRING || sub->type->eclass == EC_CHAR))
 		return 1;
+	if (super->digits != sub->digits && sub->type->eclass == EC_CHAR)
+		return 0;
 	/* subtypes are only equal iff
 	   they map onto the same systemtype */
 	return (type_cmp(sub->type, super->type) == 0);
@@ -1692,7 +1694,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "concat", "calc", "+", *t, *t, *t, DIGITS_ADD);
 		sql_create_func(sa, "ascii", "str", "ascii", *t, NULL, INT, SCALE_NONE);
 		sql_create_func(sa, "code", "str", "unicode", INT, NULL, *t, SCALE_NONE);
-		sql_create_func(sa, "length", "str", "stringlength", *t, NULL, INT, SCALE_NONE);
+		sql_create_func(sa, "length", "str", "length", *t, NULL, INT, SCALE_NONE);
 		sql_create_func(sa, "right", "str", "stringright", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "left", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "upper", "str", "toUpper", *t, NULL, *t, SCALE_NONE);

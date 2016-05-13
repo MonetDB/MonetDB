@@ -537,7 +537,7 @@ setLifespan(MalBlkPtr mb)
 	InstrPtr p;
 	int *blk;
 	Lifespan span= newLifespan(mb);
-	str lang = putName("language",8), dataflow= putName("dataflow",8);
+	str lang = putName("language"), dataflow= putName("dataflow");
 
 	if (span == NULL)
 		return NULL;
@@ -715,7 +715,7 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int *decl;
-	str lang = putName("language",8), dataflow= putName("dataflow",8);
+	str lang = putName("language"), dataflow= putName("dataflow");
 	int dflow = -1;
 
 	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);

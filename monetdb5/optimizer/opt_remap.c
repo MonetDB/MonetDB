@@ -35,8 +35,8 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 
 	snprintf(buf,1024,"bat%s",mod);
 	p= newInstruction(mb,ASSIGNsymbol);
-	setModuleId(p,putName(buf, strlen(buf)));
-	setFunctionId(p,putName(fcn, strlen(fcn)));
+	setModuleId(p,putName(buf));
+	setFunctionId(p,putName(fcn));
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)
@@ -228,7 +228,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					goto terminateMX;
 				if (getModuleId(q)){
 					snprintf(buf,1024,"bat%s",getModuleId(q));
-					setModuleId(q,putName(buf,strlen(buf)));
+					setModuleId(q,putName(buf));
 
 					actions++;
 					/* now see if we can resolve the instruction */
@@ -324,7 +324,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 	for(i=0;OperatorMap[i].src;i++)
 	if( strcmp(fcn,OperatorMap[i].src)==0){
 		/* found a candidate for a switch */
-		getVarConstant(mb, getArg(pci, 2)).val.sval = putName(OperatorMap[i].dst,OperatorMap[i].len);
+		getVarConstant(mb, getArg(pci, 2)).val.sval = putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
 		r= OPTremapDirect(cntxt,mb, stk, pci, scope);
@@ -401,7 +401,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(t, batcalcRef);
-			setFunctionId(t, putName("==", strlen("==")));
+			setFunctionId(t, putName("=="));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bit));
 			t = pushArgument(mb, t, getDestVar(cnt));
 			t = pushWrd(mb, t, 0);
@@ -418,7 +418,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(t, batcalcRef);
-			setFunctionId(t, putName("ifthenelse", strlen("ifthenelse")));
+			setFunctionId(t, putName("ifthenelse"));
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);

@@ -1,6 +1,5 @@
-ll <- NULL
 if (Sys.getenv("TSTTRGDIR") != "") {
-	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
+	.libPaths(c(.libPaths(), paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")))
 }
 library(DBI, quietly = T)
 

@@ -100,6 +100,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	/** The warnings for this ResultSet object */
 	private SQLWarning warnings;
 
+	/** Just a dummy variable to keep store the fetchsize set. */
+	private int fetchSize;
+
 	/**
 	 * Main constructor backed by the given Header.
 	 *
@@ -116,6 +119,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		this.header = header;
 		this.type = header.getRSType();
 		this.concurrency = header.getRSConcur();
+		/* if we have a header object, the fetchSize used for this result set
+		   is the header's cacheSize */
+		this.fetchSize = header.getCacheSize();
 		// well there is only one supported concurrency, so we don't have to
 		// bother about that
 
@@ -165,6 +171,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		this.tupleCount = results;
 
 		this.tlp = new TupleLineParser(columns.length);
+		
+		this.fetchSize = 0;
 	}
 
 	//== methods of interface ResultSet
@@ -942,7 +950,30 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getFetchSize() throws SQLException {
-		return header.getCacheSize();
+		return fetchSize;
+	}
+
+	/**
+	 * Gives the JDBC driver a hint as to the number of rows that should be
+	 * fetched from the database when more rows are needed.  In MonetDB, this is
+	 * actually a no-op, because even before a MonetResultSet object is
+	 * created, the fetch size is already determined in the
+	 * MonetConnection.ResultSetResponse passed to its constructor.  Since all
+	 * data blocks for this whole result set are already allocated in
+	 * MonetConnection.ResultSetResponse, it is too complicated and error-prone
+	 * to still change the fetchSize here.  If one really needs to overwrite
+	 * the default fetchSize, please use MonetStatement.setFetchSize() instead.
+	 *
+	 * @param rows the number of rows to fetch
+	 * @throws SQLException if the condition 0 &lt;= rows is not satisfied
+	 */
+	@Override
+	public void setFetchSize(int rows) throws SQLException {
+		if (rows >= 0) {
+			fetchSize = rows;
+		} else {
+			throw new SQLException("Illegal fetch size value: " + rows, "M1M05");
+		}
 	}
 
 	/**
@@ -2837,8 +2868,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public boolean rowUpdated() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowUpdated not implemented yet, sorry!", "0A000"); }
 	@Override
 	public void setFetchDirection(int direction) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchDirection not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void setFetchSize(int rows) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchSize not implemented yet, sorry!", "0A000"); }
 	@Override
 	public void updateArray(int columnIndex, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!", "0A000"); }
 	@Override

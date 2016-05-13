@@ -58,12 +58,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	InstrPtr p,q, *old, *series;
 	int i, k, limit, slimit, actions=0;
 	str m;
-	str bteRef = getName("bte",3);
-	str shtRef = getName("sht",3);
-	str intRef = getName("int",3);
-	str lngRef = getName("lng",3);
-	str fltRef = getName("flt",3);
-	str dblRef = getName("dbl",3);
+	str bteRef = getName("bte");
+	str shtRef = getName("sht");
+	str intRef = getName("int");
+	str lngRef = getName("lng");
+	str fltRef = getName("flt");
+	str dblRef = getName("dbl");
 
 	(void) cntxt;
 	(void) stk;
@@ -108,7 +108,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			errorCheck(p,algebraRef,getArg(p,1));
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
 			errorCheck(p,algebraRef,getArg(p,2));
-		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue",11) && isaBatType(getArgType(mb,p,0)) ){
+		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue") && isaBatType(getArgType(mb,p,0)) ){
 			// interface expects scalar type only, not expressable in MAL signature
 			mb->errors++;
 			showException(cntxt->fdout, MAL, "generate_series", "internal error, generate_series is a table producing function");

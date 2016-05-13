@@ -276,7 +276,7 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);
 		}
-		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
+		s= findSymbol(cntxt->nspace, putName(modnme),putName(fcnnme));
 
 		if( s == NULL) {
 			char buf[1024];

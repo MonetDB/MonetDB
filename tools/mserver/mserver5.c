@@ -511,6 +511,7 @@ main(int argc, char **av)
 	} else {
 		BBPaddfarm(dbpath, (1 << PERSISTENT) | (1 << TRANSIENT));
 	}
+	GDKfree(dbpath);
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
 		return 0;

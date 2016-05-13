@@ -13,8 +13,8 @@ libfilename <- "libmonetdb5"
 classname <- "monetdb_embedded_connection"
 
 monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE, sequential=TRUE) {
-	dir <- normalizePath(as.character(dir), mustWork=F)
 	quiet <- as.logical(quiet)
+	dir <- as.character(dir)
 	if (length(dir) != 1) {
 		stop("Need a single directory name as parameter.")
 	}
@@ -24,12 +24,13 @@ monetdb_embedded_startup <- function(dir=tempdir(), quiet=TRUE, sequential=TRUE)
 	if (file.access(dir, mode=2) < 0) {
 		stop("Cannot write to ", dir)
 	}
+	dir <- normalizePath(dir, mustWork=T)
 	if (!monetdb_embedded_env$is_started) {
 		res <- .Call("monetdb_startup_R", dir, quiet, 
 			getOption('monetdb.squential', sequential), PACKAGE=libfilename)
 	} else {
 		if (dir != monetdb_embedded_env$started_dir) {
-			stop("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ", restart R).")
+			stop("MonetDBLite cannot change database directories (already started in ", monetdb_embedded_env$started_dir, ", shutdown first).")
 		}
 		return(invisible(TRUE))
 	}

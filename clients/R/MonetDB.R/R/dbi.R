@@ -98,7 +98,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
       stop("MonetDBLite package required for embedded mode")
     }
     MonetDBLite::monetdb_embedded_startup(embedded, !getOption("monetdb.debug.embedded", FALSE), 
-      getOption("monetdb.sequential", TRUE))
+      getOption("monetdb.sequential", FALSE))
     connenv <- new.env(parent=emptyenv())
     connenv$conn <- MonetDBLite::monetdb_embedded_connect()
     connenv$open <- TRUE
@@ -143,7 +143,7 @@ setMethod("dbConnect", "MonetDBDriver", def=function(drv, dbname="demo", user="m
   .mapiAuthenticate(connenv$socket, dbname, user, password, language=language)
   
   conn <- new("MonetDBConnection", connenv=connenv)
-  if (getOption("monetdb.sequential", F)) {
+  if (getOption("monetdb.sequential", FALSE)) {
     message("MonetDB: Switching to single-threaded query execution.")
     dbSendQuery(conn, "set optimizer='sequential_pipe'")
   }
@@ -524,7 +524,7 @@ setMethod("dbWriteTable", signature(conn="MonetDBConnection", name = "character"
       if (csvdump) {
         tmp <- tempfile(fileext = ".csv")
         write.table(value, tmp, sep = ",", quote = TRUE, row.names = FALSE, col.names = FALSE, na="", fileEncoding = "UTF-8")
-        dbSendQuery(conn, paste0("COPY INTO ", qname, " FROM '", tmp, "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
+        dbSendQuery(conn, paste0("COPY INTO ", qname, " FROM '", encodeString(tmp), "' USING DELIMITERS ',','\\n','\"' NULL AS ''"))
         file.remove(tmp) 
       } else {
         vins <- paste("(", paste(rep("?", length(value)), collapse=', '), ")", sep='')
@@ -924,7 +924,7 @@ monet.read.csv <- monetdb.read.csv <- function(conn, files, tablename, header=TR
   delimspec <- paste0("USING DELIMITERS '", delim, "','", newline, "','", quote, "'")
   
   for(i in seq_along(files)) {
-    thefile <- normalizePath(files[i])
+    thefile <- encodeString(normalizePath(files[i]))
     dbSendUpdate(conn, paste("COPY", if(header) "OFFSET 2", "INTO", 
       tablename, "FROM", paste("'", thefile, "'", sep=""), delimspec, "NULL as", paste("'", 
       na.strings[1], "'", sep=""), if(locked) "LOCKED", if(best.effort) "BEST EFFORT"))
