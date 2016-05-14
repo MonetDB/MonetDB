@@ -3747,6 +3747,29 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
+/* small ordered right, dense left, oid's only, do fetches */
+static gdk_return
+fetchjoin( BAT *r1, BAT *r2, BAT *l, BAT *r)
+{
+	oid lo = l->tseqbase, hi = lo + BATcount(l);
+	BUN b = SORTfndfirst(r, &lo), e = SORTfndlast(r, &hi), p;
+
+	BATseqbase(r1, 0);
+	if (r2) {
+		BATseqbase(r2, 0);
+		for(p = b; p < e; p++) { 
+			oid v = p + r->hseqbase;
+			BUNappend(r2, &v, FALSE);
+		}
+	}
+	for(p = b; p < e; p++) {
+		oid v = *(oid*)Tloc(r, p) - l->tseqbase + l->hseqbase; 
+		BUNappend(r1, &v, FALSE);
+	}
+	return GDK_SUCCEED;
+}
+
+
 /* Make the implementation choices for various left joins. */
 static gdk_return
 subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
@@ -3792,6 +3815,8 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
 				 nil_on_miss, semi, only_misses, maxsize, t0, 0);
+	if (BATtdense(l) && BATordered(r) && (rcount * 1024) < lcount && ATOMtype(l->ttype) == TYPE_oid && !sl && !sr && !nil_matches && !only_misses) 
+		return fetchjoin(r1, r2, l, r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
 			nil_on_miss, semi, only_misses, maxsize, t0, 0, "leftjoin");
 }
