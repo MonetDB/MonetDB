@@ -64,8 +64,8 @@ static int
 rel_no_mitosis(sql_rel *rel)
 {
 	int is_point = 0;
-	
-	if (!rel || is_basetable(rel->op))
+
+	if (!rel)
 		return 1;
 	if (is_project(rel->op))
 		return rel_no_mitosis(rel->l);
