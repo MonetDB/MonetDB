@@ -44,7 +44,6 @@ struct _PyReturn{
 };
 #define PyReturn struct _PyReturn
 
-enum _sqltype { sql_none = 0, sql_date = 1, sql_time, sql_timestamp, sql_decimal };
 struct _PyInput{
     void *dataptr;                      //pointer to input data
     BAT *bat;                           //pointer to input BAT

@@ -426,9 +426,10 @@ PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static char *PyError_CreateException(char *error_text, char *pycall);
 
-static enum _sqltype get_sql_token(sql_subtype *sqltype);
-str ConvertFromSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
-str ConvertToSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
+int GetSQLType(sql_subtype *sql_subtype);
+bit ConvertableSQLType(sql_subtype *sql_subtype);
+str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
+str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
 
 //! The main PyAPI function, this function does everything PyAPI related
 //! It takes as argument a bunch of input BATs, a python function, and outputs a number of BATs
@@ -560,18 +561,16 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             inp->bat = b;
         }
         if (argnode) {
-            enum _sqltype sql_type;
             inp->sql_subtype = &((sql_arg*)argnode->data)->type;
-            sql_type = get_sql_token(inp->sql_subtype);
 
-            if (sql_type != sql_none) { // if the sql type is set, we have to do some conversion
+            if (ConvertableSQLType(inp->sql_subtype)) { // if the sql type is set, we have to do some conversion
                 if (inp->scalar) {
                     // todo: scalar SQL types
                     msg = PyError_CreateException("Scalar SQL types haven't been implemented yet... sorry", NULL);
                     goto wrapup;
                 } else {
                     BAT *ret_bat = NULL;
-                    msg = ConvertFromSQLType(cntxt, inp->bat, sql_type, inp->sql_subtype, &ret_bat, &inp->bat_type);
+                    msg = ConvertFromSQLType(cntxt, inp->bat, inp->sql_subtype, &ret_bat, &inp->bat_type);
                     if (msg != MAL_SUCCEED) {
                         goto wrapup;
                     }
@@ -732,14 +731,13 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 res_col col = output->cols[i];
                                 BAT *b = BATdescriptor(col.b);
                                 sql_subtype *subtype = &col.type;
-                                enum _sqltype sql_type = get_sql_token(subtype);
 
                                 // if the sql type is set, we have to do some conversion
                                 // we do this before sending the BATs to the other process, otherwise there are complaints about not being able to find a BATdescriptor
-                                if (sql_type != sql_none) {
+                                if (ConvertableSQLType(subtype)) {
                                     BAT *ret_bat = NULL;
                                     int ret_type;
-                                    msg = ConvertFromSQLType(cntxt, b, sql_type, subtype, &ret_bat, &ret_type);
+                                    msg = ConvertFromSQLType(cntxt, b, subtype, &ret_bat, &ret_type);
                                     if (msg != MAL_SUCCEED) {
                                         goto wrapup;
                                     }
@@ -2378,19 +2376,17 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
     size_t index_offset = 0;
     char *msg;
     size_t iu;
-    enum _sqltype sql_token;
 
     if (ret->multidimensional) index_offset = i;
 
-    sql_token = get_sql_token(type);
-    switch(sql_token)
+    switch(GetSQLType(type))
     {
-        case sql_timestamp:
-        case sql_time:
-        case sql_date:
+        case EC_TIMESTAMP:
+        case EC_TIME:
+        case EC_DATE:
             bat_type = TYPE_str;
             break;
-        case sql_decimal:
+        case EC_DEC:
             bat_type = TYPE_dbl;
             break;
         default: 
@@ -2590,9 +2586,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
         goto wrapup;
     }
 
-    if (sql_token != sql_none) {
+    if (ConvertableSQLType(type)) {
         BAT *result;
-        msg = ConvertToSQLType(NULL, b, sql_token, type, &result, &bat_type);
+        msg = ConvertToSQLType(NULL, b, type, &result, &bat_type);
         if (msg != MAL_SUCCEED) { 
             goto wrapup;
         }
@@ -2605,30 +2601,49 @@ wrapup:
     return NULL;
 }
 
+bit ConvertableSQLType(sql_subtype *sql_subtype) {
+    switch(GetSQLType(sql_subtype)) {
+        case EC_DATE:
+        case EC_TIME:
+        case EC_TIMESTAMP:
+        case EC_DEC:
+            return 1;
+    }
+    return 0;
+}
 
-str ConvertFromSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_subtype, BAT **ret_bat,  int *ret_type)
+int GetSQLType(sql_subtype *sql_subtype) {
+    if (!sql_subtype) return -1;
+    if (!sql_subtype->type) return -1;
+    return sql_subtype->type->eclass;
+}
+
+str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,  int *ret_type)
 {
     str res = MAL_SUCCEED;
     int conv_type; 
 
-    switch(sqltype)
+    assert(sql_subtype);
+    assert(sql_subtype->type);
+
+    switch(sql_subtype->type->eclass)
     {
-        case sql_timestamp:
-        case sql_time:
-        case sql_date:
+        case EC_DATE:
+        case EC_TIME:
+        case EC_TIMESTAMP:
             conv_type = TYPE_str;
             break;
-        case sql_decimal:
+        case EC_DEC:
             conv_type = TYPE_dbl;
             break;
         default: 
-            return createException(MAL, "pyapi.eval", "Convert From SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sqltype);
+            return createException(MAL, "pyapi.eval", "Convert From SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sql_subtype->type->eclass);
     }
 
     if (conv_type == TYPE_str)
     {
         // maybe there's a more elegant way for obj->str conversion than calling this MAL function? probably not
-        int eclass = -1;
+        int eclass = sql_subtype->type->eclass;
         int d1 = 0;
         int s1 = 0;
         int has_tz = 0;
@@ -2641,18 +2656,15 @@ str ConvertFromSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype 
         MalStack*     stk = NULL;
         InstrRecord*  pci = NULL;
 
-        switch(sqltype)
+        switch(eclass)
         {
-            case sql_date:
-                eclass = EC_DATE;
+            case EC_DATE:
                 d1 = 0;
                 break;
-            case sql_time:
-                eclass = EC_TIME;
+            case EC_TIME:
                 d1 = 1;
                 break;
-            case sql_timestamp:
-                eclass = EC_TIMESTAMP;
+            case EC_TIMESTAMP:
                 d1 = 7;
                 break;
             default: 
@@ -2737,7 +2749,7 @@ str ConvertFromSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype 
 }
 
 str 
-ConvertToSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
+ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
 {
     str res = MAL_SUCCEED;
     bat result_bat = 0;
@@ -2745,22 +2757,25 @@ ConvertToSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_s
     int scale = sql_subtype->scale;
     (void) cntxt;
 
-    switch(sqltype)
+    assert(sql_subtype);
+    assert(sql_subtype->type);
+
+    switch(sql_subtype->type->eclass)
     {
-        case sql_timestamp:
+        case EC_TIMESTAMP:
             res = (*batstr_2time_timestamp_ptr)(&result_bat, &b->batCacheid, &digits);
             break;
-        case sql_time:
+        case EC_TIME:
             res = (*batstr_2time_daytime_ptr)(&result_bat, &b->batCacheid, &digits);
             break;
-        case sql_date:
+        case EC_DATE:
             res = (*batstr_2_date_ptr)(&result_bat, &b->batCacheid);
             break;
-        case sql_decimal:
+        case EC_DEC:
             res = (*batdbl_num2dec_lng_ptr)(&result_bat, &b->batCacheid, &digits, &scale);
             break;
         default: 
-            return createException(MAL, "pyapi.eval", "Convert To SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sqltype);
+            return createException(MAL, "pyapi.eval", "Convert To SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sql_subtype->type->eclass);
     }
     if (res == MAL_SUCCEED) {
         *ret_bat = BATdescriptor(result_bat);
@@ -2769,25 +2784,6 @@ ConvertToSQLType(Client cntxt, BAT *b, enum _sqltype sqltype, sql_subtype *sql_s
 
     return res;
 }
-
-static enum _sqltype 
-get_sql_token(sql_subtype *sqltype)
-{
-    char *sqlname;
-    if (!sqltype) return sql_none;
-    sqlname = sqltype->type->sqlname;
-    if (strcasecmp(sqlname, "date") == 0) {
-        return sql_date;
-    } else if (strcasecmp(sqlname, "time") == 0) {
-        return sql_time;
-    } else if (strcasecmp(sqlname, "timestamp") == 0) {
-        return sql_timestamp;
-    } else if (strcasecmp(sqlname, "decimal") == 0) {
-        return sql_decimal;
-    }
-    return sql_none;
-}
-
 
 static 
 void ComputeParallelAggregation(AggrParams *p)
