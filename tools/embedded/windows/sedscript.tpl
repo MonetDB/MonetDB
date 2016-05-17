@@ -39,11 +39,11 @@ s|@build_vendor@||
 s|@builtby@||
 s|@BZ_CFLAGS@||
 s|@BZ_LIBS@||
-s|@CC@|gcc|
+s|@CC@|%CC%|
 s|@CCDEPMODE@||
 s|@cfitsio_CFLAGS@||
 s|@cfitsio_LIBS@||
-s|@CFLAGS@|-m%BITS% -O3 -I"%RINCLUDE%" -DHAVE_EMBEDDED=1 -DHAVE_EMBEDDED_R=1|
+s|@CFLAGS@|-O3 -I"%RINCLUDE%" -DHAVE_EMBEDDED=1 -DHAVE_EMBEDDED_R=1|
 s|@CLASSPATH@||
 s|@compilercall@||
 s|@configure_input@||

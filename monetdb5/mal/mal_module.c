@@ -63,7 +63,7 @@ void setModuleJump(str nme, Module cur){
 Module newModule(Module scope, str nme){
 	Module cur;
 
-	nme = putName(nme,strlen(nme));
+	nme = putName(nme);
 	assert(nme != NULL);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if( cur == NULL){

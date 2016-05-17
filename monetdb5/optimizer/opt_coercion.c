@@ -123,7 +123,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, k;
 	InstrPtr p;
 	int actions = 0;
-	str calcRef= putName("calc",4);
+	str calcRef= putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
 
 	if( coerce == NULL)

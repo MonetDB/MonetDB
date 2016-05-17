@@ -251,6 +251,7 @@ BATcheckhash(BAT *b)
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
 					hp->parentid = b->batCacheid;
+					hp->dirty = FALSE;
 					b->T->hash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
@@ -345,6 +346,7 @@ BAThash(BAT *b, BUN masksize)
 			GDKfree(hp);
 			return GDK_FAIL;
 		}
+		hp->dirty = TRUE;
 		sprintf(hp->filename, "%s.%s", nme, ext);
 
 		/* cnt = 0, hopefully there is a proper capacity from
@@ -608,6 +610,17 @@ HASHfree(BAT *b)
 		MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
 		if (b->T->hash && b->T->hash != (Hash *) -1) {
 			if (b->T->hash != (Hash *) 1) {
+				if (b->T->hash->heap->storage == STORE_MEM &&
+				    b->T->hash->heap->dirty) {
+					GDKsave(b->T->hash->heap->farmid,
+						b->T->hash->heap->filename,
+						NULL,
+						b->T->hash->heap->base,
+						b->T->hash->heap->free,
+						STORE_MEM,
+						FALSE);
+					b->T->hash->heap->dirty = FALSE;
+				}
 				HEAPfree(b->T->hash->heap, 0);
 				GDKfree(b->T->hash->heap);
 				GDKfree(b->T->hash);

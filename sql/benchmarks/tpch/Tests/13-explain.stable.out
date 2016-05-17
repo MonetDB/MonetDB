@@ -51,22 +51,22 @@ Ready.
 % clob # type
 % 400 # length
 function user.s2_1(A0:str):void;
-    X_101:void := querylog.define("explain select\n c_count,\n count(*) as custdist\nfrom\n (\n select\n c_custkey,\n count(o_orderkey)\n from\n customer left outer join orders on\n c_custkey = o_custkey\n and o_comment not like \\'%special%requests%\\'\n group by\n c_custkey\n ) as c_orders (c_custkey, c_count)\ngroup by\n c_count\norder by\n custdist desc,\n c_count desc;","sequential_pipe",65);
-    X_79 := bat.new(nil:oid,nil:str);
-    X_85 := bat.append(X_79,".c_orders");
-    X_94 := bat.append(X_85,".L2");
-    X_81 := bat.new(nil:oid,nil:str);
-    X_87 := bat.append(X_81,"c_count");
-    X_96 := bat.append(X_87,"custdist");
+    X_102:void := querylog.define("explain select\n c_count,\n count(*) as custdist\nfrom\n (\n select\n c_custkey,\n count(o_orderkey)\n from\n customer left outer join orders on\n c_custkey = o_custkey\n and o_comment not like \\'%special%requests%\\'\n group by\n c_custkey\n ) as c_orders (c_custkey, c_count)\ngroup by\n c_count\norder by\n custdist desc,\n c_count desc;","sequential_pipe",66);
+    X_80 := bat.new(nil:oid,nil:str);
+    X_86 := bat.append(X_80,".c_orders");
+    X_95 := bat.append(X_86,".L2");
     X_82 := bat.new(nil:oid,nil:str);
-    X_89 := bat.append(X_82,"wrd");
-    X_98 := bat.append(X_89,"wrd");
-    X_83 := bat.new(nil:oid,nil:int);
-    X_91 := bat.append(X_83,64);
-    X_99 := bat.append(X_91,64);
+    X_88 := bat.append(X_82,"c_count");
+    X_97 := bat.append(X_88,"custdist");
+    X_83 := bat.new(nil:oid,nil:str);
+    X_90 := bat.append(X_83,"wrd");
+    X_99 := bat.append(X_90,"wrd");
     X_84 := bat.new(nil:oid,nil:int);
-    X_93 := bat.append(X_84,0);
-    X_100 := bat.append(X_93,0);
+    X_92 := bat.append(X_84,64);
+    X_100 := bat.append(X_92,64);
+    X_85 := bat.new(nil:oid,nil:int);
+    X_94 := bat.append(X_85,0);
+    X_101 := bat.append(X_94,0);
     X_3:bat[:int] := bat.new(nil:oid,nil:int);
     X_2 := sql.mvc();
     C_6:bat[:oid] := sql.tid(X_2,"sys","customer");
@@ -108,12 +108,13 @@ function user.s2_1(A0:str):void;
     X_64:bat[:wrd] := aggr.subcount(X_55,X_61,r1_75,true);
     (X_65,r1_79,r2_79) := group.subgroupdone(X_64);
     X_68 := algebra.projection(r1_79,X_64);
-    X_69:bat[:wrd] := aggr.subcount(X_65,X_65,r1_79,false);
-    (X_70,r1_84,r2_84) := algebra.subsort(X_69,true,false);
-    (X_73,r1_87,r2_87) := algebra.subsort(X_68,r1_84,r2_84,true,false);
-    X_76 := algebra.projection(r1_87,X_68);
-    X_77 := algebra.projection(r1_87,X_69);
-    sql.resultSet(X_94,X_96,X_98,X_99,X_100,X_76,X_77);
+    X_70:bat[:wrd] := aggr.subcount(X_65,X_65,r1_79,false);
+    X_69 := bat.setKey(X_68,true);
+    (X_71,r1_85,r2_85) := algebra.subsort(X_70,true,false);
+    (X_74,r1_88,r2_88) := algebra.subsort(X_69,r1_85,r2_85,true,false);
+    X_77 := algebra.projection(r1_88,X_69);
+    X_78 := algebra.projection(r1_88,X_70);
+    sql.resultSet(X_95,X_97,X_99,X_100,X_101,X_77,X_78);
 end user.s2_1;
 
 # 22:53:28 >  

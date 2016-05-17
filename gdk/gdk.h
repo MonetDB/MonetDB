@@ -1751,11 +1751,11 @@ gdk_export int BBPcurstamp(void);
 #define BBPRENAME_ILLEGAL	(-2)
 #define BBPRENAME_LONG		(-3)
 
-gdk_export void BBPlock(const char *s);
+gdk_export void BBPlock(void);
 
 gdk_export void BBPhot(bat b);
 gdk_export void BBPcold(bat b);
-gdk_export void BBPunlock(const char *s);
+gdk_export void BBPunlock(void);
 
 gdk_export str BBPlogical(bat b, str buf);
 gdk_export str BBPphysical(bat b, str buf);

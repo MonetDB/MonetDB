@@ -88,36 +88,20 @@ pattern aggr.avg(b:bat[:any_2]):dbl
 address CMDcalcavg;
 comment Gives the avg of all tail values
 
-function aggr.corr(e1:bat[:hge],e2:bat[:hge],g:bat[:oid],e:bat[:any_2]):bat[:hge];
-function aggr.covar(e1:bat[:hge],e2:bat[:hge],g:bat[:oid],e:bat[:any_2]):bat[:hge];
 function aggr.corr(e1:bat[:hge],e2:bat[:hge]):hge;
 function aggr.covar(e1:bat[:hge],e2:bat[:hge]):hge;
-function aggr.corr(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2]):bat[:dbl];
-function aggr.covar(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2]):bat[:dbl];
 function aggr.corr(e1:bat[:dbl],e2:bat[:dbl]):dbl;
 function aggr.covar(e1:bat[:dbl],e2:bat[:dbl]):dbl;
-function aggr.corr(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2]):bat[:flt];
-function aggr.covar(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2]):bat[:flt];
 function aggr.corr(e1:bat[:flt],e2:bat[:flt]):flt;
 function aggr.covar(e1:bat[:flt],e2:bat[:flt]):flt;
-function aggr.corr(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2]):bat[:lng];
-function aggr.covar(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2]):bat[:lng];
 function aggr.corr(e1:bat[:lng],e2:bat[:lng]):lng;
 function aggr.covar(e1:bat[:lng],e2:bat[:lng]):lng;
-function aggr.corr(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2]):bat[:wrd];
-function aggr.covar(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2]):bat[:wrd];
 function aggr.corr(e1:bat[:wrd],e2:bat[:wrd]):wrd;
 function aggr.covar(e1:bat[:wrd],e2:bat[:wrd]):wrd;
-function aggr.corr(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2]):bat[:int];
-function aggr.covar(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2]):bat[:int];
 function aggr.corr(e1:bat[:int],e2:bat[:int]):int;
 function aggr.covar(e1:bat[:int],e2:bat[:int]):int;
-function aggr.corr(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2]):bat[:sht];
-function aggr.covar(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2]):bat[:sht];
 function aggr.corr(e1:bat[:sht],e2:bat[:sht]):sht;
 function aggr.covar(e1:bat[:sht],e2:bat[:sht]):sht;
-function aggr.corr(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2]):bat[:bte];
-function aggr.covar(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2]):bat[:bte];
 function aggr.corr(e1:bat[:bte],e2:bat[:bte]):bte;
 function aggr.covar(e1:bat[:bte],e2:bat[:bte]):bte;
 command aggr.count_no_nil(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:wrd] 
@@ -752,6 +736,22 @@ command aggr.quantile(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],q:bat[:dbl]):bat[:
 address AGGRquantile3;
 comment Grouped quantile aggregate
 
+function aggr.subcorr(e1:bat[:hge],e2:bat[:hge],g:bat[:oid],e:bat[:any_2],f:bit):bat[:hge];
+function aggr.subcovar(e1:bat[:hge],e2:bat[:hge],g:bat[:oid],e:bat[:any_2],f:bit):bat[:hge];
+function aggr.subcorr(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2],f:bit):bat[:dbl];
+function aggr.subcovar(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2],f:bit):bat[:dbl];
+function aggr.subcorr(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2],f:bit):bat[:flt];
+function aggr.subcovar(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2],f:bit):bat[:flt];
+function aggr.subcorr(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2],f:bit):bat[:lng];
+function aggr.subcovar(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2],f:bit):bat[:lng];
+function aggr.subcorr(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2],f:bit):bat[:wrd];
+function aggr.subcovar(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2],f:bit):bat[:wrd];
+function aggr.subcorr(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2],f:bit):bat[:int];
+function aggr.subcovar(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2],f:bit):bat[:int];
+function aggr.subcorr(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2],f:bit):bat[:sht];
+function aggr.subcovar(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2],f:bit):bat[:sht];
+function aggr.subcorr(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2],f:bit):bat[:bte];
+function aggr.subcovar(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2],f:bit):bat[:bte];
 pattern aggr.sum(b:bat[:dbl],s:bat[:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
@@ -3165,10 +3165,6 @@ comment Prefix check.
 command batstr.startsWith(s:bat[:str],prefix:bat[:str]):bat[:bit] 
 address STRbatPrefix;
 comment Prefix check.
-
-command batstr.stringlength(s:bat[:str]):bat[:int] 
-address STRbatstringLength;
-comment Return the length of a right trimed string.
 
 command batstr.trim(s:bat[:str],s2:bat[:str]):bat[:str] 
 address STRbatStrip2_bat;
@@ -31624,6 +31620,18 @@ pattern batcalc.ifthenelse(b:bat[:bit],v1:any_1,v2:any_1):bat[:any_1]
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
+pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],v2:any_1):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,v1:any_1,b2:bat[:any_1]):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],b2:bat[:any_1]):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
 pattern batcalc.int_noerror(b:bat[:str],s:bat[:oid]):bat[:int] 
 address CMDconvert_int;
 comment cast from str to int with candidates list
@@ -52089,10 +52097,6 @@ command str.startsWith(s:str,prefix:str):bit
 address STRPrefix;
 comment Prefix check.
 
-command str.stringlength(s:str):int 
-address STRSQLLength;
-comment Return the length of a right trimed string (SQL semantics).
-
 command str.string(s:str,offset:int,count:int):str 
 address STRSubString;
 comment Return substring s[offset..offset+count] of a string s[0..n]
@@ -52313,7 +52317,7 @@ comment Equality of two timestamps
 
 command timestamp.epoch(t:lng):timestamp 
 address MTIMEtimestamplng;
-comment convert seconds since epoch into a timestamp
+comment convert milli seconds since epoch into a timestamp
 
 command timestamp.epoch(t:int):timestamp 
 address MTIMEtimestamp;

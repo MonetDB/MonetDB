@@ -1,0 +1,33 @@
+stdout of test 'stream_table_crash.Bug-3952` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 22:03:48 >  
+# 22:03:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34898" "--set" "mapi_usock=/var/tmp/mtest-8540/.s.monetdb.34898" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 22:03:48 >  
+
+# MonetDB 5 server v11.23.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34898/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8540/.s.monetdb.34898
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 22:03:49 >  
+# 22:03:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8540" "--port=34898"
+# 22:03:49 >  
+
+#create stream table temp(t timestamp, room integer, payload decimal(8,2));
+
+# 22:03:49 >  
+# 22:03:49 >  "Done."
+# 22:03:49 >  
+

@@ -11,7 +11,7 @@
 #include "opt_support.h"
 
 /* cf., gdk/gdk.mx */
-#define DEBUGoptimizers		if (GDKdebug & GRPoptimizers)
+#define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
 
 opt_export  str abortRef;
 opt_export  str affectedRowsRef;
@@ -79,7 +79,7 @@ opt_export  str disconnectRef;
 opt_export  str evalRef;
 opt_export  str execRef;
 opt_export  str expandRef;
-opt_export	str exportOperationRef;
+opt_export  str exportOperationRef;
 opt_export  str finishRef;
 opt_export  str firstnRef;
 opt_export  str getRef;
@@ -212,7 +212,9 @@ opt_export  str subsortRef;
 opt_export  str timestampRef;
 opt_export  str takeRef;
 opt_export  str not_uniqueRef;
+opt_export  str sampleRef;
 opt_export  str subuniqueRef;
+opt_export  str subuniformRef;
 opt_export  str unpackRef;
 opt_export  str unpinRef;
 opt_export  str unlockRef;

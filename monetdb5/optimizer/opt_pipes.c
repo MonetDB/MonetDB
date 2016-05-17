@@ -70,8 +70,8 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.aliases();"
 	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
@@ -434,7 +434,7 @@ compileOptimizer(Client cntxt, str name)
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
 			/* precompile the pipeline as MAL string */
 			MCinitClientRecord(&c, cntxt->user, 0, 0);
-			c.nspace = newModule(NULL, putName("user", 4));
+			c.nspace = newModule(NULL, putName("user"));
 			c.father = cntxt;	/* to avoid conflicts on GDKin */
 			c.fdout = cntxt->fdout;
 			if (setScenario(&c, "mal"))

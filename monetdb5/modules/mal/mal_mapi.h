@@ -8,6 +8,7 @@
 
 #ifndef SERVER_H
 #define SERVER_H
+#ifdef HAVE_MAPI
 /* #define DEBUG_SERVER */
 
 #include "mal_client.h"
@@ -92,4 +93,5 @@ mal_mapi_export str SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 mal_mapi_export str SERVERclient(void *res, const Stream *In, const Stream *Out);
 mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+#endif /* HAVE_MAPI */
 #endif /* SERVER_H */

@@ -1597,16 +1597,14 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"cast(null as char(1)) AS \"Field5\", " +
 			"cast(null as char(1)) AS \"Field6\", " +
 			"cast(null as char(1)) AS \"REMARKS\", " +
-			"CAST(CASE (SELECT COUNT(*) FROM \"sys\".\"args\" where \"args\".\"func_id\" = \"functions\".\"id\" and \"args\".\"number\" = 0)" +
-				" WHEN 0 THEN ").append(DatabaseMetaData.procedureNoResult)
-			.append(" WHEN 1 THEN ").append(DatabaseMetaData.procedureReturnsResult)
-			.append(" ELSE ").append(DatabaseMetaData.procedureResultUnknown).append(" END AS smallint) AS \"PROCEDURE_TYPE\", " +
+			"CAST(CASE \"args\".\"type\" WHEN NULL THEN ").append(DatabaseMetaData.procedureNoResult)
+			.append(" ELSE ").append(DatabaseMetaData.procedureReturnsResult).append(" END AS smallint) AS \"PROCEDURE_TYPE\", " +
 			"CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\"" +
 			" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" " +
-		"FROM \"sys\".\"functions\", \"sys\".\"schemas\" " +
-		"WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
+		"FROM \"sys\".\"functions\" JOIN \"sys\".\"schemas\" ON (\"functions\".\"schema_id\" = \"schemas\".\"id\")" +
+		" LEFT OUTER JOIN \"sys\".\"args\" ON (\"args\".\"func_id\" = \"functions\".\"id\" and \"args\".\"number\" = 0) " +
 		// include procedures only (type = 2). Others will be returned via getFunctions()
-		"AND \"functions\".\"type\" = 2");
+		"WHERE \"functions\".\"type\" = 2");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -2051,8 +2049,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *
 	 * @param catalog a catalog name; "" retrieves those without a catalog;
 	 *                currently ignored
-	 * @param schemaPattern a schema name pattern; "" retrieves those
-	 *                      without a schema
+	 * @param schemaPattern a schema name pattern; "" retrieves those without a schema
 	 * @param tableNamePattern a table name pattern
 	 * @param columnNamePattern a column name pattern
 	 * @return ResultSet each row is a column description
@@ -2233,8 +2230,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *	</OL>
 	 *
 	 * @param catalog a catalog name; "" retrieves those without a catalog
-	 * @param schemaPattern a schema name pattern; "" retrieves those
-	 *                      without a schema
+	 * @param schemaPattern a schema name pattern; "" retrieves those without a schema
 	 * @param tableNamePattern a table name pattern
 	 * @return ResultSet each row is a table privilege description
 	 * @see #getSearchStringEscape
@@ -3144,23 +3140,23 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		StringBuilder query = new StringBuilder(990);
-		query.append("SELECT cast(null as char(1)) AS \"TYPE_CAT\", ")
-			.append("\"schemas\".\"name\" AS \"TYPE_SCHEM\", ")
-			.append("\"types\".\"sqlname\" AS \"TYPE_NAME\", ")
-			.append("CASE \"types\".\"sqlname\"")
+		query.append("SELECT cast(null as char(1)) AS \"TYPE_CAT\", " +
+			"\"schemas\".\"name\" AS \"TYPE_SCHEM\", " +
+			"\"types\".\"sqlname\" AS \"TYPE_NAME\", " +
+			"CASE \"types\".\"sqlname\"" +
 				// next 4 UDTs are known
-				.append(" WHEN 'inet' THEN 'nl.cwi.monetdb.jdbc.types.INET'")
-				.append(" WHEN 'json' THEN 'java.lang.String'")
-				.append(" WHEN 'url'  THEN 'nl.cwi.monetdb.jdbc.types.URL'")
-				.append(" WHEN 'uuid' THEN 'java.lang.String'")
-				.append(" ELSE 'java.lang.Object' END AS \"CLASS_NAME\", ")
-			.append("CAST(CASE WHEN \"types\".\"sqlname\" IN ('inet', 'json', 'url', 'uuid') THEN ").append(Types.JAVA_OBJECT)
-				.append(" ELSE ").append(Types.STRUCT).append(" END AS int) AS \"DATA_TYPE\", ")
-			.append("\"types\".\"systemname\" AS \"REMARKS\", ")
-			.append("cast(null as smallint) AS \"BASE_TYPE\" ")
-			.append("FROM sys.types JOIN sys.schemas ON types.schema_id = schemas.id ")
+				" WHEN 'inet' THEN 'nl.cwi.monetdb.jdbc.types.INET'" +
+				" WHEN 'json' THEN 'java.lang.String'" +
+				" WHEN 'url'  THEN 'nl.cwi.monetdb.jdbc.types.URL'" +
+				" WHEN 'uuid' THEN 'java.lang.String'" +
+				" ELSE 'java.lang.Object' END AS \"CLASS_NAME\", " +
+			"CAST(CASE WHEN \"types\".\"sqlname\" IN ('inet', 'json', 'url', 'uuid') THEN ").append(Types.JAVA_OBJECT)
+				.append(" ELSE ").append(Types.STRUCT).append(" END AS int) AS \"DATA_TYPE\", " +
+			"\"types\".\"systemname\" AS \"REMARKS\", " +
+			"cast(null as smallint) AS \"BASE_TYPE\" " +
+			"FROM sys.types JOIN sys.schemas ON types.schema_id = schemas.id " +
 			// exclude the built-in types (I assume they always have id <= 99 and eclass < 15)
-			.append("WHERE \"types\".\"id\" > 99 AND \"types\".\"eclass\" >= 15");
+			"WHERE \"types\".\"id\" > 99 AND \"types\".\"eclass\" >= 15");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -3732,22 +3728,22 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		throws SQLException
 	{
 		StringBuilder query = new StringBuilder(800);
-		query.append("SELECT DISTINCT cast(null as char(1)) AS \"FUNCTION_CAT\", ")
-			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
-			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
-			.append("cast(null as char(1)) AS \"REMARKS\", ")
-			.append("CASE \"functions\".\"type\"")
-				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 2 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 3 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 4 THEN ").append(DatabaseMetaData.functionNoTable)
-				.append(" WHEN 5 THEN ").append(DatabaseMetaData.functionReturnsTable)
-				.append(" ELSE ").append(DatabaseMetaData.functionResultUnknown).append(" END AS \"FUNCTION_TYPE\", ")
-			.append("CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" ")
-		.append("FROM \"sys\".\"functions\", \"sys\".\"schemas\" ")
-		.append("WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		query.append("SELECT DISTINCT cast(null as char(1)) AS \"FUNCTION_CAT\", " +
+			"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
+			"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
+			"cast(null as char(1)) AS \"REMARKS\", " +
+			"CASE \"functions\".\"type\"" +
+				" WHEN 1 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 2 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 3 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 4 THEN ").append(DatabaseMetaData.functionNoTable)
+			.append(" WHEN 5 THEN ").append(DatabaseMetaData.functionReturnsTable)
+			.append(" ELSE ").append(DatabaseMetaData.functionResultUnknown).append(" END AS \"FUNCTION_TYPE\", " +
+			"CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" " +
+		"FROM \"sys\".\"functions\", \"sys\".\"schemas\" " +
+		"WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
 		// exclude procedures (type = 2). Those need to be returned via getProcedures()
-		.append("AND \"functions\".\"type\" <> 2");
+		"AND \"functions\".\"type\" <> 2");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.
@@ -3833,31 +3829,36 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		throws SQLException
 	{
 		StringBuilder query = new StringBuilder(2600);
-		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"FUNCTION_CAT\", ")
-			.append("\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", ")
-			.append("\"functions\".\"name\" AS \"FUNCTION_NAME\", ")
-			.append("\"args\".\"name\" AS \"COLUMN_NAME\", ")
-			.append("CAST(CASE \"args\".\"inout\"")
-				.append(" WHEN 0 THEN (CASE \"args\".\"number\" WHEN 0 THEN ").append(DatabaseMetaData.functionReturn).append(" ELSE ").append(DatabaseMetaData.functionColumnOut).append(" END)")
-				.append(" WHEN 1 THEN ").append(DatabaseMetaData.functionColumnIn)
-				.append(" ELSE ").append(DatabaseMetaData.functionColumnUnknown).append(" END AS smallint) AS \"COLUMN_TYPE\", ")
-			.append("CAST(").append(MonetDriver.getSQLTypeMap("\"args\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", ")
-			.append("\"args\".\"type\" AS \"TYPE_NAME\", ")
-			.append("CASE \"args\".\"type\" WHEN 'tinyint' THEN 3 WHEN 'smallint' THEN 5 WHEN 'int' THEN 10 WHEN 'bigint' THEN 19 WHEN 'hugeint' THEN 38 WHEN 'oid' THEN 19 WHEN 'wrd' THEN 19 ELSE \"args\".\"type_digits\" END AS \"PRECISION\", ")
-			.append("CASE \"args\".\"type\" WHEN 'tinyint' THEN 1 WHEN 'smallint' THEN 2 WHEN 'int' THEN 4 WHEN 'bigint' THEN 8 WHEN 'hugeint' THEN 16 WHEN 'oid' THEN 8 WHEN 'wrd' THEN 8 ELSE \"args\".\"type_digits\" END AS \"LENGTH\", ")
-			.append("CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric','time','timetz','timestamp','timestamptz','sec_interval') THEN \"args\".\"type_scale\" ELSE NULL END AS smallint) AS \"SCALE\", ")
-			.append("CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric') THEN 10 WHEN \"args\".\"type\" IN ('real','float','double') THEN 2 ELSE NULL END AS smallint) AS \"RADIX\", ")
-			.append("CAST(").append(DatabaseMetaData.functionNullableUnknown).append(" AS smallint) AS \"NULLABLE\", ")
-			.append("CAST(null as char(1)) AS \"REMARKS\", ")
-			.append("CASE WHEN \"args\".\"type\" IN ('char','varchar','binary','varbinary') THEN \"args\".\"type_digits\" ELSE NULL END AS \"CHAR_OCTET_LENGTH\", ")
-			.append("\"args\".\"number\" AS \"ORDINAL_POSITION\", ")
-			.append("CAST('' as varchar(3)) AS \"IS_NULLABLE\", ")
-			.append("CAST(null as char(1)) AS \"SPECIFIC_NAME\" ")
-		.append("FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" ")
-		.append("WHERE \"args\".\"func_id\" = \"functions\".\"id\" ")
-		.append("AND \"functions\".\"schema_id\" = \"schemas\".\"id\" ")
+		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"FUNCTION_CAT\", " +
+			"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
+			"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
+			"\"args\".\"name\" AS \"COLUMN_NAME\", " +
+			"CAST(CASE \"args\".\"inout\"" +
+				" WHEN 0 THEN (CASE \"args\".\"number\" WHEN 0 THEN ")
+				.append(DatabaseMetaData.functionReturn).append(" ELSE ").append(DatabaseMetaData.functionColumnOut).append(" END)" +
+				" WHEN 1 THEN ").append(DatabaseMetaData.functionColumnIn)
+				.append(" ELSE ").append(DatabaseMetaData.functionColumnUnknown).append(" END AS smallint) AS \"COLUMN_TYPE\", " +
+			"CAST(").append(MonetDriver.getSQLTypeMap("\"args\".\"type\"")).append(" AS int) AS \"DATA_TYPE\", " +
+			"\"args\".\"type\" AS \"TYPE_NAME\", " +
+			"CASE \"args\".\"type\" WHEN 'tinyint' THEN 3 WHEN 'smallint' THEN 5 WHEN 'int' THEN 10 WHEN 'bigint' THEN 19" +
+				" WHEN 'hugeint' THEN 38 WHEN 'oid' THEN 19 WHEN 'wrd' THEN 19 ELSE \"args\".\"type_digits\" END AS \"PRECISION\", " +
+			"CASE \"args\".\"type\" WHEN 'tinyint' THEN 1 WHEN 'smallint' THEN 2 WHEN 'int' THEN 4 WHEN 'bigint' THEN 8" +
+				" WHEN 'hugeint' THEN 16 WHEN 'oid' THEN 8 WHEN 'wrd' THEN 8 ELSE \"args\".\"type_digits\" END AS \"LENGTH\", " +
+			"CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric'," +
+				"'time','timetz','timestamp','timestamptz','sec_interval') THEN \"args\".\"type_scale\" ELSE NULL END AS smallint) AS \"SCALE\", " +
+			"CAST(CASE WHEN \"args\".\"type\" IN ('tinyint','smallint','int','bigint','hugeint','oid','wrd','decimal','numeric') THEN 10" +
+				" WHEN \"args\".\"type\" IN ('real','float','double') THEN 2 ELSE NULL END AS smallint) AS \"RADIX\", " +
+			"CAST(").append(DatabaseMetaData.functionNullableUnknown).append(" AS smallint) AS \"NULLABLE\", " +
+			"CAST(null as char(1)) AS \"REMARKS\", " +
+			"CASE WHEN \"args\".\"type\" IN ('char','varchar','binary','varbinary') THEN \"args\".\"type_digits\" ELSE NULL END AS \"CHAR_OCTET_LENGTH\", " +
+			"\"args\".\"number\" AS \"ORDINAL_POSITION\", " +
+			"CAST('' as varchar(3)) AS \"IS_NULLABLE\", " +
+			"CAST(null as char(1)) AS \"SPECIFIC_NAME\" " +
+		"FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" " +
+		"WHERE \"args\".\"func_id\" = \"functions\".\"id\" " +
+		"AND \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
 		// exclude procedures (type = 2). Those need to be returned via getProcedureColumns()
-		.append("AND \"functions\".\"type\" <> 2");
+		"AND \"functions\".\"type\" <> 2");
 
 		if (catalog != null && catalog.length() > 0) {
 			// none empty catalog selection.

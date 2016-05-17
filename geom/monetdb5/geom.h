@@ -106,7 +106,7 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 
 
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
-geom_export str wkbFromText_bat(bat *inBAT_id, bat *outBAT_id, int *srid, int *tpe);
+geom_export str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe);
 
 geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag);
 
@@ -209,8 +209,8 @@ geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
 
-geom_export str wkbGeometryN(wkb** out, wkb** geom, int* geometryNum); 
-geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, int* flag);
+geom_export str wkbGeometryN(wkb** out, wkb** geom, const int* geometryNum); 
+geom_export str wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int* flag);
 
 geom_export str wkbNumGeometries(int* out, wkb** geom);
 geom_export str wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id);

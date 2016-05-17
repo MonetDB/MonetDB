@@ -14,7 +14,6 @@ INCLUDES = ../../../include \
 		   ../../../../monetdb5/modules/mal \
 		   ../../../../monetdb5/optimizer \
 		   ../../../../monetdb5/scheduler \
-		   ../../../../clients/mapilib \
 		   ../../../../common/options \
 		   ../../../../common/stream \
 		   ../../../../gdk

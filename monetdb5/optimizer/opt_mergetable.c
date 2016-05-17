@@ -1439,6 +1439,37 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 	}
 }
 
+static void
+mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
+{
+	int tpe = getArgType(mb,p,0), k, piv;
+	InstrPtr pck, q;
+
+	pck = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(pck, matRef);
+	setFunctionId(pck, packRef);
+	getArg(pck,0) = getArg(p,0);
+
+	for(k=1; k< ml->v[m].mi->argc; k++) {
+		q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,q->retc) = getArg(ml->v[m].mi,k);
+		pushInstruction(mb,q);
+		pck = pushArgument(mb, pck, getArg(q,0));
+	}
+
+	piv = ml->top;
+	mat_add_var(ml, pck, p, getArg(p,0), mat_slc, m, -1);
+	pushInstruction(mb,pck);
+
+	q = copyInstruction(p);
+	getArg(q,q->retc) = getArg(pck,0);
+	pushInstruction(mb,q);
+
+	ml->v[piv].packed = 1;
+	ml->v[piv].type = mat_slc;
+}
+
 int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
@@ -1576,6 +1607,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (match == 1 && bats == 1 && p->argc == 4 && isSlice(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
 			mat_topn(mb, p, &ml, m, -1, -1);
+			actions++;
+			continue;
+		}
+
+		if (match == 1 && bats == 1 && p->argc == 3 && isSample(p) && ((m=is_a_mat(getArg(p,p->retc), &ml)) >= 0)) {
+			mat_sample(mb, p, &ml, m);
 			actions++;
 			continue;
 		}
@@ -1768,7 +1805,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
 				mat_pack(mb, ml.v, m);
-				actions++;
 			}
 		}
 		pushInstruction(mb, copyInstruction(p));

@@ -190,8 +190,8 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( help)
 			mb->help= GDKstrdup(*help);
 		sig= getSignature(sym);
-		sym->name= putName(*fcn, strlen(*fcn));
-		setModuleId(sig, putName(*mod, strlen(*mod)));
+		sym->name= putName(*fcn);
+		setModuleId(sig, putName(*mod));
 		setFunctionId(sig, sym->name);
 		insertSymbol(findModule(cntxt->nspace, getModuleId(sig)), sym);
 	}

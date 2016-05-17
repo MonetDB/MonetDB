@@ -128,7 +128,7 @@
 #define UTF8BOM		"\xEF\xBB\xBF" /* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3	       /* length of above */
 
-#ifdef WIN32
+#ifdef _MSC_VER
 /* use intrinsic functions on Windows */
 #define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
 /* on Windows, long is the same size as int */

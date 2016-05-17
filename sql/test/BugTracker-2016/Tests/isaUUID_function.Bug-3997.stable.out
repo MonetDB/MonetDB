@@ -1,0 +1,102 @@
+stdout of test 'isaUUID_function.Bug-3997` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 13:53:56 >  
+# 13:53:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33417" "--set" "mapi_usock=/var/tmp/mtest-24906/.s.monetdb.33417" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 13:53:56 >  
+
+# MonetDB 5 server v11.21.20
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:33417/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24906/.s.monetdb.33417
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.14'
+# Finished reading the write-ahead log 'sql_logs/sql/log.14'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+#WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
+#    X_108:bat[:oid,:uuid]{horigin=1} := mal.multiplex("uuid":str,"isaUUID":str,X_96:bat[:oid,:str]);
+#WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
+#    X_109:bat[:oid,:uuid]{horigin=2} := mal.multiplex("uuid":str,"isaUUID":str,X_97:bat[:oid,:str]);
+#WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
+#    X_110:bat[:oid,:uuid]{horigin=3} := mal.multiplex("uuid":str,"isaUUID":str,X_98:bat[:oid,:str]);
+#WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
+#    X_108:bat[:oid,:uuid]{horigin=1} := mal.multiplex("uuid":str,"isaUUID":str,X_103:bat[:oid,:uuid]);
+#WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
+#    X_109:bat[:oid,:uuid]{horigin=2} := mal.multiplex("uuid":str,"isaUUID":str,X_105:bat[:oid,:uuid]);
+#WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
+#    X_110:bat[:oid,:uuid]{horigin=3} := mal.multiplex("uuid":str,"isaUUID":str,X_107:bat[:oid,:uuid]);
+
+# 13:53:57 >  
+# 13:53:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24906" "--port=33417"
+# 13:53:57 >  
+
+#CREATE TABLE testUUID (s varchar(36), u UUID);
+#INSERT INTO testUUID (s, u) VALUES ('ad887b3d-08f7-c308-7285-354a1857cbc8', convert('ad887b3d-08f7-c308-7285-354a1857cbc8', uuid));
+[ 1	]
+#INSERT INTO testUUID (s, u) VALUES ('7393ad7e-4fcf-461a-856e-b70027fe1a9e', convert('7393ad7e-4fcf-461a-856e-b70027fe1a9e', uuid));
+[ 1	]
+#INSERT INTO testUUID (s, u) VALUES ('c005d6fd-20c3-4d01-91a5-bbe676593530', convert('c005d6fd-20c3-4d01-91a5-bbe676593530', uuid));
+[ 1	]
+#SELECT * FROM testUUID ORDER BY s;
+% sys.testuuid,	sys.testuuid # table_name
+% s,	u # name
+% varchar,	uuid # type
+% 36,	0 # length
+[ "7393ad7e-4fcf-461a-856e-b70027fe1a9e",	7393ad7e-4fcf-461a-856e-b70027fe1a9e	]
+[ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8	]
+[ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530	]
+#SELECT s, u, isaUUID(s) as a_isa_UUID FROM testUUID ORDER BY s;
+% sys.testuuid,	sys.testuuid,	sys.L # table_name
+% s,	u,	a_isa_uuid # name
+% varchar,	uuid,	boolean # type
+% 36,	0,	5 # length
+[ "7393ad7e-4fcf-461a-856e-b70027fe1a9e",	7393ad7e-4fcf-461a-856e-b70027fe1a9e,	true	]
+[ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8,	true	]
+[ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530,	true	]
+#SELECT s, u, isaUUID(u) as u_isa_UUID FROM testUUID ORDER BY s;
+% sys.testuuid,	sys.testuuid,	sys.L # table_name
+% s,	u,	u_isa_uuid # name
+% varchar,	uuid,	boolean # type
+% 36,	0,	5 # length
+[ "7393ad7e-4fcf-461a-856e-b70027fe1a9e",	7393ad7e-4fcf-461a-856e-b70027fe1a9e,	true	]
+[ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8,	true	]
+[ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530,	true	]
+#SELECT * FROM testUUID WHERE isaUUID(s) = TRUE ORDER BY s;
+% sys.testuuid,	sys.testuuid # table_name
+% s,	u # name
+% varchar,	uuid # type
+% 36,	0 # length
+[ "7393ad7e-4fcf-461a-856e-b70027fe1a9e",	7393ad7e-4fcf-461a-856e-b70027fe1a9e	]
+[ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8	]
+[ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530	]
+#SELECT * FROM testUUID WHERE isaUUID(u) = TRUE ORDER BY s;
+% sys.testuuid,	sys.testuuid # table_name
+% s,	u # name
+% varchar,	uuid # type
+% 36,	0 # length
+[ "7393ad7e-4fcf-461a-856e-b70027fe1a9e",	7393ad7e-4fcf-461a-856e-b70027fe1a9e	]
+[ "ad887b3d-08f7-c308-7285-354a1857cbc8",	ad887b3d-08f7-c308-7285-354a1857cbc8	]
+[ "c005d6fd-20c3-4d01-91a5-bbe676593530",	c005d6fd-20c3-4d01-91a5-bbe676593530	]
+#SELECT MIN(u) AS mn, MAX(u) AS mx, COUNT(u) AS cnt, COUNT(DISTINCT u) AS cnt_d FROM testUUID;
+% sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
+% mn,	mx,	cnt,	cnt_d # name
+% uuid,	uuid,	wrd,	wrd # type
+% 0,	0,	1,	1 # length
+[ 7393ad7e-4fcf-461a-856e-b70027fe1a9e,	c005d6fd-20c3-4d01-91a5-bbe676593530,	3,	3	]
+#DROP TABLE testUUID;
+
+# 13:53:57 >  
+# 13:53:57 >  "Done."
+# 13:53:57 >  
+

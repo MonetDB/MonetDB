@@ -55,74 +55,74 @@ Ready.
 #SELECT '#' || lpad('hi', 7) || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#     hi#"	]
 #SELECT '#' || lpad('hixyäbcdef', 7) || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#hixyäbc#"	]
 #SELECT '#' || lpad('hi', 7, 'xya') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#xyaxyhi#"	]
 #SELECT '#' || lpad('hi', 7, 'xyä') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#xyäxyhi#"	]
 #SELECT '#' || lpad('hi', 7, 'xyäbcdef') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 10 # length
 [ "#xy颖äbhi#"	]
 #SELECT '#' || lpad('hi颖xyäbcdef', 7, 'lmn') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 10 # length
 [ "#hi颖xyäb#"	]
 #SELECT '#' || rpad('hi', 7) || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#hi     #"	]
 #SELECT '#' || rpad('hixyäbcdef', 7) || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#hixyäbc#"	]
 #SELECT '#' || rpad('hi', 7, 'xya') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#hixyaxy#"	]
 #SELECT '#' || rpad('hi', 7, 'xyä') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 9 # length
 [ "#hixyäxy#"	]
 #SELECT '#' || rpad('hi', 7, 'xyäbcdef') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 10 # length
 [ "#hixy颖äb#"	]
 #SELECT '#' || rpad('hi颖xyäbcdef', 7, 'lmn') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 10 # length
 [ "#hi颖xyäb#"	]
 #CREATE TABLE p (s VARCHAR(20), n int);
 #INSERT INTO p VALUES ('hi', 10), ('hixyäbcdef', 7);

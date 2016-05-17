@@ -1,29 +1,24 @@
 stdout of test 'MAL-signatures` in directory 'clients` itself:
 
 
-# 21:33:47 >  
-# 21:33:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35607" "--set" "mapi_usock=/var/tmp/mtest-19610/.s.monetdb.35607" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-stable/var/MonetDB/mTests_clients" "--set" "mal_listing=2"
-# 21:33:47 >  
+# 21:44:50 >  
+# 21:44:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33053" "--set" "mapi_usock=/var/tmp/mtest-13793/.s.monetdb.33053" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-devel/var/MonetDB/mTests_clients" "--set" "mal_listing=2" "--set" "embedded_r=yes"
+# 21:44:50 >  
 
-# MonetDB 5 server v11.17.22 (hg id: 570fbe10eb64+)
+# MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_clients', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
 # Found 7.734 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://gaai.mullender.nl:35607/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19610/.s.monetdb.35607
-# MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
 
 Ready.
 
-# 21:33:48 >  
-# 21:33:48 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19610" "--port=35607"
-# 21:33:48 >  
+# 12:27:16 >  
+# 12:27:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-25748" "--port=36923"
+# 12:27:16 >  
 
 command aggr.avg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1]) (X_4:bat[:dbl],X_5:bat[:wrd]) 
 address AGGRavg23_dbl;
@@ -85,32 +80,18 @@ pattern aggr.avg(b:bat[:any_2]):dbl
 address CMDcalcavg;
 comment Gives the avg of all tail values
 
-function aggr.corr(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2]):bat[:dbl];
-function aggr.covar(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2]):bat[:dbl];
 function aggr.corr(e1:bat[:dbl],e2:bat[:dbl]):dbl;
 function aggr.covar(e1:bat[:dbl],e2:bat[:dbl]):dbl;
-function aggr.corr(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2]):bat[:flt];
-function aggr.covar(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2]):bat[:flt];
 function aggr.corr(e1:bat[:flt],e2:bat[:flt]):flt;
 function aggr.covar(e1:bat[:flt],e2:bat[:flt]):flt;
-function aggr.corr(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2]):bat[:lng];
-function aggr.covar(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2]):bat[:lng];
 function aggr.corr(e1:bat[:lng],e2:bat[:lng]):lng;
 function aggr.covar(e1:bat[:lng],e2:bat[:lng]):lng;
-function aggr.corr(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2]):bat[:wrd];
-function aggr.covar(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2]):bat[:wrd];
 function aggr.corr(e1:bat[:wrd],e2:bat[:wrd]):wrd;
 function aggr.covar(e1:bat[:wrd],e2:bat[:wrd]):wrd;
-function aggr.corr(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2]):bat[:int];
-function aggr.covar(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2]):bat[:int];
 function aggr.corr(e1:bat[:int],e2:bat[:int]):int;
 function aggr.covar(e1:bat[:int],e2:bat[:int]):int;
-function aggr.corr(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2]):bat[:sht];
-function aggr.covar(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2]):bat[:sht];
 function aggr.corr(e1:bat[:sht],e2:bat[:sht]):sht;
 function aggr.covar(e1:bat[:sht],e2:bat[:sht]):sht;
-function aggr.corr(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2]):bat[:bte];
-function aggr.covar(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2]):bat[:bte];
 function aggr.corr(e1:bat[:bte],e2:bat[:bte]):bte;
 function aggr.covar(e1:bat[:bte],e2:bat[:bte]):bte;
 command aggr.count_no_nil(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:wrd] 
@@ -609,6 +590,20 @@ command aggr.quantile(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],q:bat[:dbl]):bat[:
 address AGGRquantile3;
 comment Grouped quantile aggregate
 
+function aggr.subcorr(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2],f:bit):bat[:dbl];
+function aggr.subcovar(e1:bat[:dbl],e2:bat[:dbl],g:bat[:oid],e:bat[:any_2],f:bit):bat[:dbl];
+function aggr.subcorr(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2],f:bit):bat[:flt];
+function aggr.subcovar(e1:bat[:flt],e2:bat[:flt],g:bat[:oid],e:bat[:any_2],f:bit):bat[:flt];
+function aggr.subcorr(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2],f:bit):bat[:lng];
+function aggr.subcovar(e1:bat[:lng],e2:bat[:lng],g:bat[:oid],e:bat[:any_2],f:bit):bat[:lng];
+function aggr.subcorr(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2],f:bit):bat[:wrd];
+function aggr.subcovar(e1:bat[:wrd],e2:bat[:wrd],g:bat[:oid],e:bat[:any_2],f:bit):bat[:wrd];
+function aggr.subcorr(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2],f:bit):bat[:int];
+function aggr.subcovar(e1:bat[:int],e2:bat[:int],g:bat[:oid],e:bat[:any_2],f:bit):bat[:int];
+function aggr.subcorr(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2],f:bit):bat[:sht];
+function aggr.subcovar(e1:bat[:sht],e2:bat[:sht],g:bat[:oid],e:bat[:any_2],f:bit):bat[:sht];
+function aggr.subcorr(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2],f:bit):bat[:bte];
+function aggr.subcovar(e1:bat[:bte],e2:bat[:bte],g:bat[:oid],e:bat[:any_2],f:bit):bat[:bte];
 pattern aggr.sum(b:bat[:dbl],s:bat[:oid],nil_if_empty:bit):dbl 
 address CMDBATsum;
 comment Calculate aggregate sum of B with candidate list.
@@ -2714,10 +2709,6 @@ comment Prefix check.
 command batstr.startsWith(s:bat[:str],prefix:bat[:str]):bat[:bit] 
 address STRbatPrefix;
 comment Prefix check.
-
-command batstr.stringlength(s:bat[:str]):bat[:int] 
-address STRbatstringLength;
-comment Return the length of a right trimed string.
 
 command batstr.trim(s:bat[:str],s2:bat[:str]):bat[:str] 
 address STRbatStrip2_bat;
@@ -24467,6 +24458,18 @@ pattern batcalc.ifthenelse(b:bat[:bit],v1:any_1,v2:any_1):bat[:any_1]
 address CMDifthen;
 comment If-then-else operation to assemble a conditional result
 
+pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],v2:any_1):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,v1:any_1,b2:bat[:any_1]):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
+pattern batcalc.ifthenelse(v:bit,b1:bat[:any_1],b2:bat[:any_1]):bat[:any_1] 
+address CMDifthen;
+comment If-then-else operation to assemble a conditional result
+
 pattern batcalc.int_noerror(b:bat[:str],s:bat[:oid]):bat[:int] 
 address CMDconvert_int;
 comment cast from str to int with candidates list
@@ -41222,10 +41225,6 @@ command str.startsWith(s:str,prefix:str):bit
 address STRPrefix;
 comment Prefix check.
 
-command str.stringlength(s:str):int 
-address STRSQLLength;
-comment Return the length of a right trimed string (SQL semantics).
-
 command str.string(s:str,offset:int,count:int):str 
 address STRSubString;
 comment Return substring s[offset..offset+count] of a string s[0..n]
@@ -41446,7 +41445,7 @@ comment Equality of two timestamps
 
 command timestamp.epoch(t:lng):timestamp 
 address MTIMEtimestamplng;
-comment convert seconds since epoch into a timestamp
+comment convert milli seconds since epoch into a timestamp
 
 command timestamp.epoch(t:int):timestamp 
 address MTIMEtimestamp;
@@ -41863,7 +41862,7 @@ address rule_fromstr;
 command zrule.#tostr():void 
 address rule_tostr;
 
-# 21:33:51 >  
-# 21:33:51 >  "Done."
-# 21:33:51 >  
+# 15:15:16 >  
+# 15:15:16 >  "Done."
+# 15:15:16 >  
 

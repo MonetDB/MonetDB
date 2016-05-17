@@ -308,7 +308,7 @@ wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id)
 /**************************************************************************************/
 
 static str
-WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (wkb **, wkb **, int *), const char *name)
+WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) (wkb **, wkb **, const int *), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -359,7 +359,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (wkb *
 }
 
 str
-wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
+wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int *flag)
 {
 	return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, flag, wkbGeometryN, "batgeom.wkbGeometryN");
 }

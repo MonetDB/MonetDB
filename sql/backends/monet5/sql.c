@@ -61,16 +61,16 @@ exp_is_point_select(sql_exp *e)
 }
 
 static int
-rel_is_point_query(sql_rel *rel)
+rel_no_mitosis(sql_rel *rel)
 {
 	int is_point = 0;
-
-	if (!rel)
+	
+	if (!rel || is_basetable(rel->op))
 		return 1;
 	if (is_project(rel->op))
-		return rel_is_point_query(rel->l);
+		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
-		return rel_is_point_query(rel->r);
+		return rel_no_mitosis(rel->r);
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
 		is_point = 0;
 		/* just one point expression makes this a point query */
@@ -120,8 +120,8 @@ sql_symbol2relation(mvc *c, symbol *sym)
 		r = rel_optimizer(c, r);
 		r = rel_distribute(c, r);
 		r = rel_partition(c, r);
-		if (rel_is_point_query(r) || rel_need_distinct_query(r))
-			c->point_query = 1;
+		if (rel_no_mitosis(r) || rel_need_distinct_query(r))
+			c->no_mitosis = 1;
 	}
 	return r;
 }
@@ -175,7 +175,7 @@ sqlcleanup(mvc *c, int err)
 	if (err <0)
 		c->session->status = err;
 	c->label = 0;
-	c->point_query = 0;
+	c->no_mitosis = 0;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -3437,8 +3437,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(ssep);
 			throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 		}
+#if defined(HAVE_EMBEDDED) && defined(WIN32)
+		// fix single backslash file separator on windows
+		strcpy(fn, *fname);
+#else
 		GDKstrFromStr(fn, (unsigned char*)*fname, len);
-
+#endif
 		ss = open_rastream((const char *) fn);
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);
@@ -3519,12 +3523,23 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
+		const char *fname = *getArgReference_str(stk, pci, i);
+		size_t flen = strlen(fname);
+		char *fn;
 
 		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
 			throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
-		f = fopen(*getArgReference_str(stk, pci, i), "r");
-		if (f == NULL)
-			throw(SQL, "sql", "Failed to open file %s", *getArgReference_str(stk, pci, i));
+		fn = GDKmalloc(flen + 1);
+		GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
+		if (fn == NULL)
+			throw(SQL, "sql", MAL_MALLOC_FAIL);
+		f = fopen(fn, "r");
+		if (f == NULL) {
+			msg = createException(SQL, "sql", "Failed to open file %s", fn);
+			GDKfree(fn);
+			return msg;
+		}
+		GDKfree(fn);
 		fclose(f);
 	}
 

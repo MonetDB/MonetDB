@@ -5,7 +5,7 @@ except ImportError:
     import process
 
 TSTSRCDIR = os.environ['TSTSRCDIR']
-DATADIR = os.path.join(TSTSRCDIR,"SF-0.01") + os.sep.replace('\\', r'\\')
+DATADIR = (os.path.join(TSTSRCDIR,"SF-0.01") + os.sep).replace('\\', r'\\')
 
 c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 for ln in open(os.path.join(TSTSRCDIR,"load-sf-0.01.sql")):
