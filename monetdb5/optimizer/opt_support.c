@@ -211,14 +211,17 @@ str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
 	char buf[256];
+	lng clk = GDKusec();
+
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, name, "prematurely stopped client");
 	if( actions > 0){
 		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 		chkFlow(cntxt->fdout, mb);
 		chkDeclarations(cntxt->fdout, mb);
+		usec += GDKusec() - clk;
 	}
-	/* keep all actions taken as a post block comments */
+	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
 	newComment(mb,buf);
 	if (mb->errors)
@@ -240,6 +243,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 	lng clk = GDKusec();
+	char buf[256];
 
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
@@ -270,6 +274,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		}
 	} while (qot && cnt++ < mb->stop);
 	mb->optimize= GDKusec() - clk;
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
+	newComment(mb,buf);
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
