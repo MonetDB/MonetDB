@@ -31,3 +31,4 @@ subcorr-missing.Bug-3978
 epoch.Bug-3979
 fk-smaller-pk.Bug-3983
 isaUUID_function.Bug-3997
+string-length.Bug-3999

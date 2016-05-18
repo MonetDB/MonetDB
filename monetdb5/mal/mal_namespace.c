@@ -36,9 +36,9 @@
 
 
 typedef struct NAME{
-	str nme;
 	size_t length;
 	struct NAME *next;
+	char nme[FLEXIBLE_ARRAY_MEMBER];
 } *NamePtr;
 
 static NamePtr *hash= NULL, *ehash = NULL;
@@ -64,8 +64,6 @@ void mal_namespace_reset(void) {
 		hash[i] = ehash[i] = 0;
 		for( ; n; n = m){
 			m = n->next;
-			if (n->nme)
-				GDKfree(n->nme);
 			GDKfree(n);
 		}
 	}
@@ -130,7 +128,6 @@ str putNameLen(const char *nme, size_t len)
 {
 	size_t l,k;
 	int key;
-	char buf[MAXIDENTLEN];
 	str fnd;
 	NamePtr n;
 
@@ -142,24 +139,18 @@ str putNameLen(const char *nme, size_t len)
 		return NULL;
 
 	/* construct a new entry */
-	n = (NamePtr) GDKzalloc(sizeof(*n));
+	if(len>=MAXIDENTLEN)
+		len = MAXIDENTLEN - 1;
+	n = GDKmalloc(offsetof(struct NAME, nme) + len + 1);
 	if ( n == NULL) {
         /* absolute an error we can not recover from */
         showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
 		mal_exit();
 	}
-	if(len>=MAXIDENTLEN)
-		len = MAXIDENTLEN - 1;
-	memcpy(buf, nme, len);
-	buf[len]=0;
-	n->nme= GDKstrdup(buf);
-	if (n->nme == NULL) {
-        /* absolute an error we can not recover from */
-		GDKfree(n);
-        showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
-		mal_exit();
-	}
+	memcpy(n->nme, nme, len);
+	n->nme[len]=0;
 	n->length = len;
+	n->next = NULL;
 	l = len;
 	NME_HASH(nme, k, l);
 	key = (int) k;
