@@ -49,34 +49,27 @@ Operation successful
 | mal                                                                 |
 +==================================================================================================+
 | function user.s2_1():void;                                                                       |
-|     X_41:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
+|     X_33:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",20); |
 |     X_2:bat[:wrd] := bat.new(nil:oid,nil:wrd);                                                   |
 |     X_1 := sql.mvc();                                                                            |
 |     X_8:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                     |
 |     C_5:bat[:oid] := sql.tid(X_1,"sys","_tables");                                               |
-|     C_50 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                       |
-|     (C_11,r1_11) := sql.bind(X_1,"sys","_tables","type",2);                                      |
-|     C_51 := algebra.subselect(r1_11,nil:bat[:oid],2,2,true,true,true);                           |
-|     X_14:bat[:sht] := sql.bind(X_1,"sys","_tables","type",1);                                    |
-|     C_53 := algebra.subselect(X_14,C_5,2,2,true,true,true);                                      |
-|     C_17 := sql.subdelta(C_50,C_5,C_11,C_51,C_53);                                               |
-|     X_19:bat[:int] := sql.bind(X_1,"sys","_tables","id",0);                                      |
-|     (C_21,r1_25) := sql.bind(X_1,"sys","_tables","id",2);                                        |
-|     X_23:bat[:int] := sql.bind(X_1,"sys","_tables","id",1);                                      |
-|     X_24 := sql.projectdelta(C_17,X_19,C_21,r1_25,X_23);                                         |
-|     X_25 := aggr.count(X_24);                                                                    |
-|     X_26 := sql.single(X_25);                                                                    |
-|     X_27 := bat.append(X_2,X_26,true);                                                           |
-|     C_28:bat[:oid] := sql.tid(X_1,"tmp","_tables");                                              |
-|     X_30:bat[:int] := sql.bind(X_1,"tmp","_tables","id",0);                                      |
-|     X_31 := algebra.projection(C_28,X_30);                                                    |
-|     X_32 := aggr.count(X_31);                                                                    |
-|     X_33 := bat.append(X_27,X_32,true);                                                          |
-|     X_34:wrd := aggr.sum(X_33);                                                                  |
-|     sql.resultSet(".L3","L3","wrd",64,0,7,X_34);                                                 |
+|     C_12 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                       |
+|     X_14:bat[:int] := sql.bind(X_1,"sys","_tables","id",0);                                      |
+|     X_16 := algebra.projection(C_12,X_14);                                                       |
+|     X_17 := aggr.count(X_16);                                                                    |
+|     X_18 := sql.single(X_17);                                                                    |
+|     X_19 := bat.append(X_2,X_18,true);                                                           |
+|     C_20:bat[:oid] := sql.tid(X_1,"tmp","_tables");                                              |
+|     X_22:bat[:int] := sql.bind(X_1,"tmp","_tables","id",0);                                      |
+|     X_23 := algebra.projection(C_20,X_22);                                                       |
+|     X_24 := aggr.count(X_23);                                                                    |
+|     X_25 := bat.append(X_19,X_24,true);                                                          |
+|     X_26:wrd := aggr.sum(X_25);                                                                  |
+|     sql.resultSet(".L3","L3","wrd",64,0,7,X_26);                                                 |
 | end user.s2_1;                                                                                   |
 +--------------------------------------------------------------------------------------------------+
-27 rows
+20 rows
 
 
 # 19:39:11 >  

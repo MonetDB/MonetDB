@@ -1550,6 +1550,7 @@ int OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 int OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+int OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2055,6 +2056,7 @@ str divRef;
 void dumpExceptionsToStream(stream *out, str msg);
 void dumpHelpTable(stream *f, Module s, str text, int flag);
 void dumpSearchTable(stream *f, str text);
+str emptybindRef;
 str eqRef;
 str escape_str(str *retval, str s);
 str evalFile(Client c, str fname, int listing);

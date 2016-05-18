@@ -59,10 +59,10 @@ Ready.
 % mal # name
 % clob # type
 % 89 # length
-function user.s2_1(A0:hge):void;
+function user.s2_1():void;
     X_6:void := querylog.define("explain set a = 1234567890987654321;","default_pipe",6);
     X_2 := sql.mvc();
-    sql.setVariable(X_2,"a",A0);
+    sql.setVariable(X_2,"a",1234567890987654321);
     sql.exportOperation();
 end user.s2_1;
 #explain SET b = 10000000000;
@@ -70,10 +70,10 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 81 # length
-function user.s3_1(A0:hge):void;
+function user.s3_1():void;
     X_6:void := querylog.define("explain set b = 10000000000;","default_pipe",6);
     X_2 := sql.mvc();
-    sql.setVariable(X_2,"b",A0);
+    sql.setVariable(X_2,"b",10000000000);
     sql.exportOperation();
 end user.s3_1;
 #explain SET c = a * b;
@@ -141,10 +141,10 @@ end user.s6_1;
 % mal # name
 % clob # type
 % 133 # length
-function user.s15_1(A0:hge):void;
+function user.s15_1():void;
     X_9:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);","default_pipe",6);
     X_2 := sql.mvc();
-    X_3 := sql.append(X_2,"sys","sql_int128","i",A0);
+    X_3 := sql.append(X_2,"sys","sql_int128","i",123456789098765432101234567890987654321);
     sql.affectedRows(X_3,1);
 end user.s15_1;
 #INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321);
