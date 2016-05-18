@@ -34,12 +34,12 @@ Operation successful
 SELECT users.name, users.fullname, schemas.name
 	FROM users, schemas
 	WHERE users.default_schema = schemas.id;
-+---------+---------------+--------+
++---------+---------------+------+
 | name    | fullname      | name |
-+=========+===============+========+
++=========+===============+======+
 | monetdb | MonetDB Admin | sys  |
 | voc     | VOC Explorer  | sys  |
-+---------+---------------+--------+
++---------+---------------+------+
 2 rows
 
 CREATE SCHEMA "voc" AUTHORIZATION "voc";
@@ -51,12 +51,12 @@ Operation successful
 SELECT users.name, users.fullname, schemas.name
 	FROM sys.users, sys.schemas
 	WHERE users.default_schema = schemas.id;
-+---------+---------------+--------+
++---------+---------------+------+
 | name    | fullname      | name |
-+=========+===============+========+
++=========+===============+======+
 | monetdb | MonetDB Admin | sys  |
 | voc     | VOC Explorer  | voc  |
-+---------+---------------+--------+
++---------+---------------+------+
 2 rows
 
 
