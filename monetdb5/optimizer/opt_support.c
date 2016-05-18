@@ -210,6 +210,7 @@ OPTsetDebugStr(void *ret, str *nme)
 str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
+	char buf[256];
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, name, "prematurely stopped client");
 	if( actions > 0){
@@ -217,16 +218,14 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 		chkFlow(cntxt->fdout, mb);
 		chkDeclarations(cntxt->fdout, mb);
 	}
-	if( cntxt->debugOptimizer){
-		/* keep the actions taken as a post block comments */
-		char buf[BUFSIZ];
-		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
-		newComment(mb,buf);
-		if (mb->errors)
-			throw(MAL, name, PROGRAM_GENERAL);
-	}
+	/* keep all actions taken as a post block comments */
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
+	newComment(mb,buf);
+	if (mb->errors)
+		throw(MAL, name, PROGRAM_GENERAL);
 	return MAL_SUCCEED;
 }
+
 /*
  * Limit the loop count in the optimizer to guard against indefinite
  * recursion, provided the optimizer does not itself generate
