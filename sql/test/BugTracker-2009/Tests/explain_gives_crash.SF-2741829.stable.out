@@ -25,71 +25,95 @@ Ready.
 # 21:13:40 >  
 
 #~BeginVariableOutput~#
-function user.s4_1{autoCommit=true}():void;
+function user.s4_1():void;
 "    X_32:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",22);"
-    X_2 := sql.mvc();
+    X_1 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_8:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
-"    X_44 := algebra.subselect(X_10,X_8,nil:int,nil:int,true,true,true);"
-"    (X_12,r1_15) := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
-"    X_45 := algebra.subselect(r1_15,nil:bat[:oid,:oid],nil:int,nil:int,true,true,true);"
-"    X_15:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
-"    X_47 := algebra.subselect(X_15,X_8,nil:int,nil:int,true,true,true);"
-"    X_18 := sql.subdelta(X_44,X_8,X_12,X_45,X_47);"
-"    X_19 := sql.projectdelta(X_18,X_10,X_12,r1_15,X_15);"
-"    (X_20,r1_26,r2_26) := group.subgroupdone(X_19);"
-    X_23 := aggr.count(r2_26);
-    X_24:wrd := aggr.sum(r2_26);
-    X_25 := calc.isnil(X_24);
-"    X_27 := calc.ifthenelse(X_25,0,X_24);"
-"    X_28 := calc.!=(X_23,X_27);"
+"    X_9:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",0);"
+"    C_7:bat[:oid] := sql.tid(X_1,""sys"",""blabla"");"
+"    C_48 := algebra.subselect(X_9,C_7,nil:int,nil:int,true,true,true);"
+"    (C_11,r1_14) := sql.bind(X_1,""sys"",""blabla"",""id"",2);"
+"    C_49 := algebra.subselect(r1_14,nil:bat[:oid],nil:int,nil:int,true,true,true);"
+"    X_14:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",1);"
+"    C_51 := algebra.subselect(X_14,C_7,nil:int,nil:int,true,true,true);"
+"    C_17 := sql.subdelta(C_48,C_7,C_11,C_49,C_51);"
+"    X_19 := sql.projectdelta(C_17,X_9,C_11,r1_14,X_14);"
+"    (X_20,r1_27,r2_27) := group.subgroupdone(X_19);"
+    X_23 := aggr.count(r2_27);
+    X_24:wrd := aggr.sum(r2_27);
+    X_25:bit := calc.isnil(X_24);
+"    X_27:wrd := calc.ifthenelse(X_25,0,X_24);"
+"    X_28:bit := calc.!=(X_23,X_27);"
 "    sql.assert(X_28,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s4_1;
-function user.s5_1{autoCommit=true}():void;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=44 usec 
+#remap                actions= 0 time=6 usec 
+#costModel            actions= 1 time=38 usec 
+#coercions            actions= 7 time=35 usec 
+#evaluate             actions= 0 time=6 usec 
+#aliases              actions= 0 time=10 usec 
+#pushselect           actions= 3 time=60 usec 
+#mergetable           actions= 0 time=47 usec 
+#deadcode             actions= 2 time=35 usec 
+#aliases              actions= 0 time=10 usec 
+#constants            actions= 1 time=45 usec 
+#commonTerms          actions= 0 time=9 usec 
+#projectionpath       actions= 0 time=6 usec 
+#reorder              actions= 1 time=55 usec 
+#deadcode             actions= 0 time=9 usec 
+#reduce               actions=28 time=63 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=14 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=30 usec 
+#garbageCollector     actions= 1 time=42 usec 
+#total                actions= 1 time=685 usec 
+function user.s5_1():void;
 "    X_32:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",22);"
-    X_2 := sql.mvc();
+    X_1 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_8:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
-"    X_44 := algebra.subselect(X_10,X_8,nil:int,nil:int,true,true,true);"
-"    (X_12,r1_15) := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
-"    X_45 := algebra.subselect(r1_15,nil:bat[:oid,:oid],nil:int,nil:int,true,true,true);"
-"    X_15:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
-"    X_47 := algebra.subselect(X_15,X_8,nil:int,nil:int,true,true,true);"
-"    X_18 := sql.subdelta(X_44,X_8,X_12,X_45,X_47);"
-"    X_19 := sql.projectdelta(X_18,X_10,X_12,r1_15,X_15);"
-"    (X_20,r1_26,r2_26) := group.subgroupdone(X_19);"
-    X_23 := aggr.count(r2_26);
-    X_24:wrd := aggr.sum(r2_26);
-    X_25 := calc.isnil(X_24);
-"    X_27 := calc.ifthenelse(X_25,0,X_24);"
-"    X_28 := calc.!=(X_23,X_27);"
+"    X_9:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",0);"
+"    C_7:bat[:oid] := sql.tid(X_1,""sys"",""blabla"");"
+"    C_48 := algebra.subselect(X_9,C_7,nil:int,nil:int,true,true,true);"
+"    (C_11,r1_14) := sql.bind(X_1,""sys"",""blabla"",""id"",2);"
+"    C_49 := algebra.subselect(r1_14,nil:bat[:oid],nil:int,nil:int,true,true,true);"
+"    X_14:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",1);"
+"    C_51 := algebra.subselect(X_14,C_7,nil:int,nil:int,true,true,true);"
+"    C_17 := sql.subdelta(C_48,C_7,C_11,C_49,C_51);"
+"    X_19 := sql.projectdelta(C_17,X_9,C_11,r1_14,X_14);"
+"    (X_20,r1_27,r2_27) := group.subgroupdone(X_19);"
+    X_23 := aggr.count(r2_27);
+    X_24:wrd := aggr.sum(r2_27);
+    X_25:bit := calc.isnil(X_24);
+"    X_27:wrd := calc.ifthenelse(X_25,0,X_24);"
+"    X_28:bit := calc.!=(X_23,X_27);"
 "    sql.assert(X_28,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s5_1;
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-function user.s9_1{autoCommit=true}():void;
+function user.s9_1():void;
 "    X_32:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",22);"
-    X_2 := sql.mvc();
+    X_1 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_8:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
-"    X_44 := algebra.subselect(X_10,X_8,nil:int,nil:int,true,true,true);"
-"    (X_12,r1_15) := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
-"    X_45 := algebra.subselect(r1_15,nil:bat[:oid,:oid],nil:int,nil:int,true,true,true);"
-"    X_15:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
-"    X_47 := algebra.subselect(X_15,X_8,nil:int,nil:int,true,true,true);"
-"    X_18 := sql.subdelta(X_44,X_8,X_12,X_45,X_47);"
-"    X_19 := sql.projectdelta(X_18,X_10,X_12,r1_15,X_15);"
-"    (X_20,r1_26,r2_26) := group.subgroupdone(X_19);"
-    X_23 := aggr.count(r2_26);
-    X_24:wrd := aggr.sum(r2_26);
-    X_25 := calc.isnil(X_24);
-"    X_27 := calc.ifthenelse(X_25,0,X_24);"
-"    X_28 := calc.!=(X_23,X_27);"
+"    X_9:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",0);"
+"    C_7:bat[:oid] := sql.tid(X_1,""sys"",""blabla"");"
+"    C_48 := algebra.subselect(X_9,C_7,nil:int,nil:int,true,true,true);"
+"    (C_11,r1_14) := sql.bind(X_1,""sys"",""blabla"",""id"",2);"
+"    C_49 := algebra.subselect(r1_14,nil:bat[:oid],nil:int,nil:int,true,true,true);"
+"    X_14:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",1);"
+"    C_51 := algebra.subselect(X_14,C_7,nil:int,nil:int,true,true,true);"
+"    C_17 := sql.subdelta(C_48,C_7,C_11,C_49,C_51);"
+"    X_19 := sql.projectdelta(C_17,X_9,C_11,r1_14,X_14);"
+"    (X_20,r1_27,r2_27) := group.subgroupdone(X_19);"
+    X_23 := aggr.count(r2_27);
+    X_24:wrd := aggr.sum(r2_27);
+    X_25:bit := calc.isnil(X_24);
+"    X_27:wrd := calc.ifthenelse(X_25,0,X_24);"
+"    X_28:bit := calc.!=(X_23,X_27);"
 "    sql.assert(X_28,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s9_1;

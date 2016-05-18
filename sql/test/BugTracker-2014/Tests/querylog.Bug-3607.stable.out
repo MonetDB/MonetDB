@@ -79,8 +79,8 @@ Ready.
 % owner,	query,	pipe,	plan,	mal # name
 % clob,	clob,	clob,	clob,	int # type
 % 7,	63,	12,	9,	2 # length
-[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	21	]
-[ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	53	]
+[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	45	]
+[ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	79	]
 #select arguments, tuples from sys.querylog_calls;
 % .querylog_calls,	.querylog_calls # table_name
 % arguments,	tuples # name
@@ -93,9 +93,9 @@ Ready.
 % owner,	query,	pipe,	plan,	mal,	arguments,	tuples # name
 % clob,	clob,	clob,	clob,	int,	clob,	wrd # type
 % 7,	63,	12,	9,	2,	23,	1 # length
-[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	21,	"user.s5_1(A0:bte):void;",	1	]
-[ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	53,	"user.s6_1():void;",	5	]
-[ "monetdb",	"select arguments, tuples from sys.querylog_calls;",	"default_pipe",	"user.s7_1",	38,	"user.s7_1():void;",	2	]
+[ "monetdb",	"select 1;",	"default_pipe",	"user.s5_1",	45,	"user.s5_1(A0:bte):void;",	1	]
+[ "monetdb",	"select owner, query, pipe, plan, mal from sys.querylog_catalog;",	"default_pipe",	"user.s6_1",	79,	"user.s6_1():void;",	5	]
+[ "monetdb",	"select arguments, tuples from sys.querylog_calls;",	"default_pipe",	"user.s7_1",	64,	"user.s7_1():void;",	2	]
 #select * from sys.querylog_history;
 % .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
