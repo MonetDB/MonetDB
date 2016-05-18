@@ -52,8 +52,33 @@ Operation successful
 |     X_22 := bat.append(X_17,X_21,true);                                                              |
 |     sql.resultSet(X_30,X_32,X_33,X_35,X_37,X_22);                                                    |
 | end user.s2_1;                                                                                     |
+| #inline               actions= 0 time=4 usec                                                         |
+| #candidates           actions= 1 time=35 usec                                                        |
+| #remap                actions= 0 time=5 usec                                                         |
+| #costModel            actions= 1 time=31 usec                                                        |
+| #coercions            actions= 1 time=31 usec                                                        |
+| #evaluate             actions= 0 time=5 usec                                                         |
+| #emptybind            actions= 0 time=6 usec                                                         |
+| #pushselect           actions= 3 time=37 usec                                                        |
+| #aliases              actions= 4 time=30 usec                                                        |
+| #mergetable           actions= 0 time=38 usec                                                        |
+| #deadcode             actions= 4 time=26 usec                                                        |
+| #aliases              actions= 0 time=6 usec                                                         |
+| #constants            actions= 4 time=18 usec                                                        |
+| #commonTerms          actions= 0 time=7 usec                                                         |
+| #projectionpath       actions= 0 time=5 usec                                                         |
+| #reorder              actions= 1 time=30 usec                                                        |
+| #deadcode             actions= 0 time=6 usec                                                         |
+| #reduce               actions=37 time=32 usec                                                        |
+| #matpack              actions= 0 time=4 usec                                                         |
+| #querylog             actions= 0 time=1 usec                                                         |
+| #multiplex            actions= 0 time=3 usec                                                         |
+| #generator            actions= 0 time=2 usec                                                         |
+| #profiler             actions= 1 time=13 usec                                                        |
+| #garbageCollector     actions= 1 time=19 usec                                                        |
+| #total                actions= 1 time=481 usec                                                       |
 +------------------------------------------------------------------------------------------------------+
-26 rows
+51 rows
 
 
 # 15:15:37 >  

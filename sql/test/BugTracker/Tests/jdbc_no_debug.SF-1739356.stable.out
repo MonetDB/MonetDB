@@ -68,8 +68,33 @@ Operation successful
 |     X_26:wrd := aggr.sum(X_25);                                                                  |
 |     sql.resultSet(".L3","L3","wrd",64,0,7,X_26);                                                 |
 | end user.s2_1;                                                                                   |
+| #inline               actions= 0 time=3 usec                                                     |
+| #candidates           actions= 1 time=25 usec                                                    |
+| #remap                actions= 0 time=3 usec                                                     |
+| #costModel            actions= 1 time=21 usec                                                    |
+| #coercions            actions= 1 time=36 usec                                                    |
+| #evaluate             actions= 0 time=4 usec                                                     |
+| #emptybind            actions= 0 time=4 usec                                                     |
+| #pushselect           actions= 3 time=34 usec                                                    |
+| #aliases              actions= 4 time=21 usec                                                    |
+| #mergetable           actions= 0 time=25 usec                                                    |
+| #deadcode             actions= 4 time=19 usec                                                    |
+| #aliases              actions= 0 time=5 usec                                                     |
+| #constants            actions= 2 time=17 usec                                                    |
+| #commonTerms          actions= 0 time=7 usec                                                     |
+| #projectionpath       actions= 0 time=5 usec                                                     |
+| #reorder              actions= 1 time=30 usec                                                    |
+| #deadcode             actions= 0 time=6 usec                                                     |
+| #reduce               actions=35 time=30 usec                                                    |
+| #matpack              actions= 0 time=5 usec                                                     |
+| #querylog             actions= 0 time=1 usec                                                     |
+| #multiplex            actions= 0 time=3 usec                                                     |
+| #generator            actions= 0 time=2 usec                                                     |
+| #profiler             actions= 1 time=14 usec                                                    |
+| #garbageCollector     actions= 1 time=17 usec                                                    |
+| #total                actions= 1 time=397 usec                                                   |
 +--------------------------------------------------------------------------------------------------+
-20 rows
+45 rows
 
 
 # 19:39:11 >  

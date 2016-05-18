@@ -22,7 +22,7 @@ Ready.
 
 #debug select * from tables;
 mdb>#X_151=0@0:void := querylog.define("debug select * from tables;","default_pipe",515);
-mdb>#barrier X_579=false := language.dataflow();
+mdb>#barrier X_599=false := language.dataflow();
 
 # 16:24:01 >  
 # 16:24:01 >  "Done."
