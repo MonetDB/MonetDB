@@ -272,3 +272,7 @@ void _connection_init(void)
     if (PyType_Ready(&Py_ConnectionType) < 0)
         return;
 }
+
+void SQLdestroyResult(res_table *destroy) {
+   res_table_destroy(destroy);
+}
