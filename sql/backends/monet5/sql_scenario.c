@@ -886,7 +886,6 @@ cachable(mvc *m, stmt *s)
 	/* we don't store empty sequences, nor queries with a large footprint */
 	if( (s && s->type == st_none) || sa_size(m->sa) > MAX_QUERY)
 		return 0;
-	/* remainders covers: m_execute, m_inplace, m_normal*/
 	return 1;
 }
 
@@ -1109,13 +1108,8 @@ SQLparser(Client c)
 			/* passed over to query cache, used during dumpproc */
 			m->sa = NULL;
 			m->sym = NULL;
-
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name);
-			/* unless a query modifier has been set, we directly call the cached plan 
-			if (m->emode == m_normal && m->emod == mod_none)
-				m->emode = m_inplace;
-			*/
 		}
 	}
 	if (err)
@@ -1137,10 +1131,6 @@ SQLparser(Client c)
 		pushEndInstruction(c->curprg->def);
 		/* check the query wrapper for errors */
 		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE);
-
-		// Prepared query plans should be partially optimized
-		if(err == 0 && m->emode == m_prepare ) 
-			SQLoptimizeFunction(c,c->curprg->def,be->mvc);
 
 		/* in case we had produced a non-cachable plan, the optimizer should be called */
 		if (opt ) {

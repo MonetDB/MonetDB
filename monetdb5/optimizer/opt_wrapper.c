@@ -34,6 +34,7 @@
 #include "opt_costModel.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
+#include "opt_emptybind.h"
 #include "opt_evaluate.h"
 #include "opt_factorize.h"
 #include "opt_garbageCollector.h"
@@ -70,6 +71,7 @@ struct{
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
+	{"emptybind", &OPTemptybindImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},

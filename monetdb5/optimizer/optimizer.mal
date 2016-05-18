@@ -98,6 +98,14 @@ pattern optimizer.derivePath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
+#opt_emptybind.mal
+
+pattern optimizer.emptybind():str
+address OPTwrapper;
+pattern optimizer.emptybind(mod:str, fcn:str):str
+address OPTwrapper
+comment "Evaluate empty set expressions.";
+
 #opt_evaluate.mal
 
 pattern optimizer.evaluate():str

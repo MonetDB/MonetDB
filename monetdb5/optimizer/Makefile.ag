@@ -26,6 +26,7 @@ lib_optimizer = {
 		opt_costModel.c opt_costModel.h \
 		opt_dataflow.c opt_dataflow.h \
 		opt_deadcode.c opt_deadcode.h \
+		opt_emptybind.c opt_emptybind.h \
 		opt_evaluate.c opt_evaluate.h \
 		opt_factorize.c opt_factorize.h \
 		opt_garbageCollector.c opt_garbageCollector.h \

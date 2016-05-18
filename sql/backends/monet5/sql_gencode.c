@@ -2838,6 +2838,7 @@ backend_callinline(backend *be, Client c)
 	return 0;
 }
 
+/* SQL procedures, functions and PREPARE statements are compiled into a parameterised plan */
 Symbol
 backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 {
@@ -2851,7 +2852,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	backup = c->curprg;
 
-	/* later we change this to a factory ? */
 	if (cq)
 		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
 	else
@@ -2927,9 +2927,13 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		GDKfree(tt);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 	}
-	if (cq)
+	if (cq){
 		SQLaddQueryToCache(c);
+		// optimize this code the 'old' way
+		//SQLoptimizeFunction(c,c->curprg->def,be->mvc);
+	}
 
+	// restore the context for the wrapper code
 	curPrg = c->curprg;
 	if (backup)
 		c->curprg = backup;

@@ -32,61 +32,95 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
-		char *f = getFunctionId(p);
 
-		if (getModuleId(p) == sqlRef && (f == bindRef || f == bindidxRef)) {
-			int upd = (p->argc == 7 || p->argc == 9), mode = 0;
-			char *sname = getVarConstant(mb, getArg(p, 2 + upd)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p, 3 + upd)).val.sval;
-			char *cname = NULL;
+		/* first straight binds with a single return */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc == 1){
+			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
+			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
+			sql_table *t = 0;
+			sql_column *c = 0;
 
 			if (!s || strcmp(s->base.name, dt_schema) == 0) 
 				continue;
-			cname = getVarConstant(mb, getArg(p, 4 + upd)).val.sval;
-			mode = getVarConstant(mb, getArg(p, 5 + upd)).val.ival;
-			if (mode != 0 || !cname || !s)
+			t = mvc_bind_table(m, s, tname);
+			if (!t)
 				continue;
-			if (f == bindidxRef) {
-				sql_idx *i = mvc_bind_idx(m, s, cname);
+			c = mvc_bind_column(m, t, cname);
+			if (!s)
+				continue;
 
-				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
-					if (b) {
-						space += (size =getBatSpace(b));
-						if( !prepare && size == 0){
-							// replace with an empty dummy bat
-							clrFunction(p);
-							setModuleId(p, batRef);
-							setFunctionId(p, newRef);
-							p->argc =1;
-							p =pushType(mb,p, b->ttype);
-					
-						}
-						BBPunfix(b->batCacheid);
+			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+				BAT *b = store_funcs.bind_col(tr, c, access);
+				if (b) {
+					size= getBatSpace(b);
+					if( access == 0)
+						space += size;	// accumulate once
+					if( !prepare && size == 0 ){
+						setFunctionId(p, emptybindRef);
 					}
-				}
-			} else if (f == bindRef) {
-				sql_table *t = mvc_bind_table(m, s, tname);
-				sql_column *c = mvc_bind_column(m, t, cname);
-
-				if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-					BAT *b = store_funcs.bind_col(tr, c, RDONLY);
-					if (b) {
-						space += (size= getBatSpace(b));
-						if( !prepare && size == 0){
-							// replace with an empty dummy bat
-							clrFunction(p);
-							setModuleId(p, batRef);
-							setFunctionId(p, newRef);
-							p->argc =1;
-							p =pushType(mb,p, b->ttype);
-						}
-						BBPunfix(b->batCacheid);
-					}
+					BBPunfix(b->batCacheid);
 				}
 			}
 		}
+		/* now deal with the update binds, it is only necessary to identify that there are updats
+		 * The actual size is not that important */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc == 2){
+			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
+			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
+			sql_schema *s = mvc_bind_schema(m, sname);
+			sql_table *t = 0;
+			sql_column *c = 0;
+
+			if (!s || strcmp(s->base.name, dt_schema) == 0) 
+				continue;
+			t = mvc_bind_table(m, s, tname);
+			if (!t)
+				continue;
+			c = mvc_bind_column(m, t, cname);
+			if (!s)
+				continue;
+
+			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+				BAT *b = store_funcs.bind_col(tr, c, RD_UPD_VAL);
+				if (b) {
+					size= getBatSpace(b);
+					if( access == 0)
+						space += size;	// accumulate once
+					if( !prepare && size == 0 ){
+						setFunctionId(p, emptybindRef);
+					}
+					BBPunfix(b->batCacheid);
+				}
+			}
+		}
+/* ignore index bats for a while
+			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
+				if (f == bindidxRef) {
+					sql_idx *i = mvc_bind_idx(m, s, cname);
+
+					if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+						BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
+						if (b) {
+							space += (size =getBatSpace(b));
+							if( !prepare && size == 0){
+								clrFunction(p);
+								setModuleId(p, batRef);
+								setFunctionId(p, newRef);
+								p->argc =1;
+								p =pushType(mb,p, b->ttype);
+						
+							}
+							BBPunfix(b->batCacheid);
+						}
+					}
+				}
+			}
+*/
 	}
 	return space;
 }

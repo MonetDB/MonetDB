@@ -7,9 +7,7 @@
  */
 
 /*
- * @f opt_pipes
- * @a M.L. Kersten
- * @-
+ * author M.L. Kersten
  * The default SQL optimizer pipeline can be set per server.  See the
  * optpipe setting in monetdb(1) when using merovingian.  During SQL
  * initialization, the optimizer pipeline is checked against the
@@ -70,6 +68,7 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
@@ -100,8 +99,9 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.aliases();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
@@ -138,8 +138,9 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.aliases();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
@@ -174,8 +175,9 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.aliases();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
@@ -201,8 +203,9 @@ static struct PIPELINES {
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
-	 "optimizer.aliases();"
+	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.aliases();"

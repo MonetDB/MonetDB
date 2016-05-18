@@ -45,6 +45,7 @@ str projectdeltaRef;
 str binddbatRef;
 str bindidxRef;
 str bindRef;
+str emptybindRef;
 str bpmRef;
 str bstreamRef;
 str calcRef;
@@ -262,6 +263,7 @@ void optimizerInit(void)
 	binddbatRef = putName("bind_dbat");
 	bindidxRef = putName("bind_idxbat");
 	bindRef = putName("bind");
+	emptybindRef = putName("emptybind");
 	bpmRef = putName("bpm");
 	bstreamRef = putName("bstream");
 	calcRef = putName("calc");
