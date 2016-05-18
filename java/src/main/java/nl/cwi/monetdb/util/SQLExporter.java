@@ -405,7 +405,7 @@ public class SQLExporter extends Exporter {
 		// find the optimal display widths of the columns
 		int[] width = new int[cols + 1];
 		boolean[] isSigned = new boolean[cols + 1];
-		for (int j = 1; j <= width.length; j++) {
+		for (int j = 1; j < width.length; j++) {
 			int coldisplaysize = md.getColumnDisplaySize(j);
 			int collabellength = md.getColumnLabel(j).length();
 			int maxwidth = (coldisplaysize > collabellength) ? coldisplaysize : collabellength;
@@ -417,7 +417,7 @@ public class SQLExporter extends Exporter {
 		// print the header text
 		out.print("+");
 		for (int j = 1; j < width.length; j++)
-			out.print(repeat('-', width[j] +1) + "-+");
+			out.print(repeat('-', width[j] + 1) + "-+");
 		out.println();
 
 		out.print("|");
@@ -466,7 +466,7 @@ public class SQLExporter extends Exporter {
 		// print the footer text
 		out.print("+");
 		for (int j = 1; j < width.length; j++)
-			out.print(repeat('-', width[j] +1) + "-+");
+			out.print(repeat('-', width[j] + 1) + "-+");
 		out.println();
 
 		out.println(count + " row" + (count != 1 ? "s" : ""));
