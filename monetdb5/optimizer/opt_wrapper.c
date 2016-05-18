@@ -97,13 +97,14 @@ opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #define OPTIMIZERDEBUG if (0) 
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str modnme = "(NONE)", curmodnme= NULL;
+	str modnme = "(NONE)";
 	str fcnnme = 0;
 	str msg= MAL_SUCCEED;
 	Symbol s= NULL;
 	lng t,clk= GDKusec();
 	int i, actions = 0;
 	char optimizer[256];
+	str curmodnme=0;
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");
@@ -138,7 +139,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		removeInstruction(mb, p);
 	if( mb->errors ){
 		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb, curmodnme);
+		addtoMalBlkHistory(mb);
 		return MAL_SUCCEED;
 	}
 
@@ -161,7 +162,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
 		t);
 	QOTupdateStatistics(curmodnme,actions,t);
-	addtoMalBlkHistory(mb,curmodnme);
+	addtoMalBlkHistory(mb);
 	return msg;
 }
 

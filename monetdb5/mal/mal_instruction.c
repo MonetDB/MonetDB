@@ -118,7 +118,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->history = NULL;
 	mb->keephistory = 0;
 	mb->dotfile = 0;
-	mb->marker = 0;
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
@@ -233,7 +232,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->history = NULL;
 	mb->keephistory = old->keephistory;
 	mb->dotfile = old->dotfile;
-	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
 	mb->activeClients = 1;
 
@@ -290,7 +288,7 @@ copyMalBlk(MalBlkPtr old)
 }
 
 void
-addtoMalBlkHistory(MalBlkPtr mb, str marker)
+addtoMalBlkHistory(MalBlkPtr mb)
 {
 	MalBlkPtr cpy, h;
 	if (mb->keephistory) {
@@ -298,7 +296,6 @@ addtoMalBlkHistory(MalBlkPtr mb, str marker)
 		if (cpy == NULL)
 			return;				/* ignore history */
 		cpy->history = NULL;
-		mb->marker = GDKstrdup(marker);
 		if (mb->history == NULL)
 			mb->history = cpy;
 		else {
@@ -318,34 +315,6 @@ getMalBlkHistory(MalBlkPtr mb, int idx)
 	return h ? h : mb;
 }
 
-/* You can retrieve the history by its marker as well. */
-MalBlkPtr
-getMalBlkMarker(MalBlkPtr mb, str marker)
-{
-	MalBlkPtr h = mb;
-	while (h && h->marker && strcmp(h->marker, marker))
-		h = h->history;
-	return h ? h : mb;
-}
-
-/* You can roll back the history to a specific marker. A NULL is
- * returned when the marker can not be found. */
-MalBlkPtr
-gotoMalBlkMarker(MalBlkPtr mb, str marker)
-{
-	MalBlkPtr h = mb, g;
-	while (h && h->marker && strcmp(h->marker, marker))
-		h = h->history;
-	if (h == NULL)
-		return NULL;			/* marker not found */
-	while (h && h->marker && strcmp(h->marker, marker)) {
-		g = h;
-		h = h->history;
-		g->history = 0;
-		freeMalBlk(g);
-	}
-	return h;
-}
 
 /* The MalBlk structures potentially consume a lot a of space, because
  * it is not possible to precisely estimate the default sizes of the
