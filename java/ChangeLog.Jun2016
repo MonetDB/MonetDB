@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl>
-- ResultSet.setFetchSize(): added a dumy implementation to get rid
+- ResultSet.setFetchSize(): added a dummy implementation to get rid
   of the SQLFeatureNotSupportedException. In MonetDB, it does not
   make sense to set the fetch size of a result set. If one really
   wants to set the fetch size, one should use Statement.setFetchSize()
