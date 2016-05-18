@@ -38,7 +38,7 @@ RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) cntxt;
 	(void) stk;
-	addtoMalBlkHistory(mb,"isolation");
+	addtoMalBlkHistory(mb);
 	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }

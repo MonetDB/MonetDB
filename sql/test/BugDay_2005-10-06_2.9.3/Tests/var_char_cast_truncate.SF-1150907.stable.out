@@ -24,24 +24,24 @@ Ready.
 [ 1	]
 [ 1	]
 #select cast(str as varchar(4)), length(cast(str as varchar(4))) from t11;
-% sys.L1,	sys.L1 # table_name
+% sys.L1,	sys.L2 # table_name
 % L1,	length_truncate_str # name
 % varchar,	int # type
 % 4,	1 # length
 [ "bla",	3	]
 [ "blab",	4	]
 [ "5",	1	]
-[ "bla ",	3	]
+[ "bla ",	4	]
 [ "blad",	4	]
 #select cast(str as char(4)), length(cast(str as char(4))) from t11;
-% sys.L1,	sys.L1 # table_name
+% sys.L1,	sys.L2 # table_name
 % L1,	length_truncate_str # name
 % char,	int # type
 % 4,	1 # length
 [ "bla",	3	]
 [ "blab",	4	]
 [ "5",	1	]
-[ "bla ",	3	]
+[ "bla ",	4	]
 [ "blad",	4	]
 
 # 12:44:10 >  

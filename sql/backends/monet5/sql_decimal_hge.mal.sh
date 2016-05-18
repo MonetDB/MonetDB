@@ -15,8 +15,8 @@ integer="bte sht int wrd lng"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 
 for tp1 in hge ; do
-	for tp2 in flt dbl ; do
-	    cat <<EOF
+    for tp2 in flt dbl ; do
+	cat <<EOF
 command calc.${tp1}( v:${tp2}, digits:int, scale:int ) :${tp1}
 address ${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
@@ -26,12 +26,12 @@ address bat${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
 EOF
-done
+    done
 done
 
 for tp1 in hge ; do
-	for tp2 in $integer hge ; do
-	    cat <<EOF
+    for tp2 in $integer hge ; do
+	cat <<EOF
 command calc.${tp1}( v:${tp2}, digits:int, scale:int ) :${tp1}
 address ${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
@@ -55,12 +55,12 @@ address bat${tp2}_dec2dec_${tp1}
 comment "cast decimal(${tp2}) to decimal(${tp1}) and check for overflow";
 
 EOF
-done
+    done
 done
 
 for tp1 in $numeric ; do
-	for tp2 in hge ; do
-	    cat <<EOF
+    for tp2 in hge ; do
+	cat <<EOF
 command calc.${tp1}( v:${tp2}, digits:int, scale:int ) :${tp1}
 address ${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
@@ -84,5 +84,5 @@ address bat${tp2}_dec2dec_${tp1}
 comment "cast decimal(${tp2}) to decimal(${tp1}) and check for overflow";
 
 EOF
-done
+    done
 done

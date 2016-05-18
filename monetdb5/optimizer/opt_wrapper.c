@@ -106,12 +106,13 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng t,clk= GDKusec();
 	int i, actions = 0;
 	char optimizer[256];
-	InstrPtr q;
+	str curmodnme=0;
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
-	q= copyInstruction(p);
+	
+	curmodnme = getModuleId(p);
 	OPTIMIZERDEBUG 
 		mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
@@ -119,10 +120,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			getArgType(mb,p,2) != TYPE_str ||
 			!isVarConstant(mb,getArg(p,1)) ||
 			!isVarConstant(mb,getArg(p,2))
-			) {
-			freeInstruction(q);
+			)
 			throw(MAL, optimizer, ILLARG_CONSTANTS);
-		}
 
 		if( stk != 0){
 			modnme= *getArgReference_str(stk,p,1);
@@ -134,18 +133,15 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		removeInstruction(mb, p);
 		s= findSymbol(cntxt->nspace, putName(modnme),putName(fcnnme));
 
-		if( s == NULL) {
-			freeInstruction(q);
+		if( s == NULL) 
 			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
-		}
 		mb = s->def;
 		stk= 0;
 	} else if( p ) 
 		removeInstruction(mb, p);
 	if( mb->errors ){
 		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb,getModuleId(q));
-		freeInstruction(q);
+		addtoMalBlkHistory(mb);
 		return MAL_SUCCEED;
 	}
 
@@ -155,10 +151,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
 			break;	
 		}
-	if ( codes[i].nme == 0){
-		freeInstruction(q);
+	if ( codes[i].nme == 0)
 		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
-	}
 
 	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk));
 	OPTIMIZERDEBUG {
@@ -169,9 +163,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
 		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
 		t);
-	QOTupdateStatistics(getModuleId(q),actions,t);
-	addtoMalBlkHistory(mb,getModuleId(q));
-	freeInstruction(q);
+	QOTupdateStatistics(curmodnme,actions,t);
+	addtoMalBlkHistory(mb);
 	return msg;
 }
 

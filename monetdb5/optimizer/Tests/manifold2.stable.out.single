@@ -26,19 +26,19 @@ Ready.
 # 12:52:57 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23074" "--port=30414"
 # 12:52:57 >  
 
-function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
-    c:wrd := aggr.count(b:bat[:dbl]);   	#[1] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[2] ALGcount_bat 4 <- 2 
-    X_9:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[3] CMDBATnew 9 <- 10 11 
-barrier (X_13:oid,X_14:dbl) := iterator.new(b:bat[:dbl]);	#[4] ITRbunIterator 13 14 <- 1 
-    X_16:dbl := algebra.fetch(b2:bat[:dbl],X_13:oid);	#[5] ALGfetchoid 16 <- 2 13 
-    X_18:dbl := calc.max(X_14:dbl,X_16:dbl);	#[6] CALCmax 18 <- 14 16 
-    bat.append(X_9:bat[:dbl],X_18:dbl); 	#[7] BKCappend_val_wrap 19 <- 9 18 
-    redo (X_13:oid,X_14:dbl) := iterator.next(b:bat[:dbl]);	#[8] ITRbunNext 13 14 <- 1 
-exit (X_13:oid,X_14:dbl);               	#[9]  13 14 
-    z:bat[:dbl] := X_9:bat[:dbl];       	#[10]  5 <- 9 
-    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[11] IOtable 8 <- 5 1 2 
-end user.tst;                           	#[12]  
+function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0] (0)  0 <- 1 2 
+    c:wrd := aggr.count(b:bat[:dbl]);   	#[1] (0) ALGcount_bat 3 <- 1 
+    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[2] (0) ALGcount_bat 4 <- 2 
+    X_9:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[3] (0) CMDBATnew 9 <- 10 11 
+barrier (X_13:oid,X_14:dbl) := iterator.new(b:bat[:dbl]);	#[4] (0) ITRbunIterator 13 14 <- 1 
+    X_16:dbl := algebra.fetch(b2:bat[:dbl],X_13:oid);	#[5] (0) ALGfetchoid 16 <- 2 13 
+    X_18:dbl := calc.max(X_14:dbl,X_16:dbl);	#[6] (0) CALCmax 18 <- 14 16 
+    bat.append(X_9:bat[:dbl],X_18:dbl); 	#[7] (0) BKCappend_val_wrap 19 <- 9 18 
+    redo (X_13:oid,X_14:dbl) := iterator.next(b:bat[:dbl]);	#[8] (0) ITRbunNext 13 14 <- 1 
+exit (X_13:oid,X_14:dbl);               	#[9] (0)  13 14 
+    z:bat[:dbl] := X_9:bat[:dbl];       	#[10] (0)  5 <- 9 
+    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[11] (0) IOtable 8 <- 5 1 2 
+end user.tst;                           	#[12] (0)  
 #[1]     b =  :bat[:dbl]  
 #[2]    b2 =  :bat[:dbl]  
 #[5]     z =  :bat[:dbl]  
@@ -51,19 +51,19 @@ end user.tst;                           	#[12]
 #[14]   _14 =  :dbl  
 #[16]   _16 =  :dbl  
 #[18]   _18 =  :dbl  
-function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
-    c:wrd := aggr.count(b:bat[:dbl]);   	#[1] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[2] ALGcount_bat 4 <- 2 
-    X_9:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[3] CMDBATnew 9 <- 10 11 
-barrier (X_13:oid,X_14:dbl) := iterator.new(b:bat[:dbl]);	#[4] ITRbunIterator 13 14 <- 1 
-    X_16:dbl := algebra.fetch(b2:bat[:dbl],X_13:oid);	#[5] ALGfetchoid 16 <- 2 13 
-    X_18:dbl := calc.max(X_14:dbl,X_16:dbl);	#[6] CALCmax 18 <- 14 16 
-    bat.append(X_9:bat[:dbl],X_18:dbl); 	#[7] BKCappend_val_wrap 19 <- 9 18 
-    redo (X_13:oid,X_14:dbl) := iterator.next(b:bat[:dbl]);	#[8] ITRbunNext 13 14 <- 1 
-exit (X_13:oid,X_14:dbl);               	#[9]  13 14 
-    z:bat[:dbl] := X_9:bat[:dbl];       	#[10]  5 <- 9 
-    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[11] IOtable 8 <- 5 1 2 
-end user.tst;                           	#[12]  
+function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0] (0)  0 <- 1 2 
+    c:wrd := aggr.count(b:bat[:dbl]);   	#[1] (0) ALGcount_bat 3 <- 1 
+    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[2] (0) ALGcount_bat 4 <- 2 
+    X_9:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[3] (0) CMDBATnew 9 <- 10 11 
+barrier (X_13:oid,X_14:dbl) := iterator.new(b:bat[:dbl]);	#[4] (0) ITRbunIterator 13 14 <- 1 
+    X_16:dbl := algebra.fetch(b2:bat[:dbl],X_13:oid);	#[5] (0) ALGfetchoid 16 <- 2 13 
+    X_18:dbl := calc.max(X_14:dbl,X_16:dbl);	#[6] (0) CALCmax 18 <- 14 16 
+    bat.append(X_9:bat[:dbl],X_18:dbl); 	#[7] (0) BKCappend_val_wrap 19 <- 9 18 
+    redo (X_13:oid,X_14:dbl) := iterator.next(b:bat[:dbl]);	#[8] (0) ITRbunNext 13 14 <- 1 
+exit (X_13:oid,X_14:dbl);               	#[9] (0)  13 14 
+    z:bat[:dbl] := X_9:bat[:dbl];       	#[10] (0)  5 <- 9 
+    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[11] (0) IOtable 8 <- 5 1 2 
+end user.tst;                           	#[12] (0)  
 
 # 09:02:36 >  
 # 09:02:36 >  "Done."
