@@ -56,11 +56,11 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define SORTfndloop(TYPE, CMP, BUNtail)					\
+#define SORTfndloop(TYPE, CMP, BUNtail, POS)				\
 	do {								\
 		while (lo < hi) {					\
 			cur = mid = (lo + hi) >> 1;			\
-			cmp = CMP(BUNtail(bi, cur), v, TYPE);		\
+			cmp = CMP(BUNtail(bi, POS), v, TYPE);		\
 			if (cmp < 0) {					\
 				lo = ++mid;				\
 				cur++;					\
@@ -79,16 +79,19 @@ enum find_which {
 };
 
 static BUN
-SORTfndwhich(BAT *b, const void *v, enum find_which which)
+SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 {
 	BUN lo, hi, mid;
 	int cmp;
 	BUN cur;
+	const oid *o = NULL;
 	BATiter bi;
 	BUN diff, end;
 	int tp;
 
-	if (b == NULL || (!b->tsorted && !b->trevsorted))
+	if (b == NULL ||
+	    (!b->tsorted && !b->trevsorted &&
+	     (!use_orderidx || !BATcheckorderidx(b))))
 		return BUN_NONE;
 
 	lo = BUNfirst(b);
@@ -124,10 +127,23 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 	/* only use storage type if comparison functions are equal */
 	tp = ATOMbasetype(b->ttype);
 
+	if (use_orderidx) {
+		if (b->torderidx == NULL ||
+		    b->torderidx->base == NULL) {
+			GDKerror("ORDERfindwhich: order idx not found\n");
+		}
+		o = (const oid *) b->torderidx->base + ORDERIDXOFF;
+		lo = 0;
+		hi = BATcount(b);
+	}
+
 	switch (which) {
 	case FIND_FIRST:
 		end = lo;
-		if (lo >= hi || (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype))) {
+		if (lo >= hi ||
+		    (use_orderidx ?
+		     (atom_GE(BUNtail(bi, (o[lo]&BUN_UNMSK) - b->hseqbase + BUNfirst(b)), v, b->ttype)) :
+		     (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype)))) {
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v (if sorted)
 			 * or <= v (if revsorted), we're done */
@@ -136,8 +152,11 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		break;
 	case FIND_LAST:
 		end = hi;
-		if (lo >= hi || (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype))) {
-			/* shortcut: if BAT is empty or first (and
+		if (lo >= hi ||
+		    (use_orderidx ?
+		     (atom_LE(BUNtail(bi, (o[hi - 1]&BUN_UNMSK) - b->hseqbase + BUNfirst(b)), v, b->ttype)) :
+		     (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype)))) {
+			/* shortcut: if BAT is empty or last (and
 			 * hence all) tail value is <= v (if sorted)
 			 * or >= v (if revsorted), we're done */
 			return hi;
@@ -155,65 +174,95 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 	if (b->tsorted) {
 		switch (tp) {
 		case TYPE_bte:
-			SORTfndloop(bte, simple_CMP, BUNtloc);
+			SORTfndloop(bte, simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_sht:
-			SORTfndloop(sht, simple_CMP, BUNtloc);
+			SORTfndloop(sht, simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_int:
-			SORTfndloop(int, simple_CMP, BUNtloc);
+			SORTfndloop(int, simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_lng:
-			SORTfndloop(lng, simple_CMP, BUNtloc);
+			SORTfndloop(lng, simple_CMP, BUNtloc, cur);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SORTfndloop(hge, simple_CMP, BUNtloc);
+			SORTfndloop(hge, simple_CMP, BUNtloc, cur);
 			break;
 #endif
 		case TYPE_flt:
-			SORTfndloop(flt, simple_CMP, BUNtloc);
+			SORTfndloop(flt, simple_CMP, BUNtloc, cur);
 			break;
 		case TYPE_dbl:
-			SORTfndloop(dbl, simple_CMP, BUNtloc);
+			SORTfndloop(dbl, simple_CMP, BUNtloc, cur);
 			break;
 		default:
 			if (b->tvarsized)
-				SORTfndloop(b->ttype, atom_CMP, BUNtvar);
+				SORTfndloop(b->ttype, atom_CMP, BUNtvar, cur);
 			else
-				SORTfndloop(b->ttype, atom_CMP, BUNtloc);
+				SORTfndloop(b->ttype, atom_CMP, BUNtloc, cur);
+			break;
+		}
+	} else if (b->trevsorted) {
+		switch (tp) {
+		case TYPE_bte:
+			SORTfndloop(bte, -simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_sht:
+			SORTfndloop(sht, -simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_int:
+			SORTfndloop(int, -simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_lng:
+			SORTfndloop(lng, -simple_CMP, BUNtloc, cur);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			SORTfndloop(hge, -simple_CMP, BUNtloc, cur);
+			break;
+#endif
+		case TYPE_flt:
+			SORTfndloop(flt, -simple_CMP, BUNtloc, cur);
+			break;
+		case TYPE_dbl:
+			SORTfndloop(dbl, -simple_CMP, BUNtloc, cur);
+			break;
+		default:
+			if (b->tvarsized)
+				SORTfndloop(b->ttype, -atom_CMP, BUNtvar, cur);
+			else
+				SORTfndloop(b->ttype, -atom_CMP, BUNtloc, cur);
 			break;
 		}
 	} else {
+		assert(use_orderidx);
 		switch (tp) {
 		case TYPE_bte:
-			SORTfndloop(bte, -simple_CMP, BUNtloc);
+			SORTfndloop(bte, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 		case TYPE_sht:
-			SORTfndloop(sht, -simple_CMP, BUNtloc);
+			SORTfndloop(sht, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 		case TYPE_int:
-			SORTfndloop(int, -simple_CMP, BUNtloc);
+			SORTfndloop(int, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 		case TYPE_lng:
-			SORTfndloop(lng, -simple_CMP, BUNtloc);
+			SORTfndloop(lng, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SORTfndloop(hge, -simple_CMP, BUNtloc);
+			SORTfndloop(hge, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 #endif
 		case TYPE_flt:
-			SORTfndloop(flt, -simple_CMP, BUNtloc);
+			SORTfndloop(flt, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 		case TYPE_dbl:
-			SORTfndloop(dbl, -simple_CMP, BUNtloc);
+			SORTfndloop(dbl, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
 			break;
 		default:
-			if (b->tvarsized)
-				SORTfndloop(b->ttype, -atom_CMP, BUNtvar);
-			else
-				SORTfndloop(b->ttype, -atom_CMP, BUNtloc);
+			assert(0);
 			break;
 		}
 	}
@@ -222,20 +271,34 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 	case FIND_FIRST:
 		if (cmp == 0 && b->tkey == 0) {
 			/* shift over multiple equals */
-			for (diff = cur - end; diff; diff >>= 1) {
-				while (cur >= end + diff &&
-				       atom_EQ(BUNtail(bi, cur - diff), v, b->ttype))
-					cur -= diff;
+			if (use_orderidx) {
+				while (--cur >= end && !(o[cur]&BUN_MSK)) {
+					;
+				}
+				cur++;
+			} else {
+				for (diff = cur - end; diff; diff >>= 1) {
+					while (cur >= end + diff &&
+					       atom_EQ(BUNtail(bi, cur - diff), v, b->ttype))
+						cur -= diff;
+				}
 			}
 		}
 		break;
 	case FIND_LAST:
 		if (cmp == 0 && b->tkey == 0) {
 			/* shift over multiple equals */
-			for (diff = (end - cur) >> 1; diff; diff >>= 1) {
-				while (cur + diff < end &&
-				       atom_EQ(BUNtail(bi, cur + diff), v, b->ttype))
-					cur += diff;
+			if (use_orderidx) {
+				while (cur < end && !(o[cur]&BUN_MSK)) {
+					cur++;
+				}
+			} else {
+				for (diff = (end - cur) >> 1; diff; diff >>= 1) {
+					while (cur + diff < end &&
+					       atom_EQ(BUNtail(bi, cur + diff), v, b->ttype)) {
+						cur += diff;
+					}
+				}
 			}
 		}
 		cur += (cmp == 0);
@@ -247,31 +310,53 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which)
 		}
 		break;
 	}
+
 	return cur;
 }
 
 /* Return the BUN of any tail value in b that is equal to v; if no
- * match is found, return BUN_NONE.  b must be sorted (reverse of
+ * match is found, return BUN_NONE.  b must be sorted (reverse or
  * forward). */
 BUN
 SORTfnd(BAT *b, const void *v)
 {
-	return SORTfndwhich(b, v, FIND_ANY);
+	return SORTfndwhich(b, v, FIND_ANY, 0);
+}
+
+/* use orderidx, returns BUN on order index */
+BUN
+ORDERfnd(BAT *b, const void *v)
+{
+	return SORTfndwhich(b, v, FIND_ANY, 1);
 }
 
 /* Return the BUN of the first (lowest numbered) tail value that is
  * equal to v; if no match is found, return the BUN of the next higher
- * value in b.  b must be sorted (reverse of forward). */
+ * value in b.  b must be sorted (reverse or forward). */
 BUN
 SORTfndfirst(BAT *b, const void *v)
 {
-	return SORTfndwhich(b, v, FIND_FIRST);
+	return SORTfndwhich(b, v, FIND_FIRST, 0);
+}
+
+/* use orderidx, returns BUN on order index */
+BUN
+ORDERfndfirst(BAT *b, const void *v)
+{
+	return SORTfndwhich(b, v, FIND_FIRST, 1);
 }
 
 /* Return the BUN of the first (lowest numbered) tail value beyond v.
- * b must be sorted (reverse of forward). */
+ * b must be sorted (reverse or forward). */
 BUN
 SORTfndlast(BAT *b, const void *v)
 {
-	return SORTfndwhich(b, v, FIND_LAST);
+	return SORTfndwhich(b, v, FIND_LAST, 0);
+}
+
+/* use orderidx, returns BUN on order index */
+BUN
+ORDERfndlast(BAT *b, const void *v)
+{
+	return SORTfndwhich(b, v, FIND_LAST, 1);
 }

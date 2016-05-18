@@ -18,8 +18,16 @@ command starttrace()
 address CMDstartTrace
 comment "Start collecting trace information";
 
+command starttrace(path:str)
+address CMDstartTracePath
+comment "Start collecting trace information and keep around in 'path' directory";
+
 command stoptrace():void
 address CMDstopTrace
+comment "Stop collecting trace information";
+
+command stoptrace(path:str):void
+address CMDstopTracePath
 comment "Stop collecting trace information";
 
 command setheartbeat(b:int):void

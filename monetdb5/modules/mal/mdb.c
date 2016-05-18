@@ -249,7 +249,7 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
-	return runMALDebugger(cntxt, s);
+	return runMALDebugger(cntxt, s->def);
 }
 
 /*

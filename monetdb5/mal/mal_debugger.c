@@ -1144,10 +1144,26 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * creation of a minimal execution environment first.
  */
 str
-runMALDebugger(Client cntxt, Symbol s)
+runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
+	str oldprompt= cntxt->prompt;
+	int oldtrace = cntxt->itrace;
+	int oldopt = cntxt->debugOptimizer;
+	int oldhist = cntxt->curprg->def->keephistory;
+	str msg;
+
 	cntxt->itrace = 'n';
-	return runMAL(cntxt, s->def, 0, 0);
+	cntxt->debugOptimizer = TRUE;
+	cntxt->curprg->def->keephistory = TRUE;
+
+	msg = runMAL(cntxt, mb, 0, 0);
+
+	cntxt->curprg->def->keephistory = oldhist;
+	cntxt->prompt =oldprompt;
+	cntxt->itrace = oldtrace;
+	cntxt->debugOptimizer = oldopt;
+	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
+	return msg;
 }
 
 /* Utilities

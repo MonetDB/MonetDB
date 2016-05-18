@@ -1,0 +1,96 @@
+stdout of test 'orderidx02` in directory 'monetdb5/modules/mal` itself:
+
+
+# 16:08:53 >  
+# 16:08:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33494" "--set" "mapi_usock=/var/tmp/mtest-12996/.s.monetdb.33494" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/leftmart//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "orderidx02.mal"
+# 16:08:53 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33494/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12996/.s.monetdb.33494
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished reading the write-ahead log 'sql_logs/sql/log.4'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 19:30:09 >  
+# 19:30:09 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-1981" "--port=33660"
+# 19:30:09 >  
+
+#--------------------------#
+# h	t	t  # name
+# void	void	int  # type
+#--------------------------#
+#--------------------------#
+# h	t	t  # name
+# void	oid	int  # type
+#--------------------------#
+[ 0@0,	0@0,	959217167  ]
+[ 1@0,	5@0,	527076325	]
+[ 2@0,	6@0,	266430612	]
+[ 3@0,	9@0,	58690783	]
+#--------------------------#
+# h	t	t  # name
+# void	void	int  # type
+#--------------------------#
+[ 0@0,	0@0,	959217167  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	int  # type
+#--------------------------#
+[ 0@0,	1@0,	1920220901	]
+[ 1@0,	8@0,	1863672321	]
+#--------------------------#
+# h	t	t  # name
+# void	oid	int  # type
+#--------------------------#
+[ 0@0,	9@0,	959217167  ]
+[ 1@0,	6@0,	1920220901  ]
+[ 2@0,	5@0,	1303856962  ]
+[ 3@0,	0@0,	1667896496  ]
+[ 4@0,	4@0,	1080090866  ]
+[ 5@0,	2@0,	527076325  ]
+[ 6@0,	3@0,	266430612  ]
+[ 7@0,	7@0,	1674978691  ]
+[ 8@0,	8@0,	1863672321  ]
+[ 9@0,	1@0,	58690783  ]
+#--------------------------#
+# h	t	t  # name
+# void	void	int  # type
+#--------------------------#
+#--------------------------#
+# h	t	t  # name
+# void	oid	int  # type
+#--------------------------#
+[ 0@0,	0@0,	959217167  ]
+[ 1@0,	5@0,	527076325	]
+[ 2@0,	6@0,	266430612	]
+[ 3@0,	9@0,	58690783	]
+#--------------------------#
+# h	t	t  # name
+# void	void	int  # type
+#--------------------------#
+[ 0@0,	0@0,	959217167  ]
+#--------------------------#
+# h	t	t  # name
+# void	oid	int  # type
+#--------------------------#
+[ 0@0,	1@0,	1920220901	]
+[ 1@0,	8@0,	1863672321	]
+
+# 16:08:53 >  
+# 16:08:53 >  "Done."
+# 16:08:53 >  
+

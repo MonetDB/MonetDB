@@ -19,6 +19,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
+#include "mtime.h"
 
 #define new_func_list(sa) sa_list(sa)
 #define new_col_list(sa) sa_list(sa)
@@ -5440,14 +5441,14 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	}
 }
 
-static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
+static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel, list *refs);
 
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel) 
 {
 	int needed = 0;
 
-	if (!rel || rel_is_ref(rel))
+	if (!rel)
 		return rel;
 
 	switch(rel->op) {
@@ -5548,20 +5549,23 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
-rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj) 
+rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj) 
 {
 	if (!rel)
 		return rel;
 
-	if (!skip_proj && rel_is_ref(rel))
-		return rel_dce(sql, rel);
+	if (!skip_proj && rel_is_ref(rel)) {
+		if (!list_find(refs, rel, NULL))
+			list_append(refs, rel);
+		return rel;
+	}
 
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
 
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(sql, rel, refs);
 
 	case op_insert:
 	case op_ddl:
@@ -5572,9 +5576,9 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_delete:
 
 		if (skip_proj && rel->r)
-			rel->r = rel_dce_down(sql, rel->r, 0);
+			rel->r = rel_dce_down(sql, rel->r, refs, 0);
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(sql, rel, refs);
 		return rel;
 
 	case op_topn: 
@@ -5583,9 +5587,9 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_groupby: 
 
 		if (skip_proj && rel->l)
-			rel->l = rel_dce_down(sql, rel->l, is_topn(rel->op) || is_sample(rel->op));
+			rel->l = rel_dce_down(sql, rel->l, refs, is_topn(rel->op) || is_sample(rel->op));
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(sql, rel, refs);
 		return rel;
 
 	case op_union: 
@@ -5593,17 +5597,17 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_except: 
 		if (skip_proj) {
 			if (rel->l)
-				rel->l = rel_dce_down(sql, rel->l, 0);
+				rel->l = rel_dce_down(sql, rel->l, refs, 0);
 			if (rel->r)
-				rel->r = rel_dce_down(sql, rel->r, 0);
+				rel->r = rel_dce_down(sql, rel->r, refs, 0);
 		}
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(sql, rel, refs);
 		return rel;
 
 	case op_select: 
 		if (rel->l)
-			rel->l = rel_dce_down(sql, rel->l, 0);
+			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		return rel;
 
 	case op_join: 
@@ -5613,9 +5617,9 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_semi: 
 	case op_anti: 
 		if (rel->l)
-			rel->l = rel_dce_down(sql, rel->l, 0);
+			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		if (rel->r)
-			rel->r = rel_dce_down(sql, rel->r, 0);
+			rel->r = rel_dce_down(sql, rel->r, refs, 0);
 		return rel;
 	case op_apply: 
 		assert(0);
@@ -5630,7 +5634,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
  */
 
 static sql_rel *
-rel_dce_sub(mvc *sql, sql_rel *rel)
+rel_dce_sub(mvc *sql, sql_rel *rel, list *refs)
 {
 	if (!rel)
 		return rel;
@@ -5642,7 +5646,7 @@ rel_dce_sub(mvc *sql, sql_rel *rel)
  	 */
 	rel_mark_used(sql, rel, 1);
 	rel = rel_remove_unused(sql, rel);
-	rel_dce_down(sql, rel, 1);
+	rel_dce_down(sql, rel, refs, 1);
 	return rel;
 }
 
@@ -5717,9 +5721,14 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
+	list *refs = sa_list(sql->sa);
+	node *n;
+
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
-	rel_dce_sub(sql, rel);
+	rel_dce_sub(sql, rel, refs);
+	for (n = refs->h; n; n = n->next)
+		rel_dce_sub(sql, n->data, refs);
 	return rel;
 }
 
@@ -6880,14 +6889,14 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 		if (emax->data.val.shval < cmin->data.val.shval || emin->data.val.shval > cmax->data.val.shval)
 			return 0;
 	}
-	if (t->type->localtype == TYPE_int) {
+	if (t->type->localtype == TYPE_int || t->type->localtype == TYPE_date) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);
 
 		if (emax->data.val.ival < cmin->data.val.ival || emin->data.val.ival > cmax->data.val.ival)
 			return 0;
 	}
-	if (t->type->localtype == TYPE_lng) {
+	if (t->type->localtype == TYPE_lng || t->type->localtype == TYPE_timestamp) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);
 

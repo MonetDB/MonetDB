@@ -281,7 +281,7 @@ QLOGempty(void *ret)
 }
 
 str
-QLOGinsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid *ret = getArgReference_oid(stk,pci,0);
 	str *q = getArgReference_str(stk,pci,1);

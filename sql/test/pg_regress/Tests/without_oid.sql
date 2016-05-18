@@ -50,7 +50,7 @@ SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)
   FROM pg_class
  WHERE relname IN ('wi', 'wo');
 */
-SELECT "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, imprints, sorted FROM sys.storage
+SELECT "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted FROM sys.storage
  WHERE "table" IN ('wi', 'wo');
 
 DROP TABLE wi;

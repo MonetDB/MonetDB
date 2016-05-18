@@ -33,6 +33,7 @@
 #include <rel_bin.h>
 #include <bbp.h>
 #include <opt_pipes.h>
+#include <orderidx.h>
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
@@ -496,8 +497,31 @@ table_has_updates(sql_trans *tr, sql_table *t)
 	return cnt;
 }
 
+static BAT *
+mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
+{
+	sql_trans *tr = m->session->tr;
+	BAT *b = NULL;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		return NULL;
+	c = mvc_bind_column(m, t, cname);
+	if (c == NULL)
+		return NULL;
+
+	b = store_funcs.bind_col(tr, c, access);
+	return b;
+}
+
 static str
-alter_table(mvc *sql, char *sname, sql_table *t)
+alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
@@ -579,6 +603,19 @@ alter_table(mvc *sql, char *sname, sql_table *t)
 		/* alter add index */
 		for (n = t->idxs.nelm; n; n = n->next) {
 			sql_idx *i = n->data;
+
+			if (i->type == ordered_idx) {
+				sql_kc *ic = i->columns->h->data;
+				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
+				BBPunfix(b->batCacheid);
+			}
+			if (i->type == imprints_idx) {
+				sql_kc *ic = i->columns->h->data;
+				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
+				BATimprints(b);
+				BBPunfix(b->batCacheid);
+			}
 			mvc_copy_idx(sql, nt, i);
 		}
 	}
@@ -704,7 +741,7 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 }
 
 static str
-drop_index(mvc *sql, char *sname, char *iname)
+drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 {
 	sql_schema *s = NULL;
 	sql_idx *i = NULL;
@@ -717,6 +754,18 @@ drop_index(mvc *sql, char *sname, char *iname)
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_message("42000!DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
+		if (i->type == ordered_idx) {
+			sql_kc *ic = i->columns->h->data;
+			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
+			OIDXdropImplementation(cntxt, b);
+			BBPunfix(b->batCacheid);
+		}
+		if (i->type == imprints_idx) {
+			sql_kc *ic = i->columns->h->data;
+			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
+			IMPSdestroy(b);
+			BBPunfix(b->batCacheid);
+		}
 		mvc_drop_idx(sql, s, i);
 	}
 	return NULL;
@@ -1265,7 +1314,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_ALTER_TABLE:{
 		sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
-		msg = alter_table(sql, sname, t);
+		msg = alter_table(cntxt, sql, sname, t);
 		break;
 	}
 	case DDL_CREATE_TYPE:{
@@ -1393,7 +1442,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	case DDL_DROP_INDEX:{
 		char *iname = *getArgReference_str(stk, pci, 3);
-		msg = drop_index(sql, sname, iname);
+		msg = drop_index(cntxt, sql, sname, iname);
 		break;
 	}
 	case DDL_DROP_FUNCTION:{
@@ -1756,29 +1805,6 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	throw(SQL, "sql.restart", "sequence %s not found", *sname);
-}
-
-static BAT *
-mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
-{
-	sql_trans *tr = m->session->tr;
-	BAT *b = NULL;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	sql_column *c = NULL;
-
-	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
-		return NULL;
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		return NULL;
-	c = mvc_bind_column(m, t, cname);
-	if (c == NULL)
-		return NULL;
-
-	b = store_funcs.bind_col(tr, c, access);
-	return b;
 }
 
 static BAT *
@@ -3641,6 +3667,61 @@ zero_or_one(ptr ret, const bat *bid)
 }
 
 str
+SQLall(ptr ret, const bat *bid)
+{
+	BAT *b;
+	BUN c, _s;
+	ptr p;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "all", "Cannot access descriptor");
+	}
+	c = BATcount(b);
+	if (c == 0) {
+		p = ATOMnilptr(b->ttype);
+	} else {
+		BUN q, r;
+		int (*ocmp) (const void *, const void *);
+		BATiter bi = bat_iterator(b);
+		q = BUNfirst(b);
+		r = BUNlast(b);
+		p = BUNtail(bi, q);
+		ocmp = ATOMcompare(b->ttype);
+		for( ; (q+1) < r; q++) {
+			const void *c = BUNtail(bi, q+1);
+			if (ocmp(p, c) != 0) {
+				p = ATOMnilptr(b->ttype);
+				break;
+			}
+		}
+	}
+	_s = ATOMsize(ATOMtype(b->ttype));
+	if (ATOMextern(b->ttype)) {
+		_s = ATOMlen(ATOMtype(b->ttype), p);
+		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
+	} else if (b->ttype == TYPE_bat) {
+		bat bid = *(bat *) p;
+		*(BAT **) ret = BATdescriptor(bid);
+	} else if (_s == 4) {
+		*(int *) ret = *(int *) p;
+	} else if (_s == 1) {
+		*(bte *) ret = *(bte *) p;
+	} else if (_s == 2) {
+		*(sht *) ret = *(sht *) p;
+	} else if (_s == 8) {
+		*(lng *) ret = *(lng *) p;
+#ifdef HAVE_HGE
+	} else if (_s == 16) {
+		*(hge *) ret = *(hge *) p;
+#endif
+	} else {
+		memcpy(ret, p, _s);
+	}
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 not_unique(bit *ret, const bat *bid)
 {
 	BAT *b;
@@ -4730,7 +4811,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *phash, *sort, *imprints, *mode, *oidx;
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
@@ -4751,6 +4832,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rphash = getArgReference_bat(stk, pci, 11);
 	bat *rimprints = getArgReference_bat(stk, pci, 12);
 	bat *rsort = getArgReference_bat(stk, pci, 13);
+	bat *roidx = getArgReference_bat(stk, pci, 14);
 	str sname = 0;
 	str tname = 0;
 	str cname = 0;
@@ -4789,10 +4871,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(imprints, 0);
 	sort = BATnew(TYPE_void, TYPE_bit, 0, TRANSIENT);
 	BATseqbase(sort, 0);
+	oidx = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+	BATseqbase(oidx, 0);
 
-
-	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL ||
-	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL) {
+	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
+	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL || oidx == NULL) {
 		if (sch)
 			BBPunfix(sch->batCacheid);
 		if (tab)
@@ -4821,6 +4904,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(imprints->batCacheid);
 		if (sort)
 			BBPunfix(sort->batCacheid);
+		if (oidx)
+			BBPunfix(oidx->batCacheid);
 		throw(SQL, "sql.storage", MAL_MALLOC_FAIL);
 	}
 	if( pci->argc - pci->retc >= 1)
@@ -4919,6 +5004,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								w = BATtordered(bn);
 								BUNappend(sort, &w, FALSE);
+
+								sz = bn->torderidx ? bn->torderidx->free : 0;
+								BUNappend(oidx, &sz, FALSE);
 								BBPunfix(bn->batCacheid);
 							}
 
@@ -4998,6 +5086,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
+									sz = bn->torderidx ? bn->torderidx->free : 0;
+									BUNappend(oidx, &sz, FALSE);
 									BBPunfix(bn->batCacheid);
 								}
 							}
@@ -5019,125 +5109,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rphash = phash->batCacheid);
 	BBPkeepref(*rimprints = imprints->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
+	BBPkeepref(*roidx = oidx->batCacheid);
 	return MAL_SUCCEED;
 }
-
-str
-RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int pos = 0;
-	str *expr = getArgReference_str(stk, pci, 1);
-	bit *opt = getArgReference_bit(stk, pci, 2);
-	backend *b = NULL;
-	mvc *m = NULL;
-	str msg;
-	sql_rel *rel;
-	list *refs;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (!m->sa)
-		m->sa = sa_create();
-	refs = sa_list(m->sa);
-	rel = rel_read(m, *expr, &pos, refs);
-	if (rel) {
-		int oldvtop = cntxt->curprg->def->vtop;
-		int oldstop = cntxt->curprg->def->stop;
-		stmt *s;
-		MalStkPtr oldglb = cntxt->glb;
-
-		if (*opt)
-			rel = rel_optimizer(m, rel);
-		s = output_rel_bin(m, rel);
-		rel_destroy(rel);
-
-		MSinitClientPrg(cntxt, "user", "test");
-
-		/* generate MAL code */
-		backend_callinline(b, cntxt, s, 1);
-		addQueryToCache(cntxt);
-
-		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
-		if (!msg) {
-			resetMalBlk(cntxt->curprg->def, oldstop);
-			freeVariables(cntxt, cntxt->curprg->def, NULL, oldvtop);
-			if( !(cntxt->glb == 0 || cntxt->glb == oldglb))
-				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
-		}
-		cntxt->glb = oldglb;
-	}
-	return msg;
-}
-
-str
-RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int pos = 0;
-	str *mod = getArgReference_str(stk, pci, 1);
-	str *nme = getArgReference_str(stk, pci, 2);
-	str *expr = getArgReference_str(stk, pci, 3);
-	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
-	backend *b = NULL;
-	mvc *m = NULL;
-	str msg;
-	sql_rel *rel;
-	list *refs, *ops;
-	char buf[BUFSIZ];
-
-	if ((msg = getSQLContext(cntxt, mb, &m, &b)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (!m->sa)
-		m->sa = sa_create();
-
-       	ops = sa_list(m->sa);
-	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
-	while (c && *c && !isspace(*c)) {
-		char *vnme = c, *tnme; 
-		char *p = strchr(++c, (int)' ');
-		int d,s,nr;
-		sql_subtype t;
-		atom *a;
-
-		*p++ = 0;
-		vnme = sa_strdup(m->sa, vnme);
-		nr = strtol(vnme+1, NULL, 10);
-		tnme = p;
-		p = strchr(p, (int)'(');
-		*p++ = 0;
-		tnme = sa_strdup(m->sa, tnme);
-
-		d = strtol(p, &p, 10);
-		p++; /* skip , */
-		s = strtol(p, &p, 10);
-		
-		sql_find_subtype(&t, tnme, d, s);
-		a = atom_general(m->sa, &t, NULL);
-		/* the argument list may have holes and maybe out of order, ie
-		 * done use sql_add_arg, but special numbered version
-		 * sql_set_arg(m, a, nr);
-		 * */
-		sql_set_arg(m, nr, a);
-		append(ops, stmt_alias(m->sa, stmt_varnr(m->sa, nr, &t), NULL, vnme));
-		c = strchr(p, (int)',');
-		if (c)
-			c++;
-	}
-	refs = sa_list(m->sa);
-	rel = rel_read(m, *expr, &pos, refs);
-	if (!rel)
-		throw(SQL, "sql.register", "Cannot register %s", buf);
-	if (rel) {
-		monet5_create_relational_function(m, *mod, *nme, rel, stmt_list(m->sa, ops), 0);
-		rel_destroy(rel);
-	}
-	sqlcleanup(m, 0);
-	return msg;
-}
-
 
 void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)

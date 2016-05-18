@@ -2548,7 +2548,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 }
 
 /* binary search in a candidate list, return 1 if found, 0 if not */
-static inline int
+inline int
 binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 {
 	BUN mid;
@@ -3747,6 +3747,61 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
+/* small ordered right, dense left, oid's only, do fetches */
+static gdk_return
+fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
+{
+	oid lo = l->tseqbase, hi = lo + BATcount(l);
+	BUN b = SORTfndfirst(r, &lo), e = SORTfndlast(r, &hi), p;
+
+	ALGODEBUG fprintf(stderr, "#fetchjoin(l=%s#" BUNFMT "[%s]%s%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s%s)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  l->tkey & 1 ? "-key" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  r->tkey & 1 ? "-key" : "");
+
+	BATseqbase(r1, 0);
+	if (r2) {
+		if (BATextend(r2, e - b) != GDK_SUCCEED)
+			goto bailout;
+		BATseqbase(r2, 0);
+		for (p = b; p < e; p++) {
+			oid v = p + r->hseqbase;
+			APPEND(r2, v);
+		}
+		BATsetcount(r2, e - b);
+		r2->tkey = 1;
+		r2->tdense = 1;
+		r2->tsorted = 1;
+		r2->trevsorted = e - b <= 1;
+		r2->tseqbase = e == b ? 0 : r->hseqbase + b;
+		virtualize(r2);
+	}
+	if (BATextend(r1, e - b) != GDK_SUCCEED)
+		goto bailout;
+	for (p = b; p < e; p++) {
+		oid v = *(const oid*)Tloc(r, p) - l->tseqbase + l->hseqbase;
+		APPEND(r1, v);
+	}
+	BATsetcount(r1, e - b);
+	r1->tkey = r->tkey & 1;
+	r1->tsorted = r->tsorted || e - b <= 1;
+	r1->trevsorted = r->trevsorted || e - b <= 1;
+	r1->tdense = e - b <= 1;
+	r1->tseqbase = e == b ? 0 : e - b == 1 ? *(const oid *)Tloc(r1, 0) : oid_nil;
+	return GDK_SUCCEED;
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
+}
+
+
 /* Make the implementation choices for various left joins. */
 static gdk_return
 subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
@@ -3792,6 +3847,8 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    BATcount(r) * (Tsize(r) + (r->T->vheap ? r->T->vheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
 				 nil_on_miss, semi, only_misses, maxsize, t0, 0);
+	if (BATtdense(l) && BATordered(r) && (rcount * 1024) < lcount && ATOMtype(l->ttype) == TYPE_oid && !sl && !sr && !nil_matches && !only_misses)
+		return fetchjoin(r1, r2, l, r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
 			nil_on_miss, semi, only_misses, maxsize, t0, 0, "leftjoin");
 }
