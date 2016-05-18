@@ -5,7 +5,7 @@
 - Improved JdbcClient program when presenting query data to console.
   It used to send an SQL catalog query for each query result column
   which slowed down the interactive response considerably.
-  These additonal SQL catalog queries have been eliminated.
+  These additional SQL catalog queries have been eliminated.
 
 * Thu May 12 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected MonetResultSet.getObject(String columnName). It no longer
