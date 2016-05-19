@@ -2191,9 +2191,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"cast(").append(MonetDriver.getJavaType("other")).append(" AS smallint) AS \"SOURCE_DATA_TYPE\", " +
 			"cast(CASE WHEN \"columns\".\"default\" IS NOT NULL AND \"columns\".\"default\" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS \"IS_AUTOINCREMENT\", " +
 			"cast('NO' AS varchar(3)) AS \"IS_GENERATEDCOLUMN\" " +
-		"FROM \"sys\".\"columns\" AS \"columns\", " +
-			"\"sys\".\"tables\" AS \"tables\", " +
-			"\"sys\".\"schemas\" AS \"schemas\" " +
+		"FROM \"sys\".\"columns\", " +
+			"\"sys\".\"tables\", " +
+			"\"sys\".\"schemas\" " +
 		"WHERE \"columns\".\"table_id\" = \"tables\".\"id\" " +
 			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\"");
 
@@ -3082,11 +3082,11 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"CAST(").append(table_row_count).append(" AS int) AS \"CARDINALITY\", " +
 			"CAST(0 AS int) AS \"PAGES\", " +
 			"CAST(null AS varchar(1)) AS \"FILTER_CONDITION\" " +
-		"FROM \"sys\".\"idxs\" AS \"idxs\" LEFT JOIN \"sys\".\"keys\" AS \"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
-			"\"sys\".\"schemas\" AS \"schemas\", " +
-			"\"sys\".\"objects\" AS \"objects\", " +
-			"\"sys\".\"columns\" AS \"columns\", " +
-			"\"sys\".\"tables\" AS \"tables\" " +
+		"FROM \"sys\".\"idxs\" LEFT JOIN \"sys\".\"keys\" ON \"idxs\".\"name\" = \"keys\".\"name\", " +
+			"\"sys\".\"schemas\", " +
+			"\"sys\".\"objects\", " +
+			"\"sys\".\"columns\", " +
+			"\"sys\".\"tables\" " +
 		"WHERE \"idxs\".\"table_id\" = \"tables\".\"id\" " +
 			"AND \"tables\".\"schema_id\" = \"schemas\".\"id\" " +
 			"AND \"idxs\".\"id\" = \"objects\".\"id\" " +
@@ -3253,7 +3253,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				.append(" ELSE ").append(Types.STRUCT).append(" END AS int) AS \"DATA_TYPE\", " +
 			"\"types\".\"systemname\" AS \"REMARKS\", " +
 			"cast(null as smallint) AS \"BASE_TYPE\" " +
-			"FROM sys.types JOIN sys.schemas ON types.schema_id = schemas.id " +
+			"FROM \"sys\".\"types\" JOIN \"sys\".\"schemas\" ON \"types\".\"schema_id\" = \"schemas\".\"id\" " +
 			// exclude the built-in types (I assume they always have id <= 99 and eclass < 15)
 			"WHERE \"types\".\"id\" > 99 AND \"types\".\"eclass\" >= 15");
 
