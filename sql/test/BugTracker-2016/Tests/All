@@ -31,4 +31,4 @@ epoch.Bug-3979
 fk-smaller-pk.Bug-3983
 isaUUID_function.Bug-3997
 string-length.Bug-3999
-RELEASE_SAVEPOIN_after_ALTER_TABLE_crash.Bug-4010
+RELEASE_SAVEPOINT_after_ALTER_TABLE_crash.Bug-4010
