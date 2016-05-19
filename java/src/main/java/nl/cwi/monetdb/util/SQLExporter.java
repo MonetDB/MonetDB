@@ -402,21 +402,22 @@ public class SQLExporter extends Exporter {
 	public void resultSetToTable(ResultSet rs) throws SQLException {
 		ResultSetMetaData md = rs.getMetaData();
 		int cols = md.getColumnCount();
-		// find the presentation widths of the columns
-		int[] width = new int[cols +1];
-		for (int j = 1; j <= cols; j++) {
-			int displaySize = md.getColumnDisplaySize(j);
-			int labelLength = md.getColumnLabel(j).length();
-			width[j] = (displaySize > labelLength) ? displaySize : labelLength;
-			if (md.isNullable(j) != ResultSetMetaData.columnNoNulls) {
-				width[j] = Math.max("<NULL>".length(), width[j]);
-			}
+		// find the optimal display widths of the columns
+		int[] width = new int[cols + 1];
+		boolean[] isSigned = new boolean[cols + 1];
+		for (int j = 1; j < width.length; j++) {
+			int coldisplaysize = md.getColumnDisplaySize(j);
+			int collabellength = md.getColumnLabel(j).length();
+			int maxwidth = (coldisplaysize > collabellength) ? coldisplaysize : collabellength;
+			// the minimum width should be 4 to represent: "NULL"
+			width[j] = (maxwidth > 4) ? maxwidth : 4;
+			isSigned[j] = md.isSigned(j);
 		}
 
-		// print header
+		// print the header text
 		out.print("+");
 		for (int j = 1; j < width.length; j++)
-			out.print(repeat('-', width[j] +1) + "-+");
+			out.print(repeat('-', width[j] + 1) + "-+");
 		out.println();
 
 		out.print("|");
@@ -439,26 +440,33 @@ public class SQLExporter extends Exporter {
 				Object rdata = rs.getObject(j);
 				String data;
 				if (rdata == null || rs.wasNull()) {
-					data = "<NULL>";
+					data = "NULL";
 				} else {
 					data = rdata.toString();
+					if (data == null)
+						data = "NULL";
 				}
-				String filler = repeat(' ', Math.max(width[j] - data.length(), 0));
-				if (md.isSigned(j)) {
-					// we have a numeric type here, right align presented data
-					out.print(" " + filler + data +  " |");
+
+				int filler_length = width[j] - data.length();
+				if (filler_length <= 0) {
+					out.print(" " + data + " |");
 				} else {
-					// something else
-					out.print(" " + data + filler +  " |");
+					if (isSigned[j]) {
+						// we have a numeric type here, right align
+						out.print(" " + repeat(' ', filler_length) + data + " |");
+					} else {
+						// all other left align
+						out.print(" " + data + repeat(' ', filler_length) + " |");
+					}
 				}
 			}
 			out.println();
 		}
 
-		// print footer
+		// print the footer text
 		out.print("+");
 		for (int j = 1; j < width.length; j++)
-			out.print(repeat('-', width[j] +1) + "-+");
+			out.print(repeat('-', width[j] + 1) + "-+");
 		out.println();
 
 		out.println(count + " row" + (count != 1 ? "s" : ""));

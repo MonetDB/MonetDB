@@ -1,101 +1,176 @@
 stdout of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracker-2009` itself:
 
 
-# 22:45:54 >  
-# 22:45:54 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=35519 --set xrpc_port=48894 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 22:45:54 >  
+# 16:38:46 >  
+# 16:38:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38761" "--set" "mapi_usock=/var/tmp/mtest-29376/.s.monetdb.38761" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_BugTracker-2009" "--set" "embedded_r=yes"
+# 16:38:46 >  
 
-# MonetDB server v5.12.0, based on kernel v1.30.0
-# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# MonetDB 5 server v11.24.0 (hg id: 934dbfa3c66b)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.518 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35519/
-# MonetDB/SQL module v2.30.0 loaded
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:38761/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29376/.s.monetdb.38761
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
+# 16:38:46 >  
+# 16:38:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29376" "--port=38761"
+# 16:38:46 >  
 
-# 21:13:40 >  
-# 21:13:40 >  mclient -lsql -i --host=alf --port=39638 
-# 21:13:40 >  
-
+#set optimizer='sequential_pipe';
+#create table blabla(id integer);
 #~BeginVariableOutput~#
-function user.s4_1{autoCommit=true}():void;
+function user.s4_1():void;
 "    X_32:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",22);"
-    X_2 := sql.mvc();
+    X_1 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_8:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
-"    X_44 := algebra.subselect(X_10,X_8,nil:int,nil:int,true,true,true);"
-"    (X_12,r1_15) := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
-"    X_45 := algebra.subselect(r1_15,nil:bat[:oid,:oid],nil:int,nil:int,true,true,true);"
-"    X_15:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
-"    X_47 := algebra.subselect(X_15,X_8,nil:int,nil:int,true,true,true);"
-"    X_18 := sql.subdelta(X_44,X_8,X_12,X_45,X_47);"
-"    X_19 := sql.projectdelta(X_18,X_10,X_12,r1_15,X_15);"
-"    (X_20,r1_26,r2_26) := group.subgroupdone(X_19);"
-    X_23 := aggr.count(r2_26);
-    X_24:wrd := aggr.sum(r2_26);
-    X_25 := calc.isnil(X_24);
-"    X_27 := calc.ifthenelse(X_25,0,X_24);"
-"    X_28 := calc.!=(X_23,X_27);"
+"    X_9:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",0);"
+"    C_7:bat[:oid] := sql.tid(X_1,""sys"",""blabla"");"
+"    C_48 := algebra.subselect(X_9,C_7,nil:int,nil:int,true,true,true);"
+"    (C_11,r1_14) := sql.bind(X_1,""sys"",""blabla"",""id"",2);"
+"    C_49 := algebra.subselect(r1_14,nil:bat[:oid],nil:int,nil:int,true,true,true);"
+"    X_14:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",1);"
+"    C_51 := algebra.subselect(X_14,C_7,nil:int,nil:int,true,true,true);"
+"    C_17 := sql.subdelta(C_48,C_7,C_11,C_49,C_51);"
+"    X_19 := sql.projectdelta(C_17,X_9,C_11,r1_14,X_14);"
+"    (X_20,r1_27,r2_27) := group.subgroupdone(X_19);"
+    X_23 := aggr.count(r2_27);
+    X_24:wrd := aggr.sum(r2_27);
+    X_25:bit := calc.isnil(X_24);
+"    X_27:wrd := calc.ifthenelse(X_25,0,X_24);"
+"    X_28:bit := calc.!=(X_23,X_27);"
 "    sql.assert(X_28,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s4_1;
-function user.s5_1{autoCommit=true}():void;
+#inline               actions= 0 time=8 usec 
+#candidates           actions= 1 time=107 usec 
+#remap                actions= 0 time=13 usec 
+#costModel            actions= 1 time=93 usec 
+#coercions            actions= 7 time=88 usec 
+#evaluate             actions= 0 time=14 usec 
+#aliases              actions= 0 time=22 usec 
+#pushselect           actions= 3 time=153 usec 
+#mergetable           actions= 0 time=105 usec 
+#deadcode             actions= 2 time=78 usec 
+#aliases              actions= 0 time=21 usec 
+#constants            actions= 1 time=73 usec 
+#commonTerms          actions= 0 time=20 usec 
+#projectionpath       actions= 0 time=12 usec 
+#reorder              actions= 1 time=120 usec 
+#deadcode             actions= 0 time=19 usec 
+#reduce               actions=28 time=150 usec 
+#matpack              actions= 0 time=14 usec 
+#querylog             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=12 usec 
+#generator            actions= 0 time=6 usec 
+#profiler             actions= 1 time=57 usec 
+#garbageCollector     actions= 1 time=90 usec 
+#total                actions= 1 time=1470 usec 
+function user.s5_1():void;
 "    X_32:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",22);"
-    X_2 := sql.mvc();
+    X_1 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_8:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
-"    X_44 := algebra.subselect(X_10,X_8,nil:int,nil:int,true,true,true);"
-"    (X_12,r1_15) := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
-"    X_45 := algebra.subselect(r1_15,nil:bat[:oid,:oid],nil:int,nil:int,true,true,true);"
-"    X_15:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
-"    X_47 := algebra.subselect(X_15,X_8,nil:int,nil:int,true,true,true);"
-"    X_18 := sql.subdelta(X_44,X_8,X_12,X_45,X_47);"
-"    X_19 := sql.projectdelta(X_18,X_10,X_12,r1_15,X_15);"
-"    (X_20,r1_26,r2_26) := group.subgroupdone(X_19);"
-    X_23 := aggr.count(r2_26);
-    X_24:wrd := aggr.sum(r2_26);
-    X_25 := calc.isnil(X_24);
-"    X_27 := calc.ifthenelse(X_25,0,X_24);"
-"    X_28 := calc.!=(X_23,X_27);"
+"    X_9:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",0);"
+"    C_7:bat[:oid] := sql.tid(X_1,""sys"",""blabla"");"
+"    C_48 := algebra.subselect(X_9,C_7,nil:int,nil:int,true,true,true);"
+"    (C_11,r1_14) := sql.bind(X_1,""sys"",""blabla"",""id"",2);"
+"    C_49 := algebra.subselect(r1_14,nil:bat[:oid],nil:int,nil:int,true,true,true);"
+"    X_14:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",1);"
+"    C_51 := algebra.subselect(X_14,C_7,nil:int,nil:int,true,true,true);"
+"    C_17 := sql.subdelta(C_48,C_7,C_11,C_49,C_51);"
+"    X_19 := sql.projectdelta(C_17,X_9,C_11,r1_14,X_14);"
+"    (X_20,r1_27,r2_27) := group.subgroupdone(X_19);"
+    X_23 := aggr.count(r2_27);
+    X_24:wrd := aggr.sum(r2_27);
+    X_25:bit := calc.isnil(X_24);
+"    X_27:wrd := calc.ifthenelse(X_25,0,X_24);"
+"    X_28:bit := calc.!=(X_23,X_27);"
 "    sql.assert(X_28,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s5_1;
+#inline               actions= 0 time=7 usec 
+#candidates           actions= 1 time=93 usec 
+#remap                actions= 0 time=12 usec 
+#costModel            actions= 1 time=79 usec 
+#coercions            actions= 7 time=75 usec 
+#evaluate             actions= 0 time=12 usec 
+#aliases              actions= 0 time=20 usec 
+#pushselect           actions= 3 time=108 usec 
+#mergetable           actions= 0 time=95 usec 
+#deadcode             actions= 2 time=69 usec 
+#aliases              actions= 0 time=18 usec 
+#constants            actions= 1 time=64 usec 
+#commonTerms          actions= 0 time=15 usec 
+#projectionpath       actions= 0 time=11 usec 
+#reorder              actions= 1 time=104 usec 
+#deadcode             actions= 0 time=16 usec 
+#reduce               actions=28 time=126 usec 
+#matpack              actions= 0 time=13 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=10 usec 
+#generator            actions= 0 time=6 usec 
+#profiler             actions= 1 time=52 usec 
+#garbageCollector     actions= 1 time=72 usec 
+#total                actions= 1 time=1255 usec 
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-function user.s9_1{autoCommit=true}():void;
+function user.s9_1():void;
 "    X_32:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",22);"
-    X_2 := sql.mvc();
+    X_1 := sql.mvc();
 "    sql.catalog(29,""sys"",nil,0);"
-"    X_10:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_8:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
-"    X_44 := algebra.subselect(X_10,X_8,nil:int,nil:int,true,true,true);"
-"    (X_12,r1_15) := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
-"    X_45 := algebra.subselect(r1_15,nil:bat[:oid,:oid],nil:int,nil:int,true,true,true);"
-"    X_15:bat[:oid,:int] := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
-"    X_47 := algebra.subselect(X_15,X_8,nil:int,nil:int,true,true,true);"
-"    X_18 := sql.subdelta(X_44,X_8,X_12,X_45,X_47);"
-"    X_19 := sql.projectdelta(X_18,X_10,X_12,r1_15,X_15);"
-"    (X_20,r1_26,r2_26) := group.subgroupdone(X_19);"
-    X_23 := aggr.count(r2_26);
-    X_24:wrd := aggr.sum(r2_26);
-    X_25 := calc.isnil(X_24);
-"    X_27 := calc.ifthenelse(X_25,0,X_24);"
-"    X_28 := calc.!=(X_23,X_27);"
+"    X_9:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",0);"
+"    C_7:bat[:oid] := sql.tid(X_1,""sys"",""blabla"");"
+"    C_48 := algebra.subselect(X_9,C_7,nil:int,nil:int,true,true,true);"
+"    (C_11,r1_14) := sql.bind(X_1,""sys"",""blabla"",""id"",2);"
+"    C_49 := algebra.subselect(r1_14,nil:bat[:oid],nil:int,nil:int,true,true,true);"
+"    X_14:bat[:int] := sql.bind(X_1,""sys"",""blabla"",""id"",1);"
+"    C_51 := algebra.subselect(X_14,C_7,nil:int,nil:int,true,true,true);"
+"    C_17 := sql.subdelta(C_48,C_7,C_11,C_49,C_51);"
+"    X_19 := sql.projectdelta(C_17,X_9,C_11,r1_14,X_14);"
+"    (X_20,r1_27,r2_27) := group.subgroupdone(X_19);"
+    X_23 := aggr.count(r2_27);
+    X_24:wrd := aggr.sum(r2_27);
+    X_25:bit := calc.isnil(X_24);
+"    X_27:wrd := calc.ifthenelse(X_25,0,X_24);"
+"    X_28:bit := calc.!=(X_23,X_27);"
 "    sql.assert(X_28,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s9_1;
+#inline               actions= 0 time=6 usec 
+#candidates           actions= 1 time=93 usec 
+#remap                actions= 0 time=11 usec 
+#costModel            actions= 1 time=78 usec 
+#coercions            actions= 7 time=73 usec 
+#evaluate             actions= 0 time=12 usec 
+#aliases              actions= 0 time=20 usec 
+#pushselect           actions= 3 time=105 usec 
+#mergetable           actions= 0 time=90 usec 
+#deadcode             actions= 2 time=68 usec 
+#aliases              actions= 0 time=18 usec 
+#constants            actions= 1 time=65 usec 
+#commonTerms          actions= 0 time=15 usec 
+#projectionpath       actions= 0 time=12 usec 
+#reorder              actions= 1 time=104 usec 
+#deadcode             actions= 0 time=17 usec 
+#reduce               actions=28 time=126 usec 
+#matpack              actions= 0 time=12 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=11 usec 
+#generator            actions= 0 time=6 usec 
+#profiler             actions= 1 time=54 usec 
+#garbageCollector     actions= 1 time=69 usec 
+#total                actions= 1 time=1219 usec 
 #~EndVariableOutput~#
 
-# 11:37:28 >  
-# 11:37:28 >  Done.
-# 11:37:28 >  
+# 16:38:46 >  
+# 16:38:46 >  "Done."
+# 16:38:46 >  
 

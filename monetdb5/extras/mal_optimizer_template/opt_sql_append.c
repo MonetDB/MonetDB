@@ -288,7 +288,7 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	if( mb->errors ){
 		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb,"sql_append");
+		addtoMalBlkHistory(mb);
 		return MAL_SUCCEED;
 	}
 	actions= OPTsql_appendImplementation(cntxt, mb,stk,p);
@@ -300,6 +300,6 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
 	QOTupdateStatistics("sql_append",actions,t);
-	addtoMalBlkHistory(mb,"sql_append");
+	addtoMalBlkHistory(mb);
 	return msg;
 }

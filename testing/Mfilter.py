@@ -119,6 +119,22 @@ elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s
 # we're only interested in elements with attributes, hence the +^
 
 def mFilter (FILE, IGNORE) :
+    # translate a pattern suitable for diff to one suitable for re
+    # this is pretty simple-minded and does not do everything that
+    # might be needed
+    ign = []
+    i = 0
+    while i < len(IGNORE):
+        if IGNORE[i] == '\\':
+            i += 1
+            if IGNORE[i] not in '()|':
+                ign.append('\\')
+        elif IGNORE[i] in '()|':
+            ign.append('\\')
+        ign.append(IGNORE[i])
+        i += 1
+    IGNORE = ''.join(ign)
+
     fin = open(FILE, "rU")
     LINE = fin.readline()
     while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):

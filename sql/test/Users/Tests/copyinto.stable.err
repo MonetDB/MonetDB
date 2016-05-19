@@ -30,9 +30,8 @@ stderr of test 'copyinto` in directory 'sql/test/Users` itself:
 # 19:39:23 >  "/usr/bin/python2" "copyinto.SQL.py" "copyinto"
 # 19:39:23 >  
 
-MAPI  = (copyuser) /var/tmp/mtest-8540/.s.monetdb.34898
-QUERY = COPY 5 RECORDS INTO region from '/home/niels/data/rc/clean/sql/benchmarks/tpch/SF-0.01//region.tbl' USING DELIMITERS '|', '|
-        ';select count(*) from region;
+MAPI  = (copyuser) /var/tmp/mtest-23128/.s.monetdb.32528
+QUERY = COPY 5 RECORDS INTO region from '$DATADIR/region.tbl' USING DELIMITERS '|', '|\n';
 ERROR = !COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "region" FROM STDIN' instead
 
 # 19:39:24 >  

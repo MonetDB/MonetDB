@@ -581,10 +581,6 @@ printSignature(stream *fd, Symbol s, int flg)
 	} else GDKerror("printSignature"MAL_MALLOC_FAIL);
 }
 
-/*
- * For clarity we show the last optimizer applied
- * also as the last of the list, although it is linked with mb.
-*/
 void showMalBlkHistory(stream *out, MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
@@ -605,14 +601,5 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 			}
 		} 
 		m= m->history;
-	}
-	p=getInstrPtr(mb,mb->stop-1);
-	if( p->token == REMsymbol){
-		msg= instruction2str(mb, 0, p, FALSE);
-		if (msg) {
-			mnstr_printf(out,"%s.%s[%2d] %s\n", 
-				getModuleId(sig), getFunctionId(sig),j++,msg+3);
-				GDKfree(msg);
-		}
 	}
 }
