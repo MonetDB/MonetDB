@@ -1058,7 +1058,6 @@ SQLparser(Client c)
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		//m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
@@ -1120,9 +1119,7 @@ SQLparser(Client c)
 			if (m->emode == m_prepare)
 				/* For prepared queries, return a table with result set structure*/
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
-			else if (m->emode == m_inplace) {
-				/* everything ready for a fast call */
-			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
+			else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
 				/* call procedure generation (only in cache mode) */
 				backend_call(be, c, be->q);
 			}

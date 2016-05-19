@@ -604,11 +604,6 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_inplace) {
-		msg = SQLexecutePrepared(c, be, be->q);
-		goto cleanup_engine;
-	}
-
 	if (m->emode == m_prepare)
 		goto cleanup_engine;
 
