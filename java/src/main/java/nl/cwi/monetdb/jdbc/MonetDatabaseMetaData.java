@@ -588,13 +588,158 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		return true;
 	}
 
+	/**
+	 * Retrieves whether this database supports the JDBC scalar function
+	 * CONVERT for the conversion of one JDBC type to another.
+	 * The JDBC types are the generic SQL data types defined in java.sql.Types.
+	 *
+	 * @return true if so; false otherwise
+	 */
 	@Override
 	public boolean supportsConvert() {
-		return false;
+		return true;
 	}
 
+	/**
+	 * Retrieves whether this database supports the JDBC scalar function
+	 * CONVERT for conversions between the JDBC types fromType and toType.
+	 * The JDBC types are the generic SQL data types defined in java.sql.Types.
+	 *
+	 * @return true if so; false otherwise
+	 */
 	@Override
 	public boolean supportsConvert(int fromType, int toType) {
+		switch (fromType) {
+		case Types.BOOLEAN:
+			switch (toType) {
+			case Types.BOOLEAN:
+		/*	case Types.BIT: is not supported by MonetDB and will fail */
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+			case Types.BIGINT:
+		/* conversion to FLOAT, REAL, DOUBLE, NUMERIC and DECIMAL is not supported by MonetDB */
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+	/*	case Types.BIT: is not supported by MonetDB and will fail */
+	/*	case Types.BINARY: is not supported by MonetDB and will fail */
+	/*	case Types.VARBINARY: is not supported by MonetDB and will fail */
+	/*	case Types.LONGVARBINARY: is not supported by MonetDB and will fail */
+		case Types.BLOB:
+			switch (toType) {
+		/*	case Types.BINARY: is not supported by MonetDB and will fail */
+		/*	case Types.VARBINARY: is not supported by MonetDB and will fail */
+		/*	case Types.LONGVARBINARY: is not supported by MonetDB and will fail */
+			case Types.BLOB:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.TINYINT:
+		case Types.SMALLINT:
+		case Types.INTEGER:
+		case Types.BIGINT:
+		case Types.FLOAT:
+		case Types.REAL:
+		case Types.DOUBLE:
+		case Types.NUMERIC:
+		case Types.DECIMAL:
+			switch (toType) {
+			case Types.BOOLEAN:
+		/*	case Types.BIT: is not supported by MonetDB and will fail */
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+			case Types.BIGINT:
+			case Types.FLOAT:
+			case Types.REAL:
+			case Types.DOUBLE:
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.CHAR:
+		case Types.VARCHAR:
+	/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+		case Types.CLOB:
+			switch (toType) {
+			case Types.BOOLEAN:
+		/*	case Types.BIT: is not supported by MonetDB and will fail */
+			case Types.TINYINT:
+			case Types.SMALLINT:
+			case Types.INTEGER:
+			case Types.BIGINT:
+			case Types.FLOAT:
+			case Types.REAL:
+			case Types.DOUBLE:
+			case Types.NUMERIC:
+			case Types.DECIMAL:
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.BLOB:
+			case Types.DATE:
+			case Types.TIME:
+			case Types.TIMESTAMP:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.DATE:
+			switch (toType) {
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.DATE:
+			case Types.TIMESTAMP:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.TIME:
+			switch (toType) {
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.TIME:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		case Types.TIMESTAMP:
+			switch (toType) {
+			case Types.CHAR:
+			case Types.VARCHAR:
+		/*	case Types.LONGVARCHAR: is not supported by MonetDB and will fail */
+			case Types.CLOB:
+			case Types.DATE:
+			case Types.TIME:
+			case Types.TIMESTAMP:
+				return true;
+			}
+			// conversion to all other types is not supported
+			return false;
+		}
+
+		// conversion from all other JDBC SQL types are not supported
 		return false;
 	}
 
