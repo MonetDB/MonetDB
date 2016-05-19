@@ -2059,7 +2059,14 @@ geoGetType(char **res, int *info, int *flag)
 
 str GEOSGeomGetZ(const GEOSGeometry *geom, double *z) {
     const GEOSCoordSequence* gcs_new;
-    int type = GEOSGeomTypeId(geom)+1;
+    int type;
+    
+    if (!geom) {
+		*z = dbl_nil;
+		return createException(MAL, "geom.GEOSGeomGetZ", "Geometry is NULL");
+    }
+
+    type = GEOSGeomTypeId(geom)+1;
     
     if (type != wkbPoint_mdb) {
 		*z = dbl_nil;
@@ -4751,7 +4758,7 @@ wkbAddPointIdx(wkb** out, wkb** lineWKB, wkb** pointWKB, int *idxPoint) {
     }
 
     //Get Coordinates from Point
-	if (GEOSGeomGetX(point, &px) == -1 || GEOSGeomGetY(point, &py) == -1 || GEOSGeomGetZ(point, &pz) != MAL_SUCCEED) {
+	if (GEOSGeomGetX(point, &px) == -1 || GEOSGeomGetY(point, &py) == -1 || (lineDim == 3 && GEOSGeomGetZ(point, &pz) != MAL_SUCCEED)) {
 		*out = NULL;
 		throw(MAL, "geom.AddPoint", "Error in reading the points' coordinates");
     }
