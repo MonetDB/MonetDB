@@ -3224,7 +3224,7 @@ def ReadMapproveRc(f) :
 
 THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
-dftIGNORE = '^#'
+dftIGNORE = r'^\(| \|\)#'
 TSTDBG = str(2+8)
 TSTTHREADS = "0"
 dftTSTPREF = "mTests"
