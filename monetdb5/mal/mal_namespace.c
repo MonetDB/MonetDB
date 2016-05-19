@@ -52,17 +52,15 @@ void initNamespace(void) {
 }
 
 void mal_namespace_reset(void) {
-	int i;
-	NamePtr n,m;
+	struct namespace *ns;
 
 	/* assume we are at the end of the server session */
 	MT_lock_set(&mal_namespaceLock);
-	for ( i =0; i < MAXIDENTIFIERS; i++){
-		for(n = hash[i]; n; n = m){
-			m = n->next;
-			GDKfree(n);
-		}
-		hash[i] = 0;
+	memset(hash, 0, sizeof(hash));
+	while (namespace) {
+		ns = namespace->next;
+		GDKfree(namespace);
+		namespace = ns;
 	}
 	MT_lock_unset(&mal_namespaceLock);
 }
