@@ -396,48 +396,16 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * Get a comma separated list of all a database's SQL keywords that
 	 * are NOT also SQL:2003 keywords.
-	 * 
 	 *
 	 * @return a comma separated list of MonetDB keywords
 	 */
 	@Override
 	public String getSQLKeywords() {
-		StringBuilder sb = new StringBuilder(1000);
-		Statement st = null;
-		ResultSet rs = null;
-		try {
-			st = con.createStatement();
-			rs = st.executeQuery("SELECT \"keyword\" FROM \"sys\".\"keywords\" ORDER BY 1");
-			// Fetch the keywords and concatenate them into a StringBuffer separated by comma's
-			boolean isfirst = true;
-			while (rs.next()) {
-				String keyword = rs.getString(1);
-				if (keyword != null) {
-					if (isfirst) {
-						isfirst = false;
-					} else {
-						sb.append(",");
-					}
-					sb.append(keyword);
-				}
-			}
-		} catch (SQLException e) {
-			/* This may occur for old (before Jul2015 release) MonetDB servers which do not have the sys.keywords table. */
-		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (SQLException e) { /* ignore */ }
-			}
-			if (st != null) {
-				try {
-					 st.close();
-				} catch (SQLException e) { /* ignore */ }
-			}
-		}
+		String keywords = getConcatenatedStringFromQuery("SELECT \"keyword\" FROM \"sys\".\"keywords\" ORDER BY 1");
 
-		return (sb.length() > 0) ? sb.toString() :
-			/* else fallback and return old static list (as returned in clients/odbc/driver/SQLGetInfo.c case SQL_KEYWORDS:) */
+		/* An old MonetDB server (pre Jul2015 release) will not have a table sys.keywords and return an empty String */
+		return (keywords.length() > 0) ? keywords :
+			/* for old servers return static list (as returned in clients/odbc/driver/SQLGetInfo.c case SQL_KEYWORDS:) */
 			"ADMIN,AFTER,AGGREGATE,ALWAYS,ASYMMETRIC,ATOMIC," +
 			"AUTO_INCREMENT,BEFORE,BIGINT,BIGSERIAL,BINARY,BLOB," +
 			"CALL,CHAIN,CLOB,COMMITTED,COPY,CORR,CUME_DIST," +
@@ -460,68 +428,32 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * getMonetDBSysFunctions(int kind)
-	 * args: int kind, value must be 1 or 2 or 3 or 4.
-	 * internal utility method to query the MonetDB sys.functions table
-	 * to dynamically get the function names (for a specific kind) and
-	 * concatenate the function names into a comma separated list.
+	 * Internal utility method getConcatenatedStringFromQuery(String query)
+	 * args: query: SQL SELECT query. Only the output of the first column is concatenated.
+	 * @return a String of query result values concatenated into one string, and values separated by comma's
 	 */
-	private String getMonetDBSysFunctions(int kind) {
-		// where clause part (for num/str/timedate to match only functions whose 1 arg exists and is of a certain type
-		String part1 = "WHERE \"id\" IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1 AND \"name\" = 'arg_1' AND \"type\" IN ";
-		String whereClause = "";
-		switch (kind) {
-			case 1:	/* numeric functions */
-				whereClause = part1 +
-				"('tinyint', 'smallint', 'int', 'bigint', 'decimal', 'real', 'double') )" +
-				// exclude 2 functions which take an int as arg but returns a char or str
-				" AND \"name\" NOT IN ('code', 'space')";
-				break;
-			case 2:	/* string functions */
-				whereClause = part1 +
-				"('char', 'varchar', 'clob') )" +
-				// include 2 functions which take an int as arg but returns a char or str
-				" OR \"name\" IN ('code', 'space')";
-				break;
-			case 3:	/* system functions */
-				whereClause = "WHERE \"id\" NOT IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1)" +
-				" AND \"func\" NOT LIKE '%function%(% %)%'" +
-				" AND \"func\" NOT LIKE '%procedure%(% %)%'" +
-				" AND \"func\" NOT LIKE '%CREATE FUNCTION%RETURNS TABLE(% %)%'" +
-				// the next names are also not usable so exclude them
-				" AND \"name\" NOT LIKE 'querylog_%'" +
-				" AND \"name\" NOT IN ('analyze', 'count', 'count_no_nil', 'initializedictionary', 'times')";
-				break;
-			case 4:	/* time date functions */
-				whereClause = part1 +
-				"('date', 'time', 'timestamp', 'timetz', 'timestamptz', 'sec_interval', 'month_interval') )";
-				break;
-			default: /* internal function called with an invalid kind value */
-				return "";
-		}
-
-		StringBuilder sb = new StringBuilder(400);
+	private String getConcatenatedStringFromQuery(String query) {
+		StringBuilder sb = new StringBuilder(1024);
 		Statement st = null;
 		ResultSet rs = null;
 		try {
-			String select = "SELECT DISTINCT \"name\" FROM \"sys\".\"functions\" " + whereClause + " ORDER BY 1";
 			st = con.createStatement();
-			rs = st.executeQuery(select);
-			// Fetch the function names and concatenate them into a StringBuffer separated by comma's
+			rs = st.executeQuery(query);
+			// Fetch the first column output and concatenate the values into a StringBuffer separated by comma's
 			boolean isfirst = true;
 			while (rs.next()) {
-				String name = rs.getString(1);
-				if (name != null) {
+				String value = rs.getString(1);
+				if (value != null) {
 					if (isfirst) {
 						isfirst = false;
 					} else {
-						sb.append(",");
+						sb.append(',');
 					}
-					sb.append(name);
+					sb.append(value);
 				}
 			}
 		} catch (SQLException e) {
-			// ignore
+			/* ignore */
 		} finally {
 			if (rs != null) {
 				try {
@@ -534,28 +466,50 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				} catch (SQLException e) { /* ignore */ }
 			}
 		}
-
+		// for debug: System.out.println("SQL query: " + query + "\nResult string: " + sb.toString());
 		return sb.toString();
 	}
 
+	// SQL query parts shared in below four getXxxxFunctions() methods
+	private final static String FunctionsSelect = "SELECT DISTINCT \"name\" FROM \"sys\".\"functions\" ";
+	private final static String FunctionsWhere = "WHERE \"id\" IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1 AND \"name\" = 'arg_1' AND \"type\" IN ";
+
 	@Override
 	public String getNumericFunctions() {
-		return getMonetDBSysFunctions(1);
+		String match =
+			"('tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'decimal', 'double', 'real') )" +
+			// exclude functions which belong to the 'str' module
+			" AND \"mod\" <> 'str'";
+		return getConcatenatedStringFromQuery(FunctionsSelect + FunctionsWhere + match + " ORDER BY 1");
 	}
 
 	@Override
 	public String getStringFunctions() {
-		return getMonetDBSysFunctions(2);
+		String match =
+			"('char', 'varchar', 'clob', 'json') )" +
+			// include functions which belong to the 'str' module
+			" OR \"mod\" = 'str'";
+		return getConcatenatedStringFromQuery(FunctionsSelect + FunctionsWhere + match + " ORDER BY 1");
 	}
 
 	@Override
 	public String getSystemFunctions() {
-		return getMonetDBSysFunctions(3);
+		String wherePart =
+			"WHERE \"id\" NOT IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1)" +
+			" AND \"func\" NOT LIKE '%function%(% %)%'" +
+			" AND \"func\" NOT LIKE '%procedure%(% %)%'" +
+			" AND \"func\" NOT LIKE '%CREATE FUNCTION%RETURNS TABLE(% %)%'" +
+			// the next names are also not usable so exclude them
+			" AND \"name\" NOT LIKE 'querylog_%'" +
+			" AND \"name\" NOT IN ('analyze', 'count', 'count_no_nil', 'initializedictionary', 'times')";
+		return getConcatenatedStringFromQuery(FunctionsSelect + wherePart + " ORDER BY 1");
 	}
 
 	@Override
 	public String getTimeDateFunctions() {
-		return getMonetDBSysFunctions(4);
+		String match =
+			"('date', 'time', 'timestamp', 'timetz', 'timestamptz', 'sec_interval', 'month_interval') )";
+		return getConcatenatedStringFromQuery(FunctionsSelect + FunctionsWhere + match + " ORDER BY 1");
 	}
 
 	/**
@@ -2489,7 +2443,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 
-	final static String keyQuery =
+	private final static String keyQuery =
 	"SELECT cast(null AS varchar(1)) AS \"PKTABLE_CAT\", " +
 		"\"pkschema\".\"name\" AS \"PKTABLE_SCHEM\", " +
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", " +
