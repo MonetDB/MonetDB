@@ -47,7 +47,7 @@ geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid)
                 geoms[0] = geom;
                 tmp = GEOSGeom_createCollection(GEOS_MULTIPOLYGON, geoms, 1);
                 ret = x3d_3_multi(tmp, precision, opts, defid);
-                GEOSGeom_destroy(tmp);
+                //GEOSGeom_destroy(tmp);
                 return ret;
             }
 
@@ -66,7 +66,8 @@ geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid)
             return x3d_3_tin(geom, precision, opts, defid);
 
         case wkbGeometryCollection_mdb:
-            return x3d_3_collection(geom, precision, opts, defid);
+            return x3d_3_psurface(geom, precision, opts, defid);
+            //return x3d_3_collection(geom, precision, opts, defid);
 
         default:
             assert(0);
@@ -196,22 +197,27 @@ static size_t
 x3d_3_mpoly_coordindex(GEOSGeom psur, char *output)
 {
     char *ptr=output;
-    GEOSGeom patch;
+    GEOSGeom geom;
     int i, j, l;
     int ngeoms = GEOSGetNumGeometries(psur);
     j = 0;
     for (i=0; i<ngeoms; i++)
     {
         int nrings;
-        patch = (GEOSGeom ) GEOSGetGeometryN(psur, i);
-        nrings = GEOSGetNumInteriorRings(patch);
+        geom = (GEOSGeom ) GEOSGetGeometryN(psur, i);
+        nrings = GEOSGetNumInteriorRings(geom) + 1;
         for (l=0; l < nrings; l++)
         {
-            GEOSGeom ring = *(GEOSGeom*)GEOSGetInteriorRingN(patch, l);
             uint32_t k, npoints = 0;
+	        const GEOSGeometry* ring;
+            if (!l)
+                ring = GEOSGetExteriorRing(geom);
+            else
+                ring = GEOSGetInteriorRingN(geom, l-1);
+
             numPointsGeometry(&npoints, ring);
 
-            for (k=0; k < npoints ; k++)
+            for (k=0; k < npoints-1 ; k++)
             {
                 if (k)
                 {
@@ -250,12 +256,13 @@ x3d_3_poly_size(GEOSGeom poly,  int precision, const char *defid)
 {
     size_t size;
     size_t defidlen = strlen(defid);
-    int i, nrings = GEOSGetNumInteriorRings(poly);
+    int i, nrings = GEOSGetNumInteriorRings(poly)+1;
 
     size = ( sizeof("<IndexedFaceSet></IndexedFaceSet>") + (defidlen*3) ) * 2 + 6 * (nrings - 1);
 
-    for (i=0; i<nrings; i++)
-        size += geom_X3Dsize(*(GEOSGeom*)GEOSGetInteriorRingN(poly, i), precision);
+    size += geom_X3Dsize((GEOSGeom)GEOSGetExteriorRing(poly), precision);
+    for (i=0; i<nrings-1; i++)
+        size += geom_X3Dsize((GEOSGeom)GEOSGetInteriorRingN(poly, i), precision);
 
     return size;
 }
@@ -263,13 +270,13 @@ x3d_3_poly_size(GEOSGeom poly,  int precision, const char *defid)
 static size_t
 x3d_3_poly_buf(GEOSGeom poly, char *output, int precision, int opts)
 {
-    int i, nrings = GEOSGetNumInteriorRings(poly);
+    int i, nIntRings = GEOSGetNumInteriorRings(poly);
     char *ptr=output;
     const GEOSGeometry* exteriorRing;
     exteriorRing = GEOSGetExteriorRing(poly);
 
     ptr += geom_toX3D3((GEOSGeom) exteriorRing, ptr, precision, opts, 1);
-    for (i=0; i<nrings; i++)
+    for (i=0; i<nIntRings; i++)
     {
         ptr += sprintf(ptr, " ");
         ptr += geom_toX3D3(*(GEOSGeom*)GEOSGetInteriorRingN(poly, i), ptr, precision, opts,1);
@@ -464,7 +471,7 @@ x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const c
     char *ptr;
     int i, ngeoms = GEOSGetNumGeometries(psur);
     int j;
-    GEOSGeom patch;
+    GEOSGeom geom;
     ptr = output;
     ptr += sprintf(ptr, "<IndexedFaceSet convex='false' %s coordIndex='",defid);
 
@@ -472,12 +479,12 @@ x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const c
     for (i=0; i<ngeoms; i++)
     {
         uint32_t k, npoints = 0;
-        GEOSGeom ring;
-        patch = (GEOSGeom ) GEOSGetGeometryN(psur, i);
-        ring =*(GEOSGeom*)GEOSGetInteriorRingN(patch, 0);
+	    const GEOSGeometry* ring;
+        geom = (GEOSGeom ) GEOSGetGeometryN(psur, i);
+        ring = GEOSGetExteriorRing(geom);
         numPointsGeometry(&npoints, ring);
 
-        for (k=0; k < npoints ; k++)
+        for (k=0; k < npoints-1 ; k++)
         {
             if (k)
             {
@@ -745,10 +752,11 @@ geom_toX3D3(GEOSGeom geom, char *output, int precision, int opts, int is_closed)
             if ( !is_closed || i < (npoints - 1) )
             {
                 GEOSGeom point = (GEOSGeom) GEOSGeomGetPointN(geom, i);
-                double pt_x, pt_y, pt_z;
+                double pt_x, pt_y, pt_z = 0.0;
                 GEOSGeomGetX(point, &pt_x);
                 GEOSGeomGetY(point, &pt_y);
-                GEOSGeomGetZ(point, &pt_z);
+                if (GEOSHasZ(point) != 1)
+                    GEOSGeomGetZ(point, &pt_z);
 
                 if (fabs(pt_x) < OUT_MAX_DOUBLE)
                     sprintf(x, "%.*f", precision, pt_x);
