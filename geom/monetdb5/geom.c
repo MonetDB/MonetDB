@@ -252,33 +252,37 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 	}
 
 	/* iterate over the interiorRing and transform each one of them */
-	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-	if (transformedInteriorRingGeometries == NULL) {
-		*transformedGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.wkbTransform", MAL_MALLOC_FAIL);
-	}
-	for (i = 0; i < numInteriorRings; i++) {
-		ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
-		if (ret != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-			GDKfree(transformedInteriorRingGeometries);
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
-			*transformedGeometry = NULL;
-			return ret;
-		}
-		GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
-	}
+    if (numInteriorRings) {
+        transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+        if (transformedInteriorRingGeometries == NULL) {
+            *transformedGeometry = NULL;
+            GEOSGeom_destroy(transformedExteriorRingGeometry);
+            throw(MAL, "geom.wkbTransform", MAL_MALLOC_FAIL);
+        }
+        for (i = 0; i < numInteriorRings; i++) {
+            ret = transformLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), proj4_src, proj4_dst);
+            if (ret != MAL_SUCCEED) {
+                while (--i >= 0)
+                    GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+                GDKfree(transformedInteriorRingGeometries);
+                GEOSGeom_destroy(transformedExteriorRingGeometry);
+                *transformedGeometry = NULL;
+                return ret;
+            }
+            GEOSSetSRID(transformedInteriorRingGeometries[i], srid);
+        }
+    }
 
-	*transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	if (*transformedGeometry == NULL) {
-		for (i = 0; i < numInteriorRings; i++)
-			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-		ret = createException(MAL, "geom.wkbTransform", "GEOSGeom_createPolygon failed");
-	}
-	GDKfree(transformedInteriorRingGeometries);
-	GEOSGeom_destroy(transformedExteriorRingGeometry);
+    *transformedGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+    if (*transformedGeometry == NULL) {
+	    GEOSGeom_destroy(transformedExteriorRingGeometry);
+        for (i = 0; i < numInteriorRings; i++)
+            GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+        ret = createException(MAL, "geom.wkbTransform", "GEOSGeom_createPolygon failed");
+    }
+
+    if(transformedInteriorRingGeometries)
+        GDKfree(transformedInteriorRingGeometries);
 
 	return ret;
 }
@@ -648,31 +652,35 @@ forceDimPolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, in
 	}
 
 	/* iterate over the interiorRing and translate each one of them */
-	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-	if (transformedInteriorRingGeometries == NULL) {
-		*outGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.ForceDim", MAL_MALLOC_FAIL);
-	}
-	for (i = 0; i < numInteriorRings; i++) {
-		if ((ret = forceDimLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dim)) != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-			GDKfree(transformedInteriorRingGeometries);
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
-			*outGeometry = NULL;
-			return ret;
-		}
-	}
+    if (numInteriorRings) {
+        transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+        if (transformedInteriorRingGeometries == NULL) {
+            *outGeometry = NULL;
+            GEOSGeom_destroy(transformedExteriorRingGeometry);
+            throw(MAL, "geom.ForceDim", MAL_MALLOC_FAIL);
+        }
+        for (i = 0; i < numInteriorRings; i++) {
+            if ((ret = forceDimLinearRing(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), dim)) != MAL_SUCCEED) {
+                while (--i >= 0)
+                    GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+                GDKfree(transformedInteriorRingGeometries);
+                GEOSGeom_destroy(transformedExteriorRingGeometry);
+                *outGeometry = NULL;
+                return ret;
+            }
+        }
+    }
 
-	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	if (*outGeometry == NULL) {
-		for (i = 0; i < numInteriorRings; i++)
-			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-		ret = createException(MAL, "geom.ForceDim", "GEOSGeom_createPolygon failed");
-	}
-	GDKfree(transformedInteriorRingGeometries);
-	GEOSGeom_destroy(transformedExteriorRingGeometry);
+    *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+    if (*outGeometry == NULL) {
+	    GEOSGeom_destroy(transformedExteriorRingGeometry);
+        for (i = 0; i < numInteriorRings; i++)
+            GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+        ret = createException(MAL, "geom.ForceDim", "GEOSGeom_createPolygon failed");
+    }
+
+    if (transformedInteriorRingGeometries)
+        GDKfree(transformedInteriorRingGeometries);
 
 	return ret;
 }
@@ -1024,31 +1032,34 @@ segmentizePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, 
 		throw(MAL, "geom.Segmentize", "GEOSGetInteriorRingN failed.");
 	}
 	//iterate over the interiorRing and segmentize each one of them
-	transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
-	if (transformedInteriorRingGeometries == NULL) {
-		*outGeometry = NULL;
-		GEOSGeom_destroy(transformedExteriorRingGeometry);
-		throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL);
-	}
-	for (i = 0; i < numInteriorRings; i++) {
-		if ((err = segmentizeLineString(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), sz, 1)) != MAL_SUCCEED) {
-			while (--i >= 0)
-				GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-			GDKfree(transformedInteriorRingGeometries);
-			GEOSGeom_destroy(transformedExteriorRingGeometry);
-			*outGeometry = NULL;
-			return err;
-		}
-	}
+    if (numInteriorRings) {
+        transformedInteriorRingGeometries = GDKmalloc(numInteriorRings * sizeof(GEOSGeometry *));
+        if (transformedInteriorRingGeometries == NULL) {
+            *outGeometry = NULL;
+            GEOSGeom_destroy(transformedExteriorRingGeometry);
+            throw(MAL, "geom.Segmentize", MAL_MALLOC_FAIL);
+        }
+        for (i = 0; i < numInteriorRings; i++) {
+            if ((err = segmentizeLineString(&transformedInteriorRingGeometries[i], GEOSGetInteriorRingN(geosGeometry, i), sz, 1)) != MAL_SUCCEED) {
+                while (--i >= 0)
+                    GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+                GDKfree(transformedInteriorRingGeometries);
+                GEOSGeom_destroy(transformedExteriorRingGeometry);
+                *outGeometry = NULL;
+                return err;
+            }
+        }
+    }
 
-	*outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-	if (*outGeometry == NULL) {
-		for (i = 0; i < numInteriorRings; i++)
-			GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-		err = createException(MAL, "geom.Segmentize", "GEOSGeom_createPolygon failed");
-	}
-	GDKfree(transformedInteriorRingGeometries);
-	GEOSGeom_destroy(transformedExteriorRingGeometry);
+    *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+    if (*outGeometry == NULL) {
+	    GEOSGeom_destroy(transformedExteriorRingGeometry);
+        for (i = 0; i < numInteriorRings; i++)
+            GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+        err = createException(MAL, "geom.Segmentize", "GEOSGeom_createPolygon failed");
+    }
+    if (transformedInteriorRingGeometries)
+        GDKfree(transformedInteriorRingGeometries);
 
 	return err;
 }
@@ -1359,18 +1370,18 @@ translatePolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, d
                 return err;
             }
         }
-
-        *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
-        if (*outGeometry == NULL) {
-            for (i = 0; i < numInteriorRings; i++)
-                GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
-            err = createException(MAL, "geom.Translate", "GEOSGeom_createPolygon failed");
-        }
-        GDKfree(transformedInteriorRingGeometries);
-        GEOSGeom_destroy(transformedExteriorRingGeometry);
-    } else {
-        *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, NULL, 0);
     }
+
+    *outGeometry = GEOSGeom_createPolygon(transformedExteriorRingGeometry, transformedInteriorRingGeometries, numInteriorRings);
+    if (*outGeometry == NULL) {
+        GEOSGeom_destroy(transformedExteriorRingGeometry);
+        for (i = 0; i < numInteriorRings; i++)
+            GEOSGeom_destroy(transformedInteriorRingGeometries[i]);
+        err = createException(MAL, "geom.Translate", "GEOSGeom_createPolygon failed");
+    }
+
+    if (transformedInteriorRingGeometries)
+        GDKfree(transformedInteriorRingGeometries);
 
 	return err;
 }
