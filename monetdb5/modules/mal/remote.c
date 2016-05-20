@@ -70,7 +70,7 @@
 #ifdef HAVE_MAPI
 
 static connection conns = NULL;
-static unsigned char localtype = 0;
+static unsigned char localtype = 0177;
 
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
@@ -495,7 +495,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 	GDKfree(rt);
 
-	if (isaBatType(rtype) && (localtype == 0 || localtype != c->type ))
+	if (isaBatType(rtype) && (localtype == 0177 || localtype != c->type ))
 	{
 		int t, s;
 		ptr r;
@@ -528,7 +528,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 0); 
+				var = mapi_fetch_field(mhdl, 1); 
 				if( var == NULL)
 					BUNappend(b, str_nil, FALSE);
 				else 
