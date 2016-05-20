@@ -1703,6 +1703,84 @@ sql_update_default(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_PROC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from systemfunctions where function_id not in (select id from functions);\n");
+
+	if (schema) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		free(schema);
+	}
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_nowrd(Client c, mvc *sql)
+{
+	size_t bufsize = 10240, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	ValRecord *schvar = stack_get_var(sql, "current_schema");
+	char *schema = NULL;
+	sql_schema *s;
+
+	s = mvc_bind_schema(sql, "sys");
+	if (schvar)
+		schema = strdup(schvar->val.sval);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	{
+		sql_table *t;
+
+		if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
+			t->system = 0;
+		if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
+			t->system = 0;
+	}
+
+	/* 15_querylog.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.querylog_history;\n"
+			"drop view sys.querylog_calls;\n"
+			"drop function sys.querylog_calls();\n"
+			"create function sys.querylog_calls()\n"
+			"returns table(\n"
+			" id oid,\n"
+			" \"start\" timestamp,\n"
+			" \"stop\" timestamp,\n"
+			" arguments string,\n"
+			" tuples bigint,\n"
+			" run bigint,\n"
+			" ship bigint,\n"
+			" cpu int,\n"
+			" io int\n"
+			")\n"
+			"external name sql.querylog_calls;\n"
+			"create view sys.querylog_calls as select * from sys.querylog_calls();\n"
+			"create view sys.querylog_history as\n"
+			"select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n"
+			"from sys.querylog_catalog() qd, sys.querylog_calls() ql\n"
+			"where qd.id = ql.id and qd.owner = user;\n"
+			"update _tables set system = true where name in ('querylog_calls', 'querylog_history') and schema_id = (select id from schemas where name = 'sys');\n");
+
+	/* 39_analytics.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop aggregate sys.stddev_pop(wrd);\n"
+			"drop aggregate sys.stddev_samp(wrd);\n"
+			"drop aggregate sys.var_pop(wrd);\n"
+			"drop aggregate sys.var_samp(wrd);\n"
+			"drop aggregate sys.median(wrd);\n"
+			"drop aggregate sys.quantile(wrd, double);\n"
+			"drop aggregate sys.corr(wrd, wrd);\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -1821,6 +1899,14 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "createorderindex", &tp, &tp, &tp, F_PROC)) {
 		if ((err = sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			GDKfree(err);
+		}
+	}
+
+	sql_find_subtype(&tp, "wrd", 0, 0);
+	if (sql_bind_func(m->sa, s, "median", &tp, NULL, F_AGGR)) {
+		if ((err = sql_update_nowrd(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
