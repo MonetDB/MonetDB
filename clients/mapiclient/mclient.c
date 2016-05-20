@@ -2195,7 +2195,11 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 
 	(void) save_history;	/* not used if no readline */
-	if (getFile(fp) && isatty(fileno(getFile(fp)))) {
+	if (getFile(fp) && isatty(fileno(getFile(fp)))
+#ifdef WIN32			/* isatty may not give expected result */
+	    && formatter != TESTformatter
+#endif
+		) {
 		interactive = 1;
 		setPrompt();
 		prompt = promptbuf;

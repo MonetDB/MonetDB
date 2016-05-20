@@ -1955,6 +1955,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which column is sorted */
 	BAT *tmp;
+	int use_orderidx = 0;
+	oid ll, lh;
 
 	assert(BAThdense(l));
 	assert(BAThdense(rl));
@@ -1971,12 +1973,13 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	assert(r2->htype == TYPE_void);
 	assert(r2->ttype == TYPE_oid);
 
-	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s#" BUNFMT "[%s]%s%s,"
+	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s#" BUNFMT "[%s]%s%s%s,"
 			  "rl=%s#" BUNFMT "[%s]%s%s,rh=%s#" BUNFMT "[%s]%s%s,"
 			  "sl=%s#" BUNFMT "%s%s,sr=%s#" BUNFMT "%s%s)\n",
 			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
 			  l->tsorted ? "-sorted" : "",
 			  l->trevsorted ? "-revsorted" : "",
+			  BATcheckorderidx(l) ? "-orderedidx" : "",
 			  BATgetId(rl), BATcount(rl), ATOMname(rl->ttype),
 			  rl->tsorted ? "-sorted" : "",
 			  rl->trevsorted ? "-revsorted" : "",
@@ -2033,7 +2036,17 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 		lvars = rlvars = rhvars = NULL;
 	}
 
-	if (BATordered(l) || BATordered_rev(l)) {
+	ll = l->hseqbase;
+	lh = ll + l->batCount;
+	if ((!sl || (sl && BATtdense(sl))) &&
+	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(abs(VIEWtparent(l)), 0))))) {
+		use_orderidx = 1;
+		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
+			l = BBPdescriptor(abs(VIEWtparent(l)));
+		}
+	}
+
+	if (BATordered(l) || BATordered_rev(l) || use_orderidx) {
 		/* left column is sorted, use binary search */
 		const oid *sval = sl ? (const oid *) Tloc(sl, BUNfirst(sl)) : NULL;
 
@@ -2080,18 +2093,19 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			}
 			if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
 				continue;
-			if (l->tsorted) {
+			if (l->tsorted || use_orderidx) {
 				if (li)
-					low = SORTfndfirst(l, vrl);
+					low = use_orderidx? ORDERfndfirst(l, vrl): SORTfndfirst(l, vrl);
 				else
-					low = SORTfndlast(l, vrl);
+					low = use_orderidx? ORDERfndlast(l, vrl): SORTfndlast(l, vrl);
 				low -= BUNfirst(l);
 				if (hi)
-					high = SORTfndlast(l, vrh);
+					high = use_orderidx? ORDERfndlast(l, vrh): SORTfndlast(l, vrh);
 				else
-					high = SORTfndfirst(l, vrh);
+					high = use_orderidx? ORDERfndfirst(l, vrh): SORTfndfirst(l, vrh);
 				high -= BUNfirst(l);
 			} else {
+				assert(l->trevsorted);
 				if (li)
 					low = SORTfndlast(l, vrh);
 				else
@@ -2107,14 +2121,20 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 				continue;
 			low += l->hseqbase;
 			high += l->hseqbase;
-			if (sl) {
+			if (use_orderidx) {
+				const oid *ord;
 				oid o;
+				ord = (const oid *) l->torderidx->base + ORDERIDXOFF;
 
-				o = (oid) low;
-				low = SORTfndfirst(sl, &o) - BUNfirst(sl);
-				o = (oid) high;
-				high = SORTfndfirst(sl, &o) - BUNfirst(sl);
-				assert(high >= low);
+				if (sl) {
+					assert(BATtdense(sl));
+					o = (oid) ((*(ord+low))&BUN_UNMSK);
+					ll = SORTfndfirst(sl, &o) - BUNfirst(sl);
+					o = (oid) ((*(ord+high))&BUN_UNMSK);
+					lh = SORTfndfirst(sl, &o) - BUNfirst(sl);
+				}
+				assert(lh >= ll);
+
 				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
 					cnt = BUNlast(r1) + high - low + 1024;
 					if (cnt > maxsize)
@@ -2128,30 +2148,64 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
 					dst2 = (oid *) Tloc(r2, BUNfirst(r2));
 				}
+
+				ord += low;
 				while (low < high) {
-					dst1[r1->batCount++] = sval[low];
-					dst2[r2->batCount++] = ro;
-					low++;
+					if (ll <= ((*ord)&BUN_UNMSK) && ((*ord)&BUN_UNMSK) < lh) {
+						dst1[r1->batCount++] = ((*ord)&BUN_UNMSK);
+						dst2[r2->batCount++] = ro;
+						low++;
+						ord++;
+					}
 				}
 			} else {
-				/* [low..high) */
-				if (BATcapacity(r1) < BUNlast(r1) + high - low) {
-					cnt = BUNlast(r1) + high - low + 1024;
-					if (cnt > maxsize)
-						cnt = maxsize;
-					BATsetcount(r1, BATcount(r1));
-					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, cnt) != GDK_SUCCEED ||
-					    BATextend(r2, cnt) != GDK_SUCCEED)
-						goto bailout;
-					assert(BATcapacity(r1) == BATcapacity(r2));
-					dst1 = (oid *) Tloc(r1, BUNfirst(r1));
-					dst2 = (oid *) Tloc(r2, BUNfirst(r2));
-				}
-				while (low < high) {
-					dst1[r1->batCount++] = low;
-					dst2[r2->batCount++] = ro;
-					low++;
+				if (sl) {
+					oid o;
+
+					o = (oid) low;
+					low = SORTfndfirst(sl, &o) - BUNfirst(sl);
+					o = (oid) high;
+					high = SORTfndfirst(sl, &o) - BUNfirst(sl);
+					assert(high >= low);
+
+					if (BATcapacity(r1) < BUNlast(r1) + high - low) {
+						cnt = BUNlast(r1) + high - low + 1024;
+						if (cnt > maxsize)
+							cnt = maxsize;
+						BATsetcount(r1, BATcount(r1));
+						BATsetcount(r2, BATcount(r2));
+						if (BATextend(r1, cnt) != GDK_SUCCEED ||
+						    BATextend(r2, cnt) != GDK_SUCCEED)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+						dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+						dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+					}
+					while (low < high) {
+						dst1[r1->batCount++] = sval[low];
+						dst2[r2->batCount++] = ro;
+						low++;
+					}
+				} else {
+					/* [low..high) */
+					if (BATcapacity(r1) < BUNlast(r1) + high - low) {
+						cnt = BUNlast(r1) + high - low + 1024;
+						if (cnt > maxsize)
+							cnt = maxsize;
+						BATsetcount(r1, BATcount(r1));
+						BATsetcount(r2, BATcount(r2));
+						if (BATextend(r1, cnt) != GDK_SUCCEED ||
+						    BATextend(r2, cnt) != GDK_SUCCEED)
+							goto bailout;
+						assert(BATcapacity(r1) == BATcapacity(r2));
+						dst1 = (oid *) Tloc(r1, BUNfirst(r1));
+						dst2 = (oid *) Tloc(r2, BUNfirst(r2));
+					}
+					while (low < high) {
+						dst1[r1->batCount++] = low;
+						dst2[r2->batCount++] = ro;
+						low++;
+					}
 				}
 			}
 		}

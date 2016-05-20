@@ -1044,6 +1044,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		mnstr_write(s, "  ]\n", 1, 4);
 	}
 
+	GDKfree(buf);
 	GDKfree(colinfo);
 
 	return GDK_SUCCEED;

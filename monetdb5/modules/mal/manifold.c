@@ -110,6 +110,7 @@ typedef struct{
 				if (msg)												\
 					break;												\
 				bunfastapp(mut->args[0].b, (void*) y);					\
+				GDKfree(y); y = NULL;									\
 				for( i = mut->fvar; i<= mut->lvar; i++) {				\
 					if(ATOMstorage(mut->args[i].type) == TYPE_void ){ 	\
 						args[i] = (void*)  &mut->args[i].o;				\

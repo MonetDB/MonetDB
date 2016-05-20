@@ -475,7 +475,7 @@ Ready.
 #    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
 % .L24,	.L24 # table_name
 % L4,	average_height # name
-% char,	char # type
+% char,	varchar # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]

@@ -1,0 +1,87 @@
+stdout of test 'RELEASE_SAVEPOINT_after_UPDATE_crash.Bug-4010` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 16:19:10 >  
+# 16:19:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39308" "--set" "mapi_usock=/var/tmp/mtest-27142/.s.monetdb.39308" "--set" "monet_prompt=" "--forcemito" "--dbpath=/net/toulouse/export/scratch2/zhang/monet-install/Jun2016/debug/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 16:19:10 >  
+
+# MonetDB 5 server v11.23.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:39308/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27142/.s.monetdb.39308
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:19:11 >  
+# 16:19:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27142" "--port=39308"
+# 16:19:11 >  
+
+#CREATE TABLE t (i INT, j INT);
+#INSERT INTO t VALUES (10, 20);
+[ 1	]
+#START TRANSACTION;
+#SAVEPOINT sp;
+#UPDATE t SET i = 42 WHERE j = 20;
+[ 1	]
+#RELEASE SAVEPOINT sp;
+#COMMIT;
+#SELECT * FROM t;
+% sys.t,	sys.t # table_name
+% i,	j # name
+% int,	int # type
+% 2,	2 # length
+[ 42,	20	]
+#DROP TABLE t;
+
+# 16:19:12 >  
+# 16:19:12 >  "Done."
+# 16:19:12 >  
+

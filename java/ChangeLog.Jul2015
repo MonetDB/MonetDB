@@ -1,3 +1,18 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu May 12 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved JdbcClient program when presenting query data to console.
+  It used to send an SQL catalog query for each query result column
+  which slowed down the interactive response considerably.
+  These additional SQL catalog queries have been eliminated.
+
+* Thu May 12 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected MonetResultSet.getObject(String columnName). It no longer
+  throws a NullPointerException in cases where internally a
+  MonetVirtualResultSet is used.
+
+* Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl>
+- Fixed Connection.isValid(): this method should never attempt to
+  close the connection, even if an error has occurred.
+

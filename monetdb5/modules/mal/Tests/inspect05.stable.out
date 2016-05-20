@@ -78,7 +78,7 @@ Ready.
 [ 46@0,	"new_persistent",	"pattern",	"bat",	"(tt:any_1,size:lng):bat[:any_1] ",	"CMDBATnewColumn;"	]
 [ 47@0,	"new_persistent",	"pattern",	"bat",	"(tt:any_1,size:int):bat[:any_1] ",	"CMDBATnewColumn;"	]
 [ 48@0,	"new_persistent",	"pattern",	"bat",	"(tt:any_1):bat[:any_1] ",	"CMDBATnewColumn;"	]
-[ 49@0,	"orderidx",	"pattern",	"bat",	"(bv:bat[:any_1],l:bat[:oid]...):void ",	"OIDXmerge;"	]
+[ 49@0,	"orderidx",	"pattern",	"bat",	"(bv:bat[:any_1],l:bat[:any_1]...):void ",	"OIDXmerge;"	]
 [ 50@0,	"orderidx",	"pattern",	"bat",	"(bv:bat[:any_1],pieces:int):void ",	"OIDXcreate;"	]
 [ 51@0,	"orderidx",	"pattern",	"bat",	"(bv:bat[:any_1]):void ",	"OIDXcreate;"	]
 [ 52@0,	"partition",	"pattern",	"bat",	"(b:bat[:any_1],pieces:int,n:int):bat[:any_1] ",	"CMDBATpartition2;"	]

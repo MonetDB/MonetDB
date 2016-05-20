@@ -72,7 +72,6 @@ batstr_export str STRbatLpad2_bat_bat(bat *ret, const bat *l, const bat *n, cons
 batstr_export str STRbatRpad2_bat_bat(bat *ret, const bat *l, const bat *n, const bat *l2);
 
 batstr_export str STRbatLength(bat *ret, const bat *l);
-batstr_export str STRbatstringLength(bat *ret, const bat *l);
 batstr_export str STRbatBytes(bat *ret, const bat *l);
 
 batstr_export str STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length);
@@ -165,12 +164,6 @@ str
 STRbatLength(bat *ret, const bat *l)
 {
 	return do_batstr_int(ret, l, "batstr.Length", STRLength);
-}
-
-str
-STRbatstringLength(bat *ret, const bat *l)
-{
-	return do_batstr_int(ret, l, "batstr.stringLength", STRSQLLength);
 }
 
 str

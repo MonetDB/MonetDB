@@ -1,0 +1,154 @@
+stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 11:44:26 >  
+# 11:44:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30837" "--set" "mapi_usock=/var/tmp/mtest-9650/.s.monetdb.30837" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 11:44:26 >  
+
+# MonetDB 5 server v11.21.20
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:30837/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9650/.s.monetdb.30837
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.15'
+# Finished reading the write-ahead log 'sql_logs/sql/log.15'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 11:44:27 >  
+# 11:44:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9650" "--port=30837"
+# 11:44:27 >  
+
+#SELECT length('123 ') as "four";
+% .L # table_name
+% four # name
+% int # type
+% 1 # length
+[ 4	]
+#SELECT length('123       ') as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT length('1234567890') as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT length('     67890') as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT length(reverse('     67890')) as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT sys.length('123 ') as "four";
+% .L # table_name
+% four # name
+% int # type
+% 1 # length
+[ 4	]
+#SELECT sys.length('123       ') as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT sys.length('1234567890') as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT sys.length('     67890') as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT sys.length(reverse('     67890')) as "ten";
+% .L # table_name
+% ten # name
+% int # type
+% 2 # length
+[ 10	]
+#CREATE TABLE tvarchar (val VARCHAR(9) NOT NULL);
+#INSERT INTO tvarchar VALUES ('A'), (' BC ');
+[ 2	]
+#SELECT val, length(val) FROM tvarchar;
+% sys.tvarchar,	sys.L # table_name
+% val,	length_val # name
+% varchar,	int # type
+% 4,	1 # length
+[ "A",	1	]
+[ " BC ",	4	]
+#UPDATE tvarchar SET val = val || '    ';
+[ 2	]
+#SELECT val, length(val) FROM tvarchar;
+% sys.tvarchar,	sys.L # table_name
+% val,	length_val # name
+% varchar,	int # type
+% 8,	1 # length
+[ "A    ",	5	]
+[ " BC     ",	8	]
+#UPDATE tvarchar SET val = (val || 'x');
+[ 2	]
+#SELECT val, length(val) FROM tvarchar;
+% sys.tvarchar,	sys.L # table_name
+% val,	length_val # name
+% varchar,	int # type
+% 9,	1 # length
+[ "A    x",	6	]
+[ " BC     x",	9	]
+#DROP TABLE tvarchar;
+#CREATE TABLE tchar (val CHAR(9) NOT NULL);
+#INSERT INTO tchar VALUES ('A'), (' BC ');
+[ 2	]
+#SELECT val, length(val) FROM tchar;
+% sys.tchar,	sys.L # table_name
+% val,	length_val # name
+% char,	int # type
+% 9,	1 # length
+[ "A",	1	]
+[ " BC ",	4	]
+#UPDATE tchar SET val = val || '    ';
+[ 2	]
+#SELECT val, length(val) FROM tchar;
+% sys.tchar,	sys.L # table_name
+% val,	length_val # name
+% char,	int # type
+% 9,	1 # length
+[ "A    ",	5	]
+[ " BC     ",	8	]
+#UPDATE tchar SET val = (val || 'x');
+[ 2	]
+#SELECT val, length(val) FROM tchar;
+% sys.tchar,	sys.L # table_name
+% val,	length_val # name
+% char,	int # type
+% 9,	1 # length
+[ "A    x",	6	]
+[ " BC     x",	9	]
+#DROP TABLE tchar;
+
+# 11:44:27 >  
+# 11:44:27 >  "Done."
+# 11:44:27 >  
+

@@ -2018,7 +2018,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Object getObject(String columnName) throws SQLException {
-		return getObject(columnName, this.getStatement().getConnection().getTypeMap());
+		return getObject(findColumn(columnName));
 	}
 
 	/**

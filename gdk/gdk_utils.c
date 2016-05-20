@@ -1222,19 +1222,31 @@ GDKexiting(void)
 	return stopped;
 }
 
-void
-GDKprepareExit(void)
-{
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
-		return;
-	if (GDKvmtrim_id)
-		MT_join_thread(GDKvmtrim_id);
-}
-
 static struct serverthread {
 	struct serverthread *next;
 	MT_Id pid;
 } *serverthread;
+
+void
+GDKprepareExit(void)
+{
+	struct serverthread *st;
+
+	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
+		return;
+	if (GDKvmtrim_id)
+		MT_join_thread(GDKvmtrim_id);
+
+	MT_lock_set(&GDKthreadLock);
+	for (st = serverthread; st; st = serverthread) {
+		MT_lock_unset(&GDKthreadLock);
+		MT_join_thread(st->pid);
+		MT_lock_set(&GDKthreadLock);
+		serverthread = st->next;
+		GDKfree(st);
+	}
+	MT_lock_unset(&GDKthreadLock);
+}
 
 /* Register a thread that should be waited for in GDKreset.  The
  * thread must exit by itself when GDKexiting() returns true. */
@@ -1281,23 +1293,28 @@ GDKreset(int status)
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
+		int killed = 0;
 		MT_lock_set(&GDKthreadLock);
 		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
 			if (t->pid) {
 				MT_Id victim = t->pid;
 
 				if (t->pid != pid) {
-					fprintf(stderr, "#GDKexit: killing thread %d\n", MT_kill_thread(victim));
+					int e;
+
+					killed = 1;
+					e = MT_kill_thread(victim);
+					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
 					GDKnrofthreads --;
 				}
 			}
 		}
 		assert(GDKnrofthreads <= 1);
 		/* all threads ceased running, now we can clean up */
-#if 0
-		/* we can't clean up after killing threads */
-		BBPexit();
-#endif
+		if (!killed) {
+			/* we can't clean up after killing threads */
+			BBPexit();
+		}
 		GDKlog(GDKLOGOFF);
 		GDKunlockHome();
 #if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)

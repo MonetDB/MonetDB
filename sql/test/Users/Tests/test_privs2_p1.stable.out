@@ -34,7 +34,7 @@ Ready.
 #insert into version (name ,i) values ('test2' ,2) ;
 [ 1	]
 #SELECT insertversion('test3', 3);
-% . # table_name
+% .L # table_name
 % insertversion_single_value # name
 % int # type
 % 1 # length
@@ -48,7 +48,7 @@ Ready.
 [ "test2",	2	]
 [ "test3",	3	]
 #SELECT updateversion('test1', 4);
-% . # table_name
+% .L # table_name
 % updateversion_single_value # name
 % int # type
 % 1 # length
@@ -62,7 +62,7 @@ Ready.
 [ "test2",	2	]
 [ "test3",	3	]
 #SELECT deleteversion(4);
-% . # table_name
+% .L # table_name
 % deleteversion_single_value # name
 % int # type
 % 1 # length

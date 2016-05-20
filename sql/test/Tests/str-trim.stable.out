@@ -55,56 +55,56 @@ Ready.
 #SELECT '#' || trim('zzzytrimxxxx', 'zyx') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || trim('zzëzytrimxxëxx', 'zëyx') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || trim('zzë颖zytrimxx颖ëxx', 'zëy颖x') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzzytrim', 'zyx') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzëzytrim', 'zëyx') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzë颖zytrim', 'zëy颖x') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxxxx', 'zyx') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxxëxx', 'zëyx') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxx颖ëxx', 'zëy颖x') || '#';
 % .L # table_name
 % concat_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 6 # length
 [ "#trim#"	]
 #CREATE TABLE t (s VARCHAR(20), s2 VARCHAR(10));
 #INSERT INTO t VALUES ('zzzytrimxxxx', 'zyx'), ('zzëzytrimxxëxx', 'zëyx'), ('zzë颖zytrimxx颖ëxx', 'zëy颖x');
