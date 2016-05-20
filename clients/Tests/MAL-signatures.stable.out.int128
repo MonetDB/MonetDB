@@ -51136,6 +51136,40 @@ pattern profiler.start():void
 address CMDstartProfiler;
 comment Start offline performance profiling
 
+pattern pyapimap.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern pyapimap.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStdMap;
+comment Execute a simple Python script value
+
+pattern pyapimap.eval(fptr:ptr,expr:str):any 
+address PyAPIevalStdMap;
+comment Execute a simple Python script returning a single value
+
+pattern pyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern pyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
+pattern pyapi.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStd;
+comment Execute a simple Python script value
+
+pattern pyapi.eval(fptr:ptr,expr:str):any 
+address PyAPIevalStd;
+comment Execute a simple Python script returning a single value
+
+command pyapi.prelude():void 
+address PyAPIprelude;
+pattern pyapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
 pattern querylog.append(q:str,pipe:str,usr:str,tick:timestamp):void 
 address QLOGappend;
 comment Add a new query call to the query log
