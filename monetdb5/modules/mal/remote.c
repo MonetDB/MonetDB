@@ -679,12 +679,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type) && *(int*) value != 0) {
+	} else if (isaBatType(type) && *(bat*) value != 0) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
 		char qbuf[BUFSIZ];
-		int bid;
+		bat bid;
 		BAT *b = NULL;
 		BUN p, q;
 		str tailv;
@@ -692,7 +692,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		tail = getTypeIdentifier(getColumnType(type));
 
-		bid = *(int *)value;
+		bid = *(bat *)value;
 		if (bid != 0) {
 			if ((b = BATdescriptor(bid)) == NULL){
 				MT_lock_unset(&c->lock);
