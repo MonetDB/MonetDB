@@ -536,7 +536,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			}
 		} else
 			while (mapi_fetch_row(mhdl)) {
-				var = mapi_fetch_field(mhdl, 0); 
+				var = mapi_fetch_field(mhdl, 1); 
 				if (var == NULL)
 					var = "nil";
 				s = 0;
