@@ -6404,7 +6404,7 @@ str
 wkbAsX3D(str *res, wkb **geomWKB, int *maxDecDigits, int *option)
 {
 	str ret = MAL_SUCCEED;
-    static const char* default_defid = "x3d:"; /* default defid */
+    static const char* default_defid = ""; /* default defid */
     const char* defid = default_defid;
 	GEOSGeom geom = wkb2geos(*geomWKB);
     int srid = (*geomWKB)->srid;
