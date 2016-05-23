@@ -699,7 +699,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushInstruction(curBlk, p);
 	pushEndInstruction(curBlk);
 
-	/* SQL function definitions meant f r inlineing should not be optimized before */
+	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
 	addQueryToCache(c);
 	if (backup)

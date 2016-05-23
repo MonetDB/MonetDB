@@ -210,7 +210,6 @@ typedef struct MALBLK {
 	struct MALBLK *history;		/* of optimizer actions */
 	short keephistory;			/* do we need the history at all */
 	short dotfile;				/* send dot file to stethoscope? */
-	str marker;					/* history points are marked for backtracking */
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */

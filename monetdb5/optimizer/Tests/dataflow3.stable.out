@@ -26,13 +26,13 @@ Ready.
 
 #mdb.list("user","s1_0");
 function user.s1_0():void;
-barrier X_47 := language.dataflow();
+barrier X_54 := language.dataflow();
     X17 := bat.new(nil:oid,nil:wrd);
     X54 := bat.new(nil:oid,nil:wrd);
     X55 := bat.new(nil:oid,nil:wrd);
     X56 := bat.new(nil:oid,nil:wrd);
     X57 := bat.new(nil:oid,nil:wrd);
-exit X_47;
+exit X_54;
     X59 := remote.connect("mapi:monetdb://volund.ins.cwi.nl:50000/sn4","monetdb","monetdb","msql");
     remote.register(X59,"user","s1_0map");
     X66 := remote.put(X59,X54);
