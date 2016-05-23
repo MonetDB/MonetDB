@@ -272,6 +272,13 @@ AC_ARG_ENABLE(rintegration,
 	enable_rintegration=$enableval,
 	enable_rintegration=$dft_rintegration)
 
+dft_pyintegration=auto
+AC_ARG_ENABLE(pyintegration,
+	AS_HELP_STRING([--enable-pyintegration],
+		[enable support for Python integration into MonetDB (default=auto)]),
+	enable_pyintegration=$enableval,
+	enable_pyintegration=$dft_pyintegration)
+
 dft_odbc=auto
 AC_ARG_ENABLE(odbc,
 	AS_HELP_STRING([--enable-odbc],
@@ -1277,6 +1284,14 @@ case "$have_python3" in
 		;;
 esac
 
+AC_ARG_WITH(pyconfig,
+	AS_HELP_STRING([--with-pyconfig=FILE], [python-config is installed as FILE]),
+	have_pyconfig="$withval")
+
+AC_ARG_WITH(pyversion,
+	AS_HELP_STRING([--with-pyversion=FILE], [python is installed as FILE]),
+	have_pyversion="$withval")
+
 dnl Figure out a default for PYTHON2 or PYTHON3
 AC_PATH_PROG(PYTHON,python,no,$PATH)
 PYTHON_MAJ=unknown
@@ -2263,6 +2278,7 @@ AC_SUBST(SPHINXCLIENT_CFLAGS, $SPHINXCLIENT_CFLAGS)
 AC_SUBST(SPHINXCLIENT_LIBS, $SPHINXCLIENT_LIBS)
 AM_CONDITIONAL(HAVE_SPHINXCLIENT, test x"$have_sphinxclient" != xno)
 
+# R API (R UDFs)
 have_libr=no
 if test "x$enable_rintegration" != xno; then
 	case "$enable_rintegration" in
@@ -2297,6 +2313,108 @@ if test "x$enable_rintegration" != xno; then
 	fi
 fi
 AM_CONDITIONAL(HAVE_LIBR, test x"$have_libr" != xno)
+
+# Python API (Python UDFs)
+have_libpy=no
+have_libpandas=no
+have_libscipy=no
+if test "x$enable_pyintegration" != xno; then
+	case "$enable_pyintegration" in
+	yes|auto)
+		XPATH="$PATH"
+		;;
+	/*)
+		XPATH="$enable_pyintegration"
+		enable_pyintegration=yes
+		;;
+	*)
+		AC_MSG_ERROR([--enable-pyintegration value must be yes|no|auto|absolute path of python-config])
+		;;
+	esac
+	if test "x$have_pyconfig" = x; then
+	   	AC_PATH_PROG(PYCMD,python-config,,$XPATH)
+	   	if test "x$PYCMD" = x; then
+	  		if test "x$enable_pyintegration" = xyes; then
+				AC_MSG_ERROR([python-config library required for Python integration support])
+			else
+				have_libpy="no"
+			 	why_have_libpy="(python-config command not found)"
+				enable_pyintegration=no
+				disable_pyintegration="(python-config command not found)"
+			fi
+		fi
+	else
+		PYCMD="$have_pyconfig"
+	fi
+
+	if test "x$have_pyversion" = x; then
+		PYTHON_CMD=$PYTHON2
+	else
+		PYTHON_CMD=$have_pyversion
+	fi
+	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)"`
+	#check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
+	AC_CHECK_HEADER(
+	    [numpy/numpyconfig.h], 
+		[NUMPYHEADERS=True],
+		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))"`]
+		)
+	if [test "x$NUMPYVER" = x] || [test "x$NUMPYVER" = xFalse]; then
+	  	if test "x$enable_pyintegration" = xyes; then
+			AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])
+		else
+			have_libpy="no"
+		 	why_have_libpy="(numpy version >= 1.7.0 not found)"
+			enable_pyintegration=no
+			disable_pyintegration="(numpy version >= 1.7.0 not found)"
+		fi
+	elif [test "x$NUMPYHEADERS" = xFalse ]; then
+		if test "x$enable_pyintegration" = xyes; then
+			AC_MSG_ERROR([numpy/arrayobject.h not found])
+		else
+			have_libpy="no"
+		 	why_have_libpy="(numpy/arrayobject.h not found)"
+			enable_pyintegration=no
+			disable_pyintegration="(numpy/arrayobject.h not found)"
+		fi
+	else
+		libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
+		libpy_LIBS=`$PYCMD --ldflags`
+		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))"`
+		if [test "x$HAVEPYTHONHEADER" = xTrue]; then
+			have_libpy=yes
+			AC_DEFINE(HAVE_LIBPY, 1, [Define if we can link to python])
+			AC_SUBST(libpy_CFLAGS, $libpy_CFLAGS)
+			AC_SUBST(libpy_LIBS, $libpy_LIBS)
+			PANDAS=`$PYTHON_CMD -c "import pandas; print(True)"`
+			if [test "x$PANDAS" = xTrue]; then
+				have_libpandas=yes
+			fi
+			SCIPY=`$PYTHON_CMD -c "import scipy; print(True)"`
+			if [test "x$SCIPY" = xTrue]; then
+				have_libscipy=yes
+			fi
+		else
+		  	if test "x$enable_pyintegration" = xyes; then
+				AC_MSG_ERROR([Python.h not found])
+			else
+				have_libpy="no"
+			 	why_have_libpy="Python.h not found"
+				enable_pyintegration=no
+				disable_pyintegration="Python.h not found"
+			fi
+		fi
+	fi
+fi
+AM_CONDITIONAL(HAVE_LIBPY, test x"$have_libpy" != xno)
+AM_CONDITIONAL(HAVE_LIBPANDAS, test x"$have_libpandas" != xno)
+AM_CONDITIONAL(HAVE_LIBSCIPY, test x"$have_libscipy" != xno)
+
+AC_CHECK_HEADER([sys/sem.h], [SEMOP=True], [SEMOP=False])
+if [test "x$SEMOP" = "xTrue"]; then
+	AC_CHECK_FUNC(semtimedop, [AC_DEFINE(HAVE_SEMTIMEDOP, 1, [Define if semtimedop exists])],)
+	AC_CHECK_FUNC(fork, [AC_DEFINE(HAVE_FORK, 1, [Define if fork exists])], )
+fi
 
 # ODBC, only used by ODBC driver
 if test "x$enable_odbc" != xno; then
@@ -3579,6 +3697,7 @@ for comp in \
 	'geom        ' \
 	'console     ' \
 	'microhttpd  ' \
+	'pyintegration' \
 	'rintegration' \
 	'odbc        ' \
 	'jdbc        ' \

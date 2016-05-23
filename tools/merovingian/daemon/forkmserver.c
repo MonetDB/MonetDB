@@ -270,6 +270,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char pipeline[512];
 		char *readonly = NULL;
 		char *embeddedr = NULL;
+		char *embeddedpy = NULL;
 		char *argv[512];	/* for the exec arguments */
 		char property_other[1024];
 		int c = 0;
@@ -317,6 +318,11 @@ forkMserver(char *database, sabdb** stats, int force)
 		kv = findConfKey(ckv, "embedr");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			embeddedr = "embedded_r=true";
+
+		kv = findConfKey(ckv, "embedpy");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+			embeddedpy = "embedded_py=true";
+
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -381,6 +387,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		if (embeddedr != NULL) {
 			argv[c++] = "--set"; argv[c++] = embeddedr;
+		}
+		if (embeddedpy != NULL) {
+			argv[c++] = "--set"; argv[c++] = embeddedpy;
 		}
 		if (readonly != NULL) {
 			argv[c++] = readonly;

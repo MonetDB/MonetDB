@@ -1,0 +1,53 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 2008-2015 MonetDB B.V.
+
+INCLUDES = \
+	../../../clients/mapilib \
+	../../../common/options \
+	../../../common/stream \
+	../../modules/atoms \
+	../../modules/mal \
+	../../../gdk \
+	../../mal \
+	../../../sql/backends/monet5 \
+	../../../sql/common \
+	../../../sql/include \
+	../../../sql/server \
+	../../../sql/storage \
+	$(libpy_CFLAGS)
+
+MTSAFE
+
+lib__pyapi = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = pyapi.c pyapi.h unicode.c unicode.h pytypes.c pytypes.h type_conversion.c type_conversion.h  formatinput.c formatinput.h connection.c connection.h unspecified_evil.h
+	XDEPS = $(libpy_LIBDEP)
+	LIBS = ../../tools/libmonetdb5 \
+	       ../../../gdk/libbat \
+	$(MALLOC_LIBS) $(libpy_LIBS)
+}
+
+headers_pyapi_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = pyapi.mal
+}
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 50_pyapi.mal
+}
+
+scripts_bat = {
+	COND = NATIVE_WIN32
+	EXT = bat
+	DIR = prefix
+	SOURCES = pyapi_locatepython.bat
+}
+
+EXTRA_DIST_DIR = Tests

@@ -133,6 +133,8 @@ defaultProperty(char *property) {
 		return 1;
 	} else if (property != NULL && strcmp(property, "embedr") == 0) {
 		return 1;
+	} else if (property != NULL && strcmp(property, "embedpy") == 0) {
+		return 1;
 	}
 	return 0;
 }
