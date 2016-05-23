@@ -1463,7 +1463,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					if (LANG_EXT(f->lang))
 						q = pushPtr(mb, q, f);
 					// f->query contains the R code to be run
-					if (f->lang == FUNC_LANG_R)
+					if (f->lang == FUNC_LANG_R || f->lang == FUNC_LANG_PY || f->lang == FUNC_LANG_MAP_PY)
 						q = pushStr(mb, q, f->query);
 
 					for (n = s->op1->op4.lval->h; n; n = n->next) {
@@ -2132,7 +2132,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (LANG_EXT(f->func->lang))
 				q = pushPtr(mb, q, f->func);
-			if (f->func->lang == FUNC_LANG_R)
+			if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
 				q = pushStr(mb, q, f->func->query);
 			/* first dynamic output of copy* functions */
 			if (f->func->type == F_UNION) 
@@ -2234,7 +2234,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (LANG_EXT(s->op4.aggrval->aggr->lang))
 				q = pushPtr(mb, q, s->op4.aggrval->aggr);
-			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R){
+			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R || s->op4.aggrval->aggr->lang == FUNC_LANG_PY || s->op4.aggrval->aggr->lang == FUNC_LANG_MAP_PY){
 				if (!g) {
 					setVarType(mb, getArg(q, 0), restype);
 					setVarUDFtype(mb, getArg(q, 0));
@@ -3030,6 +3030,44 @@ backend_create_r_func(backend *be, sql_func *f)
 }
 
 static int
+backend_create_py_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "pyapi";
+		f->imp = "eval_aggr";
+		break;
+	case  F_PROC: /* no output */
+	case  F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "pyapi";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
+static int
+backend_create_map_py_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "pyapimap";
+		f->imp = "eval_aggr";
+		break;
+	case  F_PROC: /* no output */
+	case  F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "pyapimap";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
+static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
@@ -3160,6 +3198,10 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 		return backend_create_sql_func(be, f, restypes, ops);
 	case FUNC_LANG_R:
 		return backend_create_r_func(be, f);
+	case FUNC_LANG_PY:
+		return backend_create_py_func(be, f);
+	case FUNC_LANG_MAP_PY:
+		return backend_create_map_py_func(be, f);
 	case FUNC_LANG_C:
 	case FUNC_LANG_J:
 	default:

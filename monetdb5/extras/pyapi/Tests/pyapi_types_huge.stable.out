@@ -1,0 +1,142 @@
+stdout of test 'pyapi_types_huge` in directory 'monetdb5/extras/pyapi` itself:
+
+
+# 00:29:46 >  
+# 00:29:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32717" "--set" "mapi_usock=/var/tmp/mtest-30800/.s.monetdb.32717" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/usr/local/var/MonetDB/mTests_monetdb5_extras_pyapi" "--set" "mal_listing=2" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 00:29:46 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_extras_pyapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:32717/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30800/.s.monetdb.32717
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+
+# 00:29:47 >  
+# 00:29:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30800" "--port=32717"
+# 00:29:47 >  
+
+#io.print(rhge);
+#--------------------------#
+# h	t  # name
+# void	hge  # type
+#--------------------------#
+[ 0@0,	18044433428933533865951768124325888	]
+[ 1@0,	895233278923449014354175852544	]
+[ 2@0,	558372892789247096313631211520	]
+[ 3@0,	-23	]
+[ 4@0,	nil	]
+#io.print(rhge);
+#--------------------------#
+# h	t  # name
+# void	hge  # type
+#--------------------------#
+[ 0@0,	54133300286800599292012295159283712	]
+[ 1@0,	2685699836770346902325039202304	]
+[ 2@0,	1675118678367741218572149456896	]
+[ 3@0,	-69	]
+[ 4@0,	nil	]
+#io.print(rhge, shge);
+#--------------------------#
+# h	t	t  # name
+# void	hge	hge  # type
+#--------------------------#
+[ 0@0,	32,	44	]
+[ 1@0,	12,	22	]
+#io.print(rhge, shge);
+#--------------------------#
+# h	t	t  # name
+# void	hge	hge  # type
+#--------------------------#
+[ 0@0,	3200,	44	]
+[ 1@0,	12,	22	]
+#io.print(rhge);
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	18044433428933533865951768124325888	]
+[ 1@0,	895233278923449014354175852544	]
+[ 2@0,	558372892789247096313631211520	]
+[ 3@0,	-23	]
+[ 4@0,	nil	]
+#io.print(rhge);
+#--------------------------#
+# h	t  # name
+# void	hge  # type
+#--------------------------#
+[ 0@0,	412412	]
+[ 1@0,	13231414	]
+[ 2@0,	895233278923448975389573895731	]
+#io.print(rhge, shge);
+#--------------------------#
+# h	t	t  # name
+# void	hge	hge  # type
+#--------------------------#
+[ 0@0,	18044433428933533865951768124325888,	18044433428933533865951768124325888	]
+[ 1@0,	895233278923449014354175852544,	895233278923449014354175852544	]
+[ 2@0,	558372892789247096313631211520,	558372892789247096313631211520	]
+[ 3@0,	-23,	-23	]
+[ 4@0,	nil,	nil	]
+#io.print(rint);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	44	]
+[ 1@0,	22	]
+[ 2@0,	11	]
+[ 3@0,	23	]
+[ 4@0,	nil	]
+[ 5@0,	23	]
+[ 6@0,	23	]
+[ 7@0,	23	]
+[ 8@0,	23	]
+[ 9@0,	23	]
+[ 10@0,	23	]
+[ 11@0,	23	]
+[ 12@0,	23	]
+[ 13@0,	23	]
+[ 14@0,	23	]
+[ 15@0,	23	]
+#io.print(rdbl);
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	44	]
+[ 1@0,	22	]
+[ 2@0,	11	]
+[ 3@0,	23	]
+[ 4@0,	nil	]
+[ 5@0,	23	]
+[ 6@0,	23	]
+[ 7@0,	23	]
+[ 8@0,	23	]
+[ 9@0,	23	]
+[ 10@0,	23	]
+[ 11@0,	23	]
+[ 12@0,	23	]
+[ 13@0,	23	]
+[ 14@0,	23	]
+[ 15@0,	23	]
+#--------------------------#
+# h	t  # name
+# void	dbl  # type
+#--------------------------#
+[ 0@0,	1e+22	]
+
+# 00:29:47 >  
+# 00:29:47 >  "Done."
+# 00:29:47 >  
+

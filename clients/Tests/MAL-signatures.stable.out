@@ -2257,6 +2257,30 @@ pattern batrapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
 address RAPIevalAggr;
 comment grouped aggregates through R
 
+pattern batpyapimap.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern batpyapimap.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStdMap;
+comment Execute a simple Python script value
+
+pattern batpyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern batpyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
+pattern batpyapi.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStd;
+comment Execute a simple Python script value
+
+pattern batpyapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
 command batsql.alpha(dec:dbl,theta:bat[:dbl]):bat[:dbl] 
 address SQLcst_alpha_bat;
 comment BAT implementation of astronomy alpha function
@@ -40246,6 +40270,40 @@ comment Stop offline performance profiling
 pattern profiler.start():void 
 address CMDstartProfiler;
 comment Start offline performance profiling
+
+pattern pyapimap.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern pyapimap.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStdMap;
+comment Execute a simple Python script value
+
+pattern pyapimap.eval(fptr:ptr,expr:str):any 
+address PyAPIevalStdMap;
+comment Execute a simple Python script returning a single value
+
+pattern pyapimap.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggrMap;
+comment grouped aggregates through Python
+
+pattern pyapi.eval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
+
+pattern pyapi.eval(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalStd;
+comment Execute a simple Python script value
+
+pattern pyapi.eval(fptr:ptr,expr:str):any 
+address PyAPIevalStd;
+comment Execute a simple Python script returning a single value
+
+command pyapi.prelude():void 
+address PyAPIprelude;
+pattern pyapi.subeval_aggr(fptr:ptr,expr:str,arg:any...):any... 
+address PyAPIevalAggr;
+comment grouped aggregates through Python
 
 pattern querylog.append(q:str,pipe:str,usr:str,tick:timestamp):void 
 address QLOGappend;

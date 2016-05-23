@@ -11,7 +11,7 @@
 #include "opt_support.h"
 
 /* cf., gdk/gdk.mx */
-#define DEBUGoptimizers		if (GDKdebug & GRPoptimizers)
+#define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
 
 opt_export  str abortRef;
 opt_export  str affectedRowsRef;
@@ -79,7 +79,7 @@ opt_export  str disconnectRef;
 opt_export  str evalRef;
 opt_export  str execRef;
 opt_export  str expandRef;
-opt_export	str exportOperationRef;
+opt_export  str exportOperationRef;
 opt_export  str finishRef;
 opt_export  str firstnRef;
 opt_export  str getRef;
@@ -165,6 +165,9 @@ opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rapiRef;
 opt_export  str batrapiRef;
+opt_export  str pyapiRef;
+opt_export  str batpyapiRef;
+opt_export  str pyapimapRef;
 opt_export  str subeval_aggrRef;
 opt_export  str rankRef;
 opt_export  str dense_rankRef;

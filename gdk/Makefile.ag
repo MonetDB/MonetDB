@@ -32,7 +32,7 @@ lib_gdk = {
 		gdk_unique.c \
 		gdk_firstn.c \
 		bat.feps bat1.feps bat2.feps \
-		libbat.rc
+		libbat.rc interprocess.c interprocess.h
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \
 		../common/utils/libmutils \

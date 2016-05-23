@@ -1,0 +1,111 @@
+stdout of test 'pyapi17` in directory 'sql/backends/monet5` itself:
+
+
+# 18:29:27 >  
+# 18:29:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37688" "--set" "mapi_usock=/var/tmp/mtest-4853/.s.monetdb.37688" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 18:29:27 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:37688/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4853/.s.monetdb.37688
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 18:29:27 >  
+# 18:29:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4853" "--port=37688"
+# 18:29:27 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+#language P
+#{
+#	retval = dict()
+#	retval['a'] = ['foo']
+#	retval['b'] = 'bar'
+#	retval['c'] = numpy.zeros(1, dtype=numpy.int32)
+#	retval['d'] = True
+#	return retval
+#};
+#SELECT * FROM pyapi17();
+% .,	.,	.,	. # table_name
+% a,	b,	c,	d # name
+% clob,	clob,	int,	boolean # type
+% 3,	3,	1,	5 # length
+[ "foo",	"bar",	0,	true	]
+#DROP FUNCTION pyapi17;
+#CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+#language P
+#{
+#	retval = dict()
+#	retval['a'] = ['foo']
+#	retval['b'] = 'bar'
+#	retval['c'] = numpy.zeros(1, dtype=numpy.int32)
+#	retval['d'] = True
+#	retval['e'] = "Unused value"
+#	return retval
+#};
+#SELECT * FROM pyapi17();
+% .,	.,	.,	. # table_name
+% a,	b,	c,	d # name
+% clob,	clob,	int,	boolean # type
+% 3,	3,	1,	5 # length
+[ "foo",	"bar",	0,	true	]
+#DROP FUNCTION pyapi17;
+#CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+#language P
+#{
+#	retval = dict()
+#	retval['a'] = ['foo']
+#	retval['b'] = 'bar'
+#	retval['d'] = True
+#	return retval
+#};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (3);
+[ 1	]
+#CREATE FUNCTION pyapi17(i integer) returns integer
+#language P
+#{
+#	retval = dict()
+#	retval['a'] = 33
+#	return retval
+#};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (3);
+[ 1	]
+#CREATE FUNCTION pyapi17(i integer) returns integer
+#language P
+#{
+#	retval = dict()
+#	retval['result'] = 33
+#	return retval
+#};
+#SELECT pyapi17(i) FROM integers;
+% sys.L # table_name
+% pyapi17_i # name
+% int # type
+% 2 # length
+[ 33	]
+#DROP FUNCTION pyapi17;
+#ROLLBACK;
+
+# 18:29:28 >  
+# 18:29:28 >  "Done."
+# 18:29:28 >  
+

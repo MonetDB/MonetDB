@@ -30,6 +30,7 @@ static confkeyval _internal_prop_keys[50] = {
 	{"optpipe",  NULL, 0, STR},
 	{"readonly", NULL, 0, BOOLEAN},
 	{"embedr",   NULL, 0, BOOLEAN},
+	{"embedpy",   NULL, 0, BOOLEAN},
 	{"nclients", NULL, 0, INT},
 	{"mfunnel",  NULL, 0, STR},
 	{ NULL,      NULL, 0, INVALID}
