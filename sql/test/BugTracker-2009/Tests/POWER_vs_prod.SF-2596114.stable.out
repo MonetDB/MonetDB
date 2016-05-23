@@ -28,7 +28,7 @@ Ready.
 % mal # name
 % clob # type
 % 100 # length
-function user.s3_1():void;
+function user.s6_1():void;
     X_29:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",19);
     X_12 := bat.new(nil:oid,nil:str);
     X_20 := bat.append(X_12,"sys.L");
@@ -46,13 +46,38 @@ function user.s3_1():void;
     X_9 := algebra.projection(C_3,X_6);
     X_10:bat[:dbl] := batmmath.pow(X_9,2);
     sql.resultSet(X_20,X_22,X_24,X_26,X_28,X_10);
-end user.s3_1;
+end user.s6_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=17 usec 
+#remap                actions= 1 time=34 usec 
+#costModel            actions= 1 time=14 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 1 time=41 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 2 time=24 usec 
+#mergetable           actions= 0 time=21 usec 
+#deadcode             actions= 2 time=17 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 1 time=16 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=25 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=28 time=27 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=10 usec 
+#garbageCollector     actions= 1 time=15 usec 
+#total                actions= 1 time=360 usec 
 #explain select x*x from SF_2596114;
 % .explain # table_name
 % mal # name
 % clob # type
 % 93 # length
-function user.s4_1():void;
+function user.s8_1():void;
     X_28:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",19);
     X_11 := bat.new(nil:oid,nil:str);
     X_19 := bat.append(X_11,"sys.L");
@@ -70,7 +95,32 @@ function user.s4_1():void;
     X_8 := algebra.projection(C_2,X_5);
     X_9:bat[:dbl] := batcalc.*(X_8,X_8);
     sql.resultSet(X_19,X_21,X_23,X_25,X_27,X_9);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=16 usec 
+#remap                actions= 1 time=27 usec 
+#costModel            actions= 1 time=13 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 1 time=16 usec 
+#mergetable           actions= 0 time=21 usec 
+#deadcode             actions= 2 time=15 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 0 time=6 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=24 usec 
+#deadcode             actions= 0 time=5 usec 
+#reduce               actions=26 time=27 usec 
+#matpack              actions= 0 time=11 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=10 usec 
+#garbageCollector     actions= 1 time=19 usec 
+#total                actions= 1 time=304 usec 
 #drop table SF_2596114;
 
 # 23:02:30 >  

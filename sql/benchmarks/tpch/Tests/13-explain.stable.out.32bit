@@ -106,7 +106,32 @@ function user.s2_1(A0:str):void;
     X_65 := algebra.projection(r1_88,X_57);
     X_66 := algebra.projection(r1_88,X_58);
     sql.resultSet(X_83,X_85,X_87,X_88,X_89,X_65,X_66);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=57 usec 
+#remap                actions= 0 time=6 usec 
+#costModel            actions= 1 time=48 usec 
+#coercions            actions= 2 time=47 usec 
+#evaluate             actions= 1 time=67 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=6 usec 
+#aliases              actions= 4 time=50 usec 
+#mergetable           actions= 0 time=60 usec 
+#deadcode             actions= 6 time=47 usec 
+#aliases              actions= 0 time=12 usec 
+#constants            actions=11 time=50 usec 
+#commonTerms          actions= 0 time=14 usec 
+#projectionpath       actions= 2 time=45 usec 
+#reorder              actions= 1 time=77 usec 
+#deadcode             actions= 3 time=43 usec 
+#reduce               actions=47 time=74 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=44 usec 
+#garbageCollector     actions= 1 time=47 usec 
+#total                actions= 1 time=909 usec 
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

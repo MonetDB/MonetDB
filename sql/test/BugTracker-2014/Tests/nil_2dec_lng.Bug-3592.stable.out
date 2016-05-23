@@ -44,7 +44,7 @@ Ready.
 % mal # name
 % clob # type
 % 206 # length
-function user.s5_1():void;
+function user.s10_1():void;
     X_50:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",34);
     X_28 := bat.new(nil:oid,nil:str);
     X_35 := bat.append(X_28,".L5");
@@ -77,7 +77,35 @@ function user.s5_1():void;
     X_25 := algebra.project(X_14,nil:lng);
     X_26 := bat.append(X_22,X_25,true);
     sql.resultSet(X_44,X_45,X_46,X_48,X_49,X_17,X_26);
-end user.s5_1;
+end user.s10_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
+#inline               actions= 0 time=5 usec 
+#candidates           actions= 1 time=45 usec 
+#remap                actions= 2 time=78 usec 
+#costModel            actions= 1 time=37 usec 
+#coercions            actions= 1 time=38 usec 
+#evaluate             actions= 5 time=87 usec 
+#emptybind            actions= 0 time=8 usec 
+#pushselect           actions= 0 time=8 usec 
+#aliases              actions= 8 time=44 usec 
+#mergetable           actions= 0 time=52 usec 
+#deadcode             actions= 6 time=63 usec 
+#aliases              actions= 0 time=11 usec 
+#constants            actions= 8 time=42 usec 
+#commonTerms          actions= 5 time=36 usec 
+#projectionpath       actions= 0 time=9 usec 
+#deadcode             actions= 5 time=33 usec 
+#reorder              actions= 1 time=57 usec 
+#reduce               actions=55 time=67 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=25 usec 
+#garbageCollector     actions= 1 time=34 usec 
+#total                actions= 1 time=903 usec 
+#drop table foo_nil_2dec;
 
 # 23:28:04 >  
 # 23:28:04 >  "Done."

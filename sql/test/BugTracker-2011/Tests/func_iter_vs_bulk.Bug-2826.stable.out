@@ -34,7 +34,7 @@ Ready.
 % mal # name
 % clob # type
 % 112 # length
-function user.s5_1():void;
+function user.s10_1():void;
     X_31:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",22);
     X_15 := bat.new(nil:oid,nil:str);
     X_23 := bat.append(X_15,"sys.tab_2826");
@@ -55,7 +55,32 @@ function user.s5_1():void;
     C_11 := algebra.thetasubselect(X_42,1,">");
     X_13 := algebra.projection(C_11,X_9);
     sql.resultSet(X_23,X_25,X_26,X_28,X_30,X_13);
-end user.s5_1;
+end user.s10_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=18 usec 
+#remap                actions= 1 time=62 usec 
+#costModel            actions= 1 time=15 usec 
+#coercions            actions= 1 time=16 usec 
+#evaluate             actions= 1 time=45 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 4 time=19 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 3 time=18 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 2 time=16 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=28 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=60 time=30 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=10 usec 
+#garbageCollector     actions= 1 time=17 usec 
+#total                actions= 1 time=425 usec 
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

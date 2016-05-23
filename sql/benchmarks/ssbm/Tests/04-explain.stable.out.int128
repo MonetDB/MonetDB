@@ -40,7 +40,7 @@ Ready.
 % mal # name
 % clob # type
 % 362 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_112:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n from lineorder, dwdate, part, supplier\n where lo_orderdate = d_datekey\n and lo_partkey = p_partkey\n and lo_suppkey = s_suppkey\n and p_category = \\'MFGR#12\\' \n and s_region = \\'AMERICA\\'\n group by d_year, p_brand1\n order by d_year, p_brand1;","sequential_pipe",66);
     X_80 := bat.new(nil:oid,nil:str);
     X_88 := bat.append(X_80,"sys.L1");
@@ -105,7 +105,32 @@ function user.s2_1():void;
     X_77 := algebra.projection(r1_106,X_65);
     X_78 := algebra.projection(r1_106,X_64);
     sql.resultSet(X_105,X_107,X_108,X_110,X_111,X_76,X_77,X_78);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=46 usec 
+#remap                actions= 0 time=4 usec 
+#costModel            actions= 1 time=41 usec 
+#coercions            actions= 0 time=4 usec 
+#evaluate             actions= 2 time=62 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions=10 time=64 usec 
+#aliases              actions=12 time=46 usec 
+#mergetable           actions= 0 time=50 usec 
+#deadcode             actions=13 time=39 usec 
+#aliases              actions= 0 time=11 usec 
+#constants            actions=15 time=48 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 8 time=40 usec 
+#reorder              actions= 1 time=70 usec 
+#deadcode             actions= 8 time=36 usec 
+#reduce               actions=76 time=65 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=31 usec 
+#garbageCollector     actions= 1 time=38 usec 
+#total                actions= 1 time=791 usec 
 
 # 23:10:46 >  
 # 23:10:46 >  "Done."

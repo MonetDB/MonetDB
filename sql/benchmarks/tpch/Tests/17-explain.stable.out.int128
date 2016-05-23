@@ -47,7 +47,7 @@ Ready.
 % mal # name
 % clob # type
 % 345 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_66:void := querylog.define("explain select\n sum(l_extendedprice) / 7.0 as avg_yearly\nfrom\n lineitem,\n part\nwhere\n p_partkey = l_partkey\n and p_brand = \\'Brand#23\\'\n and p_container = \\'MED BOX\\'\n and l_quantity < (\n select\n 0.2 * avg(l_quantity)\n from\n lineitem\n where\n l_partkey = p_partkey\n );","sequential_pipe",38);
     X_4 := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4,"sys","lineitem");
@@ -84,7 +84,32 @@ function user.s2_1():void;
     X_56 := calc.hge(2,X_55,39,5);
     X_59:hge := calc./(X_56,700:hge);
     sql.resultSet("sys.L3","avg_yearly","decimal",39,3,10,X_59);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=5 usec 
+#candidates           actions= 1 time=63 usec 
+#remap                actions= 5 time=108 usec 
+#costModel            actions= 1 time=46 usec 
+#coercions            actions= 0 time=4 usec 
+#evaluate             actions= 5 time=73 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 4 time=54 usec 
+#aliases              actions=17 time=47 usec 
+#mergetable           actions= 0 time=53 usec 
+#deadcode             actions=18 time=40 usec 
+#aliases              actions= 0 time=8 usec 
+#constants            actions=14 time=46 usec 
+#commonTerms          actions= 5 time=39 usec 
+#projectionpath       actions= 7 time=39 usec 
+#reorder              actions= 1 time=57 usec 
+#deadcode             actions=12 time=33 usec 
+#reduce               actions=98 time=58 usec 
+#matpack              actions= 0 time=5 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=30 usec 
+#garbageCollector     actions= 1 time=33 usec 
+#total                actions= 1 time=924 usec 
 
 # 22:53:29 >  
 # 22:53:29 >  "Done."

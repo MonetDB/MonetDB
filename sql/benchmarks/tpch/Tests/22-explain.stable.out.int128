@@ -57,7 +57,7 @@ Ready.
 % mal # name
 % clob # type
 % 709 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_129:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",88);
     X_95 := bat.new(nil:oid,nil:str);
     X_103 := bat.append(X_95,"sys.custsale");
@@ -144,7 +144,32 @@ function user.s2_1():void;
     X_90 := algebra.projection(r1_176,X_89);
     X_93 := algebra.projection(r1_176,X_92);
     sql.resultSet(X_120,X_122,X_124,X_126,X_128,X_88,X_90,X_93);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=7 usec 
+#candidates           actions= 1 time=68 usec 
+#remap                actions= 5 time=111 usec 
+#costModel            actions= 1 time=56 usec 
+#coercions            actions= 0 time=5 usec 
+#evaluate             actions=22 time=116 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions=28 time=66 usec 
+#mergetable           actions= 0 time=75 usec 
+#deadcode             actions=12 time=57 usec 
+#aliases              actions= 0 time=15 usec 
+#constants            actions=47 time=79 usec 
+#commonTerms          actions= 6 time=59 usec 
+#projectionpath       actions= 4 time=52 usec 
+#reorder              actions= 1 time=89 usec 
+#deadcode             actions=10 time=50 usec 
+#reduce               actions=126 time=96 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=41 usec 
+#garbageCollector     actions= 1 time=53 usec 
+#total                actions= 1 time=1199 usec 
 
 # 22:53:31 >  
 # 22:53:31 >  "Done."

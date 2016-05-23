@@ -57,7 +57,7 @@ Ready.
 % mal # name
 % clob # type
 % 863 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_168:void := querylog.define("explain select\n supp_nation,\n cust_nation,\n l_year,\n sum(volume) as revenue\nfrom\n (\n select\n n1.n_name as supp_nation,\n n2.n_name as cust_nation,\n extract(year from l_shipdate) as l_year,\n l_extendedprice * (1 - l_discount) as volume\n from\n supplier,\n lineitem,\n orders,\n customer,\n nation n1,\n nation n2\n where\n s_suppkey = l_suppkey\n and o_orderkey = l_orderkey\n and c_custkey = o_custkey\n and s_nationkey = n1.n_nationkey\n and c_nationkey = n2.n_nationkey\n and (\n (n1.n_name = \\'FRANCE\\' and n2.n_name = \\'GERMANY\\')\n or (n1.n_name = \\'GERMANY\\' and n2.n_name = \\'FRANCE\\')\n )\n and l_shipdate between date \\'1995-01-01\\' and date \\'1996-12-31\\'\n ) as shipping\ngroup by\n supp_nation,\n cust_nation,\n l_year\norder by\n supp_nation,\n cust_nation,\n l_year;","sequential_pipe",106);
     X_127 := bat.new(nil:oid,nil:str);
     X_135 := bat.append(X_127,"sys.shipping");
@@ -162,7 +162,32 @@ function user.s2_1():void;
     X_115 := algebra.projection(r1_185,X_101);
     X_125 := algebra.projection(r1_185,X_124);
     sql.resultSet(X_158,X_160,X_162,X_164,X_166,X_113,X_114,X_115,X_125);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=6 usec 
+#candidates           actions= 1 time=73 usec 
+#remap                actions= 4 time=313 usec 
+#costModel            actions= 1 time=91 usec 
+#coercions            actions= 0 time=55 usec 
+#evaluate             actions=12 time=140 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions=19 time=125 usec 
+#mergetable           actions= 0 time=114 usec 
+#deadcode             actions=15 time=99 usec 
+#aliases              actions= 0 time=17 usec 
+#constants            actions=29 time=116 usec 
+#commonTerms          actions= 5 time=101 usec 
+#projectionpath       actions=32 time=114 usec 
+#reorder              actions= 1 time=185 usec 
+#deadcode             actions=37 time=103 usec 
+#reduce               actions=134 time=152 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=90 usec 
+#garbageCollector     actions= 1 time=102 usec 
+#total                actions= 1 time=2106 usec 
 
 # 22:53:27 >  
 # 22:53:27 >  "Done."

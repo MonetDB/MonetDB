@@ -41,7 +41,7 @@ Ready.
 % mal # name
 % clob # type
 % 446 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_126:void := querylog.define("explain\nselect c_city, s_city, d_year, sum(lo_revenue) as revenue\n from customer, lineorder, supplier, dwdate\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_orderdate = d_datekey\n and c_nation = \\'UNITED STATES\\'\n and s_nation = \\'UNITED STATES\\'\n and d_year >= 1992 and d_year <= 1997\n group by c_city, s_city, d_year\n order by d_year asc, revenue desc;","sequential_pipe",75);
     X_88 := bat.new(nil:oid,nil:str);
     X_96 := bat.append(X_88,"sys.customer");
@@ -115,7 +115,32 @@ function user.s2_1():void;
     X_85 := algebra.projection(r1_142,X_76);
     X_86 := algebra.projection(r1_142,X_75);
     sql.resultSet(X_117,X_119,X_121,X_123,X_125,X_83,X_84,X_85,X_86);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=6 usec 
+#candidates           actions= 1 time=94 usec 
+#remap                actions= 0 time=8 usec 
+#costModel            actions= 1 time=84 usec 
+#coercions            actions= 0 time=7 usec 
+#evaluate             actions= 4 time=136 usec 
+#emptybind            actions= 0 time=9 usec 
+#pushselect           actions=14 time=128 usec 
+#aliases              actions=18 time=96 usec 
+#mergetable           actions= 0 time=103 usec 
+#deadcode             actions=15 time=80 usec 
+#aliases              actions= 0 time=21 usec 
+#constants            actions=21 time=99 usec 
+#commonTerms          actions= 0 time=22 usec 
+#projectionpath       actions=12 time=82 usec 
+#reorder              actions= 1 time=134 usec 
+#deadcode             actions=12 time=72 usec 
+#reduce               actions=98 time=148 usec 
+#matpack              actions= 0 time=9 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=7 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=61 usec 
+#garbageCollector     actions= 1 time=76 usec 
+#total                actions= 1 time=1608 usec 
 
 # 23:10:47 >  
 # 23:10:47 >  "Done."

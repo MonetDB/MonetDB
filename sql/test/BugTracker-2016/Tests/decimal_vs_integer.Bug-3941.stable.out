@@ -36,7 +36,7 @@ Ready.
 % mal # name
 % clob # type
 % 107 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_20:void := querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe",10);
     X_2 := sql.mvc();
     X_6:bat[:int] := sql.bind(X_2,"sys","tmp","i",0);
@@ -45,7 +45,7 @@ function user.s2_1():void;
     X_12 := algebra.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
-end user.s2_1;
+end user.s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 #explain select count(*) from tmp where i = '20160222';
@@ -53,7 +53,7 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 113 # length
-function user.s3_1():void;
+function user.s6_1():void;
     X_19:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe",10);
     X_1 := sql.mvc();
     X_5:bat[:int] := sql.bind(X_1,"sys","tmp","i",0);
@@ -62,7 +62,7 @@ function user.s3_1():void;
     X_11 := algebra.projection(C_8,X_5);
     X_12 := aggr.count(X_11);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
-end user.s3_1;
+end user.s6_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 #explain select count(*) from tmp where i = 201602221;
@@ -70,7 +70,7 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 108 # length
-function user.s4_1():void;
+function user.s8_1():void;
     X_22:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",11);
     X_2 := sql.mvc();
     X_6:bat[:int] := sql.bind(X_2,"sys","tmp","i",0);
@@ -80,7 +80,7 @@ function user.s4_1():void;
     X_14 := algebra.projection(C_11,X_6);
     X_15 := aggr.count(X_14);
     sql.resultSet("sys.L1","L1","wrd",64,0,7,X_15);
-end user.s4_1;
+end user.s8_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 

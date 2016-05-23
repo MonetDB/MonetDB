@@ -42,7 +42,7 @@ Ready.
 % mal # name
 % clob # type
 % 390 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_111:void := querylog.define("explain\nselect sum(lo_revenue), d_year, p_brand1\n from lineorder, dwdate, part, supplier\n where lo_orderdate = d_datekey\n and lo_partkey = p_partkey\n and lo_suppkey = s_suppkey\n \n \n and p_brand1 between \\'MFGR#2221\\' and \\'MFGR#2228\\'\n and s_region = \\'ASIA\\'\n group by d_year, p_brand1\n order by d_year, p_brand1;","sequential_pipe",65);
     X_79 := bat.new(nil:oid,nil:str);
     X_87 := bat.append(X_79,"sys.L1");
@@ -106,7 +106,32 @@ function user.s2_1():void;
     X_76 := algebra.projection(r1_101,X_64);
     X_77 := algebra.projection(r1_101,X_63);
     sql.resultSet(X_104,X_106,X_107,X_109,X_110,X_75,X_76,X_77);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=7 usec 
+#candidates           actions= 1 time=100 usec 
+#remap                actions= 0 time=9 usec 
+#costModel            actions= 1 time=89 usec 
+#coercions            actions= 0 time=8 usec 
+#evaluate             actions= 3 time=138 usec 
+#emptybind            actions= 0 time=10 usec 
+#pushselect           actions= 9 time=158 usec 
+#aliases              actions=11 time=101 usec 
+#mergetable           actions= 0 time=111 usec 
+#deadcode             actions=11 time=87 usec 
+#aliases              actions= 0 time=24 usec 
+#constants            actions=14 time=108 usec 
+#commonTerms          actions= 0 time=25 usec 
+#projectionpath       actions= 8 time=90 usec 
+#reorder              actions= 1 time=144 usec 
+#deadcode             actions= 8 time=77 usec 
+#reduce               actions=70 time=156 usec 
+#matpack              actions= 0 time=10 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=8 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=66 usec 
+#garbageCollector     actions= 1 time=85 usec 
+#total                actions= 1 time=1766 usec 
 
 # 23:10:46 >  
 # 23:10:46 >  "Done."

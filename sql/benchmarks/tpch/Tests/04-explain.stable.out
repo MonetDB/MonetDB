@@ -51,7 +51,7 @@ Ready.
 % mal # name
 % clob # type
 % 421 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_77:void := querylog.define("explain select\n o_orderpriority,\n count(*) as order_count\nfrom\n orders\nwhere\n o_orderdate >= date \\'1993-07-01\\'\n and o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n and exists (\n select\n *\n from\n lineitem\n where\n l_orderkey = o_orderkey\n and l_commitdate < l_receiptdate\n )\ngroup by\n o_orderpriority\norder by\n o_orderpriority;","sequential_pipe",48);
     X_52 := bat.new(nil:oid,nil:str);
     X_60 := bat.append(X_52,"sys.orders");
@@ -98,7 +98,32 @@ function user.s2_1():void;
     X_48 := algebra.projection(r1_85,X_44);
     X_50 := algebra.projection(r1_85,X_49);
     sql.resultSet(X_68,X_70,X_72,X_74,X_76,X_48,X_50);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=7 usec 
+#candidates           actions= 1 time=61 usec 
+#remap                actions= 1 time=283 usec 
+#costModel            actions= 1 time=86 usec 
+#coercions            actions= 0 time=5 usec 
+#evaluate             actions= 3 time=115 usec 
+#emptybind            actions= 0 time=7 usec 
+#pushselect           actions= 0 time=7 usec 
+#aliases              actions= 9 time=94 usec 
+#mergetable           actions= 0 time=101 usec 
+#deadcode             actions=12 time=86 usec 
+#aliases              actions= 0 time=12 usec 
+#constants            actions= 9 time=97 usec 
+#commonTerms          actions= 0 time=15 usec 
+#projectionpath       actions= 4 time=84 usec 
+#reorder              actions= 1 time=115 usec 
+#deadcode             actions= 4 time=78 usec 
+#reduce               actions=62 time=121 usec 
+#matpack              actions= 0 time=8 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=72 usec 
+#garbageCollector     actions= 1 time=81 usec 
+#total                actions= 1 time=1655 usec 
 
 # 22:53:26 >  
 # 22:53:26 >  "Done."

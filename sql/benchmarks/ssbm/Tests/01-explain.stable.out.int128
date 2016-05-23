@@ -37,7 +37,7 @@ Ready.
 % mal # name
 % clob # type
 % 254 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_48:void := querylog.define("explain\nselect sum(lo_extendedprice*lo_discount) as revenue\n from lineorder, dwdate\n where lo_orderdate = d_datekey\n and d_year = 1993\n and lo_discount between 1 and 3\n and lo_quantity < 25;","sequential_pipe",24);
     X_5 := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5,"sys","lineorder","lo_quantity",0);
@@ -60,7 +60,32 @@ function user.s2_1():void;
     X_40:bat[:lng] := batcalc.*(X_38,X_39);
     X_41:hge := aggr.sum(X_40);
     sql.resultSet("sys.L1","revenue","hugeint",128,0,7,X_41);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=9 usec 
+#candidates           actions= 1 time=71 usec 
+#remap                actions= 1 time=166 usec 
+#costModel            actions= 1 time=66 usec 
+#coercions            actions= 0 time=6 usec 
+#evaluate             actions= 4 time=108 usec 
+#emptybind            actions= 0 time=8 usec 
+#pushselect           actions= 9 time=103 usec 
+#aliases              actions=14 time=75 usec 
+#mergetable           actions= 0 time=79 usec 
+#deadcode             actions= 9 time=63 usec 
+#aliases              actions= 0 time=14 usec 
+#constants            actions= 8 time=71 usec 
+#commonTerms          actions= 0 time=13 usec 
+#projectionpath       actions= 2 time=61 usec 
+#reorder              actions= 1 time=90 usec 
+#deadcode             actions= 2 time=52 usec 
+#reduce               actions=63 time=90 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=6 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=49 usec 
+#garbageCollector     actions= 1 time=56 usec 
+#total                actions= 1 time=1422 usec 
 
 # 23:10:45 >  
 # 23:10:45 >  "Done."

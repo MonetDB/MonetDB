@@ -60,7 +60,7 @@ Ready.
 % mal # name
 % clob # type
 % 297 # length
-function user.s3_1():void;
+function user.s6_1():void;
     X_114:void := querylog.define("explain select\n s_suppkey,\n s_name,\n s_address,\n s_phone,\n total_revenue\nfrom\n supplier,\n revenue0\nwhere\n s_suppkey = supplier_no\n and total_revenue = (\n select\n max(total_revenue)\n from\n revenue0\n )\norder by\n s_suppkey;","sequential_pipe",76);
     X_69 := bat.new(nil:oid,nil:str);
     X_77 := bat.append(X_69,"sys.supplier");
@@ -135,7 +135,32 @@ function user.s3_1():void;
     X_66:bat[:str] := algebra.projectionpath(r1_154,C_52,X_29,C_2,X_64);
     X_67:bat[:hge] := algebra.projectionpath(r1_154,C_52,X_47);
     sql.resultSet(X_104,X_106,X_108,X_110,X_112,X_57,X_60,X_63,X_66,X_67);
-end user.s3_1;
+end user.s6_1;
+#inline               actions= 0 time=7 usec 
+#candidates           actions= 1 time=80 usec 
+#remap                actions= 6 time=434 usec 
+#costModel            actions= 1 time=131 usec 
+#coercions            actions= 8 time=235 usec 
+#evaluate             actions= 2 time=165 usec 
+#emptybind            actions= 0 time=7 usec 
+#pushselect           actions= 0 time=6 usec 
+#aliases              actions=14 time=140 usec 
+#mergetable           actions= 0 time=148 usec 
+#deadcode             actions=26 time=128 usec 
+#aliases              actions= 0 time=14 usec 
+#constants            actions=31 time=138 usec 
+#commonTerms          actions=18 time=98 usec 
+#projectionpath       actions=10 time=95 usec 
+#reorder              actions= 1 time=119 usec 
+#deadcode             actions=28 time=78 usec 
+#reduce               actions=147 time=117 usec 
+#matpack              actions= 0 time=6 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=4 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=72 usec 
+#garbageCollector     actions= 1 time=79 usec 
+#total                actions= 1 time=2393 usec 
 #drop view revenue0;
 
 # 22:53:29 >  

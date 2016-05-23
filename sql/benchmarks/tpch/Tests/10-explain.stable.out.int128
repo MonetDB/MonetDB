@@ -62,7 +62,7 @@ Ready.
 % mal # name
 % clob # type
 % 619 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_171:void := querylog.define("explain select\n c_custkey,\n c_name,\n sum(l_extendedprice * (1 - l_discount)) as revenue,\n c_acctbal,\n n_name,\n c_address,\n c_phone,\n c_comment\nfrom\n customer,\n orders,\n lineitem,\n nation\nwhere\n c_custkey = o_custkey\n and l_orderkey = o_orderkey\n and o_orderdate >= date \\'1993-10-01\\'\n and o_orderdate < date \\'1993-10-01\\' + interval \\'3\\' month\n and l_returnflag = \\'R\\'\n and c_nationkey = n_nationkey\ngroup by\n c_custkey,\n c_name,\n c_acctbal,\n c_phone,\n n_name,\n c_address,\n c_comment\norder by\n revenue desc\nlimit 20;","sequential_pipe",111);
     X_109 := bat.new(nil:oid,nil:str);
     X_117 := bat.append(X_109,"sys.customer");
@@ -172,7 +172,32 @@ function user.s2_1():void;
     X_105:bat[:str] := sql.bind(X_4,"sys","customer","c_comment",0);
     X_107:bat[:str] := algebra.projectionpath(X_89,r1_164,C_83,r1_111,C_39,X_105);
     sql.resultSet(X_165,X_166,X_167,X_168,X_170,X_90,X_93,X_94,X_97,X_98,X_101,X_104,X_107);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=10 usec 
+#candidates           actions= 1 time=148 usec 
+#remap                actions= 3 time=480 usec 
+#costModel            actions= 1 time=171 usec 
+#coercions            actions= 4 time=249 usec 
+#evaluate             actions= 9 time=274 usec 
+#emptybind            actions= 0 time=10 usec 
+#pushselect           actions=12 time=202 usec 
+#aliases              actions=28 time=177 usec 
+#mergetable           actions= 0 time=185 usec 
+#deadcode             actions=28 time=161 usec 
+#aliases              actions= 0 time=26 usec 
+#constants            actions=35 time=189 usec 
+#commonTerms          actions= 3 time=154 usec 
+#projectionpath       actions=35 time=171 usec 
+#reorder              actions= 1 time=228 usec 
+#deadcode             actions=38 time=141 usec 
+#reduce               actions=176 time=225 usec 
+#matpack              actions= 0 time=10 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=6 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=126 usec 
+#garbageCollector     actions= 1 time=138 usec 
+#total                actions= 1 time=3621 usec 
 
 # 22:53:27 >  
 # 22:53:27 >  "Done."

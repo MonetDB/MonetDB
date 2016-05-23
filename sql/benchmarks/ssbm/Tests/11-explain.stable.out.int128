@@ -42,7 +42,7 @@ Ready.
 % mal # name
 % clob # type
 % 478 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_142:void := querylog.define("explain\nselect d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1\n from dwdate, customer, supplier, part, lineorder\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_partkey = p_partkey\n and lo_orderdate = d_datekey\n and c_region = \\'AMERICA\\'\n and s_region = \\'AMERICA\\'\n and (p_mfgr = \\'MFGR#1\\' or p_mfgr = \\'MFGR#2\\')\n group by d_year, c_nation\n order by d_year, c_nation;","sequential_pipe",89);
     X_110 := bat.new(nil:oid,nil:str);
     X_118 := bat.append(X_110,"sys.dwdate");
@@ -130,7 +130,32 @@ function user.s2_1():void;
     X_97 := algebra.projection(r1_138,X_88);
     X_108 := algebra.projection(r1_138,X_107);
     sql.resultSet(X_133,X_135,X_137,X_139,X_141,X_96,X_97,X_108);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=6 usec 
+#candidates           actions= 1 time=71 usec 
+#remap                actions= 1 time=151 usec 
+#costModel            actions= 1 time=68 usec 
+#coercions            actions= 0 time=6 usec 
+#evaluate             actions= 4 time=109 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions=11 time=80 usec 
+#mergetable           actions= 0 time=88 usec 
+#deadcode             actions=14 time=73 usec 
+#aliases              actions= 0 time=17 usec 
+#constants            actions=20 time=89 usec 
+#commonTerms          actions= 0 time=20 usec 
+#projectionpath       actions=18 time=82 usec 
+#reorder              actions= 1 time=118 usec 
+#deadcode             actions=18 time=65 usec 
+#reduce               actions=90 time=112 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=5 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=58 usec 
+#garbageCollector     actions= 1 time=72 usec 
+#total                actions= 1 time=1396 usec 
 
 # 23:10:48 >  
 # 23:10:48 >  "Done."

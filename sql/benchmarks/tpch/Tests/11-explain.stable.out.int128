@@ -57,7 +57,7 @@ Ready.
 % mal # name
 % clob # type
 % 562 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_101:void := querylog.define("explain select\n ps_partkey,\n sum(ps_supplycost * ps_availqty) as value\nfrom\n partsupp,\n supplier,\n nation\nwhere\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\ngroup by\n ps_partkey having\n sum(ps_supplycost * ps_availqty) > (\n select\n sum(ps_supplycost * ps_availqty) * 0.0100000000\n \n \n \n from\n partsupp,\n supplier,\n nation\n where\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\n )\norder by\n value desc;","sequential_pipe",64);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","supplier");
@@ -120,7 +120,32 @@ function user.s2_1():void;
     X_74:bat[:int] := algebra.projectionpath(r1_165,C_69,X_49);
     X_75 := algebra.projection(r1_165,X_70);
     sql.resultSet(X_93,X_95,X_97,X_99,X_100,X_74,X_75);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=9 usec 
+#candidates           actions= 1 time=109 usec 
+#remap                actions= 4 time=520 usec 
+#costModel            actions= 1 time=188 usec 
+#coercions            actions= 1 time=300 usec 
+#evaluate             actions= 3 time=233 usec 
+#emptybind            actions= 0 time=9 usec 
+#pushselect           actions= 0 time=12 usec 
+#aliases              actions=10 time=204 usec 
+#mergetable           actions= 0 time=233 usec 
+#deadcode             actions=16 time=192 usec 
+#aliases              actions= 0 time=23 usec 
+#constants            actions=32 time=203 usec 
+#commonTerms          actions=27 time=144 usec 
+#projectionpath       actions= 2 time=130 usec 
+#reorder              actions= 1 time=191 usec 
+#deadcode             actions=29 time=127 usec 
+#reduce               actions=120 time=182 usec 
+#matpack              actions= 0 time=10 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=7 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=112 usec 
+#garbageCollector     actions= 1 time=126 usec 
+#total                actions= 1 time=3401 usec 
 
 # 22:53:28 >  
 # 22:53:28 >  "Done."

@@ -62,7 +62,7 @@ Ready.
 % mal # name
 % clob # type
 % 193 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_42:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id as id \n from sys.functions\n) as x;","sequential_pipe",26);
     X_18 := bat.new(nil:oid,nil:str);
     X_26 := bat.append(X_18,"sys.L1");
@@ -87,7 +87,32 @@ function user.s2_1():void;
     X_14:bat[:int] := sql.bind(X_3,"sys","functions","id",0);
     X_16 := algebra.projection(C_4,X_14);
     sql.resultSet(X_34,X_36,X_37,X_39,X_41,X_11,X_16);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=21 usec 
+#remap                actions= 0 time=7 usec 
+#costModel            actions= 1 time=19 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 2 time=35 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 4 time=28 usec 
+#mergetable           actions= 0 time=27 usec 
+#deadcode             actions= 4 time=19 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 3 time=22 usec 
+#commonTerms          actions= 0 time=19 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=33 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=33 time=35 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=0 usec 
+#multiplex            actions= 1 time=20 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=13 usec 
+#garbageCollector     actions= 1 time=18 usec 
+#total                actions= 1 time=415 usec 
 #explain select replace(a1,a2,a3), id
 #from (
 #  select name as a1, 'a' as a2, 'A' as a3, id + 1 as id 
@@ -97,7 +122,7 @@ end user.s2_1;
 % mal # name
 % clob # type
 % 197 # length
-function user.s3_1():void;
+function user.s6_1():void;
     X_47:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;","sequential_pipe",30);
     X_23 := bat.new(nil:oid,nil:str);
     X_31 := bat.append(X_23,"sys.L1");
@@ -126,7 +151,32 @@ function user.s3_1():void;
     X_20 := batcalc.lng(X_14);
     X_21:bat[:lng] := batcalc.+(X_20,1);
     sql.resultSet(X_39,X_41,X_42,X_44,X_46,X_17,X_21);
-end user.s3_1;
+end user.s6_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=23 usec 
+#remap                actions= 1 time=78 usec 
+#costModel            actions= 1 time=26 usec 
+#coercions            actions= 0 time=2 usec 
+#evaluate             actions= 3 time=46 usec 
+#emptybind            actions= 0 time=4 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 5 time=30 usec 
+#mergetable           actions= 0 time=35 usec 
+#deadcode             actions= 4 time=27 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 5 time=31 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=42 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=38 time=44 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 1 time=28 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=21 usec 
+#garbageCollector     actions= 1 time=27 usec 
+#total                actions= 1 time=572 usec 
 #explain select replace(a1,a2,a3), id
 #from (
 #  select name as a1, 'a' as a2, 'A' as a3, abs(id) as id 
@@ -136,7 +186,7 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 198 # length
-function user.s4_1():void;
+function user.s8_1():void;
     X_45:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, abs(id) as id \n from sys.functions\n) as x;","sequential_pipe",29);
     X_21 := bat.new(nil:oid,nil:str);
     X_29 := bat.append(X_21,"sys.L1");
@@ -164,7 +214,32 @@ function user.s4_1():void;
     X_16:bat[:str] := mal.manifold("str","replace",X_10,X_14,X_15);
     X_19:bat[:int] := batcalc.abs(X_13);
     sql.resultSet(X_37,X_39,X_40,X_42,X_44,X_16,X_19);
-end user.s4_1;
+end user.s8_1;
+#inline               actions= 0 time=3 usec 
+#candidates           actions= 1 time=20 usec 
+#remap                actions= 1 time=40 usec 
+#costModel            actions= 1 time=18 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 2 time=36 usec 
+#emptybind            actions= 0 time=5 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 4 time=22 usec 
+#mergetable           actions= 0 time=27 usec 
+#deadcode             actions= 4 time=20 usec 
+#aliases              actions= 0 time=5 usec 
+#constants            actions= 4 time=24 usec 
+#commonTerms          actions= 0 time=12 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=33 usec 
+#deadcode             actions= 0 time=6 usec 
+#reduce               actions=36 time=35 usec 
+#matpack              actions= 0 time=4 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 1 time=21 usec 
+#generator            actions= 0 time=2 usec 
+#profiler             actions= 1 time=14 usec 
+#garbageCollector     actions= 1 time=21 usec 
+#total                actions= 1 time=443 usec 
 
 # 14:13:39 >  
 # 14:13:39 >  "Done."

@@ -65,7 +65,7 @@ Ready.
 % mal # name
 % clob # type
 % 759 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_210:void := querylog.define("explain select\n s_acctbal,\n s_name,\n n_name,\n p_partkey,\n p_mfgr,\n s_address,\n s_phone,\n s_comment\nfrom\n part,\n supplier,\n partsupp,\n nation,\n region\nwhere\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and p_size = 15\n and p_type like \\'%BRASS\\'\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n and ps_supplycost = (\n select\n min(ps_supplycost)\n from\n partsupp,\n supplier,\n nation,\n region\n where\n p_partkey = ps_partkey\n and s_suppkey = ps_suppkey\n and s_nationkey = n_nationkey\n and n_regionkey = r_regionkey\n and r_name = \\'EUROPE\\'\n )\norder by\n s_acctbal desc,\n n_name,\n s_name,\n p_partkey\nlimit 100;","sequential_pipe",137);
     X_151 := bat.new(nil:oid,nil:str);
     X_159 := bat.append(X_151,"sys.supplier");
@@ -201,7 +201,32 @@ function user.s2_1():void;
     X_136:bat[:str] := algebra.projectionpath(X_133,r1_281,X_118);
     X_137:bat[:int] := algebra.projectionpath(X_133,r1_281,X_116);
     sql.resultSet(X_204,X_205,X_206,X_207,X_209,X_134,X_135,X_136,X_137,X_140,X_143,X_146,X_149);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=10 usec 
+#candidates           actions= 1 time=191 usec 
+#remap                actions= 2 time=359 usec 
+#costModel            actions= 1 time=180 usec 
+#coercions            actions= 8 time=205 usec 
+#evaluate             actions=10 time=265 usec 
+#emptybind            actions= 0 time=13 usec 
+#pushselect           actions=19 time=231 usec 
+#aliases              actions=34 time=190 usec 
+#mergetable           actions= 0 time=217 usec 
+#deadcode             actions=37 time=162 usec 
+#aliases              actions= 0 time=38 usec 
+#constants            actions=46 time=202 usec 
+#commonTerms          actions=20 time=166 usec 
+#projectionpath       actions=70 time=218 usec 
+#reorder              actions= 1 time=287 usec 
+#deadcode             actions=90 time=136 usec 
+#reduce               actions=263 time=230 usec 
+#matpack              actions= 0 time=14 usec 
+#querylog             actions= 0 time=2 usec 
+#multiplex            actions= 0 time=8 usec 
+#generator            actions= 0 time=4 usec 
+#profiler             actions= 1 time=105 usec 
+#garbageCollector     actions= 1 time=122 usec 
+#total                actions= 1 time=3696 usec 
 
 # 22:53:25 >  
 # 22:53:25 >  "Done."

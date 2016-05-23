@@ -51,7 +51,7 @@ Ready.
 % mal # name
 % clob # type
 % 1117 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_168:void := querylog.define("explain select\n sum(l_extendedprice* (1 - l_discount)) as revenue\nfrom\n lineitem,\n part\nwhere\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#12\\'\n and p_container in (\\'SM CASE\\', \\'SM BOX\\', \\'SM PACK\\', \\'SM PKG\\')\n and l_quantity >= 1 and l_quantity <= 1 + 10\n and p_size between 1 and 5\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#23\\'\n and p_container in (\\'MED BAG\\', \\'MED BOX\\', \\'MED PKG\\', \\'MED PACK\\')\n and l_quantity >= 10 and l_quantity <= 10 + 10\n and p_size between 1 and 10\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#34\\'\n and p_container in (\\'LG CASE\\', \\'LG BOX\\', \\'LG PACK\\', \\'LG PKG\\')\n and l_quantity >= 20 and l_quantity <= 20 + 10\n and p_size between 1 and 15\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n );","sequential_pipe",122);
     X_23 := sql.mvc();
     C_24:bat[:oid] := sql.tid(X_23,"sys","part");
@@ -172,7 +172,32 @@ function user.s2_1():void;
     X_160:bat[:hge] := batcalc.*(X_155,X_159);
     X_161:hge := aggr.sum(X_160);
     sql.resultSet("sys.L1","revenue","decimal",39,4,10,X_161);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=11 usec 
+#candidates           actions= 1 time=155 usec 
+#remap                actions= 3 time=495 usec 
+#costModel            actions= 1 time=183 usec 
+#coercions            actions= 0 time=76 usec 
+#evaluate             actions=84 time=402 usec 
+#emptybind            actions= 0 time=11 usec 
+#pushselect           actions= 0 time=10 usec 
+#aliases              actions=94 time=196 usec 
+#mergetable           actions= 0 time=189 usec 
+#deadcode             actions=21 time=172 usec 
+#aliases              actions= 0 time=30 usec 
+#constants            actions=77 time=239 usec 
+#commonTerms          actions= 6 time=227 usec 
+#projectionpath       actions=15 time=162 usec 
+#reorder              actions= 1 time=230 usec 
+#deadcode             actions=21 time=156 usec 
+#reduce               actions=255 time=237 usec 
+#matpack              actions= 0 time=13 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=7 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=136 usec 
+#garbageCollector     actions= 1 time=153 usec 
+#total                actions= 1 time=3625 usec 
 
 # 22:53:30 >  
 # 22:53:30 >  "Done."
