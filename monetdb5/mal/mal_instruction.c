@@ -929,7 +929,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	return res;
 }
 
-/* generate a new variable name based on a patter with 1 %d argument*/
+/* generate a new variable name based on a pattern with 1 %d argument*/
 void
 renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 {
