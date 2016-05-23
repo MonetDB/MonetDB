@@ -1,0 +1,145 @@
+stdout of test 'pyapi24` in directory 'sql/backends/monet5` itself:
+
+
+# 15:58:33 >  
+# 15:58:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33123" "--set" "mapi_usock=/var/tmp/mtest-17490/.s.monetdb.33123" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch2/raasveld/build/var/MonetDB/mTests_sql_backends_monet5" "--set" "mal_listing=0" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 15:58:33 >  
+
+# MonetDB 5 server v11.22.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.590 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lyon.ins.cwi.nl:33123/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17490/.s.monetdb.33123
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+['arg1']
+['arg1', 'arg2']
+['arg1', 'arg2', 'arg3']
+['arg1', 'arg2', 'arg3', 'arg4']
+['arg1', 'arg2', 'arg3', 'arg4', 'arg5']
+['arg1', 'arg2', 'arg3', 'arg4', 'arg5']
+['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg10']
+['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg12', 'arg13', 'arg10', 'arg11', 'arg14', 'arg15']
+['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg12', 'arg13', 'arg10', 'arg11', 'arg16', 'arg17', 'arg14', 'arg15', 'arg18', 'arg19', 'arg20']
+['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg25', 'arg24', 'arg23', 'arg22', 'arg21', 'arg20', 'arg12', 'arg13', 'arg10', 'arg11', 'arg16', 'arg17', 'arg14', 'arg15', 'arg18', 'arg19']
+['arg69', 'arg68', 'arg63', 'arg62', 'arg61', 'arg60', 'arg67', 'arg66', 'arg65', 'arg64', 'arg74', 'arg75', 'arg76', 'arg77', 'arg70', 'arg71', 'arg72', 'arg73', 'arg78', 'arg79', 'arg100', 'arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg89', 'arg88', 'arg81', 'arg80', 'arg83', 'arg82', 'arg85', 'arg84', 'arg87', 'arg86', 'arg12', 'arg13', 'arg10', 'arg11', 'arg16', 'arg17', 'arg14', 'arg15', 'arg18', 'arg19', 'arg98', 'arg99', 'arg92', 'arg93', 'arg90', 'arg91', 'arg96', 'arg97', 'arg94', 'arg95', 'arg29', 'arg28', 'arg27', 'arg26', 'arg25', 'arg24', 'arg23', 'arg22', 'arg21', 'arg20', 'arg38', 'arg39', 'arg30', 'arg31', 'arg32', 'arg33', 'arg34', 'arg35', 'arg36', 'arg37', 'arg49', 'arg48', 'arg45', 'arg44', 'arg47', 'arg46', 'arg41', 'arg40', 'arg43', 'arg42', 'arg58', 'arg59', 'arg56', 'arg57', 'arg54', 'arg55', 'arg52', 'arg53', 'arg50', 'arg51']
+
+# 15:58:34 >  
+# 15:58:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17490" "--port=33123"
+# 15:58:34 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION pyapi24(*) RETURNS integer LANGUAGE PYTHON
+#{
+#    sum = 0
+#    for key in _columns.keys():
+#        sum += numpy.sum(_columns[key])
+#    return sum
+#};
+#CREATE TABLE pyapi24table(i INTEGER, j INTEGER, k INTEGER, l INTEGER, m INTEGER);
+#INSERT INTO pyapi24table VALUES (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5);
+[ 5	]
+#SELECT pyapi24(i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 1 # length
+[ 5	]
+#SELECT pyapi24(i,j) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 15	]
+#SELECT pyapi24(i,j,k) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 30	]
+#SELECT pyapi24(i,j,k,l) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 50	]
+#SELECT pyapi24(i,j,k,l,m) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 75	]
+#SELECT pyapi24(i,i,i,i,i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 25	]
+#SELECT pyapi24(i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 50	]
+#SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 2 # length
+[ 75	]
+#SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 3 # length
+[ 100	]
+#SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 3 # length
+[ 125	]
+#SELECT pyapi24(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% int # type
+% 3 # length
+[ 500	]
+#DROP FUNCTION pyapi24;
+#DROP TABLE pyapi24table;
+#CREATE FUNCTION pyapi24(*) RETURNS DOUBLE LANGUAGE PYTHON
+#{
+#    sum = 0
+#    for key in _columns.keys():
+#        if _column_types[key] != 'STRING':
+#            sum += numpy.sum(_columns[key])
+#        else: 
+#            sum += 10000 * len(_columns[key]) # strings are worth more points
+#    return sum
+#};
+#CREATE TABLE pyapi24table(i BOOLEAN, j TINYINT, k INTEGER, l DOUBLE, m STRING);
+#INSERT INTO pyapi24table VALUES (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello'), (True, 10, 1000, 100.1, 'Hello');
+[ 5	]
+#SELECT pyapi24(i,j,k,l,m) FROM pyapi24table;
+% sys.L # table_name
+% pyapi24_i # name
+% double # type
+% 24 # length
+[ 55555.5	]
+#ROLLBACK;
+
+# 15:58:34 >  
+# 15:58:34 >  "Done."
+# 15:58:34 >  
+

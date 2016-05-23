@@ -331,6 +331,7 @@ int yydebug=1;
 	forest_element_name
 	XML_namespace_prefix
 	XML_PI_target
+	function_body
 
 %type <l>
 	passwd_schema
@@ -1743,6 +1744,12 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
+
+function_body:
+	X_BODY
+|	string
+;
+
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1773,19 +1780,25 @@ func_def:
   | create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                    lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1824,19 +1837,25 @@ func_def:
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                     lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
