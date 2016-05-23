@@ -1099,6 +1099,25 @@ atom_cast(atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			return 1;
 		}
+		if (at->type->eclass == EC_CHAR && EC_TEMP(tp->type->eclass)) {
+			int type = tp->type->localtype, res = 0;
+			ptr p = NULL;
+				
+			a->data.len = 0;
+			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval);
+			/* no result or nil means error (SQL has NULL not nil) */
+			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+				if (p)
+					GDKfree(p);
+				a->data.len = strlen(a->data.val.sval);
+				return 0;
+			}
+			a->tpe = *tp;
+			a->data.vtype = type;
+			VALset(&a->data, a->data.vtype, p);
+			if (p && ATOMextern(a->data.vtype) == 0)
+				GDKfree(p);
+		}	
 	} else {
 		ptr p = NULL;
 
