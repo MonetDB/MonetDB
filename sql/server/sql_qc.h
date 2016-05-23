@@ -48,6 +48,7 @@ extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symb
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 extern int qc_isaquerytemplate(char *nme);
+extern int qc_isapreparedquerytemplate(char *nme);
 
 #endif /*_SQL_QC_H_*/
 

@@ -277,6 +277,13 @@ qc_isaquerytemplate(str name){
 	int i,j;
 	return sscanf(name, "s%d_%d", &i,&j) == 2;
 }
+
+int
+qc_isapreparedquerytemplate(str name){
+	int i,j;
+	return sscanf(name, "p%d_%d", &i,&j) == 2;
+}
+
 int
 qc_size(qc *cache)
 {
