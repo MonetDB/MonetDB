@@ -1090,8 +1090,12 @@ SQLparser(Client c)
 			 * and bake a MAL program for it.
 			 */
 			char *q = query_cleaned(QUERY(m->scanner));
+			char qname[IDLENGTH];
+			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
+
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					  r,	/* keep relational query */
+					  qname, /* its MAL name) */
 					  m->sym,	/* the sql symbol tree */
 					  m->args,	/* the argument list */
 					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
@@ -1118,6 +1122,7 @@ SQLparser(Client c)
 		if (be->q) {
 			if (m->emode == m_prepare)
 				/* For prepared queries, return a table with result set structure*/
+				/* optimize the code block and rename it */
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
 			else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
 				/* call procedure generation (only in cache mode) */

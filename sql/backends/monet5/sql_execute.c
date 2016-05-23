@@ -198,9 +198,11 @@ SQLrun(Client c, backend *be, mvc *m){
 			
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
+
+	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){
 		p=getInstrPtr(mb,i);
-		if( (p->token == FCNcall || p->token == FUNCTIONsymbol) && p->blk) {
+		if( (p->token == FCNcall || p->token == FUNCTIONsymbol) && p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
 			mc= copyMalBlk(p->blk);
 			retc =p->retc;
 			freeMalBlk(mb);
