@@ -2182,6 +2182,8 @@ ambigious_refs( list *exps, list *refs)
 {
 	node *n;
 
+	if (!refs)
+		return 0;
 	for(n=refs->h; n; n = n->next) {
 		if (ambigious_ref(exps, n->data))
 			return 1;
