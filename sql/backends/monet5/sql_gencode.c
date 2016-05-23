@@ -2930,7 +2930,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (cq){
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
-		//SQLoptimizeFunction(c,c->curprg->def,be->mvc);
+		if ( m->emode == m_prepare)
+			SQLoptimizeFunction(c,c->curprg->def,m);
 	}
 
 	// restore the context for the wrapper code

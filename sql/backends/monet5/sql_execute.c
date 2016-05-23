@@ -188,6 +188,88 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
 }
 
+/*
+ * Execution of the SQL program is delegated to the MALengine.
+ * Different cases should be distinguished. The default is to
+ * hand over the MAL block derived by the parser for execution.
+ * However, when we received an Execute call, we make a shortcut
+ * and prepare the stack for immediate execution
+ */
+static str
+SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
+{
+	mvc *m = be->mvc;
+	int argc, parc;
+	ValPtr *argv, argvbuffer[MAXARG], v;
+	ValRecord *argrec, argrecbuffer[MAXARG];
+	MalStkPtr glb;
+	InstrPtr pci;
+	int i;
+	str ret;
+	cq *q= be->q;
+
+	pci = getInstrPtr(mb, 0);
+	if (pci->argc >= MAXARG)
+		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
+	else
+		argv = argvbuffer;
+
+	if (pci->retc >= MAXARG)
+		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
+	else
+		argrec = argrecbuffer;
+
+	/* prepare the target variables */
+	for (i = 0; i < pci->retc; i++) {
+		argv[i] = argrec + i;
+		argv[i]->vtype = getVarGDKType(mb, i);
+	}
+
+	argc = m->argc;
+	parc = q->paramlen;
+
+	if (argc != parc) {
+		if (pci->argc >= MAXARG)
+			GDKfree(argv);
+		if (pci->retc >= MAXARG)
+			GDKfree(argrec);
+		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
+	} else {
+		for (i = 0; i < m->argc; i++) {
+			atom *arg = m->args[i];
+			sql_subtype *pt = q->params + i;
+
+			if (!atom_cast(arg, pt)) {
+				/*sql_error(c, 003, buf); */
+				if (pci->argc >= MAXARG)
+					GDKfree(argv);
+				if (pci->retc >= MAXARG)
+					GDKfree(argrec);
+				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
+			}
+			argv[pci->retc + i] = &arg->data;
+		}
+	}
+	glb = (MalStkPtr) (q->stk);
+	ret = callMAL(c, mb, &glb, argv, (m->emod & mod_debug ? 'n' : 0));
+	/* cleanup the arguments */
+	for (i = pci->retc; i < pci->argc; i++) {
+		garbageElement(c, v = &glb->stk[pci->argv[i]]);
+		v->vtype = TYPE_int;
+		v->val.ival = int_nil;
+	}
+	if (glb && ret) /* error */
+		garbageCollector(c, mb, glb, glb != 0);
+	q->stk = (backend_stack) glb;
+	if (glb && SQLdebug & 1)
+		printStack(GDKstdout, mb, glb);
+	if (pci->argc >= MAXARG)
+		GDKfree(argv);
+	if (pci->retc >= MAXARG)
+		GDKfree(argrec);
+	return ret;
+}
+
 static str
 SQLrun(Client c, backend *be, mvc *m){
 	str msg= MAL_SUCCEED;
@@ -196,13 +278,20 @@ SQLrun(Client c, backend *be, mvc *m){
 	int i,j, retc;
 	ValPtr val;
 			
+	if ( *m->errstr)
+		return createException(PARSE, "SQLparser", "%s", m->errstr);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 
 	/* only consider a re-optimization when we are dealing with query templates */
 	for ( i= 1; i < mb->stop;i++){
 		p=getInstrPtr(mb,i);
-		if( (p->token == FCNcall || p->token == FUNCTIONsymbol) && p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
+		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
+			msg = SQLexecutePrepared(c, be, p->blk);
+			freeMalBlk(mb);
+			return msg;
+		}
+		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
 			mc= copyMalBlk(p->blk);
 			retc =p->retc;
 			freeMalBlk(mb);
@@ -493,95 +582,6 @@ endofcompile:
 	m->session->status = status;
 	m->session->auto_commit = ac;
 	return msg;
-}
-
-/*
- * Execution of the SQL program is delegated to the MALengine.
- * Different cases should be distinguished. The default is to
- * hand over the MAL block derived by the parser for execution.
- * However, when we received an Execute call, we make a shortcut
- * and prepare the stack for immediate execution
- */
-str
-SQLexecutePrepared(Client c, backend *be, cq *q)
-{
-	mvc *m = be->mvc;
-	int argc, parc;
-	ValPtr *argv, argvbuffer[MAXARG], v;
-	ValRecord *argrec, argrecbuffer[MAXARG];
-	MalBlkPtr mb;
-	MalStkPtr glb;
-	InstrPtr pci;
-	int i;
-	str ret;
-	Symbol qcode = q->code;
-
-	if (!qcode || qcode->def->errors) {
-		if (!qcode && *m->errstr)
-			return createException(PARSE, "SQLparser", "%s", m->errstr);
-		throw(SQL, "SQLengine", "39000!program contains errors");
-	}
-	mb = qcode->def;
-	pci = getInstrPtr(mb, 0);
-	if (pci->argc >= MAXARG)
-		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else
-		argv = argvbuffer;
-
-	if (pci->retc >= MAXARG)
-		argrec = (ValRecord *) GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else
-		argrec = argrecbuffer;
-
-	/* prepare the target variables */
-	for (i = 0; i < pci->retc; i++) {
-		argv[i] = argrec + i;
-		argv[i]->vtype = getVarGDKType(mb, i);
-	}
-
-	argc = m->argc;
-	parc = q->paramlen;
-
-	if (argc != parc) {
-		if (pci->argc >= MAXARG)
-			GDKfree(argv);
-		if (pci->retc >= MAXARG)
-			GDKfree(argrec);
-		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
-	} else {
-		for (i = 0; i < m->argc; i++) {
-			atom *arg = m->args[i];
-			sql_subtype *pt = q->params + i;
-
-			if (!atom_cast(arg, pt)) {
-				/*sql_error(c, 003, buf); */
-				if (pci->argc >= MAXARG)
-					GDKfree(argv);
-				if (pci->retc >= MAXARG)
-					GDKfree(argrec);
-				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of " "prepared statement: %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
-			}
-			argv[pci->retc + i] = &arg->data;
-		}
-	}
-	glb = (MalStkPtr) (q->stk);
-	ret = callMAL(c, mb, &glb, argv, (m->emod & mod_debug ? 'n' : 0));
-	/* cleanup the arguments */
-	for (i = pci->retc; i < pci->argc; i++) {
-		garbageElement(c, v = &glb->stk[pci->argv[i]]);
-		v->vtype = TYPE_int;
-		v->val.ival = int_nil;
-	}
-	if (glb && ret) /* error */
-		garbageCollector(c, mb, glb, glb != 0);
-	q->stk = (backend_stack) glb;
-	if (glb && SQLdebug & 1)
-		printStack(GDKstdout, mb, glb);
-	if (pci->argc >= MAXARG)
-		GDKfree(argv);
-	if (pci->retc >= MAXARG)
-		GDKfree(argrec);
-	return ret;
 }
 
 str

@@ -1120,11 +1120,11 @@ SQLparser(Client c)
 	if (err == 0) {
 		/* no parsing error encountered, finalize the code of the query wrapper */
 		if (be->q) {
-			if (m->emode == m_prepare)
+			if (m->emode == m_prepare){
 				/* For prepared queries, return a table with result set structure*/
 				/* optimize the code block and rename it */
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
-			else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
+			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
 				/* call procedure generation (only in cache mode) */
 				backend_call(be, c, be->q);
 			}
