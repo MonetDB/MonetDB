@@ -4365,6 +4365,7 @@ CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."
 --CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_DelaunayTriangles(geom Geometry, tolerance double, flags integer) RETURNS Geometry EXTERNAL NAME geom."DelaunayTriangles";
 CREATE FUNCTION ST_Dump(geom Geometry) RETURNS TABLE(id string, polygonWKB Geometry) EXTERNAL NAME geom."Dump";
+CREATE FUNCTION ST_Dump(geom Geometry, parent int) RETURNS TABLE(parent int, id string, polygonWKB Geometry) EXTERNAL NAME geom."DumpP";
 CREATE FUNCTION ST_DumpPoints(geom Geometry) RETURNS TABLE(path string, pointG Geometry) EXTERNAL NAME geom."DumpPoints";
 --CREATE FUNCTION ST_DumpRings RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_FlipCoordinates RETURNS EXTERNAL NAME

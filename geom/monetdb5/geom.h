@@ -14,6 +14,7 @@
 #include "libgeom.h"
 
 #include <mal.h>
+#include <mal_interpreter.h>
 #include <mal_atom.h>
 #include <mal_exception.h>
 #include <mal_client.h>
@@ -229,6 +230,7 @@ geom_export str wkbForceDim(wkb**, wkb**, int*);
 geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
+geom_export str wkbDumpP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbPolygonize(wkb **res, wkb **geom);
 geom_export str wkbSimplifyPreserveTopology(wkb **res, wkb **geom, float *tolerance);

@@ -336,6 +336,8 @@ command DelaunayTriangles(a:wkb, tolerance:dbl, flag:int) :wkb address wkbDelaun
 comment "Returns a Delaunay triangulation, flag=0 => collection of polygons, flag=1 => multilinestring";
 command Dump(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDump
 comment "Gets a MultiPolygon and returns the Polygons in it";
+command DumpP(a:wkb, p:int) (parent:bat[:oid, :int], id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpP
+comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
 command Polygonize(a:wkb) :wkb address wkbPolygonize
