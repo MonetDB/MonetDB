@@ -45,9 +45,9 @@ Ready.
 % mal # name
 % clob # type
 % 191 # length
-function user.s2_1():void;
+function user.s4_1():void;
     X_49:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom  treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",39);
-barrier X_82 := language.dataflow();
+barrier X_83 := language.dataflow();
     X_26 := bat.new(nil:oid,nil:str);
     X_34 := bat.append(X_26,"sys.L");
     X_43 := bat.append(X_34,"sys.L");
@@ -81,9 +81,36 @@ barrier X_82 := language.dataflow();
     language.pass(X_9);
     language.pass(C_2);
     language.pass(X_22);
-exit X_82;
+exit X_83;
     sql.resultSet(X_43,X_44,X_46,X_47,X_48,X_23,X_24);
-end user.s2_1;
+end user.s4_1;
+#inline               actions= 0 time=4 usec 
+#candidates           actions= 1 time=25 usec 
+#remap                actions= 1 time=205 usec 
+#costModel            actions= 1 time=45 usec 
+#coercions            actions= 0 time=3 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=6 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 0 time=12 usec 
+#mitosis              actions= 0 time=5 usec 
+#mergetable           actions= 0 time=60 usec 
+#deadcode             actions= 0 time=8 usec 
+#aliases              actions= 0 time=6 usec 
+#constants            actions= 3 time=49 usec 
+#commonTerms          actions= 7 time=50 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 7 time=44 usec 
+#reorder              actions= 1 time=58 usec 
+#reduce               actions=31 time=60 usec 
+#matpack              actions= 0 time=4 usec 
+#dataflow             actions=28 time=63 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=3 usec 
+#generator            actions= 0 time=1 usec 
+#profiler             actions= 1 time=42 usec 
+#garbageCollector     actions= 1 time=47 usec 
+#total                actions= 1 time=890 usec 
 #ROLLBACK;
 
 # 20:18:31 >  

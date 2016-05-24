@@ -74,6 +74,7 @@ MAPI  = (monetdb) /var/tmp/mtest-23931/.s.monetdb.39276
 QUERY = exec  3(2.3);
 
 
+
 # 09:32:45 >  
 # 09:32:45 >  Done.
 # 09:32:45 >  
