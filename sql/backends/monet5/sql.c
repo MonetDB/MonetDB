@@ -3554,8 +3554,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (c == NULL)
 				throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
-			c->T->nil = 0;
-			c->T->nonil = 0;
 			BATderiveProps(c, 0);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */

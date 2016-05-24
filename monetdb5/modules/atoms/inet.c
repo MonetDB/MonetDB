@@ -407,7 +407,7 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 		unsigned char m[4];
 
 		if (val2->mask > 0)
-			mask = ~0 << (32 - val2->mask);
+			mask = ~0U << (32 - val2->mask);
 		else
 			mask = 0;
 
@@ -499,7 +499,7 @@ INETbroadcast(inet *retval, const inet *val)
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			mask = ~0 << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
 			mask = 0;
 
@@ -591,7 +591,7 @@ INETnetmask(inet *retval, const inet *val)
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			mask = ~0 << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
 			mask = 0;
 
@@ -652,7 +652,7 @@ INETnetwork(inet *retval, const inet *val)
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			mask = ~0 << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
 			mask = 0;
 
@@ -714,7 +714,7 @@ INETabbrev(str *retval, const inet *val)
 		unsigned char m[4];
 
 		if (val->mask > 0)
-			mask = ~0 << (32 - val->mask);
+			mask = ~0U << (32 - val->mask);
 		else
 			mask = 0;
 		mask = ~mask;			/* invert the mask */
