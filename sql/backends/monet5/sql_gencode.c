@@ -31,10 +31,14 @@
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
+#include "sql_mvc.h"
+#include "sql_qc.h"
+#include "sql_optimizer.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
+#include "mal_debugger.h"
 
 #include <rel_select.h>
 #include <rel_optimizer.h>
@@ -483,8 +487,13 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	if (inline_func)
 		curBlk->inlineProp =1;
 	/* optimize the code */
-	SQLoptimizeQuery(c, c->curprg->def);
 	SQLaddQueryToCache(c);
+	if( curBlk->inlineProp == 0)
+		SQLoptimizeQuery(c, c->curprg->def);
+	else{
+		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		SQLoptimizeFunction(c,c->curprg->def,be->mvc);
+	}
 	if (backup)
 		c->curprg = backup;
 	return 0;
@@ -703,9 +712,10 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
-	SQLoptimizeFunction(c,c->curprg->def,m);
 
 	SQLaddQueryToCache(c);
+	chkProgram(c->fdout, c->nspace, c->curprg->def);
+	//SQLoptimizeFunction(c,c->curprg->def,be->mvc);
 	if (backup)
 		c->curprg = backup;
 	name[0] = old;		/* make sure stub is called */
@@ -724,7 +734,6 @@ monet5_create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, s
 }
 
 /*
- * @-
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
  */
@@ -946,7 +955,6 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 }
 
 /*
- * @-
  * The big code generation switch.
  */
 static int
@@ -2753,7 +2761,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 }
 
 /*
- * @-
  * The kernel uses two calls to procedures defined in SQL.
  * They have to be initialized, which is currently hacked
  * by using the SQLstatment.
@@ -2930,7 +2937,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (cq){
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
-		if ( m->emode == m_prepare)
+		if ( m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0))) )
 			SQLoptimizeFunction(c,c->curprg->def,m);
 	}
 
@@ -3153,8 +3160,13 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	f->sa = sa;
 	m->sa = osa;
 	/* optimize the code */
-	SQLoptimizeQuery(c, c->curprg->def);
 	SQLaddQueryToCache(c);
+	if( curBlk->inlineProp == 0)
+		SQLoptimizeFunction(c, c->curprg->def,m);
+	else{
+		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		SQLoptimizeFunction(c,c->curprg->def,be->mvc);
+	}
 	if (backup)
 		c->curprg = backup;
 	return 0;

@@ -481,8 +481,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		if( backend_callinline(be, c) < 0 ||
 			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
 			err = 1;
-		else
+		else{
 			SQLaddQueryToCache(c);
+			SQLoptimizeFunction(c,c->curprg->def,m);
+		}
 
 		if (err ||c->curprg->def->errors) {
 			/* restore the state */
@@ -696,8 +698,10 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(  backend_callinline(b, c) < 0 ||
 			 backend_dumpstmt(b, c->curprg->def, s, 1, 1) < 0)
 			msg = createException(SQL,"RAstatement","Program contains errors");
-		else 
+		else {
 			SQLaddQueryToCache(c);
+			SQLoptimizeFunction(c,c->curprg->def,m);
+		}
 			SQLrun(c,b,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
