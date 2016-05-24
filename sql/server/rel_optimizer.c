@@ -3774,7 +3774,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)*changes;
 	if (is_semi(rel->op) && rel->exps && rel->l) {
-		operator_type op = rel->op;
+		operator_type op = rel->op, lop;
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
 		sql_rel *r = rel->r;
@@ -3789,6 +3789,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		if (!is_join(l->op) || rel_is_ref(l))
 			return rel;
 
+		lop = l->op;
 		ll = l->l;
 		lr = l->r;
 		/* semijoin shouldn't be based on right relation of join */
@@ -3820,9 +3821,9 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 			l = rel_crossproduct(sql->sa, lr, r, op);
 		l->exps = nsexps;
 		if (right)
-			rel = rel_crossproduct(sql->sa, l, lr, op_join);
+			rel = rel_crossproduct(sql->sa, l, lr, lop);
 		else
-			rel = rel_crossproduct(sql->sa, l, ll, op_join);
+			rel = rel_crossproduct(sql->sa, l, ll, lop);
 		rel->exps = njexps;
 	}
 	return rel;

@@ -1081,7 +1081,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 			rrel = rn->data;
 			rrel2 = rn2->data;
 			
-			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2))
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2) || is_processed(lrel) || is_processed(rrel))
 				break;
 
 			/* push down as long as the operators allow this
@@ -1103,7 +1103,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 			lrel = ln->data;
 			rrel = rn->data;
 			
-			if (rel_is_ref(lrel) || rel_is_ref(rrel))
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || is_processed(lrel) || is_processed(rrel))
 				break;
 
 			/* push down as long as the operators allow this
@@ -1113,7 +1113,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 				(!is_select(lrel->op) &&
 				 !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
 				 lrel->op != op_join &&
-				 lrel->op != op_left))
+				 (lrel->op != op_left)))
 				break;
 			/* pushing through left head of a left join is allowed */
 			if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
@@ -2510,7 +2510,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		/* push select into the given relation */
 		return rel_push_select(sql, rel, L, e);
 	} else { /* join */
-		if (is_semi(rel->op) || is_outerjoin(rel->op)) {
+		if (is_semi(rel->op) || (is_outerjoin(rel->op) && !is_processed((rel)))) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
@@ -5823,9 +5823,6 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		rel = rel_logical_exp(sql, rel, js, sql_where);
-
-		if (!rel)
-			return rel;
 	} else if (js) {	/* using */
 		char rname[16], *rnme;
 		dnode *n = js->data.lval->h;
