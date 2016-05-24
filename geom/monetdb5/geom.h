@@ -331,3 +331,5 @@ geom_export str wkbAsX3D_bat(bat *outBAT_id, bat *inBAT_id, int *maxDecDigits, i
 geom_export str wkbAsGeoJson(str *res, wkb **geom, int *maxDecDigits, int *options);
 geom_export str wkbPatchToGeom(wkb **res, wkb **geom, dbl* px, dbl*py, dbl*pz);
 geom_export str wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz);
+
+geom_export str Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate);

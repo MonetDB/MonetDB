@@ -6571,3 +6571,172 @@ wkbPatchToGeom_bat(wkb **res, wkb **geom, bat* px, bat* py, bat* pz) {
     (void) pz;
 	return MAL_SUCCEED;
 }
+
+static str
+Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
+{
+	BAT *xl, *xr, *bl, *br;
+	oid lo, ro;
+	BATiter lBAT_iter, rBAT_iter;
+    uint32_t i = 0, j = 0;
+    int count = 0;
+    //struct timeval stop, start;
+	GEOSGeom *rGeometries = NULL;
+
+	if( (bl= BATdescriptor(*lid)) == NULL )
+		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+
+	if( (br= BATdescriptor(*rid)) == NULL ){
+		BBPunfix(*lid);
+		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
+	}
+
+	xl = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
+	if ( xl == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(xl,0);
+
+	xr = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
+	if ( xr == NULL){
+		BBPunfix(*lid);
+		BBPunfix(*rid);
+		BBPunfix(xl->batCacheid);
+		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(xr,0);
+
+	/*iterator over the BATs*/
+	lBAT_iter = bat_iterator(bl);
+	rBAT_iter = bat_iterator(br);
+    lo =  BUNfirst(bl);
+
+    printf ("BATcount %d %d\n", (int) BATcount(bl), (int) BATcount(br));
+
+    /*Get the Geometry for the inner BAT*/
+    rGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom) * BATcount(br));
+    ro = BUNfirst(br);
+    for (j = 0; j < BATcount(br); j++, ro++) {
+        wkb *rWKB = (wkb *) BUNtail(rBAT_iter, ro);
+        rGeometries[j] = wkb2geos(rWKB);
+    }
+
+	for (i = 0; i < BATcount(bl); i++, lo++) {
+		str err = NULL;
+		wkb *lWKB = NULL;
+	    mbr *lMBR = NULL;
+	    GEOSGeom lGeometry = NULL;
+        ro = BUNfirst(br);
+
+		//lWKB = (wkb *) BUNtail(lBAT_iter, i + BUNfirst(bl));
+        lWKB = (wkb *) BUNtail(lBAT_iter, lo);
+        lGeometry = wkb2geos(lWKB);
+
+	    lMBR = mbrFromGeos(lGeometry);
+	    if (lMBR == NULL || mbr_isnil(lMBR)) {
+            BBPunfix(*lid);
+            BBPunfix(*rid);
+            BBPunfix(xl->batCacheid);
+            BBPunfix(xr->batCacheid);
+            return err;
+        }
+
+        // gettimeofday(&start, NULL);
+        for (j = 0; j < BATcount(br); j++, ro++) {
+            bit out = 0;
+            mbr *rMBR = NULL;
+	        GEOSGeom rGeometry = rGeometries[j];
+    		//rWKB = (wkb *) BUNtail(rBAT_iter, j + BUNfirst(br));
+
+            if (!lGeometry ||!rGeometry) {
+                if (lGeometry)
+                    GEOSGeom_destroy(lGeometry);
+                if (rGeometry)
+                    GEOSGeom_destroy(rGeometry);
+                BBPunfix(*lid);
+                BBPunfix(*rid);
+                BBPunfix(xl->batCacheid);
+                BBPunfix(xr->batCacheid);
+                throw(MAL, "geom.Intersects", "wkb2geos failed");
+            }
+
+            if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {
+                GEOSGeom_destroy(lGeometry);
+                GEOSGeom_destroy(rGeometry);
+                throw(MAL, "geom.Intersects", "Geometries of different SRID");
+            }
+
+            rMBR = mbrFromGeos(rGeometry);
+            if (rMBR == NULL || mbr_isnil(rMBR)) {
+                BBPunfix(*lid);
+                BBPunfix(*rid);
+                BBPunfix(xl->batCacheid);
+                BBPunfix(xr->batCacheid);
+                return err;
+            }
+
+	        err = mbrOverlaps(&out, &lMBR, &rMBR);
+	        if (err != MAL_SUCCEED) {
+                BBPunfix(*lid);
+                BBPunfix(*rid);
+                BBPunfix(xl->batCacheid);
+                BBPunfix(xr->batCacheid);
+                return err;
+            } else if (out) {
+
+                count++;
+                if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
+                    GEOSGeom_destroy(lGeometry);
+                    GEOSGeom_destroy(rGeometry);
+		            throw(MAL, "geom.Contains", "GEOSIntersects failed");
+                }
+
+                /*
+                err = wkbIntersects(&out, &lWKB, &rWKB);
+                if (err != MAL_SUCCEED) {
+                    BBPunfix(*lid);
+                    BBPunfix(*rid);
+                    BBPunfix(xl->batCacheid);
+                    BBPunfix(xr->batCacheid);
+                    return err;
+                }
+                */
+                if (out) {
+                    BUNappend(xl, &lo, FALSE);
+                    BUNappend(xr, &ro, FALSE);
+                }
+            }
+	        GDKfree(rMBR);
+        }
+        if (lGeometry)
+            GEOSGeom_destroy(lGeometry);
+        GDKfree(lMBR);
+
+        //gettimeofday(&stop, NULL);
+        //printf("took %lu\n", stop.tv_usec - start.tv_usec);
+	}
+    if (rGeometries) {
+        for (j = 0; j < BATcount(br);j++) {
+            GEOSGeom_destroy(rGeometries[j]);
+        }
+        GDKfree(rGeometries);
+    }
+	BBPunfix(*lid);
+	BBPunfix(*rid);
+	BBPkeepref(*lres = xl->batCacheid);
+	BBPkeepref(*rres = xr->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+Intersectssubjoin(bat *lres, bat *rres, bat *lid, bat *rid, bat *sl, bat *sr, bit *nil_matches, lng *estimate)
+{
+    (void)sl;
+    (void)sr;
+    (void)nil_matches;
+    (void)estimate;
+    return Intersectssubjoin_intern(lres, rres, lid, rid);
+}
+
