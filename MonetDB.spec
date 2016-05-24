@@ -107,7 +107,10 @@ URL: http://www.monetdb.org/
 Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP4/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
 BuildRequires: systemd
+%endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
@@ -763,13 +766,15 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+# no _unitdir macro
+%exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_unitdir}/monetdbd.service
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
