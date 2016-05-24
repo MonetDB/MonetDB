@@ -27,7 +27,7 @@
 
 
 err
-openConnectionTCP(int *ret, char* bindaddr, unsigned short port, FILE *log)
+openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -95,7 +95,7 @@ openConnectionTCP(int *ret, char* bindaddr, unsigned short port, FILE *log)
 }
 
 err
-openConnectionUDP(int *ret, char* bindaddr, unsigned short port)
+openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 {
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
@@ -150,7 +150,7 @@ openConnectionUDP(int *ret, char* bindaddr, unsigned short port)
 }
 
 err
-openConnectionUNIX(int *ret, char *path, int mode, FILE *log)
+openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 {
 	struct sockaddr_un server;
 	int sock;
