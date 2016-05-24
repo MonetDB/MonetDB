@@ -72,6 +72,7 @@ stderr of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-23931/.s.monetdb.39276
 QUERY = exec  3(2.3);
+ERROR = !wrong type for argument 1 of function call: decimal, expected wrd
 
 
 
