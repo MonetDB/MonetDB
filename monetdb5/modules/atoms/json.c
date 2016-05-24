@@ -529,7 +529,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 					else
 						r = 0;
 				} else if (terms[ti + 1].token == END_STEP) {
-					if (jt->elm[i].kind == JSON_VALUE || jt->elm[i].kind == JSON_VALUE)
+					if (jt->elm[i].kind == JSON_VALUE)
 						r = JSONgetValue(jt, jt->elm[i].child);
 					else
 						r = JSONgetValue(jt, i);

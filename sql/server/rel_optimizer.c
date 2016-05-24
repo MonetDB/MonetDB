@@ -2241,6 +2241,8 @@ ambigious_refs( list *exps, list *refs)
 {
 	node *n;
 
+	if (!refs)
+		return 0;
 	for(n=refs->h; n; n = n->next) {
 		if (ambigious_ref(exps, n->data))
 			return 1;
@@ -6868,6 +6870,12 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 
 	if (!min || !max || !emin || !emax)
 		return 0;
+
+	if (strcmp("nil", (char*)min) == 0)
+		return 0;
+	if (strcmp("nil", (char*)max) == 0)
+		return 0;
+
 	if (t->type->localtype == TYPE_dbl) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);

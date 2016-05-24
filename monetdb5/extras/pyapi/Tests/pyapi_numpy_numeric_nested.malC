@@ -29,15 +29,15 @@ bat.append(d, 0.02:dbl);
 
 
 # square an array
-sqr:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "return(arg1*arg1)", a);
+sqr:bat[:dbl] := pyapi.eval(nil:ptr, "return(arg1*arg1)", a);
 io.print(sqr);
 
 # then take the root of that array again
-a:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "return(numpy.sqrt(arg1))", sqr);
+a:bat[:dbl] := pyapi.eval(nil:ptr, "return(numpy.sqrt(arg1))", sqr);
 io.print(a);
 
 # do some numpy operations
-x:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "return(numpy.prod(arg1*arg2*arg3*arg4)*numpy.sum(arg1*arg2*arg3*arg4))", a, b, c, d);
+x:bat[:dbl] := pyapi.eval(nil:ptr, "return(numpy.prod(arg1*arg2*arg3*arg4)*numpy.sum(arg1*arg2*arg3*arg4))", a, b, c, d);
 io.print(x);
 
 fib:= bat.new(:oid,:int);
@@ -73,5 +73,5 @@ bat.append(fib, 28:int);
 bat.append(fib, 29:int);
 
 # define a function within the main function and map it to a BAT
-s:bat[:oid,:dbl] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(list(map(fibonacci, arg1)))", fib);
+s:bat[:dbl] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(list(map(fibonacci, arg1)))", fib);
 io.print(s);

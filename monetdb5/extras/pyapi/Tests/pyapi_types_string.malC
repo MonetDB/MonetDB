@@ -1,11 +1,11 @@
-﻿
+
 # basic strings
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"asdf":str);
 bat.append(bstr,"sd asd asd asd asd a":str);
 bat.append(bstr,"test123":str);
 bat.append(bstr,"test":str);
-rstr:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rstr:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rstr);
 
 # strings with nil value
@@ -14,7 +14,7 @@ bat.append(bstr,"asdf":str);
 bat.append(bstr,"sd asd asd asd asd a":str);
 bat.append(bstr,nil:str);
 bat.append(bstr,"test":str);
-rstr1:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rstr1:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rstr1);
 
 # unicode strings
@@ -24,36 +24,36 @@ bat.append(astr,"héllo":str);
 bat.append(astr,"éáú üüäãö":str);
 bat.append(astr,"幺巾乡阜阝测试一些中国符号":str);
 bat.append(astr,"いくつかの日本のシンボルをテストします":str);
-rstr2:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",astr);
+rstr2:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",astr);
 io.print(rstr2);
 
 # return python strings
-rstr3:bat[:oid,:str] := pyapi.eval(nil:ptr,"return([[\"Hello\", \"World\"]])");
+rstr3:bat[:str] := pyapi.eval(nil:ptr,"return([[\"Hello\", \"World\"]])");
 io.print(rstr3);
 
 # convert boolean to string
-rstr4:bat[:oid,:str] := pyapi.eval(nil:ptr,"return([[True, True, False]])");
+rstr4:bat[:str] := pyapi.eval(nil:ptr,"return([[True, True, False]])");
 io.print(rstr4);
 
 # convert bit to string
 bbit:= bat.new(:oid,:bit);
 bat.append(bbit,1:bit);
 bat.append(bbit,0:bit);
-rbit:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bbit);
+rbit:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bbit);
 io.print(rbit);
 
 # convert bte to string
 bbte:= bat.new(:oid,:bte);
 bat.append(bbte,42:bte);
 bat.append(bbte,84:bte);
-rbte:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bbte);
+rbte:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bbte);
 io.print(rbte);
 
 # convert short to string
 bsht:= bat.new(:oid,:sht);
 bat.append(bsht,42:sht);
 bat.append(bsht,82:sht);
-rsht:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bsht);
+rsht:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bsht);
 io.print(rsht);
 
 # convert int to string
@@ -63,14 +63,14 @@ bat.append(bint,846930886:int);
 bat.append(bint,1681692777:int);
 bat.append(bint,1714636915:int);
 bat.append(bint,nil:int);
-rstr5:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bint);
+rstr5:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bint);
 io.print(rstr5);
 
 # convert long to string
 blng:= bat.new(:oid,:lng);
 bat.append(blng,1804289383L);
 bat.append(blng,846930886L);
-rlng:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",blng);
+rlng:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",blng);
 io.print(rlng);
 
 # convert float to string
@@ -80,7 +80,7 @@ bat.append(bflt,846.930886:flt);
 bat.append(bflt,16.81692777:flt);
 bat.append(bflt,1714636.915:flt);
 bat.append(bflt,nil:flt);
-rstr6:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bflt);
+rstr6:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bflt);
 io.print(rstr6);
 
 # convert dbl to string
@@ -90,28 +90,28 @@ bat.append(bdbl,846.930886:dbl);
 bat.append(bdbl,16.81692777:dbl);
 bat.append(bdbl,1714636.915:dbl);
 bat.append(bdbl,nil:dbl);
-rstr7:bat[:oid,:str] := pyapi.eval(nil:ptr,"return(arg1)",bdbl);
+rstr7:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bdbl);
 io.print(rstr7);
 
 # convert string to bit
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"1":str);
 bat.append(bstr,"0":str);
-rbit8:bat[:oid,:bit] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rbit8:bat[:bit] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rbit8);
 
 # convert string to bte
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"42":str);
 bat.append(bstr,"84":str);
-rbte9:bat[:oid,:bte] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rbte9:bat[:bte] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rbte9);
 
 # convert string to short
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"42":str);
 bat.append(bstr,"82":str);
-rsht10:bat[:oid,:sht] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rsht10:bat[:sht] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rsht10);
 
 # convert string to int
@@ -121,21 +121,21 @@ bat.append(bstr,"846930886":str);
 bat.append(bstr,"1681692777":str);
 bat.append(bstr,"1714636915":str);
 bat.append(bstr,nil:str);
-rstr11:bat[:oid,:int] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rstr11:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rstr11);
 
 # convert string to oid
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"18042893":str);
 bat.append(bstr,"8469308":str);
-rwrd13:bat[:oid,:oid] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rwrd13:bat[:oid] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rwrd13);
 
 # convert string to long
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"1804289383":str);
 bat.append(bstr,"846930886":str);
-rlng14:bat[:oid,:lng] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rlng14:bat[:lng] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rlng14);
 
 # convert string to float
@@ -145,7 +145,7 @@ bat.append(bstr,"846.930886":str);
 bat.append(bstr,"16.81692777":str);
 bat.append(bstr,"1714636.915":str);
 bat.append(bstr,nil:str);
-rstr15:bat[:oid,:flt] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rstr15:bat[:flt] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rstr15);
 
 # convert string to dbl
@@ -155,5 +155,5 @@ bat.append(bstr,"846.930886":str);
 bat.append(bstr,"16.81692777":str);
 bat.append(bstr,"1714636.915":str);
 bat.append(bstr,nil:str);
-rstr16:bat[:oid,:dbl] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
+rstr16:bat[:dbl] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rstr16);

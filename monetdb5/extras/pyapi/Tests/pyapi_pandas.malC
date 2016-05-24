@@ -25,7 +25,7 @@ bat.append(b,1649760492:dbl);
 bat.append(b,596516649:dbl);
 bat.append(b,1189641421:dbl);
 
-(r:bat[:oid,:int], s:bat[:oid,:dbl]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2})\ngrouped = df.groupby('Group')\nreturn([grouped.groups.keys(),grouped.sum().values.flatten()])", g, b);
+(r:bat[:int], s:bat[:dbl]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2})\ngrouped = df.groupby('Group')\nreturn([grouped.groups.keys(),grouped.sum().values.flatten()])", g, b);
 
 io.print(r,s);
 
@@ -46,8 +46,8 @@ bat.append(c,123:int);
 bat.append(c,442:int);
 
 # return a pandas dataframe
-(r2:bat[:oid,:int], s2:bat[:oid,:int]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2})\nreturn(df)", g, c);
+(r2:bat[:int], s2:bat[:int]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2})\nreturn(df)", g, c);
 io.print(r2,s2);
 
 # return a pandas dataframe with the incorrect format (return a dataframe with 3 columns when 2 columns are expected)
-#(r3:bat[:oid,:int], s3:bat[:oid,:int]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2, 'Values2': arg2})\nreturn(df)", g, c);
+#(r3:bat[:int], s3:bat[:int]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2, 'Values2': arg2})\nreturn(df)", g, c);
