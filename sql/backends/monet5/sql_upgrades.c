@@ -1703,6 +1703,8 @@ sql_update_default(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_PROC);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
 	if (schema) {
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
