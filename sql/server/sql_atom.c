@@ -1100,7 +1100,7 @@ atom_cast(atom *a, sql_subtype *tp)
 			return 1;
 		}
 		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
-			int type = tp->type->localtype, res = 0, len = strlen(a->data.val.sval);
+			int type = tp->type->localtype, res = 0, len = (int) strlen(a->data.val.sval);
 			ptr p = NULL;
 				
 			a->data.len = 0;
@@ -1109,7 +1109,7 @@ atom_cast(atom *a, sql_subtype *tp)
 			if (res < len || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				if (p)
 					GDKfree(p);
-				a->data.len = strlen(a->data.val.sval);
+				a->data.len = (int) strlen(a->data.val.sval);
 				return 0;
 			}
 			a->tpe = *tp;
