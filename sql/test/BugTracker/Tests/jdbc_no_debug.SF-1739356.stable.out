@@ -48,7 +48,7 @@ Operation successful
 +--------------------------------------------------------------------------------------------------+
 | mal                                                                 |
 +==================================================================================================+
-| function user.s4_1{autoCommit=true}():void;                                                      |
+| function user.s2_1{autoCommit=true}():void;                                                      |
 |     X_43:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
@@ -74,7 +74,7 @@ Operation successful
 |     X_33 := bat.append(X_27,X_32,true);                                                          |
 |     X_35:wrd := aggr.sum(X_33);                                                                  |
 |     sql.resultSet(".L3","L3","wrd",64,0,7,X_35);                                                 |
-| end user.s4_1;                                                                                   |
+| end user.s2_1;                                                                                   |
 +--------------------------------------------------------------------------------------------------+
 27 rows
 
