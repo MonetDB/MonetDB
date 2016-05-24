@@ -274,6 +274,7 @@ create_winconfig_conds_new_py:
 	$(ECHO) # > "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF BITS32
 	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -355,6 +356,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_LIBR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_LIBR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBXML
+	$(ECHO) HAVE_LIBXML_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBXML_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBZ
 	$(ECHO) HAVE_LIBZ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
