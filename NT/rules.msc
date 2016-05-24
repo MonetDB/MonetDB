@@ -184,6 +184,11 @@ R.lib: "$(libr_DLL)"
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 !ENDIF
 
+!IFDEF HAVE_LIBPY
+libpy_LIBS = $(PYTHON2DIR)\libs\python27.lib
+libpy_CFLAGS = -DHAVE_LIBPY -I$(PYTHON2DIR)\include -I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include
+!ENDIF
+
 # some programs we use, probably no need to edit
 
 # install python, flex and bison on your systems
@@ -274,6 +279,7 @@ create_winconfig_conds_new_py:
 	$(ECHO) # > "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF BITS32
 	$(ECHO) BITS32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) BITS64_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 	$(ECHO) BITS64OID32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) BITS32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -351,10 +357,26 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_LIBPY
+!IFDEF HAVE_LIBPANDAS
+	$(ECHO) HAVE_LIBPANDAS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBPANDAS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+	$(ECHO) HAVE_LIBPY_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBPANDAS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBPY_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_LIBR
 	$(ECHO) HAVE_LIBR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_LIBR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBXML
+	$(ECHO) HAVE_LIBXML_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBXML_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBZ
 	$(ECHO) HAVE_LIBZ_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

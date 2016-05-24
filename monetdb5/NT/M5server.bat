@@ -39,8 +39,14 @@ for /d %%i in ("%MONETDBDIR%"\sql_logs\*) do move "%%i" "%MONETDBDIR%\dbfarm"\%%
 rmdir "%MONETDBDIR%\sql_logs"
 :skipmove
 
+set MONETDBPYTHONUDF="embedded_py=false"
+
+if not exist "%MONETDB%\pyapi_locatepython.bat" goto skippython
+call "%MONETDB%\pyapi_locatepython.bat"
+:skippython
+
 rem start the real server
-"%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*
+"%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set %MONETDBPYTHONUDF% --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*
 
 if ERRORLEVEL 1 pause
 

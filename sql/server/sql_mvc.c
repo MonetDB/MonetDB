@@ -1624,7 +1624,7 @@ val_get_number(ValRecord *v)
 		if (v->vtype == TYPE_bit) 
 			if (v->val.btval)
 				return 1;
-			return 0;
+		return 0;
 	}
 	return 0;
 }

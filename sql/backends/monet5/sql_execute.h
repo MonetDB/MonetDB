@@ -15,5 +15,6 @@ sql5_export str SQLstatementIntern(Client c, str *expr, str nme, bit execute, bi
 sql5_export str SQLengineIntern(Client c, backend *be);
 sql5_export str RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export void SQLdestroyResult(res_table *destroy);
 
 #endif /* _SQL_EXECUTE_H_ */

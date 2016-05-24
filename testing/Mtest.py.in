@@ -193,6 +193,13 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
+if os.name == 'nt':
+    p = os.path.join(sys.prefix, 'Lib')
+    if 'PYTHONPATH' in os.environ:
+        p = os.environ['PYTHONPATH'] + os.pathsep + p
+    os.environ['PYTHONPATH'] = p
+    os.environ['PYTHONHOME'] = sys.prefix
+
 import string                   # for whitespace
 def splitcommand(cmd):
     '''Like string.split, except take quotes into account.'''
@@ -306,6 +313,8 @@ CONDITIONALS = {
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
+    'HAVE_LIBPANDAS'       : "@HAVE_LIBPANDAS_FALSE@",
+    'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
@@ -2789,6 +2798,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
+            # enable Python integration in server
+            if CONDITIONALS['HAVE_LIBPY']:
+                Srvr.extend(['--set', 'embedded_py=true'])
+                
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
             while 0 < len(ln) and not ln.startswith('Ready.'):

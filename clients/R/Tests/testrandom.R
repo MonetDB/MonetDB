@@ -1,9 +1,5 @@
 # Mtest boilerplate
-ll <- NULL
-if (Sys.getenv("TSTTRGDIR") != "") {
-	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
-}
-library(MonetDB.R,quietly=T,lib.loc=ll)
+library(MonetDBLite,quietly=T,lib.loc=ll)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000

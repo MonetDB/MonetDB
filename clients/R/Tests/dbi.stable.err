@@ -32,7 +32,7 @@ stderr of test 'dbi` in directory 'clients/R` itself:
 
 Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.
 Warning message:
-'MonetDB.R::isIdCurrent' is deprecated.
+'MonetDBLite::isIdCurrent' is deprecated.
 Use 'dbIsValid' instead.
 See help("Deprecated") 
 Identifier(s) "Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width", "Species" contain uppercase or reserved SQL characters and need(s) to be quoted in queries.

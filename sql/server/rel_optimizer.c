@@ -2241,6 +2241,8 @@ ambigious_refs( list *exps, list *refs)
 {
 	node *n;
 
+	if (!refs)
+		return 0;
 	for(n=refs->h; n; n = n->next) {
 		if (ambigious_ref(exps, n->data))
 			return 1;
@@ -3832,7 +3834,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)*changes;
 	if (is_semi(rel->op) && rel->exps && rel->l) {
-		operator_type op = rel->op;
+		operator_type op = rel->op, lop;
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
 		sql_rel *r = rel->r;
@@ -3847,6 +3849,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		if (!is_join(l->op) || rel_is_ref(l))
 			return rel;
 
+		lop = l->op;
 		ll = l->l;
 		lr = l->r;
 		/* semijoin shouldn't be based on right relation of join */
@@ -3878,9 +3881,9 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 			l = rel_crossproduct(sql->sa, lr, r, op);
 		l->exps = nsexps;
 		if (right)
-			rel = rel_crossproduct(sql->sa, l, lr, op_join);
+			rel = rel_crossproduct(sql->sa, l, lr, lop);
 		else
-			rel = rel_crossproduct(sql->sa, l, ll, op_join);
+			rel = rel_crossproduct(sql->sa, l, ll, lop);
 		rel->exps = njexps;
 	}
 	return rel;
@@ -4368,8 +4371,8 @@ rel_groupby_order(int *changes, mvc *sql, sql_rel *rel)
 
 /* reduce group by expressions based on pkey info 
  *
- * The reduced group by and aggr expressions are restored via
- * a join with the base table (ie which is similar to late projection).
+ * The reduced group by and (derived) aggr expressions are restored via
+ * extra (new) aggregate columns.
  */
 static sql_rel *
 rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel) 
@@ -4458,13 +4461,9 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 					}
 				}
 				if (cnr && nr && list_length(tbls[j]->pkey->k.columns) == nr) {
-					char rname[16], *rnme = sa_strdup(sql->sa, number2name(rname, 16, ++sql->label));
-					sql_rel *r = rel_basetable(sql, tbls[j], rnme);
 					list *ngbe = new_exp_list(sql->sa);
 					list *exps = rel->exps, *nexps = new_exp_list(sql->sa);
-					list *lpje = new_exp_list(sql->sa);
 
-					r = rel_project(sql->sa, r, new_exp_list(sql->sa));
 					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
 						sql_exp *e = n->data;
 
@@ -4472,22 +4471,9 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 						 * of this table. And those unrelated to this table. */
 						if (scores[l] != -1) 
 							append(ngbe, e); 
-						/* primary key's are used in the late projection */
-						if (scores[l] == 1) {
-							sql_column *c = exp_find_column_(rel, e, -2, &bt);
-							
-							sql_exp *ls = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
-							sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
-							append(r->exps, rs);
-
-							e = exp_compare(sql->sa, ls, rs, cmp_equal);
-							append(lpje, e);
-
-							e->p = prop_create(sql->sa, PROP_FETCH, e->p);
-						}
 					}
 					rel->r = ngbe;
-					/* remove gbe also from aggr list */
+					/* rewrite gbe and aggr, in the aggr list */
 					for (m = exps->h; m; m = m->next ){
 						sql_exp *e = m->data;
 						int fnd = 0;
@@ -4496,26 +4482,17 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 							sql_exp *gb = n->data;
 
 							if (scores[l] == -1 && exp_refers(e,gb)) {
-								sql_column *c = exp_find_column_(rel, e, -2, &bt);
-								sql_exp *rs;
-							       
-								if (!c)
-									c = exp_find_column_(rel, gb, -2, &bt);
-								rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+								sql_exp *rs = exp_column(sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_intern(gb));
 								exp_setname(sql->sa, rs, exp_find_rel_name(e), exp_name(e));
-								append(r->exps, rs);
+								e = rs;
 								fnd = 1;
 							}
 						}
-						if (!fnd)
-							append(nexps, e);
+						append(nexps, e);
 					}
 					/* new reduced aggr expression list */
 					assert(list_length(nexps)>0);
 					rel->exps = nexps;
-					rel = rel_crossproduct(sql->sa, rel, r, op_join);
-					rel->exps = lpje;
-					rel = rel_project(sql->sa, rel, exps_alias(sql->sa, exps));
 					/* only one reduction at a time */
 					*changes = 1;
 					free(bts);
@@ -6868,6 +6845,12 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 
 	if (!min || !max || !emin || !emax)
 		return 0;
+
+	if (strcmp("nil", (char*)min) == 0)
+		return 0;
+	if (strcmp("nil", (char*)max) == 0)
+		return 0;
+
 	if (t->type->localtype == TYPE_dbl) {
 		atom *cmin = atom_general(sql->sa, t, min);
 		atom *cmax = atom_general(sql->sa, t, max);

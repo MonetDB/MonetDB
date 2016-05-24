@@ -328,6 +328,7 @@ BATattach(int tt, const char *heapfile, int role)
 	 * are no NIL values, we cannot safely assume there are none.
 	 */
 	bn->T->nonil = 0;
+	bn->T->nil = 0;
 	if (cap > 1) {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
