@@ -1615,7 +1615,11 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #ifdef _MSC_VER
 		    WSAGetLastError() == WSAEWOULDBLOCK &&
 #else
-		    (errno == EAGAIN || errno == EWOULDBLOCK) && /* it was! */
+		    (errno == EAGAIN
+#if EAGAIN != EWOULDBLOCK
+		     || errno == EWOULDBLOCK
+#endif
+			    ) && /* it was! */
 #endif
 		    s->timeout_func != NULL && /* callback function exists */
 		    !(*s->timeout_func)())     /* callback says don't stop */
@@ -1641,7 +1645,11 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #ifdef _MSC_VER
 		    WSAGetLastError() == WSAEWOULDBLOCK
 #else
-		    (errno == EAGAIN || errno == EWOULDBLOCK)
+		    (errno == EAGAIN
+#if EAGAIN != EWOULDBLOCK
+		     || errno == EWOULDBLOCK
+#endif
+			    )
 #endif
 			)
 			s->errnr = MNSTR_TIMEOUT;

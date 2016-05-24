@@ -413,9 +413,9 @@ char **getHelp(Module m, str inputpat, int completion)
 	if( t) { sig++; *t=0; completion=0; }
 
 	/* rudimentary patterns only.
-	 	*.nme  nme.* nme.nme *.*
-	   ignore the rest.
-	*/
+	 *     *.nme  nme.* nme.nme *.*
+	 * ignore the rest.
+	 */
 	modnme= pat;
 	if( (fcnnme = strchr(pat,'.')) ){
 		*fcnnme++ = 0;
@@ -439,20 +439,20 @@ char **getHelp(Module m, str inputpat, int completion)
 	/* display module information if there is no function */
 	if( fcnnme == NULL){
 		for(i=0; i< MAXSCOPE; i++)
-		for(j=0; j< MAXSCOPE; j++){
-			m= scopeJump[i][j];
-			while(m != NULL){
-				if( strncmp(modnme,m->name,len1) ==0  || *modnme=='*'){
-					msg[top++] = GDKstrdup(m->name);
-					msg[top] =0;
-					if( top == maxhelp-1) {
-						msg= (char **) GDKrealloc(msg,sizeof(str)* maxhelp);
-						maxhelp+= MAXHELP;
+			for(j=0; j< MAXSCOPE; j++){
+				m= scopeJump[i][j];
+				while(m != NULL){
+					if( strncmp(modnme,m->name,len1) ==0  || *modnme=='*'){
+						msg[top++] = GDKstrdup(m->name);
+						msg[top] =0;
+						if( top == maxhelp-1) {
+							msg= (char **) GDKrealloc(msg,sizeof(str)* maxhelp);
+							maxhelp+= MAXHELP;
+						}
 					}
+					m= m->sibling;
 				}
-				m= m->sibling;
 			}
-		}
 		GDKfree(pat);
 		return msg;
 	}
@@ -466,78 +466,78 @@ char **getHelp(Module m, str inputpat, int completion)
 
 #ifdef MAL_SCOPE_DEBUG
 	printf("showHelp: %s %s [" SZFMT "] %s %s\n",
-			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
+		   modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
 #endif
 	for(i=0; i< MAXSCOPE; i++)
-	for(k=0; k< MAXSCOPE; k++){
-	  m= scopeJump[i][k];
-	  while( m){
-		if( strncmp(modnme,m->name,len1) && *modnme!='*' ) {
-			m= m->sibling;
-			continue;
-		}
-		for(j=0;j<MAXSCOPE;j++)
-		for(s= m->subscope[j]; s; s= s->peer)
-			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
-				fnd=0;
-				if( completion ) {
-					snprintf(buf,sizeof(buf)," %s.%s",
-						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
-					if( tstDuplicate(msg,buf+1) ) {
-						continue;
-					}
-				} else
-				if( doc) {
-					char *v;
-
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
-					buf[0]=' ';
-
-					v= strstr(buf,"address");
-					if( v) *v=0;
-					if( tstDuplicate(msg,buf+1) && s->def->help==0 ) fnd++;
-					if(fnd) continue;
-
-					msg[top++]= GDKstrdup(buf+1);
-					if(v){
-						*v='a';
-						msg[top++]= GDKstrdup(v);
-					}
-					msg[top] = 0;
-
-					if( s->def->help) {
-						char *w;
-						strcpy(buf+1,"comment ");
-						v= buf+1+8;
-						for( w= s->def->help; *w && v <buf+sizeof(buf)-2; w++)
-						if( *w == '\n'){
-							/*ignore */
-						} else *v++ = *w;
-						*v = 0;
-					} else fnd = 1; /* ignore non-existing comment */
-					if(v){
-						*v++ ='\n';
-						*v=0;
-					}
-				} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||
-							*fcnnme=='*' ) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
-					buf[0]=' ';
-					t= strstr(buf,"address");
-					if( t) *t= 0;
+		for(k=0; k< MAXSCOPE; k++){
+			m= scopeJump[i][k];
+			while( m){
+				if( strncmp(modnme,m->name,len1) && *modnme!='*' ) {
+					m= m->sibling;
+					continue;
 				}
-				if( fnd == 0 && buf[1]){
-					msg[top++] = GDKstrdup(buf+1);
-					msg[top] = 0;
-				}
-				if( top >= maxhelp-3){
-					msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
-					maxhelp+= MAXHELP;
-				}
+				for(j=0;j<MAXSCOPE;j++)
+					for(s= m->subscope[j]; s; s= s->peer)
+						if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
+							fnd=0;
+							if( completion ) {
+								snprintf(buf,sizeof(buf)," %s.%s",
+										 ((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
+								if( tstDuplicate(msg,buf+1) ) {
+									continue;
+								}
+							} else
+								if( doc) {
+									char *v;
+
+									fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
+									buf[0]=' ';
+
+									v= strstr(buf,"address");
+									if( v) *v=0;
+									if( tstDuplicate(msg,buf+1) && s->def->help==0 ) fnd++;
+									if(fnd) continue;
+
+									msg[top++]= GDKstrdup(buf+1);
+									if(v){
+										*v='a';
+										msg[top++]= GDKstrdup(v);
+									}
+									msg[top] = 0;
+
+									if( s->def->help) {
+										char *w;
+										strcpy(buf+1,"comment ");
+										v= buf+1+8;
+										for( w= s->def->help; *w && v <buf+sizeof(buf)-2; w++)
+											if( *w == '\n'){
+												/*ignore */
+											} else *v++ = *w;
+										*v = 0;
+									} else fnd = 1; /* ignore non-existing comment */
+									if(v){
+										*v++ ='\n';
+										*v=0;
+									}
+								} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||
+										   *fcnnme=='*' ) {
+									fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
+									buf[0]=' ';
+									t= strstr(buf,"address");
+									if( t) *t= 0;
+								}
+							if( fnd == 0 && buf[1]){
+								msg[top++] = GDKstrdup(buf+1);
+								msg[top] = 0;
+							}
+							if( top >= maxhelp-3){
+								msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
+								maxhelp+= MAXHELP;
+							}
+						}
+				m = m->sibling;
 			}
-			m= m->sibling;
 		}
-	}
 	GDKfree(pat);
 	return msg;
 }
@@ -565,48 +565,48 @@ char **getHelpMatch(char *pat){
 		return msg;
 
 	for(i=0; i< MAXSCOPE; i++)
-	for(k=0; k< MAXSCOPE; k++){
-		m= scopeJump[i][k];
-		while( m){
-			for(j=0;j<MAXSCOPE;j++)
-			if( m->subscope[j])
-				for(s= m->subscope[j]; s; s= s->peer)
-				if( strstr(m->name,pat) || strstr(s->name,pat) ||
-					(s->def->help && strstr(s->def->help,pat))) {
-					char *v,*w;
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
-					buf[0]=' ';
-					if( s->def->help ){
-						v= strchr(buf,0);
-						assert (v != NULL); /* fool Coverity */
-						*v++ = '\\';
-						*v++ = 'n';
-						*v++ = '#';
-						for( w= s->def->help; *w && v <buf+sizeof(buf)-3; w++)
-						if( *w == '\n'){
-							*v++ = '\\';
-							*v++ = 'n';
-							*v++ = '#';
-							w++;
-							if( isspace((int) *w)) {
-								for(; *w && isspace((int) *w); w++);
-								w--;
+		for(k=0; k< MAXSCOPE; k++){
+			m= scopeJump[i][k];
+			while( m){
+				for(j=0;j<MAXSCOPE;j++)
+					if( m->subscope[j])
+						for(s= m->subscope[j]; s; s= s->peer)
+							if( strstr(m->name,pat) || strstr(s->name,pat) ||
+								(s->def->help && strstr(s->def->help,pat))) {
+								char *v,*w;
+								fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,sizeof(buf));
+								buf[0]=' ';
+								if( s->def->help ){
+									v= strchr(buf,0);
+									assert (v != NULL); /* fool Coverity */
+									*v++ = '\\';
+									*v++ = 'n';
+									*v++ = '#';
+									for( w= s->def->help; *w && v <buf+sizeof(buf)-3; w++)
+										if( *w == '\n'){
+											*v++ = '\\';
+											*v++ = 'n';
+											*v++ = '#';
+											w++;
+											if( isspace((int) *w)) {
+												for(; *w && isspace((int) *w); w++);
+												w--;
+											}
+										} else *v++ = *w;
+									*v++ = '\\';
+									*v++ = 'n';
+									*v = 0;
+								}
+								msg[top++] = GDKstrdup(buf);
+								msg[top] = 0;
+								if( top == maxhelp-1){
+									msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
+									maxhelp+= MAXHELP;
+								}
 							}
-						} else *v++ = *w;
-						*v++ = '\\';
-						*v++ = 'n';
-						*v = 0;
-					}
-					msg[top++] = GDKstrdup(buf);
-					msg[top] = 0;
-					if( top == maxhelp-1){
-						msg= (char **) GDKrealloc(msg,sizeof(str)* (maxhelp+MAXHELP));
-						maxhelp+= MAXHELP;
-					}
-				}
-			m= m->sibling;
+				m= m->sibling;
+			}
 		}
-	}
 	return msg;
 }
 
