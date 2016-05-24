@@ -1099,7 +1099,7 @@ atom_cast(atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			return 1;
 		}
-		if (at->type->eclass == EC_CHAR && EC_TEMP(tp->type->eclass)) {
+		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
 			int type = tp->type->localtype, res = 0, len = strlen(a->data.val.sval);
 			ptr p = NULL;
 				
