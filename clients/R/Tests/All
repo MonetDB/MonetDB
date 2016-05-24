@@ -2,7 +2,6 @@ HAVE_LIBR?deps-install
 HAVE_LIBR?install
 HAVE_LIBR?deps-test
 HAVE_LIBR?dbi
-HAVE_LIBR?survey
 HAVE_LIBR?dplyr
 HAVE_LIBR?dplyr-flights
 HAVE_LIBR&NOT_WIN32?dbapply
