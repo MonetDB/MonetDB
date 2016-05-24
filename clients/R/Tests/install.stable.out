@@ -25,13 +25,12 @@ stdout of test 'install` in directory 'clients/R` itself:
 
 Ready.
 
-# 16:38:05 >  
-# 16:38:05 >  "R" "--vanilla" "--slave" "--args" "31330"
-# 16:38:05 >  
+# 15:11:08 >  
+# 15:11:08 >  "R" "--vanilla" "--slave" "--args" "32328"
+# 15:11:08 >  
 
-[1] TRUE
 
-# 16:38:07 >  
-# 16:38:07 >  "Done."
-# 16:38:07 >  
+# 15:11:12 >  
+# 15:11:12 >  "Done."
+# 15:11:12 >  
 

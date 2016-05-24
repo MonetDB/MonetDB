@@ -1,6 +1,3 @@
-if (Sys.getenv("TSTTRGDIR") != "") {
-	.libPaths(c(.libPaths(), paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")))
-}
 ff <- textConnection("asdf", open="w")
 # hide output from connect and attach since it would blow up the test output
 # dangerous since it might hide useful warnings
@@ -17,7 +14,7 @@ if (length(args) > 0)
 if (length(args) > 1) 
 	dbname <- args[[2]]
 
-dps <- MonetDB.R::src_monetdb(dbname=dbname, port=dbport)
+dps <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport)
 copy_lahman(dps)
 
 }))
