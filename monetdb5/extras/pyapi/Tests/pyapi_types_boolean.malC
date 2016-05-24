@@ -11,5 +11,5 @@ bat.append(bint,846930886:int);
 bat.append(bint,1681692777:int);
 bat.append(bint,1714636915:int);
 bat.append(bint,nil:int);
-rint:bat[:oid,:int] := pyapi.eval(nil:ptr,"return(arg1)",bint);
+rint:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bint);
 io.print(rint);
