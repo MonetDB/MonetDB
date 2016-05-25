@@ -1,3 +1,4 @@
+#!/bin/sh
 if [ -f /etc/lsb-release ]; then
     source /etc/lsb-release
     ID=${DISTRIB_ID,,}
