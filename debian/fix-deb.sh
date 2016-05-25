@@ -10,7 +10,7 @@ else
     exit 1
 fi
 
-if [[ \( $ID == debian && $VERSION_ID -lt 8 \) || \( $ID == ubuntu && $VERSION_ID \< 15.10 \) ]]; then
+if [[ ( $ID == debian && $VERSION_ID -lt 8 ) || ( $ID == ubuntu && $VERSION_ID < 15.10 ) ]]; then
     # fix control file because these systems don't have liblas and a
     # too old version of libgeos
     sed -i 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' debian/control
