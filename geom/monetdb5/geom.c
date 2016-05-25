@@ -6613,8 +6613,6 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 	rBAT_iter = bat_iterator(br);
     lo =  BUNfirst(bl);
 
-    printf ("BATcount %d %d\n", (int) BATcount(bl), (int) BATcount(br));
-
     /*Get the Geometry for the inner BAT*/
     rGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom) * BATcount(br));
     ro = BUNfirst(br);

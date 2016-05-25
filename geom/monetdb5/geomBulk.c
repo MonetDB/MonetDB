@@ -1578,3 +1578,78 @@ wkbAsX3D_bat(bat *outBAT_id, bat *inBAT_id, int *maxDecDigits, int *options)
 	return MAL_SUCCEED;
 }
 
+str
+wkbIntersection_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+{
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter;
+    uint32_t i = 0;
+
+	//get the descriptors of the input BATs
+	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
+		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
+	}
+
+	if (!BAThdense(aBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
+	}
+
+	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
+	}
+
+	if (!BAThdense(bBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
+	}
+
+    if (BATcount(aBAT) != BATcount(bBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BATs should be aligned");
+    }
+    
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "Error creating new BAT");
+	}
+
+	//set the first idx of the output BAT equal to that of the input BAT
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) {
+		str err = NULL;
+		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
+
+		aWKB = (wkb *) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
+		bWKB = (wkb *) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+
+		if ((err = wkbIntersection(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//set SRID
+			BBPunfix(aBAT->batCacheid);
+			BBPunfix(bBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
+			return err;
+		}
+
+        BUNappend(outBAT, outWKB, TRUE);	//add the point to the new BAT
+        GDKfree(outWKB);
+        outWKB = NULL;
+	}
+
+	BBPunfix(aBAT->batCacheid);
+	BBPunfix(bBAT->batCacheid);
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
