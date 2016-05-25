@@ -17,4 +17,5 @@ if [[ ( $ID == debian && $VERSION_ID -lt 8 ) || ( $ID == ubuntu && $VERSION_ID <
     sed -i '/^Package:.*lidar/,/^$/d' debian/control
     sed -i '/^Package:.*geom/,/^$/d' debian/control
     rm debian/libmonetdb5-server-lidar.install debian/libmonetdb5-server-geom.install
+    sed -i '/geo[ms]=yes/s/yes/no/;/lidar=yes/s/yes/no/;/liblas=yes/s/yes/no/' debian/rules
 fi

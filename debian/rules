@@ -23,6 +23,7 @@ override_dh_auto_configure:
 	--enable-gsl=yes \
 	--enable-instrument=no \
 	--enable-jdbc=no \
+	--enable-lidar=yes \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
@@ -38,6 +39,7 @@ override_dh_auto_configure:
 	--with-bz2=yes \
 	--with-geos=yes \
 	--with-java=no \
+	--with-liblas=yes \
 	--with-perl=yes \
 	--with-perl-libdir=lib/perl5 \
 	--with-pthread=yes \
