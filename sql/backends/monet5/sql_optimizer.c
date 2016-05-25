@@ -24,6 +24,27 @@
 #include "opt_pipes.h"
 
 /* prepare is set when we can not optimize based on actual size */
+static lng
+SQLgetColumnSize(sql_trans *tr, sql_column *c)
+{
+	lng size = 0;
+	BAT *b = store_funcs.bind_col(tr, c, RDONLY);
+	if (b) {
+		size += getBatSpace(b);
+		BBPunfix(b->batCacheid);
+	}
+	b = store_funcs.bind_col(tr, c, RD_UPD_VAL);
+	if (b) {
+		size += getBatSpace(b);
+		BBPunfix(b->batCacheid);
+	}
+	b = store_funcs.bind_col(tr, c, RD_INS);
+	if (b) {
+		size+= getBatSpace(b);
+		BBPunfix(b->batCacheid);
+	}
+	return size;
+}
 static lng 
 SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
@@ -42,6 +63,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			sql_schema *s = mvc_bind_schema(m, sname);
 			sql_table *t = 0;
 			sql_column *c = 0;
+			size = 0;
 
 			if (!s || strcmp(s->base.name, dt_schema) == 0) 
 				continue;
@@ -53,16 +75,11 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				continue;
 
 			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-				BAT *b = store_funcs.bind_col(tr, c, access);
-				if (b) {
-					size= getBatSpace(b);
-					if( access == 0)
-						space += size;	// accumulate once
-					if( !prepare && size == 0 ){
-						setFunctionId(p, emptybindRef);
-					}
-					BBPunfix(b->batCacheid);
-				}
+				size = SQLgetColumnSize(tr, c);
+				if( access == 0)
+					space += size;	// accumulate once
+				if( !prepare && size == 0 )
+					setFunctionId(p, emptybindRef);
 			}
 		}
 		/* now deal with the update binds, it is only necessary to identify that there are updats
@@ -85,17 +102,13 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			if (!s)
 				continue;
 
+			/* we have to sum the cost of all three components of a BAT */
 			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-				BAT *b = store_funcs.bind_col(tr, c, RD_UPD_VAL);
-				if (b) {
-					size= getBatSpace(b);
-					if( access == 0)
-						space += size;	// accumulate once
-					if( !prepare && size == 0 ){
-						setFunctionId(p, emptybindRef);
-					}
-					BBPunfix(b->batCacheid);
-				}
+				size = SQLgetColumnSize(tr, c);
+				if( access == 0)
+					space += size;	// accumulate once
+				if( !prepare && size == 0 )
+					setFunctionId(p, emptybindRef);
 			}
 		}
 /* ignore index bats for a while
