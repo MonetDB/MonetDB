@@ -208,6 +208,7 @@ geom_export str wkbLength(dbl *out, wkb **a);
 geom_export str wkbConvexHull(wkb **out, wkb **geom);
 geom_export str wkbIntersection(wkb **out, wkb **a, wkb **b);
 geom_export str wkbIntersection_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id);
+geom_export str wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, bat *saBAT_id, bat *sbBAT_id);
 geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
 geom_export str wkbUnionAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);

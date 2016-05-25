@@ -820,8 +820,15 @@ module batgeom;
 command asX3D(geom:bat[:oid,:wkb], maxDecDigits:int, options:int) :bat[:oid,:str] address wkbAsX3D_bat
 comment "Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML";
 
+#Bulk functions
+module batgeom;
+
 command Intersection(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbIntersection_bat
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
+
+command Intersection(a:bat[:oid,:wkb], b:bat[:oid,:wkb], sa:bat[:oid], sb:bat[:oid]) :bat[:oid,:wkb] address wkbIntersection_bat_s
+comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
+
 
 #Filter functions and joins
 

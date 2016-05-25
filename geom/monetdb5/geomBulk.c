@@ -1653,3 +1653,111 @@ wkbIntersection_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	return MAL_SUCCEED;
 }
 
+/*Bulk version with candidates lists*/
+str
+wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, bat *saBAT_id, bat *sbBAT_id)
+{
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL, *saBAT = NULL, *sbBAT = NULL;
+	BATiter aBAT_iter, bBAT_iter, saBAT_iter, sbBAT_iter;
+    uint32_t i = 0;
+
+	//get the descriptors of the input BATs
+	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
+		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
+	}
+
+	if (!BAThdense(aBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
+	}
+
+	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
+	}
+
+	if (!BAThdense(bBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
+	}
+
+    if (BATcount(aBAT) != BATcount(bBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BATs should be aligned");
+    }
+   
+    if (BATcount(aBAT) != BATcount(bBAT)) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "The BATs should be aligned");
+    }
+
+    //Get descriptors of the candidate list BATs
+	if ((saBAT = BATdescriptor(*saBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
+	}
+
+	if ((sbBAT = BATdescriptor(*sbBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		BBPunfix(saBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
+	}
+    
+	//create a new BAT for the output
+	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		BBPunfix(saBAT->batCacheid);
+		BBPunfix(sbBAT->batCacheid);
+		throw(MAL, "batgeom.Intersection", "Error creating new BAT");
+	}
+
+	//set the first idx of the output BAT equal to that of the input BAT
+	BATseqbase(outBAT, aBAT->hseqbase);
+
+	//iterator over the BATs
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+	saBAT_iter = bat_iterator(saBAT);
+	sbBAT_iter = bat_iterator(sbBAT);
+
+	for (i = BUNfirst(saBAT); i < BATcount(saBAT); i++) {
+		str err = NULL;
+        oid aOID = 0, bOID = 0;
+		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
+
+		aOID = *(oid *) BUNtail(saBAT_iter, i + BUNfirst(saBAT));
+		bOID = *(oid *) BUNtail(sbBAT_iter, i + BUNfirst(sbBAT));
+
+		aWKB = (wkb *) BUNtail(aBAT_iter, aOID);
+		bWKB = (wkb *) BUNtail(bBAT_iter, bOID);
+
+		if ((err = wkbIntersection(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//set SRID
+			BBPunfix(aBAT->batCacheid);
+			BBPunfix(bBAT->batCacheid);
+			BBPunfix(saBAT->batCacheid);
+			BBPunfix(sbBAT->batCacheid);
+			BBPunfix(outBAT->batCacheid);
+			return err;
+		}
+
+        BUNappend(outBAT, outWKB, TRUE);	//add the point to the new BAT
+        GDKfree(outWKB);
+        outWKB = NULL;
+	}
+
+	BBPunfix(aBAT->batCacheid);
+	BBPunfix(bBAT->batCacheid);
+	BBPunfix(saBAT->batCacheid);
+	BBPunfix(sbBAT->batCacheid);
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
