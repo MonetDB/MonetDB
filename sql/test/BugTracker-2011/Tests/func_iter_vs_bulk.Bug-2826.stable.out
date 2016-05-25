@@ -35,26 +35,29 @@ Ready.
 % clob # type
 % 112 # length
 function user.s10_1():void;
-    X_31:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",22);
-    X_15 := bat.new(nil:oid,nil:str);
-    X_23 := bat.append(X_15,"sys.tab_2826");
-    X_18 := bat.new(nil:oid,nil:str);
-    X_25 := bat.append(X_18,"d");
-    X_19 := bat.new(nil:oid,nil:str);
-    X_26 := bat.append(X_19,"double");
-    X_20 := bat.new(nil:oid,nil:int);
-    X_28 := bat.append(X_20,53);
-    X_22 := bat.new(nil:oid,nil:int);
-    X_30 := bat.append(X_22,0);
+    X_37:void := querylog.define("explain select * from tab_2826 where func_2826(d) > 1;","sequential_pipe",25);
+    X_21 := bat.new(nil:oid,nil:str);
+    X_29 := bat.append(X_21,"sys.tab_2826");
+    X_24 := bat.new(nil:oid,nil:str);
+    X_31 := bat.append(X_24,"d");
+    X_25 := bat.new(nil:oid,nil:str);
+    X_32 := bat.append(X_25,"double");
+    X_26 := bat.new(nil:oid,nil:int);
+    X_34 := bat.append(X_26,53);
+    X_28 := bat.new(nil:oid,nil:int);
+    X_36 := bat.append(X_28,0);
     X_2 := sql.mvc();
     C_3:bat[:oid] := sql.tid(X_2,"sys","tab_2826");
     X_6:bat[:dbl] := sql.bind(X_2,"sys","tab_2826","d",0);
-    X_9 := algebra.projection(C_3,X_6);
-    X_10 := batcalc.flt(X_9);
-    X_42:bat[:flt] := batmmath.log10(X_10);
-    C_11 := algebra.thetasubselect(X_42,1,">");
-    X_13 := algebra.projection(C_11,X_9);
-    sql.resultSet(X_23,X_25,X_26,X_28,X_30,X_13);
+    (C_9,r1_9) := sql.bind(X_2,"sys","tab_2826","d",2);
+    X_12:bat[:dbl] := sql.bind(X_2,"sys","tab_2826","d",1);
+    X_14 := sql.delta(X_6,C_9,r1_9,X_12);
+    X_15 := algebra.projection(C_3,X_14);
+    X_16 := batcalc.flt(X_15);
+    X_48:bat[:flt] := batmmath.log10(X_16);
+    C_17 := algebra.thetasubselect(X_48,1,">");
+    X_19 := algebra.projection(C_17,X_15);
+    sql.resultSet(X_29,X_31,X_32,X_34,X_36,X_19);
 end user.s10_1;
 #inline               actions= 0 time=4 usec 
 #candidates           actions= 1 time=18 usec 
