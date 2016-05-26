@@ -137,7 +137,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Constructor used by MonetFillableResultSet.
+	 * Constructor used by MonetVirtualResultSet.
 	 * DO NOT USE THIS CONSTRUCTOR IF YOU ARE NOT EXTENDING THIS OBJECT!
 	 *
 	 * @param columns the column names
@@ -300,14 +300,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int findColumn(String columnName) throws SQLException {
-		if (columnName != null) {
+		if (columnName != null && columns != null) {
 			for (int i = 0; i < columns.length; i++) {
-				if (columns[i].equals(columnName))
+				if (columnName.equals(columns[i]))
 					return i + 1;
 			}
 			/* if an exact match did not succeed try a case insensitive match */
 			for (int i = 0; i < columns.length; i++) {
-				if (columns[i].equalsIgnoreCase(columnName))
+				if (columnName.equalsIgnoreCase(columns[i]))
 					return i + 1;
 			}
 		}
@@ -928,7 +928,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getHoldability() throws SQLException {
-		return getStatement().getConnection().getHoldability();
+		// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+		if (this.getStatement() != null) {
+			return getStatement().getConnection().getHoldability();
+		}
+		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
 	}
 
 	/**
@@ -939,7 +943,30 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getFetchDirection() {
-		return FETCH_FORWARD;
+		return ResultSet.FETCH_FORWARD;
+	}
+
+	/**
+	 * Gives a hint as to the direction in which the rows in this ResultSet
+	 * object will be processed. The initial value is determined by the
+	 * Statement object that produced this ResultSet object.
+	 * The fetch direction may be changed at any time.
+	 * <b>currently not implemented</b>
+	 *
+	 * @param direction - an int specifying the suggested fetch direction;
+	 * one of ResultSet.FETCH_FORWARD, ResultSet.FETCH_REVERSE, or ResultSet.FETCH_UNKNOWN
+	 */
+	@Override
+	public void setFetchDirection(int direction) throws SQLException {
+		switch (direction) {
+		case ResultSet.FETCH_FORWARD:
+			break;
+		case ResultSet.FETCH_REVERSE:
+		case ResultSet.FETCH_UNKNOWN:
+			throw new SQLException("Not supported direction " + direction, "0A000");
+		default:
+			throw new SQLException("Illegal direction: " + direction, "M1M05");
+		}
 	}
 
 	/**
@@ -1146,8 +1173,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 						String colName = getColumnName(column);
 						if (colName != null && !"".equals(colName)) {
 							if (conn == null) {
-								// first time, get a Connection object and cache it for all next columns
-								conn = getStatement().getConnection();
+								// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+								if (getStatement() != null) {
+									// first time, get a Connection object and cache it for all next columns
+									conn = getStatement().getConnection();
+								}
 							}
 							if (conn != null && dbmd == null) {
 								// first time, get a MetaData object and cache it for all next columns
@@ -1543,8 +1573,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			public String getColumnClassName(int column) throws SQLException {
 				try {
 					if (conn == null) {
-						// first time, get a Connection object and cache it for all next columns
-						conn = getStatement().getConnection();
+						// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+						if (getStatement() != null) {
+							// first time, get a Connection object and cache it for all next columns
+							conn = getStatement().getConnection();
+						}
 					}
 					if (conn != null) {
 						Class type = null;
@@ -1652,10 +1685,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
-	  /* statement is null for virtual result sets such as the ones that hold generated keys */
-	  if (this.getStatement() == null) {
-	   return getObject(columnIndex, new HashMap<String, Class<?>>());
-	  }
+		/* statement is null for MonetVirtualResultSet such as the ones that hold generated keys */
+		if (this.getStatement() == null) {
+			return getObject(columnIndex, new HashMap<String, Class<?>>());
+		}
 		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 	}
 
@@ -1669,11 +1702,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Retrieves the value of the designated column in the current row of this
-	 * ResultSet object as an Object in the Java programming language. If the
-	 * value is an SQL NULL, the driver returns a Java null. This method uses
-	 * the given Map object for the custom mapping of the SQL structured or
-	 * distinct type that is being retrieved.
+	 * Gets the value of the designated column in the current row of this
+	 * ResultSet object as an Object in the Java programming language.
+	 *
+	 * This method will return the value of the given column as a Java object.
+	 * The type of the Java object will be the default Java object type corresponding
+	 * to the column's SQL type, following the mapping for built-in types specified
+	 * in the JDBC specification.
+	 * If the value is an SQL NULL, the driver returns a Java null.
+	 *
+	 * This method may also be used to read database-specific abstract data types.
+	 * In the JDBC 2.0 API, the behavior of method getObject is extended to
+	 * materialize data of SQL user-defined types.
+	 *
+	 * If Connection.getTypeMap does not throw a SQLFeatureNotSupportedException, then
+	 * when a column contains a structured or distinct value, the behavior of this
+	 * method is as if it were a call to: getObject(columnIndex,
+	 * this.getStatement().getConnection().getTypeMap()).
+	 * If Connection.getTypeMap does throw a SQLFeatureNotSupportedException, then
+	 * structured values are not supported, and distinct values are mapped to the
+	 * default Java class as determined by the underlying SQL type of the DISTINCT type.
 	 *
 	 * @param i the first column is 1, the second is 2, ...
 	 * @param map a java.util.Map object that contains the mapping from SQL
@@ -1894,6 +1942,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * supported.  If the conversion is not supported or null is
 	 * specified for the type, a SQLException is thrown.
 	 *
+	 * At a minimum, an implementation must support the conversions defined
+	 * in Appendix B, Table B-3 and conversion of appropriate user defined
+	 * SQL types to a Java type which implements SQLData, or Struct.
+	 * Additional conversions may be supported and are vendor defined.
+	 *
 	 * @param i the first column is 1, the second is 2, ...
 	 * @param type Class representing the Java data type to convert the
 	 *        designated column to
@@ -2006,12 +2059,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * This method may also be used to read database-specific abstract data
 	 * types.
 	 * 
-	 * In the JDBC 2.0 API, the behavior of the method getObject is extended to
-	 * materialize data of SQL user-defined types. When a column contains a
-	 * structured or distinct value, the behavior of this method is as if it
-	 * were a call to: getObject(columnName,
-	 * this.getStatement().getConnection().getTypeMap()).
-	 *
 	 * @param columnName the SQL name of the column
 	 * @return a java.lang.Object holding the column value
 	 * @throws SQLException if a database access error occurs
@@ -2432,7 +2479,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public java.sql.Date getDate(int columnIndex) throws SQLException {
-		return getDate(columnIndex,	Calendar.getInstance());
+		return getDate(columnIndex, Calendar.getInstance());
 	}
 
 	/**
@@ -2469,7 +2516,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public java.sql.Date getDate(String columnName) throws SQLException {
-		return getDate(columnName, Calendar.getInstance());
+		return getDate(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2543,7 +2590,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Time getTime(String columnName) throws SQLException {
-		return getTime(columnName, Calendar.getInstance());
+		return getTime(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2623,7 +2670,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Timestamp getTimestamp(String columnName) throws SQLException {
-		return getTimestamp(columnName, Calendar.getInstance());
+		return getTimestamp(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2897,11 +2944,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	@Override
 	public boolean rowUpdated() throws SQLException {
 		throw newSQLFeatureNotSupportedException("rowUpdated");
-	}
-
-	@Override
-	public void setFetchDirection(int direction) throws SQLException {
-		throw newSQLFeatureNotSupportedException("setFetchDirection");
 	}
 
 	@Override
