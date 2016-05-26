@@ -10,7 +10,7 @@ stderr of test 'temporary_tables.SF-1715669` in directory 'sql/test/BugTracker` 
 # 09:35:56 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32868 
 # 09:35:56 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1715669a;
 ERROR = !DROP TABLE: no such table 't1715669a'
 

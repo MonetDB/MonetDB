@@ -8,8 +8,8 @@ module batsql;
 module sql;
 
 
-pattern calc.hash( v:hge ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:hge] ) :bat[:wrd] address MKEYbathash;
+pattern calc.hash( v:hge ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:hge] ) :bat[:lng] address MKEYbathash;
 
 command sql.dec_round( v:hge, r:hge ) :hge 
 address hge_dec_round_wrap

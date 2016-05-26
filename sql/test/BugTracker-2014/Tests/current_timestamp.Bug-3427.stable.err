@@ -28,10 +28,10 @@ stderr of test 'current_timestamp.Bug-3427` in directory 'sql/test/BugTracker-20
 # 14:58:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29380" "--port=32929"
 # 14:58:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-8628/.s.monetdb.30406
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = set t = current_time;
 ERROR = !types timetz(7,0) and timestamp(7,0) are not equal
-MAPI  = (monetdb) /var/tmp/mtest-8628/.s.monetdb.30406
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table d(t timestamp default current_time, i integer);
 ERROR = !types timetz(7,0) and timestamp(7,0) are not equal
 

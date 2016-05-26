@@ -71,10 +71,10 @@ stderr of test 'duplicate-key.Bug-2667` in directory 'sql/test/BugTracker-2010` 
 # 12:43:13 >  mclient -lsql -ftest -i -e --host=ottar --port=34908 
 # 12:43:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE mulpk ADD CONSTRAINT pk2 PRIMARY KEY (id);
 ERROR = !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE mulpk ADD CONSTRAINT pk3 PRIMARY KEY (id);
 ERROR = !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
 

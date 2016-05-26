@@ -343,9 +343,6 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 		}
 		break;
 	}
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 	case TYPE_int: {
 		int *restrict sums = (int *) results;
 		switch (tp1) {
@@ -355,9 +352,6 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 		case TYPE_sht:
 			AGGR_SUM(sht, int);
 			break;
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 		case TYPE_int:
 			AGGR_SUM(int, int);
 			break;
@@ -366,9 +360,6 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 		}
 		break;
 	}
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 	case TYPE_lng: {
 		lng *restrict sums = (lng *) results;
 		switch (tp1) {
@@ -378,15 +369,9 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 		case TYPE_sht:
 			AGGR_SUM(sht, lng);
 			break;
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 		case TYPE_int:
 			AGGR_SUM(int, lng);
 			break;
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 		case TYPE_lng:
 			AGGR_SUM(lng, lng);
 			break;
@@ -570,15 +555,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	case TYPE_sht:
 		* (sht *) res = nil_if_empty ? sht_nil : 0;
 		break;
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 	case TYPE_int:
 		* (int *) res = nil_if_empty ? int_nil : 0;
 		break;
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 	case TYPE_lng:
 		* (lng *) res = nil_if_empty ? lng_nil : 0;
 		break;
@@ -593,7 +572,6 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 		case TYPE_bte:
 		case TYPE_sht:
 		case TYPE_int:
-		case TYPE_wrd:
 		case TYPE_lng:
 #ifdef HAVE_HGE
 		case TYPE_hge:
@@ -915,9 +893,6 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 		}
 		break;
 	}
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 	case TYPE_int: {
 		int *restrict prods = (int *) results;
 		switch (tp1) {
@@ -928,9 +903,6 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 			AGGR_PROD(sht, int, lng);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			AGGR_PROD(int, int, lng);
 			break;
 		default:
@@ -939,9 +911,6 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 		break;
 	}
 #ifdef HAVE_HGE
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 	case TYPE_lng: {
 		lng *prods = (lng *) results;
 		switch (ATOMstorage(tp1)) {
@@ -952,15 +921,9 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 			AGGR_PROD(sht, lng, hge);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			AGGR_PROD(int, lng, hge);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			AGGR_PROD(lng, lng, hge);
 			break;
 		default:
@@ -978,15 +941,9 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 			AGGR_PROD_HGE(sht);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_HGE(int);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_HGE(lng);
 			break;
 		case TYPE_hge:
@@ -998,9 +955,6 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 		break;
 	}
 #else
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 	case TYPE_lng: {
 		lng *restrict prods = (lng *) results;
 		switch (tp1) {
@@ -1011,15 +965,9 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 			AGGR_PROD_LNG(sht);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_LNG(int);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_LNG(lng);
 			break;
 		default:
@@ -1038,15 +986,9 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 			AGGR_PROD_FLOAT(sht, flt);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_FLOAT(int, flt);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_FLOAT(lng, flt);
 			break;
 #ifdef HAVE_HGE
@@ -1072,15 +1014,9 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 			AGGR_PROD_FLOAT(sht, dbl);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_FLOAT(int, dbl);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			AGGR_PROD_FLOAT(lng, dbl);
 			break;
 #ifdef HAVE_HGE
@@ -1225,15 +1161,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 		* (sht *) res = nil_if_empty ? sht_nil : (sht) 1;
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		* (int *) res = nil_if_empty ? int_nil : (int) 1;
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		* (lng *) res = nil_if_empty ? lng_nil : (lng) 1;
 		break;
 #ifdef HAVE_HGE
@@ -1349,8 +1279,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = (oid) i;			\
 				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
-						cnts[gid] = wrd_nil;	\
-				} else if (cnts[gid] != wrd_nil) {	\
+						cnts[gid] = lng_nil;	\
+				} else if (cnts[gid] != lng_nil) {	\
 					AVERAGE_ITER(TYPE, vals[i],	\
 						     avgs[gid],		\
 						     rems[gid],		\
@@ -1359,7 +1289,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == wrd_nil) {	\
+			if (cnts[i] == 0 || cnts[i] == lng_nil) {	\
 				dbls[i] = dbl_nil;			\
 				cnts[i] = 0;				\
 				nils++;					\
@@ -1395,8 +1325,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = (oid) i;			\
 				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
-						cnts[gid] = wrd_nil;	\
-				} else if (cnts[gid] != wrd_nil) {	\
+						cnts[gid] = lng_nil;	\
+				} else if (cnts[gid] != lng_nil) {	\
 					AVERAGE_ITER_FLOAT(TYPE, vals[i], \
 							   dbls[gid],	\
 							   cnts[gid]);	\
@@ -1404,7 +1334,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == wrd_nil) {	\
+			if (cnts[i] == 0 || cnts[i] == lng_nil) {	\
 				dbls[i] = dbl_nil;			\
 				cnts[i] = 0;				\
 				nils++;					\
@@ -1422,7 +1352,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	BUN i, ngrp;
 	BUN nils = 0;
 	BUN *restrict rems = NULL;
-	wrd *restrict cnts = NULL;
+	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
 	BAT *bn = NULL;
 	BUN start, end, cnt;
@@ -1452,8 +1382,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			return GDK_FAIL;
 		}
 		if (cntsp) {
-			wrd zero = 0;
-			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &zero, ngrp, TRANSIENT)) == NULL) {
+			lng zero = 0;
+			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
 				GDKerror("BATgroupavg: failed to create BAT\n");
 				BBPreclaim(bn);
 				return GDK_FAIL;
@@ -1471,8 +1401,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		if ((bn = BATconvert(b, s, TYPE_dbl, abort_on_error)) == NULL)
 			return GDK_FAIL;
 		if (cntsp) {
-			wrd one = 1;
-			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &one, ngrp, TRANSIENT)) == NULL) {
+			lng one = 1;
+			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
@@ -1486,7 +1416,6 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
-	case TYPE_wrd:
 	case TYPE_lng:
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -1499,12 +1428,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		break;
 	}
 	if (cntsp) {
-		if ((*cntsp = BATnew(TYPE_void, TYPE_wrd, ngrp, TRANSIENT)) == NULL)
+		if ((*cntsp = BATnew(TYPE_void, TYPE_lng, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
-		cnts = (wrd *) Tloc(*cntsp, BUNfirst(*cntsp));
-		memset(cnts, 0, ngrp * sizeof(wrd));
+		cnts = (lng *) Tloc(*cntsp, BUNfirst(*cntsp));
+		memset(cnts, 0, ngrp * sizeof(lng));
 	} else {
-		cnts = GDKzalloc(ngrp * sizeof(wrd));
+		cnts = GDKzalloc(ngrp * sizeof(lng));
 		if (cnts == NULL)
 			goto alloc_fail;
 	}
@@ -1527,15 +1456,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		AGGR_AVG(sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		AGGR_AVG(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		AGGR_AVG(lng);
 		break;
 #ifdef HAVE_HGE
@@ -1793,7 +1716,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	oid gid;
 	oid min, max;
 	BUN i, ngrp;
-	wrd *restrict cnts;
+	lng *restrict cnts;
 	BAT *bn = NULL;
 	int t;
 	const void *nil;
@@ -1803,7 +1726,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
-	assert(tp == TYPE_wrd);
+	assert(tp == TYPE_lng);
 	(void) tp;		/* compatibility (with other BATgroup* */
 	(void) abort_on_error;	/* functions) argument */
 
@@ -1820,15 +1743,15 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
 		 * with zero in the tail */
-		wrd zero = 0;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &zero, ngrp, TRANSIENT);
+		lng zero = 0;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
 	}
 
-	bn = BATnew(TYPE_void, TYPE_wrd, ngrp, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_lng, ngrp, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	cnts = (wrd *) Tloc(bn, BUNfirst(bn));
-	memset(cnts, 0, ngrp * sizeof(wrd));
+	cnts = (lng *) Tloc(bn, BUNfirst(bn));
+	memset(cnts, 0, ngrp * sizeof(lng));
 
 	if (BATtdense(g))
 		gids = NULL;
@@ -1912,13 +1835,13 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	oid min, max;
 	BUN i, ngrp;
 	const bit *restrict bits;
-	wrd *restrict cnts;
+	lng *restrict cnts;
 	BAT *bn = NULL;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
 
-	assert(tp == TYPE_wrd);
+	assert(tp == TYPE_lng);
 	assert(b->ttype == TYPE_bit);
 	/* compatibility arguments */
 	(void) tp;
@@ -1938,15 +1861,15 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
 		 * with zero in the tail */
-		wrd zero = 0;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_wrd, &zero, ngrp, TRANSIENT);
+		lng zero = 0;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
 	}
 
-	bn = BATnew(TYPE_void, TYPE_wrd, ngrp, TRANSIENT);
+	bn = BATnew(TYPE_void, TYPE_lng, ngrp, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	cnts = (wrd *) Tloc(bn, BUNfirst(bn));
-	memset(cnts, 0, ngrp * sizeof(wrd));
+	cnts = (lng *) Tloc(bn, BUNfirst(bn));
+	memset(cnts, 0, ngrp * sizeof(lng));
 
 	if (BATtdense(g))
 		gids = NULL;
@@ -2102,7 +2025,6 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		/* fall through */
 	default:
 		assert(b->ttype != TYPE_oid);
-		assert(b->ttype != TYPE_wrd);
 		bi = bat_iterator(b);
 
 		if (gdense) {
@@ -2228,7 +2150,6 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 		/* fall through */
 	default:
 		assert(b->ttype != TYPE_oid);
-		assert(b->ttype != TYPE_wrd);
 		bi = bat_iterator(b);
 
 		if (gdense) {
@@ -2661,15 +2582,9 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, i
 		AGGR_STDEV_SINGLE(sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		AGGR_STDEV_SINGLE(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		AGGR_STDEV_SINGLE(lng);
 		break;
 #ifdef HAVE_HGE
@@ -2872,15 +2787,9 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		AGGR_STDEV(sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		AGGR_STDEV(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		AGGR_STDEV(lng);
 		break;
 #ifdef HAVE_HGE

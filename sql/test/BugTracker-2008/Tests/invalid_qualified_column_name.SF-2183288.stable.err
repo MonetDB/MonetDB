@@ -79,13 +79,13 @@ stderr of test 'invalid_qualified_column_name.SF-2183288` in directory 'sql/test
 # 14:44:24 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37003 
 # 14:44:24 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t where b = 0;
 ERROR = !SELECT: identifier 'b' unknown
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t where t.b = 0;
 ERROR = !SELECT: no such column 't.b'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t where s.a = 0;
 ERROR = !SELECT: no such column 's.a'
 

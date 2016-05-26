@@ -29,7 +29,7 @@ stderr of test 'limit` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS five, unique1, unique2, stringu1 
         		FROM onek
         		ORDER BY unique1 OFFSET 990 LIMIT 5;

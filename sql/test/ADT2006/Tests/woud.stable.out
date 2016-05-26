@@ -64,7 +64,7 @@ Ready.
 #    FROM victim 
 #    WHERE murderdate LIKE '1___%' 
 #        AND dateofbirth LIKE '1___%';
-% sys.L # table_name
+% sys.L2 # table_name
 % substring_murderdate # name
 % bigint # type
 % 1 # length

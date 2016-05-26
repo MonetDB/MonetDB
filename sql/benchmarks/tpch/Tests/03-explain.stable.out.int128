@@ -153,7 +153,7 @@ function user.s2_1(A0:bte,A1:str,A2:date,A3:date):void;
     (X_109,r1_153,r2_153) := algebra.subsort(X_108,true,false);
     (X_112,r1_156,r2_156) := algebra.subsort(X_107,r1_153,r2_153,false,false);
     X_115:bat[:int] := algebra.projectionpath(r1_156,C_106,r1_102,X_72);
-    X_116 := algebra.subslice(X_115,0,9:wrd);
+    X_116 := algebra.subslice(X_115,0,9:lng);
     X_120:bat[:int] := algebra.projectionpath(X_116,r1_156,C_106,r1_102,X_65);
     X_117 := algebra.projection(X_116,X_115);
     X_118:bat[:hge] := algebra.projectionpath(X_116,r1_156,X_108);

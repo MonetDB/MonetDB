@@ -144,9 +144,6 @@ comment "Generate an exception when b==true";
 pattern assert(b:int,msg:str):void
 address SQLassertInt
 comment "Generate an exception when b!=0";
-pattern assert(b:wrd,msg:str):void
-address SQLassertWrd
-comment "Generate an exception when b!=0";
 pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
@@ -276,7 +273,7 @@ pattern update(mvc:int, sname:str, tname:str, cname:str, rids:any, upd:any):int
 address mvc_update_wrap
 comment "Update the values of the column tname.cname";
 
-unsafe pattern clear_table(sname:str, tname:str) :wrd
+unsafe pattern clear_table(sname:str, tname:str) :lng
 address mvc_clear_table_wrap
 comment "Clear table";
 
@@ -357,7 +354,7 @@ unsafe pattern exportOperation() :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-unsafe pattern affectedRows(mvc:int, nr:wrd) :int
+unsafe pattern affectedRows(mvc:int, nr:lng) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
@@ -387,7 +384,7 @@ inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], 
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);
-	c1 := calc.>(m,1:wrd);
+	c1 := calc.>(m,1:lng);
 	c11 := calc.and(c01,c1);
 	ms := calc.str(m); 
 	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
@@ -406,7 +403,7 @@ inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit)
 	m := aggr.max(h);
 	c0 := calc.isnil(m);
 	c01 := calc.not(c0);
-	c1 := calc.>(m,1:wrd);
+	c1 := calc.>(m,1:lng);
 	c11 := calc.and(c01,c1);
 	ms := calc.str(m); 
 	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
@@ -605,7 +602,7 @@ pattern querylog_calls()(
 	start:bat[:timestamp],
 	stop:bat[:timestamp],
 	arguments:bat[:str],
-	tuples:bat[:wrd],
+	tuples:bat[:lng],
 	exec:bat[:lng],
 	result:bat[:lng],
 	cpuload:bat[:int],
@@ -654,26 +651,26 @@ address COPYrejects;
 pattern copy_rejects_clear()
 address COPYrejects_clear;
 
-pattern calc.hash( v:bte ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:bte] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:sht ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:sht] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:int ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:int] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:lng ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:lng] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:oid ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:oid] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:wrd ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:wrd] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:flt ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:flt] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:dbl ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:dbl] ) :bat[:wrd] address MKEYbathash;
-pattern calc.hash( v:any ) :wrd address MKEYhash; 
-command batcalc.hash( b:bat[:any_1] ) :bat[:wrd] address MKEYbathash;
-pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
-command batcalc.rotate_xor_hash(h:bat[:wrd], nbits:int, b:bat[:any_1]) :bat[:int] address MKEYbulk_rotate_xor_hash;
+pattern calc.hash( v:bte ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:bte] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:sht ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:sht] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:int ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:int] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:lng ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:lng] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:oid ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:oid] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:lng ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:lng] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:flt ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:flt] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:dbl ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:dbl] ) :bat[:lng] address MKEYbathash;
+pattern calc.hash( v:any ) :lng address MKEYhash; 
+command batcalc.hash( b:bat[:any_1] ) :bat[:lng] address MKEYbathash;
+pattern calc.rotate_xor_hash(h:lng, nbits:int, v:any_1) :lng address MKEYrotate_xor_hash;
+command batcalc.rotate_xor_hash(h:bat[:lng], nbits:int, b:bat[:any_1]) :bat[:int] address MKEYbulk_rotate_xor_hash;
 
 command sql.dec_round( v:bte, r:bte ) :bte 
 address bte_dec_round_wrap
@@ -728,24 +725,6 @@ comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, befo
 command calc.second_interval( sc:int, v:int, ek:int, sk:int ) :lng
 address int_dec2second_interval
 comment "cast int decimal to a second_interval";
-
-command sql.dec_round( v:wrd, r:wrd ) :wrd 
-address wrd_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-command batsql.dec_round( v:bat[:wrd], r:wrd ) :bat[:wrd] 
-address wrd_bat_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-
-command sql.round( v:wrd, d:int, s:int, r:bte) :wrd
-address wrd_round_wrap
-comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-command batsql.round( v:bat[:wrd], d:int, s:int, r:bte) :bat[:wrd]
-address wrd_bat_round_wrap
-comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-
-command calc.second_interval( sc:int, v:wrd, ek:int, sk:int ) :lng
-address wrd_dec2second_interval
-comment "cast wrd decimal to a second_interval";
 
 command sql.dec_round( v:lng, r:lng ) :lng 
 address lng_dec_round_wrap
@@ -894,32 +873,6 @@ comment "cast to int and check for overflow";
 command batcalc.int( v:bat[:str], digits:int, scale:int ) :bat[:int] 
 address batstr_2dec_int
 comment "cast to dec(int) and check for overflow";
-
-command calc.wrd( v:void, digits:int ) :wrd 
-address nil_2num_wrd
-comment "cast to wrd and check for overflow";
-command calc.wrd( v:void, digits:int, scale:int ) :wrd 
-address nil_2dec_wrd
-comment "cast to dec(wrd) and check for overflow";
-command batcalc.wrd( v:bat[:oid], digits:int ) :bat[:wrd] 
-address batnil_2num_wrd
-comment "cast to wrd and check for overflow";
-command batcalc.wrd( v:bat[:oid], digits:int, scale:int ) :bat[:wrd] 
-address batnil_2dec_wrd
-comment "cast to dec(wrd) and check for overflow";
-
-command calc.wrd( v:str, digits:int ) :wrd 
-address str_2num_wrd
-comment "cast to wrd and check for overflow";
-command calc.wrd( v:str, digits:int, scale:int ) :wrd 
-address str_2dec_wrd
-comment "cast to dec(wrd) and check for overflow";
-command batcalc.wrd( v:bat[:str], digits:int ) :bat[:wrd] 
-address batstr_2num_wrd
-comment "cast to wrd and check for overflow";
-command batcalc.wrd( v:bat[:str], digits:int, scale:int ) :bat[:wrd] 
-address batstr_2dec_wrd
-comment "cast to dec(wrd) and check for overflow";
 
 command calc.lng( v:void, digits:int ) :lng 
 address nil_2num_lng
@@ -1107,14 +1060,6 @@ pattern calc.second_interval( v:int, ek:int, sk:int ) :lng
 address second_interval
 comment "cast int to a second_interval and check for overflow";
 
-pattern calc.month_interval( v:wrd, ek:int, sk:int ) :int
-address month_interval
-comment "cast wrd to a month_interval and check for overflow";
-
-pattern calc.second_interval( v:wrd, ek:int, sk:int ) :lng
-address second_interval
-comment "cast wrd to a second_interval and check for overflow";
-
 pattern calc.month_interval( v:lng, ek:int, sk:int ) :int
 address month_interval
 comment "cast lng to a month_interval and check for overflow";
@@ -1203,7 +1148,6 @@ include sql_rank;
 include sql_aggr_bte;
 include sql_aggr_sht;
 include sql_aggr_int;
-include sql_aggr_wrd;
 include sql_aggr_lng;
 include sql_aggr_flt;
 include sql_aggr_dbl;

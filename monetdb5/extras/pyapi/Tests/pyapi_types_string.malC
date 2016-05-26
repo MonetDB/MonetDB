@@ -1,4 +1,4 @@
-﻿
+
 # basic strings
 bstr:= bat.new(:oid,:str);
 bat.append(bstr,"asdf":str);
@@ -66,13 +66,6 @@ bat.append(bint,nil:int);
 rstr5:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bint);
 io.print(rstr5);
 
-# convert word to string
-bwrd:= bat.new(:oid,:wrd);
-bat.append(bwrd,1804289383:wrd);
-bat.append(bwrd,846930886:wrd);
-rwrd:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bwrd);
-io.print(rwrd);
-
 # convert long to string
 blng:= bat.new(:oid,:lng);
 bat.append(blng,1804289383L);
@@ -130,13 +123,6 @@ bat.append(bstr,"1714636915":str);
 bat.append(bstr,nil:str);
 rstr11:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
 io.print(rstr11);
-
-# convert string to word
-bstr:= bat.new(:oid,:str);
-bat.append(bstr,"1804289383":str);
-bat.append(bstr,"846930886":str);
-rwrd12:bat[:wrd] := pyapi.eval(nil:ptr,"return(arg1)",bstr);
-io.print(rwrd12);
 
 # convert string to oid
 bstr:= bat.new(:oid,:str);

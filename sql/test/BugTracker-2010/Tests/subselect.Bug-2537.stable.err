@@ -70,7 +70,7 @@ stderr of test 'subselect.Bug-2537` in directory 'sql/test/BugTracker-2010` itse
 # 09:57:59 >  mclient -lsql -ftest -i -e --host=rig --port=38583 
 # 09:57:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO Image
                (ImageId
                ,imageBinaries)

@@ -78,7 +78,7 @@ Ready.
 #SELECT COUNT(i) FROM pyapi19_load_table();
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 6 # length
 [ 100000	]
 #ROLLBACK;

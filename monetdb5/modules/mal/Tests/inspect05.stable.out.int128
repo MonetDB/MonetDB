@@ -34,7 +34,7 @@ Ready.
 [ 2@0,	"append",	"command",	"bat",	"(i:bat[:any_1],u:any_1,force:bit):bat[:any_1] ",	"BKCappend_val_force_wrap;"	]
 [ 3@0,	"append",	"command",	"bat",	"(i:bat[:any_1],u:bat[:any_1],force:bit):bat[:any_1] ",	"BKCappend_force_wrap;"	]
 [ 4@0,	"attach",	"command",	"bat",	"(i:bat[:any_1],u:bat[:any_1]):bat[:any_1] ",	"BKCappend_wrap;"	]
-[ 5@0,	"delete",	"command",	"bat",	"(sz:wrd):bat[:oid] ",	"BKCdensebat;"	]
+[ 5@0,	"delete",	"command",	"bat",	"(sz:lng):bat[:oid] ",	"BKCdensebat;"	]
 [ 6@0,	"delete",	"command",	"bat",	"(b:bat[:any_1]):bat[:any_1] ",	"BKCdelete_all;"	]
 [ 7@0,	"delete",	"command",	"bat",	"(b:bat[:any_1],d:bat[:oid]):bat[:any_1] ",	"BKCdelete_multi;"	]
 [ 8@0,	"densebat",	"command",	"bat",	"(b:bat[:any_1],h:oid):bat[:any_1] ",	"BKCdelete;"	]

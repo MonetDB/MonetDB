@@ -50,7 +50,7 @@ Operation successful
 +==================================================================================================+
 | function user.s2_1():void;                                                                       |
 |     X_41:void := querylog.define("explain select count(*) from tables\n;","sequential_pipe",27); |
-|     X_2:bat[:wrd] := bat.new(nil:oid,nil:wrd);                                                   |
+|     X_2:bat[:lng] := bat.new(nil:oid,nil:lng);                                                   |
 |     X_1 := sql.mvc();                                                                            |
 |     X_8:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                     |
 |     C_5:bat[:oid] := sql.tid(X_1,"sys","_tables");                                               |
@@ -72,8 +72,8 @@ Operation successful
 |     X_31 := algebra.projection(C_28,X_30);                                                    |
 |     X_32 := aggr.count(X_31);                                                                    |
 |     X_33 := bat.append(X_27,X_32,true);                                                          |
-|     X_34:wrd := aggr.sum(X_33);                                                                  |
-|     sql.resultSet(".L3","L3","wrd",64,0,7,X_34);                                                 |
+|     X_34:lng := aggr.sum(X_33);                                                                  |
+|     sql.resultSet(".L3","L3","bigint",64,0,7,X_34);                                              |
 | end user.s2_1;                                                                                   |
 | #inline               actions= 0 time=2 usec                                                     |
 | #candidates           actions= 1 time=20 usec                                                    |

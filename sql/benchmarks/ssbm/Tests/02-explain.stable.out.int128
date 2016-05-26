@@ -77,8 +77,8 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int,A4:int):void;
     X_53 := sql.projectdelta(C_26,X_18,C_20,r1_24,X_22);
     X_54 := algebra.projection(X_41,X_53);
     X_55:bat[:lng] := batcalc.*(X_52,X_54);
-    X_56:hge := aggr.sum(X_55);
-    sql.resultSet("sys.L1","revenue","hugeint",128,0,7,X_56);
+    X_56:lng := aggr.sum(X_55);
+    sql.resultSet("sys.L1","revenue","bigint",64,0,7,X_56);
 end user.s2_1;
 
 # 23:10:45 >  

@@ -30,7 +30,7 @@ stderr of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 # 14:48:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20228" "--port=35990"
 # 14:48:31 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-20228/.s.monetdb.35990
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT bam_flag(111, 'Fail-hard');
 ERROR = !Unknown flag name given: Fail-hard
 

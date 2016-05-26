@@ -525,7 +525,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 				as = bin_first_column(sql->sa, left);
 			} else {
 				/* create dummy single value in a column */
-				as = stmt_atom_wrd(sql->sa, 0);
+				as = stmt_atom_lng(sql->sa, 0);
 				as = const_column(sql->sa, as);
 			}
 		}
@@ -1487,9 +1487,9 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *left, stmt *right, sql_idx *i
 {
 	node *n;
 	sql_subtype *it = sql_bind_localtype("int");
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1));
+	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1));
 	sql_exp *e = en->data;
 	sql_exp *l = e->l;
 	stmt *idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
@@ -1530,12 +1530,12 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *left, stmt *right, sql_idx *i
 		if (!s) 
 			return NULL;
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
+			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, tail_type(s), lng);
 
 			h = stmt_Nop(sql->sa, stmt_list(sql->sa, list_append( list_append(
 				list_append(sa_list(sql->sa), h), bits), s)), xor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, wrd);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, lng);
 
 			h = stmt_unop(sql->sa, s, hf);
 		}
@@ -1555,21 +1555,21 @@ static stmt *
 join_hash_key( mvc *sql, list *l ) 
 {
 	node *m;
-	sql_subtype *it, *wrd;
+	sql_subtype *it, *lng;
 	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(wrd)*8)-1)/(list_length(l)+1));
+	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(lng)*8)-1)/(list_length(l)+1));
 
 	it = sql_bind_localtype("int");
-	wrd = sql_bind_localtype("wrd");
+	lng = sql_bind_localtype("lng");
 	for (m = l->h; m; m = m->next) {
 		stmt *s = m->data;
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
+			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, tail_type(s), lng);
 
 			h = stmt_Nop(sql->sa, stmt_list(sql->sa, list_append( list_append( list_append(sa_list(sql->sa), h), bits), s )), xor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, wrd);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, lng);
 			h = stmt_unop(sql->sa, s, hf);
 		}
 	}
@@ -1823,7 +1823,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_left || rel->op == op_full)
 			s = stmt_append(sql->sa, s, stmt_project(sql->sa, ld, c));
 		if (rel->op == op_right || rel->op == op_full) 
-			s = stmt_append(sql->sa, s, stmt_const(sql->sa, rd, (c->flag&OUTER_ZERO)?stmt_atom_wrd(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
+			s = stmt_append(sql->sa, s, stmt_const(sql->sa, rd, (c->flag&OUTER_ZERO)?stmt_atom_lng(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
 
 		s = stmt_alias(sql->sa, s, rnme, nme);
 		list_append(l, s);
@@ -1838,7 +1838,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
 			s = Column(sql->sa, s);
 		if (rel->op == op_left || rel->op == op_full) 
-			s = stmt_append(sql->sa, s, stmt_const(sql->sa, ld, (c->flag&OUTER_ZERO)?stmt_atom_wrd(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
+			s = stmt_append(sql->sa, s, stmt_const(sql->sa, ld, (c->flag&OUTER_ZERO)?stmt_atom_lng(sql->sa, 0):stmt_atom(sql->sa, atom_general(sql->sa, tail_type(c), NULL))));
 		if (rel->op == op_right || rel->op == op_full) 
 			s = stmt_append(sql->sa, s, stmt_project(sql->sa, rd, c));
 
@@ -2088,7 +2088,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 {
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	list *stmts; 
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
@@ -2136,8 +2136,8 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	stmt_group_done(rg);
 
 	if (need_distinct(rel)) {
-		lcnt = stmt_const(sql->sa, lcnt, stmt_atom_wrd(sql->sa, 1));
-		rcnt = stmt_const(sql->sa, rcnt, stmt_atom_wrd(sql->sa, 1));
+		lcnt = stmt_const(sql->sa, lcnt, stmt_atom_lng(sql->sa, 1));
+		rcnt = stmt_const(sql->sa, rcnt, stmt_atom_lng(sql->sa, 1));
 	}
 
 	/* now find the matching groups */
@@ -2160,7 +2160,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	/* first we find those missing in R */
 	next = stmt_project(sql->sa, s, lext);
 	ncnt = stmt_project(sql->sa, s, lcnt);
-	zero = stmt_const(sql->sa, s, stmt_atom_wrd(sql->sa, 0));
+	zero = stmt_const(sql->sa, s, stmt_atom_lng(sql->sa, 0));
 
 	/* ext, lcount, rcount */
 	lext = stmt_project(sql->sa, lm, lext);
@@ -2172,7 +2172,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	lcnt = stmt_append(sql->sa, lcnt, ncnt);
 	rcnt = stmt_append(sql->sa, rcnt, zero);
 
- 	min = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", wrd, wrd, F_FUNC);
+ 	min = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", lng, lng, F_FUNC);
 	s = stmt_binop(sql->sa, lcnt, rcnt, min); /* use count */
 
 	/* now we have gid,cnt, blowup to full groupsizes */
@@ -2199,7 +2199,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 {
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	list *stmts; 
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
@@ -2246,8 +2246,8 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	stmt_group_done(rg);
 
 	if (need_distinct(rel)) {
-		lcnt = stmt_const(sql->sa, lcnt, stmt_atom_wrd(sql->sa, 1));
-		rcnt = stmt_const(sql->sa, rcnt, stmt_atom_wrd(sql->sa, 1));
+		lcnt = stmt_const(sql->sa, lcnt, stmt_atom_lng(sql->sa, 1));
+		rcnt = stmt_const(sql->sa, rcnt, stmt_atom_lng(sql->sa, 1));
 	}
 
 	/* now find the matching groups */
@@ -2269,7 +2269,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	lcnt = stmt_project(sql->sa, lm, lcnt);
 	rcnt = stmt_project(sql->sa, rm, rcnt);
 
- 	min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", wrd, wrd, F_FUNC);
+ 	min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", lng, lng, F_FUNC);
 	s = stmt_binop(sql->sa, lcnt, rcnt, min);
 
 	/* now we have gid,cnt, blowup to full groupsizes */
@@ -2350,8 +2350,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		} else {
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL, NULL, NULL);
 			if (oe) {
-				sql_subtype *wrd = sql_bind_localtype("wrd");
-				sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", wrd, wrd, wrd);
+				sql_subtype *lng = sql_bind_localtype("lng");
+				sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
 				stmt *o = exp_bin(sql, oe, NULL, NULL, NULL, NULL, NULL, NULL);
 				l = stmt_binop(sql->sa, l, o, add);
 			}
@@ -2421,9 +2421,9 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			/* handle constants */
 			orderbycolstmt = column(sql->sa, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_wrd(sql->sa, 0), l, LIMIT_FLAG(distinct, is_ascending(orderbycole), last, 1));
+				limit = stmt_limit(sql->sa, orderbycolstmt, stmt_atom_lng(sql->sa, 0), l, LIMIT_FLAG(distinct, is_ascending(orderbycole), last, 1));
 			} else { 	/* topn based on 2 columns */
-				limit = stmt_limit2(sql->sa, orderbycolstmt, lpiv, lgid, stmt_atom_wrd(sql->sa, 0), l, LIMIT_FLAG(distinct, is_ascending(orderbycole), last, 1));
+				limit = stmt_limit2(sql->sa, orderbycolstmt, lpiv, lgid, stmt_atom_lng(sql->sa, 0), l, LIMIT_FLAG(distinct, is_ascending(orderbycole), last, 1));
 			}
 			if (!limit) 
 				return NULL;
@@ -2697,9 +2697,9 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			o = exp_bin(sql, oe, NULL, NULL, NULL, NULL, NULL, NULL);
 
 		if (!l) 
-			l = stmt_atom_wrd_nil(sql->sa);
+			l = stmt_atom_lng_nil(sql->sa);
 		if (!o)
-			o = stmt_atom_wrd(sql->sa, 0);
+			o = stmt_atom_lng(sql->sa, 0);
 
 		sc = column(sql->sa, sc);
 		limit = stmt_limit(sql->sa, stmt_alias(sql->sa, sc, tname, cname), o, l, LIMIT_FLAG(0,0,0,0));
@@ -2741,7 +2741,7 @@ rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
 		s = exp_bin(sql, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL);
 
 		if (!s)
-			s = stmt_atom_wrd_nil(sql->sa);
+			s = stmt_atom_lng_nil(sql->sa);
 
 		sc = column(sql->sa, sc);
 		sample = stmt_sample(sql->sa, stmt_alias(sql->sa, sc, tname, cname),s);
@@ -2883,11 +2883,11 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 	char *msg = NULL;
 	stmt *res;
 
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	stmt *dels = stmt_tid(sql->sa, k->t);
-	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 
 	if (list_length(k->columns) > 1) {
 		node *m;
@@ -2932,7 +2932,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal, 0);
 			s = stmt_result(sql->sa, s, 0);
 		}
-		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
+		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_lng(sql->sa, 0), ne);
 
 		/* 2e stage: find out if inserted are unique */
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
@@ -2988,7 +2988,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0);
 		}
 		/* s should be empty */
-		s = stmt_binop(sql->sa, s, stmt_atom_wrd(sql->sa, 0), ne);
+		s = stmt_binop(sql->sa, s, stmt_atom_lng(sql->sa, 0), ne);
 
 		/* 2e stage: find out if inserts are unique */
 		if (h->nrcols) {	/* insert multiple atoms */
@@ -3009,9 +3009,9 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			stmt_group_done(g);
 			ss = stmt_result(sql->sa, g, 2); /* use count */
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", wrd);
+			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", lng);
 			ssum = stmt_aggr(sql->sa, ss, NULL, NULL, sum, 1, 0);
-			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_wrd(sql->sa, 0), ssum, NULL);
+			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_lng(sql->sa, 0), ssum, NULL);
 			count_sum = stmt_binop(sql->sa, check_types(sql, tail_type(ssum), stmt_aggr(sql->sa, ss, NULL, NULL, cnt, 1, 0), type_equal), ssum, ne);
 
 			/* combine results */
@@ -3032,17 +3032,17 @@ insert_check_fkey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts, stmt *
 {
 	char *msg = NULL;
 	stmt *cs = list_fetch(inserts, 0), *s = cs->op1;
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 
 	(void) sql;		/* unused! */
 
 	if (pin && list_length(pin->op4.lval)) 
 		s = pin->op4.lval->h->data;
 	if (s->key && s->nrcols == 0) {
-		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_inserts, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 1), ne);
+		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_inserts, NULL, NULL, cnt, 1, 0), stmt_atom_lng(sql->sa, 1), ne);
 	} else {
 		/* releqjoin.count <> inserts[col1].count */
 		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, idx_inserts, NULL, NULL, cnt, 1, 0), stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), ne);
@@ -3230,7 +3230,7 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(sql, t, l)) 
 		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (insert->op1->nrcols == 0) {
-		s = stmt_atom_wrd(sql->sa, 1);
+		s = stmt_atom_lng(sql->sa, 1);
 	} else {
 		s = stmt_aggr(sql->sa, insert->op1, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0);
 	}
@@ -3295,13 +3295,13 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 	char *msg = NULL;
 	stmt *res = NULL;
 
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne;
 
 	(void)tids;
-	ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
+	ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 	if (list_length(k->columns) > 1) {
 		stmt *dels = stmt_tid(sql->sa, k->t);
 		node *m;
@@ -3336,7 +3336,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			}
 			s = releqjoin(sql, lje, rje, 1 /* hash used */, cmp_equal, 0);
 			s = stmt_result(sql->sa, s, 0);
-			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
+			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_lng(sql->sa, 0), ne);
 		}
 
 		/* 2e stage: find out if the updated are unique */
@@ -3357,7 +3357,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				Cnt = stmt_result(sql->sa, g, 2);
 
 				/* continue only with groups with a cnt > 1 */
-				cand = stmt_uselect(sql->sa, Cnt, stmt_atom_wrd(sql->sa, 1), cmp_gt, NULL);
+				cand = stmt_uselect(sql->sa, Cnt, stmt_atom_lng(sql->sa, 1), cmp_gt, NULL);
 				/* project cand on ext and Cnt */
 				Cnt = stmt_project(sql->sa, cand, Cnt);
 				ext = stmt_project(sql->sa, cand, ext);
@@ -3405,10 +3405,10 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			stmt_group_done(g);
 			ss = Cnt; /* use count */
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", wrd);
+			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", lng);
 			ssum = stmt_aggr(sql->sa, ss, NULL, NULL, sum, 1, 0);
-			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_wrd(sql->sa, 0), ssum, NULL);
-			count_sum = stmt_binop(sql->sa, stmt_aggr(sql->sa, ss, NULL, NULL, cnt, 1, 0), check_types(sql, wrd, ssum, type_equal), ne);
+			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_lng(sql->sa, 0), ssum, NULL);
+			count_sum = stmt_binop(sql->sa, stmt_aggr(sql->sa, ss, NULL, NULL, cnt, 1, 0), check_types(sql, lng, ssum, type_equal), ne);
 
 			/* combine results */
 			if (s) 
@@ -3437,7 +3437,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			o = stmt_col(sql, c->c, nu_tids);
 			s = stmt_join(sql->sa, o, h, cmp_equal);
 			s = stmt_result(sql->sa, s, 0);
-			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
+			s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0), stmt_atom_lng(sql->sa, 0), ne);
 		}
 
 		/* 2e stage: find out if updated are unique */
@@ -3466,9 +3466,9 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			ss = stmt_result(sql->sa, g, 2); /* use count */
 
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", wrd);
+			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", lng);
 			ssum = stmt_aggr(sql->sa, ss, NULL, NULL, sum, 1, 0);
-			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_wrd(sql->sa, 0), ssum, NULL);
+			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_lng(sql->sa, 0), ssum, NULL);
 			count_sum = stmt_binop(sql->sa, check_types(sql, tail_type(ssum), stmt_aggr(sql->sa, ss, NULL, NULL, cnt, 1, 0), type_equal), ssum, ne);
 
 			/* combine results */
@@ -3520,9 +3520,9 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 {
 	char *msg = NULL;
 	stmt *s, *cur, *null = NULL, *cntnulls;
-	sql_subtype *wrd = sql_bind_localtype("wrd"), *bt = sql_bind_localtype("bit");
+	sql_subtype *lng = sql_bind_localtype("lng"), *bt = sql_bind_localtype("bit");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 	node *m;
 
@@ -3566,7 +3566,7 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 	if (null) {
 		cntnulls = stmt_aggr(sql->sa, null, NULL, NULL, cnt, 1, 0); 
 	} else {
-		cntnulls = stmt_atom_wrd(sql->sa, 0);
+		cntnulls = stmt_atom_lng(sql->sa, 0);
 	}
 	s = stmt_binop(sql->sa, s, 
 		stmt_binop(sql->sa, stmt_aggr(sql->sa, stmt_selectnil(sql, idx_updates), NULL, NULL, cnt, 1, 0), cntnulls , ne), or);
@@ -3585,10 +3585,10 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 	sql_key *rk = &((sql_fkey*)k)->rkey->k;
 	stmt *s = NULL, *dels = stmt_tid(sql->sa, rk->t), *fdels, *cnteqjoin;
 	stmt *null = NULL, *rows;
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
 
@@ -3627,7 +3627,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 	/* add missing nulls */
 	cnteqjoin = stmt_aggr(sql->sa, s, NULL, NULL, cnt, 1, 0);
 	if (nulls) {
-		sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", wrd, wrd, wrd);
+		sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
 		cnteqjoin = stmt_binop(sql->sa, cnteqjoin, stmt_aggr(sql->sa, null, NULL, NULL, cnt, 1, 0), add);
 	}
 
@@ -3799,8 +3799,8 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 {
 	/* calculate new value */
 	node *m;
-	sql_subtype *it, *wrd;
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
+	sql_subtype *it, *lng;
+	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	stmt *h = NULL, *tids;
 
 	if (list_length(i->columns) <= 1)
@@ -3808,7 +3808,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 
 	tids = stmt_tid(sql->sa, i->t);
 	it = sql_bind_localtype("int");
-	wrd = sql_bind_localtype("wrd");
+	lng = sql_bind_localtype("lng");
 	for (m = i->columns->h; m; m = m->next ) {
 		sql_kc *c = m->data;
 		stmt *upd;
@@ -3823,7 +3823,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		}
 
 		if (h && i->type == hash_idx)  { 
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
+			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, &c->c->type, lng);
 
 			h = stmt_Nop(sql->sa, stmt_list( sql->sa, list_append( list_append(
 				list_append(sa_list(sql->sa), h), 
@@ -3831,15 +3831,15 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 				xor);
 		} else if (h)  { 
 			stmt *h2;
-			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
-			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", lng, it, lng);
+			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", lng, lng, lng);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 
 			h = stmt_binop(sql->sa, h, stmt_atom_int(sql->sa, bits), lsh); 
 			h2 = stmt_unop(sql->sa, upd, hf);
 			h = stmt_binop(sql->sa, h, h2, lor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 			h = stmt_unop(sql->sa, upd, hf);
 			if (i->type == oph_idx)
 				break;
@@ -4206,13 +4206,13 @@ sql_delete_ukey(mvc *sql, stmt *utids /* deleted tids from ukey table */, sql_ke
 	sql_ukey *uk = (sql_ukey*)k;
 
 	if (uk->keys && list_length(uk->keys) > 0) {
-		sql_subtype *wrd = sql_bind_localtype("wrd");
+		sql_subtype *lng = sql_bind_localtype("lng");
 		sql_subtype *bt = sql_bind_localtype("bit");
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
 			char *msg = NULL;
 			sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-			sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", wrd, wrd, bt);
+			sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
 			sql_key *fk = n->data;
 			stmt *s, *tids;
 
@@ -4235,7 +4235,7 @@ sql_delete_ukey(mvc *sql, stmt *utids /* deleted tids from ukey table */, sql_ke
 					break;
 				default:	/*RESTRICT*/
 					/* The overlap between deleted primaries and foreign should be empty */
-					s = stmt_binop(sql->sa, stmt_aggr(sql->sa, tids, NULL, NULL, cnt, 1, 0), stmt_atom_wrd(sql->sa, 0), ne);
+					s = stmt_binop(sql->sa, stmt_aggr(sql->sa, tids, NULL, NULL, cnt, 1, 0), stmt_atom_lng(sql->sa, 0), ne);
 					msg = sa_message(sql->sa, "DELETE: FOREIGN KEY constraint '%s.%s' violated", fk->t->base.name, fk->base.name);
 					s = stmt_exception(sql->sa, s, msg, 00001);
 					list_prepend(l, s);
@@ -4363,7 +4363,7 @@ rel2bin_output(mvc *sql, sql_rel *rel, list *refs)
 		stmt *cnt = stmt_aggr(sql->sa, s->op4.lval->h->data, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0);
 		list_append(slist, stmt_affected_rows(sql->sa, cnt));
 	} else {
-		list_append(slist, stmt_affected_rows(sql->sa, stmt_atom_wrd(sql->sa, 1)));
+		list_append(slist, stmt_affected_rows(sql->sa, stmt_atom_lng(sql->sa, 1)));
 	}
 	return stmt_list(sql->sa, slist);
 }

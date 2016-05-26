@@ -30,7 +30,7 @@ Ready.
 #SELECT extract(month from period) as m, count(1) as cnt FROM mmtest_v GROUP BY m;
 % .L,	.L2 # table_name
 % m,	cnt # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 [ 1,	1	]
 #rollback;

@@ -44,7 +44,7 @@ Ready.
 #hired is not null GROUP BY hired ORDER BY hired;
 % sys.voyages,	sys.L1 # table_name
 % hired,	L1 # name
-% varchar,	wrd # type
+% varchar,	bigint # type
 % 0,	1 # length
 #drop table voyages;
 

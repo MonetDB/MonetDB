@@ -2,7 +2,7 @@ n := 100000000:int;
 io.printf("\ninput count: %9lld\n", n);
 
 include microbenchmark;
-b := microbenchmark.uniform(0:oid,100000000:wrd,n);
+b := microbenchmark.uniform(0:oid,100000000:lng,n);
 
 function user.doit ( b:bat[:int] , n:int , x1:int , x2:int ) :void;
 

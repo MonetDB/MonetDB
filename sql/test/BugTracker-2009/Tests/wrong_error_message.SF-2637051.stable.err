@@ -78,7 +78,7 @@ stderr of test 'wrong_error_message.SF-2637051` in directory 'sql/test/BugTracke
 # 22:52:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31408 
 # 22:52:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select test from test2 group by test;
 ERROR = !SELECT: identifier 'test' unknown
 

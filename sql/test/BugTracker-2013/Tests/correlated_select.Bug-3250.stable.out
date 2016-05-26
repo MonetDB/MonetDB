@@ -53,7 +53,7 @@ Ready.
 #	mytest.id and i.n = mytest.n) from mytest order by id;
 % .mytest,	.mytest,	.mytest,	.L1 # table_name
 % id,	n,	flag,	L1 # name
-% int,	int,	int,	wrd # type
+% int,	int,	int,	bigint # type
 % 1,	1,	2,	1 # length
 [ 1,	1,	NULL,	0	]
 [ 2,	1,	NULL,	1	]
@@ -65,7 +65,7 @@ Ready.
 #	mytest.id and i.n = mytest.n and flag is not null) from mytest order by id;
 % .mytest,	.mytest,	.mytest,	.L1 # table_name
 % id,	n,	flag,	L1 # name
-% int,	int,	int,	wrd # type
+% int,	int,	int,	bigint # type
 % 1,	1,	2,	1 # length
 [ 1,	1,	NULL,	0	]
 [ 2,	1,	NULL,	0	]

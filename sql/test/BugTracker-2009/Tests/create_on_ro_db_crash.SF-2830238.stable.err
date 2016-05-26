@@ -5,7 +5,7 @@ stderr of test 'create_on_ro_db_crash.SF-2830238` in directory 'sql/test/BugTrac
 # 21:37:20 >  /usr/bin/python create_on_ro_db_crash.SF-2830238.py create_on_ro_db_crash.SF-2830238 
 # 21:37:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table t2 (a int);
 ERROR = !schema statements cannot be executed on a readonly database.
 # builtin opt 	gdk_dbname = demo

@@ -80,7 +80,7 @@ stderr of test 'rollback_bug` in directory 'sql/test/BugTracker-2009` itself:
 # 11:34:05 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32901 
 # 11:34:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE TABLE phpbb_attachments (
         	attach_id integer DEFAULT next value for "sys"."phpbb_attachments_seq",
         	post_msg_id integer DEFAULT '0' NOT NULL ,
@@ -90,7 +90,7 @@ QUERY = CREATE TABLE phpbb_attachments (
         	is_orphan LONG DEFAULT '1' NOT NULL ,
 ERROR = !type (long) unknown in: "create table phpbb_attachments (
         !	attach_id integer default next value for "sys""
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE TABLE phpbb_attachments (
         	attach_id integer DEFAULT next value for "sys"."phpbb_attachments_seq",
         	post_msg_id integer DEFAULT '0' NOT NULL ,
@@ -103,7 +103,7 @@ QUERY = CREATE TABLE phpbb_attachments (
         	download_count integer DEFAULT '0' NOT NULL ,
         	attach_comment varchar(4000) DEFAULT '' NOT NULL,
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE TABLE phpbb_acl_groups (
         	group_id integer DEFAULT '0' NOT NULL ,
         	forum_id integer DEFAULT '0' NOT NULL ,
@@ -112,7 +112,7 @@ QUERY = CREATE TABLE phpbb_acl_groups (
         	auth_setting smallint DEFAULT '0' NOT NULL
         );
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COMMIT;
 ERROR = !COMMIT: failed
 

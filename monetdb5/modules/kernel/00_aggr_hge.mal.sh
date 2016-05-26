@@ -13,12 +13,12 @@ module aggr;
 
 EOF
 
-integer="bte sht int wrd lng hge"	# all integer types
+integer="bte sht int lng hge"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 fixtypes="bit $numeric oid"
 alltypes="$fixtypes str"
 
-for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
+for tp1 in 1:bte 2:sht 4:int 8:lng; do
     for tp2 in 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
@@ -59,7 +59,7 @@ EOF
 done
 
 for tp1 in 16:hge; do
-    for tp2 in 8:dbl 1:bte 2:sht 4:int 4:wrd 8:lng 16:hge; do
+    for tp2 in 8:dbl 1:bte 2:sht 4:int 8:lng 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
 command sum(b:bat[:${tp1#*:}],g:bat[:oid],e:bat[:any_1])
@@ -105,7 +105,7 @@ command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on ${tp}";
 
-command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:wrd])
+command avg(b:bat[:${tp}], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on ${tp}, also returns count";
 
@@ -117,11 +117,11 @@ command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
 
-command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:wrd])
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
-command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:wrd])
+command subavg(b:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 

@@ -79,7 +79,7 @@ stderr of test 'drop_constraint_bug` in directory 'sql/test/osm` itself:
 # 14:06:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35987 
 # 14:06:51 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table ways drop constraint ways_id_pkey;
 ERROR = !ALTER TABLE: cannot drop constraint 'ways_id_pkey': there are database objects which depend on it
 

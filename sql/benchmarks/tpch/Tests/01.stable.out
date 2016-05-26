@@ -50,7 +50,7 @@ Ready.
 #	l_linestatus;
 % sys.lineitem,	sys.lineitem,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-% char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	wrd # type
+% char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	bigint # type
 % 1,	1,	21,	21,	21,	21,	24,	24,	24,	5 # length
 [ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
 [ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]

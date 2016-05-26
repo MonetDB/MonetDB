@@ -30,13 +30,13 @@ stderr of test 'name_resolution_in_proc.Bug-3074` in directory 'sql/test/BugTrac
 # 16:33:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=35071"
 # 16:33:04 >  
 
-MAPI  = monetdb@niels:32580
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create procedure dc.archive()
         begin
             insert into runningcatalog select  * from dc.lta;
         end;
 ERROR = !INSERT INTO: no such table 'runningcatalog'
-MAPI  = monetdb@niels:32580
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = call dc.archive();
 ERROR = !current transaction is aborted (please ROLLBACK)
 

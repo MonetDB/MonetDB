@@ -80,7 +80,7 @@ stderr of test 'select_from_values` in directory 'sql/test/bugs` itself:
 # 23:25:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30272 
 # 23:25:51 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT * FROM (VALUES (0, Promo0), (1, Promo1)) AS "t" ;
 ERROR = !SELECT: identifier 'promo0' unknown
 

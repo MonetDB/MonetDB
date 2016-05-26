@@ -630,7 +630,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_exp *e;
 			sql_idx *i = cn->data;
-			sql_subtype *t = sql_bind_localtype("wrd"); /* hash "wrd" */
+			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
 			if (i->type == join_idx)

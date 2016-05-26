@@ -76,7 +76,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_163 := bat.append(X_156,"char");
     X_170 := bat.append(X_163,"varchar");
     X_177 := bat.append(X_170,"int");
-    X_186 := bat.append(X_177,"wrd");
+    X_186 := bat.append(X_177,"bigint");
     X_157 := bat.new(nil:oid,nil:int);
     X_165 := bat.append(X_157,10);
     X_172 := bat.append(X_165,25);
@@ -167,7 +167,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_130 := algebra.projection(r1_153,X_119);
     X_131 := algebra.projection(r1_153,X_118);
     X_132 := algebra.projection(r1_153,X_120);
-    X_134:bat[:wrd] := aggr.subcount(X_133,X_127,r1_153,true);
+    X_134:bat[:lng] := aggr.subcount(X_133,X_127,r1_153,true);
     (X_135,r1_162,r2_162) := algebra.subsort(X_134,true,false);
     (X_138,r1_166,r2_166) := algebra.subsort(X_132,r1_162,r2_162,false,false);
     (X_141,r1_169,r2_169) := algebra.subsort(X_131,r1_166,r2_166,false,false);

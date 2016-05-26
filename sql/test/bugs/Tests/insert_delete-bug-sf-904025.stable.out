@@ -74,7 +74,7 @@ Ready.
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 26	]
 #delete from tmp;
@@ -82,7 +82,7 @@ Ready.
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #insert into tmp select name, id from tbls where "type" = 0;
@@ -90,7 +90,7 @@ Ready.
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 26	]
 #delete from tmp;
@@ -98,7 +98,7 @@ Ready.
 #select count(*) from tmp;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 

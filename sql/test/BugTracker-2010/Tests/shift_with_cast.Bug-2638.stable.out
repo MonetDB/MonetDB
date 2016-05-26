@@ -25,13 +25,13 @@ Ready.
 # 23:40:19 >  
 
 #select cast(1 as bigint) << 8;
-% .L # table_name
+% .L1 # table_name
 % left_shift_single_value # name
 % bigint # type
 % 3 # length
 [ 256	]
 #select cast(98 as bigint) << 32;
-% .L # table_name
+% .L1 # table_name
 % left_shift_single_value # name
 % bigint # type
 % 12 # length

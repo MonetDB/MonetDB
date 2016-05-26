@@ -34,7 +34,7 @@ stderr of test 'perl-table_info.Bug-2885` in directory 'sql/test/BugTracker-2011
 # 13:18:48 >  perl /Users/hannes/MonetDB/sql/test/BugTracker-2011/Tests/perl-table_info.Bug-2885.pl 38981 mTests_test_BugTracker-2011
 # 13:18:48 >  
 
-DBD::monetdb::db table_info warning: Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs at /home/niels/data/rc/clean/sql/test/BugTracker-2011/Tests/perl-table_info.Bug-2885.pl line 13.
+DBD::monetdb::db table_info warning: Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs at /net/madrid/export/scratch1/sjoerd/src/MonetDB/devel/sql/test/BugTracker-2011/Tests/perl-table_info.Bug-2885.pl line 13.
 
 # 13:18:48 >  
 # 13:18:48 >  "Done."

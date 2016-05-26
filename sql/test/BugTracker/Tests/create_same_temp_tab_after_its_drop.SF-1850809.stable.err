@@ -12,10 +12,10 @@ stderr of test 'create_same_temp_tab_after_its_drop.SF-1850809` in directory 'sq
 # 11:00:59 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=35980 
 # 11:00:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO temptest VALUES (3);
 ERROR = !INSERT INTO: no such table 'temptest'
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP TABLE temptest;
 ERROR = !DROP TABLE: no such table 'temptest'
 

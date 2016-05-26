@@ -10,13 +10,13 @@ stderr of test 'sander` in directory 'sql/test/ADT2006` itself:
 # 11:28:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32149  < sander.sql
 # 11:28:18 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-12878/.s.monetdb.32234
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into suspect (name, picture_uri, notes,
         victim_name) values ("Dr. Thomas Neill Cream ",
         "http://blabla/toolong", "did commit murders, but by
         poisoning", "");
 ERROR = !SELECT: identifier 'Dr. Thomas Neill Cream ' unknown
-MAPI  = (monetdb) /var/tmp/mtest-12878/.s.monetdb.32234
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into suspect (name, picture_uri, notes,
         victim_name) values ("Sander Borsboom", "lives
         centuries later, so not much chance", "blah.jpg",

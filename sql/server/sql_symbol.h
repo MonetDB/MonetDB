@@ -23,7 +23,6 @@ typedef enum symtype {
 
 typedef union symbdata {
 	int i_val;
-	wrd w_val;
 	lng l_val;
 	char *sval;
 	struct dlist *lval;

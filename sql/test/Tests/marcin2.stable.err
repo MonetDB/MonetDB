@@ -11,10 +11,10 @@ stderr of test 'marcin2` in directory 'sql/test` itself:
 # 20:07:33 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin2.sql
 # 20:07:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select sum(*) from t3;
 ERROR = !SUM: unable to perform 'sum(*)'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select sum(*),val from t3 group by val ;
 ERROR = !SUM: unable to perform 'sum(*)'
 

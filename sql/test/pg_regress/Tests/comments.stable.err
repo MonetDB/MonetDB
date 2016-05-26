@@ -30,12 +30,12 @@ stderr of test 'comments` in directory 'sql/test/pg_regress` itself:
 # 17:48:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5017" "--port=30983"
 # 17:48:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = /* This block comment surrounds a query which itself has a block comment...
         SELECT /* embedded single line */ 'embedded' AS x2;
 ERROR = !syntax error, unexpected STRING in: "/* This block comment surrounds a query which itself has a block comment...
         !SELE"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = */
         
         SELECT -- continued after the following block comments...

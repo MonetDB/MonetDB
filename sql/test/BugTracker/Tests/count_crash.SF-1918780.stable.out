@@ -29,7 +29,7 @@ Ready.
 #select count(1000) from count_crash;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 3	]
 

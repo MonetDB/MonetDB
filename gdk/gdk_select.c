@@ -526,7 +526,7 @@ do {									\
 static BUN								\
 NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	      int li, int hi, int equi, int anti, int lval, int hval,	\
-	      BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,	\
+	      BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,	\
 	      const oid *candlist, BUN maximum, int use_imprints)	\
 {									\
 	TYPE vl = *tl;							\
@@ -586,7 +586,7 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 static BUN
 candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	      int li, int hi, int equi, int anti, int lval, int hval,
-	      BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
+	      BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,
 	      const oid *candlist, BUN maximum, int use_imprints)
 {
 	const void *v;
@@ -673,7 +673,7 @@ candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 static BUN
 fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	     int li, int hi, int equi, int anti, int lval, int hval,
-	     BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
+	     BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,
 	     const oid *candlist, BUN maximum, int use_imprints)
 {
 	const void *v;
@@ -761,7 +761,7 @@ fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 static BUN
 fullscan_str(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	     int li, int hi, int equi, int anti, int lval, int hval,
-	     BUN r, BUN q, BUN cnt, wrd off, oid *restrict dst,
+	     BUN r, BUN q, BUN cnt, lng off, oid *restrict dst,
 	     const oid *candlist, BUN maximum, int use_imprints)
 {
 	var_t pos;
@@ -885,9 +885,9 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	oid o, *restrict dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
-	 * instead of wrd, we could also use ssize_t or int/lng with
-	 * 32/64-bit OIDs */
-	wrd off;
+	 * instead of lng, we could also use ssize_t or int with
+	 * 32-bit OIDs */
+	lng off;
 	const oid *candlist;
 
 	assert(b != NULL);
@@ -1951,7 +1951,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	oid *restrict dst1, *restrict dst2;
 	const char *vrl, *vrh;
 	oid ro;
-	wrd off = 0;
+	lng off = 0;
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which column is sorted */
 	BAT *tmp;
@@ -2018,7 +2018,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			lcand = NULL;
 			lwidth = SIZEOF_OID;
 		}
-		off = (wrd) l->tseqbase - (wrd) l->hseqbase;
+		off = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 
 	t = ATOMtype(l->ttype);

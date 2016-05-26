@@ -9,7 +9,7 @@ module algebra;
 
 # TO BE REMOVED OR CHANGED FOR HEADLESS
 
-command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid]
+command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:lng]) :bat[:oid,:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
@@ -226,22 +226,22 @@ address ALGsubinter
 comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
 
 # @+ Projection operations
-pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], n:lng, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) :bat[:oid,:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], n:lng, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:wrd, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 
@@ -264,12 +264,12 @@ command slice(b:bat[:oid,:any_1], x:int, y:int) :bat[:oid,:any_1]
 address ALGslice_int
 comment "Return the slice with the BUNs at position x till y.";
 
-command slice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:any_1]
-address ALGslice_wrd
+command slice(b:bat[:oid,:any_1], x:lng, y:lng) :bat[:oid,:any_1]
+address ALGslice_lng
 comment "Return the slice with the BUNs at position x till y.";
 
-command subslice(b:bat[:oid,:any_1], x:wrd, y:wrd) :bat[:oid,:oid]
-address ALGsubslice_wrd
+command subslice(b:bat[:oid,:any_1], x:lng, y:lng) :bat[:oid,:oid]
+address ALGsubslice_lng
 comment "Return the oids of the slice with the BUNs at position x till y.";
 
 # @+ Common BAT Aggregates
@@ -278,14 +278,14 @@ comment "Return the oids of the slice with the BUNs at position x till y.";
 #  BAT size
 module aggr;
 
-command count( b:bat[:oid,:any] ) :wrd
+command count( b:bat[:oid,:any] ) :lng
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:oid,:any], ignore_nils:bit ) :wrd
+command count ( b:bat[:oid,:any], ignore_nils:bit ) :lng
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores
 		BUNs with nil-tail iff ignore_nils==TRUE.";
-command count_no_nil ( b:bat[:oid,:any_2]) :wrd
+command count_no_nil ( b:bat[:oid,:any_2]) :lng
 address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";

@@ -1714,14 +1714,14 @@ static list *
 sum_limit_offset(mvc *sql, list *exps )
 {
 	list *nexps = new_exp_list(sql->sa);
-	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subfunc *add;
 
 	/* if the expression list only consists of a limit expression, 
 	 * we copy it */
 	if (list_length(exps) == 1 && exps->h->data)
 		return append(nexps, exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", wrd, wrd, wrd);
+	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
 	return append(nexps, exp_op(sql->sa, exps, add));
 }
 
@@ -2103,7 +2103,7 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {
 		set_nodistinct(rel);
-		rel->l = rel_topn(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_wrd(sql->sa, 1)));
+		rel->l = rel_topn(sql->sa, rel->l, append(sa_list(sql->sa), exp_atom_lng(sql->sa, 1)));
 	}
 
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ]) 
@@ -2384,7 +2384,7 @@ math_unsafe_fixup_unop( mvc *sql, sql_exp *e, sql_exp *le, sql_exp *cond, int lr
 	append(args, cond);
 	if (!lr)
 		append(args, le);
-	o = exp_atom_wrd(sql->sa, 1);
+	o = exp_atom_lng(sql->sa, 1);
 	append(args, exp_convert(sql->sa, o, exp_subtype(o), exp_subtype(le)));
 	if (lr)
 		append(args, le);
@@ -2405,7 +2405,7 @@ math_unsafe_fixup_binop( mvc *sql, sql_exp *e, sql_exp *le, sql_exp *re, sql_exp
 	append(args, cond);
 	if (!lr)
 		append(args, re);
-	o = exp_atom_wrd(sql->sa, 1);
+	o = exp_atom_lng(sql->sa, 1);
 	append(args, exp_convert(sql->sa, o, exp_subtype(o), exp_subtype(re)));
 	if (lr)
 		append(args, re);

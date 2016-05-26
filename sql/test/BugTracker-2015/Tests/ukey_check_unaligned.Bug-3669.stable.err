@@ -30,7 +30,7 @@ stderr of test 'ukey_check_unaligned.Bug-3669` in directory 'sql/test/BugTracker
 # 20:45:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6699" "--port=39026"
 # 20:45:27 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6699/.s.monetdb.39026
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table tab add constraint tab_uc6 unique (id, nm, dt, qnt, descr);
 ERROR = !UPDATE: UNIQUE constraint 'tab.tab_uc6' violated
 

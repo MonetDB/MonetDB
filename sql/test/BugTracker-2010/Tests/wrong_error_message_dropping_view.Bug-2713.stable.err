@@ -71,7 +71,7 @@ stderr of test 'wrong_error_message_dropping_view.Bug-2713` in directory 'sql/te
 # 22:26:26 >  mclient -lsql -ftest -i -e --host=alf --port=32564 
 # 22:26:26 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop view t2713;
 ERROR = !DROP VIEW: unable to drop view 't2713': is a table
 

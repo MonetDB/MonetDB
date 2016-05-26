@@ -29,7 +29,7 @@ stderr of test 'large-number-operation-strange-results.Bug-2929` in directory 's
 # 14:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=32568"
 # 14:36:23 >  
 
-MAPI  = monetdb@niels:34633
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select          convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51                +          51.097 * 100000000000000;
 ERROR = !overflow in calculation 115099999999999999673254835333890048*10000.
 
