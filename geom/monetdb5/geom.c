@@ -6578,9 +6578,8 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 	BAT *xl, *xr, *bl, *br;
 	oid lo, ro;
 	BATiter lBAT_iter, rBAT_iter;
-    uint32_t i = 0, j = 0;
-    int count = 0;
-    //struct timeval stop, start;
+    uint32_t j = 0;
+    BUN pr = 0, pl = 0, qr = 0, ql = 0;
 	GEOSGeom *rGeometries = NULL;
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
@@ -6591,7 +6590,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
 	}
 
-	xl = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
+	xl = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
@@ -6599,7 +6598,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 	}
 	BATseqbase(xl,0);
 
-	xr = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
+	xr = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
 	if ( xr == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
@@ -6611,25 +6610,23 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);
 	rBAT_iter = bat_iterator(br);
-    lo =  BUNfirst(bl);
 
     /*Get the Geometry for the inner BAT*/
     rGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom) * BATcount(br));
-    ro = BUNfirst(br);
-    for (j = 0; j < BATcount(br); j++, ro++) {
-        wkb *rWKB = (wkb *) BUNtail(rBAT_iter, ro);
+    BATloop(br, pr, qr) {
+        wkb *rWKB = (wkb *) BUNtail(rBAT_iter, pr);
         rGeometries[j] = wkb2geos(rWKB);
     }
 
-	for (i = 0; i < BATcount(bl); i++, lo++) {
+    lo = bl->hseqbase;
+    BATloop(bl, pl, ql) {
 		str err = NULL;
 		wkb *lWKB = NULL;
 	    mbr *lMBR = NULL;
 	    GEOSGeom lGeometry = NULL;
-        ro = BUNfirst(br);
+        ro = br->hseqbase;
 
-		//lWKB = (wkb *) BUNtail(lBAT_iter, i + BUNfirst(bl));
-        lWKB = (wkb *) BUNtail(lBAT_iter, lo);
+        lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
 
 	    lMBR = mbrFromGeos(lGeometry);
@@ -6641,13 +6638,10 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
             return err;
         }
 
-        // gettimeofday(&start, NULL);
         for (j = 0; j < BATcount(br); j++, ro++) {
             bit out = 0;
             mbr *rMBR = NULL;
 	        GEOSGeom rGeometry = rGeometries[j];
-    		//rWKB = (wkb *) BUNtail(rBAT_iter, j + BUNfirst(br));
-
             if (!lGeometry ||!rGeometry) {
                 if (lGeometry)
                     GEOSGeom_destroy(lGeometry);
@@ -6683,24 +6677,12 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
                 BBPunfix(xr->batCacheid);
                 return err;
             } else if (out) {
-
-                count++;
+                out = 0;
                 if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
                     GEOSGeom_destroy(lGeometry);
                     GEOSGeom_destroy(rGeometry);
 		            throw(MAL, "geom.Contains", "GEOSIntersects failed");
                 }
-
-                /*
-                err = wkbIntersects(&out, &lWKB, &rWKB);
-                if (err != MAL_SUCCEED) {
-                    BBPunfix(*lid);
-                    BBPunfix(*rid);
-                    BBPunfix(xl->batCacheid);
-                    BBPunfix(xr->batCacheid);
-                    return err;
-                }
-                */
                 if (out) {
                     BUNappend(xl, &lo, FALSE);
                     BUNappend(xr, &ro, FALSE);
@@ -6711,9 +6693,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
         if (lGeometry)
             GEOSGeom_destroy(lGeometry);
         GDKfree(lMBR);
-
-        //gettimeofday(&stop, NULL);
-        //printf("took %lu\n", stop.tv_usec - start.tv_usec);
+        lo++;
 	}
     if (rGeometries) {
         for (j = 0; j < BATcount(br);j++) {
@@ -6721,6 +6701,8 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
         }
         GDKfree(rGeometries);
     }
+    BATderiveProps(xl, FALSE);
+    BATderiveProps(xr, FALSE);
 	BBPunfix(*lid);
 	BBPunfix(*rid);
 	BBPkeepref(*lres = xl->batCacheid);
