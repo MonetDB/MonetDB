@@ -38,6 +38,9 @@ public class Test_Dobjects {
 //			dumpResultSet(dbmd.getSchemas());	// this produces different outputs on different platforms due to dependency on SAMTOOLS and NETCDF. so exclude it
 			dumpResultSet(dbmd.getSchemas(null, "sys"));
 			dumpResultSet(dbmd.getTables(null, "sys", null, null));
+			dumpResultSet(dbmd.getUDTs(null, "sys", null, null));
+			int[] UDTtypes = { Types.STRUCT, Types.DISTINCT };
+			dumpResultSet(dbmd.getUDTs(null, "sys", null, UDTtypes));
 		} catch (SQLException e) {
 			System.out.println("FAILED :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");
