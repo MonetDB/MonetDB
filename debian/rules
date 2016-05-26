@@ -31,7 +31,7 @@ override_dh_auto_configure:
 	--enable-oid32=no \
 	--enable-optimize=yes \
 	--enable-profile=no \
-	--enable-rintegration=no \
+	--enable-rintegration=yes \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
