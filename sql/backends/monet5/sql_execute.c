@@ -84,7 +84,7 @@ SQLsetTrace(Client cntxt)
 			break;
 	mb->stop=k;
 
-	q= newStmt(mb, "profiler", "stoptrace");
+	q= newStmt(mb, profilerRef, stoptraceRef);
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,ASSIGNsymbol);
