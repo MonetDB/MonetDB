@@ -15,11 +15,17 @@
 #include "mal_instruction.h"
 #include "opt_volcano.h"
 
+// delaying the startup should not be continued throughout the plan
+// after the startup phase there should be intermediate work to do
+//A heuristic to check it
+#define MAXdelays 128
+
 int
 OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit;
 	int mvcvar = -1;
+	int count=0;
 	InstrPtr p,q, *old = mb->stmt;
 
 	(void) pci;
@@ -42,7 +48,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			continue;
 		}
 
-		if( getModuleId(p) == algebraRef ){
+		if( count < MAXdelays && getModuleId(p) == algebraRef ){
 			if( getFunctionId(p) == subselectRef ||
 				getFunctionId(p) == thetasubselectRef ||
 				getFunctionId(p) == likesubselectRef ||
@@ -52,15 +58,17 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				q =  pushArgument(mb,q,mvcvar);
 				q =  pushArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
+				count++;
 			}
 			continue;
 		}
-		if( getModuleId(p) == groupRef ){
+		if( count < MAXdelays && getModuleId(p) == groupRef ){
 			if( getFunctionId(p) == subgroupdoneRef ){
 				q= newStmt(mb, languageRef, blockRef);
 				q =  pushArgument(mb,q,mvcvar);
 				q =  pushArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
+				count++;
 			}
 		}
 		if( getModuleId(p) == sqlRef){
@@ -76,5 +84,5 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 	} 
 	GDKfree(old);
-	return 1;
+	return count;
 }
