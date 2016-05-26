@@ -84,7 +84,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 			break;
 	mb->stop=k;
 
-	q= newStmt(mb, "profiler", "stoptrace");
+	q= newStmt(mb, profilerRef, stoptraceRef);
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,ASSIGNsymbol);
@@ -483,7 +483,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			err = 1;
 		else{
 			SQLaddQueryToCache(c);
-			SQLoptimizeFunction(c,c->curprg->def,m);
+			SQLoptimizeFunction(c,c->curprg->def);
 		}
 
 		if (err ||c->curprg->def->errors) {
@@ -700,7 +700,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL,"RAstatement","Program contains errors");
 		else {
 			SQLaddQueryToCache(c);
-			SQLoptimizeFunction(c,c->curprg->def,m);
+			SQLoptimizeFunction(c,c->curprg->def);
 		}
 			SQLrun(c,b,m);
 		if (!msg) {

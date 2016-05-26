@@ -8,8 +8,6 @@
 
 /*
  * N. Nes, M.L. Kersten
- */
-/*
  * The queries are stored in the user cache after they have been
  * type checked and optimized.
  */
@@ -23,7 +21,9 @@
 #include "sql_gencode.h"
 #include "opt_pipes.h"
 
-/* prepare is set when we can not optimize based on actual size */
+/* calculate the footprint for optimizer pipe line choices
+ * and identify empty columns upfront for just in time optimizers.
+ */
 static lng
 SQLgetColumnSize(sql_trans *tr, sql_column *c)
 {
@@ -45,6 +45,7 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c)
 	}
 	return size;
 }
+
 static lng 
 SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
@@ -54,37 +55,9 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
 
-		/* first straight binds with a single return */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc == 1){
-			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
-			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
-			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
-			sql_schema *s = mvc_bind_schema(m, sname);
-			sql_table *t = 0;
-			sql_column *c = 0;
-			size = 0;
-
-			if (!s || strcmp(s->base.name, dt_schema) == 0) 
-				continue;
-			t = mvc_bind_table(m, s, tname);
-			if (!t)
-				continue;
-			c = mvc_bind_column(m, t, cname);
-			if (!s)
-				continue;
-
-			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-				size = SQLgetColumnSize(tr, c);
-				if( access == 0)
-					space += size;	// accumulate once
-				if( !prepare && size == 0 )
-					setFunctionId(p, emptybindRef);
-			}
-		}
 		/* now deal with the update binds, it is only necessary to identify that there are updats
 		 * The actual size is not that important */
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc == 2){
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc <= 2){
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
 			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
@@ -111,33 +84,30 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 					setFunctionId(p, emptybindRef);
 			}
 		}
-/* ignore index bats for a while
-			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
-				if (f == bindidxRef) {
-					sql_idx *i = mvc_bind_idx(m, s, cname);
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
+			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
+			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+			sql_schema *s = mvc_bind_schema(m, sname);
 
-					if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-						BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
-						if (b) {
-							space += (size =getBatSpace(b));
-							if( !prepare && size == 0){
-								clrFunction(p);
-								setModuleId(p, batRef);
-								setFunctionId(p, newRef);
-								p->argc =1;
-								p =pushType(mb,p, b->ttype);
-						
-							}
-							BBPunfix(b->batCacheid);
-						}
+			if (getFunctionId(p) == bindidxRef) {
+				sql_idx *i = mvc_bind_idx(m, s, cname);
+
+				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
+					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
+					if (b) {
+						space += (size =getBatSpace(b));
+						if( !prepare && size == 0)
+							setFunctionId(p, emptybindidxRef);
+						BBPunfix(b->batCacheid);
 					}
 				}
 			}
-*/
+		}
 	}
 	return space;
 }
 
+/* gather the optimizer pipeline defined in the current session */
 str
 getSQLoptimizer(mvc *m)
 {
@@ -149,13 +119,13 @@ getSQLoptimizer(mvc *m)
 	return pipe;
 }
 
-static void
+static str
 addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 {
 	int i;
 	InstrPtr q;
 	backend *be;
-	str msg;
+	str msg= MAL_SUCCEED;
 	lng space;
 
 	be = (backend *) c->sqlcontext;
@@ -163,6 +133,8 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 
 	space = SQLgetSpace(be->mvc, mb, prepare);
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
+		/* for queries with a potential large footprint and running the default pipe line,
+		 * we can switch to a better one. */
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
 			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
@@ -171,8 +143,9 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	} else
 		pipe = pipe? pipe: "default_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
-	if (msg)
-		GDKfree(msg);	/* what to do with an error? */
+	if (msg){
+		return msg;
+	}
 	if (be->mvc->no_mitosis) {
 		for (i = mb->stop - 1; i > 0; i--) {
 			q = getInstrPtr(mb, i);
@@ -187,27 +160,27 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 		c->curprg->def->keephistory = TRUE;
 	} else
 		c->curprg->def->keephistory = FALSE;
+	return msg;
 }
 
+/* Queries that should rely on the latest consolidated state
+ * are not allowed to remove sql.binds operations.
+ */
+
 str
-SQLoptimizeFunction(Client c, MalBlkPtr mb, mvc *m)
+SQLoptimizeFunction(Client c, MalBlkPtr mb)
 {
 	str msg;
-	str pipe = getSQLoptimizer(m);
+	str pipe;
+	backend *be = (backend *) c->sqlcontext;
+	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	addOptimizers(c, mb, pipe, TRUE);
-	msg = optimizeMALBlock(c, mb);
+	pipe = getSQLoptimizer(be->mvc);
+	msg = addOptimizers(c, mb, pipe, TRUE);
 	if (msg)
 		return msg;
-
-	/* time to execute the optimizers */
-	if (c->debug)
-		optimizerCheck(c, mb, "sql.baseline", -1, 0);
-#ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "End Optimize Query\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#endif
-	return MAL_SUCCEED;
+	msg = optimizeMALBlock(c, mb);
+	return msg;
 }
 
 str
@@ -219,15 +192,11 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
-	pipe = getSQLoptimizer(be->mvc);
 
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	chkProgram(c->fdout, c->nspace, mb);
-#ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "Optimize query\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#endif
+
 	/*
 	 * An error in the compilation should be reported to the user.
 	 * And if the debugging option is set, the debugger is called
@@ -246,21 +215,15 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		return NULL;
 	}
 
-	addOptimizers(c, mb, pipe, FALSE);
-	msg = optimizeMALBlock(c, mb);
+	pipe = getSQLoptimizer(be->mvc);
+	msg = addOptimizers(c, mb, pipe, FALSE);
 	if (msg)
 		return msg;
-
-	/* time to execute the optimizers */
-	if (c->debug)
-		optimizerCheck(c, mb, "sql.baseline", -1, 0);
-#ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "End Optimize Query\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#endif
-	return MAL_SUCCEED;
+	msg = optimizeMALBlock(c, mb);
+	return msg;
 }
 
+/* queries are added to the MAL catalog  under the client session namespace */
 void
 SQLaddQueryToCache(Client c)
 {

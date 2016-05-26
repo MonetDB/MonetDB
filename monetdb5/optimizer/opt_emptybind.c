@@ -120,6 +120,14 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			continue;
 		}
 
+		if (getFunctionId(p) == emptybindidxRef) {
+			OPTDEBUGemptybind
+				mnstr_printf(cntxt->fdout, "#empty bindidx  pc %d var %d\n",i , getArg(p,0) );
+			setFunctionId(p,bindidxRef);
+			marked[getArg(p,0)] = i;
+			continue;
+		}
+
 		// delta operations without updates+ insert can be replaced by an assignment
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc ==5){
 			OPTDEBUGemptybind

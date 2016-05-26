@@ -277,6 +277,10 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	mb->optimize= GDKusec() - clk;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
 	newComment(mb,buf);
+	DEBUGoptimizers{
+		mnstr_printf(GDKout, "#Finished MAL optimizer\n");
+		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;

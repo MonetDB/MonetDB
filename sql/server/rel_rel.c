@@ -966,7 +966,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 			rrel = rn->data;
 			rrel2 = rn2->data;
 			
-			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2))
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2) || is_processed(lrel) || is_processed(rrel))
 				break;
 
 			/* push down as long as the operators allow this
@@ -988,7 +988,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 			lrel = ln->data;
 			rrel = rn->data;
 			
-			if (rel_is_ref(lrel) || rel_is_ref(rrel))
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || is_processed(lrel) || is_processed(rrel))
 				break;
 
 			/* push down as long as the operators allow this
