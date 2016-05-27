@@ -2483,7 +2483,6 @@ if test "x$enable_py3integration" != xno && test x"$have_libpy" == xno; then
 			# we can't have symlinks (because Windows) but we need the files from /pyapi/ in the /pyapi3/ folder, so we just copy them
 			cp monetdb5/extras/pyapi/*.c monetdb5/extras/pyapi3/
 			cp monetdb5/extras/pyapi/*.h monetdb5/extras/pyapi3/
-			AC_MSG_ERROR("Hello")
 			AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
 			AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
 			AC_SUBST(libpy3_LIBS, $libpy3_LIBS)

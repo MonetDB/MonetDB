@@ -7,7 +7,7 @@ INSERT INTO rval VALUES (33078.94),(38306.16),(15479.68),(34616.68),(28974.00),(
 
 # [ 3824, 78690   ]
 
-CREATE AGGREGATE rquantile(v double, q double) RETURNS integer LANGUAGE PYTHON3YTHON3
+CREATE AGGREGATE rquantile(v double, q double) RETURNS integer LANGUAGE PYTHON3
 { 
 	return numpy.percentile(v,q[0] * 100) 
 };

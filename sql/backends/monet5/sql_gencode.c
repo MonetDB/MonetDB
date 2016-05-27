@@ -2234,7 +2234,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (LANG_EXT(s->op4.aggrval->aggr->lang))
 				q = pushPtr(mb, q, s->op4.aggrval->aggr);
-			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R || s->op4.aggrval->aggr->lang == FUNC_LANG_PY || s->op4.aggrval->aggr->lang == FUNC_LANG_MAP_PY){
+			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R || s->op4.aggrval->aggr->lang == FUNC_LANG_PY || s->op4.aggrval->aggr->lang == FUNC_LANG_MAP_PY || s->op4.aggrval->aggr->lang == FUNC_LANG_PY3 || s->op4.aggrval->aggr->lang == FUNC_LANG_MAP_PY3){
 				if (!g) {
 					setVarType(mb, getArg(q, 0), restype);
 					setVarUDFtype(mb, getArg(q, 0));
