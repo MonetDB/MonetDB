@@ -35,11 +35,7 @@
 #define PythonUnicodeType Py_UNICODE
 #endif
 
-#ifdef IS_PY3K
-static char* pyapi_enableflag = "embedded_py3";
-#else
 static char* pyapi_enableflag = "embedded_py";
-#endif
 const char* verbose_enableflag = "enable_pyverbose";
 const char* warning_enableflag = "enable_pywarnings";
 const char* debug_enableflag = "enable_pydebug";

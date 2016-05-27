@@ -315,6 +315,7 @@ CONDITIONALS = {
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPANDAS'       : "@HAVE_LIBPANDAS_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
+    'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_LIDAR'           : "@HAVE_LIDAR_FALSE@",
@@ -2799,7 +2800,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             # enable Python integration in server
-            if CONDITIONALS['HAVE_LIBPY']:
+            if CONDITIONALS['HAVE_LIBPY'] or CONDITIONALS['HAVE_LIBPY3']:
                 Srvr.extend(['--set', 'embedded_py=true'])
                 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
