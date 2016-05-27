@@ -580,7 +580,7 @@ geom_to_sfcgal(sfcgal_geometry_t **res, const GEOSGeometry *geosGeometry)
 
                 for (i = 0; i < numInteriorRings; i++)
                 {
-                    sfcgal_geometry_t* ring = sfcgal_from_geom(&ret, *(GEOSGeom*)GEOSGetInteriorRingN(geosGeometry, i), wkbLineString_mdb);
+                    sfcgal_geometry_t* ring = sfcgal_from_geom(&ret, GEOSGetInteriorRingN(geosGeometry, i), wkbLineString_mdb);
                     sfcgal_polygon_add_interior_ring(ret_geom, ring);
                 }
                 *res = ret_geom;

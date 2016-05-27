@@ -13,9 +13,9 @@ static char *x3d_3_psurface(GEOSGeom psur, int precision, int opts, const char *
 static char *x3d_3_tin(GEOSGeom tin, int precision, int opts, const char *defid);
 /*static size_t x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid);*/
 /*static char *x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid);*/
-static size_t geom_toX3D3(GEOSGeom geom, char *buf, int precision, int opts, int is_closed);
+static size_t geom_toX3D3(const GEOSGeometry *geom, char *buf, int precision, int opts, int is_closed);
 
-static size_t geom_X3Dsize(GEOSGeom geom, int precision);
+static size_t geom_X3Dsize(const GEOSGeometry *geom, int precision);
 static void trim_trailing_zeros(char *str);
 
 /*
@@ -279,7 +279,7 @@ x3d_3_poly_buf(GEOSGeom poly, char *output, int precision, int opts)
     for (i=0; i<nIntRings; i++)
     {
         ptr += sprintf(ptr, " ");
-        ptr += geom_toX3D3(*(GEOSGeom*)GEOSGetInteriorRingN(poly, i), ptr, precision, opts,1);
+        ptr += geom_toX3D3(GEOSGetInteriorRingN(poly, i), ptr, precision, opts,1);
     }
     return (ptr-output);
 }
@@ -702,7 +702,7 @@ x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid)
 #endif
 
 static size_t
-geom_toX3D3(GEOSGeom geom, char *output, int precision, int opts, int is_closed)
+geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int is_closed)
 {
     uint32_t i;
     char *ptr;
@@ -793,7 +793,7 @@ geom_toX3D3(GEOSGeom geom, char *output, int precision, int opts, int is_closed)
 }
 
 static size_t
-geom_X3Dsize(GEOSGeom geom, int precision)
+geom_X3Dsize(const GEOSGeometry *geom, int precision)
 {
     uint32_t npoints = 0;
     numPointsGeometry(&npoints, geom);

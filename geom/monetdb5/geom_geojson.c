@@ -10,8 +10,8 @@ static char * asgeojson_collection(GEOSGeom col, char *srs, bbox3D *bbox, int pr
 static size_t asgeojson_geom_size(GEOSGeom geom, bbox3D *bbox, int precision);
 static size_t asgeojson_geom_buf(GEOSGeom geom, char *output, bbox3D *bbox, int precision);
 
-static size_t points_to_geojson(GEOSGeom geom, char *buf, int precision);
-static size_t points_geojson_size(GEOSGeom geom, int precision);
+static size_t points_to_geojson(const GEOSGeometry *geom, char *buf, int precision);
+static size_t points_geojson_size(const GEOSGeometry *geom, int precision);
 static void trim_trailing_zeros(char *str);
 
 #define BUFSIZE OUT_MAX_DIGS_DOUBLE+OUT_MAX_DOUBLE_PRECISION
@@ -214,7 +214,7 @@ asgeojson_poly_size(GEOSGeom poly, char *srs, bbox3D *bbox, int precision)
     size += sizeof("\"coordinates\":[");
     for (i=0; i<nrings; i++)
     {
-        size += points_geojson_size(*(GEOSGeom*)GEOSGetInteriorRingN(poly, i), precision);
+        size += points_geojson_size(GEOSGetInteriorRingN(poly, i), precision);
         size += sizeof("[]");
     }
     size += sizeof(",") * i;
@@ -237,7 +237,7 @@ asgeojson_poly_buf(GEOSGeom poly, char *srs, char *output, bbox3D *bbox, int pre
     {
         if (i) ptr += sprintf(ptr, ",");
         ptr += sprintf(ptr, "[");
-        ptr += points_to_geojson(*(GEOSGeom*) GEOSGetInteriorRingN(poly, i), ptr, precision);
+        ptr += points_to_geojson(GEOSGetInteriorRingN(poly, i), ptr, precision);
         ptr += sprintf(ptr, "]");
     }
     ptr += sprintf(ptr, "]}");
@@ -397,7 +397,7 @@ asgeojson_multipolygon_size(GEOSGeom mpoly, char *srs, bbox3D *bbox, int precisi
         nrings = GEOSGetNumInteriorRings(poly);
         for (j=0 ; j <nrings ; j++)
         {
-            size += points_geojson_size(*(GEOSGeom*)GEOSGetInteriorRingN(poly, j), precision);
+            size += points_geojson_size(GEOSGetInteriorRingN(poly, j), precision);
             size += sizeof("[]");
         }
         size += sizeof("[]");
@@ -430,7 +430,7 @@ asgeojson_multipolygon_buf(GEOSGeom mpoly, char *srs, char *output, bbox3D *bbox
         {
             if (j) ptr += sprintf(ptr, ",");
             ptr += sprintf(ptr, "[");
-            ptr += points_to_geojson(*(GEOSGeom*)GEOSGetInteriorRingN(poly, j), ptr, precision);
+            ptr += points_to_geojson(GEOSGetInteriorRingN(poly, j), ptr, precision);
             ptr += sprintf(ptr, "]");
         }
         ptr += sprintf(ptr, "]");
@@ -611,7 +611,7 @@ print_double(double d, int maxdd, char *buf, size_t bufsize)
 }
 
 static size_t
-points_to_geojson(GEOSGeom geom, char *output, int precision)
+points_to_geojson(const GEOSGeometry *geom, char *output, int precision)
 {
     uint32_t i;
     char *ptr;
@@ -673,7 +673,7 @@ points_to_geojson(GEOSGeom geom, char *output, int precision)
 }
 
     static size_t
-points_geojson_size(GEOSGeom geom, int precision)
+points_geojson_size(const GEOSGeometry *geom, int precision)
 {
     uint32_t npoints = 0;
     numPointsGeometry(&npoints, geom);
