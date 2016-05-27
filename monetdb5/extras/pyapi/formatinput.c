@@ -375,6 +375,7 @@ finally:
     return newcode;
 }
 
-void _formatinput_init(void) {
+NUMPY_IMPORT_ARRAY_RETTYPE _formatinput_init(void) {
     import_array();
+    return NUMPY_IMPORT_ARRAY_RETVAL;
 }

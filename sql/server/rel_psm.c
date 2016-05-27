@@ -779,7 +779,9 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 						(lang == FUNC_LANG_C)?"capi":
 						(lang == FUNC_LANG_J)?"japi":
 						(lang == FUNC_LANG_PY)?"pyapi":
-     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
+     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":
+     					(lang == FUNC_LANG_PY3)?"pyapi3":
+     					(lang == FUNC_LANG_MAP_PY3)?"pyapi3map":"unknown";
 				sql->params = NULL;
 				if (create) {
 					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);

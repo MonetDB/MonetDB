@@ -1789,16 +1789,22 @@ func_def:
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p')
             {
-                if (strcasecmp($10, "PYTHON_MAP") == 0)
-                    lang = FUNC_LANG_MAP_PY;
-                else lang = FUNC_LANG_PY;
+                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
             }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, PYTHON[3], PYTHON3_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1846,16 +1852,22 @@ func_def:
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p')
             {
-                if (strcasecmp($10, "PYTHON_MAP") == 0)
-                     lang = FUNC_LANG_MAP_PY;
-                else lang = FUNC_LANG_PY;
+                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
             }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, PYTHON[3], PYTHON[3]_MAP, or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);

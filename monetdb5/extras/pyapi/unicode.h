@@ -72,6 +72,6 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage, int offs
 */
 int utf32_char_to_utf8_char(size_t position, char *utf8_storage, unsigned int utf32_char);
 
-void _unicode_init(void);
+NUMPY_IMPORT_ARRAY_RETTYPE _unicode_init(void);
 
 #endif /* _UNICODE_LIB_ */

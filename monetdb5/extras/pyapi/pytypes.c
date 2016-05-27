@@ -166,6 +166,7 @@ bool PyType_IsLazyArray(PyObject *object)
     return ret;
 }
 
-void _pytypes_init(void) {
+NUMPY_IMPORT_ARRAY_RETTYPE _pytypes_init(void) {
     import_array();
+    return NUMPY_IMPORT_ARRAY_RETVAL;
 }

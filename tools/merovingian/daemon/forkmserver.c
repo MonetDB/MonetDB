@@ -271,6 +271,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		char *readonly = NULL;
 		char *embeddedr = NULL;
 		char *embeddedpy = NULL;
+		char *embeddedpy3 = NULL;
 		char *argv[512];	/* for the exec arguments */
 		char property_other[1024];
 		int c = 0;
@@ -323,6 +324,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 			embeddedpy = "embedded_py=true";
 
+		kv = findConfKey(ckv, "embedpy3");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+			embeddedpy3 = "embedded_py3=true";
 
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
@@ -390,6 +394,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		if (embeddedpy != NULL) {
 			argv[c++] = "--set"; argv[c++] = embeddedpy;
+		}
+		if (embeddedpy3 != NULL) {
+			argv[c++] = "--set"; argv[c++] = embeddedpy3;
 		}
 		if (readonly != NULL) {
 			argv[c++] = readonly;

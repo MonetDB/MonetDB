@@ -52,6 +52,15 @@
 #include <numpy/arrayobject.h>
 #include <numpy/npy_common.h>
 
+// For some presumably very good reason the NumPy function import_array() returns NULL in Python3 and nothing (void type) in Python2
+#if PY_VERSION_HEX >= 0x03000000
+#define NUMPY_IMPORT_ARRAY_RETTYPE void*
+#define PYFUNCNAME(name) PYAPI3##name
+#else
+#define NUMPY_IMPORT_ARRAY_RETTYPE void
+#define PYFUNCNAME(name) PYAPI2##name
+#endif
+
 #ifndef NDEBUG
 // Enable verbose output, note that this #define must be set and mserver must be started with --set <verbose_enableflag>=true
 #define _PYAPI_VERBOSE_
@@ -92,14 +101,12 @@ extern bool option_warning;
 #define pyapi_export extern
 #endif
 
-pyapi_export str PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pyapi_export str PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-pyapi_export str PyAPIprelude(void *ret);
-
-int PyAPIEnabled(void);
+pyapi_export str PYFUNCNAME(PyAPIprelude)(void *ret);
 
 pyapi_export void* lookup_function(char *func, char* library);
 

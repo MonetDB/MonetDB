@@ -206,6 +206,7 @@ bool utf8_to_utf32(size_t offset, size_t size, Py_UNICODE *utf32_storage, const 
     return true;
 }
 
-void _unicode_init(void) {
+NUMPY_IMPORT_ARRAY_RETTYPE _unicode_init(void) {
     import_array();
+    return NUMPY_IMPORT_ARRAY_RETVAL;
 }

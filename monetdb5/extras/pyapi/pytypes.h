@@ -119,6 +119,6 @@ pyapi_export bool Python_ReleaseGIL(bool);
 #define SCALAR_TO_PYSCALAR(mtpe, value) mtpe##_TO_PYSCALAR(value)
 
 
-void _pytypes_init(void);
+NUMPY_IMPORT_ARRAY_RETTYPE _pytypes_init(void);
 
 #endif /* _PYTYPE_LIB_ */

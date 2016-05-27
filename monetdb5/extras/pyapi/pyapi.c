@@ -33,10 +33,13 @@
 #define PythonUnicodeType char
 #else
 #define PythonUnicodeType Py_UNICODE
-
 #endif
 
-const char* pyapi_enableflag = "embedded_py";
+#ifdef IS_PY3K
+static char* pyapi_enableflag = "embedded_py3";
+#else
+static char* pyapi_enableflag = "embedded_py";
+#endif
 const char* verbose_enableflag = "enable_pyverbose";
 const char* warning_enableflag = "enable_pywarnings";
 const char* debug_enableflag = "enable_pydebug";
@@ -55,7 +58,8 @@ PyObject *marshal_loads = NULL;
 
 const int utf8string_minlength = 256;
 
-int PyAPIEnabled(void) {
+static int PyAPIEnabled(void);
+static int PyAPIEnabled(void) {
     return (GDKgetenv_istrue(pyapi_enableflag)
             || GDKgetenv_isyes(pyapi_enableflag));
 }
@@ -396,29 +400,29 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
     GDKfree(temp_indices);                                                        \
 } 
 
-str
+static str
 PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped);
 
 str
-PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
 }
 
 str
-PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     return PyAPIeval(cntxt, mb, stk, pci, 0, 1);
 }
 
 str
-PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     return PyAPIeval(cntxt, mb, stk, pci, 1, 0);
 }
 
 str
-PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
 }
@@ -438,7 +442,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_b
 //! [EXECUTE_CODE] Step 3: It executes the Python code using the Numpy arrays as arguments
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
-str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
+static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
     sql_func * sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
     str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
@@ -1601,7 +1605,7 @@ wrapup:
 }
 
 str
- PyAPIprelude(void *ret) {
+PYFUNCNAME(PyAPIprelude)(void *ret) {
     (void) ret;
 #ifndef _EMBEDDED_MONETDB_MONETDB_LIB_
     MT_lock_init(&pyapiLock, "pyapi_lock");
@@ -1639,7 +1643,11 @@ str
             pyapiInitialized++;
         }
         MT_lock_unset(&pyapiLock);
+#ifdef IS_PY3K
+        fprintf(stdout, "# MonetDB/Python3 module loaded\n");
+#else
         fprintf(stdout, "# MonetDB/Python module loaded\n");
+#endif
     }
 #else
     if (!pyapiInitialized) {

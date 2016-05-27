@@ -178,9 +178,22 @@ static PyMethodDef _connectionObject_methods[] = {
     {NULL,NULL,0,NULL}  /* Sentinel */
 };
 
-PyTypeObject Py_ConnectionType = {
-    PyObject_HEAD_INIT(NULL)
-    0,
+PyTypeObject Py_ConnectionType = {  
+    _PyObject_EXTRA_INIT
+// in python3 they use structs within structs to represent this information, and many compilers throw warnings if you don't use separate braces
+// to initialize these separate structs. However, in Python2, they use #defines to put this information in, so we have these nice #ifdefs
+#ifdef IS_PY3K
+    { { 
+#endif
+        1, NULL 
+#ifdef IS_PY3K
+    }
+#endif 
+    , 0
+#ifdef IS_PY3K
+    }
+#endif
+    ,
     "monetdb._connection",
     sizeof(Py_ConnectionObject),
     0,
@@ -262,7 +275,7 @@ PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
     return (PyObject*) op;
 }
 
-void _connection_init(void)
+NUMPY_IMPORT_ARRAY_RETTYPE _connection_init(void)
 {
     import_array();
 
@@ -270,5 +283,6 @@ void _connection_init(void)
     LOAD_SQL_FUNCTION_PTR(SQLstatementIntern, "lib_sql.dll");
 
     if (PyType_Ready(&Py_ConnectionType) < 0)
-        return;
+        return NUMPY_IMPORT_ARRAY_RETVAL;
+    return NUMPY_IMPORT_ARRAY_RETVAL;
 }

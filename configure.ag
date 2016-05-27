@@ -279,6 +279,13 @@ AC_ARG_ENABLE(pyintegration,
 	enable_pyintegration=$enableval,
 	enable_pyintegration=$dft_pyintegration)
 
+dft_py3integration=auto
+AC_ARG_ENABLE(py3integration,
+	AS_HELP_STRING([--enable-py3integration],
+		[enable support for Python 3 integration into MonetDB (default=auto)]),
+	enable_py3integration=$enableval,
+	enable_py3integration=$dft_py3integration)
+
 dft_odbc=auto
 AC_ARG_ENABLE(odbc,
 	AS_HELP_STRING([--enable-odbc],
@@ -1284,13 +1291,13 @@ case "$have_python3" in
 		;;
 esac
 
-AC_ARG_WITH(pyconfig,
-	AS_HELP_STRING([--with-pyconfig=FILE], [python-config is installed as FILE]),
-	have_pyconfig="$withval")
+AC_ARG_WITH(py2config,
+	AS_HELP_STRING([--with-py2config=FILE], [python2-config is installed as FILE]),
+	have_py2config="$withval")
 
-AC_ARG_WITH(pyversion,
-	AS_HELP_STRING([--with-pyversion=FILE], [python is installed as FILE]),
-	have_pyversion="$withval")
+AC_ARG_WITH(py3config,
+	AS_HELP_STRING([--with-py3config=FILE], [python3-config is installed as FILE]),
+	have_py3config="$withval")
 
 dnl Figure out a default for PYTHON2 or PYTHON3
 AC_PATH_PROG(PYTHON,python,no,$PATH)
@@ -2331,27 +2338,24 @@ if test "x$enable_pyintegration" != xno; then
 		AC_MSG_ERROR([--enable-pyintegration value must be yes|no|auto|absolute path of python-config])
 		;;
 	esac
-	if test "x$have_pyconfig" = x; then
-	   	AC_PATH_PROG(PYCMD,python-config,,$XPATH)
-	   	if test "x$PYCMD" = x; then
+	if test "x$have_py2config" = x; then
+	   	AC_PATH_PROG(PY2CONFIG,python2-config,,$XPATH)
+	   	if test "x$PY2CONFIG" = x; then
 	  		if test "x$enable_pyintegration" = xyes; then
-				AC_MSG_ERROR([python-config library required for Python integration support])
+				AC_MSG_ERROR([python2-config library required for Python integration support])
 			else
 				have_libpy="no"
-			 	why_have_libpy="(python-config command not found)"
+			 	why_have_libpy="(python2-config command not found)"
 				enable_pyintegration=no
-				disable_pyintegration="(python-config command not found)"
+				disable_pyintegration="(python2-config command not found)"
 			fi
 		fi
 	else
-		PYCMD="$have_pyconfig"
+		PY2CONFIG="$have_py2config"
 	fi
 
-	if test "x$have_pyversion" = x; then
-		PYTHON_CMD=$PYTHON2
-	else
-		PYTHON_CMD=$have_pyversion
-	fi
+	PYTHON_CMD=$PYTHON2
+
 	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)"`
 	#check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
 	AC_CHECK_HEADER(
@@ -2379,7 +2383,7 @@ if test "x$enable_pyintegration" != xno; then
 		fi
 	else
 		libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
-		libpy_LIBS=`$PYCMD --ldflags`
+		libpy_LIBS=`$PY2CONFIG --ldflags`
 		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))"`
 		if [test "x$HAVEPYTHONHEADER" = xTrue]; then
 			have_libpy=yes
@@ -2409,6 +2413,88 @@ fi
 AM_CONDITIONAL(HAVE_LIBPY, test x"$have_libpy" != xno)
 AM_CONDITIONAL(HAVE_LIBPANDAS, test x"$have_libpandas" != xno)
 AM_CONDITIONAL(HAVE_LIBSCIPY, test x"$have_libscipy" != xno)
+
+# Python 3 API
+have_libpy3=no
+if test "x$enable_py3integration" != xno; then
+	case "$enable_py3integration" in
+	yes|auto)
+		XPATH="$PATH"
+		;;
+	/*)
+		XPATH="$enable_py3integration"
+		enable_py3integration=yes
+		;;
+	*)
+		AC_MSG_ERROR([--enable-py3integration value must be yes|no|auto|absolute path of python-config])
+		;;
+	esac
+	if test "x$have_py3config" = x; then
+		# for some god forsaken reason autoconf thinks python2-config and python3-config are the same program, so we have to explicitly tell it not to select python2-config when we want python3-config
+	   	AC_PATH_PROG(PY3CONFIG,python3-config,,$XPATH,$PY2CONFIG)
+	   	if test "x$PY3CONFIG" = x; then
+	  		if test "x$enable_py3integration" = xyes; then
+				AC_MSG_ERROR([python3-config required for Python3 integration support])
+			else
+				have_libpy3="no"
+			 	why_have_libpy3="(python3-config command not found)"
+				enable_py3integration=no
+				disable_py3integration="(python3-config command not found)"
+			fi
+		fi
+	else
+		PY3CONFIG="$have_py3config"
+	fi
+
+	PYTHON_CMD=$PYTHON3
+
+	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)"`
+	# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
+	AC_CHECK_HEADER(
+	    [numpy/numpyconfig.h], 
+		[NUMPYHEADERS=True],
+		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))"`]
+		)
+	if [test "x$NUMPYVER" = x] || [test "x$NUMPYVER" = xFalse]; then
+	  	if test "x$enable_py3integration" = xyes; then
+			AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])
+		else
+			have_libpy3="no"
+		 	why_have_libpy3="(numpy version >= 1.7.0 not found)"
+			enable_py3integration=no
+			disable_py3integration="(numpy version >= 1.7.0 not found)"
+		fi
+	elif [test "x$NUMPYHEADERS" = xFalse ]; then
+		if test "x$enable_py3integration" = xyes; then
+			AC_MSG_ERROR([numpy/arrayobject.h not found])
+		else
+			have_libpy3="no"
+		 	why_have_libpy3="(numpy/arrayobject.h not found)"
+			enable_py3integration=no
+			disable_py3integration="(numpy/arrayobject.h not found)"
+		fi
+	else
+		libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
+		libpy3_LIBS=`$PY3CONFIG --ldflags`
+		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))"`
+		if [test "x$HAVEPYTHONHEADER" = xTrue]; then
+			have_libpy3=yes
+			AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
+			AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
+			AC_SUBST(libpy3_LIBS, $libpy3_LIBS)
+		else
+		  	if test "x$enable_py3integration" = xyes; then
+				AC_MSG_ERROR([Python.h not found])
+			else
+				have_libpy3="no"
+			 	why_have_libpy3="Python.h not found"
+				enable_py3integration=no
+				disable_py3integration="Python.h not found"
+			fi
+		fi
+	fi
+fi
+AM_CONDITIONAL(HAVE_LIBPY3, test x"$have_libpy3" != xno)
 
 AC_CHECK_HEADER([sys/sem.h], [SEMOP=True], [SEMOP=False])
 if [test "x$SEMOP" = "xTrue"]; then
@@ -3698,6 +3784,7 @@ for comp in \
 	'console     ' \
 	'microhttpd  ' \
 	'pyintegration' \
+	'py3integration' \
 	'rintegration' \
 	'odbc        ' \
 	'jdbc        ' \

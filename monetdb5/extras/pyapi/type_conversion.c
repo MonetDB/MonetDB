@@ -264,6 +264,7 @@ CONVERSION_FUNCTION_FACTORY(hge, hge)
 #endif
 #endif
 
-void _typeconversion_init(void) {
+NUMPY_IMPORT_ARRAY_RETTYPE _typeconversion_init(void) {
     import_array();
+    return NUMPY_IMPORT_ARRAY_RETVAL;
 }
