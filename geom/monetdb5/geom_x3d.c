@@ -757,7 +757,7 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
                 double pt_x, pt_y, pt_z = 0.0;
                 GEOSGeomGetX(point, &pt_x);
                 GEOSGeomGetY(point, &pt_y);
-                if (GEOSHasZ(point) != 1)
+                if (GEOSHasZ(point) == 1)
                     GEOSGeomGetZ(point, &pt_z);
 
                 if (fabs(pt_x) < OUT_MAX_DOUBLE)
