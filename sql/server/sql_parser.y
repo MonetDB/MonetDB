@@ -110,7 +110,6 @@ UTF8_strlen(const char *val)
 %pure-parser
 %union {
 	int		i_val,bval;
-	wrd		w_val;
 	lng		l_val,operation;
 	double		fval;
 	char *		sval;
@@ -332,6 +331,7 @@ int yydebug=1;
 	forest_element_name
 	XML_namespace_prefix
 	XML_PI_target
+	function_body
 
 %type <l>
 	passwd_schema
@@ -473,11 +473,6 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
-
-%type <w_val>
-	wrdval
-	poswrd
-	nonzerowrd
 
 %type <l_val>
 	lngval
@@ -1749,6 +1744,12 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
+
+function_body:
+	X_BODY
+|	string
+;
+
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1779,19 +1780,25 @@ func_def:
   | create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                    lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1830,19 +1837,25 @@ func_def:
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                     lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -3156,8 +3169,8 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 	{ $$ = NULL; }
- |  LIMIT nonzerowrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  LIMIT nonzerolng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  LIMIT param		{ $$ = $2; }
@@ -3165,8 +3178,8 @@ opt_limit:
 
 opt_offset:
 	/* empty */	{ $$ = NULL; }
- |  OFFSET poswrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  OFFSET poslng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
@@ -3174,8 +3187,8 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poswrd	{
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  SAMPLE poslng	{
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SAMPLE INTNUM	{
@@ -4712,29 +4725,8 @@ nonzerolng:
 		}
 	;
 
-nonzerowrd:
-	wrdval
-		{ $$ = $1;
-		  if ($$ <= 0) {
-			$$ = -1;
-			yyerror(m, "Positive value greater than 0 expected");
-			YYABORT;
-		  }
-		}
-	;
-
 poslng:
 	lngval 	{ $$ = $1;
-		  if ($$ < 0) {
-			$$ = -1;
-			yyerror(m, "Positive value expected");
-			YYABORT;
-		  }
-		}
-	;
-
-poswrd:
-	wrdval  { $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
 			yyerror(m, "Positive value expected");
@@ -5131,30 +5123,13 @@ name_commalist:
 			{ $$ = append_string($1, $3); }
  ;
 
-wrdval:
-	lngval 	{ 
-		lng l = $1;
-#if SIZEOF_WRD == SIZEOF_INT
-
-		if (l > GDK_int_max) {
-			char *msg = sql_message("\b22000!constant (" LLFMT ") has wrong type (number expected)", l);
-
-			yyerror(m, msg);
-			_DELETE(msg);
-			$$ = 0;
-			YYABORT;
-		}
-#endif
-		$$ = (wrd) l;
-	}
-;
-
 lngval:
 	sqlINT	
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 19) {
 		  	$$ = strtoll(s,&end,10);
 		  } else {
@@ -5176,7 +5151,8 @@ intval:
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 10) {
 		  	$$ = strtol(s,&end,10);
 		  } else {

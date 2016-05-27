@@ -1,5 +1,5 @@
 #Code factorization
-function test(s:str):wrd;
+function test(s:str):lng;
 	b:= bat.new(:oid,:str);
 	bat.append(b,"hello");
 	z:= algebra.subselect(b,s,s,true,true,false);

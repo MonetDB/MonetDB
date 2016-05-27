@@ -69,10 +69,10 @@ stderr of test 'rollback_mistake.SF-2814622` in directory 'sql/test/BugTracker-2
 # 19:34:00 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35878 
 # 19:34:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into tmp values(0,'llllll');
 ERROR = !value too long for type (var)char(3)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into tmp values(0,'ddd');
 ERROR = !INSERT INTO: no such table 'tmp'
 

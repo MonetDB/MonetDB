@@ -26,8 +26,7 @@ Ready.
 
 #SET TIME ZONE INTERVAL '+1:0' HOUR TO MINUTE;
 #SELECT CURRENT_TIMEZONE;
-% . # table_name
-# .L # table_name
+% .L # table_name
 % single_value # name
 % sec_interval # type
 % 8 # length

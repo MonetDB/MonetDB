@@ -53,7 +53,7 @@ Ready.
 #	WHERE A.subj = uniontable.subj
 % sys.a,	sys.L1 # table_name
 % prop,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 
 # 23:32:56 >  

@@ -76,17 +76,17 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_163 := bat.append(X_156,"char");
     X_170 := bat.append(X_163,"varchar");
     X_177 := bat.append(X_170,"int");
-    X_186 := bat.append(X_177,"wrd");
+    X_186 := bat.append(X_177,"bigint");
     X_157 := bat.new(nil:oid,nil:int);
     X_165 := bat.append(X_157,10);
     X_172 := bat.append(X_165,25);
     X_179 := bat.append(X_172,32);
-    X_188 := bat.append(X_179,32);
+    X_188 := bat.append(X_179,64);
     X_159 := bat.new(nil:oid,nil:int);
     X_167 := bat.append(X_159,0);
     X_174 := bat.append(X_167,0);
     X_181 := bat.append(X_174,0);
-    X_189 := bat.append(X_181,0);
+    X_190 := bat.append(X_181,0);
     X_12 := sql.mvc();
     C_13:bat[:oid] := sql.tid(X_12,"sys","partsupp");
     X_16:bat[:int] := sql.bind(X_12,"sys","partsupp","ps_suppkey",0);
@@ -167,7 +167,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_130 := algebra.projection(r1_153,X_119);
     X_131 := algebra.projection(r1_153,X_118);
     X_132 := algebra.projection(r1_153,X_120);
-    X_134:bat[:wrd] := aggr.subcount(X_133,X_127,r1_153,true);
+    X_134:bat[:lng] := aggr.subcount(X_133,X_127,r1_153,true);
     (X_135,r1_162,r2_162) := algebra.subsort(X_134,true,false);
     (X_138,r1_166,r2_166) := algebra.subsort(X_132,r1_162,r2_162,false,false);
     (X_141,r1_169,r2_169) := algebra.subsort(X_131,r1_166,r2_166,false,false);
@@ -176,7 +176,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_148 := algebra.projection(r1_172,X_131);
     X_149 := algebra.projection(r1_172,X_130);
     X_150 := algebra.projection(r1_172,X_134);
-    sql.resultSet(X_182,X_184,X_186,X_188,X_189,X_147,X_148,X_149,X_150);
+    sql.resultSet(X_182,X_184,X_186,X_188,X_190,X_147,X_148,X_149,X_150);
 end user.s2_1;
 
 # 22:53:29 >  

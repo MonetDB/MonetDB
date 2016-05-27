@@ -334,7 +334,7 @@ header: %s", nc_strerror(retval));
                         "Cannot read attribute %d of variable %d: %s",
                         aidx, vidx, nc_strerror(retval));
 
-	            if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
+		if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
                     return createException(MAL, "netcdf.attach",
 	                    "Cannot read attribute %s type and length: %s",
 	                    aname, nc_strerror(retval));

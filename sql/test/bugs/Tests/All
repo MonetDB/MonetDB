@@ -105,3 +105,6 @@ polymorphism
 emili
 substring_limit_bug
 apply_with_union_assertion
+cur_date_crash-JIRA-42
+WHERE_and_multiple_LEFT_JOIN_incorrect_results-JIRA-43
+WHERE_IN_subquery_incorrect_results-JIRA-44

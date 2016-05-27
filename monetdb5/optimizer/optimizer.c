@@ -87,7 +87,7 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
-	addtoMalBlkHistory(s->def,"start optimizer");
+	addtoMalBlkHistory(s->def);
 	return optimizeMALBlock(cntxt, s->def);
 }
 

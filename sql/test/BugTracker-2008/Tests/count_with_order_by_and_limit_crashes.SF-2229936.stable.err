@@ -82,7 +82,7 @@ stderr of test 'count_with_order_by_and_limit_crashes.SF-2229936` in directory '
 # 18:44:11 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38181  -G
 # 18:44:11 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select count(subtotal) from bigramlex order by subtotal;
 ERROR = !SELECT: identifier 'subtotal' unknown
 

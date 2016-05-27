@@ -95,7 +95,7 @@ Ready.
 #SELECT count(*) FROM kwTemp;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 20	]
 #SELECT 'filling s4_keywords from kwTemp';
@@ -109,7 +109,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 31 # length
+% 15 # length
 [ "dropping kwTemp"	]
 #DROP TABLE kwTemp;
 #COMMIT;
@@ -117,7 +117,7 @@ Ready.
 #SELECT count(*) FROM kwmtemp;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 20	]
 #SELECT 'filling s4_kwm from kwmTemp';
@@ -131,7 +131,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 27 # length
+% 16 # length
 [ "dropping kwmTemp"	]
 #DROP TABLE kwmTemp;
 #COMMIT;
@@ -139,13 +139,13 @@ Ready.
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% char,	wrd # type
+% char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #COMMIT;

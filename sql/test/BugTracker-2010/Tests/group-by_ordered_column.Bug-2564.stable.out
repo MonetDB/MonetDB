@@ -46,7 +46,7 @@ function user.s5_1():void;
     X_44 := bat.new(nil:oid,nil:str);
     X_51 := bat.append(X_44,"L1");
     X_45 := bat.new(nil:oid,nil:str);
-    X_53 := bat.append(X_45,"wrd");
+    X_53 := bat.append(X_45,"bigint");
     X_46 := bat.new(nil:oid,nil:int);
     X_55 := bat.append(X_46,64);
     X_48 := bat.new(nil:oid,nil:int);
@@ -71,13 +71,13 @@ function user.s5_1():void;
     (X_29,r1_29,r2_29) := group.subgroup(X_28);
     (X_32,r1_32,r2_32) := group.subgroup(X_21,X_29);
     (X_35,r1_35,r2_35) := group.subgroupdone(X_14,X_32);
-    X_38:bat[:wrd] := aggr.subcount(X_35,X_35,r1_35,false);
+    X_38:bat[:lng] := aggr.subcount(X_35,X_35,r1_35,false);
     sql.resultSet(X_49,X_51,X_53,X_55,X_57,X_38);
 end user.s5_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 [ 1	]

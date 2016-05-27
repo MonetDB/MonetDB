@@ -57,7 +57,7 @@ Ready.
 #LIMIT 10;
 % .s,	.L3 # table_name
 % refpos,	cnt # name
-% smallint,	wrd # type
+% smallint,	bigint # type
 % 1,	1 # length
 #DROP TABLE alignments_2;
 #DROP FUNCTION seq_char;

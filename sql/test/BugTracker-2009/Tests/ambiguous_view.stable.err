@@ -79,7 +79,7 @@ stderr of test 'ambiguous_view` in directory 'sql/test/BugTracker-2009` itself:
 # 20:07:37 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38269 
 # 20:07:37 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE VIEW eur_kg_test AS
         SELECT t_base.*
         , 'EUR' AS DT_CURR
@@ -87,10 +87,10 @@ QUERY = CREATE VIEW eur_kg_test AS
         FROM t_base
         ;
 ERROR = !CREATE VIEW: duplicate column name dt_uom
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from eur_kg_test;
 ERROR = !SELECT: no such table 'eur_kg_test'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop view eur_kg_test;
 ERROR = !DROP VIEW: unknown view 'eur_kg_test'
 

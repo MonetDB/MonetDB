@@ -94,8 +94,9 @@ Ready.
 #		on b_id = b.id 
 #		left join c 
 #		on c_id = c.id 
-#group by b.name, c.name, c.id;
-% .b,	.c,	sys.c # table_name
+#group by b.name, c.name, c.id
+#order by b.name, c.id, c.name;
+% .b,	.c,	.c # table_name
 % name,	id,	name # name
 % varchar,	bigint,	varchar # type
 % 2,	1,	2 # length

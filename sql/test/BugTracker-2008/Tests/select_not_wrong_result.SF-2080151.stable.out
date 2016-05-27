@@ -42,7 +42,7 @@ Ready.
 #WHERE a > 'a4' ));
 % sys.L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 

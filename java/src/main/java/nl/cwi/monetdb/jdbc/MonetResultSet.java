@@ -137,7 +137,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Constructor used by MonetFillableResultSet.
+	 * Constructor used by MonetVirtualResultSet.
 	 * DO NOT USE THIS CONSTRUCTOR IF YOU ARE NOT EXTENDING THIS OBJECT!
 	 *
 	 * @param columns the column names
@@ -300,14 +300,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int findColumn(String columnName) throws SQLException {
-		if (columnName != null) {
+		if (columnName != null && columns != null) {
 			for (int i = 0; i < columns.length; i++) {
-				if (columns[i].equals(columnName))
+				if (columnName.equals(columns[i]))
 					return i + 1;
 			}
 			/* if an exact match did not succeed try a case insensitive match */
 			for (int i = 0; i < columns.length; i++) {
-				if (columns[i].equalsIgnoreCase(columnName))
+				if (columnName.equalsIgnoreCase(columns[i]))
 					return i + 1;
 			}
 		}
@@ -328,30 +328,30 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	@Override
-	public Array getArray(int i) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000");
+	public Array getArray(int columnIndex) throws SQLException {
+		throw newSQLFeatureNotSupportedException("getArray");
 	}
 	@Override
 	public Array getArray(String colName) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getArray");
 	}
 
 	/* Mapi doesn't allow something for streams at the moment, thus all not implemented for now */
 	@Override
 	public InputStream getAsciiStream(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getAsciiStream");
 	}
 	@Override
 	public InputStream getAsciiStream(String columnName) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getAsciiStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getAsciiStream");
 	}
 	@Override
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
 	@Override
 	public InputStream getUnicodeStream(String columnName) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Method getUnicodeStream not implemented yet, sorry!", "0A000");
+		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
 
 	/**
@@ -470,7 +470,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Reader getNCharacterStream(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNCharacterStream() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getNCharacterStream");
 	}
 
 	/**
@@ -489,7 +489,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Reader getNCharacterStream(String columnName) throws SQLException {
-		return getNCharacterStream(findColumn(columnName));
+		throw newSQLFeatureNotSupportedException("getNCharacterStream");
 	}
 
 	/**
@@ -578,7 +578,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public NClob getNClob(int i) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getNClob() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getNClob");
 	}
 
 	/**
@@ -596,7 +596,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public NClob getNClob(String colName) throws SQLException {
-		return getNClob(findColumn(colName));
+		throw newSQLFeatureNotSupportedException("getNClob");
 	}
 
 	/**
@@ -928,7 +928,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getHoldability() throws SQLException {
-		return getStatement().getConnection().getHoldability();
+		// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+		if (this.getStatement() != null) {
+			return getStatement().getConnection().getHoldability();
+		}
+		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
 	}
 
 	/**
@@ -939,7 +943,30 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public int getFetchDirection() {
-		return FETCH_FORWARD;
+		return ResultSet.FETCH_FORWARD;
+	}
+
+	/**
+	 * Gives a hint as to the direction in which the rows in this ResultSet
+	 * object will be processed. The initial value is determined by the
+	 * Statement object that produced this ResultSet object.
+	 * The fetch direction may be changed at any time.
+	 * <b>currently not implemented</b>
+	 *
+	 * @param direction - an int specifying the suggested fetch direction;
+	 * one of ResultSet.FETCH_FORWARD, ResultSet.FETCH_REVERSE, or ResultSet.FETCH_UNKNOWN
+	 */
+	@Override
+	public void setFetchDirection(int direction) throws SQLException {
+		switch (direction) {
+		case ResultSet.FETCH_FORWARD:
+			break;
+		case ResultSet.FETCH_REVERSE:
+		case ResultSet.FETCH_UNKNOWN:
+			throw new SQLException("Not supported direction " + direction, "0A000");
+		default:
+			throw new SQLException("Illegal direction: " + direction, "M1M05");
+		}
 	}
 
 	/**
@@ -1146,8 +1173,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 						String colName = getColumnName(column);
 						if (colName != null && !"".equals(colName)) {
 							if (conn == null) {
-								// first time, get a Connection object and cache it for all next columns
-								conn = getStatement().getConnection();
+								// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+								if (getStatement() != null) {
+									// first time, get a Connection object and cache it for all next columns
+									conn = getStatement().getConnection();
+								}
 							}
 							if (conn != null && dbmd == null) {
 								// first time, get a MetaData object and cache it for all next columns
@@ -1543,8 +1573,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			public String getColumnClassName(int column) throws SQLException {
 				try {
 					if (conn == null) {
-						// first time, get a Connection object and cache it for all next columns
-						conn = getStatement().getConnection();
+						// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+						if (getStatement() != null) {
+							// first time, get a Connection object and cache it for all next columns
+							conn = getStatement().getConnection();
+						}
 					}
 					if (conn != null) {
 						Class type = null;
@@ -1652,10 +1685,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Object getObject(int columnIndex) throws SQLException {
-	  /* statement is null for virtual result sets such as the ones that hold generated keys */
-	  if (this.getStatement() == null) {
-	   return getObject(columnIndex, new HashMap<String, Class<?>>());
-	  }
+		/* statement is null for MonetVirtualResultSet such as the ones that hold generated keys */
+		if (this.getStatement() == null) {
+			return getObject(columnIndex, new HashMap<String, Class<?>>());
+		}
 		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 	}
 
@@ -1669,11 +1702,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Retrieves the value of the designated column in the current row of this
-	 * ResultSet object as an Object in the Java programming language. If the
-	 * value is an SQL NULL, the driver returns a Java null. This method uses
-	 * the given Map object for the custom mapping of the SQL structured or
-	 * distinct type that is being retrieved.
+	 * Gets the value of the designated column in the current row of this
+	 * ResultSet object as an Object in the Java programming language.
+	 *
+	 * This method will return the value of the given column as a Java object.
+	 * The type of the Java object will be the default Java object type corresponding
+	 * to the column's SQL type, following the mapping for built-in types specified
+	 * in the JDBC specification.
+	 * If the value is an SQL NULL, the driver returns a Java null.
+	 *
+	 * This method may also be used to read database-specific abstract data types.
+	 * In the JDBC 2.0 API, the behavior of method getObject is extended to
+	 * materialize data of SQL user-defined types.
+	 *
+	 * If Connection.getTypeMap does not throw a SQLFeatureNotSupportedException, then
+	 * when a column contains a structured or distinct value, the behavior of this
+	 * method is as if it were a call to: getObject(columnIndex,
+	 * this.getStatement().getConnection().getTypeMap()).
+	 * If Connection.getTypeMap does throw a SQLFeatureNotSupportedException, then
+	 * structured values are not supported, and distinct values are mapped to the
+	 * default Java class as determined by the underlying SQL type of the DISTINCT type.
 	 *
 	 * @param i the first column is 1, the second is 2, ...
 	 * @param map a java.util.Map object that contains the mapping from SQL
@@ -1894,6 +1942,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * supported.  If the conversion is not supported or null is
 	 * specified for the type, a SQLException is thrown.
 	 *
+	 * At a minimum, an implementation must support the conversions defined
+	 * in Appendix B, Table B-3 and conversion of appropriate user defined
+	 * SQL types to a Java type which implements SQLData, or Struct.
+	 * Additional conversions may be supported and are vendor defined.
+	 *
 	 * @param i the first column is 1, the second is 2, ...
 	 * @param type Class representing the Java data type to convert the
 	 *        designated column to
@@ -2006,19 +2059,13 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * This method may also be used to read database-specific abstract data
 	 * types.
 	 * 
-	 * In the JDBC 2.0 API, the behavior of the method getObject is extended to
-	 * materialize data of SQL user-defined types. When a column contains a
-	 * structured or distinct value, the behavior of this method is as if it
-	 * were a call to: getObject(columnName,
-	 * this.getStatement().getConnection().getTypeMap()).
-	 *
 	 * @param columnName the SQL name of the column
 	 * @return a java.lang.Object holding the column value
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
 	public Object getObject(String columnName) throws SQLException {
-		return getObject(columnName, this.getStatement().getConnection().getTypeMap());
+		return getObject(findColumn(columnName));
 	}
 
 	/**
@@ -2039,9 +2086,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	@Override
-	public Ref getRef(int i) throws SQLException { throw new SQLException("Method getRef not implemented yet, sorry!", "0A000"); }
+	public Ref getRef(int i) throws SQLException {
+		throw newSQLFeatureNotSupportedException("getRef");
+	}
+
 	@Override
-	public Ref getRef(String colName) throws SQLException { throw new SQLException("Method getRef not implemented yet, sorry!", "0A000"); }
+	public Ref getRef(String colName) throws SQLException {
+		throw newSQLFeatureNotSupportedException("getRef");
+	}
 
 	/**
 	 * Retrieves the current row number. The first row is number 1, the second
@@ -2068,7 +2120,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public RowId getRowId(int columnIndex) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getRowId() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getRowId");
 	}
 
 	/**
@@ -2085,7 +2137,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public RowId getRowId(String columnName) throws SQLException {
-		return getRowId(findColumn(columnName));
+		throw newSQLFeatureNotSupportedException("getRowId");
 	}
 
 	/**
@@ -2226,7 +2278,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public SQLXML getSQLXML(int i) throws SQLException {
-		throw new SQLFeatureNotSupportedException("getSQLXML() not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("getSQLXML");
 	}
 
 	/**
@@ -2244,7 +2296,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public SQLXML getSQLXML(String colName) throws SQLException {
-		return getSQLXML(findColumn(colName));
+		throw newSQLFeatureNotSupportedException("getSQLXML");
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
@@ -2427,7 +2479,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public java.sql.Date getDate(int columnIndex) throws SQLException {
-		return getDate(columnIndex,	Calendar.getInstance());
+		return getDate(columnIndex, Calendar.getInstance());
 	}
 
 	/**
@@ -2464,7 +2516,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public java.sql.Date getDate(String columnName) throws SQLException {
-		return getDate(columnName, Calendar.getInstance());
+		return getDate(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2538,7 +2590,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Time getTime(String columnName) throws SQLException {
-		return getTime(columnName, Calendar.getInstance());
+		return getTime(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2598,10 +2650,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		throws SQLException
 	{
 		int nanos = getJavaDate(cal, columnIndex, Types.TIMESTAMP);
-		if (nanos == -1) return null;
+		if (nanos == -1)
+			return null;
+
 		Timestamp ts = new Timestamp(cal.getTimeInMillis());
 		ts.setNanos(nanos);
-
 		return ts;
 	}
 
@@ -2617,7 +2670,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	@Override
 	public Timestamp getTimestamp(String columnName) throws SQLException {
-		return getTimestamp(columnName, Calendar.getInstance());
+		return getTimestamp(findColumn(columnName), Calendar.getInstance());
 	}
 
 	/**
@@ -2849,193 +2902,472 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	/* these methods are all related to updateable result sets, which we
 	   currently do not support */
 	@Override
-	public void cancelRowUpdates() throws SQLException { throw new SQLFeatureNotSupportedException("Method cancelRowUpdates not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void deleteRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method deleteRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void insertRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method insertRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void moveToCurrentRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method moveToCurrentRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void moveToInsertRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method moveToInsertRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void refreshRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method refreshRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public boolean rowDeleted() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowDeleted not implemented yet, sorry!", "0A000"); }
-	@Override
-	public boolean rowInserted() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowInserted not implemented yet, sorry!", "0A000"); }
-	@Override
-	public boolean rowUpdated() throws SQLException { throw new SQLFeatureNotSupportedException("Method rowUpdated not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void setFetchDirection(int direction) throws SQLException { throw new SQLFeatureNotSupportedException("Method setFetchDirection not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateArray(int columnIndex, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateArray(String columnName, Array x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateArray not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(int columnIndex, InputStream xh) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(String columnName, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateAsciiStream(String columnName, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateAsciiStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBigDecimal not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBigDecimal not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(String columnName, InputStream x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBinaryStream(String columnName, InputStream x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBinaryStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(int columnIndex, Blob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(int columnIndex, InputStream s) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(int columnIndex, InputStream s, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(String columnName, Blob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(String columnName, InputStream s) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBlob(String columnName, InputStream s, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBlob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBoolean(int columnIndex, boolean x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBoolean not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBoolean(String columnName, boolean x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBoolean not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateByte(int columnIndex, byte x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateByte not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateByte(String columnName, byte x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateByte not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBytes(int columnIndex, byte[] x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBytes not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateBytes(String columnName, byte[] x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateBytes not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(int columnIndex, Reader x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(String columnName, Reader reader) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateCharacterStream(String columnName, Reader reader, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	public void updateNCharacterStream(int columnIndex, Reader x, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(String columnName, Reader reader) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	public void updateNCharacterStream(String columnName, Reader reader, int length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNCharacterStream(String columnName, Reader reader, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNCharacterStream not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(int columnIndex, Clob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(int columnIndex, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(int columnIndex, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(String columnName, Clob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(String columnName, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateClob(String columnName, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(int columnIndex, NClob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(int columnIndex, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(int columnIndex, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(String columnName, NClob x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(String columnName, Reader r) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNClob(String columnName, Reader r, long length) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNClob not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDate not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDate(String columnName, java.sql.Date x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDate not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDouble(int columnIndex, double x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDouble not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateDouble(String columnName, double x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateDouble not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateFloat(int columnIndex, float x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateFloat not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateFloat(String columnName, float x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateFloat not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateInt(int columnIndex, int x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateInt not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateInt(String columnName, int x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateInt not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateLong(int columnIndex, long x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateLong not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateLong(String columnName, long x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateLong not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNull(int columnIndex) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNull not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNull(String columnName) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNull not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(int columnIndex, Object x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(int columnIndex, Object x, int scale) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(String columnName, Object x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateObject(String columnName, Object x, int scale) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateObject not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRef(int columnIndex, Ref x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRef not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRef(String columnName, Ref x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRef not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRow() throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRow not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateRowId(int columnIndex, RowId x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRowId not implemented yet, sorry", "0A000"); }
-	@Override
-	public void updateRowId(String columnLabel, RowId x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateRowId not implemented yet, sorry", "0A000"); }
-	@Override
-	public void updateShort(int columnIndex, short x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateShort not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateShort(String columnName, short x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateShort not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateString(int columnIndex, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateString(String columnName, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNString(int columnIndex, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateNString(String columnName, String x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateNString not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateSQLXML(String columnName, SQLXML x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateSQLXML not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateSQLXML(int columnIndex, SQLXML x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateSQLXML not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTime(int columnIndex, Time x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTime not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTime(String columnName, Time x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTime not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTimestamp not implemented yet, sorry!", "0A000"); }
-	@Override
-	public void updateTimestamp(String columnName, Timestamp x) throws SQLException { throw new SQLFeatureNotSupportedException("Method updateTimestamp not implemented yet, sorry!", "0A000"); }
+	public void cancelRowUpdates() throws SQLException {
+		throw newSQLFeatureNotSupportedException("cancelRowUpdates");
+	}
+
+	@Override
+	public void deleteRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("deleteRow");
+	}
+
+	@Override
+	public void insertRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("insertRow");
+	}
+
+	@Override
+	public void moveToCurrentRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("moveToCurrentRow");
+	}
+
+	@Override
+	public void moveToInsertRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("moveToInsertRow");
+	}
+
+	@Override
+	public void refreshRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("refreshRow");
+	}
+
+	@Override
+	public boolean rowDeleted() throws SQLException {
+		throw newSQLFeatureNotSupportedException("rowDeleted");
+	}
+
+	@Override
+	public boolean rowInserted() throws SQLException {
+		throw newSQLFeatureNotSupportedException("rowInserted");
+	}
+
+	@Override
+	public boolean rowUpdated() throws SQLException {
+		throw newSQLFeatureNotSupportedException("rowUpdated");
+	}
+
+	@Override
+	public void updateArray(int columnIndex, Array x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateArray");
+	}
+
+	@Override
+	public void updateArray(String columnName, Array x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateArray");
+	}
+
+	@Override
+	public void updateAsciiStream(int columnIndex, InputStream xh) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(String columnName, InputStream x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateAsciiStream(String columnName, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateAsciiStream");
+	}
+
+	@Override
+	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBigDecimal");
+	}
+
+	@Override
+	public void updateBigDecimal(String columnName, BigDecimal x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBigDecimal");
+	}
+
+	@Override
+	public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(String columnName, InputStream x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBinaryStream(String columnName, InputStream x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBinaryStream");
+	}
+
+	@Override
+	public void updateBlob(int columnIndex, Blob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(int columnIndex, InputStream s) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(int columnIndex, InputStream s, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(String columnName, Blob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(String columnName, InputStream s) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBlob(String columnName, InputStream s, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBlob");
+	}
+
+	@Override
+	public void updateBoolean(int columnIndex, boolean x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBoolean");
+	}
+
+	@Override
+	public void updateBoolean(String columnName, boolean x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBoolean");
+	}
+
+	@Override
+	public void updateByte(int columnIndex, byte x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateByte");
+	}
+
+	@Override
+	public void updateByte(String columnName, byte x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateByte");
+	}
+
+	@Override
+	public void updateBytes(int columnIndex, byte[] x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBytes");
+	}
+
+	@Override
+	public void updateBytes(String columnName, byte[] x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateBytes");
+	}
+
+	@Override
+	public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(String columnName, Reader reader) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(String columnName, Reader reader, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateCharacterStream(String columnName, Reader reader, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	public void updateNCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(String columnName, Reader reader) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	public void updateNCharacterStream(String columnName, Reader reader, int length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateNCharacterStream(String columnName, Reader reader, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNCharacterStream");
+	}
+
+	@Override
+	public void updateClob(int columnIndex, Clob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(int columnIndex, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(int columnIndex, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(String columnName, Clob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(String columnName, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateClob(String columnName, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateClob");
+	}
+
+	@Override
+	public void updateNClob(int columnIndex, NClob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(int columnIndex, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(int columnIndex, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(String columnName, NClob x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(String columnName, Reader r) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateNClob(String columnName, Reader r, long length) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNClob");
+	}
+
+	@Override
+	public void updateDate(int columnIndex, java.sql.Date x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDate");
+	}
+
+	@Override
+	public void updateDate(String columnName, java.sql.Date x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDate");
+	}
+
+	@Override
+	public void updateDouble(int columnIndex, double x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDouble");
+	}
+
+	@Override
+	public void updateDouble(String columnName, double x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateDouble");
+	}
+
+	@Override
+	public void updateFloat(int columnIndex, float x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateFloat");
+	}
+
+	@Override
+	public void updateFloat(String columnName, float x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateFloat");
+	}
+
+	@Override
+	public void updateInt(int columnIndex, int x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateInt");
+	}
+
+	@Override
+	public void updateInt(String columnName, int x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateInt");
+	}
+
+	@Override
+	public void updateLong(int columnIndex, long x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateLong");
+	}
+
+	@Override
+	public void updateLong(String columnName, long x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateLong");
+	}
+
+	@Override
+	public void updateNull(int columnIndex) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNull");
+	}
+
+	@Override
+	public void updateNull(String columnName) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNull");
+	}
+
+	@Override
+	public void updateObject(int columnIndex, Object x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateObject(int columnIndex, Object x, int scale) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateObject(String columnName, Object x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateObject(String columnName, Object x, int scale) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateObject");
+	}
+
+	@Override
+	public void updateRef(int columnIndex, Ref x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRef");
+	}
+
+	@Override
+	public void updateRef(String columnName, Ref x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRef");
+	}
+
+	@Override
+	public void updateRow() throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRow");
+	}
+
+	@Override
+	public void updateRowId(int columnIndex, RowId x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRowId");
+	}
+
+	@Override
+	public void updateRowId(String columnLabel, RowId x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateRowId");
+	}
+
+	@Override
+	public void updateShort(int columnIndex, short x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateShort");
+	}
+
+	@Override
+	public void updateShort(String columnName, short x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateShort");
+	}
+
+	@Override
+	public void updateString(int columnIndex, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateString");
+	}
+
+	@Override
+	public void updateString(String columnName, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateString");
+	}
+
+	@Override
+	public void updateNString(int columnIndex, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNString");
+	}
+
+	@Override
+	public void updateNString(String columnName, String x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateNString");
+	}
+
+	@Override
+	public void updateSQLXML(String columnName, SQLXML x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateSQLXML");
+	}
+
+	@Override
+	public void updateSQLXML(int columnIndex, SQLXML x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateSQLXML");
+	}
+
+	@Override
+	public void updateTime(int columnIndex, Time x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTime");
+	}
+
+	@Override
+	public void updateTime(String columnName, Time x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTime");
+	}
+
+	@Override
+	public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTimestamp");
+	}
+
+	@Override
+	public void updateTimestamp(String columnName, Timestamp x) throws SQLException {
+		throw newSQLFeatureNotSupportedException("updateTimestamp");
+	}
 
 	// Chapter 14.2.3.3 Sun JDBC 3.0 Specification
 	/**
@@ -3089,5 +3421,17 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				type = Types.BINARY;
 		}
 		return type;
+	}
+
+	/**
+	 * Small helper method that formats the "Method ... not implemented" message
+	 * and creates a new SQLFeatureNotSupportedException object
+	 * whose SQLState is set to "0A000".
+	 *
+	 * @param name the method name
+	 * @return a new created SQLFeatureNotSupportedException object with SQLState 0A000 
+	 */
+	private final static SQLFeatureNotSupportedException newSQLFeatureNotSupportedException(String name) {
+		return new SQLFeatureNotSupportedException("Method " + name + " not implemented", "0A000");
 	}
 }

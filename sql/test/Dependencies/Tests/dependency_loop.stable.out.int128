@@ -117,7 +117,7 @@ Ready.
 #select count(*) from dependencies where depend_type = 5;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 97	]
 

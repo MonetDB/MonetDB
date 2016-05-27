@@ -79,31 +79,27 @@ stderr of test 'copy-format.SF-2468513` in directory 'sql/test/BugTracker-2008` 
 # 09:34:56 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34345 
 # 09:34:56 >  
 
-# 13:05:48 >  
-# 13:05:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=38256"
-# 13:05:48 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-11932/.s.monetdb.30864
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         123|1.01||a|b
 ERROR = !Failed to import table line 1 field 2 'int' expected in '1.01'
-MAPI  = (monetdb) /var/tmp/mtest-11932/.s.monetdb.30864
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         553|.02||a|b
 ERROR = !Failed to import table line 1 field 2 'int' expected in '.02'
-MAPI  = (monetdb) /var/tmp/mtest-11932/.s.monetdb.30864
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         223|2.03||a|b
 ERROR = !Failed to import table line 1 field 2 'int' expected in '2.03'
-MAPI  = (monetdb) /var/tmp/mtest-11932/.s.monetdb.30864
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         223|2||aaa|b
 ERROR = !Failed to import table line 1 field 4 'varchar(1)' expected in 'aaa'
-MAPI  = (monetdb) /var/tmp/mtest-11932/.s.monetdb.30864
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
         NULL as '';
         223|3||a|bbb

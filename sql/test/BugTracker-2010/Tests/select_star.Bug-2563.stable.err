@@ -70,7 +70,7 @@ stderr of test 'select_star.Bug-2563` in directory 'sql/test/BugTracker-2010` it
 # 08:53:38 >  mclient -lsql -ftest -i -e --host=alf --port=33997 
 # 08:53:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select *;
 ERROR = !Table expression without table name
 

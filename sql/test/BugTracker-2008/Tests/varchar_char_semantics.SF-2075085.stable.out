@@ -34,7 +34,7 @@ Ready.
 #SELECT COUNT(*) FROM T850 WHERE T850C = T850VC;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 

@@ -45,7 +45,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ]
-) [ wrd "2" ]
+) [ bigint "2" ]
 #PLAN select * from oblo LIMIT 2;
 % .plan # table_name
 % rel # name
@@ -55,7 +55,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ]
-) [ wrd "2" ]
+) [ bigint "2" ]
 #PLAN select * from oblo LIMIT 1 OFFSET 2;
 % .plan # table_name
 % rel # name
@@ -65,7 +65,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ]
-) [ wrd "1", wrd "2" ]
+) [ bigint "1", bigint "2" ]
 #PLAN select * from oblo LIMIT 2 OFFSET 1;
 % .plan # table_name
 % rel # name
@@ -75,7 +75,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ]
-) [ wrd "2", wrd "1" ]
+) [ bigint "2", bigint "1" ]
 #PLAN select * from oblo ORDER BY a;
 % .plan # table_name
 % rel # name
@@ -93,7 +93,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ] [ oblo.a ASC ]
-) [ wrd "2" ]
+) [ bigint "2" ]
 #PLAN select * from oblo ORDER BY a LIMIT 2;
 % .plan # table_name
 % rel # name
@@ -103,7 +103,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ] [ oblo.a ASC ]
-) [ wrd "2" ]
+) [ bigint "2" ]
 #PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .plan # table_name
 % rel # name
@@ -113,7 +113,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ] [ oblo.a ASC ]
-) [ wrd "2", wrd "1" ]
+) [ bigint "2", bigint "1" ]
 #PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .plan # table_name
 % rel # name
@@ -123,7 +123,7 @@ top N (
 | project (
 | | table(sys.oblo) [ oblo.a ] COUNT 
 | ) [ oblo.a ] [ oblo.a ASC ]
-) [ wrd "1", wrd "2" ]
+) [ bigint "1", bigint "2" ]
 #EXPLAIN select * from oblo;
 % .explain # table_name
 % mal # name
@@ -164,8 +164,8 @@ function user.s5_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(2);
-    X_17 := calc.wrd(nil:wrd);
+    X_15 := calc.lng(2);
+    X_17 := calc.lng(nil:lng);
     X_19 := calc.+(X_15,X_17);
     X_20 := calc.-(X_19,1);
     X_21 := algebra.subslice(X_14,X_15,X_20);
@@ -196,8 +196,8 @@ function user.s6_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(0);
-    X_17 := calc.wrd(2);
+    X_15 := calc.lng(0);
+    X_17 := calc.lng(2);
     X_19 := calc.+(X_15,X_17);
     X_20 := calc.-(X_19,1);
     X_21 := algebra.subslice(X_14,X_15,X_20);
@@ -228,8 +228,8 @@ function user.s7_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(2);
-    X_17 := calc.wrd(1);
+    X_15 := calc.lng(2);
+    X_17 := calc.lng(1);
     X_19 := calc.+(X_15,X_17);
     X_20 := calc.-(X_19,1);
     X_21 := algebra.subslice(X_14,X_15,X_20);
@@ -260,8 +260,8 @@ function user.s8_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(1);
-    X_17 := calc.wrd(2);
+    X_15 := calc.lng(1);
+    X_17 := calc.lng(2);
     X_19 := calc.+(X_15,X_17);
     X_20 := calc.-(X_19,1);
     X_21 := algebra.subslice(X_14,X_15,X_20);
@@ -322,8 +322,8 @@ function user.s10_1():void;
     X_14 := algebra.projection(C_2,X_13);
     (X_15,r1_15,r2_15) := algebra.subsort(X_14,false,false);
     X_20 := algebra.projection(r1_15,X_14);
-    X_21 := calc.wrd(2);
-    X_23 := calc.wrd(nil:wrd);
+    X_21 := calc.lng(2);
+    X_23 := calc.lng(nil:lng);
     X_25 := calc.+(X_21,X_23);
     X_26 := calc.-(X_25,1);
     X_27 := algebra.subslice(X_20,X_21,X_26);
@@ -354,15 +354,15 @@ function user.s11_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(0);
-    X_17 := calc.wrd(2);
+    X_15 := calc.lng(0);
+    X_17 := calc.lng(2);
     X_19 := calc.+(X_15,X_17);
     C_20 := algebra.firstn(X_14,X_19,true,false);
     X_23 := algebra.projection(C_20,X_14);
     (X_24,r1_24,r2_24) := algebra.subsort(X_23,false,false);
     X_27 := algebra.projection(r1_24,X_23);
-    X_28 := calc.wrd(0);
-    X_29 := calc.wrd(2);
+    X_28 := calc.lng(0);
+    X_29 := calc.lng(2);
     X_30 := calc.+(X_28,X_29);
     X_31 := calc.-(X_30,1);
     X_32 := algebra.subslice(X_27,X_28,X_31);
@@ -393,17 +393,17 @@ function user.s12_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(0);
-    X_17 := calc.wrd(2);
-    X_19 := calc.wrd(1);
-    X_21:wrd := calc.+(X_17,X_19);
+    X_15 := calc.lng(0);
+    X_17 := calc.lng(2);
+    X_19 := calc.lng(1);
+    X_21:lng := calc.+(X_17,X_19);
     X_22 := calc.+(X_15,X_21);
     C_23 := algebra.firstn(X_14,X_22,true,false);
     X_26 := algebra.projection(C_23,X_14);
     (X_27,r1_27,r2_27) := algebra.subsort(X_26,false,false);
     X_30 := algebra.projection(r1_27,X_26);
-    X_31 := calc.wrd(1);
-    X_32 := calc.wrd(2);
+    X_31 := calc.lng(1);
+    X_32 := calc.lng(2);
     X_33 := calc.+(X_31,X_32);
     X_34 := calc.-(X_33,1);
     X_35 := algebra.subslice(X_30,X_31,X_34);
@@ -434,17 +434,17 @@ function user.s13_1():void;
     X_11:bat[:int] := sql.bind(X_1,"sys","oblo","a",1);
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
-    X_15 := calc.wrd(0);
-    X_17 := calc.wrd(1);
-    X_19 := calc.wrd(2);
-    X_21:wrd := calc.+(X_17,X_19);
+    X_15 := calc.lng(0);
+    X_17 := calc.lng(1);
+    X_19 := calc.lng(2);
+    X_21:lng := calc.+(X_17,X_19);
     X_22 := calc.+(X_15,X_21);
     C_23 := algebra.firstn(X_14,X_22,true,false);
     X_26 := algebra.projection(C_23,X_14);
     (X_27,r1_27,r2_27) := algebra.subsort(X_26,false,false);
     X_30 := algebra.projection(r1_27,X_26);
-    X_31 := calc.wrd(2);
-    X_32 := calc.wrd(1);
+    X_31 := calc.lng(2);
+    X_32 := calc.lng(1);
     X_33 := calc.+(X_31,X_32);
     X_34 := calc.-(X_33,1);
     X_35 := algebra.subslice(X_30,X_31,X_34);

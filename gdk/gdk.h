@@ -96,9 +96,6 @@
  *  Unique @strong{long int} values uses as object identifier. Highest
  *	    bit cleared always.  Thus, oids-s are 31-bit numbers on
  *	    32-bit systems, and 63-bit numbers on 64-bit systems.
- * @item wrd:
- *  Machine-word sized integers
- *  (32-bit on 32-bit systems, 64-bit on 64-bit systems).
  * @item ptr:
  * Memory pointer values. DEPRECATED.  Can only be stored in transient
  * BATs.
@@ -534,16 +531,15 @@
 #define TYPE_bat	4	/* BAT id: index in BBPcache */
 #define TYPE_int	5
 #define TYPE_oid	6
-#define TYPE_wrd	7
-#define TYPE_ptr	8	/* C pointer! */
-#define TYPE_flt	9
-#define TYPE_dbl	10
-#define TYPE_lng	11
+#define TYPE_ptr	7	/* C pointer! */
+#define TYPE_flt	8
+#define TYPE_dbl	9
+#define TYPE_lng	10
 #ifdef HAVE_HGE
-#define TYPE_hge	12
-#define TYPE_str	13
-#else
+#define TYPE_hge	11
 #define TYPE_str	12
+#else
+#define TYPE_str	11
 #endif
 #define TYPE_any	255	/* limit types to <255! */
 
@@ -568,8 +564,6 @@ typedef size_t oid;
 #endif
 #endif
 
-#define SIZEOF_WRD	SIZEOF_SSIZE_T
-typedef ssize_t wrd;
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
 
@@ -643,9 +637,12 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 /* Heap storage modes */
 typedef enum {
-	STORE_MEM = 0,		/* load into GDKmalloced memory */
-	STORE_MMAP = 1,		/* mmap() into virtual memory */
-	STORE_PRIV = 2,		/* BAT copy of copy-on-write mmap */
+	STORE_MEM     = 0,		/* load into GDKmalloced memory */
+	STORE_MMAP    = 1,		/* mmap() into virtual memory */
+	STORE_PRIV    = 2,		/* BAT copy of copy-on-write mmap */
+    STORE_CMEM    = 3,      /* Indicates the value is stored in regular C memory rather than GDK memory.*/
+    STORE_NOWN    = 4,      /* Indicates that the bat does not own the chunk of memory and is not in charge of freeing it.*/
+    STORE_MMAPABS = 5,      /* mmap() into virtual memory from an absolute path (not part of dbfarm) */
 	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
@@ -738,7 +735,6 @@ typedef struct {
 		oid oval;
 		sht shval;
 		bte btval;
-		wrd wval;
 		flt fval;
 		ptr pval;
 		bat bval;
@@ -1145,6 +1141,7 @@ gdk_export bte ATOMelmshift(int sz);
  * @end itemize
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
+#if SIZEOF_VAR_T == 8
 #define HTputvalue(b, p, v, copyall, HT)				\
 	do {								\
 		if ((b)->HT->varsized && (b)->HT->type) {		\
@@ -1176,7 +1173,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMputFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
-#define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
 #define HTreplacevalue(b, p, v, HT)					\
 	do {								\
 		if ((b)->HT->varsized && (b)->HT->type) {		\
@@ -1223,6 +1219,77 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMreplaceFIX((b)->HT->type, (p), v);		\
 		}							\
 	} while (0)
+#else
+#define HTputvalue(b, p, v, copyall, HT)				\
+	do {								\
+		if ((b)->HT->varsized && (b)->HT->type) {		\
+			var_t _d;					\
+			ptr _ptr;					\
+			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
+			if ((b)->HT->width < SIZEOF_VAR_T &&		\
+			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+				/* doesn't fit in current heap, upgrade it */ \
+				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+					goto bunins_failed;		\
+			}						\
+			_ptr = (p);					\
+			switch ((b)->HT->width) {			\
+			case 1:						\
+				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
+				break;					\
+			case 2:						\
+				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
+				break;					\
+			case 4:						\
+				* (var_t *) _ptr = _d;			\
+				break;					\
+			}						\
+		} else {						\
+			ATOMputFIX((b)->HT->type, (p), v);		\
+		}							\
+	} while (0)
+#define HTreplacevalue(b, p, v, HT)					\
+	do {								\
+		if ((b)->HT->varsized && (b)->HT->type) {		\
+			var_t _d;					\
+			ptr _ptr;					\
+			_ptr = (p);					\
+			switch ((b)->HT->width) {			\
+			case 1:						\
+				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
+				break;					\
+			case 2:						\
+				_d = (var_t) * (unsigned short *) _ptr + GDK_VAROFFSET; \
+				break;					\
+			case 4:						\
+				_d = * (var_t *) _ptr;			\
+				break;					\
+			}						\
+			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
+			if ((b)->HT->width < SIZEOF_VAR_T &&		\
+			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+				/* doesn't fit in current heap, upgrade it */ \
+				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+					goto bunins_failed;		\
+			}						\
+			_ptr = (p);					\
+			switch ((b)->HT->width) {			\
+			case 1:						\
+				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
+				break;					\
+			case 2:						\
+				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
+				break;					\
+			case 4:						\
+				* (var_t *) _ptr = _d;			\
+				break;					\
+			}						\
+		} else {						\
+			ATOMreplaceFIX((b)->HT->type, (p), v);		\
+		}							\
+	} while (0)
+#endif
+#define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
 #define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
 #define HTfastins_nocheck(b, p, v, s, HT)			\
 	do {							\

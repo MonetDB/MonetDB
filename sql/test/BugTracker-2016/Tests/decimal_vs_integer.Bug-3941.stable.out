@@ -44,7 +44,7 @@ function user.s2_1(A0:int):void;
     C_9 := algebra.subselect(X_6,C_3,A0,A0,true,false,false);
     X_12 := algebra.projection(C_9,X_6);
     X_13 := aggr.count(X_12);
-    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
+    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_13);
 end user.s2_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -62,7 +62,7 @@ function user.s3_1(A0:str):void;
     C_11 := algebra.subselect(X_6,C_3,X_9,X_9,true,false,false);
     X_14 := algebra.projection(C_11,X_6);
     X_15 := aggr.count(X_14);
-    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_15);
+    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_15);
 end user.s3_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -80,7 +80,7 @@ function user.s4_1(A0:lng):void;
     C_11 := algebra.subselect(X_9,C_3,A0,A0,true,false,false);
     X_14 := algebra.projection(C_11,X_6);
     X_15 := aggr.count(X_14);
-    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_15);
+    sql.resultSet("sys.L1","L1","bigint",64,0,7,X_15);
 end user.s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

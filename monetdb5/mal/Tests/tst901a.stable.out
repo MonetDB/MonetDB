@@ -50,8 +50,8 @@ exit i:lng;                             	#[12] (0)  13
     t3:lng := alarm.usec();             	#[18] (0) ALARMusec 23 
     d1:lng := calc.-(t1:lng,t0:lng);    	#[19] (0) CMDvarSUBsignal 24 <- 18 12 
     d2:lng := calc.-(t3:lng,t2:lng);    	#[20] (0) CMDvarSUBsignal 25 <- 23 21 
-    xc:wrd := aggr.count(b:bat[:lng]);  	#[21] (0) ALGcount_bat 26 <- 1 
-    io.printf("#count %d\n":str,xc:wrd);	#[22] (0) IOprintf 27 <- 28 26 
+    xc:lng := aggr.count(b:bat[:lng]);  	#[21] (0) ALGcount_bat 26 <- 1 
+    io.printf("#count %d\n":str,xc:lng);	#[22] (0) IOprintf 27 <- 28 26 
     io.printf("#make %d \n":str,d1:lng);	#[23] (0) IOprintf 29 <- 30 24 
     io.printf("#multiplex %d\n":str,d2:lng);	#[24] (0) IOprintf 31 <- 32 25 
 end user.foo;                           	#[25] (0)  

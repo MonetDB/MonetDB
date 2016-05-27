@@ -56,7 +56,7 @@ Ready.
 % def # name
 % clob # type
 % 541 # length
-[ "optimizer.inline();optimizer.candidates();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -64,10 +64,10 @@ Ready.
 % 118 # length
 function user.s4_1():void;
     X_24:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","default_pipe",12);
-barrier X_34 := language.dataflow();
+barrier X_53 := language.dataflow();
     X_1 := sql.mvc();
     (X_11:bat[:int],X_12:bat[:int],X_13:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0);
-exit X_34;
+exit X_53;
     X_14 := sql.append(X_1,"sys","ttt","a",X_11);
     X_18 := sql.append(X_14,"sys","ttt","b",X_12);
     X_20 := sql.append(X_18,"sys","ttt","c",X_13);
@@ -90,7 +90,7 @@ end user.s4_1;
 % def # name
 % clob # type
 % 564 # length
-[ "optimizer.inline();optimizer.candidates();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.sql_append();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.reduce();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -98,10 +98,10 @@ end user.s4_1;
 % 118 # length
 function user.s12_1():void;
     X_24:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';","user_1",12);
-barrier X_35 := language.dataflow();
+barrier X_54 := language.dataflow();
     X_1 := sql.mvc();
     (X_11:bat[:int],X_12:bat[:int],X_13:bat[:int]) := sql.copy_from(nil,"|","\\n",nil:str,"null","/tmp/xyz",-1,0,0,0);
-exit X_35;
+exit X_54;
     X_14 := sql.append(X_1,"sys","ttt","a",X_11);
     X_18 := sql.append(X_14,"sys","ttt","b",X_12);
     X_22 := aggr.count(X_13);

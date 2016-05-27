@@ -26,7 +26,7 @@ Ready.
 #SELECT MODEL232.is_mutagen, count(distinct MODEL232.model_id ) FROM MODEL MODEL232, BOND T1008290421150  WHERE MODEL232.model_id=T1008290421150.model_id AND MODEL232.logp='8' group by MODEL232.is_mutagen;
 % sys.model232,	sys.L1 # table_name
 % is_mutagen,	L1 # name
-% char,	wrd # type
+% char,	bigint # type
 % 3,	1 # length
 [ "F",	1	]
 

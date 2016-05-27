@@ -1,0 +1,53 @@
+
+
+
+g:= bat.new(:oid,:int);
+bat.append(g,1);
+bat.append(g,2);
+bat.append(g,3);
+bat.append(g,1);
+bat.append(g,2);
+bat.append(g,3);
+bat.append(g,1);
+bat.append(g,2);
+bat.append(g,3);
+bat.append(g,1);
+
+b:= bat.new(:oid,:dbl);
+bat.append(b,1804289383:dbl);
+bat.append(b,846930886:dbl);
+bat.append(b,1681692777:dbl);
+bat.append(b,1714636915:dbl);
+bat.append(b,1957747793:dbl);
+bat.append(b,424238335:dbl);
+bat.append(b,719885386:dbl);
+bat.append(b,1649760492:dbl);
+bat.append(b,596516649:dbl);
+bat.append(b,1189641421:dbl);
+
+(r:bat[:int], s:bat[:dbl]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2})\ngrouped = df.groupby('Group')\nreturn([grouped.groups.keys(),grouped.sum().values.flatten()])", g, b);
+
+io.print(r,s);
+
+
+##############
+# --PANDAS-- #
+##############
+c:= bat.new(:oid,:int);
+bat.append(c,4:int);
+bat.append(c,24:int);
+bat.append(c,363:int);
+bat.append(c,63:int);
+bat.append(c,838:int);
+bat.append(c,454:int);
+bat.append(c,22:int);
+bat.append(c,663:int);
+bat.append(c,123:int);
+bat.append(c,442:int);
+
+# return a pandas dataframe
+(r2:bat[:int], s2:bat[:int]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2})\nreturn(df)", g, c);
+io.print(r2,s2);
+
+# return a pandas dataframe with the incorrect format (return a dataframe with 3 columns when 2 columns are expected)
+#(r3:bat[:int], s3:bat[:int]) := pyapi.eval(nil:ptr,"import pandas as pd\ndf = pd.DataFrame({\'Group\': arg1, \'Values\': arg2, 'Values2': arg2})\nreturn(df)", g, c);

@@ -205,36 +205,6 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 }
 
 int
-getWrdConstant(MalBlkPtr mb, wrd val)
-{
-	int _t;
-	ValRecord cst;
-
-	cst.vtype= TYPE_wrd;
-	cst.val.wval= val;
-	cst.len = 0;
-	_t= fndConstant(mb, &cst, mb->vtop);
-	if( _t < 0)
-		_t = defConstant(mb, TYPE_wrd, &cst);
-	return _t;
-}
-
-InstrPtr
-pushWrd(MalBlkPtr mb, InstrPtr q, wrd val)
-{
-	int _t;
-	ValRecord cst;
-
-	if (q == NULL)
-		return NULL;
-	cst.vtype= TYPE_wrd;
-	cst.val.wval= val;
-	cst.len = 0;
-	_t = defConstant(mb, TYPE_wrd,&cst);
-	return pushArgument(mb, q, _t);
-}
-
-int
 getBteConstant(MalBlkPtr mb, bte val)
 {
 	int _t;

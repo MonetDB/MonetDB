@@ -33,7 +33,7 @@ Ready.
 #a BETWEEN 19.999 AND 2.001E1;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 3	]
 

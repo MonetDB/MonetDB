@@ -48,7 +48,7 @@ Ready.
 #select count(*) from number;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 31	]
 

@@ -10,7 +10,7 @@ stderr of test 'revoke_role.SF-1691646` in directory 'sql/test/BugTracker` itsel
 # 09:58:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=31889 
 # 09:58:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = REVOKE auth1 from user1;
 ERROR = !REVOKE: no such role 'auth1' or grantee 'user1'
 

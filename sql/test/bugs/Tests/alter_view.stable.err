@@ -10,7 +10,7 @@ stderr of test 'alter_view` in directory 'sql/test/bugs` itself:
 # 10:54:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=34930  < alter_view.sql
 # 10:54:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE v1 ADD PRIMARY KEY(age);
 ERROR = !ALTER TABLE: cannot add constraint to VIEW 'v1'
 

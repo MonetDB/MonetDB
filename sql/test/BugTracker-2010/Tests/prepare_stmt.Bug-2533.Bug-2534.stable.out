@@ -27,13 +27,13 @@ Ready.
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 3,	3,	1,	0,	2,	2 # length
-[ "wrd",	64,	0,	"",	"L1",	"L1"	]
-[ "wrd",	64,	0,	NULL,	NULL,	NULL	]
-#exec  0(1);
+% 6,	3,	1,	0,	2,	2 # length
+[ "bigint",	64,	0,	"",	"L1",	"L1"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#exec  1(1);
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 
 # 09:32:45 >  

@@ -1,0 +1,72 @@
+
+# huge with null value
+bhge:= bat.new(:oid,:hge);
+bat.append(bhge,18044433428933534654634643698858345:hge);
+bat.append(bhge,895233278923448975389573895731:hge);
+bat.append(bhge,558372892789247104910348981249:hge);
+bat.append(bhge,-23:hge);
+bat.append(bhge,nil:hge);
+
+# return huge
+rhge:bat[:hge] := pyapi.eval(nil:ptr,"return(arg1)",bhge);
+io.print(rhge);
+
+# computation with huge
+rhge:bat[:hge] := pyapi.eval(nil:ptr,"return(arg1*3)",bhge);
+io.print(rhge);
+
+# convert int to huge
+(rhge:bat[:hge], shge:bat[:hge]) := pyapi.eval(nil:ptr,"return(numpy.array([[32,12],[44,22]]))",bhge);
+io.print(rhge, shge);
+
+# convert double to huge
+(rhge:bat[:hge], shge:bat[:hge]) := pyapi.eval(nil:ptr,"return(numpy.array([[3200.3,12.7],[44.1,22.8]]))",bhge);
+io.print(rhge, shge);
+
+# convert hge to string
+rhge:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bhge);
+io.print(rhge);
+
+# convert string to hge
+bstr:= bat.new(:oid,:str);
+bat.append(bstr,"412412":str);
+bat.append(bstr,"13231414":str);
+bat.append(bstr,"895233278923448975389573895731":str);
+rhge:bat[:hge] := pyapi.eval(nil:ptr,"return(arg1)", bstr);
+io.print(rhge);
+
+
+# return multidimensional huge
+(rhge:bat[:hge], shge:bat[:hge]) := pyapi.eval(nil:ptr,"return(numpy.ma.masked_array([arg1, arg1], [arg1.mask,arg1.mask]))",bhge);
+io.print(rhge, shge);
+
+z:= bat.new(:oid,:hge);
+bat.append(z,44:hge);
+bat.append(z,22:hge);
+bat.append(z,11:hge);
+bat.append(z,23:hge);
+bat.append(z,nil:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+bat.append(z,23:hge);
+
+# convert huge to int
+rint:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",z);
+io.print(rint);
+
+
+# convert huge to double
+rdbl:bat[:dbl] := pyapi.eval(nil:ptr,"return(arg1)",z);
+io.print(rdbl);
+
+# return very large PyLongObject numbers and convert them to double
+s:bat[:dbl] := pyapi.eval(nil:ptr, "return(10000000000000000000000)");
+io.print(s);

@@ -1,0 +1,77 @@
+
+a:= bat.new(:oid,:dbl);
+bat.append(a, 1.4:dbl);
+bat.append(a, 3.4:dbl);
+bat.append(a, 2.1:dbl);
+bat.append(a, 8.2:dbl);
+bat.append(a, 9.6:dbl);
+
+b:= bat.new(:oid,:dbl);
+bat.append(b, 13.4:dbl);
+bat.append(b, 17.6:dbl);
+bat.append(b, 12.8:dbl);
+bat.append(b, 19.1:dbl);
+bat.append(b, 19.9:dbl);
+
+c:= bat.new(:oid,:dbl);
+bat.append(c, 18.4:dbl);
+bat.append(c, 18.5:dbl);
+bat.append(c, 18.6:dbl);
+;bat.append(c, 18.7:dbl);
+bat.append(c, 18.8:dbl);
+
+d:= bat.new(:oid,:dbl);
+bat.append(d, 0.04:dbl);
+bat.append(d, 0.005:dbl);
+bat.append(d, 0.008:dbl);
+bat.append(d, 0.04:dbl);
+bat.append(d, 0.02:dbl);
+
+
+# square an array
+sqr:bat[:dbl] := pyapi.eval(nil:ptr, "return(arg1*arg1)", a);
+io.print(sqr);
+
+# then take the root of that array again
+a:bat[:dbl] := pyapi.eval(nil:ptr, "return(numpy.sqrt(arg1))", sqr);
+io.print(a);
+
+# do some numpy operations
+x:bat[:dbl] := pyapi.eval(nil:ptr, "return(numpy.prod(arg1*arg2*arg3*arg4)*numpy.sum(arg1*arg2*arg3*arg4))", a, b, c, d);
+io.print(x);
+
+fib:= bat.new(:oid,:int);
+bat.append(fib, 0:int);
+bat.append(fib, 1:int);
+bat.append(fib, 2:int);
+bat.append(fib, 3:int);
+bat.append(fib, 4:int);
+bat.append(fib, 5:int);
+bat.append(fib, 6:int);
+bat.append(fib, 7:int);
+bat.append(fib, 8:int);
+bat.append(fib, 9:int);
+bat.append(fib, 10:int);
+bat.append(fib, 11:int);
+bat.append(fib, 12:int);
+bat.append(fib, 13:int);
+bat.append(fib, 14:int);
+bat.append(fib, 15:int);
+bat.append(fib, 16:int);
+bat.append(fib, 17:int);
+bat.append(fib, 18:int);
+bat.append(fib, 19:int);
+bat.append(fib, 20:int);
+bat.append(fib, 21:int);
+bat.append(fib, 22:int);
+bat.append(fib, 23:int);
+bat.append(fib, 24:int);
+bat.append(fib, 25:int);
+bat.append(fib, 26:int);
+bat.append(fib, 27:int);
+bat.append(fib, 28:int);
+bat.append(fib, 29:int);
+
+# define a function within the main function and map it to a BAT
+s:bat[:dbl] := pyapi.eval(nil:ptr, "def fibonacci(nmbr):\n\tif (nmbr == 0): return 0\n\tif (nmbr == 1): return 1\n\ta = 0\n\tb = 1\n\tfor i in range(0, nmbr - 1):\n\t\tc = a + b\n\t\ta = b\n\t\tb = c\n\treturn b\nreturn(list(map(fibonacci, arg1)))", fib);
+io.print(s);

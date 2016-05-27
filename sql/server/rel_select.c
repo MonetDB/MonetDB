@@ -1483,7 +1483,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		/* push select into the given relation */
 		return rel_push_select(sql, rel, L, e);
 	} else { /* join */
-		if (is_semi(rel->op) || is_outerjoin(rel->op)) {
+		if (is_semi(rel->op) || (is_outerjoin(rel->op) && !is_processed((rel)))) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
@@ -4601,13 +4601,13 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		return NULL;
 
 	if (sn->limit || sn->offset) {
-		sql_subtype *wrd = sql_bind_localtype("wrd");
+		sql_subtype *lng = sql_bind_localtype("lng");
 		list *exps = new_exp_list(sql->sa);
 
 		if (sn->limit) {
 			sql_exp *l = rel_value_exp( sql, NULL, sn->limit, 0, ek);
 
-			if (!l || !(l=rel_check_type(sql, wrd, l, type_equal)))
+			if (!l || !(l=rel_check_type(sql, lng, l, type_equal)))
 				return NULL;
 			if ((ek.card != card_relation && sn->limit) &&
 				(ek.card == card_value && sn->limit)) {
@@ -4620,7 +4620,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			append(exps, NULL);
 		if (sn->offset) {
 			sql_exp *o = rel_value_exp( sql, NULL, sn->offset, 0, ek);
-			if (!o || !(o=rel_check_type(sql, wrd, o, type_equal)))
+			if (!o || !(o=rel_check_type(sql, lng, o, type_equal)))
 				return NULL;
 			append(exps, o);
 		}
@@ -4908,9 +4908,6 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		rel = rel_logical_exp(sql, rel, js, sql_where);
-
-		if (!rel)
-			return rel;
 	} else if (js) {	/* using */
 		char rname[16], *rnme;
 		dnode *n = js->data.lval->h;

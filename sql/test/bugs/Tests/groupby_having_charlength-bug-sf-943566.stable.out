@@ -33,7 +33,7 @@ Ready.
 #	group by s.name having count(*) > char_length(s.name);
 % .s,	.L3,	.L4 # table_name
 % name,	L3,	L4 # name
-% varchar,	int,	wrd # type
+% varchar,	int,	bigint # type
 % 8,	1,	2 # length
 [ "sys",	3,	10	]
 [ "tmp",	3,	10	]

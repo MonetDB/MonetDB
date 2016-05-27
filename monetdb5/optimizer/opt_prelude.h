@@ -11,13 +11,14 @@
 #include "opt_support.h"
 
 /* cf., gdk/gdk.mx */
-#define DEBUGoptimizers		if (GDKdebug & GRPoptimizers)
+#define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
 
 opt_export  str abortRef;
 opt_export  str affectedRowsRef;
 opt_export  str aggrRef;
 opt_export  str alarmRef;
 opt_export  str algebraRef;
+opt_export	str andRef;
 opt_export  str batalgebraRef;
 opt_export  str appendidxRef;
 opt_export  str appendRef;
@@ -33,6 +34,8 @@ opt_export  str batmtimeRef;
 opt_export  str batmmathRef;
 opt_export  str batxmlRef;
 opt_export  str batsqlRef;
+opt_export  str betweenRef;
+opt_export  str betweensymmetricRef;
 opt_export  str blockRef;
 opt_export  str bbpRef;
 opt_export  str tidRef;
@@ -79,10 +82,12 @@ opt_export  str disconnectRef;
 opt_export  str evalRef;
 opt_export  str execRef;
 opt_export  str expandRef;
-opt_export	str exportOperationRef;
+opt_export  str exportOperationRef;
+opt_export  str findRef;
 opt_export  str finishRef;
 opt_export  str firstnRef;
 opt_export  str getRef;
+opt_export  str getTraceRef;
 opt_export  str generatorRef;
 opt_export  str grabRef;
 opt_export  str groupRef;
@@ -165,9 +170,13 @@ opt_export  str querylogRef;
 opt_export  str queryRef;
 opt_export  str rapiRef;
 opt_export  str batrapiRef;
+opt_export  str pyapiRef;
+opt_export  str batpyapiRef;
+opt_export  str pyapimapRef;
 opt_export  str subeval_aggrRef;
 opt_export  str rankRef;
 opt_export  str dense_rankRef;
+opt_export	str raiseRef;
 opt_export  str reconnectRef;
 opt_export  str recycleRef;
 opt_export  str refineRef;
@@ -186,6 +195,7 @@ opt_export  str selectNotNilRef;
 opt_export  str seriesRef;
 opt_export  str semaRef;
 opt_export  str setAccessRef;
+opt_export  str setVariableRef;
 opt_export  str setWriteModeRef;
 opt_export  str sinkRef;
 opt_export  str sliceRef;
@@ -207,6 +217,7 @@ opt_export  str subavgRef;
 opt_export  str subsortRef;
 opt_export  str timestampRef;
 opt_export  str takeRef;
+opt_export  str transRef;
 opt_export  str not_uniqueRef;
 opt_export  str sampleRef;
 opt_export  str subuniqueRef;

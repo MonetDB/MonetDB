@@ -1,0 +1,37 @@
+stderr of test 'WHERE_IN_subquery_incorrect_results-JIRA-44` in directory 'sql/test/bugs` itself:
+
+
+# 16:51:18 >  
+# 16:51:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34531" "--set" "mapi_usock=/var/tmp/mtest-15511/.s.monetdb.34531" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/net/toulouse/export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_bugs" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:51:18 >  
+
+# builtin opt 	gdk_dbpath = /net/toulouse/export/scratch2/zhang/monet-install/Jul2015/debug/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34531
+# cmdline opt 	mapi_usock = /var/tmp/mtest-15511/.s.monetdb.34531
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /net/toulouse/export/scratch2/zhang/monet-install/Jul2015/debug/var/MonetDB/mTests_sql_test_bugs
+# cmdline opt 	mal_listing = 0
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:51:18 >  
+# 16:51:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15511" "--port=34531"
+# 16:51:18 >  
+
+
+# 16:51:19 >  
+# 16:51:19 >  "Done."
+# 16:51:19 >  
+

@@ -1,8 +1,14 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu May 19 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Implemented MonetDatabaseMetaData.supportsConvert() and
+  MonetDatabaseMetaData.supportsConvert(int fromType, int toType) methods.
+  It used to always return false. Now it returns true for the supported conversions.
+  This fixes Bug 3460.
+
 * Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl>
-- ResultSet.setFetchSize(): added a dumy implementation to get rid
+- ResultSet.setFetchSize(): added a dummy implementation to get rid
   of the SQLFeatureNotSupportedException. In MonetDB, it does not
   make sense to set the fetch size of a result set. If one really
   wants to set the fetch size, one should use Statement.setFetchSize()

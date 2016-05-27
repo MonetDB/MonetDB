@@ -38,14 +38,6 @@ bat.append(bint,nil:int);
 rint:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bint);
 io.print(rint);
 
-bwrd:= bat.new(:oid,:wrd);
-bat.append(bwrd,1804289383:wrd);
-bat.append(bwrd,846930886:wrd);
-bat.append(bwrd,1681692777:wrd);
-bat.append(bwrd,1714636915:wrd);
-rwrd:bat[:oid,:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bwrd);
-io.print(rwrd);
-
 blng:= bat.new(:oid,:lng);
 bat.append(blng,1804289383L);
 bat.append(blng,846930886L);

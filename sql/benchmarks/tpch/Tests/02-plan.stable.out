@@ -106,7 +106,7 @@ top N (
 | | | ) [ partsupp.ps_supplycost NOT NULL = L1 NOT NULL ]
 | | ) [ part.p_partkey NOT NULL HASHCOL , part.p_mfgr NOT NULL, supplier.s_name NOT NULL, supplier.s_address NOT NULL, supplier.s_phone NOT NULL, supplier.s_acctbal NOT NULL, supplier.s_comment NOT NULL, partsupp.ps_supplycost NOT NULL, nation.n_name NOT NULL, L1 NOT NULL as L1.L1 ]
 | ) [ supplier.s_acctbal NOT NULL, supplier.s_name NOT NULL, nation.n_name NOT NULL, part.p_partkey NOT NULL HASHCOL , part.p_mfgr NOT NULL, supplier.s_address NOT NULL, supplier.s_phone NOT NULL, supplier.s_comment NOT NULL ] [ supplier.s_acctbal NOT NULL, nation.n_name ASC NOT NULL, supplier.s_name ASC NOT NULL, part.p_partkey ASC NOT NULL HASHCOL  ]
-) [ wrd "100" ]
+) [ bigint "100" ]
 
 # 22:46:29 >  
 # 22:46:29 >  "Done."

@@ -1,6 +1,6 @@
 function foo();
 	b:= bat.new(:int);
-	cnt:= 0:wrd;
+	cnt:= 0:lng;
 	f:= 0;
 	g:= 0;
 barrier d:=true;

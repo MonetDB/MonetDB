@@ -30,22 +30,22 @@ stderr of test 'number_4_4.Bug-3543` in directory 'sql/test/BugTracker-2014` its
 # 14:07:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23224" "--port=38282"
 # 14:07:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23224/.s.monetdb.38282
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (4, '0.99995');  -- should fail but is invalidly accepted
 ERROR = !rounding of decimal (0.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-23224/.s.monetdb.38282
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (5, '0.99999');  -- should fail but is invalidly accepted
 ERROR = !rounding of decimal (0.99999) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-23224/.s.monetdb.38282
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (6, '+0.99995'); -- correctly fails
 ERROR = !rounding of decimal (+0.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-23224/.s.monetdb.38282
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (6, '+.99995');  -- should fail but is invalidly accepted
 ERROR = !rounding of decimal (+.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-23224/.s.monetdb.38282
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (7, '-0.99995'); -- correctly fails
 ERROR = !rounding of decimal (-0.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-23224/.s.monetdb.38282
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (7, '-.999998');  -- should fail but is invalidly accepted
 ERROR = !rounding of decimal (-.999998) doesn't fit format (4.4)
 

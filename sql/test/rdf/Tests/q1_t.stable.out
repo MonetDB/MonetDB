@@ -36,7 +36,7 @@ Ready.
 #	GROUP BY A.obj;
 % sys.a,	sys.L1 # table_name
 % obj,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 
 # 23:32:51 >  

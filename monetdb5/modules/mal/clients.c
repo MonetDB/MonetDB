@@ -584,7 +584,6 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *qtimeoutId = getArgReference_bat(stk,pci,4);
 	bat *activeId = getArgReference_bat(stk,pci,5);
     Client c;
-	char usrname[256]= {"monetdb"};
 	timestamp ts, ret;
 	lng clk,timeout;
 	str msg;
@@ -618,7 +617,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
     for (c = mal_clients + (GDKgetenv_isyes("monet_daemon") != 0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
-		BUNappend(user, &usrname, FALSE);
+		BUNappend(user, c->username, FALSE);
 		msg = MTIMEunix_epoch(&ts);
 		if (msg)
 			goto bailout;

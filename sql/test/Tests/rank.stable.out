@@ -28,7 +28,7 @@ Ready.
 #select count(*) from ranktest;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 27	]
 #select ROW_NUMBER() over () as foo from ranktest;

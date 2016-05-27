@@ -35,9 +35,9 @@ Ready.
 #select count(*) from bbp() as bbp where refcnt > 0; 
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
-[ 427	]
+[ 426	]
 #select 1; 
 % .L # table_name
 % single_value # name
@@ -47,9 +47,9 @@ Ready.
 #select count(*) from bbp() as bbp where refcnt > 0; 
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
-[ 431	]
+[ 430	]
 
 # 16:21:20 >  
 # 16:21:20 >  "Done."

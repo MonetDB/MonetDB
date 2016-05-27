@@ -383,7 +383,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
 	int first = pc;
-	int stepsize = 10;
+	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	do {
 		int r;

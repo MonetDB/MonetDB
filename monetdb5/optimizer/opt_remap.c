@@ -395,7 +395,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
 			getArg(sum,0) = newTmpVariable(mb, getArgType(mb, p, 1));
-			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_wrd));
+			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_lng));
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 
@@ -404,7 +404,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			setFunctionId(t, putName("=="));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bit));
 			t = pushArgument(mb, t, getDestVar(cnt));
-			t = pushWrd(mb, t, 0);
+			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 

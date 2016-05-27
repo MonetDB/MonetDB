@@ -84,7 +84,7 @@ SQLsetTrace(Client cntxt)
 			break;
 	mb->stop=k;
 
-	q= newStmt(mb, "profiler", "stoptrace");
+	q= newStmt(mb, profilerRef, stoptraceRef);
 	q= pushStr(mb,q,"sql_traces");
 	/* cook a new resultSet instruction */
 	resultset = newInstruction(mb,ASSIGNsymbol);
@@ -628,6 +628,10 @@ cleanup_engine:
 	return msg;
 }
 
+void SQLdestroyResult(res_table *destroy) {
+   res_table_destroy(destroy);
+}
+
 /* a hook is provided to execute relational algebra expressions */
 str
 RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -668,7 +672,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL,"RAstatement","Program contains errors");
 		else 
 			addQueryToCache(c);
-			SQLrun(c,m);
+		SQLrun(c,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);

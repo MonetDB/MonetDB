@@ -29,37 +29,37 @@ stderr of test 'int4` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('34.5');
 ERROR = !conversion of string '34.5' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('1000000000000');
 ERROR = !conversion of string '1000000000000' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('asdf');
 ERROR = !conversion of string 'asdf' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('     ');
 ERROR = !conversion of string '     ' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('   asdf   ');
 ERROR = !conversion of string '   asdf   ' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('- 1234');
 ERROR = !conversion of string '- 1234' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('123       5');
 ERROR = !conversion of string '123       5' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT4_TBL(f1) VALUES ('');
 ERROR = !conversion of string '' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS five, INT4_TBL.*;
 ERROR = !Column expression Table 'int4_tbl' unknown
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT 4! AS twenty_four;
 ERROR = !unexpected symbol (!)
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT !!3 AS six;
 ERROR = !unexpected symbol (!)
 

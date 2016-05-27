@@ -8,11 +8,10 @@ Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 # for Build-Depends and Depends syntax, see
 # http://www.debian.org/doc/debian-policy/ch-relationships.html
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
- libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.0.0),
+ libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libgsl0-dev, libpcre3-dev, libreadline-dev,
  libssl-dev, libxml2-dev, perl, pkg-config, python, python3,
- unixodbc-dev, uuid-dev, zlib1g-dev,
- liblas-c-dev
+ unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.0
@@ -283,6 +282,22 @@ Description: MonetDB5 128 bit integer (hugeint) support for SQL
  .
  This package provides HUGEINT (128-bit integer) support for the SQL
  frontend of MonetDB.
+
+Package: monetdb-r
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, monetdb5-sql (= ${source:Version})
+Description: MonetDB5 128 bit integer (hugeint) support for SQL
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL frontend.
+ .
+ This package contains the interface to use the R language from within
+ SQL queries.
+ .
+ NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+ know how this package affects the security of your system, do not
+ install it.
 
 Package: monetdb-testing
 Architecture: any

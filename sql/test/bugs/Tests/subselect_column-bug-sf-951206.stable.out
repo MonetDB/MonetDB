@@ -26,7 +26,7 @@ Ready.
 [ 3	]
 % sys.t # table_name
 % x # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 % sys.t # table_name

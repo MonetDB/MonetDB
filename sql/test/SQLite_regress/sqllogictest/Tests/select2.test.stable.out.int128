@@ -187,7 +187,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.t1 # table_name
 % a,	L1,	L2,	d # name
-% int,	wrd,	hugeint,	int # type
+% int,	bigint,	hugeint,	int # type
 % 1,	2,	1,	3 # length
 [ NULL,	1,	NULL,	114	]
 [ NULL,	18,	NULL,	207	]
@@ -199,7 +199,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 1,	2 # length
 [ 0,	NULL	]
 [ 0,	NULL	]
@@ -225,7 +225,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
-% hugeint,	smallint,	wrd,	int,	smallint,	hugeint # type
+% hugeint,	smallint,	bigint,	int,	smallint,	hugeint # type
 % 4,	3,	2,	3,	3,	4 # length
 [ NULL,	444,	0,	NULL,	222,	NULL	]
 [ NULL,	444,	0,	NULL,	555,	NULL	]
@@ -324,7 +324,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % c,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	smallint,	bigint,	bigint,	wrd,	hugeint,	int # type
+% int,	smallint,	bigint,	bigint,	bigint,	hugeint,	int # type
 % 3,	3,	2,	1,	2,	4,	3 # length
 [ 119,	444,	-1,	3,	0,	NULL,	115	]
 [ 187,	333,	-4,	2,	15,	2806,	188	]
@@ -345,7 +345,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % d,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	wrd,	bigint,	bigint,	smallint,	bigint,	bigint # type
+% int,	bigint,	bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	2,	1,	2,	3,	3,	1 # length
 [ NULL,	9,	3,	NULL,	555,	475,	3	]
 [ 128,	3,	4,	-3,	333,	385,	4	]
@@ -369,7 +369,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	b,	a,	L1,	L2,	L3,	L4 # name
-% int,	int,	int,	hugeint,	wrd,	bigint,	hugeint # type
+% int,	int,	int,	hugeint,	bigint,	bigint,	hugeint # type
 % 3,	3,	3,	4,	2,	2,	3 # length
 [ NULL,	124,	121,	NULL,	2,	-3,	NULL	]
 [ NULL,	151,	153,	NULL,	8,	2,	NULL	]
@@ -409,7 +409,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% wrd,	hugeint,	bigint,	bigint # type
+% bigint,	hugeint,	bigint,	bigint # type
 % 1,	4,	2,	2 # length
 [ 0,	NULL,	NULL,	NULL	]
 [ 0,	1030,	4,	-2	]
@@ -437,7 +437,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -609,7 +609,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% wrd,	bigint,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 1,	2,	4 # length
 [ 0,	NULL,	NULL	]
 [ 0,	NULL,	NULL	]
@@ -700,7 +700,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .t1,	.t1,	.L1 # table_name
 % e,	a,	L1 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 3,	3,	1 # length
 [ NULL,	NULL,	0	]
 [ 162,	163,	0	]
@@ -729,7 +729,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	c,	L3,	L4,	L5 # name
-% bigint,	bigint,	int,	bigint,	hugeint,	wrd # type
+% bigint,	bigint,	int,	bigint,	hugeint,	bigint # type
 % 3,	1,	3,	2,	4,	2 # length
 [ NULL,	NULL,	202,	-1,	NULL,	0	]
 [ NULL,	1,	113,	4,	NULL,	1	]
@@ -764,7 +764,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L2,	.L3,	.L4 # table_name
 % L2,	L3,	L4 # name
-% bigint,	smallint,	wrd # type
+% bigint,	smallint,	bigint # type
 % 4,	3,	1 # length
 [ NULL,	444,	0	]
 [ NULL,	444,	0	]
@@ -791,7 +791,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.t1,	.L4 # table_name
 % L1,	L2,	d,	L4 # name
-% bigint,	wrd,	int,	bigint # type
+% bigint,	bigint,	int,	bigint # type
 % 1,	2,	3,	4 # length
 [ NULL,	0,	101,	NULL	]
 [ NULL,	0,	203,	402	]
@@ -823,7 +823,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % a,	L1,	L2,	L3,	L4 # name
-% int,	bigint,	hugeint,	hugeint,	wrd # type
+% int,	bigint,	hugeint,	hugeint,	bigint # type
 % 3,	2,	4,	4,	1 # length
 [ NULL,	-1,	NULL,	NULL,	0	]
 [ NULL,	1,	NULL,	NULL,	0	]
@@ -879,7 +879,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	wrd,	bigint,	hugeint,	smallint # type
+% bigint,	hugeint,	bigint,	bigint,	hugeint,	smallint # type
 % 1,	4,	2,	2,	4,	3 # length
 [ NULL,	NULL,	0,	NULL,	NULL,	444	]
 [ NULL,	NULL,	0,	NULL,	NULL,	444	]
@@ -1147,7 +1147,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4 # table_name
 % c,	L1,	L2,	L3,	a,	L4 # name
-% int,	bigint,	wrd,	hugeint,	int,	hugeint # type
+% int,	bigint,	bigint,	hugeint,	int,	hugeint # type
 % 3,	1,	1,	4,	3,	3 # length
 [ 193,	1,	0,	2878,	191,	192	]
 [ 247,	2,	0,	3706,	245,	247	]
@@ -1161,7 +1161,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% hugeint,	wrd,	bigint,	int,	bigint,	bigint # type
+% hugeint,	bigint,	bigint,	int,	bigint,	bigint # type
 % 3,	2,	2,	3,	2,	2 # length
 [ NULL,	0,	-1,	201,	-1,	NULL	]
 [ NULL,	0,	1,	104,	NULL,	NULL	]
@@ -1363,7 +1363,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L2,	.L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
 % L2,	L3,	L4,	L5,	L6,	L7,	L10 # name
-% bigint,	hugeint,	bigint,	wrd,	bigint,	bigint,	smallint # type
+% bigint,	hugeint,	bigint,	bigint,	bigint,	bigint,	smallint # type
 % 4,	4,	1,	2,	2,	3,	3 # length
 [ NULL,	NULL,	NULL,	0,	1,	NULL,	444	]
 [ NULL,	NULL,	NULL,	0,	3,	NULL,	444	]
@@ -1404,7 +1404,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	e,	L2 # name
-% hugeint,	int,	wrd # type
+% hugeint,	int,	bigint # type
 % 3,	3,	1 # length
 [ NULL,	157,	0	]
 [ NULL,	165,	0	]
@@ -1587,7 +1587,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	b,	L2 # name
-% hugeint,	int,	wrd # type
+% hugeint,	int,	bigint # type
 % 4,	3,	2 # length
 [ NULL,	236,	24	]
 [ 635,	105,	0	]
@@ -1645,7 +1645,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 1,	1 # length
 #SELECT b-c,
 #       c
@@ -1762,7 +1762,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L5,	L6 # name
-% smallint,	wrd,	hugeint,	bigint,	bigint # type
+% smallint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	1,	3,	4,	2 # length
 [ 111,	0,	137,	1390,	1	]
 [ 111,	0,	142,	1430,	1	]
@@ -1854,7 +1854,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -1981,7 +1981,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% wrd,	hugeint,	bigint # type
+% bigint,	hugeint,	bigint # type
 % 1,	3,	2 # length
 [ 0,	NULL,	NULL	]
 [ 0,	NULL,	NULL	]
@@ -2025,7 +2025,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% smallint,	hugeint,	wrd,	bigint # type
+% smallint,	hugeint,	bigint,	bigint # type
 % 3,	4,	2,	1 # length
 [ 333,	1391,	23,	2	]
 #SELECT a+b*2+c*3+d*4+e*5,
@@ -2039,7 +2039,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% hugeint,	bigint,	wrd,	bigint,	hugeint,	hugeint # type
+% hugeint,	bigint,	bigint,	bigint,	hugeint,	hugeint # type
 % 4,	1,	1,	2,	4,	4 # length
 [ NULL,	NULL,	0,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	0,	NULL,	NULL,	NULL	]
@@ -2083,7 +2083,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	wrd,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint # type
 % 2,	1,	4,	2 # length
 [ NULL,	0,	NULL,	-1	]
 [ NULL,	0,	NULL,	4	]
@@ -2302,7 +2302,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L7,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L7,	b # name
-% wrd,	bigint,	smallint,	hugeint,	bigint,	bigint,	int # type
+% bigint,	bigint,	smallint,	hugeint,	bigint,	bigint,	int # type
 % 2,	2,	3,	4,	2,	4,	3 # length
 [ 0,	-2,	333,	1612,	2,	1050,	105	]
 [ 0,	-1,	444,	NULL,	NULL,	402,	NULL	]
@@ -2647,7 +2647,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L6,	L7 # name
-% hugeint,	wrd,	bigint,	bigint,	bigint,	smallint # type
+% hugeint,	bigint,	bigint,	bigint,	bigint,	smallint # type
 % 3,	1,	3,	2,	4,	3 # length
 [ NULL,	0,	NULL,	-1,	1120,	555	]
 [ NULL,	0,	NULL,	3,	NULL,	333	]
@@ -2701,7 +2701,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
 % L1,	d,	L2,	L3,	L4,	b,	L5 # name
-% wrd,	int,	bigint,	bigint,	smallint,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	smallint,	int,	bigint # type
 % 2,	3,	2,	2,	3,	3,	1 # length
 [ 0,	101,	NULL,	1,	555,	NULL,	NULL	]
 [ 0,	108,	-1,	-2,	333,	105,	1	]
@@ -2745,7 +2745,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L3,	a,	L4,	L5 # name
-% hugeint,	bigint,	int,	wrd,	hugeint # type
+% hugeint,	bigint,	int,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT c-d,
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
@@ -2757,7 +2757,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	b # name
-% bigint,	wrd,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 1,	2,	4,	3 # length
 [ 1,	4,	793,	130	]
 [ 1,	5,	827,	139	]
@@ -2837,7 +2837,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	int # type
+% bigint,	int # type
 % 2,	3 # length
 [ 0,	107	]
 [ 1,	NULL	]
@@ -2888,7 +2888,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	smallint,	bigint,	bigint,	bigint,	wrd # type
+% bigint,	smallint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	3,	2,	2,	3,	1 # length
 [ NULL,	555,	NULL,	NULL,	711,	0	]
 [ 1,	333,	-1,	-3,	483,	0	]
@@ -2998,7 +2998,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	d,	L3,	L4,	L5,	L6 # name
-% wrd,	bigint,	int,	bigint,	hugeint,	bigint,	int # type
+% bigint,	bigint,	int,	bigint,	hugeint,	bigint,	int # type
 % 1,	1,	3,	2,	4,	3,	3 # length
 [ 0,	NULL,	101,	NULL,	NULL,	NULL,	104	]
 [ 0,	NULL,	116,	NULL,	NULL,	NULL,	115	]
@@ -3040,7 +3040,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	d,	L2,	L3,	L4,	L5 # name
-% bigint,	int,	wrd,	bigint,	bigint,	hugeint # type
+% bigint,	int,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	2,	2,	4 # length
 [ NULL,	101,	0,	NULL,	NULL,	NULL	]
 [ NULL,	114,	1,	4,	NULL,	NULL	]
@@ -3160,7 +3160,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 1,	3 # length
 [ 0,	369	]
 [ 0,	385	]
@@ -3233,7 +3233,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	e,	L3,	L4,	L5 # name
-% bigint,	wrd,	int,	bigint,	smallint,	hugeint # type
+% bigint,	bigint,	int,	bigint,	smallint,	hugeint # type
 % 2,	1,	3,	2,	3,	4 # length
 [ NULL,	0,	NULL,	NULL,	555,	NULL	]
 [ NULL,	0,	NULL,	-4,	222,	1455	]
@@ -3356,7 +3356,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% int,	bigint,	wrd # type
+% int,	bigint,	bigint # type
 % 3,	1,	2 # length
 [ NULL,	2,	18	]
 [ 104,	NULL,	0	]
@@ -3387,7 +3387,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L2,	L3,	L4,	L5,	c # name
-% bigint,	bigint,	wrd,	hugeint,	int # type
+% bigint,	bigint,	bigint,	hugeint,	int # type
 % 4,	2,	1,	3,	3 # length
 [ NULL,	NULL,	0,	NULL,	208	]
 [ 358,	4,	0,	NULL,	176	]
@@ -3593,7 +3593,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	d # name
-% hugeint,	bigint,	wrd,	bigint,	bigint,	int # type
+% hugeint,	bigint,	bigint,	bigint,	bigint,	int # type
 % 4,	2,	2,	2,	1,	3 # length
 [ NULL,	NULL,	7,	4,	2,	NULL	]
 [ NULL,	NULL,	8,	2,	1,	NULL	]
@@ -3700,7 +3700,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.t1,	.L2,	.L3 # table_name
 % L1,	b,	L2,	L3 # name
-% hugeint,	int,	wrd,	bigint # type
+% hugeint,	int,	bigint,	bigint # type
 % 4,	3,	1,	2 # length
 [ NULL,	NULL,	0,	NULL	]
 [ NULL,	NULL,	0,	-1	]
@@ -3771,7 +3771,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.t1,	.t1 # table_name
 % d,	L1,	L2,	L3,	L4,	c,	a # name
-% int,	bigint,	smallint,	wrd,	hugeint,	int,	int # type
+% int,	bigint,	smallint,	bigint,	hugeint,	int,	int # type
 % 3,	2,	3,	2,	4,	3,	3 # length
 [ 108,	-1,	333,	0,	1067,	106,	107	]
 [ 116,	NULL,	333,	0,	NULL,	119,	115	]
@@ -3793,7 +3793,7 @@ Ready.
 #;
 % .L1,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
 % L1,	L3,	L4,	L5,	L6,	e # name
-% wrd,	bigint,	hugeint,	hugeint,	bigint,	int # type
+% bigint,	bigint,	hugeint,	hugeint,	bigint,	int # type
 % 2,	4,	4,	4,	2,	3 # length
 [ 0,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 0,	NULL,	NULL,	NULL,	NULL,	117	]
@@ -3838,7 +3838,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L5,	L6 # name
-% hugeint,	smallint,	wrd,	bigint,	wrd # type
+% hugeint,	smallint,	bigint,	bigint,	bigint # type
 % 4,	3,	1,	4,	2 # length
 [ NULL,	222,	0,	402,	0	]
 [ NULL,	222,	0,	486,	25	]
@@ -3893,7 +3893,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	bigint,	smallint,	hugeint,	wrd # type
+% hugeint,	bigint,	smallint,	hugeint,	bigint # type
 % 4,	2,	3,	4,	1 # length
 [ NULL,	NULL,	222,	1455,	0	]
 [ NULL,	NULL,	333,	738,	0	]
@@ -3935,7 +3935,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.L2,	.L3,	.t1,	.L4 # table_name
 % c,	b,	L2,	L3,	e,	L4 # name
-% int,	int,	bigint,	hugeint,	int,	wrd # type
+% int,	int,	bigint,	hugeint,	int,	bigint # type
 % 3,	3,	4,	4,	3,	2 # length
 [ NULL,	236,	2360,	NULL,	237,	24	]
 [ 102,	NULL,	NULL,	NULL,	NULL,	0	]
@@ -4032,7 +4032,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% smallint,	hugeint,	bigint,	bigint,	wrd,	hugeint # type
+% smallint,	hugeint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	4,	2,	2,	2,	4 # length
 [ 111,	2046,	1,	2,	5,	1371	]
 [ 111,	2131,	1,	2,	6,	1411	]
@@ -4077,7 +4077,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	d # name
-% bigint,	hugeint,	wrd,	smallint,	int # type
+% bigint,	hugeint,	bigint,	smallint,	int # type
 % 2,	4,	2,	3,	3 # length
 [ NULL,	NULL,	1,	555,	114	]
 [ -4,	3706,	26,	444,	248	]
@@ -4096,7 +4096,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% hugeint,	wrd # type
+% hugeint,	bigint # type
 % 4,	2 # length
 [ NULL,	1	]
 [ 1325,	4	]
@@ -4302,7 +4302,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .t1,	.L1,	.L2 # table_name
 % a,	L1,	L2 # name
-% int,	wrd,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	1,	2 # length
 [ 107,	0,	-1	]
 [ 131,	0,	1	]
@@ -4442,7 +4442,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % b,	L1,	L2,	L3,	L4,	L5 # name
-% int,	smallint,	smallint,	hugeint,	wrd,	bigint # type
+% int,	smallint,	smallint,	hugeint,	bigint,	bigint # type
 % 3,	3,	3,	4,	1,	3 # length
 [ 105,	333,	333,	1612,	0,	317	]
 [ 130,	444,	333,	1985,	0,	391	]
@@ -4631,7 +4631,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 5	]
 #SELECT a+b*2
@@ -4863,7 +4863,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	bigint,	bigint,	wrd,	int # type
+% bigint,	bigint,	bigint,	bigint,	int # type
 % 1,	2,	3,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	104	]
 [ NULL,	NULL,	NULL,	0,	115	]
@@ -4909,7 +4909,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	c,	d,	L4,	L5 # name
-% wrd,	smallint,	bigint,	int,	int,	wrd,	bigint # type
+% bigint,	smallint,	bigint,	int,	int,	bigint,	bigint # type
 % 1,	3,	3,	3,	3,	1,	2 # length
 [ 0,	333,	317,	106,	108,	0,	2	]
 [ 0,	333,	385,	125,	128,	3,	-2	]
@@ -4920,7 +4920,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -4983,7 +4983,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.t1,	.L4 # table_name
 % L1,	L2,	L3,	b,	L4 # name
-% smallint,	hugeint,	wrd,	int,	bigint # type
+% smallint,	hugeint,	bigint,	int,	bigint # type
 % 3,	3,	2,	3,	2 # length
 [ 111,	247,	26,	249,	-1	]
 [ 222,	NULL,	2,	124,	1	]
@@ -5026,7 +5026,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% hugeint,	hugeint,	wrd,	bigint # type
+% hugeint,	hugeint,	bigint,	bigint # type
 % 3,	4,	1,	1 # length
 [ NULL,	NULL,	0,	NULL	]
 [ NULL,	NULL,	0,	NULL	]
@@ -5114,7 +5114,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L10 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	L10 # name
-% hugeint,	bigint,	smallint,	wrd,	hugeint,	wrd,	bigint # type
+% hugeint,	bigint,	smallint,	bigint,	hugeint,	bigint,	bigint # type
 % 4,	1,	3,	1,	4,	2,	4 # length
 [ NULL,	NULL,	222,	0,	NULL,	0,	402	]
 [ NULL,	NULL,	555,	0,	NULL,	24,	2360	]
@@ -5235,7 +5235,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.t1,	.L4 # table_name
 % L1,	d,	L2,	L3,	c,	L4 # name
-% hugeint,	int,	wrd,	hugeint,	int,	smallint # type
+% hugeint,	int,	bigint,	hugeint,	int,	smallint # type
 % 1,	3,	1,	1,	3,	3 # length
 [ NULL,	114,	0,	NULL,	113,	444	]
 [ NULL,	207,	0,	NULL,	208,	444	]
@@ -5353,7 +5353,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	a # name
-% wrd,	int,	bigint,	int # type
+% bigint,	int,	bigint,	int # type
 % 1,	3,	3,	3 # length
 [ 0,	NULL,	NULL,	NULL	]
 [ 0,	NULL,	NULL,	NULL	]
@@ -5414,7 +5414,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% bigint,	hugeint # type
 % 1,	4 # length
 [ 0,	NULL	]
 [ 0,	NULL	]
@@ -5525,7 +5525,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.t1,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	b,	L5,	L6 # name
-% int,	wrd,	bigint,	hugeint,	int,	hugeint,	smallint # type
+% int,	bigint,	bigint,	hugeint,	int,	hugeint,	smallint # type
 % 3,	1,	2,	3,	3,	3,	3 # length
 [ 107,	0,	-1,	107,	105,	635,	333	]
 [ 127,	0,	2,	127,	129,	760,	333	]
@@ -5542,7 +5542,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L5,	.L6 # table_name
 % e,	L1,	L2,	L3,	d,	L5,	L6 # name
-% int,	wrd,	bigint,	smallint,	int,	bigint,	smallint # type
+% int,	bigint,	bigint,	smallint,	int,	bigint,	smallint # type
 % 3,	1,	2,	3,	3,	4,	3 # length
 [ NULL,	0,	NULL,	333,	NULL,	1510,	555	]
 [ NULL,	0,	NULL,	444,	NULL,	486,	222	]
@@ -5666,7 +5666,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.L3 # table_name
 % a,	L1,	L2,	L3 # name
-% int,	wrd,	int,	smallint # type
+% int,	bigint,	int,	smallint # type
 % 3,	1,	3,	3 # length
 [ NULL,	0,	NULL,	444	]
 [ NULL,	0,	NULL,	444	]
@@ -5829,7 +5829,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.t1,	.t1,	.L3 # table_name
 % L1,	b,	L2,	e,	c,	L3 # name
-% hugeint,	int,	bigint,	int,	int,	wrd # type
+% hugeint,	int,	bigint,	int,	int,	bigint # type
 % 4,	3,	2,	3,	3,	1 # length
 [ NULL,	112,	NULL,	110,	113,	0	]
 [ NULL,	145,	4,	146,	147,	0	]
@@ -5950,7 +5950,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	e,	b,	L2,	L3,	L4 # name
-% bigint,	int,	int,	wrd,	smallint,	hugeint # type
+% bigint,	int,	int,	bigint,	smallint,	hugeint # type
 % 1,	3,	3,	2,	3,	4 # length
 [ NULL,	NULL,	NULL,	0,	444,	NULL	]
 [ NULL,	204,	NULL,	0,	444,	NULL	]
@@ -6187,7 +6187,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	a,	L4,	L5,	L6 # name
-% hugeint,	smallint,	wrd,	int,	bigint,	int,	bigint # type
+% hugeint,	smallint,	bigint,	int,	bigint,	int,	bigint # type
 % 4,	3,	2,	3,	1,	3,	2 # length
 [ NULL,	222,	2,	121,	1,	121,	1	]
 [ NULL,	444,	1,	NULL,	1,	NULL,	-1	]
@@ -6254,7 +6254,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	L4,	d,	L5 # name
-% wrd,	bigint,	hugeint,	wrd,	int,	bigint # type
+% bigint,	bigint,	hugeint,	bigint,	int,	bigint # type
 % 1,	2,	3,	2,	3,	2 # length
 [ 0,	NULL,	NULL,	0,	101,	1	]
 [ 0,	NULL,	NULL,	0,	116,	3	]
@@ -6297,7 +6297,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.L3 # table_name
 % c,	L1,	L2,	L3 # name
-% int,	bigint,	wrd,	bigint # type
+% int,	bigint,	bigint,	bigint # type
 % 3,	3,	2,	2 # length
 [ NULL,	711,	24,	NULL	]
 [ 102,	NULL,	0,	1	]
@@ -6341,7 +6341,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	c,	e,	L4,	L5 # name
-% wrd,	bigint,	wrd,	int,	int,	int,	smallint # type
+% bigint,	bigint,	bigint,	int,	int,	int,	smallint # type
 % 2,	2,	1,	3,	3,	3,	3 # length
 [ 1,	-1,	0,	113,	110,	NULL,	444	]
 [ 16,	1,	0,	193,	192,	191,	222	]
@@ -6444,7 +6444,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L3,	.L4,	.t1,	.L5,	.L6,	.L7 # table_name
 % L1,	L3,	L4,	e,	L5,	L6,	L7 # name
-% wrd,	bigint,	smallint,	int,	bigint,	bigint,	int # type
+% bigint,	bigint,	smallint,	int,	bigint,	bigint,	int # type
 % 2,	4,	3,	3,	2,	2,	3 # length
 [ 0,	NULL,	444,	117,	NULL,	-1,	115	]
 [ 0,	1050,	333,	109,	-1,	-1,	107	]
@@ -6465,7 +6465,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .t1,	.L1,	.L2 # table_name
 % d,	L1,	L2 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
 #       c-d,
@@ -6478,7 +6478,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L3,	.L5,	.L6 # table_name
 % L1,	L2,	d,	L3,	L5,	L6 # name
-% bigint,	bigint,	int,	wrd,	bigint,	hugeint # type
+% bigint,	bigint,	int,	bigint,	bigint,	hugeint # type
 % 2,	2,	3,	1,	4,	4 # length
 [ NULL,	3,	116,	0,	NULL,	NULL	]
 [ -3,	2,	212,	0,	426,	2125	]
@@ -6501,7 +6501,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.t1 # table_name
 % a,	L1,	L2,	L3,	b # name
-% int,	hugeint,	hugeint,	wrd,	int # type
+% int,	hugeint,	hugeint,	bigint,	int # type
 % 3,	4,	4,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	112	]
 [ NULL,	NULL,	NULL,	0,	206	]
@@ -6552,7 +6552,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.t1 # table_name
 % L1,	L2,	e # name
-% hugeint,	wrd,	int # type
+% hugeint,	bigint,	int # type
 % 4,	2,	3 # length
 [ NULL,	0,	NULL	]
 [ NULL,	0,	117	]
@@ -6594,7 +6594,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.t1,	.t1,	.t1,	.L2 # table_name
 % d,	L1,	a,	c,	e,	L2 # name
-% int,	wrd,	int,	int,	int,	hugeint # type
+% int,	bigint,	int,	int,	int,	hugeint # type
 % 3,	2,	3,	3,	3,	4 # length
 [ NULL,	7,	149,	147,	146,	880	]
 [ NULL,	8,	153,	150,	NULL,	905	]
@@ -6634,7 +6634,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% hugeint,	int,	wrd,	hugeint # type
+% hugeint,	int,	bigint,	hugeint # type
 % 3,	3,	1,	4 # length
 [ NULL,	NULL,	0,	NULL	]
 [ NULL,	NULL,	0,	NULL	]
@@ -6678,7 +6678,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	b,	L3,	a,	L4,	L5 # name
-% bigint,	bigint,	int,	int,	int,	smallint,	wrd # type
+% bigint,	bigint,	int,	int,	int,	smallint,	bigint # type
 % 2,	1,	3,	3,	3,	3,	2 # length
 [ NULL,	NULL,	236,	239,	239,	444,	24	]
 [ NULL,	1,	151,	153,	153,	333,	8	]
@@ -6775,7 +6775,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L6 # name
-% bigint,	bigint,	hugeint,	wrd,	bigint # type
+% bigint,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	2,	4,	2,	4 # length
 [ NULL,	-1,	NULL,	1,	1120	]
 [ NULL,	1,	NULL,	18,	NULL	]
@@ -6802,7 +6802,7 @@ Ready.
 #ORDER BY 1,2;
 % .t1,	.L1 # table_name
 % e,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 3,	1 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -6844,7 +6844,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L3,	.L5 # table_name
 % L1,	L2,	a,	L3,	L5 # name
-% bigint,	wrd,	int,	wrd,	bigint # type
+% bigint,	bigint,	int,	bigint,	bigint # type
 % 2,	2,	1,	1,	4 # length
 [ -1,	1,	NULL,	0,	1120	]
 [ 1,	18,	NULL,	0,	NULL	]
@@ -6915,7 +6915,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.t1,	.L6 # table_name
 % L1,	L2,	e,	L3,	L4,	a,	L6 # name
-% wrd,	hugeint,	int,	bigint,	bigint,	int,	bigint # type
+% bigint,	hugeint,	int,	bigint,	bigint,	int,	bigint # type
 % 2,	3,	3,	3,	2,	3,	4 # length
 [ 0,	NULL,	NULL,	NULL,	1,	104,	NULL	]
 [ 0,	NULL,	117,	NULL,	3,	115,	NULL	]
@@ -6971,7 +6971,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	d,	L2 # name
-% bigint,	int,	wrd # type
+% bigint,	int,	bigint # type
 % 1,	3,	1 # length
 [ NULL,	116,	0	]
 [ 1,	108,	0	]
@@ -6994,7 +6994,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	e # name
-% bigint,	hugeint,	wrd,	int # type
+% bigint,	hugeint,	bigint,	int # type
 % 2,	4,	1,	3 # length
 [ NULL,	NULL,	0,	237	]
 [ NULL,	940,	0,	157	]
@@ -7045,7 +7045,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	d,	L2,	L3,	L4 # name
-% hugeint,	int,	hugeint,	wrd,	hugeint # type
+% hugeint,	int,	hugeint,	bigint,	hugeint # type
 % 3,	3,	4,	1,	4 # length
 [ NULL,	NULL,	NULL,	0,	880	]
 [ NULL,	NULL,	NULL,	0,	905	]
@@ -7144,7 +7144,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% wrd,	smallint,	hugeint,	bigint,	bigint # type
+% bigint,	smallint,	hugeint,	bigint,	bigint # type
 % 1,	3,	4,	2,	2 # length
 [ 0,	111,	2476,	-4,	-1	]
 [ 0,	222,	1226,	-3,	1	]
@@ -7250,7 +7250,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	e # name
-% bigint,	hugeint,	int,	wrd,	wrd,	bigint,	int # type
+% bigint,	hugeint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	3,	3,	1,	2,	1,	3 # length
 [ NULL,	NULL,	113,	0,	1,	1,	110	]
 [ NULL,	NULL,	208,	0,	18,	2,	NULL	]
@@ -7331,7 +7331,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L6,	L7 # name
-% wrd,	hugeint,	bigint,	bigint,	bigint,	smallint # type
+% bigint,	hugeint,	bigint,	bigint,	bigint,	smallint # type
 % 2,	4,	1,	3,	4,	3 # length
 [ 2,	NULL,	1,	369,	1240,	222	]
 [ 3,	1902,	4,	385,	1290,	222	]
@@ -7352,7 +7352,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -7736,7 +7736,7 @@ Ready.
 #ORDER BY 1,2;
 % .t1,	.L1 # table_name
 % d,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 3,	2 # length
 [ NULL,	7	]
 [ NULL,	8	]
@@ -7819,7 +7819,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	e # name
-% smallint,	wrd,	bigint,	bigint,	smallint,	int # type
+% smallint,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	1,	3,	3 # length
 [ 111,	26,	-1,	2,	444,	246	]
 [ 222,	2,	1,	1,	333,	NULL	]
@@ -7902,7 +7902,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % L2,	c,	L3,	L4,	L5 # name
-% bigint,	int,	wrd,	bigint,	hugeint # type
+% bigint,	int,	bigint,	bigint,	hugeint # type
 % 4,	3,	2,	1,	3 # length
 [ NULL,	119,	0,	NULL,	NULL	]
 [ 364,	184,	14,	3,	182	]
@@ -7947,7 +7947,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	e,	L2 # name
-% hugeint,	int,	wrd # type
+% hugeint,	int,	bigint # type
 % 4,	3,	2 # length
 [ NULL,	NULL,	0	]
 [ NULL,	NULL,	8	]
@@ -7990,7 +7990,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L5 # table_name
 % L1,	c,	L2,	L3,	L5 # name
-% wrd,	int,	int,	bigint,	bigint # type
+% bigint,	int,	int,	bigint,	bigint # type
 % 1,	3,	3,	1,	4 # length
 [ 0,	NULL,	239,	NULL,	2360	]
 [ 0,	113,	NULL,	1,	1120	]
@@ -8025,7 +8025,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
 [ 1,	0	]
@@ -8049,7 +8049,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 0	]
 [ 0	]
@@ -8138,7 +8138,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 1,	1 # length
 [ 0,	NULL	]
 [ 0,	1	]
@@ -8268,7 +8268,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % b,	L1,	L2,	L3,	L4,	L5 # name
-% int,	bigint,	bigint,	wrd,	smallint,	int # type
+% int,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	3,	2,	1,	3,	3 # length
 [ NULL,	NULL,	-1,	0,	444,	201	]
 [ NULL,	NULL,	1,	0,	444,	104	]
@@ -8334,7 +8334,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% wrd,	bigint,	int,	smallint,	hugeint,	smallint # type
+% bigint,	bigint,	int,	smallint,	hugeint,	smallint # type
 % 2,	2,	3,	3,	4,	3 # length
 [ 0,	-1,	107,	333,	1067,	333	]
 [ 0,	-1,	201,	444,	NULL,	222	]
@@ -8405,7 +8405,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% int,	bigint,	bigint,	wrd,	hugeint # type
+% int,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	1,	1,	1,	4 # length
 [ 138,	2,	1,	0,	2046	]
 [ 142,	2,	1,	0,	2131	]
@@ -8442,7 +8442,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	e,	L3,	L4 # name
-% wrd,	bigint,	int,	wrd,	bigint # type
+% bigint,	bigint,	int,	bigint,	bigint # type
 % 1,	1,	3,	2,	2 # length
 [ 0,	NULL,	NULL,	0,	NULL	]
 [ 0,	NULL,	117,	0,	NULL	]
@@ -8493,7 +8493,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	smallint # type
+% bigint,	smallint # type
 % 2,	3 # length
 [ 0,	444	]
 [ 0,	444	]
@@ -8561,7 +8561,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	d,	L2,	L3,	L4 # name
-% bigint,	int,	bigint,	wrd,	bigint # type
+% bigint,	int,	bigint,	bigint,	bigint # type
 % 1,	3,	2,	1,	2 # length
 [ 1,	108,	-2,	0,	-1	]
 [ 4,	128,	-3,	0,	4	]
@@ -8572,7 +8572,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -8645,7 +8645,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % b,	e,	L1,	L2,	L3,	L4 # name
-% int,	int,	hugeint,	bigint,	wrd,	smallint # type
+% int,	int,	hugeint,	bigint,	bigint,	smallint # type
 % 3,	3,	4,	2,	1,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	0,	444	]
 [ NULL,	117,	NULL,	-1,	0,	444	]
@@ -8741,7 +8741,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.t1,	.t1,	.L4 # table_name
 % L1,	L2,	L3,	a,	c,	L4 # name
-% wrd,	bigint,	bigint,	int,	int,	smallint # type
+% bigint,	bigint,	bigint,	int,	int,	smallint # type
 % 1,	2,	2,	3,	3,	3 # length
 [ 0,	NULL,	NULL,	104,	102,	555	]
 [ 0,	NULL,	-4,	243,	244,	222	]
@@ -8784,7 +8784,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	bigint,	wrd,	bigint # type
+% bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	2,	2 # length
 [ NULL,	1,	2,	-3	]
 [ NULL,	1,	8,	2	]
@@ -8823,7 +8823,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1 # table_name
 % L1,	L2,	d # name
-% wrd,	wrd,	int # type
+% bigint,	bigint,	int # type
 % 2,	1,	3 # length
 [ 0,	0,	101	]
 [ 0,	0,	108	]
@@ -8956,7 +8956,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	d # name
-% hugeint,	wrd,	hugeint,	smallint,	int # type
+% hugeint,	bigint,	hugeint,	smallint,	int # type
 % 3,	1,	4,	3,	3 # length
 [ NULL,	0,	NULL,	222,	203	]
 [ NULL,	0,	NULL,	333,	116	]
@@ -9043,7 +9043,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	a,	L2,	L3,	L4,	d # name
-% hugeint,	int,	hugeint,	wrd,	bigint,	int # type
+% hugeint,	int,	hugeint,	bigint,	bigint,	int # type
 % 3,	3,	4,	1,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	1,	114	]
 [ NULL,	159,	940,	0,	3,	NULL	]
@@ -9131,7 +9131,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L3,	.L4,	.L5,	.t1,	.L6,	.L7 # table_name
 % L1,	L3,	L4,	L5,	e,	L6,	L7 # name
-% wrd,	bigint,	hugeint,	smallint,	int,	bigint,	bigint # type
+% bigint,	bigint,	hugeint,	smallint,	int,	bigint,	bigint # type
 % 1,	4,	4,	3,	3,	2,	2 # length
 [ 0,	NULL,	NULL,	555,	NULL,	-2,	1	]
 [ 0,	358,	1057,	555,	177,	-1,	NULL	]
@@ -9219,7 +9219,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L5,	L6,	L7 # name
-% bigint,	bigint,	bigint,	bigint,	hugeint,	wrd # type
+% bigint,	bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 2,	2,	2,	4,	4,	1 # length
 [ NULL,	NULL,	-2,	NULL,	NULL,	0	]
 [ NULL,	4,	-1,	1120,	NULL,	0	]
@@ -9312,7 +9312,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.t1,	.L2,	.L3 # table_name
 % L1,	c,	L2,	L3 # name
-% hugeint,	int,	wrd,	wrd # type
+% hugeint,	int,	bigint,	bigint # type
 % 4,	3,	2,	1 # length
 [ 966,	161,	10,	0	]
 [ 1121,	187,	15,	0	]
@@ -9360,7 +9360,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	bigint,	hugeint,	bigint,	wrd # type
+% bigint,	hugeint,	bigint,	hugeint,	bigint,	bigint # type
 % 2,	4,	2,	4,	2,	1 # length
 [ NULL,	NULL,	1,	NULL,	NULL,	0	]
 [ NULL,	880,	NULL,	NULL,	-2,	0	]
@@ -9495,7 +9495,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	a,	L2,	L3,	L4,	c # name
-% bigint,	int,	wrd,	bigint,	hugeint,	int # type
+% bigint,	int,	bigint,	bigint,	hugeint,	int # type
 % 2,	3,	1,	2,	4,	3 # length
 [ NULL,	159,	0,	3,	940,	155	]
 [ NULL,	168,	0,	1,	1000,	166	]
@@ -9558,7 +9558,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% wrd,	hugeint,	smallint # type
+% bigint,	hugeint,	smallint # type
 % 1,	4,	3 # length
 [ 0,	NULL,	222	]
 [ 0,	NULL,	333	]
@@ -9592,7 +9592,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.t1,	.L1,	.L2 # table_name
 % a,	e,	L1,	L2 # name
-% int,	int,	wrd,	bigint # type
+% int,	int,	bigint,	bigint # type
 % 3,	3,	2,	1 # length
 [ NULL,	NULL,	18,	2	]
 [ NULL,	110,	1,	1	]
@@ -9631,7 +9631,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	c,	L2,	L3,	L4 # name
-% bigint,	int,	hugeint,	hugeint,	wrd # type
+% bigint,	int,	hugeint,	hugeint,	bigint # type
 % 2,	3,	3,	4,	1 # length
 [ -4,	187,	187,	2806,	0	]
 [ -2,	193,	192,	2878,	0	]
@@ -9732,7 +9732,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	L1,	L2,	L3,	L4 # name
-% int,	wrd,	int,	hugeint,	smallint # type
+% int,	bigint,	int,	hugeint,	smallint # type
 % 3,	1,	3,	4,	3 # length
 [ NULL,	0,	NULL,	NULL,	555	]
 [ NULL,	0,	104,	NULL,	555	]
@@ -9995,7 +9995,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.L4 # table_name
 % d,	L1,	L2,	L4 # name
-% int,	bigint,	wrd,	bigint # type
+% int,	bigint,	bigint,	bigint # type
 % 3,	2,	1,	4 # length
 [ NULL,	NULL,	0,	1510	]
 [ NULL,	NULL,	0,	1580	]
@@ -10031,7 +10031,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	c,	L4,	L5,	L6 # name
-% bigint,	wrd,	bigint,	int,	hugeint,	hugeint,	bigint # type
+% bigint,	bigint,	bigint,	int,	hugeint,	hugeint,	bigint # type
 % 3,	1,	2,	3,	3,	4,	1 # length
 [ NULL,	0,	NULL,	102,	NULL,	NULL,	NULL	]
 [ NULL,	0,	NULL,	113,	NULL,	NULL,	1	]
@@ -10119,7 +10119,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L4 # table_name
 % L1,	L2,	e,	L3,	b,	L4 # name
-% int,	wrd,	int,	bigint,	int,	smallint # type
+% int,	bigint,	int,	bigint,	int,	smallint # type
 % 3,	1,	3,	1,	3,	3 # length
 [ NULL,	0,	NULL,	2,	206,	555	]
 [ NULL,	0,	110,	1,	112,	555	]
@@ -10154,7 +10154,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% smallint,	wrd,	smallint # type
+% smallint,	bigint,	smallint # type
 % 3,	2,	3 # length
 [ 111,	26,	444	]
 [ 222,	2,	333	]
@@ -10185,7 +10185,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % c,	b,	L1,	L2,	L3,	L4,	L5 # name
-% int,	int,	hugeint,	hugeint,	smallint,	wrd,	smallint # type
+% int,	int,	hugeint,	hugeint,	smallint,	bigint,	smallint # type
 % 3,	3,	3,	4,	3,	1,	3 # length
 [ 106,	105,	635,	1612,	333,	0,	333	]
 #SELECT c-d,
@@ -10273,7 +10273,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L4,	.L5,	.t1,	.L6 # table_name
 % L1,	L2,	L4,	L5,	b,	L6 # name
-% hugeint,	hugeint,	bigint,	int,	int,	wrd # type
+% hugeint,	hugeint,	bigint,	int,	int,	bigint # type
 % 4,	4,	4,	3,	3,	1 # length
 [ NULL,	NULL,	1120,	NULL,	112,	0	]
 [ NULL,	NULL,	2360,	239,	236,	0	]
@@ -10310,7 +10310,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	d,	L3,	c,	L4,	L5 # name
-% wrd,	bigint,	int,	hugeint,	int,	hugeint,	wrd # type
+% bigint,	bigint,	int,	hugeint,	int,	hugeint,	bigint # type
 % 1,	2,	3,	4,	3,	3,	2 # length
 [ 0,	-4,	248,	1484,	247,	247,	26	]
 [ 0,	-3,	190,	1158,	193,	192,	16	]
@@ -10476,7 +10476,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % b,	L1,	L2,	d,	L3,	L4,	L5 # name
-% int,	wrd,	wrd,	int,	bigint,	bigint,	hugeint # type
+% int,	bigint,	bigint,	int,	bigint,	bigint,	hugeint # type
 % 3,	1,	2,	3,	2,	1,	4 # length
 [ 181,	0,	14,	183,	-3,	3,	1828	]
 [ 198,	0,	17,	196,	3,	3,	1964	]
@@ -10512,7 +10512,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % a,	L1,	L2,	L3,	L4,	d # name
-% int,	bigint,	wrd,	wrd,	bigint,	int # type
+% int,	bigint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	1,	2,	2,	3 # length
 [ NULL,	-1,	0,	1,	4,	114	]
 [ 107,	-1,	0,	0,	-1,	108	]
@@ -10595,7 +10595,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % e,	L1,	L2,	L3,	L4,	L5 # name
-% int,	wrd,	bigint,	bigint,	int,	hugeint # type
+% int,	bigint,	bigint,	bigint,	int,	hugeint # type
 % 3,	1,	3,	2,	3,	4 # length
 [ NULL,	0,	369,	NULL,	121,	738	]
 [ NULL,	0,	455,	NULL,	153,	905	]
@@ -11026,7 +11026,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	bigint,	wrd,	smallint,	int,	bigint # type
+% bigint,	bigint,	bigint,	smallint,	int,	bigint # type
 % 1,	2,	2,	3,	3,	2 # length
 [ NULL,	NULL,	0,	444,	104,	NULL	]
 [ NULL,	NULL,	0,	444,	115,	NULL	]
@@ -11222,7 +11222,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	wrd # type
+% bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
 [ -1,	2,	5	]
 [ -1,	2,	6	]
@@ -11281,7 +11281,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	a # name
-% smallint,	wrd,	hugeint,	int # type
+% smallint,	bigint,	hugeint,	int # type
 % 3,	1,	3,	3 # length
 [ 111,	0,	247,	245	]
 [ 222,	0,	127,	127	]
@@ -11412,7 +11412,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.t1,	.t1,	.L3 # table_name
 % L1,	e,	L2,	c,	a,	L3 # name
-% bigint,	int,	hugeint,	int,	int,	wrd # type
+% bigint,	int,	hugeint,	int,	int,	bigint # type
 % 2,	3,	4,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	150,	153,	8	]
 [ NULL,	NULL,	NULL,	244,	243,	25	]
@@ -11626,7 +11626,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.t1,	.t1 # table_name
 % L1,	L2,	c,	d # name
-% bigint,	wrd,	int,	int # type
+% bigint,	bigint,	int,	int # type
 % 2,	1,	3,	3 # length
 [ NULL,	0,	NULL,	238	]
 [ NULL,	0,	102,	101	]
@@ -11739,7 +11739,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	d,	L1,	L2,	L3,	L4 # name
-% int,	int,	wrd,	wrd,	hugeint,	hugeint # type
+% int,	int,	bigint,	bigint,	hugeint,	hugeint # type
 % 3,	3,	1,	2,	3,	4 # length
 [ 126,	128,	0,	3,	127,	1902	]
 [ 135,	136,	0,	5,	137,	2046	]
@@ -11757,7 +11757,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.L1,	.L2,	.L4,	.L5 # table_name
 % d,	e,	L1,	L2,	L4,	L5 # name
-% int,	int,	wrd,	hugeint,	bigint,	bigint # type
+% int,	int,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	3,	2,	4,	4,	1 # length
 [ 101,	NULL,	0,	NULL,	NULL,	NULL	]
 [ 116,	117,	0,	NULL,	NULL,	NULL	]
@@ -11886,7 +11886,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.t1,	.L3 # table_name
 % L1,	L2,	c,	b,	L3 # name
-% wrd,	bigint,	int,	int,	bigint # type
+% bigint,	bigint,	int,	int,	bigint # type
 % 2,	1,	3,	3,	2 # length
 [ 10,	1,	161,	160,	3	]
 [ 19,	3,	214,	211,	2	]
@@ -11942,7 +11942,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	smallint # type
+% bigint,	smallint # type
 % 1,	3 # length
 [ 0,	111	]
 [ 0,	222	]
@@ -12046,7 +12046,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % b,	L1,	L2,	L3,	L4,	L5,	d # name
-% int,	hugeint,	bigint,	bigint,	int,	wrd,	int # type
+% int,	hugeint,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	4,	3,	2,	3,	1,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	104,	0,	101	]
 [ NULL,	NULL,	NULL,	-1,	115,	0,	116	]
@@ -12090,7 +12090,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % b,	L1,	L2,	L3,	L4,	a # name
-% int,	smallint,	hugeint,	wrd,	hugeint,	int # type
+% int,	smallint,	hugeint,	bigint,	hugeint,	int # type
 % 3,	3,	4,	2,	4,	3 # length
 [ 112,	555,	NULL,	1,	NULL,	NULL	]
 [ 129,	333,	1272,	3,	760,	127	]
@@ -12255,7 +12255,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L4,	.t1 # table_name
 % L1,	L2,	c,	L4,	a # name
-% hugeint,	wrd,	int,	bigint,	int # type
+% hugeint,	bigint,	int,	bigint,	int # type
 % 4,	2,	3,	3,	3 # length
 [ 2728,	14,	184,	364,	182	]
 #SELECT a,
@@ -12305,7 +12305,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	a,	L4,	L5,	L6,	L7 # name
-% smallint,	bigint,	int,	bigint,	wrd,	bigint,	int # type
+% smallint,	bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	1,	2,	3 # length
 [ 111,	2,	245,	490,	0,	-4,	245	]
 [ 222,	NULL,	121,	1240,	0,	-3,	121	]
@@ -12532,7 +12532,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	a # name
-% wrd,	bigint,	bigint,	hugeint,	smallint,	int # type
+% bigint,	bigint,	bigint,	hugeint,	smallint,	int # type
 % 2,	2,	2,	4,	3,	3 # length
 [ 0,	-1,	-2,	1612,	333,	107	]
 [ 1,	4,	-1,	NULL,	444,	NULL	]
@@ -12584,7 +12584,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% hugeint,	hugeint,	wrd,	int # type
+% hugeint,	hugeint,	bigint,	int # type
 % 3,	4,	1,	3 # length
 [ NULL,	NULL,	0,	149	]
 [ NULL,	NULL,	0,	153	]
@@ -12711,7 +12711,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	hugeint,	int,	bigint,	wrd # type
+% hugeint,	hugeint,	int,	bigint,	bigint # type
 % 1,	1,	1,	2,	1 # length
 [ NULL,	NULL,	NULL,	-1,	0	]
 #SELECT a,
@@ -12751,7 +12751,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	L4,	a,	L5 # name
-% bigint,	hugeint,	wrd,	bigint,	int,	bigint # type
+% bigint,	hugeint,	bigint,	bigint,	int,	bigint # type
 % 2,	4,	1,	2,	3,	1 # length
 [ NULL,	NULL,	0,	NULL,	104,	NULL	]
 [ NULL,	NULL,	0,	NULL,	115,	NULL	]
@@ -12943,7 +12943,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	d # name
-% bigint,	bigint,	bigint,	wrd,	int # type
+% bigint,	bigint,	bigint,	bigint,	int # type
 % 2,	1,	2,	2,	3 # length
 [ NULL,	NULL,	NULL,	24,	238	]
 [ NULL,	1,	1,	8,	NULL	]
@@ -12996,7 +12996,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L2,	.L3,	.L4 # table_name
 % L2,	L3,	L4 # name
-% bigint,	wrd,	wrd # type
+% bigint,	bigint,	bigint # type
 % 4,	1,	2 # length
 [ 364,	0,	14	]
 [ 398,	0,	17	]
@@ -13015,7 +13015,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	d,	L3,	L4 # name
-% bigint,	bigint,	int,	int,	wrd # type
+% bigint,	bigint,	int,	int,	bigint # type
 % 3,	2,	3,	3,	1 # length
 [ 317,	-1,	108,	107,	0	]
 [ 385,	2,	128,	127,	3	]
@@ -13029,7 +13029,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	c,	L2,	L3,	L4,	L5 # name
-% bigint,	int,	bigint,	wrd,	bigint,	int # type
+% bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 2,	3,	2,	1,	2,	3 # length
 [ NULL,	NULL,	3,	0,	NULL,	239	]
 [ NULL,	102,	NULL,	0,	1,	104	]
@@ -13164,7 +13164,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% hugeint,	wrd # type
+% hugeint,	bigint # type
 % 4,	2 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -13255,7 +13255,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 1,	2 # length
 [ 0,	NULL	]
 [ 0,	-3	]
@@ -13314,7 +13314,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .t1,	.L2,	.L3 # table_name
 % a,	L2,	L3 # name
-% int,	bigint,	wrd # type
+% int,	bigint,	bigint # type
 % 3,	4,	2 # length
 [ NULL,	NULL,	18	]
 [ NULL,	1120,	1	]
@@ -13394,7 +13394,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	a # name
-% hugeint,	bigint,	wrd,	smallint,	int # type
+% hugeint,	bigint,	bigint,	smallint,	int # type
 % 3,	3,	2,	3,	3 # length
 [ NULL,	NULL,	0,	444,	104	]
 [ NULL,	NULL,	0,	444,	115	]
@@ -13490,7 +13490,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % b,	L1,	L2,	L3,	L4 # name
-% int,	bigint,	wrd,	bigint,	hugeint # type
+% int,	bigint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT abs(b-c),
 #       CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -13726,7 +13726,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % L1,	L2,	L3,	L4,	b # name
-% wrd,	bigint,	wrd,	bigint,	int # type
+% bigint,	bigint,	bigint,	bigint,	int # type
 % 2,	1,	1,	1,	3 # length
 [ 2,	1,	0,	1,	124	]
 [ 4,	1,	0,	4,	130	]
@@ -13754,7 +13754,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	d,	L6 # name
-% bigint,	smallint,	wrd,	hugeint,	bigint,	int,	wrd # type
+% bigint,	smallint,	bigint,	hugeint,	bigint,	int,	bigint # type
 % 1,	3,	1,	4,	2,	3,	1 # length
 [ 1,	333,	0,	1067,	-1,	108,	0	]
 [ 4,	333,	3,	1272,	4,	128,	0	]
@@ -14107,7 +14107,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.t1,	.L3 # table_name
 % L1,	L2,	c,	L3 # name
-% bigint,	hugeint,	int,	wrd # type
+% bigint,	hugeint,	int,	bigint # type
 % 2,	4,	3,	1 # length
 [ NULL,	NULL,	119,	0	]
 [ -3,	1918,	193,	0	]
@@ -14130,7 +14130,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% bigint,	hugeint,	smallint,	bigint,	hugeint,	wrd,	smallint # type
+% bigint,	hugeint,	smallint,	bigint,	hugeint,	bigint,	smallint # type
 % 2,	3,	3,	1,	4,	2,	3 # length
 [ NULL,	NULL,	555,	NULL,	NULL,	0,	444	]
 [ NULL,	NULL,	555,	2,	NULL,	18,	444	]
@@ -14211,7 +14211,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L6,	L7 # name
-% smallint,	wrd,	bigint,	bigint,	bigint,	wrd # type
+% smallint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	3,	4,	1 # length
 [ 111,	26,	2,	743,	490,	0	]
 [ 222,	2,	NULL,	369,	1240,	0	]
@@ -14305,7 +14305,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L4,	.L5 # table_name
 % L1,	L2,	L4,	L5 # name
-% bigint,	wrd,	bigint,	bigint # type
+% bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	4,	2 # length
 [ -4,	0,	1300,	1	]
 [ -3,	0,	364,	1	]
@@ -14367,7 +14367,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -14455,7 +14455,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.t1 # table_name
 % a,	L1,	b,	L2,	L3,	L4,	d # name
-% int,	smallint,	int,	hugeint,	wrd,	bigint,	int # type
+% int,	smallint,	int,	hugeint,	bigint,	bigint,	int # type
 % 3,	3,	3,	3,	2,	2,	3 # length
 [ 121,	333,	124,	NULL,	2,	-3,	122	]
 [ 127,	333,	129,	127,	3,	-2,	128	]
@@ -14521,7 +14521,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	c,	L2,	L3,	L4,	L5 # name
-% bigint,	int,	bigint,	hugeint,	wrd,	bigint # type
+% bigint,	int,	bigint,	hugeint,	bigint,	bigint # type
 % 3,	3,	2,	4,	2,	2 # length
 [ NULL,	119,	-1,	NULL,	0,	NULL	]
 [ 317,	106,	-1,	1067,	0,	2	]
@@ -14542,7 +14542,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L3 # table_name
 % L1,	L3 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 2,	4 # length
 [ 0,	NULL	]
 [ 0,	1050	]
@@ -14582,7 +14582,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.t1 # table_name
 % L1,	L2,	e # name
-% bigint,	wrd,	int # type
+% bigint,	bigint,	int # type
 % 3,	2,	3 # length
 [ NULL,	0,	NULL	]
 [ NULL,	0,	117	]
@@ -14683,7 +14683,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	a,	L6 # name
-% wrd,	bigint,	smallint,	wrd,	bigint,	int,	int # type
+% bigint,	bigint,	smallint,	bigint,	bigint,	int,	int # type
 % 1,	3,	3,	2,	2,	3,	3 # length
 [ 0,	NULL,	555,	1,	-1,	NULL,	NULL	]
 [ 0,	NULL,	555,	18,	-2,	NULL,	NULL	]
@@ -14713,7 +14713,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L3,	.L4,	.L5,	.L6,	.L7,	.L10 # table_name
 % L1,	L3,	L4,	L5,	L6,	L7,	L10 # name
-% bigint,	bigint,	bigint,	bigint,	wrd,	bigint,	hugeint # type
+% bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	4,	2,	2,	1,	2,	3 # length
 [ NULL,	NULL,	NULL,	1,	0,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	3,	0,	-1,	NULL	]
@@ -14753,7 +14753,7 @@ Ready.
 #;
 % .L1,	.t1 # table_name
 % L1,	a # name
-% wrd,	int # type
+% bigint,	int # type
 % 1,	3 # length
 [ 0,	NULL	]
 [ 0,	NULL	]
@@ -14788,7 +14788,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.t1 # table_name
 % L1,	e,	L2,	d # name
-% wrd,	int,	bigint,	int # type
+% bigint,	int,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	NULL,	NULL,	101	]
 [ 0,	109,	-1,	108	]
@@ -14942,7 +14942,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 0	]
 [ 0	]
@@ -14995,7 +14995,7 @@ Ready.
 #;
 % .L1,	.L3,	.t1 # table_name
 % L1,	L3,	b # name
-% wrd,	bigint,	int # type
+% bigint,	bigint,	int # type
 % 1,	4,	3 # length
 [ 0,	NULL,	NULL	]
 [ 0,	NULL,	206	]
@@ -15043,7 +15043,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.t1,	.L2,	.L3 # table_name
 % L1,	e,	L2,	L3 # name
-% hugeint,	int,	bigint,	wrd # type
+% hugeint,	int,	bigint,	bigint # type
 % 4,	3,	3,	1 # length
 [ NULL,	NULL,	NULL,	0	]
 [ NULL,	NULL,	NULL,	0	]
@@ -15104,7 +15104,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -15191,7 +15191,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 1,	2 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -15236,7 +15236,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	a,	L2,	L3,	L4 # name
-% wrd,	int,	bigint,	hugeint,	smallint # type
+% bigint,	int,	bigint,	hugeint,	smallint # type
 % 2,	3,	2,	4,	3 # length
 [ 0,	104,	NULL,	NULL,	444	]
 [ 0,	107,	2,	1612,	333	]
@@ -15277,7 +15277,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L2,	.L3,	.L4,	.t1 # table_name
 % L2,	L3,	L4,	a # name
-% bigint,	wrd,	smallint,	int # type
+% bigint,	bigint,	smallint,	int # type
 % 4,	1,	3,	3 # length
 [ NULL,	0,	444,	NULL	]
 [ NULL,	0,	444,	104	]
@@ -15318,7 +15318,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.t1 # table_name
 % c,	L1,	L2,	L3,	a # name
-% int,	wrd,	bigint,	hugeint,	int # type
+% int,	bigint,	bigint,	hugeint,	int # type
 % 3,	2,	1,	4,	3 # length
 [ NULL,	24,	NULL,	NULL,	239	]
 [ 102,	0,	NULL,	NULL,	104	]
@@ -15398,7 +15398,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % b,	L1,	L2,	c,	L3,	L4,	L5 # name
-% int,	hugeint,	wrd,	int,	smallint,	bigint,	bigint # type
+% int,	hugeint,	bigint,	int,	smallint,	bigint,	bigint # type
 % 3,	3,	1,	3,	3,	2,	2 # length
 [ NULL,	NULL,	0,	119,	333,	-1,	NULL	]
 [ 105,	107,	0,	106,	333,	-1,	2	]
@@ -15417,7 +15417,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .t1,	.L1,	.L2 # table_name
 % c,	L1,	L2 # name
-% int,	hugeint,	wrd # type
+% int,	hugeint,	bigint # type
 % 3,	4,	1 # length
 [ NULL,	NULL,	0	]
 [ 102,	NULL,	0	]
@@ -15480,7 +15480,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	wrd,	bigint # type
+% bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
 [ NULL,	0,	1	]
 [ NULL,	0,	1	]
@@ -16004,7 +16004,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	c,	d,	L2,	L3,	L4,	L5 # name
-% wrd,	int,	int,	smallint,	bigint,	bigint,	hugeint # type
+% bigint,	int,	int,	smallint,	bigint,	bigint,	hugeint # type
 % 2,	3,	3,	3,	3,	2,	4 # length
 [ 0,	106,	108,	333,	317,	-2,	1612	]
 [ 1,	113,	114,	444,	NULL,	-1,	NULL	]
@@ -16054,7 +16054,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % L2,	L3,	L4,	L5,	L6,	L7 # name
-% bigint,	wrd,	bigint,	hugeint,	bigint,	hugeint # type
+% bigint,	bigint,	bigint,	hugeint,	bigint,	hugeint # type
 % 4,	2,	2,	4,	2,	3 # length
 [ NULL,	0,	NULL,	NULL,	1,	NULL	]
 [ NULL,	0,	-1,	NULL,	3,	NULL	]
@@ -16188,7 +16188,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
-% hugeint,	bigint,	bigint,	int,	hugeint,	wrd # type
+% hugeint,	bigint,	bigint,	int,	hugeint,	bigint # type
 % 4,	2,	2,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	0	]
 [ 1067,	2,	-1,	105,	107,	0	]
@@ -16212,7 +16212,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	c,	L4,	L5,	L6 # name
-% wrd,	wrd,	smallint,	int,	hugeint,	bigint,	bigint # type
+% bigint,	bigint,	smallint,	int,	hugeint,	bigint,	bigint # type
 % 1,	2,	3,	3,	4,	1,	2 # length
 [ 0,	0,	333,	106,	1067,	1,	-1	]
 [ 0,	0,	444,	102,	NULL,	NULL,	NULL	]
@@ -16304,7 +16304,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	smallint # type
+% bigint,	smallint # type
 % 2,	3 # length
 [ 0,	222	]
 [ 0,	333	]
@@ -16402,7 +16402,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.t1,	.L1,	.L2,	.L3 # table_name
 % b,	c,	e,	L1,	L2,	L3 # name
-% int,	int,	int,	int,	wrd,	bigint # type
+% int,	int,	int,	int,	bigint,	bigint # type
 % 3,	3,	3,	3,	1,	2 # length
 [ NULL,	102,	NULL,	104,	0,	NULL	]
 [ NULL,	202,	204,	201,	0,	NULL	]
@@ -16530,7 +16530,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% bigint,	hugeint # type
 % 1,	3 # length
 [ 0,	107	]
 [ 0,	127	]
@@ -16545,7 +16545,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	hugeint,	wrd,	bigint,	smallint # type
+% hugeint,	hugeint,	bigint,	bigint,	smallint # type
 % 4,	4,	1,	1,	3 # length
 [ NULL,	NULL,	0,	NULL,	444	]
 [ NULL,	NULL,	0,	1,	444	]
@@ -16598,7 +16598,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L4,	.L5 # table_name
 % L1,	L2,	L4,	L5 # name
-% wrd,	smallint,	bigint,	bigint # type
+% bigint,	smallint,	bigint,	bigint # type
 % 2,	3,	4,	2 # length
 [ 0,	333,	1050,	-2	]
 [ 0,	444,	NULL,	1	]
@@ -16643,7 +16643,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L3,	.L4,	.L5,	.L6 # table_name
 % d,	L1,	L3,	L4,	L5,	L6 # name
-% int,	bigint,	bigint,	hugeint,	hugeint,	wrd # type
+% int,	bigint,	bigint,	hugeint,	hugeint,	bigint # type
 % 3,	1,	4,	4,	3,	2 # length
 [ 133,	1,	1300,	1325,	132,	4	]
 [ 171,	1,	1700,	1714,	172,	12	]
@@ -16661,7 +16661,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L4,	.t1,	.L5,	.L6 # table_name
 % L1,	L2,	c,	L4,	e,	L5,	L6 # name
-% bigint,	wrd,	int,	bigint,	int,	hugeint,	bigint # type
+% bigint,	bigint,	int,	bigint,	int,	hugeint,	bigint # type
 % 2,	1,	3,	4,	3,	3,	2 # length
 [ NULL,	0,	102,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	0,	113,	1120,	110,	NULL,	4	]
@@ -16817,7 +16817,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.t1,	.L3 # table_name
 % c,	L1,	L2,	a,	L3 # name
-% int,	wrd,	smallint,	int,	bigint # type
+% int,	bigint,	smallint,	int,	bigint # type
 % 3,	2,	3,	1,	1 # length
 [ 113,	1,	555,	NULL,	NULL	]
 [ 208,	18,	555,	NULL,	NULL	]
@@ -16894,7 +16894,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	wrd,	smallint # type
+% hugeint,	bigint,	smallint # type
 % 3,	1,	3 # length
 [ NULL,	0,	222	]
 [ NULL,	0,	333	]
@@ -16935,7 +16935,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% smallint,	bigint,	wrd # type
+% smallint,	bigint,	bigint # type
 % 3,	1,	1 # length
 [ 111,	2,	0	]
 [ 222,	1,	0	]
@@ -17024,7 +17024,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% smallint,	wrd,	bigint,	bigint,	hugeint # type
+% smallint,	bigint,	bigint,	bigint,	hugeint # type
 % 3,	2,	2,	2,	4 # length
 [ 111,	5,	1,	1,	827	]
 [ 111,	6,	1,	-4,	851	]
@@ -17191,7 +17191,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% bigint,	wrd,	smallint,	hugeint,	smallint,	bigint,	bigint # type
+% bigint,	bigint,	smallint,	hugeint,	smallint,	bigint,	bigint # type
 % 2,	2,	3,	4,	3,	2,	2 # length
 [ NULL,	24,	555,	NULL,	444,	3,	1	]
 [ -3,	10,	333,	1622,	444,	3,	2	]
@@ -17228,7 +17228,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% hugeint,	bigint,	wrd,	bigint # type
+% hugeint,	bigint,	bigint,	bigint # type
 % 3,	2,	1,	2 # length
 [ NULL,	NULL,	0,	NULL	]
 [ NULL,	NULL,	0,	-1	]
@@ -17267,7 +17267,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% bigint,	hugeint # type
 % 1,	4 # length
 [ 0,	NULL	]
 [ 0,	NULL	]
@@ -17311,7 +17311,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % b,	L1,	L2,	L3,	L4 # name
-% int,	bigint,	hugeint,	wrd,	smallint # type
+% int,	bigint,	hugeint,	bigint,	smallint # type
 % 3,	1,	1,	1,	3 # length
 [ 112,	4,	NULL,	1,	444	]
 #SELECT e,
@@ -17498,7 +17498,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	a # name
-% hugeint,	wrd,	hugeint,	int # type
+% hugeint,	bigint,	hugeint,	int # type
 % 1,	1,	1,	1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
 #       CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -17515,7 +17515,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% wrd,	smallint,	bigint,	hugeint,	bigint,	hugeint,	smallint # type
+% bigint,	smallint,	bigint,	hugeint,	bigint,	hugeint,	smallint # type
 % 1,	3,	3,	4,	2,	3,	3 # length
 [ 0,	111,	416,	827,	1,	137,	222	]
 [ 0,	111,	428,	851,	-4,	142,	222	]
@@ -17596,7 +17596,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	bigint,	wrd,	bigint # type
+% bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	2 # length
 [ NULL,	-1,	0,	-1	]
 [ NULL,	1,	0,	NULL	]
@@ -17852,7 +17852,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	e,	d # name
-% hugeint,	wrd,	hugeint,	int,	int # type
+% hugeint,	bigint,	hugeint,	int,	int # type
 % 4,	1,	4,	3,	3 # length
 [ NULL,	0,	NULL,	NULL,	NULL	]
 [ NULL,	0,	NULL,	NULL,	NULL	]
@@ -17956,7 +17956,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	hugeint,	wrd,	bigint,	bigint # type
+% hugeint,	hugeint,	bigint,	bigint,	bigint # type
 % 4,	3,	1,	2,	1 # length
 [ NULL,	NULL,	0,	NULL,	1	]
 [ NULL,	NULL,	0,	3,	NULL	]
@@ -17983,7 +17983,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L4,	.t1,	.L5,	.L6 # table_name
 % e,	L1,	L2,	L4,	a,	L5,	L6 # name
-% int,	int,	wrd,	bigint,	int,	wrd,	smallint # type
+% int,	int,	bigint,	bigint,	int,	bigint,	smallint # type
 % 3,	3,	2,	4,	3,	1,	3 # length
 [ NULL,	NULL,	18,	NULL,	NULL,	0,	444	]
 [ NULL,	121,	2,	1240,	121,	0,	222	]
@@ -18015,7 +18015,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L3,	.L4,	.L5,	.L6,	.t1,	.t1 # table_name
 % L1,	L3,	L4,	L5,	L6,	c,	a # name
-% bigint,	bigint,	int,	wrd,	bigint,	int,	int # type
+% bigint,	bigint,	int,	bigint,	bigint,	int,	int # type
 % 1,	4,	3,	1,	2,	3,	3 # length
 [ NULL,	NULL,	104,	0,	NULL,	102,	104	]
 [ NULL,	NULL,	115,	0,	NULL,	119,	115	]
@@ -18085,7 +18085,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L5,	.L6,	.L7,	.L10 # table_name
 % L1,	L2,	L3,	L5,	L6,	L7,	L10 # name
-% wrd,	hugeint,	wrd,	bigint,	bigint,	bigint,	hugeint # type
+% bigint,	hugeint,	bigint,	bigint,	bigint,	bigint,	hugeint # type
 % 2,	4,	1,	4,	2,	1,	3 # length
 [ 0,	NULL,	0,	NULL,	NULL,	NULL,	NULL	]
 [ 0,	NULL,	0,	NULL,	-1,	NULL,	NULL	]
@@ -18151,7 +18151,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	a,	L4,	L5,	L6 # name
-% wrd,	hugeint,	int,	bigint,	hugeint,	smallint # type
+% bigint,	hugeint,	int,	bigint,	hugeint,	smallint # type
 % 1,	4,	3,	4,	3,	3 # length
 [ 0,	NULL,	NULL,	NULL,	NULL,	444	]
 [ 0,	NULL,	104,	NULL,	NULL,	444	]
@@ -18282,7 +18282,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	bigint # type
+% bigint,	bigint # type
 % 1,	1 # length
 [ 0,	NULL	]
 [ 0,	1	]
@@ -18568,7 +18568,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.t1,	.L3 # table_name
 % L1,	L2,	e,	L3 # name
-% hugeint,	wrd,	int,	hugeint # type
+% hugeint,	bigint,	int,	hugeint # type
 % 4,	2,	3,	3 # length
 [ NULL,	24,	237,	NULL	]
 [ 635,	0,	109,	107	]
@@ -18602,7 +18602,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4,	.L5 # table_name
 % b,	L1,	d,	L2,	L3,	L4,	L5 # name
-% int,	smallint,	int,	bigint,	bigint,	hugeint,	wrd # type
+% int,	smallint,	int,	bigint,	bigint,	hugeint,	bigint # type
 % 3,	3,	3,	2,	3,	4,	2 # length
 [ NULL,	222,	203,	NULL,	NULL,	NULL,	0	]
 [ NULL,	333,	116,	NULL,	NULL,	NULL,	0	]
@@ -18647,7 +18647,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% wrd,	wrd,	hugeint,	smallint,	bigint,	smallint # type
+% bigint,	bigint,	hugeint,	smallint,	bigint,	smallint # type
 % 2,	1,	4,	3,	1,	3 # length
 [ 16,	0,	1158,	222,	1,	444	]
 [ 21,	0,	1338,	222,	1,	444	]
@@ -18733,7 +18733,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.t1,	.L4 # table_name
 % L1,	L2,	L3,	e,	L4 # name
-% bigint,	bigint,	bigint,	int,	wrd # type
+% bigint,	bigint,	bigint,	int,	bigint # type
 % 1,	1,	1,	3,	2 # length
 [ 2,	1,	1,	135,	5	]
 [ 3,	1,	3,	180,	14	]
@@ -18778,7 +18778,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% hugeint,	hugeint,	hugeint,	wrd,	bigint,	hugeint # type
+% hugeint,	hugeint,	hugeint,	bigint,	bigint,	hugeint # type
 % 4,	4,	4,	2,	2,	3 # length
 [ NULL,	NULL,	NULL,	0,	-1,	NULL	]
 [ NULL,	NULL,	NULL,	0,	1,	NULL	]
@@ -18938,7 +18938,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	b,	L3,	L4,	L5,	L6 # name
-% hugeint,	bigint,	int,	bigint,	smallint,	wrd,	bigint # type
+% hugeint,	bigint,	int,	bigint,	smallint,	bigint,	bigint # type
 % 4,	3,	3,	2,	3,	2,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	444,	0,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	444,	0,	NULL	]
@@ -19010,7 +19010,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	b # name
-% bigint,	wrd,	hugeint,	hugeint,	bigint,	smallint,	int # type
+% bigint,	bigint,	hugeint,	hugeint,	bigint,	smallint,	int # type
 % 2,	2,	4,	4,	1,	3,	3 # length
 [ NULL,	0,	NULL,	NULL,	NULL,	444,	NULL	]
 [ NULL,	18,	NULL,	NULL,	2,	444,	206	]
@@ -19086,7 +19086,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% hugeint,	smallint,	wrd,	hugeint # type
+% hugeint,	smallint,	bigint,	hugeint # type
 % 4,	3,	1,	4 # length
 [ 1918,	444,	0,	2878	]
 [ 2226,	444,	0,	3331	]
@@ -19101,7 +19101,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.t1,	.L2,	.L3 # table_name
 % L1,	e,	L2,	L3 # name
-% bigint,	int,	bigint,	wrd # type
+% bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	1 # length
 [ NULL,	NULL,	-4,	0	]
 [ NULL,	NULL,	-2,	0	]
@@ -19136,7 +19136,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -19234,7 +19234,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	c,	b,	L2,	L3,	L4 # name
-% wrd,	int,	int,	wrd,	hugeint,	hugeint # type
+% bigint,	int,	int,	bigint,	hugeint,	hugeint # type
 % 2,	3,	3,	1,	4,	3 # length
 [ 1,	113,	112,	0,	NULL,	NULL	]
 [ 2,	123,	124,	0,	NULL,	NULL	]
@@ -19275,7 +19275,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
-% bigint,	wrd,	bigint,	int,	smallint,	smallint # type
+% bigint,	bigint,	bigint,	int,	smallint,	smallint # type
 % 2,	2,	1,	3,	3,	3 # length
 [ NULL,	0,	1,	NULL,	555,	444	]
 [ NULL,	0,	3,	NULL,	333,	444	]
@@ -19331,7 +19331,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% wrd,	hugeint # type
+% bigint,	hugeint # type
 % 1,	4 # length
 [ 0,	NULL	]
 [ 0,	NULL	]
@@ -19522,7 +19522,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.t1,	.L2 # table_name
 % e,	L1,	a,	L2 # name
-% int,	wrd,	int,	hugeint # type
+% int,	bigint,	int,	hugeint # type
 % 3,	1,	3,	3 # length
 [ 110,	0,	NULL,	NULL	]
 [ 126,	0,	127,	127	]
@@ -19548,7 +19548,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	b # name
-% bigint,	hugeint,	smallint,	bigint,	wrd,	bigint,	int # type
+% bigint,	hugeint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 2,	3,	3,	1,	1,	3,	3 # length
 [ NULL,	NULL,	555,	1,	0,	NULL,	112	]
 [ NULL,	NULL,	555,	2,	0,	NULL,	206	]
@@ -19576,7 +19576,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.t1,	.L4 # table_name
 % L1,	L2,	L3,	b,	L4 # name
-% smallint,	wrd,	bigint,	int,	bigint # type
+% smallint,	bigint,	bigint,	int,	bigint # type
 % 3,	1,	3,	3,	2 # length
 [ 111,	0,	416,	139,	1	]
 [ 111,	0,	428,	143,	-4	]
@@ -19729,7 +19729,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.t1 # table_name
 % d,	L1,	L2,	L3,	a # name
-% int,	wrd,	bigint,	bigint,	int # type
+% int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	1,	2,	3 # length
 [ NULL,	8,	1,	2,	153	]
 [ NULL,	9,	3,	1,	159	]
@@ -19813,7 +19813,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 0	]
 [ 1	]
@@ -20088,7 +20088,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L3,	L4,	L5,	L6 # name
-% bigint,	bigint,	bigint,	hugeint,	wrd # type
+% bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 2,	4,	2,	4,	1 # length
 [ NULL,	NULL,	1,	NULL,	0	]
 [ NULL,	NULL,	3,	NULL,	0	]
@@ -20170,7 +20170,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L2,	.L3,	.t1,	.L4,	.L5,	.t1 # table_name
 % L2,	L3,	a,	L4,	L5,	d # name
-% bigint,	int,	int,	wrd,	bigint,	int # type
+% bigint,	int,	int,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	2,	3 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	207	]
 [ 364,	182,	182,	0,	1,	183	]
@@ -20203,7 +20203,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	b,	L3,	L4,	L5,	L6 # name
-% bigint,	hugeint,	int,	wrd,	int,	hugeint,	wrd # type
+% bigint,	hugeint,	int,	bigint,	int,	hugeint,	bigint # type
 % 2,	3,	3,	2,	3,	4,	1 # length
 [ NULL,	NULL,	NULL,	0,	104,	NULL,	0	]
 [ NULL,	NULL,	124,	2,	121,	1226,	0	]
@@ -20280,7 +20280,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% wrd,	bigint,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 2,	2,	4 # length
 [ 0,	NULL,	NULL	]
 [ 0,	NULL,	NULL	]
@@ -20465,7 +20465,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% int,	wrd # type
+% int,	bigint # type
 % 3,	1 # length
 [ 107,	0	]
 #SELECT a+b*2+c*3+d*4,
@@ -20625,7 +20625,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	c # name
-% bigint,	hugeint,	bigint,	hugeint,	wrd,	wrd,	int # type
+% bigint,	hugeint,	bigint,	hugeint,	bigint,	bigint,	int # type
 % 2,	4,	2,	4,	1,	2,	3 # length
 [ NULL,	NULL,	-1,	NULL,	0,	0,	202	]
 [ NULL,	NULL,	-1,	NULL,	0,	1,	113	]
@@ -20681,7 +20681,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % e,	L1,	L2,	L3,	L4,	b # name
-% int,	bigint,	wrd,	bigint,	smallint,	int # type
+% int,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	1,	2,	3,	3 # length
 [ NULL,	-4,	0,	NULL,	222,	240	]
 [ NULL,	-2,	0,	NULL,	555,	206	]
@@ -21020,7 +21020,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % L2,	L3,	L4,	L5,	L6,	L7 # name
-% bigint,	hugeint,	smallint,	bigint,	wrd,	hugeint # type
+% bigint,	hugeint,	smallint,	bigint,	bigint,	hugeint # type
 % 4,	1,	3,	1,	1,	1 # length
 [ NULL,	NULL,	444,	NULL,	0,	NULL	]
 [ 1120,	NULL,	444,	NULL,	0,	NULL	]
@@ -21034,7 +21034,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	c,	L2,	L3,	L4 # name
-% wrd,	int,	bigint,	hugeint,	bigint # type
+% bigint,	int,	bigint,	hugeint,	bigint # type
 % 2,	3,	2,	4,	1 # length
 [ 16,	193,	3,	1158,	1	]
 [ 21,	224,	2,	1338,	1	]
@@ -21050,7 +21050,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	b,	L3,	L4 # name
-% bigint,	bigint,	int,	smallint,	wrd # type
+% bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	444,	0	]
 [ NULL,	711,	236,	444,	24	]
@@ -21162,7 +21162,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.L6 # table_name
 % L1,	L2,	L3,	L5,	b,	L6 # name
-% bigint,	wrd,	bigint,	bigint,	int,	hugeint # type
+% bigint,	bigint,	bigint,	bigint,	int,	hugeint # type
 % 2,	2,	2,	4,	3,	4 # length
 [ NULL,	2,	-3,	1240,	124,	NULL	]
 [ NULL,	7,	4,	1450,	145,	NULL	]
@@ -21239,7 +21239,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	wrd,	bigint,	hugeint # type
+% bigint,	bigint,	bigint,	hugeint # type
 % 1,	1,	1,	1 # length
 #SELECT abs(b-c),
 #       c,
@@ -21478,7 +21478,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4 # table_name
 % d,	L1,	L2,	L3,	a,	L4 # name
-% int,	bigint,	bigint,	wrd,	int,	bigint # type
+% int,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	2,	2,	2,	3,	3 # length
 [ 108,	-1,	2,	0,	107,	317	]
 [ 114,	-1,	NULL,	1,	NULL,	NULL	]
@@ -21570,7 +21570,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % a,	L1,	L2,	b,	L3,	L4,	L5 # name
-% int,	bigint,	hugeint,	int,	bigint,	bigint,	wrd # type
+% int,	bigint,	hugeint,	int,	bigint,	bigint,	bigint # type
 % 3,	3,	4,	3,	1,	2,	2 # length
 [ NULL,	NULL,	NULL,	112,	1,	-1,	1	]
 [ NULL,	NULL,	NULL,	206,	2,	1,	18	]
@@ -21636,7 +21636,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L2,	.L3,	.L4,	.L5 # table_name
 % L2,	L3,	L4,	L5 # name
-% bigint,	bigint,	bigint,	wrd # type
+% bigint,	bigint,	bigint,	bigint # type
 % 4,	2,	2,	1 # length
 [ NULL,	1,	NULL,	0	]
 [ NULL,	1,	NULL,	0	]
@@ -21677,7 +21677,7 @@ Ready.
 #ORDER BY 1,2;
 % .t1,	.L1 # table_name
 % a,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 3,	1 # length
 [ 107,	0	]
 [ 127,	0	]
@@ -21709,7 +21709,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% int,	bigint,	smallint,	wrd,	hugeint # type
+% int,	bigint,	smallint,	bigint,	hugeint # type
 % 3,	3,	3,	2,	4 # length
 [ NULL,	NULL,	555,	1,	NULL	]
 [ NULL,	NULL,	555,	18,	NULL	]
@@ -21868,7 +21868,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.L2,	.L3,	.t1,	.L4,	.L6 # table_name
 % L1,	a,	L2,	L3,	e,	L4,	L6 # name
-% wrd,	int,	hugeint,	bigint,	int,	hugeint,	bigint # type
+% bigint,	int,	hugeint,	bigint,	int,	hugeint,	bigint # type
 % 2,	3,	4,	2,	3,	4,	4 # length
 [ 0,	107,	635,	-2,	109,	1612,	1050	]
 [ 1,	NULL,	NULL,	-1,	110,	NULL,	1120	]
@@ -21937,7 +21937,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	a,	L2,	L3,	L4 # name
-% wrd,	int,	hugeint,	hugeint,	bigint # type
+% bigint,	int,	hugeint,	hugeint,	bigint # type
 % 2,	3,	3,	4,	2 # length
 [ 0,	104,	NULL,	NULL,	NULL	]
 [ 0,	107,	107,	1612,	2	]
@@ -21972,7 +21972,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.t1 # table_name
 % L1,	L2,	a # name
-% int,	wrd,	int # type
+% int,	bigint,	int # type
 % 3,	2,	3 # length
 [ NULL,	1,	NULL	]
 [ 107,	0,	107	]
@@ -22009,7 +22009,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % d,	b,	L1,	L2,	L3,	L4 # name
-% int,	int,	wrd,	smallint,	bigint,	hugeint # type
+% int,	int,	bigint,	smallint,	bigint,	hugeint # type
 % 3,	3,	2,	3,	2,	3 # length
 [ NULL,	151,	8,	333,	2,	NULL	]
 [ NULL,	158,	9,	333,	1,	NULL	]
@@ -22307,7 +22307,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.L3 # table_name
 % e,	L1,	L2,	L3 # name
-% int,	wrd,	bigint,	bigint # type
+% int,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1 # length
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
 #       abs(b-c),
@@ -22355,7 +22355,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.t1,	.L1,	.t1,	.L2,	.L3 # table_name
 % c,	b,	L1,	e,	L2,	L3 # name
-% int,	int,	bigint,	int,	bigint,	wrd # type
+% int,	int,	bigint,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	1 # length
 [ NULL,	236,	NULL,	237,	1,	0	]
 [ 102,	NULL,	NULL,	NULL,	NULL,	0	]
@@ -22411,7 +22411,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% bigint,	bigint,	wrd # type
+% bigint,	bigint,	bigint # type
 % 2,	3,	2 # length
 [ NULL,	NULL,	0	]
 [ NULL,	NULL,	0	]
@@ -22525,7 +22525,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 3,	1 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -22567,7 +22567,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.t1,	.L1,	.L2,	.L4,	.L5,	.L6 # table_name
 % a,	e,	L1,	L2,	L4,	L5,	L6 # name
-% int,	int,	wrd,	int,	bigint,	wrd,	hugeint # type
+% int,	int,	bigint,	int,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	3,	4,	1,	3 # length
 [ NULL,	NULL,	18,	NULL,	NULL,	0,	NULL	]
 [ NULL,	110,	1,	NULL,	1120,	0,	NULL	]
@@ -22639,7 +22639,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.L5,	.L6 # table_name
 % L1,	L2,	c,	d,	L3,	L5,	L6 # name
-% wrd,	smallint,	int,	int,	bigint,	bigint,	hugeint # type
+% bigint,	smallint,	int,	int,	bigint,	bigint,	hugeint # type
 % 1,	3,	3,	3,	2,	4,	4 # length
 [ 0,	111,	137,	136,	2,	1390,	1371	]
 [ 0,	111,	141,	140,	2,	1430,	1411	]
@@ -22679,7 +22679,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	bigint,	wrd # type
+% hugeint,	bigint,	bigint # type
 % 4,	2,	1 # length
 [ 1612,	-2,	0	]
 [ 1902,	-3,	3	]
@@ -22693,7 +22693,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	b # name
-% hugeint,	wrd,	bigint,	int # type
+% hugeint,	bigint,	bigint,	int # type
 % 3,	2,	3,	3 # length
 [ NULL,	0,	NULL,	NULL	]
 [ NULL,	0,	NULL,	NULL	]
@@ -22776,7 +22776,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.t1,	.L2,	.L3,	.t1,	.L4 # table_name
 % L1,	b,	L2,	L3,	c,	L4 # name
-% bigint,	int,	bigint,	wrd,	int,	bigint # type
+% bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 2,	3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	0,	119,	-1	]
 [ -3,	211,	635,	19,	214,	2	]
@@ -22799,7 +22799,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % a,	L1,	L2,	L3,	L4 # name
-% int,	wrd,	hugeint,	hugeint,	bigint # type
+% int,	bigint,	hugeint,	hugeint,	bigint # type
 % 1,	1,	1,	1,	1 # length
 [ NULL,	0,	NULL,	NULL,	1	]
 [ NULL,	0,	NULL,	NULL,	2	]
@@ -22937,7 +22937,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5,	.L7 # table_name
 % L1,	L2,	L3,	d,	L4,	L5,	L7 # name
-% bigint,	hugeint,	bigint,	int,	hugeint,	wrd,	bigint # type
+% bigint,	hugeint,	bigint,	int,	hugeint,	bigint,	bigint # type
 % 2,	4,	1,	3,	3,	2,	4 # length
 [ NULL,	NULL,	1,	114,	NULL,	1,	1120	]
 [ NULL,	NULL,	2,	207,	NULL,	18,	NULL	]
@@ -22994,7 +22994,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% wrd,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
+% bigint,	hugeint,	smallint,	hugeint,	bigint,	bigint # type
 % 1,	4,	3,	3,	1,	3 # length
 [ 0,	NULL,	222,	NULL,	4,	723	]
 [ 0,	NULL,	555,	NULL,	NULL,	711	]
@@ -23063,7 +23063,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	bigint,	hugeint,	wrd # type
+% bigint,	bigint,	hugeint,	bigint # type
 % 3,	2,	4,	2 # length
 [ NULL,	NULL,	NULL,	0	]
 [ NULL,	NULL,	NULL,	0	]
@@ -23196,7 +23196,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	a,	b,	L3,	L4 # name
-% wrd,	bigint,	int,	int,	wrd,	bigint # type
+% bigint,	bigint,	int,	int,	bigint,	bigint # type
 % 2,	3,	3,	3,	1,	2 # length
 [ 2,	369,	121,	124,	0,	NULL	]
 [ 3,	385,	127,	129,	0,	2	]
@@ -23515,7 +23515,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	a,	L4,	b,	e # name
-% wrd,	hugeint,	bigint,	int,	bigint,	int,	int # type
+% bigint,	hugeint,	bigint,	int,	bigint,	int,	int # type
 % 1,	3,	3,	3,	2,	3,	3 # length
 [ 0,	635,	317,	107,	2,	105,	109	]
 [ 3,	760,	385,	127,	-2,	129,	126	]
@@ -23564,7 +23564,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.t1,	.L3,	.t1 # table_name
 % d,	L1,	L2,	c,	L3,	b # name
-% int,	wrd,	smallint,	int,	hugeint,	int # type
+% int,	bigint,	smallint,	int,	hugeint,	int # type
 % 3,	2,	3,	3,	4,	3 # length
 [ NULL,	8,	555,	150,	905,	151	]
 [ NULL,	9,	555,	155,	940,	158	]
@@ -23603,7 +23603,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.t1 # table_name
 % e,	L1,	L2,	L3,	L4,	d # name
-% int,	wrd,	smallint,	smallint,	bigint,	int # type
+% int,	bigint,	smallint,	smallint,	bigint,	int # type
 % 3,	1,	3,	3,	1,	3 # length
 [ 230,	0,	333,	555,	1,	233	]
 [ 246,	0,	111,	444,	2,	248	]
@@ -23650,7 +23650,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % L1,	e,	L2,	L3,	L4 # name
-% smallint,	int,	hugeint,	bigint,	wrd # type
+% smallint,	int,	hugeint,	bigint,	bigint # type
 % 3,	3,	4,	3,	1 # length
 [ 111,	246,	3706,	743,	0	]
 [ 222,	NULL,	NULL,	369,	0	]
@@ -23688,7 +23688,7 @@ Ready.
 #ORDER BY 1,2;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -23942,7 +23942,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
 % c,	L1,	L2,	L3,	L4,	a,	L5 # name
-% int,	bigint,	hugeint,	wrd,	hugeint,	int,	bigint # type
+% int,	bigint,	hugeint,	bigint,	hugeint,	int,	bigint # type
 % 3,	2,	4,	1,	4,	3,	2 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	239,	NULL	]
 [ 106,	-1,	1067,	0,	635,	107,	-2	]
@@ -24061,7 +24061,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % d,	L1,	L2,	L3,	L4 # name
-% int,	wrd,	hugeint,	bigint,	smallint # type
+% int,	bigint,	hugeint,	bigint,	smallint # type
 % 3,	2,	4,	2,	3 # length
 [ 108,	0,	1612,	-2,	333	]
 [ 114,	1,	NULL,	-1,	444	]
@@ -24180,7 +24180,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4,	.t1 # table_name
 % e,	L1,	L2,	L3,	b,	L4,	c # name
-% int,	bigint,	hugeint,	bigint,	int,	wrd,	int # type
+% int,	bigint,	hugeint,	bigint,	int,	bigint,	int # type
 % 3,	2,	3,	3,	3,	1,	3 # length
 [ 180,	1,	182,	544,	181,	0,	184	]
 [ 197,	-1,	197,	595,	198,	0,	195	]
@@ -24310,7 +24310,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.t1,	.L1,	.L3,	.L4 # table_name
 % a,	c,	L1,	L3,	L4 # name
-% int,	int,	hugeint,	bigint,	wrd # type
+% int,	int,	hugeint,	bigint,	bigint # type
 % 3,	3,	4,	4,	2 # length
 [ 107,	106,	635,	1050,	0	]
 [ 115,	119,	NULL,	NULL,	0	]
@@ -24332,7 +24332,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% wrd,	bigint,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	2,	3,	3 # length
 [ 4,	1,	132,	131	]
 [ 5,	1,	137,	138	]
@@ -24354,7 +24354,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	wrd,	bigint,	smallint,	wrd # type
+% bigint,	bigint,	bigint,	smallint,	bigint # type
 % 3,	1,	2,	3,	1 # length
 [ 317,	0,	2,	333,	0	]
 [ 385,	3,	-2,	222,	0	]
@@ -24442,7 +24442,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	d,	L3,	L4,	L5 # name
-% smallint,	hugeint,	int,	int,	wrd,	bigint # type
+% smallint,	hugeint,	int,	int,	bigint,	bigint # type
 % 3,	1,	3,	1,	1,	2 # length
 [ 555,	NULL,	114,	NULL,	0,	-1	]
 [ 555,	NULL,	207,	NULL,	0,	-2	]
@@ -24458,7 +24458,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L5,	.L6,	.t1,	.L7 # table_name
 % L1,	L2,	L3,	L5,	L6,	a,	L7 # name
-% hugeint,	bigint,	hugeint,	bigint,	bigint,	int,	wrd # type
+% hugeint,	bigint,	hugeint,	bigint,	bigint,	int,	bigint # type
 % 4,	2,	3,	4,	2,	3,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	104,	0	]
 [ NULL,	NULL,	NULL,	NULL,	-2,	NULL,	0	]
@@ -24553,7 +24553,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	hugeint,	hugeint,	wrd,	bigint # type
+% hugeint,	hugeint,	hugeint,	bigint,	bigint # type
 % 3,	4,	4,	1,	2 # length
 [ NULL,	NULL,	NULL,	0,	NULL	]
 [ 107,	635,	1612,	0,	2	]
@@ -24577,7 +24577,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	a,	L3,	L4 # name
-% int,	hugeint,	int,	wrd,	bigint # type
+% int,	hugeint,	int,	bigint,	bigint # type
 % 3,	3,	3,	1,	2 # length
 [ 138,	137,	138,	0,	-1	]
 [ 142,	142,	142,	0,	-1	]
@@ -24608,7 +24608,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	wrd,	int,	hugeint,	bigint # type
+% bigint,	bigint,	int,	hugeint,	bigint # type
 % 2,	1,	3,	4,	1 # length
 [ NULL,	0,	121,	NULL,	1	]
 [ NULL,	0,	153,	NULL,	1	]
@@ -24724,7 +24724,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.t1,	.L2,	.L3 # table_name
 % L1,	a,	L2,	L3 # name
-% smallint,	int,	bigint,	wrd # type
+% smallint,	int,	bigint,	bigint # type
 % 3,	3,	2,	1 # length
 [ 111,	245,	-4,	0	]
 [ 222,	121,	-3,	0	]
@@ -24899,7 +24899,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% wrd,	bigint,	hugeint,	hugeint,	bigint,	bigint # type
+% bigint,	bigint,	hugeint,	hugeint,	bigint,	bigint # type
 % 2,	3,	4,	3,	2,	1 # length
 [ 0,	317,	1612,	107,	-1,	1	]
 [ 1,	NULL,	NULL,	NULL,	4,	1	]
@@ -24984,7 +24984,7 @@ Ready.
 #;
 % .L1,	.L3,	.t1 # table_name
 % L1,	L3,	b # name
-% wrd,	bigint,	int # type
+% bigint,	bigint,	int # type
 % 2,	4,	3 # length
 [ 0,	NULL,	NULL	]
 [ 0,	NULL,	NULL	]
@@ -25027,7 +25027,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.t1,	.L2,	.L4 # table_name
 % L1,	c,	a,	L2,	L4 # name
-% wrd,	int,	int,	hugeint,	bigint # type
+% bigint,	int,	int,	hugeint,	bigint # type
 % 1,	3,	1,	1,	4 # length
 [ 1,	113,	NULL,	NULL,	1120	]
 #SELECT CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -25042,7 +25042,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	b # name
-% smallint,	hugeint,	wrd,	hugeint,	hugeint,	int # type
+% smallint,	hugeint,	bigint,	hugeint,	hugeint,	int # type
 % 3,	4,	1,	3,	4,	3 # length
 [ 111,	827,	0,	137,	2046,	139	]
 [ 111,	851,	0,	142,	2131,	143	]
@@ -25107,7 +25107,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L5,	.L6,	.L7,	.t1 # table_name
 % L1,	L2,	L3,	L5,	L6,	L7,	a # name
-% bigint,	bigint,	bigint,	bigint,	wrd,	hugeint,	int # type
+% bigint,	bigint,	bigint,	bigint,	bigint,	hugeint,	int # type
 % 1,	2,	2,	4,	2,	4,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	0,	NULL,	104	]
 [ NULL,	NULL,	-1,	NULL,	0,	NULL,	115	]
@@ -25157,7 +25157,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.L3 # table_name
 % a,	L1,	L2,	L3 # name
-% int,	bigint,	bigint,	wrd # type
+% int,	bigint,	bigint,	bigint # type
 % 3,	3,	2,	2 # length
 [ NULL,	NULL,	NULL,	1	]
 [ NULL,	NULL,	NULL,	18	]
@@ -25187,7 +25187,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	b,	L4,	L5 # name
-% hugeint,	wrd,	hugeint,	int,	bigint,	bigint # type
+% hugeint,	bigint,	hugeint,	int,	bigint,	bigint # type
 % 4,	1,	4,	3,	2,	2 # length
 [ NULL,	0,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	0,	NULL,	NULL,	NULL,	-1	]
@@ -25315,7 +25315,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.t1,	.L3 # table_name
 % L1,	e,	L2,	b,	L3 # name
-% bigint,	int,	wrd,	int,	bigint # type
+% bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	0,	NULL,	1	]
 [ NULL,	NULL,	18,	206,	1	]
@@ -25354,7 +25354,7 @@ Ready.
 #;
 % .L1,	.L2,	.t1 # table_name
 % L1,	L2,	b # name
-% wrd,	hugeint,	int # type
+% bigint,	hugeint,	int # type
 % 2,	3,	3 # length
 [ 0,	NULL,	NULL	]
 [ 0,	NULL,	NULL	]
@@ -25394,7 +25394,7 @@ Ready.
 #ORDER BY 1,2;
 % .t1,	.L1 # table_name
 % d,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 3,	1 # length
 [ NULL,	0	]
 [ NULL,	0	]
@@ -25437,7 +25437,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% hugeint,	smallint,	bigint,	wrd,	hugeint,	hugeint # type
+% hugeint,	smallint,	bigint,	bigint,	hugeint,	hugeint # type
 % 4,	3,	1,	2,	3,	4 # length
 [ NULL,	222,	NULL,	0,	NULL,	NULL	]
 [ NULL,	222,	4,	25,	NULL,	NULL	]
@@ -25479,7 +25479,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1,	.t1 # table_name
 % L1,	L2,	L3,	d,	b # name
-% wrd,	bigint,	smallint,	int,	int # type
+% bigint,	bigint,	smallint,	int,	int # type
 % 2,	2,	3,	3,	3 # length
 [ 0,	-2,	333,	108,	105	]
 [ 0,	-1,	222,	203,	NULL	]
@@ -25559,7 +25559,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	a,	L3,	L4,	L5 # name
-% smallint,	bigint,	int,	bigint,	hugeint,	wrd # type
+% smallint,	bigint,	int,	bigint,	hugeint,	bigint # type
 % 3,	2,	3,	2,	4,	1 # length
 [ 111,	-1,	245,	2,	3706,	0	]
 [ 222,	-3,	127,	4,	1902,	0	]
@@ -25626,7 +25626,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% wrd,	smallint,	hugeint # type
+% bigint,	smallint,	hugeint # type
 % 2,	3,	4 # length
 [ 1,	555,	NULL	]
 [ 3,	333,	1902	]
@@ -25713,7 +25713,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6 # name
-% smallint,	bigint,	bigint,	bigint,	bigint,	wrd # type
+% smallint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	1,	2,	2,	1,	1 # length
 [ 222,	2,	-3,	2,	3,	0	]
 [ 333,	1,	-3,	1,	3,	0	]
@@ -25766,7 +25766,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	c # name
-% wrd,	smallint,	bigint,	int # type
+% bigint,	smallint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	333,	2,	106	]
 [ 0,	444,	NULL,	102	]
@@ -25829,7 +25829,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L2,	.L3,	.t1,	.L4,	.L5,	.L6,	.L7 # table_name
 % L2,	L3,	b,	L4,	L5,	L6,	L7 # name
-% bigint,	bigint,	int,	hugeint,	wrd,	bigint,	bigint # type
+% bigint,	bigint,	int,	hugeint,	bigint,	bigint,	bigint # type
 % 4,	2,	3,	4,	2,	1,	2 # length
 [ 364,	1,	181,	2728,	14,	3,	1	]
 [ 398,	-1,	198,	2949,	17,	3,	1	]
@@ -25925,7 +25925,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
 % L1,	L2,	L3,	L4,	L5,	L6,	L7 # name
-% smallint,	hugeint,	hugeint,	bigint,	wrd,	bigint,	wrd # type
+% smallint,	hugeint,	hugeint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	4,	4,	2,	2,	1,	1 # length
 [ 222,	1277,	2125,	2,	19,	3,	0	]
 [ 333,	NULL,	NULL,	NULL,	0,	NULL,	0	]
@@ -25967,7 +25967,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L5,	.t1,	.t1,	.L6 # table_name
 % L1,	L2,	L3,	L5,	c,	a,	L6 # name
-% bigint,	wrd,	hugeint,	bigint,	int,	int,	hugeint # type
+% bigint,	bigint,	hugeint,	bigint,	int,	int,	hugeint # type
 % 2,	2,	3,	4,	3,	3,	4 # length
 [ NULL,	8,	NULL,	1510,	150,	153,	NULL	]
 [ NULL,	9,	NULL,	1580,	155,	159,	NULL	]
@@ -26127,7 +26127,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.t1,	.t1 # table_name
 % L1,	L2,	c,	b # name
-% smallint,	wrd,	int,	int # type
+% smallint,	bigint,	int,	int # type
 % 3,	2,	3,	3 # length
 [ 111,	5,	137,	139	]
 [ 111,	6,	141,	143	]
@@ -26206,7 +26206,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	c,	L2,	L3,	L4,	L5,	L6 # name
-% smallint,	int,	int,	hugeint,	smallint,	wrd,	bigint # type
+% smallint,	int,	int,	hugeint,	smallint,	bigint,	bigint # type
 % 3,	3,	3,	4,	3,	2,	2 # length
 [ 111,	247,	245,	2476,	444,	26,	-4	]
 [ 222,	123,	121,	1226,	333,	2,	-3	]
@@ -26250,7 +26250,7 @@ Ready.
 #;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	e,	L2,	L3,	L4,	L5,	d # name
-% wrd,	int,	hugeint,	hugeint,	bigint,	bigint,	int # type
+% bigint,	int,	hugeint,	hugeint,	bigint,	bigint,	int # type
 % 2,	3,	4,	4,	2,	1,	3 # length
 [ 2,	NULL,	NULL,	738,	-3,	1,	122	]
 [ 3,	126,	1902,	760,	-2,	4,	128	]
@@ -26339,7 +26339,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % e,	L1,	L2,	L3,	L4,	L5,	L6 # name
-% int,	bigint,	bigint,	wrd,	bigint,	smallint,	hugeint # type
+% int,	bigint,	bigint,	bigint,	bigint,	smallint,	hugeint # type
 % 1,	1,	1,	1,	1,	1,	1 # length
 #SELECT d,
 #       b-c
@@ -26375,7 +26375,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.t1,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	c,	L3,	L4,	L5,	L6 # name
-% bigint,	wrd,	int,	bigint,	bigint,	hugeint,	bigint # type
+% bigint,	bigint,	int,	bigint,	bigint,	hugeint,	bigint # type
 % 2,	2,	3,	1,	1,	1,	1 # length
 [ -2,	18,	208,	NULL,	NULL,	NULL,	1	]
 #SELECT b,
@@ -26385,7 +26385,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .t1,	.L1,	.L2 # table_name
 % b,	L1,	L2 # name
-% int,	wrd,	bigint # type
+% int,	bigint,	bigint # type
 % 3,	1,	3 # length
 [ NULL,	0,	NULL	]
 [ NULL,	0,	NULL	]
@@ -26496,7 +26496,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	e,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	int,	bigint,	smallint,	int,	bigint,	wrd # type
+% bigint,	int,	bigint,	smallint,	int,	bigint,	bigint # type
 % 1,	3,	3,	3,	3,	2,	2 # length
 [ NULL,	NULL,	NULL,	444,	104,	1,	0	]
 [ NULL,	117,	NULL,	444,	115,	3,	0	]
@@ -26540,7 +26540,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.t1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	d,	e,	L2,	a,	L3,	L4 # name
-% smallint,	int,	int,	bigint,	int,	int,	wrd # type
+% smallint,	int,	int,	bigint,	int,	int,	bigint # type
 % 3,	3,	3,	2,	3,	3,	2 # length
 [ 111,	136,	135,	1,	138,	138,	5	]
 [ 111,	140,	144,	1,	142,	142,	6	]
@@ -26865,7 +26865,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.L2,	.L3 # table_name
 % b,	L1,	L2,	L3 # name
-% int,	bigint,	bigint,	wrd # type
+% int,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	1 # length
 [ 105,	2,	-1,	0	]
 [ 112,	NULL,	4,	0	]
@@ -26941,7 +26941,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L6 # table_name
 % L1,	a,	L2,	L3,	L4,	L5,	L6 # name
-% bigint,	int,	hugeint,	bigint,	hugeint,	smallint,	wrd # type
+% bigint,	int,	hugeint,	bigint,	hugeint,	smallint,	bigint # type
 % 2,	3,	3,	2,	4,	3,	1 # length
 [ NULL,	104,	NULL,	1,	NULL,	444,	0	]
 [ NULL,	201,	NULL,	-1,	NULL,	444,	0	]
@@ -27181,7 +27181,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	bigint,	hugeint,	wrd,	smallint # type
+% hugeint,	bigint,	hugeint,	bigint,	smallint # type
 % 3,	2,	4,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	333	]
 [ NULL,	NULL,	NULL,	0,	333	]
@@ -27398,7 +27398,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	L4,	a,	L5 # name
-% bigint,	hugeint,	hugeint,	int,	int,	wrd # type
+% bigint,	hugeint,	hugeint,	int,	int,	bigint # type
 % 1,	3,	4,	3,	3,	1 # length
 [ 1,	635,	1067,	107,	107,	0	]
 [ 4,	760,	1272,	127,	127,	0	]
@@ -27410,7 +27410,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	b,	L2 # name
-% smallint,	int,	wrd # type
+% smallint,	int,	bigint # type
 % 3,	3,	1 # length
 [ 111,	139,	0	]
 [ 111,	143,	0	]
@@ -27452,7 +27452,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L5 # table_name
 % L1,	L2,	L3,	L5 # name
-% bigint,	wrd,	hugeint,	bigint # type
+% bigint,	bigint,	hugeint,	bigint # type
 % 3,	2,	3,	4 # length
 [ NULL,	1,	NULL,	1120	]
 [ NULL,	18,	NULL,	NULL	]
@@ -27532,7 +27532,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L2,	.L3,	.L4 # table_name
 % L2,	L3,	L4 # name
-% bigint,	hugeint,	wrd # type
+% bigint,	hugeint,	bigint # type
 % 4,	4,	1 # length
 [ NULL,	NULL,	0	]
 [ NULL,	NULL,	0	]
@@ -27629,7 +27629,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -27723,7 +27723,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 0	]
 [ 0	]
@@ -27808,7 +27808,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	c,	L2 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 3,	3,	2 # length
 [ NULL,	113,	1	]
 [ NULL,	208,	18	]
@@ -27947,7 +27947,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.t1,	.L2,	.L3,	.L4 # table_name
 % a,	L1,	e,	L2,	L3,	L4 # name
-% int,	hugeint,	int,	bigint,	wrd,	bigint # type
+% int,	hugeint,	int,	bigint,	bigint,	bigint # type
 % 3,	4,	3,	3,	2,	1 # length
 [ NULL,	NULL,	NULL,	NULL,	18,	2	]
 [ NULL,	NULL,	110,	NULL,	1,	1	]
@@ -28029,7 +28029,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	L4,	e,	L5 # name
-% hugeint,	smallint,	bigint,	wrd,	int,	smallint # type
+% hugeint,	smallint,	bigint,	bigint,	int,	smallint # type
 % 4,	3,	2,	2,	3,	3 # length
 [ NULL,	222,	NULL,	0,	204,	444	]
 [ NULL,	222,	-4,	25,	NULL,	444	]
@@ -28072,7 +28072,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .t1,	.L1,	.t1,	.L2 # table_name
 % a,	L1,	c,	L2 # name
-% int,	hugeint,	int,	wrd # type
+% int,	hugeint,	int,	bigint # type
 % 3,	4,	3,	2 # length
 [ 131,	1325,	134,	4	]
 [ 174,	1714,	172,	12	]
@@ -28132,7 +28132,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .t1,	.L1,	.L2,	.L3,	.L4 # table_name
 % e,	L1,	L2,	L3,	L4 # name
-% int,	bigint,	bigint,	bigint,	wrd # type
+% int,	bigint,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	2,	2 # length
 [ NULL,	NULL,	-2,	NULL,	18	]
 [ 110,	NULL,	-1,	4,	1	]
@@ -28151,7 +28151,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% bigint,	smallint,	wrd,	bigint,	hugeint # type
+% bigint,	smallint,	bigint,	bigint,	hugeint # type
 % 3,	3,	2,	2,	4 # length
 [ NULL,	333,	0,	3,	NULL	]
 [ NULL,	555,	1,	-1,	NULL	]
@@ -28291,7 +28291,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.L3 # table_name
 % L1,	L2,	L3 # name
-% hugeint,	smallint,	wrd # type
+% hugeint,	smallint,	bigint # type
 % 4,	3,	1 # length
 [ NULL,	444,	0	]
 [ NULL,	444,	0	]
@@ -28324,7 +28324,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .t1,	.L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % c,	L1,	L2,	L3,	L4,	L5,	d # name
-% int,	hugeint,	smallint,	bigint,	wrd,	bigint,	int # type
+% int,	hugeint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	4,	3,	2,	1,	2,	3 # length
 [ NULL,	NULL,	444,	NULL,	0,	3,	238	]
 [ 102,	NULL,	444,	NULL,	0,	NULL,	101	]
@@ -28388,7 +28388,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.t1,	.L2 # table_name
 % L1,	d,	L2 # name
-% hugeint,	int,	wrd # type
+% hugeint,	int,	bigint # type
 % 3,	3,	2 # length
 [ NULL,	NULL,	7	]
 [ NULL,	NULL,	8	]
@@ -28428,7 +28428,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	e # name
-% hugeint,	wrd,	hugeint,	int # type
+% hugeint,	bigint,	hugeint,	int # type
 % 4,	2,	3,	3 # length
 [ NULL,	9,	NULL,	157	]
 [ NULL,	11,	NULL,	165	]
@@ -28471,7 +28471,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.t1,	.L2,	.t1,	.L3 # table_name
 % d,	L1,	c,	L2,	e,	L3 # name
-% int,	smallint,	int,	wrd,	int,	hugeint # type
+% int,	smallint,	int,	bigint,	int,	hugeint # type
 % 3,	3,	3,	1,	3,	4 # length
 [ 108,	333,	106,	0,	109,	1612	]
 [ 128,	222,	125,	0,	126,	1902	]
@@ -28550,7 +28550,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.L4 # table_name
 % L1,	L2,	L3,	L4 # name
-% bigint,	wrd,	bigint,	smallint # type
+% bigint,	bigint,	bigint,	smallint # type
 % 3,	2,	1,	3 # length
 [ NULL,	0,	NULL,	222	]
 [ NULL,	0,	NULL,	333	]
@@ -28596,7 +28596,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.t1,	.L4,	.L6 # table_name
 % L1,	L2,	L3,	c,	a,	L4,	L6 # name
-% wrd,	smallint,	hugeint,	int,	int,	smallint,	bigint # type
+% bigint,	smallint,	hugeint,	int,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	3,	3,	4 # length
 [ 0,	333,	NULL,	119,	115,	444,	NULL	]
 [ 0,	555,	NULL,	102,	104,	444,	NULL	]
@@ -28624,7 +28624,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
 % L1,	L2,	L3,	L4,	L5,	b # name
-% hugeint,	smallint,	bigint,	hugeint,	wrd,	int # type
+% hugeint,	smallint,	bigint,	hugeint,	bigint,	int # type
 % 4,	3,	2,	4,	2,	3 # length
 [ NULL,	444,	NULL,	NULL,	1,	112	]
 [ NULL,	444,	3,	NULL,	24,	236	]
@@ -28648,7 +28648,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.t1,	.L3,	.L4,	.L5,	.t1,	.t1 # table_name
 % L1,	b,	L3,	L4,	L5,	a,	d # name
-% hugeint,	int,	bigint,	wrd,	hugeint,	int,	int # type
+% hugeint,	int,	bigint,	bigint,	hugeint,	int,	int # type
 % 4,	3,	4,	2,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	104,	101	]
 [ NULL,	NULL,	NULL,	0,	NULL,	115,	116	]
@@ -28729,7 +28729,7 @@ Ready.
 #;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 [ 0	]
@@ -28848,7 +28848,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	d # name
-% bigint,	wrd,	hugeint,	int # type
+% bigint,	bigint,	hugeint,	int # type
 % 2,	2,	4,	3 # length
 [ NULL,	7,	NULL,	NULL	]
 [ NULL,	8,	NULL,	NULL	]
@@ -29043,7 +29043,7 @@ Ready.
 #;
 % .L1,	.L2,	.L3,	.t1 # table_name
 % L1,	L2,	L3,	e # name
-% wrd,	smallint,	bigint,	int # type
+% bigint,	smallint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	333,	-2,	109	]
 [ 1,	444,	-1,	110	]
@@ -29124,7 +29124,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6;
 % .t1,	.L1,	.L2,	.L3,	.t1,	.L4 # table_name
 % a,	L1,	L2,	L3,	b,	L4 # name
-% int,	bigint,	bigint,	wrd,	int,	smallint # type
+% int,	bigint,	bigint,	bigint,	int,	smallint # type
 % 3,	3,	2,	1,	3,	3 # length
 [ 191,	579,	1,	0,	194,	444	]
 [ 220,	666,	-1,	0,	223,	444	]
@@ -29141,7 +29141,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L6 # table_name
 % L1,	L2,	L3,	L4,	L6 # name
-% wrd,	bigint,	bigint,	hugeint,	bigint # type
+% bigint,	bigint,	bigint,	hugeint,	bigint # type
 % 1,	2,	2,	4,	4 # length
 [ 0,	NULL,	NULL,	NULL,	2360	]
 [ 0,	NULL,	-1,	NULL,	402	]
@@ -29176,7 +29176,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.t1,	.L2,	.L3,	.t1 # table_name
 % L1,	d,	L2,	L3,	c # name
-% int,	int,	hugeint,	wrd,	int # type
+% int,	int,	hugeint,	bigint,	int # type
 % 1,	1,	1,	1,	1 # length
 #SELECT abs(b-c),
 #       (a+b+c+d+e)/5,
@@ -29383,7 +29383,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.L4,	.L5,	.L7,	.L10 # table_name
 % L1,	L2,	L3,	L4,	L5,	L7,	L10 # name
-% smallint,	wrd,	int,	bigint,	bigint,	bigint,	bigint # type
+% smallint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 3,	1,	3,	3,	2,	4,	2 # length
 [ 111,	0,	245,	743,	-4,	490,	2	]
 [ 222,	0,	121,	369,	-3,	1240,	NULL	]
@@ -29426,7 +29426,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L3,	.L4,	.L5 # table_name
 % L1,	L2,	L3,	L4,	L5 # name
-% hugeint,	hugeint,	wrd,	bigint,	bigint # type
+% hugeint,	hugeint,	bigint,	bigint,	bigint # type
 % 3,	4,	1,	2,	1 # length
 [ NULL,	NULL,	0,	NULL,	NULL	]
 [ NULL,	NULL,	0,	NULL,	2	]
@@ -29641,7 +29641,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.t1,	.L3,	.L4 # table_name
 % L1,	L2,	b,	L3,	L4 # name
-% wrd,	int,	int,	bigint,	hugeint # type
+% bigint,	int,	int,	bigint,	hugeint # type
 % 1,	3,	3,	1,	4 # length
 [ 0,	131,	130,	1,	1325	]
 [ 0,	159,	158,	1,	NULL	]
@@ -29659,7 +29659,7 @@ Ready.
 #ORDER BY 1,2,3,4,5;
 % .L1,	.L2,	.L4,	.L5,	.L6 # table_name
 % L1,	L2,	L4,	L5,	L6 # name
-% hugeint,	hugeint,	bigint,	wrd,	hugeint # type
+% hugeint,	hugeint,	bigint,	bigint,	hugeint # type
 % 4,	4,	4,	1,	3 # length
 [ NULL,	NULL,	358,	0,	NULL	]
 [ NULL,	NULL,	486,	0,	NULL	]
@@ -29922,7 +29922,7 @@ Ready.
 #ORDER BY 1,2,3,4,5,6,7;
 % .L1,	.L2,	.L3,	.t1,	.L4,	.t1,	.L5 # table_name
 % L1,	L2,	L3,	c,	L4,	e,	L5 # name
-% bigint,	hugeint,	bigint,	int,	int,	int,	wrd # type
+% bigint,	hugeint,	bigint,	int,	int,	int,	bigint # type
 % 2,	3,	1,	3,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	102,	104,	NULL,	0	]
 [ NULL,	NULL,	NULL,	202,	201,	204,	0	]
@@ -30006,7 +30006,7 @@ Ready.
 #ORDER BY 1,2,3,4;
 % .L1,	.t1,	.L2,	.L3 # table_name
 % L1,	d,	L2,	L3 # name
-% smallint,	int,	hugeint,	wrd # type
+% smallint,	int,	hugeint,	bigint # type
 % 1,	1,	1,	1 # length
 #SELECT a+b*2+c*3+d*4+e*5
 #  FROM t1
@@ -30127,7 +30127,7 @@ Ready.
 #ORDER BY 1,2,3;
 % .L1,	.L2,	.t1 # table_name
 % L1,	L2,	a # name
-% bigint,	wrd,	int # type
+% bigint,	bigint,	int # type
 % 2,	2,	3 # length
 [ NULL,	0,	104	]
 [ NULL,	0,	115	]
