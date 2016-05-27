@@ -1,4 +1,4 @@
-stdout of test 'pyapi25` in directory 'sql/backends/monet5` itself:
+stdout of test 'pyapi3_25` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 12:40:00 >  
@@ -61,7 +61,6 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-Great success!
 
 # 12:40:00 >  
 # 12:40:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21450" "--port=30737"

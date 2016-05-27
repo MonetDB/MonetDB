@@ -9,7 +9,7 @@ CREATE TABLE pyapi25multiplication(i integer);
 INSERT INTO pyapi25multiplication VALUES (3);
 
 CREATE FUNCTION pyapi25(i integer) returns integer
-language PYTHON_MAP
+LANGUAGE PYTHON3_MAP
 {
     res = _conn.execute('SELECT i FROM pyapi25multiplication;')
     return res['i'] * i
@@ -29,7 +29,7 @@ CREATE TABLE pyapi25table(i integer);
 INSERT INTO pyapi25table VALUES (1), (2), (3), (4);
 
 CREATE FUNCTION pyapi25(i integer) returns integer
-language PYTHON
+LANGUAGE PYTHON3
 {
     _conn.execute('CREATE TABLE mytable(i INTEGER);')
     _conn.execute('INSERT INTO mytable VALUES (1), (2), (3), (4);')
@@ -39,7 +39,7 @@ language PYTHON
 SELECT pyapi25(i) FROM pyapi25table;
 
 CREATE FUNCTION pyapi25map(i integer) returns integer
-language PYTHON_MAP
+LANGUAGE PYTHON3_MAP
 {
     _conn.execute('UPDATE mytable SET i=i*10;')
     return i
@@ -53,14 +53,14 @@ SELECT * FROM mytable; # 10000, 20000, 30000, 40000 (*10 for every thread, 4 thr
 # we compute the mean in parallel, then store the mean of every thread in the table
 CREATE TABLE pyapi25medians(mean DOUBLE);
 
-CREATE FUNCTION pyapi25randomtable() returns TABLE(d DOUBLE) LANGUAGE PYTHON3YTHON
+CREATE FUNCTION pyapi25randomtable() returns TABLE(d DOUBLE) LANGUAGE PYTHON3
 {
     numpy.random.seed(33)
     return numpy.random.rand(1000000)
 };
 
 CREATE FUNCTION pyapi25mediancompute(d DOUBLE) RETURNS DOUBLE
-language PYTHON_MAP
+LANGUAGE PYTHON3_MAP
 {
     mean = numpy.mean(d)
     _conn.execute('INSERT INTO pyapi25medians (mean) VALUES (%g);' % mean)
@@ -68,7 +68,7 @@ language PYTHON_MAP
 };
 
 # to verify that the output is correct, we check if the mean stored in pyapi25medians is within an epsilon of the actual mean of the data
-CREATE FUNCTION pyapi25checker(d DOUBLE) RETURNS BOOL LANGUAGE PYTHON3YTHON {
+CREATE FUNCTION pyapi25checker(d DOUBLE) RETURNS BOOL LANGUAGE PYTHON3 {
     actual_mean = numpy.mean(d)
     numpy.random.seed(33)
     expected_mean = numpy.mean(numpy.random.rand(1000000))
@@ -88,7 +88,7 @@ SELECT pyapi25checker(mean) FROM pyapi25medians;
 
 # test error in parallel SQL query
 
-CREATE FUNCTION pyapi25errortable() returns TABLE(d DOUBLE) LANGUAGE PYTHON3YTHON_MAP
+CREATE FUNCTION pyapi25errortable() returns TABLE(d DOUBLE) LANGUAGE PYTHON3_MAP
 {
     _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
     return 1
