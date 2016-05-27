@@ -8,7 +8,7 @@ CREATE TABLE rval(i integer);
 INSERT INTO rval VALUES (1),(2),(3),(4),(-1),(0);
 
 # PYTHON_MAP test in WHERE
-CREATE FUNCTION pyapi12(i integer,z integer) returns boolean language PYTHON_MAP
+CREATE FUNCTION pyapi12(i integer,z integer) returns boolean LANGUAGE PYTHON3_MAP
 {
 	return(numpy.greater(i,z))
 };
@@ -17,7 +17,7 @@ DROP FUNCTION pyapi12;
 
 
 # Return NPY_OBJECT test
-CREATE FUNCTION pyapi12(i integer,z integer) returns string language PYTHON_MAP
+CREATE FUNCTION pyapi12(i integer,z integer) returns string LANGUAGE PYTHON3_MAP
 {
 	return(numpy.array(['Hello'] * len(i), dtype=object))
 };

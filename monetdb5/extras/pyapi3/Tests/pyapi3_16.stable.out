@@ -1,4 +1,4 @@
-stdout of test 'pyapi16` in directory 'sql/backends/monet5` itself:
+stdout of test 'pyapi3_16` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 16:45:16 >  
@@ -22,15 +22,10 @@ stdout of test 'pyapi16` in directory 'sql/backends/monet5` itself:
 # MonetDB/R   module loaded
 
 Ready.
-['foo' 't' 'f' 'i']
-['bar' 'e' 'o' 'k']
-['123' 's' 'u' 'r']
-[ 33   7   4 149]
-{'a': 'STRING', 'c': 'STRING', 'b': 'STRING', 'd': 'INTEGER'}
 
-# 16:45:17 >  
-# 16:45:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20609" "--port=38263"
-# 16:45:17 >  
+# 17:56:53 >  
+# 17:56:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17686" "--port=32656"
+# 17:56:53 >  
 
 #START TRANSACTION;
 #CREATE TABLE vals(a STRING, b STRING, c STRING, d INTEGER);

@@ -1,4 +1,4 @@
-stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
+stdout of test 'pyapi3_09` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 14:42:11 >  
@@ -23,7 +23,6 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 # MonetDB/R   module loaded
 
 Ready.
-[    0     1     2 ..., 99997 99998 99999]
 
 # 14:42:12 >  
 # 14:42:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30058" "--port=35977"
@@ -90,41 +89,7 @@ Ready.
 #{
 #    import cPickle
 #    result = numpy.arange(100000)
-#    return cPickle.dumps(result)
-#};
-#CREATE TABLE pyapi09objects AS SELECT * FROM pyapi09create() WITH DATA;
-#CREATE FUNCTION pyapi09load() returns TABLE(i INTEGER)
-#language P
-#{
-#    import cPickle
-#    res = _conn.execute('SELECT s FROM pyapi09objects;')
-#    array = cPickle.loads(res['s'][0])
-#    print array
-#    return array[:10]
-#};
-#SELECT * FROM pyapi09load();
-% . # table_name
-% i # name
-% int # type
-% 1 # length
-[ 0	]
-[ 1	]
-[ 2	]
-[ 3	]
-[ 4	]
-[ 5	]
-[ 6	]
-[ 7	]
-[ 8	]
-[ 9	]
-#DROP FUNCTION pyapi09create;
-#DROP FUNCTION pyapi09load;
-#DROP TABLE pyapi09objects;
-#CREATE FUNCTION pyapi09() returns TABLE(i INTEGER)
-#language P
-#{
-#    res = _conn.execute('SELECT * FROM unknown_table;')
-#    return numpy.arange(10)
+#    return pickle.dumps(result)
 #};
 #ROLLBACK;
 #START TRANSACTION;

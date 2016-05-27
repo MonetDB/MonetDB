@@ -1,4 +1,4 @@
-stdout of test 'pyapi24` in directory 'sql/backends/monet5` itself:
+stdout of test 'pyapi3_24` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 15:58:33 >  
@@ -23,21 +23,10 @@ stdout of test 'pyapi24` in directory 'sql/backends/monet5` itself:
 # MonetDB/R   module loaded
 
 Ready.
-['arg1']
-['arg1', 'arg2']
-['arg1', 'arg2', 'arg3']
-['arg1', 'arg2', 'arg3', 'arg4']
-['arg1', 'arg2', 'arg3', 'arg4', 'arg5']
-['arg1', 'arg2', 'arg3', 'arg4', 'arg5']
-['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg10']
-['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg12', 'arg13', 'arg10', 'arg11', 'arg14', 'arg15']
-['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg12', 'arg13', 'arg10', 'arg11', 'arg16', 'arg17', 'arg14', 'arg15', 'arg18', 'arg19', 'arg20']
-['arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg25', 'arg24', 'arg23', 'arg22', 'arg21', 'arg20', 'arg12', 'arg13', 'arg10', 'arg11', 'arg16', 'arg17', 'arg14', 'arg15', 'arg18', 'arg19']
-['arg69', 'arg68', 'arg63', 'arg62', 'arg61', 'arg60', 'arg67', 'arg66', 'arg65', 'arg64', 'arg74', 'arg75', 'arg76', 'arg77', 'arg70', 'arg71', 'arg72', 'arg73', 'arg78', 'arg79', 'arg100', 'arg8', 'arg9', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5', 'arg6', 'arg7', 'arg89', 'arg88', 'arg81', 'arg80', 'arg83', 'arg82', 'arg85', 'arg84', 'arg87', 'arg86', 'arg12', 'arg13', 'arg10', 'arg11', 'arg16', 'arg17', 'arg14', 'arg15', 'arg18', 'arg19', 'arg98', 'arg99', 'arg92', 'arg93', 'arg90', 'arg91', 'arg96', 'arg97', 'arg94', 'arg95', 'arg29', 'arg28', 'arg27', 'arg26', 'arg25', 'arg24', 'arg23', 'arg22', 'arg21', 'arg20', 'arg38', 'arg39', 'arg30', 'arg31', 'arg32', 'arg33', 'arg34', 'arg35', 'arg36', 'arg37', 'arg49', 'arg48', 'arg45', 'arg44', 'arg47', 'arg46', 'arg41', 'arg40', 'arg43', 'arg42', 'arg58', 'arg59', 'arg56', 'arg57', 'arg54', 'arg55', 'arg52', 'arg53', 'arg50', 'arg51']
 
-# 15:58:34 >  
-# 15:58:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17490" "--port=33123"
-# 15:58:34 >  
+# 17:56:57 >  
+# 17:56:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17686" "--port=32656"
+# 17:56:57 >  
 
 #START TRANSACTION;
 #CREATE FUNCTION pyapi24(*) RETURNS integer LANGUAGE PYTHON

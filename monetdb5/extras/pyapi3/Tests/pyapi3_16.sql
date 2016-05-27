@@ -5,7 +5,7 @@ CREATE TABLE vals(a STRING, b STRING, c STRING, d INTEGER);
 INSERT INTO vals VALUES ('foo', 'bar', '123', 33), ('t', 'e', 's', 7), ('f', 'o', 'u', 4), ('i', 'k', 'r', 149);
 
 CREATE FUNCTION pyapi16(a STRING, b string, c STRING, d INTEGER) returns table (d boolean)
-language P
+LANGUAGE PYTHON3
 {
 	print(_columns['a'])
 	print(_columns['b'])

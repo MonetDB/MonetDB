@@ -6,7 +6,7 @@ INSERT INTO ival VALUES (1, 1), (2, 2), (NULL, 3), (4, 4), (5, 5);
 
 
 CREATE FUNCTION pyapi15(i integer, j integer) returns integer
-language P
+LANGUAGE PYTHON3
 {
     # type <lazyarray>
     print(type(i))

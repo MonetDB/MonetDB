@@ -1,4 +1,4 @@
-stdout of test 'pyapi13` in directory 'sql/backends/monet5` itself:
+stdout of test 'pyapi3_13` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 18:27:33 >  
@@ -22,53 +22,10 @@ stdout of test 'pyapi13` in directory 'sql/backends/monet5` itself:
 # MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
-test
 
-testtest
-
-test123
-testtest
-""test2""
-hello world
-
-y is not negative!
-Addition in python is not inconsistent!
-
-# 18:27:33 >  
-# 18:27:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1088" "--port=37004"
-# 18:27:33 >  
+# 17:56:52 >  
+# 17:56:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17686" "--port=32656"
+# 17:56:52 >  
 
 #START TRANSACTION;
 #CREATE FUNCTION pyapi13_random_table_nulls(entries integer) returns table (i integer, j integer)

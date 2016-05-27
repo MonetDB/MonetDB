@@ -8,7 +8,7 @@ START TRANSACTION;
 
 # Standard case
 CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
-language P
+LANGUAGE PYTHON3
 {
 	retval = dict()
 	retval['a'] = ['foo']
@@ -22,7 +22,7 @@ DROP FUNCTION pyapi17;
 
 # Too many keys (prints warning if warnings are enabled)
 CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
-language P
+LANGUAGE PYTHON3
 {
 	retval = dict()
 	retval['a'] = ['foo']
@@ -37,7 +37,7 @@ DROP FUNCTION pyapi17;
 
 # Keys are multidimensional arrays (cannot convert to single column, throws error)
 CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
-language P
+LANGUAGE PYTHON3
 {
 	retval = dict()
 	retval['a'] = [['foo'], ['hello']]
@@ -52,7 +52,7 @@ ROLLBACK;
 START TRANSACTION;
 # Missing return value (throws error)
 CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
-language P
+LANGUAGE PYTHON3
 {
 	retval = dict()
 	retval['a'] = ['foo']
@@ -68,7 +68,7 @@ START TRANSACTION;
 CREATE TABLE integers(i INTEGER);
 INSERT INTO integers VALUES (3);
 CREATE FUNCTION pyapi17(i integer) returns integer
-language P
+LANGUAGE PYTHON3
 {
 	retval = dict()
 	retval['a'] = 33
@@ -82,7 +82,7 @@ START TRANSACTION;
 CREATE TABLE integers(i INTEGER);
 INSERT INTO integers VALUES (3);
 CREATE FUNCTION pyapi17(i integer) returns integer
-language P
+LANGUAGE PYTHON3
 {
 	retval = dict()
 	retval['result'] = 33

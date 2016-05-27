@@ -1,4 +1,4 @@
-stderr of test 'pyapi20` in directory 'sql/backends/monet5` itself:
+stderr of test 'pyapi3_20` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 20:46:11 >  
@@ -39,8 +39,8 @@ ERROR = !Python exception
         !> 4.   c = a / b
         !  5.   return i
         !  6. 
-        !integer division or modulo by zero
-MAPI  = (monetdb) /var/tmp/mtest-1892/.s.monetdb.30765
+        !division by zero
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
 QUERY = DROP FUNCTION pyapi20;
 ERROR = !current transaction is aborted (please ROLLBACK)
 MAPI  = (monetdb) /var/tmp/mtest-1892/.s.monetdb.30765

@@ -28,7 +28,7 @@ SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 DROP FUNCTION pyapi13_mult;
 
 #no new line
-CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer LANGUAGE PYTHON3YTHON_MAP { return(i*j) };
+CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer LANGUAGE PYTHON3 { return(i*j) };
 SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 DROP FUNCTION pyapi13_mult;
 

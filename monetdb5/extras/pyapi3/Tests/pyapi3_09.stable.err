@@ -1,4 +1,4 @@
-stderr of test 'pyapi09` in directory 'sql/backends/monet5` itself:
+stderr of test 'pyapi3_09` in directory 'monetdb5/extras/pyapi3` itself:
 
 
 # 14:42:11 >  
@@ -27,21 +27,48 @@ stderr of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 # cmdline opt 	embedded_py = true
 # cmdline opt 	gdk_debug = 536870922
 
-# 14:42:12 >  
-# 14:42:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30058" "--port=35977"
-# 14:42:12 >  
+# 17:56:49 >  
+# 17:56:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17686" "--port=32656"
+# 17:56:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = CREATE TABLE pyapi09objects AS SELECT * FROM pyapi09create() WITH DATA;
+ERROR = !Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = CREATE FUNCTION pyapi09load() returns TABLE(i INTEGER)
+        LANGUAGE PYTHON3
+        {
+            import pickle
+            res = _conn.execute('SELECT s FROM pyapi09objects;')
+            array = pickle.loads(res['s'][0])
+            print array
+            return array[:10]
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = SELECT * FROM pyapi09load();
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = DROP FUNCTION pyapi09create;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = DROP FUNCTION pyapi09load;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = DROP TABLE pyapi09objects;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
+QUERY = CREATE FUNCTION pyapi09() returns TABLE(i INTEGER)
+        LANGUAGE PYTHON3
+        {
+            res = _conn.execute('SELECT * FROM unknown_table;')
+            return numpy.arange(10)
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
 QUERY = SELECT * FROM pyapi09();
-ERROR = !SELECT: no such table 'unknown_table'
-        !Python exception
-        !
-        !  1. def pyfun(_columns,_column_types,_conn):
-        !> 2.   res = _conn.execute('SELECT * FROM unknown_table;')
-        !  3.   return numpy.arange(10)
-        !  4. 
-        !SQL Query Failed: ParseException:SQLparser:42S02!SELECT: no such table 'unknown_table'
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-17686/.s.monetdb.32656
 QUERY = SELECT * FROM pyapi09();
 ERROR = !SELECT: no such table 'unknown_table'
 MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135

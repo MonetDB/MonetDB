@@ -4,7 +4,7 @@
 
 START TRANSACTION;
 
-CREATE FUNCTION pyapi24(*) RETURNS integer LANGUAGE PYTHON3YTHON
+CREATE FUNCTION pyapi24(*) RETURNS integer LANGUAGE PYTHON3
 {
     sum = 0
     print(_columns.keys())
@@ -38,7 +38,7 @@ DROP TABLE pyapi24table;
 #lets try to mix column types
 
 
-CREATE FUNCTION pyapi24(*) RETURNS DOUBLE LANGUAGE PYTHON3YTHON
+CREATE FUNCTION pyapi24(*) RETURNS DOUBLE LANGUAGE PYTHON3
 {
     sum = 0
     for key in _columns.keys():
