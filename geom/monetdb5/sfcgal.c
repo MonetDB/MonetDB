@@ -14,7 +14,7 @@
 #include "sfcgal.h"
 
 static sfcgal_geometry_t* sfcgal_from_geom(str *ret, const GEOSGeometry *geom, int type);
-static str geom_to_sfcgal(sfcgal_geometry_t **res, GEOSGeom geosGeometry);
+static str geom_to_sfcgal(sfcgal_geometry_t **res, const GEOSGeometry *geosGeometry);
 static str sfcgal_to_geom(GEOSGeom *res, const sfcgal_geometry_t* geom, int force3D, int srid, int flag);
 
 static str
@@ -524,9 +524,9 @@ sfcgal_from_geom(str *ret, const GEOSGeometry *geom, int type)
 
 
 static str
-geom_to_sfcgal(sfcgal_geometry_t **res, GEOSGeom geosGeometry)
+geom_to_sfcgal(sfcgal_geometry_t **res, const GEOSGeometry *geosGeometry)
 {
-    int i, numGeometries = GEOSGetNumGeometries(geosGeometry);
+    int i, numGeometries = 0;
     int type = GEOSGeomTypeId(geosGeometry)+1;
     sfcgal_geometry_t* ret_geom = NULL;
     str ret = MAL_SUCCEED;
@@ -601,10 +601,11 @@ geom_to_sfcgal(sfcgal_geometry_t **res, GEOSGeom geosGeometry)
                 else
                     ret_geom = sfcgal_geometry_collection_create();
 
+                numGeometries = GEOSGetNumGeometries(geosGeometry);
                 for (i = 0; i < numGeometries; i++)
                 {
                     sfcgal_geometry_t *g;
-                    ret = geom_to_sfcgal(&g, *(GEOSGeom*)GEOSGetGeometryN(geosGeometry, i));
+                    ret = geom_to_sfcgal(&g, GEOSGetGeometryN(geosGeometry, i));
                     sfcgal_geometry_collection_add_geometry(ret_geom, g);
                 }
                 *res = ret_geom;
@@ -614,10 +615,11 @@ geom_to_sfcgal(sfcgal_geometry_t **res, GEOSGeom geosGeometry)
         case wkbPolyehdralSurface_mdb:
             {
                 ret_geom = sfcgal_polyhedral_surface_create();
+                numGeometries = GEOSGetNumGeometries(geosGeometry);
                 for (i = 0; i < numGeometries; i++)
                 {
                     sfcgal_geometry_t* g;
-                    ret = geom_to_sfcgal(&g, *(GEOSGeom*)GEOSGetGeometryN(geosGeometry, i));
+                    ret = geom_to_sfcgal(&g, GEOSGetGeometryN(geosGeometry, i));
                     sfcgal_polyhedral_surface_add_polygon(ret_geom, g);
                 }
                 /*
@@ -637,10 +639,11 @@ geom_to_sfcgal(sfcgal_geometry_t **res, GEOSGeom geosGeometry)
             {
                 ret_geom = sfcgal_triangulated_surface_create();
 
+                numGeometries = GEOSGetNumGeometries(geosGeometry);
                 for (i = 0; i < numGeometries; i++)
                 {
                     sfcgal_geometry_t* g;
-                    ret = geom_to_sfcgal(&g, *(GEOSGeom*)(GEOSGetGeometryN(geosGeometry, i)));
+                    ret = geom_to_sfcgal(&g, GEOSGetGeometryN(geosGeometry, i));
                     sfcgal_triangulated_surface_add_triangle(ret_geom, g);
                 }
 
