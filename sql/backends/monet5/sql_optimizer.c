@@ -81,7 +81,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				if( access == 0)
 					space += size;	// accumulate once
 				if( !prepare && size == 0 )
-					setFunctionId(p, emptybindRef);
+					setFunctionId(p, emptycolumnRef);
 			}
 		}
 		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
@@ -97,7 +97,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 					if (b) {
 						space += (size =getBatSpace(b));
 						if( !prepare && size == 0)
-							setFunctionId(p, emptybindidxRef);
+							setFunctionId(p, emptycolumnidxRef);
 						BBPunfix(b->batCacheid);
 					}
 				}

@@ -17,13 +17,13 @@
  * All Rights Reserved.
  */
 
-#ifndef _MAL_EMPTYBIND_
-#define _MAL_EMPTYBIND_
+#ifndef _MAL_EMPTYCOLUMN_
+#define _MAL_EMPTYCOLUMN_
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-opt_export int OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export int OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGemptybind  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYBIND) )
+#define OPTDEBUGemptycolumn  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYCOLUMN) )
 
 #endif
