@@ -96,9 +96,6 @@
  *  Unique @strong{long int} values uses as object identifier. Highest
  *	    bit cleared always.  Thus, oids-s are 31-bit numbers on
  *	    32-bit systems, and 63-bit numbers on 64-bit systems.
- * @item wrd:
- *  Machine-word sized integers
- *  (32-bit on 32-bit systems, 64-bit on 64-bit systems).
  * @item ptr:
  * Memory pointer values. DEPRECATED.  Can only be stored in transient
  * BATs.
@@ -534,16 +531,15 @@
 #define TYPE_bat	4	/* BAT id: index in BBPcache */
 #define TYPE_int	5
 #define TYPE_oid	6
-#define TYPE_wrd	7
-#define TYPE_ptr	8	/* C pointer! */
-#define TYPE_flt	9
-#define TYPE_dbl	10
-#define TYPE_lng	11
+#define TYPE_ptr	7	/* C pointer! */
+#define TYPE_flt	8
+#define TYPE_dbl	9
+#define TYPE_lng	10
 #ifdef HAVE_HGE
-#define TYPE_hge	12
-#define TYPE_str	13
-#else
+#define TYPE_hge	11
 #define TYPE_str	12
+#else
+#define TYPE_str	11
 #endif
 #define TYPE_any	255	/* limit types to <255! */
 
@@ -568,8 +564,6 @@ typedef size_t oid;
 #endif
 #endif
 
-#define SIZEOF_WRD	SIZEOF_SSIZE_T
-typedef ssize_t wrd;
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
 
@@ -741,7 +735,6 @@ typedef struct {
 		oid oval;
 		sht shval;
 		bte btval;
-		wrd wval;
 		flt fval;
 		ptr pval;
 		bat bval;

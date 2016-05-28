@@ -91,7 +91,7 @@ Ready.
 #SELECT MIN(u) AS mn, MAX(u) AS mx, COUNT(u) AS cnt, COUNT(DISTINCT u) AS cnt_d FROM testUUID;
 % sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
 % mn,	mx,	cnt,	cnt_d # name
-% uuid,	uuid,	wrd,	wrd # type
+% uuid,	uuid,	bigint,	bigint # type
 % 0,	0,	1,	1 # length
 [ 7393ad7e-4fcf-461a-856e-b70027fe1a9e,	c005d6fd-20c3-4d01-91a5-bbe676593530,	3,	3	]
 #DROP TABLE testUUID;

@@ -10,7 +10,7 @@ stderr of test 'reset_session_vars.SF-1505987` in directory 'sql/test/BugTracker
 # 10:38:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=30346  < reset_session_vars.SF-1505987.sql
 # 10:38:14 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = commit;
 ERROR = !COMMIT: not allowed in auto commit mode
 

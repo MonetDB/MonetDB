@@ -100,7 +100,6 @@ typedef struct{
 		case TYPE_lng: ManifoldLoop(lng,__VA_ARGS__); break;			\
 		Manifoldbody_hge(__VA_ARGS__);									\
 		case TYPE_oid: ManifoldLoop(oid,__VA_ARGS__); break;			\
-		case TYPE_wrd: ManifoldLoop(wrd,__VA_ARGS__); break;			\
 		case TYPE_flt: ManifoldLoop(flt,__VA_ARGS__); break;			\
 		case TYPE_dbl: ManifoldLoop(dbl,__VA_ARGS__); break;			\
 		case TYPE_str:													\

@@ -63,7 +63,7 @@ Ready.
 [ 1	]
 #CREATE TABLE foo AS SELECT SUM(ct + ct2) / 100.0 AS eur FROM bar GROUP BY name WITH DATA;
 CREATE TABLE "sys"."foo" (
-	"eur" DECIMAL(38,3)
+	"eur" DECIMAL(23,3)
 );
 #DROP TABLE foo;
 #DROP TABLE bar;

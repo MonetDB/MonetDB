@@ -85,7 +85,7 @@ top N (
 | | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, orders.o_orderkey NOT NULL HASHCOL , orders.o_totalprice NOT NULL, orders.o_orderdate NOT NULL, lineitem.l_quantity NOT NULL ]
 | | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL  ] [ customer.c_name NOT NULL, customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L6.L6 ]
 | ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6 NOT NULL as L6.L6 ] [ orders.o_totalprice NOT NULL, orders.o_orderdate ASC NOT NULL ]
-) [ wrd "100" ]
+) [ bigint "100" ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

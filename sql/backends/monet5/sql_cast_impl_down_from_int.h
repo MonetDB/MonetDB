@@ -39,10 +39,7 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 	if (scale)
 		val = (val + h * scales[scale - 1]) / scales[scale];
 	/* see if the number fits in the data type */
-	if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
-	    && val <= GDKmax(TP2)
-#endif
+	if (val > (lng) GDKmin(TP2) && val <= GDKmax(TP2)
 		) {
 		*res = (TP2) val;
 		return MAL_SUCCEED;
@@ -79,10 +76,7 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, c
 		val = (val + h * scales[s1 - s2 - 1]) / scales[s1 - s2];
 
 	/* see if the number fits in the data type */
-	if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
-	    && val <= GDKmax(TP2)
-#endif
+	if (val > (lng) GDKmin(TP2) && val <= GDKmax(TP2)
 		) {
 		*res = (TP2) val;
 		return MAL_SUCCEED;
@@ -130,10 +124,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 			else
 				val = (TP1) (*p);
 			/* see if the number fits in the data type */
-			if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
-			    && val <= GDKmax(TP2)
-#endif
+			if (val > (lng) GDKmin(TP2) && val <= GDKmax(TP2)
 				)
 				*o = (TP2) val;
 			else {
@@ -154,9 +145,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 					val = (TP1) (*p);
 				/* see if the number fits in the data type */
 				if (val > (lng) GDKmin(TP2)
-#if TPE(TP2) != TYPE_wrd || SIZEOF_LNG != SIZEOF_WRD
 				    && val <= GDKmax(TP2)
-#endif
 					)
 					*o = (TP2) val;
 				else {

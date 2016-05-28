@@ -155,26 +155,20 @@ stmt_atom_int(sql_allocator *sa, int i)
 }
 
 stmt *
-stmt_atom_wrd(sql_allocator *sa, wrd i)
+stmt_atom_lng(sql_allocator *sa, lng i)
 {
 	sql_subtype t;
 
-	if (sizeof(wrd) == sizeof(int))
-		sql_find_subtype(&t, "wrd", 32, 0);
-	else
-		sql_find_subtype(&t, "wrd", 64, 0);
+	sql_find_subtype(&t, "bigint", 64, 0);
 	return stmt_atom(sa, atom_int(sa, &t, i));
 }
 
 stmt *
-stmt_atom_wrd_nil(sql_allocator *sa)
+stmt_atom_lng_nil(sql_allocator *sa)
 {
 	sql_subtype t;
 
-	if (sizeof(wrd) == sizeof(int))
-		sql_find_subtype(&t, "wrd", 32, 0);
-	else
-		sql_find_subtype(&t, "wrd", 64, 0);
+	sql_find_subtype(&t, "bigint", 64, 0);
 	return stmt_atom(sa, atom_general(sa, &t, NULL));
 }
 
@@ -1222,7 +1216,7 @@ tail_type(stmt *st)
 		return &st->op4.cval->type;
 	case st_idxbat:
 		if (hash_index(st->op4.idxval->type)) {
-			return sql_bind_localtype("wrd");
+			return sql_bind_localtype("lng");
 		} else if (st->op4.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}

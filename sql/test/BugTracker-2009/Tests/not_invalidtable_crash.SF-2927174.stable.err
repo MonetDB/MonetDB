@@ -75,7 +75,7 @@ stderr of test 'not_invalidtable_crash.SF-2927174` in directory 'sql/test/BugTra
 # 21:39:47 >  mclient -lsql -i --host=alf --port=38367 
 # 21:39:47 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select not(invalidtable.bla) from tables;
 ERROR = !SELECT: no such column 'invalidtable.bla'
 

@@ -51,7 +51,7 @@ Ready.
 #	l_linestatus;
 % sys.lineitem,	sys.lineitem,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-% char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	wrd # type
+% char,	char,	decimal,	decimal,	decimal,	decimal,	double,	double,	double,	bigint # type
 % 1,	1,	41,	41,	41,	41,	24,	24,	24,	5 # length
 [ "A",	"F",	380456.00,	532348211.65,	505822441.4861,	526165934.000839,	25.57515461,	35785.70931,	0.05008133907,	14876	]
 [ "N",	"F",	8971.00,	12384801.37,	11798257.2080,	12282485.056933,	25.77873563,	35588.50968,	0.04775862069,	348	]
@@ -157,7 +157,7 @@ Ready.
 #	o_orderpriority;
 % sys.orders,	sys.L1 # table_name
 % o_orderpriority,	order_count # name
-% char,	wrd # type
+% char,	bigint # type
 % 15,	3 # length
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
@@ -716,7 +716,7 @@ Ready.
 #	c_count desc;
 % .c_orders,	.L2 # table_name
 % c_count,	custdist # name
-% wrd,	wrd # type
+% bigint,	bigint # type
 % 2,	3 # length
 [ 0,	500	]
 [ 11,	68	]
@@ -838,7 +838,7 @@ Ready.
 #	p_size;
 % sys.part,	sys.part,	sys.part,	sys.L4 # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
-% char,	varchar,	int,	wrd # type
+% char,	varchar,	int,	bigint # type
 % 10,	25,	2,	1 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
@@ -1312,7 +1312,7 @@ Ready.
 #			and l3.l_receiptdate > l3.l_commitdate
 % sys.supplier,	sys.L1 # table_name
 % s_name,	numwait # name
-% char,	wrd # type
+% char,	bigint # type
 % 25,	1 # length
 [ "Supplier#000000074",	9	]
 % .stats,	.stats # table_name
@@ -1355,7 +1355,7 @@ Ready.
 #				from
 % sys.custsale,	sys.L2,	sys.L3 # table_name
 % cntrycode,	numcust,	totacctbal # name
-% char,	wrd,	decimal # type
+% char,	bigint,	decimal # type
 % 15,	2,	41 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]

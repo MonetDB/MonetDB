@@ -10,7 +10,7 @@ stderr of test 'copy_into_crash.SF-1975402` in directory 'geom/BugTracker` itsel
 # 11:37:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30423 
 # 11:37:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = COPY 1 RECORDS INTO nodes from STDIN USING DELIMITERS ',', '\n';
         45111956, 'POINT(52.0697 4.3723)'
 ERROR = !Failed to import table line 1 field 2 'geometry(4)' expected in ' 'POINT(52.0697 4.3723)''

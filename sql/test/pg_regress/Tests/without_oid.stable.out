@@ -107,13 +107,13 @@ Ready.
 #SELECT count(oid) FROM wi;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 9136	]
 #SELECT count(i) FROM wo;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 9136	]
 #SELECT * FROM sys.storage
@@ -156,13 +156,13 @@ Ready.
 #SELECT count(oid) FROM create_table_test2;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM create_table_test3;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #DROP TABLE create_table_test;

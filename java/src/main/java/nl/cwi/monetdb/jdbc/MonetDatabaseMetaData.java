@@ -3239,6 +3239,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		StringBuilder query = new StringBuilder(990);
+		if (types != null && types.length > 0) {
+			query.append("SELECT * FROM (");
+		}
 		query.append("SELECT cast(null as char(1)) AS \"TYPE_CAT\", " +
 			"\"schemas\".\"name\" AS \"TYPE_SCHEM\", " +
 			"\"types\".\"sqlname\" AS \"TYPE_NAME\", " +
@@ -3269,7 +3272,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			query.append(" AND \"types\".\"sqlname\" ").append(composeMatchPart(typeNamePattern));
 		}
 		if (types != null && types.length > 0) {
-			query.append(" AND \"DATA_TYPE\" IN (");
+			query.append(") AS getUDTs WHERE \"DATA_TYPE\" IN (");
 			for (int i = 0; i < types.length; i++) {
 				if (i > 0) {
 					query.append(", ");

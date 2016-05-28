@@ -71,7 +71,7 @@ Ready.
 #SELECT COUNT(*) FROM bug3813;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 5 # length
 [ 99846	]
 #ROLLBACK;

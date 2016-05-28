@@ -84,25 +84,25 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
-	sql_subtype *it, *wrd;
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
+	sql_subtype *it, *lng;
+	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
 
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
 		/* dummy append */
-		append(get_inserts(inserts), exp_label(sql->sa, exp_atom_wrd(sql->sa, 0), ++sql->label));
+		append(get_inserts(inserts), exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
 		return inserts;
 	}
 
 	it = sql_bind_localtype("int");
-	wrd = sql_bind_localtype("wrd");
+	lng = sql_bind_localtype("lng");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
 
 		if (h && i->type == hash_idx)  { 
 			list *exps = new_exp_list(sql->sa);
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
+			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, &c->c->type, lng);
 
 			append(exps, h);
 			append(exps, exp_atom_int(sql->sa, bits));
@@ -110,15 +110,15 @@ rel_insert_hash_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 			h = exp_op(sql->sa, exps, xor);
 		} else if (h)  { /* order preserving hash */
 			sql_exp *h2;
-			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
-			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+			sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", lng, it, lng);
+			sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", lng, lng, lng);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 
 			h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
 			h2 = exp_unop(sql->sa, e, hf);
 			h = exp_binop(sql->sa, h, h2, lor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 			h = exp_unop(sql->sa, e, hf);
 			if (i->type == oph_idx) 
 				break;
@@ -562,15 +562,15 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
-	sql_subtype *it, *wrd = 0; /* is not set in first if below */
-	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1);
+	sql_subtype *it, *lng = 0; /* is not set in first if below */
+	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
 
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
-		h = exp_label(sql->sa, exp_atom_wrd(sql->sa, 0), ++sql->label);
+		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
 		it = sql_bind_localtype("int");
-		wrd = sql_bind_localtype("wrd");
+		lng = sql_bind_localtype("lng");
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
 			sql_exp *e;
@@ -579,7 +579,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 			
 			if (h && i->type == hash_idx)  { 
 				list *exps = new_exp_list(sql->sa);
-				sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
+				sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", lng, it, &c->c->type, lng);
 	
 				append(exps, h);
 				append(exps, exp_atom_int(sql->sa, bits));
@@ -587,15 +587,15 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 				h = exp_op(sql->sa, exps, xor);
 			} else if (h)  { /* order preserving hash */
 				sql_exp *h2;
-				sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", wrd, it, wrd);
-				sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", wrd, wrd, wrd);
-				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+				sql_subfunc *lsh = sql_bind_func_result(sql->sa, sql->session->schema, "left_shift", lng, it, lng);
+				sql_subfunc *lor = sql_bind_func_result(sql->sa, sql->session->schema, "bit_or", lng, lng, lng);
+				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 	
 				h = exp_binop(sql->sa, h, exp_atom_int(sql->sa, bits), lsh); 
 				h2 = exp_unop(sql->sa, e, hf);
 				h = exp_binop(sql->sa, h, h2, lor);
 			} else {
-				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, wrd);
+				sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", &c->c->type, NULL, lng);
 				h = exp_unop(sql->sa, e, hf);
 				if (i->type == oph_idx) 
 					break;
@@ -608,7 +608,7 @@ rel_update_hash_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, wrd, CARD_MULTI, 0, 0));
+	append(updates->exps, exp_column(sql->sa, i->t->base.name, iname, lng, CARD_MULTI, 0, 0));
 	return updates;
 }
 

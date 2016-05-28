@@ -61,13 +61,13 @@ Ready.
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
 % sys.t # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 32	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
 % sys.t # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 32	]
 #drop table withonlybug;

@@ -1040,7 +1040,6 @@ GDKinit(opt *set, int setlen)
 #endif
 	assert(sizeof(oid) == SIZEOF_OID);
 	assert(sizeof(void *) == SIZEOF_VOID_P);
-	assert(sizeof(wrd) == SIZEOF_WRD);
 	assert(sizeof(size_t) == SIZEOF_SIZE_T);
 	assert(sizeof(ptrdiff_t) == SIZEOF_PTRDIFF_T);
 	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);

@@ -950,6 +950,9 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	/* silently convert chr columns to bte */
 	if (strcmp(type, "chr") == 0)
 		strcpy(type, "bte");
+	/* silently convert wrd columns to int or lng */
+	else if (strcmp(type, "wrd") == 0)
+		strcpy(type, width == SIZEOF_INT ? "int" : "lng");
 #ifdef HAVE_HGE
 	else if (strcmp(type, "hge") == 0)
 		havehge = 1;

@@ -9135,7 +9135,7 @@ set schema "testschema";
 #select count(*) from testschema.smallstring;
 % testschema.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 66	]
 

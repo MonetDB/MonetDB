@@ -197,7 +197,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
+	tpe = ATOMbasetype(tpe); /* takes care of oid */
 	/* if the input happens to be almost sorted in ascending order
 	 * (likely a common use case), it is more efficient to start
 	 * off with the first n elements when doing a firstn-ascending
@@ -414,7 +414,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
+	tpe = ATOMbasetype(tpe); /* takes care of oid */
 	ci = 0;
 	if (cand) {
 		for (i = 0; i < n; i++) {
@@ -661,7 +661,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
+	tpe = ATOMbasetype(tpe); /* takes care of oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
 	oldcand = cand;
 	if (asc) {
@@ -969,7 +969,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
-	tpe = ATOMbasetype(tpe); /* takes care of wrd and oid */
+	tpe = ATOMbasetype(tpe); /* takes care of oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
 	gv = (const oid *) Tloc(g, BUNfirst(g));
 	oldcand = cand;

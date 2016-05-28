@@ -70,7 +70,7 @@ top N (
 | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ]
 | | ) [ lineitem.l_orderkey NOT NULL HASHCOL , orders.o_shippriority NOT NULL, orders.o_orderdate NOT NULL ] [ lineitem.l_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL, sys.sum no nil (sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ]
 | ) [ lineitem.l_orderkey NOT NULL, L1 as L1.revenue, orders.o_orderdate NOT NULL, orders.o_shippriority NOT NULL ] [ L1.revenue, orders.o_orderdate ASC NOT NULL ]
-) [ wrd "10" ]
+) [ bigint "10" ]
 
 # 22:46:29 >  
 # 22:46:29 >  "Done."

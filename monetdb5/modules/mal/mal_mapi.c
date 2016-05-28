@@ -1469,11 +1469,6 @@ static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 			v->val.shval = sht_nil;
 		else v->val.shval= (sht)  atol(fld);
 		break;
-	case TYPE_wrd:
-		if(fld==0 || strcmp(fld,"nil")==0)
-			v->val.wval = int_nil;
-		else v->val.wval= (wrd)  atol(fld);
-		break;
 	case TYPE_int:
 		if(fld==0 || strcmp(fld,"nil")==0)
 			v->val.ival = int_nil;
@@ -1562,7 +1557,6 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_bte:
 			case TYPE_sht:
 			case TYPE_int:
-			case TYPE_wrd:
 			case TYPE_lng:
 #ifdef HAVE_HGE
 			case TYPE_hge:

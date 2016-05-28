@@ -26,7 +26,7 @@
  * The extents and histo bats have the group id in the head (a dense
  * sequence starting at 0).  The tail of extents is the head oid from
  * b of a representative of the group.  The tail of histo is of type
- * wrd and contains the number of elements from b that are member of
+ * lng and contains the number of elements from b that are member of
  * the group.
  *
  * The extents and histo bats are optionally created.  The groups bat
@@ -77,7 +77,7 @@
 				BATsetcount(hn, ngrp);			\
 				if (BATextend(hn, maxgrps) != GDK_SUCCEED) \
 					goto error;			\
-				cnts = (wrd *) Tloc(hn, BUNfirst(hn));	\
+				cnts = (lng *) Tloc(hn, BUNfirst(hn));	\
 			}						\
 		}							\
 		if (extents)						\
@@ -371,7 +371,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	const oid *grps = NULL;
 	oid *restrict ngrps, ngrp, prev = 0, hseqb = 0;
 	oid *restrict exts = NULL;
-	wrd *restrict cnts = NULL;
+	lng *restrict cnts = NULL;
 	BUN p, q, r;
 	const void *v, *pv;
 	BATiter bi;
@@ -395,9 +395,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* e is NULL or [oid(dense),oid] */
 	assert(e == NULL || BAThdense(e));
 	assert(e == NULL || BATttype(e) == TYPE_oid);
-	/* h is NULL or [oid(dense),wrd] */
+	/* h is NULL or [oid(dense),lng] */
 	assert(h == NULL || BAThdense(h));
-	assert(h == NULL || h->ttype == TYPE_wrd);
+	assert(h == NULL || h->ttype == TYPE_lng);
 	/* e and h are aligned */
 	assert(e == NULL || h == NULL || BATcount(e) == BATcount(h));
 	assert(e == NULL || h == NULL || e->hseqbase == h->hseqbase);
@@ -435,9 +435,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			*extents = en;
 		}
 		if (histo) {
-			wrd one = 1;
+			lng one = 1;
 
-			hn = BATconstant(0, TYPE_wrd, &one, BATcount(b), TRANSIENT);
+			hn = BATconstant(0, TYPE_lng, &one, BATcount(b), TRANSIENT);
 			if (hn == NULL)
 				goto error;
 			*histo = hn;
@@ -472,9 +472,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				*extents = en;
 			}
 			if (histo) {
-				wrd cnt = (wrd) BATcount(b);
+				lng cnt = (lng) BATcount(b);
 
-				hn = BATconstant(0, TYPE_wrd, &cnt, 1, TRANSIENT);
+				hn = BATconstant(0, TYPE_lng, &cnt, 1, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -544,10 +544,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		exts = (oid *) Tloc(en, BUNfirst(en));
 	}
 	if (histo) {
-		hn = BATnew(TYPE_void, TYPE_wrd, maxgrps, TRANSIENT);
+		hn = BATnew(TYPE_void, TYPE_lng, maxgrps, TRANSIENT);
 		if (hn == NULL)
 			goto error;
-		cnts = (wrd *) Tloc(hn, BUNfirst(hn));
+		cnts = (lng *) Tloc(hn, BUNfirst(hn));
 	}
 	ngrp = 0;
 	BATsetcount(gn, BATcount(b));
@@ -720,7 +720,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		unsigned char v;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
-			memset(cnts, 0, maxgrps * sizeof(wrd));
+			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = 1;
 		for (p = 0, q = BATcount(b); p < q; p++) {
@@ -746,7 +746,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		unsigned short v;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
-			memset(cnts, 0, maxgrps * sizeof(wrd));
+			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = 1;
 		for (p = 0, q = BATcount(b); p < q; p++) {

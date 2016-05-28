@@ -25,7 +25,7 @@ Ready.
 # 10:55:30 >  
 
 function user.tst():void;               	#[0] (0)  0 
-    s:bat[:int] := microbenchmark.uniform(0@0:oid,100000:wrd,100000:int);	#[1] (0) MBMuniform 1 <- 2 3 4 
+    s:bat[:int] := microbenchmark.uniform(0@0:oid,100000:lng,100000:int);	#[1] (0) MBMuniform 1 <- 2 3 4 
     l:int := aggr.min(s:bat[:int]);     	#[2] (0) ALGminany 5 <- 1 
     h:int := l:int;                     	#[3] (0)  6 <- 5 
 #mdb.setTimer(true);                    
@@ -44,8 +44,8 @@ barrier X_28:bit := language.dataflow();	#[6] (0) MALstartDataflow 28
 exit X_28:bit;                          	#[17] (0)  28 
     z:bat[:oid] := mat.pack(t1:bat[:oid],t2:bat[:oid],t3:bat[:oid],t4:bat[:oid],t5:bat[:oid],t6:bat[:oid],t7:bat[:oid],t8:bat[:oid]);	#[18] (0) MATpack 9 <- 11 15 16 17 18 19 20 21 
     mdb.var();                          	#[19] (0) MDBvar 22 
-    c:wrd := aggr.count(z:bat[:oid]);   	#[20] (0) ALGcount_bat 23 <- 9 
-    io.print(c:wrd);                    	#[21] (0) IOprint_val 24 <- 23 
+    c:lng := aggr.count(z:bat[:oid]);   	#[20] (0) ALGcount_bat 23 <- 9 
+    io.print(c:lng);                    	#[21] (0) IOprint_val 24 <- 23 
     io.print("done":str);               	#[22] (0) IOprint_val 25 <- 26 
 end user.tst;                           	#[23] (0)  
 #Stack 'tst' size=512 top=31

@@ -80,7 +80,7 @@ top N (
 | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ]
 | | ) [ customer.c_custkey NOT NULL HASHCOL , nation.n_name NOT NULL ] [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_acctbal NOT NULL, customer.c_phone NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_comment NOT NULL, sys.sum no nil (sys.sql_mul(decimal(33,2)[lineitem.l_extendedprice NOT NULL] as lineitem.l_extendedprice, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ]
 | ) [ customer.c_custkey NOT NULL, customer.c_name NOT NULL, L1 as L1.revenue, customer.c_acctbal NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_comment NOT NULL ] [ L1.revenue ]
-) [ wrd "20" ]
+) [ bigint "20" ]
 
 # 22:46:31 >  
 # 22:46:31 >  "Done."

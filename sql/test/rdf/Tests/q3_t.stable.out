@@ -41,7 +41,7 @@ Ready.
 #	HAVING count(*) > 1;
 % sys.b,	sys.b,	sys.L1 # table_name
 % prop,	obj,	L1 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 1,	1,	1 # length
 
 # 23:32:54 >  

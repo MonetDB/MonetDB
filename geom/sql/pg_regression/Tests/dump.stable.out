@@ -82,7 +82,7 @@ Ready.
 #SELECT 't10', count(*)  FROM ST_Dump(ST_WKTToSQL('GEOMETRYCOLLECTION EMPTY'));
 % .L2,	.L3 # table_name
 % L2,	L3 # name
-% char,	wrd # type
+% char,	bigint # type
 % 3,	1 # length
 [ "t10",	1	]
 #SELECT 't11', * 

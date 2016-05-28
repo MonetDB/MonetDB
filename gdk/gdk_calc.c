@@ -12650,7 +12650,6 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		break;
 	default:
 		assert(tp != TYPE_oid);
-		assert(tp != TYPE_wrd);
 		if (!ATOMlinear(tp) ||
 		    (atomcmp = ATOMcompare(tp)) == NULL) {
 			BBPunfix(bn->batCacheid);

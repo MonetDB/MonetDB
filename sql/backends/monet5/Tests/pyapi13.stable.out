@@ -92,7 +92,7 @@ Addition in python is not inconsistent!
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 % .L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
@@ -102,7 +102,7 @@ Addition in python is not inconsistent!
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 % .L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
@@ -110,7 +110,7 @@ Addition in python is not inconsistent!
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 % .L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
@@ -124,7 +124,7 @@ Addition in python is not inconsistent!
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 % .L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
@@ -145,7 +145,7 @@ Addition in python is not inconsistent!
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 % .L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
@@ -168,7 +168,7 @@ Addition in python is not inconsistent!
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
 % .L2 # table_name
 % L2 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;

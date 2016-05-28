@@ -36,55 +36,55 @@ Ready.
 #select count(*) from i0;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from i1;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 10	]
 #select count(*) from i2;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 100	]
 #select count(*) from i3;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 1000	]
 #select count(*) from i4;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 5 # length
 [ 10000	]
 #select count(*) from i5;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 6 # length
 [ 100000	]
 #select count(*) from i6;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 7 # length
 [ 1000000	]
 #select count(*) from i7;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 8 # length
 [ 10000000	]
 #select count(*) from i8;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 9 # length
 [ 100000000	]
 

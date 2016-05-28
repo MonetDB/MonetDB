@@ -93,7 +93,7 @@ top N (
 | | | ) [ L2.l_orderkey NOT NULL HASHCOL  = l1.l_orderkey NOT NULL, L2.l_suppkey NOT NULL != l1.l_suppkey NOT NULL ]
 | | ) [ supplier.s_name NOT NULL ] [ supplier.s_name NOT NULL, sys.count() NOT NULL as L1.L1 ]
 | ) [ supplier.s_name NOT NULL, L1 NOT NULL as L1.numwait ] [ L1.numwait NOT NULL, supplier.s_name ASC NOT NULL ]
-) [ wrd "100" ]
+) [ bigint "100" ]
 
 # 22:46:34 >  
 # 22:46:34 >  "Done."

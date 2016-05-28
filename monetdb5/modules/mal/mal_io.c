@@ -305,8 +305,6 @@ IOprintf_(str *res, str format, ...)
 					ival = (int) *(sht *) p;
 				} else if (type == TYPE_flt) {
 					ival = (int) *(flt *) p;
-				} else if (type == TYPE_wrd) {
-					goto largetypes;
 				} else if (type == TYPE_lng) {
 					goto largetypes;
 #ifdef HAVE_HGE
@@ -340,8 +338,6 @@ IOprintf_(str *res, str format, ...)
 					lval = (lng) *(sht *) p;
 				} else if (type == TYPE_int) {
 					lval = (lng) *(int *) p;
-				} else if (type == TYPE_wrd) {
-					lval = (lng) *(wrd *) p;
 				} else if (type == TYPE_flt) {
 					lval = (lng) *(flt *) p;
 				} else if (type == TYPE_dbl) {

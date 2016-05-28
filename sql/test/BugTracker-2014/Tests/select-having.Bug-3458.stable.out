@@ -52,7 +52,7 @@ Ready.
 #select count(*) from sys.tbls having count(*) > 0;
 % .L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 2 # length
 [ 40	]
 

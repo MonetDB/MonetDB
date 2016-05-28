@@ -30,13 +30,13 @@ Ready.
 #select count(*) from t1 where c1='1' and (c2='3' or c3='3');
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from t1 where c1='1' and (c2 in ('3') or c3 in ('3'));
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 1	]
 

@@ -47,7 +47,7 @@ Ready.
 # 15:05:38 >  
 
 #select (4.4054292 - 4.40572025343667)^2 + (52.0903881 - 52.091375762174)^2;
-% . # table_name
+% .L # table_name
 % sql_sub_single_value # name
 % decimal # type
 % 21 # length

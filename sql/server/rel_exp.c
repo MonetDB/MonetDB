@@ -313,19 +313,6 @@ exp_atom_hge(sql_allocator *sa, hge i)
 #endif
 
 sql_exp *
-exp_atom_wrd(sql_allocator *sa, wrd w) 
-{
-	sql_subtype it; 
-
-#ifdef HAVE_HGE
-	sql_find_subtype(&it, "wrd", have_hge ? 18 : 19, 0);
-#else
-	sql_find_subtype(&it, "wrd", 19, 0);
-#endif
-	return exp_atom(sa, atom_int(sa, &it, w ));
-}
-
-sql_exp *
 exp_atom_flt(sql_allocator *sa, flt f) 
 {
 	sql_subtype it; 

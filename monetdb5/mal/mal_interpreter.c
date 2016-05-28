@@ -37,7 +37,6 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_sht:  return (ptr) &v->val.shval;
 	case TYPE_bat:  return (ptr) &v->val.bval;
 	case TYPE_int:  return (ptr) &v->val.ival;
-	case TYPE_wrd:  return (ptr) &v->val.wval;
 	case TYPE_bte:  return (ptr) &v->val.btval;
 	case TYPE_oid:  return (ptr) &v->val.oval;
 	case TYPE_ptr:  return (ptr) &v->val.pval;
@@ -1059,12 +1058,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			case TYPE_int:
 				if (v->val.ival != int_nil)
-					stkpc = pci->jump;
-				else
-					stkpc++;
-				break;
-			case TYPE_wrd:
-				if (v->val.wval != wrd_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;

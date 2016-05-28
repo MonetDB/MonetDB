@@ -46,7 +46,7 @@ Ready.
 #) AS qnames1_sub, (
 % .insct_sub,	.L3,	.L3 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
-% wrd,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 2,	1,	1 # length
 [ 21,	0,	0	]
 #WITH qnames1 AS (
@@ -70,7 +70,7 @@ Ready.
 #    SELECT COUNT(*) AS count_qnames1
 % .insct_sub,	.L3,	.L3 # table_name
 % count_a_insct_b,	count_a_minus_b,	count_b_minus_a # name
-% wrd,	hugeint,	hugeint # type
+% bigint,	hugeint,	hugeint # type
 % 2,	1,	1 # length
 [ 21,	0,	0	]
 

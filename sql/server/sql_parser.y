@@ -110,7 +110,6 @@ UTF8_strlen(const char *val)
 %pure-parser
 %union {
 	int		i_val,bval;
-	wrd		w_val;
 	lng		l_val,operation;
 	double		fval;
 	char *		sval;
@@ -474,11 +473,6 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
-
-%type <w_val>
-	wrdval
-	poswrd
-	nonzerowrd
 
 %type <l_val>
 	lngval
@@ -3175,8 +3169,8 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 	{ $$ = NULL; }
- |  LIMIT nonzerowrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  LIMIT nonzerolng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  LIMIT param		{ $$ = $2; }
@@ -3184,8 +3178,8 @@ opt_limit:
 
 opt_offset:
 	/* empty */	{ $$ = NULL; }
- |  OFFSET poswrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  OFFSET poslng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
@@ -3193,8 +3187,8 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poswrd	{
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  SAMPLE poslng	{
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SAMPLE INTNUM	{
@@ -4731,29 +4725,8 @@ nonzerolng:
 		}
 	;
 
-nonzerowrd:
-	wrdval
-		{ $$ = $1;
-		  if ($$ <= 0) {
-			$$ = -1;
-			yyerror(m, "Positive value greater than 0 expected");
-			YYABORT;
-		  }
-		}
-	;
-
 poslng:
 	lngval 	{ $$ = $1;
-		  if ($$ < 0) {
-			$$ = -1;
-			yyerror(m, "Positive value expected");
-			YYABORT;
-		  }
-		}
-	;
-
-poswrd:
-	wrdval  { $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
 			yyerror(m, "Positive value expected");
@@ -5149,24 +5122,6 @@ name_commalist:
  |  name_commalist ',' ident
 			{ $$ = append_string($1, $3); }
  ;
-
-wrdval:
-	lngval 	{ 
-		lng l = $1;
-#if SIZEOF_WRD == SIZEOF_INT
-
-		if (l > GDK_int_max) {
-			char *msg = sql_message("\b22000!constant (" LLFMT ") has wrong type (number expected)", l);
-
-			yyerror(m, msg);
-			_DELETE(msg);
-			$$ = 0;
-			YYABORT;
-		}
-#endif
-		$$ = (wrd) l;
-	}
-;
 
 lngval:
 	sqlINT	

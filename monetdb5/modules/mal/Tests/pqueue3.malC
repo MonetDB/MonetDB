@@ -24,23 +24,23 @@ bat.append(a,"stefan");
 io.print(a);
 
 # topn of b, new interface should return void,oid(position)
-bp:= algebra.firstn(a,0:wrd,false,false);
+bp:= algebra.firstn(a,0:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,1:wrd,false,false);
+bp:= algebra.firstn(a,1:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,2:wrd,false,false);
+bp:= algebra.firstn(a,2:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,3:wrd,false,false);
+bp:= algebra.firstn(a,3:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,4:wrd,false,false);
+bp:= algebra.firstn(a,4:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,5:wrd,false,false);
+bp:= algebra.firstn(a,5:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,6:wrd,false,false);
+bp:= algebra.firstn(a,6:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,7:wrd,false,false);
+bp:= algebra.firstn(a,7:lng,false,false);
 io.print(bp);
-bp:= algebra.firstn(a,8:wrd,false,false);
+bp:= algebra.firstn(a,8:lng,false,false);
 io.print(bp);
 
 # utopn only count the unique values - topn of b, 
@@ -49,68 +49,68 @@ io.print(bp);
 #
 # 	returns both void,pos, void,gid
 io.print("Start of compound");
-(bp,bg):= algebra.firstn(b,0:wrd,false,false);
+(bp,bg):= algebra.firstn(b,0:lng,false,false);
 io.print(bp);
 io.print(bg);
 # (sub) topn input: aligned bg group id, ap values bat
 #	output:	void,pos
 # returns the topn of the combination gid,value
-(cp,cg):= algebra.firstn(a,bp,bg,0:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,0:lng,false,false);
 io.print(cp);
 
-(bp,bg):= algebra.firstn(b,1:wrd,false,false);
+(bp,bg):= algebra.firstn(b,1:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,1:wrd,false,false);
-io.print(cp);
-io.print(cg);
-
-(bp,bg):= algebra.firstn(b,2:wrd,false,false);
-io.print(bp);
-io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,2:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,1:lng,false,false);
 io.print(cp);
 io.print(cg);
 
-(bp,bg):= algebra.firstn(b,3:wrd,false,false);
+(bp,bg):= algebra.firstn(b,2:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,3:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,2:lng,false,false);
 io.print(cp);
 io.print(cg);
 
-(bp,bg):= algebra.firstn(b,4:wrd,false,false);
+(bp,bg):= algebra.firstn(b,3:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,4:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,3:lng,false,false);
 io.print(cp);
 io.print(cg);
 
-(bp,bg):= algebra.firstn(b,5:wrd,false,false);
+(bp,bg):= algebra.firstn(b,4:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,5:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,4:lng,false,false);
 io.print(cp);
 io.print(cg);
 
-(bp,bg):= algebra.firstn(b,6:wrd,false,false);
+(bp,bg):= algebra.firstn(b,5:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,6:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,5:lng,false,false);
 io.print(cp);
 io.print(cg);
 
-(bp,bg):= algebra.firstn(b,7:wrd,false,false);
+(bp,bg):= algebra.firstn(b,6:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,7:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,6:lng,false,false);
 io.print(cp);
 io.print(cg);
 
-(bp,bg):= algebra.firstn(b,8:wrd,false,false);
+(bp,bg):= algebra.firstn(b,7:lng,false,false);
 io.print(bp);
 io.print(bg);
-(cp,cg):= algebra.firstn(a,bp,bg,8:wrd,false,false);
+(cp,cg):= algebra.firstn(a,bp,bg,7:lng,false,false);
+io.print(cp);
+io.print(cg);
+
+(bp,bg):= algebra.firstn(b,8:lng,false,false);
+io.print(bp);
+io.print(bg);
+(cp,cg):= algebra.firstn(a,bp,bg,8:lng,false,false);
 io.print(cp);
 io.print(cg);
 

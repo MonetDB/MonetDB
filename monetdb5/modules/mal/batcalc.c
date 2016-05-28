@@ -236,14 +236,8 @@ calctypeenlarge(int tp1, int tp2)
 	case TYPE_sht:
 		return TYPE_int;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		return TYPE_lng;
 #ifdef HAVE_HGE
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 	case TYPE_lng:
 		return TYPE_hge;
 #endif
@@ -1131,27 +1125,6 @@ CMDconvertsignal_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	return CMDconvertbat(stk, pci, TYPE_int, 1);
-}
-
-batcalc_export str CMDconvert_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-batcalc_export str CMDconvertsignal_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDconvert_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	return CMDconvertbat(stk, pci, TYPE_wrd, 0);
-}
-
-str
-CMDconvertsignal_wrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	return CMDconvertbat(stk, pci, TYPE_wrd, 1);
 }
 
 batcalc_export str CMDconvert_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

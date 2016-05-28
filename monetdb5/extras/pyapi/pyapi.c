@@ -98,7 +98,6 @@ static char* FunctionBasePath(void) {
 CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl,(bat*, int*, bat*));
 CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl,(bat*, int*, bat*));
 CREATE_SQL_FUNCTION_PTR(str,batint_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batwrd_dec2_dbl,(bat*, int*, bat*));
 CREATE_SQL_FUNCTION_PTR(str,batlng_dec2_dbl,(bat*, int*, bat*));
 CREATE_SQL_FUNCTION_PTR(str,bathge_dec2_dbl,(bat*, int*, bat*));
 CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp,(bat*, bat*, int*));
@@ -1126,9 +1125,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                         case TYPE_lng:
                             NP_SPLIT_BAT(lng);
                             break;
-                        case TYPE_wrd:
-                            NP_SPLIT_BAT(wrd);
-                            break;
                         case TYPE_flt:
                             NP_SPLIT_BAT(flt);
                             break;
@@ -1630,7 +1626,6 @@ str
             LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl, "lib_sql.dll");
             LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl, "lib_sql.dll");
             LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batwrd_dec2_dbl, "lib_sql.dll");
             LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl, "lib_sql.dll");
 #ifdef HAVE_HGE
             LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
@@ -2414,9 +2409,6 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
     case TYPE_lng:
         NP_CREATE_BAT(b, lng);
         break;
-    case TYPE_wrd:
-        NP_CREATE_BAT(b, wrd);
-        break;
     case TYPE_flt:
         NP_CREATE_BAT(b, flt);
         break;
@@ -2722,9 +2714,6 @@ str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret
                 break;
             case TYPE_int:
                 res = (*batint_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
-                break;
-            case TYPE_wrd:
-                res = (*batwrd_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
                 break;
             case TYPE_lng:
                 res = (*batlng_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);

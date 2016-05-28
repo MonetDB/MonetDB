@@ -12,13 +12,13 @@ stderr of test 'function_syntax` in directory 'sql/test` itself:
 # 13:04:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36428 
 # 13:04:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP FUNCTION f1;
 ERROR = !DROP FUNCTION: there are more than one function called 'f1', please use the full signature
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP FUNCTION f2 (int, varchar(1024));
 ERROR = !DROP FUNCTION: no such function 'f2' (int(32), varchar(1024))
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP ALL FUNCTION f1 CASCADE;
 ERROR = !DROP ALL FUNCTION: no such function 'f1'
 

@@ -61,43 +61,31 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 236 # length
+% 311 # length
 top N (
 | project (
-| | project (
-| | | join (
-| | | | project (
+| | group by (
+| | | project (
+| | | | join (
 | | | | | join (
-| | | | | | group by (
+| | | | | | semijoin (
+| | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.o_totalprice NOT NULL, orders.o_orderdate NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT ,
 | | | | | | | project (
-| | | | | | | | join (
-| | | | | | | | | join (
-| | | | | | | | | | semijoin (
-| | | | | | | | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL , orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT ,
-| | | | | | | | | | | project (
-| | | | | | | | | | | | select (
-| | | | | | | | | | | | | group by (
-| | | | | | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
-| | | | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  ] [ lineitem.l_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L3.L3 ]
-| | | | | | | | | | | | ) [ L3 NOT NULL > decimal(19,2)[smallint "300"] ]
-| | | | | | | | | | | ) [ lineitem.l_orderkey NOT NULL as L5.L4 ]
-| | | | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = L5.L4 NOT NULL ],
+| | | | | | | | select (
+| | | | | | | | | group by (
 | | | | | | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
-| | | | | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = lineitem.l_orderkey NOT NULL HASHCOL  ],
-| | | | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL ] COUNT 
-| | | | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ]
-| | | | | | | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ]
-| | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL , customer.c_custkey NOT NULL HASHCOL  ] [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L6.L6 ],
-| | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL  as L10.c_custkey, customer.c_name NOT NULL as L10.c_name ] COUNT 
-| | | | | ) [ customer.c_custkey NOT NULL = L10.c_custkey NOT NULL HASHCOL  FETCH  ]
-| | | | ) [ L10.c_name NOT NULL as customer.c_name, customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , L6.L6 NOT NULL ],
-| | | | project (
-| | | | | table(sys.orders) [ orders.o_orderkey NOT NULL HASHCOL  as L7.o_orderkey, orders.o_totalprice NOT NULL as L7.o_totalprice, orders.o_orderdate NOT NULL as L7.o_orderdate ] COUNT 
-| | | | ) [ L7.o_orderkey NOT NULL, L7.o_orderdate NOT NULL as orders.o_orderdate, L7.o_totalprice NOT NULL as orders.o_totalprice ]
-| | | ) [ orders.o_orderkey NOT NULL = L7.o_orderkey NOT NULL FETCH  ]
-| | ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6.L6 NOT NULL ]
+| | | | | | | | | ) [ lineitem.l_orderkey NOT NULL HASHCOL  ] [ lineitem.l_orderkey NOT NULL HASHCOL , sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L3.L3 ]
+| | | | | | | | ) [ L3 NOT NULL > decimal(19,2)[smallint "300"] ]
+| | | | | | | ) [ lineitem.l_orderkey NOT NULL as L5.L4 ]
+| | | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = L5.L4 NOT NULL ],
+| | | | | | table(sys.lineitem) [ lineitem.l_orderkey NOT NULL HASHCOL , lineitem.l_quantity NOT NULL ] COUNT 
+| | | | | ) [ orders.o_orderkey NOT NULL HASHCOL  = lineitem.l_orderkey NOT NULL HASHCOL  ],
+| | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.%TID% NOT NULL ] COUNT 
+| | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ]
+| | | ) [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, orders.o_orderkey NOT NULL HASHCOL , orders.o_totalprice NOT NULL, orders.o_orderdate NOT NULL, lineitem.l_quantity NOT NULL ]
+| | ) [ customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL  ] [ customer.c_name NOT NULL, customer.c_custkey NOT NULL HASHCOL , orders.o_orderkey NOT NULL HASHCOL , orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, sys.sum no nil (lineitem.l_quantity NOT NULL) NOT NULL as L6.L6 ]
 | ) [ customer.c_name NOT NULL, customer.c_custkey NOT NULL, orders.o_orderkey NOT NULL, orders.o_orderdate NOT NULL, orders.o_totalprice NOT NULL, L6 NOT NULL as L6.L6 ] [ orders.o_totalprice NOT NULL, orders.o_orderdate ASC NOT NULL ]
-) [ wrd "100" ]
+) [ bigint "100" ]
 
 # 22:46:33 >  
 # 22:46:33 >  "Done."

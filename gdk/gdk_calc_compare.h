@@ -84,18 +84,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, TPE, OP);
 			else
 				BINARY_3TYPE_FUNC(bte, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, TPE, OP);
 			else
@@ -141,18 +135,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, TPE, OP);
 			else
 				BINARY_3TYPE_FUNC(sht, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, TPE, OP);
 			else
@@ -183,9 +171,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
@@ -200,9 +185,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 		intint:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, TPE, OP);
@@ -210,9 +192,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, TPE, OP);
 			else
@@ -243,9 +222,6 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
@@ -260,18 +236,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, TPE, OP);
 			else
 				BINARY_3TYPE_FUNC(lng, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 		lnglng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, TPE, OP);
@@ -318,18 +288,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(hge, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, int, TPE, OP);
 			else
 				BINARY_3TYPE_FUNC(hge, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, lng, TPE, OP);
 			else
@@ -374,18 +338,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, TPE, OP);
 			else
 				BINARY_3TYPE_FUNC(flt, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, TPE, OP);
 			else
@@ -431,18 +389,12 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, TPE, OP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, TPE, OP);
 			else
 				BINARY_3TYPE_FUNC(dbl, int, TPE, OP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, TPE, OP);
 			else

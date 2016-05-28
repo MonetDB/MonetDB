@@ -33,7 +33,7 @@ Ready.
 #             'objects', 'keys', 'modules', 'sequences')
 % .a,	.b,	.L5 # table_name
 % name,	name,	L5 # name
-% varchar,	varchar,	wrd # type
+% varchar,	varchar,	bigint # type
 % 9,	9,	2 # length
 [ "args",	"columns",	6	]
 [ "args",	"idxs",	6	]

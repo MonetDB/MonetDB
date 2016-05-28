@@ -275,8 +275,6 @@ VALisnil(const ValRecord *v)
 		return v->val.shval == sht_nil;
 	case TYPE_int:
 		return v->val.ival == int_nil;
-	case TYPE_wrd:
-		return v->val.wval == wrd_nil;
 	case TYPE_lng:
 		return v->val.lval == lng_nil;
 #ifdef HAVE_HGE

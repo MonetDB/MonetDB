@@ -92,9 +92,6 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 		case TYPE_int:
 			a->data.val.ival = (int) val;
 			break;
-		case TYPE_wrd:
-			a->data.val.wval = (wrd) val;
-			break;
 		case TYPE_oid:
 			a->data.val.oval = (oid) val;
 			break;
@@ -144,9 +141,6 @@ atom_get_int(atom *a)
 			break;
 		case TYPE_oid:
 			r = a->data.val.oval;
-			break;
-		case TYPE_wrd:
-			r = a->data.val.wval;
 			break;
 		case TYPE_lng:
 			r = a->data.val.lval;
@@ -301,9 +295,6 @@ atom2string(sql_allocator *sa, atom *a)
 #endif
 	case TYPE_lng:
 		sprintf(buf, LLFMT, a->data.val.lval);
-		break;
-	case TYPE_wrd:
-		sprintf(buf, SSZFMT, a->data.val.wval);
 		break;
 	case TYPE_oid:
 		sprintf(buf, OIDFMT "@0", a->data.val.oval);
@@ -652,9 +643,6 @@ atom_cast(atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.ival = a->data.val.btval;
 				else if (at->type->localtype == TYPE_sht) 
@@ -665,9 +653,6 @@ atom_cast(atom *a, sql_subtype *tp)
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.lval = a->data.val.btval;
@@ -724,9 +709,6 @@ atom_cast(atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.ival = a->data.val.btval;
 				else if (at->type->localtype == TYPE_sht) 
@@ -737,9 +719,6 @@ atom_cast(atom *a, sql_subtype *tp)
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.lval = a->data.val.btval;
@@ -954,9 +933,6 @@ atom_cast(atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.ival = a->data.val.btval;
 				else if (at->type->localtype == TYPE_sht) 
@@ -967,9 +943,6 @@ atom_cast(atom *a, sql_subtype *tp)
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.lval = a->data.val.btval;

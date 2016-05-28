@@ -40,7 +40,7 @@ Ready.
 #	GROUP BY B.prop;
 % sys.b,	sys.L1 # table_name
 % prop,	L1 # name
-% int,	wrd # type
+% int,	bigint # type
 % 1,	1 # length
 
 # 23:36:16 >  

@@ -53,16 +53,6 @@ bat.append(bint,nil:int);
 rint:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bint);
 io.print(rint);
 
-# word with null value
-bwrd:= bat.new(:oid,:wrd);
-bat.append(bwrd,1804289383:wrd);
-bat.append(bwrd,846930886:wrd);
-bat.append(bwrd,1681692777:wrd);
-bat.append(bwrd,1714636915:wrd);
-bat.append(bwrd,nil:wrd);
-rwrd:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bwrd);
-io.print(rwrd);
-
 # long with null value
 blng:= bat.new(:oid,:lng);
 bat.append(blng,1804289383L);
