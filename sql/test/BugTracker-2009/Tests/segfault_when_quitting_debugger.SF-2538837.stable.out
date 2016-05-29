@@ -21,8 +21,8 @@ Ready.
 # 16:24:01 >  
 
 #debug select * from tables;
-mdb>#X_159=0@0:void := querylog.define("debug select * from tables;","default_pipe",630);
-mdb>#barrier X_779=false := language.dataflow();
+mdb>#X_149=0@0:void := querylog.define("debug select * from tables;","default_pipe",620);
+mdb>#barrier X_768=false := language.dataflow();
 
 # 16:24:01 >  
 # 16:24:01 >  "Done."

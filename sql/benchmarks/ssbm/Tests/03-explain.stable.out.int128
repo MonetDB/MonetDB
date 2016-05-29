@@ -84,8 +84,8 @@ function user.s4_1():void;
     X_60 := sql.projectdelta(C_27,X_19,C_21,r1_25,X_23);
     X_61 := algebra.projection(X_48,X_60);
     X_62:bat[:lng] := batcalc.*(X_59,X_61);
-    X_63:hge := aggr.sum(X_62);
-    sql.resultSet("sys.L1","revenue","hugeint",128,0,7,X_63);
+    X_63:lng := aggr.sum(X_62);
+    sql.resultSet("sys.L1","revenue","bigint",64,0,7,X_63);
 end user.s4_1;
 #inline               actions= 0 time=6 usec 
 #candidates           actions= 1 time=52 usec 

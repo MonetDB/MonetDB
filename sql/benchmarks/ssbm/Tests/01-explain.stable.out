@@ -53,33 +53,58 @@ function user.s2_1(A0:int,A1:int,A2:int,A3:int):void;
     (C_12,r1_12) := sql.bind(X_5,"sys","lineorder","lo_quantity",2);
     C_84 := algebra.thetasubselect(r1_12,nil:bat[:oid],A3,"<");
     X_15:bat[:int] := sql.bind(X_5,"sys","lineorder","lo_quantity",1);
-    C_85 := algebra.thetasubselect(X_15,C_22,A3,"<");
-    C_25 := sql.subdelta(C_83,C_22,C_12,C_84,C_85);
-    X_27:bat[:oid] := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
-    (X_29,r1_37) := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
-    X_31:bat[:oid] := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
-    X_32 := sql.projectdelta(C_25,X_27,X_29,r1_37,X_31);
-    X_35:bat[:int] := sql.bind(X_5,"sys","dwdate","d_year",0);
-    C_33:bat[:oid] := sql.tid(X_5,"sys","dwdate");
-    C_86 := algebra.subselect(X_35,C_33,A0,A0,true,false,false);
-    (C_37,r1_47) := sql.bind(X_5,"sys","dwdate","d_year",2);
-    C_87 := algebra.subselect(r1_47,nil:bat[:oid],A0,A0,true,false,false);
-    X_39:bat[:int] := sql.bind(X_5,"sys","dwdate","d_year",1);
-    C_88 := algebra.subselect(X_39,C_33,A0,A0,true,false,false);
-    C_40 := sql.subdelta(C_86,C_33,C_37,C_87,C_88);
-    (X_41,r1_55) := algebra.subjoin(X_32,C_40,nil:BAT,nil:BAT,false,nil:lng);
-    X_45:bat[:int] := sql.bind(X_5,"sys","lineorder","lo_extendedprice",0);
-    (C_47,r1_62) := sql.bind(X_5,"sys","lineorder","lo_extendedprice",2);
-    X_49:bat[:int] := sql.bind(X_5,"sys","lineorder","lo_extendedprice",1);
-    X_50 := sql.projectdelta(C_25,X_45,C_47,r1_62,X_49);
-    X_51 := algebra.projection(X_41,X_50);
-    X_52 := batcalc.lng(X_51);
-    X_53 := sql.projectdelta(C_25,X_17,C_19,r1_22,X_21);
-    X_54 := algebra.projection(X_41,X_53);
-    X_55:bat[:lng] := batcalc.*(X_52,X_54);
-    X_56:lng := aggr.sum(X_55);
-    sql.resultSet("sys.L1","revenue","bigint",64,0,7,X_56);
-end user.s2_1;
+    C_84 := algebra.thetasubselect(X_15,C_21,25,"<");
+    C_24 := sql.subdelta(C_82,C_21,C_12,C_83,C_84);
+    X_26:bat[:oid] := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_orderdate_fkey",0);
+    (X_28,r1_37) := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_orderdate_fkey",2);
+    X_30:bat[:oid] := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_orderdate_fkey",1);
+    X_31 := sql.projectdelta(C_24,X_26,X_28,r1_37,X_30);
+    X_34:bat[:int] := sql.bind(X_5,"sys","dwdate","d_year",0);
+    C_32:bat[:oid] := sql.tid(X_5,"sys","dwdate");
+    C_85 := algebra.subselect(X_34,C_32,1993,1993,true,false,false);
+    (C_36,r1_47) := sql.bind(X_5,"sys","dwdate","d_year",2);
+    C_86 := algebra.subselect(r1_47,nil:bat[:oid],1993,1993,true,false,false);
+    X_38:bat[:int] := sql.bind(X_5,"sys","dwdate","d_year",1);
+    C_87 := algebra.subselect(X_38,C_32,1993,1993,true,false,false);
+    C_39 := sql.subdelta(C_85,C_32,C_36,C_86,C_87);
+    (X_40,r1_55) := algebra.subjoin(X_31,C_39,nil:BAT,nil:BAT,false,nil:lng);
+    X_44:bat[:int] := sql.bind(X_5,"sys","lineorder","lo_extendedprice",0);
+    (C_46,r1_62) := sql.bind(X_5,"sys","lineorder","lo_extendedprice",2);
+    X_48:bat[:int] := sql.bind(X_5,"sys","lineorder","lo_extendedprice",1);
+    X_49 := sql.projectdelta(C_24,X_44,C_46,r1_62,X_48);
+    X_50 := algebra.projection(X_40,X_49);
+    X_51 := batcalc.lng(X_50);
+    X_52 := sql.projectdelta(C_24,X_16,C_18,r1_22,X_20);
+    X_53 := algebra.projection(X_40,X_52);
+    X_54:bat[:lng] := batcalc.*(X_51,X_53);
+    X_55:lng := aggr.sum(X_54);
+    sql.resultSet("sys.L1","revenue","bigint",64,0,7,X_55);
+end user.s4_1;
+#inline               actions= 0 time=8 usec 
+#remap                actions= 1 time=137 usec 
+#costModel            actions= 1 time=53 usec 
+#coercions            actions= 0 time=5 usec 
+#evaluate             actions= 4 time=90 usec 
+#emptycolumn          actions= 0 time=46 usec 
+#pushselect           actions=11 time=106 usec 
+#aliases              actions=10 time=72 usec 
+#mergetable           actions= 0 time=78 usec 
+#deadcode             actions= 5 time=72 usec 
+#aliases              actions= 0 time=16 usec 
+#constants            actions=10 time=70 usec 
+#commonTerms          actions= 0 time=19 usec 
+#projectionpath       actions= 0 time=10 usec 
+#reorder              actions= 1 time=96 usec 
+#deadcode             actions= 0 time=13 usec 
+#reduce               actions=50 time=103 usec 
+#matpack              actions= 0 time=7 usec 
+#querylog             actions= 0 time=1 usec 
+#multiplex            actions= 0 time=6 usec 
+#generator            actions= 0 time=3 usec 
+#profiler             actions= 1 time=60 usec 
+#candidates           actions= 1 time=46 usec 
+#garbageCollector     actions= 1 time=66 usec 
+#total                actions= 1 time=1301 usec 
 
 # 23:10:45 >  
 # 23:10:45 >  "Done."

@@ -223,7 +223,7 @@ function user.s4_1():void;
     (X_158,r1_278,r2_278) := algebra.subsort(X_149,r1_275,r2_275,false,false);
     (X_161,r1_281,r2_281) := algebra.subsort(X_148,r1_278,r2_278,false,false);
     X_164 := algebra.projection(r1_281,X_151);
-    X_165 := algebra.subslice(X_164,0,99:wrd);
+    X_165 := algebra.subslice(X_164,0,99:lng);
     X_176:bat[:str] := algebra.projectionpath(X_165,r1_281,C_147,C_116,r1_176,r1_170,X_90,X_87,X_84,r1_105,X_175);
     X_177:bat[:str] := sql.bind(X_4,"sys","supplier","s_address",0);
     (C_179,r1_320) := sql.bind(X_4,"sys","supplier","s_address",2);

@@ -56,7 +56,7 @@ Ready.
 #select * from sys.querylog_history;
 % .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
-% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select * from sys.querylog_catalog;
 % .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name
@@ -66,7 +66,7 @@ Ready.
 #select * from sys.querylog_calls;
 % .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
 % id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
-% oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select 1;
 % .L # table_name
@@ -99,12 +99,12 @@ Ready.
 #select * from sys.querylog_history;
 % .querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history,	.querylog_history # table_name
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
-% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select * from sys.querylog_calls;
 % .querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls,	.querylog_calls # table_name
 % id,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
-% oid,	timestamp,	timestamp,	clob,	wrd,	bigint,	bigint,	int,	int # type
+% oid,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	26,	26,	0,	1,	1,	1,	1,	1 # length
 #select * from sys.querylog_catalog;
 % .querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog,	.querylog_catalog # table_name

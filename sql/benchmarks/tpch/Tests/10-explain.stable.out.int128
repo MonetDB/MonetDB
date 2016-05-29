@@ -179,7 +179,7 @@ function user.s4_1():void;
     (C_110,r1_163) := sql.bind(X_4,"sys","customer","c_name",2);
     X_112:bat[:str] := sql.bind(X_4,"sys","customer","c_name",1);
     X_113 := sql.projectdelta(C_45,X_108,C_110,r1_163,X_112);
-    X_106 := algebra.subslice(X_105,0,19:wrd);
+    X_106 := algebra.subslice(X_105,0,19:lng);
     X_114:bat[:str] := algebra.projectionpath(X_106,r1_148,C_100,r1_133,X_58,r1_64,X_113);
     X_116:bat[:lng] := sql.bind(X_4,"sys","customer","c_acctbal",0);
     (C_118,r1_178) := sql.bind(X_4,"sys","customer","c_acctbal",2);
