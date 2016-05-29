@@ -74,6 +74,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					block = -1;
 					skip = 0;
 					freeInstruction(p);
+					mb->stmt[i]= 0;
 					continue;
 			}
 			if (p->argc == 2 && blockStart(p) && block < 0 && isVarConstant(mb, getArg(p, 1)) && getArgType(mb, p, 1) == TYPE_bit ){
@@ -90,14 +91,16 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					skip = 0;
 					action++;
 					freeInstruction(p);
+					mb->stmt[i]= 0;
 					continue;
 				}
 			} else 
 			if( p->argc == 2 &&  blockStart(p) && block >= 0 && skip == 0 && isVarConstant(mb, getArg(p, 1)) && getArgType(mb, p, 1) == TYPE_bit && multipass == 0)
 				multipass++;
-			if (skip)
+			if (skip){
 				freeInstruction(p);
-			else
+				mb->stmt[i]= 0;
+			} else
 				mb->stmt[j++] = p;
 		}
 		mb->stop = j;
