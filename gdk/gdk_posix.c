@@ -623,6 +623,13 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 #endif
 						) {
+						int err = errno;
+						/* extending failed:
+						 * free any disk space
+						 * allocated in the
+						 * process */
+						(void) ftruncate(fd, (off_t) old_size);
+						errno = err; /* restore for error message */
 						GDKsyserror("MT_mremap: growing file failed\n");
 						close(fd);
 						fprintf(stderr,
