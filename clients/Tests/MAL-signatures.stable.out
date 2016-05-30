@@ -31365,11 +31365,11 @@ comment Evaluate constant expressions once.
 
 pattern optimizer.evaluate():str 
 address OPTwrapper;
-pattern optimizer.emptybind(mod:str,fcn:str):str 
+pattern optimizer.emptycolumn(mod:str,fcn:str):str 
 address OPTwrapper;
 comment Evaluate empty set expressions.
 
-pattern optimizer.emptybind():str 
+pattern optimizer.emptycolumn():str 
 address OPTwrapper;
 pattern optimizer.factorize(mod:str,fcn:str):str 
 address OPTwrapper;
@@ -32225,14 +32225,22 @@ pattern sql.export_table(fname:str,fmt:str,colsep:str,recsep:str,qout:str,nullre
 address mvc_export_row_wrap;
 comment Prepare a table result set for the COPY INTO stream
 
-pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) 
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) 
 address mvc_bind_wrap;
-pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] 
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] 
 address mvc_bind_wrap;
-pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) 
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) 
 address mvc_bind_wrap;
-pattern sql.emptybind(mvc:int,schema:str,table:str,column:str,access:int):bat[:any_1] 
+pattern sql.emptycolumn(mvc:int,schema:str,table:str,column:str,access:int):bat[:any_1] 
 address mvc_bind_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int,part_nr:int,nr_parts:int) (uid:bat[:oid],uval:bat[:any_1]) 
+address mvc_bind_idxbat_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int,part_nr:int,nr_parts:int):bat[:any_1] 
+address mvc_bind_idxbat_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int) (uid:bat[:oid],uval:bat[:any_1]) 
+address mvc_bind_idxbat_wrap;
+pattern sql.emptycolumnidx(mvc:int,schema:str,table:str,index:str,access:int):bat[:any_1] 
+address mvc_bind_idxbat_wrap;
 pattern sql.evalAlgebra(cmd:str,optimize:bit):void 
 address RAstatement;
 comment Compile and execute a single 'relational algebra' statement
