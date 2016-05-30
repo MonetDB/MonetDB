@@ -481,10 +481,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		if( backend_callinline(be, c) < 0 ||
 			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
 			err = 1;
-		else{
-			SQLaddQueryToCache(c);
-			SQLoptimizeFunction(c,c->curprg->def);
-		}
+		/* always keep it around for inspection */
+		SQLaddQueryToCache(c);
+		SQLoptimizeFunction(c,c->curprg->def);
 
 		if (err ||c->curprg->def->errors) {
 			/* restore the state */
