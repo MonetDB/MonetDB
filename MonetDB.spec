@@ -966,7 +966,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-ant=no \
 	--with-bz2=yes \
 	--with-curl=yes \
-	--with-gdal=yes \
+	--with-gdal=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-java=no \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
