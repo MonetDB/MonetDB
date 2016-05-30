@@ -9,6 +9,7 @@
 %define bits 32
 %else
 %define bits 64
+%define with_int128=1
 %endif
 
 # only add .oidXX suffix if oid size differs from bit size
@@ -134,6 +135,7 @@ BuildRequires: liblas >= 1.8.0
 %endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
+BuildRequires: xz-devel
 # BuildRequires: libmicrohttpd-devel
 # BuildRequires: libsphinxclient-devel
 BuildRequires: libuuid-devel
@@ -937,31 +939,43 @@ developer, but if you do want to test, this is the package you need.
 	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \
+	--enable-embedded=no \
+	--enable-embedded-r=no \
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-gsl=yes \
 	--enable-instrument=no \
+	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-jdbc=no \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
+	--enable-mapi=yes \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
+	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
 	--enable-profile=no \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
+	--enable-shp=no \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
+	--with-curl=yes \
+	--with-gdal=yes \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-java=no \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
+	--with-libxml2=yes \
+	--with-lzma=yes \
+	--with-openssl=yes \
 	--with-perl=yes \
 	--with-perl-libdir=lib/perl5 \
+	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=%{?rhel:no}%{!?rhel:yes} \
@@ -969,6 +983,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
+	--with-uuid=yes \
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
