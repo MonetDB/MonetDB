@@ -262,13 +262,23 @@ PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
     return (PyObject*) op;
 }
 
-void _connection_init(void)
-{
+static void _connection_import_array(void) {
     import_array();
+}
+
+str _connection_init(void)
+{
+    str msg = MAL_SUCCEED;
+    _connection_import_array();
 
     LOAD_SQL_FUNCTION_PTR(SQLdestroyResult, "lib_sql.dll");
     LOAD_SQL_FUNCTION_PTR(SQLstatementIntern, "lib_sql.dll");
 
+    if (msg != MAL_SUCCEED) {
+        return msg;
+    }
+
     if (PyType_Ready(&Py_ConnectionType) < 0)
-        return;
+        return createException(MAL, "pyapi.eval", "Failed to initialize connection type.");
+    return msg;
 }
