@@ -709,7 +709,7 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
     char x[OUT_MAX_DIGS_DOUBLE+OUT_MAX_DOUBLE_PRECISION+1];
     char y[OUT_MAX_DIGS_DOUBLE+OUT_MAX_DOUBLE_PRECISION+1];
     char z[OUT_MAX_DIGS_DOUBLE+OUT_MAX_DOUBLE_PRECISION+1];
-    uint32_t npoints = 0;
+    uint32_t npoints = -1;
     numPointsGeometry(&npoints, geom);
 
     ptr = output;
@@ -720,8 +720,14 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
         {
             if ( !is_closed || i < (npoints - 1) )
             {
-                GEOSGeom point = (GEOSGeom) GEOSGeomGetPointN(geom, i);
+                const GEOSGeometry *point = NULL;
                 double pt_x, pt_y;
+                if (GEOSGeomTypeId(geom) == GEOS_POINT) {
+                    point = geom;
+                } else {
+                    assert(GEOSGeomTypeId(geom) == GEOS_LINESTRING);
+                    point = GEOSGeomGetPointN(geom, i);
+                }
                 GEOSGeomGetX(point, &pt_x);
                 GEOSGeomGetY(point, &pt_y);
 
@@ -753,8 +759,14 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
         {
             if ( !is_closed || i < (npoints - 1) )
             {
-                GEOSGeom point = (GEOSGeom) GEOSGeomGetPointN(geom, i);
+                const GEOSGeometry *point = NULL;
                 double pt_x, pt_y, pt_z = 0.0;
+                if (GEOSGeomTypeId(geom) == GEOS_POINT) {
+                    point = geom;
+                } else {
+                    assert(GEOSGeomTypeId(geom) == GEOS_LINESTRING);
+                    point = GEOSGeomGetPointN(geom, i);
+                }
                 GEOSGeomGetX(point, &pt_x);
                 GEOSGeomGetY(point, &pt_y);
                 if (GEOSHasZ(point) == 1)

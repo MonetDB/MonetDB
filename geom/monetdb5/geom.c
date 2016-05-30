@@ -4356,12 +4356,23 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN i;
+    wkb *geomWKB = wkbNULL();
 	str err;
 
 	//get the BATs
 	if (!(inBAT = BATdescriptor(*inBAT_id))) {
 		throw(MAL, "geom.Union", "Problem retrieving BATs");
 	}
+
+    /*TODO: We need a better way to handle the cases where the BAT was created, but it has zero elements*/
+    if (!BATcount(inBAT)) {
+		BBPunfix(inBAT->batCacheid);
+		if ((err = wkbUnion(outWKB,&geomWKB, &geomWKB)) != MAL_SUCCEED) {
+			BBPunfix(inBAT->batCacheid);
+			return err;
+		}
+        return MAL_SUCCEED;
+    }
 	//check if the BATs are dense and aligned
 	if (!BAThdense(inBAT)) {
 		BBPunfix(inBAT->batCacheid);
@@ -4374,6 +4385,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	for (i = BUNfirst(inBAT); i < BUNfirst(inBAT) + 1; i += 2) {
 		wkb *aWKB = NULL, *bWKB = NULL;
 
+        /*TODO: check if the BAT only has one elemente in that case report error*/
 		aWKB = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
 		bWKB = (wkb *) BUNtail(inBAT_iter, i + 1 + BUNfirst(inBAT));
 

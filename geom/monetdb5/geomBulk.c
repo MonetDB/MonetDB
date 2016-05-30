@@ -974,6 +974,8 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		pointWKB = NULL;
 	}
 
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(xBAT));
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
       clean:
