@@ -1344,7 +1344,8 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_BIT: {
-			int f, n;
+			SQLUBIGINT f;
+			int n;
 
 			data = (char *) ptr;
 
