@@ -1,3 +1,3 @@
 #!/bin/sh
 cd $TSTSRCBASE
-hg locate -I monetdb5 -I geom -I sql -X '**/Tests/**' '*.[ch]' '*.mal' | python -c 'import MonetDBtesting.malcheck'
+hg files -I 'monetdb5/**.[ch]' -I 'geom/**.[ch]' -I 'sql/**.[ch]' -X '**/Tests/**' | python -c 'import MonetDBtesting.malcheck'
