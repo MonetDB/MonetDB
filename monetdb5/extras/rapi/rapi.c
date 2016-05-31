@@ -271,7 +271,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// get the lock even before initialization of the R interpreter, as this can take a second and must be done only once.
 	MT_lock_set(&rapiLock);
 
-	env = PROTECT(eval(lang1(install("new.env")),R_GlobalEnv));
+	env = PROTECT(eval(lang1(install("new.env")), R_GlobalEnv));
 	assert(env != NULL);
 
 	// first argument after the return contains the pointer to the sql_func structure
@@ -444,6 +444,12 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	return msg;
 }
 
+void* RAPIloopback(void *query) {
+	//FIXME actually do something
+	return (void*) ScalarString(mkCharCE((char*)CHAR(STRING_ELT((SEXP) query, 0)), CE_UTF8));
+}
+
+
 str RAPIprelude(void *ret) {
 	(void) ret;
 	MT_lock_init(&rapiLock, "rapi_lock");
@@ -458,6 +464,8 @@ str RAPIprelude(void *ret) {
 				throw(MAL, "rapi.eval",
 					  "failed to initialise R environment (%s)", initstatus);
 			}
+			Rf_defineVar(Rf_install("MONETDB_BINDIR"), ScalarString(mkCharCE(BINDIR, CE_UTF8)), R_GlobalEnv);
+
 		}
 		MT_lock_unset(&rapiLock);
 		printf("# MonetDB/R   module loaded\n");

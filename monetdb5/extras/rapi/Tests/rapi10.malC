@@ -1,0 +1,3 @@
+
+r:bat[:oid,:str] := rapi.eval(nil:ptr,"loopback_query('select * from tables;')");
+io.print(r);
