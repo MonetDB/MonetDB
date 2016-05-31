@@ -181,6 +181,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 				clrVarFixed(mb,getArg(ns[k],n)); /* for typing */
 			setModuleId(ns[k],getModuleId(q));
 			setFunctionId(ns[k],getFunctionId(q));
+			ns[k]->typechk = TYPE_UNKNOWN;
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
 		}

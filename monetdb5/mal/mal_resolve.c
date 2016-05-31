@@ -728,7 +728,8 @@ chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert (p != NULL);
-		typeChecker(out, s, mb, p, silent);
+		if (p->typechk != TYPE_RESOLVED)
+			typeChecker(out, s, mb, p, silent);
 		if (mb->errors)
 			return;
 
@@ -749,6 +750,8 @@ chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p)
 {
 	int olderrors= mb->errors;
 	int error;
+
+	p->typechk = TYPE_UNKNOWN;
 	typeChecker(out, s, mb, p, TRUE);
 	error = mb->errors;
 	mb->errors = olderrors;

@@ -81,6 +81,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			setVarUDFtype(mb, getArg(r,0));
 			if( r->argc == 3)
 				setFunctionId(r,projectionRef);
+			r->typechk = TYPE_UNKNOWN;
 			pushInstruction(mb,r);
 			OPTDEBUGprojectionpath  {
 				mnstr_printf(cntxt->fdout,"#projectionpath prefix instruction\n");
@@ -253,6 +254,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			setVarType(mb, getArg(q,0), newBatType( TYPE_oid, getColumnType(getArgType(mb,q,q->argc-1))));
 			if ( getFunctionId(q) == projectionRef )
 				setFunctionId(q,projectionpathRef);
+			q->typechk = TYPE_UNKNOWN;
 			OPTDEBUGprojectionpath {
 				mnstr_printf(cntxt->fdout,"#after ");
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);

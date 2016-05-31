@@ -229,6 +229,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				if (getModuleId(q)){
 					snprintf(buf,1024,"bat%s",getModuleId(q));
 					setModuleId(q,putName(buf));
+					q->typechk = TYPE_UNKNOWN;
 
 					actions++;
 					/* now see if we can resolve the instruction */
@@ -247,6 +248,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					getArg(q,1)= refbat;
 				
 					actions++;
+					q->typechk = TYPE_UNKNOWN;
 					typeChecker(cntxt->fdout, cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;

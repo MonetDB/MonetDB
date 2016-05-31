@@ -526,6 +526,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(q, 1); /* column */
+				r->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				setVarCList(mb,getArg(s,0));
@@ -550,6 +551,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(u, 3) = getArg(q,2); /* update ids */
 				getArg(u, 4) = getArg(s,0);
 				u = pushArgument(mb, u, getArg(t,0));
+				u->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,u);	
 				freeInstruction(p);
 				continue;
