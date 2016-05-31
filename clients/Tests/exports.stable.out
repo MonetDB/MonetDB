@@ -913,7 +913,6 @@ str CMDBATimprints(void *ret, bat *bid);
 str CMDBATimprintsize(lng *ret, bat *bid);
 str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
