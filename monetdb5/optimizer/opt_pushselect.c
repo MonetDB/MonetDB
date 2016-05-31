@@ -487,6 +487,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 1) = getArg(s, 1); 
 				cst.vtype = getArgType(mb, r, 2);
 				cst.val.lval = 0;
+				cst.len = 0;
 				getArg(r, 2) = defConstant(mb, cst.vtype, &cst); /* start from zero */
 				pushInstruction(mb,r);
 

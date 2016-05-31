@@ -9,7 +9,9 @@
 %define bits 32
 %else
 %define bits 64
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %define with_int128=1
+%endif
 %endif
 
 # only add .oidXX suffix if oid size differs from bit size
@@ -592,7 +594,7 @@ Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server-rdf
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if %{bits} == 64
+%if %{?with_int128:1}%{!?with_int128:0}
 Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
@@ -653,7 +655,7 @@ fi
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
-%if %{bits} == 64
+%if %{?with_int128:1}%{!?with_int128:0}
 %exclude %{_libdir}/monetdb5/*_hge.mal
 %exclude %{_libdir}/monetdb5/autoload/*_hge.mal
 %endif
@@ -692,7 +694,7 @@ fi
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
 
-%if %{bits} == 64
+%if %{?with_int128:1}%{!?with_int128:0}
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
 Group: Application/Databases
@@ -747,7 +749,7 @@ Requires: %{_bindir}/systemd-tmpfiles
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 %if (0%{?fedora} >= 22)
-%if %{bits} == 64
+%if %{?with_int128:1}%{!?with_int128:0}
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
@@ -800,7 +802,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
-%if %{bits} == 64
+%if %{?with_int128:1}%{!?with_int128:0}
 %exclude %{_libdir}/monetdb5/createdb/*_hge.sql
 %exclude %{_libdir}/monetdb5/sql*_hge.mal
 %endif
@@ -810,7 +812,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
 
-%if %{bits} == 64
+%if %{?with_int128:1}%{!?with_int128:0}
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
 Group: Applications/Databases
@@ -966,7 +968,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-ant=no \
 	--with-bz2=yes \
 	--with-curl=yes \
-	--with-gdal=yes \
+	--with-gdal=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-java=no \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \

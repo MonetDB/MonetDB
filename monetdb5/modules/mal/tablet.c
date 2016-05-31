@@ -903,13 +903,16 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		snprintf(buf, sizeof(buf), "'%s' expected", fmt->type);
 		err = SQLload_error(task, idx, task->as->nr_attrs);
 		if (task->rowerror) {
-			size_t slen = mystrlen(s);
-			char *scpy = GDKmalloc(slen + 1);
-			if (scpy)
-				mycpstr(scpy, s);
+			if (s) {
+				size_t slen = mystrlen(s);
+				char *scpy = GDKmalloc(slen + 1);
+				if (scpy)
+					mycpstr(scpy, s);
+				s = scpy;
+			}
 			MT_lock_set(&errorlock);
-			snprintf(buf, sizeof(buf), "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, scpy ? scpy : buf);
-			GDKfree(scpy);
+			snprintf(buf, sizeof(buf), "line " LLFMT " field %d '%s' expected in '%s'", row, col, fmt->type, s ? s : buf);
+			GDKfree(s);
 			buf[sizeof(buf)-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
 				task->as->error = M5OutOfMemory;
@@ -1474,7 +1477,6 @@ SQLproducer(void *p)
 					ateof[cur] = 1;
 					goto reportlackofinput;
 				}
-				base = e;
 				break;
 			}
 		}

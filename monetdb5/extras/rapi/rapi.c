@@ -394,6 +394,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		}
 		msg = createException(MAL, "rapi.eval",
 							  "Error running R expression: %s", errormsg);
+		free(errormsg);
 		goto wrapup;
 	}
 

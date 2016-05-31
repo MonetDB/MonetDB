@@ -913,7 +913,6 @@ str CMDBATimprints(void *ret, bat *bid);
 str CMDBATimprintsize(lng *ret, bat *bid);
 str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1540,7 +1539,6 @@ int OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 int OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-int OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

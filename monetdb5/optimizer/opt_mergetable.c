@@ -439,6 +439,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 		mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1);
 		pushInstruction(mb, r[k]);
 	}
+	GDKfree(r);
 }
 
 static void
@@ -1381,6 +1382,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		ValRecord cst;
 		cst.vtype= getArgType(mb,p,2);
 		cst.val.lval= 0;
+		cst.len = 0;
 		zero = defConstant(mb, cst.vtype, &cst);
 	}
 	assert( (n<0 && o<0) || 

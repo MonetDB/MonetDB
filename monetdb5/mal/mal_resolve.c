@@ -698,7 +698,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			int tpe = getArgType(mb, p, k);
 			if (findGDKtype(tpe) == TYPE_bat ||
 				findGDKtype(tpe) == TYPE_str ||
-				(!isPolyType(tpe) && tpe < TYPE_any && ATOMextern(tpe)))
+				(!isPolyType(tpe) && tpe < MAXATOMS && ATOMextern(tpe)))
 				setVarCleanup(mb, getArg(p, k));
 		}
 }
