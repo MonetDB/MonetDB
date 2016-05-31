@@ -47,7 +47,6 @@
 #include "opt_multiplex.h"
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
-#include "opt_qep.h"
 #include "opt_querylog.h"
 #include "opt_recycler.h"
 #include "opt_reduce.h"
@@ -69,7 +68,6 @@ struct{
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
-	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},

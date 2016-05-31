@@ -41,7 +41,6 @@ lib_optimizer = {
 		opt_multiplex.c opt_multiplex.h \
 		opt_pipes.c opt_pipes.h \
 		opt_prelude.c opt_prelude.h \
-		opt_qep.c opt_qep.h \
 		opt_recycler.c opt_recycler.h \
 		opt_reduce.c opt_reduce.h \
 		opt_remap.c opt_remap.h \

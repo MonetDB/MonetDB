@@ -268,14 +268,6 @@ comment "Dead code optimizer";
 # address ALGprejoin
 # comment "Recluster the table to reduce random access behavior.";
 
-#opt_qep.mal
-
-pattern optimizer.dumpQEP()
-address OPTwrapper;
-pattern optimizer.dumpQEP(mod:str, fcn:str):str
-address OPTwrapper
-comment "Produce an indented tree visualisation";
-
 #opt_recycler.mal
 
 pattern optimizer.recycler():str
