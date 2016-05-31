@@ -2724,14 +2724,14 @@ if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
 	LIBS=""
 	found_gdal_h=yes
 	AC_CHECK_HEADER(gdal.h,,
-		AC_CHECK_HEADER(gdal/gdal.h,
+		[AC_CHECK_HEADER(gdal/gdal.h,
 			[if test "x$GDAL_CFLAGS" = x; then
 				GDAL_CFLAGS="-I/usr/include/gdal"
 			else
 				GDAL_CFLAGS="$GDAL_CFLAGS/gdal"
 			fi
 			CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
-			[found_gdal_h=no]))
+			[found_gdal_h=no])])
 	if test "x$found_gdal_h" = xyes; then
 		AC_CHECK_LIB(gdal, GDALAllRegister,
 			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
