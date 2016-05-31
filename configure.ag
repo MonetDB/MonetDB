@@ -2998,8 +2998,12 @@ case "$enable_int128" in
 yes|auto)
 	have_hge=no
 	why_have_hge='(no 128-bit integer type found)'
-	AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''],
-		[if test x$enable_int128 = xyes; then AC_MSG_ERROR([128-bit integers not supported by platform]); fi])
+	AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''])
+	if test $have_hge = no; then
+		if test x$enable_int128 = xyes; then
+			AC_MSG_ERROR([128-bit integers not supported by platform])
+		fi
+	fi
 	;;
 no)
 	have_hge=no
