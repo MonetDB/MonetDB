@@ -391,6 +391,7 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 
 	cst.vtype= TYPE_hge;
 	cst.val.hval= val;
+	cst.len = 0;
 	_t = defConstant(mb,TYPE_hge,&cst);
 	return pushArgument(mb, q, _t);
 }

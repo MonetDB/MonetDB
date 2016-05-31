@@ -1100,12 +1100,14 @@ RECYCLEdumpInternal(stream *s)
     /* and dump the statistics per instruction*/
 	mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
     for(i=0; i< recycleBlk->stop; i++){
+		str inst = instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),0);
         mnstr_printf(s,"#%d\t%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
             recycleBlk->stmt[i]->calls,
             recycleBlk->stmt[i]->ticks,
             recycleBlk->stmt[i]->rbytes,
             recycleBlk->stmt[i]->wbytes,
-            instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),0));
+            inst);
+		GDKfree(inst);
     }
 #else
 	(void) i;

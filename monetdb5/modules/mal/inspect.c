@@ -159,7 +159,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
-					BUNappend(b, strchr(sig, '('), FALSE);
+					BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE);
 				}
 			}
 		s = s->outer;
@@ -266,8 +266,10 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			ps = instruction2str(s->def, 0, getSignature(s), 0);
 			c = strchr(ps, '(');
-			if (c == 0)
+			if (c == 0) {
+				GDKfree(ps);
 				continue;
+			}
 			tail= strstr(c,"address");
 			if( tail)
 				*tail = 0;
@@ -309,8 +311,10 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			ps = instruction2str(s->def, 0, getSignature(s), 0);
 			c = strchr(ps, '(');
-			if (c == 0)
+			if (c == 0) {
+				GDKfree(ps);
 				continue;
+			}
 			tail= strstr(c,"address");
 			if( tail){
 				*tail = 0;
