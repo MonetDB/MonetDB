@@ -18,6 +18,7 @@
 #include "gdk.h"
 #include "mmath.h"
 #include "sql_catalog.h"
+#include "sql_execute.h"
 #include "rapi.h"
 
 // R headers
@@ -62,6 +63,8 @@ static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
+
+static Client rapiClient = NULL;
 
 
 // helper function to translate R TYPEOF() return values to something readable
@@ -247,8 +250,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	node * argnode;
 	int seengrp = FALSE;
 
-	// we don't need no context, but the compiler needs us to touch it (...)
-	(void) cntxt;
+	rapiClient = cntxt;
 
 	if (!RAPIEnabled()) {
 		throw(MAL, "rapi.eval",
@@ -445,8 +447,32 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 }
 
 void* RAPIloopback(void *query) {
-	//FIXME actually do something
-	return (void*) ScalarString(mkCharCE((char*)CHAR(STRING_ELT((SEXP) query, 0)), CE_UTF8));
+	res_table* output = NULL;
+	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
+	char* err = SQLstatementIntern(rapiClient, &querystr, "name", 1, 0, &output);
+
+	if (err) { // there was an error
+		return ScalarString(RSTR(err));
+	}
+	if (output && output->nr_cols > 0) {
+		int i, ncols = output->nr_cols;
+		SEXP retlist, names, varvalue = R_NilValue;
+		retlist = PROTECT(allocVector(VECSXP, ncols));
+		names = PROTECT(NEW_STRING(ncols));
+		for (i = 0; i < ncols; i++) {
+			if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
+				UNPROTECT(i + 3);
+				return ScalarString(RSTR("Conversion error"));
+			}
+			SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
+			SET_VECTOR_ELT(retlist, i, varvalue);
+		}
+		res_table_destroy(output);
+		SET_NAMES(retlist, names);
+		UNPROTECT(ncols + 2);
+		return retlist;
+	}
+	return ScalarLogical(1);
 }
 
 
@@ -464,7 +490,7 @@ str RAPIprelude(void *ret) {
 				throw(MAL, "rapi.eval",
 					  "failed to initialise R environment (%s)", initstatus);
 			}
-			Rf_defineVar(Rf_install("MONETDB_BINDIR"), ScalarString(mkCharCE(BINDIR, CE_UTF8)), R_GlobalEnv);
+			Rf_defineVar(Rf_install("MONETDB_BINDIR"), ScalarString(RSTR(BINDIR)), R_GlobalEnv);
 
 		}
 		MT_lock_unset(&rapiLock);
