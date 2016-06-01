@@ -24,6 +24,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	InstrPtr p, q, *old;
 	int actions = 0;
 	Lifespan span;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -125,6 +127,16 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 	GDKfree(span);
+
+    /* Defense line against incorrect plans */
+    if( actions+1 > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollctor",actions+1,GDKusec() - usec);
+    newComment(mb,buf);
 
 	return actions+1;
 }

@@ -75,32 +75,30 @@ Operation successful
 |     X_34:lng := aggr.sum(X_33);                                                                  |
 |     sql.resultSet(".L3","L3","bigint",64,0,7,X_34);                                              |
 | end user.s2_1;                                                                                   |
-| #inline               actions= 0 time=2 usec                                                     |
-| #candidates           actions= 1 time=20 usec                                                    |
-| #remap                actions= 0 time=4 usec                                                     |
-| #costModel            actions= 1 time=18 usec                                                    |
-| #coercions            actions= 1 time=17 usec                                                    |
+| #inline               actions= 0 time=1 usec                                                     |
+| #alias                actions= 0 time=3 usec                                                     |
+| #costmodel            actions= 1 time=6 usec                                                     |
+| #coercion             actions= 1 time=5 usec                                                     |
 | #evaluate             actions= 0 time=3 usec                                                     |
 | #aliases              actions= 0 time=6 usec                                                     |
-| #pushselect           actions= 4 time=35 usec                                                    |
-| #mergetable           actions= 0 time=25 usec                                                    |
-| #deadcode             actions= 4 time=19 usec                                                    |
-| #aliases              actions= 0 time=6 usec                                                     |
-| #constants            actions= 2 time=19 usec                                                    |
-| #commonTerms          actions= 0 time=6 usec                                                     |
-| #projectionpath       actions= 0 time=3 usec                                                     |
-| #reorder              actions= 1 time=30 usec                                                    |
+| #pushselect           actions= 4 time=26 usec                                                    |
+| #mergetable           actions= 0 time=30 usec                                                    |
+| #deadcode             actions= 4 time=9 usec                                                     |
+| #aliases              actions= 0 time=5 usec                                                     |
+| #constants            actions= 2 time=9 usec                                                     |
+| #commonTerms          actions= 0 time=5 usec                                                     |
+| #alias                actions= 0 time=3 usec                                                     |
+| #alias                actions= 1 time=20 usec                                                    |
 | #deadcode             actions= 0 time=5 usec                                                     |
-| #reduce               actions=26 time=32 usec                                                    |
+| #reduce               actions=25 time=22 usec                                                    |
 | #matpack              actions= 0 time=3 usec                                                     |
-| #querylog             actions= 0 time=1 usec                                                     |
 | #multiplex            actions= 0 time=3 usec                                                     |
-| #generator            actions= 0 time=2 usec                                                     |
-| #profiler             actions= 1 time=16 usec                                                    |
-| #garbageCollector     actions= 1 time=21 usec                                                    |
-| #total                actions= 1 time=347 usec                                                   |
+| #alias                actions= 1 time=8 usec                                                     |
+| #candidates           actions= 1 time=3 usec                                                     |
+| #garbagecollctor      actions= 1 time=11 usec                                                    |
+| #total                actions= 1 time=246 usec                                                   |
 +--------------------------------------------------------------------------------------------------+
-51 rows
+49 rows
 
 
 # 19:39:11 >  

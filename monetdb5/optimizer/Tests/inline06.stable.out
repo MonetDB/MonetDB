@@ -37,11 +37,11 @@ function user.qry():void;               	#[0] (0)  0
 #                                       
     X_15:bat[:int] := batcalc.*(X_15:bat[:int],X_16:int);	#[6] (0) CMDbatMULsignal 15 <- 15 16 
     z:bat[:int] := X_15:bat[:int];      	#[7] (0)  6 <- 15 
-    X_21:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 21 <- 1 10 
-    X_22:int := mmath.rand();           	#[9] (0) MATHrandint 22 
+    X_23:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 23 <- 1 10 
+    X_24:int := mmath.rand();           	#[9] (0) MATHrandint 24 
 #                                       
-    X_21:bat[:int] := batcalc.*(X_21:bat[:int],X_22:int);	#[11] (0) CMDbatMULsignal 21 <- 21 22 
-    z:bat[:int] := X_21:bat[:int];      	#[12] (0)  6 <- 21 
+    X_23:bat[:int] := batcalc.*(X_23:bat[:int],X_24:int);	#[11] (0) CMDbatMULsignal 23 <- 23 24 
+    z:bat[:int] := X_23:bat[:int];      	#[12] (0)  6 <- 23 
 end user.qry;                           	#[13] (0)  
 
 # 18:00:44 >  

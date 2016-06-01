@@ -262,6 +262,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old;
 	int limit, slimit, *uselist = NULL;
 	Node *dep;
+	char buf[256];
+	lng usec= GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -330,5 +332,16 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(uselist);
 	GDKfree(old);
 	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
+
+    /* Defense line against incorrect plans */
+    if( 1){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","alias",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

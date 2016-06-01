@@ -40,14 +40,14 @@ barrier X_17:bit := true:bit;           	#[5] (0)  17 <- 18
     redo X_17:bit := calc.<(X_16:int,3:int);	#[8] (0) CMDvarLT 17 <- 16 19 
 exit X_17:bit;                          	#[9] (0)  17 
     z:bat[:int] := X_15:bat[:int];      	#[10] (0)  6 <- 15 
-    X_23:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[11] (0) CMDbatADDsignal 23 <- 1 10 
-    X_24:int := 1:int;                  	#[12] (0)  24 <- 5 
-barrier X_25:bit := true:bit;           	#[13] (0)  25 <- 18 
-    X_23:bat[:int] := batcalc.*(X_23:bat[:int],X_23:bat[:int]);	#[14] (0) CMDbatMULsignal 23 <- 23 23 
-    X_24:int := calc.+(X_24:int,1:int); 	#[15] (0) CMDvarADDsignal 24 <- 24 5 
-    redo X_25:bit := calc.<(X_24:int,3:int);	#[16] (0) CMDvarLT 25 <- 24 19 
-exit X_25:bit;                          	#[17] (0)  25 
-    z:bat[:int] := X_23:bat[:int];      	#[18] (0)  6 <- 23 
+    X_25:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[11] (0) CMDbatADDsignal 25 <- 1 10 
+    X_26:int := 1:int;                  	#[12] (0)  26 <- 5 
+barrier X_27:bit := true:bit;           	#[13] (0)  27 <- 18 
+    X_25:bat[:int] := batcalc.*(X_25:bat[:int],X_25:bat[:int]);	#[14] (0) CMDbatMULsignal 25 <- 25 25 
+    X_26:int := calc.+(X_26:int,1:int); 	#[15] (0) CMDvarADDsignal 26 <- 26 5 
+    redo X_27:bit := calc.<(X_26:int,3:int);	#[16] (0) CMDvarLT 27 <- 26 19 
+exit X_27:bit;                          	#[17] (0)  27 
+    z:bat[:int] := X_25:bat[:int];      	#[18] (0)  6 <- 25 
 end user.qry;                           	#[19] (0)  
 
 # 18:00:43 >  

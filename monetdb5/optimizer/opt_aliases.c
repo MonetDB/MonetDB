@@ -31,6 +31,8 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,k=1, limit, actions=0;
 	int *alias;
 	Lifespan span;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) stk;
 	(void) cntxt;
@@ -62,13 +64,26 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} else 
 			OPTaliasRemap(p,alias);
 	}
+
 	for(i=k; i<limit; i++)
 		mb->stmt[i]= NULL;
+
 	mb->stop= k;
 	/*
 	 * The second phase is constant alias replacement should be implemented.
 	 */
 	GDKfree(span);
 	GDKfree(alias);
+
+	/* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+	}
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,GDKusec()-usec);
+    newComment(mb,buf);
+
 	return actions;
 }

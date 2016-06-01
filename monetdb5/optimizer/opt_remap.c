@@ -350,6 +350,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *old, p;
 	int i, limit, slimit, doit= 0;
 	Module scope = cntxt->nspace;
+	lng usec = GDKusec();
+	char buf[256];
 
 	(void) pci;
 	old = mb->stmt;
@@ -380,7 +382,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) )
 					doit++;
 				OPTDEBUGremap
-					mnstr_printf(cntxt->fdout,"#doit %d\n",doit);
+					mnstr_printf(cntxt->fdout,"#actions %d\n",doit);
 			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
 				freeInstruction(p); 
@@ -460,5 +462,15 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (doit) 
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
+    /* Defense line against incorrect plans */
+    if( mb->errors == 0 && doit > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","alias",doit,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return mb->errors? 0: doit;
 }

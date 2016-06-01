@@ -1479,6 +1479,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	matlist_t ml;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit;
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
+	char buf[256];
+	lng usec = GDKusec();
 
 	old = mb->stmt;
 	oldtop= mb->stop;
@@ -1836,5 +1838,15 @@ cleanup:
 	GDKfree(ml.v);
 	GDKfree(ml.horigin);
 	GDKfree(ml.torigin);
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

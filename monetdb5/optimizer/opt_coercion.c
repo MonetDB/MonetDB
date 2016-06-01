@@ -125,6 +125,8 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int actions = 0;
 	str calcRef= putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
+	char buf[256];
+	lng usec = GDKusec();
 
 	if( coerce == NULL)
 		return 0;
@@ -186,5 +188,16 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	 * structure. A cheaper optimizer is sufficient.
 	 */
 	GDKfree(coerce);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }
