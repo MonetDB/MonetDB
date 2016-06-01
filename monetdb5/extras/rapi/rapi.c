@@ -441,6 +441,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
   wrapup:
 	MT_lock_unset(&rapiLock);
 	free(rcall);
+	for (i = 0; i < pci->argc; i++)
+		GDKfree(args[i]);
 	GDKfree(args);
 
 	return msg;
