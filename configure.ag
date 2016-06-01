@@ -3393,6 +3393,9 @@ AC_SUBST(Erundir)
 Qlibdir="$libdir"
 Xlibdir="`$translatepath "$libdir"`"
 QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
+Elibdir="`echo "$Xlibdir" | sed 's/{exec_prefix}/{prefix}/'`"
+eval "Elibdir=${Elibdir}"
+QElibdir="`echo "$Elibdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlibdir)
 AC_SUBST(Xlibdir)
 AC_SUBST(QXlibdir)
@@ -3469,6 +3472,7 @@ AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
 AC_DEFINE_UNQUOTED(DATA_DIR,"$QEdatadir",[read-only architecture-independent data])
 AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
+AC_DEFINE_UNQUOTED(LIBDIR,"$QElibdir",[location where libraries are installed])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
 dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only
