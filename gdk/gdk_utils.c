@@ -1269,8 +1269,8 @@ THRnew(const char *name)
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
+		s->name = GDKstrdup(name);
 	}
-	s->name = GDKstrdup(name);
 	MT_lock_unset(&GDKthreadLock);
 
 	return s;
