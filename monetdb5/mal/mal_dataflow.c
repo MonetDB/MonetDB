@@ -97,8 +97,12 @@ mal_dataflow_reset(void)
 {
 	stopMALdataflow();
 	memset((char*) workers, 0,  sizeof(workers));
-	if( todo)
+	if( todo) {
+		GDKfree(todo->data);
+		MT_lock_destroy(&todo->l);
+		MT_sema_destroy(&todo->s);
 		GDKfree(todo);
+	}
 	todo = 0;	/* pending instructions */
 	exiting = 0;
 }
