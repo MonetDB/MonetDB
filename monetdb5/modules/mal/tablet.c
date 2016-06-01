@@ -363,10 +363,10 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 					if (*buf == NULL)
 						return -1;
 				}
-				strncpy(*buf + fill, p, *len - fill - 1);
+				strncpy(*buf + fill, p, l);
 				fill += l;
 			}
-			strncpy(*buf + fill, f->sep, *len - fill - 1);
+			strncpy(*buf + fill, f->sep, f->seplen);
 			fill += f->seplen;
 		}
 	}
@@ -403,11 +403,11 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 				if (*buf == NULL)
 					return -1;
 			}
-			strncpy(*buf + fill, p, *len - fill - 1);
+			strncpy(*buf + fill, p, l);
 			fill += l;
 			f->p++;
 		}
-		strncpy(*buf + fill, f->sep, *len - fill - 1);
+		strncpy(*buf + fill, f->sep, f->seplen);
 		fill += f->seplen;
 	}
 	if (fd && mnstr_write(fd, *buf, 1, fill) != fill)
