@@ -353,7 +353,8 @@ GDKextendf(int fd, size_t size, const char *fn)
 			/* extending failed, try to reduce file size
 			 * back to original */
 			int err = errno;
-			(void) ftruncate(fd, stb.st_size);
+			if (ftruncate(fd, stb.st_size))
+				perror("ftruncate");
 			errno = err; /* restore for error message */
 			GDKsyserror("GDKextendf: could not extend file\n");
 		}
