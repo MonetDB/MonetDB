@@ -1,0 +1,25 @@
+# write.fwf(mtcars, "/tmp/mtcars", header=F)
+
+# CREATE TABLE mtcars (mpg DOUBLE PRECISION, cyl DOUBLE PRECISION, disp DOUBLE PRECISION, hp DOUBLE PRECISION, drat DOUBLE PRECISION, wt DOUBLE PRECISION, qsec DOUBLE PRECISION, vs DOUBLE PRECISION, am DOUBLE PRECISION, gear DOUBLE PRECISION, carb DOUBLE PRECISION)
+
+#4   2 6     4   5    6     6     2 2 2 2
+# 21.0 6 160.0 110 3.90 2.620 16.46 0 1 4 4
+
+sql.start2();
+
+bint:= bat.new(:oid,:int);
+bat.append(bint,4:int);
+bat.append(bint,2:int);
+bat.append(bint,6:int);
+bat.append(bint,4:int);
+bat.append(bint,5:int);
+bat.append(bint,6:int);
+bat.append(bint,6:int);
+bat.append(bint,2:int);
+bat.append(bint,2:int);
+bat.append(bint,2:int);
+bat.append(bint,2:int);
+
+include fwf;
+
+fwf.load("sys", "mtcars", "/tmp/mtcars", bint, 32:bte);

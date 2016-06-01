@@ -46,7 +46,8 @@ lib__sql = {
 		sql_round.c sql_round_impl.h sql_bat2time.c \
 		sql_fround.c sql_fround_impl.h \
 		sql_orderidx.c sql_orderidx.h \
-		sql_rank.c sql_rank.h
+		sql_rank.c sql_rank.h \
+		fwf.c fwf.h
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
@@ -64,7 +65,8 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 		sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
-		sql_rank.mal sql.mal 
+		sql_rank.mal sql.mal \
+		fwf.mal
 }
 
 headers_mal_hge = {
