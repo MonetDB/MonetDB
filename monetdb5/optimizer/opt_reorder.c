@@ -59,6 +59,17 @@ typedef struct{
 	int stmt[FLEXIBLE_ARRAY_MEMBER];
 } *Node, NodeRecord;
 
+static void
+OPTremoveDep(Node *list, int lim)
+{
+	int i;
+
+	for (i=0; i< lim; i++)
+		if (list[i])
+			GDKfree(list[i]);
+	GDKfree(list);
+}
+
 static Node *
 OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 {
@@ -81,9 +92,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 		block |= p->barrier != 0;
 		list[i]= (Node) GDKzalloc(offsetof(NodeRecord, stmt) + sizeof(int) * p->argc);
 		if (list[i] == NULL){
-			for (i--; i>=0; i--)
-				GDKfree(list[i]);
-			GDKfree(list);
+			OPTremoveDep(list, i);
 			GDKfree(var);
 			return 0;
 		}
@@ -97,9 +106,7 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 			if ( var[ getArg(p,j)] ) {
 				//list[i]->stmt[j] = var [getArg(p,j)];
 				// escape we should avoid reused variables.
-				for (i--; i>=0; i--)
-					GDKfree(list[i]);
-				GDKfree(list);
+				OPTremoveDep(list, i + 1);
 				GDKfree(var);
 				return 0;
 			}
@@ -148,27 +155,14 @@ OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
 	 */
 
 	if ( block ){
-		for (i--; i>=0; i--)
-			GDKfree(list[i]);
+		OPTremoveDep(list, mb->stop);
 		GDKfree(uselist);
-		GDKfree(list);
 		GDKfree(var);
 		return NULL;
 	}
 	GDKfree(var);
 	*Ulist = uselist;
 	return list;
-}
-
-static void
-OPTremoveDep(Node *list, int lim)
-{
-	int i;
-
-	for (i=0; i< lim; i++)
-		if (list[i])
-			GDKfree(list[i]);
-	GDKfree(list);
 }
 
 static int
@@ -219,7 +213,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
-		GDKfree(dep);
+		OPTremoveDep(dep, limit);
 		return 0;
 	}
 	
