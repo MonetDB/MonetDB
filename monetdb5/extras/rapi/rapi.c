@@ -492,7 +492,7 @@ str RAPIprelude(void *ret) {
 				throw(MAL, "rapi.eval",
 					  "failed to initialise R environment (%s)", initstatus);
 			}
-			Rf_defineVar(Rf_install("MONETDB_BINDIR"), ScalarString(RSTR(BINDIR)), R_GlobalEnv);
+			Rf_defineVar(Rf_install("MONETDB_LIBDIR"), ScalarString(RSTR(LIBDIR)), R_GlobalEnv);
 
 		}
 		MT_lock_unset(&rapiLock);
