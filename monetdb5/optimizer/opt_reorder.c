@@ -340,7 +340,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
         chkDeclarations(cntxt->fdout, mb);
     }
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","alias",1,GDKusec() - usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,GDKusec() - usec);
     newComment(mb,buf);
 
 	return 1;
