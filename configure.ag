@@ -2325,8 +2325,7 @@ AM_CONDITIONAL(HAVE_LIBR, test x"$have_libr" != xno)
 have_libpy=no
 have_libpandas=no
 have_libscipy=no
-# we can only have either python2 or python3 integration at the moment, so if python3 integration is enabled we disable python2 integration
-if test "x$enable_pyintegration" != xno && test "x$enable_py3integration" != xyes; then
+if test "x$enable_pyintegration" != xno; then
 	case "$enable_pyintegration" in
 	yes|auto)
 		XPATH="$PATH"
@@ -2417,7 +2416,7 @@ AM_CONDITIONAL(HAVE_LIBSCIPY, test x"$have_libscipy" != xno)
 
 # Python 3 API
 have_libpy3=no
-if test "x$enable_py3integration" != xno && test x"$have_libpy" == xno; then
+if test "x$enable_py3integration" != xno; then
 	case "$enable_py3integration" in
 	yes|auto)
 		XPATH="$PATH"
