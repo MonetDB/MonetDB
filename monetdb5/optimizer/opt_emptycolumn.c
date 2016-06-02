@@ -109,6 +109,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			OPTDEBUGemptycolumn
 				mnstr_printf(cntxt->fdout, "#empty bind  pc %d var %d\n",i , getArg(p,0) );
 			setFunctionId(p,bindRef);
+			p->typechk= TYPE_UNKNOWN;
 			marked[getArg(p,0)] = i;
 			if( p->retc == 2){
 				marked[getArg(p,1)] = i;
@@ -126,6 +127,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			OPTDEBUGemptycolumn
 				mnstr_printf(cntxt->fdout, "#empty bindidx  pc %d var %d\n",i , getArg(p,0) );
 			setFunctionId(p,bindidxRef);
+			p->typechk= TYPE_UNKNOWN;
 			marked[getArg(p,0)] = i;
 			continue;
 		}
@@ -151,6 +153,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					setModuleId(p,algebraRef);
 					setFunctionId(p,projectionRef);
 					p->argc = 3;
+					p->typechk= TYPE_UNKNOWN;
 			}
 			continue;
 		}
