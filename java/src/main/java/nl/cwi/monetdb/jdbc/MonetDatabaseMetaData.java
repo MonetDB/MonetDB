@@ -439,7 +439,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			st = con.createStatement();
 			rs = st.executeQuery(query);
-			// Fetch the first column output and concatenate the values into a StringBuffer separated by comma's
+			// Fetch the first column output and concatenate the values into a StringBuilder separated by comma's
 			boolean isfirst = true;
 			while (rs.next()) {
 				String value = rs.getString(1);
@@ -496,12 +496,23 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public String getSystemFunctions() {
 		String wherePart =
 			"WHERE \"id\" NOT IN (SELECT \"func_id\" FROM \"sys\".\"args\" WHERE \"number\" = 1)" +
-			" AND \"func\" NOT LIKE '%function%(% %)%'" +
-			" AND \"func\" NOT LIKE '%procedure%(% %)%'" +
-			" AND \"func\" NOT LIKE '%CREATE FUNCTION%RETURNS TABLE(% %)%'" +
-			// the next names are also not usable so exclude them
-			" AND \"name\" NOT LIKE 'querylog_%'" +
-			" AND \"name\" NOT IN ('analyze', 'count', 'count_no_nil', 'initializedictionary', 'times')";
+			" AND \"id\" IN (SELECT \"function_id\" FROM \"sys\".\"systemfunctions\")" +
+			" AND \"type\" = 1" +	// only scalar functions
+			// add system functions which are not listed in sys.functions but implemented in the SQL parser (see sql/server/sql_parser.y)
+			" UNION SELECT 'cast'" +
+			" UNION SELECT 'convert'" +
+			" UNION SELECT 'coalesce'" +
+			" UNION SELECT 'extract'" +
+			" UNION SELECT 'ifthenelse'" +
+			" UNION SELECT 'isnull'" +
+			" UNION SELECT 'nullif'" +
+			// for completeness include also some pseudo columns
+			" UNION SELECT 'current_role'" +
+			" UNION SELECT 'current_schema'" +
+			" UNION SELECT 'current_timezone'" +
+			" UNION SELECT 'current_user'" +
+			" UNION SELECT 'session_user'" +
+			" UNION SELECT 'user'";
 		return getConcatenatedStringFromQuery(FunctionsSelect + wherePart + " ORDER BY 1");
 	}
 
@@ -2969,11 +2980,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				.append(" ELSE ").append(DatabaseMetaData.typePredBasic).append(" END AS smallint) AS \"SEARCHABLE\", " +
 			"CASE WHEN \"sqlname\" IN ('tinyint','smallint','int','bigint','hugeint','decimal','real','double','sec_interval','month_interval') THEN false ELSE true END AS \"UNSIGNED_ATTRIBUTE\", " +
 			"CASE \"sqlname\" WHEN 'decimal' THEN true ELSE false END AS \"FIXED_PREC_SCALE\", " +
-			"false AS \"AUTO_INCREMENT\", " +
+			"CASE WHEN \"sqlname\" IN ('tinyint','smallint','int','bigint','hugeint','decimal','oid','wrd') THEN true ELSE false END AS \"AUTO_INCREMENT\", " +
 			"\"systemname\" AS \"LOCAL_TYPE_NAME\", " +
 			"cast(0 AS smallint) AS \"MINIMUM_SCALE\", " +
-			"cast(CASE WHEN \"sqlname\" = 'decimal' AND \"systemname\" = 'lng' THEN 18" +
-				" WHEN \"sqlname\" = 'decimal' AND \"systemname\" = 'hge' THEN 38" +
+			"cast(CASE WHEN \"sqlname\" = 'decimal' THEN (CASE \"systemname\" WHEN 'lng' THEN 18 WHEN 'hge' THEN 38 WHEN 'int' THEN 9 WHEN 'sht' THEN 4 WHEN 'bte' THEN 2 ELSE 0 END)" +
 				" WHEN \"sqlname\" IN ('sec_interval', 'timestamp', 'timestamptz') THEN 9 ELSE 0 END AS smallint) AS \"MAXIMUM_SCALE\", " +
 			"cast(0 AS int) AS \"SQL_DATA_TYPE\", " +
 			"cast(0 AS int) AS \"SQL_DATETIME_SUB\", " +
