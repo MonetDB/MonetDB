@@ -201,6 +201,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int limit, slimit, vlimit, top = 0;
 	char *init = NULL;
 	int *used = NULL, *assigned = NULL, *eolife = NULL;
+	char  buf[256];
+	lng usec = GDKusec();
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1)
@@ -358,5 +360,16 @@ wrapup:
 	if( sink) GDKfree(sink);
 	if( assigned) GDKfree(assigned);
 	if( old) GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

@@ -152,7 +152,6 @@ dbWriteTable(conn,tname,mtcars,append=T,overwrite=F)
 stopifnot(identical(as.integer(2*nrow(mtcars)),tsize(conn,tname)))
 dbRemoveTable(conn,tname)
 
-dbRemoveTable(conn,tname)
 dbWriteTable(conn,tname,mtcars,append=F,overwrite=F,insert=T)
 dbRemoveTable(conn,tname)
 

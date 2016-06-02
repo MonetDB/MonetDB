@@ -134,6 +134,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
 	InstrPtr p, *old;
 	subselect_t subselects;
+	char buf[256];
+	lng usec = GDKusec();
 
 	memset(&subselects, 0, sizeof(subselects));
 	if( mb->errors) 
@@ -487,6 +489,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 1) = getArg(s, 1); 
 				cst.vtype = getArgType(mb, r, 2);
 				cst.val.lval = 0;
+				cst.len = 0;
 				getArg(r, 2) = defConstant(mb, cst.vtype, &cst); /* start from zero */
 				pushInstruction(mb,r);
 
@@ -525,6 +528,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(q, 1); /* column */
+				r->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 				setVarCList(mb,getArg(s,0));
@@ -549,6 +553,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(u, 3) = getArg(q,2); /* update ids */
 				getArg(u, 4) = getArg(s,0);
 				u = pushArgument(mb, u, getArg(t,0));
+				u->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,u);	
 				freeInstruction(p);
 				continue;
@@ -561,5 +566,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			pushInstruction(mb,old[i]);
 	GDKfree(vars);
 	GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

@@ -40032,10 +40032,6 @@ pattern mdb.inspect(mod:str,fcn:str):void
 address MDBinspect;
 comment Run the debugger on a specific function
 
-pattern mdb.lifespan(M:str,F:str):void 
-address MDBlifespan;
-comment Dump the current routine lifespan information on standard out.
-
 pattern mdb.list(M:str,F:str):void 
 address MDBlist3;
 comment Dump the routine M.F on standard out.
@@ -40755,12 +40751,6 @@ address OPTwrapper;
 comment Handle simple type coercions
 
 pattern optimizer.coercions():str 
-address OPTwrapper;
-pattern optimizer.dumpQEP(mod:str,fcn:str):str 
-address OPTwrapper;
-comment Produce an indented tree visualisation
-
-pattern optimizer.dumpQEP():void 
 address OPTwrapper;
 pattern optimizer.derivePath(mod:str,fcn:str):str 
 address OPTwrapper;

@@ -7,8 +7,10 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_instruction.h"
 #include "opt_aliases.h"
 
+/* an alias is recognized by a simple assignment */
 int
 OPTisAlias(InstrPtr p){
 	if( p->token == ASSIGNsymbol &&
@@ -28,31 +30,37 @@ OPTaliasRemap(InstrPtr p, int *alias){
 int
 OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,k=1, limit, actions=0;
-	int *alias;
-	Lifespan span;
+	int i,j,k=1, limit, actions=0;
+	int *alias = 0;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) stk;
 	(void) cntxt;
-	span= setLifespan(mb);
-	if( span == NULL)
-		return 0;
 
-	alias= (int*) GDKmalloc(sizeof(int)* mb->vtop);
-	if (alias == NULL){
-		GDKfree(span);
-		return 0;
-	}
-	for(i=0; i<mb->vtop; i++) alias[i]=i;
 
+	setVariableScope(mb);
 	limit = mb->stop;
 	for (i = 1; i < limit; i++){
 		p= getInstrPtr(mb,i);
+		if (OPTisAlias(p))
+			break;
+		mb->stmt[k++] = p;
+	}
+	if( i < limit){
+		alias= (int*) GDKzalloc(sizeof(int)* mb->vtop);
+		if (alias == NULL){
+			return 0;
+		}
+		for(j=1; j<mb->vtop; j++) alias[j]=j;
+	}
+	for (; i < limit; i++){
+		p= getInstrPtr(mb,i);
 		mb->stmt[k++] = p;
 		if (OPTisAlias(p)){
-			if( getLastUpdate(span,getArg(p,0)) == i  &&
-				getBeginLifespan(span,getArg(p,0)) == i  &&
-				getLastUpdate(span,getArg(p,1)) <= i ){
+			if( getLastUpdate(mb,getArg(p,0)) == i  &&
+				getBeginScope(mb,getArg(p,0)) == i  &&
+				getLastUpdate(mb,getArg(p,1)) <= i ){
 				alias[getArg(p,0)]= alias[getArg(p,1)];
 				freeInstruction(p);
 				actions++;
@@ -62,13 +70,23 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} else 
 			OPTaliasRemap(p,alias);
 	}
+
 	for(i=k; i<limit; i++)
 		mb->stmt[i]= NULL;
+
 	mb->stop= k;
-	/*
-	 * The second phase is constant alias replacement should be implemented.
-	 */
-	GDKfree(span);
-	GDKfree(alias);
+	if( alias)
+		GDKfree(alias);
+
+	/* Defense line against incorrect plans */
+	/* Plan is unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+	//
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,GDKusec()-usec);
+    newComment(mb,buf);
+
 	return actions;
 }

@@ -292,12 +292,17 @@ evalFile(Client c, str fname, int listing)
 			MSinitClientPrg(c, "user", "main");     /* re-initialize context */
 			MCpushClientInput(c, bstream_create(fd, 128 * BLOCK), c->listing, "");
 			msg = runScenario(c);
+			if (msg != MAL_SUCCEED) {
+				dumpExceptionsToStream(c->fdout, msg);
+				GDKfree(msg);
+			}
 		}
 		filename = p + 1;
 	}
 	fd = malOpenSource(filename);
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		if( fd == 0) mnstr_destroy(fd);
+		if (fd)
+			mnstr_destroy(fd);
 		msg = createException(MAL,"mal.eval", "WARNING: could not open file: %s\n", filename);
 	} else {
 		c->srcFile = filename;

@@ -36,6 +36,8 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr *old, q,p;
 	int limit;
 	char *recycled;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -122,5 +124,15 @@ OPTrecyclerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		mnstr_printf(cntxt->fdout, "#recycle optimizer: ");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 	}
+    /* Defense line against incorrect plans */
+    if( actions+ marks > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","recycler",actions + marks,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions + marks;
 }

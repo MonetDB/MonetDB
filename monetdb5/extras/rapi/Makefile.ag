@@ -10,7 +10,13 @@ INCLUDES = \
 	../../../gdk \
 	../../mal \
 	../../modules/kernel \
+	../../modules/atoms \
+	../../modules/mal \	
+	../../../sql/common \
 	../../../sql/include \
+	../../../sql/server \
+	../../../sql/storage \
+	../../../sql/backends/monet5 \
 	$(libr_CFLAGS)
 
 MTSAFE
