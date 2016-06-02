@@ -61,7 +61,7 @@ const int utf8string_minlength = 256;
 static int PyAPIEnabled(void);
 static int PyAPIEnabled(void) {
     return (GDKgetenv_istrue(pyapi_enableflag)
-            || GDKgetenv_isyes(pyapi_enableflag));
+            || GDKgetenv_isyes(pyapi_enableflag))   ;
 }
 
 struct _AggrParams{

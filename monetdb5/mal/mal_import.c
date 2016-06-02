@@ -160,6 +160,7 @@ malLoadScript(Client c, str name, bstream **fdin)
 #ifdef HAVE_EMBEDDED
 extern char* mal_init_inline;
 #endif
+
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.

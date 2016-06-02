@@ -1006,6 +1006,18 @@ static str parseModule(Client cntxt)
 	return "";
 }
 
+static bit malConditionalInclude(str name) {
+	if (strcmp(name, "pyapi") == 0) {
+		return (GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py"));
+	} else if (strcmp(name, "pyapi3") == 0) {
+		if (GDKgetenv_istrue("embedded_py3") || GDKgetenv_isyes("embedded_py3")) {
+			 //we cannot include both python2 and python3 because of linking issues, if both are enabled we only enable python2
+			return (!(GDKgetenv_istrue("embedded_py") || GDKgetenv_isyes("embedded_py")));
+		}
+	}
+	return true;
+}
+
 /*
  * Include statement
  * An include statement is immediately taken into effect. This
@@ -1051,6 +1063,8 @@ parseInclude(Client cntxt)
 		return 0;
 	}
 	skipToEnd(cntxt);
+
+	if (!malConditionalInclude(modnme)) return "";
 
 	s = loadLibrary(modnme, FALSE);
 	if (s) {

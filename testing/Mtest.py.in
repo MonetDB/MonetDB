@@ -2800,7 +2800,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             # enable Python integration in server
-            if (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
+            if (not all_tests or (COND != None and "HAVE_LIBPY" in COND and "HAVE_LIBPY3" not in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 Srvr.extend(['--set', 'embedded_py=true'])
 
              # enable Python 3 integration in server
