@@ -78,7 +78,7 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if(a->cols) GDKfree(a->cols);
 		if(a->bid) GDKfree(a->bid);
 		if(a->unique) GDKfree(a->unique);
-		if(a) GDKfree(a);
+		GDKfree(a);
 		return NULL;
 	}
 	for ( i= pci->retc; i< pci->argc; i++, a->last++) {
@@ -87,6 +87,9 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if ( a->cols[a->last] == NULL){
 			for(a->last--; a->last>=0; a->last--)
 				BBPunfix(a->cols[a->last]->batCacheid);
+			GDKfree(a->cols);
+			GDKfree(a->bid);
+			GDKfree(a->unique);
 			GDKfree(a);
 			return NULL;
 		}
