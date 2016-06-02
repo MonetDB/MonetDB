@@ -3609,6 +3609,7 @@ def main(argv) :
     CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
     addreqs = False
+    all_tests = False
     global global_timeout
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
@@ -4158,7 +4159,6 @@ def main(argv) :
         if len(testdirs) == 1:
             if testlist:
                 tsts = "tests "+str(testlist)
-                all_tests = False
             else:
                 tsts = "all tests"
                 all_tests = True
@@ -4174,7 +4174,7 @@ def main(argv) :
             if verbose:
                 print("\nRunning all tests in directories %s.\n" % str(testdirs))
             for d in testdirs:
-                t, elem, diff = PerformDir(env, d, [], BusyPorts)
+                t, elem, diff = PerformDir(env, d, [], BusyPorts, True)
                 t_ = t_ + t
                 if elem is not None:
                     if diff <= F_OK:
