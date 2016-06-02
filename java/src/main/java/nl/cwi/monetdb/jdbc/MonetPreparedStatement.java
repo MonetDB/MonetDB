@@ -350,12 +350,6 @@ public class MonetPreparedStatement
 
 		// return inner class which implements the ResultSetMetaData interface
 		return new rsmdw() {
-			// for the more expensive methods, we provide a simple cache
-			// for the most expensive part; getting the ResultSet which
-			// contains the data
-			private DatabaseMetaData dbmd = null;
-			private Map<Integer, ResultSet> colrs = new HashMap<Integer, ResultSet>();
-
 			/**
 			 * Returns the number of columns in this ResultSet object.
 			 *
@@ -402,7 +396,15 @@ public class MonetPreparedStatement
 			 * @returns false
 			 */
 			@Override
-			public boolean isCaseSensitive(int column) {
+			public boolean isCaseSensitive(int column) throws SQLException {
+				switch (javaType[getColumnIdx(column)]) {
+					case Types.CHAR:
+					case Types.VARCHAR:
+					case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+					case Types.CLOB:
+						return true;
+				}
+
 				return false;
 			}
 
@@ -554,8 +556,7 @@ public class MonetPreparedStatement
 
 			/**
 			 * Gets the designated column's table's catalog name.
-			 * Because MonetDB handles only one catalog (dbfarm) at a
-			 * time, the current one is the one we deal with here.
+			 * MonetDB does not support the catalog naming concept as in: catalog.schema.table naming scheme
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the name of the catalog for the table in which the given
@@ -563,7 +564,7 @@ public class MonetPreparedStatement
 			 */
 			@Override
 			public String getCatalogName(int column) throws SQLException {
-				return getConnection().getCatalog();
+				return null;	// MonetDB does NOT support catalogs
 			}
 
 			/**
@@ -673,38 +674,6 @@ public class MonetPreparedStatement
 			@Override
 			public String getColumnTypeName(int column) throws SQLException {
 				return monetdbType[getColumnIdx(column)];
-			}
-
-			/**
-			 * Returns the Metadata ResultSet for the given column
-			 * number of this ResultSet.  If the column was previously
-			 * requested, a cached ResultSet is returned, otherwise it
-			 * is fetched using the DatabaseMetaData class.
-			 *
-			 * @param column the column index number starting from 1
-			 * @return Metadata ResultSet
-			 * @throws SQLException if a database error occurs
-			 */
-			@SuppressWarnings("unused")
-			private ResultSet getColumnResultSet(int col)
-				throws SQLException
-			{
-				if (!colrs.containsKey(col)) {
-					if (dbmd == null)
-						dbmd = getConnection().getMetaData();
-					ResultSet rscol = 
-						dbmd.getColumns(
-								null, /* this doesn't matter here... */
-								schema[getColumnIdx(col)],
-								table[getColumnIdx(col)],
-								column[getColumnIdx(col)]
-							);
-					colrs.put(col, rscol);
-				}
-
-				ResultSet res = (ResultSet)(colrs.get(col));
-				res.beforeFirst();
-				return res;
 			}
 		};
 	}
