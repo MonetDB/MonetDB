@@ -55,6 +55,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr p;
 	char buf[BUFSIZ];
 	str v;
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) stk;
@@ -100,5 +101,15 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				setSTC(mb, getArg(p,0), GDKstrdup(v));
 		} 
 	}
+    /* Defense line against incorrect plans */
+	/* Plan remains unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+	//
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","profiler",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

@@ -231,7 +231,7 @@ getBatSpace(BAT *b){
 	space += BATcount(b) * b->T->width;
 	if( space){
 		if( b->T->vheap) space += heapinfo(b->T->vheap, abs(b->batCacheid)); 
-		if( b->T) space += hashinfo(b->T->hash, abs(b->batCacheid)); 
+		space += hashinfo(b->T->hash, abs(b->batCacheid)); 
 		space += IMPSimprintsize(b);
 	}
 	return space;

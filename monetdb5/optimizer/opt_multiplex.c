@@ -192,8 +192,10 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 	if(mb)
 	for( i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		if(isMultiplex(p))
+		if(isMultiplex(p)) {
+			p->typechk = TYPE_UNKNOWN;
 			doit++;
+		}
 	}
 	if( doit) {
 		OPTmultiplexImplementation(cntxt, mb, 0, 0);
@@ -211,6 +213,8 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	InstrPtr *old, p;
 	int i, limit, slimit, actions= 0;
 	str msg= MAL_SUCCEED;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) stk;
 	(void) pci;
@@ -226,6 +230,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (msg == MAL_SUCCEED && isMultiplex(p)) { 
 			if ( MANIFOLDtypecheck(cntxt,mb,p) != NULL){
 				setFunctionId(p, manifoldRef);
+				p->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb, p);
 				actions++;
 				continue;
@@ -251,5 +256,16 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		/* rollback */
 	}
 	GDKfree(msg);
+
+    /* Defense line against incorrect plans */
+    if( mb->errors == 0 && actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return mb->errors? 0: actions;
 }

@@ -93,9 +93,6 @@ comment "Dump the symboltable of current routine on standard out.";
 pattern var(M:str,F:str):void 
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
-pattern lifespan(M:str,F:str):void
-address MDBlifespan
-comment "Dump the current routine lifespan information on standard out.";
 
 pattern grab():void
 address mdbGrab

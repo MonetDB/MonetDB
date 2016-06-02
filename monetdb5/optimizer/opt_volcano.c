@@ -27,6 +27,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int mvcvar = -1;
 	int count=0;
 	InstrPtr p,q, *old = mb->stmt;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -84,5 +86,16 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		}
 	} 
 	GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( count){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","vulcano",count,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return count;
 }

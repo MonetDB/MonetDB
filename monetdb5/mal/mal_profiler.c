@@ -198,10 +198,10 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 			stmtq = mal_quote(c, strlen(c));
 			if (stmtq != NULL) {
 				logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
-				//GDKfree(stmtq);
+				GDKfree(stmtq);
 			}
 		} 
-		//GDKfree(stmt);
+		GDKfree(stmt);
 
 		// ship the beautified version as well
 
@@ -296,7 +296,7 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				logadd("\"eol\":%d%s", p == getEndOfLife(mb,getArg(pci,j)) , pret);
+				logadd("\"eol\":%d%s", p == getEndScope(mb,getArg(pci,j)) , pret);
 				GDKfree(tname);
 				logadd("}%s%s", (j< pci->argc-1 && j != pci->retc -1?",":""), pret);
 			}
@@ -1045,9 +1045,10 @@ static void profilerHeartbeat(void *dummy)
 
 void setHeartbeat(int delay)
 {
-	if (hbthread &&  delay < 0 ){
+	if (delay < 0 ){
 		ATOMIC_SET(hbrunning, 0, mal_beatLock);
-		MT_join_thread(hbthread);
+		if (hbthread)
+			MT_join_thread(hbthread);
 		return;
 	}
 	if ( delay > 0 &&  delay <= 10)

@@ -457,23 +457,24 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
  * is returned.
  */
 
-Lifespan
-setLifespan(MalBlkPtr mb)
+/* initialize the static scope boundaries for all variables */
+void
+setVariableScope(MalBlkPtr mb)
 {
 	int pc, k, depth=0, dflow= -1;
 	InstrPtr p;
-	int *blk;
-	Lifespan span= newLifespan(mb);
 	str lang = putName("language"), dataflow= putName("dataflow");
 
-	if (span == NULL)
-		return NULL;
-
-	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
-	if( blk == NULL){
-		GDKerror("setLifeSpan" MAL_MALLOC_FAIL);
-		GDKfree(span);
-		return NULL;
+	/* reset the scope admin */
+	for (k = 0; k < mb->vtop; k++)
+	if( isVarConstant(mb,k)){
+		mb->var[k]->depth = 0;
+		mb->var[k]->declared = 0;
+		mb->var[k]->eolife = mb->stop;
+	} else {
+		mb->var[k]->depth = 0;
+		mb->var[k]->declared = 0;
+		mb->var[k]->eolife = 0;
 	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
@@ -494,18 +495,20 @@ setLifespan(MalBlkPtr mb)
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
+			if( isVarConstant(mb,v) && mb->var[v]->updated == 0)
+				mb->var[v]->updated= pc;
 
-			if (span[v].beginLifespan == 0 ){
-				span[v].beginLifespan = pc;
-				blk[v]= depth;
+			if (mb->var[v]->declared == 0 ){
+				mb->var[v]->declared = pc;
+				mb->var[v]->depth = depth;
 			}
 			if (k < p->retc )
-				span[v].lastUpdate= pc;
-			if ( blk[v] == depth )
-				span[v].endLifespan = pc;
+				mb->var[v]->updated= pc;
+			if ( mb->var[v]->depth == depth )
+				mb->var[v]->eolife = pc;
 
-			if ( k >= p->retc && blk[v] < depth )
-				span[v].endLifespan = -1;	/* declared in outer scope*/
+			if ( k >= p->retc && mb->var[v]->depth < depth )
+				mb->var[v]->eolife = -1;
 		}
 		/*
 		 * At a block exit we can finalize all variables defined within that block.
@@ -514,21 +517,19 @@ setLifespan(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( span[k].endLifespan == -1 )
-				span[k].endLifespan = pc;
-			else
-			if ( span[k].endLifespan == 0 && blk[k]==depth )
-				span[k].endLifespan = pc;
+			if ( mb->var[k]->eolife == 0 && mb->var[k]->depth==depth )
+				mb->var[k]->eolife = pc;
+			else if ( mb->var[k]->eolife == -1 )
+				mb->var[k]->eolife = pc;
+			
 			if( dflow == depth)
 				dflow= -1;
 			else depth--;
 		}
 	}
 	for (k = 0; k < mb->vtop; k++)
-	if ( span[k].endLifespan == 0 )
-		span[k].endLifespan = pc-2;/* generate them before the end */
-	GDKfree(blk);
-	return span;
+		if( mb->var[k]->eolife == 0)
+			mb->var[k]->eolife = mb->stop-1;
 }
 
 int
@@ -596,18 +597,14 @@ void
 malGarbageCollector(MalBlkPtr mb)
 {
 	int i;
-	Lifespan span;
 
-	span = setLifespan(mb);
-	if ( span == NULL)
-		return ;
+	setVariableScope(mb);
 
 	for (i = 0; i < mb->vtop; i++)
-		if( isVarCleanup(mb,i) && getEndLifespan(span,i) >= 0) {
-			mb->var[i]->eolife = getEndLifespan(span,i);
+		if( isVarCleanup(mb,i) && getEndScope(mb,i) >= 0) {
+			mb->var[i]->eolife = getEndScope(mb,i);
 			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
 		}
-	GDKfree(span);
 }
 /*
  * Variable declaration

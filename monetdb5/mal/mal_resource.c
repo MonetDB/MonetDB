@@ -190,8 +190,10 @@ MALresourceFairness(lng usec)
 	/* worker reporting time spent  in usec! */
 	clk =  usec / 1000;
 
+#if FAIRNESS_THRESHOLD < 1000	/* it's actually 2000 */
 	/* cap the maximum penalty */
 	clk = clk > FAIRNESS_THRESHOLD? FAIRNESS_THRESHOLD:clk;
+#endif
 
 	/* always keep one running to avoid all waiting  */
 	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {

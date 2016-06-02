@@ -111,8 +111,6 @@
 #define getArgType(M,P,I)	getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
 
-#define getEndOfLife(X,Y)	(X)->var[Y]->eolife
-
 mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);

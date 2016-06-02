@@ -251,7 +251,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 #ifndef HAVE_EMBEDDED /* no authentication in embedded mode */
-	(void) AUTHgetUsername(&c->username, c);
+	{
+		str msg = AUTHgetUsername(&c->username, c);
+		if (msg)				/* shouldn't happen */
+			GDKfree(msg);
+	}
 #endif
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
@@ -608,15 +612,13 @@ MCvalid(Client tc)
 str
 PROFinitClient(Client c){
 	(void) c;
-	startProfiler();
-	return MAL_SUCCEED;
+	return startProfiler();
 }
 
 str
 PROFexitClient(Client c){
 	(void) c;
-	stopProfiler();
-	return MAL_SUCCEED;
+	return stopProfiler();
 }
 
 

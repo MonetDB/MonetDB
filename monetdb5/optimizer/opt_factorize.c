@@ -1,5 +1,5 @@
 /*
- * This Source Code Form is subject to the terms of the Mozilla Public
+* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
@@ -38,21 +38,18 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0, retvar=0;
 	InstrPtr *first, *second;
-	Lifespan span;
+	char buf[256];
+	lng usec= GDKusec();
 
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	span = setLifespan(mb);
-	if( span == NULL)
-		return 0;
-
+	setVariableScope(mb);
 	varused = GDKmalloc(mb->vtop * sizeof(int));
-	if ( varused == NULL) {
-		GDKfree(span);
+	if ( varused == NULL)
 		return 0;
-	}
+	
 	for (i = 0; i < mb->vtop; i++)
 		varused[i] = 0;
 
@@ -63,13 +60,11 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	first = (InstrPtr *) GDKzalloc(mb->ssize * sizeof(InstrPtr));
 	if ( first == NULL){
-		GDKfree(span);
 		GDKfree(varused);
 		return 0;
 	}
 	second = (InstrPtr *) GDKzalloc(mb->ssize * sizeof(InstrPtr));
 	if ( second == NULL){
-		GDKfree(span);
 		GDKfree(varused);
 		GDKfree(first);
 		return 0;
@@ -100,7 +95,7 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		/* beware, none of the target variables may live
 		   before the cut point.  */
 		for (k = 0; k < p->retc; k++)
-			if (getBeginLifespan(span, p->argv[k])< i || !OPTallowed(p))
+			if (getBeginScope(mb, p->argv[k])< i || !OPTallowed(p))
 				se = 0;
 		if (p->barrier == RETURNsymbol) {
 			se = 1;
@@ -130,7 +125,6 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		GDKfree(varused);
 		GDKfree(first);
 		GDKfree(second);
-		GDKfree(span);
 		/* remove the FToptimizer request */
 		return 1;
 	}
@@ -139,7 +133,6 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	mbnew = (InstrPtr *) GDKmalloc((mb->stop + 4) * sizeof(InstrPtr));
 	if ( mbnew == NULL) {
-		GDKfree(span);
 		GDKfree(varused);
 		GDKfree(first);
 		GDKfree(second);
@@ -195,6 +188,16 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(varused);
 	GDKfree(first);
 	GDKfree(second);
-	GDKfree(span);
+
+    /* Defense line against incorrect plans */
+    if( 1){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","factorize",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

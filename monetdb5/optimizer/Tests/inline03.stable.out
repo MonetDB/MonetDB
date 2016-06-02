@@ -36,10 +36,10 @@ function user.qry():void;               	#[0] (0)  0
     X_16:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[4] (0) CMDbatADDsignal 16 <- 1 1 
     X_16:bat[:int] := batcalc.*(X_16:bat[:int],X_15:int);	#[5] (0) CMDbatMULsignal 16 <- 16 15 
     z:bat[:int] := X_16:bat[:int];      	#[6] (0)  6 <- 16 
-    X_20:int := 1:int;                  	#[7] (0)  20 <- 5 
-    X_21:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 21 <- 1 10 
-    X_21:bat[:int] := batcalc.*(X_21:bat[:int],X_20:int);	#[9] (0) CMDbatMULsignal 21 <- 21 20 
-    z:bat[:int] := X_21:bat[:int];      	#[10] (0)  6 <- 21 
+    X_22:int := 1:int;                  	#[7] (0)  22 <- 5 
+    X_23:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 23 <- 1 10 
+    X_23:bat[:int] := batcalc.*(X_23:bat[:int],X_22:int);	#[9] (0) CMDbatMULsignal 23 <- 23 22 
+    z:bat[:int] := X_23:bat[:int];      	#[10] (0)  6 <- 23 
 end user.qry;                           	#[11] (0)  
 
 # 18:00:43 >  

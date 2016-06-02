@@ -457,6 +457,8 @@ compileOptimizer(Client cntxt, str name)
 			/* don't cleanup thread info since the thread continues to
 			 * exist, just this client record is closed */
 			c.errbuf = NULL;
+			/* we must clear c.mythread because we're reusing a Thread
+			 * and must not delete that one */
 			c.mythread = 0;
 			/* destroy bstream using free */
 			free(c.fdin->buf);

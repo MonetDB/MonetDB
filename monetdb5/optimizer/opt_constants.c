@@ -28,6 +28,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i,k=1, n=0, fnd=0, actions=0;
 	int *alias, *index;
 	VarPtr x,y, *cst;
+	char buf[256];
+	lng usec = GDKusec();
 
 	OPTDEBUGconstants mnstr_printf(cntxt->fdout,"#OPT_CONSTANTS: MATCHING CONSTANTS ELEMENTS\n");
 
@@ -87,5 +89,15 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(alias);
 	GDKfree(cst);
 	GDKfree(index);
+    /* Defense line against incorrect plans */
+	/* Plan remains unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+    
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

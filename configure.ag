@@ -2842,14 +2842,14 @@ if test "x$have_gdal" != xno && test "x$have_gdal" != xpkgconf; then
 	LIBS=""
 	found_gdal_h=yes
 	AC_CHECK_HEADER(gdal.h,,
-		AC_CHECK_HEADER(gdal/gdal.h,
+		[AC_CHECK_HEADER(gdal/gdal.h,
 			[if test "x$GDAL_CFLAGS" = x; then
 				GDAL_CFLAGS="-I/usr/include/gdal"
 			else
 				GDAL_CFLAGS="$GDAL_CFLAGS/gdal"
 			fi
 			CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
-			[found_gdal_h=no]))
+			[found_gdal_h=no])])
 	if test "x$found_gdal_h" = xyes; then
 		AC_CHECK_LIB(gdal, GDALAllRegister,
 			[AC_DEFINE(HAVE_GDAL, 1, [Define if you have the gdal library])
@@ -3116,8 +3116,12 @@ case "$enable_int128" in
 yes|auto)
 	have_hge=no
 	why_have_hge='(no 128-bit integer type found)'
-	AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''],
-		[if test x$enable_int128 = xyes; then AC_MSG_ERROR([128-bit integers not supported by platform]); fi])
+	AC_CHECK_TYPES([__int128, __int128_t, __uint128_t], [have_hge=yes; why_have_hge=''])
+	if test $have_hge = no; then
+		if test x$enable_int128 = xyes; then
+			AC_MSG_ERROR([128-bit integers not supported by platform])
+		fi
+	fi
 	;;
 no)
 	have_hge=no
@@ -3389,6 +3393,9 @@ AC_SUBST(Erundir)
 Qlibdir="$libdir"
 Xlibdir="`$translatepath "$libdir"`"
 QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
+Elibdir="`echo "$Xlibdir" | sed 's/{exec_prefix}/{prefix}/'`"
+eval "Elibdir=${Elibdir}"
+QElibdir="`echo "$Elibdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlibdir)
 AC_SUBST(Xlibdir)
 AC_SUBST(QXlibdir)
@@ -3465,6 +3472,7 @@ AC_SUBST(QXSOURCE)
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR,"$QElocalstatedir",[modifiable single-machine data])
 AC_DEFINE_UNQUOTED(DATA_DIR,"$QEdatadir",[read-only architecture-independent data])
 AC_DEFINE_UNQUOTED(BINDIR,"$QEbindir",[location where binaries are installed])
+AC_DEFINE_UNQUOTED(LIBDIR,"$QElibdir",[location where libraries are installed])
 
 dnl  On Solaris, libxml2 enables threading only when _REENTRANT, __MT__
 dnl  or _POSIX_C_SOURCE >= 199506L is defined.  The latter is only

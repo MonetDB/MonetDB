@@ -18,6 +18,7 @@
 #include "gdk.h"
 #include "mmath.h"
 #include "sql_catalog.h"
+#include "sql_execute.h"
 #include "rapi.h"
 
 // R headers
@@ -62,6 +63,8 @@ static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
 		"EXTPTR", "WEAKREF", "RAW", "S4" };
+
+static Client rapiClient = NULL;
 
 
 // helper function to translate R TYPEOF() return values to something readable
@@ -247,8 +250,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	node * argnode;
 	int seengrp = FALSE;
 
-	// we don't need no context, but the compiler needs us to touch it (...)
-	(void) cntxt;
+	rapiClient = cntxt;
 
 	if (!RAPIEnabled()) {
 		throw(MAL, "rapi.eval",
@@ -271,7 +273,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// get the lock even before initialization of the R interpreter, as this can take a second and must be done only once.
 	MT_lock_set(&rapiLock);
 
-	env = PROTECT(eval(lang1(install("new.env")),R_GlobalEnv));
+	env = PROTECT(eval(lang1(install("new.env")), R_GlobalEnv));
 	assert(env != NULL);
 
 	// first argument after the return contains the pointer to the sql_func structure
@@ -394,6 +396,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		}
 		msg = createException(MAL, "rapi.eval",
 							  "Error running R expression: %s", errormsg);
+		free(errormsg);
 		goto wrapup;
 	}
 
@@ -438,10 +441,42 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
   wrapup:
 	MT_lock_unset(&rapiLock);
 	free(rcall);
+	for (i = 0; i < pci->argc; i++)
+		GDKfree(args[i]);
 	GDKfree(args);
 
 	return msg;
 }
+
+void* RAPIloopback(void *query) {
+	res_table* output = NULL;
+	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
+	char* err = SQLstatementIntern(rapiClient, &querystr, "name", 1, 0, &output);
+
+	if (err) { // there was an error
+		return ScalarString(RSTR(err));
+	}
+	if (output && output->nr_cols > 0) {
+		int i, ncols = output->nr_cols;
+		SEXP retlist, names, varvalue = R_NilValue;
+		retlist = PROTECT(allocVector(VECSXP, ncols));
+		names = PROTECT(NEW_STRING(ncols));
+		for (i = 0; i < ncols; i++) {
+			if (!(varvalue = bat_to_sexp(BATdescriptor(output->cols[i].b)))) {
+				UNPROTECT(i + 3);
+				return ScalarString(RSTR("Conversion error"));
+			}
+			SET_STRING_ELT(names, i, RSTR(output->cols[i].name));
+			SET_VECTOR_ELT(retlist, i, varvalue);
+		}
+		res_table_destroy(output);
+		SET_NAMES(retlist, names);
+		UNPROTECT(ncols + 2);
+		return retlist;
+	}
+	return ScalarLogical(1);
+}
+
 
 str RAPIprelude(void *ret) {
 	(void) ret;
@@ -457,6 +492,8 @@ str RAPIprelude(void *ret) {
 				throw(MAL, "rapi.eval",
 					  "failed to initialise R environment (%s)", initstatus);
 			}
+			Rf_defineVar(Rf_install("MONETDB_LIBDIR"), ScalarString(RSTR(LIBDIR)), R_GlobalEnv);
+
 		}
 		MT_lock_unset(&rapiLock);
 		printf("# MonetDB/R   module loaded\n");

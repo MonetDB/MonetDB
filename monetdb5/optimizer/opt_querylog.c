@@ -19,6 +19,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
 	int xtime=0, rtime = 0, tuples=0;
 	InstrPtr defineQuery = NULL;
+	char buf[256];
+	lng usec = GDKusec();
 
 
 	// query log needed?
@@ -182,5 +184,15 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if(old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
+	    /* Defense line against incorrect plans */
+    if( 1){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","querylog",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

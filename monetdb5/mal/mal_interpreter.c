@@ -579,7 +579,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					backup[i].len = 0;
 					backup[i].val.pval = 0;
 					garbage[i] = -1;
-					if (stk->stk[a].vtype == TYPE_bat && getEndOfLife(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
+					if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
 						garbage[i] = a;
 
 					if (i < pci->retc && stk->stk[a].vtype == TYPE_bat) {
