@@ -256,11 +256,10 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
+	if (mb->errors)
+		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
 	do {
-		/* any errors should abort the optimizer */
-		if (mb->errors)
-			break;
 		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
 			p = getInstrPtr(mb, pc);
