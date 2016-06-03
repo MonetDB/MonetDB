@@ -588,7 +588,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	memset(terms, 0, sizeof(terms));
 	msg = JSONcompile(*expr, terms);
 	if (msg)
-		return msg;
+		goto bailout;
 
 	result = s = JSONmatch(jt, 0, terms, tidx);
 	// process all other PATH expression
@@ -606,12 +606,13 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	s = GDKzalloc(l + 3);
 	snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	GDKfree(result);
+	*ret = s;
 
-	for (l = 0; terms[l].token; l++)
+  bailout:
+	for (l = 0; l < MAXTERMS; l++)
 		if (terms[l].name)
 			GDKfree(terms[l].name);
 	JSONfree(jt);
-	*ret = s;
 	return msg;
 }
 
@@ -1175,26 +1176,25 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 			GDKfree(r);
 			r = JSONgetValue(jt, jt->elm[i].child);
 			BUNappend(bv, r, FALSE);
+			GDKfree(r);
 			if (bo)
 				BUNappend(bo, o, FALSE);
 			(*o)++;
-			GDKfree(r);
 			if (i == last)
 				break;
 	} else if (jt->elm[idx].kind == JSON_ARRAY)
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next) {
-			r = GDKstrdup(str_nil);
-			BUNappend(bk, r, FALSE);
+			BUNappend(bk, str_nil, FALSE);
 			if (jt->elm[i].kind == JSON_VALUE)
 				r = JSONgetValue(jt, jt->elm[i].child);
 			else
 				r = JSONgetValue(jt, i);
 			BUNappend(bv, r, FALSE);
+			GDKfree(r);
 			if (bo)
 				BUNappend(bo, o, FALSE);
 			(*o)++;
 			cnt++;
-			GDKfree(r);
 			if (i == last)
 				break;
 		}
