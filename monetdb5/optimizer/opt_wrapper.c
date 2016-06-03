@@ -146,7 +146,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			break;	
 		}
 	if ( codes[i].nme == 0)
-		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
+		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
 
 	OPTIMIZERDEBUG {
 		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
