@@ -69,6 +69,7 @@ struct{
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
+	{"emptycolumn", &OPTemptycolumnImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
@@ -97,8 +98,7 @@ opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme = "(NONE)";
-	str fcnnme = 0;
-	str msg= MAL_SUCCEED;
+	str fcnnme = "(NONE)";
 	Symbol s= NULL;
 	int i, actions = 0;
 	char optimizer[256];
@@ -139,12 +139,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		stk= 0;
 	} else if( p ) 
 		removeInstruction(mb, p);
-	if( mb->errors ){
-		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb);
-		return MAL_SUCCEED;
-	}
-
 
 	for ( i=0; codes[i].nme; i++)
 		if ( strcmp(codes[i].nme, optimizer)== 0 ){
@@ -167,6 +161,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if ( mb->errors)
 		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
-	return msg;
+	return MAL_SUCCEED;
 }
 
