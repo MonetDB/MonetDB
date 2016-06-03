@@ -4760,13 +4760,13 @@ stream_fwf_close(stream *s)
 {
 	if (strcmp(s->name, STREAM_FWF_NAME) == 0) {
 		stream_fwf_data *fsd = (stream_fwf_data*) s->stream_data.p;
-		fsd->s->close(fsd->s);
+		mnstr_close(fsd->s);
 		free(fsd->widths);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);
 	}
-	destroy(s);
+	// FIXME destroy(s);
 }
 
 stream*
