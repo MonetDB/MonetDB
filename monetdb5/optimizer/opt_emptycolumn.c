@@ -54,7 +54,7 @@
 int
 OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, actions = 0;
+	int i;
 	int *marked;
 	int limit = mb->stop;
 	InstrPtr p, *old = mb->stmt;
@@ -179,13 +179,11 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	GDKfree(old);
 	GDKfree(marked);
     /* Defense line against incorrect plans */
-    if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
-    }
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptycolumn",actions,GDKusec() - usec);
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptycolumn",1,GDKusec() - usec);
     newComment(mb,buf);
-	return actions;
+	return 1;
 }
