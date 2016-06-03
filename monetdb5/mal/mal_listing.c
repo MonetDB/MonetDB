@@ -567,6 +567,7 @@ printSignature(stream *fd, Symbol s, int flg)
 {
 	InstrPtr p;
 	str txt;
+	str addr="";
 
 	if ( s->def == 0 ){
 		mnstr_printf(fd, "missing definition of %s\n", s->name);
@@ -576,7 +577,14 @@ printSignature(stream *fd, Symbol s, int flg)
 	if( txt){
 		p = getSignature(s);
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
-		mnstr_printf(fd, "%s\n", txt);
+		switch( p->token){
+		case COMMANDsymbol:
+		case PATTERNsymbol:
+			if( p->fcn == NULL)
+				addr="#implementation missing";
+		
+		}
+		mnstr_printf(fd, "%s%s\n", txt,addr);
 		GDKfree(txt);
 	} else GDKerror("printSignature"MAL_MALLOC_FAIL);
 }
