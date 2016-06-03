@@ -5,6 +5,7 @@ create trigger test_8_1
 	after insert on t_8_1 referencing new row as ins
 	for each statement insert into t_8_2 values( ins.id );
 
+explain insert into t_8_1 values (1, 'testing');
 insert into t_8_1 values (1, 'testing');
 
 select * from t_8_1;

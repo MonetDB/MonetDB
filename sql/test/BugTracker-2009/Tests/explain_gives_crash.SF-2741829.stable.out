@@ -1,29 +1,28 @@
 stdout of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracker-2009` itself:
 
 
-# 16:38:46 >  
-# 16:38:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38761" "--set" "mapi_usock=/var/tmp/mtest-29376/.s.monetdb.38761" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_BugTracker-2009" "--set" "embedded_r=yes"
-# 16:38:46 >  
+# 13:17:22 >  
+# 13:17:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32129" "--set" "mapi_usock=/var/tmp/mtest-23841/.s.monetdb.32129" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/jit//Linux/var/MonetDB/mTests_sql_test_BugTracker-2009"
+# 13:17:22 >  
 
-# MonetDB 5 server v11.24.0 (hg id: 934dbfa3c66b)
+# MonetDB 5 server v11.24.0
 # This is an unreleased version
-# Serving database 'mTests_sql_test_BugTracker-2009', using 4 threads
+# Serving database 'mTests_sql_test_BugTracker-2009', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 15.518 GiB available main-memory.
+# Found 15.589 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:38761/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29376/.s.monetdb.38761
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:32129/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23841/.s.monetdb.32129
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/R   module loaded
 
 Ready.
 
-# 16:38:46 >  
-# 16:38:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29376" "--port=38761"
-# 16:38:46 >  
+# 13:17:23 >  
+# 13:17:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23841" "--port=32129"
+# 13:17:23 >  
 
 #set optimizer='sequential_pipe';
 #create table blabla(id integer);
@@ -43,31 +42,28 @@ function user.s8_1():void;
 "    sql.assert(X_19,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s8_1;
-#inline               actions= 0 time=4 usec 
-#candidates           actions= 1 time=40 usec 
-#remap                actions= 0 time=6 usec 
-#costModel            actions= 1 time=34 usec 
-#coercions            actions= 7 time=32 usec 
-#evaluate             actions= 0 time=6 usec 
-#emptybind            actions= 0 time=6 usec 
-#pushselect           actions= 2 time=36 usec 
-#aliases              actions= 2 time=28 usec 
-#mergetable           actions= 0 time=36 usec 
-#deadcode             actions= 2 time=26 usec 
-#aliases              actions= 0 time=7 usec 
-#constants            actions= 1 time=23 usec 
-#commonTerms          actions= 0 time=7 usec 
-#projectionpath       actions= 0 time=7 usec 
-#reorder              actions= 1 time=55 usec 
-#deadcode             actions= 0 time=9 usec 
-#reduce               actions=34 time=47 usec 
-#matpack              actions= 0 time=7 usec 
-#querylog             actions= 0 time=2 usec 
-#multiplex            actions= 0 time=5 usec 
-#generator            actions= 0 time=3 usec 
-#profiler             actions= 1 time=18 usec 
-#garbageCollector     actions= 1 time=26 usec 
-#total                actions= 1 time=565 usec 
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 7 time=8 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptycolumn          actions= 1 time=16 usec 
+#aliases              actions= 1 time=6 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 5 time=8 usec 
+#aliases              actions= 0 time=3 usec 
+#constants            actions= 3 time=4 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=4 usec 
+#reorder              actions= 1 time=16 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=38 time=20 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollctor      actions= 1 time=10 usec 
+#total                actions= 1 time=224 usec 
 function user.s10_1():void;
 "    X_23:void := querylog.define(""explain alter table blabla add constraint dada unique (id);"",""sequential_pipe"",15);"
 "    sql.catalog(29,""sys"",nil,0);"
@@ -83,31 +79,28 @@ function user.s10_1():void;
 "    sql.assert(X_19,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s10_1;
-#inline               actions= 0 time=4 usec 
-#candidates           actions= 1 time=38 usec 
-#remap                actions= 0 time=6 usec 
-#costModel            actions= 1 time=34 usec 
-#coercions            actions= 7 time=32 usec 
-#evaluate             actions= 0 time=6 usec 
-#emptybind            actions= 0 time=6 usec 
-#pushselect           actions= 2 time=34 usec 
-#aliases              actions= 2 time=27 usec 
-#mergetable           actions= 0 time=37 usec 
-#deadcode             actions= 2 time=27 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions= 1 time=24 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#reorder              actions= 1 time=42 usec 
-#deadcode             actions= 0 time=9 usec 
-#reduce               actions=34 time=48 usec 
-#matpack              actions= 0 time=6 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=5 usec 
-#generator            actions= 0 time=3 usec 
-#profiler             actions= 1 time=18 usec 
-#garbageCollector     actions= 1 time=25 usec 
-#total                actions= 1 time=547 usec 
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 7 time=7 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptycolumn          actions= 1 time=11 usec 
+#aliases              actions= 1 time=6 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 5 time=9 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 3 time=4 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#reorder              actions= 1 time=15 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=38 time=20 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#garbagecollctor      actions= 1 time=10 usec 
+#total                actions= 1 time=215 usec 
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
 function user.s18_1():void;
@@ -125,34 +118,31 @@ function user.s18_1():void;
 "    sql.assert(X_19,""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
     sql.exportOperation();
 end user.s18_1;
-#inline               actions= 0 time=4 usec 
-#candidates           actions= 1 time=51 usec 
-#remap                actions= 0 time=14 usec 
-#costModel            actions= 1 time=35 usec 
-#coercions            actions= 7 time=30 usec 
-#evaluate             actions= 0 time=6 usec 
-#emptybind            actions= 0 time=6 usec 
-#pushselect           actions= 2 time=32 usec 
-#aliases              actions= 2 time=26 usec 
-#mergetable           actions= 0 time=35 usec 
-#deadcode             actions= 2 time=25 usec 
-#aliases              actions= 0 time=8 usec 
-#constants            actions= 1 time=22 usec 
-#commonTerms          actions= 0 time=8 usec 
-#projectionpath       actions= 0 time=6 usec 
-#reorder              actions= 1 time=42 usec 
-#deadcode             actions= 0 time=8 usec 
-#reduce               actions=34 time=45 usec 
-#matpack              actions= 0 time=6 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=4 usec 
-#generator            actions= 0 time=3 usec 
-#profiler             actions= 1 time=17 usec 
-#garbageCollector     actions= 1 time=32 usec 
-#total                actions= 1 time=556 usec 
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 7 time=7 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptycolumn          actions= 1 time=11 usec 
+#aliases              actions= 1 time=5 usec 
+#mergetable           actions= 0 time=23 usec 
+#deadcode             actions= 5 time=8 usec 
+#aliases              actions= 0 time=4 usec 
+#constants            actions= 3 time=4 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=15 usec 
+#deadcode             actions= 0 time=4 usec 
+#reduce               actions=38 time=20 usec 
+#matpack              actions= 0 time=2 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=0 usec 
+#garbagecollctor      actions= 1 time=10 usec 
+#total                actions= 1 time=221 usec 
 #~EndVariableOutput~#
 
-# 16:38:46 >  
-# 16:38:46 >  "Done."
-# 16:38:46 >  
+# 13:17:23 >  
+# 13:17:23 >  "Done."
+# 13:17:23 >  
 
