@@ -311,7 +311,6 @@ SQLrun(Client c, backend *be, mvc *m){
 				setVarFixed(mb, j+retc);
 			}
 			mb->stmt[0]->argc = 1;
-			chkProgram(c->fdout, c->nspace, mb);
 			break;
 		}
 	}

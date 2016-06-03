@@ -252,10 +252,9 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
         	return 0;
 
 	/* force at least once a complete type check by resetting the type check flag */
+
 	resetMalBlk(mb,mb->stop);
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
+	chkProgram(cntxt->fdout,cntxt->nspace,mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
