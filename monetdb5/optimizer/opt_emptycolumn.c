@@ -58,6 +58,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *marked;
 	int limit = mb->stop;
 	InstrPtr p, *old = mb->stmt;
+	char buf[256];
+	lng usec = GDKusec();
 
 	// use an instruction reference table to keep
 	// track of where 'emptycolumn' results are produced
@@ -168,13 +170,22 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		}
 	}
 
-	chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 	OPTDEBUGemptycolumn{
+		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 		mnstr_printf(GDKout, "Optimize Query Emptybind done\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 	}
 
 	GDKfree(old);
 	GDKfree(marked);
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","emptycolumn",actions,GDKusec() - usec);
+    newComment(mb,buf);
 	return actions;
 }
