@@ -316,7 +316,7 @@ SQLrun(Client c, backend *be, mvc *m){
 	}
 	// JIT optimize the SQL query using all current information
 	// This include template constants, BAT sizes.
-	SQLoptimizeQuery(c,mb);
+	msg = SQLoptimizeQuery(c,mb);
 
 	if( mb->errors){
 		freeMalBlk(mb);
@@ -483,7 +483,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			err = 1;
 		/* always keep it around for inspection */
 		SQLaddQueryToCache(c);
-		SQLoptimizeFunction(c,c->curprg->def);
+		msg =SQLoptimizeFunction(c,c->curprg->def);
+		if( msg)
+			goto endofcompile;
 
 		if (err ||c->curprg->def->errors) {
 			/* restore the state */
@@ -703,7 +705,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL,"RAstatement","Program contains errors");
 		else {
 			SQLaddQueryToCache(c);
-			SQLoptimizeFunction(c,c->curprg->def);
+			msg = SQLoptimizeFunction(c,c->curprg->def);
 		}
 			SQLrun(c,b,m);
 		if (!msg) {
