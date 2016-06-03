@@ -254,4 +254,6 @@ stream_export stream *callback_stream(
 
 stream_export stream* stream_blackhole_create(void);
 
+stream_export stream* stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler);
+
 #endif /*_STREAM_H_*/
