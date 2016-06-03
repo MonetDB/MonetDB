@@ -4747,10 +4747,11 @@ stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 			memcpy((char*) buf + buf_written, fsd->out_buf + fsd->out_buf_start, to_write);
 			fsd->out_buf_start += to_write;
 			fsd->out_buf_remaining -= to_write;
+			buf_written += to_write;
 			to_write = 0;
 		}
 	}
-	return cnt;
+	return buf_written;
 }
 
 
