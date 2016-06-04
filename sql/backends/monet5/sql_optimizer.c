@@ -38,6 +38,11 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c)
 		size += getBatSpace(b);
 		BBPunfix(b->batCacheid);
 	}
+	b = store_funcs.bind_col(tr, c, RD_UPD_ID);
+	if (b) {
+		size+= getBatSpace(b);
+		BBPunfix(b->batCacheid);
+	}
 	b = store_funcs.bind_col(tr, c, RD_INS);
 	if (b) {
 		size+= getBatSpace(b);
