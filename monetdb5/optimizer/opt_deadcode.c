@@ -105,11 +105,12 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	GDKfree(old);
 	GDKfree(varused);
     /* Defense line against incorrect plans */
-    if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	/* we don't create or change existing structures */
+    //if( actions > 0){
+        //chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
         chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
-    }
+        //chkDeclarations(cntxt->fdout, mb);
+    //}
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, GDKusec() - usec);
     newComment(mb,buf);
