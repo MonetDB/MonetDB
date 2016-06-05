@@ -849,7 +849,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		int c;
 		start = stop = up = 0;
 		p = data;
-		while ((c = (char)fgetc(f)) != EOF) {
+		while ((c = getc(f)) != EOF) {
 			*p = (char)c;
 			switch (*p) {
 				case '\t':

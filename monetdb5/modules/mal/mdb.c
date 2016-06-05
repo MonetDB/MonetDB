@@ -295,6 +295,8 @@ MDBgetFrame(BAT *b, BAT*bn, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
 			ATOMformat(v->vtype, VALptr(v), &buf);
 			BUNappend(b, getVarName(mb, i), FALSE);
 			BUNappend(bn, buf, FALSE);
+			GDKfree(buf);
+			buf = NULL;
 		}
 	return MAL_SUCCEED;
 }
