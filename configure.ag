@@ -292,6 +292,13 @@ AC_ARG_ENABLE(developer,
 	enable_developer=$enableval,
 	enable_developer=$dft_developer)
 
+dft_sanitizer=no
+AC_ARG_ENABLE(sanitizer,
+	AS_HELP_STRING([--enable-sanitizer],
+		[enable support for the GCC address sanitizer (default=no)]),
+	enable_sanitizer=$enableval,
+	enable_sanitizer=$dft_sanitizer)
+
 dnl The console is a direct client hooked onto the kernel with full
 dnl administrative privileges, bypassing any security checks.  It is
 dnl handy only during development.
@@ -751,6 +758,26 @@ yes-*-*)
 	;;
 esac
 fi
+if test "x$enable_sanitizer" != xno; then
+case "$GCC" in
+yes)
+	# if no specific sanitizer was specified, use address sanitizer
+	if test "x$enable_sanitizer" = xyes; then
+		MCHECK_ADD_FLAG([-fsanitize=address])
+	else
+		MCHECK_ADD_FLAG([-fsanitize=$enable_sanitizer])
+		if test "x$enable_sanitizer" = xthread; then
+			X_CFLAGS="$X_CFLAGS -DNO_ATOMIC_INSTRUCTIONS"
+		fi
+	fi
+	MCHECK_ADD_FLAG([-fno-omit-frame-pointer])
+	;;
+*)
+	AC_MSG_ERROR([--enable-sanitizer only supported with GCC])
+	;;
+esac
+fi
+
 AC_SUBST(CFLAGS)
 AC_SUBST(X_CFLAGS)
 
@@ -3565,6 +3592,7 @@ for comp in \
 	'debug     ' \
 	'optimize  ' \
 	'developer ' \
+	'sanitizer ' \
 	'instrument' \
 	'profile   ' \
 ; do
