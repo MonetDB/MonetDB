@@ -885,7 +885,7 @@ fixwkbheap(void)
 		new = (var_t *) Tloc(b, BUNfirst(b));
 		for (i = 0; i < b->batCount; i++) {
 			int len;
-			owkb = (struct old_wkb *) (h2.base + old[i]);
+			owkb = (struct old_wkb *) (h2.base + (old[i] << GDK_VARSHIFT));
 			if ((len = owkb->len) == ~0)
 				len = 0;
 			if ((new[i] = HEAP_malloc(b->T->vheap, offsetof(struct new_wkb, data) + len)) == 0)
