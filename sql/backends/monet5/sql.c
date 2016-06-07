@@ -3489,7 +3489,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		}
 		GDKfree(fn);
-		if (fixed_widths) {
+		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
 			size_t ncol = 0, current_width_entry = 0, i;
 			size_t *widths;
 			char* val_start = fixed_widths;
