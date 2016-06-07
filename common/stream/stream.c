@@ -4791,7 +4791,7 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 		free(fsd);
 		return NULL;
 	}
-	out_buf_len = fsd->line_len * 2; // TODO: what if this is not enough?
+	out_buf_len = fsd->line_len * 3;
 	fsd->out_buf = malloc(out_buf_len);
 	if (!fsd->out_buf) {
 		free(fsd->in_buf);
