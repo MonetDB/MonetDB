@@ -1088,9 +1088,7 @@ freeVariable(MalBlkPtr mb, int varid)
 
 /* A special action is to reduce the variable space by removing all
  * that do not contribute.
- * Beware that properties are represented as variables as well. They
- * must be retained and the references must be corrected after the
- * stack has been reduced. */
+ */
 void
 trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 {

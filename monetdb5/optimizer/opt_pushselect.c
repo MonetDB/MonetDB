@@ -134,6 +134,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
 	InstrPtr p, *old;
 	subselect_t subselects;
+	char buf[256];
+	lng usec = GDKusec();
 
 	memset(&subselects, 0, sizeof(subselects));
 	if( mb->errors) 
@@ -564,5 +566,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			pushInstruction(mb,old[i]);
 	GDKfree(vars);
 	GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

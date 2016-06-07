@@ -296,7 +296,7 @@ This information can be used to determine memory footprint and variable life tim
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				logadd("\"eol\":%d%s", p == getEndOfLife(mb,getArg(pci,j)) , pret);
+				logadd("\"eol\":%d%s", p == getEndScope(mb,getArg(pci,j)) , pret);
 				GDKfree(tname);
 				logadd("}%s%s", (j< pci->argc-1 && j != pci->retc -1?",":""), pret);
 			}

@@ -295,6 +295,8 @@ MDBgetFrame(BAT *b, BAT*bn, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
 			ATOMformat(v->vtype, VALptr(v), &buf);
 			BUNappend(b, getVarName(mb, i), FALSE);
 			BUNappend(bn, buf, FALSE);
+			GDKfree(buf);
+			buf = NULL;
 		}
 	return MAL_SUCCEED;
 }
@@ -414,37 +416,6 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 /*
  * Display routines
  */
-str
-MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	Lifespan span;
-	str modnme;
-	str fcnnme;
-	Symbol s = NULL;
-
-	(void) cntxt;
-	if (stk != 0) {
-		modnme = *getArgReference_str(stk, p, 1);
-		fcnnme = *getArgReference_str(stk, p, 2);
-	} else {
-		modnme = getArgDefault(mb, p, 1);
-		fcnnme = getArgDefault(mb, p, 2);
-	}
-
-	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
-
-	if (s == NULL)
-		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
-	span = setLifespan(s->def);
-	if( span == NULL)
-		throw(MAL,"mdb.inspect", MAL_MALLOC_FAIL);
-	debugLifespan(cntxt, s->def, span);
-	GDKfree(span);
-	(void) p;
-	(void) stk;
-	return MAL_SUCCEED;
-}
-
 str
 MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {

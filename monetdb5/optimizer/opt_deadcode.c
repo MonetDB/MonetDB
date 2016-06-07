@@ -18,6 +18,8 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr p=0, *old= mb->stmt;
 	int actions = 0;
 	int *varused=0;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) cntxt;
 	(void) pci;
@@ -102,5 +104,16 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(varused);
+    /* Defense line against incorrect plans */
+	/* we don't create or change existing structures */
+    //if( actions > 0){
+        //chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        //chkDeclarations(cntxt->fdout, mb);
+    //}
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

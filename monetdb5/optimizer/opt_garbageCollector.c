@@ -23,7 +23,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	int i, j, k, n = 0, limit, vlimit, depth=0, slimit;
 	InstrPtr p, q, *old;
 	int actions = 0;
-	Lifespan span;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -52,14 +53,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		mb->stmt[1] = p;
 		mb->stmt[1]->token = ASSIGNsymbol;
 	}
-	span = setLifespan(mb);
-	if ( span == NULL)
-		return 0;
+	setVariableScope(mb);
 
-	if ( newMalBlkStmt(mb,mb->ssize) < 0) {
-		GDKfree(span);
+	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
 		return 0;
-	}
 
 	p = NULL;
 	for (i = 0; i < limit; i++) {
@@ -79,7 +76,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		pushInstruction(mb, p);
 		n = mb->stop-1;
 		for (j = 0; j < p->argc; j++) {
-			if (getEndLifespan(span,getArg(p,j)) == i && isaBatType(getArgType(mb, p, j)) ){
+			if (getEndScope(mb,getArg(p,j)) == i && isaBatType(getArgType(mb, p, j)) ){
 				mb->var[getArg(p,j)]->eolife = n;
 				p->gc |= GARBAGECONTROL;
 			} 
@@ -88,8 +85,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			/* force garbage collection of all within upper block */
 			depth--;
 			for (k = 0; k < vlimit; k++) {
-				if (getBeginLifespan(span,k) > 0  &&
-					getEndLifespan(span,k) == i &&
+				if (getBeginScope(mb,k) > 0  &&
+					getEndScope(mb,k) == i &&
 					isaBatType(getVarType(mb,k)) ){
 						q= newAssignment(mb);
 						getArg(q,0) = k;
@@ -119,12 +116,23 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		for ( k =0; k < vlimit; k++)
 		mnstr_printf(cntxt->fdout,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
-			getBeginLifespan(span,k), getLastUpdate(span,k), getEndLifespan(span,k));
+			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 		chkFlow(cntxt->fdout,mb);
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 		mnstr_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
-	GDKfree(span);
+
+	/* leave a consistent scope admin behind */
+	setVariableScope(mb);
+    /* Defense line against incorrect plans */
+    if( actions+1 > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions+1,GDKusec() - usec);
+    newComment(mb,buf);
 
 	return actions+1;
 }

@@ -600,7 +600,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			if (!isVarConstant(mb, getArg(p, j))) {
 				/* be careful, watch out for garbage collection interference */
 				/* those should be scheduled after all its other uses */
-				l = getEndOfLife(mb, getArg(p, j));
+				l = getEndScope(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
 					PARDEBUG fprintf(stderr, "#endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);

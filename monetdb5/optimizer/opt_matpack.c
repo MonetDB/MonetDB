@@ -21,6 +21,8 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int actions = 0;
 	InstrPtr *old;
 	char *packIncrementRef = putName("packIncrement");
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -57,5 +59,16 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if (old[i]) 
 			freeInstruction(old[i]);
 	GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

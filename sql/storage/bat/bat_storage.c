@@ -723,6 +723,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 	}
 	assert(b->T->heap.storage != STORE_PRIV);
 	BATappend(b, i, TRUE);
+	BATkey(BATmirror(b), TRUE);
 	bat_destroy(b);
 
 	bat->cnt += BATcount(i);
@@ -744,6 +745,7 @@ delta_delete_val( sql_dbat *bat, oid rid )
 	}
 	assert(b->T->heap.storage != STORE_PRIV);
 	BUNappend(b, (ptr)&rid, TRUE);
+	BATkey(BATmirror(b), TRUE);
 	bat_destroy(b);
 
 	bat->cnt ++;

@@ -45,7 +45,7 @@ monet_version(void)
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"
-			"Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved\n");
+			"Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved\n");
 	printf("Visit http://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");

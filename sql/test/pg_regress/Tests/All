@@ -18,7 +18,7 @@ oid
 float4
 float8
 # bit NOT supported in MonetDB. BIT is also not standard SQL so exclude this test
-HAVE_HGE?numeric
+HAVE_HGE&THREADS=1?numeric
 strings
 strings_concat
 strings_cast

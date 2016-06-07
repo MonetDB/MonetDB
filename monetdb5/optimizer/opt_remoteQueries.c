@@ -156,6 +156,8 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int dbtop,k;
 	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
+	lng usec = GDKusec();
+
 	cst.vtype= TYPE_int;
 	cst.val.ival= 0;
 	cst.len = 0;
@@ -369,5 +371,16 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 	GDKfree(location);
 	GDKfree(dbalias);
+
+    /* Defense line against incorrect plans */
+    if( doit){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit, GDKusec() - usec);
+    newComment(mb,buf);
+
 	return doit;
 }

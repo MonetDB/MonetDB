@@ -121,6 +121,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	str msg;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
 	int *assigned, use; 
+	char buf[256];
+	lng usec = GDKusec();
 
 	cntxt->itrace = 0;
 	(void)stk;
@@ -228,5 +230,16 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ( env) 
 		freeStack(env);
 	cntxt->itrace = debugstate;
+
+    /* Defense line against incorrect plans */
+	/* Plan is unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+    
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,GDKusec() -usec);
+    newComment(mb,buf);
+
 	return actions;
 }

@@ -37,7 +37,7 @@ import java.text.SimpleDateFormat;
  * </pre>
  *
  * @author Fabian Groffen
- * @version 0.2
+ * @version 0.3
  */
 public class MonetPreparedStatement
 	extends MonetStatement
@@ -55,7 +55,6 @@ public class MonetPreparedStatement
 	private final int rscolcnt;
 
 	private final String[] values;
-	private final StringBuilder buf;
 	
 	private final MonetConnection connection;
 
@@ -121,7 +120,6 @@ public class MonetPreparedStatement
 		table = new String[size];
 		column = new String[size];
 		values = new String[size];
-		buf = new StringBuilder(6 + 12 * size);
 
 		this.connection = connection;
 
@@ -153,6 +151,8 @@ public class MonetPreparedStatement
 	 * @param resultSetConcurrency concurrency of ResultSet to produce
 	 * @throws SQLException if an error occurs during login
 	 */
+	/* Disabled this constructor code as it is not part of the JDBC interface
+	   It may be enabled again when a subclass is constructed which needs it.
 	MonetPreparedStatement(
 			MonetConnection connection,
 			int resultSetType,
@@ -175,13 +175,13 @@ public class MonetPreparedStatement
 		table = null;
 		column = null;
 		values = null;
-		buf = null;
 		id = -1;
 		size = -1;
 		rscolcnt = -1;
 
 		this.connection = connection;
 	}
+	*/
 
 	//== methods interface PreparedStatement
 
@@ -350,12 +350,6 @@ public class MonetPreparedStatement
 
 		// return inner class which implements the ResultSetMetaData interface
 		return new rsmdw() {
-			// for the more expensive methods, we provide a simple cache
-			// for the most expensive part; getting the ResultSet which
-			// contains the data
-			private DatabaseMetaData dbmd = null;
-			private Map<Integer, ResultSet> colrs = new HashMap<Integer, ResultSet>();
-
 			/**
 			 * Returns the number of columns in this ResultSet object.
 			 *
@@ -369,7 +363,6 @@ public class MonetPreparedStatement
 					if (column[i] != null)
 						cnt++;
 				}
-				
 				return cnt;
 			}
 
@@ -402,7 +395,15 @@ public class MonetPreparedStatement
 			 * @returns false
 			 */
 			@Override
-			public boolean isCaseSensitive(int column) {
+			public boolean isCaseSensitive(int column) throws SQLException {
+				switch (javaType[getColumnIdx(column)]) {
+					case Types.CHAR:
+					case Types.VARCHAR:
+					case Types.LONGVARCHAR: // MonetDB doesn't use type LONGVARCHAR, it's here for completeness
+					case Types.CLOB:
+						return true;
+				}
+
 				return false;
 			}
 
@@ -554,8 +555,7 @@ public class MonetPreparedStatement
 
 			/**
 			 * Gets the designated column's table's catalog name.
-			 * Because MonetDB handles only one catalog (dbfarm) at a
-			 * time, the current one is the one we deal with here.
+			 * MonetDB does not support the catalog naming concept as in: catalog.schema.table naming scheme
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the name of the catalog for the table in which the given
@@ -563,7 +563,7 @@ public class MonetPreparedStatement
 			 */
 			@Override
 			public String getCatalogName(int column) throws SQLException {
-				return getConnection().getCatalog();
+				return null;	// MonetDB does NOT support catalogs
 			}
 
 			/**
@@ -674,44 +674,12 @@ public class MonetPreparedStatement
 			public String getColumnTypeName(int column) throws SQLException {
 				return monetdbType[getColumnIdx(column)];
 			}
-
-			/**
-			 * Returns the Metadata ResultSet for the given column
-			 * number of this ResultSet.  If the column was previously
-			 * requested, a cached ResultSet is returned, otherwise it
-			 * is fetched using the DatabaseMetaData class.
-			 *
-			 * @param column the column index number starting from 1
-			 * @return Metadata ResultSet
-			 * @throws SQLException if a database error occurs
-			 */
-			@SuppressWarnings("unused")
-			private ResultSet getColumnResultSet(int col)
-				throws SQLException
-			{
-				if (!colrs.containsKey(col)) {
-					if (dbmd == null)
-						dbmd = getConnection().getMetaData();
-					ResultSet rscol = 
-						dbmd.getColumns(
-								null, /* this doesn't matter here... */
-								schema[getColumnIdx(col)],
-								table[getColumnIdx(col)],
-								column[getColumnIdx(col)]
-							);
-					colrs.put(col, rscol);
-				}
-
-				ResultSet res = (ResultSet)(colrs.get(col));
-				res.beforeFirst();
-				return res;
-			}
 		};
 	}
 
 	/* helper class for the anonymous class in getParameterMetaData */
 	private abstract class pmdw extends MonetWrapper implements ParameterMetaData {}
-    /**
+	/**
 	 * Retrieves the number, types and properties of this
 	 * PreparedStatement object's parameters.
 	 *
@@ -928,7 +896,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int, InputStream x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setAsciiStream");
 	}
 
 	/**
@@ -951,7 +919,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		setAsciiStream(parameterIndex, x, (long)length);
+		throw newSQLFeatureNotSupportedException("setAsciiStream");
 	}
 
 	/**
@@ -977,7 +945,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x, long length)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int parameterIndex, InputStream x, long length) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setAsciiStream");
 	}
 
 	/**
@@ -1037,7 +1005,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setBinaryStream");
 	}
 
 	/**
@@ -1061,7 +1029,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		setBinaryStream(parameterIndex, x, (long)length);
+		throw newSQLFeatureNotSupportedException("setBinaryStream");
 	}
 
 	/**
@@ -1085,7 +1053,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x, long length)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x, long length) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setBinaryStream");
 	}
 
 	/**
@@ -1100,7 +1068,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setBlob(int i, InputStream x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setBlob");
 	}
 
 	/**
@@ -1115,7 +1083,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setBlob(int i, Blob x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setBlob(int i, Blob x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setBlob");
 	}
 
 	/**
@@ -1139,7 +1107,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setBlob(int i, InputStream is, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream, long) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setBlob");
 	}
 
 	/**
@@ -1255,7 +1223,7 @@ public class MonetPreparedStatement
 	public void setCharacterStream(int parameterIndex, Reader reader)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("setCharacterStream(int, Reader) not supported", "0A000");
+		setCharacterStream(parameterIndex, reader, (int)0);
 	}
 
 	/**
@@ -1324,8 +1292,8 @@ public class MonetPreparedStatement
 			return;
 		}
 		// Some buffer. Size of 8192 is default for BufferedReader, so...
-		char[] arr = new char[8192];  
-		StringBuffer buf = new StringBuffer();
+		char[] arr = new char[8192];
+		StringBuilder buf = new StringBuilder(8192 * 8);
 		int numChars;
 		try {
 			while ((numChars = reader.read(arr, 0, arr.length)) > 0) {
@@ -1487,7 +1455,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setNCharacterStream(int i, Reader value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNCharacterStream currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setNCharacterStream");
 	}
 
 	/**
@@ -1507,7 +1475,7 @@ public class MonetPreparedStatement
 	public void setNCharacterStream(int i, Reader value, long length)
 		throws SQLException
 	{
-		setNCharacterStream(i, value);
+		throw newSQLFeatureNotSupportedException("setNCharacterStream");
 	}
 
 	/**
@@ -1523,7 +1491,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setNClob(int i, Reader value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setNClob");
 	}
 
 	/**
@@ -1539,7 +1507,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setNClob(int i, NClob value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNClob(int, NClob) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setNClob");
 	}
 
 	/**
@@ -1563,7 +1531,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setNClob(int i, Reader r, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader, long) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setNClob");
 	}
 
 	/**
@@ -1580,7 +1548,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setNString(int i, String value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNString(int i, String x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setNString");
 	}
 
 	/**
@@ -1830,7 +1798,7 @@ public class MonetPreparedStatement
 				case Types.NCHAR:
 				case Types.NVARCHAR:
 				case Types.LONGNVARCHAR:
-					throw new SQLFeatureNotSupportedException("N CHAR types not supported");
+					throw newSQLFeatureNotSupportedException("setObject() with targetType N[VAR]CHAR");
 				default:
 					throw new SQLException("Conversion not allowed", "M1M05");
 			}
@@ -2030,7 +1998,7 @@ public class MonetPreparedStatement
 			setClob(parameterIndex, (Clob)x);
 		} else if (x instanceof Struct) {
 			// I have no idea how to do this...
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Struct currently not supported!", "0A000");
+			throw newSQLFeatureNotSupportedException("setObject() with object of type Struct");
 		} else if (x instanceof Ref) {
 			setRef(parameterIndex, (Ref)x);
 		} else if (x instanceof java.net.URL) {
@@ -2038,9 +2006,9 @@ public class MonetPreparedStatement
 		} else if (x instanceof RowId) {
 			setRowId(parameterIndex, (RowId)x);
 		} else if (x instanceof NClob) {
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type NClob currently not supported!", "0A000");
+			throw newSQLFeatureNotSupportedException("setObject() with object of type NClob");
 		} else if (x instanceof SQLXML) {
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!", "0A000");
+			throw newSQLFeatureNotSupportedException("setObject() with object of type SQLXML");
 		} else if (x instanceof SQLData) { // not in JDBC4.1???
 			SQLData sx = (SQLData)x;
 			final int paramnr = parameterIndex;
@@ -2053,8 +2021,8 @@ public class MonetPreparedStatement
 					// with the actual sqltype the server expects, or we
 					// will get an error back
 					setValue(
-							paramnr,
-							sqltype + " '" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
+						paramnr,
+						sqltype + " '" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
 					);
 				}
 
@@ -2190,7 +2158,7 @@ public class MonetPreparedStatement
 			};
 			sx.writeSQL(out);
 		} else {	// java Class
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!", "0A000");
+			throw newSQLFeatureNotSupportedException("setObject() with object of type Class");
 		}
 	}
 
@@ -2207,7 +2175,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setRef(int i, Ref x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setRef(int i, Ref x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setRef");
 	}
 
 	/**
@@ -2223,7 +2191,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setRowId(int i, RowId x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setRowId(int i, RowId x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setRowId");
 	}
 
 	/**
@@ -2275,7 +2243,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setSQLXML(int parameterIndex, SQLXML x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("setSQLXML(int, SQLXML) not supported", "0A000");
+		throw newSQLFeatureNotSupportedException("setSQLXML");
 	}
 
 	/**
@@ -2353,7 +2321,7 @@ public class MonetPreparedStatement
 		setTimestamp(index, x, null);
 	}
 
-    /**
+	/**
 	 * Sets the designated parameter to the given java.sql.Timestamp
 	 * value, using the given Calendar object.  The driver uses the
 	 * Calendar object to construct an SQL TIMESTAMP value, which the
@@ -2423,7 +2391,7 @@ public class MonetPreparedStatement
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation setUnicodeStream(int parameterIndex, InputStream x, int length) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setUnicodeStream");
 	}
 
 	/**
@@ -2437,7 +2405,7 @@ public class MonetPreparedStatement
 	 */
 	@Override
 	public void setURL(int parameterIndex, URL x) throws SQLException {
-		throw new SQLException("Operation setURL(int parameterIndex, URL x) currently not supported!", "0A000");
+		throw newSQLFeatureNotSupportedException("setURL");
 	}
 
 	/**
@@ -2499,10 +2467,10 @@ public class MonetPreparedStatement
 	 * @throws SQLException if not all columns are set
 	 */
 	private String transform() throws SQLException {
-		buf.delete(0, buf.length());
+		StringBuilder buf = new StringBuilder(8 + 12 * size);
 		buf.append("exec ");
 		buf.append(id);
-		buf.append("(");
+		buf.append('(');
 		// check if all columns are set and do a replace
 		int col = 0;
 		for (int i = 0; i < size; i++) {
@@ -2510,14 +2478,26 @@ public class MonetPreparedStatement
 				continue;
 			col++;
 			if (col > 1)
-				buf.append(",");
+				buf.append(',');
 			if (values[i] == null) throw
 				new SQLException("Cannot execute, parameter " + col + " is missing.", "M1M05");
 
 			buf.append(values[i]);
 		}
-		buf.append(")");
-		
+		buf.append(')');
+
 		return buf.toString();
+	}
+
+	/**
+	 * Small helper method that formats the "Method ... not implemented" message
+	 * and creates a new SQLFeatureNotSupportedException object
+	 * whose SQLState is set to "0A000".
+	 *
+	 * @param name the method name
+	 * @return a new created SQLFeatureNotSupportedException object with SQLState 0A000
+	 */
+	private final static SQLFeatureNotSupportedException newSQLFeatureNotSupportedException(String name) {
+		return new SQLFeatureNotSupportedException("Method " + name + " not implemented", "0A000");
 	}
 }

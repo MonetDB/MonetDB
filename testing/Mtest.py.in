@@ -1129,7 +1129,7 @@ def find_test_dirs(thisdir) :
     return testdirs
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, BusyPorts) :
+def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     td = 0
     elem = None
     FdOut = F_SKIP
@@ -1231,7 +1231,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
         alllinks = []
         for TST,COND in testlist:
             os.environ['TST'] = TST
-            tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length)
+            tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests)
             alllinks.extend(links)
             if tt:
                 t = "%7.3f" % tt
@@ -1757,7 +1757,7 @@ def CategorizeResult(TST, SockTime):
         e = SockTime
     return o, e
 
-def RunTest(env, TST, BusyPorts, COND, oktests, length) :
+def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -2071,7 +2071,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2700,7 +2700,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2795,11 +2795,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
-            if CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
+            if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             # enable Python integration in server
-            if CONDITIONALS['HAVE_LIBPY']:
+            if (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 Srvr.extend(['--set', 'embedded_py=true'])
                 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -3609,6 +3609,7 @@ def main(argv) :
     CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
     addreqs = False
+    all_tests = False
     global global_timeout
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
@@ -4160,9 +4161,10 @@ def main(argv) :
                 tsts = "tests "+str(testlist)
             else:
                 tsts = "all tests"
+                all_tests = True
             if verbose:
                 print("\nRunning %s in directory %s.\n" % (tsts , testdirs[0]))
-            t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts)
+            t_, elem, diff = PerformDir(env, testdirs[0], testlist, BusyPorts, all_tests)
             if elem is not None:
                 if diff <= F_OK:
                     body_good.append(elem)
@@ -4172,7 +4174,7 @@ def main(argv) :
             if verbose:
                 print("\nRunning all tests in directories %s.\n" % str(testdirs))
             for d in testdirs:
-                t, elem, diff = PerformDir(env, d, [], BusyPorts)
+                t, elem, diff = PerformDir(env, d, [], BusyPorts, True)
                 t_ = t_ + t
                 if elem is not None:
                     if diff <= F_OK:

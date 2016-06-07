@@ -250,6 +250,11 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if ( mb->inlineProp)
         	return 0;
 
+	/* force at least once a complete type check by resetting the type check flag */
+	resetMalBlk(mb,mb->stop);
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 
 	do {
 		/* any errors should abort the optimizer */

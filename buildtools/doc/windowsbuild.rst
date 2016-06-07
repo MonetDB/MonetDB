@@ -727,14 +727,15 @@ Java
 ----
 
 If you want to build the java component of the MonetDB suite, you need
-Java__.  Get Java from http://java.sun.com/, but make sure you do
-*not* get the latest version.  Get the Java Development Kit 1.5.  Our
-current JDBC driver is not compatible with Java 1.6 yet.
+JDK__.  Get the Java Development Kit from
+http://www.oracle.com/technetwork/java/.
+We currently compile for target Java 7, so we do not yet support
+JDBC methods/features introduced in Java 8 (or higher).
 
 In addition to the Java Development Kit, you will also need `Apache Ant`_
 which is responsible for the actual building of the driver.
 
-__ http://java.sun.com/
+__ http://www.oracle.com/technetwork/java/
 
 Apache Ant
 ----------
@@ -840,8 +841,8 @@ is an example: version numbers may differ)::
  rem Bison (and Diff)
  set Path=%ProgramFiles%\GnuWin32\bin;%Path%
  rem Java is optional, set JAVA_HOME for convenience
- set JAVA_HOME=%ProgramFiles%\Java\jdk1.5.0_16
- set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.5.0_16\bin;%Path%
+ set JAVA_HOME=%ProgramFiles%\Java\jdk1.8.0_92
+ set Path=%JAVA_HOME%\bin;%ProgramFiles%\Java\jre1.8.0_92\bin;%Path%
  rem Apache Ant is optional, but required for Java compilation
  set Path=%ProgramFiles%\apache-ant-1.7.1\bin;%Path%
 
