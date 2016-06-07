@@ -2359,7 +2359,7 @@ if test "x$enable_pyintegration" != xno; then
 		;;
 	esac
 	if test "x$have_pyconfig" = x; then
-	   	AC_PATH_PROG(PYCMD,python-config,,$XPATH)
+	   	AC_PATH_PROG(PYCMD,python-config,no,$PATH)
 	   	if test "x$PYCMD" = x; then
 	  		if test "x$enable_pyintegration" = xyes; then
 				AC_MSG_ERROR([python-config library required for Python integration support])
