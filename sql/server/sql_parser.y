@@ -342,6 +342,8 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_list
 	column_commalist_parens
+	opt_fwf_widths
+	fwf_widthlist
 	opt_header_list
 	header_list
 	header
@@ -599,7 +601,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN STDOUT
+%token COPY RECORDS DELIMITERS STDIN STDOUT FWF
 %token INDEX
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
@@ -2481,7 +2483,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2493,6 +2495,7 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
+	  append_list(l, $14);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
   | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
@@ -2532,7 +2535,22 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
+  
 
+
+opt_fwf_widths:
+       /* empty */		{ $$ = NULL; }
+| FWF '(' fwf_widthlist ')' { $$ = $3; }
+ 
+ ;
+ 
+ fwf_widthlist:
+    poslng		{ $$ = append_lng(L(), $1); }
+ |  fwf_widthlist ',' poslng
+			{ $$ = append_lng($1, $3); }
+ ;
+
+ 
 opt_header_list:
        /* empty */		{ $$ = NULL; }
  | '(' header_list ')'		{ $$ = $2; }

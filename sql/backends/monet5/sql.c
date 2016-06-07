@@ -3410,9 +3410,15 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
 	int *besteffort = getArgReference_int(stk, pci, pci->retc + 9);
+	char *fixed_widths = NULL;
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
+
+	if (pci->argc - pci->retc > 10) {
+		fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
+
+	}
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3483,14 +3489,29 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		}
 		GDKfree(fn);
-
-		// FIXME
-		if (GDKgetenv_isyes("testfwf")) {
-			fprintf(stderr, "### FWF IMPORT ON %s ###\n", *fname);
-			size_t *widths = malloc(sizeof(size_t)*400);
-			size_t i = 0;
-			widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 12;  widths[i++] = 8;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 8;  widths[i++] = 8;  widths[i++] = 30;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 4;  widths[i++] = 4;  widths[i++] = 2;  widths[i++] = 8;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 9;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 4;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 4;  widths[i++] = 2;  widths[i++] = 8;  widths[i++] = 2;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 8;  widths[i++] = 8;  widths[i++] = 8;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 9;  widths[i++] = 4;  widths[i++] = 4;  widths[i++] = 4;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 12;  widths[i++] = 12;  widths[i++] = 12;  widths[i++] = 8;  widths[i++] = 8;  widths[i++] = 8;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 3;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 2;  widths[i++] = 40;
-			ss = stream_fwf_create(ss, 376, widths, ' ');
+		if (fixed_widths) {
+			size_t ncol = 0, current_width_entry = 0, i;
+			size_t *widths;
+			char* val_start = fixed_widths;
+			size_t width_len = strlen(fixed_widths);
+			for (i = 0; i < width_len; i++) {
+				if (fixed_widths[i] == '|') {
+					ncol++;
+				}
+			}
+			widths = malloc(sizeof(size_t) * ncol);
+			if (!widths) {
+				// TODO: free other stuff
+				throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+			}
+			for (i = 0; i < width_len; i++) {
+				if (fixed_widths[i] == '|') {
+					fixed_widths[i] = '\0';
+					widths[current_width_entry++] = (size_t) atoll(val_start);
+					val_start = fixed_widths + i + 1;
+				}
+			}
+			ss = stream_fwf_create(ss, ncol, widths, ' ');
 		}
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
