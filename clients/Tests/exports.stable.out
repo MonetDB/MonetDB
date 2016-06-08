@@ -2636,6 +2636,7 @@ stream *socket_rstream(SOCKET socket, const char *name);
 stream *socket_wastream(SOCKET socket, const char *name);
 stream *socket_wstream(SOCKET socket, const char *name);
 stream *stream_blackhole_create(void);
+stream *stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler);
 stream *udp_rastream(const char *hostname, int port, const char *name);
 stream *udp_wastream(const char *hostname, int port, const char *name);
 stream *wbstream(stream *s, size_t buflen);
