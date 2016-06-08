@@ -2497,7 +2497,7 @@ copyfrom_stmt:
 	  append_int(l, $13);
 	  append_list(l, $14);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint 
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2509,7 +2509,7 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
-	  append_list(l, $14);
+	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
