@@ -1161,11 +1161,10 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		fwf_string = GDKmalloc(20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
-		if (!fwf_string) {
+		char* fwf_string_cur = fwf_string = GDKmalloc(20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
+
+		if (!fwf_string) 
 			return NULL;
-		}
-		char* fwf_string_cur = fwf_string;
 		for (dn = fwf_widths->h; dn; dn = dn->next) {
 			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
 			ncol++;
