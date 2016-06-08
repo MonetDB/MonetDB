@@ -178,11 +178,14 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				}
 			}
 			if( marked[getArg(p,0)]){
-				int tpe = getColumnType(getVarType(mb,getArg(p,1)));
-				q= newStmt(mb,batRef,newRef);
-				q = pushType(mb,q, TYPE_oid);
-				q = pushType(mb,q,tpe);
-				getArg(q,0)= getArg(p,1);
+				int tpe;
+				if( p->retc == 2){
+					tpe = getColumnType(getVarType(mb,getArg(p,1)));
+					q= newStmt(mb,batRef,newRef);
+					q = pushType(mb,q, TYPE_oid);
+					q = pushType(mb,q,tpe);
+					getArg(q,0)= getArg(p,1);
+				}
 				
 				tpe = getColumnType(getVarType(mb,getArg(p,0)));
 				clrFunction(p);
