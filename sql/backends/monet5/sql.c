@@ -3410,9 +3410,15 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *offset = getArgReference_lng(stk, pci, pci->retc + 7);
 	int *locked = getArgReference_int(stk, pci, pci->retc + 8);
 	int *besteffort = getArgReference_int(stk, pci, pci->retc + 9);
+	char *fixed_widths = NULL;
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
+
+	if (pci->argc - pci->retc > 10) {
+		fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
+
+	}
 
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -3483,6 +3489,41 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		}
 		GDKfree(fn);
+		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
+			size_t ncol = 0, current_width_entry = 0, i;
+			size_t *widths;
+			char* val_start = fixed_widths;
+			size_t width_len = strlen(fixed_widths);
+			for (i = 0; i < width_len; i++) {
+				if (fixed_widths[i] == '|') {
+					ncol++;
+				}
+			}
+			widths = malloc(sizeof(size_t) * ncol);
+			if (!widths) {
+				mnstr_destroy(ss);
+				GDKfree(tsep);
+				GDKfree(rsep);
+				GDKfree(ssep);
+				GDKfree(ns);
+				throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
+			}
+			for (i = 0; i < width_len; i++) {
+				if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
+					fixed_widths[i] = '\0';
+					widths[current_width_entry++] = (size_t) atoll(val_start);
+					val_start = fixed_widths + i + 1;
+				}
+			}
+			/* overwrite other delimiters to the ones the FWF stream uses */
+			sprintf((char*) tsep, "%c", STREAM_FWF_FIELD_SEP);
+			sprintf((char*) rsep, "%c", STREAM_FWF_RECORD_SEP);
+			if (!ssep) 
+				ssep = GDKmalloc(2);
+			ssep[0] = 0;
+
+			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
+		}
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
 #else

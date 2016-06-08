@@ -176,6 +176,8 @@ scanner_init_keywords(void)
 	keywords_insert("FOR", FOR);
 	keywords_insert("FOREIGN", FOREIGN);
 	keywords_insert("FROM", FROM);
+	keywords_insert("FWF", FWF);
+
 	keywords_insert("REFERENCES", REFERENCES);
 
 	keywords_insert("MATCH", MATCH);
