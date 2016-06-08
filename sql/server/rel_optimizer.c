@@ -399,29 +399,6 @@ exp_keyvalue(sql_exp *e)
 	return cnt;
 }
 
-static int
-joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
-{
-	sql_rel *h_l;
-	sql_rel *h_r;
-	sql_rel *key_l;
-	sql_rel *key_r;
-
-	assert (!h || !key || (h->type == e_cmp && key->type == e_cmp));
-	if (is_complex_exp(h->flag) || is_complex_exp(key->flag))
-		return -1;
-	h_l = find_rel(rels, h->l);
-	h_r = find_rel(rels, h->r);
-	key_l = find_rel(rels, key->l);
-	key_r  = find_rel(rels, key->r);
-
-	if (h_l == key_l && h_r == key_r)
-		return 0;
-	if (h_r == key_l && h_l == key_r)
-		return 0;
-        return -1;
-}
-
 static sql_exp *
 joinexp_col(sql_exp *e, sql_rel *r)
 {
@@ -640,15 +617,74 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 	return NULL;
 }
 
+static int
+find_join_rels(list **L, list **R, list *exps, list *rels)
+{
+	node *n;
+
+	*L = sa_list(exps->sa);
+	*R = sa_list(exps->sa);
+	if (!exps || list_length(exps) <= 1)
+		return -1;
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		sql_rel *l = NULL, *r = NULL;
+
+		if (!is_complex_exp(e->flag)){
+			l = find_rel(rels, e->l);
+			r = find_rel(rels, e->r);
+		}
+		if (l<r) {
+			list_append(*L, l);
+			list_append(*R, r);
+		} else {
+			list_append(*L, r);
+			list_append(*R, l);
+		}
+	}
+	return 0;
+}
+
+static list * 
+distinct_join_exps(list *aje, list *lrels, list *rrels)
+{
+	node *n, *m, *o, *p;
+	int len = 0, i, j;
+	char *used = SA_NEW_ARRAY(aje->sa, char, len = list_length(aje));
+	list *res = sa_list(aje->sa);
+
+	memset(used, 0, len);
+	assert(len == list_length(lrels));
+	for(n = lrels->h, m = rrels->h, j = 0; n && m; 
+	    n = n->next, m = m->next, j++) {
+		if (n->data && m->data)
+		for(o = n->next, p = m->next, i = j+1; o && p; 
+		    o = o->next, p = p->next, i++) {
+			if (o->data == n->data && p->data == m->data)
+				used[i] = 1;
+		}
+	}
+	for (i = 0, n = aje->h; i < len; n = n->next, i++) {
+		if (!used[i])
+			list_append(res, n->data);
+	}
+	return res;
+}
+
 static list *
 find_fk( mvc *sql, list *rels, list *exps) 
 {
 	node *djn;
 	list *sdje, *aje, *dje;
+	list *lrels, *rrels;
 
 	/* first find the distinct join expressions */
 	aje = list_select(exps, rels, (fcmp) &exp_is_join, (fdup)NULL);
-	dje = list_distinct2(aje, rels, (fcmp2) &joinexp_cmp, (fdup)NULL);
+	/* add left/right relation */
+	if (find_join_rels(&lrels, &rrels, aje, rels) < 0)
+		dje = aje;
+	else
+		dje = distinct_join_exps(aje, lrels, rrels);
 	for(djn=dje->h; djn; djn = djn->next) {
 		/* equal join expressions */
 		sql_idx *idx = NULL;

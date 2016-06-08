@@ -448,21 +448,6 @@ list_distinct(list *l, fcmp cmp, fdup dup)
 	return res;
 }
 
-static node *
-list_find2(list *l, void *data, void *key, fcmp2 cmp)
-{
-	node *n = NULL;
-
-	if (key) {
-		for (n = l->h; n; n = n->next) {
-			if (cmp(data, n->data, key) == 0) {
-				return n;
-			}
-		}
-	}
-	return NULL;
-}
-
 int
 list_position(list *l, void *val)
 {
@@ -485,20 +470,6 @@ list_fetch(list *l, int pos)
 	if (n)
 		return n->data;
 	return NULL;
-}
-
-list *
-list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup)
-{
-	list *res = list_new_(l);
-	node *n = NULL;
-
-	for (n = l->h; n; n = n->next) {
-		if (!list_find2(res, data, n->data, cmp)) {
-			list_append(res, dup?dup(n->data):n->data);
-		}
-	}
-	return res;
 }
 
 void *
