@@ -9,7 +9,7 @@
 %define bits 32
 %else
 %define bits 64
-%define with_int128=1
+%define with_int128 1
 %endif
 
 # only add .oidXX suffix if oid size differs from bit size
