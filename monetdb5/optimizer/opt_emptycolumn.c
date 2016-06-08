@@ -27,15 +27,6 @@
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define propagate(X)									\
-	do {												\
-		clrFunction(p);									\
-		getArg(p,1)= getArg(p,X);						\
-		p->argc = 2;									\
-		actions++;										\
-	} while (0)
-
-
 #define emptyresult(I)								\
 	do {												\
 		int tpe = getColumnType(getVarType(mb,getArg(p,I))); \
@@ -48,18 +39,17 @@
 	} while (0)
 
 
-//#undef	OPTDEBUGemptycolumn
-//#define	OPTDEBUGemptycolumn
 
 int
 OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
+	int i,j;
 	int *marked;
 	int limit = mb->stop;
-	InstrPtr p, *old = mb->stmt;
+	InstrPtr p, q, *old = mb->stmt;
 	char buf[256];
 	lng usec = GDKusec();
+	str sch,tbl;
 
 	// use an instruction reference table to keep
 	// track of where 'emptycolumn' results are produced
@@ -75,7 +65,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) pci;
 
 	OPTDEBUGemptycolumn{
-		mnstr_printf(GDKout, "Optimize Query Emptybind\n");
+		mnstr_printf(GDKout, "Optimize Query Emptycolumn\n");
 		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 	}
 
@@ -118,9 +108,44 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				OPTDEBUGemptycolumn
 					mnstr_printf(cntxt->fdout, "#empty bind  pc %d var %d\n",i , getArg(p,1) );
 			}
-			// replace the call into a empty bat creation
-			if( p->retc == 1){
-				emptyresult(0);
+			// replace the call into a empty bat creation unless the table was updated already in the same query 
+			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
+			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
+			for(j= 1; j< mb->stop; j++){
+				q= getInstrPtr(mb,j);
+				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
+					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
+						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
+						marked[getArg(p,0)] = 0;
+						if( p->retc == 2)
+							marked[getArg(p,1)] = 0;
+						break;
+					}
+				}
+				if(q && getModuleId(q) == sqlRef && getFunctionId(q) == catalogRef){
+					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
+						marked[getArg(p,0)] = 0;
+						break;
+					}
+				}
+			}
+			if( marked[getArg(p,0)]){
+                int tpe;
+				if( p->retc == 2){
+					tpe = getColumnType(getVarType(mb,getArg(p,1)));
+					q= newStmt(mb,batRef,newRef);
+					q = pushType(mb,q, TYPE_oid);
+					q = pushType(mb,q,tpe);
+					getArg(q,0)= getArg(p,1);
+				}
+
+                tpe = getColumnType(getVarType(mb,getArg(p,0)));
+                clrFunction(p);
+                setModuleId(p,batRef);
+                setFunctionId(p,newRef);
+                p->argc = p->retc = 1;
+                p = pushType(mb,p, TYPE_oid);
+                p = pushType(mb,p,tpe);
 			}
 			continue;
 		}
@@ -131,6 +156,42 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			setFunctionId(p,bindidxRef);
 			p->typechk= TYPE_UNKNOWN;
 			marked[getArg(p,0)] = i;
+			// replace the call into a empty bat creation unless the table was updated already in the same query 
+			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
+			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
+			for(j= 1; j< mb->stop; j++){
+				q= getInstrPtr(mb,j);
+				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
+					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
+						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
+						marked[getArg(p,0)] = 0;
+						if( p->retc == 2)
+							marked[getArg(p,1)] = 0;
+						break;
+					}
+				}
+				if(q && getModuleId(q) == sqlRef && getFunctionId(q) == catalogRef){
+					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
+						marked[getArg(p,0)] = 0;
+						break;
+					}
+				}
+			}
+			if( marked[getArg(p,0)]){
+				int tpe = getColumnType(getVarType(mb,getArg(p,1)));
+				q= newStmt(mb,batRef,newRef);
+				q = pushType(mb,q, TYPE_oid);
+				q = pushType(mb,q,tpe);
+				getArg(q,0)= getArg(p,1);
+				
+				tpe = getColumnType(getVarType(mb,getArg(p,0)));
+				clrFunction(p);
+				setModuleId(p,batRef);
+				setFunctionId(p,newRef);
+				p->argc = p->retc = 1;
+				p = pushType(mb,p, TYPE_oid);
+				p = pushType(mb,p,tpe);
+			}
 			continue;
 		}
 
