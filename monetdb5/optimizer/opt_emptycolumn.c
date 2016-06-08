@@ -39,24 +39,31 @@
 	} while (0)
 
 
-
 int
 OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j;
 	int *marked;
 	int limit = mb->stop;
-	InstrPtr p, q, *old = mb->stmt;
+	InstrPtr p, q, *old = mb->stmt, *empty;
 	char buf[256];
 	lng usec = GDKusec();
 	str sch,tbl;
+	int etop= 0, esize= 256;
 
 	// use an instruction reference table to keep
 	// track of where 'emptycolumn' results are produced
 	marked = (int *) GDKzalloc(mb->vsize * sizeof(int));
 	if ( marked == NULL)
 		return 0;
+
+	empty= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	if( empty == 0){
+		GDKfree(marked);
+		return 0;
+	}
 	(void) stk;
+
 	/* Got an instructions V:= bat.new(:tpe) 
 	 * The form the initial family of marked sets.
 	 */
@@ -95,6 +102,16 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			marked[getArg(p,0)] = i;
 			continue;
 		} 
+		if(p && getModuleId(p) == sqlRef && (getFunctionId(p) == appendRef || getFunctionId(p) == updateRef || getFunctionId(p) == catalogRef)){
+			if ( etop == esize){			\
+				empty = (InstrPtr*) GDKrealloc( empty, esize += 256);
+				if( empty == NULL){
+					GDKfree(marked);
+					return 0;
+				}
+			}
+			empty[etop++]= p;
+		}
 
 		/* restore the naming, dropping the runtime property 'marked' */
 		if (getFunctionId(p) == emptycolumnRef) {
@@ -111,8 +128,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			// replace the call into a empty bat creation unless the table was updated already in the same query 
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
-			for(j= 1; j< mb->stop; j++){
-				q= getInstrPtr(mb,j);
+			for(j= 0; j< etop; j++){
+				q= empty[j];
 				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
@@ -159,8 +176,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			// replace the call into a empty bat creation unless the table was updated already in the same query 
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
-			for(j= 1; j< mb->stop; j++){
-				q= getInstrPtr(mb,j);
+			for(j= 0; j< etop; j++){
+				q= empty[j];
 				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
@@ -242,6 +259,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	GDKfree(old);
 	GDKfree(marked);
+	GDKfree(empty);
     /* Defense line against incorrect plans */
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 	chkFlow(cntxt->fdout, mb);
