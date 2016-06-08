@@ -1167,7 +1167,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		}
 		char* fwf_string_cur = fwf_string;
 		for (dn = fwf_widths->h; dn; dn = dn->next) {
-			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"|", dn->data.l_val);
+			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
 			ncol++;
 		}
 		if(list_length(f->res) != ncol) {

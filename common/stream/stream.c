@@ -4674,11 +4674,7 @@ stream * stream_blackhole_create (void)
 
 
 /* fixed-width format streams */
-
-#define STREAM_FWF_NAME "fwf"
-#define STREAM_FWF_FIELD_SEP '|'
-#define STREAM_FWF_ESCAPE '\\'
-#define STREAM_FWF_RECORD_SEP '\n'
+#define STREAM_FWF_NAME "fwf_ftw"
 
 typedef struct {
 	stream *s;

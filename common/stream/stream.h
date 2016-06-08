@@ -87,6 +87,12 @@ typedef __int128_t hge;
 #define ST_READ  0
 #define ST_WRITE 1
 
+/* fwf gets turned into a csv with these parameters */
+#define STREAM_FWF_FIELD_SEP '|'
+#define STREAM_FWF_ESCAPE '\\'
+#define STREAM_FWF_RECORD_SEP '\n'
+#define STREAM_FWF_FILLER ' '
+
 typedef struct stream stream;
 
 /* some os specific initialization */

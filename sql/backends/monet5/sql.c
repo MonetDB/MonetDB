@@ -3501,17 +3501,26 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			widths = malloc(sizeof(size_t) * ncol);
 			if (!widths) {
-				// TODO: free other stuff
+				mnstr_destroy(ss);
+				GDKfree(tsep);
+				GDKfree(rsep);
+				GDKfree(ssep);
+				GDKfree(ns);
 				throw(MAL, "sql.copy_from", MAL_MALLOC_FAIL);
 			}
 			for (i = 0; i < width_len; i++) {
-				if (fixed_widths[i] == '|') {
+				if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
 					fixed_widths[i] = '\0';
 					widths[current_width_entry++] = (size_t) atoll(val_start);
 					val_start = fixed_widths + i + 1;
 				}
 			}
-			ss = stream_fwf_create(ss, ncol, widths, ' ');
+			/* overwrite other delimiters to the ones the FWF stream uses */
+			sprintf((char*) tsep, "%c", STREAM_FWF_FIELD_SEP);
+			sprintf((char*) rsep, "%c", STREAM_FWF_RECORD_SEP);
+			sprintf((char*) ssep, "");
+
+			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
 		}
 #if SIZEOF_VOID_P == 4
 		s = bstream_create(ss, 0x20000);
