@@ -3518,6 +3518,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* overwrite other delimiters to the ones the FWF stream uses */
 			sprintf((char*) tsep, "%c", STREAM_FWF_FIELD_SEP);
 			sprintf((char*) rsep, "%c", STREAM_FWF_RECORD_SEP);
+			if (!ssep) 
+				ssep = GDKmalloc(2);
 			ssep[0] = 0;
 
 			ss = stream_fwf_create(ss, ncol, widths, STREAM_FWF_FILLER);
