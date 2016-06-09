@@ -910,7 +910,6 @@ Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python
-BuildArch: noarch
 
 %description testing-python
 MonetDB is a database management system that is developed from a
