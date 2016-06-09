@@ -1146,13 +1146,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			private int[] _precision 	= new int[columns.length +1];
 			private int[] _scale 		= new int[columns.length +1];
 			private int[] _isNullable 	= new int[columns.length +1];
+			private boolean[] _isAutoincrement = new boolean[columns.length +1];
 			private Connection conn = null;
 			private DatabaseMetaData dbmd = null;
 
 			/**
-			 * A private method to fetch the precision, scale and isNuallble value for a fully qualified column.
+			 * A private method to fetch the precision, scale, isNullable and isAutoincrement value for a fully qualified column.
 			 * As md.getColumns() is an expensive method we call it only once per column
-			 * and cache the precision, scale and isNullable values in the above array chaches.
+			 * and cache the precision, scale, isNullable and isAutoincrement values in the above array chaches.
 			 * Also we only call md.getColumns() when we have a non empty schema name and table name and column name.
 			 */
 			private void fetchColumnInfo(int column) throws SQLException
@@ -1164,6 +1165,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				_precision[column] = 0;
 				_scale[column] = 0;
 				_isNullable[column] = columnNullableUnknown;
+				_isAutoincrement[column] = false;
 
 				// we can only call dbmd.getColumns() when we have a specific schema name and table name and column name
 				String schName = getSchemaName(column);
@@ -1184,7 +1186,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 								dbmd = conn.getMetaData();
 							}
 							if (dbmd != null) {
-								// for precision, scale and isNullable we query the information from data dictionary
+								// for precision, scale, isNullable and isAutoincrement we query the information from data dictionary
 								ResultSet colInfo = dbmd.getColumns(null, schName, tblName, colName);
 								if (colInfo != null) {
 									// we expect exactly one row in the resultset
@@ -1192,6 +1194,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 										_precision[column] = colInfo.getInt(7);  // col 7 is "COLUMN_SIZE"
 										_scale[column] = colInfo.getInt(9);  // col 9 is "DECIMAL_DIGITS"
 										_isNullable[column] = colInfo.getInt(11);  // col 11 is "NULLABLE"
+										String strVal = colInfo.getString(23);  // col 23 is "IS_AUTOINCREMENT"
+										if (strVal != null && "YES".equals(strVal))
+											_isAutoincrement[column] = true;
 									}
 									colInfo.close();  // close the resultset to release resources
 								}
@@ -1220,14 +1225,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public boolean isAutoIncrement(int column) throws SQLException {
-				// the only column I know of is a 'secret' column called rowid
-				// with datatype oid
-				// avoid nullpointer exception here
-				if ("oid".equals(getColumnTypeName(column))) {
-					return true;
-				} else {
-					return false;
+				if (_is_fetched[column] != true) {
+					fetchColumnInfo(column);
 				}
+				return _isAutoincrement[column];
 			}
 
 			/**
@@ -1284,13 +1285,19 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			/**
 			 * Indicates whether values in the designated column are signed
 			 * numbers.
-			 * Within MonetDB all numeric types are signed.
+			 * Within MonetDB all numeric types (except oid and ptr) are signed.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
 			 */
 			@Override
 			public boolean isSigned(int column) throws SQLException {
+				String monettype = getColumnTypeName(column);
+				if (monettype != null) {
+					if ("oid".equals(monettype)
+					 || "ptr".equals(monettype))
+						return false;
+				}
 				// we can hardcode this, based on the colum type
 				switch (getColumnType(column)) {
 					case Types.NUMERIC:
@@ -1339,7 +1346,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			}
 
 			/**
-			 * Get the designated column's table's schema.
+			 * Get the designated column's schema name.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return schema name or "" if not applicable
@@ -1355,17 +1362,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// figure the name out
 				try {
 					schema = header.getTableNames()[column - 1];
+					if (schema != null) {
+						int dot = schema.indexOf(".");
+						return (dot >= 0) ? schema.substring(0, dot) : "";
+					}
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
 
-				if (schema == null) throw
-					new AssertionError("table_name header is empty!");
-				int dot = schema.indexOf(".");
-				if (dot == -1) throw
-					new AssertionError("table_name is not fully qualified! (" + schema + ")");
-
-				return schema.substring(0, dot);
+				return "";
 			}
 
 			/**
@@ -1384,17 +1389,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// figure the name out
 				try {
 					table = header.getTableNames()[column - 1];
+					if (table != null) {
+						int dot = table.indexOf(".");
+						return (dot >= 0) ? table.substring(dot + 1) : table;
+					}
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
 
-				if (table == null) throw
-					new AssertionError("table_name header is empty!");
-				int dot = table.indexOf(".");
-				if (dot == -1) throw
-					new AssertionError("table_name is not fully qualified! (" + table + ")");
-
-				return table.substring(dot + 1);
+				return "";
 			}
 
 			/**
