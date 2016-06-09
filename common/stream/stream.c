@@ -4688,6 +4688,7 @@ typedef struct {
 	char* out_buf;
 	size_t out_buf_start;
 	size_t out_buf_remaining;
+	char* nl_buf;
 } stream_fwf_data;
 
 
@@ -4713,6 +4714,9 @@ stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 				}
 				return buf_written; // skip last line
 			}
+			// consume to next newline
+			while (fsd->s->read(fsd->s, fsd->nl_buf, 1, 1) == 1 && *fsd->nl_buf != '\n');
+
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
 				char *val_start, *val_end;
 				val_start = fsd->in_buf + in_buf_pos;
@@ -4760,6 +4764,7 @@ stream_fwf_close(stream *s)
 		free(fsd->widths);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
+		free(fsd->nl_buf);
 		free(fsd);
 	}
 	// FIXME destroy(s);
@@ -4778,7 +4783,7 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 	fsd->num_fields = num_fields;
 	fsd->widths = widths;
 	fsd->filler = filler;
-	fsd->line_len = 1; // newline
+	fsd->line_len = 0;
 	for (i = 0; i < num_fields; i++) {
 		fsd->line_len += widths[i];
 	}
@@ -4795,10 +4800,17 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 		return NULL;
 	}
 	fsd->out_buf_remaining = 0;
-
+	fsd->nl_buf = malloc(1);
+	if (!fsd->nl_buf) {
+		free(fsd->in_buf);
+		free(fsd->out_buf);
+		free(fsd);
+		return NULL;
+	}
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
 		free(fsd->in_buf);
 		free(fsd->out_buf);
+		free(fsd->nl_buf);
 		free(fsd);
 		return NULL;
 	}
