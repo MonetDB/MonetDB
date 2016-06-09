@@ -237,7 +237,7 @@ Description: MonetDB5 SQL interface to the bam library
 Package: monetdb5-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
-Recommends: monetdb5-server-hugeint [amd64] (= ${source:Version}),
+Recommends: monetdb5-server-hugeint (= ${source:Version}) [amd64],
  monetdb5-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
 Description: MonetDB database server version 5
@@ -279,7 +279,7 @@ Package: monetdb5-sql
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  monetdb5-server (= ${source:Version})
-Recommends: monetdb5-sql-hugeint [amd64] (= ${source:Version})
+Recommends: monetdb5-sql-hugeint (= ${source:Version}) [amd64]
 Suggests: monetdb-client (= ${source:Version})
 Description: MonetDB SQL support for monetdb5
  MonetDB is a database management system that is developed from a
