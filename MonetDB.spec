@@ -1012,6 +1012,10 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Jun 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.3-20160610
+- Rebuilt.
+- BZ#4015: Daemon crashes on database release command
+
 * Wed Jun 01 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
 - Rebuilt.
 - BZ#2407: Merovingian: allow binds to given ip/interface
