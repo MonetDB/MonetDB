@@ -38,10 +38,18 @@ case $SUITE in
 wheezy | precise | trusty)
     # fix control file because these systems don't have liblas and a
     # too old version of libgeos
-    sed -i 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' debian/control
-    sed -i '/^Package:.*lidar/,/^$/d' debian/control
-    sed -i '/^Package:.*geom/,/^$/d' debian/control
+    sed -i -e 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' \
+	-e '/^Package:.*lidar/,/^$/d' \
+	-e '/^Package:.*geom/,/^$/d' debian/control
     rm debian/libmonetdb5-server-lidar.install debian/libmonetdb5-server-geom.install
     sed -i '/geo[ms]=yes/s/yes/no/;/gdal=yes/s/yes/no/;/lidar=yes/s/yes/no/;/liblas=yes/s/yes/no/' debian/rules
+    ;;
+esac
+
+case $SUITE in
+wheezy | jessie | precise | trusty | wily)
+    # Xenial Xerus (and presumably newer releases) uses php-common,
+    # all others still have php5-common
+    sed -i 's/php-common/php5-common/' debian/control
     ;;
 esac

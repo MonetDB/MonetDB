@@ -294,8 +294,8 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Returns the index in the backing arrays for the given
-	 * resultset column number
+	 * Returns the index (0..size-1) in the backing arrays for the given
+	 * resultset column number or an SQLException when not found
 	 */
 	private int getColumnIdx(int colnr) throws SQLException {
 		int curcol = 0;
@@ -309,8 +309,8 @@ public class MonetPreparedStatement
 		throw new SQLException("No such column with index: " + colnr, "M1M05");
 	}
 	/**
-	 * Returns the index in the backing arrays for the given
-	 * parameter number
+	 * Returns the index (0..size-1) in the backing arrays for the given
+	 * parameter number or an SQLException when not found
 	 */
 	private int getParamIdx(int paramnr) throws SQLException {
 		int curparam = 0;
@@ -367,29 +367,25 @@ public class MonetPreparedStatement
 			}
 
 			/**
-			 * Indicates whether the designated column is automatically
-			 * numbered, thus read-only.
-			 * 
+			 * Indicates whether the designated column is automatically numbered.
+			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
 			 * @throws SQLException if a database access error occurs
 			 */
 			@Override
 			public boolean isAutoIncrement(int column) throws SQLException {
-				// the only column I know of is a 'secret' column called rowid
-				// with datatype oid
-				// avoid nullpointer exception here
-				if ("oid".equals(monetdbType[getColumnIdx(column)])) {
-					return true;
-				} else {
-					return false;
-				}
+				/* TODO: in MonetDB only numeric (int, decimal) columns could be autoincrement/serial
+				 * This however requires an expensive dbmd.getColumns(null, schema, table, column)
+				 * query call to pull the IS_AUTOINCREMENT value for this column.
+				 * See also ResultSetMetaData.isAutoIncrement()
+				 */
+				// For now we simply allways return false.
+				return false;
 			}
 
 			/**
-			 * Indicates whether a column's case matters. This holds for all
-			 * columns in MonetDB resultsets since the mapping is done case
-			 * insensitive, therefore this method will always return false.
+			 * Indicates whether a column's case matters.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @returns false
@@ -410,11 +406,8 @@ public class MonetPreparedStatement
 			/**
 			 * Indicates whether the designated column can be used in a
 			 * where clause.
-			 * It is unknown to me what kind ot columns they regard to,
-			 * as I think all columns are useable in a where clause.
-			 * Returning true for all here, for the time being.
-			 * Possible thought; maybe they want to know here if it's a
-			 * real column existing in a table or not...
+			 *
+			 * Returning true for all here, even for CLOB, BLOB.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @returns true
@@ -442,13 +435,19 @@ public class MonetPreparedStatement
 			/**
 			 * Indicates whether values in the designated column are signed
 			 * numbers.
-			 * Within MonetDB all numeric types are signed.
+			 * Within MonetDB all numeric types (except oid and ptr) are signed.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
 			 */
 			@Override
 			public boolean isSigned(int column) throws SQLException {
+				String monettype = getColumnTypeName(column);
+				if (monettype != null) {
+					if ("oid".equals(monettype)
+					 || "ptr".equals(monettype))
+						return false;
+				}
 				// we can hardcode this, based on the colum type
 				switch (javaType[getColumnIdx(column)]) {
 					case Types.NUMERIC:

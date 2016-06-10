@@ -9,7 +9,7 @@
 %define bits 32
 %else
 %define bits 64
-%define with_int128=1
+%define with_int128 1
 %endif
 
 # only add .oidXX suffix if oid size differs from bit size
@@ -695,7 +695,7 @@ fi
 %if %{bits} == 64
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
-Group: Application/Databases
+Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa}
 
 %description -n MonetDB5-server-hugeint
@@ -910,7 +910,6 @@ Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python
-BuildArch: noarch
 
 %description testing-python
 MonetDB is a database management system that is developed from a
@@ -1276,7 +1275,7 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 - gdk: Removed all versions of the SORTloop macro.
 
 * Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
-- monetdb5: Removed algerbra.like with a BAT argument.  Use algebra.likesubselect
+- monetdb5: Removed algebra.like with a BAT argument.  Use algebra.likesubselect
   instead.
 
 * Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601

@@ -296,6 +296,8 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 	}
 	if (digits < 0)
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+	if (*d < 0 || *d >= (int) (sizeof(scales) / sizeof(scales[0])))
+		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 
 	value = decimal_from_str(s, &end);
 	if (*s == '+' || *s == '-')

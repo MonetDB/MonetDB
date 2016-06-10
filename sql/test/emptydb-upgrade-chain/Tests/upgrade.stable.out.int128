@@ -5352,6 +5352,12 @@ insert into sys.keywords values
 ('VALUES'), ('VARCHAR'), ('VARYING'), ('VIEW'),
 ('WHEN'), ('WHERE'), ('WHILE'), ('WITH'), ('WORK'), ('WRITE'),
 ('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');
+insert into sys.dependency_types (dependency_type_id, dependency_type_name)
+ select 15 as id, 'TYPE' as name where 15 not in (select dependency_type_id from sys.dependency_types);
+insert into sys.dependencies (id, depend_id, depend_type)
+ select distinct types.id as type_id, args.func_id, 15 as depend_type from sys.args join sys.types on types.systemname = args.type where args.type in ('inet', 'json', 'url', 'uuid')
+ except
+ select distinct id, depend_id, depend_type from sys.dependencies where depend_type = 15;
 create function sys."storage"( sname string)
 returns table (
     "schema" string,

@@ -212,9 +212,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		mnstr_printf(fout, " NOT NULL");
 	if (e->p) {
 		prop *p = e->p;
+		char *pv;
 
-		for (; p; p = p->p) 
-			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
+		for (; p; p = p->p) {
+			pv = propvalue2string(p);
+			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			GDKfree(pv);
+		}
 	}
 	if (e->name && alias) {
 		mnstr_printf(fout, " as ");
@@ -502,9 +506,13 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	}
 	if (rel->p) {
 		prop *p = rel->p;
+		char *pv;
 
-		for (; p; p = p->p) 
-			mnstr_printf(fout, " %s %s", propkind2string(p), propvalue2string(p));
+		for (; p; p = p->p) {
+			pv = propvalue2string(p);
+			mnstr_printf(fout, " %s %s", propkind2string(p), pv);
+			GDKfree(pv);
+		}
 	}
 }
 
