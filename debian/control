@@ -5,8 +5,6 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: http://www.monetdb.org/
 Vcs-Browser: http://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
-# for Build-Depends and Depends syntax, see
-# http://www.debian.org/doc/debian-policy/ch-relationships.html
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libgsl0-dev, libpcre3-dev, libreadline-dev, liblzma-dev,
@@ -136,8 +134,6 @@ Description: MonetDB ODBC driver
 
 Package: php5-monetdb-client
 Architecture: all
-# wheezy, jessie, precise, trusty, wily: php5-common
-# xenial: php-common
 Depends: ${shlibs:Depends}, ${misc:Depends}, php-common
 Description: MonetDB php5 client module
  MonetDB is a database management system that is developed from a
