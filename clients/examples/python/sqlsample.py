@@ -6,10 +6,10 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-import monetdb.sql
+import pymonetdb
 import sys
 
-dbh = monetdb.sql.Connection(port=int(sys.argv[1]),database=sys.argv[2],hostname=sys.argv[3],autocommit=True)
+dbh = pymonetdb.connect(port=int(sys.argv[1]),database=sys.argv[2],hostname=sys.argv[3],autocommit=True)
 
 cursor = dbh.cursor();
 cursor.execute('select 1;')
@@ -22,7 +22,7 @@ print(cursor.fetchone())
 # deliberately executing a wrong SQL statement:
 try:
     cursor.execute('( xyz 1);')
-except monetdb.sql.OperationalError as e:
+except pymonetdb.OperationalError as e:
     print(e)
 
 cursor.execute('create table python_table (i smallint,s string);');

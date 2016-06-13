@@ -10,18 +10,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('monetdb')
 
-try:
-    import monetdb.sql
-except ImportError:
-    # running examples from development tree
-    import sys
-    import os
-    parent = os.path.join(sys.path[0], os.pardir)
-    sys.path.append(parent)
-    import monetdb.sql
+import pymonetdb
 
-
-x = monetdb.sql.connect(username="monetdb", password="monetdb", hostname="localhost", database="demo")
+x = pymonetdb.connect(username="monetdb", password="monetdb", hostname="localhost", database="demo")
 c = x.cursor()
 
 # some basic query

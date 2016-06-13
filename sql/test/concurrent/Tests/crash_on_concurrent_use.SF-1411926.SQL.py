@@ -1,4 +1,4 @@
-import monetdb.sql, sys, threading, os
+import pymonetdb, sys, threading, os
 
 query = '''
 select count(*) from tables;
@@ -22,7 +22,7 @@ class Client(threading.Thread):
     def __init__(self, client):
         threading.Thread.__init__ (self)
         self.client = client
-        self.dbh = monetdb.sql.Connection(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
+        self.dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
 
     def run(self):
         cursor = self.dbh.cursor();

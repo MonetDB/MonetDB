@@ -2,5 +2,5 @@ create
 check0
 load
 check1
-delete_all
-leaks
+HAVE_PYMONETDB?delete_all
+HAVE_PYMONETDB?leaks

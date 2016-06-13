@@ -101,6 +101,15 @@
 %endif
 %endif
 
+%{!?__python2: %global __python2 %__python}
+%{!?python2_sitelib: %global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+
+%if 0%{?fedora}
+%bcond_without python3
+%else
+%bcond_with python3
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -144,9 +153,6 @@ BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: python-devel
-%if %{?rhel:0}%{!?rhel:1}
-BuildRequires: python3-devel
-%endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
@@ -162,12 +168,6 @@ BuildRequires: R-core-devel
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
-
-# need to define python_sitelib on RHEL 5 and older
-# no need to define python3_sitelib: it's defined by python3-devel
-%if 0%{?rhel} && 0%{?rhel} <= 5
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
 
 %description
@@ -416,7 +416,7 @@ Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-perl = %{version}-%{release}
 Requires: %{name}-client-php = %{version}-%{release}
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-monetdb = %{version}-%{release}
+Requires: python-monetdb >= 1.0
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -833,55 +833,6 @@ frontend of MonetDB.
 %{_libdir}/monetdb5/sql*_hge.mal
 %endif
 
-%package -n python-monetdb
-Summary: Native MonetDB client Python API
-Group: Applications/Databases
-Requires: python
-BuildArch: noarch
-Obsoletes: MonetDB-client-python
-
-%description -n python-monetdb
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Python
-program.  This package is for Python version 2.  If you want to use
-Python version 3, you need %{name}-python3-monetdb.
-
-%files -n python-monetdb
-%defattr(-,root,root)
-%dir %{python_sitelib}/monetdb
-%{python_sitelib}/monetdb/*
-%{python_sitelib}/python_monetdb-*.egg-info
-%doc clients/python2/README.rst
-
-%if %{?rhel:0}%{!?rhel:1}
-%package -n python3-monetdb
-Summary: Native MonetDB client Python3 API
-Group: Applications/Databases
-Requires: python3
-BuildArch: noarch
-
-%description -n python3-monetdb
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Python3
-program.  This package is for Python version 3.  If you want to use
-Python version 2, you need %{name}-python-monetdb.
-
-%files -n python3-monetdb
-%defattr(-,root,root)
-%dir %{python3_sitelib}/monetdb
-%{python3_sitelib}/monetdb/*
-%{python3_sitelib}/python_monetdb-*.egg-info
-%doc clients/python3/README.rst
-%endif
-
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -925,8 +876,8 @@ developer, but if you do want to test, this is the package you need.
 %defattr(-,root,root)
 %{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
-%dir %{python_sitelib}/MonetDBtesting
-%{python_sitelib}/MonetDBtesting/*
+%dir %{python2_sitelib}/MonetDBtesting
+%{python2_sitelib}/MonetDBtesting/*
 
 %prep
 %setup -q
@@ -976,8 +927,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-perl-libdir=lib/perl5 \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=yes \
-	--with-python3=%{?rhel:no}%{!?rhel:yes} \
+	--with-python=yes \
 	--with-readline=yes \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
