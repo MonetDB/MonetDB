@@ -699,10 +699,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	char is_table = (res && res->token == SQL_TABLE);
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
-	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char is_loader = (type != F_LOADER);
+
+	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
-	assert(res || type == F_PROC || type == F_FILT);
+	assert(res || type == F_PROC || type == F_FILT || type == F_LOADER);
 
 	if (is_table)
 		type = F_UNION;
@@ -784,18 +786,18 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
      					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 				sql->params = NULL;
 				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
-				} else {
+				} /*else {
 					sql_func *f = sf->func;
 					f->mod = _STRDUP("rapi");
 					f->imp = _STRDUP("eval");
 					if (res && restype)
 						f->res = restype;
-					f->sql = 0; /* native */
+					f->sql = 0;
 					f->lang = FUNC_LANG_INT;
-				}
+				}*/
 			} else if (body) {
 				sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
 				list *b = NULL;

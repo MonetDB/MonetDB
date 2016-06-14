@@ -418,6 +418,12 @@ PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
+}
+
+str
 PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     return PyAPIeval(cntxt, mb, stk, pci, 1, 1);

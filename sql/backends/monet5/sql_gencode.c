@@ -2135,7 +2135,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
 				q = pushStr(mb, q, f->func->query);
 			/* first dynamic output of copy* functions */
-			if (f->func->type == F_UNION) 
+			if (f->func->type == F_UNION || f->func->type == F_LOADER)
 				q = table_func_create_result(mb, q, f->func, f->res);
 			if (list_length(s->op1->op4.lval))
 				tpe = tail_type(s->op1->op4.lval->h->data);
@@ -3037,6 +3037,10 @@ backend_create_py_func(backend *be, sql_func *f)
 	case  F_AGGR:
 		f->mod = "pyapi";
 		f->imp = "eval_aggr";
+		break;
+	case F_LOADER:
+		f->mod = "pyapi";
+		f->imp = "eval_loader";
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:

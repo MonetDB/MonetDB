@@ -15,6 +15,7 @@
 #include "sql_privileges.h"
 #include "rel_optimizer.h"
 #include "rel_dump.h"
+#include "rel_psm.h"
 #include "sql_symbol.h"
 
 static sql_exp *
@@ -1452,6 +1453,86 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files, int constraint)
 	return res;
 }
 
+
+static sql_rel *
+copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
+{
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_subtype tpe;
+
+	node *n;
+	sql_rel *res;
+	list *exps, *args = NULL;
+	sql_exp *import;
+	dnode *l = fcall->data.lval->h;
+	char *fname = qname_fname(l->data.lval);
+	char *f_sname = qname_schema(l->data.lval);
+	sql_schema *f_s = sql->session->schema;
+	sql_subfunc *f = NULL;
+
+	if (!copy_allowed(sql, 1)) {
+		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+				"binary COPY INTO requires database administrator rights");
+		return NULL;
+	}
+
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t)
+			t = stack_find_table(sql, tname);
+	}
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
+		return NULL;
+	}
+	if (sname) {
+		f_s = mvc_bind_schema(sql, f_sname);
+		if (!f_s) {
+			(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", f_sname);
+			return NULL;
+		}
+	}
+
+	// TODO: handle parameters to bind correct version
+
+	f = sql_bind_func(sql->sa, f_s, fname, NULL, NULL, F_LOADER);
+	if (!f) {
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such loader function '%s'", fname);
+		return NULL;
+	}
+	f->res = table_column_types(sql->sa, t);
+
+ 	sql_find_subtype(&tpe, "varchar", 0, 0);
+//	args = append( append( new_exp_list(sql->sa),
+//		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)),
+//		exp_atom_str(sql->sa, t->base.name, &tpe));
+
+	import = exp_op(sql->sa, args, f);
+	if (!import) {
+		return NULL;
+	}
+
+	exps = new_exp_list(sql->sa);
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+	}
+	res = rel_table_func(sql->sa, NULL, import, exps, 1);
+	res = rel_insert_table(sql, t, t->base.name, res);
+	return res;
+}
+
 static sql_rel *
 rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file) 
 {
@@ -1611,6 +1692,14 @@ rel_updates(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.i_val);
+		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_COPYLOADER:
+	{
+		dlist *l = s->data.lval;
+
+		ret = copyfromloader(sql, l->h->data.lval, l->h->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;

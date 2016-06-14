@@ -602,7 +602,7 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 
 	f = sql_bind_func(sql->sa, s, fname, NULL, NULL, type);
 	if (f && 
-		((ek.card == card_none && !f->res) || 
+		((ek.card == card_none && !f->res) ||
 		 (ek.card != card_none && f->res))) {
 		return exp_op(sql->sa, NULL, f);
 	} else {

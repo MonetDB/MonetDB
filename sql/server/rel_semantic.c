@@ -155,6 +155,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DELETE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
+	case SQL_COPYLOADER:
 	case SQL_COPYTO:
 		return rel_updates(sql, s);
 
