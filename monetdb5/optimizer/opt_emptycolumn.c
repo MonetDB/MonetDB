@@ -104,7 +104,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		} 
 		if(p && getModuleId(p) == sqlRef && (getFunctionId(p) == appendRef || getFunctionId(p) == updateRef || getFunctionId(p) == catalogRef)){
 			if ( etop == esize){			\
-				empty = (InstrPtr*) GDKrealloc( empty, esize += 256);
+				empty = (InstrPtr*) GDKrealloc( empty, (esize += 256) * sizeof(InstrPtr));
 				if( empty == NULL){
 					GDKfree(marked);
 					return 0;
