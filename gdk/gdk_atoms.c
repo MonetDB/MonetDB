@@ -578,6 +578,24 @@ batWrite(const bat *a, stream *s, size_t cnt)
 	return mnstr_writeIntArray(s, (const int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+#ifdef HAVE_HGE
+static hge h_pow(hge base, hge exp) {
+	hge result = 1;
+#else
+static lng h_pow(lng base, lng exp) {
+	lng result = 1;
+#endif
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+    return result;
+}
+
+
 /*
  * numFromStr parses the head of the string for a number, accepting an
  * optional sign. The code has been prepared to continue parsing by
@@ -592,9 +610,11 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	int sz = ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
+	hge expbase = -1;
 	const hge maxdiv10 = GDK_hge_max / 10;
 #else
 	lng base = 0;
+	lng expbase = -1;
 	const lng maxdiv10 = LL_CONSTANT(922337203685477580); /*7*/
 #endif
 	const int maxmod10 = 7;	/* max value % 10 */
@@ -636,8 +656,22 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 		}
 		base = 10 * base + base10(*p);
 		p++;
+		if (*p == 'E' || *p == 'e') {
+			expbase = base;
+			base = 0;
+			p++;
+		}
 	} while (num10(*p));
+	if (expbase > -1) {
+		dbl checkval = fabs(expbase * pow(10, base));
+		if (checkval >= maxdiv10 * 10) {
+			memcpy(*dst, ATOMnilptr(tp), sz);
+			return 0;
+		}
+		base = expbase * h_pow(10, base);
+	}
 	base *= sign;
+
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;

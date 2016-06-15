@@ -59,3 +59,5 @@ HAVE_LIBPY?pyapi29
 
 simpleSQL
 limithack
+
+HAVE_HUGEINT?int_notation_1e5
