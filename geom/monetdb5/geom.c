@@ -3128,7 +3128,7 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 {
 	GEOSGeom outGeometry, geom1Geometry, geom2Geometry;
 	GEOSCoordSeq outCoordSeq;
-	const GEOSCoordSequence *geom1CoordSeq, *geom2CoordSeq;
+	const GEOSCoordSequence *geom1CoordSeq = NULL, *geom2CoordSeq = NULL;
 	unsigned int i = 0, geom1Size = 0, geom2Size = 0;
 	unsigned geom1Dimension = 0, geom2Dimension = 0;
 	double x, y, z;
