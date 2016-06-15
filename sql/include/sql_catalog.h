@@ -339,6 +339,7 @@ typedef struct sql_func {
 typedef struct sql_subfunc {
 	sql_func *func;
 	list *res;
+	list *colnames; /* we need this for the python copy into */
 } sql_subfunc;
 
 typedef struct sql_subaggr {

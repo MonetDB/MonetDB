@@ -1,0 +1,119 @@
+stdout of test 'pyapi30` in directory 'sql/backends/monet5` itself:
+
+
+# 17:27:11 >  
+# 17:27:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33363" "--set" "mapi_usock=/var/tmp/mtest-90622/.s.monetdb.33363" "--set" "monet_prompt=" "--forcemito" "--dbpath=/tmp/fuckit/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:27:11 >  
+
+# MonetDB 5 server v11.24.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 4 threads
+# Compiled for x86_64-apple-darwin15.5.0/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:33363/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-90622/.s.monetdb.33363
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:27:12 >  
+# 17:27:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-90622" "--port=33363"
+# 17:27:12 >  
+
+#START TRANSACTION;
+#CREATE TABLE mytable(a DOUBLE, d int);
+#CREATE LOADER myfunc() LANGUAGE PYTHON {
+#	_emit.emit({'a':42,'d':1})
+#};
+#CREATE LOADER myfunc1(i integer) LANGUAGE PYTHON {
+#	_emit.emit({'a':i,'d':2})
+#};
+#CREATE LOADER myfunc2(i integer, f string) LANGUAGE PYTHON {
+#	_emit.emit({'a':i,'d':3})
+#};
+#CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
+#	_emit.emit({'a':i,'d':4})
+#};
+#SELECT * FROM functions WHERE name='myfunc';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 4,	6,	32,	5,	1,	1,	5,	5,	5,	4 # length
+[ 6906,	"myfunc",	"{\n\t_emit.emit({'a':42,'d':1})\n};",	"pyapi",	6,	7,	true,	true,	false,	2000	]
+#COPY INTO mytable FROM LOADER myfunc3(46, 'asdf', 3.2);
+[ 1	]
+#COPY INTO mytable FROM LOADER myfunc2(45, 'asdf');
+[ 1	]
+#COPY INTO mytable FROM LOADER myfunc1(44);
+[ 1	]
+#COPY INTO mytable FROM LOADER myfunc();
+[ 1	]
+#SELECT * FROM mytable;
+% sys.mytable,	sys.mytable # table_name
+% a,	d # name
+% double,	int # type
+% 24,	1 # length
+[ 46,	4	]
+[ 45,	3	]
+[ 44,	2	]
+[ 42,	1	]
+#DROP TABLE mytable;
+#DROP ALL LOADER myfunc;
+#CREATE LOADER myfunc() LANGUAGE PYTHON {
+#};
+#DROP LOADER myfunc;
+#DROP LOADER myfunc1;
+#DROP LOADER myfunc2;
+#DROP LOADER myfunc3;
+#SELECT * FROM functions WHERE name='myfunc';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#ROLLBACK;
+
+# 17:27:12 >  
+# 17:27:12 >  "Done."
+# 17:27:12 >  
+

@@ -36,7 +36,6 @@
 
 #endif
 
-const char* pyapi_enableflag = "embedded_py";
 const char* verbose_enableflag = "enable_pyverbose";
 const char* warning_enableflag = "enable_pywarnings";
 const char* debug_enableflag = "enable_pydebug";
@@ -59,6 +58,8 @@ int PyAPIEnabled(void) {
     return (GDKgetenv_istrue(pyapi_enableflag)
             || GDKgetenv_isyes(pyapi_enableflag));
 }
+
+
 
 struct _AggrParams{
     PyInput **pyinput_values;
@@ -109,6 +110,10 @@ CREATE_SQL_FUNCTION_PTR(str,SQLbatstr_cast,(Client, MalBlkPtr, MalStkPtr, InstrP
 static MT_Lock pyapiLock;
 static MT_Lock queryLock;
 static int pyapiInitialized = FALSE;
+
+int PyAPIInitialized(void) {
+    return pyapiInitialized;
+}
 
 #ifdef HAVE_FORK
 static bool python_call_active = false;
@@ -418,18 +423,10 @@ PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-    return PyAPIeval(cntxt, mb, stk, pci, 0, 0);
-}
-
-str
 PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     return PyAPIeval(cntxt, mb, stk, pci, 1, 1);
 }
-
-static char *PyError_CreateException(char *error_text, char *pycall);
 
 int GetSQLType(sql_subtype *sql_subtype);
 bit ConvertableSQLType(sql_subtype *sql_subtype);
@@ -479,6 +476,8 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     bit parallel_aggregation = grouped && mapped;
     int argcount = pci->argc;
 
+    char * eval_additional_args[] = {"_columns", "_column_types", "_conn"};
+
     mapped = 0;
 
 #ifndef HAVE_FORK
@@ -495,8 +494,11 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         throw(MAL, "pyapi.eval",
               "Embedded Python is enabled but an error was thrown during initialization.");
     }
-
-    sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+    if (!grouped) {
+    	sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
+    } else {
+    	sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+    }
     exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
     varres = sqlfun ? sqlfun->varres : 0;
     retcols = !varres ? pci->retc : -1;
@@ -981,7 +983,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 
     /*[PARSE_CODE]*/
     VERBOSE_MESSAGE("Formatting python code.\n");
-    pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg);
+    pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg, eval_additional_args, additional_columns);
     if (pycall == NULL && code_object == NULL) {
         if (msg == NULL) { msg = createException(MAL, "pyapi.eval", "Error while parsing Python code."); }
         goto wrapup;
@@ -1631,6 +1633,7 @@ str
                 return PyError_CreateException("Failed to initialize embedded python", NULL);
             }
             msg = _connection_init();
+            _loader_init();
             marshal_module = PyImport_Import(PyString_FromString("marshal"));
             if (marshal_module == NULL) {
                 return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
@@ -1702,7 +1705,7 @@ bool PyType_IsPyScalar(PyObject *object)
 }
 
 
-static char *PyError_CreateException(char *error_text, char *pycall)
+char *PyError_CreateException(char *error_text, char *pycall)
 {
     PyObject *py_error_type = NULL, *py_error_value = NULL, *py_error_traceback = NULL;
     char *py_error_string = NULL;

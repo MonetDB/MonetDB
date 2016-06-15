@@ -883,7 +883,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
 	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
+	char is_func = (type != F_PROC && type != F_LOADER);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";

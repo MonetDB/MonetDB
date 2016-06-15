@@ -101,6 +101,7 @@ pyapi_export str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 pyapi_export str PyAPIprelude(void *ret);
 
 int PyAPIEnabled(void);
+int PyAPIInitialized(void);
 
 pyapi_export void* lookup_function(char *func, char* library);
 
@@ -113,5 +114,12 @@ pyapi_export void* lookup_function(char *func, char* library);
     if (fcnname##_ptr == NULL) {                                         \
         msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname); \
     }
+
+str _loader_init(void);
+
+pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
+
+#define pyapi_enableflag "embedded_py"
+
 
 #endif /* _PYPI_LIB_ */

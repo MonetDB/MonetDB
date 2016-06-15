@@ -1136,6 +1136,19 @@ table_column_types(sql_allocator *sa, sql_table *t)
 	return types;
 }
 
+static list *
+table_column_names(sql_allocator *sa, sql_table *t)
+{
+	node *n;
+	list *types = sa_list(sa);
+
+	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(types, &c->base.name);
+	}
+	return types;
+}
+
 static sql_rel *
 rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths)
 {
@@ -1462,17 +1475,13 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	sql_subtype tpe;
 
 	node *n;
-	sql_rel *res;
-	list *exps, *args = NULL;
+	sql_rel res_obj ;
+	sql_rel *res = &res_obj;
+	list *exps = new_exp_list(sql->sa); //, *args = NULL;
 	sql_exp *import;
-	dnode *l = fcall->data.lval->h;
-	char *fname = qname_fname(l->data.lval);
-	char *f_sname = qname_schema(l->data.lval);
-	sql_schema *f_s = sql->session->schema;
-	sql_subfunc *f = NULL;
+	exp_kind ek = {type_value, card_loader, FALSE};
 
 	if (!copy_allowed(sql, 1)) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
@@ -1496,42 +1505,23 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
 		return NULL;
 	}
-	if (sname) {
-		f_s = mvc_bind_schema(sql, f_sname);
-		if (!f_s) {
-			(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", f_sname);
-			return NULL;
-		}
-	}
 
-	// TODO: handle parameters to bind correct version
-
-	f = sql_bind_func(sql->sa, f_s, fname, NULL, NULL, F_LOADER);
-	if (!f) {
-		(void) sql_error(sql, 02, "3F000!COPY INTO: no such loader function '%s'", fname);
-		return NULL;
-	}
-	f->res = table_column_types(sql->sa, t);
-
- 	sql_find_subtype(&tpe, "varchar", 0, 0);
-//	args = append( append( new_exp_list(sql->sa),
-//		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &tpe)),
-//		exp_atom_str(sql->sa, t->base.name, &tpe));
-
-	import = exp_op(sql->sa, args, f);
+	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
 	if (!import) {
 		return NULL;
 	}
+	((sql_subfunc*) import->f)->res = table_column_types(sql->sa, t);
+	((sql_subfunc*) import->f)->colnames = table_column_names(sql->sa, t);
 
-	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
+
 	res = rel_table_func(sql->sa, NULL, import, exps, 1);
-	res = rel_insert_table(sql, t, t->base.name, res);
-	return res;
+	return  rel_insert_table(sql, t, t->base.name, res);
 }
+
 
 static sql_rel *
 rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file) 

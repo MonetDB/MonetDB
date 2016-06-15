@@ -51,6 +51,10 @@ HAVE_LIBPY?pyapi27
 HAVE_LIBPY?pyapi28
 HAVE_LIBPY?pyapi29
 
+HAVE_LIBPY?pyapi30
+HAVE_LIBPY?pyapi31
+
+
 # should this work?
 #inlineUDF
 
@@ -60,4 +64,4 @@ HAVE_LIBPY?pyapi29
 simpleSQL
 limithack
 
-HAVE_HUGEINT?int_notation_1e5
+HAVE_HUGE?int_notation_1e5

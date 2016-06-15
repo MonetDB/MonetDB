@@ -1461,7 +1461,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					// push pointer to the SQL structure into the MAL call
 					// allows getting argument names for example
 					if (LANG_EXT(f->lang))
-						q = pushPtr(mb, q, f);
+						q = pushPtr(mb, q, s->op4.funcval); // nothing to see here, please move along
 					// f->query contains the R code to be run
 					if (f->lang == FUNC_LANG_R || f->lang == FUNC_LANG_PY || f->lang == FUNC_LANG_MAP_PY)
 						q = pushStr(mb, q, f->query);
@@ -2131,7 +2131,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 			}
 			if (LANG_EXT(f->func->lang))
-				q = pushPtr(mb, q, f->func);
+				q = pushPtr(mb, q, f);
 			if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
 				q = pushStr(mb, q, f->func->query);
 			/* first dynamic output of copy* functions */

@@ -2341,6 +2341,12 @@ routine_designator:
 	  append_list(l, $3 );
 	  append_int(l, F_PROC );
 	  $$ = l; }
+ |	sqlLOADER qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $2 );	
+	  append_list(l, $3 );
+	  append_int(l, F_LOADER );
+	  $$ = l; }
  ;
 
 drop_statement:
@@ -2383,6 +2389,14 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_PROC );
+	  append_int(l, 1 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
+ | drop ALL sqlLOADER qname drop_action
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_list(l, NULL );
+	  append_int(l, F_LOADER );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
