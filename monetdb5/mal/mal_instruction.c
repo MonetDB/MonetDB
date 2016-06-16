@@ -643,6 +643,7 @@ getVarName(MalBlkPtr mb, int i)
 	nme = mb->var[i]->name;
 
 	if (nme == 0 || *nme =='_') {
+		GDKfree(nme);
 		snprintf(buf, IDLENGTH, "%c_%d", refMarker(mb,i), mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
