@@ -145,6 +145,7 @@ GROUPdelete(AGGRtask *a){
 	for(a->last--; a->last>=0; a->last--){
 		BBPunfix(a->cols[a->last]->batCacheid);
 	}
+	GDKfree(a->bid);
 	GDKfree(a->cols);
 	GDKfree(a->unique);
 	GDKfree(a);
