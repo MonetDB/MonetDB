@@ -42,14 +42,11 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     PyObject *pArgs = NULL, *pEmit = NULL, *pConnection; // this is going to be the parameter tuple
     PyObject *code_object = NULL;
     EmitCol *cols = NULL;
-    bit varres;
-    int retcols;
     bool gstate = 0;
     int unnamedArgs = 0;
     int argcount = pci->argc;
 
     char * loader_additional_args[] = {"_emit", "_conn"};
-
 
     if (!PyAPIEnabled()) {
         throw(MAL, "pyapi.eval",
@@ -64,8 +61,6 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
     sqlfun = sqlmorefun->func;
     exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
-    varres = sqlfun ? sqlfun->varres : 0;
-    retcols = !varres ? pci->retc : -1;
 
 
     args = (str*) GDKzalloc(pci->argc * sizeof(str));
