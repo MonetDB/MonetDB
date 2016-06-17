@@ -711,7 +711,7 @@ typedef struct {
 } READERtask;
 
 static void
-tablet_error(READERtask *task, lng row, int col, str msg, str fcn)
+tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fcn)
 {
 	if (task->cntxt->error_row != NULL) {
 		MT_lock_set(&errorlock);
@@ -1296,7 +1296,6 @@ SQLproducer(void *p)
 				char msg[256];
 				snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
 				tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
-				task->as->error = GDKstrdup(msg);
 				task->b->pos += partial;
 			}
 			goto reportlackofinput;
@@ -1643,7 +1642,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	/* create the reject tables */
 	create_rejects_table(task->cntxt);
 	if (task->cntxt->error_row == NULL || task->cntxt->error_fld == NULL || task->cntxt->error_msg == NULL || task->cntxt->error_input == NULL) {
-		tablet_error(task, lng_nil, int_nil, NULL, "SQLload initialization failed");
+		tablet_error(task, lng_nil, int_nil, "SQLload initialization failed", "");
 		goto bailout;
 	}
 
@@ -1663,7 +1662,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		task->base[i] = GDKzalloc(MAXROWSIZE(2 * b->size) + 2);
 		task->rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task->base[i] == 0) {
-			tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
+			tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
 			goto bailout;
 		}
 		task->base[i][b->size + 1] = 0;
@@ -1677,7 +1676,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		task->maxrow = (BUN) maxrow;
 
 	if (task->fields == 0 || task->cols == 0 || task->time == 0) {
-		tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file");
+		tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
 		goto bailout;
 	}
 
@@ -1727,7 +1726,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	for (i = 0; i < MAXBUFFERS; i++) {
 		task->lines[i] = GDKzalloc(sizeof(char *) * task->limit);
 		if (task->lines[i] == NULL) {
-			tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file:failed to alloc buffers");
+			tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file:failed to alloc buffers");
 			goto bailout;
 		}
 	}
@@ -1745,7 +1744,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			tablet_error(task, lng_nil, int_nil, NULL, "SQLload_file:failed to alloc task descriptors");
+			tablet_error(task, lng_nil, int_nil, "memory allocation failed", "SQLload_file");
 			goto bailout;
 		}
 #ifdef MLOCK_TST

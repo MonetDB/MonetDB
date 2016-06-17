@@ -194,7 +194,13 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	   with the approriate scenario (sql) */
 	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE);
 
-	t = mvc_create_view(m, s, "users", SQL_PERSIST, "SELECT u.\"name\" AS \"name\", " "ui.\"fullname\", ui.\"default_schema\" " "FROM db_users() AS u LEFT JOIN " "\"sys\".\"db_user_info\" AS ui " "ON u.\"name\" = ui.\"name\" " ";", 1);
+	t = mvc_create_view(m, s, "users", SQL_PERSIST,
+			    "SELECT u.\"name\" AS \"name\", "
+			    "ui.\"fullname\", ui.\"default_schema\" "
+			    "FROM db_users() AS u LEFT JOIN "
+			    "\"sys\".\"db_user_info\" AS ui "
+			    "ON u.\"name\" = ui.\"name\" "
+			    ";", 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
@@ -273,13 +279,18 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			}
 			if (strcmp(username, user) == 0) {
 				/* avoid message about changePassword (from MAL level) */
+				GDKfree(username);
 				if (!enc) {
 					free(pwd);
 					free(opwd);
 				}
-				(void) sql_error(m, 02, "ALTER USER: " "use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx " "USING OLD PASSWORD yyy' " "when changing your own password");
+				(void) sql_error(m, 02, "ALTER USER: "
+					"use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx "
+					"USING OLD PASSWORD yyy' "
+					"when changing your own password");
 				return (FALSE);
 			}
+			GDKfree(username);
 			err = AUTHsetPassword(c, &user, &pwd);
 			if (!enc) {
 				free(pwd);
@@ -332,14 +343,16 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, olduser, NULL);
 	if (rid == oid_nil) {
-		(void) sql_error(m, 02, "ALTER USER: local inconsistency, " "your database is damaged, user not found in SQL catalog");
+		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
+				 "your database is damaged, user not found in SQL catalog");
 		return (FALSE);
 	}
 	table_funcs.column_update_value(m->session->tr, users_name, rid, newuser);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, olduser, NULL);
 	if (rid == oid_nil) {
-		(void) sql_error(m, 02, "ALTER USER: local inconsistency, " "your database is damaged, auth not found in SQL catalog");
+		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
+				 "your database is damaged, auth not found in SQL catalog");
 		return (FALSE);
 	}
 	table_funcs.column_update_value(m->session->tr, auths_name, rid, newuser);
@@ -416,6 +429,7 @@ monet5_user_get_def_schema(mvc *m, int user)
 	if ((rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL)) != oid_nil)
 		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
+	_DELETE(username);
 	assert(p);
 	schema_id = *(sqlid *) p;
 	_DELETE(p);

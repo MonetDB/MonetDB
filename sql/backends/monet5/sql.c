@@ -2900,7 +2900,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_export_result(cntxt->sqlcontext, s, res))
 		msg = createException(SQL, "sql.resultset", "failed");
 	if( s != cntxt->fdout)
-		mnstr_close(s);
+		close_stream(s);
   wrapup_result_set1:
 	BBPunfix(order->batCacheid);
 	if( tbl) BBPunfix(tblId);
