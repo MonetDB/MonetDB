@@ -36,9 +36,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     const int additional_columns = 2;
     int i = 1, ai = 0;
     char* pycall = NULL;
-    str *args;
+    str *args = NULL;
     char *msg = MAL_SUCCEED;
-    node * argnode;
+    node *argnode, *n;
     PyObject *pArgs = NULL, *pEmit = NULL, *pConnection; // this is going to be the parameter tuple
     PyObject *code_object = NULL;
     EmitCol *cols = NULL;
@@ -91,16 +91,20 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     gstate = Python_ObtainGIL();
 
     pArgs = PyTuple_New(argcount - pci->retc - 2 + additional_columns);
-    // TODO: check pArgs
-    ai = 0;
+    if (!pArgs) {
+        msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"python object");
+        goto wrapup;
+    }
 
+    ai = 0;
     argnode = sqlfun && sqlfun->ops->cnt > 0 ? sqlfun->ops->h : NULL;
     for (i = pci->retc + 2; i < argcount; i++) {
         PyInput inp;
 
         PyObject *val = NULL;
         if (isaBatType(getArgType(mb,pci,i))) {
-        	// complain
+            msg = createException(MAL, "pyapi.eval_loader", "Only scalar arguments are supported.");
+            goto wrapup;
         }
 		inp.scalar = true;
 		inp.bat_type = getArgType(mb, pci, i);
@@ -113,40 +117,43 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 		val = PyArrayObject_FromScalar(&inp, &msg);
 		if (msg != MAL_SUCCEED) {
-			// complain
+            goto wrapup;
 		}
 		if (PyTuple_SetItem(pArgs, ai++, val) != 0) {
-			// complain
+            msg = createException(MAL, "pyapi.eval_loader", "Failed to set tuple (this shouldn't happen).");
+            goto wrapup;
 		}
 		// TODO deal with sql types
     }
 
     pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
-    {
-    	node *n = sqlmorefun->colnames->h;
-    	cols = GDKmalloc(sizeof(EmitCol) * pci->retc);
-    	if (!cols) {
-    		// complain
-    	}
-    	i = 0;
-    	while (n) {
-    		cols[i].name = *((char**) n->data);
-    		n = n->next;
-    		cols[i].b = BATnew(TYPE_void, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
-    		i++;
-    	}
-    	// TODO: assert list length == number of return BATs
-    	pEmit = Py_Emit_Create(cols, pci->retc);
-    	// TODO: check pConnection
+	n = sqlmorefun->colnames->h;
+	cols = GDKmalloc(sizeof(EmitCol) * pci->retc);
+	if (!cols) {
+        msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"column list");
+        goto wrapup;
+	}
+	i = 0;
+	while (n) {
+        assert(i < pci->retc);
+		cols[i].name = *((char**) n->data);
+		n = n->next;
+		cols[i].b = BATnew(TYPE_void, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
+		i++;
+	}
+	pEmit = Py_Emit_Create(cols, pci->retc);
 
+    if (!pConnection || !pEmit) {
+        msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"python object");
+        goto wrapup;
     }
+
     PyTuple_SetItem(pArgs, ai++, pEmit);
     PyTuple_SetItem(pArgs, ai++, pConnection);
 
-
     pycall = FormatCode(exprStr, args, argcount, 4, &code_object, &msg, loader_additional_args, additional_columns);
     if (pycall == NULL && code_object == NULL) {
-        if (msg == NULL) { msg = createException(MAL, "pyapi.eval", "Error while parsing Python code."); }
+        if (msg == NULL) { msg = createException(MAL, "pyapi.eval_loader", "Error while parsing Python code."); }
         goto wrapup;
     }
 
@@ -194,10 +201,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
             if (code_object == NULL) { PyRun_SimpleString("del pyfun"); }
             goto wrapup;
         }
-
-
     }
 
+    gstate = Python_ReleaseGIL(gstate);
 
     {
     	size_t nval = ((Py_EmitObject *) pEmit)->nvals;
@@ -211,9 +217,15 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     	}
     }
 
-    wrapup:
+wrapup:
+    if (gstate) {
+        gstate = Python_ReleaseGIL(gstate);
+    }
+    if (pycall) GDKfree(pycall);
+    if (args) GDKfree(args);
+    if (cols) GDKfree(cols);
+
 	// TODO: fix leaks of which there are many
-		Python_ReleaseGIL(gstate);
-		return(msg);
+    return(msg);
 
 }
