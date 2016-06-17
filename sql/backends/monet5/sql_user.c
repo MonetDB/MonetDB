@@ -429,6 +429,7 @@ monet5_user_get_def_schema(mvc *m, int user)
 	if ((rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL)) != oid_nil)
 		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
+	_DELETE(username);
 	assert(p);
 	schema_id = *(sqlid *) p;
 	_DELETE(p);

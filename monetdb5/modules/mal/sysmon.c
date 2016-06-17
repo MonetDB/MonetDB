@@ -95,6 +95,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 
 		BUNappend(user, usr, FALSE);
+		GDKfree(usr);
 		BUNappend(query, QRYqueue[i].query, FALSE);
 		BUNappend(activity, QRYqueue[i].status, FALSE);
 
