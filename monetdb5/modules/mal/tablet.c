@@ -1296,7 +1296,6 @@ SQLproducer(void *p)
 				char msg[256];
 				snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
 				tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
-				task->as->error = GDKstrdup(msg);
 				task->b->pos += partial;
 			}
 			goto reportlackofinput;

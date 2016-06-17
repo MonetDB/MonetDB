@@ -32,7 +32,7 @@ stderr of test 'malformed-copy-int.Bug-3987` in directory 'sql/test/BugTracker-2
 
 MAPI  = (monetdb) /var/tmp/mtest-25832/.s.monetdb.32759
 QUERY = COPY INTO test3987 FROM '/net/madrid/export/scratch1/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2016/Tests/data3987.csv' DELIMITERS '\t','\n','\"' NULL AS '<NULL>';
-ERROR = !Failed to import table incomplete record at end of file:
+ERROR = !Failed to import table incomplete record at end of file
 
 # 14:57:00 >  
 # 14:57:00 >  "Done."
