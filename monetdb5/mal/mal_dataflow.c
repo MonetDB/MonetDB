@@ -417,6 +417,8 @@ DFLOWworker(void *T)
 			/* only collect one error (from one thread, needed for stable testing) */
 			if (!flow->error)
 				flow->error = error;
+			else
+				GDKfree(error);
 			MT_lock_unset(&flow->flowlock);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
