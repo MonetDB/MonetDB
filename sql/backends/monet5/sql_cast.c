@@ -325,10 +325,6 @@ str_2_sqlblob(sqlblob **res, const str *val)
 		throw(SQL, "sqlblob", "%s", buf);
 	}
 	*res = (sqlblob *) p;
-	if (!ATOMextern(TYPE_sqlblob)) {
-		if (p)
-			GDKfree(p);
-	}
 	return MAL_SUCCEED;
 }
 
@@ -370,6 +366,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 			return msg;
 		}
 		BUNappend(dst, r, FALSE);
+		GDKfree(r);
 	}
 	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);

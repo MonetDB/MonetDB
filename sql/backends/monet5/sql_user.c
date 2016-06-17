@@ -279,6 +279,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			}
 			if (strcmp(username, user) == 0) {
 				/* avoid message about changePassword (from MAL level) */
+				GDKfree(username);
 				if (!enc) {
 					free(pwd);
 					free(opwd);
@@ -289,6 +290,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 					"when changing your own password");
 				return (FALSE);
 			}
+			GDKfree(username);
 			err = AUTHsetPassword(c, &user, &pwd);
 			if (!enc) {
 				free(pwd);
