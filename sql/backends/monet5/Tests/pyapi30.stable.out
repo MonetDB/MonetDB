@@ -75,12 +75,12 @@ Ready.
 #CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
 #	_emit.emit({'a':i,'d':4})
 #};
-#SELECT * FROM functions WHERE name='myfunc';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 4,	6,	32,	5,	1,	1,	5,	5,	5,	4 # length
-[ 6906,	"myfunc",	"{\n\t_emit.emit({'a':42,'d':1})\n};",	"pyapi",	6,	7,	true,	true,	false,	2000	]
+#SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	func,	mod,	language,	type,	side_effect,	varres,	vararg # name
+% varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
+% 6,	32,	5,	1,	1,	5,	5,	5 # length
+[ "myfunc",	"{\n\t_emit.emit({'a':42,'d':1})\n};",	"pyapi",	6,	7,	true,	true,	false	]
 #COPY INTO mytable FROM LOADER myfunc3(46, 'asdf', 3.2);
 [ 1	]
 #COPY INTO mytable FROM LOADER myfunc2(45, 'asdf');
