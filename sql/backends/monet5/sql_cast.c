@@ -310,7 +310,7 @@ batstr_2_date(bat *res, const bat *bid)
 }
 
 str
-str_2_sqlblob(sqlblob * *res, const str *val)
+str_2_sqlblob(sqlblob **res, const str *val)
 {
 	ptr p = NULL;
 	int len = 0;

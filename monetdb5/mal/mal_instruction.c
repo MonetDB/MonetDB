@@ -1539,7 +1539,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 			freeInstruction(p);
 			return NULL;
 		}
-		memcpy((char *) pn, (char *) p, space);
+		memcpy(pn, p, space);
 		GDKfree(p);
 		pn->maxarg += MAXARG;
 		/* we have to keep track on the maximal arguments/block
