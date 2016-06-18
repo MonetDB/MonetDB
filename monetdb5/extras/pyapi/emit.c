@@ -13,7 +13,7 @@
 	tpe val = (tpe) tpe##_nil; msg = pyobject_to_##tpe(&dictEntry, 42, &val); \
 	BUNappend(self->cols[i].b, &val, 0); \
 	if (msg != MAL_SUCCEED) { \
-		PyErr_SetString(PyExc_TypeError, "conversion failed"); /* TODO: better error message */ \
+		PyErr_Format(PyExc_TypeError, "Conversion Failed: %s", msg); \
 		return NULL; \
 	}}
 
@@ -91,7 +91,18 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
 				        break;
 				#endif
 				    case TYPE_str:
-				    	// FIXME scalar_convert(str);
+                    {
+                        str val = NULL;
+                        msg = pyobject_to_str(&dictEntry, 42, &val);
+                    	BUNappend(self->cols[i].b, val, 0);
+                        if (val) {
+                            free(val);
+                        }
+                    	if (msg != MAL_SUCCEED) {
+                    		PyErr_Format(PyExc_TypeError, "Conversion Failed: %s", msg);
+                    		return NULL;
+                    	}
+                    }
 				    	break;
 				    default:
 				    	break;
@@ -162,7 +173,7 @@ PyTypeObject Py_EmitType = {
     0,
     0,
     0,
-    0, 
+    0,
     0,
     0
 #ifdef IS_PY3K

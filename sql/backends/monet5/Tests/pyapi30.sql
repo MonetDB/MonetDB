@@ -1,7 +1,7 @@
 
 START TRANSACTION;
 
-CREATE TABLE mytable(a DOUBLE, d int);
+CREATE TABLE mytable(a DOUBLE, d int, s STRING);
 
 CREATE LOADER myfunc() LANGUAGE PYTHON {
 	_emit.emit({'a':42,'d':1})
@@ -16,7 +16,7 @@ CREATE LOADER myfunc2(i integer, f string) LANGUAGE PYTHON {
 };
 
 CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
-	_emit.emit({'a':i,'d':4})
+	_emit.emit({'a':i,'d':4, 's': 'hello'})
 };
 
 SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc';
