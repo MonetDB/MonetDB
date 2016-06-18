@@ -8,7 +8,6 @@
 #include "type_conversion.h"
 #include "formatinput.h"
 
-
 static void _loader_import_array(void) {
     import_array();
 }
@@ -139,6 +138,8 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		cols[i].name = *((char**) n->data);
 		n = n->next;
 		cols[i].b = BATnew(TYPE_void, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
+        cols[i].b->T->nil = 0;
+        cols[i].b->T->nonil = 0;
 		i++;
 	}
 	pEmit = Py_Emit_Create(cols, pci->retc);
@@ -210,7 +211,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     	for (i = 0; i < pci->retc; i++) {
     		BAT *b = cols[i].b;
     		BATsetcount(b, nval);
-    		// TODO set various other BAT properties here
+            b->tkey = 0;
+            b->tsorted = 0;
+            b->trevsorted = 0;
 
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
             BBPkeepref(b->batCacheid);

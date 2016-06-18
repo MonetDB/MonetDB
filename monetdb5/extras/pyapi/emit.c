@@ -3,10 +3,20 @@
 #include "type_conversion.h"
 #include "interprocess.h"
 
+#include "convert_loops.h"
+
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
-#define PyString_CheckExact PyUnicode_CheckExact
 #define PyString_FromString PyUnicode_FromString
+#define PyString_Check PyUnicode_Check
+#define PyString_CheckExact PyUnicode_CheckExact
+#define PyString_AsString PyUnicode_AsUTF8
+#define PyString_AS_STRING PyUnicode_AsUTF8
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_Check PyLong_Check
+#define PythonUnicodeType char
+#else
+#define PythonUnicodeType Py_UNICODE
 #endif
 
 #define scalar_convert(tpe) {\
@@ -24,7 +34,6 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
     str msg = MAL_SUCCEED;
     (void) self;
     if (!PyDict_Check(args)) {
-        // complain
         PyErr_SetString(PyExc_TypeError, "need dict");
         return NULL;
     }
@@ -33,14 +42,15 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
         PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
         ssize_t this_size = 1;
         if (dictEntry) {
-            if (!PyType_IsPyScalar(dictEntry)) {
-                this_size = Py_SIZE(dictEntry);
+            this_size = PyType_Size(dictEntry);
+            if (this_size < 0) {
+                PyErr_Format(PyExc_TypeError, "Unsupported Python Object %s", PyString_AsString(PyObject_Str(PyObject_Type(dictEntry))));
+                return NULL;
             }
             if (el_count < 0) el_count = this_size;
             else {
                 if (el_count != this_size) {
-                    PyErr_SetString(PyExc_TypeError, "need same length values");
-                    // todo: better error message!
+                    PyErr_Format(PyExc_TypeError, "Element %s has size %zu, but expected an element with size %zu", self->cols[i].name, this_size, el_count);
                     return NULL;
                 }
             }
@@ -57,7 +67,7 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
 
     for (i = 0; i < self->ncols; i++) {
         PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
-        if (dictEntry) {
+        if (dictEntry && dictEntry != Py_None) {
             if (PyType_IsPyScalar(dictEntry)) {
                 switch (self->cols[i].b->T->type)
                     {
@@ -105,20 +115,84 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                     }
                         break;
                     default:
-                        break;
-                        // complain
+                        PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
+                        return NULL;
                 }
             } else {
-                // TODO: handle dicts with array values
+                bool *mask = NULL;
+                char *data = NULL;
+                PyReturn return_struct;
+                PyReturn *ret = &return_struct;
+                size_t index_offset = 0;
+                size_t iu = 0;
+                if (BATextend(self->cols[i].b, self->nvals + el_count) != GDK_SUCCEED) {
+                    PyErr_Format(PyExc_TypeError, "Failed to allocate memory to extend BAT.");
+                    return NULL;
+                }
+                msg = PyObject_GetReturnValues(dictEntry, ret);
+                if (ret->mask_data != NULL) {
+                    mask = (bool*) ret->mask_data;
+                }
+                if (ret->array_data == NULL) {
+                    msg = createException(MAL, "pyapi.eval", "No return value stored in the structure.\n");
+                    goto wrapup;
+                }
+                data = (char*) ret->array_data;
+                switch (self->cols[i].b->T->type)
+                    {
+                    case TYPE_bit:
+                        NP_INSERT_BAT(self->cols[i].b, bit, self->nvals);
+                        break;
+                    case TYPE_bte:
+                        NP_INSERT_BAT(self->cols[i].b, bte, self->nvals);
+                        break;
+                    case TYPE_sht:
+                        NP_INSERT_BAT(self->cols[i].b, sht, self->nvals);
+                        break;
+                    case TYPE_int:
+                        NP_INSERT_BAT(self->cols[i].b, int, self->nvals);
+                        break;
+                    case TYPE_oid:
+                        NP_INSERT_BAT(self->cols[i].b, oid, self->nvals);
+                        break;
+                    case TYPE_lng:
+                        NP_INSERT_BAT(self->cols[i].b, lng, self->nvals);
+                        break;
+                    case TYPE_flt:
+                        NP_INSERT_BAT(self->cols[i].b, flt, self->nvals);
+                        break;
+                    case TYPE_dbl:
+                        NP_INSERT_BAT(self->cols[i].b, dbl, self->nvals);
+                        break;
+                #ifdef HAVE_HGE
+                    case TYPE_hge:
+                        NP_INSERT_BAT(self->cols[i].b, hge, self->nvals);
+                        break;
+                #endif
+                    case TYPE_str:
+                    default:
+                        PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
+                        return NULL;
+                }
             }
         } else {
             for (ai = 0; ai < (size_t) el_count; ai++) {
                 BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->T->type), 0);
             }
+            self->cols[i].b->T->nil = 1;
+            self->cols[i].b->T->nonil = 0;
         }
     }
     self->nvals += el_count;
     Py_RETURN_NONE;
+
+wrapup:
+    if (msg != MAL_SUCCEED) {
+        PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);
+    } else {
+        Py_RETURN_NONE;
+    }
+    return NULL;
 }
 
 
