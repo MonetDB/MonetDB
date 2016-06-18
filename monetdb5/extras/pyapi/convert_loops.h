@@ -135,6 +135,7 @@
                 goto wrapup;                                                                                                                          \
             }                                                                                                                                         \
             ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = value;                                                                                \
+            if (bat->T->nil == 0) bat->T->nil = value == mtpe_to##_nil ? 1 : 0;                                                                       \
         }                                                                                                                                             \
     }                                                                                                                                                 \
     else                                                                                                                                              \
@@ -153,6 +154,7 @@
                     goto wrapup;                                                                                                                      \
                 }                                                                                                                                     \
                 ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = value;                                                                            \
+                if (bat->T->nil == 0) bat->T->nil = value == mtpe_to##_nil ? 1 : 0;                                                                   \
             }                                                                                                                                         \
         }                                                                                                                                             \
     } }

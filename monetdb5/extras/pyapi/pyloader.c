@@ -26,10 +26,9 @@ str _loader_init(void)
     return msg;
 }
 
-
 str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sql_func * sqlfun;
-	sql_subfunc * sqlmorefun;
+    sql_subfunc * sqlmorefun;
     str exprStr;
 
     const int additional_columns = 2;
@@ -82,9 +81,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     // We name all the unknown arguments
     for (i = pci->retc + 2; i < argcount; i++) {
         if (args[i] == NULL) {
-			char argbuf[64];
-			snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
-			args[i] = GDKstrdup(argbuf);
+            char argbuf[64];
+            snprintf(argbuf, sizeof(argbuf), "arg%i", i - pci->retc - 1);
+            args[i] = GDKstrdup(argbuf);
         }
     }
     gstate = Python_ObtainGIL();
@@ -105,44 +104,44 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
             msg = createException(MAL, "pyapi.eval_loader", "Only scalar arguments are supported.");
             goto wrapup;
         }
-		inp.scalar = true;
-		inp.bat_type = getArgType(mb, pci, i);
-		inp.count = 1;
-		if (inp.bat_type == TYPE_str) {
-			inp.dataptr = getArgReference_str(stk, pci, i);
-		}
-		else {
-			inp.dataptr = getArgReference(stk, pci, i);
-		}
-		val = PyArrayObject_FromScalar(&inp, &msg);
-		if (msg != MAL_SUCCEED) {
+        inp.scalar = true;
+        inp.bat_type = getArgType(mb, pci, i);
+        inp.count = 1;
+        if (inp.bat_type == TYPE_str) {
+            inp.dataptr = getArgReference_str(stk, pci, i);
+        }
+        else {
+            inp.dataptr = getArgReference(stk, pci, i);
+        }
+        val = PyArrayObject_FromScalar(&inp, &msg);
+        if (msg != MAL_SUCCEED) {
             goto wrapup;
-		}
-		if (PyTuple_SetItem(pArgs, ai++, val) != 0) {
+        }
+        if (PyTuple_SetItem(pArgs, ai++, val) != 0) {
             msg = createException(MAL, "pyapi.eval_loader", "Failed to set tuple (this shouldn't happen).");
             goto wrapup;
-		}
-		// TODO deal with sql types
+        }
+        // TODO deal with sql types
     }
 
     pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
-	n = sqlmorefun->colnames->h;
-	cols = GDKmalloc(sizeof(EmitCol) * pci->retc);
-	if (!cols) {
+    n = sqlmorefun->colnames->h;
+    cols = GDKmalloc(sizeof(EmitCol) * pci->retc);
+    if (!cols) {
         msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"column list");
         goto wrapup;
-	}
-	i = 0;
-	while (n) {
+    }
+    i = 0;
+    while (n) {
         assert(i < pci->retc);
-		cols[i].name = *((char**) n->data);
-		n = n->next;
-		cols[i].b = BATnew(TYPE_void, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
+        cols[i].name = *((char**) n->data);
+        n = n->next;
+        cols[i].b = BATnew(TYPE_void, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
         cols[i].b->T->nil = 0;
         cols[i].b->T->nonil = 0;
-		i++;
-	}
-	pEmit = Py_Emit_Create(cols, pci->retc);
+        i++;
+    }
+    pEmit = Py_Emit_Create(cols, pci->retc);
 
     if (!pConnection || !pEmit) {
         msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"python object");
@@ -158,40 +157,39 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
         goto wrapup;
     }
 
-
     {
-		PyObject *pFunc, *pModule, *v, *d;
+        PyObject *pFunc, *pModule, *v, *d;
 
-		// First we will load the main module, this is required
-		pModule = PyImport_AddModule("__main__");
-		if (!pModule) {
-			msg = PyError_CreateException("Failed to load module", NULL);
-			goto wrapup;
-		}
+        // First we will load the main module, this is required
+        pModule = PyImport_AddModule("__main__");
+        if (!pModule) {
+            msg = PyError_CreateException("Failed to load module", NULL);
+            goto wrapup;
+        }
 
-		// Now we will add the UDF to the main module
-		d = PyModule_GetDict(pModule);
-		if (code_object == NULL) {
-			v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
-			if (v == NULL) {
-				msg = PyError_CreateException("Could not parse Python code", pycall);
-				goto wrapup;
-			}
-			Py_DECREF(v);
+        // Now we will add the UDF to the main module
+        d = PyModule_GetDict(pModule);
+        if (code_object == NULL) {
+            v = PyRun_StringFlags(pycall, Py_file_input, d, d, NULL);
+            if (v == NULL) {
+                msg = PyError_CreateException("Could not parse Python code", pycall);
+                goto wrapup;
+            }
+            Py_DECREF(v);
 
-			// Now we need to obtain a pointer to the function, the function is called "pyfun"
-			pFunc = PyObject_GetAttrString(pModule, "pyfun");
-			if (!pFunc || !PyCallable_Check(pFunc)) {
-				msg = PyError_CreateException("Failed to load function", NULL);
-				goto wrapup;
-			}
-		} else {
-			pFunc = PyFunction_New(code_object, d);
-			if (!pFunc || !PyCallable_Check(pFunc)) {
-				msg = PyError_CreateException("Failed to load function", NULL);
-				goto wrapup;
-			}
-		}
+            // Now we need to obtain a pointer to the function, the function is called "pyfun"
+            pFunc = PyObject_GetAttrString(pModule, "pyfun");
+            if (!pFunc || !PyCallable_Check(pFunc)) {
+                msg = PyError_CreateException("Failed to load function", NULL);
+                goto wrapup;
+            }
+        } else {
+            pFunc = PyFunction_New(code_object, d);
+            if (!pFunc || !PyCallable_Check(pFunc)) {
+                msg = PyError_CreateException("Failed to load function", NULL);
+                goto wrapup;
+            }
+        }
         PyObject_CallObject(pFunc, pArgs);
 
         Py_DECREF(pFunc);
@@ -207,17 +205,17 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     gstate = Python_ReleaseGIL(gstate);
 
     {
-    	size_t nval = ((Py_EmitObject *) pEmit)->nvals;
-    	for (i = 0; i < pci->retc; i++) {
-    		BAT *b = cols[i].b;
-    		BATsetcount(b, nval);
+        size_t nval = ((Py_EmitObject *) pEmit)->nvals;
+        for (i = 0; i < pci->retc; i++) {
+            BAT *b = cols[i].b;
+            BATsetcount(b, nval);
             b->tkey = 0;
             b->tsorted = 0;
             b->trevsorted = 0;
 
             *getArgReference_bat(stk, pci, i) = b->batCacheid;
             BBPkeepref(b->batCacheid);
-    	}
+        }
     }
 
 wrapup:
@@ -228,7 +226,7 @@ wrapup:
     if (args) GDKfree(args);
     if (cols) GDKfree(cols);
 
-	// TODO: fix leaks of which there are many
+    // TODO: fix leaks of which there are many
     return(msg);
 
 }

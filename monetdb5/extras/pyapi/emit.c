@@ -138,8 +138,8 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                     goto wrapup;
                 }
                 data = (char*) ret->array_data;
-                switch (self->cols[i].b->T->type)
-                    {
+                assert((size_t) el_count == (size_t) ret->count);
+                switch (self->cols[i].b->T->type) {
                     case TYPE_bit:
                         NP_INSERT_BAT(self->cols[i].b, bit, self->nvals);
                         break;
@@ -174,6 +174,8 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                         PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
                         return NULL;
                 }
+                BATsetcount(self->cols[i].b, self->nvals + el_count);
+                self->cols[i].b->T->nonil = 1 - self->cols[i].b->T->nil;
             }
         } else {
             for (ai = 0; ai < (size_t) el_count; ai++) {

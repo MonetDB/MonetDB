@@ -2641,7 +2641,7 @@ ssize_t PyType_Size(PyObject *obj) {
     if (PyType_IsPyScalar(obj)) {
         return 1;
     }
-    if (PyArray_CheckExact(obj)) {
+    if (PyArray_Check(obj)) {
         return PyArray_Size(obj);
     }
     if (PyList_Check(obj)) {
