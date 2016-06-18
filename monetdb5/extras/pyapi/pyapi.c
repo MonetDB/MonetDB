@@ -442,7 +442,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_b
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
 str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
-    sql_func * sqlfun;
+    sql_func * sqlfun = NULL;
     str exprStr;
 
     const int additional_columns = 3;
@@ -451,7 +451,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     str *args;
     char *msg = MAL_SUCCEED;
     BAT *b = NULL;
-    node * argnode;
+    node * argnode = NULL;
     int seengrp = FALSE;
     PyObject *pArgs = NULL, *pColumns = NULL, *pColumnTypes = NULL, *pConnection, *pResult = NULL; // this is going to be the parameter tuple
     PyObject *code_object = NULL;
@@ -495,9 +495,12 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
               "Embedded Python is enabled but an error was thrown during initialization.");
     }
     if (!grouped) {
-    	sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
+        sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
+        if (sqlmorefun) {
+            sqlfun = sqlmorefun->func;
+        }
     } else {
-    	sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+        sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
     }
     exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
     varres = sqlfun ? sqlfun->varres : 0;

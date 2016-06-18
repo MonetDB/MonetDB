@@ -229,7 +229,7 @@ rapi_export str RAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
-	sql_func * sqlfun;
+	sql_func * sqlfun = NULL;
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
 
 	SEXP x, env, retval;
@@ -259,7 +259,8 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	}
 
 	if (!grouped) {
-		sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
+		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
+		if (sqlmorefun) sqlfun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc))->func;
 	} else {
 		sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
 	}
