@@ -1620,10 +1620,10 @@ str
         MT_lock_set(&pyapiLock);
         if (!pyapiInitialized) {
             str msg = MAL_SUCCEED;
-            char* iar = NULL;
             Py_Initialize();
-            PyRun_SimpleString("import numpy");
-            import_array1(iar);
+            if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
+                return PyError_CreateException("Failed to initialize embedded python", NULL);
+            }
             msg = _connection_init();
             marshal_module = PyImport_Import(PyString_FromString("marshal"));
             if (marshal_module == NULL) {

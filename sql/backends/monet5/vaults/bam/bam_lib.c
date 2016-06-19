@@ -475,6 +475,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 			goto cleanup;
 		}
 		BUNappend(result, (ptr) r, FALSE);
+		GDKfree(r);
 		++seq;
 		++pos;
 		++cigar;

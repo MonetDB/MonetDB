@@ -113,10 +113,10 @@ wkb2geos(wkb *geomWKB)
 	if (wkb_isnil(geomWKB))
 		return NULL;
 
-	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) ((geomWKB)->data), (geomWKB)->len);
+	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) geomWKB->data, geomWKB->len);
 
 	if (geosGeometry != NULL)
-		GEOSSetSRID(geosGeometry, (geomWKB)->srid);
+		GEOSSetSRID(geosGeometry, geomWKB->srid);
 
 	return geosGeometry;
 }

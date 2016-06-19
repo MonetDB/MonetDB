@@ -88,7 +88,7 @@ QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
         allemaal nogal lang duurt, maar in principe is het nog
         maar een uurtje of 6 werk om het goed te krijgen. Zoals
         je kan zien heb ik bij de voicemails al wat leuke
-ERROR = !Failed to import table incomplete record at end of file:
+ERROR = !Failed to import table incomplete record at end of file
 
 
 

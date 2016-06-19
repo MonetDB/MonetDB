@@ -99,5 +99,5 @@ propvalue2string( prop *p)
 			break;
 		}
 	}
-	return "";
+	return _STRDUP("");
 }

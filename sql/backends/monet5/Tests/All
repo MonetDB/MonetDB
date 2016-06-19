@@ -48,6 +48,8 @@ HAVE_LIBPY?pyapi24
 HAVE_LIBPY&THREADS=8?pyapi25
 HAVE_LIBPY?pyapi26
 HAVE_LIBPY?pyapi27
+HAVE_LIBPY?pyapi28
+HAVE_LIBPY?pyapi29
 
 # should this work?
 #inlineUDF

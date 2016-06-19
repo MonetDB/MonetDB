@@ -211,37 +211,39 @@ bl_postversion( void *lg)
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
 		bi = bat_iterator(b);
 		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-			char *t = (char*)BUNtail(bi, p);
-			if (strcmp(toLower(t), "wkb") == 0){
-				geomUpgrade++;
+			char *t = toLower(BUNtail(bi, p));
+			geomUpgrade = strcmp(t, "wkb") == 0;
+			GDKfree(t);
+			if (geomUpgrade)
 				break;
-			}
 		}
 		bat_destroy(b);
 
-		/* test whether the catalog contains information about
-		 * geometry columns */
-		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
-		bi = bat_iterator(b);
-		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-			char *t = (char*)BUNtail(bi, p);
-			if (strcmp(toLower(t), "point") == 0 ||
-				strcmp(toLower(t), "curve") == 0 ||
-				strcmp(toLower(t), "linestring") == 0 ||
-				strcmp(toLower(t), "surface") == 0 ||
-				strcmp(toLower(t), "polygon") == 0 ||
-				strcmp(toLower(t), "multipoint") == 0 ||
-				strcmp(toLower(t), "multicurve") == 0 ||
-				strcmp(toLower(t), "multilinestring") == 0 ||
-				strcmp(toLower(t), "multisurface") == 0 ||
-				strcmp(toLower(t), "multipolygon") == 0 ||
-				strcmp(toLower(t), "geometry") == 0 ||
-				strcmp(toLower(t), "geometrycollection") == 0){
-				geomUpgrade++;
-				break;
+		if (!geomUpgrade) {
+			/* test whether the catalog contains
+			 * information about geometry columns */
+			b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+			bi = bat_iterator(b);
+			for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+				char *t = toLower(BUNtail(bi, p));
+				geomUpgrade = strcmp(t, "point") == 0 ||
+					strcmp(t, "curve") == 0 ||
+					strcmp(t, "linestring") == 0 ||
+					strcmp(t, "surface") == 0 ||
+					strcmp(t, "polygon") == 0 ||
+					strcmp(t, "multipoint") == 0 ||
+					strcmp(t, "multicurve") == 0 ||
+					strcmp(t, "multilinestring") == 0 ||
+					strcmp(t, "multisurface") == 0 ||
+					strcmp(t, "multipolygon") == 0 ||
+					strcmp(t, "geometry") == 0 ||
+					strcmp(t, "geometrycollection") == 0;
+				GDKfree(t);
+				if (geomUpgrade)
+					break;
 			}
+			bat_destroy(b);
 		}
-		bat_destroy(b);
 
 		if (!geomUpgrade && geomcatalogfix_get() == NULL) {
 			/* The catalog knew nothing about geometries

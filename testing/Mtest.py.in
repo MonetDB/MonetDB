@@ -343,6 +343,7 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
     'HAVE_PHP'             : "",
+    'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
@@ -3692,6 +3693,12 @@ def main(argv) :
     # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    try:
+        import pymonetdb
+    except ImportError:
+        print('Python available, but pymonetdb package not available')
+    else:
+        CONDITIONALS['HAVE_PYMONETDB'] = '#'
     if CheckExec('php'):
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:

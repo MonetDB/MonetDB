@@ -1,3 +1,10 @@
+monetdb (11.23.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4015: Daemon crashes on database release command
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 10 Jun 2016 13:23:50 +0200
+
 monetdb (11.23.1) unstable; urgency=low
 
   * Rebuilt.
@@ -382,7 +389,7 @@ monetdb (11.23.1) unstable; urgency=low
 
 monetdb (11.23.1) unstable; urgency=low
 
-  * monetdb5: Removed algerbra.like with a BAT argument.  Use algebra.likesubselect
+  * monetdb5: Removed algebra.like with a BAT argument.  Use algebra.likesubselect
     instead.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 5 Apr 2016 16:10:50 +0200

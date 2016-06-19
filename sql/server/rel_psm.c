@@ -725,8 +725,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				char *tpe =  subtype2string((sql_subtype *) n->data);
 				
 				if (arg_list) {
+					char *t = arg_list;
 					arg_list = sql_message("%s, %s", arg_list, tpe);
-					_DELETE(tpe);	
+					_DELETE(t);
+					_DELETE(tpe);
 				} else {
 					arg_list = tpe;
 				}
@@ -914,19 +916,24 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 			node *n;
 			
 			if (type_list->cnt > 0) {
+				void *e;
 				for (n = type_list->h; n; n = n->next) {
 					char *tpe =  subtype2string((sql_subtype *) n->data);
 				
 					if (arg_list) {
+						char *t = arg_list;
 						arg_list = sql_message("%s, %s", arg_list, tpe);
-						_DELETE(tpe);	
+						_DELETE(tpe);
+						_DELETE(t);
 					} else {
 						arg_list = tpe;
 					}
 				}
 				list_destroy(list_func);
 				list_destroy(type_list);
-				return sql_error(sql, 02, "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
+				e = sql_error(sql, 02, "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
+				_DELETE(arg_list);
+				return e;
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);

@@ -617,6 +617,7 @@ getVarName(MalBlkPtr mb, int i)
 	nme = mb->var[i]->name;
 
 	if (nme == 0 || *nme =='_') {
+		GDKfree(nme);
 		snprintf(buf, IDLENGTH, "%c_%d", refMarker(mb,i), mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
@@ -1509,7 +1510,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 			freeInstruction(p);
 			return NULL;
 		}
-		memcpy((char *) pn, (char *) p, space);
+		memcpy(pn, p, space);
 		GDKfree(p);
 		pn->maxarg += MAXARG;
 		/* we have to keep track on the maximal arguments/block
