@@ -665,8 +665,8 @@ def CreateHtmlIndex (env, *body) :
         tr.addchildren(body)
         html = Element('html', {},
                        Element('head', {},
-                               Element('title', {},
-                                       Text(HTMLTITLE)),
+                               Element('meta', {'charset':'utf8'}),
+                               Element('title', {}, Text(HTMLTITLE)),
                                stylesheet),
                        Element('body',
                                {'bgcolor': white,
@@ -691,6 +691,7 @@ def CreateHtmlIndex (env, *body) :
             ROWS="54"
         html = Element('html', {},
                        Element('head', {},
+                               Element('meta', {'charset':'utf8'}),
                                Element('title', {}, Text(HTMLTITLE))),
                        Element('frameset',
                                {'rows': '%s,*' % ROWS,
