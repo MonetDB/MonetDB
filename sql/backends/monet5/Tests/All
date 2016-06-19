@@ -66,4 +66,4 @@ HAVE_LIBPY?pyloader04
 simpleSQL
 limithack
 
-HAVE_HUGE?int_notation_1e5
+HAVE_HGE?int_notation_1e5
