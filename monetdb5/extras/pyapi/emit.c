@@ -29,41 +29,73 @@
 
 static PyObject *
 _emit_emit(Py_EmitObject *self, PyObject *args) {
-    size_t i, ai;
-    ssize_t el_count = -1;
-    str msg = MAL_SUCCEED;
-    (void) self;
+    size_t i, ai; // iterators
+    ssize_t el_count = -1; // the amount of elements this emit call will write to the table
+    size_t dict_elements, matched_elements;
+    str msg = MAL_SUCCEED; // return message
+
     if (!PyDict_Check(args)) {
         PyErr_SetString(PyExc_TypeError, "need dict");
         return NULL;
     }
 
+    matched_elements = 0;
+    dict_elements = PyDict_Size(args);
+    if (dict_elements == 0) {
+        PyErr_SetString(PyExc_TypeError, "dict must contain at least one element");
+        return NULL;
+    }
     for (i = 0; i < self->ncols; i++) {
         PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
-        ssize_t this_size = 1;
         if (dictEntry) {
+            ssize_t this_size = 1;
+            matched_elements++;
             this_size = PyType_Size(dictEntry);
             if (this_size < 0) {
                 PyErr_Format(PyExc_TypeError, "Unsupported Python Object %s", PyString_AsString(PyObject_Str(PyObject_Type(dictEntry))));
                 return NULL;
             }
-            if (el_count < 0) el_count = this_size;
-            else {
-                if (el_count != this_size) {
-                    PyErr_Format(PyExc_TypeError, "Element %s has size %zu, but expected an element with size %zu", self->cols[i].name, this_size, el_count);
-                    return NULL;
-                }
+            if (el_count < 0) {
+                el_count = this_size;
+            } else if (el_count != this_size) {
+                PyErr_Format(PyExc_TypeError, "Element %s has size %zu, but expected an element with size %zu", self->cols[i].name, this_size, el_count);
+                return NULL;
             }
         }
     }
-    if (el_count < 1) {
-        PyErr_SetString(PyExc_TypeError, "need at least some values");
-        // todo: better error message!
+    if (el_count == 0) {
+        PyErr_SetString(PyExc_TypeError, "Empty input values supplied");
         return NULL;
     }
-
-    // TODO: check for dict entries not matched by any column and complain if present
-
+    if (matched_elements != dict_elements) {
+        // not all elements in the dictionary were matched, look for the element that was not matched
+        PyObject *keys = PyDict_Keys(args);
+        for(i = 0; i < (size_t) PyList_Size(keys); i++) {
+            PyObject *key = PyList_GetItem(keys, i);
+            char *val;
+            if (!PyString_CheckExact(key)) {
+                // one of the keys in the dictionary was not a string
+                PyErr_Format(PyExc_TypeError, "Expected a string as dict key, but found %s", PyString_AsString(PyObject_Str(PyObject_Type(key))));
+                goto loop_end;
+            }
+            val = PyString_AsString(key);
+            bool found = false;
+            for(ai = 0; ai < self->ncols; ai++) {
+                if (strcmp(val, self->cols[ai].name) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                // the current element was present in the dictionary, but it has no matching column
+                PyErr_Format(PyExc_TypeError, "Unmatched element \"%s\" in dict", val);
+                goto loop_end;
+            }
+        }
+loop_end:
+        Py_DECREF(keys);
+        goto wrapup;
+    }
 
     for (i = 0; i < self->ncols; i++) {
         PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
@@ -187,7 +219,6 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
     }
     self->nvals += el_count;
     Py_RETURN_NONE;
-
 wrapup:
     if (msg != MAL_SUCCEED) {
         PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);
