@@ -51,8 +51,6 @@ bool option_warning;
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
 
-const int utf8string_minlength = 256;
-
 int PyAPIEnabled(void) {
     return (GDKgetenv_istrue(pyapi_enableflag)
             || GDKgetenv_isyes(pyapi_enableflag));
@@ -2212,82 +2210,8 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
             BATseqbase(b, seqbase); b->T->nil = 0; b->T->nonil = 1;
             b->tkey = 0; b->tsorted = 0; b->trevsorted = 0;
             VERBOSE_MESSAGE("- Collecting return values of type %s.\n", PyType_Format(ret->result_type));
-            switch(ret->result_type)
-            {
-                case NPY_BOOL:      NP_COL_BAT_STR_LOOP(b, bit, "%hhd"); break;
-                case NPY_BYTE:      NP_COL_BAT_STR_LOOP(b, bte, "%hhd"); break;
-                case NPY_SHORT:     NP_COL_BAT_STR_LOOP(b, sht, "%hd"); break;
-                case NPY_INT:       NP_COL_BAT_STR_LOOP(b, int, "%d"); break;
-                case NPY_LONG:      NP_COL_BAT_STR_LOOP(b, long, "%ld"); break;
-                case NPY_LONGLONG:  NP_COL_BAT_STR_LOOP(b, lng, LLFMT); break;
-                case NPY_UBYTE:     NP_COL_BAT_STR_LOOP(b, unsigned char, "%hhu"); break;
-                case NPY_USHORT:    NP_COL_BAT_STR_LOOP(b, unsigned short, "%hu"); break;
-                case NPY_UINT:      NP_COL_BAT_STR_LOOP(b, unsigned int, "%u"); break;
-                case NPY_ULONG:     NP_COL_BAT_STR_LOOP(b, unsigned long, "%lu"); break;
-                case NPY_ULONGLONG: NP_COL_BAT_STR_LOOP(b, unsigned long long, ULLFMT); break;
-                case NPY_FLOAT16:
-                case NPY_FLOAT:     NP_COL_BAT_STR_LOOP(b, flt, "%f"); break;
-                case NPY_DOUBLE:
-                case NPY_LONGDOUBLE: NP_COL_BAT_STR_LOOP(b, dbl, "%lf"); break;
-                case NPY_STRING:
-                    for (iu = 0; iu < ret->count; iu++) {
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->T->nil = 1;
-                            BUNappend(b, str_nil, FALSE);
-                        }  else {
-                            if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, true)) {
-                                msg = createException(MAL, "pyapi.eval", "Invalid string encoding used. Please return a regular ASCII string, or a Numpy_Unicode object.\n");
-                                goto wrapup;
-                            }
-                            BUNappend(b, utf8_string, FALSE);
-                        }
-                    }
-                    break;
-                case NPY_UNICODE:
-                    for (iu = 0; iu < ret->count; iu++) {
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->T->nil = 1;
-                            BUNappend(b, str_nil, FALSE);
-                        }  else {
-                            utf32_to_utf8(0, ret->memory_size / 4, utf8_string, (const Py_UNICODE*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));
-                            BUNappend(b, utf8_string, FALSE);
-                        }
-                    }
-                    break;
-                case NPY_OBJECT:
-                {
-                    //The resulting array is an array of pointers to various python objects
-                    //Because the python objects can be of any size, we need to allocate a different size utf8_string for every object
-                    //we will first loop over all the objects to get the maximum size needed, so we only need to do one allocation
-                    size_t utf8_size = utf8string_minlength;
-                    for (iu = 0; iu < ret->count; iu++) {
-                        size_t size = utf8string_minlength;
-                        PyObject *obj;
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) continue;
-                        obj = *((PyObject**) &data[(index_offset * ret->count + iu) * ret->memory_size]);
-                        size = pyobject_get_size(obj);
-                        if (size > utf8_size) utf8_size = size;
-                    }
-                    utf8_string = GDKzalloc(utf8_size);
-                    for (iu = 0; iu < ret->count; iu++) {
-                        if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->T->nil = 1;
-                            BUNappend(b, str_nil, FALSE);
-                        } else {
-                            //we try to handle as many types as possible
-                            pyobject_to_str(((PyObject**) &data[(index_offset * ret->count + iu) * ret->memory_size]), utf8_size, &utf8_string);
-                            BUNappend(b, utf8_string, FALSE);
-                        }
-                    }
-                    break;
-                }
-                default:
-                    msg = createException(MAL, "pyapi.eval", "Unrecognized type. Could not convert to NPY_UNICODE.\n");
-                    goto wrapup;
-            }
-            GDKfree(utf8_string);
-
-            b->T->nonil = 1 - b->T->nil;
+            NP_INSERT_STRING_BAT(b);
+            if (utf8_string) GDKfree(utf8_string);
             BATsetcount(b, (BUN) ret->count);
             BATsettrivprop(b);
             break;

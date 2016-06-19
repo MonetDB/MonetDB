@@ -4,6 +4,7 @@
 #include "interprocess.h"
 
 #include "convert_loops.h"
+#include "unicode.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
@@ -202,6 +203,16 @@ loop_end:
                         break;
                 #endif
                     case TYPE_str:
+                    {
+                        char *utf8_string = NULL;
+                        if (ret->result_type != NPY_OBJECT) {
+                            utf8_string = GDKzalloc(utf8string_minlength + ret->memory_size + 1);
+                            utf8_string[utf8string_minlength + ret->memory_size] = '\0';
+                        }
+                        NP_INSERT_STRING_BAT(self->cols[i].b);
+                        if (utf8_string) GDKfree(utf8_string);
+                    }
+                        break;
                     default:
                         PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
                         return NULL;

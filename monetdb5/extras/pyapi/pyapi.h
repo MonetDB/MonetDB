@@ -120,6 +120,6 @@ str _loader_init(void);
 pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
 
 #define pyapi_enableflag "embedded_py"
-
+#define utf8string_minlength 256
 
 #endif /* _PYPI_LIB_ */
