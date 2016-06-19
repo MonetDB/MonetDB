@@ -46,41 +46,96 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
         PyErr_SetString(PyExc_TypeError, "dict must contain at least one element");
         return NULL;
     }
-    for (i = 0; i < self->ncols; i++) {
-        PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
-        if (dictEntry) {
+    {
+        PyObject *items = PyDict_Items(args);
+        for (i = 0; i < dict_elements; i++) {
+            PyObject *tuple = PyList_GetItem(items, i);
+            PyObject *key = PyTuple_GetItem(tuple, 0);
+            PyObject *dictEntry = PyTuple_GetItem(tuple, 1);
             ssize_t this_size = 1;
-            matched_elements++;
             this_size = PyType_Size(dictEntry);
             if (this_size < 0) {
                 PyErr_Format(PyExc_TypeError, "Unsupported Python Object %s", PyString_AsString(PyObject_Str(PyObject_Type(dictEntry))));
+                Py_DECREF(items);
                 return NULL;
             }
             if (el_count < 0) {
                 el_count = this_size;
             } else if (el_count != this_size) {
-                PyErr_Format(PyExc_TypeError, "Element %s has size %zu, but expected an element with size %zu", self->cols[i].name, this_size, el_count);
+                PyErr_Format(PyExc_TypeError, "Element %s has size %zu, but expected an element with size %zu", PyString_AsString(PyObject_Str(key)), this_size, el_count);
+                Py_DECREF(items);
                 return NULL;
             }
         }
+        Py_DECREF(items);
     }
     if (el_count == 0) {
         PyErr_SetString(PyExc_TypeError, "Empty input values supplied");
         return NULL;
     }
-    if (matched_elements != dict_elements) {
-        // not all elements in the dictionary were matched, look for the element that was not matched
-        PyObject *keys = PyDict_Keys(args);
+
+    if (!self->create_table) {
+        for (i = 0; i < self->ncols; i++) {
+            PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
+            if (dictEntry) {
+                matched_elements++;
+            }
+        }
+        if (matched_elements != dict_elements) {
+            // not all elements in the dictionary were matched, look for the element that was not matched
+            PyObject *keys = PyDict_Keys(args);
+            for(i = 0; i < (size_t) PyList_Size(keys); i++) {
+                PyObject *key = PyList_GetItem(keys, i);
+                char *val;
+                bool found = false;
+                if (!PyString_CheckExact(key)) {
+                    // one of the keys in the dictionary was not a string
+                    PyErr_Format(PyExc_TypeError, "Expected a string as dict key, but found %s", PyString_AsString(PyObject_Str(PyObject_Type(key))));
+                    goto loop_end;
+                }
+                val = PyString_AsString(key);
+                for(ai = 0; ai < self->ncols; ai++) {
+                    if (strcmp(val, self->cols[ai].name) == 0) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // the current element was present in the dictionary, but it has no matching column
+                    PyErr_Format(PyExc_TypeError, "Unmatched element \"%s\" in dict", val);
+                    goto loop_end;
+                }
+            }
+    loop_end:
+            Py_DECREF(keys);
+            goto wrapup;
+        }
+    } else {
+        size_t potential_size = self->ncols + PyDict_Size(args);
+        PyObject *keys;
+        if (potential_size > self->maxcols) {
+            // allocate space for new columns (if any new columns show up)
+            EmitCol *old = self->cols;
+            self->cols = GDKmalloc(sizeof(EmitCol) * potential_size);
+            if (old) {
+                memcpy(self->cols, old, sizeof(EmitCol) * self->maxcols);
+                GDKfree(old);
+            }
+            self->maxcols = potential_size;
+        }
+        keys = PyDict_Keys(args);
+        // create new columns based on the entries in the dictionary
         for(i = 0; i < (size_t) PyList_Size(keys); i++) {
             PyObject *key = PyList_GetItem(keys, i);
             char *val;
+            bool found = false;
             if (!PyString_CheckExact(key)) {
                 // one of the keys in the dictionary was not a string
                 PyErr_Format(PyExc_TypeError, "Expected a string as dict key, but found %s", PyString_AsString(PyObject_Str(PyObject_Type(key))));
-                goto loop_end;
+                Py_DECREF(keys);
+                goto wrapup;
             }
             val = PyString_AsString(key);
-            bool found = false;
             for(ai = 0; ai < self->ncols; ai++) {
                 if (strcmp(val, self->cols[ai].name) == 0) {
                     found = true;
@@ -88,14 +143,21 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                 }
             }
             if (!found) {
-                // the current element was present in the dictionary, but it has no matching column
-                PyErr_Format(PyExc_TypeError, "Unmatched element \"%s\" in dict", val);
-                goto loop_end;
+                // unrecognized column, create the column in the table
+                self->cols[self->ncols].b = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
+                self->cols[self->ncols].name = GDKstrdup(val);
+                if (self->nvals > 0) {
+                    // insert NULL values up until the current entry
+                    for (ai = 0; ai < self->nvals; ai++) {
+                        BUNappend(self->cols[self->ncols].b, ATOMnil(self->cols[self->ncols].b->T->type), 0);
+                    }
+                    self->cols[i].b->T->nil = 1;
+                    self->cols[i].b->T->nonil = 0;
+                    BATsetcount(self->cols[i].b, self->nvals);
+                }
+                self->ncols++;
             }
         }
-loop_end:
-        Py_DECREF(keys);
-        goto wrapup;
     }
 
     for (i = 0; i < self->ncols; i++) {
@@ -217,7 +279,6 @@ loop_end:
                         PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
                         return NULL;
                 }
-                BATsetcount(self->cols[i].b, self->nvals + el_count);
                 self->cols[i].b->T->nonil = 1 - self->cols[i].b->T->nil;
             }
         } else {
@@ -227,7 +288,9 @@ loop_end:
             self->cols[i].b->T->nil = 1;
             self->cols[i].b->T->nonil = 0;
         }
+        BATsetcount(self->cols[i].b, self->nvals + el_count);
     }
+
     self->nvals += el_count;
     Py_RETURN_NONE;
 wrapup:
@@ -311,7 +374,9 @@ PyObject *Py_Emit_Create(EmitCol *cols, size_t ncols)
     PyObject_Init((PyObject*)op, &Py_EmitType);
     op->cols = cols;
     op->ncols = ncols;
+    op->maxcols = ncols;
     op->nvals = 0;
+    op->create_table = cols == NULL;
     return (PyObject*) op;
 }
 

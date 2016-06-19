@@ -8,7 +8,7 @@
 
 /*
  * M. Raasveldt
- * 
+ *
  */
 
 #ifndef _LOADER_EMIT_
@@ -24,10 +24,11 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-	// some more stuff
 	EmitCol *cols;
     size_t ncols;
     size_t nvals;
+	size_t maxcols;
+	bool create_table;
 } Py_EmitObject;
 
 extern PyTypeObject Py_EmitType;

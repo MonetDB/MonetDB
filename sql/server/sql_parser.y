@@ -1304,6 +1304,13 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  TABLE qname FROM sqlLOADER func_ref
+    {
+      dlist *l = L();
+      append_list(l, $2);
+      append_symbol(l, $5);
+      $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
+    }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();

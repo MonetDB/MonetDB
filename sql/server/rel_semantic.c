@@ -143,6 +143,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
+	
+	case SQL_CREATE_TABLE_LOADER:
 
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:

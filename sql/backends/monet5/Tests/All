@@ -56,6 +56,7 @@ HAVE_LIBPY?pyloader02
 HAVE_LIBPY?pyloader03
 HAVE_LIBPY?pyloader04
 HAVE_LIBPY?pyloader05
+HAVE_LIBPY?pyloader06
 
 
 # should this work?

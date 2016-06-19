@@ -36,13 +36,11 @@ DROP TABLE restable;
 DROP LOADER myloader;
 
 # different length arrays (this should fail)
-CREATE TABLE restable(a1 INTEGER, a2 BIGINT, a3 SMALLINT, a4 REAL);
+CREATE TABLE restable(a1 INTEGER, a2 BIGINT);
 CREATE LOADER myloader() LANGUAGE PYTHON {
     a1 = numpy.arange(100)
     a2 = numpy.arange(200)
-    a3 = numpy.arange(300)
-    a4 = numpy.arange(400)
-    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
+    _emit.emit({'a1': a1, 'a2': a2})
 };
 
 COPY INTO restable FROM LOADER myloader();
