@@ -599,9 +599,11 @@ static BAT *TRACE_id_stmt = 0;
 int
 TRACEtable(BAT **r)
 {
-	if (TRACE_init == 0)
-		return -1;       /* not initialized */
 	MT_lock_set(&mal_profileLock);
+	if (TRACE_init == 0) {
+		MT_lock_unset(&mal_profileLock);
+		return -1;       /* not initialized */
+	}
 	r[0] = COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
 	r[1] = COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
 	r[2] = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
@@ -622,35 +624,39 @@ TRACEtable(BAT **r)
 BAT *
 getTrace(const char *nme)
 {
-	if (TRACE_init == 0)
-		return NULL;
-	if (strcmp(nme, "event") == 0)
-		return COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "time") == 0)
-		return COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "pc") == 0)
-		return COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "thread") == 0)
-		return COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "usec") == 0)
-		return COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "rssMB") == 0)
-		return COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "tmpspace") == 0)
-		return COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "reads") == 0)
-		return COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "writes") == 0)
-		return COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "minflt") == 0)
-		return COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "majflt") == 0)
-		return COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "nvcsw") == 0)
-		return COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
-	if (strcmp(nme, "stmt") == 0)
-		return COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
-	return NULL;
+	BAT *bn = NULL;
+
+	MT_lock_set(&mal_profileLock);
+	if (TRACE_init) {
+		if (strcmp(nme, "event") == 0)
+			bn = COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "time") == 0)
+			bn = COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "pc") == 0)
+			bn = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "thread") == 0)
+			bn = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "usec") == 0)
+			bn = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "rssMB") == 0)
+			bn = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "tmpspace") == 0)
+			bn = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "reads") == 0)
+			bn = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "writes") == 0)
+			bn = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "minflt") == 0)
+			bn = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "majflt") == 0)
+			bn = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "nvcsw") == 0)
+			bn = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+		else if (strcmp(nme, "stmt") == 0)
+			bn = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
+	}
+	MT_lock_unset(&mal_profileLock);
+	return bn;
 }
 
 static BAT *
@@ -704,9 +710,11 @@ initTrace(void)
 {
 	int ret = -1;
 
-	if (TRACE_init)
-		return 0;       /* already initialized */
 	MT_lock_set(&mal_contextLock);
+	if (TRACE_init) {
+		MT_lock_unset(&mal_contextLock);
+		return 0;       /* already initialized */
+	}
 	TRACE_id_event = TRACEcreate("id", "event", TYPE_int);
 	TRACE_id_time = TRACEcreate("id", "time", TYPE_str);
 	// TODO split pc into its components fcn,pc,tag
@@ -747,9 +755,11 @@ initTrace(void)
 void
 clearTrace(void)
 {
-	if (TRACE_init == 0)
-		return;     /* not initialized */
 	MT_lock_set(&mal_contextLock);
+	if (TRACE_init == 0) {
+		MT_lock_unset(&mal_contextLock);
+		return;     /* not initialized */
+	}
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
@@ -849,6 +859,10 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
+ 	if (TRACE_init == 0) {
+		MT_lock_unset(&mal_profileLock);
+		return;
+	}
 	errors += BUNappend(TRACE_id_event, &TRACE_event, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_time, ct, FALSE) != GDK_SUCCEED;
 	errors += BUNappend(TRACE_id_pc, buf, FALSE) != GDK_SUCCEED;
