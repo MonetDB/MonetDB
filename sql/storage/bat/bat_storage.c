@@ -2077,6 +2077,37 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	return ok;
 }
 
+/* the central and transaction local bats need to be swapped */
+static int
+tr_update_dbat_swap(sql_dbat *tdb, sql_dbat *fdb)
+{
+	/* The fdb holds the central bat, tdb has the proper new rows
+	 * Add these (new) rows to the fdb->dbid
+	 * and remove the rows from tdb->dbid.
+	 * Swap both tdb->dbid/fdb->dbid */
+	int ok = LOG_OK;
+	BAT *db = NULL;
+	size_t cnt;
+
+	if (!fdb)
+		return ok;
+
+	db = temp_descriptor(tdb->dbid);
+	if (BUNlast(db) > db->batInserted) {
+		BAT *odb = temp_descriptor(fdb->dbid);
+
+		cnt = BATcount(odb);
+		append_inserted(odb, db);
+		BATcommit(odb);
+		BATsetcount(db, cnt);
+		bat_destroy(odb);
+	}
+	tdb->dbid = fdb->dbid; 
+	fdb->dbid = db->batCacheid;
+	bat_destroy(db);
+	return ok;
+}
+
 static int
 tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 {
@@ -2136,6 +2167,12 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				/* anything older can go */
 				destroy_dbat(tr, b->next);
 				b->next = NULL;
+			}
+			if (store_nr_active > 1 && tr->parent == gtrans) {
+				b = tt->data;
+				/* The central (as known to the logger) and 
+				 * transaction local bats need to be swapped */
+				tr_update_dbat_swap(tt->data, b->next);
 			}
 		} else if (tt->data && ft->base.allocated) {
 			tr_update_dbat(tr, tt->data, ft->data, ft->cleared);
