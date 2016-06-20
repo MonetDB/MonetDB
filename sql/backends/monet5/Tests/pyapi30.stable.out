@@ -66,51 +66,25 @@ Ready.
 #CREATE LOADER myfunc() LANGUAGE PYTHON {
 #	_emit.emit({'a':42,'d':1})
 #};
-#CREATE LOADER myfunc1(i integer) LANGUAGE PYTHON {
-#	_emit.emit({'a':i,'d':2})
-#};
-#CREATE LOADER myfunc2(i integer, f string) LANGUAGE PYTHON {
-#	_emit.emit({'a':i,'d':3})
-#};
-#CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
-#	_emit.emit({'a':i,'d':4})
-#};
-#SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% name,	func,	mod,	language,	type,	side_effect,	varres,	vararg # name
-% varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
-% 6,	32,	5,	1,	1,	5,	5,	5 # length
-[ "myfunc",	"{\n\t_emit.emit({'a':42,'d':1})\n};",	"pyapi",	6,	7,	true,	true,	false	]
-#COPY INTO mytable FROM LOADER myfunc3(46, 'asdf', 3.2);
-[ 1	]
-#COPY INTO mytable FROM LOADER myfunc2(45, 'asdf');
-[ 1	]
-#COPY INTO mytable FROM LOADER myfunc1(44);
-[ 1	]
-#COPY INTO mytable FROM LOADER myfunc();
-[ 1	]
-#SELECT * FROM mytable;
-% sys.mytable,	sys.mytable,	sys.mytable # table_name
-% a,	d,	s # name
-% double,	int,	clob # type
-% 24,	1,	5 # length
-[ 46,	4,	"hello"	]
-[ 45,	3,	NULL	]
-[ 44,	2,	NULL	]
-[ 42,	1,	NULL	]
-#DROP TABLE mytable;
-#DROP ALL LOADER myfunc;
-#CREATE LOADER myfunc() LANGUAGE PYTHON {
-#};
-#DROP LOADER myfunc;
-#DROP LOADER myfunc1;
-#DROP LOADER myfunc2;
-#DROP LOADER myfunc3;
-#SELECT * FROM functions WHERE name='myfunc';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT * FROM pyapi32();
+% .,	. # table_name
+% i,	j # name
+% int,	double # type
+% 1,	24 # length
+[ NULL,	NULL	]
+#SELECT * FROM pyapi32() WHERE i IS NULL;
+% .,	. # table_name
+% i,	j # name
+% int,	double # type
+% 1,	24 # length
+[ NULL,	NULL	]
+#SELECT * FROM pyapi32() WHERE j IS NULL;
+% .,	. # table_name
+% i,	j # name
+% int,	double # type
+% 1,	24 # length
+[ NULL,	NULL	]
+#DROP FUNCTION pyapi32;
 #ROLLBACK;
 
 # 17:27:12 >  

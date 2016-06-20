@@ -27,8 +27,11 @@
                     bat->T->nil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
+            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+        } else {                                                                                                        \
+            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
         }                                                                                                               \
-        bat->T->nonil = 1 - bat->T->nil;                                                                                \
+                                                                                                                        \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->T->heap.base);                                                                                     \
         bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
@@ -312,8 +315,8 @@
             goto wrapup;                                                                                                                                       \
         }                                                                                                                                                      \
         data = (char*) ret->array_data;                                                                                                                        \
-        if (!copy && ret->count > 0 && TYPE_##mtpe == PyType_ToBat(ret->result_type) && (ret->count * ret->memory_size < BUN_MAX) &&           \
-             (ret->numpy_array == NULL || PyArray_FLAGS((PyArrayObject*)ret->numpy_array) & NPY_ARRAY_OWNDATA)) {                      \
+        if (!copy && ret->count > 0 && TYPE_##mtpe == PyType_ToBat(ret->result_type) && (ret->count * ret->memory_size < BUN_MAX) &&                           \
+             (ret->numpy_array == NULL || PyArray_FLAGS((PyArrayObject*)ret->numpy_array) & NPY_ARRAY_OWNDATA)) {                                              \
             /*We can only create a direct map if the numpy array type and target BAT type*/                                                                    \
             /*are identical, otherwise we have to do a conversion.*/                                                                                           \
             if (ret->numpy_array == NULL) {                                                                                                                    \
@@ -325,13 +328,14 @@
                 CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_CMEM);                                                                                                    \
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
-            bat = BATnew(TYPE_void, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                       \
-            BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                                                      \
+            bat = BATnew(TYPE_void, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                 \
+            BATseqbase(bat, seqbase);                                                                                                                          \
             if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
 Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
-            NP_INSERT_BAT(bat, mtpe, 0);                                                                                                                   \
-            BATsetcount(bat, (BUN) ret->count);                                                                                                                 \
+            NP_INSERT_BAT(bat, mtpe, 0);                                                                                                                       \
+            if (!mask) { bat->T->nil = 0; bat->T->nonil = 0; }                                                                                                 \
+            BATsetcount(bat, (BUN) ret->count);                                                                                                                \
             BATsettrivprop(bat);                                                                                                                               \
         }                                                                                                                                                      \
     }
