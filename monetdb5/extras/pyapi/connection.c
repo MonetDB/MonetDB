@@ -244,106 +244,76 @@ str _connection_query(Client cntxt, char* query, res_table** result) {
     return res;
 }
 
-static str _connection_append_table(Client cntxt, char *sname, char *tname, EmitCol *columns, size_t ncols) {
-    size_t i;
-    size_t nvar = 6; // variables we need to make up
-    MalBlkRecord mb;
-    MalStack*     stk = NULL;
-    InstrRecord*  pci = NULL;
-    str res = MAL_SUCCEED;
-    VarRecord bat_varrec;
-    mvc* m = ((backend *) cntxt->sqlcontext)->mvc;
-
-    assert(tname != NULL && columns != NULL && ncols > 0);
-
-    // very black MAL magic below
-    mb.var = GDKmalloc(nvar * sizeof(VarRecord*));
-    stk = GDKmalloc(sizeof(MalStack) + nvar * sizeof(ValRecord));
-    pci = GDKmalloc(sizeof(InstrRecord) + nvar * sizeof(int));
-    assert(mb.var != NULL && stk != NULL && pci != NULL); // cough, cough
-    bat_varrec.type = TYPE_bat;
-    for (i = 0; i < nvar; i++) {
-        pci->argv[i] = i;
-    }
-    stk->stk[0].vtype = TYPE_int;
-    stk->stk[2].val.sval = (str) sname;
-    stk->stk[2].vtype = TYPE_str;
-    stk->stk[3].val.sval = (str) tname;
-    stk->stk[3].vtype = TYPE_str;
-    stk->stk[4].vtype = TYPE_str;
-    stk->stk[5].vtype = TYPE_bat;
-    mb.var[5] = &bat_varrec;
-    for (i = 0; i < ncols; i++) {
-        EmitCol col = columns[i];
-        stk->stk[4].val.sval = col.name;
-        stk->stk[5].val.bval = col.b->batCacheid;
-
-        res = (*mvc_append_wrap_ptr)(cntxt, &mb, stk, pci);
-        if (res != NULL) {
-            break;
-        }
-    }
-    if (res == MAL_SUCCEED) {
-        (*sqlcleanup_ptr)(m, 0);
-    }
-    GDKfree(mb.var);
-    GDKfree(stk);
-    GDKfree(pci);
-    return res;
-}
-
-static char *BatType_ToSQLType(int type) {
-    switch (type) {
-        case TYPE_bit:
-        case TYPE_bte: return "TINYINT";
-        case TYPE_sht: return "SMALLINT";
-        case TYPE_int: return "INTEGER";
-        case TYPE_lng: return "BIGINT";
-        case TYPE_flt: return "FLOAT";
-        case TYPE_dbl: return "DOUBLE";
-        case TYPE_str: return "STRING";
-        case TYPE_hge: return "HUGEINT";
-        case TYPE_oid: return "UNKNOWN";
-        default: return "UNKNOWN";
-    }
-}
 
 str _connection_create_table(Client cntxt, char *sname, char *tname, EmitCol *columns, size_t ncols) {
-    char *query = NULL;
     size_t i;
-    size_t query_size = 255, query_index = 0;
-    res_table *res;
+    sql_table *t;
+    sql_schema *s;
+    mvc *sql = NULL;
     str msg = MAL_SUCCEED;
 
+	if ((msg = getSQLContext(cntxt, NULL, &sql, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	/* for some reason we don't have an allocator here so make one */
+	sql->sa = sa_create();
+
     if (!sname) sname = "sys";
+	if (!(s = mvc_bind_schema(sql, sname))) {
+		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+		goto cleanup;
+	}
+	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1))) {
+		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create table '%s'", tname);
+		goto cleanup;
+	}
 
-    // first compute the size of the query
-    query_size += strlen(sname);
-    query_size += strlen(tname);
-    for(i = 0; i < ncols; i++) {
-        query_size += strlen(columns[i].name) + 20;
-    }
-
-    query = GDKzalloc(sizeof(char) * query_size);
-    if (query == NULL) {
-        return GDKstrdup(MAL_MALLOC_FAIL"query");
-    }
-
-    //format the CREATE TABLE query
-    query_index = snprintf(query, query_size, "create table %s.%s(", sname, tname);
     for(i = 0; i < ncols; i++) {
         BAT *b = columns[i].b;
-        query_index += snprintf(query + query_index, query_size, "%s %s%s", columns[i].name, BatType_ToSQLType(b->T->type), i < ncols - 1 ? "," : ");");
+        sql_subtype *tpe = sql_bind_localtype(ATOMname(b->T->type));
+        sql_column *col = NULL;
+
+        if (!tpe) {
+    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not find type for column");
+    		goto cleanup;
+        }
+
+        col = mvc_create_column(sql, t, columns[i].name, tpe);
+        if (!col) {
+    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create column %s", columns[i].name);
+    		goto cleanup;
+        }
+    }
+    msg = create_table_or_view(sql, sname, t, 0);
+    if (msg != MAL_SUCCEED) {
+    	goto cleanup;
+    }
+    t = mvc_bind_table(sql, s, tname);
+    if (!t) {
+		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind table %s", tname);
+		goto cleanup;
+    }
+    for(i = 0; i < ncols; i++) {
+        BAT *b = columns[i].b;
+        sql_column *col = NULL;
+
+        col = mvc_bind_column(sql,t, columns[i].name);
+        if (!col) {
+    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind column %s", columns[i].name);
+    		goto cleanup;
+        }
+        msg = mvc_append_column(sql->session->tr, col, b);
+        if (msg != MAL_SUCCEED) {
+        	goto cleanup;
+        }
     }
 
-    // execute the create table query
-    msg = _connection_query(cntxt, query, &res);
-    GDKfree(query);
-    if (msg != MAL_SUCCEED) {
-        return msg;
-    }
-    // now append the values to the created table
-    return _connection_append_table(cntxt, sname, tname, columns, ncols);
+cleanup:
+    sa_destroy(sql->sa);
+    sql->sa = NULL;
+    return msg;
 }
 
 

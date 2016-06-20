@@ -386,7 +386,7 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static str
+str
 create_table_or_view(mvc *sql, char *sname, sql_table *t, int temp)
 {
 	sql_allocator *osa;
@@ -2036,6 +2036,14 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (*sname)
 		throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *iname, *sname, *tname);
 	throw(SQL, "sql.idxbind", "unable to find index %s for %s", *iname, *tname);
+}
+
+str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
+	int res = store_funcs.append_col(t, c, ins, TYPE_bat);
+	if (res != 0) {
+		throw(SQL, "sql.append", "Cannot append values");
+	}
+	return MAL_SUCCEED;
 }
 
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
