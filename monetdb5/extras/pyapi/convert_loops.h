@@ -74,8 +74,10 @@
                     bat->T->nil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
+            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+        } else {                                                                                                        \
+            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
         }                                                                                                               \
-        bat->T->nonil = 1 - bat->T->nil;                                                                                \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->T->heap.base);                                                                                     \
         bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
