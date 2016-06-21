@@ -211,6 +211,9 @@ freeMalBlk(MalBlkPtr mb)
 	if (mb->help)
 		GDKfree(mb->help);
 	mb->help = 0;
+	if (mb->marker)
+		GDKfree(mb->marker);
+	mb->marker = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	GDKfree(mb);
@@ -298,6 +301,7 @@ addtoMalBlkHistory(MalBlkPtr mb, str marker)
 		if (cpy == NULL)
 			return;				/* ignore history */
 		cpy->history = NULL;
+		GDKfree(mb->marker);
 		mb->marker = GDKstrdup(marker);
 		if (mb->history == NULL)
 			mb->history = cpy;
