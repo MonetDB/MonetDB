@@ -725,11 +725,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					nstk->up = stk;
 					if (nstk->calldepth > 256) {
 						ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+						GDKfree(nstk);
 						break;
 					}
 					if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
 						/* we are running low on stack space */
 						ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
+						GDKfree(nstk);
 						break;
 					}
 
