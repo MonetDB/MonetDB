@@ -2087,7 +2087,7 @@ tr_update_dbat_swap(sql_dbat *tdb, sql_dbat *fdb)
 	 * Swap both tdb->dbid/fdb->dbid */
 	int ok = LOG_OK;
 	BAT *db = NULL;
-	size_t cnt;
+	BUN cnt;
 
 	if (!fdb)
 		return ok;
