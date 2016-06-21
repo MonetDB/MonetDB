@@ -36,6 +36,7 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) p;
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
+	optPipeInit();
 	optimizerInit();
 	return MAL_SUCCEED;
 }
