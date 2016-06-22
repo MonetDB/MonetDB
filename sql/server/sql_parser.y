@@ -2654,12 +2654,13 @@ delete_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_where_clause
+    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 

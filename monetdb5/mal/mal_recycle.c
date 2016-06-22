@@ -424,6 +424,8 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 			c = fndConstant(recycleBlk, &cst, recycleBlk->vtop);
 			if (c<0)
 				c = defConstant(recycleBlk, v->vtype, &cst);
+			else
+				VALclear(&cst);
 		} else {
 			c = newTmpVariable(recycleBlk, v->vtype);
 			setVarConstant(recycleBlk, c);
@@ -434,6 +436,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 				clrVarCleanup(recycleBlk, c);
 			v = &getVarConstant(recycleBlk, c);
 			VALcopy(v,&cst);
+			VALclear(&cst);
 		}
 		if (v->vtype == TYPE_bat)
 			BBPincref( *(const int*)VALptr(v), TRUE);
@@ -864,7 +867,7 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfil
 
 	/* infinite case, admit all new instructions */
 	if (RECYCLEfind(cntxt,mb,stk,p)<0 )
-		(void) RECYCLEkeep(cntxt,mb, stk, p, prof);
+		RECYCLEkeep(cntxt,mb, stk, p, prof);
 	recycleSearchTime += GDKusec()-clk;
 	recycleSearchCalls++;
 	MT_lock_unset(&recycleLock);

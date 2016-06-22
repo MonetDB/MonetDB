@@ -150,8 +150,10 @@ static bool enable_zerocopy_output = true;
                     bat->T->nil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
+            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+        } else {                                                                                                        \
+            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
         }                                                                                                               \
-        bat->T->nonil = 1 - bat->T->nil;                                                                                \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->T->heap.base);                                                                                     \
         bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
@@ -194,8 +196,10 @@ static bool enable_zerocopy_output = true;
                     bat->T->nil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
+            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+        } else {                                                                                                        \
+            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
         }                                                                                                               \
-        bat->T->nonil = 1 - bat->T->nil;                                                                                \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->T->heap.base);                                                                                     \
         bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
@@ -372,7 +376,8 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
                     goto wrapup;                                                                                                                               \
             }                                                                                                                                                  \
             bat->T->nonil = 1 - bat->T->nil;                                                                                                                   \
-            BATsetcount(bat, (BUN) ret->count);                                                                                                                      \
+            if (!mask) { bat->T->nil = 0; bat->T->nonil = 0; }                                                                                                 \
+            BATsetcount(bat, (BUN) ret->count);                                                                                                                \
             BATsettrivprop(bat);                                                                                                                               \
         }                                                                                                                                                      \
     }

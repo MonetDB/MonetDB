@@ -318,14 +318,14 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	pe = pcre_study(re, 0, &error);
 	if (error != NULL) {
 		my_pcre_free(re);
-		my_pcre_free(pe);
+		pcre_free_study(pe);
 		throw(MAL, "pcre.likesubselect",
 			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
 	}
 	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		my_pcre_free(re);
-		my_pcre_free(pe);
+		pcre_free_study(pe);
 		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
 	}
 	off = b->hseqbase - BUNfirst(b);
@@ -373,7 +373,7 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
 	}
 	my_pcre_free(re);
-	my_pcre_free(pe);
+	pcre_free_study(pe);
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
@@ -391,7 +391,7 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
   bunins_failed:
 	BBPreclaim(bn);
 	my_pcre_free(re);
-	my_pcre_free(pe);
+	pcre_free_study(pe);
 	*bnp = NULL;
 	throw(MAL, "pcre.likesubselect", OPERATION_FAILED);
 }
@@ -567,6 +567,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 			offset = ovector[1];
 		}
 	} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
+	pcre_free_study(extra);
 
 	if (ncaptures > 0){
 		tmpres = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
@@ -688,6 +689,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
 			if (!replaced_str) {
 				my_pcre_free(pcre_code);
+				pcre_free_study(extra);
 				GDKfree(ovector);
 				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 			}
@@ -725,6 +727,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		}
 	}
 
+	pcre_free_study(extra);
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
 	BATseqbase(tmpbat, origin_strs->hseqbase);
@@ -1576,7 +1579,7 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (pcrere) {
 			my_pcre_free(pcrere);
-			my_pcre_free(pcreex);
+			pcre_free_study(pcreex);
 			pcrere = NULL;
 			pcreex = NULL;
 		}
@@ -1618,7 +1621,7 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (pcrere)
 		my_pcre_free(pcrere);
 	if (pcreex)
-		my_pcre_free(pcreex);
+		pcre_free_study(pcreex);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }

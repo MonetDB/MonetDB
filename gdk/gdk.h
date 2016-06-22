@@ -1293,7 +1293,6 @@ gdk_export bte ATOMelmshift(int sz);
 #define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
 #define HTfastins_nocheck(b, p, v, s, HT)			\
 	do {							\
-		assert((b)->HT->width == (s));			\
 		(b)->HT->heap.free += (s);			\
 		(b)->HT->heap.dirty |= (s) != 0;		\
 		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\

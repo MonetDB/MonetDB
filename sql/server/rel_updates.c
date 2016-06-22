@@ -837,13 +837,12 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
+update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	sql_rel *bt = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
 		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
@@ -866,7 +865,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		list *exps;
 		dnode *n;
 		const char *rname = NULL;
+		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
 
+		res = bt;
 #if 0
 			dlist *selection = dlist_create(sql->sa);
 			dlist *from_list = dlist_create(sql->sa);
@@ -912,6 +913,19 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 #endif
 
+		if (opt_from) {
+			dlist *fl = opt_from->data.lval;
+			dnode *n = NULL;
+			sql_rel *fnd = NULL;
+
+			for (n = fl->h; n && res; n = n->next) {
+				fnd = table_ref(sql, NULL, n->data.sym);
+				if (fnd)
+					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+			}
+			if (!res) 
+				return NULL;
+		}
 		if (opt_where) {
 			int status = sql->session->status;
 	
@@ -920,21 +934,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
-
-				sql_rel *l = bt = rel_basetable(sql, t, t->base.name );
-				r = rel_crossproduct(sql->sa, l, r, op_semi);
+				r = rel_crossproduct(sql->sa, res, r, op_semi);
 			} else {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				bt = r = rel_basetable(sql, t, t->base.name );
-				r = rel_logical_exp(sql, r, opt_where, sql_where);
-				if (r && is_join(r->op))
+				r = rel_logical_exp(sql, res, opt_where, sql_where);
+				if (!opt_from && r && is_join(r->op))
 					r->op = op_semi;
 			}
 			if (!r) 
 				return NULL;
 		} else {	/* update all */
-			bt = r = rel_basetable(sql, t, t->base.name );
+			r = res;
 		}
 	
 		/* first create the project */
@@ -1634,7 +1645,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
