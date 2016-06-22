@@ -27,15 +27,17 @@
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define emptyresult(I)								\
+#define emptyresult(I)									\
 	do {												\
-		int tpe = getColumnType(getVarType(mb,getArg(p,I))); \
+		int tpe = getVarType(mb,getArg(p,I));			\
 		clrFunction(p);									\
 		setModuleId(p,batRef);							\
 		setFunctionId(p,newRef);						\
 		p->argc = p->retc;								\
 		p = pushType(mb,p, TYPE_oid);					\
-		p = pushType(mb,p,tpe);							\
+		p = pushType(mb,p, getColumnType(tpe));			\
+		setVarType(mb, getArg(p,0), tpe);				\
+		setVarFixed(mb, getArg(p,0));					\
 	} while (0)
 
 
@@ -45,7 +47,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int i,j;
 	int *marked;
 	int limit = mb->stop;
-	InstrPtr p, q, *old = mb->stmt, *empty;
+	InstrPtr p, q, *old = mb->stmt, *updated;
 	char buf[256];
 	lng usec = GDKusec();
 	str sch,tbl;
@@ -57,8 +59,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	if ( marked == NULL)
 		return 0;
 
-	empty= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
-	if( empty == 0){
+	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	if( updated == 0){
 		GDKfree(marked);
 		return 0;
 	}
@@ -102,15 +104,17 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			marked[getArg(p,0)] = i;
 			continue;
 		} 
-		if(p && getModuleId(p) == sqlRef && (getFunctionId(p) == appendRef || getFunctionId(p) == updateRef || getFunctionId(p) == catalogRef)){
-			if ( etop == esize){			\
-				empty = (InstrPtr*) GDKrealloc( empty, (esize += 256) * sizeof(InstrPtr));
-				if( empty == NULL){
+
+		// any of these instructions leave a non-empty BAT behind
+		if(p && getModuleId(p) == sqlRef && isUpdateInstruction(p)){
+			if ( etop == esize){
+				updated = (InstrPtr*) GDKrealloc( updated, (esize += 256) * sizeof(InstrPtr));
+				if( updated == NULL){
 					GDKfree(marked);
 					return 0;
 				}
 			}
-			empty[etop++]= p;
+			updated[etop++]= p;
 		}
 
 		/* restore the naming, dropping the runtime property 'marked' */
@@ -129,8 +133,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
 			for(j= 0; j< etop; j++){
-				q= empty[j];
-				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
+				q= updated[j];
+				if(q && getModuleId(q) == sqlRef && isUpdateInstruction(q)){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
 						marked[getArg(p,0)] = 0;
@@ -142,6 +146,8 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				if(q && getModuleId(q) == sqlRef && getFunctionId(q) == catalogRef){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 ){
 						marked[getArg(p,0)] = 0;
+						if( p->retc == 2)
+							marked[getArg(p,1)] = 0;
 						break;
 					}
 				}
@@ -154,6 +160,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					q = pushType(mb,q, TYPE_oid);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
+					setVarFixed(mb, getArg(p,0));
 				}
 
                 tpe = getColumnType(getVarType(mb,getArg(p,0)));
@@ -163,6 +170,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
                 p->argc = p->retc = 1;
                 p = pushType(mb,p, TYPE_oid);
                 p = pushType(mb,p,tpe);
+				setVarFixed(mb, getArg(p,0));
 			}
 			continue;
 		}
@@ -177,7 +185,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			sch = getVarConstant(mb,getArg(p,2  + (p->retc==2))).val.sval;
 			tbl = getVarConstant(mb,getArg(p,3  + (p->retc==2))).val.sval;
 			for(j= 0; j< etop; j++){
-				q= empty[j];
+				q= updated[j];
 				if(q && getModuleId(q) == sqlRef && (getFunctionId(q) == appendRef || getFunctionId(q) == updateRef )){
 					if ( strcmp(getVarConstant(mb,getArg(q,2)).val.sval, sch) == 0 &&
 						 strcmp(getVarConstant(mb,getArg(q,3)).val.sval, tbl) == 0 ){
@@ -202,6 +210,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					q = pushType(mb,q, TYPE_oid);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
+					setVarFixed(mb,getArg(q,0));
 				}
 				
 				tpe = getColumnType(getVarType(mb,getArg(p,0)));
@@ -211,6 +220,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				p->argc = p->retc = 1;
 				p = pushType(mb,p, TYPE_oid);
 				p = pushType(mb,p,tpe);
+				setVarFixed(mb, getArg(p,0));
 			}
 			continue;
 		}
@@ -259,7 +269,7 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	GDKfree(old);
 	GDKfree(marked);
-	GDKfree(empty);
+	GDKfree(updated);
     /* Defense line against incorrect plans */
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 	chkFlow(cntxt->fdout, mb);
