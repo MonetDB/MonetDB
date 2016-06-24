@@ -587,10 +587,12 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 
 	/* for each column add table.column name */
 	exps = new_exp_list(sql->sa);
-	for (m = sf->func->res->h; m; m = m->next) {
-		sql_arg *a = m->data;
+	if (!sf->func->varres) {
+		for (m = sf->func->res->h; m; m = m->next) {
+			sql_arg *a = m->data;
 
-		append(exps, exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0));
+			append(exps, exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0));
+		}
 	}
 	return rel_table_func(sql->sa, rel, e, exps, (sq != NULL));
 }

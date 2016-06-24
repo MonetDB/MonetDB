@@ -2485,49 +2485,63 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				list *l = lst->op4.lval;
 				int cnt = list_length(l);
 				stmt *first;
+				if (cnt > 0) {
+					n = l->h;
+					first = n->data;
 
-				n = l->h;
-				first = n->data;
+					/* single value result, has a fast exit */
+					if (cnt == 1 && first->nrcols <= 0 ){
+						stmt *c = n->data;
+						sql_subtype *t = tail_type(c);
+						const char *tname = table_name(sql->mvc->sa, c);
+						const char *sname = schema_name(sql->mvc->sa, c);
+						const char *_empty = "";
+						const char *tn = (tname) ? tname : _empty;
+						const char *sn = (sname) ? sname : _empty;
+						const char *cn = column_name(sql->mvc->sa, c);
+						const char *ntn = sql_escape_ident(tn);
+						const char *nsn = sql_escape_ident(sn);
+						size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
+						char *fqtn = NEW_ARRAY(char, fqtnl);
 
-				/* single value result, has a fast exit */
-				if (cnt == 1 && first->nrcols <= 0 ){
-					stmt *c = n->data;
-					sql_subtype *t = tail_type(c);
-					const char *tname = table_name(sql->mvc->sa, c);
-					const char *sname = schema_name(sql->mvc->sa, c);
-					const char *_empty = "";
-					const char *tn = (tname) ? tname : _empty;
-					const char *sn = (sname) ? sname : _empty;
-					const char *cn = column_name(sql->mvc->sa, c);
-					const char *ntn = sql_escape_ident(tn);
-					const char *nsn = sql_escape_ident(sn);
-					size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
-					char *fqtn = NEW_ARRAY(char, fqtnl);
+						snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
-					snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
+						q = newStmt(mb, sqlRef, resultSetRef);
+						if (q) {
+							s->nr = getDestVar(q);
+							q = pushStr(mb, q, fqtn);
+							q = pushStr(mb, q, cn);
+							q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
+							q = pushInt(mb, q, t->digits);
+							q = pushInt(mb, q, t->scale);
+							q = pushInt(mb, q, t->type->eclass);
+							q = pushArgument(mb, q, c->nr);
+						}
 
+						c_delete(ntn);
+						c_delete(nsn);
+						_DELETE(fqtn);
+						if (q == NULL)
+							return -1;
+						break;
+					}
+					if ( (s->nr =dump_header(sql->mvc, mb, s, l)) < 0)
+						return -1;
+				} else {
 					q = newStmt(mb, sqlRef, resultSetRef);
 					if (q) {
+						const char *_empty = "";
+
 						s->nr = getDestVar(q);
-						q = pushStr(mb, q, fqtn);
-						q = pushStr(mb, q, cn);
-						q = pushStr(mb, q, t->type->localtype == TYPE_void ? "char" : t->type->sqlname);
-						q = pushInt(mb, q, t->digits);
-						q = pushInt(mb, q, t->scale);
-						q = pushInt(mb, q, t->type->eclass);
-						q = pushArgument(mb, q, c->nr);
+						q = pushStr(mb, q, _empty);
+						q = pushStr(mb, q, _empty);
+						q = pushStr(mb, q, "char");
+						q = pushInt(mb, q, 0);
+						q = pushInt(mb, q, 0);
+						q = pushInt(mb, q, 0);
+						q = pushArgument(mb, q, 1);
 					}
-
-					c_delete(ntn);
-					c_delete(nsn);
-					_DELETE(fqtn);
-					if (q == NULL)
-						return -1;
-					break;
 				}
-				if ( (s->nr =dump_header(sql->mvc, mb, s, l)) < 0)
-					return -1;
-
 			} else {
 				q = newStmt(mb, sqlRef, raiseRef);
 				q = pushStr(mb, q, "not a valid output list\n");
