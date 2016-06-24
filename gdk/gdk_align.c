@@ -86,7 +86,7 @@ ALIGNcommit(BAT *b)
 }
 
 void
-ALIGNsetH(BAT *b1, BAT *b2)
+ALIGNsetT(BAT *b1, BAT *b2)
 {
 	ssize_t diff;
 
@@ -94,38 +94,38 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		return;
 
 	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
-	if (b2->halign == 0) {
-		b2->halign = OIDnew(1);
+	if (b2->talign == 0) {
+		b2->talign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
 	}
-	if (BAThvoid(b2)) {
-		/* b2 is either dense or has a void(nil) head */
-		if (b1->htype != TYPE_void)
-			b1->hdense = TRUE;
-		else if (b2->hseqbase == oid_nil)
-			b1->H->nonil = FALSE;
-		BATseqbase(b1, b2->hseqbase);
-	} else if (b1->htype != TYPE_void) {
+	if (BATtvoid(b2)) {
+		/* b2 is either dense or has a void(nil) tail */
+		if (b1->ttype != TYPE_void)
+			b1->tdense = TRUE;
+		else if (b2->tseqbase == oid_nil)
+			b1->T->nonil = FALSE;
+		BATseqbase(BATmirror(b1), b2->tseqbase);
+	} else if (b1->ttype != TYPE_void) {
 		/* b2 is not dense, so set b1 not dense */
-		b1->hdense = FALSE;
-		BATseqbase(b1, oid_nil);
-		b1->H->nonil = b2->H->nonil;
-	} else if (BAThkey(b2))
-		BATseqbase(b1, 0);
-	BATkey(b1, BAThkey(b2));
-	b1->hsorted = BAThordered(b2);
-	b1->hrevsorted = BAThrevordered(b2);
-	b1->halign = b2->halign;
+		b1->tdense = FALSE;
+		BATseqbase(BATmirror(b1), oid_nil);
+		b1->T->nonil = b2->T->nonil;
+	} else if (BATtkey(b2))
+		BATseqbase(BATmirror(b1), 0);
+	BATkey(BATmirror(b1), BATtkey(b2));
+	b1->tsorted = BATtordered(b2);
+	b1->trevsorted = BATtrevordered(b2);
+	b1->talign = b2->talign;
 	b1->batDirtydesc = TRUE;
-	b1->H->norevsorted = b2->H->norevsorted ? (BUN) (b2->H->norevsorted + diff) : 0;
-	if (b2->H->nokey[0] != b2->H->nokey[1]) {
-		b1->H->nokey[0] = (BUN) (b2->H->nokey[0] + diff);
-		b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
+	b1->T->norevsorted = b2->T->norevsorted ? (BUN) (b2->T->norevsorted + diff) : 0;
+	if (b2->T->nokey[0] != b2->T->nokey[1]) {
+		b1->T->nokey[0] = (BUN) (b2->T->nokey[0] + diff);
+		b1->T->nokey[1] = (BUN) (b2->T->nokey[1] + diff);
 	} else {
-		b1->H->nokey[0] = b1->H->nokey[1] = 0;
+		b1->T->nokey[0] = b1->T->nokey[1] = 0;
 	}
-	b1->H->nosorted = b2->H->nosorted ? (BUN) (b2->H->nosorted + diff): 0;
-	b1->H->nodense = b2->H->nodense ? (BUN) (b2->H->nodense + diff) : 0;
+	b1->T->nosorted = b2->T->nosorted ? (BUN) (b2->T->nosorted + diff): 0;
+	b1->T->nodense = b2->T->nodense ? (BUN) (b2->T->nodense + diff) : 0;
 }
 
 /*

@@ -460,7 +460,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATcount(b) == 0) {
 			BATiter ni = bat_iterator(n);
 
-			ALIGNsetH(BATmirror(b), BATmirror(n));
+			ALIGNsetT(b, n);
 			b->tseqbase = n->tseqbase;
 
 			if (n->tdense && n->ttype == TYPE_oid) {

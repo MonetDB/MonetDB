@@ -2756,7 +2756,7 @@ gdk_export void BATundo(BAT *b);
  * @item int
  * @tab ALIGNrelated (BAT *b1, BAT *b2)
  * @item int
- * @tab ALIGNsetH    ((BAT *dst, BAT *src)
+ * @tab ALIGNsetT    ((BAT *dst, BAT *src)
  *
  * @item BAT*
  * @tab VIEWcreate   (oid seq, BAT *b)
@@ -2810,10 +2810,9 @@ gdk_export BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
-gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
+gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
-#define ALIGNset(x,y)	do {ALIGNsetH(x,y);ALIGNsetT(x,y);} while (0)
-#define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
+#define ALIGNsetH(x,y)	ALIGNsetT(BATmirror(x),BATmirror(y))
 #define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->halign=(x)->talign=0; } while (0)
 #define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->halign=(x)->talign=0; } while (0)
 #define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
