@@ -467,40 +467,40 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 	char *s;
 	unsigned short w;
 	const char *bnme;
-	int ht;
+	int tt;
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
 	else
 		bnme = nme;
 
-	if (GDKmove(b->H->heap.farmid, srcdir, bnme, headtail, BAKDIR, bnme, headtail) != GDK_SUCCEED)
+	if (GDKmove(b->T->heap.farmid, srcdir, bnme, headtail, BAKDIR, bnme, headtail) != GDK_SUCCEED)
 		GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, headtail);
 
-	if ((ht = b->H->type) < 0) {
+	if ((tt = b->ttype) < 0) {
 		const char *anme;
 
-		/* as yet unknown head column type */
-		anme = ATOMunknown_name(ht);
+		/* as yet unknown tail column type */
+		anme = ATOMunknown_name(tt);
 		if (strcmp(anme, "url") == 0)
-			b->H->type = TYPE_str;
+			b->ttype = TYPE_str;
 		else if (strcmp(anme, "sqlblob") == 0 ||
 			 strcmp(anme, "wkb") == 0)
-			b->H->type = TYPE_int;
+			b->ttype = TYPE_int;
 		else
 			GDKfatal("fixoidheap: unrecognized column "
 				 "type %s for BAT %d\n", anme, bid);
 	}
 
-	if (b->H->type == TYPE_str) {
-		if (GDKmove(b->H->vheap->farmid, srcdir, bnme, htheap, BAKDIR, bnme, htheap) != GDK_SUCCEED)
+	if (b->ttype == TYPE_str) {
+		if (GDKmove(b->T->vheap->farmid, srcdir, bnme, htheap, BAKDIR, bnme, htheap) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, htheap);
 
-		h1 = b->H->heap;
+		h1 = b->T->heap;
 		h1.filename = NULL;
 		h1.base = NULL;
 		h1.dirty = 0;
-		h2 = *b->H->vheap;
+		h2 = *b->T->vheap;
 		h2.filename = NULL;
 		h2.base = NULL;
 		h2.dirty = 0;
@@ -514,28 +514,28 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", bid);
 
 		/* create new string heap */
-		b->H->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
-		if (b->H->heap.filename == NULL)
+		b->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
+		if (b->T->heap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		w = b->H->width; /* remember old width */
-		b->H->width = 1;
-		b->H->shift = 0;
-		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
+		w = b->T->width; /* remember old width */
+		b->T->width = 1;
+		b->T->shift = 0;
+		if (HEAPalloc(&b->T->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
-		b->H->heap.dirty = TRUE;
-		b->H->vheap->filename = GDKfilepath(NOFARM, NULL, nme, htheap);
-		if (b->H->vheap->filename == NULL)
+		b->T->heap.dirty = TRUE;
+		b->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, htheap);
+		if (b->T->vheap->filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		if (ATOMheap(TYPE_str, b->H->vheap, b->batCapacity) != GDK_SUCCEED)
+		if (ATOMheap(TYPE_str, b->T->vheap, b->batCapacity) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: initializing new string "
 				 "heap for BAT %d failed\n", bid);
-		b->H->vheap->parentid = bid;
+		b->T->vheap->parentid = bid;
 
 		/* do the conversion */
-		b->H->heap.dirty = TRUE;
-		b->H->vheap->dirty = TRUE;
+		b->T->heap.dirty = TRUE;
+		b->T->vheap->dirty = TRUE;
 		for (i = 0; i < b->batCount; i++) {
 			/* s = h2.base + VarHeapVal(h1.base, i, w); */
 			switch (w) {
@@ -553,17 +553,17 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				/* cannot happen, but compiler doesn't know */
 				s = NULL;
 			}
-			b->H->heap.free += b->H->width;
-			Hputvalue(b, Hloc(b, i), s, 0);
+			b->T->heap.free += b->T->width;
+			Tputvalue(b, Tloc(b, i), s, 0);
 		}
 		HEAPfree(&h1, 0);
 		HEAPfree(&h2, 0);
-		HEAPsave(b->H->vheap, nme, htheap);
-		HEAPfree(b->H->vheap, 0);
+		HEAPsave(b->T->vheap, nme, htheap);
+		HEAPfree(b->T->vheap, 0);
 	} else {
-		assert(b->H->type == TYPE_oid ||
-		       (b->H->type != TYPE_void && b->H->varsized));
-		h1 = b->H->heap;
+		assert(b->ttype == TYPE_oid ||
+		       (b->ttype != TYPE_void && b->T->varsized));
+		h1 = b->T->heap;
 		h1.filename = NULL;
 		h1.base = NULL;
 		h1.dirty = 0;
@@ -575,33 +575,33 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", headtail, bid);
 
 		/* create new heap */
-		b->H->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
-		if (b->H->heap.filename == NULL)
+		b->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
+		if (b->T->heap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		b->H->width = SIZEOF_OID;
-		b->H->shift = 3;
-		assert(b->H->width == (1 << b->H->shift));
-		if (HEAPalloc(&b->H->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
+		b->T->width = SIZEOF_OID;
+		b->T->shift = 3;
+		assert(b->T->width == (1 << b->T->shift));
+		if (HEAPalloc(&b->T->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
-		b->H->heap.dirty = TRUE;
+		b->T->heap.dirty = TRUE;
 		old = (int *) h1.base + b->batFirst;
-		new = (oid *) b->H->heap.base + b->batFirst;
-		if (b->H->varsized)
+		new = (oid *) b->T->heap.base + b->batFirst;
+		if (b->T->varsized)
 			for (i = 0; i < b->batCount; i++)
 				new[i] = (oid) old[i] << 3;
 		else
 			for (i = 0; i < b->batCount; i++)
 				new[i] = old[i] == int_nil ? oid_nil : (oid) old[i];
-		b->H->heap.free = h1.free << 1;
+		b->T->heap.free = h1.free << 1;
 		HEAPfree(&h1, 0);
 	}
-	HEAPsave(&b->H->heap, nme, headtail);
-	HEAPfree(&b->H->heap, 0);
+	HEAPsave(&b->T->heap, nme, headtail);
+	HEAPfree(&b->T->heap, 0);
 
-	if (ht < 0)
-		b->H->type = ht;
+	if (tt < 0)
+		b->ttype = tt;
 
 	return;
 
@@ -664,7 +664,7 @@ fixoidheap(void)
 		if (bs->H.type == TYPE_oid ||
 		    (bs->H.varsized && bs->H.type != TYPE_void)) {
 			assert(bs->H.type != TYPE_oid || bs->H.width == 4);
-			fixoidheapcolumn(&bs->B, srcdir, nme, filename, "head", "hheap");
+			fixoidheapcolumn(&bs->BM, srcdir, nme, filename, "head", "hheap");
 		}
 		GDKfree(srcdir);
 		srcdir = GDKfilepath(bs->T.heap.farmid, BATDIR, nme, NULL);
@@ -672,7 +672,7 @@ fixoidheap(void)
 		if (bs->T.type == TYPE_oid ||
 		    (bs->T.varsized && bs->T.type != TYPE_void)) {
 			assert(bs->T.type != TYPE_oid || bs->T.width == 4);
-			fixoidheapcolumn(&bs->BM, srcdir, nme, filename, "tail", "theap");
+			fixoidheapcolumn(&bs->B, srcdir, nme, filename, "tail", "theap");
 		}
 		GDKfree(srcdir);
 	}
