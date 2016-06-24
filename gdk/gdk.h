@@ -1359,8 +1359,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 			 TYPE_oid : (b)->htype)
 #define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
 			 TYPE_oid : (b)->ttype)
-#define BAThstore(b)	(BAThdense(b) ? TYPE_void : (b)->htype)
-#define BATtstore(b)	(BATtdense(b) ? TYPE_void : (b)->ttype)
 #define Hbase(b)	((b)->H->vheap->base)
 #define Tbase(b)	((b)->T->vheap->base)
 
