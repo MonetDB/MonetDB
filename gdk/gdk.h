@@ -1086,8 +1086,6 @@ gdk_export bte ATOMelmshift(int sz);
  * @item BUN
  * @tab BUNlocate (BAT *b, ptr head, ptr tail)
  * @item ptr
- * @tab BUNhead (BAT *b, BUN p)
- * @item ptr
  * @tab BUNtail (BAT *b, BUN p)
  * @end multitable
  *
@@ -1113,10 +1111,10 @@ gdk_export bte ATOMelmshift(int sz);
  * To select on a tail, one should use the reverse view obtained by
  * BATmirror.
  *
- * The routines BUNhead and BUNtail return a pointer to the first and
- * second value in an association, respectively.  To guard against
- * side effects on the BAT, one should normally copy this value into a
- * scratch variable for further processing.
+ * The routine BUNtail returns a pointer to the second value in an
+ * association.  To guard against side effects on the BAT, one should
+ * normally copy this value into a scratch variable for further
+ * processing.
  *
  * Behind the interface we use several macros to access the BUN fixed
  * part and the variable part. The BUN operators always require a BAT
@@ -1129,15 +1127,6 @@ gdk_export bte ATOMelmshift(int sz);
  * @item
  * BUNlast(b) returns the BUN pointer directly after the last BUN
  * in the BAT.
- * @item
- * BUNhead(b, p) and BUNtail(b, p) return pointers to the
- * head-value and tail-value in a given BUN.
- * @item
- * BUNhloc(b, p) and BUNtloc(b, p) do the same thing, but knowing
- * in advance that the head-atom resp. tail-atom of a BAT is fixed size.
- * @item
- * BUNhvar(b, p) and BUNtvar(b, p) do the same thing, but knowing
- * in advance that the head-atom resp. tail-atom of a BAT is variable sized.
  * @end itemize
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
@@ -1369,7 +1358,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 #define headsize(b,p)	((b)->H->type?((size_t)(p))<<(b)->H->shift:0)
 #define tailsize(b,p)	((b)->T->type?((size_t)(p))<<(b)->T->shift:0)
 
-#define Hloc(b,p)	((b)->H->heap.base+((p)<<(b)->H->shift))
 #define Tloc(b,p)	((b)->T->heap.base+((p)<<(b)->T->shift))
 
 #if SIZEOF_VAR_T < SIZEOF_VOID_P
@@ -1417,16 +1405,11 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 	 ((var_t *) (b))[p])
 #endif
 #define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w)  << GDK_VARSHIFT)
-#define BUNhvaroff(bi,p) VarHeapVal((bi).b->H->heap.base, (p), (bi).b->H->width)
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->T->heap.base, (p), (bi).b->T->width)
 
-#define BUNhloc(bi,p)	Hloc((bi).b,p)
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
-#define BUNhpos(bi,p)	Hpos(&(bi),p)
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNhvar(bi,p)	(assert((bi).b->htype && (bi).b->hvarsized), Hbase((bi).b)+BUNhvaroff(bi,p))
 #define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), Tbase((bi).b)+BUNtvaroff(bi,p))
-#define BUNhead(bi,p)	((bi).b->htype?(bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p):BUNhpos(bi,p))
 #define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 static inline BATiter
@@ -2610,15 +2593,6 @@ BATdescriptor(register bat i)
 }
 
 static inline char *
-Hpos(BATiter *bi, BUN p)
-{
-	bi->hvid = bi->b->hseqbase;
-	if (bi->hvid != oid_nil)
-		bi->hvid += p - BUNfirst(bi->b);
-	return (char*)&bi->hvid;
-}
-
-static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
@@ -2905,20 +2879,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  * @end multitable
  *
  * The @emph{BATloop()} looks like a function call, but is actually a
- * macro.  The following example gives an indication of how they are
- * to be used:
- * @verbatim
- * void
- * print_a_bat(BAT *b)
- * {
- *	BATiter bi = bat_iterator(b);
- *	BUN p, q;
- *
- *	BATloop(b, p, q)
- *		printf("Element %3d has value %d\n",
- *			   *(int*) BUNhead(bi, p), *(int*) BUNtail(bi, p));
- * }
- * @end verbatim
+ * macro.
  *
  * @- simple sequential scan
  * The first parameter is a BAT, the p and q are BUN pointers, where p
@@ -2962,27 +2923,6 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 		if (GDK_STREQ(v, BUNtvar(bi, hb)))
 
 /*
- * The following example shows how the hashloop is used:
- *
- * @verbatim
- * void
- * print_books(BAT *books_author, str author)
- * {
- *         BAT *b = books_author;
- *         BUN i;
- *
- *         printf("%s\n==================\n", author);
- *         HASHloop(b, (b)->T->hash, i, author)
- *			printf("%s\n", ((str) BUNhead(b, i));
- * }
- * @end verbatim
- *
- * Note that for optimization purposes, we could have used a
- * HASHloop_str instead, and also a BUNhvar instead of a BUNhead
- * (since we know the head-type of books_author is string, hence
- * variable-sized). However, this would make the code less general.
- *
- * @- specialized hashloops
  * HASHloops come in various flavors, from the general HASHloop, as
  * above, to specialized versions (for speed) where the type is known
  * (e.g. HASHloop_int), or the fact that the atom is fixed-sized
