@@ -1000,13 +1000,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->heap.newstorage = (storage_t) storage;
 	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
 	col->heap.dirty = 0;
-	if (bbpversion <= GDKLIBRARY_INET_COMPARE &&
-	    strcmp(type, "inet") == 0) {
-		/* don't trust ordering information on inet columns */
-		col->sorted = 0;
-		col->revsorted = 0;
-		col->nosorted = col->norevsorted = 0;
-	}
 	if (col->heap.free > col->heap.size)
 		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
 	return n;
@@ -1216,7 +1209,6 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	}
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
-	    bbpversion != GDKLIBRARY_64_BIT_INT &&
 	    bbpversion != GDKLIBRARY_OLDWKB &&
 	    bbpversion != GDKLIBRARY_INSERTED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
@@ -1224,15 +1216,8 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");
 	}
-	if (bbpversion <= GDKLIBRARY_64_BIT_INT) {
-		if (sscanf(buf, "%d %d", &ptrsize, &oidsize) != 2) {
-			GDKfatal("BBPinit: BBP.dir has incompatible format: pointer and OID sizes are missing");
-		}
-		intsize = SIZEOF_LNG;
-	} else {
-		if (sscanf(buf, "%d %d %d", &ptrsize, &oidsize, &intsize) != 3) {
-			GDKfatal("BBPinit: BBP.dir has incompatible format: pointer, OID, and max. integer sizes are missing");
-		}
+	if (sscanf(buf, "%d %d %d", &ptrsize, &oidsize, &intsize) != 3) {
+		GDKfatal("BBPinit: BBP.dir has incompatible format: pointer, OID, and max. integer sizes are missing");
 	}
 	if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8

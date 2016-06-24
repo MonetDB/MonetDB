@@ -1492,6 +1492,10 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (n == 0)
 			logger_fatal("logger_load: inconsistent database, catalog_nme does not exist", 0, 0, 0);
 
+		if (!BAThdense(b) || !BAThdense(n))
+			logger_fatal("logger_load: ancient database, please "
+				     "upgrade first to Jul2015 (11.21.X) or "
+				     "Jun2016 (11.23.X) release", 0, 0, 0);
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
@@ -1506,46 +1510,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
-/* LEGACY */
-			if (!BAThdense(b) || !BAThdense(n)) {
-				/* we need to convert catalog_bid and
-				 * catalog_nme to be dense-headed; we
-				 * do this by replacing the two with
-				 * new, dense versions */
-				BATiter bi, ni;
-				BUN r;
-				BAT *b2, *n2;
-				bat list[5];
-
-				list[0] = 0;
-				list[1] = b->batCacheid;
-				list[2] = n->batCacheid;
-				if ((b2 = logbat_new(b->ttype, BATSIZE, PERSISTENT)) == NULL)
-					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
-				if ((n2 = logbat_new(n->ttype, BATSIZE, PERSISTENT)) == NULL)
-					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
-				list[3] = b2->batCacheid;
-				list[4] = n2->batCacheid;
-				logger_switch_bat(b, b2, fn, "catalog_bid");
-				logger_switch_bat(n, n2, fn, "catalog_nme");
-				bi = bat_iterator(b);
-				ni = bat_iterator(n);
-				BATloop(b, p, q) {
-					oid o = ((const oid *) b->H->heap.base)[p];
-					r = BUNfnd(BATmirror(n), &o);
-					if (r != BUN_NONE) {
-						if (BUNappend(b2, BUNtloc(bi, p), 0) != GDK_SUCCEED ||
-						    BUNappend(n2, BUNtvar(ni, r), 0) != GDK_SUCCEED)
-							logger_fatal("logger_load: cannot append to new catalog BATs", 0, 0, 0);
-					}
-				}
-				BBPunfix(b->batCacheid);
-				BBPunfix(n->batCacheid);
-				b = b2;
-				n = n2;
-				if (TMsubcommit_list(list, 5) != GDK_SUCCEED)
-					logger_fatal("logger_load: committing new catalog_bid/catalog_nme failed", 0, 0, 0);
-			}
 		}
 
 		/* the catalog exists, and so should the log file */
