@@ -116,8 +116,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 			return;
 		}
 	}
-	bi = bat_iterator(qotStat[QOTnames]);
-	idx = *(oid*) BUNhead(bi,p);
+	idx = qotStat[QOTnames]->hseqbase + p - BUNfirst(qotStat[QOTnames]);
 
 	p = BUNfnd(BATmirror(qotStat[QOTcalls]),&idx);
 	if (p == BUN_NONE) {

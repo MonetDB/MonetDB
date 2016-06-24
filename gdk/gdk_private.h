@@ -179,8 +179,6 @@ __hidden void IMPSprint(BAT *b)
 #endif
 __hidden gdk_return unshare_string_heap(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden oid MAXoid(BAT *i)
-	__attribute__((__visibility__("hidden")));
 __hidden void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
 __hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)

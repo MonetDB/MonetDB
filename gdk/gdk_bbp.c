@@ -2880,20 +2880,12 @@ BBPdestroy(BAT *b)
 		VIEWdestroy(b);
 	} else {
 		/* bats that get destroyed must unfix their atoms */
-		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		BUN p, q;
 		BATiter bi = bat_iterator(b);
 
 		assert(b->batSharecnt == 0);
-		if (hunfix) {
-			DELloop(b, p, q) {
-				(*hunfix) (BUNhead(bi, p));
-			}
-			BATloop(b, p, q) {
-				(*hunfix) (BUNhead(bi, p));
-			}
-		}
+		assert(BATatoms[b->htype].atomUnfix == NULL);
 		if (tunfix) {
 			DELloop(b, p, q) {
 				(*tunfix) (BUNtail(bi, p));

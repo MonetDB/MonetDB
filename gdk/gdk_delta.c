@@ -47,23 +47,16 @@ BATcommit(BAT *b)
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		BATiter bi = bat_iterator(b);
-		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 		BUN p, q;
 
-		if (hatmdel || hunfix || tatmdel || tunfix) {
+		assert(BATatoms[b->htype].atomUnfix == NULL);
+		assert(BATatoms[b->htype].atomDel == NULL);
+		if (tatmdel || tunfix) {
 			DELloop(b, p, q) {
-				ptr h = BUNhead(bi, p);
 				ptr t = BUNtail(bi, p);
 
-				if (hunfix) {
-					(*hunfix) (h);
-				}
-				if (hatmdel) {
-					(*hatmdel) (b->H->vheap, (var_t *) BUNhloc(bi, p));
-				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}
@@ -139,23 +132,17 @@ BATundo(BAT *b)
 	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
-		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (hunfix || tunfix || hatmdel || tatmdel || b->H->hash || b->T->hash) {
+		assert(BATatoms[b->htype].atomUnfix == NULL);
+		assert(BATatoms[b->htype].atomDel == NULL);
+		assert(b->H->hash == NULL);
+		if (tunfix || tatmdel || b->T->hash) {
 			HASHdestroy(b);
 			for (p = bunfirst; p <= bunlast; p++, i++) {
-				ptr h = BUNhead(bi, p);
 				ptr t = BUNtail(bi, p);
 
-				if (hunfix) {
-					(*hunfix) (h);
-				}
-				if (hatmdel) {
-					(*hatmdel) (b->H->vheap, (var_t *) BUNhloc(bi, p));
-				}
 				if (tunfix) {
 					(*tunfix) (t);
 				}

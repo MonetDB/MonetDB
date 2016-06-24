@@ -1506,6 +1506,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
+/* LEGACY */
 			if (!BAThdense(b) || !BAThdense(n)) {
 				/* we need to convert catalog_bid and
 				 * catalog_nme to be dense-headed; we
@@ -1513,7 +1514,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				 * new, dense versions */
 				BATiter bi, ni;
 				BUN r;
-				const oid *o;
 				BAT *b2, *n2;
 				bat list[5];
 
@@ -1531,8 +1531,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				bi = bat_iterator(b);
 				ni = bat_iterator(n);
 				BATloop(b, p, q) {
-					o = (const oid *) BUNhloc(bi, p);
-					r = BUNfnd(BATmirror(n), o);
+					oid o = ((const oid *) b->H->heap.base)[p];
+					r = BUNfnd(BATmirror(n), &o);
 					if (r != BUN_NONE) {
 						if (BUNappend(b2, BUNtloc(bi, p), 0) != GDK_SUCCEED ||
 						    BUNappend(n2, BUNtvar(ni, r), 0) != GDK_SUCCEED)
@@ -2478,6 +2478,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 	logformat l;
 	BUN p;
 
+	assert(b->htype == TYPE_void);
 	if (lg->debug & 128) {
 		/* logging is switched off */
 		return LOG_OK;
@@ -2489,7 +2490,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
-		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_INSERT;
@@ -2497,8 +2497,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		if (b->htype == TYPE_void &&
-		    b->ttype > TYPE_void &&
+		if (b->ttype > TYPE_void &&
 		    b->ttype < TYPE_str &&
 		    !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);
@@ -2506,10 +2505,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 			ok = wt(t, lg->log, (size_t)l.nr);
 		} else {
 			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-				const void *h = BUNhead(bi, p);
 				const void *t = BUNtail(bi, p);
 
-				ok = wh(h, lg->log, 1);
 				ok = (ok != GDK_SUCCEED) ? ok : wt(t, lg->log, 1);
 			}
 		}

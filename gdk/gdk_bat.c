@@ -775,10 +775,9 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			BATiter bi = bat_iterator(b);
 
 			BATloop(b, p, q) {
-				const void *h = BUNhead(bi, p);
 				const void *t = BUNtail(bi, p);
 
-				bunfastins_nocheck(bn, r, h, t, Hsize(bn), Tsize(bn));
+				bunfastapp_nocheck(bn, r, t, Tsize(bn));
 				r++;
 			}
 		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
@@ -913,6 +912,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	const void *prv;
 	int cmp;
 
+	assert(col == b->T);
 	/* x may only be NULL if the column type is VOID */
 	assert(x != NULL || col->type == TYPE_void);
 	if (b->batCount == 0) {
@@ -961,7 +961,7 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 	} else {
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
-		prv = col == b->H ? BUNhead(bi, pos - 1) : BUNtail(bi, pos - 1);
+		prv = BUNtail(bi, pos - 1);
 		cmp = atom_CMP(prv, x, col->type);
 
 		if (col->key == 1 && /* assume outside check if BOUND2BTRUE */
@@ -995,27 +995,6 @@ setcolprops(BAT *b, COLrec *col, const void *x)
 			col->nil = 1;
 		}
 	}
-}
-
-oid
-MAXoid(BAT *i)
-{
-	BATiter ii = bat_iterator(i);
-	oid o = i->hseqbase - 1;
-
-	if (i->batCount)
-		o = *(oid *) BUNhead(ii, BUNlast(i) - 1);
-	if (!BAThordered(i)) {
-		BUN r, s;
-
-		BATloop(i, r, s) {
-			oid v = *(oid *) BUNhead(ii, r);
-
-			if (v > o)
-				o = v;
-		}
-	}
-	return o;
 }
 
 /*
