@@ -12,23 +12,11 @@
  * We factor out all possible overhead by inlining code.  This
  * includes the macros BUNhead and BUNtail, which do a test to see
  * whether the atom resides in the buns or in a variable storage
- * heap. The updateloop(dstbat, srcbat, operation) macro invokes
- * operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns of
- * the srcbat, but testing only once where they reside.
+ * heap.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-
-#define updateloop(bn, b, func)						\
-	do {								\
-		BATiter bi = bat_iterator(b);				\
-		BUN p1, p2;						\
-									\
-		BATloop(b, p1, p2) {					\
-			func(bn, BUNhead(bi, p1), BUNtail(bi, p1));	\
-		}							\
-	} while (0)
 
 gdk_return
 unshare_string_heap(BAT *b)
