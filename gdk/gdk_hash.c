@@ -187,8 +187,8 @@ HASHcollisions(BAT *b, Hash *h)
  * Note that the b->T->hash pointer can be NULL, meaning there is no
  * hash; (Hash *) 1, meaning there is no hash loaded, but it may exist
  * on disk; or a valid pointer to a loaded hash.  These values are
- * maintained here, in the HASHdestroy/HASHremove and HASHfree
- * functions, and in BBPdiskscan during initialization. */
+ * maintained here, in the HASHdestroy and HASHfree functions, and in
+ * BBPdiskscan during initialization. */
 int
 BATcheckhash(BAT *b)
 {
@@ -323,6 +323,7 @@ BAThash(BAT *b, BUN masksize)
 {
 	lng t0 = 0, t1 = 0;
 
+	assert(b->batCacheid > 0);
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
@@ -565,7 +566,7 @@ HASHlist(Hash *h, BUN i)
 }
 
 void
-HASHremove(BAT *b)
+HASHdestroy(BAT *b)
 {
 	if (b) {
 		if (b->T->hash == (Hash *) 1) {
@@ -582,24 +583,13 @@ HASHremove(BAT *b)
 
 			if ((!hp || b->T->hash != hp->T->hash) && b->T->hash != (Hash *) -1) {
 				ALGODEBUG if (*(size_t *) b->T->hash->heap->base & (1 << 24))
-					fprintf(stderr, "#HASHremove: removing persisted hash %d\n", b->batCacheid);
+					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
 				HEAPfree(b->T->hash->heap, 1);
 				GDKfree(b->T->hash->heap);
 				GDKfree(b->T->hash);
 			}
 		}
 		b->T->hash = NULL;
-	}
-}
-
-void
-HASHdestroy(BAT *b)
-{
-	if (b) {
-		HASHremove(b);
-		if (BATmirror(b))
-			HASHremove(BATmirror(b));
-
 	}
 }
 

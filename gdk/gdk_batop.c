@@ -408,7 +408,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 	/* if growing too much, remove the hash, else we maintain it */
 	if (BATcheckhash(b) && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
-		HASHremove(b);
+		HASHdestroy(b);
 	}
 	if (b->T->hash != NULL ||
 	    (b->tkey & BOUND2BTRUE) != 0 ||

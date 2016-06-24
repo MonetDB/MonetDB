@@ -167,7 +167,7 @@ BATundo(BAT *b)
 			BATkey(b, FALSE);
 		if (b->tkey)
 			BATkey(BATmirror(b), FALSE);
-		HASHremove(b);
+		HASHdestroy(b);
 	}
 	b->batFirst = b->batDeleted;
 	BATsetcount(b, b->batInserted);

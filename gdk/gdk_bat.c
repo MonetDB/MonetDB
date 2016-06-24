@@ -1155,7 +1155,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 		 * clear it */
 		b->T->nil = 0;
 	}
-	HASHremove(b);
+	HASHdestroy(b);
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;

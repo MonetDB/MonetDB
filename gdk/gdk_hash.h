@@ -218,7 +218,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		if ((b)->T->hash == (Hash *) 1 ||			\
 		    (((i) & 1023) == 1023 && HASHgonebad((b), (v)))) {	\
-			HASHremove(b);					\
+			HASHdestroy(b);					\
 		} else {						\
 			BUN _c = HASHprobe((b)->T->hash, (v));		\
 			HASHputall((b)->T->hash, (i), _c);		\
