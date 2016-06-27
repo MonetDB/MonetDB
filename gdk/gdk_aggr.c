@@ -501,7 +501,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	bn = BATconstant(0, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -518,7 +518,6 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
-		BATseqbase(bn, min);
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
@@ -1106,7 +1105,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	bn = BATconstant(0, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -1123,7 +1122,6 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
-		BATseqbase(bn, min);
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
