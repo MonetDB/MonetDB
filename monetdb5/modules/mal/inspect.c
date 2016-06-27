@@ -436,8 +436,8 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
  	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
+	BAThseqbase(b,0);
+	BAThseqbase(bn,0);
 
 	BBPkeepref(*ret = b->batCacheid);
 	BBPkeepref(*ret2 = bn->batCacheid);

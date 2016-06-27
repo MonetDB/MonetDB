@@ -1027,7 +1027,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 		bat_destroy(i);
 		i = temp_descriptor(bat->ibid);
 		bat_set_access(i, BAT_READ);
-		BATseqbase(i, bat->ibase);
+		BAThseqbase(i, bat->ibase);
 		bat_destroy(i);
 	} else {
 		BAT *i, *b = temp_descriptor(bat->ibid);

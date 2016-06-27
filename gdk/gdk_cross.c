@@ -48,8 +48,8 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	bn2->tdense = bn2->tkey != 0;
 	bn2->T->nil = 0;
 	bn2->T->nonil = 1;
-	BATseqbase(BATmirror(bn1), l->hseqbase);
-	BATseqbase(BATmirror(bn2), r->hseqbase);
+	BATtseqbase(bn1, l->hseqbase);
+	BATtseqbase(bn2, r->hseqbase);
 	*r1p = bn1;
 	*r2p = bn2;
 	return GDK_SUCCEED;

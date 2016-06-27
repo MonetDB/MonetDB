@@ -360,7 +360,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		}
 
 		if (tseq)
-			BATseqbase(BATmirror(r), 0);
+			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
 			for (; l->nr > 0; l->nr--) {
@@ -609,7 +609,7 @@ la_bat_create(logger *lg, logaction *la)
 
 	if (b != NULL) {
 		if (la->tt < 0)
-			BATseqbase(BATmirror(b), 0);
+			BATtseqbase(b, 0);
 
 		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, la->name);
@@ -1177,7 +1177,7 @@ bm_tids(BAT *b, BAT *d)
 	BUN sz = BATcount(b);
 	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 
-	BATseqbase(BATmirror(tids), 0);
+	BATtseqbase(tids, 0);
 	BATsetcount(tids, sz);
 	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
@@ -1606,8 +1606,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			lg->seqs_val = COLcopy(o_val, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
-			BATseqbase(lg->seqs_id, 0);
-			BATseqbase(lg->seqs_val, 0);
+			BAThseqbase(lg->seqs_id, 0);
+			BAThseqbase(lg->seqs_val, 0);
 		} else {
 			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
@@ -1631,7 +1631,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			BAT *b;
 			assert(lg->snapshots_tid->htype == TYPE_oid);
 			b = COLcopy(lg->snapshots_bid, lg->snapshots_bid->ttype, 1, PERSISTENT);
-			BATseqbase(b, 0);
+			BAThseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
 			BBPrename(lg->snapshots_bid->batCacheid, bak);
@@ -1642,7 +1642,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			lg->snapshots_bid = b;
 			logger_add_bat(lg, b, "snapshots_bid");
 			b = COLcopy(lg->snapshots_tid, lg->snapshots_tid->ttype, 1, PERSISTENT);
-			BATseqbase(b, 0);
+			BAThseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
 			BBPrename(lg->snapshots_tid->batCacheid, bak);

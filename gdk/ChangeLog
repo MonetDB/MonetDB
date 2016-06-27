@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Jun 27 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Replaced BATseqbase with BAThseqbase and BATtseqbase, the former for
+  setting the seqbase on the HEAD, the latter for setting the seqbase
+  on the TAIL.
+
 * Fri Jun 24 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Replaced function BATnew with COLnew with slightly different arguments:
   the first argument of COLnew is the SEQBASE of the head column (which

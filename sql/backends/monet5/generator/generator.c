@@ -485,7 +485,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "generator.subselect",
 				      MAL_MALLOC_FAIL);
 			BATsetcount(bn, o2 - o1);
-			BATseqbase(BATmirror(bn), o1);
+			BATtseqbase(bn, o1);
 		}
 	}
 	* getArgReference_bat(stk, pci, 0) = bn->batCacheid;

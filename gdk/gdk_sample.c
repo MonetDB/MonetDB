@@ -129,7 +129,7 @@ BATsample(BAT *b, BUN n)
 			return NULL;
 		}
 		BATsetcount(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 	/* sample size is larger than the input BAT, return all oids */
 	} else if (cnt <= n) {
 		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
@@ -137,7 +137,7 @@ BATsample(BAT *b, BUN n)
 			return NULL;
 		}
 		BATsetcount(bn, cnt);
-		BATseqbase(BATmirror(bn), b->H->seq);
+		BATtseqbase(bn, b->H->seq);
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;

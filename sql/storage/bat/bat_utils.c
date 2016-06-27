@@ -22,7 +22,7 @@ bat_new(int tt, BUN size, int role)
 {
 	BAT *bn = COLnew(0, tt, size, role);
 	if (bn)
-		BATseqbase(bn, 0);
+		BAThseqbase(bn, 0);
 	return bn;
 }
 
@@ -111,7 +111,7 @@ ebat2real(log_bid b, oid ibase)
 	BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
 	log_bid r;
 
-	BATseqbase(c, ibase );
+	BAThseqbase(c, ibase );
 	c->H->dense = 1;
 	r = temp_create(c);
 	bat_destroy(c);
@@ -152,7 +152,7 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
 		if (!c)
 			return BID_NIL;
-		BATseqbase(c, ibase );
+		BAThseqbase(c, ibase );
 		c->H->dense = 1;
 		BATcommit(c);
 		bat_set_access(c, BAT_READ);

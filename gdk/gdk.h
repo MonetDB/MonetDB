@@ -1486,7 +1486,8 @@ gdk_export gdk_return BATkey(BAT *b, int onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
 gdk_export void BATroles(BAT *b, const char *hnme, const char *tnme);
 gdk_export int BATname(BAT *b, const char *nme);
-gdk_export void BATseqbase(BAT *b, oid o);
+gdk_export void BAThseqbase(BAT *b, oid o);
+gdk_export void BATtseqbase(BAT *b, oid o);
 gdk_export gdk_return BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
 

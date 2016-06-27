@@ -170,7 +170,7 @@ CMDBATpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bat.partition", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(bn, lval);
+		BAThseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= getArgReference_bat(stk,pci,i);
 		BBPkeepref(*ret = bn->batCacheid);
@@ -207,7 +207,7 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		hval = lval+step;
 	bn =  BATslice(b, lval,hval);
-	BATseqbase(bn, lval + b->hseqbase) ;
+	BAThseqbase(bn, lval + b->hseqbase) ;
 	if (bn== NULL){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);

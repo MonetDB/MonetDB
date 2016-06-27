@@ -201,7 +201,7 @@ AUTHinitTables(str *passwd) {
 		assert(pass->htype == TYPE_oid);
 		blist[0] = 0;
 		b = COLcopy(user, user->ttype, 1, PERSISTENT);
-		BATseqbase(b, 0);
+		BAThseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(user, TRANSIENT);
 		snprintf(name, sizeof(name), "tmp_%o", user->batCacheid);
@@ -212,7 +212,7 @@ AUTHinitTables(str *passwd) {
 		BBPunfix(user->batCacheid);
 		user = b;
 		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
-		BATseqbase(b, 0);
+		BAThseqbase(b, 0);
 		BATmode(b, PERSISTENT);
 		BATmode(pass, TRANSIENT);
 		snprintf(name, sizeof(name), "tmp_%o", pass->batCacheid);

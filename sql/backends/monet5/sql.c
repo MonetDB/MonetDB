@@ -1875,7 +1875,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (*access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
-				BATseqbase(bn, part_nr * psz);
+				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
@@ -1973,7 +1973,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (*access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
-				BATseqbase(bn, part_nr * psz);
+				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
@@ -2692,7 +2692,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tids == NULL)
 		throw(SQL, "sql.tid", MAL_MALLOC_FAIL);
 	BATsetcount(tids, (BUN) nr);
-	BATseqbase(BATmirror(tids), sb);
+	BATtseqbase(tids, sb);
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
@@ -2703,7 +2703,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
-		BATseqbase(diff, sb);
+		BAThseqbase(diff, sb);
 		tids = diff;
 	}
 	if (!(tids->batDirty&2)) BATsetaccess(tids, BAT_READ);

@@ -422,14 +422,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (gn == NULL)
 			goto error;
 		BATsetcount(gn, BATcount(b));
-		BATseqbase(BATmirror(gn), 0);
+		BATtseqbase(gn, 0);
 		*groups = gn;
 		if (extents) {
 			en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
 			if (en == NULL)
 				goto error;
 			BATsetcount(en, BATcount(b));
-			BATseqbase(BATmirror(en), ngrp);
+			BATtseqbase(en, ngrp);
 			*extents = en;
 		}
 		if (histo) {
@@ -466,7 +466,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				en = BATconstant(0, TYPE_void, &ngrp, 1, TRANSIENT);
 				if (en == NULL)
 					goto error;
-				BATseqbase(BATmirror(en), ngrp);
+				BATtseqbase(en, ngrp);
 				*extents = en;
 			}
 			if (histo) {

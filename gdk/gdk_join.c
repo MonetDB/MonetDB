@@ -489,7 +489,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		if (BATextend(r1, cnt) != GDK_SUCCEED)
 			goto bailout;
 		BATsetcount(r1, cnt);
-		BATseqbase(BATmirror(r1), lstart + l->hseqbase);
+		BATtseqbase(r1, lstart + l->hseqbase);
 	}
 	r1->T->norevsorted = !(r1->trevsorted = BATcount(r1) <= 1);
 	if (r2) {
@@ -501,7 +501,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		if (BATextend(r2, cnt) != GDK_SUCCEED)
 			goto bailout;
 		BATsetcount(r2, cnt);
-		BATseqbase(BATmirror(r2), oid_nil);
+		BATtseqbase(r2, oid_nil);
 	}
 	ALGODEBUG fprintf(stderr,
 			  "#%s(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s,%s#"BUNFMT"%s%s%s) " LLFMT "us -- nomatch\n",
@@ -637,7 +637,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					if (BATextend(r1, cnt - (hi - lo)) != GDK_SUCCEED)
 						goto bailout;
 					BATsetcount(r1, cnt - (hi - lo));
-					BATseqbase(BATmirror(r1), lo == seq ? hi : seq);
+					BATtseqbase(r1, lo == seq ? hi : seq);
 				} else {
 					if (BATextend(r1, cnt - (hi - lo)) != GDK_SUCCEED)
 						goto bailout;
@@ -666,7 +666,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				/* we need to fill in nils in r2 for
 				 * missing values */
 				BATsetcount(r1, cnt);
-				BATseqbase(BATmirror(r1), seq);
+				BATtseqbase(r1, seq);
 				if (BATextend(r2, cnt) != GDK_SUCCEED)
 					goto bailout;
 				for (o = seq - l->hseqbase + l->tseqbase; o < lo; o++)
@@ -683,9 +683,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->trevsorted = 1;
 					r2->tdense = 1;
 					if (BATcount(r2) == 0)
-						BATseqbase(BATmirror(r2), 0);
+						BATtseqbase(r2, 0);
 					else
-						BATseqbase(BATmirror(r2), *(oid*)Tloc(r2, BUNfirst(r2)));
+						BATtseqbase(r2, *(oid*)Tloc(r2, BUNfirst(r2)));
 				} else {
 					r2->tsorted = 0;
 					r2->trevsorted = 0;
@@ -698,7 +698,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				goto doreturn;
 			}
 			BATsetcount(r1, hi - lo);
-			BATseqbase(BATmirror(r1), l->hseqbase + lo - l->tseqbase);
+			BATtseqbase(r1, l->hseqbase + lo - l->tseqbase);
 			if (r2) {
 				r2->tdense = 1;
 				HEAPfree(&r2->T->heap, 1);
@@ -707,7 +707,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				r2->T->width = 0;
 				r2->T->shift = 0;
 				BATsetcount(r2, hi - lo);
-				BATseqbase(BATmirror(r2), r->hseqbase + lo - r->tseqbase);
+				BATtseqbase(r2, r->hseqbase + lo - r->tseqbase);
 			}
 			goto doreturn;
 		}
@@ -3952,8 +3952,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			BBPreclaim(r2);
 			return GDK_FAIL;
 		}
-		BATseqbase(BATmirror(r1), 0);
-		BATseqbase(BATmirror(r2), 0);
+		BATtseqbase(r1, 0);
+		BATtseqbase(r2, 0);
 		*r1p = r1;
 		*r2p = r2;
 		return GDK_SUCCEED;

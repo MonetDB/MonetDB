@@ -150,7 +150,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, cnt);
-		BATseqbase(BATmirror(bn), start + b->hseqbase);
+		BATtseqbase(bn, start + b->hseqbase);
 		return bn;
 	}
 	/* note, we want to do bot calls */
@@ -176,10 +176,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		BATsetcount(bn, n);
 		if (asc ? b->tsorted : b->trevsorted) {
 			/* first n entries from b */
-			BATseqbase(BATmirror(bn), start + b->hseqbase);
+			BATtseqbase(bn, start + b->hseqbase);
 		} else {
 			/* last n entries from b */
-			BATseqbase(BATmirror(bn), start + cnt + b->hseqbase - n);
+			BATtseqbase(bn, start + cnt + b->hseqbase - n);
 		}
 		return bn;
 	}
@@ -390,7 +390,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 		return bn;
 	}
 
@@ -636,14 +636,14 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 		if (gids) {
 			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(BATmirror(gn), 0);
+			BATtseqbase(gn, 0);
 			*gids = gn;
 		}
 		*topn = bn;
@@ -807,7 +807,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	GDKfree(groups);
 	BATsetcount(bn, ncnt);
 	if (ncnt == cnt) {
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 	} else {
 		bn->tkey = 1;
 		bn->tsorted = 1;
@@ -940,14 +940,14 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 		if (gids) {
 			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(BATmirror(gn), 0);
+			BATtseqbase(gn, 0);
 			*gids = gn;
 		}
 		*topn = bn;
@@ -1114,7 +1114,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	GDKfree(groups);
 	BATsetcount(bn, ncnt);
 	if (ncnt == cnt) {
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 	} else {
 		bn->tkey = 1;
 		bn->tsorted = 1;
@@ -1160,14 +1160,14 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 		*topn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (*topn == NULL)
 			return GDK_FAIL;
-		BATseqbase(BATmirror(*topn), 0);
+		BATtseqbase(*topn, 0);
 		if (gids) {
 			*gids = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (*gids == NULL) {
 				BBPreclaim(*topn);
 				return GDK_FAIL;
 			}
-			BATseqbase(BATmirror(*gids), 0);
+			BATtseqbase(*gids, 0);
 		}
 		return GDK_SUCCEED;
 	}

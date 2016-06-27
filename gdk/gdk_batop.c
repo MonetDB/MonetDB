@@ -395,7 +395,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			f = *(oid *) BUNtloc(bat_iterator(n), BUNfirst(n));
 
 		if (BATcount(b) == 0 && f != oid_nil)
-			BATseqbase(BATmirror(b), f);
+			BATtseqbase(b, f);
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			sz += BATcount(b);
 			BATsetcount(b, sz);
@@ -712,7 +712,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (bn == NULL)
 			return NULL;
 		VIEWbounds(b, bn, l - BUNfirst(b), h - BUNfirst(b));
-		BATseqbase(bn, (oid) (b->hseqbase + low));
+		BAThseqbase(bn, (oid) (b->hseqbase + low));
 	} else {
 		/* create a new BAT and put everything into it */
 		BUN p = l;
@@ -765,16 +765,16 @@ BATslice(BAT *b, BUN l, BUN h)
 	bni = bat_iterator(bn);
 	if (BATtdense(b)) {
 		bn->tdense = TRUE;
-		BATseqbase(BATmirror(bn), (oid) (b->tseqbase + low));
+		BATtseqbase(bn, (oid) (b->tseqbase + low));
 	} else if (bn->tkey && bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
-			BATseqbase(BATmirror(bn), 0);
+			BATtseqbase(bn, 0);
 		} else if (bn->tsorted &&
 			   (foid = *(oid *) BUNtloc(bni, BUNfirst(bn))) != oid_nil &&
 			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
 			bn->tdense = TRUE;
-			BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
+			BATtseqbase(bn, *(oid *) BUNtloc(bni, BUNfirst(bn)));
 		}
 	}
 	if (bn->batCount <= 1) {
@@ -1017,7 +1017,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			if (on == NULL)
 				goto error;
 			BATsetcount(on, BATcount(b));
-			BATseqbase(BATmirror(on), b->hseqbase);
+			BATtseqbase(on, b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
@@ -1027,7 +1027,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				if (gn == NULL)
 					goto error;
 				BATsetcount(gn, BATcount(b));
-				BATseqbase(BATmirror(gn), 0);
+				BATtseqbase(gn, 0);
 			} else {
 				/* single group */
 				const oid *o = 0;
@@ -1067,7 +1067,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				     TRANSIENT);
 			if (on == NULL)
 				goto error;
-			BATseqbase(on, b->hseqbase);
+			BAThseqbase(on, b->hseqbase);
 		} else {
 			/* create new order */
 			on = COLnew(b->hseqbase, TYPE_oid, BATcount(bn), TRANSIENT);
@@ -1223,7 +1223,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 	switch (ATOMstorage(tailtype)) {
 	case TYPE_void:
 		v = &oid_nil;
-		BATseqbase(BATmirror(bn), oid_nil);
+		BATtseqbase(bn, oid_nil);
 		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)
@@ -1453,7 +1453,7 @@ newdensecand(oid first, oid last)
 	if (last < first)
 		first = last = 0; /* empty range */
 	BATsetcount(bn, last - first + 1);
-	BATseqbase(BATmirror(bn), first);
+	BATtseqbase(bn, first);
 	return bn;
 }
 

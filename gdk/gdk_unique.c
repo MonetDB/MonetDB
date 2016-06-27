@@ -69,7 +69,7 @@ BATunique(BAT *b, BAT *s)
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, BATcount(b));
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 		return bn;
 	}
 
@@ -85,7 +85,7 @@ BATunique(BAT *b, BAT *s)
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, 0);
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 		return bn;
 	}
 
@@ -100,7 +100,7 @@ BATunique(BAT *b, BAT *s)
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, 1);
-		BATseqbase(BATmirror(bn), cand ? *cand : b->hseqbase);
+		BATtseqbase(bn, cand ? *cand : b->hseqbase);
 		return bn;
 	}
 

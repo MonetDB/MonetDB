@@ -104,14 +104,14 @@ ALIGNsetT(BAT *b1, BAT *b2)
 			b1->tdense = TRUE;
 		else if (b2->tseqbase == oid_nil)
 			b1->T->nonil = FALSE;
-		BATseqbase(BATmirror(b1), b2->tseqbase);
+		BATtseqbase(b1, b2->tseqbase);
 	} else if (b1->ttype != TYPE_void) {
 		/* b2 is not dense, so set b1 not dense */
 		b1->tdense = FALSE;
-		BATseqbase(BATmirror(b1), oid_nil);
+		BATtseqbase(b1, oid_nil);
 		b1->T->nonil = b2->T->nonil;
 	} else if (BATtkey(b2))
-		BATseqbase(BATmirror(b1), 0);
+		BATtseqbase(b1, 0);
 	BATkey(BATmirror(b1), BATtkey(b2));
 	b1->tsorted = BATtordered(b2);
 	b1->trevsorted = BATtrevordered(b2);

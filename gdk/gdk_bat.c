@@ -274,7 +274,7 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	bn = COLnew(hseq, TYPE_void, 0, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	BATseqbase(BATmirror(bn), tseq);
+	BATtseqbase(bn, tseq);
 	BATsetcount(bn, cnt);
 	return bn;
 }
@@ -487,8 +487,8 @@ BATclear(BAT *b, int force)
 	else
 		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
-	BATseqbase(b, 0);
-	BATseqbase(BATmirror(b), 0);
+	BAThseqbase(b, 0);
+	BATtseqbase(b, 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
 	b->H->nosorted = b->H->norevsorted = b->H->nodense = 0;
@@ -1503,52 +1503,79 @@ BATkey(BAT *b, int flag)
 	return GDK_SUCCEED;
 }
 
+void
+BAThseqbase(BAT *b, oid o)
+{
+	if (b == NULL)
+		return;
+	assert(o < oid_nil);
+	assert(o + BATcount(b) < oid_nil);
+	assert(b->htype == TYPE_void);
+	if (b->hseqbase != o) {
+		b->batDirtydesc = TRUE;
+		b->hseqbase = o;
+		/* zap alignment if column is changed by new
+		 * seqbase */
+		b->halign = 0;
+	}
+
+	b->hrevsorted = b->batCount <= 1;
+	if (!b->hrevsorted)
+		b->H->norevsorted = BUNfirst(b) + 1;
+
+	/* other properties should already be correct */
+	assert(b->hkey & 1);
+	assert(b->H->nonil);
+	assert(!b->H->nil);
+	assert(b->hsorted);
+}
 
 void
-BATseqbase(BAT *b, oid o)
+BATtseqbase(BAT *b, oid o)
 {
 	if (b == NULL)
 		return;
 	assert(o <= oid_nil);
-	if (ATOMtype(b->htype) == TYPE_oid) {
-		if (b->hseqbase != o) {
+	assert(o == oid_nil || o + BATcount(b) < oid_nil);
+	if (ATOMtype(b->ttype) == TYPE_oid) {
+		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
 			/* zap alignment if column is changed by new
 			 * seqbase */
-			if (b->htype == TYPE_void)
-				b->halign = 0;
+			if (b->ttype == TYPE_void)
+				b->talign = 0;
 		}
-		b->hseqbase = o;
-		if (b->htype == TYPE_oid && o == oid_nil) {
-			b->hdense = 0;
-			b->H->nodense = BUNfirst(b);
+		b->tseqbase = o;
+		if (b->ttype == TYPE_oid && o == oid_nil) {
+			b->tdense = 0;
+			b->T->nodense = BUNfirst(b);
 		}
 
 		/* adapt keyness */
-		if (BAThvoid(b)) {
+		if (BATtvoid(b)) {
 			if (o == oid_nil) {
-				b->hkey = b->batCount <= 1;
-				b->H->nonil = b->batCount == 0;
-				b->H->nil = b->batCount > 0;
-				b->hsorted = b->hrevsorted = 1;
-				b->H->nosorted = b->H->norevsorted = 0;
-				if (!b->hkey) {
-					b->H->nokey[0] = BUNfirst(b);
-					b->H->nokey[1] = BUNfirst(b) + 1;
+				b->tkey = b->batCount <= 1;
+				b->T->nonil = b->batCount == 0;
+				b->T->nil = b->batCount > 0;
+				b->tsorted = b->trevsorted = 1;
+				b->T->nosorted = b->T->norevsorted = 0;
+				if (!b->tkey) {
+					b->T->nokey[0] = BUNfirst(b);
+					b->T->nokey[1] = BUNfirst(b) + 1;
 				} else {
-					b->H->nokey[0] = b->H->nokey[1] = 0;
+					b->T->nokey[0] = b->T->nokey[1] = 0;
 				}
 			} else {
-				if (!b->hkey) {
-					b->hkey = TRUE;
-					b->H->nokey[0] = b->H->nokey[1] = 0;
+				if (!b->tkey) {
+					b->tkey = TRUE;
+					b->T->nokey[0] = b->T->nokey[1] = 0;
 				}
-				b->H->nonil = 1;
-				b->H->nil = 0;
-				b->hsorted = 1;
-				b->hrevsorted = b->batCount <= 1;
-				if (!b->hrevsorted)
-					b->H->norevsorted = BUNfirst(b) + 1;
+				b->T->nonil = 1;
+				b->T->nil = 0;
+				b->tsorted = 1;
+				b->trevsorted = b->batCount <= 1;
+				if (!b->trevsorted)
+					b->T->norevsorted = BUNfirst(b) + 1;
 			}
 		}
 	}
@@ -2283,11 +2310,11 @@ BATassertTailProps(BAT *b)
  * bit, when set, indicates that all values must be distinct
  * (BOUND2BTRUE).
  *
- * Note that the functions BATseqbase and BATkey also set more
+ * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
  * newly created and filled BAT, you may want to first make sure the
  * batCount is set correctly (e.g. by calling BATsetcount), then use
- * BATseqbase and BATkey, and finally set the other properties.
+ * BAThseqbase and BATkey, and finally set the other properties.
  */
 
 void

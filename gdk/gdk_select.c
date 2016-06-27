@@ -75,7 +75,7 @@ newempty(void)
 	if (bn == NULL) {
 		return NULL;
 	}
-	BATseqbase(BATmirror(bn), 0);
+	BATtseqbase(bn, 0);
 	return bn;
 }
 
@@ -93,7 +93,7 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, h1 - l1 + h2 - l2);
-		BATseqbase(BATmirror(bn), l1 == h1 ? l2 : l1);
+		BATtseqbase(bn, l1 == h1 ? l2 : l1);
 		return bn;
 	}
 	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
