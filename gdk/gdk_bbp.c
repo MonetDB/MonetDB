@@ -957,6 +957,8 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	else if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
+	else if (HT[0] == 'H' && strcmp(type, "void") != 0)
+		GDKfatal("BBPinit: head column must be VOID\n");
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
@@ -990,6 +992,8 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->nosorted = (BUN) nosorted;
 	col->norevsorted = (BUN) norevsorted;
 	col->seq = base < 0 ? oid_nil : (oid) base;
+	if (HT[0] == 'H' && col->seq == oid_nil)
+		GDKfatal("BBPinit: head column must not have NIL seqbase.\n");
 	col->align = (oid) align;
 	col->heap.free = (size_t) free;
 	col->heap.size = (size_t) size;
@@ -2401,7 +2405,7 @@ static inline int
 incref(bat i, int logical, int lock)
 {
 	int refs;
-	bat hp, tp, hvp, tvp;
+	bat tp, tvp;
 	BATstore *bs;
 	BAT *b;
 	int load = 0;
@@ -2431,7 +2435,7 @@ incref(bat i, int logical, int lock)
 	/* we have the lock */
 
 	bs = BBP_desc(i);
-	if ( bs == 0) {
+	if (bs == NULL) {
 		/* should not have happened */
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
@@ -2440,17 +2444,16 @@ incref(bat i, int logical, int lock)
 
 	assert(BBP_refs(i) + BBP_lrefs(i) ||
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
+	assert(bs->B.H->type == TYPE_void);
 	if (logical) {
 		/* parent BATs are not relevant for logical refs */
-		hp = tp = hvp = tvp = 0;
+		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		hp = bs->B.H->heap.parentid;
 		tp = bs->B.T->heap.parentid;
-		hvp = bs->B.H->vheap == 0 || bs->B.H->vheap->parentid == i ? 0 : bs->B.H->vheap->parentid;
 		tvp = bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
 		refs = ++BBP_refs(i);
-		if (refs == 1 && (hp || tp || hvp || tvp)) {
+		if (refs == 1 && (tp || tvp)) {
 			/* If this is a view, we must load the parent
 			 * BATs, but we must do that outside of the
 			 * lock.  Set the BBPLOADING flag so that
@@ -2467,33 +2470,17 @@ incref(bat i, int logical, int lock)
 		/* load the parent BATs and set the heap base pointers
 		 * to the correct values */
 		assert(!logical);
-		if (hp) {
-			incref(hp, 0, lock);
-			b = getBBPdescriptor(hp, lock);
-			bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
-			/* if we shared the hash before, share
-			 * it again note that if the parent's
-			 * hash is destroyed, we also don't
-			 * have a hash anymore */
-			if (bs->B.H->hash == (Hash *) -1)
-				bs->B.H->hash = b->H->hash;
-		}
 		if (tp) {
 			incref(tp, 0, lock);
 			b = getBBPdescriptor(tp, lock);
-			if (bs->B.H != bs->B.T) {  /* mirror? */
-				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
-				/* if we shared the hash before, share
-				 * it again note that if the parent's
-				 * hash is destroyed, we also don't
-				 * have a hash anymore */
-				if (bs->B.T->hash == (Hash *) -1)
-					bs->B.T->hash = b->H->hash;
-			}
-		}
-		if (hvp) {
-			incref(hvp, 0, lock);
-			(void) getBBPdescriptor(hvp, lock);
+			assert(bs->B.H != bs->B.T);
+			bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
+			/* if we shared the hash before, share it
+			 * again note that if the parent's hash is
+			 * destroyed, we also don't have a hash
+			 * anymore */
+			if (bs->B.T->hash == (Hash *) -1)
+				bs->B.T->hash = b->H->hash;
 		}
 		if (tvp) {
 			incref(tvp, 0, lock);
@@ -2534,7 +2521,7 @@ static inline int
 decref(bat i, int logical, int releaseShare, int lock)
 {
 	int refs = 0, swap = 0;
-	bat hp = 0, tp = 0, hvp = 0, tvp = 0;
+	bat tp = 0, tvp = 0;
 	BAT *b;
 
 	assert(i > 0);
@@ -2556,6 +2543,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 	}
 
 	b = BBP_cache(i);
+	assert(b == NULL || b->htype == TYPE_void);
 
 	/* decrement references by one */
 	if (logical) {
@@ -2570,27 +2558,21 @@ decref(bat i, int logical, int releaseShare, int lock)
 			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->H->heap.parentid == 0 || BBP_refs(b->H->heap.parentid) > 0);
+			assert(b == NULL || b->H->heap.parentid == 0);
 			assert(b == NULL || b->T->heap.parentid == 0 || BBP_refs(b->T->heap.parentid) > 0);
-			assert(b == NULL || b->H->vheap == NULL || b->H->vheap->parentid == 0 || BBP_refs(b->H->vheap->parentid) > 0);
+			assert(b == NULL || b->H->vheap == NULL);
 			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((hp = b->H->heap.parentid) != 0)
-					b->H->heap.base = (char *) (b->H->heap.base - BBP_cache(hp)->H->heap.base);
 				if ((tp = b->T->heap.parentid) != 0 &&
 				    b->H != b->T)
 					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->H->heap.base);
 				/* if a view shared the hash with its
 				 * parent, indicate this, but only if
 				 * view isn't getting destroyed */
-				if (hp && b->H->hash &&
-				    b->H->hash == BBP_cache(hp)->H->hash)
-					b->H->hash = (Hash *) -1;
 				if (tp && b->T->hash &&
 				    b->T->hash == BBP_cache(tp)->H->hash)
 					b->T->hash = (Hash *) -1;
-				hvp = VIEWvhparent(b);
 				tvp = VIEWvtparent(b);
 			}
 		}
@@ -2640,12 +2622,8 @@ decref(bat i, int logical, int releaseShare, int lock)
 				return -1;	/* indicate failure */
 		}
 	}
-	if (hp)
-		decref(abs(hp), FALSE, FALSE, lock);
 	if (tp)
 		decref(abs(tp), FALSE, FALSE, lock);
-	if (hvp)
-		decref(abs(hvp), FALSE, FALSE, lock);
 	if (tvp)
 		decref(abs(tvp), FALSE, FALSE, lock);
 	return refs;
@@ -4177,27 +4155,12 @@ BBPdiskscan(const char *parent)
 			delete = TRUE;
 		} else if (strstr(p + 1, ".tmp")) {
 			delete = 1;	/* throw away any .tmp file */
-		} else if (strncmp(p + 1, "head", 4) == 0) {
-			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->htype || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "tail", 4) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "hheap", 5) == 0) {
-			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->H->vheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
 			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "hhash", 5) == 0) {
-#ifdef PERSISTENTHASH
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->H->hash = (Hash *) 1;
-#else
-			delete = TRUE;
-#endif
 		} else if (strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
@@ -4207,18 +4170,11 @@ BBPdiskscan(const char *parent)
 #else
 			delete = TRUE;
 #endif
-		} else if (strncmp(p + 1, "himprints", 9) == 0) {
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->H->imprints = (Imprints *) 1;
 		} else if (strncmp(p + 1, "timprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 			if (!delete)
 				b->T->imprints = (Imprints *) 1;
-		} else if (strncmp(p + 1, "horderidx", 9) == 0) {
-			delete = TRUE;
 		} else if (strncmp(p + 1, "torderidx", 9) == 0) {
 #ifdef PERSISTENTIDX
 			BAT *b = getdesc(bid);
@@ -4233,6 +4189,15 @@ BBPdiskscan(const char *parent)
 			   strncmp(p + 1, "head", 4) != 0 &&
 			   strncmp(p + 1, "tail", 4) != 0) {
 			ok = FALSE;
+		} else if (strncmp(p + 1, "head", 4) == 0 ||
+			   strncmp(p + 1, "hheap", 5) == 0 ||
+			   strncmp(p + 1, "hhash", 5) == 0 ||
+			   strncmp(p + 1, "himprints", 9) == 0 ||
+			   strncmp(p + 1, "horderidx", 9) == 0) {
+			/* head is VOID, so no head, hheap files, and
+			 * we do not support any indexes on the
+			 * head */
+			delete = 1;
 		}
 		if (!ok) {
 			/* found an unknown file; stop pruning in this
