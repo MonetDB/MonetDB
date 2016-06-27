@@ -1257,7 +1257,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	printStackHdr(f, mb, v, index);
 
 	if (v && v->vtype == TYPE_bat) {
-		int i = v->val.ival;
+		bat i = v->val.bval;
 		BAT *b = BBPquickdesc(abs(i), TRUE);
 
 		if (i < 0)
