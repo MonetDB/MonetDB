@@ -683,7 +683,6 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */
-#undef BATslice
 BAT *
 BATslice(BAT *b, BUN l, BUN h)
 {
