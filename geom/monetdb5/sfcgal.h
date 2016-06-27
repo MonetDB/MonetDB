@@ -44,3 +44,4 @@ geom_export str geom_sfcgal_straightSkeleton(wkb **res, wkb **geom);
 geom_export str geom_sfcgal_tesselate(wkb **res, wkb **geom);
 geom_export str geom_sfcgal_triangulate2DZ(wkb **res, wkb **geom, int *flag);
 
+geom_export str geom_sfcgal_triangulate2DZ_bat(bat *outBAT_id, bat *inBAT_id, int *flag);

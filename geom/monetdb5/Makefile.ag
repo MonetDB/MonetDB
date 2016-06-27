@@ -40,7 +40,7 @@ lib__sfcgal = {
 	COND = HAVE_SFCGAL
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = sfcgal.h sfcgal.c
+	SOURCES = sfcgal.h sfcgal.c sfcgalBulk.c
 	LIBS = ../lib/libgeom \
 		   ../../gdk/libbat \
 	       ../../common/stream/libstream \

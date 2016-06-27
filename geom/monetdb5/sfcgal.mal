@@ -6,18 +6,30 @@
 
 module geom;
 
-command version() :str address geom_sfcgal_version
+command version() :str
+address geom_sfcgal_version
 comment "Returns the version number of the SFCGAL library";
 
-command extrude(geo:wkb, x:dbl, y:dbl, z:dbl) : wkb address geom_sfcgal_extrude
-comment "Extrude a surface to a related volume"
+command extrude(geo:wkb, x:dbl, y:dbl, z:dbl) : wkb
+address geom_sfcgal_extrude
+comment "Extrude a surface to a related volume";
 
-command straightSkeletion(geo:wkb) : wkb address geom_sfcgal_straightSkeleton
-comment "Compute a straight skeleton from a geometry"
+command straightSkeletion(geo:wkb) : wkb
+address geom_sfcgal_straightSkeleton
+comment "Compute a straight skeleton from a geometry";
 
-command tesselate(geo:wkb) : wkb address geom_sfcgal_tesselate
-comment "Perform surface Tesselation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS"
+command tesselate(geo:wkb) : wkb
+address geom_sfcgal_tesselate
+comment "Perform surface Tesselation of a polygon or polyhedralsurface and returns as a TIN or collection of TINS";
 
-command triangulate2DZ(geo:wkb, flag:int) : wkb address geom_sfcgal_triangulate2DZ
-comment "Triangulates a geometry collection"
+command triangulate2DZ(geo:wkb, flag:int) : wkb
+address geom_sfcgal_triangulate2DZ
+comment "Triangulates a geometry collection";
 
+
+
+module batgeom;
+
+command triangulate2DZ(geo:bat[:oid,:wkb], flag:int) :bat[ :oid, :wkb]
+address geom_sfcgal_triangulate2DZ_bat
+comment "Triangulates a geometry collection";
