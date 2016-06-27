@@ -71,11 +71,10 @@ virtualize(BAT *bn)
 static BAT *
 newempty(void)
 {
-	BAT *bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
-	BATseqbase(bn, 0);
 	BATseqbase(BATmirror(bn), 0);
 	return bn;
 }
@@ -90,19 +89,17 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	assert(l2 <= h2);
 	assert(h1 <= l2);
 	if (l1 == h1 || l2 == h2) {
-		bn = BATnew(TYPE_void, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
+		bn = COLnew(0, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, h1 - l1 + h2 - l2);
-		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), l1 == h1 ? l2 : l1);
 		return bn;
 	}
-	bn = BATnew(TYPE_void, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, h1 - l1 + h2 - l2);
-	BATseqbase(bn, 0);
 	p = (oid *) Tloc(bn, BUNfirst(bn));
 	while (l1 < h1)
 		*p++ = l1++;
@@ -131,11 +128,10 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	if (b->ttype == TYPE_void)
 		return doublerange(l1 + b->tseqbase, h1 + b->tseqbase,
 				   l2 + b->tseqbase, h2 + b->tseqbase);
-	bn = BATnew(TYPE_void, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, h1 - l1 + h2 - l2);
-	BATseqbase(bn, 0);
 	p = (oid *) Tloc(bn, BUNfirst(bn));
 	o = (const oid *) Tloc(b, BUNfirst(b) + l1);
 	while (l1++ < h1)
@@ -261,7 +257,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase = *dst;
-	BATseqbase(bn, 0);
 	return bn;
 }
 
@@ -1631,7 +1626,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				rs = (const oid *) b->torderidx->base + ORDERIDXOFF;
 				rs += low;
-				bn = BATnew(TYPE_void, TYPE_oid, high-low, TRANSIENT);
+				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL)
 					GDKerror("memory allocation error");
 
@@ -1830,7 +1825,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* limit estimation by upper limit */
 	estimate = MIN(estimate, maximum);
 
-	bn = BATnew(TYPE_void, TYPE_oid, estimate, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, estimate, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 

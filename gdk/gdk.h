@@ -1043,12 +1043,12 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * @- BAT construction
  * @multitable @columnfractions 0.08 0.7
  * @item @code{BAT* }
- * @tab BATnew (int headtype, int tailtype, BUN cap, int role)
+ * @tab COLnew (oid headseq, int tailtype, BUN cap, int role)
  * @item @code{BAT* }
  * @tab BATextend (BAT *b, BUN newcap)
  * @end multitable
  *
- * A temporary BAT is instantiated using BATnew with the type aliases
+ * A temporary BAT is instantiated using COLnew with the type aliases
  * of the required binary association. The aliases include the
  * built-in types, such as TYPE_int....TYPE_ptr, and the atomic types
  * introduced by the user. The initial capacity to be accommodated
@@ -1061,7 +1061,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  */
 #define BATDELETE	(-9999)
 
-gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity, int role)
+gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, int role)
 	__attribute__((warn_unused_result));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((warn_unused_result));
@@ -1545,7 +1545,7 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
  * @tab BATdelete (BAT *b)
  * @end multitable
  *
- * A BAT created by BATnew is considered temporary until one calls the
+ * A BAT created by COLnew is considered temporary until one calls the
  * routine BATsave or BATmode.  This routine reserves disk space and
  * checks for name clashes in the BAT directory. It also makes the BAT
  * persistent. The empty BAT is initially marked as ordered on both

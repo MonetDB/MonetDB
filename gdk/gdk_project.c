@@ -268,7 +268,7 @@ BATproject(BAT *l, BAT *r)
 		nilcheck = 0;
 		stringtrick = 1;
 	}
-	bn = BATnew(TYPE_void, tpe, BATcount(l), TRANSIENT);
+	bn = COLnew(l->hseqbase, tpe, BATcount(l), TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (stringtrick) {
@@ -387,7 +387,6 @@ BATproject(BAT *l, BAT *r)
 	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
-	BATseqbase(bn, l->hseqbase);
 	if (!BATtdense(r))
 		BATseqbase(BATmirror(bn), oid_nil);
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s%s " LLFMT "us\n",
@@ -563,7 +562,7 @@ BATprojectchain(BAT **bats)
 		tpe = b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
-	bn = BATnew(TYPE_void, ATOMtype(tpe), cnt, TRANSIENT);
+	bn = COLnew(hseq, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL || cnt == 0) {
 		GDKfree(ba);
 		return bn;
@@ -734,7 +733,6 @@ BATprojectchain(BAT **bats)
 		}
 	}
 	BATsetcount(bn, cnt);
-	BATseqbase(bn, hseq);
 	if (stringtrick) {
 		bn->T->nonil = bn->T->nil = 0;
 		bn->tkey = 0;

@@ -75,10 +75,9 @@ static unsigned char localtype = 0177;
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
-#define newColumn(Var,Type,sz,Tag)							\
-	Var = BATnew(TYPE_void, Type, sz, TRANSIENT);		\
-	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);	\
-	BATseqbase(Var,0);
+#define newColumn(Var,Type,sz,Tag)						\
+	Var = COLnew(0, Type, sz, TRANSIENT);				\
+	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);
 
 /**
  * Returns a BAT with valid redirects for the given pattern.  If

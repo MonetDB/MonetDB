@@ -712,12 +712,13 @@ BATslice(BAT *b, BUN l, BUN h)
 		if (bn == NULL)
 			return NULL;
 		VIEWbounds(b, bn, l - BUNfirst(b), h - BUNfirst(b));
+		BATseqbase(bn, (oid) (b->hseqbase + low));
 	} else {
 		/* create a new BAT and put everything into it */
 		BUN p = l;
 		BUN q = h;
 
-		bn = BATnew(TYPE_void, BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
+		bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
 		if (bn == NULL) {
 			return bn;
 		}
@@ -762,7 +763,6 @@ BATslice(BAT *b, BUN l, BUN h)
 		}
 	}
 	bni = bat_iterator(bn);
-	BATseqbase(bn, (oid) (b->hseqbase + low));
 	if (BATtdense(b)) {
 		bn->tdense = TRUE;
 		BATseqbase(BATmirror(bn), (oid) (b->tseqbase + low));
@@ -1013,23 +1013,21 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			*sorted = bn;
 		}
 		if (order) {
-			on = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+			on = COLnew(b->hseqbase, TYPE_void, BATcount(b), TRANSIENT);
 			if (on == NULL)
 				goto error;
 			BATsetcount(on, BATcount(b));
-			BATseqbase(on, b->hseqbase);
 			BATseqbase(BATmirror(on), b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
 			if (BATtkey(b)) {
 				/* singleton groups */
-				gn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+				gn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
 				if (gn == NULL)
 					goto error;
 				BATsetcount(gn, BATcount(b));
 				BATseqbase(BATmirror(gn), 0);
-				BATseqbase(gn, 0);
 			} else {
 				/* single group */
 				const oid *o = 0;
@@ -1069,9 +1067,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				     TRANSIENT);
 			if (on == NULL)
 				goto error;
+			BATseqbase(on, b->hseqbase);
 		} else {
 			/* create new order */
-			on = BATnew(TYPE_void, TYPE_oid, BATcount(bn), TRANSIENT);
+			on = COLnew(b->hseqbase, TYPE_oid, BATcount(bn), TRANSIENT);
 			if (on == NULL)
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
@@ -1082,7 +1081,6 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			on->T->nil = 0;
 			on->T->nonil = 1;
 		}
-		BATseqbase(on, b->hseqbase);
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
 		on->T->nosorted = on->T->norevsorted = on->T->nodense = 0;
@@ -1218,7 +1216,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 
 	if (v == NULL)
 		return NULL;
-	bn = BATnew(TYPE_void, tailtype, n, role);
+	bn = COLnew(hseq, tailtype, n, role);
 	if (bn == NULL)
 		return NULL;
 	p = Tloc(bn, bn->batFirst);
@@ -1265,7 +1263,6 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 	bn->trevsorted = 1;
 	bn->T->nonil = !bn->T->nil;
 	bn->T->key = BATcount(bn) <= 1;
-	BATseqbase(bn, hseq);
 	return bn;
 
   bunins_failed:
@@ -1451,12 +1448,11 @@ newdensecand(oid first, oid last)
 {
 	BAT *bn;
 
-	if ((bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT)) == NULL)
+	if ((bn = COLnew(0, TYPE_void, 0, TRANSIENT)) == NULL)
 		return NULL;
 	if (last < first)
 		first = last = 0; /* empty range */
 	BATsetcount(bn, last - first + 1);
-	BATseqbase(bn, 0);
 	BATseqbase(BATmirror(bn), first);
 	return bn;
 }
@@ -1525,7 +1521,7 @@ BATmergecand(BAT *a, BAT *b)
 		return newdensecand(bf, bl);
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, BATcount(a) + BATcount(b), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, BATcount(a) + BATcount(b), TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	p = (oid *) Tloc(bn, BUNfirst(bn));
@@ -1586,7 +1582,6 @@ BATmergecand(BAT *a, BAT *b)
 
 	/* properties */
 	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
-	BATseqbase(bn, 0);
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tsorted = 1;
 	bn->tkey = 1;
@@ -1638,7 +1633,7 @@ BATintersectcand(BAT *a, BAT *b)
 		return newdensecand(MAX(af, bf), MIN(al, bl));
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(a), BATcount(b)), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, MIN(BATcount(a), BATcount(b)), TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	p = (oid *) Tloc(bn, BUNfirst(bn));
@@ -1676,7 +1671,6 @@ BATintersectcand(BAT *a, BAT *b)
 
 	/* properties */
 	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
-	BATseqbase(bn, 0);
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tsorted = 1;
 	bn->tkey = 1;

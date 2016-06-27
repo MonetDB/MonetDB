@@ -64,21 +64,20 @@ batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const 
 
 #ifdef HAVE_LIBXML
 
-#define prepareResult(X,Y,tpe,Z,free)							\
-	do {														\
-		(X) = BATnew(TYPE_void, (tpe), BATcount(Y), TRANSIENT);	\
-		if ((X) == NULL) {										\
-			BBPunfix((Y)->batCacheid);							\
-			free;												\
-			throw(MAL, "xml." Z, MAL_MALLOC_FAIL);				\
-		}														\
-		BATseqbase((X), (Y)->hseqbase);							\
-		(X)->hsorted = 1;										\
-		(X)->hrevsorted = (Y)->hrevsorted;						\
-		(X)->tsorted =  0;										\
-		(X)->trevsorted =  0;									\
-		(X)->H->nonil = (Y)->H->nonil;							\
-		(X)->T->nonil = 1;										\
+#define prepareResult(X,Y,tpe,Z,free)								\
+	do {															\
+		(X) = COLnew((Y)->hseqbase, (tpe), BATcount(Y), TRANSIENT);	\
+		if ((X) == NULL) {											\
+			BBPunfix((Y)->batCacheid);								\
+			free;													\
+			throw(MAL, "xml." Z, MAL_MALLOC_FAIL);					\
+		}															\
+		(X)->hsorted = 1;											\
+		(X)->hrevsorted = (Y)->hrevsorted;							\
+		(X)->tsorted =  0;											\
+		(X)->trevsorted =  0;										\
+		(X)->H->nonil = (Y)->H->nonil;								\
+		(X)->T->nonil = 1;											\
 	} while (0)
 
 #define finalizeResult(X,Y,Z)					\
@@ -1232,9 +1231,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (g && BATtdense(g)) {
 		/* singleton groups: return group ID's (g's tail) and original
 		 * values from b */
-		bn = VIEWcreate(b->hseqbase, b);
-		if (bn)
-			BATseqbase(bn, g->tseqbase);
+		bn = VIEWcreate(g->tseqbase, b);
 		goto out;
 	}
 
@@ -1244,7 +1241,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	buflen = 0;
-	bn = BATnew(TYPE_void, TYPE_xml, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_xml, ngrp, TRANSIENT);
 	if (bn == NULL) {
 		err = MAL_MALLOC_FAIL;
 		goto out;
@@ -1362,7 +1359,6 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
-	BATseqbase(bn, min);
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 	bn->T->sorted = BATcount(bn) <= 1;

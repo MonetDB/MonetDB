@@ -1094,10 +1094,10 @@ strPrelude(void *ret)
 	if (UTF8_upperBat == NULL) {
 		int i = UTF8_CONVERSIONS;
 
-		UTF8_upperBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
+		UTF8_upperBat = COLnew(0, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
 		if (UTF8_upperBat == NULL)
 			return NULL;
-		UTF8_lowerBat = BATnew(TYPE_void, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
+		UTF8_lowerBat = COLnew(0, TYPE_int, UTF8_CONVERSIONS, TRANSIENT);
 		if (UTF8_lowerBat == NULL) {
 			BBPreclaim(UTF8_upperBat);
 			UTF8_upperBat = NULL;
@@ -1107,8 +1107,6 @@ strPrelude(void *ret)
 			BUNappend(UTF8_upperBat, &UTF8_lower_upper[i].upper, FALSE);
 			BUNappend(UTF8_lowerBat, &UTF8_lower_upper[i].lower, FALSE);
 		}
-		BATseqbase(UTF8_upperBat, 0);
-		BATseqbase(UTF8_lowerBat, 0);
 		BATname(UTF8_upperBat, "monet_unicode_toupper");
 		BATname(UTF8_lowerBat, "monet_unicode_tolower");
 	}

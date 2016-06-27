@@ -34,12 +34,11 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
-	bn= BATnew(TYPE_void,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= COLnew(b->hseqbase,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
 	}																	\
-	BATseqbase(bn, b->hseqbase);									\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
 	bn->T->nil = 0;														\
@@ -57,7 +56,6 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			FUNC(yp,x);													\
 		bunfastapp(bn, yp);												\
 	}																	\
-	BATseqbase(bn, b->hseqbase);									\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\
@@ -110,7 +108,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b3->batCacheid);									\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
 	}																	\
-	bn= BATnew(TYPE_void,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= COLnew(b->hseqbase,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
@@ -144,7 +142,6 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		p2++;															\
 		p3++;															\
 	}																	\
-	BATseqbase(bn, b->hseqbase);									\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\
 	*ret = bn->batCacheid;												\

@@ -66,17 +66,17 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return MAL_SUCCEED;
 	}
 
-	bn = BATnew(TYPE_void, tt, cap, TRANSIENT);
+	bn = COLnew(0, tt, cap, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b ){
-			if (BATcount(bn) == 0)
+			if (BATcount(bn) == 0) {
 				BATseqbase(bn, b->H->seq);
-			if (BATcount(bn) == 0)
 				BATseqbase(BATmirror(bn), b->T->seq);
+			}
 			BATappend(bn,b,FALSE);
 			BBPunfix(b->batCacheid);
 		}
@@ -108,7 +108,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( getArgType(mb,p,2) == TYPE_int){
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p,2)].val.ival;
-		bn = BATnew(TYPE_void, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
+		bn = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
 		if (bn == NULL)
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		/* allocate enough space for the vheap, but not for strings,
@@ -118,7 +118,6 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (HEAPextend(bn->T->vheap, newsize, TRUE) != GDK_SUCCEED)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(bn, b->H->seq);
 		BATseqbase(BATmirror(bn), b->T->seq);
 		BATappend(bn,b,FALSE);
 		assert(!bn->H->nil || !bn->H->nonil);
@@ -130,10 +129,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* remaining steps */
 		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
 		if ( bb ){
-			if (BATcount(b) == 0)
+			if (BATcount(b) == 0) {
 				BATseqbase(b, bb->H->seq);
-			if (BATcount(b) == 0)
 				BATseqbase(BATmirror(b), bb->T->seq);
+			}
 			BATappend(b,bb,FALSE);
 		}
 		b->H->align--;
@@ -163,7 +162,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	type = getArgType(mb,p,first);
-	bn = BATnew(TYPE_void, type, p->argc, TRANSIENT);
+	bn = COLnew(0, type, p->argc, TRANSIENT);
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 
@@ -174,7 +173,6 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for(i = first; i < p->argc; i++)
 			BUNappend(bn, getArgReference(stk, p, i), TRUE);
 	}
-	BATseqbase(bn, 0);
 	ret= getArgReference_bat(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;

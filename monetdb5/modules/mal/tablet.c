@@ -55,13 +55,11 @@ static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
 static BAT *
 void_bat_create(int adt, BUN nr)
 {
-	BAT *b = BATnew(TYPE_void, adt, BATTINY, PERSISTENT);
+	BAT *b = COLnew(0, adt, BATTINY, PERSISTENT);
 
 	/* check for correct structures */
 	if (b == NULL)
 		return b;
-	if (BATmirror(b))
-		BATseqbase(b, 0);
 	BATsetaccess(b, BAT_APPEND);
 	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1583,14 +1581,10 @@ create_rejects_table(Client cntxt)
 {
 	MT_lock_set(&mal_contextLock);
 	if (cntxt->error_row == NULL) {
-		cntxt->error_row = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
-		BATseqbase(cntxt->error_row, 0);
-		cntxt->error_fld = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
-		BATseqbase(cntxt->error_fld, 0);
-		cntxt->error_msg = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(cntxt->error_msg, 0);
-		cntxt->error_input = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-		BATseqbase(cntxt->error_input, 0);
+		cntxt->error_row = COLnew(0, TYPE_lng, 0, TRANSIENT);
+		cntxt->error_fld = COLnew(0, TYPE_int, 0, TRANSIENT);
+		cntxt->error_msg = COLnew(0, TYPE_str, 0, TRANSIENT);
+		cntxt->error_input = COLnew(0, TYPE_str, 0, TRANSIENT);
 		if (cntxt->error_row == NULL || cntxt->error_fld == NULL || cntxt->error_msg == NULL || cntxt->error_input == NULL) {
 			if (cntxt->error_row)
 				BBPunfix(cntxt->error_row->batCacheid);

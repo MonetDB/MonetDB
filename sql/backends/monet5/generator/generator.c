@@ -77,7 +77,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		n = (BUN) ((l - f) / s);				\
 		if ((TPE) (n * s + f) != l)				\
 			n++;						\
-		bn = BATnew(TYPE_void, TYPE_##TPE, n, TRANSIENT);	\
+		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);	\
 		if (bn == NULL)						\
 			throw(MAL, "generator.table", MAL_MALLOC_FAIL);	\
 		v = (TPE*) Tloc(bn, BUNfirst(bn));			\
@@ -146,7 +146,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
 			n = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
-			bn = BATnew(TYPE_void, TYPE_timestamp, n + 1, TRANSIENT);
+			bn = COLnew(0, TYPE_timestamp, n + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.table", MAL_MALLOC_FAIL);
 			v = (timestamp *) Tloc(bn, BUNfirst(bn));
@@ -170,7 +170,6 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		break;
 	}
 	BATsetcount(bn, c);
-	BATseqbase(bn, 0);
 	bn->tkey = 1;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
@@ -374,10 +373,9 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
 			o2 = (BUN) ((((lng) tsl.days - tsf.days) * 24*60*60*1000 + tsl.msecs - tsf.msecs) / tss);
-			bn = BATnew(TYPE_void, TYPE_oid, o2 + 1, TRANSIENT);
+			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.subselect", MAL_MALLOC_FAIL);
-			BATseqbase(bn,0);\
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, BUNfirst(bn));
@@ -435,12 +433,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o2 = SORTfndfirst(cand, &o);
 		n = BATcount(cand);
 		if (anti && o1 < o2) {
-			bn = BATnew(TYPE_void, TYPE_oid, n - (o2 - o1), TRANSIENT);
+			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
 			if (bn) {
 				oid *op = (oid *) Tloc(bn, BUNfirst(bn));
 				const oid *cp = (const oid *) Tloc(cand, BUNfirst(cand));
 				BATsetcount(bn, n - (o2 - o1));
-				BATseqbase(bn, 0);
 				bn->T->nil = 0;
 				bn->T->nonil = 1;
 				bn->tsorted = 1;
@@ -467,12 +464,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid o;
 			oid *op;
 
-			bn = BATnew(TYPE_void, TYPE_oid, n - (o2 - o1), TRANSIENT);
+			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.subselect",
 				      MAL_MALLOC_FAIL);
 			BATsetcount(bn, n - (o2 - o1));
-			BATseqbase(bn, 0);
 			op = (oid *) Tloc(bn, BUNfirst(bn));
 			for (o = 0; o < o1; o++)
 				*op++ = o;
@@ -484,12 +480,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn->trevsorted = BATcount(bn) <= 1;
 			bn->tkey = 1;
 		} else {
-			bn = BATnew(TYPE_void, TYPE_void, (BUN) (o2 - o1), TRANSIENT);
+			bn = COLnew(0, TYPE_void, (BUN) (o2 - o1), TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.subselect",
 				      MAL_MALLOC_FAIL);
 			BATsetcount(bn, o2 - o1);
-			BATseqbase(bn, 0);
 			BATseqbase(BATmirror(bn), o1);
 		}
 	}
@@ -537,10 +532,9 @@ float nextafterf(float x, float y);
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
 		throw(MAL,"generator.thetasubselect","Illegal range");\
 	cap = (BUN)(ABS(l-f)/ABS(s));\
-	bn = BATnew(TYPE_void, TYPE_oid, cap, TRANSIENT);\
+	bn = COLnew(0, TYPE_oid, cap, TRANSIENT);\
 	if( bn == NULL)\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
-	BATseqbase(bn,0);\
 	low= hgh = TPE##_nil;\
 	v = (oid*) Tloc(bn,BUNfirst(bn));\
 	if ( strcmp(oper,"<") == 0){\
@@ -657,11 +651,10 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.thetasubselect","Unknown operator");
 
 			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
-			bn = BATnew(TYPE_void, TYPE_oid, cap, TRANSIENT);
+			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
 			if( bn == NULL)
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
 			v = (oid*) Tloc(bn,BUNfirst(bn));
-			BATseqbase(bn,0);
 
 			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			val = f;
@@ -704,7 +697,7 @@ wrapup:
 	else s = * getArgReference_##TPE(stk, p, 3); \
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.projection","Illegal range");\
-	bn = BATnew(TYPE_void, TYPE_##TPE, cnt, TRANSIENT);\
+	bn = COLnew(0, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
 		BBPunfix(bid);\
 		throw(MAL,"generator.projection",MAL_MALLOC_FAIL);\
@@ -779,7 +772,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				(s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) )
 				throw(MAL,"generator.projection","Illegal range");
 
-			bn = BATnew(TYPE_void, TYPE_timestamp, cnt, TRANSIENT);
+			bn = COLnew(0, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){
 				BBPunfix(bid);
 				throw(MAL,"generator.projection",MAL_MALLOC_FAIL);
@@ -883,8 +876,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = b->ttype;
 	o= b->hseqbase;
 	
-	bln = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
-	brn = BATnew(TYPE_void,TYPE_oid, cnt, TRANSIENT);
+	bln = COLnew(0,TYPE_oid, cnt, TRANSIENT);
+	brn = COLnew(0,TYPE_oid, cnt, TRANSIENT);
 	if( bln == NULL || brn == NULL){
 		if(bln) BBPunfix(bln->batCacheid);
 		if(brn) BBPunfix(brn->batCacheid);
@@ -1043,8 +1036,8 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	tpe = blow->ttype;
 	o= blow->hseqbase;
 	
-	bln = BATnew(TYPE_void,TYPE_oid, limit, TRANSIENT);
-	brn = BATnew(TYPE_void,TYPE_oid, limit, TRANSIENT);
+	bln = COLnew(0,TYPE_oid, limit, TRANSIENT);
+	brn = COLnew(0,TYPE_oid, limit, TRANSIENT);
 	if( bln == NULL || brn == NULL){
 		if(bln) BBPunfix(bln->batCacheid);
 		if(brn) BBPunfix(brn->batCacheid);

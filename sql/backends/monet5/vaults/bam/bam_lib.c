@@ -274,7 +274,6 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 
 #define finish_props() { \
 	BATsetcount(output, BATcount(input)); \
-	BATseqbase(output, input->hseqbase); \
 	output->tkey = FALSE; /* Tail values are not unique */ \
 }
 
@@ -299,7 +298,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	output = BATnew(TYPE_void, TYPE_bit, BATcount(input), TRANSIENT);
+	output = COLnew(input->hseqbase, TYPE_bit, BATcount(input), TRANSIENT);
 	if (output == NULL) {
 		BBPunfix(input->batCacheid);
 		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
@@ -335,12 +334,11 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING); \
  \
 	/* allocate result BAT */ \
-	output = BATnew(TYPE_void, TYPE_str, BATcount(input), TRANSIENT); \
+	output = COLnew(input->hseqbase, TYPE_str, BATcount(input), TRANSIENT); \
 	if (output == NULL) { \
 		BBPunfix(input->batCacheid); \
 		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL); \
 	} \
-	BATseqbase(output, input->hseqbase); \
  \
 	li = bat_iterator(input); \
  \
@@ -394,7 +392,7 @@ seq_length_bat(bat * ret, bat * bid)
 		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
-	output = BATnew(TYPE_void, TYPE_int, BATcount(input), TRANSIENT);
+	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
 	if (output == NULL) {
 		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
 	}
@@ -448,12 +446,11 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	}
 	
 	/* allocate result BAT */
-	result = BATnew(TYPE_void, TYPE_str, BATcount(cigars), TRANSIENT);
+	result = COLnew(seqs->hseqbase, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
 		msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	BATseqbase(result, seqs->hseqbase);
 
 	seq = BUNfirst(seqs);
 	pos = BUNfirst(poss);

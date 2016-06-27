@@ -25,20 +25,19 @@
 #define fetestexcept(x)		0
 #endif
 
-#define voidresultBAT(X1,X2)								\
-	do {													\
-		bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);	\
-		if (bn == NULL) {									\
-			BBPunfix(b->batCacheid);						\
-			throw(MAL, X2, MAL_MALLOC_FAIL);				\
-		}													\
-		BATseqbase(bn, b->hseqbase);						\
-		bn->hsorted = b->hsorted;							\
-		bn->hrevsorted = b->hrevsorted;						\
-		bn->tsorted = b->tsorted;							\
-		bn->trevsorted = b->trevsorted;						\
-		bn->H->nonil = 1;									\
-		bn->T->nonil = b->T->nonil;							\
+#define voidresultBAT(X1,X2)									\
+	do {														\
+		bn = COLnew(b->hseqbase, X1, BATcount(b), TRANSIENT);	\
+		if (bn == NULL) {										\
+			BBPunfix(b->batCacheid);							\
+			throw(MAL, X2, MAL_MALLOC_FAIL);					\
+		}														\
+		bn->hsorted = b->hsorted;								\
+		bn->hrevsorted = b->hrevsorted;							\
+		bn->tsorted = b->tsorted;								\
+		bn->trevsorted = b->trevsorted;							\
+		bn->H->nonil = 1;										\
+		bn->T->nonil = b->T->nonil;								\
 	} while (0)
 
 

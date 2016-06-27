@@ -134,12 +134,11 @@ QLOGcreate(str hnme, str tnme, int tt)
 	if (b) 
 		return b;
 
-	b = BATnew(TYPE_void, tt, 1 << 16, PERSISTENT);
+	b = COLnew(0, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 
 	BATmode(b, PERSISTENT);
-	BATseqbase(b, 0);
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	commitlist[committop++]= abs(b->batCacheid);

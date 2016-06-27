@@ -467,27 +467,25 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	lend= (lng*) Tloc(bl, BUNlast(bl));
 	rend= (lng*) Tloc(br, BUNlast(br));
 
-	xl = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
+	xl = COLnew(0, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(xl,0);
 	xl->hsorted = 1;
 	xl->tsorted = 0;
 	xl->trevsorted = 0;
 	xl->T->nonil = 1;
 	xl->H->nonil = 1;
 
-	xr = BATnew(TYPE_void, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
+	xr = COLnew(0, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xr == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(xr,0);
 	xr->hsorted = 1;
 	xr->tsorted = 0;
 	xr->trevsorted = 0;
@@ -575,13 +573,12 @@ LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 	}
-	if ((bn = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT)) == NULL) {
+	if ((bn = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, 0);
 	if (*r == lng_nil) {
 		BBPunfix(b->batCacheid);
 		if (s)

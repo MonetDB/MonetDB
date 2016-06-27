@@ -56,11 +56,10 @@ static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	lng j, gcnt = BATcount(gids);
-	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
+	BAT *r = COLnew(0, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
 	if (r == NULL)
 		return GDK_FAIL;
-	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->hseqbase;
 		lng *cnt = (lng*)Tloc(cnts, 0);
@@ -1096,7 +1095,7 @@ str ALGreuse(bat *ret, const bat *bid)
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
 			}
 		} else {
-			bn = BATnew(TYPE_void,b->ttype,BATcount(b), TRANSIENT);
+			bn = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
@@ -1105,8 +1104,6 @@ str ALGreuse(bat *ret, const bat *bid)
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
 			BATkey(bn,FALSE);
-			/* head is void */
-			BATseqbase(bn, b->hseqbase);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPunfix(b->batCacheid);

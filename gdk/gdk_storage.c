@@ -577,7 +577,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * physical @%home@ where they are to be located.  The subdirectories
  * BAT and PRG contain what its name says.
  *
- * A BAT created by @%BATnew@ is considered temporary until one calls
+ * A BAT created by @%COLnew@ is considered temporary until one calls
  * the routine @%BATsave@. This routine reserves disk space and checks
  * for name clashes.
  *

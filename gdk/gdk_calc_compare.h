@@ -546,7 +546,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	BUN nils = 0;
 	TPE *restrict dst;
 
-	bn = BATnew(TYPE_void, TYPE_TPE, cnt, TRANSIENT);
+	bn = COLnew(seqbase, TYPE_TPE, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -563,7 +563,6 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	}
 
 	BATsetcount(bn, cnt);
-	BATseqbase(bn, seqbase);
 
 	bn->T->sorted = cnt <= 1 || nils == cnt;
 	bn->T->revsorted = cnt <= 1 || nils == cnt;

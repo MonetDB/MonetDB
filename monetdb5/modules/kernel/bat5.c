@@ -170,10 +170,9 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role)
 {
 	BAT *bn;
 
-	bn = BATnew(TYPE_void, *tt, *cap, role);
+	bn = COLnew(0, *tt, *cap, role);
 	if (bn == NULL)
 		throw(MAL, "bat.new", GDK_EXCEPTION);
-	BATseqbase(bn, 0);
 	*res = bn->batCacheid;
 	BBPkeepref(*res);
 	return MAL_SUCCEED;
@@ -720,16 +719,14 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		throw(MAL, "bat.getInfo", RUNTIME_OBJECT_MISSING);
 	}
 
-	bk = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT);
-	bv = BATnew(TYPE_void, TYPE_str, 128, TRANSIENT);
+	bk = COLnew(0, TYPE_str, 128, TRANSIENT);
+	bv = COLnew(0, TYPE_str, 128, TRANSIENT);
 	if (bk == NULL || bv == NULL) {
 		BBPreclaim(bk);
 		BBPreclaim(bv);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getInfo", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bk,0);
-	BATseqbase(bv,0);
 
 	if (b->batPersistence == PERSISTENT) {
 		mode = "persistent";
@@ -1180,7 +1177,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrink", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
+	bn= COLnew(0, b->ttype, BATcount(b) - BATcount(d) , TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
@@ -1239,7 +1236,6 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	BATsetcount(bn, cnt);
-	BATseqbase(bn, 0);
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
 	bn->tdense = 0;
@@ -1271,7 +1267,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
 
-	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) , TRANSIENT);
+	bn= COLnew(b->hseqbase, TYPE_oid, BATcount(b) , TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
@@ -1300,7 +1296,6 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
     bn->tdense = 0;
@@ -1349,7 +1344,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.reuse", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, b->ttype, BATcount(b) - BATcount(d), TRANSIENT);
+	bn= COLnew(b->hseqbase, b->ttype, BATcount(b) - BATcount(d), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
@@ -1416,7 +1411,6 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b) - BATcount(bs));
-	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
     bn->tdense = 0;
@@ -1445,7 +1439,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.shrinkMap", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATnew(TYPE_void, TYPE_oid, BATcount(b) - BATcount(d), TRANSIENT);
+	bn= COLnew(b->hseqbase, TYPE_oid, BATcount(b) - BATcount(d), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(d->batCacheid);
@@ -1480,7 +1474,6 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
     bn->trevsorted = 0;
     bn->tdense = 0;

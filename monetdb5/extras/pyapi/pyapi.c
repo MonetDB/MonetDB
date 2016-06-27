@@ -136,8 +136,8 @@ static bool enable_zerocopy_output = true;
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the BAT type, and 'batstore' is the heap storage type of the BAT (this should be STORE_CMEM or STORE_SHARED)
 #ifdef HAVE_FORK
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
-        bat = BATnew(TYPE_void, TYPE_##mtpe, 0, TRANSIENT);                                                             \
-        BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                   \
+        bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        bat->T->nil = 0; bat->T->nonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
         if (mask != NULL)                                                                                               \
@@ -182,8 +182,8 @@ static bool enable_zerocopy_output = true;
     }
 #else
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
-        bat = BATnew(TYPE_void, TYPE_##mtpe, 0, TRANSIENT);                                                             \
-        BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                   \
+        bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
+        bat->T->nil = 0; bat->T->nonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
         if (mask != NULL)                                                                                               \
@@ -346,8 +346,8 @@ static bool enable_zerocopy_output = true;
                 CREATE_BAT_ZEROCOPY(bat, mtpe, STORE_CMEM);                                                                                                    \
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
-            bat = BATnew(TYPE_void, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                       \
-            BATseqbase(bat, seqbase); bat->T->nil = 0; bat->T->nonil = 1;                                                                                      \
+            bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                       \
+            bat->T->nil = 0; bat->T->nonil = 1;                                                                                      \
             if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
 Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
@@ -2461,8 +2461,8 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                 utf8_string[utf8string_minlength + ret->memory_size] = '\0';
             }
 
-            b = BATnew(TYPE_void, TYPE_str, (BUN) ret->count, TRANSIENT);
-            BATseqbase(b, seqbase); b->T->nil = 0; b->T->nonil = 1;
+            b = COLnew(seqbase, TYPE_str, (BUN) ret->count, TRANSIENT);
+            b->T->nil = 0; b->T->nonil = 1;
             b->tkey = 0; b->tsorted = 0; b->trevsorted = 0;
             VERBOSE_MESSAGE("- Collecting return values of type %s.\n", PyType_Format(ret->result_type));
             switch(ret->result_type)

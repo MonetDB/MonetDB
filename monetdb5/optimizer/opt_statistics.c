@@ -35,7 +35,7 @@ QOT_create(str hnme, str tnme, int tt)
 	if (b)
 		return b;
 
-	b = BATnew(TYPE_void, tt, 256, PERSISTENT);
+	b = COLnew(0, tt, 256, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 
@@ -62,7 +62,6 @@ static void QOTstatisticsSave(void) {
 }
 
 static void QOTstatisticsInit(void){
-	oid o=0;
 	int i,j;
 
 	if (qotStat[QOTnames]) return;
@@ -72,13 +71,9 @@ static void QOTstatisticsInit(void){
 
 	MT_lock_set(&qotlock);
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_str);
-	BATseqbase(qotStat[QOTnames],o);
 	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_int);
-	BATseqbase(qotStat[QOTcalls],o);
 	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_int);
-	BATseqbase(qotStat[QOTactions],o);
 	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_lng);
-	BATseqbase(qotStat[QOTtimings],o);
 
 	/* recover from errors */
 	for ( i=0; i<4; i++)

@@ -56,10 +56,9 @@ bl_postversion( void *lg)
 		if (te == NULL)
 			return;
 		bi = bat_iterator(te);
-		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(bi, p);
 
@@ -79,10 +78,9 @@ bl_postversion( void *lg)
 			return;
 		if (te->ttype == TYPE_bit) {
 			bi = bat_iterator(te);
-			tne = BATnew(TYPE_void, TYPE_bte, BATcount(te), PERSISTENT);
+			tne = COLnew(te->hseqbase, TYPE_bte, BATcount(te), PERSISTENT);
 			if (!tne)
 				return;
-			BATseqbase(tne, te->hseqbase);
 			for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 				bte inout = (bte) *(bit*)BUNtail(bi, p);
 

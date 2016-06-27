@@ -146,11 +146,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		}
 	} else if (n >= cnt) {
 		/* trivial: return everything */
-		bn = BATnew(TYPE_void, TYPE_void, cnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, cnt);
-		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), start + b->hseqbase);
 		return bn;
 	}
@@ -171,11 +170,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			i = (BUN) (candend - (const oid *) Tloc(s, 0));
 			return BATslice(s, i - n, i);
 		}
-		bn = BATnew(TYPE_void, TYPE_void, n, TRANSIENT);
+		bn = COLnew(0, TYPE_void, n, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, n);
-		BATseqbase(bn, 0);
 		if (asc ? b->tsorted : b->trevsorted) {
 			/* first n entries from b */
 			BATseqbase(BATmirror(bn), start + b->hseqbase);
@@ -188,11 +186,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 
 	assert(b->ttype != TYPE_void); /* tsorted above took care of this */
 
-	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
-	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
@@ -390,19 +387,17 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
-		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
 		return bn;
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
-	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
 	gv = (const oid *) Tloc(g, BUNfirst(g));
 	goids = GDKmalloc(n * sizeof(oid));
@@ -638,18 +633,16 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
-		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
 		if (gids) {
-			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(gn, 0);
 			BATseqbase(BATmirror(gn), 0);
 			*gids = gn;
 		}
@@ -743,10 +736,10 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	top = i;
 	assert(ncnt <= cnt);
 	if (ncnt == cnt)
-		bn = BATnew(TYPE_void, TYPE_void, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, ncnt, TRANSIENT);
 	else
-		bn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
-	gn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
+	gn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
 	if (bn == NULL || gn == NULL) {
 		GDKfree(groups);
 		BBPreclaim(bn);
@@ -813,7 +806,6 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	}
 	GDKfree(groups);
 	BATsetcount(bn, ncnt);
-	BATseqbase(bn, 0);
 	if (ncnt == cnt) {
 		BATseqbase(BATmirror(bn), b->hseqbase);
 	} else {
@@ -825,7 +817,6 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	}
 	if (gids) {
 		BATsetcount(gn, ncnt);
-		BATseqbase(gn, 0);
 		gn->tkey = ncnt == top;
 		gn->tsorted = ncnt <= 1;
 		gn->trevsorted = ncnt <= 1;
@@ -946,18 +937,16 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
-		BATseqbase(bn, 0);
 		BATseqbase(BATmirror(bn), 0);
 		if (gids) {
-			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(gn, 0);
 			BATseqbase(BATmirror(gn), 0);
 			*gids = gn;
 		}
@@ -1052,10 +1041,10 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	top = i;
 	assert(ncnt <= cnt);
 	if (ncnt == cnt)
-		bn = BATnew(TYPE_void, TYPE_void, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, ncnt, TRANSIENT);
 	else
-		bn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
-	gn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
+	gn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
 	if (bn == NULL || gn == NULL) {
 		GDKfree(groups);
 		BBPreclaim(bn);
@@ -1124,7 +1113,6 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 	GDKfree(groups);
 	BATsetcount(bn, ncnt);
-	BATseqbase(bn, 0);
 	if (ncnt == cnt) {
 		BATseqbase(BATmirror(bn), b->hseqbase);
 	} else {
@@ -1136,7 +1124,6 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 	if (gids) {
 		BATsetcount(gn, ncnt);
-		BATseqbase(gn, 0);
 		gn->tkey = ncnt == top;
 		gn->tsorted = ncnt <= 1;
 		gn->trevsorted = ncnt <= 1;
@@ -1170,18 +1157,16 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 
 	if (n == 0 || BATcount(b) == 0 || (s != NULL && BATcount(s) == 0)) {
 		/* trivial: empty result */
-		*topn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		*topn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (*topn == NULL)
 			return GDK_FAIL;
-		BATseqbase(*topn, 0);
 		BATseqbase(BATmirror(*topn), 0);
 		if (gids) {
-			*gids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			*gids = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (*gids == NULL) {
 				BBPreclaim(*topn);
 				return GDK_FAIL;
 			}
-			BATseqbase(*gids, 0);
 			BATseqbase(BATmirror(*gids), 0);
 		}
 		return GDK_SUCCEED;

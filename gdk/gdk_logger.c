@@ -146,10 +146,9 @@ logbat_destroy(BAT *b)
 static BAT *
 logbat_new(int tt, BUN size, int role)
 {
-	BAT *nb = BATnew(TYPE_void, tt, size, role);
+	BAT *nb = COLnew(0, tt, size, role);
 
 	if (nb) {
-		BATseqbase(nb, 0);
 		if (role == PERSISTENT)
 			BATmode(nb, PERSISTENT);
 	} else {
@@ -307,15 +306,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	log_bid bid = logger_find_bat(lg, name);
 	BAT *b = BATdescriptor(bid);
 	int res = LOG_OK;
-	int ht = -1, tt = -1, hseq = 0, tseq = 0;
+	int ht = -1, tt = -1, tseq = 0;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
 
 	if (b) {
 		ht = b->htype;
-		if (ht == TYPE_void && b->hseqbase != oid_nil)
-			hseq = 1;
 		tt = b->ttype;
 		if (tt == TYPE_void && b->tseqbase != oid_nil)
 			tseq = 1;
@@ -326,7 +323,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			if (tr->changes[i].type == LOG_CREATE && strcmp(tr->changes[i].name, name) == 0) {
 				ht = tr->changes[i].ht;
 				if (ht < 0) {
-					hseq = 1;
 					ht = TYPE_void;
 				}
 				tt = tr->changes[i].tt;
@@ -356,15 +352,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 #endif
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
-			uid = BATnew(TYPE_void, ht, (BUN) l->nr, PERSISTENT);
-			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
+			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		} else {
 			assert(ht == TYPE_void);
-			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		}
 
-		if (hseq)
-			BATseqbase(r, 0);
 		if (tseq)
 			BATseqbase(BATmirror(r), 0);
 
@@ -608,11 +602,12 @@ la_bat_create(logger *lg, logaction *la)
 {
 	int ht = (la->ht < 0) ? TYPE_void : la->ht;
 	int tt = (la->tt < 0) ? TYPE_void : la->tt;
-	BAT *b = BATnew(ht, tt, BATSIZE, PERSISTENT);
+	BAT *b;
+
+	assert(ht == TYPE_void);
+	b = COLnew(0, tt, BATSIZE, PERSISTENT);
 
 	if (b != NULL) {
-		if (la->ht < 0)
-			BATseqbase(b, 0);
 		if (la->tt < 0)
 			BATseqbase(BATmirror(b), 0);
 
@@ -1180,10 +1175,9 @@ static BAT *
 bm_tids(BAT *b, BAT *d)
 {
 	BUN sz = BATcount(b);
-	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 
-	tids->H->seq = 0;
-	tids->T->seq = 0;
+	BATseqbase(BATmirror(tids), 0);
 	BATsetcount(tids, sz);
 	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
@@ -2710,7 +2704,6 @@ bm_commit(logger *lg)
 	gdk_return res;
 
 	/* subcommit the freed bats */
-	BATseqbase(n, 0);
 	if (BATcount(lg->freed)) {
 
 		BATloop(lg->freed, p, q) {

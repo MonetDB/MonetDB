@@ -100,25 +100,24 @@ batstr_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const ba
 		BBPunfix(A->batCacheid);				\
 		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
 	}
-#define prepareResult(X,Y,T,Z)						\
-	X= BATnew(TYPE_void,T,BATcount(Y), TRANSIENT);	\
-	if( X == NULL){									\
-		BBPunfix(Y->batCacheid);					\
-		throw(MAL, Z, MAL_MALLOC_FAIL);				\
-	}												\
-	X->tsorted=0;									\
+#define prepareResult(X,Y,T,Z)							\
+	X= COLnew((Y)->hseqbase,T,BATcount(Y), TRANSIENT);	\
+	if( X == NULL){										\
+		BBPunfix(Y->batCacheid);						\
+		throw(MAL, Z, MAL_MALLOC_FAIL);					\
+	}													\
+	X->tsorted=0;										\
 	X->trevsorted=0;
-#define prepareResult2(X,Y,A,T,Z)					\
-	X= BATnew(TYPE_void,T,BATcount(Y), TRANSIENT);	\
-	if( X == NULL){									\
-		BBPunfix(Y->batCacheid);					\
-		BBPunfix(A->batCacheid);					\
-		throw(MAL, Z, MAL_MALLOC_FAIL);				\
-	}												\
-	X->tsorted=0;									\
+#define prepareResult2(X,Y,A,T,Z)						\
+	X= COLnew((Y)->hseqbase,T,BATcount(Y), TRANSIENT);	\
+	if( X == NULL){										\
+		BBPunfix(Y->batCacheid);						\
+		BBPunfix(A->batCacheid);						\
+		throw(MAL, Z, MAL_MALLOC_FAIL);					\
+	}													\
+	X->tsorted=0;										\
 	X->trevsorted=0;
 #define finalizeResult(X,Y,Z)								\
-	BATseqbase((Y), (Z)->hseqbase);						\
 	if (!((Y)->batDirty&2)) BATsetaccess((Y), BAT_READ);	\
 	*X = (Y)->batCacheid;									\
 	BBPkeepref(*(X));										\
@@ -1179,12 +1178,11 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 
 	if( (b= BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
-	bn= BATnew(TYPE_void, TYPE_str, BATcount(b)/10+5, TRANSIENT);
+	bn= COLnew(b->hseqbase, TYPE_str, BATcount(b)/10+5, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
 	bn->tsorted = b->tsorted;
@@ -1232,14 +1230,13 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 	if( BATcount(left) != BATcount(length) )
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
-	bn= BATnew(TYPE_void, TYPE_str,BATcount(left), TRANSIENT);
+	bn= COLnew(left->hseqbase, TYPE_str,BATcount(left), TRANSIENT);
 	if( bn == NULL){
 		BBPunfix(left->batCacheid);
 		BBPunfix(start->batCacheid);
 		BBPunfix(length->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, left->hseqbase);
 
 	bn->hsorted= left->hsorted;
 	bn->hrevsorted= left->hrevsorted;

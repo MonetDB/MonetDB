@@ -129,7 +129,7 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 		throw(OPTIMIZER, "zorder.encode", ILLEGAL_ARGUMENT);
 	}
 	
-	bz = BATnew(TYPE_void, TYPE_oid, BATcount(bx), TRANSIENT);
+	bz = COLnew(bx->hseqbase, TYPE_oid, BATcount(bx), TRANSIENT);
 	if (bz == 0){
 		BBPunfix(bx->batCacheid);
 		BBPunfix(by->batCacheid);
@@ -174,7 +174,6 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	if (!(bz->batDirty&2)) 
 		BATsetaccess(bz, BAT_READ);
 	BATsetcount(bz, BATcount(bx));
-	BATseqbase(bz, bx->hseqbase);
 	bz->hsorted = 1;
 	bz->hrevsorted = 0;
 	bz->tsorted = 0;
@@ -197,8 +196,8 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
-	by = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	bx = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
+	by = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( bx == 0 || by == 0 ){
 		if ( bx ) BBPunfix(bx->batCacheid);
 		if ( by ) BBPunfix(by->batCacheid);
@@ -226,7 +225,6 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	if (!(bx->batDirty&2)) 
 		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
-	BATseqbase(bx, bz->hseqbase);
 	bx->hsorted = 1;
 	bx->hrevsorted = 0;
 	bx->tsorted = 0;
@@ -237,7 +235,6 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
-	BATseqbase(by, bz->hseqbase);
 	by->hsorted = 1;
 	by->hrevsorted = 0;
 	by->tsorted = 0;
@@ -262,7 +259,7 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	bx = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( bx == 0 ){
 		BBPunfix(bz->batCacheid);
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
@@ -286,7 +283,6 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	if (!(bx->batDirty&2)) 
 		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
-	BATseqbase(bx, bz->hseqbase);
 	bx->hsorted = 1;
 	bx->hrevsorted = 0;
 	bx->tsorted = 0;
@@ -310,7 +306,7 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	by = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	by = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( by == 0 ){
 		BBPunfix(bz->batCacheid);
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
@@ -334,7 +330,6 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
-	BATseqbase(by, bz->hseqbase);
 	by->hsorted = 1;
 	by->hrevsorted = 0;
 	by->tsorted = 0;
@@ -353,10 +348,9 @@ str ZORDslice_int(bat *r, int *xb, int *yb, int *xt, int *yt)
 	int i,j;
 	oid zv;
 
-	bn = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( bn == 0)
 		throw(OPTIMIZER, "zorder.slice", MAL_MALLOC_FAIL);
-	BATseqbase(bn, 0);
 	/* use the expensive road, could be improved by bit masking */
 	for ( i= *xb; i < *xt; i++)
 	{

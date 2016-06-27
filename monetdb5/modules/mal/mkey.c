@@ -86,12 +86,11 @@ MKEYbathash(bat *res, const bat *bid)
 	assert(BAThvoid(b) || BAThrestricted(b));
 
 	n = BATcount(b);
-	dst = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BATsetcount(dst, n);
 
 	r = (lng *) Tloc(dst, BUNfirst(dst));
@@ -257,13 +256,12 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BATsetcount(bn, n);
 
 	r = (lng *) Tloc(bn, BUNfirst(bn));
@@ -382,12 +380,11 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 	n = BATcount(hb);
 
-	bn = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	bn = COLnew(hb->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, hb->hseqbase);
 	BATsetcount(bn, n);
 
 	switch (ATOMstorage(tpe)) {
@@ -456,12 +453,11 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BATsetcount(bn, n);
 
 	r = (lng *) Tloc(bn, BUNfirst(bn));

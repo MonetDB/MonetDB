@@ -67,7 +67,7 @@ BATinit_idents(BAT *bn)
 }
 
 BATstore *
-BATcreatedesc(int tt, int heapnames, int role)
+BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 {
 	BAT *bn;
 	BATstore *bs;
@@ -114,7 +114,7 @@ BATcreatedesc(int tt, int heapnames, int role)
 	bn->tident = BATstring_t;
 	bn->halign = OIDnew(2);
 	bn->talign = bn->halign + 1;
-	bn->hseqbase = 0;
+	bn->hseqbase = hseq;
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->batRole = role;
 	bn->batPersistence = TRANSIENT;
@@ -206,7 +206,7 @@ BATsetdims(BAT *b)
  * filenames.
  */
 static BATstore *
-BATnewstorage(int tt, BUN cap, int role)
+BATnewstorage(oid hseq, int tt, BUN cap, int role)
 {
 	BATstore *bs;
 	BAT *bn;
@@ -217,7 +217,7 @@ BATnewstorage(int tt, BUN cap, int role)
 		assert(0);
 		cap = BUN_MAX;
 	}
-	bs = BATcreatedesc(tt, tt != TYPE_void, role);
+	bs = BATcreatedesc(hseq, tt, tt != TYPE_void, role);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
@@ -242,18 +242,16 @@ BATnewstorage(int tt, BUN cap, int role)
 }
 
 BAT *
-BATnew(int ht, int tt, BUN cap, int role)
+COLnew(oid hseq, int tt, BUN cap, int role)
 {
 	BATstore *bs;
 
 	assert(cap <= BUN_MAX);
-	assert(ht == TYPE_void);
+	assert(hseq <= oid_nil);
 	assert(tt != TYPE_bat);
-	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n", NULL);
-	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "BATnew:role error\n", NULL);
+	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
+	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
 
-	(void) ht;		/* always TYPE_void */
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
 		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
@@ -262,8 +260,10 @@ BATnew(int ht, int tt, BUN cap, int role)
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
-	bs = BATnewstorage(tt, cap, role);
-	return bs == NULL ? NULL : &bs->B;
+	bs = BATnewstorage(hseq, tt, cap, role);
+	if (bs == NULL)
+		return NULL;
+	return &bs->B;
 }
 
 BAT *
@@ -271,10 +271,9 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 {
 	BAT *bn;
 
-	bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	bn = COLnew(hseq, TYPE_void, 0, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	BATseqbase(bn, hseq);
 	BATseqbase(BATmirror(bn), tseq);
 	BATsetcount(bn, cnt);
 	return bn;
@@ -304,7 +303,7 @@ BATattach(int tt, const char *heapfile, int role)
 	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n", NULL);
 	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n", NULL);
 	cap = (BUN) (st.st_size / atomsize);
-	bs = BATcreatedesc(tt, 1, role);
+	bs = BATcreatedesc(0, tt, 1, role);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
@@ -319,7 +318,6 @@ BATattach(int tt, const char *heapfile, int role)
 		return NULL;
 	}
 	GDKfree(path);
-	bn->hseqbase = 0;
 	BATkey(bn, TRUE);
 	BATsetcapacity(bn, cap);
 	BATsetcount(bn, cap);
@@ -720,7 +718,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 				bunstocopy = cnt;
 		}
 
-		bn = BATnew(TYPE_void, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
+		bn = COLnew(0, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
 		if (bn == NULL)
 			return NULL;
 

@@ -947,8 +947,8 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		throw(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
 
-	bn = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
-	bn2 = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
+	bn = COLnew(0, TYPE_int, n, TRANSIENT);
+	bn2 = COLnew(0, TYPE_int, n, TRANSIENT);
 	if (bn == NULL || bn2 == NULL){
 		BBPreclaim(bn);
 		BBPreclaim(bn2);
@@ -1025,12 +1025,11 @@ CMDstr2qgrams(bat *ret, str *val)
 	strcpy(s, "##");
 	strcpy(s + 2, *val);
 	strcpy(s + len - 3, "$$");
-	bn = BATnew(TYPE_void, TYPE_str, (BUN) strlen(*val), TRANSIENT);
+	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(s);
 		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, 0);
 
 	i = 0;
 	while (s[i]) {

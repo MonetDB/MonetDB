@@ -61,7 +61,7 @@ __hidden gdk_return BATcheckmodes(BAT *b, int persistent)
 __hidden int BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
 
-__hidden BATstore *BATcreatedesc(int tt, int heapnames, int role)
+__hidden BATstore *BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));

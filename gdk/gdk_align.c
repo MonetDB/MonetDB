@@ -188,7 +188,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 
 	assert(b->htype == TYPE_void);
 
-	bs = BATcreatedesc(b->ttype, FALSE, TRANSIENT);
+	bs = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
@@ -209,7 +209,6 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->H->width = 0;
 	bn->H->shift = 0;
 	bn->hvarsized = 1;
-	BATseqbase(bn, seq);
 	*bn->T = *b->T;
 	if (bn->batFirst > 0) {
 		bn->T->heap.base += b->batFirst * b->T->width;
