@@ -14,6 +14,7 @@ bin_Mdiff = {
 bin_Mtimeout = {
 	SOURCES = Mtimeout.c
 	COND = NOT_WIN32
+	LIBS = $(PTHREAD_LIBS)
 }
 
 bin_Mapprove.py = bin_Mtest.py
