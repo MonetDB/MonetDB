@@ -288,7 +288,7 @@ command Intersection(a:wkb, b:wkb) :wkb address wkbIntersection
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
 command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
-command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionAggr
+command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionCascade
 comment "Gets a BAT with geometries and returns their union"; 
 command Difference(a:wkb, b:wkb) :wkb address wkbDifference
 comment "Returns a geometry that represents that part of geometry A that does not intersect with geometry B";

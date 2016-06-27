@@ -4415,6 +4415,112 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 
 }
 
+static str
+wkbUnaryUnion(wkb **out, wkb **geoms, int num_geoms)
+{
+    int i = 0, j = 0;
+	GEOSGeom outGeometry, *geomGeometries = NULL, geomCollection;
+
+    if ( (geomGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom)*num_geoms)) == NULL) {
+		*out = NULL;
+        throw(MAL, "GEOSUnaryUnion", "GDKmalloc failed");
+    }
+
+    for (i = 0; i < num_geoms; i++) {
+        if (wkb_isnil(geoms[i])) {
+            if ((*out = wkbNULLcopy()) == NULL)
+                throw(MAL, "GEOSUnaryUnion", MAL_MALLOC_FAIL);
+            return MAL_SUCCEED;
+        }
+
+        geomGeometries[i] = wkb2geos(geoms[i]);
+        if (!geomGeometries[i]) {
+            for (j = 0; j < i; j++)
+		        GEOSGeom_destroy(geomGeometries[j]);
+            GDKfree(geomGeometries);
+            *out = NULL;
+            throw(MAL, "GEOSUnaryUnion", "wkb2geos failed");
+        }
+    }
+
+	if ( (geomCollection = GEOSGeom_createCollection(wkbMultiPoint_mdb - 1, geomGeometries, num_geoms)) == NULL ) {
+		*out = NULL;
+        for (i = 0; i < num_geoms; i++)
+            GEOSGeom_destroy(geomGeometries[i]);
+        GDKfree(geomGeometries);
+		throw(MAL, "GEOSUnaryUnion", "GEOSGeom_createCollection failed");
+    }
+
+	if (!(outGeometry = GEOSUnaryUnion(geomCollection))) {
+		*out = NULL;
+        GDKfree(geomGeometries);
+		throw(MAL, "GEOSUnaryUnion", "GEOSUnaryUnion failed");
+	}
+
+	GEOSSetSRID(outGeometry, GEOSGetSRID(geomGeometries[0]));
+	*out = geos2wkb(outGeometry);
+    GDKfree(geomGeometries);
+
+	return MAL_SUCCEED;
+}
+
+//Gets a BAT with geometries and returns a single LineString
+str
+wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
+{
+	BAT *inBAT = NULL;
+	BATiter inBAT_iter;
+	BUN i;
+    int j = 0;
+    wkb *geomWKB = wkbNULL(), **geoms = NULL;
+	str err;
+
+	//get the BATs
+	if (!(inBAT = BATdescriptor(*inBAT_id))) {
+		throw(MAL, "geom.Collect", "Problem retrieving BATs");
+	}
+
+    /*TODO: We need a better way to handle the cases where the BAT was created, but it has zero elements*/
+    if (!BATcount(inBAT)) {
+		BBPunfix(inBAT->batCacheid);
+		if ((err = wkbUnion(outWKB,&geomWKB, &geomWKB)) != MAL_SUCCEED) {
+			BBPunfix(inBAT->batCacheid);
+			return err;
+		}
+        return MAL_SUCCEED;
+    }
+	//check if the BATs are dense and aligned
+	if (!BAThdense(inBAT)) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, "geom.Collect", "BATs must have dense heads");
+	}
+	//iterator over the BATs
+	inBAT_iter = bat_iterator(inBAT);
+
+    /*Collect all geoms*/
+    if ( (geoms = (wkb**) GDKmalloc(sizeof(wkb*)*BATcount(inBAT))) == NULL) {
+        BBPunfix(inBAT->batCacheid);
+		throw(MAL, "geom.Collect", "GDKmalloc failed");
+    }
+
+	for (j = 0, i = BUNfirst(inBAT); i < BATcount(inBAT); i++, j++) {
+        geoms[j] = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+    }
+
+    if ((err = wkbUnaryUnion(outWKB, geoms, j)) != MAL_SUCCEED) {
+        BBPunfix(inBAT->batCacheid);
+        if (geoms)
+            GDKfree(geoms);
+        return err;
+    }
+
+	BBPunfix(inBAT->batCacheid);
+    if (geoms)
+        GDKfree(geoms);
+
+	return MAL_SUCCEED;
+}
+
 str
 wkbDifference(wkb **out, wkb **a, wkb **b)
 {
