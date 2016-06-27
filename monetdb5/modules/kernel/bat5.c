@@ -344,25 +344,6 @@ BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
 	return MAL_SUCCEED;
 }
 
-str
-BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
-	b = BATmirror(b);
-	if (BUNappend(b, u, FALSE) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.append", GDK_EXCEPTION);
-	}
-	b = BATmirror(b);
-	BBPkeepref(*r = b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 char *
 BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 {

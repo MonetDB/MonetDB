@@ -770,7 +770,6 @@ str BATXMLxml2str(bat *ret, const bat *bid);
 str BATXMLxmltext(bat *ret, const bat *bid);
 str BATXMLxquery(bat *ret, const bat *bid, const char *const *expr);
 str BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force);
-str BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u);
 str BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force);
 str BKCappend_val_wrap(bat *r, const bat *bid, const void *u);
 str BKCappend_wrap(bat *r, const bat *bid, const bat *uid);
