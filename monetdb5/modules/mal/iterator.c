@@ -61,7 +61,6 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	/*  printf("set bat chunk bound to " LLFMT " " BUNFMT " - " BUNFMT "\n",
 	 *granule, first, MIN(cnt,(BUN) *granule)); */
 	VIEWbounds(b, view, (BUN) first, first + MIN(cnt, (BUN) * granule));
-	BAThseqbase(view, b->hseqbase);
 	*vid = view->batCacheid;
 	BBPkeepref(view->batCacheid);
 	BBPunfix(b->batCacheid);
