@@ -107,7 +107,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -223,7 +223,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);

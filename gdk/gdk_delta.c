@@ -158,7 +158,7 @@ BATundo(BAT *b)
 		b->tsorted = 0;
 		b->trevsorted = 0;
 		if (b->tkey)
-			BATkey(BATmirror(b), FALSE);
+			BATkey(b, FALSE);
 		HASHdestroy(b);
 	}
 	b->batFirst = b->batDeleted;

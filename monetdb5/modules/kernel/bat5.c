@@ -516,7 +516,7 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setKey", RUNTIME_OBJECT_MISSING);
 	}
-	BATkey(BATmirror(b), *param ? BOUND2BTRUE :FALSE);
+	BATkey(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;

@@ -561,7 +561,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	res->T->nil = FALSE;
 	res->tsorted = FALSE;
 	res->trevsorted = FALSE;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 	BBPkeepref(vbid = res->batCacheid);
 
 	res = NULL;

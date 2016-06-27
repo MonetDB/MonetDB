@@ -138,7 +138,7 @@ ALIGNsetT(BAT *b1, BAT *b2)
 		b1->T->nonil = b2->T->nonil;
 	} else if (BATtkey(b2))
 		BATtseqbase(b1, 0);
-	BATkey(BATmirror(b1), BATtkey(b2));
+	BATkey(b1, BATtkey(b2));
 	b1->tsorted = BATtordered(b2);
 	b1->trevsorted = BATtrevordered(b2);
 	b1->talign = b2->talign;
@@ -165,27 +165,12 @@ ALIGNsynced(BAT *b1, BAT *b2)
 	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
 	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
 
-	/* first try to prove head columns are not in sync */
-	if (BATcount(b1) != BATcount(b2))
-		return 0;
-	if (ATOMtype(BAThtype(b1)) != ATOMtype(BAThtype(b2)))
-		return 0;
-	if (BAThvoid(b1) && BAThvoid(b2))
-		return (b1->hseqbase == b2->hseqbase);
+	assert(b1->htype == TYPE_void);
+	assert(b2->htype == TYPE_void);
+	assert(b1->hseqbase != oid_nil);
+	assert(b2->hseqbase != oid_nil);
 
-	/* then try that they are */
-	if (b1->batCacheid == b2->batCacheid)
-		return 1;	/* same bat. trivial case */
-	if (BATcount(b1) == 0)
-		return 1;	/* empty bats of same type. trivial case */
-	if (b1->halign && b1->halign == b2->halign)
-		return 1;	/* columns marked as equal by algorithmics */
-	if (VIEWparentcol(b1) && ALIGNsynced(BBPcache(VIEWhparent(b1)), b2))
-		return 1;	/* view on same bat --- left recursive def.. */
-	if (VIEWparentcol(b2) && ALIGNsynced(b1, BBPcache(VIEWhparent(b2))))
-		return 1;	/* view on same bat --- right recursive def.. */
-
-	return 0;		/* we simply don't know */
+	return BATcount(b1) == BATcount(b2) && b1->hseqbase == b2->hseqbase;
 }
 
 /*

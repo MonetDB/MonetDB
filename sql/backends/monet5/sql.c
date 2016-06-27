@@ -2431,7 +2431,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 		res = u;
 	}
-	BATkey(BATmirror(res), TRUE);
+	BATkey(res, TRUE);
 	if (!(res->batDirty&2)) BATsetaccess(res, BAT_READ);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;

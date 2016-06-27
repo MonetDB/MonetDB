@@ -161,7 +161,7 @@ AUTHinitTables(str *passwd) {
 		if (user == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
 
-		BATkey(BATmirror(user), TRUE);
+		BATkey(user, TRUE);
 		BBPrename(BBPcacheid(user), "M5system_auth_user");
 		BATmode(user, PERSISTENT);
 	} else {

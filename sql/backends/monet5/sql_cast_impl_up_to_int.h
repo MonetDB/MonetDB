@@ -127,7 +127,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
-	BATkey(BATmirror(bn), FALSE);
+	BATkey(bn, FALSE);
 
 	if (!(bn->batDirty & 2))
 		BATsetaccess(bn, BAT_READ);

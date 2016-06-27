@@ -50,7 +50,7 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(BATmirror(b), TRUE);
+		BATkey(b, TRUE);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -79,7 +79,7 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
 	b->tdense = FALSE;
-	BATkey(BATmirror(b), FALSE);
+	BATkey(b, FALSE);
 	*bn = b;
 	return GDK_SUCCEED;
 }
@@ -110,7 +110,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(BATmirror(b), TRUE);
+		BATkey(b, TRUE);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -136,7 +136,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
 	b->tdense = FALSE;
-	BATkey(BATmirror(b), *size <= *domain);
+	BATkey(b, *size <= *domain);
 	*bn = b;
 	return GDK_SUCCEED;
 }
@@ -173,7 +173,7 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(BATmirror(b), TRUE);
+		BATkey(b, TRUE);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -198,7 +198,7 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
 	b->tdense = FALSE;
-	BATkey(BATmirror(b), *size <= *domain);
+	BATkey(b, *size <= *domain);
 	*bn = b;
 	return GDK_SUCCEED;
 }
@@ -254,7 +254,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(BATmirror(b), TRUE);
+		BATkey(b, TRUE);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -310,7 +310,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
 	b->tdense = FALSE;
-	BATkey(BATmirror(b), n<2);
+	BATkey(b, n<2);
 	*bn = b;
 	return GDK_SUCCEED;
 }

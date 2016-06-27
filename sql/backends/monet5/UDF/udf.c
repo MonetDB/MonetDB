@@ -313,7 +313,7 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		else
 			bres->trevsorted = (BATcount(bres) <= 1);
 		/* result tail is key (unique), iff both input tails are */
-		BATkey(BATmirror(bres), BATtkey(bone) || BATtkey(btwo));
+		BATkey(bres, BATtkey(bone) || BATtkey(btwo));
 
 		*ret = bres;
 	}

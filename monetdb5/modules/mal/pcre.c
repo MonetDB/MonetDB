@@ -1188,7 +1188,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;
-		BATkey(BATmirror(r),FALSE);
+		BATkey(r,FALSE);
 
 		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 

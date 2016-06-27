@@ -454,7 +454,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			if (b->tkey &&
 			    (!(BATtordered(b) || BATtrevordered(b)) ||
 			     n->tkey == 0 || xx == 0)) {
-				BATkey(BATmirror(b), FALSE);
+				BATkey(b, FALSE);
 			}
 			if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
 			    (BATtdense(n) == 0 ||
@@ -520,7 +520,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				}
 				i++;
 			}
-			BATkey(BATmirror(b), FALSE);
+			BATkey(b, FALSE);
 			b->tdense = b->tsorted = b->trevsorted = 0;
 		}
 	}
@@ -782,13 +782,13 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->tsorted = ATOMlinear(b->ttype);
 		bn->hrevsorted = 1;
 		bn->trevsorted = ATOMlinear(b->ttype);
-		BATkey(BATmirror(bn), 1);
+		BATkey(bn, 1);
 	} else {
 		bn->tsorted = b->tsorted;
 		bn->hrevsorted = 0;
 		bn->H->norevsorted = BUNfirst(bn) + 1;
 		bn->trevsorted = b->trevsorted;
-		BATkey(BATmirror(bn), BATtkey(b));
+		BATkey(bn, BATtkey(b));
 	}
 	bn->T->nonil = b->T->nonil || bn->batCount == 0;
 	bn->T->nil = 0;		/* we just don't know */

@@ -2822,14 +2822,6 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 #define VIEWtparent(x)	((x)->T->heap.parentid)
 #define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==abs((x)->batCacheid))?0:(x)->T->vheap->parentid)
 
-/* VIEWparentcol(b) tells whether the head column was inherited from
- * the parent "as is". We must check whether the type was not
- * overridden in the view.
- */
-#define VIEWparentcol(b)					\
-	((VIEWhparent(b) && (b)->htype				\
-	  && (b)->htype == BBP_cache(VIEWhparent(b))->htype)	\
-	 ?VIEWhparent(b):0)
 /*
  * @+ BAT Iterators
  *  @multitable @columnfractions 0.15 0.7

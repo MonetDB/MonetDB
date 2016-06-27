@@ -808,7 +808,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
-			BATkey(BATmirror(bn), TRUE);
+			BATkey(bn, TRUE);
 		bn->T->nonil = b->T->nonil;
 		if (b->T->nosorted > l && b->T->nosorted < h)
 			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
@@ -1188,7 +1188,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	} else if (b->T->norevsorted >= p)
 		b->T->norevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
-		BATkey(BATmirror(b), FALSE);
+		BATkey(b, FALSE);
 	}
 	if (b->T->nonil)
 		b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
@@ -1450,33 +1450,41 @@ BATmemsize(BAT *b, int dirty)
 gdk_return
 BATkey(BAT *b, int flag)
 {
-	bat parent;
-
 	BATcheck(b, "BATkey", GDK_FAIL);
-	parent = VIEWparentcol(b);
-	if (b->htype == TYPE_void) {
-		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE) {
+	assert(b->batCacheid > 0);
+	if (b->ttype == TYPE_void) {
+		if (b->tseqbase == oid_nil && flag == BOUND2BTRUE) {
 			GDKerror("BATkey: nil-column cannot be kept unique.\n");
 			return GDK_FAIL;
 		}
-		if (b->hseqbase != oid_nil && flag == FALSE) {
+		if (b->tseqbase != oid_nil && flag == FALSE) {
 			GDKerror("BATkey: dense column must be unique.\n");
 			return GDK_FAIL;
 		}
-		if (b->hseqbase == oid_nil && flag == TRUE && b->batCount > 1) {
+		if (b->tseqbase == oid_nil && flag == TRUE && b->batCount > 1) {
 			GDKerror("BATkey: void column cannot be unique.\n");
 			return GDK_FAIL;
 		}
 	}
 	if (flag)
-		flag |= (1 | b->hkey);
-	if (b->hkey != flag)
+		flag |= (1 | b->tkey);
+	if (b->tkey != flag)
 		b->batDirtydesc = TRUE;
-	b->hkey = flag;
+	b->tkey = flag;
 	if (!flag)
-		b->hdense = 0;
-	if (flag && parent && ALIGNsynced(b, BBP_cache(parent)))
-		return BATkey(BBP_cache(parent), TRUE);
+		b->tdense = 0;
+	if (flag && VIEWtparent(b)) {
+		/* if a view is key, then so is the parent if the two
+		 * are aligned */
+		BAT *bp = BBP_cache(-VIEWtparent(b));
+		if (BATcount(b) == BATcount(bp) &&
+		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
+		    !BATtkey(bp) &&
+		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
+		     BATcount(b) == 0 ||
+		     (b->talign && b->talign == bp->talign)))
+			return BATkey(bp, TRUE);
+	}
 	return GDK_SUCCEED;
 }
 

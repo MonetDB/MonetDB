@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Mon Jun 27 2016 Sjoerd Mullender <sjoerd@acm.org>
+- BATkey now works on the TAIL column instead of the HEAD column.
 - Replaced BATseqbase with BAThseqbase and BATtseqbase, the former for
   setting the seqbase on the HEAD, the latter for setting the seqbase
   on the TAIL.
