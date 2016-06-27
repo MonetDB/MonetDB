@@ -100,25 +100,30 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * Fill in basic column info
 	 */
 	bn->htype = TYPE_void;
-	bn->ttype = tt;
-	bn->hkey = TRUE | BOUND2BTRUE;
-	bn->tkey = FALSE;
-	bn->H->nonil = TRUE;
-	bn->T->nonil = TRUE;
-	bn->H->nil = FALSE;
-	bn->T->nil = FALSE;
-	bn->hsorted = bn->hrevsorted = 1;
-	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
-
-	bn->hident = BATstring_h;
-	bn->tident = BATstring_t;
-	bn->halign = OIDnew(2);
-	bn->talign = bn->halign + 1;
+	bn->H->width = 0;
+	bn->H->shift = 0;
+	bn->H->varsized = 1;
 	bn->hseqbase = hseq;
+	bn->hkey = TRUE | BOUND2BTRUE;
+	bn->H->nonil = TRUE;
+	bn->H->nil = FALSE;
+	bn->hsorted = bn->hrevsorted = 1;
+	bn->hident = BATstring_h;
+	bn->halign = OIDnew(2);
+	bn->H->props = NULL;
+
+	bn->ttype = tt;
+	bn->tkey = FALSE;
+	bn->T->nonil = TRUE;
+	bn->T->nil = FALSE;
+	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
+	bn->tident = BATstring_t;
+	bn->talign = bn->halign + 1;
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
+	bn->T->props = NULL;
+
 	bn->batRole = role;
 	bn->batPersistence = TRANSIENT;
-	bn->H->props = bn->T->props = NULL;
 	/*
 	 * add to BBP
 	 */
@@ -184,9 +189,6 @@ void
 BATsetdims(BAT *b)
 {
 	assert(b->htype == TYPE_void);
-	b->H->width = 0;
-	b->H->shift = 0;
-	b->H->varsized = 1;
 
 	b->T->width = b->ttype == TYPE_str ? 1 : ATOMsize(b->ttype);
 	b->T->shift = ATOMelmshift(Tsize(b));

@@ -206,9 +206,6 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	bn->H->width = 0;
-	bn->H->shift = 0;
-	bn->hvarsized = 1;
 	*bn->T = *b->T;
 	if (bn->batFirst > 0) {
 		bn->T->heap.base += b->batFirst * b->T->width;
@@ -272,7 +269,6 @@ BATmaterialize(BAT *b)
 	Heap tail;
 	BUN p, q;
 	oid t, *x;
-	bte hshift;
 
 	BATcheck(b, "BATmaterialize", GDK_FAIL);
 	assert(!isVIEW(b));
@@ -303,12 +299,7 @@ BATmaterialize(BAT *b)
 
 	/* point of no return */
 	b->ttype = tt;
-	hshift = b->H->shift;
 	BATsetdims(b);
-	if (b->htype) {
-		b->H->shift = hshift;	/* restore in case it got changed */
-		b->H->width = 1 << hshift;
-	}
 	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
 	b->T->heap.dirty = TRUE;
