@@ -1355,7 +1355,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 					BBPunfix(b[1]->batCacheid);
 				return;
 			}
-			p = BUNfnd(BATmirror(b[0]), props);
+			p = BUNfnd(b[0], props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b[1]);
 				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));
