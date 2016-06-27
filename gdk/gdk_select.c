@@ -548,7 +548,7 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	assert(lval);							\
 	assert(hval);							\
 	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	\
+		BAT *parent = BATdescriptor(-VIEWtparent(b));		\
 		basesrc = (const TYPE *) Tloc(parent, BUNfirst(parent)); \
 		imprints = parent->T->imprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\

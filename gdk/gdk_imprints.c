@@ -299,7 +299,7 @@ BATimprints(BAT *b)
 	if (VIEWtparent(b)) {
 		bat p = VIEWtparent(b);
 		o = b;
-		b = BATmirror(BATdescriptor(p));
+		b = BATdescriptor(-p);
 		if (BATcheckimprints(b)) {
 			BBPunfix(b->batCacheid);
 			return GDK_SUCCEED;

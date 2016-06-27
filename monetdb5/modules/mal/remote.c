@@ -1015,7 +1015,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(abs(bid), FALSE);
+	BAT *b = BBPquickdesc(bid, FALSE);
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1024,10 +1024,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
-
-	/* mirror when argument is mirrored */
-	if (bid < 0)
-		b = BATmirror(b);
 
 	BBPfix(bid);
 
