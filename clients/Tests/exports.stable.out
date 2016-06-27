@@ -6,6 +6,7 @@ stdout of test 'exports` in directory 'clients` itself:
 # 21:40:57 >  
 
 # gdk
+void ALIGNsetH(BAT *b1, BAT *b2);
 void ALIGNsetT(BAT *b1, BAT *b2);
 int ALIGNsynced(BAT *b1, BAT *b2);
 int ATOMallocate(const char *nme);

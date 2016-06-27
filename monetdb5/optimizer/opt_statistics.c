@@ -39,7 +39,6 @@ QOT_create(str hnme, str tnme, int tt)
 	if (b == NULL)
 		return NULL;
 
-	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
 	return b;

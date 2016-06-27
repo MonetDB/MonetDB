@@ -118,13 +118,12 @@ BATundo(BAT *b)
 	if (b == NULL)
 		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
+	assert(b->htype == TYPE_void);
 	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
+		b->batDirtydesc = b->T->heap.dirty = 1;
 	} else {
 		b->batDirty = 0;
-		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
-		if (b->H->vheap)
-			b->H->vheap->dirty = 0;
+		b->batDirtydesc = b->T->heap.dirty = 0;
 		if (b->T->vheap)
 			b->T->vheap->dirty = 0;
 	}
@@ -135,8 +134,6 @@ BATundo(BAT *b)
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		assert(BATatoms[b->htype].atomUnfix == NULL);
-		assert(BATatoms[b->htype].atomDel == NULL);
 		assert(b->H->hash == NULL);
 		if (tunfix || tatmdel || b->T->hash) {
 			HASHdestroy(b);
@@ -152,19 +149,14 @@ BATundo(BAT *b)
 			}
 		}
 	}
-	b->H->heap.free = headsize(b, b->batInserted);
 	b->T->heap.free = tailsize(b, b->batInserted);
 
 	bunfirst = b->batDeleted;
 	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
 		/* elements are 'inserted' => zap properties */
-		b->hsorted = 0;
-		b->hrevsorted = 0;
 		b->tsorted = 0;
 		b->trevsorted = 0;
-		if (b->hkey)
-			BATkey(b, FALSE);
 		if (b->tkey)
 			BATkey(BATmirror(b), FALSE);
 		HASHdestroy(b);

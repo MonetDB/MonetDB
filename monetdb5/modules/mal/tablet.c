@@ -66,13 +66,6 @@ void_bat_create(int adt, BUN nr)
 		return NULL;
 	}
 
-	b->hsorted = TRUE;
-	b->hrevsorted = FALSE;
-	b->H->norevsorted = 1;
-	b->hkey = TRUE;
-	b->H->nil = FALSE;
-	b->H->nonil = TRUE;
-
 	/* disable all properties here */
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
@@ -967,9 +960,11 @@ SQLworker_column(READERtask *task, int col)
 
 	for (i = 0; i < task->top[task->cur]; i++) {
 		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0) {
+			BATsetcount(fmt[col].c, BATcount(fmt[col].c));
 			return -1;
 		}
 	}
+	BATsetcount(fmt[col].c, BATcount(fmt[col].c));
 
 	return 0;
 }

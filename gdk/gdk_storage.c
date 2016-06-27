@@ -764,12 +764,7 @@ BATsave(BAT *bd)
 	b->H = &bs.H;
 	b->T = &bs.T;
 
-	if (b->H->vheap) {
-		b->H->vheap = (Heap *) GDKmalloc(sizeof(Heap));
-		if (b->H->vheap == NULL)
-			return GDK_FAIL;
-		*b->H->vheap = *bd->H->vheap;
-	}
+	assert(b->htype == TYPE_void);
 	if (b->T->vheap) {
 		b->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
 		if (b->T->vheap == NULL) {

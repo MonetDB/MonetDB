@@ -1019,11 +1019,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
 	if (bn->batCount == 1 || bn->batCount == b->batCount)
 		bn->tseqbase = b->hseqbase;
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
 
 	return bn;
 }
@@ -1688,12 +1683,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			}
 		}
-		bn->hseqbase = 0;
-		bn->hkey = 1;
-		bn->hsorted = 1;
-		bn->hrevsorted = bn->batCount <= 1;
-		bn->H->nonil = 1;
-		bn->H->nil = 0;
 		return virtualize(bn);
 	}
 

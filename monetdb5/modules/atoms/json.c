@@ -1215,9 +1215,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		JSONfree(jt);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
-	bk->hsorted = 1;
-	bk->hrevsorted = 0;
-	bk->H->nonil = 1;
 	bk->tsorted = 1;
 	bk->trevsorted = 0;
 	bk->T->nonil = 1;
@@ -1229,9 +1226,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 			JSONfree(jt);
 			throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 		}
-		bo->hsorted = 1;
-		bo->hrevsorted = 0;
-		bo->H->nonil = 1;
 		bo->tsorted = 1;
 		bo->trevsorted = 0;
 		bo->T->nonil = 1;
@@ -1245,9 +1239,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPunfix(bk->batCacheid);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
-	bv->hsorted = 1;
-	bv->hrevsorted = 0;
-	bv->H->nonil = 1;
 	bv->tsorted = 1;
 	bv->trevsorted = 0;
 	bv->T->nonil = 1;
@@ -1279,9 +1270,6 @@ JSONkeyTable(bat *ret, json *js)
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
-	bn->hsorted = 1;
-	bn->hrevsorted = 0;
-	bn->H->nonil = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
 	bn->T->nonil = 1;
@@ -1340,9 +1328,6 @@ JSONvalueTable(bat *ret, json *js)
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.values", MAL_MALLOC_FAIL);
-	bn->hsorted = 1;
-	bn->hrevsorted = 0;
-	bn->H->nonil = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
 	bn->T->nonil = 1;

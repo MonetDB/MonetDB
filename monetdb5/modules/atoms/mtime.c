@@ -3028,12 +3028,6 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 
 	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
-
 	bn->tsorted = BATcount(bn)<2;
 	bn->trevsorted = BATcount(bn)<2;
 
@@ -3077,12 +3071,6 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
-
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
 
 	bn->tsorted = BATcount(bn) < 2;
 	bn->trevsorted = BATcount(bn) < 2;
@@ -3129,12 +3117,6 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 
 	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
-
 	bn->tsorted = BATcount(bn) <2;
 	bn->trevsorted = BATcount(bn) <2;
 
@@ -3179,12 +3161,6 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	}
 	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
-
 	bn->tsorted = BATcount(bn) <2;;
 	bn->trevsorted = BATcount(bn) <2;;
 
@@ -3227,12 +3203,6 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 	}
 	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
-
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
 
@@ -3274,11 +3244,6 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
 
@@ -3322,11 +3287,6 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
 	bn->tsorted = BATcount(bn) <2;
 	bn->trevsorted = BATcount(bn) <2;
 
@@ -3369,11 +3329,6 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
 
-	bn->H->nonil = b->H->nonil;
-	bn->H->nil = b->H->nil;
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
 

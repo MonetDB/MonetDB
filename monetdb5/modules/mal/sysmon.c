@@ -55,21 +55,6 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (oids) BBPunfix(oids->batCacheid);
 		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 	}
-    BATkey(tag, TRUE);
-
-    BATkey(user, TRUE);
-
-    BATkey(query, TRUE);
-
-    BATkey(activity, TRUE);
-
-    BATkey(estimate, TRUE);
-
-    BATkey(started, TRUE);
-
-    BATkey(progress, TRUE);
-
-    BATkey(oids, TRUE);
 
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< QRYqueue[i].tag; i++)

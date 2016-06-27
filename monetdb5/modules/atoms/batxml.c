@@ -72,11 +72,8 @@ batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const 
 			free;													\
 			throw(MAL, "xml." Z, MAL_MALLOC_FAIL);					\
 		}															\
-		(X)->hsorted = 1;											\
-		(X)->hrevsorted = (Y)->hrevsorted;							\
 		(X)->tsorted =  0;											\
 		(X)->trevsorted =  0;										\
-		(X)->H->nonil = (Y)->H->nonil;								\
 		(X)->T->nonil = 1;											\
 	} while (0)
 

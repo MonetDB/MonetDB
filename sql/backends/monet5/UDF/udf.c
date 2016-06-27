@@ -296,12 +296,6 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		/* set number of tuples in result BAT */
 		BATsetcount(bres, n);
 
-		/* set result properties */
-		bres->hdense = TRUE;              /* result head is dense */
-		bres->hsorted = 1;                /* result head is sorted */
-		bres->hrevsorted = (BATcount(bres) <= 1);
-		BATkey(bres, TRUE);               /* result head is key (unique) */
-
 		/* Result tail is sorted, if the left/first input tail is
 		 * sorted and key (unique), or if the left/first input tail is
 		 * sorted and the second/right input tail is sorted and the

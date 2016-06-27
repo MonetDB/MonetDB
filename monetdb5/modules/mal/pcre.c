@@ -374,16 +374,13 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	}
 	my_pcre_free(re);
 	pcre_free_study(pe);
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
 	*bnp = bn;
 	return MAL_SUCCEED;
 
@@ -479,16 +476,13 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 					re_match_no_ignore(v, re));
 		}
 	}
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
 	*bnp = bn;
 	re_destroy(re);
 	return MAL_SUCCEED;

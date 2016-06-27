@@ -326,8 +326,6 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	mat[0].b->hsorted= 0;
-	mat[0].b->hrevsorted= 0;
 	mat[0].b->T->nonil=0;
 	mat[0].b->tsorted=0;
 	mat[0].b->trevsorted=0;

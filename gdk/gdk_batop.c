@@ -525,6 +525,8 @@ BATappend(BAT *b, BAT *n, bit force)
 		}
 	}
 	b->hrevsorted = BATcount(b) <= 1;
+	if (b->hrevsorted)
+		b->H->norevsorted = BUNfirst(b) + 1;
 	b->T->nonil &= n->T->nonil;
 	return GDK_SUCCEED;
       bunins_failed:
@@ -784,6 +786,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	} else {
 		bn->tsorted = b->tsorted;
 		bn->hrevsorted = 0;
+		bn->H->norevsorted = BUNfirst(bn) + 1;
 		bn->trevsorted = b->trevsorted;
 		BATkey(BATmirror(bn), BATtkey(b));
 	}

@@ -516,7 +516,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->ibid = id;
 		temp_dup(id);
 		bat_destroy(b);
-		i->hseqbase = bat->ibase;
+		BAThseqbase(i, bat->ibase);
 	} else {
 		if (!isEbat(b)){
 			assert(b->T->heap.storage != STORE_PRIV);

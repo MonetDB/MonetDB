@@ -86,6 +86,32 @@ ALIGNcommit(BAT *b)
 }
 
 void
+ALIGNsetH(BAT *b1, BAT *b2)
+{
+	if (b1 == NULL || b2 == NULL)
+		return;
+
+	assert(b1->htype == TYPE_void);
+	assert(b2->htype == TYPE_void);
+
+	if (b2->halign == 0) {
+		b2->halign = OIDnew(1);
+		b2->batDirtydesc = TRUE;
+	}
+	/* b2 is either dense or has a void(nil) tail */
+	BAThseqbase(b1, b2->hseqbase);
+	b1->halign = b2->halign;
+	b1->batDirtydesc = TRUE;
+
+	assert(b1->hkey & 1);
+	assert(b2->hkey & 1);
+	assert(b1->hsorted);
+	assert(b2->hsorted);
+	assert(b1->hrevsorted == (BATcount(b1) <= 1));
+	assert(b2->hrevsorted == (BATcount(b2) <= 1));
+}
+
+void
 ALIGNsetT(BAT *b1, BAT *b2)
 {
 	ssize_t diff;
@@ -487,7 +513,6 @@ VIEWreset(BAT *b)
 		b->batDirty = 1;
 
 		/* reset BOUND2KEY */
-		b->hkey = BAThkey(v);
 		b->tkey = BATtkey(v);
 
 		/* make the BAT empty and insert all again */

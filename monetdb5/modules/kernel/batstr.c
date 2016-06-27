@@ -1183,8 +1183,6 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
 	bn->tsorted = b->tsorted;
 	bn->trevsorted = b->trevsorted;
 
@@ -1238,8 +1236,6 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
 
-	bn->hsorted= left->hsorted;
-	bn->hrevsorted= left->hrevsorted;
 	bn->tsorted=0;
 	bn->trevsorted=0;
 

@@ -1103,7 +1103,7 @@ str ALGreuse(bat *ret, const bat *bid)
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
-			BATkey(bn,FALSE);
+			BATkey(BATmirror(bn),FALSE);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPunfix(b->batCacheid);

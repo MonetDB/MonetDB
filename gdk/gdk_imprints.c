@@ -630,14 +630,7 @@ IMPSdestroy(BAT *b)
 		} else if (b->T->imprints != NULL && !VIEWtparent(b))
 			IMPSremove(b);
 
-		if (b->H->imprints == (Imprints *) 1) {
-			b->H->imprints = NULL;
-			GDKunlink(BBPselectfarm(b->batRole, b->htype, imprintsheap),
-				  BATDIR,
-				  BBP_physical(b->batCacheid),
-				  "himprints");
-		} else if (b->H->imprints != NULL && !VIEWhparent(b))
-			IMPSremove(BATmirror(b));
+		assert(b->H->imprints == NULL);
 	}
 }
 

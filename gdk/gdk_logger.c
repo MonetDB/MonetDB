@@ -1179,13 +1179,10 @@ bm_tids(BAT *b, BAT *d)
 
 	BATtseqbase(tids, 0);
 	BATsetcount(tids, sz);
-	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
 
 	tids->T->key = 1;
 	tids->T->dense = 1;
-	tids->H->key = 1;
-	tids->H->dense = 1;
 
 	if (BATcount(d)) {
 		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);

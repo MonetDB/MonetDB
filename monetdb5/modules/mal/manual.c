@@ -38,10 +38,6 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(com) BBPunfix(com->batCacheid);
 	}
 
-    BATkey(sig, TRUE);
-    BATkey(adr, TRUE);
-    BATkey(com, TRUE);
-
 	if(s==NULL){
 		return MAL_SUCCEED;
 	}

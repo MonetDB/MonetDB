@@ -610,7 +610,6 @@ TKNZRgetCount(bat *r)
 		cnt = (lng) BATcount(tokenBAT[i].val);
 		BUNappend(b, &cnt, FALSE);
 	}
-	b->hdense = TRUE;
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -639,7 +638,6 @@ TKNZRgetCardinality(bat *r)
 		BUNappend(b, &cnt, FALSE);
 	}
 
-	b->hdense = TRUE;
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
 	BBPkeepref(*r);

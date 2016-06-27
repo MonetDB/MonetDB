@@ -201,10 +201,6 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 		throw(MAL, "array.series", MAL_MALLOC_FAIL);
 
 	BATsetcount(bn, cnt);
-	bn->hdense = TRUE;
-	BATkey(bn, TRUE);
-	bn->hsorted = 1;
-	bn->hrevsorted = (cnt <= 1);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
 	bn->T->nonil = TRUE;

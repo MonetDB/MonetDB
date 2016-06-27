@@ -473,11 +473,6 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 		BBPunfix(*rid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
-	xl->hsorted = 1;
-	xl->tsorted = 0;
-	xl->trevsorted = 0;
-	xl->T->nonil = 1;
-	xl->H->nonil = 1;
 
 	xr = COLnew(0, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
 	if ( xr == NULL){
@@ -486,11 +481,6 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 		BBPunfix(xl->batCacheid);
 		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
 	}
-	xr->hsorted = 1;
-	xr->tsorted = 0;
-	xr->trevsorted = 0;
-	xr->T->nonil = 1;
-	xr->H->nonil = 1;
 
 	for (lo = bl->hseqbase; l < lend; lo++, l++) {
 		if (*l != lng_nil) {

@@ -595,10 +595,7 @@ GDKinit(opt *set, int setlen)
 		/* no cleanup necessary before GDKfatal */
 		GDKfatal("GDKinit: Could not create environment BAT");
 	}
-	BATkey(GDKkey, BOUND2BTRUE);
 	BATrename(GDKkey, "environment_key");
-
-	BATkey(GDKval, BOUND2BTRUE);
 	BATrename(GDKval, "environment_val");
 
 	/* store options into environment BATs */

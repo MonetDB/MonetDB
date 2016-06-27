@@ -174,11 +174,8 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	if (!(bz->batDirty&2)) 
 		BATsetaccess(bz, BAT_READ);
 	BATsetcount(bz, BATcount(bx));
-	bz->hsorted = 1;
-	bz->hrevsorted = 0;
 	bz->tsorted = 0;
 	bz->trevsorted = 0;
-	bz->H->nonil = 1;
 	bz->T->nonil = bx->T->nonil && by->T->nonil;
 
 	BBPkeepref(*zbid = bz->batCacheid);
@@ -225,21 +222,15 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	if (!(bx->batDirty&2)) 
 		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
-	bx->hsorted = 1;
-	bx->hrevsorted = 0;
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
-	bx->H->nonil = 1;
 	bx->T->nonil = bz->T->nonil;
 
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
-	by->hsorted = 1;
-	by->hrevsorted = 0;
 	by->tsorted = 0;
 	by->trevsorted = 0;
-	by->H->nonil = 1;
 	by->T->nonil = bz->T->nonil;
 
 	BBPunfix(bz->batCacheid);
@@ -283,11 +274,8 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	if (!(bx->batDirty&2)) 
 		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
-	bx->hsorted = 1;
-	bx->hrevsorted = 0;
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
-	bx->H->nonil = 1;
 	bx->T->nonil = bz->T->nonil;
 
 	BBPunfix(bz->batCacheid);
@@ -330,11 +318,8 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
-	by->hsorted = 1;
-	by->hrevsorted = 0;
 	by->tsorted = 0;
 	by->trevsorted = 0;
-	by->H->nonil = 1;
 	by->T->nonil = bz->T->nonil;
 
 	BBPunfix(bz->batCacheid);

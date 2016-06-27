@@ -704,7 +704,6 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 		return NULL;
 
 	BATmode(b, PERSISTENT);
-	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	BATcommit(b);
 	return b;

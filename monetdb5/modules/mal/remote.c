@@ -1221,10 +1221,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	/* set properties */
-	b->hseqbase = bb.Hseqbase;
 	b->tseqbase = bb.Tseqbase;
-	b->hsorted = bb.Hsorted;
-	b->hrevsorted = bb.Hrevsorted;
 	b->tsorted = bb.Tsorted;
 	b->trevsorted = bb.Trevsorted;
 	b->tkey = bb.Tkey;

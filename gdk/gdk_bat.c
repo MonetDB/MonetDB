@@ -320,7 +320,6 @@ BATattach(int tt, const char *heapfile, int role)
 		return NULL;
 	}
 	GDKfree(path);
-	BATkey(bn, TRUE);
 	BATsetcapacity(bn, cap);
 	BATsetcount(bn, cap);
 	/*
@@ -685,13 +684,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL)
 			return NULL;
-		if (bn->htype != TYPE_void) {
-			/* legacy BAT, transform to "headless" */
-			assert(bn->H != bn->T);
-			bn->htype = TYPE_void;
-			bn->hvarsized = ATOMvarsized(TYPE_void);
-			bn->hseqbase = b->hseqbase;
-		}
 		if (tt != bn->ttype) {
 			assert(bn->H != bn->T);
 			bn->ttype = tt;
@@ -845,9 +837,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		bn->T->nokey[0] = bn->T->nokey[1] = 0;
 	}
 	if (BATcount(bn) <= 1) {
-		bn->hsorted = ATOMlinear(b->htype);
-		bn->hrevsorted = ATOMlinear(b->htype);
-		bn->hkey = 1;
 		bn->tsorted = ATOMlinear(b->ttype);
 		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = 1;
@@ -1137,7 +1126,6 @@ gdk_return
 BUNinplace(BAT *b, BUN p, const void *t, bit force)
 {
 	BUN last = BUNlast(b) - 1;
-	BAT *bm = BBP_cache(-b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	int tt;
 	BUN prv, nxt;
@@ -1182,7 +1170,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 				b->T->nodense = nxt;
 			} else if (prv == BUN_NONE &&
 				   nxt == BUN_NONE) {
-				bm->hseqbase = b->tseqbase = * (oid *) t;
+				b->tseqbase = * (oid *) t;
 			}
 		}
 	} else if (b->T->nosorted >= p)
@@ -1200,7 +1188,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	} else if (b->T->norevsorted >= p)
 		b->T->norevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
-		BATkey(bm, FALSE);
+		BATkey(BATmirror(b), FALSE);
 	}
 	if (b->T->nonil)
 		b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
@@ -1370,29 +1358,30 @@ BATsetcapacity(BAT *b, BUN cnt)
 void
 BATsetcount(BAT *b, BUN cnt)
 {
+	/* head column is always VOID, and some head properties never change */
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase != oid_nil);
+	assert(b->hsorted);
+	assert(b->hkey & 1);
+	assert(!b->H->nil);
+	assert(b->H->nonil);
+	assert(b->H->heap.free == 0);
+
 	b->batCount = cnt;
 	b->batDirtydesc = TRUE;
-	b->H->heap.free = headsize(b, BUNfirst(b) + cnt);
 	b->T->heap.free = tailsize(b, BUNfirst(b) + cnt);
-	if (b->H->type == TYPE_void && b->T->type == TYPE_void)
+	if (b->T->type == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
-		b->hsorted = b->hrevsorted = ATOMlinear(b->htype) != 0;
+		b->hrevsorted = 1;
+		b->H->norevsorted = 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
-		b->H->nosorted = b->H->norevsorted = 0;
 		b->T->nosorted = b->T->norevsorted = 0;
+	} else {
+		b->hrevsorted = 0;
+		b->H->norevsorted = BUNfirst(b) + 1;
 	}
 	/* if the BAT was made smaller, we need to zap some values */
-	if (b->H->nosorted >= BUNlast(b))
-		b->H->nosorted = 0;
-	if (b->H->norevsorted >= BUNlast(b))
-		b->H->norevsorted = 0;
-	if (b->H->nodense >= BUNlast(b))
-		b->H->nodense = 0;
-	if (b->H->nokey[0] >= BUNlast(b) || b->H->nokey[1] >= BUNlast(b)) {
-		b->H->nokey[0] = 0;
-		b->H->nokey[1] = 0;
-	}
 	if (b->T->nosorted >= BUNlast(b))
 		b->T->nosorted = 0;
 	if (b->T->norevsorted >= BUNlast(b))
@@ -1402,20 +1391,6 @@ BATsetcount(BAT *b, BUN cnt)
 	if (b->T->nokey[0] >= BUNlast(b) || b->T->nokey[1] >= BUNlast(b)) {
 		b->T->nokey[0] = 0;
 		b->T->nokey[1] = 0;
-	}
-	if (b->htype == TYPE_void) {
-		b->hsorted = 1;
-		if (b->hseqbase == oid_nil) { /* unlikely */
-			b->hkey = cnt <= 1;
-			b->hrevsorted = 1;
-			b->H->nil = 1;
-			b->H->nonil = 0;
-		} else {
-			b->hkey = 1;
-			b->hrevsorted = cnt <= 1;
-			b->H->nil = 0;
-			b->H->nonil = 1;
-		}
 	}
 	if (b->ttype == TYPE_void) {
 		b->tsorted = 1;
@@ -1510,9 +1485,10 @@ BAThseqbase(BAT *b, oid o)
 {
 	if (b == NULL)
 		return;
-	assert(o < oid_nil);
+	assert(o < oid_nil);	/* i.e., not oid_nil */
 	assert(o + BATcount(b) < oid_nil);
 	assert(b->htype == TYPE_void);
+	assert(b->batCacheid > 0);
 	if (b->hseqbase != o) {
 		b->batDirtydesc = TRUE;
 		b->hseqbase = o;
@@ -1539,6 +1515,7 @@ BATtseqbase(BAT *b, oid o)
 		return;
 	assert(o <= oid_nil);
 	assert(o == oid_nil || o + BATcount(b) < oid_nil);
+	assert(b->batCacheid > 0);
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
@@ -2588,6 +2565,12 @@ BATderiveProps(BAT *b, int expensive)
 		return;
 	}
 	BATderiveTailProps(b, expensive);
-	if (b->H != b->T)
-		BATderiveTailProps(BATmirror(b), expensive);
+	assert(b->H != b->T);
+	assert(b->htype == TYPE_void);
+	assert(b->hsorted);
+	assert(b->hkey & 1);
+	assert(b->H->nonil);
+	assert(!b->H->nil);
+	if ((b->hrevsorted = BATcount(b) <= 1) != 0)
+		b->H->norevsorted = BUNfirst(b) + 1;
 }

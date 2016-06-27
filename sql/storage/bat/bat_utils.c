@@ -112,7 +112,6 @@ ebat2real(log_bid b, oid ibase)
 	log_bid r;
 
 	BAThseqbase(c, ibase );
-	c->H->dense = 1;
 	r = temp_create(c);
 	bat_destroy(c);
 	bat_destroy(o);
@@ -153,7 +152,6 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		if (!c)
 			return BID_NIL;
 		BAThseqbase(c, ibase );
-		c->H->dense = 1;
 		BATcommit(c);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);

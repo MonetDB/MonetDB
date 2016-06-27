@@ -181,11 +181,6 @@ BATsample(BAT *b, BUN n)
 		bn->tdense = bn->batCount <= 1;
 		if (bn->batCount == 1)
 			bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
-		bn->hdense = 1;
-		bn->hseqbase = 0;
-		bn->hkey = 1;
-		bn->hrevsorted = bn->batCount <= 1;
-		bn->hsorted = 1;
 	}
 	return bn;
 }

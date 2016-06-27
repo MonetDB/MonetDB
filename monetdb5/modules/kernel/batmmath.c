@@ -32,11 +32,8 @@
 			BBPunfix(b->batCacheid);							\
 			throw(MAL, X2, MAL_MALLOC_FAIL);					\
 		}														\
-		bn->hsorted = b->hsorted;								\
-		bn->hrevsorted = b->hrevsorted;							\
 		bn->tsorted = b->tsorted;								\
 		bn->trevsorted = b->trevsorted;							\
-		bn->H->nonil = 1;										\
 		bn->T->nonil = b->T->nonil;								\
 	} while (0)
 

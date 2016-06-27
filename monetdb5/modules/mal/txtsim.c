@@ -968,14 +968,6 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		}
 	}
 
-	bn->hsorted = bn->tsorted = 0;
-	bn->hrevsorted = bn->trevsorted = 0;
-	bn->H->nonil = bn->T->nonil = 0;
-
-	bn2->hsorted = bn2->tsorted = 0;
-	bn2->hrevsorted = bn2->trevsorted = 0;
-	bn2->H->nonil = bn2->T->nonil = 0;
-
 	BBPunfix(qgram->batCacheid);
 	BBPunfix(id->batCacheid);
 	BBPunfix(pos->batCacheid);
