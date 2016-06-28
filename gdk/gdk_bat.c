@@ -87,9 +87,6 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * assert needed in the kernel to get symbol eprintf resolved.
 	 * Else modules using assert fail to load.
 	 */
-	bs->BM.H = &bs->T;
-	bs->BM.T = &bs->H;
-	bs->BM.S = &bs->S;
 	bs->B.H = &bs->H;
 	bs->B.T = &bs->T;
 	bs->B.S = &bs->S;
@@ -531,8 +528,6 @@ BATfree(BAT *b)
 		assert(b->T->vheap->parentid == b->batCacheid);
 		HEAPfree(b->T->vheap, 0);
 	}
-
-	BBP_cache(-b->batCacheid) = NULL;
 }
 
 /* free a cached BAT descriptor */
@@ -2294,17 +2289,11 @@ BATassertTailProps(BAT *b)
 void
 BATassertProps(BAT *b)
 {
-	BAT *bm;
 	int bbpstatus;
 
 	/* general BAT sanity */
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
-	bm = BBP_cache(-b->batCacheid);
-	assert(bm != NULL);
-	assert(b->H == bm->T);
-	assert(b->T == bm->H);
-	assert(b->S == bm->S);
 	assert(b->batDeleted < BUN_MAX);
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);

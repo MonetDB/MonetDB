@@ -32,7 +32,6 @@ enum heaptype {
  */
 struct BATstore {
 	BAT B;			/* storage for BAT descriptor */
-	BAT BM;			/* mirror (reverse) BAT */
 	COLrec H;		/* storage for head column */
 	COLrec T;		/* storage for tail column */
 	BATrec S;		/* the BAT properties */

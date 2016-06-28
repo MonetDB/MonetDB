@@ -1728,7 +1728,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * field.
  */
 typedef struct {
-	BAT *cache[2];		/* if loaded: BAT* handle + reverse */
+	BAT *cache;		/* if loaded: BAT* handle */
 	str logical[2];		/* logical name + reverse */
 	str bak[2];		/* logical name + reverse backups */
 	bat next[2];		/* next BBP slot in linked list */
@@ -1754,7 +1754,7 @@ gdk_export bat BBPlimit;
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
-#define BBP_cache(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].cache[(i)<0]
+#define BBP_cache(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].cache
 #define BBP_logical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].logical[(i)<0]
 #define BBP_bak(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].bak[(i)<0]
 #define BBP_next(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].next[(i)<0]

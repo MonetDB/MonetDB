@@ -658,15 +658,6 @@ fixoidheap(void)
 		else
 			bnme++;
 		sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
-		srcdir = GDKfilepath(bs->H.heap.farmid, BATDIR, nme, NULL);
-		*strrchr(srcdir, DIR_SEP) = 0;
-
-		if (bs->H.type == TYPE_oid ||
-		    (bs->H.varsized && bs->H.type != TYPE_void)) {
-			assert(bs->H.type != TYPE_oid || bs->H.width == 4);
-			fixoidheapcolumn(&bs->BM, srcdir, nme, filename, "head", "hheap");
-		}
-		GDKfree(srcdir);
 		srcdir = GDKfilepath(bs->T.heap.farmid, BATDIR, nme, NULL);
 		*strrchr(srcdir, DIR_SEP) = 0;
 		if (bs->T.type == TYPE_oid ||
@@ -1120,10 +1111,6 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->B.T = &bs->T;
 		bs->B.S = &bs->S;
 		bs->B.batCacheid = bid;
-		bs->BM.H = &bs->T;
-		bs->BM.T = &bs->H;
-		bs->BM.S = &bs->S;
-		bs->BM.batCacheid = -bid;
 		BATroles(&bs->B, NULL, NULL);
 		bs->S.persistence = PERSISTENT;
 		bs->S.copiedtodisk = 1;
@@ -2078,8 +2065,6 @@ BBPinsert(BATstore *bs)
 
 	assert(bs->B.H != NULL);
 	assert(bs->B.T != NULL);
-	assert(bs->B.H == bs->BM.T);
-	assert(bs->B.T == bs->BM.H);
 
 	/* critical section: get a new BBP entry */
 	if (lock) {
@@ -2125,7 +2110,6 @@ BBPinsert(BATstore *bs)
 
 	bs->S.stamp = ATOMIC_INC(BBP_curstamp, BBP_curstampLock) & 0x7fffffff;
 	bs->B.batCacheid = i;
-	bs->BM.batCacheid = -i;
 	bs->S.tid = MT_getpid();
 
 	BBP_status_set(i, BBPDELETING, "BBPinsert");
@@ -2180,8 +2164,6 @@ BBPcacheit(BATstore *bs, int lock)
 			bs->T.vheap->parentid = i;
 	}
 	assert(bs->B.batCacheid > 0);
-	assert(bs->BM.batCacheid < 0);
-	assert(bs->B.batCacheid == -bs->BM.batCacheid);
 
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
@@ -2192,7 +2174,6 @@ BBPcacheit(BATstore *bs, int lock)
 
 	/* cache it! */
 	BBP_cache(i) = &bs->B;
-	BBP_cache(-i) = &bs->BM;
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
@@ -2216,7 +2197,7 @@ BBPuncacheit(bat i, int unloaddesc)
 			if (BBP_cache(i)) {
 				BATDEBUG fprintf(stderr, "#uncache %d (%s)\n", (int) i, BBPname(i));
 
-				BBP_cache(i) = BBP_cache(-i) = NULL;
+				BBP_cache(i) = NULL;
 
 				/* clearing bits can be done without the lock */
 				BBP_status_off(i, BBPLOADED, "BBPuncacheit");
@@ -2555,14 +2536,14 @@ decref(bat i, int logical, int releaseShare, int lock)
 			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((tp = b->T->heap.parentid) != 0 &&
+				if ((tp = -b->T->heap.parentid) != 0 &&
 				    b->H != b->T)
-					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->H->heap.base);
+					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->T->heap.base);
 				/* if a view shared the hash with its
 				 * parent, indicate this, but only if
 				 * view isn't getting destroyed */
 				if (tp && b->T->hash &&
-				    b->T->hash == BBP_cache(tp)->H->hash)
+				    b->T->hash == BBP_cache(tp)->T->hash)
 					b->T->hash = (Hash *) -1;
 				tvp = VIEWvtparent(b);
 			}
@@ -2614,9 +2595,9 @@ decref(bat i, int logical, int releaseShare, int lock)
 		}
 	}
 	if (tp)
-		decref(abs(tp), FALSE, FALSE, lock);
+		decref(tp, FALSE, FALSE, lock);
 	if (tvp)
-		decref(abs(tvp), FALSE, FALSE, lock);
+		decref(tvp, FALSE, FALSE, lock);
 	return refs;
 }
 

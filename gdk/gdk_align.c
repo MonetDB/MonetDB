@@ -397,8 +397,6 @@ VIEWreset(BAT *b)
 	tp = -VIEWtparent(b);
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
-		BAT *m;
-		BATstore *bs;
 		BUN cnt;
 		str nme;
 		size_t nmelen;
@@ -407,7 +405,6 @@ VIEWreset(BAT *b)
 		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
 
-		bs = BBP_desc(b->batCacheid);
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
 		nmelen = nme ? strlen(nme) : 0;
@@ -452,12 +449,6 @@ VIEWreset(BAT *b)
 			BBPunshare(tvp);
 			BBPunfix(tvp);
 		}
-
-		/* make sure everything points there */
-		m = BBP_cache(-b->batCacheid);
-		m->S = b->S = &bs->S;
-		m->T = b->H = &bs->H;
-		m->H = b->T = &bs->T;
 
 		b->H->type = TYPE_void;
 		b->H->varsized = 1;

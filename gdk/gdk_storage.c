@@ -753,11 +753,7 @@ BATsave(BAT *bd)
 	 * only read it. */
 	bs = *BBP_desc(b->batCacheid);
 	/* fix up internal pointers */
-	b = &bs.BM;		/* first the mirror */
-	b->S = &bs.S;
-	b->H = &bs.T;
-	b->T = &bs.H;
-	b = &bs.B;		/* then the unmirrored version */
+	b = &bs.B;
 	b->S = &bs.S;
 	b->H = &bs.H;
 	b->T = &bs.T;
