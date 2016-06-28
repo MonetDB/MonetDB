@@ -1758,14 +1758,14 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_logical(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].logical
 #define BBP_bak(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].bak
 #define BBP_next(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].next
-#define BBP_physical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].physical
-#define BBP_options(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].options
-#define BBP_desc(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].desc
-#define BBP_refs(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].refs
-#define BBP_lrefs(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].lrefs
-#define BBP_lastused(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].lastused
-#define BBP_status(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].status
-#define BBP_pid(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].pid
+#define BBP_physical(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].physical
+#define BBP_options(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].options
+#define BBP_desc(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].desc
+#define BBP_refs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].refs
+#define BBP_lrefs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lrefs
+#define BBP_lastused(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lastused
+#define BBP_status(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].status
+#define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
@@ -1773,9 +1773,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 gdk_export int BBPcurstamp(void);
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-/* we use abs(i) instead of -(i) here because of a bug in gcc 4.8.2
- * (at least) with optimization enabled; it incorrectly complains
- * about an array bound error in monetdb5/modules/kernel/status.c */
 #define BBPname(i)						\
 	(BBPcheck((i), "BBPname") ?				\
 	 BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical :	\
@@ -2545,12 +2542,12 @@ static inline bat
 BBPcheck(register bat x, register const char *y)
 {
 	if (x && x != bat_nil) {
-		register bat z = abs(x);
+		assert(x > 0);
 
-		if (z >= getBBPsize() || BBP_logical(z) == NULL) {
+		if (x >= getBBPsize() || BBP_logical(x) == NULL) {
 			CHECKDEBUG fprintf(stderr,"#%s: range error %d\n", y, (int) x);
 		} else {
-			return z;
+			return x;
 		}
 	}
 	return 0;
@@ -2788,7 +2785,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
 #define isVIEWCOMBINE(x) ((x)->H == (x)->T)
 #define VIEWtparent(x)	((x)->T->heap.parentid)
-#define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==abs((x)->batCacheid))?0:(x)->T->vheap->parentid)
+#define VIEWvtparent(x)	((x)->T->vheap == NULL || (x)->T->vheap->parentid == (x)->batCacheid ? 0 : (x)->T->vheap->parentid)
 
 /*
  * @+ BAT Iterators

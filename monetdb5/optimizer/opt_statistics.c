@@ -51,10 +51,10 @@ static void QOTstatisticsSave(void) {
 		return;
 	MT_lock_set(&qotlock);
 	names[0] = 0;
-	names[1] = abs(qotStat[QOTnames]->batCacheid);
-	names[2] = abs(qotStat[QOTcalls]->batCacheid);
-	names[3] = abs(qotStat[QOTactions]->batCacheid);
-	names[4] = abs(qotStat[QOTtimings]->batCacheid);
+	names[1] = qotStat[QOTnames]->batCacheid;
+	names[2] = qotStat[QOTcalls]->batCacheid;
+	names[3] = qotStat[QOTactions]->batCacheid;
+	names[4] = qotStat[QOTtimings]->batCacheid;
 
 	TMsubcommit_list(names, 5);
 	MT_lock_unset(&qotlock);

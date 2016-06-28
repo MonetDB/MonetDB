@@ -119,7 +119,7 @@ static gdk_return BBPdir(int cnt, bat *subcommit);
 static int havehge = 0;
 #endif
 
-#define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
+#define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
 
 #ifdef ATOMIC_LOCK
 static MT_Lock stampLock MT_LOCK_INITIALIZER("stampLock");
@@ -218,7 +218,7 @@ int BBPout = 0;			/* bats saved statistic */
  *
  * To reduce contention GDKswapLock was split into multiple locks; it
  * is now an array of lock pointers which is accessed by
- * GDKswapLock(abs(bat))
+ * GDKswapLock(bat)
  * @end table
  *
  * Routines that need both locks should first acquire the locks in the
@@ -454,7 +454,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		 const char *filename, const char *headtail,
 		 const char *htheap)
 {
-	bat bid = abs(b->batCacheid);
+	bat bid = b->batCacheid;
 	Heap h1, h2;
 	int *old;
 	oid *new;
@@ -1888,10 +1888,10 @@ BBP_find(const char *nme, int lock)
 	bat i = BBPnamecheck(nme);
 
 	if (i != 0) {
-		/* for tmp_X and tmpr_X BATs, we already know X */
+		/* for tmp_X BATs, we already know X */
 		const char *s;
 
-		if (abs(i) >= (bat) ATOMIC_GET(BBPsize, BBPsizeLock) || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
+		if (i >= (bat) ATOMIC_GET(BBPsize, BBPsizeLock) || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
 			i = 0;
 		}
 	} else if (*nme != '.') {
@@ -1948,7 +1948,7 @@ BBPphysical(bat bid, str buf)
 	if (buf == NULL) {
 		return NULL;
 	} else if (BBPcheck(bid, "BBPphysical")) {
-		strcpy(buf, BBP_physical(abs(bid)));
+		strcpy(buf, BBP_physical(bid));
 	} else {
 		*buf = 0;
 	}
@@ -2237,7 +2237,7 @@ BBPclear(bat i)
 	int lock = locked_by ? pid != locked_by : 1;
 
 	if (BBPcheck(i, "BBPclear")) {
-		bbpclear(abs(i), threadmask(pid), lock ? "BBPclear" : NULL);
+		bbpclear(i, threadmask(pid), lock ? "BBPclear" : NULL);
 	}
 }
 
@@ -2278,7 +2278,7 @@ BBPrename(bat bid, const char *nme)
 	if (BBP_logical(bid) && strcmp(BBP_logical(bid), nme) == 0)
 		return 0;
 
-	BBPgetsubdir(dirname, abs(bid));
+	BBPgetsubdir(dirname, bid);
 
 	if ((tmpid = BBPnamecheck(nme)) && (bid < 0 || tmpid != bid)) {
 		return BBPRENAME_ILLEGAL;
@@ -2313,7 +2313,7 @@ BBPrename(bat bid, const char *nme)
 
 		if (lock)
 			MT_lock_set(&GDKswapLock(i));
-		BBP_status_on(abs(bid), BBPRENAMED, "BBPrename");
+		BBP_status_on(bid, BBPRENAMED, "BBPrename");
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
 		BBPdirty(1);
@@ -2652,7 +2652,7 @@ BBPreclaim(BAT *b)
 
 	if (b == NULL)
 		return -1;
-	i = abs(b->batCacheid);
+	i = b->batCacheid;
 
 	assert(BBP_refs(i) == 1);
 
@@ -2730,7 +2730,7 @@ gdk_return
 BBPsave(BAT *b)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
-	bat bid = abs(b->batCacheid);
+	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
 	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))

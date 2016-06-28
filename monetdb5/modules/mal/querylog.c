@@ -140,7 +140,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 
 	BATmode(b, PERSISTENT);
 	BBPrename(b->batCacheid, buf);
-	commitlist[committop++]= abs(b->batCacheid);
+	commitlist[committop++]= b->batCacheid;
 	assert(committop < 32);
 	return b;
 }

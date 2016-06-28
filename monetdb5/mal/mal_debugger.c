@@ -305,9 +305,9 @@ static void
 printBATproperties(stream *f, BAT *b)
 {
 	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
-			BATcount(b), BBP_lrefs(abs(b->batCacheid)));
-	if (BBP_refs(abs(b->batCacheid)) - 1)
-		mnstr_printf(f, " refs=%d ", BBP_refs(abs(b->batCacheid)));
+			BATcount(b), BBP_lrefs(b->batCacheid));
+	if (BBP_refs(b->batCacheid) - 1)
+		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
 	if (b->T->heap.parentid)

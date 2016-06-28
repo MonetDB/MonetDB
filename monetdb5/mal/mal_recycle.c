@@ -143,7 +143,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 		v= &getVarConstant(mb,getArg(q,j));
 		if(isaBatType(getArgType(mb, q,j)) ){
 			if( v->val.bval != bat_nil ){
-				BBPdecref(abs(v->val.bval), TRUE);
+				BBPdecref(v->val.bval, TRUE);
 				if (!BBP_lrefs(v->val.bval)){
 					v->vtype= TYPE_int;
 					v->val.ival= 0;
@@ -742,8 +742,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 					bid = nbid;
 					pc = i;
 				} else {
-					b1 = BBPquickdesc(abs(bid), FALSE);
-					b2 = BBPquickdesc(abs(nbid), FALSE);
+					b1 = BBPquickdesc(bid, FALSE);
+					b2 = BBPquickdesc(nbid, FALSE);
 					if (b1 && b2 && BATcount(b1) > BATcount(b2)){
 						bid = nbid;
 						pc = i;
@@ -788,7 +788,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 #endif
 		nbid = stk->stk[getArg(p,2)].val.bval;
         stk->stk[getArg(p,2)].val.bval = bid;
-        BBPincref(abs(bid), TRUE);
+        BBPincref(bid, TRUE);
         /* make sure the garbage collector is not called, it is taken care of by the current call */
         j = stk->keepAlive ;
         stk->keepAlive = TRUE;
@@ -1003,7 +1003,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 			release[getArg(p,j)]=1;//propagate the removal request
 			if (j < p->retc && isaBatType(getArgType(recycleBlk,p,j)) ){
 				v = &getVarConstant(recycleBlk,getArg(p,j));
-				BBPdecref(abs(v->val.bval), TRUE);
+				BBPdecref(v->val.bval, TRUE);
 			}
 		}
 		freeInstruction(p);
@@ -1068,7 +1068,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 			release[getArg(p,j)]=1;//propagate the removal request
 			if (j < p->retc && isaBatType(getArgType(recycleBlk,p,j)) ){
 				v = &getVarConstant(recycleBlk,getArg(p,j));
-				BBPdecref(abs(v->val.bval), TRUE);
+				BBPdecref(v->val.bval, TRUE);
 			}
 		}
 		actions++;

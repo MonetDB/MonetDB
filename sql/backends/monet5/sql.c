@@ -2257,9 +2257,9 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 {
 	BAT *c, *u_id, *u_val, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
+	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(abs(*ins), 0)) == NULL)
+	if (ins && (i = BBPquickdesc(*ins, 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -2268,7 +2268,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(abs(*col), 0)) == NULL)
+	if ((c = BBPquickdesc(*col, 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -2312,9 +2312,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 	gdk_return ret;
 
-	if ((u_id = BBPquickdesc(abs(*uid), 0)) == NULL)
+	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(abs(*ins), 0)) == NULL)
+	if (ins && (i = BBPquickdesc(*ins, 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -2323,7 +2323,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(abs(*col), 0)) == NULL)
+	if ((c = BBPquickdesc(*col, 0)) == NULL)
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -4992,10 +4992,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = BATcount(bn) * bn->T->width; 
 								BUNappend(size, &sz, FALSE);
 
-								sz = heapinfo(bn->T->vheap, abs(bn->batCacheid));
+								sz = heapinfo(bn->T->vheap, bn->batCacheid);
 								BUNappend(heap, &sz, FALSE);
 
-								sz = hashinfo(bn->T->hash, abs(bn->batCacheid));
+								sz = hashinfo(bn->T->hash, bn->batCacheid);
 								BUNappend(indices, &sz, FALSE);
 
 								bitval = 0; /* HASHispersistent(bn); */

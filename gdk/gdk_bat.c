@@ -1975,7 +1975,7 @@ BATmode(BAT *b, int mode)
 	}
 
 	if (mode != b->batPersistence) {
-		bat bid = abs(b->batCacheid);
+		bat bid = b->batCacheid;
 
 		if (mode == PERSISTENT) {
 			check_type(b->htype);

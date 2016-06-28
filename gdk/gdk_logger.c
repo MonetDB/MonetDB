@@ -1241,7 +1241,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
 		assert(col);
-		n[i++] = abs(col);
+		n[i++] = col;
 	}
 	if (extra) {
 		iter = bat_iterator(extra);
@@ -1257,9 +1257,9 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	n[i++] = abs(catalog_bid->batCacheid);
-	n[i++] = abs(catalog_nme->batCacheid);
-	n[i++] = abs(dcatalog->batCacheid);
+	n[i++] = catalog_bid->batCacheid;
+	n[i++] = catalog_nme->batCacheid;
+	n[i++] = dcatalog->batCacheid;
 	assert((BUN) i <= nn);
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
 		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;

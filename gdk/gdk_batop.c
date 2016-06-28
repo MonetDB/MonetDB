@@ -98,7 +98,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
                          *   with some other bat, we materialize it
                          *   and we will have to copy strings.
 			 */
-			bat bid = abs(b->batCacheid);
+			bat bid = b->batCacheid;
 
 			if (b->batCount == 0) {
 				if (b->T->vheap->parentid != bid) {
@@ -817,7 +817,7 @@ BATordered(BAT *b)
 	 * use a lock.  We reuse the hash lock for this, not because
 	 * this scanning interferes with hashes, but because it's
 	 * there, and not so likely to be used at the same time. */
-	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
+	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (!b->tsorted && b->T->nosorted == 0) {
 		BATiter bi = bat_iterator(b);
 		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
@@ -860,7 +860,7 @@ BATordered(BAT *b)
 		ALGODEBUG fprintf(stderr, "#BATordered: fixed sorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	return b->tsorted;
 }
 
@@ -876,7 +876,7 @@ BATordered_rev(BAT *b)
 		return 0;
 	if (b->ttype == TYPE_void)
 		return b->tseqbase == oid_nil;
-	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
+	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (!b->trevsorted && b->T->norevsorted == 0) {
 		BATiter bi = bat_iterator(b);
 		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
@@ -893,7 +893,7 @@ BATordered_rev(BAT *b)
 		ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed revsorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
 	}
   doreturn:
-	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	return b->trevsorted;
 }
 

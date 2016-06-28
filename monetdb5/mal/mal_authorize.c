@@ -123,11 +123,11 @@ AUTHcommit(void)
 	blist[0] = 0;
 
 	assert(user);
-	blist[1] = abs(user->batCacheid);
+	blist[1] = user->batCacheid;
 	assert(pass);
-	blist[2] = abs(pass->batCacheid);
+	blist[2] = pass->batCacheid;
 	assert(duser);
-	blist[3] = abs(duser->batCacheid);
+	blist[3] = duser->batCacheid;
 	TMsubcommit_list(blist, 4);
 }
 
