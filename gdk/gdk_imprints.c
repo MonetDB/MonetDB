@@ -119,7 +119,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 	dcnt = icnt = 0;
 	memset(cnt_bins, 0, 64 * SIZEOF_BUN);
 
-	switch (ATOMbasetype(b->T->type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 		BINSIZE(bits, IMPS_CREATE, bte);
 		break;
@@ -273,7 +273,7 @@ BATimprints(BAT *b)
 	assert(BAThdense(b));	/* assert void head */
 
 	/* we only create imprints for types that look like types we know */
-	switch (ATOMbasetype(b->T->type)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -421,7 +421,7 @@ BATimprints(BAT *b)
 		imprints->imps = (void *) (imprints->stats + 64 * 3);
 		imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 
-		switch (ATOMbasetype(b->T->type)) {
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
 			FILL_HISTOGRAM(bte);
 			break;

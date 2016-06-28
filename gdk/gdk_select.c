@@ -1571,14 +1571,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					 * that they refer to existing
 					 * head values of b whose tail
 					 * is not nil */
-					oid o = (oid) first + b->H->seq;
+					oid o = (oid) first + b->hseqbase;
 					BUN last;
 					first = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) low + b->H->seq;
+					o = (oid) low + b->hseqbase;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) high + b->H->seq;
+					o = (oid) high + b->hseqbase;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = b->H->seq + b->batCount;
+					o = b->hseqbase + b->batCount;
 					last = SORTfndfirst(s, &o) - BUNfirst(s);
 					bn = doubleslice(s, first, low, high, last);
 				} else {
@@ -1595,14 +1595,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					 * that they refer to existing
 					 * head values of b whose tail
 					 * is not nil */
-					oid o = (oid) last + b->H->seq;
+					oid o = (oid) last + b->hseqbase;
 					BUN first;
 					last = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) low + b->H->seq;
+					o = (oid) low + b->hseqbase;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) high + b->H->seq;
+					o = (oid) high + b->hseqbase;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = b->H->seq;
+					o = b->hseqbase;
 					first = SORTfndfirst(s, &o) - BUNfirst(s);
 					bn = doubleslice(s, first, low, high, last);
 				} else {

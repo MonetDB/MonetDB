@@ -557,7 +557,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		HEAPfree(b->T->vheap, 0);
 	} else {
 		assert(b->ttype == TYPE_oid ||
-		       (b->ttype != TYPE_void && b->T->varsized));
+		       (b->ttype != TYPE_void && b->tvarsized));
 		h1 = b->T->heap;
 		h1.filename = NULL;
 		h1.base = NULL;
@@ -583,7 +583,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		b->T->heap.dirty = TRUE;
 		old = (int *) h1.base + b->batFirst;
 		new = (oid *) b->T->heap.base + b->batFirst;
-		if (b->T->varsized)
+		if (b->tvarsized)
 			for (i = 0; i < b->batCount; i++)
 				new[i] = (oid) old[i] << 3;
 		else
@@ -811,7 +811,7 @@ fixwkbheap(void)
 		if ((bs = BBP_desc(bid)) == NULL)
 			continue; /* not a valid BAT */
 		b = (BAT *) bs;	  /* bit of a hack: BATstore contents not known */
-		if (b->T->type != utypewkb || b->batCount == 0)
+		if (b->ttype != utypewkb || b->batCount == 0)
 			continue; /* nothing to do for this BAT */
 		assert(b->T->vheap);
 		assert(b->T->width == SIZEOF_VAR_T);
@@ -1789,8 +1789,8 @@ BBPdump(void)
 			"Tvheap=[" SZFMT "," SZFMT "] "
 			"Thash=[" SZFMT "," SZFMT "]\n",
 			i,
-			ATOMname(b->H->type),
-			ATOMname(b->T->type),
+			ATOMname(b->htype),
+			ATOMname(b->ttype),
 			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
 			BBP_refs(i),
 			BBP_lrefs(i),
@@ -2365,7 +2365,7 @@ incref(bat i, int logical, int lock)
 
 	assert(BBP_refs(i) + BBP_lrefs(i) ||
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
-	assert(bs->B.H->type == TYPE_void);
+	assert(bs->B.htype == TYPE_void);
 	if (logical) {
 		/* parent BATs are not relevant for logical refs */
 		tp = tvp = 0;
@@ -4084,7 +4084,7 @@ BBPdiskscan(const char *parent)
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 			if (!delete)
-				b->T->orderidx = (Heap *) 1;
+				b->torderidx = (Heap *) 1;
 #else
 			delete = TRUE;
 #endif

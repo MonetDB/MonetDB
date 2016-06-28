@@ -254,8 +254,8 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
 	/* Order OID index */
-	bn->H->orderidx = NULL;
-	bn->T->orderidx = NULL;
+	bn->horderidx = NULL;
+	bn->torderidx = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	return bn;
 }
@@ -450,24 +450,24 @@ VIEWreset(BAT *b)
 			BBPunfix(tvp);
 		}
 
-		b->H->type = TYPE_void;
-		b->H->varsized = 1;
+		b->htype = TYPE_void;
+		b->hvarsized = 1;
 		b->H->shift = 0;
 		b->H->width = 0;
-		b->H->seq = v->H->seq;
-		b->H->key = BOUND2BTRUE | 1;
+		b->hseqbase = v->hseqbase;
+		b->hkey = BOUND2BTRUE | 1;
 
-		b->T->type = v->T->type;
-		b->T->varsized = v->T->varsized;
+		b->ttype = v->ttype;
+		b->tvarsized = v->tvarsized;
 		b->T->shift = v->T->shift;
 		b->T->width = v->T->width;
-		b->T->seq = v->T->seq;
+		b->tseqbase = v->tseqbase;
 
 		b->T->heap.parentid = 0;
 		b->batRestricted = BAT_WRITE;
 
 		/* reset BOUND2BTRUE */
-		b->T->key = BATtkey(v);
+		b->tkey = BATtkey(v);
 
 		/* copy the heaps */
 		b->H->heap = head;

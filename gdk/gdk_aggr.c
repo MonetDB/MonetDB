@@ -1574,9 +1574,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 				/* 0 <= r < n (if n > 0) */		\
 				/* or if n == 0: a == 0; r == 0 */	\
 				if (cand) {				\
-					if (i < *cand - b->H->seq)	\
+					if (i < *cand - b->hseqbase)	\
 						continue;		\
-					assert(i == *cand - b->H->seq);	\
+					assert(i == *cand - b->hseqbase); \
 					if (++cand == candend)		\
 						end = i + 1;		\
 				}					\
@@ -1639,7 +1639,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 	src = Tloc(b, b->batFirst);
 
-	switch (b->T->type) {
+	switch (b->ttype) {
 	case TYPE_bte:
 		AVERAGE_TYPE(bte);
 		break;
@@ -1665,7 +1665,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 		break;
 	default:
 		GDKerror("BATcalcavg: average of type %s unsupported.\n",
-			 ATOMname(b->T->type));
+			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
 	if (vals)
@@ -1754,7 +1754,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	t = b->T->type;
+	t = b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
@@ -1982,7 +1982,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	if (cnt == 0)
 		return nils;
 
-	t = b->T->type;
+	t = b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
@@ -2107,7 +2107,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	if (cnt == 0)
 		return nils;
 
-	t = b->T->type;
+	t = b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);

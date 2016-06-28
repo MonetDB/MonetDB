@@ -1997,9 +1997,9 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 			bn->T->nil = nils != 0;
 			bn->T->nonil = nils == 0;
-			bn->T->sorted = BATcount(bn) <= 1;
-			bn->T->revsorted = BATcount(bn) <= 1;
-			bn->T->key = BATcount(bn) <= 1;
+			bn->tsorted = BATcount(bn) <= 1;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = BATcount(bn) <= 1;
 			goto out;
 		}
 		grps = (const oid *) Tloc(g, BUNfirst(g));
@@ -2141,9 +2141,9 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	}
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-	bn->T->sorted = BATcount(bn) <= 1;
-	bn->T->revsorted = BATcount(bn) <= 1;
-	bn->T->key = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tkey = BATcount(bn) <= 1;
 
       out:
 	if (t2)

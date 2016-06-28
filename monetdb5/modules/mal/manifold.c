@@ -93,7 +93,7 @@ typedef struct{
 #endif
 #define Manifoldbody(...)												\
 	do {																\
-		switch(ATOMstorage(mut->args[0].b->T->type)){					\
+		switch(ATOMstorage(mut->args[0].b->ttype)){						\
 		case TYPE_bte: ManifoldLoop(bte,__VA_ARGS__); break;			\
 		case TYPE_sht: ManifoldLoop(sht,__VA_ARGS__); break;			\
 		case TYPE_int: ManifoldLoop(int,__VA_ARGS__); break;			\

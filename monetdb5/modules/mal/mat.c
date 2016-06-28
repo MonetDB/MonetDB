@@ -74,8 +74,8 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b ){
 			if (BATcount(bn) == 0) {
-				BAThseqbase(bn, b->H->seq);
-				BATtseqbase(bn, b->T->seq);
+				BAThseqbase(bn, b->hseqbase);
+				BATtseqbase(bn, b->tseqbase);
 			}
 			BATappend(bn,b,FALSE);
 			BBPunfix(b->batCacheid);
@@ -118,11 +118,11 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (HEAPextend(bn->T->vheap, newsize, TRUE) != GDK_SUCCEED)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
-		BATtseqbase(bn, b->T->seq);
+		BATtseqbase(bn, b->tseqbase);
 		BATappend(bn,b,FALSE);
 		assert(!bn->H->nil || !bn->H->nonil);
 		assert(!bn->T->nil || !bn->T->nonil);
-		bn->H->align = (pieces-1);
+		bn->halign = (pieces-1);
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
 	} else {
@@ -130,13 +130,13 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
 		if ( bb ){
 			if (BATcount(b) == 0) {
-				BAThseqbase(b, bb->H->seq);
-				BATtseqbase(b, bb->T->seq);
+				BAThseqbase(b, bb->hseqbase);
+				BATtseqbase(b, bb->tseqbase);
 			}
 			BATappend(b,bb,FALSE);
 		}
-		b->H->align--;
-		if(b->H->align == 0)
+		b->halign--;
+		if(b->halign == 0)
 			BATsetaccess(b, BAT_READ);
 		assert(!b->H->nil || !b->H->nonil);
 		assert(!b->T->nil || !b->T->nonil);

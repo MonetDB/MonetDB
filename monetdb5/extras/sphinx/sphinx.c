@@ -56,8 +56,8 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	}
 	sphinx_destroy (client);
 
-	bn->T->sorted = 0;
-	bn->T->revsorted = 0;
+	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = 1;
 	BATkey(bn, FALSE);
 

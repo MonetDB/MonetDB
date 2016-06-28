@@ -85,7 +85,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 	    b->T->vheap->hashash == n->T->vheap->hashash &&
 	    /* if needs to be kept unique, take slow path */
 	    (b->tkey & BOUND2BTRUE) == 0) {
-		if (b->S->role == TRANSIENT) {
+		if (b->batRole == TRANSIENT) {
 			/* If b is in the transient farm (i.e. b will
 			 * never become persistent), we try some
 			 * clever tricks to avoid copying:
@@ -362,7 +362,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	assert(b->H->heap.parentid == 0 &&
 	       b->T->heap.parentid == 0 &&
 	       b->H->vheap == NULL &&
-	       (b->T->vheap == NULL || b->T->vheap->parentid == b->batCacheid || b->T->type == TYPE_str));
+	       (b->T->vheap == NULL || b->T->vheap->parentid == b->batCacheid || b->ttype == TYPE_str));
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
@@ -1264,7 +1264,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 	bn->tsorted = 1;
 	bn->trevsorted = 1;
 	bn->T->nonil = !bn->T->nil;
-	bn->T->key = BATcount(bn) <= 1;
+	bn->tkey = BATcount(bn) <= 1;
 	return bn;
 
   bunins_failed:

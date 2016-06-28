@@ -21,12 +21,12 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 	if (!tids)
 		return NULL;
-	tids->T->seq = 0;
+	tids->tseqbase = 0;
 	BATsetcount(tids, (BUN) nr);
-	tids->T->revsorted = 0;
+	tids->trevsorted = 0;
 
-	tids->T->key = 1;
-	tids->T->dense = 1;
+	tids->tkey = 1;
+	tids->tdense = 1;
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d, *diff = NULL;

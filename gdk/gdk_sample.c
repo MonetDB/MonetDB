@@ -137,7 +137,7 @@ BATsample(BAT *b, BUN n)
 			return NULL;
 		}
 		BATsetcount(bn, cnt);
-		BATtseqbase(bn, b->H->seq);
+		BATtseqbase(bn, b->hseqbase);
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;

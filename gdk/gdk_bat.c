@@ -99,7 +99,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->htype = TYPE_void;
 	bn->H->width = 0;
 	bn->H->shift = 0;
-	bn->H->varsized = 1;
+	bn->hvarsized = 1;
 	bn->hseqbase = hseq;
 	bn->hkey = TRUE | BOUND2BTRUE;
 	bn->H->nonil = TRUE;
@@ -190,7 +190,7 @@ BATsetdims(BAT *b)
 	b->T->width = b->ttype == TYPE_str ? 1 : ATOMsize(b->ttype);
 	b->T->shift = ATOMelmshift(Tsize(b));
 	assert_shift_width(b->T->shift, b->T->width);
-	b->T->varsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
+	b->tvarsized = b->ttype == TYPE_void || BATatoms[b->ttype].atomPut != NULL;
 }
 
 /*
@@ -1349,7 +1349,7 @@ BATsetcount(BAT *b, BUN cnt)
 	b->batCount = cnt;
 	b->batDirtydesc = TRUE;
 	b->T->heap.free = tailsize(b, BUNfirst(b) + cnt);
-	if (b->T->type == TYPE_void)
+	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
 		b->hrevsorted = 1;

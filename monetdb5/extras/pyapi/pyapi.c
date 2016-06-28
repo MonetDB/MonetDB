@@ -174,9 +174,9 @@ static bool enable_zerocopy_output = true;
             }                                                                                                           \
         }                                                                                                               \
         bat->T->heap.newstorage = STORE_MEM;                                                                            \
-        bat->S->count = ret->count;                                                                                     \
-        bat->S->capacity = ret->count;                                                                                  \
-        bat->S->copiedtodisk = false;                                                                                   \
+        bat->batCount = ret->count;                                                                                     \
+        bat->batCapacity = ret->count;                                                                                  \
+        bat->batCopiedtodisk = false;                                                                                   \
         /*Take over the data from the numpy array*/                                                                     \
         if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
     }
@@ -213,9 +213,9 @@ static bool enable_zerocopy_output = true;
             bat->T->heap.storage = batstore;                                                                            \
         }                                                                                                               \
         bat->T->heap.newstorage = STORE_MEM;                                                                            \
-        bat->S->count = (BUN) ret->count;                                                                                     \
-        bat->S->capacity = (BUN) ret->count;                                                                                  \
-        bat->S->copiedtodisk = false;                                                                                   \
+        bat->batCount = (BUN) ret->count;                                                                                     \
+        bat->batCapacity = (BUN) ret->count;                                                                                  \
+        bat->batCopiedtodisk = false;                                                                                   \
         /*Take over the data from the numpy array*/                                                                     \
         if (ret->numpy_array != NULL) PyArray_CLEARFLAGS((PyArrayObject*)ret->numpy_array, NPY_ARRAY_OWNDATA);          \
     }
@@ -569,7 +569,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 msg = createException(MAL, "pyapi.eval", "The BAT passed to the function (argument #%d) is NULL.\n", i - (pci->retc + 2) + 1);
                 goto wrapup;
             }
-            seqbase = b->H->seq;
+            seqbase = b->hseqbase;
             inp->count = BATcount(b);
             inp->bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
             inp->bat = b;
@@ -2104,7 +2104,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
     BATiter bi = bat_iterator(b);
     bool *mask_data = (bool*)PyArray_DATA(nullmask);
 
-    switch(ATOMstorage(getColumnType(b->T->type)))
+    switch(ATOMstorage(getColumnType(b->ttype)))
     {
         case TYPE_bit: CreateNullMask(bit); break;
         case TYPE_bte: CreateNullMask(bte); break;
@@ -2720,7 +2720,7 @@ str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret
     } 
     else if (conv_type == TYPE_dbl)
     {
-        int bat_type = ATOMstorage(b->T->type);
+        int bat_type = ATOMstorage(b->ttype);
         int hpos = sql_subtype->scale; //this value isn't right, it's always 3. todo: find the right scale value (i.e. where the decimal point is)
         bat result = 0;
         //decimal values can be stored in various numeric fields, so check the numeric field and convert the one it's actually stored in
@@ -2788,7 +2788,7 @@ ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, 
     }
     if (res == MAL_SUCCEED) {
         *ret_bat = BATdescriptor(result_bat);
-        *ret_type = (*ret_bat)->T->type;
+        *ret_type = (*ret_bat)->ttype;
     }
 
     return res;

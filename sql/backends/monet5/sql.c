@@ -2621,11 +2621,11 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 		for(i=0;i<cnt; i++) 
 			p[lp[i]] = rp[i];
 	}
-	res->T->sorted = 0;
-	res->T->revsorted = 0;
+	res->tsorted = 0;
+	res->trevsorted = 0;
 	res->T->nil = 0;
 	res->T->nonil = 0;
-	res->T->key = 0;
+	res->tkey = 0;
 	BBPunfix(c->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
