@@ -1519,14 +1519,12 @@ new_bbpentry(FILE *fp, bat i)
 	assert(BBP_desc(i));
 	assert(BBP_desc(i)->B.batCacheid == i);
 	assert(BBP_desc(i)->S.role == PERSISTENT);
+	assert(BBP_desc(i)->H.type == TYPE_void);
 	assert(0 <= BBP_desc(i)->H.heap.farmid && BBP_desc(i)->H.heap.farmid < MAXFARMS);
 	assert(BBPfarms[BBP_desc(i)->H.heap.farmid].roles & (1 << PERSISTENT));
 	assert(0 <= BBP_desc(i)->T.heap.farmid && BBP_desc(i)->T.heap.farmid < MAXFARMS);
 	assert(BBPfarms[BBP_desc(i)->T.heap.farmid].roles & (1 << PERSISTENT));
-	if (BBP_desc(i)->H.vheap) {
-		assert(0 <= BBP_desc(i)->H.vheap->farmid && BBP_desc(i)->H.vheap->farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(i)->H.vheap->farmid].roles & (1 << PERSISTENT));
-	}
+	assert(BBP_desc(i)->H.vheap == NULL);
 	if (BBP_desc(i)->T.vheap) {
 		assert(0 <= BBP_desc(i)->T.vheap->farmid && BBP_desc(i)->T.vheap->farmid < MAXFARMS);
 		assert(BBPfarms[BBP_desc(i)->T.vheap->farmid].roles & (1 << PERSISTENT));
