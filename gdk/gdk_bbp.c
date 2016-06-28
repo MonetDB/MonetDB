@@ -1142,13 +1142,13 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		if (bs->S.count > 1) {
 			/* fix result of bug in BATappend not clearing
 			 * revsorted property */
-			if (bs->H.type == TYPE_void && bs->H.seq != oid_nil && bs->H.revsorted) {
-				bs->H.revsorted = 0;
+			if (bs->H.type == TYPE_void && bs->H.seq != oid_nil && bs->H.revsorted != (bs->S.count <= 1)) {
+				bs->H.revsorted = bs->S.count <= 1;
 				bs->S.descdirty = 1;
 				needcommit = 1;
 			}
-			if (bs->T.type == TYPE_void && bs->T.seq != oid_nil && bs->T.revsorted) {
-				bs->T.revsorted = 0;
+			if (bs->T.type == TYPE_void && bs->T.seq != oid_nil && bs->T.revsorted != (bs->S.count <= 1)) {
+				bs->T.revsorted = bs->S.count <= 1;
 				bs->S.descdirty = 1;
 				needcommit = 1;
 			}
