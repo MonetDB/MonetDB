@@ -2321,6 +2321,7 @@ BATassertProps(BAT *b)
 	assert(b->batFirst == 0);
 	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
+	assert(b->H != b->T);
 
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
@@ -2329,8 +2330,14 @@ BATassertProps(BAT *b)
 	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertTailProps(b);
-	if (b->H != bm->H)
-		BATassertTailProps(bm);
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
+	assert(b->hseqbase + BATcount(b) < oid_nil);
+	assert(b->hsorted);
+	assert(b->hkey & 1);
+	assert(b->H->nonil);
+	assert(!b->H->nil);
+	assert(!b->hrevsorted || BATcount(b) <= 1);
 }
 
 /* derive properties that can be derived with a simple scan: sorted,
