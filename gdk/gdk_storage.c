@@ -729,19 +729,17 @@ BATsave(BAT *bd)
 
 	BATcheck(b, "BATsave", GDK_FAIL);
 
+	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b) &&
 	    !(b->H->heap.copied && b->H->heap.storage == STORE_MMAP) &&
 	    !(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
-		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), VIEWhparent(b) ? BBPname(VIEWhparent(b)) : BBPname(VIEWtparent(b)));
+		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(-VIEWtparent(b)));
 		return GDK_FAIL;
 	}
 	if (!BATdirty(b)) {
 		return GDK_SUCCEED;
-	}
-	if (b->batCacheid < 0) {
-		b = BATmirror(b);
 	}
 	if (!DELTAdirty(b))
 		ALIGNcommit(b);
@@ -812,12 +810,16 @@ BATsave(BAT *bd)
  * TODO: move to gdk_bbp.mx
  */
 BAT *
-BATload_intern(bat i, int lock)
+BATload_intern(bat bid, int lock)
 {
-	bat bid = abs(i);
-	str nme = BBP_physical(bid);
-	BATstore *bs = DESCload(bid);
+	str nme;
+	BATstore *bs;
 	BAT *b;
+
+	assert(bid > 0);
+
+	nme = BBP_physical(bid);
+	bs = DESCload(bid);
 
 	if (bs == NULL) {
 		return NULL;
@@ -907,7 +909,7 @@ BATload_intern(bat i, int lock)
 		++b->batSharecnt;
 		--b->batSharecnt;
 	}
-	return (i < 0) ? BATmirror(b) : b;
+	return b;
 }
 
 /*
@@ -928,24 +930,18 @@ BATload_intern(bat i, int lock)
 void
 BATdelete(BAT *b)
 {
-	bat bid = abs(b->batCacheid);
+	bat bid = b->batCacheid;
 	str o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
 
+	assert(bid > 0);
+	assert(b->htype == TYPE_void);
+	assert(b->H->heap.base == NULL);
 	if (loaded) {
 		b = loaded;
 		HASHdestroy(b);
 		IMPSdestroy(b);
 		OIDXdestroy(b);
-	}
-	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
-	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {
-		if (b->htype != TYPE_void &&
-		    HEAPdelete(&b->H->heap, o, "head") &&
-		    b->batCopiedtodisk)
-			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->H->heap.base) {
-		HEAPfree(&b->H->heap, 1);
 	}
 	if (b->batCopiedtodisk || (b->T->heap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
@@ -954,15 +950,6 @@ BATdelete(BAT *b)
 			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->T->heap.base) {
 		HEAPfree(&b->T->heap, 1);
-	}
-	if (b->H->vheap) {
-		assert(b->H->vheap->parentid == bid);
-		if (b->batCopiedtodisk || (b->H->vheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->H->vheap, o, "hheap") && b->batCopiedtodisk)
-				IODEBUG fprintf(stderr, "#BATdelete(%s): head heap\n", BATgetId(b));
-		} else {
-			HEAPfree(b->H->vheap, 1);
-		}
 	}
 	if (b->T->vheap) {
 		assert(b->T->vheap->parentid == bid);

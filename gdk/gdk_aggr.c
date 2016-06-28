@@ -2288,7 +2288,7 @@ BATminmax(BAT *b, void *aggr,
 	if (!BAThdense(b))
 		return NULL;
 	if ((VIEWtparent(b) == 0 ||
-	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+	     BATcount(b) == BATcount(BBPdescriptor(-VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
 		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(-VIEWtparent(b))->T->imprints : b->T->imprints;
 		pos = oid_nil;

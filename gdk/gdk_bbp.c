@@ -1449,19 +1449,11 @@ BBPexit(void)
 						 * VIEWdestroy doesn't
 						 * (and can't here due
 						 * to locks) do it */
-						bat hp = VIEWhparent(b), tp = VIEWtparent(b);
-						bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
-						if (hp) {
-							BBP_cache(hp)->batSharecnt--;
-							--BBP_lrefs(hp);
-						}
+						bat tp = -VIEWtparent(b);
+						bat vtp = VIEWvtparent(b);
 						if (tp) {
 							BBP_cache(tp)->batSharecnt--;
 							--BBP_lrefs(tp);
-						}
-						if (vhp) {
-							BBP_cache(vhp)->batSharecnt--;
-							--BBP_lrefs(vhp);
 						}
 						if (vtp) {
 							BBP_cache(vtp)->batSharecnt--;
@@ -2184,8 +2176,6 @@ BBPcacheit(BATstore *bs, int lock)
 		assert(i > 0);
 	} else {
 		i = BBPinsert(bs);	/* bat was not previously entered */
-		if (bs->H.vheap)
-			bs->H.vheap->parentid = i;
 		if (bs->T.vheap)
 			bs->T.vheap->parentid = i;
 	}
@@ -2450,7 +2440,8 @@ incref(bat i, int logical, int lock)
 		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		tp = bs->B.T->heap.parentid;
+		tp = -bs->B.T->heap.parentid;
+		assert(tp >= 0);
 		tvp = bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
 		refs = ++BBP_refs(i);
 		if (refs == 1 && (tp || tvp)) {
@@ -2474,13 +2465,13 @@ incref(bat i, int logical, int lock)
 			incref(tp, 0, lock);
 			b = getBBPdescriptor(tp, lock);
 			assert(bs->B.H != bs->B.T);
-			bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
+			bs->B.T->heap.base = b->T->heap.base + (size_t) bs->B.T->heap.base;
 			/* if we shared the hash before, share it
 			 * again note that if the parent's hash is
 			 * destroyed, we also don't have a hash
 			 * anymore */
 			if (bs->B.T->hash == (Hash *) -1)
-				bs->B.T->hash = b->H->hash;
+				bs->B.T->hash = b->T->hash;
 		}
 		if (tvp) {
 			incref(tvp, 0, lock);
@@ -2719,9 +2710,9 @@ static BAT *
 getBBPdescriptor(bat i, int lock)
 {
 	int load = FALSE;
-	bat j = abs(i);
 	BAT *b = NULL;
 
+	assert(i > 0);
 	if (!BBPcheck(i, "BBPdescriptor")) {
 		return NULL;
 	}
@@ -2729,39 +2720,37 @@ getBBPdescriptor(bat i, int lock)
 	if ((b = BBP_cache(i)) == NULL) {
 
 		if (lock)
-			MT_lock_set(&GDKswapLock(j));
-		while (BBP_status(j) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
+			MT_lock_set(&GDKswapLock(i));
+		while (BBP_status(i) & BBPWAITING) {	/* wait for bat to be loaded by other thread */
 			if (lock)
-				MT_lock_unset(&GDKswapLock(j));
+				MT_lock_unset(&GDKswapLock(i));
 			MT_sleep_ms(KITTENNAP);
 			if (lock)
-				MT_lock_set(&GDKswapLock(j));
+				MT_lock_set(&GDKswapLock(i));
 		}
-		if (BBPvalid(j)) {
+		if (BBPvalid(i)) {
 			b = BBP_cache(i);
 			if (b == NULL) {
 				load = TRUE;
 				BATDEBUG {
-					fprintf(stderr, "#BBPdescriptor set to unloading BAT %d\n", j);
+					fprintf(stderr, "#BBPdescriptor set to unloading BAT %d\n", i);
 				}
-				BBP_status_on(j, BBPLOADING, "BBPdescriptor");
+				BBP_status_on(i, BBPLOADING, "BBPdescriptor");
 			}
 		}
 		if (lock)
-			MT_lock_unset(&GDKswapLock(j));
+			MT_lock_unset(&GDKswapLock(i));
 	}
 	if (load) {
 		IODEBUG fprintf(stderr, "#load %s\n", BBPname(i));
 
-		b = BATload_intern(j, lock);
+		b = BATload_intern(i, lock);
 		BBPin++;
 
 		/* clearing bits can be done without the lock */
-		BBP_status_off(j, BBPLOADING, "BBPdescriptor");
+		BBP_status_off(i, BBPLOADING, "BBPdescriptor");
 		CHECKDEBUG if (b != NULL)
 			BATassertProps(b);
-		if (i < 0)
-			b = BATmirror(b);
 	}
 	return b;
 }
@@ -2836,8 +2825,8 @@ BBPsave(BAT *b)
 static void
 BBPdestroy(BAT *b)
 {
-	bat hp = b->H->heap.parentid, tp = b->T->heap.parentid;
-	bat vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
+	bat tp = b->T->heap.parentid;
+	bat vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
 		VIEWdestroy(b);
@@ -2862,10 +2851,6 @@ BBPdestroy(BAT *b)
 	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
 
 	/* parent released when completely done with child */
-	if (hp)
-		GDKunshare(hp);
-	if (vhp)
-		GDKunshare(vhp);
 	if (tp)
 		GDKunshare(tp);
 	if (vtp)
@@ -2875,9 +2860,10 @@ BBPdestroy(BAT *b)
 static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = abs(b->batCacheid), hp = VIEWhparent(b), tp = VIEWtparent(b), vhp = VIEWvhparent(b), vtp = VIEWvtparent(b);
+	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
 	gdk_return ret;
 
+	assert(bid > 0);
 	assert(BBPswappable(b));
 	(void) calledFrom;
 
@@ -2900,12 +2886,8 @@ BBPfree(BAT *b, const char *calledFrom)
 	BBP_unload_dec(bid, calledFrom);
 
 	/* parent released when completely done with child */
-	if (ret == GDK_SUCCEED && hp)
-		GDKunshare(hp);
 	if (ret == GDK_SUCCEED && tp)
-		GDKunshare(tp);
-	if (ret == GDK_SUCCEED && vhp)
-		GDKunshare(vhp);
+		GDKunshare(-tp);
 	if (ret == GDK_SUCCEED && vtp)
 		GDKunshare(vtp);
 	return ret;
@@ -3087,13 +3069,12 @@ BBPtrim_select(size_t target, int dirty)
 
 			fprintf(stderr,
 				"#            (cnt=" BUNFMT ", mode=%d, "
-				"refs=%d, wait=%d, parent=%d,%d, "
+				"refs=%d, wait=%d, parent=%d, "
 				"lastused=%d,%d,%d)\n",
 				bbptrim[cur].cnt,
 				(int) b->batPersistence,
 				BBP_refs(b->batCacheid),
 				(BBP_status(b->batCacheid) & BBPWAITING) != 0,
-				VIEWhparent(b),
 				VIEWtparent(b),
 				BBP_lastused(b->batCacheid),
 				(int) BBPLASTUSED(lastused[cur]),

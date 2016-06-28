@@ -224,7 +224,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	}
 
 	if (tp)
-		BBPshare(tp);
+		BBPshare(-tp);
 	if (bn->T->vheap) {
 		assert(b->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
@@ -344,11 +344,12 @@ VIEWunlink(BAT *b)
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
 
+		assert(b->batCacheid > 0);
 		assert(b->htype == TYPE_void);
 		if (tp)
-			tpb = BBP_cache(tp);
+			tpb = BBP_cache(-tp);
 		if (tp && !vtp)
-			vtp = tp;
+			vtp = -tp;
 		if (vtp)
 			vtpb = BBP_cache(vtp);
 
@@ -357,20 +358,23 @@ VIEWunlink(BAT *b)
 
 		/* unlink heaps shared with parent */
 		assert(b->H->vheap == NULL);
+		assert(b->H->props == NULL);
+		assert(b->H->hash == NULL);
+		assert(b->H->imprints == NULL);
 		assert(b->T->vheap == NULL || b->T->vheap->parentid > 0);
-		if (b->T->vheap && b->T->vheap->parentid != abs(b->batCacheid))
+		if (b->T->vheap && b->T->vheap->parentid != b->batCacheid)
 			b->T->vheap = NULL;
 
 		/* unlink properties shared with parent */
-		if (tpb && b->T->props && b->T->props == tpb->H->props)
+		if (tpb && b->T->props && b->T->props == tpb->T->props)
 			b->T->props = NULL;
 
 		/* unlink hash accelerators shared with parent */
-		if (tpb && b->T->hash && b->T->hash == tpb->H->hash)
+		if (tpb && b->T->hash && b->T->hash == tpb->T->hash)
 			b->T->hash = NULL;
 
 		/* unlink imprints shared with parent */
-		if (tpb && b->T->imprints && b->T->imprints == tpb->H->imprints)
+		if (tpb && b->T->imprints && b->T->imprints == tpb->T->imprints)
 			b->T->imprints = NULL;
 	}
 }
@@ -390,7 +394,7 @@ VIEWreset(BAT *b)
 		return GDK_FAIL;
 	assert(b->htype == TYPE_void);
 	assert(b->batCacheid > 0);
-	tp = VIEWtparent(b);
+	tp = -VIEWtparent(b);
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
 		BAT *m;
@@ -403,7 +407,6 @@ VIEWreset(BAT *b)
 		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
 
-		m = BATmirror(b);
 		bs = BBP_desc(b->batCacheid);
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
@@ -451,6 +454,7 @@ VIEWreset(BAT *b)
 		}
 
 		/* make sure everything points there */
+		m = BBP_cache(-b->batCacheid);
 		m->S = b->S = &bs->S;
 		m->T = b->H = &bs->H;
 		m->H = b->T = &bs->T;

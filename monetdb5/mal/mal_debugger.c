@@ -1258,10 +1258,8 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 
 	if (v && v->vtype == TYPE_bat) {
 		bat i = v->val.bval;
-		BAT *b = BBPquickdesc(abs(i), TRUE);
+		BAT *b = BBPquickdesc(i, TRUE);
 
-		if (i < 0)
-			b = BATmirror(b);
 		if (b) {
 			nme = getTypeName(newColumnType(b->ttype));
 			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));

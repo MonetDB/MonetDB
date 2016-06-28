@@ -816,12 +816,6 @@ gdk_export int VALisnil(const ValRecord *v);
  * more complex, but GDK programmers should refrain of making use of
  * that.
  *
- * The reason for this complex structure is to allow for a BAT to
- * exist in two incarnations at the time: the @emph{normal view} and
- * the @emph{reversed view}. Each bat @emph{b} has a
- * BATmirror(@emph{b}) which has the negative @strong{cacheid} of b in
- * the BBP.
- *
  * Since we don't want to pay cost to keep both views in line with
  * each other under BAT updates, we work with shared pieces of memory
  * between the two views. An update to one will thus automatically
@@ -1105,9 +1099,6 @@ gdk_export bte ATOMelmshift(int sz);
  *
  * The routine BUNfnd provides fast access to a single BUN providing a
  * value for the tail of the binary association.
- *
- * To select on a tail, one should use the reverse view obtained by
- * BATmirror.
  *
  * The routine BUNtail returns a pointer to the second value in an
  * association.  To guard against side effects on the BAT, one should
@@ -1515,20 +1506,12 @@ gdk_export int BATgetaccess(BAT *b);
  * @tab BATclear (BAT *b, int force)
  * @item BAT *
  * @tab COLcopy (BAT *b, int tt, int writeable, int role)
- * @item BAT *
- * @tab BATmirror (BAT *b)
- * @item BAT *
  * @end multitable
  *
  * The routine BATclear removes the binary associations, leading to an
  * empty, but (re-)initialized BAT. Its properties are retained.  A
  * temporary copy is obtained with Colcopy. The new BAT has an unique
  * name.
- *
- * The routine BATmirror returns the mirror image BAT (where tail is
- * head and head is tail) of that same BAT. This does not involve a
- * state change in the BAT (as previously): both views on the BAT
- * exist at the same time.
  */
 gdk_export gdk_return BATclear(BAT *b, int force);
 gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
@@ -2600,14 +2583,6 @@ Tpos(BATiter *bi, BUN p)
 	return (char*)&bi->tvid;
 }
 
-static inline BAT *
-BATmirror(register BAT *b)
-{
-	if (b == NULL)
-		return NULL;
-	return BBP_cache(-b->batCacheid);
-}
-
 #endif
 
 /*
@@ -2789,8 +2764,8 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 #define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
 #define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
 
-#define BAThrestricted(b) (VIEWhparent(b) ? BBP_cache(VIEWhparent(b))->batRestricted : (b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
+#define BAThrestricted(b) ((b)->batRestricted)
+#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(-VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -2811,14 +2786,11 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  * correct for the reversed view.
  */
 #define isVIEW(x)							\
-	((x)->H->heap.parentid ||					\
-	 (x)->T->heap.parentid ||					\
-	 ((x)->H->vheap && (x)->H->vheap->parentid != abs((x)->batCacheid)) || \
-	 ((x)->T->vheap && (x)->T->vheap->parentid != abs((x)->batCacheid)))
+	(assert((x)->batCacheid > 0 && (x)->htype == TYPE_void),	\
+	 ((x)->T->heap.parentid ||					\
+	  ((x)->T->vheap && (x)->T->vheap->parentid != (x)->batCacheid)))
 
 #define isVIEWCOMBINE(x) ((x)->H == (x)->T)
-#define VIEWhparent(x)	((x)->H->heap.parentid)
-#define VIEWvhparent(x)	(((x)->H->vheap==NULL||(x)->H->vheap->parentid==abs((x)->batCacheid))?0:(x)->H->vheap->parentid)
 #define VIEWtparent(x)	((x)->T->heap.parentid)
 #define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==abs((x)->batCacheid))?0:(x)->T->vheap->parentid)
 

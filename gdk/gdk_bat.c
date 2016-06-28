@@ -463,7 +463,7 @@ BATclear(BAT *b, int force)
 			    ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
-		assert(b->T->vheap == NULL || b->T->vheap->parentid == abs(b->batCacheid));
+		assert(b->T->vheap == NULL || b->T->vheap->parentid == b->batCacheid);
 		if (b->T->vheap && b->T->vheap->free > 0) {
 			th.parentid = b->T->vheap->parentid;
 			HEAPfree(b->T->vheap, 0);
@@ -507,44 +507,32 @@ BATfree(BAT *b)
 		return;
 
 	/* deallocate all memory for a bat */
-	if (b->batCacheid < 0)
-		b = BBP_cache(-(b->batCacheid));
+	assert(b->batCacheid > 0);
 	if (b->hident && !default_ident(b->hident))
 		GDKfree(b->hident);
 	b->hident = BATstring_h;
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	if (b->H->props)
-		PROPdestroy(b->H->props);
-	b->H->props = NULL;
+	assert(b->H->props == NULL);
 	if (b->T->props)
 		PROPdestroy(b->T->props);
 	b->T->props = NULL;
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
-	if (b->htype)
-		HEAPfree(&b->H->heap, 0);
-	else
-		assert(!b->H->heap.base);
+	assert(b->H->heap.base == NULL);
+	assert(b->H->vheap == NULL);
 	if (b->ttype)
 		HEAPfree(&b->T->heap, 0);
 	else
 		assert(!b->T->heap.base);
-	if (b->H->vheap) {
-		assert(b->H->vheap->parentid == b->batCacheid);
-		HEAPfree(b->H->vheap, 0);
-	}
 	if (b->T->vheap) {
 		assert(b->T->vheap->parentid == b->batCacheid);
 		HEAPfree(b->T->vheap, 0);
 	}
 
-	b = BBP_cache(-b->batCacheid);
-	if (b) {
-		BBP_cache(b->batCacheid) = NULL;
-	}
+	BBP_cache(-b->batCacheid) = NULL;
 }
 
 /* free a cached BAT descriptor */
@@ -702,13 +690,12 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			bunstocopy = cnt;
 		} else if (isVIEW(b)) {
 			/* extra checks needed for views */
-			bat hp = VIEWhparent(b), tp = VIEWtparent(b);
+			bat tp = VIEWtparent(b);
 
 			if (isVIEWCOMBINE(b) ||	/* oops, mirror view! */
 			    /* reduced slice view: do not copy too
 			     * much garbage */
-			    (hp != 0 && BATcapacity(BBP_cache(hp)) > cnt + cnt) ||
-			    (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt))
+			    (tp != 0 && BATcapacity(BBP_cache(-tp)) > cnt + cnt))
 				bunstocopy = cnt;
 		}
 
@@ -2313,9 +2300,7 @@ BATassertProps(BAT *b)
 	/* general BAT sanity */
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
-	assert(VIEWhparent(b) == 0);
-	assert(VIEWvhparent(b) == 0);
-	bm = BATmirror(b);
+	bm = BBP_cache(-b->batCacheid);
 	assert(bm != NULL);
 	assert(b->H == bm->T);
 	assert(b->T == bm->H);

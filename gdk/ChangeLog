@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Jun 28 2016 Sjoerd Mullender <sjoerd@acm.org>
+- The function BATmirror is gone.  The HEAD column is always VOID (with
+  a non-nil seqbase) and the TAIL column carries the data.  All functions
+  that deal with data work on the TAIL column.
+
 * Mon Jun 27 2016 Sjoerd Mullender <sjoerd@acm.org>
 - BATkey now works on the TAIL column instead of the HEAD column.
 - Replaced BATseqbase with BAThseqbase and BATtseqbase, the former for

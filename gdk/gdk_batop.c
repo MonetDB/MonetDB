@@ -21,12 +21,13 @@
 gdk_return
 unshare_string_heap(BAT *b)
 {
+	assert(b->batCacheid > 0);
 	if (b->ttype == TYPE_str &&
-	    b->T->vheap->parentid != abs(b->batCacheid)) {
+	    b->T->vheap->parentid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
-		h->parentid = abs(b->batCacheid);
+		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		if (b->T->vheap->filename) {
 			char *nme = BBP_physical(b->batCacheid);
@@ -355,12 +356,13 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (b == NULL || n == NULL || (sz = BATcount(n)) == 0) {
 		return GDK_SUCCEED;
 	}
+	assert(b->batCacheid > 0);
 	assert(b->htype == TYPE_void);
 	/* almost: assert(!isVIEW(b)); */
 	assert(b->H->heap.parentid == 0 &&
 	       b->T->heap.parentid == 0 &&
 	       b->H->vheap == NULL &&
-	       (b->T->vheap == NULL || b->T->vheap->parentid == abs(b->batCacheid) || b->T->type == TYPE_str));
+	       (b->T->vheap == NULL || b->T->vheap->parentid == b->batCacheid || b->T->type == TYPE_str));
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");

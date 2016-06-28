@@ -3970,10 +3970,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
 
 #ifndef DISABLE_PARENT_HASH
-	lparent = VIEWtparent(l);
+	lparent = -VIEWtparent(l);
 	if (lparent) {
 		lpcount = BATcount(BBPdescriptor(lparent));
-		lhash = BATcheckhash(l) || BATcheckhash(BBPdescriptor(-lparent));
+		lhash = BATcheckhash(l) || BATcheckhash(BBPdescriptor(lparent));
 	} else
 #endif
 	{
@@ -3981,10 +3981,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		lhash = BATcheckhash(l);
 	}
 #ifndef DISABLE_PARENT_HASH
-	rparent = VIEWtparent(r);
+	rparent = -VIEWtparent(r);
 	if (rparent) {
 		rpcount = BATcount(BBPdescriptor(rparent));
-		rhash = BATcheckhash(r) || BATcheckhash(BBPdescriptor(-rparent));
+		rhash = BATcheckhash(r) || BATcheckhash(BBPdescriptor(rparent));
 	} else
 #endif
 	{
@@ -4030,13 +4030,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	} else if ((l->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		     || (lparent != 0 &&
-			 BBPquickdesc(abs(lparent), 0)->batPersistence == PERSISTENT)
+			 BBPquickdesc(lparent, 0)->batPersistence == PERSISTENT)
 #endif
 			   ) &&
 		   !(r->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		     || (rparent != 0 &&
-			 BBPquickdesc(abs(rparent), 0)->batPersistence == PERSISTENT)
+			 BBPquickdesc(rparent, 0)->batPersistence == PERSISTENT)
 #endif
 			   )) {
 		/* l (or its parent) is persistent and r is not,
@@ -4046,13 +4046,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	} else if (!(l->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		     || (lparent != 0 &&
-			 BBPquickdesc(abs(lparent), 0)->batPersistence == PERSISTENT)
+			 BBPquickdesc(lparent, 0)->batPersistence == PERSISTENT)
 #endif
 			   ) &&
 		   (r->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		    || (rparent != 0 &&
-			BBPquickdesc(abs(rparent), 0)->batPersistence == PERSISTENT)
+			BBPquickdesc(rparent, 0)->batPersistence == PERSISTENT)
 #endif
 			   )) {
 		/* l (and its parent) is not persistent but r (or its

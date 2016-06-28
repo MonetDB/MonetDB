@@ -643,7 +643,8 @@ IMPSfree(BAT *b)
 	Imprints *imprints;
 
 	if (b) {
-		MT_lock_set(&GDKimprintsLock(abs(b->batCacheid)));
+		assert(b->batCacheid > 0);
+		MT_lock_set(&GDKimprintsLock(b->batCacheid));
 		imprints = b->T->imprints;
 		if (imprints != NULL && imprints != (Imprints *) 1) {
 			b->T->imprints = (Imprints *) 1;
@@ -653,7 +654,7 @@ IMPSfree(BAT *b)
 				GDKfree(imprints);
 			}
 		}
-		MT_lock_unset(&GDKimprintsLock(abs(b->batCacheid)));
+		MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 	}
 }
 
