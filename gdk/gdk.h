@@ -1729,8 +1729,8 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  */
 typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
-	str logical[2];		/* logical name + reverse */
-	str bak[2];		/* logical name + reverse backups */
+	str logical;		/* logical name */
+	str bak;		/* logical name backup */
 	bat next[2];		/* next BBP slot in linked list */
 	BATstore *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
@@ -1755,8 +1755,8 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
 #define BBP_cache(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].cache
-#define BBP_logical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].logical[(i)<0]
-#define BBP_bak(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].bak[(i)<0]
+#define BBP_logical(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].logical
+#define BBP_bak(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].bak
 #define BBP_next(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].next[(i)<0]
 #define BBP_physical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].physical
 #define BBP_options(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].options
@@ -1776,13 +1776,9 @@ gdk_export int BBPcurstamp(void);
 /* we use abs(i) instead of -(i) here because of a bug in gcc 4.8.2
  * (at least) with optimization enabled; it incorrectly complains
  * about an array bound error in monetdb5/modules/kernel/status.c */
-#define BBPname(i)							\
-	(BBPcheck((i), "BBPname") ?					\
-	 ((i) > 0 ?							\
-	  BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical[0] :	\
-	  (BBP[abs(i) >> BBPINITLOG][abs(i) & (BBPINIT - 1)].logical[1] ? \
-	   BBP[abs(i) >> BBPINITLOG][abs(i) & (BBPINIT - 1)].logical[1] : \
-	   BBP[abs(i) >> BBPINITLOG][abs(i) & (BBPINIT - 1)].logical[0])) : \
+#define BBPname(i)						\
+	(BBPcheck((i), "BBPname") ?				\
+	 BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical :	\
 	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)

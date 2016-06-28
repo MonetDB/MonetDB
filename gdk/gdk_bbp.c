@@ -319,13 +319,8 @@ BBPinithash(int j)
 		const char *s = BBP_logical(i);
 
 		if (s) {
-			const char *sm = BBP_logical(-i);
-
 			if (*s != '.' && BBPtmpcheck(s) == 0) {
 				BBP_insert(i);
-			}
-			if (sm && *sm != '.' && BBPtmpcheck(sm) == 0) {
-				BBP_insert(-i);
 			}
 		} else {
 			BBP_next(i) = BBP_free(j);
@@ -1157,10 +1152,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			s = logical;
 		}
 		BBP_logical(bid) = GDKstrdup(s);
-		if (strcmp(tailname, BBPNONAME) != 0)
-			BBP_logical(-bid) = GDKstrdup(tailname);
-		else
-			BBP_logical(-bid) = GDKstrdup(BBPtmpname(tailname, sizeof(tailname), -bid));
+		/* tailname is ignored */
 		BBP_physical(bid) = GDKstrdup(filename);
 		BBP_options(bid) = NULL;
 		if (options)
@@ -1457,8 +1449,6 @@ BBPexit(void)
 				BBP_bak(i) = NULL;
 				GDKfree(BBP_logical(i));
 				BBP_logical(i) = NULL;
-				GDKfree(BBP_logical(-i));
-				BBP_logical(-i) = NULL;
 			}
 			if (BBP_physical(i)) {
 				GDKfree(BBP_physical(i));
@@ -1548,7 +1538,7 @@ new_bbpentry(FILE *fp, bat i)
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
-		    BBP_logical(-i) ? BBP_logical(-i) : BBPNONAME,
+		    BBPNONAME,	/* backward compatible entry */
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->S.restricted << 1,
@@ -1797,7 +1787,7 @@ BBPdump(void)
 		if (b == NULL)
 			continue;
 		fprintf(stderr,
-			"# %d[%s,%s]: nme=['%s','%s'] refs=%d lrefs=%d "
+			"# %d[%s,%s]: nme='%s' refs=%d lrefs=%d "
 			"status=%d count=" BUNFMT " "
 			"Hheap=[" SZFMT "," SZFMT "] "
 			"Hvheap=[" SZFMT "," SZFMT "] "
@@ -1809,7 +1799,6 @@ BBPdump(void)
 			ATOMname(b->H->type),
 			ATOMname(b->T->type),
 			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
-			BBP_logical(-i) ? BBP_logical(-i) : "<NULL>",
 			BBP_refs(i),
 			BBP_lrefs(i),
 			BBP_status(i),
@@ -2129,8 +2118,6 @@ BBPinsert(BATstore *bs)
 		BBP_bak(i) = BBP_logical(i);
 	} else
 		BBP_logical(i) = BBP_bak(i);
-	s = BBPtmpname(dirname, 64, -i);
-	BBP_logical(-i) = GDKstrdup(s);
 
 	/* Keep the physical location around forever */
 	if (BBP_physical(i) == NULL) {
@@ -2235,18 +2222,10 @@ bbpclear(bat i, int idx, const char *lock)
 		BBP_delete(i);
 		MT_lock_unset(&GDKnameLock);
 	}
-	if (BBPtmpcheck(BBP_logical(-i)) == 0) {
-		MT_lock_set(&GDKnameLock);
-		BBP_delete(-i);
-		MT_lock_unset(&GDKnameLock);
-	}
 	if (BBP_logical(i) != BBP_bak(i))
 		GDKfree(BBP_logical(i));
-	if (BBP_logical(-i) != BBP_bak(-i))
-		GDKfree(BBP_logical(-i));
 	BBP_status_set(i, 0, "BBPclear");
 	BBP_logical(i) = NULL;
-	BBP_logical(-i) = NULL;
 	BBP_next(i) = BBP_free(idx);
 	BBP_free(idx) = i;
 	if (lock)

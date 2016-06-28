@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Tue Jun 28 2016 Sjoerd Mullender <sjoerd@acm.org>
+- BATs now only have a single (logical) name.
 - The function BATmirror is gone.  The HEAD column is always VOID (with
   a non-nil seqbase) and the TAIL column carries the data.  All functions
   that deal with data work on the TAIL column.

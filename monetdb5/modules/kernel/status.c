@@ -298,8 +298,6 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 			sz += BATSTORESIZE;
 		if (BBP_logical(i))
 			n += strLen(BBP_logical(i));
-		if (BBP_logical(-i))
-			n += strLen(BBP_logical(-i));
 		if (BBP_physical(i))
 			n += strLen(BBP_physical(i));
 		if (b)

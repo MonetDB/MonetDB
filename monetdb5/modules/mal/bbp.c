@@ -99,8 +99,6 @@ CMDbbpNames(bat *ret)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
 				BUNappend(b, BBP_logical(i), FALSE);
-				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i)) && !BBPtmpcheck(BBP_logical(-i)))
-					BUNappend(b,  BBP_logical(-i), FALSE);
 			}
 		}
 	BBPunlock();
