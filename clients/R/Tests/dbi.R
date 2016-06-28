@@ -37,7 +37,7 @@ MonetDBLite::dbSendUpdate(con,"CREATE TABLE monetdbtest (a varchar(10),b integer
 stopifnot(identical(dbExistsTable(con,tname),TRUE))
 MonetDBLite::dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('one',1,'1111')")
 MonetDBLite::dbSendUpdate(con,"INSERT INTO monetdbtest VALUES ('two',2,'22222222')")
-stopifnot(identical(dbGetQuery(con,"SELECT count(*) FROM monetdbtest")[[1]],2L))
+stopifnot(identical(dbGetQuery(con,"SELECT count(*) FROM monetdbtest")[[1]],2))
 stopifnot(identical(dbReadTable(con,tname)[[3]],list(charToRaw("1111"),charToRaw("22222222"))))
 dbRemoveTable(con,tname)
 stopifnot(identical(dbExistsTable(con,tname),FALSE))
@@ -152,7 +152,6 @@ dbWriteTable(conn,tname,mtcars,append=T,overwrite=F)
 stopifnot(identical(as.integer(2*nrow(mtcars)),tsize(conn,tname)))
 dbRemoveTable(conn,tname)
 
-dbRemoveTable(conn,tname)
 dbWriteTable(conn,tname,mtcars,append=F,overwrite=F,insert=T)
 dbRemoveTable(conn,tname)
 

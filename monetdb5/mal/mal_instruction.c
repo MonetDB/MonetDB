@@ -174,6 +174,10 @@ wrapup:
 void
 resetMalBlk(MalBlkPtr mb, int stop)
 {
+	int i;
+
+	for(i=0; i<stop; i++) 
+		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
 }
 
@@ -513,6 +517,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 	memcpy((char *) new, (char *) p, space);
 	setFunctionId(new, getFunctionId(p));
 	setModuleId(new, getModuleId(p));
+	new->typechk = TYPE_UNKNOWN;
 }
 
 /* Query optimizers walk their way through a MAL program block. They
@@ -612,6 +617,7 @@ getVarName(MalBlkPtr mb, int i)
 	nme = mb->var[i]->name;
 
 	if (nme == 0 || *nme =='_') {
+		GDKfree(nme);
 		snprintf(buf, IDLENGTH, "%c_%d", refMarker(mb,i), mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
@@ -1083,9 +1089,7 @@ freeVariable(MalBlkPtr mb, int varid)
 
 /* A special action is to reduce the variable space by removing all
  * that do not contribute.
- * Beware that properties are represented as variables as well. They
- * must be retained and the references must be corrected after the
- * stack has been reduced. */
+ */
 void
 trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 {
@@ -1506,7 +1510,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 			freeInstruction(p);
 			return NULL;
 		}
-		memcpy((char *) pn, (char *) p, space);
+		memcpy(pn, p, space);
 		GDKfree(p);
 		pn->maxarg += MAXARG;
 		/* we have to keep track on the maximal arguments/block

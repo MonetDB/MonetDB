@@ -579,7 +579,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					backup[i].len = 0;
 					backup[i].val.pval = 0;
 					garbage[i] = -1;
-					if (stk->stk[a].vtype == TYPE_bat && getEndOfLife(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
+					if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
 						garbage[i] = a;
 
 					if (i < pci->retc && stk->stk[a].vtype == TYPE_bat) {
@@ -724,11 +724,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					nstk->up = stk;
 					if (nstk->calldepth > 256) {
 						ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+						GDKfree(nstk);
 						break;
 					}
 					if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
 						/* we are running low on stack space */
 						ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
+						GDKfree(nstk);
 						break;
 					}
 
@@ -743,6 +745,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							BBPincref(lhs->val.bval, TRUE);
 					}
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+					for (ii = 0; ii < nstk->stktop; ii++)
+						if (ATOMextern(nstk->stk[ii].vtype))
+							GDKfree(nstk->stk[ii].val.pval);
 					GDKfree(nstk);
 				}
 				break;
@@ -1421,8 +1426,10 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	ValPtr v;
 
 #ifdef STACKTRACE
-	mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
-	printStack(cntxt->fdout, mb, stk, 0);
+	if (cntxt) {
+		mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
+		printStack(cntxt->fdout, mb, stk, 0);
+	}
 #endif
 	for (k = 0; k < mb->vtop; k++) {
 		if (isVarCleanup(mb, k) && (flag || isTmpVar(mb, k))) {
@@ -1432,8 +1439,10 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 		}
 	}
 #ifdef STACKTRACE
-	mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
-	printStack(cntxt->fdout, mb, stk, 0);
+	if (cntxt) {
+		mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
+		printStack(cntxt->fdout, mb, stk, 0);
+	}
 #else
 	(void)cntxt;
 #endif

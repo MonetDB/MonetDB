@@ -64,7 +64,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = sql_aggr_bte.mal  sql_aggr_flt.mal sql_aggr_dbl.mal  sql_aggr_int.mal  sql_aggr_lng.mal \
 		sql_aggr_sht.mal  sql_decimal.mal  sql_inspect.mal \
-		sql_rank.mal sql.mal 
+		sql_rank.mal sql.mal
 }
 
 headers_mal_hge = {

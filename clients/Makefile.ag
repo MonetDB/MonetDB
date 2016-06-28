@@ -4,6 +4,6 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-SUBDIRS = HAVE_MAPI?mapilib HAVE_MAPI?mapiclient HAVE_ODBC?odbc HAVE_PERL?perl php examples HAVE_PYTHON2?python2 HAVE_PYTHON3?python3 NATIVE_WIN32?NT
+SUBDIRS = HAVE_MAPI?mapilib HAVE_MAPI?mapiclient HAVE_ODBC?odbc HAVE_PERL?perl php examples NATIVE_WIN32?NT
 
-EXTRA_DIST_DIR = Tests ruby
+EXTRA_DIST_DIR = Tests ruby R

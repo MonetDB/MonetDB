@@ -38,6 +38,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i;
 	BUN c1, c2;
 	InstrPtr p;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -141,5 +143,14 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				setRowCnt(mb, getArg(p,0), c1);
 		}
 	}
+    /* Defense line against incorrect plans */
+	/* plan remains unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","costmodel",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

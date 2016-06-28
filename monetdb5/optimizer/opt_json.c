@@ -24,6 +24,8 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -65,5 +67,15 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (old[i]) 
 			freeInstruction(old[i]);
 	GDKfree(old);
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

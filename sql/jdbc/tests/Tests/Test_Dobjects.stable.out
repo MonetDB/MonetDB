@@ -107,8 +107,16 @@ as select "schema","table",max(count) as "count",
 from sys.storagemodel() group by "schema","table";	null	null	null	null	null	
 null	sys	tracelog	SYSTEM VIEW	create view sys.tracelog as select * from sys.tracelog();	null	null	null	null	null	
 null	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	null	null	
+Resultset with 7 columns
+TYPE_CAT	TYPE_SCHEM	TYPE_NAME	CLASS_NAME	DATA_TYPE	REMARKS	BASE_TYPE	
+null	sys	inet	nl.cwi.monetdb.jdbc.types.INET	2000	inet	null	
+null	sys	json	java.lang.String	2000	json	null	
+null	sys	url	nl.cwi.monetdb.jdbc.types.URL	2000	url	null	
+null	sys	uuid	java.lang.String	2000	uuid	null	
+Resultset with 7 columns
+TYPE_CAT	TYPE_SCHEM	TYPE_NAME	CLASS_NAME	DATA_TYPE	REMARKS	BASE_TYPE	
 
-# 18:29:26 >  
-# 18:29:26 >  "Done."
-# 18:29:26 >  
+# 17:19:03 >  
+# 17:19:03 >  "Done."
+# 17:19:03 >  
 

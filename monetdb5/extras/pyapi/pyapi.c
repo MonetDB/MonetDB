@@ -150,8 +150,10 @@ static bool enable_zerocopy_output = true;
                     bat->T->nil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
+            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+        } else {                                                                                                        \
+            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
         }                                                                                                               \
-        bat->T->nonil = 1 - bat->T->nil;                                                                                \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->T->heap.base);                                                                                     \
         bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
@@ -194,8 +196,10 @@ static bool enable_zerocopy_output = true;
                     bat->T->nil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
+            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+        } else {                                                                                                        \
+            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
         }                                                                                                               \
-        bat->T->nonil = 1 - bat->T->nil;                                                                                \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
         GDKfree(bat->T->heap.base);                                                                                     \
         bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
@@ -372,7 +376,8 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
                     goto wrapup;                                                                                                                               \
             }                                                                                                                                                  \
             bat->T->nonil = 1 - bat->T->nil;                                                                                                                   \
-            BATsetcount(bat, (BUN) ret->count);                                                                                                                      \
+            if (!mask) { bat->T->nil = 0; bat->T->nonil = 0; }                                                                                                 \
+            BATsetcount(bat, (BUN) ret->count);                                                                                                                \
             BATsettrivprop(bat);                                                                                                                               \
         }                                                                                                                                                      \
     }
@@ -439,8 +444,8 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_b
 //! [RETURN_VALUES] Step 4: It collects the return values and converts them back into BATs
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
 str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped, bit mapped) {
-    sql_func * sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
-    str exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+    sql_func * sqlfun;
+    str exprStr;
 
     const int additional_columns = 3;
     int i = 1, ai = 0;
@@ -466,8 +471,8 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
     void **mmap_ptrs = NULL;
     size_t *mmap_sizes = NULL;
 #endif
-    bit varres = sqlfun ? sqlfun->varres : 0;
-    int retcols = !varres ? pci->retc : -1;
+    bit varres;
+    int retcols;
     bool gstate = 0;
     int unnamedArgs = 0;
     bit parallel_aggregation = grouped && mapped;
@@ -484,6 +489,16 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
               "Embedded Python has not been enabled. Start server with --set %s=true",
               pyapi_enableflag);
     }
+
+    if (!pyapiInitialized) {
+        throw(MAL, "pyapi.eval",
+              "Embedded Python is enabled but an error was thrown during initialization.");
+    }
+
+    sqlfun = *(sql_func**) getArgReference(stk, pci, pci->retc);
+    exprStr = *getArgReference_str(stk, pci, pci->retc + 1);
+    varres = sqlfun ? sqlfun->varres : 0;
+    retcols = !varres ? pci->retc : -1;
 
     VERBOSE_MESSAGE("PyAPI Start\n");
 
@@ -1609,11 +1624,12 @@ str
     if (PyAPIEnabled()) {
         MT_lock_set(&pyapiLock);
         if (!pyapiInitialized) {
-            char* iar = NULL;
+            str msg = MAL_SUCCEED;
             Py_Initialize();
-            PyRun_SimpleString("import numpy");
-            import_array1(iar);
-            _connection_init();
+            if (PyRun_SimpleString("import numpy") != 0 || _import_array() < 0) {
+                return PyError_CreateException("Failed to initialize embedded python", NULL);
+            }
+            msg = _connection_init();
             marshal_module = PyImport_Import(PyString_FromString("marshal"));
             if (marshal_module == NULL) {
                 return createException(MAL, "pyapi.eval", "Failed to load Marshal module.");
@@ -1636,6 +1652,10 @@ str
             LOAD_SQL_FUNCTION_PTR(batstr_2_date, "lib_sql.dll");
             LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng, "lib_sql.dll");
             LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast, "lib_sql.dll");
+            if (msg != MAL_SUCCEED) {
+                MT_lock_unset(&pyapiLock);
+                return msg;
+            }
             pyapiInitialized++;
         }
         MT_lock_unset(&pyapiLock);

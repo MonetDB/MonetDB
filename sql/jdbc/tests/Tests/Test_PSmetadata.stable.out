@@ -144,7 +144,7 @@ Ready.
 	schemaname    
 	tablename     table_test_psmetadata
 	autoincrement false
-	casesensitive false
+	casesensitive true
 	currency      false
 	defwritable   false
 	nullable      2
@@ -164,7 +164,7 @@ Ready.
 	schemaname    
 	tablename     table_test_psmetadata
 	autoincrement false
-	casesensitive false
+	casesensitive true
 	currency      false
 	defwritable   false
 	nullable      2

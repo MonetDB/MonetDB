@@ -3322,6 +3322,7 @@ main(int argc, char **argv)
 	if (command != NULL) {
 #ifdef HAVE_ICONV
 		iconv_t cd_in;
+		int free_command = 0;
 
 		if (encoding != NULL &&
 		    (cd_in = iconv_open("utf-8", encoding)) != (iconv_t) -1) {
@@ -3331,6 +3332,7 @@ main(int argc, char **argv)
 			int factor = 4;
 			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
+			free_command = 1;
 
 		  try_again:
 			command = to;
@@ -3367,6 +3369,10 @@ main(int argc, char **argv)
 		timerStart();
 		c = doRequest(mid, command);
 		timerEnd();
+#ifdef HAVE_ICONV
+		if (free_command)
+			free(command);
+#endif
 	}
 
 	if (optind < argc) {

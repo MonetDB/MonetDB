@@ -64,6 +64,8 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str lngRef = getName("lng");
 	str fltRef = getName("flt");
 	str dblRef = getName("dbl");
+	char buf[256];
+	lng usec= GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -155,5 +157,15 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #ifdef VLT_DEBUG
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
+
+    /* Defense line against incorrect plans */
+	/* all new/modified statements are already checked */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

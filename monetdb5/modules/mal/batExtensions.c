@@ -122,49 +122,6 @@ CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 }
 
 str
-CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
-{
-	bat bid;
-	int tt;
-	BUN cap = 0;
-	int *res;
-	BAT *b;
-	str msg;
-	oid o;
-
-	(void) mb;
-	(void) cntxt;
-	bid = *getArgReference_bat(s, p, 1);
-	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	}
-
-	if (p->argc > 2) {
-		lng lcap = *getArgReference_lng(s, p, 2);
-		if (lcap < 0)
-			throw(MAL, "bat.new", POSITIVE_EXPECTED);
-		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
-		cap = (BUN) lcap;
-	}
-	else
-		cap = BATcount(b);
-	o = b->hseqbase;
-	BBPunfix(b->batCacheid);
-
-	res = getArgReference_int(s, p, 0);
-	msg = (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
-	if (msg == MAL_SUCCEED ){
-		b = BATdescriptor(*res);
-		if ( b == NULL )
-			throw(MAL, "bat.new", RUNTIME_OBJECT_MISSING);
-		BATseqbase(b, o);
-		BBPunfix(b->batCacheid);
-	}
-	return msg;
-}
-
-str
 CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;

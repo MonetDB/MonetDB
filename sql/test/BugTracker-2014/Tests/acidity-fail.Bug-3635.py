@@ -3,15 +3,15 @@ try:
 except ImportError:
     import process
 
-import sys, time, monetdb.sql, os
+import sys, time, pymonetdb, os
 
 def connect(autocommit):
-    return monetdb.sql.connect(database = os.getenv('TSTDB'),
-                               hostname = '127.0.0.1',
-                               port = int(os.getenv('MAPIPORT')),
-                               username = 'monetdb',
-                               password = 'monetdb',
-                               autocommit = autocommit)
+    return pymonetdb.connect(database = os.getenv('TSTDB'),
+                             hostname = '127.0.0.1',
+                             port = int(os.getenv('MAPIPORT')),
+                             username = 'monetdb',
+                             password = 'monetdb',
+                             autocommit = autocommit)
 
 def query(conn, sql):
     cur = conn.cursor()

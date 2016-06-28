@@ -382,13 +382,12 @@ void mal_factory_reset(void)
 			/* MSresetVariables(mb, pl->stk, 0);*/
 			/* freeStack(pl->stk); there may be a reference?*/
 			/* we are inside the body of the factory and about to return */
-			pl->factory = 0;
-			if (pl->stk)
+			if (pl->stk) {
 				pl->stk->keepAlive = FALSE;
-			if ( pl->stk) {
-				//garbageCollector(cntxt, mb, pl->stk,TRUE);
+				garbageCollector(NULL, pl->factory, pl->stk,TRUE);
 				GDKfree(pl->stk);
 			}
+			pl->factory = 0;
 			pl->stk=0;
 			pl->pc = 0;
 			pl->inuse = 0;

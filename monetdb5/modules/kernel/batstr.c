@@ -1001,6 +1001,7 @@ str STRbatTail(bat *ret, const bat *l, const bat *r)
 	BAT *bn, *left, *right;
 	BUN p,q;
 	str v;
+	str msg = MAL_SUCCEED;
 
 	prepareOperand2(left,l,right,r,"batstr.string");
 	if( BATcount(left) != BATcount(right) )
@@ -1013,7 +1014,8 @@ str STRbatTail(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
 		int *tr = (int *) BUNtail(righti,p);
-		STRTail(&v, &tl, tr);
+		if ((msg = STRTail(&v, &tl, tr)) != MAL_SUCCEED)
+			goto bunins_failed;
 		bunfastapp(bn, v);
 		GDKfree(v);
 	}
@@ -1026,6 +1028,8 @@ bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
+	if (msg)
+		return msg;
 	GDKfree(v);
 	throw(MAL, "batstr.string" , OPERATION_FAILED " During bulk operation");
 }
@@ -1036,6 +1040,7 @@ str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 	BAT *bn, *left;
 	BUN p,q;
 	str v;
+	str msg = MAL_SUCCEED;
 
 	prepareOperand(left,l,"batstr.string");
 	prepareResult(bn,left,TYPE_str,"batstr.string");
@@ -1044,7 +1049,8 @@ str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
-		STRTail(&v, &tl, cst);
+		if ((msg = STRTail(&v, &tl, cst)) != MAL_SUCCEED)
+			goto bunins_failed;
 		bunfastapp(bn, v);
 		GDKfree(v);
 	}
@@ -1055,6 +1061,8 @@ str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
+	if (msg)
+		return msg;
 	GDKfree(v);
 	throw(MAL, "batstr.string", OPERATION_FAILED " During bulk operation");
 }
@@ -1127,6 +1135,7 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 	BUN p, q;
 	str x;
 	str y;
+	str err = MAL_SUCCEED;
 
 	prepareOperand(b, l, "subString");
 	prepareResult(bn, b, TYPE_int, "subString");
@@ -1136,8 +1145,9 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 	BATloop(b, p, q) {
 		y = (str) str_nil;
 		x = (str) BUNtail(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0)
-			STRSubstitute(&y, &x, arg2, arg3, rep);
+		if (x != 0 && strcmp(x, str_nil) != 0 &&
+			(err = STRSubstitute(&y, &x, arg2, arg3, rep)) != MAL_SUCCEED)
+			goto bunins_failed;
 		bunfastapp(bn, y);
 		if (y != str_nil)
 			GDKfree(y);
@@ -1146,10 +1156,12 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
-	if (y != str_nil)
+	if (err == MAL_SUCCEED && y != str_nil)
 		GDKfree(y);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	if (err)
+		return err;
 	throw(MAL, "batstr.subString", OPERATION_FAILED " During bulk operation");
 }
 
@@ -1202,7 +1214,7 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 	BATiter lefti, starti, lengthi;
 	BAT *bn, *left, *start, *length;
 	BUN p,q;
-	str v, *vp= &v;
+	str v;
 
 	if( (left= BATdescriptor(*l)) == NULL )
 		throw(MAL, "batstr.substring" , RUNTIME_OBJECT_MISSING);
@@ -1241,9 +1253,18 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		str tl = (str) BUNtail(lefti,p);
 		int *t1 = (int *) BUNtail(starti,p);
 		int *t2 = (int *) BUNtail(lengthi,p);
-		STRsubstring(vp, &tl, t1, t2);
-		BUNappend(bn, *vp, FALSE);
-		GDKfree(*vp);
+		str msg;
+		if ((msg = STRsubstring(&v, &tl, t1, t2)) != MAL_SUCCEED ||
+			BUNappend(bn, v, FALSE) != GDK_SUCCEED) {
+			BBPunfix(left->batCacheid);
+			BBPunfix(start->batCacheid);
+			BBPreclaim(bn);
+			if (msg)
+				return msg;
+			GDKfree(v);
+			throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
+		}
+		GDKfree(v);
 	}
 	bn->T->nonil = 0;
 	BBPunfix(start->batCacheid);

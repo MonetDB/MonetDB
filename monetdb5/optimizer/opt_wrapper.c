@@ -47,7 +47,6 @@
 #include "opt_multiplex.h"
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
-#include "opt_qep.h"
 #include "opt_querylog.h"
 #include "opt_recycler.h"
 #include "opt_reduce.h"
@@ -69,7 +68,6 @@ struct{
 	{"costModel", &OPTcostModelImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
-	{"dumpQEP", &OPTdumpQEPImplementation},
 	{"evaluate", &OPTevaluateImplementation},
 	{"factorize", &OPTfactorizeImplementation},
 	{"garbageCollector", &OPTgarbageCollectorImplementation},
@@ -101,10 +99,13 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str fcnnme = 0;
 	str msg= MAL_SUCCEED;
 	Symbol s= NULL;
-	lng t,clk= GDKusec();
 	int i, actions = 0;
 	char optimizer[256];
 	str curmodnme=0;
+	lng usec = GDKusec();
+
+    if (cntxt->mode == FINISHCLIENT)
+        throw(MAL, "optimizer", "prematurely stopped client");
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");
@@ -152,17 +153,19 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if ( codes[i].nme == 0)
 		throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 
-	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk));
 	OPTIMIZERDEBUG {
 		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG );
 	}
+	usec= GDKusec() - usec;
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions ("SZFMT" K) " LLFMT" usec\n", optimizer, actions, mb->stop, 
 		((sizeof( MalBlkRecord) +mb->ssize * offsetof(InstrRecord, argv)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
-		t);
-	QOTupdateStatistics(curmodnme,actions,t);
+		usec);
+	QOTupdateStatistics(curmodnme,actions,usec);
 	addtoMalBlkHistory(mb);
+	if ( mb->errors)
+		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
 	return msg;
 }
 

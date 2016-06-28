@@ -110,7 +110,7 @@ pyapi_export void* lookup_function(char *func, char* library);
 #define LOAD_SQL_FUNCTION_PTR(fcnname,libname)                                   \
     fcnname##_ptr = (fcnname##_ptr_tpe) lookup_function(#fcnname, libname);        \
     if (fcnname##_ptr == NULL) {                                         \
-        WARNING_MESSAGE("Failed to load function %s", #fcnname);                       \
+        msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname); \
     }
 
 #endif /* _PYPI_LIB_ */

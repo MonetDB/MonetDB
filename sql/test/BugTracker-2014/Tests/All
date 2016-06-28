@@ -10,7 +10,7 @@ sample-crash.Bug-3429
 temporary.Bug-3430
 indices.Bug-3435
 utf8bom.Bug-3436
-python-microseconds.Bug-3439
+HAVE_PYMONETDB?python-microseconds.Bug-3439
 left-outer-join-with-and.Bug-3444
 setreadonly_forgets_changes.Bug-3446
 select-having.Bug-3458
@@ -63,10 +63,10 @@ stddev-empty.Bug-3628
 ifthenelse.Bug-3629
 order_by_incorrect_error.Bug-3630
 incorrect_floating_point_cast.Bug-3633
-acidity-fail.Bug-3635
+HAVE_PYMONETDB?acidity-fail.Bug-3635
 BOM-in-string.Bug-3641
 combined_WHERE_conditions.Bug-3642
-copy-into.Bug-3481
+HAVE_PYMONETDB?copy-into.Bug-3481
 empty_intermediate_quantile.Bug-3611
 uppercaseboolean.Bug-3519
 null_in_string.Bug-2014

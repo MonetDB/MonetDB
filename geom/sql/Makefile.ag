@@ -17,4 +17,4 @@ headers_sql_sfcgal = {
 	SOURCES = 41_sfcgal.sql
 }
 
-EXTRA_DIST_DIR = Tests
+EXTRA_DIST_DIR = Tests conformance functions pg_regression

@@ -6899,6 +6899,8 @@ drop function pcre_replace(string, string, string, string);
 [ 12,	"SEQUENCE"	]
 [ 13,	"PROCEDURE"	]
 [ 14,	"BE_DROPPED"	]
+[ 15,	"TYPE"	]
+#drop function pcre_replace(string, string, string, string);
 
 # 12:41:47 >  
 # 12:41:47 >  "Done."

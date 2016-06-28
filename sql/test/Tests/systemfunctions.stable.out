@@ -419,6 +419,7 @@ Ready.
 [ "sys",	"copyfrom",	7,	"bigint",	""	]
 [ "sys",	"copyfrom",	8,	"bigint",	""	]
 [ "sys",	"copyfrom",	9,	"int",	""	]
+[ "sys",	"copyfrom",	10,	"varchar",	""	]
 [ "sys",	"copyfrom",	0,	"table",	"importTable"	]
 [ "sys",	"copyfrom",	1,	"varchar",	""	]
 [ "sys",	"copyfrom",	2,	"varchar",	""	]

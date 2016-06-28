@@ -47,7 +47,7 @@ Ready.
 % 191 # length
 function user.s2_1():void;
     X_49:void := querylog.define("explain\nselect t1.subject as id1, t2.subject as id2\nfrom  treeitems t1, treeitems t2\nwhere t2.pre between t1.pre and t1.pre + t1.size;","default_pipe",39);
-barrier X_82 := language.dataflow();
+barrier X_80 := language.dataflow();
     X_26 := bat.new(nil:oid,nil:str);
     X_34 := bat.append(X_26,"sys.L");
     X_43 := bat.append(X_34,"sys.L");
@@ -81,7 +81,7 @@ barrier X_82 := language.dataflow();
     language.pass(X_9);
     language.pass(C_2);
     language.pass(X_22);
-exit X_82;
+exit X_80;
     sql.resultSet(X_43,X_44,X_46,X_47,X_48,X_23,X_24);
 end user.s2_1;
 #ROLLBACK;
