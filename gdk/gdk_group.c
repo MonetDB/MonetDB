@@ -763,8 +763,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		   (b->batPersistence == PERSISTENT &&
 		    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-		   || ((parent = VIEWtparent(b)) != 0 &&
-		       BATcheckhash(BBPdescriptor(-parent)))
+		   || ((parent = -VIEWtparent(b)) != 0 &&
+		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
 		BUN lo, hi;
@@ -783,11 +783,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 #ifndef DISABLE_PARENT_HASH
-		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->T->hash == NULL && (parent = -VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, hi) in the parent
 			 * that b uses */
-			BAT *b2 = BBPdescriptor(-parent);
+			BAT *b2 = BBPdescriptor(parent);
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 			hi = lo + BATcount(b);
 			hseqb = b->hseqbase;

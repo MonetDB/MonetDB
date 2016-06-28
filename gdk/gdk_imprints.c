@@ -297,9 +297,9 @@ BATimprints(BAT *b)
 	assert(b->T->imprints == NULL);
 
 	if (VIEWtparent(b)) {
-		bat p = VIEWtparent(b);
+		bat p = -VIEWtparent(b);
 		o = b;
-		b = BATdescriptor(-p);
+		b = BATdescriptor(p);
 		if (BATcheckimprints(b)) {
 			BBPunfix(b->batCacheid);
 			return GDK_SUCCEED;

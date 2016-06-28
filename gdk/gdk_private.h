@@ -322,37 +322,6 @@ extern MT_Lock MT_system_lock;
 #define GDKcacheLock(y)	GDKbbpLock[y].alloc
 #define BBP_free(y)	GDKbbpLock[y].free
 
-#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
-
-#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
-
-#define bunfastins_nocheck(b, p, h, t, hs, ts)		\
-	do {						\
-		hfastins_nocheck(b, p, h, hs);		\
-		tfastins_nocheck(b, p, t, ts);		\
-		(b)->batCount++;			\
-	} while (0)
-
-#define bunfastins_nocheck_inc(b, p, h, t)				\
-	do {								\
-		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
-		p++;							\
-	} while (0)
-
-#define bunfastins(b, h, t)						\
-	do {								\
-		register BUN _p = BUNlast(b);				\
-		if (_p >= BATcapacity(b)) {				\
-			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
-	} while (0)
-
 /* extra space in front of strings in string heaps when hashash is set
  * if at least (2*SIZEOF_BUN), also store length (heaps are then
  * incompatible) */

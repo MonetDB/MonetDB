@@ -412,9 +412,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	if (BATcheckhash(b) && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
 		HASHdestroy(b);
 	}
-	if (b->T->hash != NULL ||
-	    (b->tkey & BOUND2BTRUE) != 0 ||
-	    (b->H->hash != NULL && ATOMstorage(b->htype) != ATOMstorage(TYPE_oid)))
+	if (b->T->hash != NULL || (b->tkey & BOUND2BTRUE) != 0)
 		fastpath = 0;
 
 	if (fastpath) {

@@ -5071,15 +5071,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BUNappend(atom, &w, FALSE);
 									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0)); */
 									sz = tailsize(bn, BATcount(bn));
-									sz += headsize(bn, BATcount(bn));
 									BUNappend(size, &sz, FALSE);
 
 									sz = bn->T->vheap ? bn->T->vheap->size : 0;
-									sz += bn->H->vheap ? bn->H->vheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
 									sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; /* HASHsize() */
-									sz += bn->H->hash && bn->H->hash != (Hash *) 1 ? bn->H->hash->heap->size : 0; /* HASHsize() */
 									BUNappend(indices, &sz, FALSE);
 									bitval = 0; /* HASHispersistent(bn); */
 									BUNappend(phash, &bitval, FALSE);

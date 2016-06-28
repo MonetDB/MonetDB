@@ -641,9 +641,7 @@ fixoidheap(void)
 		}
 
 		/* OID and (non-void) varsized columns have to be rewritten */
-		if (bs->H.type != TYPE_oid &&
-		    (bs->H.type == TYPE_void || !bs->H.varsized) &&
-		    bs->T.type != TYPE_oid &&
+		if (bs->T.type != TYPE_oid &&
 		    (bs->T.type == TYPE_void || !bs->T.varsized))
 			continue; /* nothing to do for this BAT */
 
@@ -1549,7 +1547,6 @@ new_bbpentry(FILE *fp, bat i)
 		    (unsigned char) 0) < 0 ||
 	    heap_entry(fp, &BBP_desc(i)->H) < 0 ||
 	    heap_entry(fp, &BBP_desc(i)->T) < 0 ||
-	    vheap_entry(fp, BBP_desc(i)->H.vheap) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->T.vheap) < 0 ||
 	    (BBP_options(i) &&
 	     fprintf(fp, " %s", BBP_options(i)) < 0) ||
@@ -1788,8 +1785,6 @@ BBPdump(void)
 			"# %d[%s,%s]: nme='%s' refs=%d lrefs=%d "
 			"status=%d count=" BUNFMT " "
 			"Hheap=[" SZFMT "," SZFMT "] "
-			"Hvheap=[" SZFMT "," SZFMT "] "
-			"Hhash=[" SZFMT "," SZFMT "] "
 			"Theap=[" SZFMT "," SZFMT "] "
 			"Tvheap=[" SZFMT "," SZFMT "] "
 			"Thash=[" SZFMT "," SZFMT "]\n",
@@ -1803,10 +1798,6 @@ BBPdump(void)
 			b->batCount,
 			HEAPmemsize(&b->H->heap),
 			HEAPvmsize(&b->H->heap),
-			HEAPmemsize(b->H->vheap),
-			HEAPvmsize(b->H->vheap),
-			b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1 ? HEAPmemsize(b->H->hash->heap) : 0,
-			b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1 ? HEAPvmsize(b->H->hash->heap) : 0,
 			HEAPmemsize(&b->T->heap),
 			HEAPvmsize(&b->T->heap),
 			HEAPmemsize(b->T->vheap),
@@ -1821,24 +1812,6 @@ BBPdump(void)
 			mem += HEAPmemsize(&b->H->heap);
 			vm += HEAPvmsize(&b->H->heap);
 			n++;
-		}
-		if (b->H->vheap) {
-			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->H->vheap);
-				cvm += HEAPvmsize(b->H->vheap);
-			} else {
-				mem += HEAPmemsize(b->H->vheap);
-				vm += HEAPvmsize(b->H->vheap);
-			}
-		}
-		if (b->H->hash && b->H->hash != (Hash *) -1 && b->H->hash != (Hash *) 1) {
-			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->H->hash->heap);
-				cvm += HEAPvmsize(b->H->hash->heap);
-			} else {
-				mem += HEAPmemsize(b->H->hash->heap);
-				vm += HEAPvmsize(b->H->hash->heap);
-			}
 		}
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 			cmem += HEAPmemsize(&b->T->heap);
@@ -2508,13 +2481,12 @@ decref(bat i, int logical, int releaseShare, int lock)
 			assert(0);
 		} else {
 			assert(b == NULL || b->H->heap.parentid == 0);
-			assert(b == NULL || b->T->heap.parentid == 0 || BBP_refs(b->T->heap.parentid) > 0);
+			assert(b == NULL || b->T->heap.parentid == 0 || BBP_refs(-b->T->heap.parentid) > 0);
 			assert(b == NULL || b->H->vheap == NULL);
 			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((tp = -b->T->heap.parentid) != 0 &&
-				    b->H != b->T)
+				if ((tp = -b->T->heap.parentid) != 0)
 					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->T->heap.base);
 				/* if a view shared the hash with its
 				 * parent, indicate this, but only if
@@ -2783,7 +2755,7 @@ BBPsave(BAT *b)
 static void
 BBPdestroy(BAT *b)
 {
-	bat tp = b->T->heap.parentid;
+	bat tp = -b->T->heap.parentid;
 	bat vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
@@ -2818,7 +2790,7 @@ BBPdestroy(BAT *b)
 static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
+	bat bid = b->batCacheid, tp = -VIEWtparent(b), vtp = VIEWvtparent(b);
 	gdk_return ret;
 
 	assert(bid > 0);
@@ -2845,7 +2817,7 @@ BBPfree(BAT *b, const char *calledFrom)
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
-		GDKunshare(-tp);
+		GDKunshare(tp);
 	if (ret == GDK_SUCCEED && vtp)
 		GDKunshare(vtp);
 	return ret;
@@ -3630,17 +3602,10 @@ BBPbackup(BAT *b, bit subcommit)
 	nme[sizeof(nme) - 1] = 0;
 	srcdir[s - srcdir] = 0;
 
-	if (b->htype != TYPE_void &&
-	    do_backup(srcdir, nme, "head", &b->H->heap,
-		      b->batDirty || b->H->heap.dirty, subcommit) != GDK_SUCCEED)
-		goto fail;
+	assert(b->htype == TYPE_void);
 	if (b->ttype != TYPE_void &&
 	    do_backup(srcdir, nme, "tail", &b->T->heap,
 		      b->batDirty || b->T->heap.dirty, subcommit) != GDK_SUCCEED)
-		goto fail;
-	if (b->H->vheap &&
-	    do_backup(srcdir, nme, "hheap", b->H->vheap,
-		      b->batDirty || b->H->vheap->dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->T->vheap &&
 	    do_backup(srcdir, nme, "theap", b->T->vheap,

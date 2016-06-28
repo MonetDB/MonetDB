@@ -644,10 +644,7 @@ la_bat_use(logger *lg, logaction *la)
 	assert(b->batRole == PERSISTENT);
 	assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
 	assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-	if (b->H->vheap) {
-		assert(0 <= b->H->vheap->farmid && b->H->vheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-	}
+	assert(b->H->vheap == NULL);
 	assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
 	assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
 	if (b->T->vheap) {
@@ -2254,10 +2251,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->batRole == PERSISTENT);
 		assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
 		assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-		if (b->H->vheap) {
-			assert(0 <= b->H->vheap->farmid && b->H->vheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-		}
+		assert(b->H->vheap == NULL);
 		assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
 		assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
 		if (b->T->vheap) {
@@ -2282,8 +2276,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	if (flag == LOG_USE) {
 		assert(b->batRole == PERSISTENT);
 		assert(b->H->heap.farmid == 0);
-		assert(b->H->vheap == NULL ||
-		       BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
+		assert(b->H->vheap == NULL);
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));

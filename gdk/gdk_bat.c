@@ -540,12 +540,10 @@ BATdestroy( BATstore *bs )
 	if (bs->T.id && !default_ident(bs->T.id))
 		GDKfree(bs->T.id);
 	bs->T.id = BATstring_t;
-	if (bs->H.vheap)
-		GDKfree(bs->H.vheap);
+	assert(bs->H.vheap == NULL);
+	assert(bs->H.props == NULL);
 	if (bs->T.vheap)
 		GDKfree(bs->T.vheap);
-	if (bs->H.props)
-		PROPdestroy(bs->H.props);
 	if (bs->T.props)
 		PROPdestroy(bs->T.props);
 	GDKfree(bs);
@@ -685,12 +683,11 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			bunstocopy = cnt;
 		} else if (isVIEW(b)) {
 			/* extra checks needed for views */
-			bat tp = VIEWtparent(b);
+			bat tp = -VIEWtparent(b);
 
-			if (isVIEWCOMBINE(b) ||	/* oops, mirror view! */
-			    /* reduced slice view: do not copy too
-			     * much garbage */
-			    (tp != 0 && BATcapacity(BBP_cache(-tp)) > cnt + cnt))
+			if (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt)
+				/* reduced slice view: do not copy too
+				 * much garbage */
 				bunstocopy = cnt;
 		}
 
@@ -1397,11 +1394,8 @@ BATvmsize(BAT *b, int dirty)
 	BATcheck(b, "BATvmsize", 0);
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return (!dirty || b->H->heap.dirty ? HEAPvmsize(&b->H->heap) : 0) +
-		(!dirty || b->T->heap.dirty ? HEAPvmsize(&b->T->heap) : 0) +
-		((!dirty || b->H->heap.dirty) && b->H->hash && b->H->hash != (Hash *) 1 ? HEAPvmsize(b->H->hash->heap) : 0) +
+	return (!dirty || b->T->heap.dirty ? HEAPvmsize(&b->T->heap) : 0) +
 		((!dirty || b->T->heap.dirty) && b->T->hash && b->T->hash != (Hash *) 1 ? HEAPvmsize(b->T->hash->heap) : 0) +
-		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPvmsize(b->H->vheap) : 0) +
 		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPvmsize(b->T->vheap) : 0);
 }
 
@@ -1413,11 +1407,8 @@ BATmemsize(BAT *b, int dirty)
 	    (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
 	return (!dirty || b->batDirtydesc ? sizeof(BATstore) : 0) +
-		(!dirty || b->H->heap.dirty ? HEAPmemsize(&b->H->heap) : 0) +
 		(!dirty || b->T->heap.dirty ? HEAPmemsize(&b->T->heap) : 0) +
-		((!dirty || b->H->heap.dirty) && b->H->hash && b->H->hash != (Hash *) 1 ? HEAPmemsize(b->H->hash->heap) : 0) +
 		((!dirty || b->T->heap.dirty) && b->T->hash && b->T->hash != (Hash *) 1 ? HEAPmemsize(b->T->hash->heap) : 0) +
-		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPmemsize(b->H->vheap) : 0) +
 		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPmemsize(b->T->vheap) : 0);
 }
 
@@ -1807,41 +1798,27 @@ gdk_return
 BATcheckmodes(BAT *b, int existing)
 {
 	int wr = (b->batRestricted == BAT_WRITE);
-	storage_t m0 = STORE_MEM, m1 = STORE_MEM, m2 = STORE_MEM, m3 = STORE_MEM;
+	storage_t m1 = STORE_MEM, m3 = STORE_MEM;
 	int dirty = 0;
 
 	BATcheck(b, "BATcheckmodes", GDK_FAIL);
-
-	if (b->htype) {
-		m0 = HEAPcommitpersistence(&b->H->heap, wr, existing);
-		dirty |= (b->H->heap.newstorage != m0);
-	}
 
 	if (b->ttype) {
 		m1 = HEAPcommitpersistence(&b->T->heap, wr, existing);
 		dirty |= (b->T->heap.newstorage != m1);
 	}
 
-	if (b->H->vheap) {
-		int ha = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		m2 = HEAPcommitpersistence(b->H->vheap, wr || ha, existing);
-		dirty |= (b->H->vheap->newstorage != m2);
-	}
 	if (b->T->vheap) {
 		int ta = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
 		m3 = HEAPcommitpersistence(b->T->vheap, wr || ta, existing);
 		dirty |= (b->T->vheap->newstorage != m3);
 	}
-	if (m0 == STORE_INVALID || m1 == STORE_INVALID ||
-	    m2 == STORE_INVALID || m3 == STORE_INVALID)
+	if (m1 == STORE_INVALID || m3 == STORE_INVALID)
 		return GDK_FAIL;
 
 	if (dirty) {
 		b->batDirtydesc = 1;
-		b->H->heap.newstorage = m0;
 		b->T->heap.newstorage = m1;
-		if (b->H->vheap)
-			b->H->vheap->newstorage = m2;
 		if (b->T->vheap)
 			b->T->vheap->newstorage = m3;
 	}
@@ -1863,8 +1840,8 @@ BATsetaccess(BAT *b, int newmode)
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
-		storage_t m0, m1, m2 = STORE_MEM, m3 = STORE_MEM;
-		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
+		storage_t m1, m3 = STORE_MEM;
+		storage_t b1, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
 			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
@@ -1873,31 +1850,20 @@ BATsetaccess(BAT *b, int newmode)
 			return GDK_FAIL;
 		}
 
-		b0 = b->H->heap.newstorage;
-		m0 = HEAPchangeaccess(&b->H->heap, ACCESSMODE(wr, rd), existing);
 		b1 = b->T->heap.newstorage;
 		m1 = HEAPchangeaccess(&b->T->heap, ACCESSMODE(wr, rd), existing);
-		if (b->H->vheap) {
-			int ha = (newmode == BAT_APPEND && ATOMappendpriv(b->htype, b->H->vheap));
-			b2 = b->H->vheap->newstorage;
-			m2 = HEAPchangeaccess(b->H->vheap, ACCESSMODE(wr && ha, rd && ha), existing);
-		}
 		if (b->T->vheap) {
 			int ta = (newmode == BAT_APPEND && ATOMappendpriv(b->ttype, b->T->vheap));
 			b3 = b->T->vheap->newstorage;
 			m3 = HEAPchangeaccess(b->T->vheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
-		if (m0 == STORE_INVALID || m1 == STORE_INVALID ||
-		    m2 == STORE_INVALID || m3 == STORE_INVALID)
+		if (m1 == STORE_INVALID || m3 == STORE_INVALID)
 			return GDK_FAIL;
 
 		/* set new access mode and mmap modes */
 		b->batRestricted = newmode;
 		b->batDirtydesc = TRUE;
-		b->H->heap.newstorage = m0;
 		b->T->heap.newstorage = m1;
-		if (b->H->vheap)
-			b->H->vheap->newstorage = m2;
 		if (b->T->vheap)
 			b->T->vheap->newstorage = m3;
 
@@ -1905,10 +1871,7 @@ BATsetaccess(BAT *b, int newmode)
 			/* roll back all changes */
 			b->batRestricted = bakmode;
 			b->batDirtydesc = bakdirty;
-			b->H->heap.newstorage = b0;
 			b->T->heap.newstorage = b1;
-			if (b->H->vheap)
-				b->H->vheap->newstorage = b2;
 			if (b->T->vheap)
 				b->T->vheap->newstorage = b3;
 			return GDK_FAIL;

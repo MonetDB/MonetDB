@@ -96,8 +96,6 @@ BATfakeCommit(BAT *b)
 		BATcommit(b);
 		b->batDirty = 0;
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
-		if (b->H->vheap)
-			b->H->vheap->dirty = 0;
 		if (b->T->vheap)
 			b->T->vheap->dirty = 0;
 	}

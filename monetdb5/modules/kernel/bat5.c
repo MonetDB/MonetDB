@@ -857,8 +857,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		infoHeap(bk, bv, b->T->vheap, "theap.") != GDK_SUCCEED ||
 
 		/* dump index information */
-		(b->H->hash &&
-		 HASHinfo(bk, bv, b->H->hash, "hhash->") != GDK_SUCCEED) ||
 		(b->T->hash &&
 		 HASHinfo(bk, bv, b->T->hash, "thash->") != GDK_SUCCEED)) {
 		BBPreclaim(bk);
@@ -892,12 +890,8 @@ BKCgetSize(lng *tot, const bat *bid){
 		BUN cnt = BATcapacity(b);
 		size += ROUND_UP(b->H->heap.free, blksize);
 		size += ROUND_UP(b->T->heap.free, blksize);
-		if (b->H->vheap)
-			size += ROUND_UP(b->H->vheap->free, blksize);
 		if (b->T->vheap)
 			size += ROUND_UP(b->T->vheap->free, blksize);
-		if (b->H->hash)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		if (b->T->hash)
 			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		size += IMPSimprintsize(b);

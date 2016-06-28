@@ -632,8 +632,6 @@ DESCclean(BAT *b)
 	b->batDirtydesc = 0;
 	b->H->heap.dirty = 0;
 	b->T->heap.dirty = 0;
-	if (b->H->vheap)
-		b->H->vheap->dirty = 0;
 	if (b->T->vheap)
 		b->T->vheap->dirty = 0;
 }
@@ -762,8 +760,6 @@ BATsave(BAT *bd)
 	if (b->T->vheap) {
 		b->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
 		if (b->T->vheap == NULL) {
-			if (b->H->vheap)
-				GDKfree(b->H->vheap);
 			return GDK_FAIL;
 		}
 		*b->T->vheap = *bd->T->vheap;
@@ -771,25 +767,15 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->H->heap.dirty)
-		if (err == GDK_SUCCEED && b->htype)
-			err = HEAPsave(&b->H->heap, nme, "head");
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->T->heap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
 			err = HEAPsave(&b->T->heap, nme, "tail");
-	if (b->H->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->H->vheap->dirty))
-		if (b->htype && b->hvarsized) {
-			if (err == GDK_SUCCEED)
-				err = HEAPsave(b->H->vheap, nme, "hheap");
-		}
 	if (b->T->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == GDK_SUCCEED)
 				err = HEAPsave(b->T->vheap, nme, "theap");
 		}
 
-	if (b->H->vheap)
-		GDKfree(b->H->vheap);
 	if (b->T->vheap)
 		GDKfree(b->T->vheap);
 
@@ -823,63 +809,22 @@ BATload_intern(bat bid, int lock)
 	b = &bs->B;
 
 	/* LOAD bun heap */
-	if (b->htype != TYPE_void) {
-		if (HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			return NULL;
-		}
-		assert(b->H->heap.size >> b->H->shift <= BUN_MAX);
-		b->batCapacity = (BUN) (b->H->heap.size >> b->H->shift);
-	} else {
-		b->H->heap.base = NULL;
-	}
+	b->H->heap.base = NULL;
+
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			HEAPfree(&b->H->heap, 0);
 			return NULL;
 		}
-		if (b->htype == TYPE_void) {
-			assert(b->T->heap.size >> b->T->shift <= BUN_MAX);
-			b->batCapacity = (BUN) (b->T->heap.size >> b->T->shift);
-		}
-		if (b->batCapacity != (b->T->heap.size >> b->T->shift)) {
-			BUN cap = b->batCapacity;
-			gdk_return h;
-			if (cap < (b->T->heap.size >> b->T->shift)) {
-				cap = (BUN) (b->T->heap.size >> b->T->shift);
-				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
-				h = HEAPextend(&b->H->heap, headsize(b, cap), b->batRestricted == BAT_READ);
-				b->batCapacity = cap;
-			} else {
-				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
-				h = HEAPextend(&b->T->heap, tailsize(b, cap), b->batRestricted == BAT_READ);
-			}
-			if (h != GDK_SUCCEED) {
-				HEAPfree(&b->H->heap, 0);
-				HEAPfree(&b->T->heap, 0);
-				return NULL;
-			}
-		}
+		assert(b->T->heap.size >> b->T->shift <= BUN_MAX);
+		b->batCapacity = (BUN) (b->T->heap.size >> b->T->shift);
 	} else {
 		b->T->heap.base = NULL;
-	}
-
-	/* LOAD head heap */
-	if (ATOMvarsized(b->htype)) {
-		if (HEAPload(b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->H->heap, 0);
-			HEAPfree(&b->T->heap, 0);
-			return NULL;
-		}
-		if (ATOMstorage(b->htype) == TYPE_str) {
-			strCleanHash(b->H->vheap, FALSE);	/* ensure consistency */
-		}
 	}
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			if (b->H->vheap)
-				HEAPfree(b->H->vheap, 0);
 			HEAPfree(&b->H->heap, 0);
 			HEAPfree(&b->T->heap, 0);
 			return NULL;

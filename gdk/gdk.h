@@ -1337,14 +1337,10 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 			 TYPE_oid : (b)->htype)
 #define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
 			 TYPE_oid : (b)->ttype)
-#define Hbase(b)	((b)->H->vheap->base)
 #define Tbase(b)	((b)->T->vheap->base)
 
-#define Hsize(b)	((b)->H->width)
 #define Tsize(b)	((b)->T->width)
 
-/* new semantics ! */
-#define headsize(b,p)	((b)->H->type?((size_t)(p))<<(b)->H->shift:0)
 #define tailsize(b,p)	((b)->T->type?((size_t)(p))<<(b)->T->shift:0)
 
 #define Tloc(b,p)	((b)->T->heap.base+((p)<<(b)->T->shift))
@@ -1486,7 +1482,6 @@ gdk_export int BATgetaccess(BAT *b);
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||	\
 			 (b)->batDirtydesc ||				\
 			 (b)->H->heap.dirty || (b)->T->heap.dirty ||	\
-			 ((b)->H->vheap?(b)->H->vheap->dirty:0) ||	\
 			 ((b)->T->vheap?(b)->T->vheap->dirty:0))
 
 #define PERSISTENT		0
@@ -1668,8 +1663,11 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 	} while (0)
 #define BATsettrivprop(b)						\
 	do {								\
+		assert((b)->htype == TYPE_void);			\
+		assert((b)->hseqbase != oid_nil);			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
-		COLsettrivprop((b), (b)->H);				\
+		(b)->hrevsorted = (b)->batCount <= 1;			\
+		/* the other head properties should already be correct */ \
 		COLsettrivprop((b), (b)->T);				\
 	} while (0)
 
@@ -2783,7 +2781,6 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 	 ((x)->T->heap.parentid ||					\
 	  ((x)->T->vheap && (x)->T->vheap->parentid != (x)->batCacheid)))
 
-#define isVIEWCOMBINE(x) ((x)->H == (x)->T)
 #define VIEWtparent(x)	((x)->T->heap.parentid)
 #define VIEWvtparent(x)	((x)->T->vheap == NULL || (x)->T->vheap->parentid == (x)->batCacheid ? 0 : (x)->T->vheap->parentid)
 
@@ -2856,7 +2853,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 /*
  * @- hash-table supported loop over BUNs
  * The first parameter `b' is a BAT, the second (`h') should point to
- * `b->H->hash', and `v' a pointer to an atomic value (corresponding
+ * `b->T->hash', and `v' a pointer to an atomic value (corresponding
  * to the head column of `b'). The 'hb' is an integer index, pointing
  * out the `hb'-th BUN.
  */

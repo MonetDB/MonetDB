@@ -204,9 +204,9 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 		return NULL;
 	bn = &bs->B;
 
-	tp = VIEWtparent(b);
+	tp = -VIEWtparent(b);
 	if ((tp == 0 && b->ttype != TYPE_void) || b->T->heap.copied)
-		tp = -b->batCacheid;
+		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
 	/* the H and T column descriptors are fully copied. We need
 	 * copies because in case of a mark, we are going to override
@@ -224,7 +224,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	}
 
 	if (tp)
-		BBPshare(-tp);
+		BBPshare(tp);
 	if (bn->T->vheap) {
 		assert(b->T->vheap);
 		assert(bn->T->vheap->parentid > 0);
@@ -240,7 +240,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 
 	/* correct values after copy of head and tail info */
 	if (tp)
-		bn->T->heap.parentid = tp;
+		bn->T->heap.parentid = -tp;
 	BATinit_idents(bn);
 	/* Some bits must be copied individually. */
 	bn->batDirty = BATdirty(b);
@@ -339,7 +339,7 @@ static void
 VIEWunlink(BAT *b)
 {
 	if (b) {
-		bat tp = VIEWtparent(b);
+		bat tp = -VIEWtparent(b);
 		bat vtp = VIEWvtparent(b);
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
@@ -347,9 +347,9 @@ VIEWunlink(BAT *b)
 		assert(b->batCacheid > 0);
 		assert(b->htype == TYPE_void);
 		if (tp)
-			tpb = BBP_cache(-tp);
+			tpb = BBP_cache(tp);
 		if (tp && !vtp)
-			vtp = -tp;
+			vtp = tp;
 		if (vtp)
 			vtpb = BBP_cache(vtp);
 
@@ -455,6 +455,7 @@ VIEWreset(BAT *b)
 		b->H->shift = 0;
 		b->H->width = 0;
 		b->H->seq = v->H->seq;
+		b->H->key = BOUND2BTRUE | 1;
 
 		b->T->type = v->T->type;
 		b->T->varsized = v->T->varsized;
@@ -465,8 +466,7 @@ VIEWreset(BAT *b)
 		b->T->heap.parentid = 0;
 		b->batRestricted = BAT_WRITE;
 
-		/* reset BOUND2KEY */
-		b->H->key = BAThkey(v);
+		/* reset BOUND2BTRUE */
 		b->T->key = BATtkey(v);
 
 		/* copy the heaps */
@@ -481,7 +481,7 @@ VIEWreset(BAT *b)
 			b->T->vheap->parentid = b->batCacheid;
 		}
 
-		if (v->T->heap.parentid == -b->batCacheid) {
+		if (-v->T->heap.parentid == b->batCacheid) {
 			assert(tp == 0);
 			assert(b->batSharecnt > 0);
 			BBPunshare(b->batCacheid);
