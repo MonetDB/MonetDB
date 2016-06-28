@@ -1731,7 +1731,7 @@ typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
 	str logical;		/* logical name */
 	str bak;		/* logical name backup */
-	bat next[2];		/* next BBP slot in linked list */
+	bat next;		/* next BBP slot in linked list */
 	BATstore *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
@@ -1757,7 +1757,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_cache(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].cache
 #define BBP_logical(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].logical
 #define BBP_bak(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].bak
-#define BBP_next(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].next[(i)<0]
+#define BBP_next(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].next
 #define BBP_physical(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].physical
 #define BBP_options(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].options
 #define BBP_desc(i)	BBP[abs(i)>>BBPINITLOG][abs(i)&(BBPINIT-1)].desc
