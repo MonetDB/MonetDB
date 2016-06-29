@@ -597,11 +597,11 @@ log_read_create(logger *lg, trans *tr, char *name)
 static void
 la_bat_create(logger *lg, logaction *la)
 {
-	int ht = (la->ht < 0) ? TYPE_void : la->ht;
 	int tt = (la->tt < 0) ? TYPE_void : la->tt;
 	BAT *b;
 
-	assert(ht == TYPE_void);
+	/* formerly head column type, should be void */
+	assert(((la->ht < 0) ? TYPE_void : la->ht) == TYPE_void);
 	b = COLnew(0, tt, BATSIZE, PERSISTENT);
 
 	if (b != NULL) {
