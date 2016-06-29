@@ -62,4 +62,4 @@ headers_autoload_sfcgal = {
 	SOURCES = 31_sfcgal.mal
 }
 
-EXTRA_DIST = 30_geom.mal 31_geom.mal geom.mal
+EXTRA_DIST = 30_geom.mal 31_sfcgal.mal geom.mal sfcgal.mal

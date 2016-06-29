@@ -26,8 +26,6 @@ command triangulate2DZ(geo:wkb, flag:int) : wkb
 address geom_sfcgal_triangulate2DZ
 comment "Triangulates a geometry collection";
 
-
-
 module batgeom;
 
 command triangulate2DZ(geo:bat[:oid,:wkb], flag:int) :bat[ :oid, :wkb]

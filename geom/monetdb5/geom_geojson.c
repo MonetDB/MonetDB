@@ -598,7 +598,7 @@ asgeojson_geom_buf(GEOSGeom geom, char *output, bbox3D *bbox, int precision)
 print_double(double d, int maxdd, char *buf, size_t bufsize)
 {
     double ad = fabs(d);
-    int ndd = ad < 1 ? 0 : floor(log10(ad))+1; /* non-decimal digits */
+    double ndd = ad < 1 ? 0 : floor(log10(ad))+1; /* non-decimal digits */
     if (fabs(d) < OUT_MAX_DOUBLE)
     {
         if ( maxdd > (OUT_MAX_DOUBLE_PRECISION - ndd) )  maxdd -= ndd;
@@ -691,7 +691,7 @@ points_geojson_size(const GEOSGeometry *geom, int precision)
 trim_trailing_zeros(char *str)
 {
     char *ptr, *totrim=NULL;
-    int len;
+    size_t len;
     int i;
 
     /* no dot, no decimal digits */

@@ -1661,7 +1661,7 @@ wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, bat *saBAT_id,
 {
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL, *saBAT = NULL, *sbBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter, saBAT_iter, sbBAT_iter;
-    uint32_t i = 0;
+    BUN i = 0;
 
 	//get the descriptors of the input BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {

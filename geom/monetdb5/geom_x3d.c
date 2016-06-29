@@ -490,7 +490,7 @@ x3d_3_psurface_buf(GEOSGeom psur, char *output, int precision, int opts, const c
             {
                 ptr += sprintf(ptr, " ");
             }
-            ptr += sprintf(ptr, "%d", (j + k));
+            ptr += sprintf(ptr, "%ud", (j + k));
         }
         if (i < (ngeoms - 1) )
         {
