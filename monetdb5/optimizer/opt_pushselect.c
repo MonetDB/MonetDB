@@ -168,7 +168,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			return 0;
 		}
 
-		if (getModuleId(p) == algebraRef && getFunctionId(p) == sliceRef)
+		if (isSlice(p))
 			nr_topn++;
 
 		if (isLikeOp(p))
