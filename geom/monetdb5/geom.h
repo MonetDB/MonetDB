@@ -159,8 +159,8 @@ geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
 
 //geom_export str wkbFromString(wkb**, str*); 
 
-geom_export str wkbMakePoint(wkb**, dbl*, dbl*, dbl*, dbl*, int*);
-geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*);
+geom_export str wkbMakePoint(wkb**, dbl*, dbl*, dbl*, dbl*, int*, int*);
+geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*, int*);
 
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbSetSRID(wkb**, wkb**, int*);

@@ -3072,7 +3072,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 }
 
 str
-wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag)
+wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag, int *srid)
 {
 	GEOSGeom geosGeometry;
 	GEOSCoordSeq seq;
@@ -3113,6 +3113,9 @@ wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag)
 		GEOSCoordSeq_destroy(seq);
 		throw(MAL, "geom.MakePoint", "Failed to create GEOSGeometry from the coordinates");
 	}
+
+    if (*srid)
+    	GEOSSetSRID(geosGeometry, *srid);
 
 	*out = geos2wkb(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);

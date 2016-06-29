@@ -174,22 +174,41 @@ function BdMPolyFromText(wkt:str, srid:int) :wkb;
 end BdMPolyFromText;
 
 
-command MakePointXYZM(x:dbl, y:dbl, z:dbl, m:dbl, zmFlag:int) :wkb address wkbMakePoint
+command MakePointXYZM(x:dbl, y:dbl, z:dbl, m:dbl, zmFlag:int, srid:int) :wkb address wkbMakePoint
 comment "creates a point using the coordinates";
 function MakePoint(x:dbl, y:dbl) :wkb;
-	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0);
+	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0, 0);
 	return p;
 end MakePoint;
+function MakePoint(x:dbl, y:dbl, srid:int) :wkb;
+	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0, srid);
+	return p;
+end MakePoint;
+
 function MakePoint(x:dbl, y:dbl, z:dbl) :wkb;
-	p := MakePointXYZM(x, y, z, 0:dbl, 10);
+	p := MakePointXYZM(x, y, z, 0:dbl, 10, 0);
 	return p;
 end MakePoint;
+function MakePoint(x:dbl, y:dbl, z:dbl, srid:int) :wkb;
+	p := MakePointXYZM(x, y, z, 0:dbl, 10, srid);
+	return p;
+end MakePoint;
+
 function MakePointM(x:dbl, y:dbl, m:dbl) :wkb;
-	p := MakePointXYZM(x, y, 0:dbl, m, 1);
+	p := MakePointXYZM(x, y, 0:dbl, m, 1, 0);
 	return p;
 end MakePointM;
+function MakePointM(x:dbl, y:dbl, m:dbl, srid:int) :wkb;
+	p := MakePointXYZM(x, y, 0:dbl, m, 1, srid);
+	return p;
+end MakePointM;
+
 function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb;
-	p := MakePointXYZM(x, y, z, m, 11);
+	p := MakePointXYZM(x, y, z, m, 11, 0);
+	return p;
+end MakePoint;
+function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl, srid:int) :wkb;
+	p := MakePointXYZM(x, y, z, m, 11, srid);
 	return p;
 end MakePoint;
 
@@ -621,22 +640,42 @@ function GeometryType2(w:bat[:oid,:wkb]) :bat[:oid,:str];
 	return x;
 end GeometryType2;
 
-command MakePointXYZM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], zmFlag:int) :bat[:oid,:wkb] address wkbMakePoint_bat
+command MakePointXYZM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], zmFlag:int, srid:int) :bat[:oid,:wkb] address wkbMakePoint_bat
 comment "creates a point using the coordinates";
+
 function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0);
+	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0, 0);
 	return p;
 end MakePoint;
+function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
+	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0, srid);
+	return p;
+end MakePoint;
+
 function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, nil:bat, 10);
+	p := MakePointXYZM(x, y, z, nil:bat, 10, 0);
 	return p;
 end MakePoint;
+function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
+	p := MakePointXYZM(x, y, z, nil:bat, 10, srid);
+	return p;
+end MakePoint;
+
 function MakePointM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, m, 1);
+	p := MakePointXYZM(x, y, nil:bat, m, 1, 0);
 	return p;
 end MakePointM;
+function MakePointM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
+	p := MakePointXYZM(x, y, nil:bat, m, 1, srid);
+	return p;
+end MakePointM;
+
 function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, m, 11);
+	p := MakePointXYZM(x, y, z, m, 11, 0);
+	return p;
+end MakePoint;
+function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
+	p := MakePointXYZM(x, y, z, m, 11, srid);
 	return p;
 end MakePoint;
 

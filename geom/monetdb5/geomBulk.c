@@ -876,7 +876,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 /********* Multiple inputs **********/
 /************************************/
 str
-wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *mBAT_id, int *zmFlag)
+wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *mBAT_id, int *zmFlag, int *srid)
 {
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL, *mBAT = NULL;
 	BATiter xBAT_iter, yBAT_iter, zBAT_iter, mBAT_iter;
@@ -932,15 +932,15 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		if (mBAT)
 			m = *((double *) BUNtail(mBAT_iter, i + BUNfirst(mBAT)));
 
-		if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) {	//check
-			BBPunfix(outBAT->batCacheid);
-
-			goto clean;
-		}
-		BUNappend(outBAT, pointWKB, TRUE);	//add the result to the outBAT
-		GDKfree(pointWKB);
-		pointWKB = NULL;
-	}
+        if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag, srid)) != MAL_SUCCEED) {	//check
+            BBPunfix(outBAT->batCacheid);
+            goto clean;
+        }
+        BUNappend(outBAT, pointWKB, TRUE);	//add the result to the outBAT
+        if (pointWKB)
+            GDKfree(pointWKB);
+        pointWKB = NULL;
+    }
 
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(xBAT));
