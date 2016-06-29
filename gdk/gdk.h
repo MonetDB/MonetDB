@@ -781,20 +781,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           BUN    batFirst;         // empty BUN before the first alive BUN
  *           BUN    batInserted;      // first inserted BUN
  *           BUN    batCount;         // Tuple count
- *           // Head properties
- *           int    htype;            // Head type number
- *           str    hident;           // name for head column
- *           bit    hkey;             // head values should be unique?
- *           bit    hsorted;          // are head values currently ordered?
- *           bit    hvarsized;        // for speed: head type is varsized?
- *           bit    hnonil;           // head has no nils
- *           oid    halign;           // alignment OID for head.
- *           // Head storage
- *           int    hloc;             // byte-offset in BUN for head elements
- *           Heap   *hheap;           // heap for varsized head values
- *           Hash   *hhash;           // linear chained hash table on head
- *           Imprints *himprints;     // column imprints index on head
- *           orderidx horderidx;      // order oid index on head
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
@@ -897,9 +883,9 @@ typedef struct {
 typedef struct BAT {
 	/* static bat properties */
 	bat batCacheid;		/* index into BBP */
+	oid hseqbase;		/* head seq base */
 
 	/* dynamic column properties */
-	COLrec *H;		/* column info */
 	COLrec *T;		/* column info */
 
 	BATrec *S;		/* the BAT properties */
@@ -932,25 +918,15 @@ typedef int (*GDKfcn) ();
 #define batRestricted	S->restricted
 #define batRole		S->role
 #define creator_tid	S->tid
-#define htype		H->type
 #define ttype		T->type
-#define hkey		H->key
 #define tkey		T->key
-#define hvarsized	H->varsized
 #define tvarsized	T->varsized
-#define hseqbase	H->seq
 #define tseqbase	T->seq
-#define hsorted		H->sorted
-#define hrevsorted	H->revsorted
 #define tsorted		T->sorted
 #define trevsorted	T->revsorted
-#define hdense		H->dense
 #define tdense		T->dense
-#define hident		H->id
 #define tident		T->id
-#define halign		H->align
 #define talign		T->align
-#define horderidx	H->orderidx
 #define torderidx	T->orderidx
 
 
@@ -1293,7 +1269,6 @@ gdk_export bte ATOMelmshift(int sz);
 #define bunfastapp(b, t)						\
 	do {								\
 		register BUN _p = BUNlast(b);				\
-		assert((b)->htype == TYPE_void);			\
 		if (_p >= BATcapacity(b)) {				\
 			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
@@ -1334,8 +1309,6 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 	 BUN_NONE :							\
 	 BUNfirst((b)) + (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
-#define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase != oid_nil ? \
-			 TYPE_oid : (b)->htype)
 #define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
 			 TYPE_oid : (b)->ttype)
 #define Tbase(b)	((b)->T->vheap->base)
@@ -1472,7 +1445,7 @@ gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, int onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
-gdk_export void BATroles(BAT *b, const char *hnme, const char *tnme);
+gdk_export void BATroles(BAT *b, const char *tnme);
 gdk_export int BATname(BAT *b, const char *nme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
@@ -1482,7 +1455,7 @@ gdk_export int BATgetaccess(BAT *b);
 
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||	\
 			 (b)->batDirtydesc ||				\
-			 (b)->H->heap.dirty || (b)->T->heap.dirty ||	\
+			 (b)->T->heap.dirty ||				\
 			 ((b)->T->vheap?(b)->T->vheap->dirty:0))
 
 #define PERSISTENT		0
@@ -1600,15 +1573,10 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 
-#define BAThordered(b)	((b)->htype == TYPE_void || (b)->hsorted)
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
-#define BAThrevordered(b) (((b)->htype == TYPE_void && (b)->hseqbase == oid_nil) || (b)->hrevsorted)
 #define BATtrevordered(b) (((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil) || (b)->trevsorted)
-#define BAThdense(b)	(BAThvoid(b) && (b)->hseqbase != oid_nil)
 #define BATtdense(b)	(BATtvoid(b) && (b)->tseqbase != oid_nil)
-#define BAThvoid(b)	(((b)->hdense && (b)->hsorted) || (b)->htype==TYPE_void)
 #define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
-#define BAThkey(b)	(b->hkey != FALSE || BAThdense(b))
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
@@ -1664,10 +1632,8 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 	} while (0)
 #define BATsettrivprop(b)						\
 	do {								\
-		assert((b)->htype == TYPE_void);			\
 		assert((b)->hseqbase != oid_nil);			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
-		(b)->hrevsorted = (b)->batCount <= 1;			\
 		/* the other head properties should already be correct */ \
 		COLsettrivprop((b), (b)->T);				\
 	} while (0)
@@ -2751,8 +2717,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
-#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->halign=(x)->talign=0; } while (0)
-#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNins(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
+#define ALIGNdel(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
 #define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e);(x)->talign=0; } while (0)
 #define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
 
@@ -2778,7 +2744,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  * correct for the reversed view.
  */
 #define isVIEW(x)							\
-	(assert((x)->batCacheid > 0 && (x)->htype == TYPE_void),	\
+	(assert((x)->batCacheid > 0),					\
 	 ((x)->T->heap.parentid ||					\
 	  ((x)->T->vheap && (x)->T->vheap->parentid != (x)->batCacheid)))
 

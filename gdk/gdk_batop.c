@@ -71,9 +71,6 @@ insert_string_bat(BAT *b, BAT *n, int force)
 	var_t v;		/* value */
 	size_t off;		/* offset within n's string heap */
 
-	assert(BAThdense(b));
-	assert(b->htype == TYPE_void);
-	assert(BAThdense(n));
 	if (n->batCount == 0)
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
@@ -357,11 +354,8 @@ BATappend(BAT *b, BAT *n, bit force)
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
-	assert(b->htype == TYPE_void);
 	/* almost: assert(!isVIEW(b)); */
-	assert(b->H->heap.parentid == 0 &&
-	       b->T->heap.parentid == 0 &&
-	       b->H->vheap == NULL &&
+	assert(b->T->heap.parentid == 0 &&
 	       (b->T->vheap == NULL || b->T->vheap->parentid == b->batCacheid || b->ttype == TYPE_str));
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
@@ -524,9 +518,6 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tdense = b->tsorted = b->trevsorted = 0;
 		}
 	}
-	b->hrevsorted = BATcount(b) <= 1;
-	if (b->hrevsorted)
-		b->H->norevsorted = BUNfirst(b) + 1;
 	b->T->nonil &= n->T->nonil;
 	return GDK_SUCCEED;
       bunins_failed:
@@ -540,8 +531,6 @@ BATdel(BAT *b, BAT *d)
 	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 	BATiter bi = bat_iterator(b);
 
-	assert(BAThdense(b));
-	assert(BAThdense(d));
 	assert(ATOMtype(d->ttype) == TYPE_oid);
 	assert(d->tsorted);
 	assert(d->tkey & 1);
@@ -694,7 +683,6 @@ BATslice(BAT *b, BUN l, BUN h)
 	oid foid;		/* first oid value if oid column */
 
 	BATcheck(b, "BATslice", NULL);
-	assert(b->htype == TYPE_void);
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)
@@ -740,8 +728,6 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		bn->tkey = b->tkey & 1;
 		bn->T->nonil = b->T->nonil;
-		bn->H->nosorted = bn->H->norevsorted = bn->H->nodense = 0;
-		bn->H->nokey[0] = bn->H->nokey[1] = 0;
 		if (b->T->nosorted > l && b->T->nosorted < h)
 			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
 		else
@@ -780,13 +766,10 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	if (bn->batCount <= 1) {
 		bn->tsorted = ATOMlinear(b->ttype);
-		bn->hrevsorted = 1;
 		bn->trevsorted = ATOMlinear(b->ttype);
 		BATkey(bn, 1);
 	} else {
 		bn->tsorted = b->tsorted;
-		bn->hrevsorted = 0;
-		bn->H->norevsorted = BUNfirst(bn) + 1;
 		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BATtkey(b));
 	}
@@ -969,13 +952,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	oid *restrict grps, prev;
 	BUN p, q, r;
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATsort: b must be dense-headed\n");
+	if (b == NULL) {
+		GDKerror("BATsort: b must exist\n");
 		return GDK_FAIL;
 	}
 	if (o != NULL &&
-	    (!BAThdense(o) ||		       /* dense head */
-	     ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
+	    (ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
@@ -984,8 +966,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		return GDK_FAIL;
 	}
 	if (g != NULL &&
-	    (!BAThdense(g) ||		       /* dense head */
-	     ATOMtype(g->ttype) != TYPE_oid || /* oid tail */
+	    (ATOMtype(g->ttype) != TYPE_oid || /* oid tail */
 	     !g->tsorted ||		       /* sorted */
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
@@ -1476,8 +1457,6 @@ BATmergecand(BAT *a, BAT *b)
 
 	BATcheck(a, "BATmergecand", NULL);
 	BATcheck(b, "BATmergecand", NULL);
-	assert(a->htype == TYPE_void);
-	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->ttype) == TYPE_oid);
 	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(BATcount(a) <= 1 || a->tsorted);
@@ -1608,8 +1587,6 @@ BATintersectcand(BAT *a, BAT *b)
 
 	BATcheck(a, "BATintersectcand", NULL);
 	BATcheck(b, "BATintersectcand", NULL);
-	assert(a->htype == TYPE_void);
-	assert(b->htype == TYPE_void);
 	assert(ATOMtype(a->ttype) == TYPE_oid);
 	assert(ATOMtype(b->ttype) == TYPE_oid);
 	assert(a->tsorted);

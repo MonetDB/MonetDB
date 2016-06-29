@@ -168,7 +168,7 @@ check_BATs(Tablet *as)
 	cnt = BATcount(fmt[i].c);
 	base = fmt[i].c->hseqbase;
 
-	if (!BAThdense(fmt[i].c) || as->nr != cnt)
+	if (as->nr != cnt)
 		return oid_nil;
 
 	for (i = 0; i < as->nr_attrs; i++) {
@@ -180,7 +180,7 @@ check_BATs(Tablet *as)
 			continue;
 		offset = BUNfirst(b) + as->offset;
 
-		if (BATcount(b) != cnt || !BAThdense(b) || b->hseqbase != base)
+		if (BATcount(b) != cnt || b->hseqbase != base)
 			return oid_nil;
 
 		fmt[i].p = offset;
@@ -612,7 +612,7 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 		as->nr = maxnr;
 
 	if ((base = check_BATs(as)) != oid_nil) {
-		if (BAThdense(order) && order->hseqbase == base)
+		if (order->hseqbase == base)
 			ret = output_file_dense(as, s);
 		else
 			ret = output_file_ordered(as, order, s);

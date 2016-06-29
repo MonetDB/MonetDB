@@ -306,7 +306,6 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	const char *v;
 	int ovector[10];
 
-	assert(BAThdense(b));
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	assert(anti == 0 || anti == 1);
 
@@ -334,7 +333,6 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 		const oid *candlist;
 		BUN r;
 
-		assert(BAThdense(s));
 		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
 		assert(s->tsorted);
 		assert(s->tkey);
@@ -403,7 +401,6 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 	int nr;
 	RE *re = NULL;
 
-	assert(BAThdense(b));
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	assert(anti == 0 || anti == 1);
 
@@ -420,7 +417,6 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 		const oid *candlist;
 		BUN r;
 
-		assert(BAThdense(s));
 		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
 		assert(s->tsorted);
 		assert(s->tkey);
@@ -1413,8 +1409,6 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					  sr && sr->tsorted ? "-sorted" : "",
 					  sr && sr->trevsorted ? "-revsorted" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 	assert(sl == NULL || sl->tsorted);

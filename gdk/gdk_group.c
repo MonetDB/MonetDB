@@ -383,20 +383,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bat parent;
 #endif
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATgroup: b must be dense-headed\n");
+	if (b == NULL) {
+		GDKerror("BATgroup: b must exist\n");
 		return GDK_FAIL;
 	}
 	/* g is NULL or [oid(dense),oid] and same size as b */
-	assert(g == NULL || BAThdense(g));
 	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
 	assert(g == NULL || BATcount(b) == BATcount(g));
 	assert(g == NULL || BATcount(b) == 0 || b->hseqbase == g->hseqbase);
 	/* e is NULL or [oid(dense),oid] */
-	assert(e == NULL || BAThdense(e));
 	assert(e == NULL || BATttype(e) == TYPE_oid);
 	/* h is NULL or [oid(dense),lng] */
-	assert(h == NULL || BAThdense(h));
 	assert(h == NULL || h->ttype == TYPE_lng);
 	/* e and h are aligned */
 	assert(e == NULL || h == NULL || BATcount(e) == BATcount(h));
@@ -496,20 +493,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			assert(g->htype == TYPE_void);
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			*groups = gn;
 			if (extents) {
-				assert(e->htype == TYPE_void);
 				en = COLcopy(e, e->ttype, 0, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				assert(h->htype == TYPE_void);
 				hn = COLcopy(h, h->ttype, 0, TRANSIENT);
 				if (hn == NULL)
 					goto error;

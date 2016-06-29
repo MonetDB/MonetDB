@@ -114,7 +114,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		} else {
 			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
 			if( b[0]){
-				BATroles(b[0], NULL, b[1]->hident);
+				BATroles(b[0], "h");
 				BATprintcolumns(cntxt->fdout, 2, b);
 				BBPunfix(b[0]->batCacheid);
 			}

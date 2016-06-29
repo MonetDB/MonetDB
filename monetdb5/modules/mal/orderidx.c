@@ -252,7 +252,6 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 	if (b == NULL)
 		throw(MAL, "algebra.orderidx", RUNTIME_OBJECT_MISSING);
 
-	assert(BAThdense(b));
 	r = BATorderidx(b, *stable);
 	if (r != GDK_SUCCEED) {
 		BBPunfix(*bid);
@@ -290,7 +289,6 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 
-	assert(BAThdense(b));	/* assert void headed */
 	assert(b->torderidx == NULL);
 
 	switch (ATOMbasetype(b->ttype)) {

@@ -193,38 +193,6 @@ AUTHinitTables(str *passwd) {
 	}
 	assert(pass);
 
-	/* convert an old authorization table */
-	if (user->htype == TYPE_oid) {
-		BAT *b;
-		char name[10];
-		bat blist[5];
-		assert(pass->htype == TYPE_oid);
-		blist[0] = 0;
-		b = COLcopy(user, user->ttype, 1, PERSISTENT);
-		BAThseqbase(b, 0);
-		BATmode(b, PERSISTENT);
-		BATmode(user, TRANSIENT);
-		snprintf(name, sizeof(name), "tmp_%o", user->batCacheid);
-		BBPrename(user->batCacheid, name);
-		BBPrename(b->batCacheid, "M5system_auth_user");
-		blist[1] = user->batCacheid;
-		blist[2] = b->batCacheid;
-		BBPunfix(user->batCacheid);
-		user = b;
-		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
-		BAThseqbase(b, 0);
-		BATmode(b, PERSISTENT);
-		BATmode(pass, TRANSIENT);
-		snprintf(name, sizeof(name), "tmp_%o", pass->batCacheid);
-		BBPrename(pass->batCacheid, name);
-		BBPrename(b->batCacheid, "M5system_auth_passwd_v2");
-		blist[3] = pass->batCacheid;
-		blist[4] = b->batCacheid;
-		BBPunfix(pass->batCacheid);
-		pass = b;
-		TMsubcommit_list(blist, 5);
-	}
-
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_deleted");
 	if (!bid) {

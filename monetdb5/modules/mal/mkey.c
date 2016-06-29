@@ -83,8 +83,6 @@ MKEYbathash(bat *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "mkey.bathash", RUNTIME_OBJECT_MISSING);
 
-	assert(BAThvoid(b) || BAThrestricted(b));
-
 	n = BATcount(b);
 	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (dst == NULL) {
