@@ -1714,7 +1714,7 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 		}
 
         if (parent) {
-            if ((parentBAT = BATnew(TYPE_void, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+            if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
                 BBPunfix(idBAT->batCacheid);
                 BBPunfix(geomBAT->batCacheid);
                 *parentBAT_id = bat_nil;
@@ -1722,13 +1722,12 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
             }
         }
 
-		BATseqbase(idBAT, 0);
 		BBPkeepref(*idBAT_id = idBAT->batCacheid);
 
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
 
         if (parent) {
-		    BATseqbase(parentBAT, 0);
+		    BAThseqbase(parentBAT, 0);
     		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
         }
 
@@ -1752,12 +1751,11 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 	}
 
     if (parent) {
-        if ((parentBAT = BATnew(TYPE_void, ATOMindex("int"), geometriesNum, TRANSIENT)) == NULL) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), geometriesNum, TRANSIENT)) == NULL) {
             BBPunfix(idBAT->batCacheid);
             BBPunfix(geomBAT->batCacheid);
             throw(MAL, "geom.Dump", "Error creating new BAT");
         }
-        BATseqbase(parentBAT, 0);
         /*Get the tail and add parentID geometriesNum types*/
         for (i = 0; i < geometriesNum; i++) {
             if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
@@ -6566,22 +6564,21 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 		throw(MAL, "algebra.instersects", RUNTIME_OBJECT_MISSING);
 	}
 
-	xl = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
+	xl = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(xl,0);
+	BAThseqbase(xl,0);
 
-	xr = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
+	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xr == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
 		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(xr,0);
 
 	/*iterator over the BATs*/
 	lBAT_iter = bat_iterator(bl);

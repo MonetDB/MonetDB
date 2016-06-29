@@ -1498,12 +1498,11 @@ wkbAsX3D_bat(bat *outBAT_id, bat *inBAT_id, int *maxDecDigits, int *options)
 		throw(MAL, "batgeom.SetSRID", "The BAT must have dense head");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.SetSRID", "Error creating new BAT");
 	}
 	//set the first idx of the output BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
@@ -1566,14 +1565,11 @@ wkbIntersection_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
     }
     
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.Intersection", "Error creating new BAT");
 	}
-
-	//set the first idx of the output BAT equal to that of the input BAT
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);
@@ -1662,16 +1658,13 @@ wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, bat *saBAT_id,
 	}
     
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
 		BBPunfix(saBAT->batCacheid);
 		BBPunfix(sbBAT->batCacheid);
 		throw(MAL, "batgeom.Intersection", "Error creating new BAT");
 	}
-
-	//set the first idx of the output BAT equal to that of the input BAT
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);

@@ -30,12 +30,10 @@ geom_sfcgal_triangulate2DZ_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		throw(MAL, "batgeom.geom_sfcgal_triangle2DZ", "The BAT must have dense head");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.geom_sfcgal_triangle2DZ", "Error creating new BAT");
 	}
-	//set the first idx of the output BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
