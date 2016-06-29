@@ -60,10 +60,6 @@
 static gdk_return
 checkbats(BAT *b1, BAT *b2, const char *func)
 {
-	if (!BAThdense(b1) || (b2 != NULL && !BAThdense(b2))) {
-		GDKerror("%s: inputs must have dense head.\n", func);
-		return GDK_FAIL;
-	}
 	if (b2 != NULL) {
 		if (b1->batCount != b2->batCount) {
 			GDKerror("%s: inputs not the same size.\n", func);
@@ -14059,7 +14055,6 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (s == NULL && tp != TYPE_bit && ATOMbasetype(b->ttype) == ATOMbasetype(tp)){
-		assert(b->htype == TYPE_void);
 		return COLcopy(b, tp, 0, TRANSIENT);
 	}
 

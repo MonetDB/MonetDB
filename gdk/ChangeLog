@@ -1,6 +1,14 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Jun 29 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Changed BATroles by removing the argument to set the name of the
+  head column.
+- The head column is now completely gone.  MonetDB is completely
+  "headless".
+- The format of the BBP.dir file was simplified.  Since the head column
+  is VOID, the only value that needs to be stored is the head seqbase.
+
 * Tue Jun 28 2016 Sjoerd Mullender <sjoerd@acm.org>
 - BATs now only have a single (logical) name.
 - The function BATmirror is gone.  The HEAD column is always VOID (with

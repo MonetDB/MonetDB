@@ -682,14 +682,6 @@ fixsorted(void)
 		if ((bs = BBP_desc(bid)) == NULL)
 			continue; /* not a valid BAT */
 		b = NULL;
-		if (bs->H.nosorted != 0) {
-			bs->H.nosorted = 0;
-			bs->S.descdirty = 1;
-		}
-		if (bs->H.norevsorted != 0) {
-			bs->S.descdirty = 1;
-			bs->H.norevsorted = 0;
-		}
 		if (bs->T.nosorted != 0) {
 			if (bs->T.sorted) {
 				/* position should not be set */
@@ -896,6 +888,45 @@ fixwkbheap(void)
  * BBPdir file.
  */
 static int
+headheapinit(oid *hseq, const char *buf, bat bid)
+{
+	char type[11];
+	unsigned short width;
+	unsigned short var;
+	unsigned short properties;
+	lng nokey0;
+	lng nokey1;
+	lng nosorted;
+	lng norevsorted;
+	lng base;
+	lng align;
+	lng free;
+	lng size;
+	unsigned short storage;
+	int n;
+
+	if (sscanf(buf,
+		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &align, &free, &size, &storage,
+		   &n) < 13)
+		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+
+	if (strcmp(type, "void") != 0)
+		GDKfatal("BBPinit: head column must be VOID (ID = %d).", (int) bid);
+	if (base < 0
+#if SIZEOF_OID < SIZEOF_LNG
+	    || base >= (lng) oid_nil
+#endif
+		)
+		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = "LLFMT").", (int) bid, base);
+	*hseq = (oid) base;
+	return n;
+}
+
+static int
 heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize, int bbpversion, bat bid)
 {
 	int t;
@@ -941,8 +972,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	else if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
-	else if (HT[0] == 'H' && strcmp(type, "void") != 0)
-		GDKfatal("BBPinit: head column must be VOID\n");
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
@@ -976,8 +1005,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->nosorted = (BUN) nosorted;
 	col->norevsorted = (BUN) norevsorted;
 	col->seq = base < 0 ? oid_nil : (oid) base;
-	if (HT[0] == 'H' && col->seq == oid_nil)
-		GDKfatal("BBPinit: head column must not have NIL seqbase.\n");
 	col->align = (oid) align;
 	col->heap.free = (size_t) free;
 	col->heap.size = (size_t) size;
@@ -1039,16 +1066,19 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		lng batid;
 		unsigned short status;
 		char headname[129];
-		char tailname[129];
 		char filename[129];
 		unsigned int properties;
 		int lastused;
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted = 0, deleted = 0, first, count, capacity;
-		unsigned short map_head, map_tail, map_hheap, map_theap;
-		int Hhashash, Thashash;
+		lng inserted = 0, deleted = 0, first, count, capacity, base = 0;
+#ifdef GDKLIBRARY_HEADED
+		/* these variables are not used in later versions */
+		char tailname[129];
+		unsigned short map_head = 0, map_tail = 0, map_hheap = 0, map_theap = 0;
+#endif
+		int Thashash;
 
 		if ((s = strchr(buf, '\r')) != NULL) {
 			/* convert \r\n into just \n */
@@ -1067,14 +1097,22 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			   &count, &capacity, &map_head, &map_tail, &map_hheap,
 			   &map_theap,
 			   &nread) < 16 :
-			sscanf(buf,
+		    bbpversion <= GDKLIBRARY_HEADED ?
+		    sscanf(buf,
 			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &first,
 			   &count, &capacity, &map_head, &map_tail, &map_hheap,
 			   &map_theap,
-			   &nread) < 14)
+			   &nread) < 14 :
+		    sscanf(buf,
+			   "%lld %hu %128s %128s %d %u %lld %lld %lld %lld"
+			   "%n",
+			   &batid, &status, headname, filename,
+			   &lastused, &properties, &first,
+			   &count, &capacity, &base,
+			   &nread) < 10)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1096,15 +1134,14 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 				BBPextend(0, FALSE);
 		}
 		if (BBP_desc(bid) != NULL)
-			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
+			GDKfatal("BBPinit: duplicate entry in BBP.dir (ID = "LLFMT").", batid);
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BATstore.");
-		bs->B.H = &bs->H;
 		bs->B.T = &bs->T;
 		bs->B.S = &bs->S;
 		bs->B.batCacheid = bid;
-		BATroles(&bs->B, NULL, NULL);
+		BATroles(&bs->B, NULL);
 		bs->S.persistence = PERSISTENT;
 		bs->S.copiedtodisk = 1;
 		bs->S.restricted = (properties & 0x06) >> 1;
@@ -1114,19 +1151,23 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->S.deleted = bs->S.first;
 		bs->S.capacity = (BUN) capacity;
 
-		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
+		if (bbpversion <= GDKLIBRARY_HEADED) {
+			nread += headheapinit(&bs->B.hseqbase, buf + nread, bid);
+		} else {
+			if (base < 0
+#if SIZEOF_OID < SIZEOF_LNG
+			    || base >= (lng) oid_nil
+#endif
+				)
+				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
+			bs->B.hseqbase = (oid) base;
+		}
 		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
-		nread += vheapinit(&bs->H, buf + nread, Hhashash, bid);
 		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
 
 		if (bs->S.count > 1) {
 			/* fix result of bug in BATappend not clearing
 			 * revsorted property */
-			if (bs->H.type == TYPE_void && bs->H.seq != oid_nil && bs->H.revsorted != (bs->S.count <= 1)) {
-				bs->H.revsorted = bs->S.count <= 1;
-				bs->S.descdirty = 1;
-				needcommit = 1;
-			}
 			if (bs->T.type == TYPE_void && bs->T.seq != oid_nil && bs->T.revsorted != (bs->S.count <= 1)) {
 				bs->T.revsorted = bs->S.count <= 1;
 				bs->S.descdirty = 1;
@@ -1191,7 +1232,8 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_OLDWKB &&
-	    bbpversion != GDKLIBRARY_INSERTED) {
+	    bbpversion != GDKLIBRARY_INSERTED &&
+	    bbpversion != GDKLIBRARY_HEADED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1517,35 +1559,26 @@ new_bbpentry(FILE *fp, bat i)
 	assert(BBP_desc(i));
 	assert(BBP_desc(i)->B.batCacheid == i);
 	assert(BBP_desc(i)->S.role == PERSISTENT);
-	assert(BBP_desc(i)->H.type == TYPE_void);
-	assert(0 <= BBP_desc(i)->H.heap.farmid && BBP_desc(i)->H.heap.farmid < MAXFARMS);
-	assert(BBPfarms[BBP_desc(i)->H.heap.farmid].roles & (1 << PERSISTENT));
 	assert(0 <= BBP_desc(i)->T.heap.farmid && BBP_desc(i)->T.heap.farmid < MAXFARMS);
 	assert(BBPfarms[BBP_desc(i)->T.heap.farmid].roles & (1 << PERSISTENT));
-	assert(BBP_desc(i)->H.vheap == NULL);
 	if (BBP_desc(i)->T.vheap) {
 		assert(0 <= BBP_desc(i)->T.vheap->farmid && BBP_desc(i)->T.vheap->farmid < MAXFARMS);
 		assert(BBPfarms[BBP_desc(i)->T.vheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %s %d %d " BUNFMT " " BUNFMT " "
-		    BUNFMT " %d %d %d %d", /* BAT info */
+	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " " BUNFMT " "
+		    BUNFMT " " OIDFMT, /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
-		    BBPNONAME,	/* backward compatible entry */
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->S.restricted << 1,
 		    BBP_desc(i)->S.first,
 		    BBP_desc(i)->S.count,
 		    BBP_desc(i)->S.capacity,
-		    (unsigned char) 0,
-		    (unsigned char) 0,
-		    (unsigned char) 0,
-		    (unsigned char) 0) < 0 ||
-	    heap_entry(fp, &BBP_desc(i)->H) < 0 ||
+		    BBP_desc(i)->B.hseqbase) < 0 ||
 	    heap_entry(fp, &BBP_desc(i)->T) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->T.vheap) < 0 ||
 	    (BBP_options(i) &&
@@ -1782,22 +1815,18 @@ BBPdump(void)
 		if (b == NULL)
 			continue;
 		fprintf(stderr,
-			"# %d[%s,%s]: nme='%s' refs=%d lrefs=%d "
+			"# %d[%s]: nme='%s' refs=%d lrefs=%d "
 			"status=%d count=" BUNFMT " "
-			"Hheap=[" SZFMT "," SZFMT "] "
 			"Theap=[" SZFMT "," SZFMT "] "
 			"Tvheap=[" SZFMT "," SZFMT "] "
 			"Thash=[" SZFMT "," SZFMT "]\n",
 			i,
-			ATOMname(b->htype),
 			ATOMname(b->ttype),
 			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
 			BBP_refs(i),
 			BBP_lrefs(i),
 			BBP_status(i),
 			b->batCount,
-			HEAPmemsize(&b->H->heap),
-			HEAPvmsize(&b->H->heap),
 			HEAPmemsize(&b->T->heap),
 			HEAPvmsize(&b->T->heap),
 			HEAPmemsize(b->T->vheap),
@@ -1805,20 +1834,13 @@ BBPdump(void)
 			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPmemsize(b->T->hash->heap) : 0,
 			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPvmsize(b->T->hash->heap) : 0);
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-			cmem += HEAPmemsize(&b->H->heap);
-			cvm += HEAPvmsize(&b->H->heap);
-			nc++;
-		} else {
-			mem += HEAPmemsize(&b->H->heap);
-			vm += HEAPvmsize(&b->H->heap);
-			n++;
-		}
-		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 			cmem += HEAPmemsize(&b->T->heap);
 			cvm += HEAPvmsize(&b->T->heap);
+			nc++;
 		} else {
 			mem += HEAPmemsize(&b->T->heap);
 			vm += HEAPvmsize(&b->T->heap);
+			n++;
 		}
 		if (b->T->vheap) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
@@ -1906,8 +1928,6 @@ BBPlogical(bat bid, str buf)
 	if (buf == NULL) {
 		return NULL;
 	} else if (BBPcheck(bid, "BBPlogical")) {
-		if (bid < 0 && BBP_logical(bid) == NULL)
-			bid = -bid;
 		strcpy(buf, BBP_logical(bid));
 	} else {
 		*buf = 0;
@@ -2023,7 +2043,6 @@ BBPinsert(BATstore *bs)
 	bat i;
 	int idx = threadmask(pid);
 
-	assert(bs->B.H != NULL);
 	assert(bs->B.T != NULL);
 
 	/* critical section: get a new BBP entry */
@@ -2099,7 +2118,7 @@ BBPinsert(BATstore *bs)
 
 		BBP_physical(i) = GDKfilepath(NOFARM, dirname, nme, NULL);
 
-		BATDEBUG fprintf(stderr, "#%d = new %s(%s,%s)\n", (int) i, BBPname(i), ATOMname(bs->H.type), ATOMname(bs->T.type));
+		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bs->T.type));
 	}
 
 	return i;
@@ -2253,7 +2272,7 @@ BBPrename(bat bid, const char *nme)
 
 	BBPgetsubdir(dirname, bid);
 
-	if ((tmpid = BBPnamecheck(nme)) && (bid < 0 || tmpid != bid)) {
+	if ((tmpid = BBPnamecheck(nme)) && tmpid != bid) {
 		return BBPRENAME_ILLEGAL;
 	}
 	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
@@ -2337,8 +2356,6 @@ incref(bat i, int logical, int lock)
 		/* GDKerror("BBPincref() called with bat_nil!\n"); */
 		return 0;
 	}
-	if (i < 0)
-		i = -i;
 
 	if (!BBPcheck(i, "BBPincref"))
 		return 0;
@@ -2365,7 +2382,6 @@ incref(bat i, int logical, int lock)
 
 	assert(BBP_refs(i) + BBP_lrefs(i) ||
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
-	assert(bs->B.htype == TYPE_void);
 	if (logical) {
 		/* parent BATs are not relevant for logical refs */
 		tp = tvp = 0;
@@ -2395,7 +2411,6 @@ incref(bat i, int logical, int lock)
 		if (tp) {
 			incref(tp, 0, lock);
 			b = getBBPdescriptor(tp, lock);
-			assert(bs->B.H != bs->B.T);
 			bs->B.T->heap.base = b->T->heap.base + (size_t) bs->B.T->heap.base;
 			/* if we shared the hash before, share it
 			 * again note that if the parent's hash is
@@ -2427,8 +2442,7 @@ BBPshare(bat parent)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
 
-	if (parent < 0)
-		parent = -parent;
+	assert(parent > 0);
 	if (lock)
 		MT_lock_set(&GDKswapLock(parent));
 	(void) incref(parent, TRUE, 0);
@@ -2465,7 +2479,6 @@ decref(bat i, int logical, int releaseShare, int lock)
 	}
 
 	b = BBP_cache(i);
-	assert(b == NULL || b->htype == TYPE_void);
 
 	/* decrement references by one */
 	if (logical) {
@@ -2480,9 +2493,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->H->heap.parentid == 0);
 			assert(b == NULL || b->T->heap.parentid == 0 || BBP_refs(-b->T->heap.parentid) > 0);
-			assert(b == NULL || b->H->vheap == NULL);
 			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
@@ -2557,8 +2568,6 @@ BBPdecref(bat i, int logical)
 	if (BBPcheck(i, "BBPdecref") == 0) {
 		return -1;
 	}
-	if (i < 0)
-		i = -i;
 	return decref(i, logical, FALSE, TRUE);
 }
 
@@ -2574,8 +2583,6 @@ BBPkeepref(bat i)
 {
 	if (i == bat_nil)
 		return;
-	if (i < 0)
-		i = -i;
 	if (BBPcheck(i, "BBPkeepref")) {
 		int lock = locked_by ? MT_getpid() != locked_by : 1;
 		BAT *b;
@@ -2595,8 +2602,6 @@ BBPkeepref(bat i)
 static inline void
 GDKunshare(bat parent)
 {
-	if (parent < 0)
-		parent = -parent;
 	(void) decref(parent, FALSE, TRUE, TRUE);
 	(void) decref(parent, TRUE, FALSE, TRUE);
 }
@@ -2767,7 +2772,6 @@ BBPdestroy(BAT *b)
 		BATiter bi = bat_iterator(b);
 
 		assert(b->batSharecnt == 0);
-		assert(BATatoms[b->htype].atomUnfix == NULL);
 		if (tunfix) {
 			DELloop(b, p, q) {
 				(*tunfix) (BUNtail(bi, p));
@@ -3224,8 +3228,6 @@ BBPtrim(size_t target)
 void
 BBPhot(bat i)
 {
-	if (i < 0)
-		i = -i;
 	if (BBPcheck(i, "BBPhot")) {
 		int lock = locked_by ? MT_getpid() != locked_by : 1;
 
@@ -3240,8 +3242,6 @@ BBPhot(bat i)
 void
 BBPcold(bat i)
 {
-	if (i < 0)
-		i = -i;
 	if (BBPcheck(i, "BBPcold")) {
 		MT_Id pid = MT_getpid();
 		int idx = threadmask(pid);
@@ -3305,7 +3305,6 @@ BBPquickdesc(bat bid, int delaccess)
 		return b;	/* already cached */
 	b = (BAT *) BBPgetdesc(bid);
 	if (b == NULL ||
-	    complexatom(b->htype, delaccess) ||
 	    complexatom(b->ttype, delaccess)) {
 		b = BATload_intern(bid, 1);
 		BBPin++;
@@ -3602,7 +3601,6 @@ BBPbackup(BAT *b, bit subcommit)
 	nme[sizeof(nme) - 1] = 0;
 	srcdir[s - srcdir] = 0;
 
-	assert(b->htype == TYPE_void);
 	if (b->ttype != TYPE_void &&
 	    do_backup(srcdir, nme, "tail", &b->T->heap,
 		      b->batDirty || b->T->heap.dirty, subcommit) != GDK_SUCCEED)
@@ -4137,8 +4135,6 @@ BBPatom_drop(int atom)
 			if (!b)
 				continue;
 
-			if (b->B.htype == atom)
-				b->B.htype = unknown;
 			if (b->B.ttype == atom)
 				b->B.ttype = unknown;
 		}
@@ -4163,8 +4159,6 @@ BBPatom_load(int atom)
 			if (!b)
 				continue;
 
-			if (b->B.htype == unknown)
-				b->B.htype = atom;
 			if (b->B.ttype == unknown)
 				b->B.ttype = atom;
 		}

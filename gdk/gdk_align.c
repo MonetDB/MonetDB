@@ -58,9 +58,8 @@
  * leftmost 4 bits are for the head, the rightmost 4 for the
  * tail. This has been done to make the zap ultra-cheap.
  *
- * Both head and tail column contain an OID in the @emph{halign} and
- * @emph{talign} fields respectively to mark their alignment
- * group. All BATs with the same OID in this field (and the
+ * Columns contain an OID in the @emph{talign} field to mark their
+ * alignment group. All BATs with the same OID in this field (and the
  * ALIGN_SYNCED bit on) are guaranteed by the system to have equal
  * head columns. As an exception, they might also have TYPE_void head
  * columns (a virtual column).  In such a case, the tail values
@@ -77,9 +76,6 @@ ALIGNcommit(BAT *b)
 {
 	if (b == NULL)
 		return;
-	if (!b->halign) {
-		b->halign = OIDnew(1);
-	}
 	if (!b->talign) {
 		b->talign = OIDnew(1);
 	}
@@ -91,24 +87,9 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	if (b1 == NULL || b2 == NULL)
 		return;
 
-	assert(b1->htype == TYPE_void);
-	assert(b2->htype == TYPE_void);
-
-	if (b2->halign == 0) {
-		b2->halign = OIDnew(1);
-		b2->batDirtydesc = TRUE;
-	}
 	/* b2 is either dense or has a void(nil) tail */
 	BAThseqbase(b1, b2->hseqbase);
-	b1->halign = b2->halign;
 	b1->batDirtydesc = TRUE;
-
-	assert(b1->hkey & 1);
-	assert(b2->hkey & 1);
-	assert(b1->hsorted);
-	assert(b2->hsorted);
-	assert(b1->hrevsorted == (BATcount(b1) <= 1));
-	assert(b2->hrevsorted == (BATcount(b2) <= 1));
 }
 
 void
@@ -165,8 +146,6 @@ ALIGNsynced(BAT *b1, BAT *b2)
 	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
 	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
 
-	assert(b1->htype == TYPE_void);
-	assert(b2->htype == TYPE_void);
 	assert(b1->hseqbase != oid_nil);
 	assert(b2->hseqbase != oid_nil);
 
@@ -197,8 +176,6 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 
 	BATcheck(b, "VIEWcreate_", NULL);
 
-	assert(b->htype == TYPE_void);
-
 	bs = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
@@ -208,10 +185,10 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	if ((tp == 0 && b->ttype != TYPE_void) || b->T->heap.copied)
 		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
-	/* the H and T column descriptors are fully copied. We need
-	 * copies because in case of a mark, we are going to override
-	 * a column with a void. Take care to zero the accelerator
-	 * data, though. */
+	/* the T column descriptor is fully copied. We need copies
+	 * because in case of a mark, we are going to override a
+	 * column with a void. Take care to zero the accelerator data,
+	 * though. */
 	bn->batDeleted = b->batDeleted;
 	bn->batFirst = b->batFirst;
 	bn->batInserted = b->batInserted;
@@ -251,10 +228,8 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	else
 		bn->T->hash = b->T->hash;
 	/* imprints are shared, but the check is dynamic */
-	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
 	/* Order OID index */
-	bn->horderidx = NULL;
 	bn->torderidx = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	return bn;
@@ -345,7 +320,6 @@ VIEWunlink(BAT *b)
 		BAT *vtpb = NULL;
 
 		assert(b->batCacheid > 0);
-		assert(b->htype == TYPE_void);
 		if (tp)
 			tpb = BBP_cache(tp);
 		if (tp && !vtp)
@@ -357,10 +331,6 @@ VIEWunlink(BAT *b)
 			return;
 
 		/* unlink heaps shared with parent */
-		assert(b->H->vheap == NULL);
-		assert(b->H->props == NULL);
-		assert(b->H->hash == NULL);
-		assert(b->H->imprints == NULL);
 		assert(b->T->vheap == NULL || b->T->vheap->parentid > 0);
 		if (b->T->vheap && b->T->vheap->parentid != b->batCacheid)
 			b->T->vheap = NULL;
@@ -387,12 +357,11 @@ gdk_return
 VIEWreset(BAT *b)
 {
 	bat tp, tvp;
-	Heap head, tail, *th = NULL;
+	Heap tail, *th = NULL;
 	BAT *v = NULL;
 
 	if (b == NULL)
 		return GDK_FAIL;
-	assert(b->htype == TYPE_void);
 	assert(b->batCacheid > 0);
 	tp = -VIEWtparent(b);
 	tvp = VIEWvtparent(b);
@@ -402,7 +371,6 @@ VIEWreset(BAT *b)
 		size_t nmelen;
 
 		/* alloc heaps */
-		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
 
 		cnt = BATcount(b) + 1;
@@ -412,7 +380,6 @@ VIEWreset(BAT *b)
 		assert(b->batCacheid > 0);
 		assert(tp || tvp || !b->ttype);
 
-		head.farmid = BBPselectfarm(b->batRole, TYPE_void, offheap);
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
 		if (b->ttype) {
 			tail.filename = (str) GDKmalloc(nmelen + 12);
@@ -450,12 +417,7 @@ VIEWreset(BAT *b)
 			BBPunfix(tvp);
 		}
 
-		b->htype = TYPE_void;
-		b->hvarsized = 1;
-		b->H->shift = 0;
-		b->H->width = 0;
 		b->hseqbase = v->hseqbase;
-		b->hkey = BOUND2BTRUE | 1;
 
 		b->ttype = v->ttype;
 		b->tvarsized = v->tvarsized;
@@ -470,7 +432,6 @@ VIEWreset(BAT *b)
 		b->tkey = BATtkey(v);
 
 		/* copy the heaps */
-		b->H->heap = head;
 		b->T->heap = tail;
 
 		/* unshare from parents heap */
@@ -507,7 +468,6 @@ VIEWreset(BAT *b)
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	HEAPfree(&head, 0);
 	HEAPfree(&tail, 0);
 	GDKfree(th);
 	return GDK_FAIL;
@@ -526,8 +486,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 
 	if (b == NULL || view == NULL)
 		return;
-	assert(b->htype == TYPE_void);
-	assert(view->htype == TYPE_void);
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)
@@ -535,14 +493,10 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	cnt = h - l;
 	l += BUNfirst(b);
 	view->batFirst = view->batDeleted = view->batInserted = 0;
-	view->H->heap.base = NULL;
-	view->H->heap.size = 0;
 	view->T->heap.base = view->ttype ? BUNtloc(bi, l) : NULL;
 	view->T->heap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);
 	BATsetcapacity(view, cnt);
-	view->H->nosorted = view->H->norevsorted = view->H->nodense = 0;
-	view->H->nokey[0] = view->H->nokey[1] = 0;
 	if (view->T->nosorted > l && view->T->nosorted < l + cnt)
 		view->T->nosorted -= l;
 	else
@@ -572,7 +526,6 @@ void
 VIEWdestroy(BAT *b)
 {
 	assert(isVIEW(b));
-	assert(b->htype == TYPE_void);
 
 	/* remove any leftover private hash structures */
 	HASHdestroy(b);
@@ -580,16 +533,12 @@ VIEWdestroy(BAT *b)
 	OIDXdestroy(b);
 	VIEWunlink(b);
 
-	b->H->heap.base = NULL;
-	b->H->heap.filename = NULL;
-
 	if (b->ttype && !b->T->heap.parentid) {
 		HEAPfree(&b->T->heap, 0);
 	} else {
 		b->T->heap.base = NULL;
 		b->T->heap.filename = NULL;
 	}
-	b->H->vheap = NULL;
 	b->T->vheap = NULL;
 	BATfree(b);
 }

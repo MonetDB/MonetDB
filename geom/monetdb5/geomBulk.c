@@ -29,10 +29,6 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 		throw(MAL, "batcalc.wkb", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batcalc.wkb", "the arguments must have dense and aligned heads");
-	}
 	//create a new BAT, aligned with input BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -81,10 +77,6 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 		throw(MAL, "batgeom.wkbFromText", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbFromText", "the arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -134,10 +126,6 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 		throw(MAL, "batgeom.coordinateFromMBR", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.coordinateFromMBR", "the arguments must have dense and aligned heads");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -184,10 +172,6 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, "the arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -250,10 +234,6 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, "The arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -310,10 +290,6 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, "The arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -369,10 +345,6 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, "The arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -452,10 +424,6 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, "The arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -516,10 +484,6 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 		throw(MAL, name, RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, "The arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -580,10 +544,6 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		throw(MAL, "batgeom.wkbGetCoordinate", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbGetCoordinate", "The arguments must have dense and aligned heads");
-	}
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -632,11 +592,7 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		ret = createException(MAL, "batgeom.wkbBox2D", "Problem retrieving BATs");
 		goto clean;
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(aBAT) || !BAThdense(bBAT)) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "BATs must have dense heads");
-		goto clean;
-	}
+	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		ret = createException(MAL, "batgeom.wkbBox2D", "BATs must be aligned");
 		goto clean;
@@ -690,11 +646,7 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		ret = createException(MAL, "batgeom.Contains", "Problem retrieving BATs");
 		goto clean;
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(aBAT) || !BAThdense(bBAT)) {
-		ret = createException(MAL, "batgeom.Contains", "BATs must have dense heads");
-		goto clean;
-	}
+	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		ret = createException(MAL, "batgeom.Contains", "BATs must be aligned");
 		goto clean;
@@ -745,10 +697,6 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		throw(MAL, "batgeom.Contains", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "The BAT must have dense head");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -790,10 +738,6 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 		throw(MAL, "batgeom.Contains", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "The BAT must have dense head");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -837,10 +781,6 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 		throw(MAL, "batgeom.wkb", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkb", "both arguments must have dense and aligned heads");
-	}
 	//create a new BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -893,11 +833,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		ret = createException(MAL, "batgeom.wkbMakePoint", "Problem retrieving BATs");
 		goto clean;
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(xBAT) || !BAThdense(yBAT) || (zBAT && !BAThdense(zBAT)) || (mBAT && !BAThdense(mBAT))) {
-		ret = createException(MAL, "batgeom.wkbMakePoint", "BATs must have dense heads");
-		goto clean;
-	}
+	//check if the BATs are aligned
 	if (xBAT->hseqbase != yBAT->hseqbase ||
 	    BATcount(xBAT) != BATcount(yBAT) ||
 	    (zBAT && (xBAT->hseqbase != zBAT->hseqbase || BATcount(xBAT) != BATcount(zBAT))) ||
@@ -971,10 +907,6 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 		throw(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.SetSRID", "The BAT must have dense head");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -1018,11 +950,7 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		ret = createException(MAL, "batgeom.Distance", "Problem retrieving BATs");
 		goto clean;
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(aBAT) || !BAThdense(bBAT)) {
-		ret = createException(MAL, "batgeom.Distance", "BATs must have dense heads");
-		goto clean;
-	}
+	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		ret = createException(MAL, "batgeom.Distance", "BATs must be aligned");
 		goto clean;
@@ -1075,10 +1003,6 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		throw(MAL, "batgeom.Distance", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Distance", "The BAT must have dense head");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -1136,9 +1060,7 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (aBAT->htype != TYPE_void ||	//header type of aBAT not void
-	    bBAT->htype != TYPE_void ||	//header type of bBAT not void
-	    aBAT->hseqbase != bBAT->hseqbase ||	//the idxs of the headers of the BATs are not the same
+	if (aBAT->hseqbase != bBAT->hseqbase ||	//the idxs of the headers of the BATs are not the same
 	    BATcount(aBAT) != BATcount(bBAT)) {	//the number of valid elements in the BATs are not the same
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
@@ -1219,10 +1141,6 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (BAToriginal->htype != TYPE_void) {	//header type of bBAT not void
-		BBPunfix(BAToriginal->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
-	}
 	//create the new BAT
 	if ((BATfiltered = COLnew(BAToriginal->hseqbase, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
 		BBPunfix(BAToriginal->batCacheid);
@@ -1305,10 +1223,6 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 		throw(MAL, "batgeom.mbr", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (inBAT->htype != TYPE_void) {	//header type of  BAT not void
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.mbr", "the arguments must have dense and aligned heads");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -1369,12 +1283,7 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MakeLine", "Problem retrieving BATs");
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(aBAT) || !BAThdense(bBAT)) {
-		BBPunfix(aBAT->batCacheid);
-		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "BATs must have dense heads");
-	}
+	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
@@ -1431,12 +1340,7 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.Union", "Problem retrieving BATs");
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(aBAT) || !BAThdense(bBAT)) {
-		BBPunfix(aBAT->batCacheid);
-		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "BATs must have dense heads");
-	}
+	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);

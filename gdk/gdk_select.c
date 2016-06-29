@@ -165,9 +165,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	oid seq;
 	int (*cmp)(const void *, const void *);
 
-	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
-	assert(BAThdense(b));
 	seq = b->hseqbase;
 	l = BUNfirst(b);
 	h = BUNlast(b);
@@ -887,7 +885,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 	assert(b != NULL);
 	assert(bn != NULL);
-	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
 	assert(anti == 0 || anti == 1);
 	assert(!lval || tl != NULL);
@@ -1224,8 +1221,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BATcheck(b, "BATselect", NULL);
 	BATcheck(tl, "BATselect: tl value required", NULL);
 
-	assert(BAThdense(b));
-	assert(s == NULL || BAThdense(s));
 	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
 	assert(hi == 0 || hi == 1);
 	assert(li == 0 || li == 1);
@@ -1236,11 +1231,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    (anti != 0 && anti != 1)) {
 		GDKerror("BATselect: invalid arguments: "
 			 "li, hi, anti must be 0 or 1\n");
-		return NULL;
-	}
-	if (!BAThdense(b)) {
-		GDKerror("BATselect: invalid argument: "
-			 "b must have a dense head.\n");
 		return NULL;
 	}
 	if (s && !BATtordered(s)) {
@@ -1943,9 +1933,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	int use_orderidx = 0;
 	oid ll, lh;
 
-	assert(BAThdense(l));
-	assert(BAThdense(rl));
-	assert(BAThdense(rh));
 	assert(ATOMtype(l->ttype) == ATOMtype(rl->ttype));
 	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
 	assert(BATcount(rl) == BATcount(rh));
@@ -1953,9 +1940,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	assert(sl == NULL || (sl->tsorted && sl->tkey));
 	assert(sr == NULL || (sr->tsorted && sr->tkey));
 	assert(BATcount(r1) == BATcount(r2));
-	assert(r1->htype == TYPE_void);
 	assert(r1->ttype == TYPE_oid);
-	assert(r2->htype == TYPE_void);
 	assert(r2->ttype == TYPE_oid);
 
 	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s#" BUNFMT "[%s]%s%s%s,"

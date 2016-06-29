@@ -312,7 +312,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
 
 	if (b) {
-		ht = b->htype;
+		ht = TYPE_void;
 		tt = b->ttype;
 		if (tt == TYPE_void && b->tseqbase != oid_nil)
 			tseq = 1;
@@ -462,7 +462,7 @@ la_bat_updates(logger *lg, logaction *la)
 	b = BATdescriptor(bid);
 	assert(b);
 	if (b) {
-		if (b->htype == TYPE_void && la->type == LOG_INSERT) {
+		if (la->type == LOG_INSERT) {
 			BATappend(b, la->b, TRUE);
 		} else if (la->type == LOG_UPDATE) {
 			BATiter vi = bat_iterator(la->b);
@@ -473,7 +473,6 @@ la_bat_updates(logger *lg, logaction *la)
 				oid h = * (const oid *) BUNtail(ii, p);
 				const void *t = BUNtail(vi, p);
 
-				assert(b->htype == TYPE_void);
 				if (h < b->hseqbase || h >= b->hseqbase + BATcount(b)) {
 					/* if value doesn't exist,
 					 * insert it; if b void headed,
@@ -521,9 +520,6 @@ la_bat_destroy(logger *lg, logaction *la)
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->S.role == PERSISTENT);
-			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->H.heap.farmid].roles & (1 << PERSISTENT));
-			assert(BBP_desc(bid)->H.vheap == NULL);
 			assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
 			assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
 			if (BBP_desc(bid)->T.vheap) {
@@ -597,11 +593,11 @@ log_read_create(logger *lg, trans *tr, char *name)
 static void
 la_bat_create(logger *lg, logaction *la)
 {
-	int ht = (la->ht < 0) ? TYPE_void : la->ht;
 	int tt = (la->tt < 0) ? TYPE_void : la->tt;
 	BAT *b;
 
-	assert(ht == TYPE_void);
+	/* formerly head column type, should be void */
+	assert(((la->ht < 0) ? TYPE_void : la->ht) == TYPE_void);
 	b = COLnew(0, tt, BATSIZE, PERSISTENT);
 
 	if (b != NULL) {
@@ -642,9 +638,6 @@ la_bat_use(logger *lg, logaction *la)
 	logger_add_bat(lg, b, la->name);
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
-	assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
-	assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-	assert(b->H->vheap == NULL);
 	assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
 	assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
 	if (b->T->vheap) {
@@ -1477,10 +1470,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (n == 0)
 			logger_fatal("logger_load: inconsistent database, catalog_nme does not exist", 0, 0, 0);
 
-		if (!BAThdense(b) || !BAThdense(n))
-			logger_fatal("logger_load: ancient database, please "
-				     "upgrade first to Jul2015 (11.21.X) or "
-				     "Jun2016 (11.23.X) release", 0, 0, 0);
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
@@ -1618,33 +1607,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (lg->snapshots_tid == 0)
 			logger_fatal("logger_load: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
 		GDKdebug = dbg;
-		if (lg->snapshots_bid->htype == TYPE_oid) {
-			BAT *b;
-			assert(lg->snapshots_tid->htype == TYPE_oid);
-			b = COLcopy(lg->snapshots_bid, lg->snapshots_bid->ttype, 1, PERSISTENT);
-			BAThseqbase(b, 0);
-			BATsetaccess(b, BAT_READ);
-			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
-			BBPrename(lg->snapshots_bid->batCacheid, bak);
-			BATmode(lg->snapshots_bid, TRANSIENT);
-			snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
-			BBPrename(b->batCacheid, bak);
-			logbat_destroy(lg->snapshots_bid);
-			lg->snapshots_bid = b;
-			logger_add_bat(lg, b, "snapshots_bid");
-			b = COLcopy(lg->snapshots_tid, lg->snapshots_tid->ttype, 1, PERSISTENT);
-			BAThseqbase(b, 0);
-			BATsetaccess(b, BAT_READ);
-			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
-			BBPrename(lg->snapshots_tid->batCacheid, bak);
-			BATmode(lg->snapshots_tid, TRANSIENT);
-			snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
-			BBPrename(b->batCacheid, bak);
-			logbat_destroy(lg->snapshots_tid);
-			lg->snapshots_tid = b;
-			logger_add_bat(lg, b, "snapshots_tid");
-			needcommit = 1;
-		}
 
 		if (dsnapshots) {
 			lg->dsnapshots = BATdescriptor(dsnapshots);
@@ -2241,7 +2203,6 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	int len;
 	char buf[BUFSIZ];
 	logformat l;
-	int havevoid = 0;
 	int flag = (b->batPersistence == PERSISTENT) ? LOG_USE : LOG_CREATE;
 	BUN p;
 
@@ -2249,9 +2210,6 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	if (flag == LOG_USE) {
 #ifndef NDEBUG
 		assert(b->batRole == PERSISTENT);
-		assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
-		assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-		assert(b->H->vheap == NULL);
 		assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
 		assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
 		if (b->T->vheap) {
@@ -2275,8 +2233,6 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 
 	if (flag == LOG_USE) {
 		assert(b->batRole == PERSISTENT);
-		assert(b->H->heap.farmid == 0);
-		assert(b->H->vheap == NULL);
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
@@ -2294,15 +2250,8 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		return LOG_OK;
 	}
 
-	ha = ATOMname(b->htype);
-	if (b->htype == TYPE_void && BAThdense(b)) {
-		ha = "vid";
-		havevoid = 1;
-	}
+	ha = "vid";
 	ta = ATOMname(b->ttype);
-	if (!havevoid && b->ttype == TYPE_void && BATtdense(b)) {
-		ta = "vid";
-	}
 	len = snprintf(buf, sizeof(buf), "%s,%s", ha, ta);
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
@@ -2334,9 +2283,6 @@ log_bat_transient(logger *lg, const char *name)
 		//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
-		assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(bid)->H.heap.farmid].roles & (1 << PERSISTENT));
-		assert(BBP_desc(bid)->H.vheap == NULL);
 		assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
 		assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
 		if (BBP_desc(bid)->T.vheap) {
@@ -2420,7 +2366,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 	logformat l;
 	BUN p;
 
-	assert(b->htype == TYPE_void);
 	if (lg->debug & 128) {
 		/* logging is switched off */
 		return LOG_OK;

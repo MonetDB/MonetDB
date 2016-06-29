@@ -270,8 +270,6 @@ BATimprints(BAT *b)
 	Imprints *imprints;
 	lng t0 = 0, t1 = 0;
 
-	assert(BAThdense(b));	/* assert void head */
-
 	/* we only create imprints for types that look like types we know */
 	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
@@ -595,7 +593,6 @@ IMPSremove(BAT *b)
 {
 	Imprints *imprints;
 
-	assert(BAThdense(b));	/* assert void head */
 	assert(b->T->imprints != NULL);
 	assert(!VIEWtparent(b));
 
@@ -629,8 +626,6 @@ IMPSdestroy(BAT *b)
 				  "timprints");
 		} else if (b->T->imprints != NULL && !VIEWtparent(b))
 			IMPSremove(b);
-
-		assert(b->H->imprints == NULL);
 	}
 }
 

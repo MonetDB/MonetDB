@@ -74,10 +74,6 @@
 static gdk_return
 joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 {
-	if (!BAThdense(l) || !BAThdense(r1) || (r2 && !BAThdense(r2))) {
-		GDKerror("%s: inputs must have dense head.\n", func);
-		return GDK_FAIL;
-	}
 	if (ATOMtype(l->ttype) != ATOMtype(r1->ttype) ||
 	    (r2 && ATOMtype(l->ttype) != ATOMtype(r2->ttype))) {
 		GDKerror("%s: inputs not compatible.\n", func);
@@ -86,10 +82,6 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 	if (r2 &&
 	    (BATcount(r1) != BATcount(r2) || r1->hseqbase != r2->hseqbase)) {
 		GDKerror("%s: right inputs not aligned.\n", func);
-		return GDK_FAIL;
-	}
-	if ((sl && !BAThdense(sl)) || (sr && !BAThdense(sr))) {
-		GDKerror("%s: candidate lists must have dense head.\n", func);
 		return GDK_FAIL;
 	}
 	if ((sl && ATOMtype(sl->ttype) != TYPE_oid) ||
@@ -537,8 +529,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 * too is dense.  This means we don't have to do any searches,
 	 * we only need to compare ranges to know whether a value from
 	 * l has a match in r */
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 	assert(sl == NULL || sl->tsorted);
@@ -550,7 +540,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	lo = r->tseqbase;
 	hi = lo + BATcount(r);
 	if (sr) {
-		assert(BAThdense(sr));
 		assert(BATtdense(sr));
 		assert(BATcount(sr) > 0);
 		/* restrict [lo..hi) range further using candidate
@@ -561,7 +550,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			hi -= r->hseqbase + BATcount(r) - sr->tseqbase - BATcount(sr);
 	}
 	/* at this point, the matchable values in r are [lo..hi) */
-	assert(BAThdense(l));
 	if (BATtdense(l)) {
 		/* if l has a dense tail, we can further restrict the
 		 * [lo..hi) range to values in l that match with
@@ -1014,8 +1002,6 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			  r->tkey & 1 ? "-key" : "",
 			  swapped ? " swapped" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
@@ -1313,8 +1299,6 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			  r->tkey & 1 ? "-key" : "",
 			  swapped ? " swapped" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
@@ -1657,8 +1641,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  nil_matches, nil_on_miss, semi,
 			  swapped ? " swapped" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 	assert(sl == NULL || sl->tsorted);
@@ -2670,8 +2652,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			  swapped ? " swapped" : "",
 			  *reason ? " " : "", reason);
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(r->ttype != TYPE_void);
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
@@ -3117,8 +3097,6 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			  opcode & MASK_GT ? ">" : "",
 			  opcode & MASK_EQ ? "=" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
@@ -3345,8 +3323,6 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			  sr && sr->trevsorted ? "-revsorted" : "",
 			  sr && sr->tkey & 1 ? "-key" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);

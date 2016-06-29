@@ -31,8 +31,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			error = 1;
 		} else {
 			joins[top++] = b;
-			if (!BAThdense(b) ||
-				(i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid)) {
+			if (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid) {
 				error = 1;
 			}
 		}

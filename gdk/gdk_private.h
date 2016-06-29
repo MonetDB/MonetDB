@@ -32,7 +32,6 @@ enum heaptype {
  */
 struct BATstore {
 	BAT B;			/* storage for BAT descriptor */
-	COLrec H;		/* storage for head column */
 	COLrec T;		/* storage for tail column */
 	BATrec S;		/* the BAT properties */
 };
@@ -291,16 +290,9 @@ extern MT_Lock MT_system_lock;
 	do {								\
 		ERRORcheck((P1) == NULL, F ": BAT required\n", E);	\
 		ERRORcheck((P2) == NULL, F ": BAT required\n", E);	\
-		if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||		\
-		    TYPEerror(BATttype(P1),BATttype(P2)))		\
-		{							\
+		if (TYPEerror(BATttype(P1),BATttype(P2))) {		\
 			GDKerror("Incompatible operands.\n");		\
 			return (E);					\
-		}							\
-		if (BAThtype(P1) != BAThtype(P2) &&			\
-		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 		}							\
 		if (BATttype(P1) != BATttype(P2) &&			\
 		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\

@@ -70,14 +70,12 @@ temp_copy(log_bid b, int temp)
 	if (!o)
 		return BID_NIL;
 	if (!temp) {
-		assert(o->htype == TYPE_void);
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
 		if (!c)
 			return BID_NIL;
 		bat_set_access(c, BAT_READ);
 		BATcommit(c);
 	} else {
-		assert(o->htype == TYPE_void);
 		c = bat_new(o->ttype, COLSIZE, PERSISTENT);
 		if (!c)
 			return BID_NIL;

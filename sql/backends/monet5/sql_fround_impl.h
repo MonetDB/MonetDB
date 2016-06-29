@@ -61,10 +61,6 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
-	if (!BAThdense(v)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a dense head");
-	}
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
@@ -177,10 +173,6 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
-	if (!BAThdense(v)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a dense head");
-	}
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");

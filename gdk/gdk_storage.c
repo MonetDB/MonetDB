@@ -591,7 +591,7 @@ DESCload(int i)
 	str s, nme = BBP_physical(i);
 	BATstore *bs;
 	BAT *b = NULL;
-	int ht, tt;
+	int tt;
 
 	IODEBUG {
 		fprintf(stderr, "#DESCload %s\n", nme ? nme : "<noname>");
@@ -602,16 +602,13 @@ DESCload(int i)
 		return 0;
 	b = &bs->B;
 
-	ht = b->htype;
 	tt = b->ttype;
-	if ((ht < 0 && (ht = ATOMindex(s = ATOMunknown_name(ht))) < 0) ||
-	    (tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
+	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
 		GDKerror("DESCload: atom '%s' unknown, in BAT '%s'.\n", s, nme);
 		return NULL;
 	}
-	b->htype = ht;
 	b->ttype = tt;
-	b->H->hash = b->T->hash = NULL;
+	b->T->hash = NULL;
 	/* mil shouldn't mess with just loaded bats */
 	if (b->batStamp > 0)
 		b->batStamp = -b->batStamp;
@@ -630,7 +627,6 @@ DESCclean(BAT *b)
 	b->batDirtyflushed = DELTAdirty(b) ? TRUE : FALSE;
 	b->batDirty = 0;
 	b->batDirtydesc = 0;
-	b->H->heap.dirty = 0;
 	b->T->heap.dirty = 0;
 	if (b->T->vheap)
 		b->T->vheap->dirty = 0;
@@ -731,7 +727,6 @@ BATsave(BAT *bd)
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b) &&
-	    !(b->H->heap.copied && b->H->heap.storage == STORE_MMAP) &&
 	    !(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
 		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(-VIEWtparent(b)));
 		return GDK_FAIL;
@@ -741,8 +736,6 @@ BATsave(BAT *bd)
 	}
 	if (!DELTAdirty(b))
 		ALIGNcommit(b);
-	if (!b->halign)
-		b->halign = OIDnew(1);
 	if (!b->talign)
 		b->talign = OIDnew(1);
 
@@ -753,10 +746,8 @@ BATsave(BAT *bd)
 	/* fix up internal pointers */
 	b = &bs.B;
 	b->S = &bs.S;
-	b->H = &bs.H;
 	b->T = &bs.T;
 
-	assert(b->htype == TYPE_void);
 	if (b->T->vheap) {
 		b->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
 		if (b->T->vheap == NULL) {
@@ -809,11 +800,8 @@ BATload_intern(bat bid, int lock)
 	b = &bs->B;
 
 	/* LOAD bun heap */
-	b->H->heap.base = NULL;
-
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->H->heap, 0);
 			return NULL;
 		}
 		assert(b->T->heap.size >> b->T->shift <= BUN_MAX);
@@ -825,7 +813,6 @@ BATload_intern(bat bid, int lock)
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->H->heap, 0);
 			HEAPfree(&b->T->heap, 0);
 			return NULL;
 		}
@@ -836,7 +823,7 @@ BATload_intern(bat bid, int lock)
 
 	/* initialize descriptor */
 	b->batDirtydesc = FALSE;
-	b->H->heap.parentid = b->T->heap.parentid = 0;
+	b->T->heap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
 	BBPcacheit(bs, lock);
@@ -876,8 +863,6 @@ BATdelete(BAT *b)
 	BAT *loaded = BBP_cache(bid);
 
 	assert(bid > 0);
-	assert(b->htype == TYPE_void);
-	assert(b->H->heap.base == NULL);
 	if (loaded) {
 		b = loaded;
 		HASHdestroy(b);
@@ -989,7 +974,7 @@ BATprintf(stream *s, BAT *b)
 	argv[0] = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 	argv[1] = b;
 	if (argv[0] && argv[1]) {
-		BATroles(argv[0], NULL, b->hident);
+		BATroles(argv[0], "h");
 		ret = BATprintcolumns(s, 2, argv);
 	}
 	if (argv[0])
