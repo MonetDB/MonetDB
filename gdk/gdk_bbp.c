@@ -1160,7 +1160,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 #endif
 				)
 				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
-			bs->B.hseqbase = base;
+			bs->B.hseqbase = (oid) base;
 		}
 		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
 		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
