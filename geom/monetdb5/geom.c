@@ -4507,11 +4507,6 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		}
         return MAL_SUCCEED;
     }
-	//check if the BATs are dense and aligned
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "geom.Union", "BATs must have dense heads");
-	}
 
 	if (BATcount(inBAT) == 0) {
 		BBPunfix(inBAT->batCacheid);
@@ -4625,11 +4620,6 @@ wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
 		}
         return MAL_SUCCEED;
     }
-	//check if the BATs are dense and aligned
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "geom.Collect", "BATs must have dense heads");
-	}
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 

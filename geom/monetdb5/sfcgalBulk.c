@@ -25,10 +25,6 @@ geom_sfcgal_triangulate2DZ_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		throw(MAL, "batgeom.geom_sfcgal_triangle2DZ", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.geom_sfcgal_triangle2DZ", "The BAT must have dense head");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);

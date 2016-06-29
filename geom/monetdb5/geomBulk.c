@@ -1397,10 +1397,6 @@ wkbAsX3D_bat(bat *outBAT_id, bat *inBAT_id, int *maxDecDigits, int *options)
 		throw(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.SetSRID", "The BAT must have dense head");
-	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
@@ -1446,20 +1442,9 @@ wkbIntersection_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(aBAT)) {
-		BBPunfix(aBAT->batCacheid);
-		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
-	}
-
 	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
-	}
-
-	if (!BAThdense(bBAT)) {
-		BBPunfix(aBAT->batCacheid);
-		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
 	}
 
     if (BATcount(aBAT) != BATcount(bBAT)) {
@@ -1519,20 +1504,9 @@ wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, bat *saBAT_id,
 		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
 	}
 
-	if (!BAThdense(aBAT)) {
-		BBPunfix(aBAT->batCacheid);
-		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
-	}
-
 	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		throw(MAL, "batgeom.Intersection", "Problem retrieving BAT");
-	}
-
-	if (!BAThdense(bBAT)) {
-		BBPunfix(aBAT->batCacheid);
-		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Intersection", "The BAT must have dense head");
 	}
 
     if (BATcount(aBAT) != BATcount(bBAT)) {
