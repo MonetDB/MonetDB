@@ -11,8 +11,8 @@ static size_t x3d_3_multi_size(GEOSGeom col, int precisioSn, int opts, const cha
 static char *x3d_3_multi(GEOSGeom col, int precision, int opts, const char *defid);
 static char *x3d_3_psurface(GEOSGeom psur, int precision, int opts, const char *defid);
 static char *x3d_3_tin(GEOSGeom tin, int precision, int opts, const char *defid);
-/*static size_t x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid);*/
-/*static char *x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid);*/
+static size_t x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid);
+static char *x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid);
 static size_t geom_toX3D3(const GEOSGeometry *geom, char *buf, int precision, int opts, int is_closed);
 
 static size_t geom_X3Dsize(const GEOSGeometry *geom, int precision);
@@ -66,8 +66,8 @@ geom_to_x3d_3(GEOSGeom geom, int precision, int opts, const char *defid)
             return x3d_3_tin(geom, precision, opts, defid);
 
         case wkbGeometryCollection_mdb:
-            return x3d_3_psurface(geom, precision, opts, defid);
-            //return x3d_3_collection(geom, precision, opts, defid);
+            //return x3d_3_psurface(geom, precision, opts, defid);
+            return x3d_3_collection(geom, precision, opts, defid);
 
         default:
             assert(0);
@@ -599,7 +599,6 @@ x3d_3_tin(GEOSGeom tin, int precision, int opts, const char *defid)
     return x3d;
 }
 
-#if 0
 static size_t
 x3d_3_collection_size(GEOSGeom col, int precision, int opts, const char *defid)
 {
@@ -699,7 +698,6 @@ x3d_3_collection(GEOSGeom col, int precision, int opts, const char *defid)
     x3d_3_collection_buf(col, x3d, precision, opts, defid);
     return x3d;
 }
-#endif
 
 static size_t
 geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int is_closed)
@@ -725,7 +723,7 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
                 if (GEOSGeomTypeId(geom) == GEOS_POINT) {
                     point = geom;
                 } else {
-                    assert(GEOSGeomTypeId(geom) == GEOS_LINESTRING);
+                    assert(GEOSGeomTypeId(geom) == GEOS_LINESTRING || GEOSGeomTypeId(geom) == GEOS_CURVE);
                     point = GEOSGeomGetPointN(geom, i);
                 }
                 GEOSGeomGetX(point, &pt_x);
@@ -764,7 +762,7 @@ geom_toX3D3(const GEOSGeometry *geom, char *output, int precision, int opts, int
                 if (GEOSGeomTypeId(geom) == GEOS_POINT) {
                     point = geom;
                 } else {
-                    assert(GEOSGeomTypeId(geom) == GEOS_LINESTRING);
+                    assert(GEOSGeomTypeId(geom) == GEOS_LINESTRING || GEOSGeomTypeId(geom) == GEOS_CURVE);
                     point = GEOSGeomGetPointN(geom, i);
                 }
                 GEOSGeomGetX(point, &pt_x);
