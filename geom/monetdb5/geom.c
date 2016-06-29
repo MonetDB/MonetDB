@@ -1727,7 +1727,6 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
 
         if (parent) {
-		    BAThseqbase(parentBAT, 0);
     		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
         }
 
@@ -6570,7 +6569,6 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 		BBPunfix(*rid);
 		throw(MAL, "algebra.instersects", MAL_MALLOC_FAIL);
 	}
-	BAThseqbase(xl,0);
 
 	xr = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if ( xr == NULL){
