@@ -100,9 +100,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 
 			if (getFunctionId(p) == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
-				//t = mvc_bind_table(m, s, tname);
-				//if (!t)
-					//continue;
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
 					b = store_funcs.bind_idx(tr, i, RDONLY);
