@@ -501,7 +501,7 @@ BKCgetRole(str *res, const bat *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getType", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.getRole", RUNTIME_OBJECT_MISSING);
 	}
 	*res = GDKstrdup((*bid > 0) ? b->hident : b->tident);
 	BBPunfix(b->batCacheid);
