@@ -39,50 +39,6 @@
 #include "mal_resource.h"
 
 static int
-rel_is_table(sql_rel *rel)
-{
-	if (!rel || is_base(rel->op))
-		return 1;
-	return 0;
-}
-
-static int
-exp_is_point_select(sql_exp *e)
-{
-	if (!e)
-		return 1;
-	if (e->type == e_cmp && !e->f && e->flag == (int) cmp_equal) {
-		sql_exp *r = e->r;
-		sql_exp *l = e->l;
-
-		if (!is_func(l->type) && r->card <= CARD_AGGR)
-			return 1;
-	}
-	return 0;
-}
-
-static int
-rel_no_mitosis(sql_rel *rel)
-{
-	int is_point = 0;
-
-	if (!rel)
-		return 1;
-	if (is_project(rel->op))
-		return rel_no_mitosis(rel->l);
-	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
-		return rel_no_mitosis(rel->r);
-	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
-		is_point = 0;
-		/* just one point expression makes this a point query */
-		if (rel->exps->h)
-			if (exp_is_point_select(rel->exps->h->data))
-				is_point = 1;
-	}
-	return is_point;
-}
-
-static int
 rel_need_distinct_query(sql_rel *rel)
 {
 	int need_distinct = 0;
@@ -121,7 +77,7 @@ sql_symbol2relation(mvc *c, symbol *sym)
 		r = rel_optimizer(c, r);
 		r = rel_distribute(c, r);
 		r = rel_partition(c, r);
-		if (rel_no_mitosis(r) || rel_need_distinct_query(r))
+		if (rel_need_distinct_query(r))
 			c->no_mitosis = 1;
 	}
 	return r;
