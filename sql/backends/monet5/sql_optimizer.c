@@ -85,24 +85,35 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				size = SQLgetColumnSize(tr, c);
 				if( access == 0)
 					space += size;	// accumulate once
-				if( !prepare && size == 0 )
+				if( !prepare && size == 0 ){
+					//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
 					setFunctionId(p, emptycolumnRef);
+				}
 			}
 		}
 		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
-			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+			//char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
+			char *idxname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
 			sql_schema *s = mvc_bind_schema(m, sname);
+			BAT *b;
 
 			if (getFunctionId(p) == bindidxRef) {
-				sql_idx *i = mvc_bind_idx(m, s, cname);
+				sql_idx *i = mvc_bind_idx(m, s, idxname);
+				//t = mvc_bind_table(m, s, tname);
+				//if (!t)
+					//continue;
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					BAT *b = store_funcs.bind_idx(tr, i, RDONLY);
+					b = store_funcs.bind_idx(tr, i, RDONLY);
 					if (b) {
 						space += (size =getBatSpace(b));
-						if( !prepare && size == 0)
+/*
+						if( !prepare && size == 0){
 							setFunctionId(p, emptycolumnidxRef);
+							mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
+						}
+*/
 						BBPunfix(b->batCacheid);
 					}
 				}
