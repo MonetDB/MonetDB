@@ -418,20 +418,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 		ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
-		gn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+		gn = COLnew(ngrp, TYPE_void, BATcount(b), TRANSIENT);
 		if (gn == NULL)
 			goto error;
 		BATsetcount(gn, BATcount(b));
-		BATseqbase(gn, ngrp);
-		BATseqbase(BATmirror(gn), 0);
+		BATtseqbase(gn, 0);
 		*groups = gn;
 		if (extents) {
-			en = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+			en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
 			if (en == NULL)
 				goto error;
 			BATsetcount(en, BATcount(b));
-			BATseqbase(en, 0);
-			BATseqbase(BATmirror(en), ngrp);
+			BATtseqbase(en, ngrp);
 			*extents = en;
 		}
 		if (histo) {
@@ -468,7 +466,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				en = BATconstant(0, TYPE_void, &ngrp, 1, TRANSIENT);
 				if (en == NULL)
 					goto error;
-				BATseqbase(BATmirror(en), ngrp);
+				BATtseqbase(en, ngrp);
 				*extents = en;
 			}
 			if (histo) {
@@ -523,7 +521,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
-	gn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT);
+	gn = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, BUNfirst(gn));
@@ -538,20 +536,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2))))
 		maxgrps = (BUN) 1 << (8 << (b->T->width == 2));
 	if (extents) {
-		en = BATnew(TYPE_void, TYPE_oid, maxgrps, TRANSIENT);
+		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
 			goto error;
 		exts = (oid *) Tloc(en, BUNfirst(en));
 	}
 	if (histo) {
-		hn = BATnew(TYPE_void, TYPE_lng, maxgrps, TRANSIENT);
+		hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
 		if (hn == NULL)
 			goto error;
 		cnts = (lng *) Tloc(hn, BUNfirst(hn));
 	}
 	ngrp = 0;
 	BATsetcount(gn, BATcount(b));
-	BATseqbase(gn, b->hseqbase);
 	if (g)
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 
@@ -766,8 +763,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		   (b->batPersistence == PERSISTENT &&
 		    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-		   || ((parent = VIEWtparent(b)) != 0 &&
-		       BATcheckhash(BBPdescriptor(-parent)))
+		   || ((parent = -VIEWtparent(b)) != 0 &&
+		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
 		BUN lo, hi;
@@ -786,11 +783,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 #ifndef DISABLE_PARENT_HASH
-		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->T->hash == NULL && (parent = -VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, hi) in the parent
 			 * that b uses */
-			BAT *b2 = BBPdescriptor(-parent);
+			BAT *b2 = BBPdescriptor(parent);
 			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
 			hi = lo + BATcount(b);
 			hseqb = b->hseqbase;
@@ -935,7 +932,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
-		BATseqbase(en, 0);
 		en->tkey = 1;
 		en->tsorted = 1;
 		en->trevsorted = BATcount(en) <= 1;
@@ -945,7 +941,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
-		BATseqbase(hn, 0);
 		if (BATcount(hn) <= 1) {
 			hn->tkey = 1;
 			hn->tsorted = 1;

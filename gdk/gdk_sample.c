@@ -124,22 +124,20 @@ BATsample(BAT *b, BUN n)
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL) {
 			return NULL;
 		}
 		BATsetcount(bn, 0);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 	/* sample size is larger than the input BAT, return all oids */
 	} else if (cnt <= n) {
-		bn = BATnew(TYPE_void, TYPE_void, cnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
 		if (bn == NULL) {
 			return NULL;
 		}
 		BATsetcount(bn, cnt);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), b->H->seq);
+		BATtseqbase(bn, b->hseqbase);
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;
@@ -154,7 +152,7 @@ BATsample(BAT *b, BUN n)
 		if (tree == NULL) {
 			return NULL;
 		}
-		bn = BATnew(TYPE_void, TYPE_oid, slen, TRANSIENT);
+		bn = COLnew(0, TYPE_oid, slen, TRANSIENT);
 		if (bn == NULL) {
 			GDKfree(tree);
 			return NULL;
@@ -183,11 +181,6 @@ BATsample(BAT *b, BUN n)
 		bn->tdense = bn->batCount <= 1;
 		if (bn->batCount == 1)
 			bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
-		bn->hdense = 1;
-		bn->hseqbase = 0;
-		bn->hkey = 1;
-		bn->hrevsorted = bn->batCount <= 1;
-		bn->hsorted = 1;
 	}
 	return bn;
 }

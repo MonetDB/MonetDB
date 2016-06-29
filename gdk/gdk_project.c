@@ -218,7 +218,7 @@ BATproject(BAT *l, BAT *r)
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
 		if (bn == NULL)
 			return NULL;
-		BATseqbase(bn, l->hseqbase + (lo - l->tseqbase));
+		BAThseqbase(bn, l->hseqbase + (lo - l->tseqbase));
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
 				  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 				  bn->tsorted ? "-sorted" : "",
@@ -239,7 +239,7 @@ BATproject(BAT *l, BAT *r)
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
 			bn->tdense = 1;
-			BATseqbase(BATmirror(bn), 0);
+			BATtseqbase(bn, 0);
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
 				  BATgetId(l), BATgetId(r),
@@ -268,7 +268,7 @@ BATproject(BAT *l, BAT *r)
 		nilcheck = 0;
 		stringtrick = 1;
 	}
-	bn = BATnew(TYPE_void, tpe, BATcount(l), TRANSIENT);
+	bn = COLnew(l->hseqbase, tpe, BATcount(l), TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	if (stringtrick) {
@@ -387,9 +387,8 @@ BATproject(BAT *l, BAT *r)
 	}
 	bn->T->nonil |= l->T->nonil & r->T->nonil;
 
-	BATseqbase(bn, l->hseqbase);
 	if (!BATtdense(r))
-		BATseqbase(BATmirror(bn), oid_nil);
+		BATtseqbase(bn, oid_nil);
 	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s%s " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
 			  bn->tsorted ? "-sorted" : "",
@@ -547,9 +546,9 @@ BATprojectchain(BAT **bats)
 			bn = BATslice(b, off, off + cnt);
 			if (bn == NULL)
 				return NULL;
-			BATseqbase(bn, hseq);
+			BAThseqbase(bn, hseq);
 			if (bn->ttype == TYPE_void)
-				BATseqbase(BATmirror(bn), tseq);
+				BATtseqbase(bn, tseq);
 		}
 		return bn;
 	}
@@ -563,7 +562,7 @@ BATprojectchain(BAT **bats)
 		tpe = b->T->width == 1 ? TYPE_bte : (b->T->width == 2 ? TYPE_sht : (b->T->width == 4 ? TYPE_int : TYPE_lng));
 	}
 
-	bn = BATnew(TYPE_void, ATOMtype(tpe), cnt, TRANSIENT);
+	bn = COLnew(hseq, ATOMtype(tpe), cnt, TRANSIENT);
 	if (bn == NULL || cnt == 0) {
 		GDKfree(ba);
 		return bn;
@@ -734,7 +733,6 @@ BATprojectchain(BAT **bats)
 		}
 	}
 	BATsetcount(bn, cnt);
-	BATseqbase(bn, hseq);
 	if (stringtrick) {
 		bn->T->nonil = bn->T->nil = 0;
 		bn->tkey = 0;

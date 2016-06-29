@@ -32,7 +32,6 @@ bat5_export str BKCdelete_multi(bat *r, const bat *bid, const bat *sid);
 bat5_export str BKCdelete_all(bat *r, const bat *bid);
 bat5_export str BKCappend_wrap(bat *r, const bat *bid, const bat *uid);
 bat5_export str BKCappend_val_wrap(bat *r, const bat *bid, const void *u);
-bat5_export str BKCappend_reverse_val_wrap(bat *r, const bat *bid, const void *u);
 bat5_export str BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force);
 bat5_export str BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force);
 bat5_export str BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t);

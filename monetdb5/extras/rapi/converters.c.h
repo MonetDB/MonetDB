@@ -37,9 +37,9 @@
 #define SXP_TO_BAT(tpe,access_fun,na_check)								\
 	do {																\
 		tpe *p, prev = tpe##_nil; size_t j;								\
-		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
+		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);				\
 		if (!b) break;                                                  \
-		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
+		b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
 		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
 		p = (tpe*) Tloc(b, BUNfirst(b));								\
 		for( j = 0; j < cnt; j++, p++){								    \
@@ -62,7 +62,7 @@
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
-	switch (ATOMstorage(getColumnType(b->T->type))) {
+	switch (ATOMstorage(getColumnType(b->ttype))) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -196,9 +196,8 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		if (!IS_CHARACTER(s) && !isFactor(s)) {
 			return NULL;
 		}
-		b = BATnew(TYPE_void, TYPE_str, cnt, TRANSIENT);
+		b = COLnew(0, TYPE_str, cnt, TRANSIENT);
 		if (!b) return NULL;
-		BATseqbase(b, 0);
 		b->T->nil = 0;
 		b->T->nonil = 1;
 		b->tkey = 0;

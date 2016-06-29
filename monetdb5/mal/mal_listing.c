@@ -96,8 +96,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			showtype =closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & LIST_MAL_REMOTE)) && isVarConstant(mb,varid)) ||
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
-			if (stk && isaBatType(getVarType(mb,varid)) && abs(stk->stk[varid].val.ival) ){
-				BAT *d= BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
+			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
+				BAT *d= BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 				if( d)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
@@ -398,7 +398,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 		if( nme == NULL) 
 			nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
-			b = BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
+			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
 		} else
 		if( cv)

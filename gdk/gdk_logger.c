@@ -146,10 +146,9 @@ logbat_destroy(BAT *b)
 static BAT *
 logbat_new(int tt, BUN size, int role)
 {
-	BAT *nb = BATnew(TYPE_void, tt, size, role);
+	BAT *nb = COLnew(0, tt, size, role);
 
 	if (nb) {
-		BATseqbase(nb, 0);
 		if (role == PERSISTENT)
 			BATmode(nb, PERSISTENT);
 	} else {
@@ -307,15 +306,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	log_bid bid = logger_find_bat(lg, name);
 	BAT *b = BATdescriptor(bid);
 	int res = LOG_OK;
-	int ht = -1, tt = -1, hseq = 0, tseq = 0;
+	int ht = -1, tt = -1, tseq = 0;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
 
 	if (b) {
 		ht = b->htype;
-		if (ht == TYPE_void && b->hseqbase != oid_nil)
-			hseq = 1;
 		tt = b->ttype;
 		if (tt == TYPE_void && b->tseqbase != oid_nil)
 			tseq = 1;
@@ -326,7 +323,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			if (tr->changes[i].type == LOG_CREATE && strcmp(tr->changes[i].name, name) == 0) {
 				ht = tr->changes[i].ht;
 				if (ht < 0) {
-					hseq = 1;
 					ht = TYPE_void;
 				}
 				tt = tr->changes[i].tt;
@@ -356,17 +352,15 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 #endif
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
-			uid = BATnew(TYPE_void, ht, (BUN) l->nr, PERSISTENT);
-			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
+			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		} else {
 			assert(ht == TYPE_void);
-			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		}
 
-		if (hseq)
-			BATseqbase(r, 0);
 		if (tseq)
-			BATseqbase(BATmirror(r), 0);
+			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
 			for (; l->nr > 0; l->nr--) {
@@ -529,10 +523,7 @@ la_bat_destroy(logger *lg, logaction *la)
 			assert(BBP_desc(bid)->S.role == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
 			assert(BBPfarms[BBP_desc(bid)->H.heap.farmid].roles & (1 << PERSISTENT));
-			if (BBP_desc(bid)->H.vheap) {
-				assert(0 <= BBP_desc(bid)->H.vheap->farmid && BBP_desc(bid)->H.vheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->H.vheap->farmid].roles & (1 << PERSISTENT));
-			}
+			assert(BBP_desc(bid)->H.vheap == NULL);
 			assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
 			assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
 			if (BBP_desc(bid)->T.vheap) {
@@ -606,15 +597,16 @@ log_read_create(logger *lg, trans *tr, char *name)
 static void
 la_bat_create(logger *lg, logaction *la)
 {
-	int ht = (la->ht < 0) ? TYPE_void : la->ht;
 	int tt = (la->tt < 0) ? TYPE_void : la->tt;
-	BAT *b = BATnew(ht, tt, BATSIZE, PERSISTENT);
+	BAT *b;
+
+	/* formerly head column type, should be void */
+	assert(((la->ht < 0) ? TYPE_void : la->ht) == TYPE_void);
+	b = COLnew(0, tt, BATSIZE, PERSISTENT);
 
 	if (b != NULL) {
-		if (la->ht < 0)
-			BATseqbase(b, 0);
 		if (la->tt < 0)
-			BATseqbase(BATmirror(b), 0);
+			BATtseqbase(b, 0);
 
 		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, la->name);
@@ -652,10 +644,7 @@ la_bat_use(logger *lg, logaction *la)
 	assert(b->batRole == PERSISTENT);
 	assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
 	assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-	if (b->H->vheap) {
-		assert(0 <= b->H->vheap->farmid && b->H->vheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-	}
+	assert(b->H->vheap == NULL);
 	assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
 	assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
 	if (b->T->vheap) {
@@ -1180,18 +1169,14 @@ static BAT *
 bm_tids(BAT *b, BAT *d)
 {
 	BUN sz = BATcount(b);
-	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 
-	tids->H->seq = 0;
-	tids->T->seq = 0;
+	BATtseqbase(tids, 0);
 	BATsetcount(tids, sz);
-	tids->H->revsorted = 0;
-	tids->T->revsorted = 0;
+	tids->trevsorted = 0;
 
-	tids->T->key = 1;
-	tids->T->dense = 1;
-	tids->H->key = 1;
-	tids->H->dense = 1;
+	tids->tkey = 1;
+	tids->tdense = 1;
 
 	if (BATcount(d)) {
 		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
@@ -1253,7 +1238,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
 		assert(col);
-		n[i++] = abs(col);
+		n[i++] = col;
 	}
 	if (extra) {
 		iter = bat_iterator(extra);
@@ -1269,9 +1254,9 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	n[i++] = abs(catalog_bid->batCacheid);
-	n[i++] = abs(catalog_nme->batCacheid);
-	n[i++] = abs(dcatalog->batCacheid);
+	n[i++] = catalog_bid->batCacheid;
+	n[i++] = catalog_nme->batCacheid;
+	n[i++] = dcatalog->batCacheid;
 	assert((BUN) i <= nn);
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
 		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
@@ -1492,6 +1477,10 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (n == 0)
 			logger_fatal("logger_load: inconsistent database, catalog_nme does not exist", 0, 0, 0);
 
+		if (!BAThdense(b) || !BAThdense(n))
+			logger_fatal("logger_load: ancient database, please "
+				     "upgrade first to Jul2015 (11.21.X) or "
+				     "Jun2016 (11.23.X) release", 0, 0, 0);
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
 		dcatalog = BBPindex(bak);
 		d = BATdescriptor(dcatalog);
@@ -1506,46 +1495,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
-			if (!BAThdense(b) || !BAThdense(n)) {
-				/* we need to convert catalog_bid and
-				 * catalog_nme to be dense-headed; we
-				 * do this by replacing the two with
-				 * new, dense versions */
-				BATiter bi, ni;
-				BUN r;
-				const oid *o;
-				BAT *b2, *n2;
-				bat list[5];
-
-				list[0] = 0;
-				list[1] = b->batCacheid;
-				list[2] = n->batCacheid;
-				if ((b2 = logbat_new(b->ttype, BATSIZE, PERSISTENT)) == NULL)
-					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
-				if ((n2 = logbat_new(n->ttype, BATSIZE, PERSISTENT)) == NULL)
-					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
-				list[3] = b2->batCacheid;
-				list[4] = n2->batCacheid;
-				logger_switch_bat(b, b2, fn, "catalog_bid");
-				logger_switch_bat(n, n2, fn, "catalog_nme");
-				bi = bat_iterator(b);
-				ni = bat_iterator(n);
-				BATloop(b, p, q) {
-					o = (const oid *) BUNhloc(bi, p);
-					r = BUNfnd(BATmirror(n), o);
-					if (r != BUN_NONE) {
-						if (BUNappend(b2, BUNtloc(bi, p), 0) != GDK_SUCCEED ||
-						    BUNappend(n2, BUNtvar(ni, r), 0) != GDK_SUCCEED)
-							logger_fatal("logger_load: cannot append to new catalog BATs", 0, 0, 0);
-					}
-				}
-				BBPunfix(b->batCacheid);
-				BBPunfix(n->batCacheid);
-				b = b2;
-				n = n2;
-				if (TMsubcommit_list(list, 5) != GDK_SUCCEED)
-					logger_fatal("logger_load: committing new catalog_bid/catalog_nme failed", 0, 0, 0);
-			}
 		}
 
 		/* the catalog exists, and so should the log file */
@@ -1648,8 +1597,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			lg->seqs_val = COLcopy(o_val, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
-			BATseqbase(lg->seqs_id, 0);
-			BATseqbase(lg->seqs_val, 0);
+			BAThseqbase(lg->seqs_id, 0);
+			BAThseqbase(lg->seqs_val, 0);
 		} else {
 			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
@@ -1673,7 +1622,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			BAT *b;
 			assert(lg->snapshots_tid->htype == TYPE_oid);
 			b = COLcopy(lg->snapshots_bid, lg->snapshots_bid->ttype, 1, PERSISTENT);
-			BATseqbase(b, 0);
+			BAThseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
 			BBPrename(lg->snapshots_bid->batCacheid, bak);
@@ -1684,7 +1633,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			lg->snapshots_bid = b;
 			logger_add_bat(lg, b, "snapshots_bid");
 			b = COLcopy(lg->snapshots_tid, lg->snapshots_tid->ttype, 1, PERSISTENT);
-			BATseqbase(b, 0);
+			BAThseqbase(b, 0);
 			BATsetaccess(b, BAT_READ);
 			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
 			BBPrename(lg->snapshots_tid->batCacheid, bak);
@@ -2302,10 +2251,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		assert(b->batRole == PERSISTENT);
 		assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
 		assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-		if (b->H->vheap) {
-			assert(0 <= b->H->vheap->farmid && b->H->vheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-		}
+		assert(b->H->vheap == NULL);
 		assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
 		assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
 		if (b->T->vheap) {
@@ -2330,8 +2276,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	if (flag == LOG_USE) {
 		assert(b->batRole == PERSISTENT);
 		assert(b->H->heap.farmid == 0);
-		assert(b->H->vheap == NULL ||
-		       BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
+		assert(b->H->vheap == NULL);
 		assert(b->T->heap.farmid == 0);
 		assert(b->T->vheap == NULL ||
 		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
@@ -2391,10 +2336,7 @@ log_bat_transient(logger *lg, const char *name)
 		assert(BBP_desc(bid)->S.role == PERSISTENT);
 		assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
 		assert(BBPfarms[BBP_desc(bid)->H.heap.farmid].roles & (1 << PERSISTENT));
-		if (BBP_desc(bid)->H.vheap) {
-			assert(0 <= BBP_desc(bid)->H.vheap->farmid && BBP_desc(bid)->H.vheap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->H.vheap->farmid].roles & (1 << PERSISTENT));
-		}
+		assert(BBP_desc(bid)->H.vheap == NULL);
 		assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
 		assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
 		if (BBP_desc(bid)->T.vheap) {
@@ -2478,6 +2420,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 	logformat l;
 	BUN p;
 
+	assert(b->htype == TYPE_void);
 	if (lg->debug & 128) {
 		/* logging is switched off */
 		return LOG_OK;
@@ -2489,7 +2432,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
-		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_INSERT;
@@ -2497,8 +2439,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		if (b->htype == TYPE_void &&
-		    b->ttype > TYPE_void &&
+		if (b->ttype > TYPE_void &&
 		    b->ttype < TYPE_str &&
 		    !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);
@@ -2506,10 +2447,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 			ok = wt(t, lg->log, (size_t)l.nr);
 		} else {
 			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-				const void *h = BUNhead(bi, p);
 				const void *t = BUNtail(bi, p);
 
-				ok = wh(h, lg->log, 1);
 				ok = (ok != GDK_SUCCEED) ? ok : wt(t, lg->log, 1);
 			}
 		}
@@ -2749,7 +2688,6 @@ bm_commit(logger *lg)
 	gdk_return res;
 
 	/* subcommit the freed bats */
-	BATseqbase(n, 0);
 	if (BATcount(lg->freed)) {
 
 		BATloop(lg->freed, p, q) {

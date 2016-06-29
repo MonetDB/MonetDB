@@ -391,11 +391,10 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 				return LOG_ERR;
 		} else if (oc_isnew && !bat->bid) { 
 			/* move the bat to the new col, fixup the old col*/
-			b = bat_new(TYPE_void, type, sz, PERSISTENT);
+			b = COLnew((oid) obat->cnt, type, sz, PERSISTENT);
 			bat_set_access(b, BAT_READ);
 			obat->ibid = temp_create(b);
 			obat->ibase = bat->ibase = (oid) obat->cnt;
-			BATseqbase(b, obat->ibase);
 			bat_destroy(b);
 			if (c_isnew && tr->parent == gtrans) { 
 				/* new cols are moved to gtrans and bat.bid */
@@ -404,9 +403,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			} else if (!c_isnew) {  
 				bat->bid = bat->ibid;
 
-				b = bat_new(TYPE_void, type, sz, PERSISTENT);
+				b = COLnew(bat->ibase, type, sz, PERSISTENT);
 				bat_set_access(b, BAT_READ);
-				BATseqbase(b, bat->ibase);
 				bat->ibid = temp_create(b);
 			}
 		} else { /* old column */
@@ -513,12 +511,12 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
-	if (BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->S->role == PERSISTENT){
+	if (BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->batRole == PERSISTENT){
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
 		temp_dup(id);
 		bat_destroy(b);
-		i->hseqbase = bat->ibase;
+		BAThseqbase(i, bat->ibase);
 	} else {
 		if (!isEbat(b)){
 			assert(b->T->heap.storage != STORE_PRIV);
@@ -528,7 +526,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			bat_destroy(b);
 			b = temp_descriptor(bat->ibid);
 		}
-		if (isVIEW(i) && b->batCacheid == abs(VIEWtparent(i))) {
+		if (isVIEW(i) && b->batCacheid == -VIEWtparent(i)) {
 			BAT *ic = COLcopy(i, i->ttype, TRUE, TRANSIENT);
 			BATappend(b, ic, TRUE);
 			bat_destroy(ic);
@@ -723,7 +721,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 	}
 	assert(b->T->heap.storage != STORE_PRIV);
 	BATappend(b, i, TRUE);
-	BATkey(BATmirror(b), TRUE);
+	BATkey(b, TRUE);
 	bat_destroy(b);
 
 	bat->cnt += BATcount(i);
@@ -745,7 +743,7 @@ delta_delete_val( sql_dbat *bat, oid rid )
 	}
 	assert(b->T->heap.storage != STORE_PRIV);
 	BUNappend(b, (ptr)&rid, TRUE);
-	BATkey(BATmirror(b), TRUE);
+	BATkey(b, TRUE);
 	bat_destroy(b);
 
 	bat->cnt ++;
@@ -1029,7 +1027,7 @@ new_persistent_delta( sql_delta *bat, int sz )
 		bat_destroy(i);
 		i = temp_descriptor(bat->ibid);
 		bat_set_access(i, BAT_READ);
-		BATseqbase(i, bat->ibase);
+		BAThseqbase(i, bat->ibase);
 		bat_destroy(i);
 	} else {
 		BAT *i, *b = temp_descriptor(bat->ibid);
@@ -1040,9 +1038,8 @@ new_persistent_delta( sql_delta *bat, int sz )
 		bat->ucnt = 0;
 		bat_destroy(b);
 
-		i = bat_new(TYPE_void, type, sz, PERSISTENT);
+		i = COLnew(bat->ibase, type, sz, PERSISTENT);
 		bat_set_access(i, BAT_READ);
-		BATseqbase(i, bat->ibase);
 		bat->ibid = temp_create(i);
 		bat_destroy(i);
 	}
@@ -1062,7 +1059,7 @@ create_delta( sql_delta *d, BAT *b, BAT *i)
 	d->cnt = BATcount(i);
 	bat_set_access(i, BAT_READ);
 	d->bid = 0;
-	d->ibase = i->H->seq;
+	d->ibase = i->hseqbase;
 	d->ibid = temp_create(i);
 	if (b) {
 		d->cnt += BATcount(b);
@@ -1082,22 +1079,13 @@ copyBat (bat i, int type, oid seq)
 	if (!i)
 		return i;
 	tb = temp_descriptor(i);
-	b = BATconstant(tb->hseqbase, type, ATOMnilptr(type), BATcount(tb), PERSISTENT);
+	b = BATconstant(seq, type, ATOMnilptr(type), BATcount(tb), PERSISTENT);
 	bat_destroy(tb);
-	if (isVIEW(b)) {
-		tb = COLcopy(b, b->ttype, TRUE, PERSISTENT);
-		BATseqbase(b, 0); 
-		b->H->dense = 1;
-		bat_destroy(b);
-	} else {
-		tb = b;
-	}
 
-	bat_set_access(tb, BAT_READ);
-	BATseqbase(tb, seq);
+	bat_set_access(b, BAT_READ);
 
-	res = temp_create(tb);
-	bat_destroy(tb);
+	res = temp_create(b);
+	bat_destroy(b);
 	return res;
 }
 
@@ -1141,7 +1129,7 @@ create_col(sql_trans *tr, sql_column *c)
 			if (d->uvbid)
 				bat->uvbid = e_bat(type);
 		} else {
-			BAT *b = bat_new(TYPE_void, type, c->t->sz, PERSISTENT);
+			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) 
 				return LOG_ERR;
 			create_delta(c->data, NULL, b);
@@ -1270,7 +1258,7 @@ create_del(sql_trans *tr, sql_table *t)
 	} else if (bat->dbid && !isTempTable(t)) {
 		return ok;
 	} else if (!bat->dbid) {
-		b = bat_new(TYPE_void, TYPE_oid, t->sz, PERSISTENT);
+		b = bat_new(TYPE_oid, t->sz, PERSISTENT);
 		bat_set_access(b, BAT_READ);
 		bat->dbid = temp_create(b);
 		bat_destroy(b);
@@ -1915,7 +1903,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			BAT *newcur = ins;
 
 			if (unique)
-				BATkey(BATmirror(newcur), TRUE);
+				BATkey(newcur, TRUE);
 			temp_destroy(cbat->bid);
 			temp_destroy(obat->bid);
 			obat->bid = cbat->ibid;
@@ -2001,7 +1989,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			bat id = obat->bid;
 
 			if (unique)
-				BATkey(BATmirror(newcur), TRUE);
+				BATkey(newcur, TRUE);
 			obat->bid = obat->ibid;
 			obat->ibid = id;
 

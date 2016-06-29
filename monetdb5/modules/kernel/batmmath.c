@@ -25,20 +25,16 @@
 #define fetestexcept(x)		0
 #endif
 
-#define voidresultBAT(X1,X2)								\
-	do {													\
-		bn = BATnew(TYPE_void, X1, BATcount(b), TRANSIENT);	\
-		if (bn == NULL) {									\
-			BBPunfix(b->batCacheid);						\
-			throw(MAL, X2, MAL_MALLOC_FAIL);				\
-		}													\
-		BATseqbase(bn, b->hseqbase);						\
-		bn->hsorted = b->hsorted;							\
-		bn->hrevsorted = b->hrevsorted;						\
-		bn->tsorted = b->tsorted;							\
-		bn->trevsorted = b->trevsorted;						\
-		bn->H->nonil = 1;									\
-		bn->T->nonil = b->T->nonil;							\
+#define voidresultBAT(X1,X2)									\
+	do {														\
+		bn = COLnew(b->hseqbase, X1, BATcount(b), TRANSIENT);	\
+		if (bn == NULL) {										\
+			BBPunfix(b->batCacheid);							\
+			throw(MAL, X2, MAL_MALLOC_FAIL);					\
+		}														\
+		bn->tsorted = b->tsorted;								\
+		bn->trevsorted = b->trevsorted;							\
+		bn->T->nonil = b->T->nonil;								\
 	} while (0)
 
 
@@ -77,7 +73,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	bn->trevsorted = 0;												\
 	bn->T->nil = b->T->nil;											\
 	bn->T->nonil = b->T->nonil;										\
-	BATkey(BATmirror(bn), 0);										\
+	BATkey(bn, 0);													\
 	if (!(bn->batDirty&2))											\
 		BATsetaccess(bn, BAT_READ);									\
 	BBPkeepref(*ret = bn->batCacheid);								\
@@ -122,7 +118,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	bn->trevsorted = 0;													\
 	bn->T->nil = b->T->nil;												\
 	bn->T->nonil = b->T->nonil;											\
-	BATkey(BATmirror(bn),0);											\
+	BATkey(bn,0);														\
 	if (!(bn->batDirty&2))												\
 		BATsetaccess(bn, BAT_READ);										\
 	BBPkeepref(*ret = bn->batCacheid);									\
@@ -166,7 +162,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	bn->trevsorted = 0;													\
 	bn->T->nil = b->T->nil;												\
 	bn->T->nonil = b->T->nonil;											\
-	BATkey(BATmirror(bn),0);											\
+	BATkey(bn,0);														\
 	if (!(bn->batDirty&2))												\
 		BATsetaccess(bn, BAT_READ);										\
 	BBPkeepref(*ret = bn->batCacheid);									\

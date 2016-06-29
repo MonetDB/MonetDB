@@ -322,7 +322,7 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 		throw(MAL, "pcre.likesubselect",
 			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
 	}
-	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		my_pcre_free(re);
 		pcre_free_study(pe);
@@ -374,17 +374,13 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	}
 	my_pcre_free(re);
 	pcre_free_study(pe);
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
 	*bnp = bn;
 	return MAL_SUCCEED;
 
@@ -411,7 +407,7 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	assert(anti == 0 || anti == 1);
 
-	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
 	off = b->hseqbase - BUNfirst(b);
@@ -480,17 +476,13 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 					re_match_no_ignore(v, re));
 		}
 	}
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
 	*bnp = bn;
 	re_destroy(re);
 	return MAL_SUCCEED;
@@ -662,7 +654,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 
-	tmpbat = BATnew(TYPE_void, TYPE_str, BATcount(origin_strs), TRANSIENT);
+	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL) {
 		my_pcre_free(pcre_code);
 		GDKfree(ovector);
@@ -730,7 +722,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	pcre_free_study(extra);
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
-	BATseqbase(tmpbat, origin_strs->hseqbase);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 }
@@ -1128,7 +1119,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 			throw(MAL, "batstr.like", OPERATION_FAILED);
 		}
 
-		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs), TRANSIENT);
+		r = COLnew(strs->hseqbase, TYPE_bit, BATcount(strs), TRANSIENT);
 		if( r==NULL) {
 			GDKfree(ppat);
 			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
@@ -1197,8 +1188,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;
-		BATkey(BATmirror(r),FALSE);
-		BATseqbase(r, strs->hseqbase);
+		BATkey(r,FALSE);
 
 		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 
@@ -1642,14 +1632,12 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		goto fail;
 	if (srid != bat_nil && (candright = BATdescriptor(srid)) == NULL)
 		goto fail;
-	result1 = BATnew(TYPE_void, TYPE_oid, BATcount(left), TRANSIENT);
-	result2 = BATnew(TYPE_void, TYPE_oid, BATcount(left), TRANSIENT);
+	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	if (result1 == NULL || result2 == NULL) {
 		msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
 		goto fail;
 	}
-	BATseqbase(result1, 0);
-	BATseqbase(result2, 0);
 	result1->T->nil = 0;
 	result1->T->nonil = 1;
 	result1->tkey = 1;

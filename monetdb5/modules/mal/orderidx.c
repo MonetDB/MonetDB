@@ -221,7 +221,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
 	}
 
-	if ((bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
+	if ((bn = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getorderidx", MAL_MALLOC_FAIL);
 	}
@@ -231,7 +231,6 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while (s < se)
 			 *d++ = *s++ & ~BUN_MSK;
 	BATsetcount(bn, BATcount(b));
-	BATseqbase(bn, 0);
 	bn->tkey = 1;
 	bn->tsorted = bn->trevsorted = BATcount(b) <= 1;
 	bn->T->nil = 0;

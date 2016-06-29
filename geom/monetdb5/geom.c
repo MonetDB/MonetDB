@@ -1702,12 +1702,12 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 	if (wkb_isnil(*geomWKB)) {
 
 		//create new empty BAT for the output
-		if ((idBAT = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT)) == NULL) {
+		if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
 			*idBAT_id = bat_nil;
 			throw(MAL, "geom.Dump", "Error creating new BAT");
 		}
 
-		if ((geomBAT = BATnew(TYPE_void, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+		if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
 			BBPunfix(idBAT->batCacheid);
 			*geomBAT_id = bat_nil;
 			throw(MAL, "geom.Dump", "Error creating new BAT");
@@ -1725,7 +1725,6 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 		BATseqbase(idBAT, 0);
 		BBPkeepref(*idBAT_id = idBAT->batCacheid);
 
-		BATseqbase(geomBAT, 0);
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
 
         if (parent) {
@@ -1741,18 +1740,16 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 	//count the number of geometries
 	geometriesNum = GEOSGetNumGeometries(geosGeometry);
 
-	if ((idBAT = BATnew(TYPE_void, TYPE_str, geometriesNum, TRANSIENT)) == NULL) {
+	if ((idBAT = COLnew(0, TYPE_str, geometriesNum, TRANSIENT)) == NULL) {
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
-	BATseqbase(idBAT, 0);
 
-	if ((geomBAT = BATnew(TYPE_void, ATOMindex("wkb"), geometriesNum, TRANSIENT)) == NULL) {
+	if ((geomBAT = COLnew(0, ATOMindex("wkb"), geometriesNum, TRANSIENT)) == NULL) {
 		BBPunfix(idBAT->batCacheid);
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
-	BATseqbase(geomBAT, 0);
 
     if (parent) {
         if ((parentBAT = BATnew(TYPE_void, ATOMindex("int"), geometriesNum, TRANSIENT)) == NULL) {
@@ -1973,21 +1970,19 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 	if (wkb_isnil(*geomWKB)) {
 
 		//create new empty BAT for the output
-		if ((idBAT = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT)) == NULL) {
+		if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
 			*idBAT_id = int_nil;
 			throw(MAL, "geom.DumpPoints", "Error creating new BAT");
 		}
 
-		if ((geomBAT = BATnew(TYPE_void, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+		if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
 			BBPunfix(idBAT->batCacheid);
 			*geomBAT_id = int_nil;
 			throw(MAL, "geom.DumpPoints", "Error creating new BAT");
 		}
 
-		BATseqbase(idBAT, 0);
 		BBPkeepref(*idBAT_id = idBAT->batCacheid);
 
-		BATseqbase(geomBAT, 0);
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
 
 		return MAL_SUCCEED;
@@ -2000,18 +1995,16 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		return err;
 	}
 
-	if ((idBAT = BATnew(TYPE_void, TYPE_str, pointsNum, TRANSIENT)) == NULL) {
+	if ((idBAT = COLnew(0, TYPE_str, pointsNum, TRANSIENT)) == NULL) {
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
-	BATseqbase(idBAT, 0);
 
-	if ((geomBAT = BATnew(TYPE_void, ATOMindex("wkb"), pointsNum, TRANSIENT)) == NULL) {
+	if ((geomBAT = COLnew(0, ATOMindex("wkb"), pointsNum, TRANSIENT)) == NULL) {
 		BBPunfix(idBAT->batCacheid);
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
-	BATseqbase(geomBAT, 0);
 
 	err = dumpPointsGeometry(idBAT, geomBAT, geosGeometry, "");
 	GEOSGeom_destroy(geosGeometry);
@@ -6204,12 +6197,11 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Create output BAT */
-	if ((bo = BATnew(TYPE_void, TYPE_bit, BATcount(bpx), TRANSIENT)) == NULL) {
+	if ((bo = COLnew(bpx->hseqbase, TYPE_bit, BATcount(bpx), TRANSIENT)) == NULL) {
 		BBPunfix(bpx->batCacheid);
 		BBPunfix(bpy->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bo, bpx->hseqbase);
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
 	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
@@ -6268,12 +6260,11 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Create output BAT */
-	if ((bo = BATnew(TYPE_void, TYPE_bit, BATcount(bpx), TRANSIENT)) == NULL) {
+	if ((bo = COLnew(bpx->hseqbase, TYPE_bit, BATcount(bpx), TRANSIENT)) == NULL) {
 		BBPunfix(bpx->batCacheid);
 		BBPunfix(bpy->batCacheid);
 		throw(MAL, "geom.point", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bo, bpx->hseqbase);
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
 	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
