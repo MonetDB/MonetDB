@@ -2509,7 +2509,7 @@ BBPcheck(register bat x, register const char *y)
 	if (x && x != bat_nil) {
 		assert(x > 0);
 
-		if (x >= getBBPsize() || BBP_logical(x) == NULL) {
+		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			CHECKDEBUG fprintf(stderr,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return x;

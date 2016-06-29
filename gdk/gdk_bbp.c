@@ -2272,7 +2272,7 @@ BBPrename(bat bid, const char *nme)
 
 	BBPgetsubdir(dirname, bid);
 
-	if ((tmpid = BBPnamecheck(nme)) && (bid < 0 || tmpid != bid)) {
+	if ((tmpid = BBPnamecheck(nme)) && tmpid != bid) {
 		return BBPRENAME_ILLEGAL;
 	}
 	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
@@ -2356,8 +2356,6 @@ incref(bat i, int logical, int lock)
 		/* GDKerror("BBPincref() called with bat_nil!\n"); */
 		return 0;
 	}
-	if (i < 0)
-		i = -i;
 
 	if (!BBPcheck(i, "BBPincref"))
 		return 0;
@@ -2444,8 +2442,7 @@ BBPshare(bat parent)
 {
 	int lock = locked_by ? MT_getpid() != locked_by : 1;
 
-	if (parent < 0)
-		parent = -parent;
+	assert(parent > 0);
 	if (lock)
 		MT_lock_set(&GDKswapLock(parent));
 	(void) incref(parent, TRUE, 0);
@@ -2571,8 +2568,6 @@ BBPdecref(bat i, int logical)
 	if (BBPcheck(i, "BBPdecref") == 0) {
 		return -1;
 	}
-	if (i < 0)
-		i = -i;
 	return decref(i, logical, FALSE, TRUE);
 }
 
@@ -2588,8 +2583,6 @@ BBPkeepref(bat i)
 {
 	if (i == bat_nil)
 		return;
-	if (i < 0)
-		i = -i;
 	if (BBPcheck(i, "BBPkeepref")) {
 		int lock = locked_by ? MT_getpid() != locked_by : 1;
 		BAT *b;
@@ -2609,8 +2602,6 @@ BBPkeepref(bat i)
 static inline void
 GDKunshare(bat parent)
 {
-	if (parent < 0)
-		parent = -parent;
 	(void) decref(parent, FALSE, TRUE, TRUE);
 	(void) decref(parent, TRUE, FALSE, TRUE);
 }
@@ -3237,8 +3228,6 @@ BBPtrim(size_t target)
 void
 BBPhot(bat i)
 {
-	if (i < 0)
-		i = -i;
 	if (BBPcheck(i, "BBPhot")) {
 		int lock = locked_by ? MT_getpid() != locked_by : 1;
 
@@ -3253,8 +3242,6 @@ BBPhot(bat i)
 void
 BBPcold(bat i)
 {
-	if (i < 0)
-		i = -i;
 	if (BBPcheck(i, "BBPcold")) {
 		MT_Id pid = MT_getpid();
 		int idx = threadmask(pid);
