@@ -1906,8 +1906,6 @@ BBPlogical(bat bid, str buf)
 	if (buf == NULL) {
 		return NULL;
 	} else if (BBPcheck(bid, "BBPlogical")) {
-		if (bid < 0 && BBP_logical(bid) == NULL)
-			bid = -bid;
 		strcpy(buf, BBP_logical(bid));
 	} else {
 		*buf = 0;
