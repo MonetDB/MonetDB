@@ -22,7 +22,6 @@
 #define bat5_export extern
 #endif
 
-bat5_export char *BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname);
 bat5_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
 bat5_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 bat5_export str BKCdensebat(bat *ret, const lng *size);
@@ -56,7 +55,6 @@ bat5_export str BKCinfo(bat *ret1, bat *ret2, const bat *bid);
 bat5_export str BKCgetSize(lng *tot, const bat *bid);
 bat5_export str BKCisSynced(bit *ret, const bat *bid1, const bat *bid2);
 bat5_export str BKCsetColumn(void *r, const bat *bid, const char * const *tname);
-bat5_export str BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname);
 bat5_export str BKCsetName(void *r, const bat *bid, const char * const *s);
 bat5_export str BKCgetBBPname(str *ret, const bat *bid);
 bat5_export str BKCsave(bit *res, const char * const *input);

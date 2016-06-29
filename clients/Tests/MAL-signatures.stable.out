@@ -24024,17 +24024,9 @@ command bat.setTransient(b:bat[:any_1]):void
 address BKCsetTransient;
 comment Make the BAT transient.  Returns 	boolean which indicates if theBAT administration has indeed changed.
 
-command bat.setColumn(b:bat[:any_1],h:str,t:str):void 
-address BKCsetColumns;
-comment Give both columns of a BAT a new name.
-
 command bat.setColumn(b:bat[:any_1],t:str):void 
 address BKCsetColumn;
 comment Give a logical name to the tail column of a BAT.
-
-command bat.setRole(b:bat[:any_1],h:str,t:str):void 
-address BKCsetRole;
-comment Give a logical name to the columns of a BAT.
 
 command bat.setName(b:bat[:any_1],s:str):void 
 address BKCsetName;

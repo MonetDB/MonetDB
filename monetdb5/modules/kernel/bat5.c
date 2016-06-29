@@ -925,28 +925,6 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
 /*
  * Role Management
  */
-char *
-BKCsetRole(void *r, const bat *bid, const char * const *hname, const char * const *tname)
-{
-	BAT *b;
-
-	(void) r;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setRole", RUNTIME_OBJECT_MISSING);
-	}
-	if (hname == 0 || *hname == 0 || **hname == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Head name missing");
-	}
-	if (tname == 0 || *tname == 0 || **tname == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Tail name missing");
-	}
-	BATroles(b, *hname, *tname);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 str
 BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 {
@@ -968,29 +946,6 @@ BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-
-str
-BKCsetColumns(void *r, const bat *bid, const char * const *hname, const char * const *tname)
-{
-	BAT *b;
-
-	(void) r;
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setColumns", RUNTIME_OBJECT_MISSING);
-	}
-	if (hname == 0 || *hname == 0 || **hname == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Head name missing");
-	}
-	if (tname == 0 || *tname == 0 || **tname == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Tail name missing");
-	}
-	BATroles(b, *hname, *tname);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
 
 str
 BKCsetName(void *r, const bat *bid, const char * const *s)

@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Jun 29 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed bat.setColumn with two arguments and bat.setRole.  Use
+  bat.setColumn with one argument instead.
+
 * Mon Jun 27 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function BKCappend_reverse_val_wrap: it was unused.
 
