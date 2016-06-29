@@ -95,6 +95,7 @@ Type values:
 17 = TRIANGLE
 
 */
+#define GEOS_CURVE 2
 
 typedef enum wkb_type {
 	//wkbGeometry_mbd = 0,
