@@ -108,12 +108,15 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 					b = store_funcs.bind_idx(tr, i, RDONLY);
 					if (b) {
 						space += (size =getBatSpace(b));
-/*
+						if (!size) {
+							sql_column *c = i->t->columns.set->h->data;
+							size = SQLgetColumnSize(tr, c);
+						}
+
 						if( !prepare && size == 0){
 							setFunctionId(p, emptycolumnidxRef);
-							mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
+							//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
 						}
-*/
 						BBPunfix(b->batCacheid);
 					}
 				}
