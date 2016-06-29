@@ -36,14 +36,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	tag = BATnew(TYPE_void, TYPE_lng, 256, TRANSIENT);
-	user = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	started = BATnew(TYPE_void, TYPE_timestamp, 256, TRANSIENT);
-	estimate = BATnew(TYPE_void, TYPE_timestamp, 256, TRANSIENT);
-	progress = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
-	activity = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	oids = BATnew(TYPE_void, TYPE_oid, 256, TRANSIENT);
-	query = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
+	user = COLnew(0, TYPE_str, 256, TRANSIENT);
+	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
+	estimate = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
+	progress = COLnew(0, TYPE_int, 256, TRANSIENT);
+	activity = COLnew(0, TYPE_str, 256, TRANSIENT);
+	oids = COLnew(0, TYPE_oid, 256, TRANSIENT);
+	query = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if ( tag == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
 		if (tag) BBPunfix(tag->batCacheid);
 		if (user) BBPunfix(user->batCacheid);
@@ -55,29 +55,6 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (oids) BBPunfix(oids->batCacheid);
 		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(tag, 0);
-    BATkey(tag, TRUE);
-
-	BATseqbase(user, 0);
-    BATkey(user, TRUE);
-
-	BATseqbase(query, 0);
-    BATkey(query, TRUE);
-
-	BATseqbase(activity, 0);
-    BATkey(activity, TRUE);
-
-	BATseqbase(estimate, 0);
-    BATkey(estimate, TRUE);
-
-	BATseqbase(started, 0);
-    BATkey(started, TRUE);
-
-	BATseqbase(progress, 0);
-    BATkey(progress, TRUE);
-
-	BATseqbase(oids, 0);
-    BATkey(oids, TRUE);
 
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< QRYqueue[i].tag; i++)

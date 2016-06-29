@@ -71,12 +71,11 @@ virtualize(BAT *bn)
 static BAT *
 newempty(void)
 {
-	BAT *bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
-	BATseqbase(bn, 0);
-	BATseqbase(BATmirror(bn), 0);
+	BATtseqbase(bn, 0);
 	return bn;
 }
 
@@ -90,19 +89,17 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	assert(l2 <= h2);
 	assert(h1 <= l2);
 	if (l1 == h1 || l2 == h2) {
-		bn = BATnew(TYPE_void, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
+		bn = COLnew(0, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, h1 - l1 + h2 - l2);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), l1 == h1 ? l2 : l1);
+		BATtseqbase(bn, l1 == h1 ? l2 : l1);
 		return bn;
 	}
-	bn = BATnew(TYPE_void, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, h1 - l1 + h2 - l2);
-	BATseqbase(bn, 0);
 	p = (oid *) Tloc(bn, BUNfirst(bn));
 	while (l1 < h1)
 		*p++ = l1++;
@@ -131,11 +128,10 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	if (b->ttype == TYPE_void)
 		return doublerange(l1 + b->tseqbase, h1 + b->tseqbase,
 				   l2 + b->tseqbase, h2 + b->tseqbase);
-	bn = BATnew(TYPE_void, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, h1 - l1 + h2 - l2);
-	BATseqbase(bn, 0);
 	p = (oid *) Tloc(bn, BUNfirst(bn));
 	o = (const oid *) Tloc(b, BUNfirst(b) + l1);
 	while (l1++ < h1)
@@ -261,7 +257,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	bn->tdense = bn->trevsorted = bn->batCount <= 1;
 	if (bn->batCount == 1)
 		bn->tseqbase = *dst;
-	BATseqbase(bn, 0);
 	return bn;
 }
 
@@ -553,7 +548,7 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	assert(lval);							\
 	assert(hval);							\
 	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BATmirror(BATdescriptor(VIEWtparent(b)));	\
+		BAT *parent = BATdescriptor(-VIEWtparent(b));		\
 		basesrc = (const TYPE *) Tloc(parent, BUNfirst(parent)); \
 		imprints = parent->T->imprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
@@ -1024,11 +1019,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
 	if (bn->batCount == 1 || bn->batCount == b->batCount)
 		bn->tseqbase = b->hseqbase;
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
 
 	return bn;
 }
@@ -1435,12 +1425,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !(b->tsorted || b->trevsorted) &&
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(abs(VIEWtparent(b)), 0)))))
+	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(-VIEWtparent(b), 0)))))
 	{
 		BAT *view = NULL;
 		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
-			b = BBPdescriptor(abs(VIEWtparent(b)));
+			b = BBPdescriptor(-VIEWtparent(b));
 		}
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
@@ -1581,14 +1571,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					 * that they refer to existing
 					 * head values of b whose tail
 					 * is not nil */
-					oid o = (oid) first + b->H->seq;
+					oid o = (oid) first + b->hseqbase;
 					BUN last;
 					first = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) low + b->H->seq;
+					o = (oid) low + b->hseqbase;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) high + b->H->seq;
+					o = (oid) high + b->hseqbase;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = b->H->seq + b->batCount;
+					o = b->hseqbase + b->batCount;
 					last = SORTfndfirst(s, &o) - BUNfirst(s);
 					bn = doubleslice(s, first, low, high, last);
 				} else {
@@ -1605,14 +1595,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					 * that they refer to existing
 					 * head values of b whose tail
 					 * is not nil */
-					oid o = (oid) last + b->H->seq;
+					oid o = (oid) last + b->hseqbase;
 					BUN first;
 					last = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) low + b->H->seq;
+					o = (oid) low + b->hseqbase;
 					low = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = (oid) high + b->H->seq;
+					o = (oid) high + b->hseqbase;
 					high = SORTfndfirst(s, &o) - BUNfirst(s);
-					o = b->H->seq;
+					o = b->hseqbase;
 					first = SORTfndfirst(s, &o) - BUNfirst(s);
 					bn = doubleslice(s, first, low, high, last);
 				} else {
@@ -1631,7 +1621,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 				rs = (const oid *) b->torderidx->base + ORDERIDXOFF;
 				rs += low;
-				bn = BATnew(TYPE_void, TYPE_oid, high-low, TRANSIENT);
+				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL)
 					GDKerror("memory allocation error");
 
@@ -1693,12 +1683,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				}
 			}
 		}
-		bn->hseqbase = 0;
-		bn->hkey = 1;
-		bn->hsorted = 1;
-		bn->hrevsorted = bn->batCount <= 1;
-		bn->H->nonil = 1;
-		bn->H->nil = 0;
 		return virtualize(bn);
 	}
 
@@ -1750,7 +1734,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	parent = VIEWtparent(b);
+	parent = -VIEWtparent(b);
+	assert(parent >= 0);
 	/* use hash only for equi-join, and then only if b or its
 	 * parent already has a hash, or if b or its parent is
 	 * persistent and the total size wouldn't be too large; check
@@ -1759,7 +1744,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		(((b->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		   || (parent != 0 &&
-		       (tmp = BBPquickdesc(abs(parent),0)) != NULL &&
+		       (tmp = BBPquickdesc(parent, 0)) != NULL &&
 		       tmp->batPersistence == PERSISTENT)
 #endif
 			  ) &&
@@ -1768,14 +1753,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 (BATcheckhash(b)
 #ifndef DISABLE_PARENT_HASH
 		  || (parent != 0 &&
-		      BATcheckhash(BBPdescriptor(-parent)))
+		      BATcheckhash(BBPdescriptor(parent)))
 #endif
 			 ));
 	if (hash &&
 	    estimate == BUN_NONE &&
 	    !BATcheckhash(b)
 #ifndef DISABLE_PARENT_HASH
-	    && (parent == 0 || !BATcheckhash(BBPdescriptor(-parent)))
+	    && (parent == 0 || !BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
 		/* no exact result size, but we need estimate to choose
@@ -1830,7 +1815,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* limit estimation by upper limit */
 	estimate = MIN(estimate, maximum);
 
-	bn = BATnew(TYPE_void, TYPE_oid, estimate, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, estimate, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -1847,7 +1832,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		    !b->tvarsized &&
 		    (b->batPersistence == PERSISTENT ||
 		     (parent != 0 &&
-		      (tmp = BBPquickdesc(abs(parent),0)) != NULL &&
+		      (tmp = BBPquickdesc(parent, 0)) != NULL &&
 		      tmp->batPersistence == PERSISTENT))) {
 			/* use imprints if
 			 *   i) bat is persistent, or parent is persistent
@@ -2039,10 +2024,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	ll = l->hseqbase;
 	lh = ll + l->batCount;
 	if ((!sl || (sl && BATtdense(sl))) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(abs(VIEWtparent(l)), 0))))) {
+	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(-VIEWtparent(l), 0))))) {
 		use_orderidx = 1;
 		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
-			l = BBPdescriptor(abs(VIEWtparent(l)));
+			l = BBPdescriptor(-VIEWtparent(l));
 		}
 	}
 
@@ -2214,7 +2199,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	} else if ((BATcount(rl) > 2 ||
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
-		     (tmp = BBPquickdesc(abs(VIEWtparent(l)), 0)) != NULL &&
+		     (tmp = BBPquickdesc(-VIEWtparent(l), 0)) != NULL &&
 		     tmp->batPersistence == PERSISTENT) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {

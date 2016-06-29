@@ -33,13 +33,11 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batcalc.wkb", "the arguments must have dense and aligned heads");
 	}
-	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	//create a new BAT, aligned with input BAT
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -88,12 +86,10 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 		throw(MAL, "batgeom.wkbFromText", "the arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbFromText", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -143,12 +139,10 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 		throw(MAL, "batgeom.coordinateFromMBR", "the arguments must have dense and aligned heads");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -195,12 +189,10 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 		throw(MAL, name, "the arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -263,12 +255,10 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -325,12 +315,10 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -386,12 +374,10 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -471,12 +457,10 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -537,12 +521,10 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 		throw(MAL, name, "The arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, name, MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -603,12 +585,10 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		throw(MAL, "batgeom.wkbGetCoordinate", "The arguments must have dense and aligned heads");
 	}
 	//create a new for the output BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkbGetCoordinate", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -662,12 +642,10 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		goto clean;
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("mbr"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("mbr"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		ret = createException(MAL, "batgeom.wkbBox2D", "Error creating new BAT");
 		goto clean;
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);
@@ -722,12 +700,10 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		goto clean;
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		ret = createException(MAL, "batgeom.Contains", "Error creating new BAT");
 		goto clean;
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);
@@ -774,12 +750,10 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		throw(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.Contains", "Error creating new BAT");
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
@@ -821,12 +795,10 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 		throw(MAL, "batgeom.Contains", "The BAT must have dense head");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.Contains", "Error creating new BAT");
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
@@ -870,12 +842,10 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 		throw(MAL, "batgeom.wkb", "both arguments must have dense and aligned heads");
 	}
 	//create a new BAT
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.wkb", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//pointers to the first valid elements of the x and y BATS
 	inWKB = (wkb **) Tloc(inBAT, BUNfirst(inBAT));
@@ -936,12 +906,10 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		goto clean;
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(xBAT->hseqbase, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
 		ret = createException(MAL, "batgeom.wkbMakePoint", "Error creating new BAT");
 		goto clean;
 	}
-	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
-	BATseqbase(outBAT, xBAT->hseqbase);
 
 	//iterator over the BATs
 	xBAT_iter = bat_iterator(xBAT);
@@ -1008,12 +976,10 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 		throw(MAL, "batgeom.SetSRID", "The BAT must have dense head");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.SetSRID", "Error creating new BAT");
 	}
-	//set the first idx of the output BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
@@ -1062,12 +1028,10 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		goto clean;
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("dbl"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		ret = createException(MAL, "batgeom.Distance", "Error creating new BAT");
 		goto clean;
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);
@@ -1116,12 +1080,10 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		throw(MAL, "batgeom.Distance", "The BAT must have dense head");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.Distance", "Error creating new BAT");
 	}
-	//set the first idx of the output BAT equal to that of the aBAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -1183,19 +1145,16 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
 	}
 	//create two new BATs for the output
-	if ((aBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((aBATfiltered = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
-	if ((bBATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(bBAT), TRANSIENT)) == NULL) {
+	if ((bBATfiltered = COLnew(bBAT->hseqbase, ATOMindex("wkb"), BATcount(bBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the output BATs equal to that of the aBAT
-	BATseqbase(aBATfiltered, aBAT->hseqbase);
-	BATseqbase(bBATfiltered, bBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);
@@ -1265,12 +1224,10 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
 	}
 	//create the new BAT
-	if ((BATfiltered = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
+	if ((BATfiltered = COLnew(BAToriginal->hseqbase, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
 		BBPunfix(BAToriginal->batCacheid);
 		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the output BATs equal to that of the aBAT
-	BATseqbase(BATfiltered, BAToriginal->hseqbase);
 
 	//iterator over the BAT
 	BAToriginal_iter = bat_iterator(BAToriginal);
@@ -1353,12 +1310,10 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 		throw(MAL, "batgeom.mbr", "the arguments must have dense and aligned heads");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
 		throw(MAL, "batgeom.mbr", MAL_MALLOC_FAIL);
 	}
-	//set the first idx of the new BAT equal to that of the input BAT
-	BATseqbase(outBAT, inBAT->hseqbase);
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
@@ -1426,13 +1381,11 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		throw(MAL, "batgeom.MakeLine", "BATs must be aligned");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.MakeLine", "Error creating new BAT");
 	}
-	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);
@@ -1490,13 +1443,11 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		throw(MAL, "batgeom.Union", "BATs must be aligned");
 	}
 	//create a new BAT for the output
-	if ((outBAT = BATnew(TYPE_void, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
 		throw(MAL, "batgeom.Union", "Error creating new BAT");
 	}
-	//set the first idx of the new BAT equal to that of the x BAT (which is equal to the y BAT)
-	BATseqbase(outBAT, aBAT->hseqbase);
 
 	//iterator over the BATs
 	aBAT_iter = bat_iterator(aBAT);

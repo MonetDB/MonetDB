@@ -88,44 +88,70 @@ ALIGNcommit(BAT *b)
 void
 ALIGNsetH(BAT *b1, BAT *b2)
 {
+	if (b1 == NULL || b2 == NULL)
+		return;
+
+	assert(b1->htype == TYPE_void);
+	assert(b2->htype == TYPE_void);
+
+	if (b2->halign == 0) {
+		b2->halign = OIDnew(1);
+		b2->batDirtydesc = TRUE;
+	}
+	/* b2 is either dense or has a void(nil) tail */
+	BAThseqbase(b1, b2->hseqbase);
+	b1->halign = b2->halign;
+	b1->batDirtydesc = TRUE;
+
+	assert(b1->hkey & 1);
+	assert(b2->hkey & 1);
+	assert(b1->hsorted);
+	assert(b2->hsorted);
+	assert(b1->hrevsorted == (BATcount(b1) <= 1));
+	assert(b2->hrevsorted == (BATcount(b2) <= 1));
+}
+
+void
+ALIGNsetT(BAT *b1, BAT *b2)
+{
 	ssize_t diff;
 
 	if (b1 == NULL || b2 == NULL)
 		return;
 
 	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
-	if (b2->halign == 0) {
-		b2->halign = OIDnew(1);
+	if (b2->talign == 0) {
+		b2->talign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
 	}
-	if (BAThvoid(b2)) {
-		/* b2 is either dense or has a void(nil) head */
-		if (b1->htype != TYPE_void)
-			b1->hdense = TRUE;
-		else if (b2->hseqbase == oid_nil)
-			b1->H->nonil = FALSE;
-		BATseqbase(b1, b2->hseqbase);
-	} else if (b1->htype != TYPE_void) {
+	if (BATtvoid(b2)) {
+		/* b2 is either dense or has a void(nil) tail */
+		if (b1->ttype != TYPE_void)
+			b1->tdense = TRUE;
+		else if (b2->tseqbase == oid_nil)
+			b1->T->nonil = FALSE;
+		BATtseqbase(b1, b2->tseqbase);
+	} else if (b1->ttype != TYPE_void) {
 		/* b2 is not dense, so set b1 not dense */
-		b1->hdense = FALSE;
-		BATseqbase(b1, oid_nil);
-		b1->H->nonil = b2->H->nonil;
-	} else if (BAThkey(b2))
-		BATseqbase(b1, 0);
-	BATkey(b1, BAThkey(b2));
-	b1->hsorted = BAThordered(b2);
-	b1->hrevsorted = BAThrevordered(b2);
-	b1->halign = b2->halign;
+		b1->tdense = FALSE;
+		BATtseqbase(b1, oid_nil);
+		b1->T->nonil = b2->T->nonil;
+	} else if (BATtkey(b2))
+		BATtseqbase(b1, 0);
+	BATkey(b1, BATtkey(b2));
+	b1->tsorted = BATtordered(b2);
+	b1->trevsorted = BATtrevordered(b2);
+	b1->talign = b2->talign;
 	b1->batDirtydesc = TRUE;
-	b1->H->norevsorted = b2->H->norevsorted ? (BUN) (b2->H->norevsorted + diff) : 0;
-	if (b2->H->nokey[0] != b2->H->nokey[1]) {
-		b1->H->nokey[0] = (BUN) (b2->H->nokey[0] + diff);
-		b1->H->nokey[1] = (BUN) (b2->H->nokey[1] + diff);
+	b1->T->norevsorted = b2->T->norevsorted ? (BUN) (b2->T->norevsorted + diff) : 0;
+	if (b2->T->nokey[0] != b2->T->nokey[1]) {
+		b1->T->nokey[0] = (BUN) (b2->T->nokey[0] + diff);
+		b1->T->nokey[1] = (BUN) (b2->T->nokey[1] + diff);
 	} else {
-		b1->H->nokey[0] = b1->H->nokey[1] = 0;
+		b1->T->nokey[0] = b1->T->nokey[1] = 0;
 	}
-	b1->H->nosorted = b2->H->nosorted ? (BUN) (b2->H->nosorted + diff): 0;
-	b1->H->nodense = b2->H->nodense ? (BUN) (b2->H->nodense + diff) : 0;
+	b1->T->nosorted = b2->T->nosorted ? (BUN) (b2->T->nosorted + diff): 0;
+	b1->T->nodense = b2->T->nodense ? (BUN) (b2->T->nodense + diff) : 0;
 }
 
 /*
@@ -139,27 +165,12 @@ ALIGNsynced(BAT *b1, BAT *b2)
 	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
 	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
 
-	/* first try to prove head columns are not in sync */
-	if (BATcount(b1) != BATcount(b2))
-		return 0;
-	if (ATOMtype(BAThtype(b1)) != ATOMtype(BAThtype(b2)))
-		return 0;
-	if (BAThvoid(b1) && BAThvoid(b2))
-		return (b1->hseqbase == b2->hseqbase);
+	assert(b1->htype == TYPE_void);
+	assert(b2->htype == TYPE_void);
+	assert(b1->hseqbase != oid_nil);
+	assert(b2->hseqbase != oid_nil);
 
-	/* then try that they are */
-	if (b1->batCacheid == b2->batCacheid)
-		return 1;	/* same bat. trivial case */
-	if (BATcount(b1) == 0)
-		return 1;	/* empty bats of same type. trivial case */
-	if (b1->halign && b1->halign == b2->halign)
-		return 1;	/* columns marked as equal by algorithmics */
-	if (VIEWparentcol(b1) && ALIGNsynced(BBPcache(VIEWhparent(b1)), b2))
-		return 1;	/* view on same bat --- left recursive def.. */
-	if (VIEWparentcol(b2) && ALIGNsynced(b1, BBPcache(VIEWhparent(b2))))
-		return 1;	/* view on same bat --- right recursive def.. */
-
-	return 0;		/* we simply don't know */
+	return BATcount(b1) == BATcount(b2) && b1->hseqbase == b2->hseqbase;
 }
 
 /*
@@ -188,14 +199,14 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 
 	assert(b->htype == TYPE_void);
 
-	bs = BATcreatedesc(b->ttype, FALSE, TRANSIENT);
+	bs = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
 
-	tp = VIEWtparent(b);
+	tp = -VIEWtparent(b);
 	if ((tp == 0 && b->ttype != TYPE_void) || b->T->heap.copied)
-		tp = -b->batCacheid;
+		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
 	/* the H and T column descriptors are fully copied. We need
 	 * copies because in case of a mark, we are going to override
@@ -206,10 +217,6 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	bn->H->width = 0;
-	bn->H->shift = 0;
-	bn->hvarsized = 1;
-	BATseqbase(bn, seq);
 	*bn->T = *b->T;
 	if (bn->batFirst > 0) {
 		bn->T->heap.base += b->batFirst * b->T->width;
@@ -233,7 +240,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 
 	/* correct values after copy of head and tail info */
 	if (tp)
-		bn->T->heap.parentid = tp;
+		bn->T->heap.parentid = -tp;
 	BATinit_idents(bn);
 	/* Some bits must be copied individually. */
 	bn->batDirty = BATdirty(b);
@@ -247,8 +254,8 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->H->imprints = NULL;
 	bn->T->imprints = NULL;
 	/* Order OID index */
-	bn->H->orderidx = NULL;
-	bn->T->orderidx = NULL;
+	bn->horderidx = NULL;
+	bn->torderidx = NULL;
 	BBPcacheit(bs, 1);	/* enter in BBP */
 	return bn;
 }
@@ -273,7 +280,6 @@ BATmaterialize(BAT *b)
 	Heap tail;
 	BUN p, q;
 	oid t, *x;
-	bte hshift;
 
 	BATcheck(b, "BATmaterialize", GDK_FAIL);
 	assert(!isVIEW(b));
@@ -304,12 +310,7 @@ BATmaterialize(BAT *b)
 
 	/* point of no return */
 	b->ttype = tt;
-	hshift = b->H->shift;
 	BATsetdims(b);
-	if (b->htype) {
-		b->H->shift = hshift;	/* restore in case it got changed */
-		b->H->width = 1 << hshift;
-	}
 	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
 	b->T->heap.dirty = TRUE;
@@ -338,11 +339,12 @@ static void
 VIEWunlink(BAT *b)
 {
 	if (b) {
-		bat tp = VIEWtparent(b);
+		bat tp = -VIEWtparent(b);
 		bat vtp = VIEWvtparent(b);
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
 
+		assert(b->batCacheid > 0);
 		assert(b->htype == TYPE_void);
 		if (tp)
 			tpb = BBP_cache(tp);
@@ -356,20 +358,23 @@ VIEWunlink(BAT *b)
 
 		/* unlink heaps shared with parent */
 		assert(b->H->vheap == NULL);
+		assert(b->H->props == NULL);
+		assert(b->H->hash == NULL);
+		assert(b->H->imprints == NULL);
 		assert(b->T->vheap == NULL || b->T->vheap->parentid > 0);
-		if (b->T->vheap && b->T->vheap->parentid != abs(b->batCacheid))
+		if (b->T->vheap && b->T->vheap->parentid != b->batCacheid)
 			b->T->vheap = NULL;
 
 		/* unlink properties shared with parent */
-		if (tpb && b->T->props && b->T->props == tpb->H->props)
+		if (tpb && b->T->props && b->T->props == tpb->T->props)
 			b->T->props = NULL;
 
 		/* unlink hash accelerators shared with parent */
-		if (tpb && b->T->hash && b->T->hash == tpb->H->hash)
+		if (tpb && b->T->hash && b->T->hash == tpb->T->hash)
 			b->T->hash = NULL;
 
 		/* unlink imprints shared with parent */
-		if (tpb && b->T->imprints && b->T->imprints == tpb->H->imprints)
+		if (tpb && b->T->imprints && b->T->imprints == tpb->T->imprints)
 			b->T->imprints = NULL;
 	}
 }
@@ -389,11 +394,9 @@ VIEWreset(BAT *b)
 		return GDK_FAIL;
 	assert(b->htype == TYPE_void);
 	assert(b->batCacheid > 0);
-	tp = VIEWtparent(b);
+	tp = -VIEWtparent(b);
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
-		BAT *m;
-		BATstore *bs;
 		BUN cnt;
 		str nme;
 		size_t nmelen;
@@ -402,8 +405,6 @@ VIEWreset(BAT *b)
 		memset(&head, 0, sizeof(Heap));
 		memset(&tail, 0, sizeof(Heap));
 
-		m = BATmirror(b);
-		bs = BBP_desc(b->batCacheid);
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
 		nmelen = nme ? strlen(nme) : 0;
@@ -449,29 +450,24 @@ VIEWreset(BAT *b)
 			BBPunfix(tvp);
 		}
 
-		/* make sure everything points there */
-		m->S = b->S = &bs->S;
-		m->T = b->H = &bs->H;
-		m->H = b->T = &bs->T;
-
-		b->H->type = TYPE_void;
-		b->H->varsized = 1;
+		b->htype = TYPE_void;
+		b->hvarsized = 1;
 		b->H->shift = 0;
 		b->H->width = 0;
-		b->H->seq = v->H->seq;
+		b->hseqbase = v->hseqbase;
+		b->hkey = BOUND2BTRUE | 1;
 
-		b->T->type = v->T->type;
-		b->T->varsized = v->T->varsized;
+		b->ttype = v->ttype;
+		b->tvarsized = v->tvarsized;
 		b->T->shift = v->T->shift;
 		b->T->width = v->T->width;
-		b->T->seq = v->T->seq;
+		b->tseqbase = v->tseqbase;
 
 		b->T->heap.parentid = 0;
 		b->batRestricted = BAT_WRITE;
 
-		/* reset BOUND2KEY */
-		b->H->key = BAThkey(v);
-		b->T->key = BATtkey(v);
+		/* reset BOUND2BTRUE */
+		b->tkey = BATtkey(v);
 
 		/* copy the heaps */
 		b->H->heap = head;
@@ -485,7 +481,7 @@ VIEWreset(BAT *b)
 			b->T->vheap->parentid = b->batCacheid;
 		}
 
-		if (v->T->heap.parentid == -b->batCacheid) {
+		if (-v->T->heap.parentid == b->batCacheid) {
 			assert(tp == 0);
 			assert(b->batSharecnt > 0);
 			BBPunshare(b->batCacheid);
@@ -497,7 +493,6 @@ VIEWreset(BAT *b)
 		b->batDirty = 1;
 
 		/* reset BOUND2KEY */
-		b->hkey = BAThkey(v);
 		b->tkey = BATtkey(v);
 
 		/* make the BAT empty and insert all again */

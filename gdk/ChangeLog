@@ -1,6 +1,23 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Jun 28 2016 Sjoerd Mullender <sjoerd@acm.org>
+- BATs now only have a single (logical) name.
+- The function BATmirror is gone.  The HEAD column is always VOID (with
+  a non-nil seqbase) and the TAIL column carries the data.  All functions
+  that deal with data work on the TAIL column.
+
+* Mon Jun 27 2016 Sjoerd Mullender <sjoerd@acm.org>
+- BATkey now works on the TAIL column instead of the HEAD column.
+- Replaced BATseqbase with BAThseqbase and BATtseqbase, the former for
+  setting the seqbase on the HEAD, the latter for setting the seqbase
+  on the TAIL.
+
+* Fri Jun 24 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Replaced function BATnew with COLnew with slightly different arguments:
+  the first argument of COLnew is the SEQBASE of the head column (which
+  is always VOID).
+
 * Thu May 26 2016 Sjoerd Mullender <sjoerd@acm.org>
 - The "wrd" type has been removed from GDK and MAL.  The type was defined
   to be a 32 bit integer on 32 bit architectures and a 64 bit integer

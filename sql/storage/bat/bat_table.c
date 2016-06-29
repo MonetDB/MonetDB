@@ -16,21 +16,17 @@ _delta_cands(sql_trans *tr, sql_table *t)
 {
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
-	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 	size_t nr = store_funcs.count_col(tr, c, 1);
 
 	if (!tids)
 		return NULL;
-	tids->H->seq = 0;
-	tids->T->seq = 0;
+	tids->tseqbase = 0;
 	BATsetcount(tids, (BUN) nr);
-	tids->H->revsorted = 0;
-	tids->T->revsorted = 0;
+	tids->trevsorted = 0;
 
-	tids->T->key = 1;
-	tids->T->dense = 1;
-	tids->H->key = 1;
-	tids->H->dense = 1;
+	tids->tkey = 1;
+	tids->tdense = 1;
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d, *diff = NULL;
@@ -229,8 +225,12 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	void *res = NULL;
 
 	b = full_column(tr, c);
-	if (b)
-		q = BUNfnd(BATmirror(b), (ptr) &rid);
+	if (b) {
+		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
+			q = BUN_NONE;
+		else
+			q = rid - b->hseqbase + BUNfirst(b);
+	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;

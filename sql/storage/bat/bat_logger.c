@@ -17,21 +17,9 @@ logger *bat_logger_shared = NULL;
 static int
 bl_preversion( int oldversion, int newversion)
 {
-#define CATALOG_OCT2014 52100
-#define CATALOG_OCT2014SP3 52101
 #define CATALOG_JUL2015 52200
 
 	(void)newversion;
-	if (oldversion == CATALOG_OCT2014SP3) {
-		catalog_version = oldversion;
-		geomversion_set();
-		return 0;
-	}
-	if (oldversion == CATALOG_OCT2014) {
-		catalog_version = oldversion;
-		geomversion_set();
-		return 0;
-	}
 	if (oldversion == CATALOG_JUL2015) {
 		catalog_version = oldversion;
 		geomversion_set();
@@ -55,107 +43,6 @@ static void
 bl_postversion( void *lg) 
 {
 	(void)lg;
-	if (catalog_version <= CATALOG_OCT2014) {
-		BAT *te, *tn, *tne;
-		BATiter tei, tni;
-		char *s = "sys", n[64];
-		BUN p,q;
-
-		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
-		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_sqlname")));
-		if (!te || !tn)
-			return;
-		tei = bat_iterator(te);
-		tni = bat_iterator(tn);
-		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
-		if (!tne)
-			return;
-		BATseqbase(tne, te->hseqbase);
-		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
-			int eclass = *(int*)BUNtail(tei, p);
-			char *name = BUNtail(tni, p);
-
-			if (eclass == EC_POS)		/* old EC_NUM */
-				eclass = strcmp(name, "oid") == 0 ? EC_POS : EC_NUM;
-			else if (eclass == EC_NUM)	/* old EC_INTERVAL */
-				eclass = strcmp(name, "sec_interval") == 0 ? EC_SEC : EC_MONTH;
-			else if (eclass >= EC_MONTH)	/* old EC_DEC */
-				eclass += 2;
-			BUNappend(tne, &eclass, TRUE);
-		}
-		BATsetaccess(tne, BAT_READ);
-		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
-		bat_destroy(te);
-		bat_destroy(tn);
-	} else if (catalog_version == CATALOG_OCT2014SP3) {
-		BAT *te, *tn, *tne;
-		BATiter tei, tni;
-		char *s = "sys", n[64];
-		BUN p,q;
-
-		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
-		tn = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_sqlname")));
-		if (!te || !tn)
-			return;
-		tei = bat_iterator(te);
-		tni = bat_iterator(tn);
-		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
-		if (!tne)
-			return;
-		BATseqbase(tne, te->hseqbase);
-		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
-			int eclass = *(int*)BUNtail(tei, p);
-			char *name = BUNtail(tni, p);
-
-			if (eclass == EC_MONTH)		/* old EC_INTERVAL */
-				eclass = strcmp(name, "sec_interval") == 0 ? EC_SEC : EC_MONTH;
-			else if (eclass >= EC_SEC)	/* old EC_DEC */
-				eclass += 1;
-			BUNappend(tne, &eclass, TRUE);
-		}
-		BATsetaccess(tne, BAT_READ);
-		logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass"));
-		bat_destroy(te);
-		bat_destroy(tn);
-	}
-	if (catalog_version == CATALOG_OCT2014 ||
-	    catalog_version == CATALOG_OCT2014SP3) {
-		/* we need to replace tables.readonly by tables.access column */
-		BAT *b, *b1;
-		BATiter bi;
-		char *s = "sys", n[64];
-		BUN p,q;
-
-		while(s) {
-			b = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "_tables_readonly")));
-			if (!b)
-				return;
-			bi = bat_iterator(b);
-			b1 = BATnew(TYPE_void, TYPE_sht, BATcount(b), PERSISTENT);
-			if (!b1)
-				return;
-			BATseqbase(b1, b->hseqbase);
-
-			bi = bat_iterator(b);
-			for(p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
-				bit ro = *(bit*)BUNtail(bi, p);
-				sht access = 0;
-				if (ro)
-					access = TABLE_READONLY;
-				BUNappend(b1, &access, TRUE);
-			}
-			BATsetaccess(b1, BAT_READ);
-			logger_add_bat(lg, b1, N(n, NULL, s, "_tables_access"));
-			/* delete functions.sql */
-			logger_del_bat(lg, b->batCacheid);
-			bat_destroy(b);
-			bat_destroy(b1);
-			if (strcmp(s,"sys")==0)
-				s = "tmp";
-			else
-				s = NULL;
-		}
-	}
 
 	if (catalog_version <= CATALOG_JUL2015) {
 		BAT *b;
@@ -169,10 +56,9 @@ bl_postversion( void *lg)
 		if (te == NULL)
 			return;
 		bi = bat_iterator(te);
-		tne = BATnew(TYPE_void, TYPE_int, BATcount(te), PERSISTENT);
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-		BATseqbase(tne, te->hseqbase);
 		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(bi, p);
 
@@ -192,10 +78,9 @@ bl_postversion( void *lg)
 			return;
 		if (te->ttype == TYPE_bit) {
 			bi = bat_iterator(te);
-			tne = BATnew(TYPE_void, TYPE_bte, BATcount(te), PERSISTENT);
+			tne = COLnew(te->hseqbase, TYPE_bte, BATcount(te), PERSISTENT);
 			if (!tne)
 				return;
-			BATseqbase(tne, te->hseqbase);
 			for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
 				bte inout = (bte) *(bit*)BUNtail(bi, p);
 

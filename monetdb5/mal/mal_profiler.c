@@ -270,16 +270,16 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( isaBatType(tpe) ){
-					BAT *d= BATdescriptor( bid = abs(stk->stk[getArg(pci,j)].val.ival));
+					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
 					tname = getTypeName(getColumnType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
 						//if( isVIEW(d))
-							//bid = abs(VIEWtparent(d));
+							//bid = -VIEWtparent(d);
 						cnt = BATcount(d);
 						total += cnt * d->T->width;
-						total += heapinfo(d->T->vheap, abs(d->batCacheid)); 
-						total += hashinfo(d->T->hash, abs(d->batCacheid)); 
+						total += heapinfo(d->T->vheap, d->batCacheid); 
+						total += hashinfo(d->T->hash, d->batCacheid); 
 						total += IMPSimprintsize(d);
 						BBPunfix(d->batCacheid);
 					} 
@@ -699,13 +699,11 @@ TRACEcreate(const char *hnme, const char *tnme, int tt)
 		return b;
 	}
 
-	b = BATnew(TYPE_void, tt, 1 << 16, PERSISTENT);
+	b = COLnew(0, tt, 1 << 16, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 
 	BATmode(b, PERSISTENT);
-	BATseqbase(b, 0);
-	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	BATcommit(b);
 	return b;

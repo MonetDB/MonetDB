@@ -501,7 +501,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	bn = BATconstant(0, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -518,7 +518,6 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
-		BATseqbase(bn, min);
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
@@ -1106,7 +1105,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	bn = BATconstant(0, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -1123,7 +1122,6 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
-		BATseqbase(bn, min);
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
@@ -1428,7 +1426,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		break;
 	}
 	if (cntsp) {
-		if ((*cntsp = BATnew(TYPE_void, TYPE_lng, ngrp, TRANSIENT)) == NULL)
+		if ((*cntsp = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 		cnts = (lng *) Tloc(*cntsp, BUNfirst(*cntsp));
 		memset(cnts, 0, ngrp * sizeof(lng));
@@ -1438,7 +1436,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			goto alloc_fail;
 	}
 
-	bn = BATnew(TYPE_void, TYPE_dbl, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
 		goto alloc_fail;
 	dbls = (dbl *) Tloc(bn, BUNfirst(bn));
@@ -1488,7 +1486,6 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		GDKfree(cnts);
 	else {
 		BATsetcount(*cntsp, ngrp);
-		BATseqbase(*cntsp, min);
 		(*cntsp)->tkey = BATcount(*cntsp) <= 1;
 		(*cntsp)->tsorted = BATcount(*cntsp) <= 1;
 		(*cntsp)->trevsorted = BATcount(*cntsp) <= 1;
@@ -1496,7 +1493,6 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		(*cntsp)->T->nonil = 1;
 	}
 	BATsetcount(bn, ngrp);
-	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -1578,9 +1574,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 				/* 0 <= r < n (if n > 0) */		\
 				/* or if n == 0: a == 0; r == 0 */	\
 				if (cand) {				\
-					if (i < *cand - b->H->seq)	\
+					if (i < *cand - b->hseqbase)	\
 						continue;		\
-					assert(i == *cand - b->H->seq);	\
+					assert(i == *cand - b->hseqbase); \
 					if (++cand == candend)		\
 						end = i + 1;		\
 				}					\
@@ -1643,7 +1639,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 	src = Tloc(b, b->batFirst);
 
-	switch (b->T->type) {
+	switch (b->ttype) {
 	case TYPE_bte:
 		AVERAGE_TYPE(bte);
 		break;
@@ -1669,7 +1665,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 		break;
 	default:
 		GDKerror("BATcalcavg: average of type %s unsupported.\n",
-			 ATOMname(b->T->type));
+			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
 	if (vals)
@@ -1747,7 +1743,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
 	}
 
-	bn = BATnew(TYPE_void, TYPE_lng, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_lng, ngrp, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	cnts = (lng *) Tloc(bn, BUNfirst(bn));
@@ -1758,7 +1754,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	t = b->T->type;
+	t = b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
@@ -1817,7 +1813,6 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 		break;
 	}
 	BATsetcount(bn, ngrp);
-	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -1865,7 +1860,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
 	}
 
-	bn = BATnew(TYPE_void, TYPE_lng, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_lng, ngrp, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	cnts = (lng *) Tloc(bn, BUNfirst(bn));
@@ -1896,7 +1891,6 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		}
 	}
 	BATsetcount(bn, ngrp);
-	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -1988,7 +1982,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	if (cnt == 0)
 		return nils;
 
-	t = b->T->type;
+	t = b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
@@ -2113,7 +2107,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 	if (cnt == 0)
 		return nils;
 
-	t = b->T->type;
+	t = b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
@@ -2256,7 +2250,7 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_oid, &oid_nil, ngrp, TRANSIENT);
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_oid, ngrp, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
@@ -2271,7 +2265,6 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 
 	BATsetcount(bn, ngrp);
 
-	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -2295,7 +2288,7 @@ BATminmax(BAT *b, void *aggr,
 	if (!BAThdense(b))
 		return NULL;
 	if ((VIEWtparent(b) == 0 ||
-	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+	     BATcount(b) == BATcount(BBPdescriptor(-VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
 		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(-VIEWtparent(b))->T->imprints : b->T->imprints;
 		pos = oid_nil;
@@ -2440,7 +2433,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			/* singleton groups, so calculating quantile is
 			 * easy */
 			bn = COLcopy(b, b->ttype, 0, TRANSIENT);
-			BATseqbase(bn, g->tseqbase);
+			BAThseqbase(bn, g->tseqbase);
 			if (freeg)
 				BBPunfix(g->batCacheid);
 			return bn;
@@ -2461,7 +2454,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	if (t2)
 		BBPunfix(t2->batCacheid);
 
-	bn = BATnew(TYPE_void, b->ttype, ngrp, TRANSIENT);
+	bn = COLnew(g ? min : 0, b->ttype, ngrp, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -2510,7 +2503,6 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		while (BATcount(bn) < ngrp) {
 			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
 		}
-		BATseqbase(bn, min);
 	} else { /* quantiles for entire BAT b, EZ */
 
 		BUN index, r = 0, p = BATcount(b);
@@ -2522,7 +2514,6 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		index = BUNfirst(b) + (BUN) (r + (p-r-1) * quantile);
 		v = BUNtail(bi, index);
 		BUNappend(bn, v, FALSE);
-		BATseqbase(bn, 0);
 		nils += (*atomcmp)(v, nil) == 0;
 	}
 
@@ -2752,7 +2743,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	m2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
 	if (avgb) {
-		if ((*avgb = BATnew(TYPE_void, TYPE_dbl, ngrp, TRANSIENT)) == NULL) {
+		if ((*avgb = COLnew(0, TYPE_dbl, ngrp, TRANSIENT)) == NULL) {
 			mean = NULL;
 			goto alloc_fail;
 		}
@@ -2763,7 +2754,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	if (mean == NULL || delta == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
-	bn = BATnew(TYPE_void, TYPE_dbl, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
 		goto alloc_fail;
 	dbls = (dbl *) Tloc(bn, BUNfirst(bn));
@@ -2818,7 +2809,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	}
 	if (avgb) {
 		BATsetcount(*avgb, ngrp);
-		BATseqbase(*avgb, 0);
 		(*avgb)->tkey = ngrp <= 1;
 		(*avgb)->tsorted = ngrp <= 1;
 		(*avgb)->trevsorted = ngrp <= 1;
@@ -2832,7 +2822,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	GDKfree(m2);
 	GDKfree(cnts);
 	BATsetcount(bn, ngrp);
-	BATseqbase(bn, min);
 	bn->tkey = ngrp <= 1;
 	bn->tsorted = ngrp <= 1;
 	bn->trevsorted = ngrp <= 1;

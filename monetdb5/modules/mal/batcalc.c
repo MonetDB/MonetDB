@@ -347,7 +347,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BBPunfix(b2->batCacheid);
 		} else {
 			if (tp3 == TYPE_any)
-				tp3 = (*typefunc)(b->T->type, tp2);
+				tp3 = (*typefunc)(b->ttype, tp2);
 			bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], s,
 							 tp3, abort_on_error);
 		}
@@ -363,7 +363,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 		assert(BAThdense(b));
 		if (tp3 == TYPE_any)
-			tp3 = (*typefunc)(tp1, b->T->type);
+			tp3 = (*typefunc)(tp1, b->ttype);
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s, tp3, abort_on_error);
 	}
 	BBPunfix(b->batCacheid);

@@ -1210,36 +1210,28 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	JSON *jt = JSONparse(*js, FALSE);
 
 	CHECK_JSON(jt);
-	bk = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL) {
 		JSONfree(jt);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bk, 0);
-	bk->hsorted = 1;
-	bk->hrevsorted = 0;
-	bk->H->nonil = 1;
 	bk->tsorted = 1;
 	bk->trevsorted = 0;
 	bk->T->nonil = 1;
 
 	if (od) {
-		bo = BATnew(TYPE_void, TYPE_oid, 64, TRANSIENT);
+		bo = COLnew(0, TYPE_oid, 64, TRANSIENT);
 		if (bo == NULL) {
 			BBPunfix(bk->batCacheid);
 			JSONfree(jt);
 			throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(bo, 0);
-		bo->hsorted = 1;
-		bo->hrevsorted = 0;
-		bo->H->nonil = 1;
 		bo->tsorted = 1;
 		bo->trevsorted = 0;
 		bo->T->nonil = 1;
 	}
 
-	bv = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
+	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bv == NULL) {
 		JSONfree(jt);
 		if (od)
@@ -1247,10 +1239,6 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPunfix(bk->batCacheid);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bv, 0);
-	bv->hsorted = 1;
-	bv->hrevsorted = 0;
-	bv->H->nonil = 1;
 	bv->tsorted = 1;
 	bv->trevsorted = 0;
 	bv->T->nonil = 1;
@@ -1279,13 +1267,9 @@ JSONkeyTable(bat *ret, json *js)
 
 	jt = JSONparse(*js, FALSE);	// already validated
 	CHECK_JSON(jt);
-	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
-	BATseqbase(bn, 0);
-	bn->hsorted = 1;
-	bn->hrevsorted = 0;
-	bn->H->nonil = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
 	bn->T->nonil = 1;
@@ -1341,13 +1325,9 @@ JSONvalueTable(bat *ret, json *js)
 
 	jt = JSONparse(*js, FALSE);	// already validated
 	CHECK_JSON(jt);
-	bn = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
+	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.values", MAL_MALLOC_FAIL);
-	BATseqbase(bn, 0);
-	bn->hsorted = 1;
-	bn->hrevsorted = 0;
-	bn->H->nonil = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
 	bn->T->nonil = 1;
@@ -1932,7 +1912,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	buflen = 0;
-	bn = BATnew(TYPE_void, TYPE_str, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_str, ngrp, TRANSIENT);
 	if (bn == NULL) {
 		err = MAL_MALLOC_FAIL;
 		goto out;
@@ -2015,12 +1995,11 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 				buflen = 0;
 			}
-			BATseqbase(bn, min);
 			bn->T->nil = nils != 0;
 			bn->T->nonil = nils == 0;
-			bn->T->sorted = BATcount(bn) <= 1;
-			bn->T->revsorted = BATcount(bn) <= 1;
-			bn->T->key = BATcount(bn) <= 1;
+			bn->tsorted = BATcount(bn) <= 1;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = BATcount(bn) <= 1;
 			goto out;
 		}
 		grps = (const oid *) Tloc(g, BUNfirst(g));
@@ -2160,12 +2139,11 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
-	BATseqbase(bn, min);
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-	bn->T->sorted = BATcount(bn) <= 1;
-	bn->T->revsorted = BATcount(bn) <= 1;
-	bn->T->key = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tkey = BATcount(bn) <= 1;
 
       out:
 	if (t2)

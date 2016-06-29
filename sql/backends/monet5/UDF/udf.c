@@ -87,11 +87,10 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	}
 
 	/* allocate void-headed result BAT */
-	bn = BATnew(TYPE_void, TYPE_str, BATcount(src), TRANSIENT);
+	bn = COLnew(src->hseqbase, TYPE_str, BATcount(src), TRANSIENT);
 	if (bn == NULL) {
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, src->hseqbase);
 
 	/* create BAT iterator */
 	li = bat_iterator(src);
@@ -237,17 +236,17 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 	/* allocate result BAT */
 	switch (bone->ttype) {
 	case TYPE_bte:
-		bres = BATnew(TYPE_void, TYPE_sht, n, TRANSIENT);
+		bres = COLnew(bone->hseqbase, TYPE_sht, n, TRANSIENT);
 		break;
 	case TYPE_sht:
-		bres = BATnew(TYPE_void, TYPE_int, n, TRANSIENT);
+		bres = COLnew(bone->hseqbase, TYPE_int, n, TRANSIENT);
 		break;
 	case TYPE_int:
-		bres = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+		bres = COLnew(bone->hseqbase, TYPE_lng, n, TRANSIENT);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_lng:
-		bres = BATnew(TYPE_void, TYPE_hge, n, TRANSIENT);
+		bres = COLnew(bone->hseqbase, TYPE_hge, n, TRANSIENT);
 		break;
 #endif
 	default:
@@ -297,13 +296,6 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		/* set number of tuples in result BAT */
 		BATsetcount(bres, n);
 
-		/* set result properties */
-		bres->hdense = TRUE;              /* result head is dense */
-		BATseqbase(bres, bone->hseqbase); /* result head has same seqbase as input */
-		bres->hsorted = 1;                /* result head is sorted */
-		bres->hrevsorted = (BATcount(bres) <= 1);
-		BATkey(bres, TRUE);               /* result head is key (unique) */
-
 		/* Result tail is sorted, if the left/first input tail is
 		 * sorted and key (unique), or if the left/first input tail is
 		 * sorted and the second/right input tail is sorted and the
@@ -321,7 +313,7 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		else
 			bres->trevsorted = (BATcount(bres) <= 1);
 		/* result tail is key (unique), iff both input tails are */
-		BATkey(BATmirror(bres), BATtkey(bone) || BATtkey(btwo));
+		BATkey(bres, BATtkey(bone) || BATtkey(btwo));
 
 		*ret = bres;
 	}

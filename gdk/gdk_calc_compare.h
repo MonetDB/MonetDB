@@ -546,7 +546,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	BUN nils = 0;
 	TPE *restrict dst;
 
-	bn = BATnew(TYPE_void, TYPE_TPE, cnt, TRANSIENT);
+	bn = COLnew(seqbase, TYPE_TPE, cnt, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -563,11 +563,10 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	}
 
 	BATsetcount(bn, cnt);
-	BATseqbase(bn, seqbase);
 
-	bn->T->sorted = cnt <= 1 || nils == cnt;
-	bn->T->revsorted = cnt <= 1 || nils == cnt;
-	bn->T->key = cnt <= 1;
+	bn->tsorted = cnt <= 1 || nils == cnt;
+	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tkey = cnt <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
@@ -592,23 +591,23 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 	if (BATtvoid(b1) && BATtvoid(b2) && cand == NULL) {
 		TPE res;
 
-		if (b1->T->seq == oid_nil || b2->T->seq == oid_nil)
+		if (b1->tseqbase == oid_nil || b2->tseqbase == oid_nil)
 			res = TPE_nil;
 		else
-			res = OP(b1->T->seq, b2->T->seq);
+			res = OP(b1->tseqbase, b2->tseqbase);
 
 		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
 	}
 
-	bn = BATcalcop_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->batFirst), ATOMbasetype(b1->T->type), 1,
+	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, b1->batFirst), ATOMbasetype(b1->ttype), 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
-			      b2->T->type == TYPE_void ? (void *) &b2->T->seq : (void *) Tloc(b2, b2->batFirst), ATOMbasetype(b2->T->type), 1,
+			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, b2->batFirst), ATOMbasetype(b2->ttype), 1,
 			      b2->T->vheap ? b2->T->vheap->base : NULL,
 			      b2->T->width,
 			      cnt, start, end, cand, candend, b1->hseqbase,
 			      cand == NULL && b1->T->nonil && b2->T->nonil,
-			      b1->H->seq, __func__);
+			      b1->hseqbase, __func__);
 
 	return bn;
 }
@@ -627,14 +626,14 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(Tloc(b, b->batFirst), ATOMbasetype(b->T->type), 1,
+	bn = BATcalcop_intern(Tloc(b, b->batFirst), ATOMbasetype(b->ttype), 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      VALptr(v), ATOMbasetype(v->vtype), 0,
 			      NULL, 0,
 			      cnt, start, end, cand, candend, b->hseqbase,
 			      cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->H->seq, __func__);
+			      b->hseqbase, __func__);
 
 	return bn;
 }
@@ -655,12 +654,12 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	bn = BATcalcop_intern(VALptr(v), ATOMbasetype(v->vtype), 0,
 			      NULL, 0,
-			      Tloc(b, b->batFirst), ATOMbasetype(b->T->type), 1,
+			      Tloc(b, b->batFirst), ATOMbasetype(b->ttype), 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      cnt, start, end, cand, candend, b->hseqbase,
 			      cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->H->seq, __func__);
+			      b->hseqbase, __func__);
 
 	return bn;
 }

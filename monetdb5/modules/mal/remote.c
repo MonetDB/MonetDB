@@ -75,10 +75,9 @@ static unsigned char localtype = 0177;
 static inline str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
 
-#define newColumn(Var,Type,sz,Tag)							\
-	Var = BATnew(TYPE_void, Type, sz, TRANSIENT);		\
-	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);	\
-	BATseqbase(Var,0);
+#define newColumn(Var,Type,sz,Tag)						\
+	Var = COLnew(0, Type, sz, TRANSIENT);				\
+	if ( Var == NULL) throw(MAL,Tag,MAL_MALLOC_FAIL);
 
 /**
  * Returns a BAT with valid redirects for the given pattern.  If
@@ -1016,7 +1015,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid = *getArgReference_bat(stk, pci, 1);
-	BAT *b = BBPquickdesc(abs(bid), FALSE);
+	BAT *b = BBPquickdesc(bid, FALSE);
 	char sendtheap = 0;
 
 	(void)mb;
@@ -1025,10 +1024,6 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
-
-	/* mirror when argument is mirrored */
-	if (bid < 0)
-		b = BATmirror(b);
 
 	BBPfix(bid);
 
@@ -1222,10 +1217,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	/* set properties */
-	b->hseqbase = bb.Hseqbase;
 	b->tseqbase = bb.Tseqbase;
-	b->hsorted = bb.Hsorted;
-	b->hrevsorted = bb.Hrevsorted;
 	b->tsorted = bb.Tsorted;
 	b->trevsorted = bb.Trevsorted;
 	b->tkey = bb.Tkey;
