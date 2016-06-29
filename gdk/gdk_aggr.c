@@ -70,16 +70,14 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
-	if (b == NULL || !BAThdense(b))
-		return "b must be dense-headed";
+	if (b == NULL)
+		return "b must exist";
 	if (g) {
-		if (!BAThdense(g) || BATcount(b) != BATcount(g) ||
+		if (BATcount(b) != BATcount(g) ||
 		    (BATcount(b) != 0 && b->hseqbase != g->hseqbase))
 			return "b and g must be aligned";
 		assert(BATttype(g) == TYPE_oid);
 	}
-	if (e != NULL && !BAThdense(e))
-		return "e must be dense-headed";
 	if (g == NULL) {
 		min = 0;
 		max = 0;
@@ -2285,8 +2283,6 @@ BATminmax(BAT *b, void *aggr,
 	int needdecref = 0;
 	BATiter bi;
 
-	if (!BAThdense(b))
-		return NULL;
 	if ((VIEWtparent(b) == 0 ||
 	     BATcount(b) == BATcount(BBPdescriptor(-VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {

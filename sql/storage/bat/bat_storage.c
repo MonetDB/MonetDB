@@ -497,14 +497,12 @@ delta_append_bat( sql_delta *bat, BAT *i )
 	int id = i->batCacheid;
 	BAT *b;
 #ifndef NDEBUG
-	BAT *c = BBPquickdesc(bat->bid, 0); 
-	assert(!c || c->htype == TYPE_void);
+	BAT *c = BBPquickdesc(bat->bid, 0);
 #endif
 
 	if (!BATcount(i))
 		return LOG_OK;
 	b = temp_descriptor(bat->ibid);
-	assert(b->htype == TYPE_void);
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
@@ -545,10 +543,8 @@ delta_append_val( sql_delta *bat, void *i )
 	BAT *b = temp_descriptor(bat->ibid);
 #ifndef NDEBUG
 	BAT *c = BBPquickdesc(bat->bid, 0);
-	assert(!c || c->htype == TYPE_void);
 #endif
 
-	assert(b->htype == TYPE_void);
 	if (bat->cached) {
 		bat_destroy(bat->cached);
 		bat->cached = NULL;

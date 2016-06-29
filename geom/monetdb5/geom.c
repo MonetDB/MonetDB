@@ -3547,11 +3547,6 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
 		throw(MAL, "geom.MakeLine", RUNTIME_OBJECT_MISSING);
 	}
-	//check if the BATs are dense and aligned
-	if (!BAThdense(inBAT)) {
-		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "geom.MakeLine", "BATs must have dense heads");
-	}
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 
@@ -4503,7 +4498,6 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	if (!(inBAT = BATdescriptor(*inBAT_id))) {
 		throw(MAL, "geom.Union", "Problem retrieving BATs");
 	}
-
     /*TODO: We need a better way to handle the cases where the BAT was created, but it has zero elements*/
     if (!BATcount(inBAT)) {
 		BBPunfix(inBAT->batCacheid);
@@ -6190,7 +6184,7 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Check BATs alignment */
-	if (bpx->htype != TYPE_void || bpy->htype != TYPE_void || bpx->hseqbase != bpy->hseqbase || BATcount(bpx) != BATcount(bpy)) {
+	if (bpx->hseqbase != bpy->hseqbase || BATcount(bpx) != BATcount(bpy)) {
 		BBPunfix(bpx->batCacheid);
 		BBPunfix(bpy->batCacheid);
 		throw(MAL, "geom.point", "both point bats must have dense and aligned heads");
@@ -6253,7 +6247,7 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Check BATs alignment */
-	if (bpx->htype != TYPE_void || bpy->htype != TYPE_void || bpx->hseqbase != bpy->hseqbase || BATcount(bpx) != BATcount(bpy)) {
+	if (bpx->hseqbase != bpy->hseqbase || BATcount(bpx) != BATcount(bpy)) {
 		BBPunfix(bpx->batCacheid);
 		BBPunfix(bpy->batCacheid);
 		throw(MAL, "geom.point", "both point bats must have dense and aligned heads");

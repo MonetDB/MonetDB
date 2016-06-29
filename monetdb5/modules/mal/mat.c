@@ -120,9 +120,8 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		BATtseqbase(bn, b->tseqbase);
 		BATappend(bn,b,FALSE);
-		assert(!bn->H->nil || !bn->H->nonil);
 		assert(!bn->T->nil || !bn->T->nonil);
-		bn->halign = (pieces-1);
+		bn->talign = (pieces-1); /* misuse talign field */
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
 	} else {
@@ -135,10 +134,9 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			BATappend(b,bb,FALSE);
 		}
-		b->halign--;
-		if(b->halign == 0)
+		b->talign--;
+		if(b->talign == 0)
 			BATsetaccess(b, BAT_READ);
-		assert(!b->H->nil || !b->H->nonil);
 		assert(!b->T->nil || !b->T->nonil);
 		BBPkeepref(*ret = b->batCacheid);
 		if( bb) 

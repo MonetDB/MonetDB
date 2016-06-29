@@ -558,7 +558,6 @@ LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 	assert(b->ttype == TYPE_lng);
-	assert(BAThdense(b));
 	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);

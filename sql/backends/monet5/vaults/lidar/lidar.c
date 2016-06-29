@@ -16,7 +16,6 @@
 #include <glob.h>
 
 /* clash with GDK? */
-// #undef htype
 // #undef ttype
 
 #include <liblas/capi/liblas.h>

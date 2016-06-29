@@ -35,14 +35,12 @@ BATcommit(BAT *b)
 {
 	if (b == NULL)
 		return;
-	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "\n",
 			   BATgetId(b),
-			   b->H->heap.free,
 			   b->T->heap.free,
 			   b->batInserted,
 			   b->batDeleted,
 			   b->batFirst,
-			   PTRFMTCAST b->H->heap.base,
 			   PTRFMTCAST b->T->heap.base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
@@ -51,8 +49,6 @@ BATcommit(BAT *b)
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 		BUN p, q;
 
-		assert(BATatoms[b->htype].atomUnfix == NULL);
-		assert(BATatoms[b->htype].atomDel == NULL);
 		if (tatmdel || tunfix) {
 			DELloop(b, p, q) {
 				ptr t = BUNtail(bi, p);
@@ -74,14 +70,12 @@ BATcommit(BAT *b)
 	}
 	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "\n",
 			   BATgetId(b),
-			   b->H->heap.free,
 			   b->T->heap.free,
 			   b->batInserted,
 			   b->batDeleted,
 			   b->batFirst,
-			   PTRFMTCAST b->H->heap.base,
 			   PTRFMTCAST b->T->heap.base);
 }
 
@@ -95,7 +89,7 @@ BATfakeCommit(BAT *b)
 	if (b) {
 		BATcommit(b);
 		b->batDirty = 0;
-		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 0;
+		b->batDirtydesc = b->T->heap.dirty = 0;
 		if (b->T->vheap)
 			b->T->vheap->dirty = 0;
 	}
@@ -116,7 +110,6 @@ BATundo(BAT *b)
 	if (b == NULL)
 		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
-	assert(b->htype == TYPE_void);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->T->heap.dirty = 1;
 	} else {
@@ -132,7 +125,6 @@ BATundo(BAT *b)
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		assert(b->H->hash == NULL);
 		if (tunfix || tatmdel || b->T->hash) {
 			HASHdestroy(b);
 			for (p = bunfirst; p <= bunlast; p++, i++) {

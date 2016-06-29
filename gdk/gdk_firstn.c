@@ -1145,10 +1145,6 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 		return GDK_SUCCEED;
 	}
 
-	/* all BATs must be dense-headed */
-	assert(BAThdense(b));
-	assert(s == NULL || BAThdense(s));
-	assert(g == NULL || BAThdense(g));
 	/* if g specified, then so must s */
 	assert(g == NULL || s != NULL);
 	/* g and s must be aligned (same size, same hseqbase) */

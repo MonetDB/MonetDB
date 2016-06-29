@@ -313,7 +313,6 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heap(1,&c->H->heap,hbuns,"hbuns");
 		heap(1,&c->T->heap,tbuns,"tbuns");
 		heap(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
 		heap(c->T->vheap,c->T->vheap,tail,"tail");
@@ -409,7 +408,6 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heapvm(1,&c->H->heap,hbuns,"hcuns");
 		heapvm(1,&c->T->heap,tbuns,"tcuns");
 		heapvm(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
 		heapvm(c->T->vheap,c->T->vheap,tail,"tail");

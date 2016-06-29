@@ -21,7 +21,7 @@
  * The hash mask size is a power of two, so we can do bitwise AND on
  * the hash (integer) number to quickly find the head of the bucket
  * chain.  Clearly, the hash mask size is a crucial parameter. If we
- * know that the column is unique (hkey), we use direct hashing (mask
+ * know that the column is unique (tkey), we use direct hashing (mask
  * size ~= BATcount). Otherwise we dynamically determine the mask size
  * by starting out with mask size = BATcount/64 (just 1.5% of memory
  * storage overhead). Then we start building the hash table on the

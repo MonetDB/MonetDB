@@ -131,7 +131,6 @@ gsl_bat_chisqprob_bat(bat * retval, bat chi2, bat datapoints)
 	if( (c = BATdescriptor(datapoints)) == NULL) {
 		throw(MAL, "chisqprob", "Cannot access descriptor datapoints");
 	}
-	assert(b->htype == TYPE_void);
 	bn = COLnew(b->hseqbase, TYPE_dbl, cnt = BATcount(b), TRANSIENT);
 	if( bn == NULL) {
 		BBPunfix(b->batCacheid);

@@ -93,15 +93,13 @@ Ready.
 [ 61@0,	"save",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCsetImprints;"	]
 [ 62@0,	"setAccess",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCsetHash;"	]
 [ 63@0,	"setColumn",	"command",	"bat",	"(nme:str):bit ",	"BKCsave;"	]
-[ 64@0,	"setColumn",	"command",	"bat",	"(nme:bat[:any_1]):void ",	"BKCsave2;"	]
-[ 65@0,	"setHash",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetPersistent;"	]
-[ 66@0,	"setImprints",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetTransient;"	]
-[ 67@0,	"setKey",	"command",	"bat",	"(b:bat[:any_1],h:str,t:str):void ",	"BKCsetColumns;"	]
-[ 68@0,	"setName",	"command",	"bat",	"(b:bat[:any_1],t:str):void ",	"BKCsetColumn;"	]
-[ 69@0,	"setPersistent",	"command",	"bat",	"(b:bat[:any_1],h:str,t:str):void ",	"BKCsetRole;"	]
-[ 70@0,	"setRole",	"command",	"bat",	"(b:bat[:any_1],s:str):void ",	"BKCsetName;"	]
-[ 71@0,	"setTransient",	"command",	"bat",	"(b:bat[:any_1],mode:str):bat[:any_1] ",	"BKCsetAccess;"	]
-[ 72@0,	"single",	"command",	"bat",	"(b:bat[:any_1],mode:bit):bat[:any_1] ",	"BKCsetkey;"	]
+[ 64@0,	"setHash",	"command",	"bat",	"(nme:bat[:any_1]):void ",	"BKCsave2;"	]
+[ 65@0,	"setImprints",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetPersistent;"	]
+[ 66@0,	"setKey",	"command",	"bat",	"(b:bat[:any_1]):void ",	"BKCsetTransient;"	]
+[ 67@0,	"setName",	"command",	"bat",	"(b:bat[:any_1],t:str):void ",	"BKCsetColumn;"	]
+[ 68@0,	"setPersistent",	"command",	"bat",	"(b:bat[:any_1],s:str):void ",	"BKCsetName;"	]
+[ 69@0,	"setTransient",	"command",	"bat",	"(b:bat[:any_1],mode:str):bat[:any_1] ",	"BKCsetAccess;"	]
+[ 70@0,	"single",	"command",	"bat",	"(b:bat[:any_1],mode:bit):bat[:any_1] ",	"BKCsetkey;"	]
 
 # 08:55:30 >  
 # 08:55:30 >  Done.

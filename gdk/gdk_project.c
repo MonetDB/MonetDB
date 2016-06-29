@@ -204,8 +204,6 @@ BATproject(BAT *l, BAT *r)
 			  r->trevsorted ? "-revsorted" : "",
 			  r->tkey & 1 ? "-key" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
 	if (BATtdense(l) && BATcount(l) > 0) {
@@ -224,7 +222,6 @@ BATproject(BAT *l, BAT *r)
 				  bn->tsorted ? "-sorted" : "",
 				  bn->trevsorted ? "-revsorted" : "",
 				  bn->tkey & 1 ? "-key" : "");
-		assert(bn->htype == TYPE_void);
 		return bn;
 	}
 	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
@@ -452,7 +449,6 @@ BATprojectchain(BAT **bats)
 	tseq = oid_nil;		/* initialize, but overwritten before use */
 	off = 0;		/* this will be the BUN offset into last BAT */
 	for (i = n = 0; b != NULL; n++, i++) {
-		assert(BAThdense(b));
 		if (!b->T->nonil)
 			nonil = 0; /* not guaranteed without nils */
 		if (!allnil) {

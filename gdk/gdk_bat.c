@@ -62,7 +62,6 @@ default_ident(char *s)
 void
 BATinit_idents(BAT *bn)
 {
-	bn->hident = BATstring_h;
 	bn->tident = BATstring_t;
 }
 
@@ -87,7 +86,6 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * assert needed in the kernel to get symbol eprintf resolved.
 	 * Else modules using assert fail to load.
 	 */
-	bs->B.H = &bs->H;
 	bs->B.T = &bs->T;
 	bs->B.S = &bs->S;
 
@@ -96,18 +94,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	/*
 	 * Fill in basic column info
 	 */
-	bn->htype = TYPE_void;
-	bn->H->width = 0;
-	bn->H->shift = 0;
-	bn->hvarsized = 1;
 	bn->hseqbase = hseq;
-	bn->hkey = TRUE | BOUND2BTRUE;
-	bn->H->nonil = TRUE;
-	bn->H->nil = FALSE;
-	bn->hsorted = bn->hrevsorted = 1;
-	bn->hident = BATstring_h;
-	bn->halign = OIDnew(2);
-	bn->H->props = NULL;
 
 	bn->ttype = tt;
 	bn->tkey = FALSE;
@@ -115,7 +102,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->T->nil = FALSE;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 	bn->tident = BATstring_t;
-	bn->talign = bn->halign + 1;
+	bn->talign = OIDnew(1);
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->T->props = NULL;
 
@@ -129,15 +116,12 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
  	* Default zero for order oid index
  	*/
 	bn->torderidx = 0;
-	bn->horderidx = 0;
 	/*
 	 * fill in heap names, so HEAPallocs can resort to disk for
 	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
-	bn->H->heap.filename = NULL;
 	bn->T->heap.filename = NULL;
-	bn->H->heap.farmid = BBPselectfarm(role, bn->htype, offheap);
 	bn->T->heap.farmid = BBPselectfarm(role, bn->ttype, offheap);
 	if (heapnames) {
 		const char *nme = BBP_physical(bn->batCacheid);
@@ -185,8 +169,6 @@ ATOMelmshift(int sz)
 void
 BATsetdims(BAT *b)
 {
-	assert(b->htype == TYPE_void);
-
 	b->T->width = b->ttype == TYPE_str ? 1 : ATOMsize(b->ttype);
 	b->T->shift = ATOMelmshift(Tsize(b));
 	assert_shift_width(b->T->shift, b->T->width);
@@ -390,7 +372,6 @@ BATextend(BAT *b, BUN newcap)
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, "BATextend", GDK_FAIL);
-	assert(b->htype == TYPE_void);
 	/*
 	 * The main issue is to properly predict the new BAT size.
 	 * storage overflow. The assumption taken is that capacity
@@ -436,7 +417,6 @@ BATclear(BAT *b, int force)
 	BUN p, q;
 
 	BATcheck(b, "BATclear", GDK_FAIL);
-	assert(b->htype == TYPE_void);
 
 	/* kill all search accelerators */
 	HASHdestroy(b);
@@ -489,8 +469,6 @@ BATclear(BAT *b, int force)
 	BATtseqbase(b, 0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
-	b->H->nosorted = b->H->norevsorted = b->H->nodense = 0;
-	b->H->nokey[0] = b->H->nokey[1] = 0;
 	b->T->nosorted = b->T->norevsorted = b->T->nodense = 0;
 	b->T->nokey[0] = b->T->nokey[1] = 0;
 	return GDK_SUCCEED;
@@ -505,21 +483,15 @@ BATfree(BAT *b)
 
 	/* deallocate all memory for a bat */
 	assert(b->batCacheid > 0);
-	if (b->hident && !default_ident(b->hident))
-		GDKfree(b->hident);
-	b->hident = BATstring_h;
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	assert(b->H->props == NULL);
 	if (b->T->props)
 		PROPdestroy(b->T->props);
 	b->T->props = NULL;
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
-	assert(b->H->heap.base == NULL);
-	assert(b->H->vheap == NULL);
 	if (b->ttype)
 		HEAPfree(&b->T->heap, 0);
 	else
@@ -534,14 +506,9 @@ BATfree(BAT *b)
 void
 BATdestroy( BATstore *bs )
 {
-	if (bs->H.id && !default_ident(bs->H.id))
-		GDKfree(bs->H.id);
-	bs->H.id = BATstring_h;
 	if (bs->T.id && !default_ident(bs->T.id))
 		GDKfree(bs->T.id);
 	bs->T.id = BATstring_t;
-	assert(bs->H.vheap == NULL);
-	assert(bs->H.props == NULL);
 	if (bs->T.vheap)
 		GDKfree(bs->T.vheap);
 	if (bs->T.props)
@@ -666,7 +633,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		if (bn == NULL)
 			return NULL;
 		if (tt != bn->ttype) {
-			assert(bn->H != bn->T);
 			bn->ttype = tt;
 			bn->tvarsized = ATOMvarsized(tt);
 			bn->tseqbase = b->tseqbase;
@@ -674,8 +640,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting bunstocopy != BUN_NONE) */
-		if (ATOMsize(b->htype) != 0 ||
-		    ATOMsize(tt) != ATOMsize(b->ttype)) {
+		if (ATOMsize(tt) != ATOMsize(b->ttype)) {
 			/* oops, void materialization */
 			bunstocopy = cnt;
 		} else if (BATatoms[tt].atomFix) {
@@ -705,14 +670,12 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		if (tt == TYPE_void) {
 			/* case (2): a void,void result => nothing to
 			 * copy! */
-			bn->H->heap.free = 0;
 			bn->T->heap.free = 0;
 		} else if (bunstocopy == BUN_NONE) {
 			/* case (3): just copy the heaps; if possible
 			 * with copy-on-write VM support */
 			Heap bthp, thp;
 
-			assert(b->htype == TYPE_void);
 			memset(&bthp, 0, sizeof(Heap));
 			memset(&thp, 0, sizeof(Heap));
 
@@ -757,7 +720,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			oid cur = b->tseqbase, *dst = (oid *) bn->T->heap.base;
 			oid inc = (cur != oid_nil);
 
-			bn->H->heap.free = 0;
 			bn->T->heap.free = bunstocopy * sizeof(oid);
 			bn->T->heap.dirty |= bunstocopy > 0;
 			while (bunstocopy--) {
@@ -768,7 +730,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			/* case (4): optimized for simple array copy */
 			BUN p = BUNfirst(b);
 
-			bn->H->heap.free = 0;
 			bn->T->heap.free = bunstocopy * Tsize(bn);
 			bn->T->heap.dirty |= bunstocopy > 0;
 			memcpy(Tloc(bn, 0), Tloc(b, p), bn->T->heap.free);
@@ -978,7 +939,6 @@ BUNappend(BAT *b, const void *t, bit force)
 	size_t tsize = 0;
 
 	BATcheck(b, "BUNappend", GDK_FAIL);
-	assert(b->htype == TYPE_void);
 
 	assert(!isVIEW(b));
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(b, t) != BUN_NONE) {
@@ -1010,7 +970,6 @@ BUNappend(BAT *b, const void *t, bit force)
 		return GDK_FAIL;
 	}
 
-	b->hrevsorted = b->batCount == 0; /* count before append */
 	setcolprops(b, b->T, t);
 
 	if (b->ttype != TYPE_void) {
@@ -1042,7 +1001,6 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator(b);
 
-	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
 		/* value already not there */
@@ -1338,13 +1296,7 @@ void
 BATsetcount(BAT *b, BUN cnt)
 {
 	/* head column is always VOID, and some head properties never change */
-	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
-	assert(b->hsorted);
-	assert(b->hkey & 1);
-	assert(!b->H->nil);
-	assert(b->H->nonil);
-	assert(b->H->heap.free == 0);
 
 	b->batCount = cnt;
 	b->batDirtydesc = TRUE;
@@ -1352,13 +1304,8 @@ BATsetcount(BAT *b, BUN cnt)
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
-		b->hrevsorted = 1;
-		b->H->norevsorted = 0;
 		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
 		b->T->nosorted = b->T->norevsorted = 0;
-	} else {
-		b->hrevsorted = 0;
-		b->H->norevsorted = BUNfirst(b) + 1;
 	}
 	/* if the BAT was made smaller, we need to zap some values */
 	if (b->T->nosorted >= BUNlast(b))
@@ -1468,25 +1415,11 @@ BAThseqbase(BAT *b, oid o)
 		return;
 	assert(o < oid_nil);	/* i.e., not oid_nil */
 	assert(o + BATcount(b) < oid_nil);
-	assert(b->htype == TYPE_void);
 	assert(b->batCacheid > 0);
 	if (b->hseqbase != o) {
 		b->batDirtydesc = TRUE;
 		b->hseqbase = o;
-		/* zap alignment if column is changed by new
-		 * seqbase */
-		b->halign = 0;
 	}
-
-	b->hrevsorted = b->batCount <= 1;
-	if (!b->hrevsorted)
-		b->H->norevsorted = BUNfirst(b) + 1;
-
-	/* other properties should already be correct */
-	assert(b->hkey & 1);
-	assert(b->H->nonil);
-	assert(!b->H->nil);
-	assert(b->hsorted);
 }
 
 void
@@ -1577,16 +1510,10 @@ BATrename(BAT *b, const char *nme)
 
 
 void
-BATroles(BAT *b, const char *hnme, const char *tnme)
+BATroles(BAT *b, const char *tnme)
 {
 	if (b == NULL)
 		return;
-	if (b->hident && !default_ident(b->hident))
-		GDKfree(b->hident);
-	if (hnme)
-		b->hident = GDKstrdup(hnme);
-	else
-		b->hident = BATstring_h;
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	if (tnme)
@@ -1914,10 +1841,10 @@ BATgetaccess(BAT *b)
 		if (ATOMisdescendant((tp), TYPE_ptr) ||			\
 		    BATatoms[tp].atomUnfix ||				\
 		    BATatoms[tp].atomFix) {				\
-			GDKerror("BATmode: %s type implies that %s[%s,%s] " \
+			GDKerror("BATmode: %s type implies that %s[%s] " \
 				 "cannot be made persistent.\n",	\
 				 ATOMname(tp), BATgetId(b),		\
-				 ATOMname(b->htype), ATOMname(b->ttype)); \
+				 ATOMname(b->ttype));			\
 			return GDK_FAIL;				\
 		}							\
 	} while (0)
@@ -1941,7 +1868,6 @@ BATmode(BAT *b, int mode)
 		bat bid = b->batCacheid;
 
 		if (mode == PERSISTENT) {
-			check_type(b->htype);
 			check_type(b->ttype);
 		}
 		BBPdirty(1);
@@ -2264,9 +2190,7 @@ BATassertProps(BAT *b)
 
 	/* headless */
 	assert(b->batFirst == 0);
-	assert(b->htype == TYPE_void);
 	assert(b->hseqbase != oid_nil);
-	assert(b->H != b->T);
 
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
@@ -2275,14 +2199,8 @@ BATassertProps(BAT *b)
 	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	BATassertTailProps(b);
-	assert(b->htype == TYPE_void);
 	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) < oid_nil);
-	assert(b->hsorted);
-	assert(b->hkey & 1);
-	assert(b->H->nonil);
-	assert(!b->H->nil);
-	assert(!b->hrevsorted || BATcount(b) <= 1);
 }
 
 /* derive properties that can be derived with a simple scan: sorted,
@@ -2517,12 +2435,4 @@ BATderiveProps(BAT *b, int expensive)
 		return;
 	}
 	BATderiveTailProps(b, expensive);
-	assert(b->H != b->T);
-	assert(b->htype == TYPE_void);
-	assert(b->hsorted);
-	assert(b->hkey & 1);
-	assert(b->H->nonil);
-	assert(!b->H->nil);
-	if ((b->hrevsorted = BATcount(b) <= 1) != 0)
-		b->H->norevsorted = BUNfirst(b) + 1;
 }

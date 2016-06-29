@@ -116,7 +116,6 @@ BATsample(BAT *b, BUN n)
 	struct oidtreenode *tree = NULL;
 
 	BATcheck(b, "BATsample", NULL);
-	assert(BAThdense(b));
 	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n", NULL);
 	ALGODEBUG
 		fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);

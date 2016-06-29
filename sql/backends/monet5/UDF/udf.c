@@ -217,10 +217,8 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 	if (bone == NULL || btwo == NULL)
 		throw(MAL, "batudf.fuse", RUNTIME_OBJECT_MISSING);
 
-	/* check for dense & aligned heads */
-	if (!BAThdense(bone) ||
-	    !BAThdense(btwo) ||
-	    BATcount(bone) != BATcount(btwo) ||
+	/* check for aligned heads */
+	if (BATcount(bone) != BATcount(btwo) ||
 	    bone->hseqbase != btwo->hseqbase) {
 		throw(MAL, "batudf.fuse",
 		      "heads of input BATs must be aligned");
