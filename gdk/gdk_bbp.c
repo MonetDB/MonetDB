@@ -941,8 +941,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	else if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
-	else if (HT[0] == 'H' && strcmp(type, "void") != 0)
-		GDKfatal("BBPinit: head column must be VOID\n");
 	if ((t = ATOMindex(type)) < 0)
 		t = ATOMunknown_find(type);
 	else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
@@ -976,8 +974,6 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 	col->nosorted = (BUN) nosorted;
 	col->norevsorted = (BUN) norevsorted;
 	col->seq = base < 0 ? oid_nil : (oid) base;
-	if (HT[0] == 'H' && col->seq == oid_nil)
-		GDKfatal("BBPinit: head column must not have NIL seqbase.\n");
 	col->align = (oid) align;
 	col->heap.free = (size_t) free;
 	col->heap.size = (size_t) size;
@@ -1039,16 +1035,20 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		lng batid;
 		unsigned short status;
 		char headname[129];
-		char tailname[129];
 		char filename[129];
 		unsigned int properties;
 		int lastused;
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted = 0, deleted = 0, first, count, capacity;
-		unsigned short map_head, map_tail, map_hheap, map_theap;
-		int Hhashash, Thashash;
+		lng inserted = 0, deleted = 0, first, count, capacity, base = 0;
+#ifdef GDKLIBRARY_HEADED
+		/* these variables are not used in later versions */
+		char tailname[129];
+		unsigned short map_head = 0, map_tail = 0, map_hheap = 0, map_theap = 0;
+		int Hhashash = 0;
+#endif
+		int Thashash;
 
 		if ((s = strchr(buf, '\r')) != NULL) {
 			/* convert \r\n into just \n */
@@ -1067,14 +1067,22 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			   &count, &capacity, &map_head, &map_tail, &map_hheap,
 			   &map_theap,
 			   &nread) < 16 :
-			sscanf(buf,
+		    bbpversion <= GDKLIBRARY_HEADED ?
+		    sscanf(buf,
 			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &first,
 			   &count, &capacity, &map_head, &map_tail, &map_hheap,
 			   &map_theap,
-			   &nread) < 14)
+			   &nread) < 14 :
+		    sscanf(buf,
+			   "%lld %hu %128s %128s %d %u %lld %lld %lld %lld"
+			   "%n",
+			   &batid, &status, headname, filename,
+			   &lastused, &properties, &first,
+			   &count, &capacity, &base,
+			   &nread) < 10)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1096,7 +1104,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 				BBPextend(0, FALSE);
 		}
 		if (BBP_desc(bid) != NULL)
-			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
+			GDKfatal("BBPinit: duplicate entry in BBP.dir (ID = "LLFMT").", batid);
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BATstore.");
@@ -1114,9 +1122,36 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bs->S.deleted = bs->S.first;
 		bs->S.capacity = (BUN) capacity;
 
-		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
+		if (bbpversion <= GDKLIBRARY_HEADED) {
+			nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, bid);
+			if (bs->H.type != TYPE_void)
+				GDKfatal("BBPinit: head column must be VOID (ID = "LLFMT").", batid);
+			if (bs->H.seq == oid_nil)
+				GDKfatal("BBPinit: head column must not have NIL seqbase (ID = "LLFMT").", batid);
+		} else {
+			if (base < 0
+#if SIZEOF_OID < SIZEOF_LNG
+			    || base >= (lng) oid_nil
+#endif
+				)
+				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
+			bs->H.type = TYPE_void;
+			bs->H.seq = base;
+			bs->H.width = 0;
+			bs->H.shift = 0;
+			bs->H.varsized = 1;
+			bs->H.key = BOUND2BTRUE | 1;
+			bs->H.dense = 0; /* void does not need dense */
+			bs->H.nonil = 1;
+			bs->H.nil = 0;
+			bs->H.sorted = 1;
+			bs->H.revsorted = bs->S.count <= 1;
+			bs->H.heap.storage = STORE_MEM;
+			bs->H.heap.newstorage = STORE_MEM;
+			bs->H.heap.farmid = BBPselectfarm(PERSISTENT, TYPE_void, offheap);
+			/* no need to assign 0 to all fields (GDKzalloc) */
+		}
 		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
-		nread += vheapinit(&bs->H, buf + nread, Hhashash, bid);
 		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
 
 		if (bs->S.count > 1) {
@@ -1191,7 +1226,8 @@ BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_SORTEDPOS &&
 	    bbpversion != GDKLIBRARY_OLDWKB &&
-	    bbpversion != GDKLIBRARY_INSERTED) {
+	    bbpversion != GDKLIBRARY_INSERTED &&
+	    bbpversion != GDKLIBRARY_HEADED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1529,23 +1565,18 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %s %d %d " BUNFMT " " BUNFMT " "
-		    BUNFMT " %d %d %d %d", /* BAT info */
+	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " " BUNFMT " "
+		    BUNFMT " " OIDFMT, /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
-		    BBPNONAME,	/* backward compatible entry */
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->S.restricted << 1,
 		    BBP_desc(i)->S.first,
 		    BBP_desc(i)->S.count,
 		    BBP_desc(i)->S.capacity,
-		    (unsigned char) 0,
-		    (unsigned char) 0,
-		    (unsigned char) 0,
-		    (unsigned char) 0) < 0 ||
-	    heap_entry(fp, &BBP_desc(i)->H) < 0 ||
+		    BBP_desc(i)->H.seq) < 0 ||
 	    heap_entry(fp, &BBP_desc(i)->T) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->T.vheap) < 0 ||
 	    (BBP_options(i) &&

@@ -891,7 +891,8 @@ typedef struct {
 #define GDKLIBRARY_SORTEDPOS	061030	/* version where we can't trust no(rev)sorted */
 #define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
 #define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
-#define GDKLIBRARY		061033
+#define GDKLIBRARY_HEADED	061033	/* head properties are stored */
+#define GDKLIBRARY		061034
 
 typedef struct BAT {
 	/* static bat properties */
