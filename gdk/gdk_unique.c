@@ -243,7 +243,7 @@ BATunique(BAT *b, BAT *s)
 		   (b->batPersistence == PERSISTENT &&
 		    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-		   || ((parent = -VIEWtparent(b)) != 0 &&
+		   || ((parent = VIEWtparent(b)) != 0 &&
 		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
@@ -259,7 +259,7 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATcount(s) : 0);
 		seq = b->hseqbase;
 #ifndef DISABLE_PARENT_HASH
-		if (b->thash == NULL && (parent = -VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
 			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift) + BUNfirst(b);
 			b = b2;

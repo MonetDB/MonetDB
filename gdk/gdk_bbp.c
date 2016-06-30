@@ -1469,7 +1469,7 @@ BBPexit(void)
 						 * VIEWdestroy doesn't
 						 * (and can't here due
 						 * to locks) do it */
-						bat tp = -VIEWtparent(b);
+						bat tp = VIEWtparent(b);
 						bat vtp = VIEWvtparent(b);
 						if (tp) {
 							BBP_cache(tp)->batSharecnt--;
@@ -2385,7 +2385,7 @@ incref(bat i, int logical, int lock)
 		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		tp = -b->theap.parentid;
+		tp = b->theap.parentid;
 		assert(tp >= 0);
 		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
 		refs = ++BBP_refs(i);
@@ -2492,11 +2492,11 @@ decref(bat i, int logical, int releaseShare, int lock)
 			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(-b->theap.parentid) > 0);
+			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(b->theap.parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || b->tvheap->parentid == 0 || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((tp = -b->theap.parentid) != 0)
+				if ((tp = b->theap.parentid) != 0)
 					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
 				/* if a view shared the hash with its
 				 * parent, indicate this, but only if
@@ -2759,7 +2759,7 @@ BBPsave(BAT *b)
 static void
 BBPdestroy(BAT *b)
 {
-	bat tp = -b->theap.parentid;
+	bat tp = b->theap.parentid;
 	bat vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
@@ -2793,7 +2793,7 @@ BBPdestroy(BAT *b)
 static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = b->batCacheid, tp = -VIEWtparent(b), vtp = VIEWvtparent(b);
+	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
 	gdk_return ret;
 
 	assert(bid > 0);

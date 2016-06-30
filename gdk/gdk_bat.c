@@ -629,7 +629,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			bunstocopy = cnt;
 		} else if (isVIEW(b)) {
 			/* extra checks needed for views */
-			bat tp = -VIEWtparent(b);
+			bat tp = VIEWtparent(b);
 
 			if (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt)
 				/* reduced slice view: do not copy too
@@ -1376,7 +1376,7 @@ BATkey(BAT *b, int flag)
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
-		BAT *bp = BBP_cache(-VIEWtparent(b));
+		BAT *bp = BBP_cache(VIEWtparent(b));
 		if (BATcount(b) == BATcount(bp) &&
 		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
 		    !BATtkey(bp) &&

@@ -575,7 +575,7 @@ HASHdestroy(BAT *b)
 				  BBP_physical(b->batCacheid),
 				  b->batCacheid > 0 ? "thash" : "hhash");
 		} else if (b->thash) {
-			bat p = -VIEWtparent(b);
+			bat p = VIEWtparent(b);
 			BAT *hp = NULL;
 
 			if (p)
