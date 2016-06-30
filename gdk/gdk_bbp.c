@@ -927,7 +927,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 }
 
 static int
-heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize, int bbpversion, bat bid)
+heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int oidsize, int bbpversion, bat bid)
 {
 	int t;
 	char type[11];
@@ -989,65 +989,65 @@ heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize
 #endif
 		)
 		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.size mismatch for BAT %d\n", HT, (int) bid);
-	col->type = t;
-	col->width = width;
-	col->varsized = var != 0;
-	col->shift = ATOMelmshift(width);
-	assert_shift_width(col->shift,col->width);
-	col->nokey[0] = (BUN) nokey0;
-	col->nokey[1] = (BUN) nokey1;
-	col->sorted = (bit) ((properties & 0x0001) != 0);
-	col->revsorted = (bit) ((properties & 0x0080) != 0);
-	col->key = (properties & 0x0100) != 0;
-	col->dense = (properties & 0x0200) != 0;
-	col->nonil = (properties & 0x0400) != 0;
-	col->nil = (properties & 0x0800) != 0;
-	col->nosorted = (BUN) nosorted;
-	col->norevsorted = (BUN) norevsorted;
-	col->seq = base < 0 ? oid_nil : (oid) base;
-	col->align = (oid) align;
-	col->heap.free = (size_t) free;
-	col->heap.size = (size_t) size;
-	col->heap.base = NULL;
-	col->heap.filename = NULL;
-	col->heap.storage = (storage_t) storage;
-	col->heap.copied = 0;
-	col->heap.newstorage = (storage_t) storage;
-	col->heap.farmid = BBPselectfarm(PERSISTENT, col->type, offheap);
-	col->heap.dirty = 0;
-	if (col->heap.free > col->heap.size)
+	b->ttype = t;
+	b->twidth = width;
+	b->tvarsized = var != 0;
+	b->tshift = ATOMelmshift(width);
+	assert_shift_width(b->tshift,b->twidth);
+	b->tnokey[0] = (BUN) nokey0;
+	b->tnokey[1] = (BUN) nokey1;
+	b->tsorted = (bit) ((properties & 0x0001) != 0);
+	b->trevsorted = (bit) ((properties & 0x0080) != 0);
+	b->tkey = (properties & 0x0100) != 0;
+	b->tdense = (properties & 0x0200) != 0;
+	b->tnonil = (properties & 0x0400) != 0;
+	b->tnil = (properties & 0x0800) != 0;
+	b->tnosorted = (BUN) nosorted;
+	b->tnorevsorted = (BUN) norevsorted;
+	b->tseqbase = base < 0 ? oid_nil : (oid) base;
+	b->talign = (oid) align;
+	b->theap.free = (size_t) free;
+	b->theap.size = (size_t) size;
+	b->theap.base = NULL;
+	b->theap.filename = NULL;
+	b->theap.storage = (storage_t) storage;
+	b->theap.copied = 0;
+	b->theap.newstorage = (storage_t) storage;
+	b->theap.farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
+	b->theap.dirty = 0;
+	if (b->theap.free > b->theap.size)
 		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
 	return n;
 }
 
 static int
-vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
+vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 {
 	int n = 0;
 	lng free, size;
 	unsigned short storage;
 
-	if (col->varsized && col->type != TYPE_void) {
-		col->vheap = GDKzalloc(sizeof(Heap));
-		if (col->vheap == NULL)
+	if (b->tvarsized && b->ttype != TYPE_void) {
+		b->tvheap = GDKzalloc(sizeof(Heap));
+		if (b->tvheap == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for heap.");
 		if (sscanf(buf,
 			   " %lld %lld %hu"
 			   "%n",
 			   &free, &size, &storage, &n) < 3)
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
-		col->vheap->free = (size_t) free;
-		col->vheap->size = (size_t) size;
-		col->vheap->base = NULL;
-		col->vheap->filename = NULL;
-		col->vheap->storage = (storage_t) storage;
-		col->vheap->copied = 0;
-		col->vheap->hashash = hashash != 0;
-		col->vheap->newstorage = (storage_t) storage;
-		col->vheap->dirty = 0;
-		col->vheap->parentid = bid;
-		col->vheap->farmid = BBPselectfarm(PERSISTENT, col->type, varheap);
-		if (col->vheap->free > col->vheap->size)
+		b->tvheap->free = (size_t) free;
+		b->tvheap->size = (size_t) size;
+		b->tvheap->base = NULL;
+		b->tvheap->filename = NULL;
+		b->tvheap->storage = (storage_t) storage;
+		b->tvheap->copied = 0;
+		b->tvheap->hashash = hashash != 0;
+		b->tvheap->newstorage = (storage_t) storage;
+		b->tvheap->dirty = 0;
+		b->tvheap->parentid = bid;
+		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
+		if (b->tvheap->free > b->tvheap->size)
 			GDKfatal("BBPinit: \"free\" value larger than \"size\" in var heap of bat %d\n", (int) bid);
 	}
 	return n;
@@ -1162,8 +1162,8 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
 			bs->B.hseqbase = (oid) base;
 		}
-		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
-		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
+		nread += heapinit(&bs->B, buf + nread, &Thashash, "T", oidsize, bbpversion, bid);
+		nread += vheapinit(&bs->B, buf + nread, Thashash, bid);
 
 		if (bs->S.count > 1) {
 			/* fix result of bug in BATappend not clearing
@@ -1517,28 +1517,28 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, COLrec *col)
+heap_entry(FILE *fp, BAT *b)
 {
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
-		       col->type >= 0 ? BATatoms[col->type].name : ATOMunknown_name(col->type),
-		       col->width,
-		       col->varsized | (col->vheap ? col->vheap->hashash << 1 : 0),
-		       (unsigned short) col->sorted |
-			   ((unsigned short) col->revsorted << 7) |
-			   (((unsigned short) col->key & 0x01) << 8) |
-			   ((unsigned short) col->dense << 9) |
-			   ((unsigned short) col->nonil << 10) |
-			   ((unsigned short) col->nil << 11),
-		       col->nokey[0],
-		       col->nokey[1],
-		       col->nosorted,
-		       col->norevsorted,
-		       col->seq,
-		       col->align,
-		       col->heap.free,
-		       col->heap.size,
-		       (int) col->heap.newstorage);
+		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
+		       b->twidth,
+		       b->tvarsized | (b->tvheap ? b->tvheap->hashash << 1 : 0),
+		       (unsigned short) b->tsorted |
+			   ((unsigned short) b->trevsorted << 7) |
+			   (((unsigned short) b->tkey & 0x01) << 8) |
+			   ((unsigned short) b->tdense << 9) |
+			   ((unsigned short) b->tnonil << 10) |
+			   ((unsigned short) b->tnil << 11),
+		       b->tnokey[0],
+		       b->tnokey[1],
+		       b->tnosorted,
+		       b->tnorevsorted,
+		       b->tseqbase,
+		       b->talign,
+		       b->theap.free,
+		       b->theap.size,
+		       (int) b->theap.newstorage);
 }
 
 static inline int
@@ -1579,7 +1579,7 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_desc(i)->S.count,
 		    BBP_desc(i)->S.capacity,
 		    BBP_desc(i)->B.hseqbase) < 0 ||
-	    heap_entry(fp, &BBP_desc(i)->T) < 0 ||
+	    heap_entry(fp, &BBP_desc(i)->B) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->T.vheap) < 0 ||
 	    (BBP_options(i) &&
 	     fprintf(fp, " %s", BBP_options(i)) < 0) ||

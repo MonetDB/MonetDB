@@ -175,7 +175,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? (b->tvheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->tvheap->size >> GDK_VARSHIFT))) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
-				if (GDKupgradevarheap(b->T, (var_t) (b->tvheap->size >> GDK_VARSHIFT), 0, force) != GDK_SUCCEED) {
+				if (GDKupgradevarheap(b, (var_t) (b->tvheap->size >> GDK_VARSHIFT), 0, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
@@ -294,7 +294,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 				    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
 					 * so widen offset heap */
-					if (GDKupgradevarheap(b->T, v, 0, force) != GDK_SUCCEED) {
+					if (GDKupgradevarheap(b, v, 0, force) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}

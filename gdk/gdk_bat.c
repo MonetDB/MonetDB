@@ -832,96 +832,95 @@ COLcopy(BAT *b, int tt, int writable, int role)
 	} while (0)
 
 static void
-setcolprops(BAT *b, COLrec *col, const void *x)
+setcolprops(BAT *b, const void *x)
 {
-	int isnil = col->type != TYPE_void &&
-		atom_CMP(x, ATOMnilptr(col->type), col->type) == 0;
+	int isnil = b->ttype != TYPE_void &&
+		atom_CMP(x, ATOMnilptr(b->ttype), b->ttype) == 0;
 	BATiter bi;
 	BUN pos;
 	const void *prv;
 	int cmp;
 
-	assert(col == b->T);
 	/* x may only be NULL if the column type is VOID */
-	assert(x != NULL || col->type == TYPE_void);
+	assert(x != NULL || b->ttype == TYPE_void);
 	if (b->batCount == 0) {
 		/* first value */
-		col->sorted = col->revsorted = ATOMlinear(col->type) != 0;
-		col->nosorted = col->norevsorted = 0;
-		col->key |= 1;
-		col->nokey[0] = col->nokey[1] = 0;
-		col->nodense = 0;
-		if (col->type == TYPE_void) {
+		b->tsorted = b->trevsorted = ATOMlinear(b->ttype) != 0;
+		b->tnosorted = b->tnorevsorted = 0;
+		b->tkey |= 1;
+		b->tnokey[0] = b->tnokey[1] = 0;
+		b->tnodense = 0;
+		if (b->ttype == TYPE_void) {
 			if (x) {
-				col->seq = * (const oid *) x;
+				b->tseqbase = * (const oid *) x;
 			}
-			col->nil = col->seq == oid_nil;
-			col->nonil = !col->nil;
+			b->tnil = b->tseqbase == oid_nil;
+			b->tnonil = !b->tnil;
 		} else {
-			col->nil = isnil;
-			col->nonil = !isnil;
-			if (col->type == TYPE_oid) {
-				col->dense = !isnil;
-				col->seq = * (const oid *) x;
+			b->tnil = isnil;
+			b->tnonil = !isnil;
+			if (b->ttype == TYPE_oid) {
+				b->tdense = !isnil;
+				b->tseqbase = * (const oid *) x;
 				if (isnil)
-					col->nodense = BUNlast(b);
+					b->tnodense = BUNlast(b);
 			}
 		}
-	} else if (col->type == TYPE_void) {
+	} else if (b->ttype == TYPE_void) {
 		/* not the first value in a VOID column: we keep the
 		 * seqbase, and x is not used, so only some properties
 		 * are affected */
-		if (col->seq != oid_nil) {
-			if (col->revsorted) {
-				col->norevsorted = BUNlast(b);
-				col->revsorted = 0;
+		if (b->tseqbase != oid_nil) {
+			if (b->trevsorted) {
+				b->tnorevsorted = BUNlast(b);
+				b->trevsorted = 0;
 			}
-			col->nil = 0;
-			col->nonil = 1;
+			b->tnil = 0;
+			b->tnonil = 1;
 		} else {
-			if (col->key) {
-				col->nokey[0] = BUNfirst(b);
-				col->nokey[1] = BUNlast(b);
-				col->key = 0;
+			if (b->tkey) {
+				b->tnokey[0] = BUNfirst(b);
+				b->tnokey[1] = BUNlast(b);
+				b->tkey = 0;
 			}
-			col->nil = 1;
-			col->nonil = 0;
+			b->tnil = 1;
+			b->tnonil = 0;
 		}
 	} else {
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
 		prv = BUNtail(bi, pos - 1);
-		cmp = atom_CMP(prv, x, col->type);
+		cmp = atom_CMP(prv, x, b->ttype);
 
-		if (col->key == 1 && /* assume outside check if BOUND2BTRUE */
+		if (b->tkey == 1 && /* assume outside check if BOUND2BTRUE */
 		    (cmp == 0 || /* definitely not KEY */
 		     (b->batCount > 1 && /* can't guarantee KEY if unordered */
-		      ((col->sorted && cmp > 0) ||
-		       (col->revsorted && cmp < 0) ||
-		       (!col->sorted && !col->revsorted))))) {
-			col->key = 0;
+		      ((b->tsorted && cmp > 0) ||
+		       (b->trevsorted && cmp < 0) ||
+		       (!b->tsorted && !b->trevsorted))))) {
+			b->tkey = 0;
 			if (cmp == 0) {
-				col->nokey[0] = pos - 1;
-				col->nokey[1] = pos;
+				b->tnokey[0] = pos - 1;
+				b->tnokey[1] = pos;
 			}
 		}
-		if (col->sorted && cmp > 0) {
+		if (b->tsorted && cmp > 0) {
 			/* out of order */
-			col->sorted = 0;
-			col->nosorted = pos;
+			b->tsorted = 0;
+			b->tnosorted = pos;
 		}
-		if (col->revsorted && cmp < 0) {
+		if (b->trevsorted && cmp < 0) {
 			/* out of order */
-			col->revsorted = 0;
-			col->norevsorted = pos;
+			b->trevsorted = 0;
+			b->tnorevsorted = pos;
 		}
-		if (col->dense && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
-			col->dense = 0;
-			col->nodense = pos;
+		if (b->tdense && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
+			b->tdense = 0;
+			b->tnodense = pos;
 		}
 		if (isnil) {
-			col->nonil = 0;
-			col->nil = 1;
+			b->tnonil = 0;
+			b->tnil = 1;
 		}
 	}
 }
@@ -970,7 +969,7 @@ BUNappend(BAT *b, const void *t, bit force)
 		return GDK_FAIL;
 	}
 
-	setcolprops(b, b->T, t);
+	setcolprops(b, t);
 
 	if (b->ttype != TYPE_void) {
 		bunfastapp(b, t);
@@ -2232,12 +2231,12 @@ BATderiveTailProps(BAT *b, int expensive)
 		return;
 	}
 	assert((b->tkey & BOUND2BTRUE) == 0);
-	COLsettrivprop(b, b->T);
+	BATsettrivprop(b);
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 	b->batDirtydesc = 1;	/* we will be changing things */
 	if (b->ttype == TYPE_void || b->batCount <= 1) {
-		/* COLsettrivprop has already taken care of all
+		/* BATsettrivprop has already taken care of all
 		 * properties except for (no)nil if count == 1 */
 		if (b->batCount == 1) {
 			valp = BUNtail(bi, BUNfirst(b));

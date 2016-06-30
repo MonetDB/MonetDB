@@ -1119,7 +1119,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->T, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1165,7 +1165,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->T, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1197,7 +1197,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->T, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1237,7 +1237,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->T, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1290,7 +1290,7 @@ gdk_export bte ATOMelmshift(int sz);
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
 	} while (0)
 
-gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
 
@@ -1590,62 +1590,58 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
-#define COLsettrivprop(b, col)						\
-	do {								\
-		if ((col)->type == TYPE_void) {				\
-			if ((col)->seq == oid_nil) {			\
-				(col)->nonil = (b)->batCount == 0;	\
-				(col)->nil = !(col)->nonil;		\
-				(col)->revsorted = 1;			\
-				(col)->key = (b)->batCount <= 1;	\
-				(col)->dense = 0;			\
-			} else {					\
-				(col)->dense = 1;			\
-				(col)->nonil = 1;			\
-				(col)->nil = 0;				\
-				(col)->key = 1;				\
-				(col)->revsorted = (b)->batCount <= 1;	\
-			}						\
-			(col)->sorted = 1;				\
-		} else if ((b)->batCount <= 1) {			\
-			if (ATOMlinear((col)->type)) {			\
-				(col)->sorted = 1;			\
-				(col)->revsorted = 1;			\
-			}						\
-			(col)->key = 1;					\
-			if ((b)->batCount == 0) {			\
-				(col)->nonil = 1;			\
-				(col)->nil = 0;				\
-				if ((col)->type == TYPE_oid) {		\
-					(col)->dense = 1;		\
-					(col)->seq = 0;			\
-				}					\
-			} else if ((col)->type == TYPE_oid) {		\
-				/* b->batCount == 1 */			\
-				oid sqbs;				\
-				if ((sqbs = ((oid *) (col)->heap.base)[(b)->batFirst]) == oid_nil) { \
-					(col)->dense = 0;		\
-					(col)->nonil = 0;		\
-					(col)->nil = 1;			\
-				} else {				\
-					(col)->dense = 1;		\
-					(col)->nonil = 1;		\
-					(col)->nil = 0;			\
-				}					\
-				(col)->seq = sqbs;			\
-			}						\
-		}							\
-		if (!ATOMlinear((col)->type)) {				\
-			(col)->sorted = 0;				\
-			(col)->revsorted = 0;				\
-		}							\
-	} while (0)
 #define BATsettrivprop(b)						\
 	do {								\
 		assert((b)->hseqbase != oid_nil);			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
 		/* the other head properties should already be correct */ \
-		COLsettrivprop((b), (b)->T);				\
+		if ((b)->ttype == TYPE_void) {				\
+			if ((b)->tseqbase == oid_nil) {			\
+				(b)->tnonil = (b)->batCount == 0;	\
+				(b)->tnil = !(b)->tnonil;		\
+				(b)->trevsorted = 1;			\
+				(b)->tkey = (b)->batCount <= 1;		\
+				(b)->tdense = 0;			\
+			} else {					\
+				(b)->tdense = 1;			\
+				(b)->tnonil = 1;			\
+				(b)->tnil = 0;				\
+				(b)->tkey = 1;				\
+				(b)->trevsorted = (b)->batCount <= 1;	\
+			}						\
+			(b)->tsorted = 1;				\
+		} else if ((b)->batCount <= 1) {			\
+			if (ATOMlinear((b)->ttype)) {			\
+				(b)->tsorted = 1;			\
+				(b)->trevsorted = 1;			\
+			}						\
+			(b)->tkey = 1;					\
+			if ((b)->batCount == 0) {			\
+				(b)->tnonil = 1;			\
+				(b)->tnil = 0;				\
+				if ((b)->ttype == TYPE_oid) {		\
+					(b)->tdense = 1;		\
+					(b)->tseqbase = 0;		\
+				}					\
+			} else if ((b)->ttype == TYPE_oid) {		\
+				/* b->batCount == 1 */			\
+				oid sqbs;				\
+				if ((sqbs = ((oid *) (b)->theap.base)[(b)->batFirst]) == oid_nil) { \
+					(b)->tdense = 0;		\
+					(b)->tnonil = 0;		\
+					(b)->tnil = 1;			\
+				} else {				\
+					(b)->tdense = 1;		\
+					(b)->tnonil = 1;		\
+					(b)->tnil = 0;			\
+				}					\
+				(b)->tseqbase = sqbs;			\
+			}						\
+		}							\
+		if (!ATOMlinear((b)->ttype)) {				\
+			(b)->tsorted = 0;				\
+			(b)->trevsorted = 0;				\
+		}							\
 	} while (0)
 
 /*
