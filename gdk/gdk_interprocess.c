@@ -282,4 +282,73 @@ GDKreleasesem(int sem_id, str *msg) {
     return GDK_SUCCEED;
 }
 
+// align to 8 bytes
+#define align(sz) ((sz + 7) & ~7)
+
+size_t 
+GDKbatcopysize(BAT *bat, str colname) {
+    size_t size = 0;
+
+    size += align(strlen(colname) + 1);         //[COLNAME]
+    size += align(sizeof(BAT));                 //[BAT]
+    size += align(bat->twidth * BATcount(bat)); //[DATA]
+    
+    if (bat->tvheap != NULL) {
+        size += align(sizeof(Heap));            //[VHEAP]
+        size += align(bat->tvheap->size);       //[VHEAPDATA]
+    }
+    return size;
+}
+
+size_t 
+GDKbatcopy(char *dest, BAT *bat, str colname) {
+    size_t batsize = bat->twidth * BATcount(bat);
+    size_t position = 0;
+
+    //[COLNAME]
+    memcpy(dest + position, colname, strlen(colname) + 1); 
+    position += align(strlen(colname) + 1);
+    //[BAT]
+    memcpy(dest + position, bat, sizeof(BAT)); 
+    position += align(sizeof(BAT));
+    //[DATA]
+    memcpy(dest + position, Tloc(bat, BUNfirst(bat)), batsize);
+    position += align(batsize);
+    if (bat->tvheap != NULL) {
+        //[VHEAP]
+        memcpy(dest + position, bat->tvheap, sizeof(Heap));
+        position += align(sizeof(Heap));
+        //[VHEAPDATA]
+        memcpy(dest + position, bat->tvheap->base, bat->tvheap->size);
+        position += align(bat->tvheap->size);
+    }
+    return position;
+}
+
+size_t 
+GDKbatread(char *src, BAT **bat, str *colname) {
+    size_t position = 0;
+    BAT *b;
+    //load the data for this column from shared memory
+    //[COLNAME]
+    *colname = src + position; 
+    position += align(strlen(*colname) + 1);
+    //[BAT]
+    b = (BAT*) (src + position); 
+    position += align(sizeof(BAT));
+    //[DATA]
+    b->theap.base = (void*)(src + position); 
+    position += align(b->twidth * BATcount(b));
+    if (b->tvheap != NULL) {
+        //[VHEAP]
+        b->tvheap = (Heap*) (src + position); 
+        position += align(sizeof(Heap));
+        //[VHEAPDATA]
+        b->tvheap->base = (void*) (src + position); 
+        position += align(b->tvheap->size);
+    }
+    *bat = b;
+    return position;
+}
+
 #endif

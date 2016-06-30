@@ -762,17 +762,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
                                 BAT* b = BATdescriptor(col.b);
-                                size_t batsize = b->twidth * BATcount(b);
-                                char *colname = col.name;
-
-                                size += strlen(colname) + 1;                                          //[COLNAME]
-                                size += sizeof(BAT);                                                  //[BAT]
-                                size += batsize;                                                      //[DATA]
-                                
-                                if (b->tvheap != NULL) {
-                                    size += sizeof(Heap);                                             //[VHEAP]
-                                    size += b->tvheap->size;                                        //[VHEAPDATA]
-                                }
+                                size += GDKbatcopysize(b, col.name);
                                 BBPunfix(b->batCacheid);
                             }
 
@@ -794,26 +784,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
                                 BAT* b = BATdescriptor(col.b);
-                                char *colname = col.name;
-                                size_t batsize = b->twidth * BATcount(b);
-
-                                //[COLNAME]
-                                memcpy(result_ptr + position, colname, strlen(colname) + 1); 
-                                position += strlen(colname) + 1;
-                                //[BAT]
-                                memcpy(result_ptr + position, b, sizeof(BAT)); 
-                                position += sizeof(BAT);
-                                //[DATA]
-                                memcpy(result_ptr + position, Tloc(b, BUNfirst(b)), batsize);
-                                position += batsize;
-                                if (b->tvheap != NULL) {
-                                    //[VHEAP]
-                                    memcpy(result_ptr + position, b->tvheap, sizeof(Heap));
-                                    position += sizeof(Heap);
-                                    //[VHEAPDATA]
-                                    memcpy(result_ptr + position, b->tvheap->base, b->tvheap->size);
-                                    position += b->tvheap->size;
-                                }
+                                result_ptr += GDKbatcopy(result_ptr + position, b, col.name);
                                 BBPunfix(b->batCacheid);
                             }
                             //detach the main process from this piece of shared memory so the child process can delete it

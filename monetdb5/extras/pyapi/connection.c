@@ -116,27 +116,9 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
             for(i = 0; i < self->query_ptr->nr_cols; i++)
             {
                 BAT *b;
-                char *colname;
+                str colname;
                 PyInput input;
-
-                //load the data for this column from shared memory
-                //[COLNAME]
-                colname = ptr + position; 
-                position += strlen(colname) + 1;
-                //[BAT]
-                b = (BAT*) (ptr + position); 
-                position += sizeof(BAT);
-                //[DATA]
-                b->theap.base = (void*)(ptr + position); 
-                position += b->twidth * BATcount(b);
-                if (b->tvheap != NULL) {
-                    //[VHEAP]
-                    b->tvheap = (Heap*) (ptr + position); 
-                    position += sizeof(Heap);
-                    //[VHEAPDATA]
-                    b->tvheap->base = (void*) (ptr + position); 
-                    position += b->tvheap->size;
-                }
+                position += GDKbatread(ptr + position, &b, &colname);
                 //initialize the PyInput structure
                 input.bat = b;
                 input.count = BATcount(b);

@@ -52,9 +52,18 @@ gdk_export gdk_return GDKchangesemval_timeout(int sem_id, int number, int change
 //! Destroy an interprocess semaphore
 gdk_export gdk_return GDKreleasesem(int sem_id, str *msg);
 
-//str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***return_ptr, size_t **return_size, char **single_ptr);
-//str release_mmap_memory(void *ptr, size_t size, size_t id);
-//str snprintf_mmap_file(str file, size_t max, size_t id);
+/*
+ * Operations for copying a BAT into a memory mapped file
+ */
+
+//! Returns the size of the buffer necessary to copy the BAT into
+gdk_export size_t GDKbatcopysize(BAT *bat, str colname);
+//! Copies a BAT into the given destination. Returns the amount of bytes copied (equiv. to GDKbatcopysize(bat))
+gdk_export size_t GDKbatcopy(char *dest, BAT *bat, str colname);
+//! Reads a BAT from the given source (one that was copied into by GDKbatcopy)
+gdk_export size_t GDKbatread(char *src, BAT **bat, str *colname);
+
+
 #endif
 
 #endif /* _GDK_INTERPROCES_H_ */
