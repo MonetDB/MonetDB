@@ -2002,13 +2002,13 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Internal Helper method to support the getObject and
+	 * Helper method to support the getObject and
 	 * ResultsetMetaData.getColumnClassName JDBC methods.
 	 *
 	 * @param type a value from java.sql.Types
 	 * @return a Class object from which an instance would be returned
 	 */
-	private static Class<?> getClassForType(int type) {
+	static Class<?> getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
 		 * Oracle's JDBC specification 4.1
