@@ -891,7 +891,7 @@ typedef struct BATiter {
 	oid tvid;
 } BATiter;
 
-/* macros's to hide complexity of BAT structure */
+/* macros to hide complexity of the BAT structure */
 #define batPersistence	S.persistence
 #define batCopiedtodisk	S.copiedtodisk
 #define batDirty	S.dirty
