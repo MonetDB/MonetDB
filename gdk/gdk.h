@@ -391,22 +391,18 @@
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
 
-#define GDKPROP		6	/* use one spare! */
-#define MONETHOME	"MONETHOME"
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
 #define DELDIR		"bat/DELETE_ME"
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
-#define HCDIR		"bat/HC"
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
-#define HCDIR		"bat\\HC"
 #endif
 
 #ifdef MAXPATHLEN
@@ -637,12 +633,13 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 /* Heap storage modes */
 typedef enum {
-	STORE_MEM     = 0,		/* load into GDKmalloced memory */
-	STORE_MMAP    = 1,		/* mmap() into virtual memory */
-	STORE_PRIV    = 2,		/* BAT copy of copy-on-write mmap */
-    STORE_CMEM    = 3,      /* Indicates the value is stored in regular C memory rather than GDK memory.*/
-    STORE_NOWN    = 4,      /* Indicates that the bat does not own the chunk of memory and is not in charge of freeing it.*/
-    STORE_MMAPABS = 5,      /* mmap() into virtual memory from an absolute path (not part of dbfarm) */
+	STORE_MEM     = 0,	/* load into GDKmalloced memory */
+	STORE_MMAP    = 1,	/* mmap() into virtual memory */
+	STORE_PRIV    = 2,	/* BAT copy of copy-on-write mmap */
+	STORE_CMEM    = 3,	/* load into malloc (not GDKmalloc) memory*/
+	STORE_NOWN    = 4,	/* memory not owned by the BAT */
+	STORE_MMAPABS = 5,	/* mmap() into virtual memory from an
+				 * absolute path (not part of dbfarm) */
 	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
@@ -653,8 +650,8 @@ typedef struct {
 	str filename;		/* file containing image of the heap */
 
 	unsigned int copied:1,	/* a copy of an existing map. */
-		      hashash:1,/* the string heap contains hash values */
-		      forcemap:1;  /* force STORE_MMAP even if heap exists */
+		hashash:1,	/* the string heap contains hash values */
+		forcemap:1;	/* force STORE_MMAP even if heap exists */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
@@ -895,8 +892,6 @@ typedef struct BATiter {
 	BAT *b;
 	oid tvid;
 } BATiter;
-
-typedef int (*GDKfcn) ();
 
 /* macros's to hide complexity of BAT structure */
 #define batPersistence	S.persistence
@@ -2726,7 +2721,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 #define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
 
 #define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(-VIEWtparent(b))->batRestricted : (b)->batRestricted)
+#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted

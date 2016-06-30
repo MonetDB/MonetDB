@@ -275,7 +275,7 @@ This information can be used to determine memory footprint and variable life tim
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
 						//if( isVIEW(d))
-							//bid = -VIEWtparent(d);
+							//bid = VIEWtparent(d);
 						cnt = BATcount(d);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid); 

@@ -2284,9 +2284,9 @@ BATminmax(BAT *b, void *aggr,
 	BATiter bi;
 
 	if ((VIEWtparent(b) == 0 ||
-	     BATcount(b) == BATcount(BBPdescriptor(-VIEWtparent(b)))) &&
+	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
-		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(-VIEWtparent(b))->timprints : b->timprints;
+		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 		pos = oid_nil;
 		if (minmax == do_groupmin) {
 			/* find first non-empty bin */

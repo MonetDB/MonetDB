@@ -179,7 +179,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	if (bn == NULL)
 		return NULL;
 
-	tp = -VIEWtparent(b);
+	tp = VIEWtparent(b);
 	if ((tp == 0 && b->ttype != TYPE_void) || b->theap.copied)
 		tp = b->batCacheid;
 	assert(b->ttype != TYPE_void || !tp);
@@ -215,7 +215,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 
 	/* correct values after copy of head and tail info */
 	if (tp)
-		bn->theap.parentid = -tp;
+		bn->theap.parentid = tp;
 	BATinit_idents(bn);
 	/* Some bits must be copied individually. */
 	bn->batDirty = BATdirty(b);
@@ -312,7 +312,7 @@ static void
 VIEWunlink(BAT *b)
 {
 	if (b) {
-		bat tp = -VIEWtparent(b);
+		bat tp = VIEWtparent(b);
 		bat vtp = VIEWvtparent(b);
 		BAT *tpb = NULL;
 		BAT *vtpb = NULL;
@@ -361,7 +361,7 @@ VIEWreset(BAT *b)
 	if (b == NULL)
 		return GDK_FAIL;
 	assert(b->batCacheid > 0);
-	tp = -VIEWtparent(b);
+	tp = VIEWtparent(b);
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
 		BUN cnt;
@@ -440,7 +440,7 @@ VIEWreset(BAT *b)
 			b->tvheap->parentid = b->batCacheid;
 		}
 
-		if (-v->theap.parentid == b->batCacheid) {
+		if (v->theap.parentid == b->batCacheid) {
 			assert(tp == 0);
 			assert(b->batSharecnt > 0);
 			BBPunshare(b->batCacheid);
