@@ -897,7 +897,7 @@ typedef struct BATiter {
 } BATiter;
 
 typedef struct BATstore BATstore;
-#define BATSTORESIZE	(2 * (sizeof(BAT) + sizeof(COLrec)) + sizeof(BATrec))
+#define BATSTORESIZE	(sizeof(BAT) + sizeof(COLrec) + sizeof(BATrec))
 
 typedef int (*GDKfcn) ();
 
