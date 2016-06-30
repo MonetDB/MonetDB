@@ -3381,7 +3381,9 @@ main(int argc, char **argv)
 			stream *s;
 
 			if (fp == NULL &&
-			    (fp = fopen(argv[optind], "r")) == NULL) {
+			    (fp = (strcmp(argv[optind], "-") == 0 ?
+				   stdin :
+				   fopen(argv[optind], "r"))) == NULL) {
 				fprintf(stderr, "%s: cannot open\n", argv[optind]);
 				c |= 1;
 			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
