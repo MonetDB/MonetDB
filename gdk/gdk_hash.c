@@ -184,7 +184,7 @@ HASHcollisions(BAT *b, Hash *h)
 /* Return TRUE if we have a hash on the tail, even if we need to read
  * one from disk.
  *
- * Note that the b->T->hash pointer can be NULL, meaning there is no
+ * Note that the b->thash pointer can be NULL, meaning there is no
  * hash; (Hash *) 1, meaning there is no hash loaded, but it may exist
  * on disk; or a valid pointer to a loaded hash.  These values are
  * maintained here, in the HASHdestroy and HASHfree functions, and in
@@ -198,14 +198,14 @@ BATcheckhash(BAT *b)
 	t = GDKusec();
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	t = GDKusec() - t;
-	if (b->T->hash == (Hash *) 1) {
+	if (b->thash == (Hash *) 1) {
 		Hash *h;
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
 		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
 		int fd;
 
-		b->T->hash = NULL;
+		b->thash = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
 		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
@@ -252,7 +252,7 @@ BATcheckhash(BAT *b)
 					close(fd);
 					hp->parentid = b->batCacheid;
 					hp->dirty = FALSE;
-					b->T->hash = h;
+					b->thash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
 					return 1;
@@ -267,7 +267,7 @@ BATcheckhash(BAT *b)
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
-	ret = b->T->hash != NULL;
+	ret = b->thash != NULL;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
@@ -328,7 +328,7 @@ BAThash(BAT *b, BUN masksize)
 		return GDK_SUCCEED;
 	}
 	MT_lock_set(&GDKhashLock(b->batCacheid));
-	if (b->T->hash == NULL) {
+	if (b->thash == NULL) {
 		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
 		BUN mask, maxmask = 0;
@@ -447,7 +447,7 @@ BAThash(BAT *b, BUN masksize)
 			default:
 				for (; r < p; r++) {
 					ptr v = BUNtail(bi, r);
-					BUN c = (BUN) heap_hash_any(b->T->vheap, h, v);
+					BUN c = (BUN) heap_hash_any(b->tvheap, h, v);
 
 					if (HASHget(h, c) == HASHnil(h) &&
 					    nslots-- == 0)
@@ -488,7 +488,7 @@ BAThash(BAT *b, BUN masksize)
 		default:
 			for (; p < q; p++) {
 				ptr v = BUNtail(bi, p);
-				BUN c = (BUN) heap_hash_any(b->T->vheap, h, v);
+				BUN c = (BUN) heap_hash_any(b->tvheap, h, v);
 
 				HASHputlink(h, p, HASHget(h, c));
 				HASHput(h, c, p);
@@ -514,10 +514,10 @@ BAThash(BAT *b, BUN masksize)
 		} else
 			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
 #endif
-		b->T->hash = h;
+		b->thash = h;
 		t1 = GDKusec();
 		ALGODEBUG fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", t1 - t0);
-		ALGODEBUG HASHcollisions(b, b->T->hash);
+		ALGODEBUG HASHcollisions(b, b->thash);
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	return GDK_SUCCEED;
@@ -569,27 +569,27 @@ void
 HASHdestroy(BAT *b)
 {
 	if (b) {
-		if (b->T->hash == (Hash *) 1) {
+		if (b->thash == (Hash *) 1) {
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
 				  b->batCacheid > 0 ? "thash" : "hhash");
-		} else if (b->T->hash) {
+		} else if (b->thash) {
 			bat p = -VIEWtparent(b);
 			BAT *hp = NULL;
 
 			if (p)
 				hp = BBP_cache(p);
 
-			if ((!hp || b->T->hash != hp->T->hash) && b->T->hash != (Hash *) -1) {
-				ALGODEBUG if (*(size_t *) b->T->hash->heap->base & (1 << 24))
+			if ((!hp || b->thash != hp->thash) && b->thash != (Hash *) -1) {
+				ALGODEBUG if (*(size_t *) b->thash->heap->base & (1 << 24))
 					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
-				HEAPfree(b->T->hash->heap, 1);
-				GDKfree(b->T->hash->heap);
-				GDKfree(b->T->hash);
+				HEAPfree(b->thash->heap, 1);
+				GDKfree(b->thash->heap);
+				GDKfree(b->thash);
 			}
 		}
-		b->T->hash = NULL;
+		b->thash = NULL;
 	}
 }
 
@@ -598,26 +598,26 @@ HASHfree(BAT *b)
 {
 	if (b) {
 		MT_lock_set(&GDKhashLock(b->batCacheid));
-		if (b->T->hash && b->T->hash != (Hash *) -1) {
-			if (b->T->hash != (Hash *) 1) {
-				if (b->T->hash->heap->storage == STORE_MEM &&
-				    b->T->hash->heap->dirty) {
-					GDKsave(b->T->hash->heap->farmid,
-						b->T->hash->heap->filename,
+		if (b->thash && b->thash != (Hash *) -1) {
+			if (b->thash != (Hash *) 1) {
+				if (b->thash->heap->storage == STORE_MEM &&
+				    b->thash->heap->dirty) {
+					GDKsave(b->thash->heap->farmid,
+						b->thash->heap->filename,
 						NULL,
-						b->T->hash->heap->base,
-						b->T->hash->heap->free,
+						b->thash->heap->base,
+						b->thash->heap->free,
 						STORE_MEM,
 						FALSE);
-					b->T->hash->heap->dirty = FALSE;
+					b->thash->heap->dirty = FALSE;
 				}
-				HEAPfree(b->T->hash->heap, 0);
-				GDKfree(b->T->hash->heap);
-				GDKfree(b->T->hash);
-				b->T->hash = (Hash *) 1;
+				HEAPfree(b->thash->heap, 0);
+				GDKfree(b->thash->heap);
+				GDKfree(b->thash);
+				b->thash = (Hash *) 1;
 			}
 		} else {
-			b->T->hash = NULL;
+			b->thash = NULL;
 		}
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 	}
@@ -626,7 +626,7 @@ HASHfree(BAT *b)
 int
 HASHgonebad(BAT *b, const void *v)
 {
-	Hash *h = b->T->hash;
+	Hash *h = b->thash;
 	BATiter bi = bat_iterator(b);
 	BUN cnt, hit;
 

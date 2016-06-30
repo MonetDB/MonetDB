@@ -132,7 +132,7 @@ BATunique(BAT *b, BAT *s)
 		return NULL;
 	vals = Tloc(b, BUNfirst(b));
 	if (b->tvarsized && b->ttype)
-		vars = b->T->vheap->base;
+		vars = b->tvheap->base;
 	else
 		vars = NULL;
 	width = Tsize(b);
@@ -259,9 +259,9 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATcount(s) : 0);
 		seq = b->hseqbase;
 #ifndef DISABLE_PARENT_HASH
-		if (b->T->hash == NULL && (parent = -VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && (parent = -VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift) + BUNfirst(b);
 			b = b2;
 			bi = bat_iterator(b);
 		} else
@@ -269,7 +269,7 @@ BATunique(BAT *b, BAT *s)
 		{
 			lo = BUNfirst(b);
 		}
-		hs = b->T->hash;
+		hs = b->thash;
 		for (;;) {
 			if (cand) {
 				if (cand == candend)
@@ -385,8 +385,8 @@ BATunique(BAT *b, BAT *s)
 	bn->tsorted = 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return virtualize(bn);
 
   bunins_failed:

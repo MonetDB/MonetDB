@@ -3093,7 +3093,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg);
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
 	sql_allocator *sa, *osa = m->sa;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
@@ -3191,11 +3191,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p));
+		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)); 
+		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION)
+	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)
 		curBlk->inlineProp =1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;

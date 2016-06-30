@@ -23,13 +23,13 @@ unshare_string_heap(BAT *b)
 {
 	assert(b->batCacheid > 0);
 	if (b->ttype == TYPE_str &&
-	    b->T->vheap->parentid != b->batCacheid) {
+	    b->tvheap->parentid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-		if (b->T->vheap->filename) {
+		if (b->tvheap->filename) {
 			char *nme = BBP_physical(b->batCacheid);
 			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
 			if (h->filename == NULL) {
@@ -37,13 +37,13 @@ unshare_string_heap(BAT *b)
 				return GDK_FAIL;
 			}
 		}
-		if (HEAPcopy(h, b->T->vheap) != GDK_SUCCEED) {
+		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		BBPunshare(b->T->vheap->parentid);
-		b->T->vheap = h;
+		BBPunshare(b->tvheap->parentid);
+		b->tvheap = h;
 	}
 	return GDK_SUCCEED;
 }
@@ -77,9 +77,9 @@ insert_string_bat(BAT *b, BAT *n, int force)
 	tp = NULL;
 	tt = b->ttype;
 	if (tt == TYPE_str &&
-	    (!GDK_ELIMDOUBLES(b->T->vheap) || b->batCount == 0) &&
-	    !GDK_ELIMDOUBLES(n->T->vheap) &&
-	    b->T->vheap->hashash == n->T->vheap->hashash &&
+	    (!GDK_ELIMDOUBLES(b->tvheap) || b->batCount == 0) &&
+	    !GDK_ELIMDOUBLES(n->tvheap) &&
+	    b->tvheap->hashash == n->tvheap->hashash &&
 	    /* if needs to be kept unique, take slow path */
 	    (b->tkey & BOUND2BTRUE) == 0) {
 		if (b->batRole == TRANSIENT) {
@@ -98,18 +98,18 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			bat bid = b->batCacheid;
 
 			if (b->batCount == 0) {
-				if (b->T->vheap->parentid != bid) {
-					BBPunshare(b->T->vheap->parentid);
+				if (b->tvheap->parentid != bid) {
+					BBPunshare(b->tvheap->parentid);
 				} else {
-					HEAPfree(b->T->vheap, 1);
-					GDKfree(b->T->vheap);
+					HEAPfree(b->tvheap, 1);
+					GDKfree(b->tvheap);
 				}
-				BBPshare(n->T->vheap->parentid);
-				b->T->vheap = n->T->vheap;
+				BBPshare(n->tvheap->parentid);
+				b->tvheap = n->tvheap;
 				toff = 0;
-			} else if (b->T->vheap->parentid == n->T->vheap->parentid) {
+			} else if (b->tvheap->parentid == n->tvheap->parentid) {
 				toff = 0;
-			} else if (b->T->vheap->parentid != bid &&
+			} else if (b->tvheap->parentid != bid &&
 				   unshare_string_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
@@ -134,33 +134,33 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			 * individually, but reusing the string in b's
 			 * string heap. */
 			int match = 0, i;
-			size_t len = b->T->vheap->hashash ? 1024 * EXTRALEN : 0;
+			size_t len = b->tvheap->hashash ? 1024 * EXTRALEN : 0;
 			for (i = 0; i < 1024; i++) {
 				p = BUNfirst(n) + (BUN) (((double) rand() / RAND_MAX) * (BATcount(n) - 1));
 				off = BUNtvaroff(ni, p);
-				if (off < b->T->vheap->free &&
-				    strcmp(b->T->vheap->base + off, n->T->vheap->base + off) == 0 &&
-				    (!b->T->vheap->hashash ||
-				     ((BUN *) (b->T->vheap->base + off))[-1] == (n->T->vheap->hashash ? ((BUN *) (n->T->vheap->base + off))[-1] : strHash(n->T->vheap->base + off))))
+				if (off < b->tvheap->free &&
+				    strcmp(b->tvheap->base + off, n->tvheap->base + off) == 0 &&
+				    (!b->tvheap->hashash ||
+				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : strHash(n->tvheap->base + off))))
 					match++;
-				len += (strlen(n->T->vheap->base + off) + 8) & ~7;
+				len += (strlen(n->tvheap->base + off) + 8) & ~7;
 			}
-			if (match < 768 && (size_t) (BATcount(n) * (double) len / 1024) >= n->T->vheap->free / 2) {
+			if (match < 768 && (size_t) (BATcount(n) * (double) len / 1024) >= n->tvheap->free / 2) {
 				/* append string heaps */
-				toff = b->batCount == 0 ? 0 : b->T->vheap->free;
+				toff = b->batCount == 0 ? 0 : b->tvheap->free;
 				/* make sure we get alignment right */
 				toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 				assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
 				/* if in "force" mode, the heap may be shared when
 				 * memory mapped */
-				if (HEAPextend(b->T->vheap, toff + n->T->vheap->size, force) != GDK_SUCCEED) {
+				if (HEAPextend(b->tvheap, toff + n->tvheap->size, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
-				memcpy(b->T->vheap->base + toff, n->T->vheap->base, n->T->vheap->free);
-				b->T->vheap->free = toff + n->T->vheap->free;
+				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
+				b->tvheap->free = toff + n->tvheap->free;
 				/* flush double-elimination hash table */
-				memset(b->T->vheap->base, 0, GDK_STRHASHSIZE);
+				memset(b->tvheap->base, 0, GDK_STRHASHSIZE);
 			}
 		}
 		if (toff != ~(size_t) 0) {
@@ -171,16 +171,16 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			 * size column.  Of course, we must make sure
 			 * first that the width of b's offset heap can
 			 * accommodate all values. */
-			if (b->T->width < SIZEOF_VAR_T &&
-			    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
+			if (b->twidth < SIZEOF_VAR_T &&
+			    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? (b->tvheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->tvheap->size >> GDK_VARSHIFT))) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
-				if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0, force) != GDK_SUCCEED) {
+				if (GDKupgradevarheap(b, (var_t) (b->tvheap->size >> GDK_VARSHIFT), 0, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
 			}
-			switch (b->T->width) {
+			switch (b->twidth) {
 			case 1:
 				tt = TYPE_bte;
 				tp = &tbv;
@@ -204,12 +204,12 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			b->ttype = tt;
 		}
 	}
-	if (toff == 0 && n->T->width == b->T->width) {
+	if (toff == 0 && n->twidth == b->twidth) {
 		/* we don't need to do any translation of offset
 		 * values, nor do we need to do any calculations for
 		 * the head column, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, BUNfirst(n)),
-		       BATcount(n) * n->T->width);
+		       BATcount(n) * n->twidth);
 		BATsetcount(b, BATcount(b) + BATcount(n));
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
@@ -230,7 +230,7 @@ insert_string_bat(BAT *b, BAT *n, int force)
 		const var_t *restrict tvp = (const var_t *) Tloc(n, BUNfirst(n));
 
 		BATloop(n, p, q) {
-			switch (n->T->width) {
+			switch (n->twidth) {
 			case 1:
 				v = (var_t) *tbp++ + GDK_VAROFFSET;
 				break;
@@ -248,8 +248,8 @@ insert_string_bat(BAT *b, BAT *n, int force)
 			}
 			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + toff) >> GDK_VARSHIFT);
 			assert(v >= GDK_VAROFFSET);
-			assert(((size_t) v << GDK_VARSHIFT) < b->T->vheap->free);
-			switch (b->T->width) {
+			assert(((size_t) v << GDK_VARSHIFT) < b->tvheap->free);
+			switch (b->twidth) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 				tbv = (unsigned char) (v - GDK_VAROFFSET);
@@ -279,46 +279,46 @@ insert_string_bat(BAT *b, BAT *n, int force)
 		 * offset, otherwise we insert normally.  */
 		BATloop(n, p, q) {
 			off = BUNtvaroff(ni, p); /* the offset */
-			tp = n->T->vheap->base + off; /* the string */
-			if (off < b->T->vheap->free &&
-			    strcmp(b->T->vheap->base + off, tp) == 0 &&
-			    (!b->T->vheap->hashash ||
-			     ((BUN *) (b->T->vheap->base + off))[-1] == (n->T->vheap->hashash ? ((BUN *) tp)[-1] : strHash(tp)))) {
+			tp = n->tvheap->base + off; /* the string */
+			if (off < b->tvheap->free &&
+			    strcmp(b->tvheap->base + off, tp) == 0 &&
+			    (!b->tvheap->hashash ||
+			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : strHash(tp)))) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
 				 * in n's string heap, so we don't
 				 * have to insert a new string into b:
 				 * we can just copy the offset */
 				v = (var_t) (off >> GDK_VARSHIFT);
-				if (b->T->width < SIZEOF_VAR_T &&
-				    ((size_t) 1 << 8 * b->T->width) <= (b->T->width <= 2 ? v - GDK_VAROFFSET : v)) {
+				if (b->twidth < SIZEOF_VAR_T &&
+				    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
 					 * so widen offset heap */
-					if (GDKupgradevarheap(b->T, v, 0, force) != GDK_SUCCEED) {
+					if (GDKupgradevarheap(b, v, 0, force) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
-				switch (b->T->width) {
+				switch (b->twidth) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
 					*(unsigned char *)Tloc(b, BUNlast(b)) = (unsigned char) (v - GDK_VAROFFSET);
-					b->T->heap.free += 1;
+					b->theap.free += 1;
 					break;
 				case 2:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
 					*(unsigned short *)Tloc(b, BUNlast(b)) = (unsigned short) (v - GDK_VAROFFSET);
-					b->T->heap.free += 2;
+					b->theap.free += 2;
 					break;
 #if SIZEOF_VAR_T == 8
 				case 4:
 					assert(v < ((var_t) 1 << 32));
 					*(unsigned int *)Tloc(b, BUNlast(b)) = (unsigned int) v;
-					b->T->heap.free += 4;
+					b->theap.free += 4;
 					break;
 #endif
 				default:
 					*(var_t *)Tloc(b, BUNlast(b)) = v;
-					b->T->heap.free += SIZEOF_VAR_T;
+					b->theap.free += SIZEOF_VAR_T;
 					break;
 				}
 				b->batCount++;
@@ -355,8 +355,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 	assert(b->batCacheid > 0);
 	/* almost: assert(!isVIEW(b)); */
-	assert(b->T->heap.parentid == 0 &&
-	       (b->T->vheap == NULL || b->T->vheap->parentid == b->batCacheid || b->ttype == TYPE_str));
+	assert(b->theap.parentid == 0 &&
+	       (b->tvheap == NULL || b->tvheap->parentid == b->batCacheid || b->ttype == TYPE_str));
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
@@ -403,10 +403,10 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
-	if (BATcheckhash(b) && (2 * b->T->hash->mask) < (BATcount(b) + sz)) {
+	if (BATcheckhash(b) && (2 * b->thash->mask) < (BATcount(b) + sz)) {
 		HASHdestroy(b);
 	}
-	if (b->T->hash != NULL || (b->tkey & BOUND2BTRUE) != 0)
+	if (b->thash != NULL || (b->tkey & BOUND2BTRUE) != 0)
 		fastpath = 0;
 
 	if (fastpath) {
@@ -422,11 +422,11 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->tseqbase = *(oid *) BUNtail(ni, BUNfirst(n));
 			}
 			b->tdense = n->tdense;
-			b->T->nodense = n->T->nodense;
+			b->tnodense = n->tnodense;
 			b->tkey |= (n->tkey & TRUE);
-			b->T->nokey[0] = n->T->nokey[0];
-			b->T->nokey[1] = n->T->nokey[1];
-			b->T->nonil = n->T->nonil;
+			b->tnokey[0] = n->tnokey[0];
+			b->tnokey[1] = n->tnokey[1];
+			b->tnonil = n->tnonil;
 		} else {
 			BUN last = BUNlast(b) - 1;
 			BATiter ni = bat_iterator(n);
@@ -434,16 +434,16 @@ BATappend(BAT *b, BAT *n, bit force)
 			int xx = ATOMcmp(b->ttype, BUNtail(ni, BUNfirst(n)), BUNtail(bi, last));
 			if (BATtordered(b) && (!BATtordered(n) || xx < 0)) {
 				b->tsorted = FALSE;
-				b->T->nosorted = 0;
+				b->tnosorted = 0;
 				if (b->tdense) {
 					b->tdense = FALSE;
-					b->T->nodense = r;
+					b->tnodense = r;
 				}
 			}
 			if (BATtrevordered(b) &&
 			    (!BATtrevordered(n) || xx > 0)) {
 				b->trevsorted = FALSE;
-				b->T->norevsorted = 0;
+				b->tnorevsorted = 0;
 			}
 			if (b->tkey &&
 			    (!(BATtordered(b) || BATtrevordered(b)) ||
@@ -454,13 +454,13 @@ BATappend(BAT *b, BAT *n, bit force)
 			    (BATtdense(n) == 0 ||
 			     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, BUNfirst(n)))) {
 				b->tdense = FALSE;
-				b->T->nodense = r;
+				b->tnodense = r;
 			}
 		}
 		if (b->ttype == TYPE_str &&
-		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->T->vheap)) &&
-		    !GDK_ELIMDOUBLES(n->T->vheap) &&
-		    b->T->vheap->hashash == n->T->vheap->hashash) {
+		    (b->batCount == 0 || !GDK_ELIMDOUBLES(b->tvheap)) &&
+		    !GDK_ELIMDOUBLES(n->tvheap) &&
+		    b->tvheap->hashash == n->tvheap->hashash) {
 			if (insert_string_bat(b, n, force) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else {
@@ -493,7 +493,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 				if (BUNfnd(b, t) == BUN_NONE) {
 					bunfastapp(b, t);
-					if (b->T->hash) {
+					if (b->thash) {
 						HASHins(b, i, t);
 					}
 					i++;
@@ -509,7 +509,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				const void *t = BUNtail(ni, p);
 
 				bunfastapp(b, t);
-				if (b->T->hash) {
+				if (b->thash) {
 					HASHins(b, i, t);
 				}
 				i++;
@@ -518,7 +518,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tdense = b->tsorted = b->trevsorted = 0;
 		}
 	}
-	b->T->nonil &= n->T->nonil;
+	b->tnonil &= n->tnonil;
 	return GDK_SUCCEED;
       bunins_failed:
 	return GDK_FAIL;
@@ -561,7 +561,7 @@ BATdel(BAT *b, BAT *d)
 				if (unfix)
 					(*unfix)(BUNtail(bi, p));
 				if (atmdel)
-					(*atmdel)(b->T->vheap, (var_t *) BUNtloc(bi, p));
+					(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
 				p++;
 			}
 		}
@@ -599,7 +599,7 @@ BATdel(BAT *b, BAT *d)
 			if (unfix)
 				(*unfix)(BUNtail(bi, *o - b->hseqbase + BUNfirst(b)));
 			if (atmdel)
-				(*atmdel)(b->T->vheap, (var_t *) BUNtloc(bi, *o - b->hseqbase + BUNfirst(b)));
+				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, *o - b->hseqbase + BUNfirst(b)));
 			o++;
 			c--;
 			nd++;
@@ -625,8 +625,8 @@ BATdel(BAT *b, BAT *d)
 		b->tkey |= 1;
 		b->tsorted = b->trevsorted = 1;
 		if (b->batCount == 0) {
-			b->T->nil = 0;
-			b->T->nonil = 1;
+			b->tnil = 0;
+			b->tnonil = 1;
 		}
 	}
 	return GDK_SUCCEED;
@@ -727,26 +727,26 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tkey = b->tkey & 1;
-		bn->T->nonil = b->T->nonil;
-		if (b->T->nosorted > l && b->T->nosorted < h)
-			bn->T->nosorted = b->T->nosorted - l + BUNfirst(bn);
+		bn->tnonil = b->tnonil;
+		if (b->tnosorted > l && b->tnosorted < h)
+			bn->tnosorted = b->tnosorted - l + BUNfirst(bn);
 		else
-			bn->T->nosorted = 0;
-		if (b->T->norevsorted > l && b->T->norevsorted < h)
-			bn->T->norevsorted = b->T->norevsorted - l + BUNfirst(bn);
+			bn->tnosorted = 0;
+		if (b->tnorevsorted > l && b->tnorevsorted < h)
+			bn->tnorevsorted = b->tnorevsorted - l + BUNfirst(bn);
 		else
-			bn->T->norevsorted = 0;
-		if (b->T->nodense > l && b->T->nodense < h)
-			bn->T->nodense = b->T->nodense - l + BUNfirst(bn);
+			bn->tnorevsorted = 0;
+		if (b->tnodense > l && b->tnodense < h)
+			bn->tnodense = b->tnodense - l + BUNfirst(bn);
 		else
-			bn->T->nodense = 0;
-		if (b->T->nokey[0] >= l && b->T->nokey[0] < h &&
-		    b->T->nokey[1] >= l && b->T->nokey[1] < h &&
-		    b->T->nokey[0] != b->T->nokey[1]) {
-			bn->T->nokey[0] = b->T->nokey[0] - l + BUNfirst(bn);
-			bn->T->nokey[1] = b->T->nokey[1] - l + BUNfirst(bn);
+			bn->tnodense = 0;
+		if (b->tnokey[0] >= l && b->tnokey[0] < h &&
+		    b->tnokey[1] >= l && b->tnokey[1] < h &&
+		    b->tnokey[0] != b->tnokey[1]) {
+			bn->tnokey[0] = b->tnokey[0] - l + BUNfirst(bn);
+			bn->tnokey[1] = b->tnokey[1] - l + BUNfirst(bn);
 		} else {
-			bn->T->nokey[0] = bn->T->nokey[1] = 0;
+			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
 	}
 	bni = bat_iterator(bn);
@@ -773,11 +773,11 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BATtkey(b));
 	}
-	bn->T->nonil = b->T->nonil || bn->batCount == 0;
-	bn->T->nil = 0;		/* we just don't know */
-	bn->T->nosorted = 0;
-	bn->T->nodense = 0;
-	bn->T->nokey[0] = bn->T->nokey[1] = 0;
+	bn->tnonil = b->tnonil || bn->batCount == 0;
+	bn->tnil = 0;		/* we just don't know */
+	bn->tnosorted = 0;
+	bn->tnodense = 0;
+	bn->tnokey[0] = bn->tnokey[1] = 0;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -799,7 +799,7 @@ BATordered(BAT *b)
 	 * this scanning interferes with hashes, but because it's
 	 * there, and not so likely to be used at the same time. */
 	MT_lock_set(&GDKhashLock(b->batCacheid));
-	if (!b->tsorted && b->T->nosorted == 0) {
+	if (!b->tsorted && b->tnosorted == 0) {
 		BATiter bi = bat_iterator(b);
 		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 		BUN p, q;
@@ -809,7 +809,7 @@ BATordered(BAT *b)
 			const int *iptr = (const int *) Tloc(b, 0);
 			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
 				if (iptr[p - 1] > iptr[p]) {
-					b->T->nosorted = p;
+					b->tnosorted = p;
 					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				}
@@ -820,7 +820,7 @@ BATordered(BAT *b)
 			const lng *lptr = (const lng *) Tloc(b, 0);
 			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
 				if (lptr[p - 1] > lptr[p]) {
-					b->T->nosorted = p;
+					b->tnosorted = p;
 					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				}
@@ -830,7 +830,7 @@ BATordered(BAT *b)
 		default:
 			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
 				if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) > 0) {
-					b->T->nosorted = p;
+					b->tnosorted = p;
 					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				}
@@ -858,14 +858,14 @@ BATordered_rev(BAT *b)
 	if (b->ttype == TYPE_void)
 		return b->tseqbase == oid_nil;
 	MT_lock_set(&GDKhashLock(b->batCacheid));
-	if (!b->trevsorted && b->T->norevsorted == 0) {
+	if (!b->trevsorted && b->tnorevsorted == 0) {
 		BATiter bi = bat_iterator(b);
 		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 		BUN p, q;
 		b->batDirtydesc = 1;
 		for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
 			if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
-				b->T->norevsorted = p;
+				b->tnorevsorted = p;
 				ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 				goto doreturn;
 			}
@@ -1061,12 +1061,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				grps[p] = p + b->hseqbase;
 			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
-			on->T->nil = 0;
-			on->T->nonil = 1;
+			on->tnil = 0;
+			on->tnonil = 1;
 		}
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
-		on->T->nosorted = on->T->norevsorted = on->T->nodense = 0;
+		on->tnosorted = on->tnorevsorted = on->tnodense = 0;
 		*order = on;
 	}
 	if (g) {
@@ -1085,10 +1085,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					 * after all */
 					on->tsorted = o->tsorted;
 					on->trevsorted = o->trevsorted;
-					if (o->T->nosorted)
-						on->T->nosorted = o->T->nosorted - BUNfirst(o) + BUNfirst(on);
-					if (o->T->norevsorted)
-						on->T->norevsorted = o->T->norevsorted - BUNfirst(o) + BUNfirst(on);
+					if (o->tnosorted)
+						on->tnosorted = o->tnosorted - BUNfirst(o) + BUNfirst(on);
+					if (o->tnorevsorted)
+						on->tnorevsorted = o->tnorevsorted - BUNfirst(o) + BUNfirst(on);
 				} else {
 					/* we didn't rearrange, so
 					 * still sorted */
@@ -1116,7 +1116,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				/* sub sort [r,p) */
 				if (do_sort(Tloc(bn, BUNfirst(bn) + r),
 					    on ? Tloc(on, BUNfirst(on) + r) : NULL,
-					    bn->T->vheap ? bn->T->vheap->base : NULL,
+					    bn->tvheap ? bn->tvheap->base : NULL,
 					    p - r, Tsize(bn), on ? Tsize(on) : 0,
 					    bn->ttype, reverse, stable) != GDK_SUCCEED)
 					goto error;
@@ -1127,7 +1127,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		/* sub sort [r,q) */
 		if (do_sort(Tloc(bn, BUNfirst(bn) + r),
 			    on ? Tloc(on, BUNfirst(on) + r) : NULL,
-			    bn->T->vheap ? bn->T->vheap->base : NULL,
+			    bn->tvheap ? bn->tvheap->base : NULL,
 			    p - r, Tsize(bn), on ? Tsize(on) : 0,
 			    bn->ttype, reverse, stable) != GDK_SUCCEED)
 			goto error;
@@ -1146,15 +1146,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
 		    do_sort(Tloc(bn, BUNfirst(bn)),
 			    on ? Tloc(on, BUNfirst(on)) : NULL,
-			    bn->T->vheap ? bn->T->vheap->base : NULL,
+			    bn->tvheap ? bn->tvheap->base : NULL,
 			    BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
 			    bn->ttype, reverse, stable) != GDK_SUCCEED)
 			goto error;
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
 	}
-	bn->T->nosorted = 0;
-	bn->T->norevsorted = 0;
+	bn->tnosorted = 0;
+	bn->tnorevsorted = 0;
 	if (groups) {
 		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) != GDK_SUCCEED)
 			goto error;
@@ -1240,11 +1240,11 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 		n -= BUNfirst(bn);
 		break;
 	}
-	bn->T->nil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
+	bn->tnil = n >= 1 && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
 	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;
-	bn->T->nonil = !bn->T->nil;
+	bn->tnonil = !bn->tnil;
 	bn->tkey = BATcount(bn) <= 1;
 	return bn;
 
@@ -1297,7 +1297,7 @@ PROPdestroy(PROPrec *p)
 PROPrec *
 BATgetprop(BAT *b, int idx)
 {
-	PROPrec *p = b->T->props;
+	PROPrec *p = b->tprops;
 
 	while (p) {
 		if (p->id == idx)
@@ -1315,9 +1315,9 @@ BATsetprop(BAT *b, int idx, int type, void *v)
 
 	if (!p && (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
 		p->id = idx;
-		p->next = b->T->props;
+		p->next = b->tprops;
 		p->v.vtype = 0;
-		b->T->props = p;
+		b->tprops = p;
 	}
 	if (p) {
 		VALset(&vr, type, v);
@@ -1343,7 +1343,7 @@ BATcount_no_nil(BAT *b)
 
 	BATcheck(b, "BATcnt", 0);
 	n = BATcount(b);
-	if (b->T->nonil)
+	if (b->tnonil)
 		return n;
 	p = Tloc(b, b->batFirst);
 	t = ATOMbasetype(b->ttype);
@@ -1382,8 +1382,8 @@ BATcount_no_nil(BAT *b)
 			cnt += ((const dbl *) p)[i] != dbl_nil;
 		break;
 	case TYPE_str:
-		base = b->T->vheap->base;
-		switch (b->T->width) {
+		base = b->tvheap->base;
+		switch (b->twidth) {
 		case 1:
 			for (i = 0; i < n; i++)
 				cnt += base[((var_t) ((const unsigned char *) p)[i] + GDK_VAROFFSET) << GDK_VARSHIFT] != '\200';
@@ -1408,7 +1408,7 @@ BATcount_no_nil(BAT *b)
 		nil = ATOMnilptr(t);
 		cmp = ATOMcompare(t);
 		if (b->tvarsized) {
-			base = b->T->vheap->base;
+			base = b->tvheap->base;
 			for (i = 0; i < n; i++)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[i]) != 0;
 		} else {
@@ -1419,9 +1419,9 @@ BATcount_no_nil(BAT *b)
 	}
 	if (cnt == BATcount(b)) {
 		/* we learned something */
-		b->T->nonil = 1;
-		assert(b->T->nil == 0);
-		b->T->nil = 0;
+		b->tnonil = 1;
+		assert(b->tnil == 0);
+		b->tnil = 0;
 	}
 	return cnt;
 }
@@ -1463,8 +1463,8 @@ BATmergecand(BAT *a, BAT *b)
 	assert(BATcount(b) <= 1 || b->tsorted);
 	assert(BATcount(a) <= 1 || a->tkey);
 	assert(BATcount(b) <= 1 || b->tkey);
-	assert(a->T->nonil);
-	assert(b->T->nonil);
+	assert(a->tnonil);
+	assert(b->tnonil);
 
 	/* we can return a if b is empty (and v.v.) */
 	if (BATcount(a) == 0) {
@@ -1566,8 +1566,8 @@ BATmergecand(BAT *a, BAT *b)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tsorted = 1;
 	bn->tkey = 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return virtualize(bn);
 }
 
@@ -1593,8 +1593,8 @@ BATintersectcand(BAT *a, BAT *b)
 	assert(b->tsorted);
 	assert(a->tkey);
 	assert(b->tkey);
-	assert(a->T->nonil);
-	assert(b->T->nonil);
+	assert(a->tnonil);
+	assert(b->tnonil);
 
 	if (BATcount(a) == 0 || BATcount(b) == 0) {
 		return newdensecand(0, 0);
@@ -1653,7 +1653,7 @@ BATintersectcand(BAT *a, BAT *b)
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tsorted = 1;
 	bn->tkey = 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return virtualize(bn);
 }

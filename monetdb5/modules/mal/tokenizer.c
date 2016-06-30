@@ -69,7 +69,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BUN p;
 
 	if (BAThash(b, 2 * BATcount(b)) == GDK_SUCCEED) {
-		HASHloop_str(bi, b->T->hash, p, part) {
+		HASHloop_str(bi, b->thash, p, part) {
 			if (*((oid *) BUNtail(biidx, p)) == *prv) {
 				*prv = (oid) p;
 				return TRUE;
@@ -351,9 +351,9 @@ TKNZRappend(oid *pos, str *s)
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");
 		}
-		if (tokenBAT[i].val->T->hash == NULL ||
-			tokenBAT[i].val->T->hash == (Hash *) 1 ||
-			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->T->hash->mask) {
+		if (tokenBAT[i].val->thash == NULL ||
+			tokenBAT[i].val->thash == (Hash *) 1 ||
+			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->thash->mask) {
 			HASHdestroy(tokenBAT[i].val);
 			BAThash(tokenBAT[i].val, 2 * BATcount(tokenBAT[i].val));
 		}
@@ -370,9 +370,9 @@ TKNZRappend(oid *pos, str *s)
 	*pos = (oid) BATcount(tokenBAT[INDEX].val);
 	comp = COMP(prv, depth);
 	BUNappend(tokenBAT[INDEX].val, (ptr) & comp, TRUE);
-	if (tokenBAT[INDEX].val->T->hash == NULL ||
-		tokenBAT[INDEX].val->T->hash == (Hash *) 1 ||
-		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->T->hash->mask) {
+	if (tokenBAT[INDEX].val->thash == NULL ||
+		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
+		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->thash->mask) {
 		HASHdestroy(tokenBAT[INDEX].val);
 		BAThash(tokenBAT[INDEX].val, 2 * BATcount(tokenBAT[INDEX].val));
 	}

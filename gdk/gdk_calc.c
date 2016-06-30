@@ -98,7 +98,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, b->batFirst); \
 		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, bn->batFirst); \
 		CANDLOOP(dst, i, TYPE2##_nil, 0, start);		\
-		if (b->T->nonil && cand == NULL) {			\
+		if (b->tnonil && cand == NULL) {			\
 			for (i = start; i < end; i++)			\
 				dst[i] = FUNC(src[i]);			\
 		} else {						\
@@ -238,16 +238,16 @@ BATcalcnot(BAT *b, BAT *s)
 	/* NOT reverses the order, but NILs mess it up */
 	bn->tsorted = nils == 0 && b->trevsorted;
 	bn->trevsorted = nils == 0 && b->tsorted;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	bn->tkey = b->tkey & 1;
 
-	if (nils != 0 && !b->T->nil) {
-		b->T->nil = 1;
+	if (nils != 0 && !b->tnil) {
+		b->tnil = 1;
 		b->batDirtydesc = 1;
 	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
+	if (nils == 0 && !b->tnonil) {
+		b->tnonil = 1;
 		b->batDirtydesc = 1;
 	}
 
@@ -359,16 +359,16 @@ BATcalcnegate(BAT *b, BAT *s)
 	/* unary - reverses the order, but NILs mess it up */
 	bn->tsorted = nils == 0 && b->trevsorted;
 	bn->trevsorted = nils == 0 && b->tsorted;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	bn->tkey = b->tkey & 1;
 
-	if (nils != 0 && !b->T->nil) {
-		b->T->nil = 1;
+	if (nils != 0 && !b->tnil) {
+		b->tnil = 1;
 		b->batDirtydesc = 1;
 	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
+	if (nils == 0 && !b->tnonil) {
+		b->tnonil = 1;
 		b->batDirtydesc = 1;
 	}
 
@@ -491,15 +491,15 @@ BATcalcabsolute(BAT *b, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
-	if (nils && !b->T->nil) {
-		b->T->nil = 1;
+	if (nils && !b->tnil) {
+		b->tnil = 1;
 		b->batDirtydesc = 1;
 	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
+	if (nils == 0 && !b->tnonil) {
+		b->tnonil = 1;
 		b->batDirtydesc = 1;
 	}
 
@@ -621,15 +621,15 @@ BATcalciszero(BAT *b, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
-	if (nils != 0 && !b->T->nil) {
-		b->T->nil = 1;
+	if (nils != 0 && !b->tnil) {
+		b->tnil = 1;
 		b->batDirtydesc = 1;
 	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
+	if (nils == 0 && !b->tnonil) {
+		b->tnonil = 1;
 		b->batDirtydesc = 1;
 	}
 
@@ -755,15 +755,15 @@ BATcalcsign(BAT *b, BAT *s)
 	bn->tsorted = b->tsorted || cnt <= 1 || nils == cnt;
 	bn->trevsorted = b->trevsorted || cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
-	if (nils != 0 && !b->T->nil) {
-		b->T->nil = 1;
+	if (nils != 0 && !b->tnil) {
+		b->tnil = 1;
 		b->batDirtydesc = 1;
 	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
+	if (nils == 0 && !b->tnonil) {
+		b->tnonil = 1;
 		b->batDirtydesc = 1;
 	}
 
@@ -853,7 +853,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (start == 0 && end == cnt && cand == NULL) {
-		if (b->T->nonil ||
+		if (b->tnonil ||
 		    (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 			bit zero = 0;
 
@@ -920,8 +920,8 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 	 * candidate list. */
 	bn->tsorted = s == NULL && b->trevsorted;
 	bn->trevsorted = s == NULL && b->tsorted;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	bn->tkey = cnt <= 1;
 
 	return bn;
@@ -1015,8 +1015,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
 	nils += cnt - end;
-	bn->T->nil = nils > 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
@@ -1100,8 +1100,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
 	nils += cnt - end;
-	bn->T->nil = nils > 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
@@ -1181,8 +1181,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
 	nils += cnt - end;
-	bn->T->nil = nils > 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
@@ -1266,8 +1266,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
 	nils += cnt - end;
-	bn->T->nil = nils > 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils > 0;
+	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
@@ -3167,8 +3167,8 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	bn->trevsorted = (abort_on_error && b1->trevsorted & b2->trevsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -3219,8 +3219,8 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -3271,8 +3271,8 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -3336,15 +3336,15 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 	bn->trevsorted = (abort_on_error && b->trevsorted) ||
 		cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
-	if (nils && !b->T->nil) {
-		b->T->nil = 1;
+	if (nils && !b->tnil) {
+		b->tnil = 1;
 		b->batDirtydesc = 1;
 	}
-	if (nils == 0 && !b->T->nonil) {
-		b->T->nonil = 1;
+	if (nils == 0 && !b->tnonil) {
+		b->tnonil = 1;
 		b->batDirtydesc = 1;
 	}
 
@@ -5164,8 +5164,8 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -5211,8 +5211,8 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	bn->trevsorted = (abort_on_error && b->trevsorted && nils == 0) ||
 		cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -5259,8 +5259,8 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	bn->trevsorted = (abort_on_error && nils == 0 && b->tsorted) ||
 		cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -7281,8 +7281,8 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error,
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -7345,8 +7345,8 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 		bn->trevsorted = cnt <= 1 || nils == cnt;
 	}
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -7402,8 +7402,8 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 		bn->trevsorted = cnt <= 1 || nils == cnt;
 	}
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -9387,8 +9387,8 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -9429,8 +9429,8 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -10951,8 +10951,8 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -10993,8 +10993,8 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11107,7 +11107,7 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 				  Tloc(bn, bn->batFirst),
 				  b1->ttype, cnt,
 				  start, end, cand, candend, b1->hseqbase,
-				  cand == NULL && b1->T->nonil && b2->T->nonil,
+				  cand == NULL && b1->tnonil && b2->tnonil,
 				  "BATcalcxor");
 
 	if (nils == BUN_NONE) {
@@ -11120,8 +11120,8 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11155,7 +11155,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 				  Tloc(bn, bn->batFirst), b->ttype,
 				  cnt,
 				  start, end, cand, candend, b->hseqbase,
-				  cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcxorcst");
 
 	if (nils == BUN_NONE) {
@@ -11168,8 +11168,8 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11203,7 +11203,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 				  Tloc(bn, bn->batFirst), b->ttype,
 				  cnt,
 				  start, end, cand, candend, b->hseqbase,
-				  cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstxor");
 
 	if (nils == BUN_NONE) {
@@ -11216,8 +11216,8 @@ BATcalccstxor(const ValRecord *v, BAT *b, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11351,7 +11351,7 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 				 Tloc(bn, bn->batFirst),
 				 b1->ttype, cnt,
 				 start, end, cand, candend, b1->hseqbase,
-				 b1->T->nonil && b2->T->nonil,
+				 b1->tnonil && b2->tnonil,
 				 "BATcalcor");
 
 	if (nils == BUN_NONE) {
@@ -11364,8 +11364,8 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11399,7 +11399,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 				 Tloc(bn, bn->batFirst), b->ttype,
 				 cnt,
 				 start, end, cand, candend, b->hseqbase,
-				 cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				 cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalcorcst");
 
 	if (nils == BUN_NONE) {
@@ -11412,8 +11412,8 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11447,7 +11447,7 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 				 Tloc(bn, bn->batFirst), b->ttype,
 				 cnt,
 				 start, end, cand, candend, b->hseqbase,
-				 cand == NULL && b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				 cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalccstor");
 
 	if (nils == BUN_NONE) {
@@ -11460,8 +11460,8 @@ BATcalccstor(const ValRecord *v, BAT *b, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11592,7 +11592,7 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 				  Tloc(bn, bn->batFirst),
 				  b1->ttype, cnt,
 				  start, end, cand, candend, b1->hseqbase,
-				  b1->T->nonil && b2->T->nonil,
+				  b1->tnonil && b2->tnonil,
 				  "BATcalcand");
 
 	if (nils == BUN_NONE) {
@@ -11605,8 +11605,8 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11639,7 +11639,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 				  VALptr(v), 0,
 				  Tloc(bn, bn->batFirst), b->ttype,
 				  cnt, start, end, cand, candend, b->hseqbase,
-				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcandcst");
 
 	if (nils == BUN_NONE) {
@@ -11652,8 +11652,8 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11686,7 +11686,7 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 				  Tloc(b, b->batFirst), 1,
 				  Tloc(bn, bn->batFirst), b->ttype,
 				  cnt, start, end, cand, candend, b->hseqbase,
-				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstand");
 
 	if (nils == BUN_NONE) {
@@ -11699,8 +11699,8 @@ BATcalccstand(const ValRecord *v, BAT *b, BAT *s)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11946,8 +11946,8 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -11987,8 +11987,8 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -12028,8 +12028,8 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -12255,8 +12255,8 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -12296,8 +12296,8 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -12337,8 +12337,8 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -12651,8 +12651,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 
 	return bn;
 }
@@ -12695,14 +12695,14 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int sym)
 	}
 
 	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
-				   b->T->vheap ? b->T->vheap->base : NULL,
-				   b->T->width,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
 				   Tloc(lo, lo->batFirst), 1,
-				   lo->T->vheap ? lo->T->vheap->base : NULL,
-				   lo->T->width,
+				   lo->tvheap ? lo->tvheap->base : NULL,
+				   lo->twidth,
 				   Tloc(hi, hi->batFirst), 1,
-				   hi->T->vheap ? hi->T->vheap->base : NULL,
-				   hi->T->width,
+				   hi->tvheap ? hi->tvheap->base : NULL,
+				   hi->twidth,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
 				   b->hseqbase, sym, "BATcalcbetween");
@@ -12731,8 +12731,8 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
-				   b->T->vheap ? b->T->vheap->base : NULL,
-				   b->T->width,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
 				   VALptr(lo), 0, NULL, 0,
 				   VALptr(hi), 0, NULL, 0,
 				   b->ttype, cnt,
@@ -12762,11 +12762,11 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int sym)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
-				   b->T->vheap ? b->T->vheap->base : NULL,
-				   b->T->width,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
 				   Tloc(lo, lo->batFirst), 1,
-				   lo->T->vheap ? lo->T->vheap->base : NULL,
-				   lo->T->width,
+				   lo->tvheap ? lo->tvheap->base : NULL,
+				   lo->twidth,
 				   VALptr(hi), 0, NULL, 0,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
@@ -12795,12 +12795,12 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int sym)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->batFirst), 1,
-				   b->T->vheap ? b->T->vheap->base : NULL,
-				   b->T->width,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
 				   VALptr(lo), 0, NULL, 0,
 				   Tloc(hi, hi->batFirst), 1,
-				   hi->T->vheap ? hi->T->vheap->base : NULL,
-				   hi->T->width,
+				   hi->tvheap ? hi->tvheap->base : NULL,
+				   hi->twidth,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
 				   b->hseqbase, sym, "BATcalcbetweencstbat");
@@ -12946,7 +12946,7 @@ BATcalcifthenelse_intern(BAT *b,
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		switch (bn->T->width) {
+		switch (bn->twidth) {
 		case 1:
 			IFTHENELSELOOP(bte);
 			break;
@@ -12974,8 +12974,8 @@ BATcalcifthenelse_intern(BAT *b,
 				} else {
 					p = ((const char *) col2) + l * width2;
 				}
-				memcpy(dst, p, bn->T->width);
-				dst = (void *) ((char *) dst + bn->T->width);
+				memcpy(dst, p, bn->twidth);
+				dst = (void *) ((char *) dst + bn->twidth);
 				k += incr1;
 				l += incr2;
 			}
@@ -12987,8 +12987,8 @@ BATcalcifthenelse_intern(BAT *b,
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
 	bn->tkey = cnt <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0 && nonil1 && nonil2;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0 && nonil1 && nonil2;
 
 	return bn;
   bunins_failed:
@@ -13012,8 +13012,8 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
-					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
+					Tloc(b1, b1->batFirst), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil,
+					Tloc(b2, b2->batFirst), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil,
 					b1->ttype);
 }
 
@@ -13031,7 +13031,7 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 		return NULL;
 	}
 	return BATcalcifthenelse_intern(b,
-					Tloc(b1, b1->batFirst), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
+					Tloc(b1, b1->batFirst), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil,
 					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
 					b1->ttype);
 }
@@ -13051,7 +13051,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 	}
 	return BATcalcifthenelse_intern(b,
 					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
-					Tloc(b2, b2->batFirst), 1, b2->T->vheap ? b2->T->vheap->base : NULL, b2->T->width, b2->T->nonil,
+					Tloc(b2, b2->batFirst), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil,
 					c1->vtype);
 }
 
@@ -13377,12 +13377,12 @@ convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
 	int size = ATOMsize(tp);
 
 	for (i = 0; i < start; i++)
-		tfastins_nocheck(bn, i, str_nil, bn->T->width);
+		tfastins_nocheck(bn, i, str_nil, bn->twidth);
 	for (i = start; i < end; i++) {
 		if (cand) {
 			if (i < *cand - candoff) {
 				nils++;
-				tfastins_nocheck(bn, i, str_nil, bn->T->width);
+				tfastins_nocheck(bn, i, str_nil, bn->twidth);
 				continue;
 			}
 			assert(i == *cand - candoff);
@@ -13392,11 +13392,11 @@ convert_any_str(int tp, const void *src, BAT *bn, BUN cnt,
 		(*atomtostr)(&dst, &len, src);
 		if (ATOMcmp(tp, src, nil) == 0)
 			nils++;
-		tfastins_nocheck(bn, i, dst, bn->T->width);
+		tfastins_nocheck(bn, i, dst, bn->twidth);
 		src = (const void *) ((const char *) src + size);
 	}
 	for (i = end; i < cnt; i++)
-		tfastins_nocheck(bn, i, str_nil, bn->T->width);
+		tfastins_nocheck(bn, i, str_nil, bn->twidth);
 	BATsetcount(bn, cnt);
 	if (dst)
 		GDKfree(dst);
@@ -13566,13 +13566,13 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			break;
 		case TYPE_str:
 			for (i = 0; i < start; i++)
-				tfastins_nocheck(bn, i, str_nil, bn->T->width);
+				tfastins_nocheck(bn, i, str_nil, bn->twidth);
 			for (i = 0; i < end; i++) {
 				if (cand) {
 					if (i < *cand - candoff) {
 						nils++;
 						tfastins_nocheck(bn, i, str_nil,
-								 bn->T->width);
+								 bn->twidth);
 						continue;
 					}
 					assert(i == *cand - candoff);
@@ -13580,7 +13580,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 						end = i + 1;
 				}
 				(*atomtostr)(&s, &len, &seq);
-				tfastins_nocheck(bn, i, s, bn->T->width);
+				tfastins_nocheck(bn, i, s, bn->twidth);
 				seq++;
 			}
 			break;
@@ -13624,7 +13624,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		seq = oid_nil;
 		(*atomtostr)(&s, &len, &seq);
 		for (; i < cnt; i++) {
-			tfastins_nocheck(bn, i, s, bn->T->width);
+			tfastins_nocheck(bn, i, s, bn->twidth);
 		}
 		break;
 	default:
@@ -14095,8 +14095,8 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	BATsetcount(bn, b->batCount);
 
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	if ((bn->ttype != TYPE_bit && b->ttype != TYPE_str) ||
 	    BATcount(bn) < 2) {
 		bn->tsorted = nils == 0 && b->tsorted;

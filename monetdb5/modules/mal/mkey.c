@@ -174,8 +174,8 @@ MKEYbathash(bat *res, const bat *bid)
 		BATkey(dst, 0);
 		dst->tsorted = dst->trevsorted = 0;
 	}
-	dst->T->nonil = 0;
-	dst->T->nil = 0;
+	dst->tnonil = 0;
+	dst->tnil = 0;
 
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -316,7 +316,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 #endif
 	case TYPE_str:
-		if (b->T->vheap->hashash) {
+		if (b->tvheap->hashash) {
 			BATiter bi = bat_iterator(b);
 			BUN i;
 			BATloop(b, i, n) {
@@ -346,8 +346,8 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -428,8 +428,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(hb->batCacheid);
@@ -506,7 +506,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 #endif
 	case TYPE_str:
-		if (b->T->vheap->hashash) {
+		if (b->tvheap->hashash) {
 			BATiter bi = bat_iterator(b);
 			BUN i;
 			BATloop(b, i, n) {
@@ -534,8 +534,8 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);

@@ -34,7 +34,7 @@
 		}														\
 		bn->tsorted = b->tsorted;								\
 		bn->trevsorted = b->trevsorted;							\
-		bn->T->nonil = b->T->nonil;								\
+		bn->tnonil = b->tnonil;									\
 	} while (0)
 
 
@@ -53,7 +53,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 																	\
 	errno = 0;														\
 	feclearexcept(FE_ALL_EXCEPT);									\
-	if (b->T->nonil) {												\
+	if (b->tnonil) {												\
 		for (; p < q; o++, p++)										\
 			*o = FUNC##SUFF(*p);									\
 	} else {														\
@@ -71,8 +71,8 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	BATsetcount(bn, BATcount(b));									\
 	bn->tsorted = 0;												\
 	bn->trevsorted = 0;												\
-	bn->T->nil = b->T->nil;											\
-	bn->T->nonil = b->T->nonil;										\
+	bn->tnil = b->tnil;												\
+	bn->tnonil = b->tnonil;											\
 	BATkey(bn, 0);													\
 	if (!(bn->batDirty&2))											\
 		BATsetaccess(bn, BAT_READ);									\
@@ -98,7 +98,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 																		\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->T->nonil) {													\
+	if (b->tnonil) {													\
 		for (; p < q; o++, p++)											\
 			*o = FUNC##SUFF(*p, *d);									\
 	} else {															\
@@ -116,8 +116,8 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\
 	bn->trevsorted = 0;													\
-	bn->T->nil = b->T->nil;												\
-	bn->T->nonil = b->T->nonil;											\
+	bn->tnil = b->tnil;													\
+	bn->tnonil = b->tnonil;												\
 	BATkey(bn,0);														\
 	if (!(bn->batDirty&2))												\
 		BATsetaccess(bn, BAT_READ);										\
@@ -142,7 +142,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 																		\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->T->nonil) {													\
+	if (b->tnonil) {													\
 		for (; p < q; o++, p++)											\
 			*o = FUNC##SUFF(*d, *p);									\
 	} else {															\
@@ -160,8 +160,8 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\
 	bn->trevsorted = 0;													\
-	bn->T->nil = b->T->nil;												\
-	bn->T->nonil = b->T->nonil;											\
+	bn->tnil = b->tnil;													\
+	bn->tnonil = b->tnonil;												\
 	BATkey(bn,0);														\
 	if (!(bn->batDirty&2))												\
 		BATsetaccess(bn, BAT_READ);										\

@@ -153,7 +153,7 @@ column_lookup_row(sql_trans *tr, sql_column *c, const void *value)
 		BATiter cni = bat_iterator(b);
 		BUN p;
 
-		HASHloop(cni, cni.b->T->hash, p, value) {
+		HASHloop(cni, cni.b->thash, p, value) {
 			oid pos = p;
 
 			if (!s || BUNfnd(s, &pos) == BUN_NONE) {

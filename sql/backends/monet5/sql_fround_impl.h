@@ -79,7 +79,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	dst = (TYPE *) Tloc(res, BUNfirst(res));
 
 	nonil = TRUE;
-	if (v->T->nonil == TRUE) {
+	if (v->tnonil == TRUE) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -98,8 +98,8 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
-	res->T->nonil = nonil;
-	res->T->nil = !nonil;
+	res->tnonil = nonil;
+	res->tnil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
@@ -191,7 +191,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	dst = (TYPE *) Tloc(res, BUNfirst(res));
 
 	nonil = TRUE;
-	if (v->T->nonil == TRUE) {
+	if (v->tnonil == TRUE) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *r);
 	} else {
@@ -210,8 +210,8 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
-	res->T->nonil = nonil;
-	res->T->nil = !nonil;
+	res->tnonil = nonil;
+	res->tnil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;

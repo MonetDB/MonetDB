@@ -255,7 +255,7 @@ str GDKstrdup(const char *s) __attribute__((__warn_unused_result__));
 str GDKstrndup(const char *s, size_t n) __attribute__((__warn_unused_result__));
 void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
 ThreadRec GDKthreads[THREADS];
-gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
+gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
 lng GDKusec(void);
 BAT *GDKval;
 const char *GDKversion(void);

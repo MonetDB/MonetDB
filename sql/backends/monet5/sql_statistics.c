@@ -122,7 +122,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sorted = BATtordered(bn);
 
 						// Gather the min/max value for builtin types
-						width = bn->T->width;
+						width = bn->twidth;
 
 						if (tostr) { 
 							val = BATmax(bn,0); len = 0;
