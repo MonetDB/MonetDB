@@ -4169,13 +4169,9 @@ CREATE FUNCTION ST_GeomCollFromText(wkt string) RETURNS Geometry EXTERNAL NAME g
 
 -- Create Geometry from simpler geometries
 CREATE FUNCTION ST_MakePoint(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint"; 
-CREATE FUNCTION ST_MakePoint(x double, y double, srid integer) RETURNS Geometry EXTERNAL NAME geom."MakePoint"; 
 CREATE FUNCTION ST_Point(x double, y double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
 CREATE FUNCTION ST_MakePoint(x double, y double, z double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
-CREATE FUNCTION ST_MakePoint(x double, y double, z double, srid integer) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
 CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
-CREATE FUNCTION ST_MakePoint(x double, y double, z double, m double, srid integer) RETURNS Geometry EXTERNAL NAME geom."MakePoint";
-
 CREATE FUNCTION ST_MakePointM(x double, y double, m double) RETURNS Geometry EXTERNAL NAME geom."MakePointM";
 
 --CREATE FUNCTION ST_MakeLine(geometry set geoms)?????
