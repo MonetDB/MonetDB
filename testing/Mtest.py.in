@@ -2711,7 +2711,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
                       PRELUDE and PRELUDE[0] or '', TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
-        if ttywidth > 0 and length + 10 + 21 > ttywidth:
+        if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
             # 21 - length of time plus result
             l = ttywidth - 10 - 21 - 1
