@@ -633,12 +633,13 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 /* Heap storage modes */
 typedef enum {
-	STORE_MEM     = 0,		/* load into GDKmalloced memory */
-	STORE_MMAP    = 1,		/* mmap() into virtual memory */
-	STORE_PRIV    = 2,		/* BAT copy of copy-on-write mmap */
-    STORE_CMEM    = 3,      /* Indicates the value is stored in regular C memory rather than GDK memory.*/
-    STORE_NOWN    = 4,      /* Indicates that the bat does not own the chunk of memory and is not in charge of freeing it.*/
-    STORE_MMAPABS = 5,      /* mmap() into virtual memory from an absolute path (not part of dbfarm) */
+	STORE_MEM     = 0,	/* load into GDKmalloced memory */
+	STORE_MMAP    = 1,	/* mmap() into virtual memory */
+	STORE_PRIV    = 2,	/* BAT copy of copy-on-write mmap */
+	STORE_CMEM    = 3,	/* load into malloc (not GDKmalloc) memory*/
+	STORE_NOWN    = 4,	/* memory not owned by the BAT */
+	STORE_MMAPABS = 5,	/* mmap() into virtual memory from an
+				 * absolute path (not part of dbfarm) */
 	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
@@ -649,8 +650,8 @@ typedef struct {
 	str filename;		/* file containing image of the heap */
 
 	unsigned int copied:1,	/* a copy of an existing map. */
-		      hashash:1,/* the string heap contains hash values */
-		      forcemap:1;  /* force STORE_MMAP even if heap exists */
+		hashash:1,	/* the string heap contains hash values */
+		forcemap:1;	/* force STORE_MMAP even if heap exists */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
