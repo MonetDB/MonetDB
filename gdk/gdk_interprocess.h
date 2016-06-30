@@ -13,7 +13,7 @@
 
 #ifndef _GDK_INTERPROCES_H_
 #define _GDK_INTERPROCES_H_
- 
+
 #include "monetdb_config.h"
 
 #ifdef HAVE_FORK
@@ -24,8 +24,8 @@
 //! Obtain a set of unique identifiers that can be used to create memory mapped files or semaphores
 gdk_export size_t GDKuniqueid(size_t offset);
 
-/* 
- * Memory-Mapped File operations, used for transporting data between processes 
+/*
+ * Memory-Mapped File operations, used for transporting data between processes
  */
 
 //! Create a memory mapped file if it does not exist and open it
@@ -35,11 +35,11 @@ gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id, str *msg
 //! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
 gdk_export gdk_return GDKmmapfile(str buffer, size_t max, size_t id);
 
-/* 
- * Interprocess-Semaphores, used for cross process lock operations 
+/*
+ * Interprocess-Semaphores, used for cross process lock operations
  */
 
-//! Create an interprocess semaphore 
+//! Create an interprocess semaphore
 gdk_export gdk_return GDKcreatesem(int id, int count, int *semid, str *msg);
 //! Get an interprocess semaphore that was already created using GDKcreatesem
 gdk_export gdk_return GDKgetsem(int sem_id, int count, int *semid, str *msg);
