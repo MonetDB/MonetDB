@@ -5,7 +5,6 @@
 
 #include "gdk.h"
 #include "gdk_private.h"
-#include "../monetdb5/mal/mal_exception.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -65,13 +64,13 @@ GDKuniqueid(size_t offset) {
  * return: GDK_SUCCEED if successful, GDK_FAIL if not successful (with msg set to error message)
 */
 gdk_return 
-GDKinitmmap(size_t id, size_t size, void **return_ptr, str *msg) {
+GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str *msg) {
     char address[100];
     void *ptr;
     int fd;
     int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC  | MAP_SHARED;
     char *path = NULL;
-    snprintf_mmap_file(address, 100, id);
+    GDKmmapfile(address, 100, id);
 
     /* round up to multiple of GDK_mmap_pagesize with a
      * minimum of one 
@@ -99,7 +98,12 @@ GDKinitmmap(size_t id, size_t size, void **return_ptr, str *msg) {
         goto cleanup;
     }
     GDKfree(path);
-    if (return_ptr != NULL) (*return_ptr) = ptr;
+    if (return_ptr != NULL) {
+        *return_ptr = ptr;
+    }
+    if (return_size != NULL) {
+        *return_size = size;
+    }
     return GDK_SUCCEED;
 cleanup:
     if (path) GDKfree(path);
@@ -118,7 +122,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id, str *msg) {
     char address[100];
     char *path;
     int ret;
-    snprintf_mmap_file(address, 100, id);
+    GDKmmapfile(address, 100, id);
     if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
         interprocess_create_error("Failure in GDKmunmap: %s", strerror(errno));
         return GDK_FAIL;
@@ -277,69 +281,5 @@ GDKreleasesem(int sem_id, str *msg) {
     }
     return GDK_SUCCEED;
 }
-
-str snprintf_mmap_file(str file, size_t max, size_t id) {
-    snprintf(file, max, "pymmap%zu", id);
-    return MAL_SUCCEED;
-}
-
-str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***return_ptr, size_t **return_size, char **single_ptr) {
-    char address[100];
-    void *ptr;
-    int fd;
-    size_t size = maxsize;
-    int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC  | MAP_SHARED;
-    char *path = NULL;
-    snprintf_mmap_file(address, 100, base_id + id_offset);
-
-    /* round up to multiple of GDK_mmap_pagesize with a
-     * minimum of one 
-    size = (maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-    if (size == 0)
-        size = GDK_mmap_pagesize; */
-    fd = GDKfdlocate(0, address, "wb", "tmp");
-    if (fd < 0) {
-        return createException(MAL, "interprocess.get", "Failure in GDKfdlocate(0, %s, \"wb\", NULL)", address);
-    }
-    path = GDKfilepath(0, BATDIR, address, "tmp");
-    if (path == NULL) {
-        return createException(MAL, "interprocess.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
-    }
-    close(fd);
-    if (GDKextend(path, size) != GDK_SUCCEED) {
-        return createException(MAL, "interprocess.get", "Failure in GDKextend(%s,%zu)", path, size);
-    }
-    ptr = GDKmmap(path, mod, size);
-    if (ptr == NULL) {
-        return createException(MAL, "interprocess.get", "Failure in GDKmmap(%s, %d, %zu)", path, mod, size);
-    }
-    GDKfree(path);
-    if (return_ptr != NULL) (*return_ptr)[id_offset] = ptr;
-    if (return_size != NULL) (*return_size)[id_offset] = size;
-    if (single_ptr != NULL) *single_ptr = ptr;
-    return MAL_SUCCEED;
-}
-
-str release_mmap_memory(void *ptr, size_t size, size_t id) {
-    char address[100];
-    char *path;
-    int ret;
-    snprintf_mmap_file(address, 100, id);
-    if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
-        return createException(MAL, "interprocess.get", "Failure in GDKmunmap(%p, %zu)", ptr, size);
-    }
-    path = GDKfilepath(0, BATDIR, address, "tmp");
-    if (path == NULL) {
-        return createException(MAL, "interprocess.get", "Failure in GDKfilepath(0, "BATDIR",%s,\"tmp\")", address);
-    }
-    ret = remove(path);
-    GDKfree(path);
-    if (ret < 0) {
-        perror(strerror(errno));
-        return createException(MAL, "interprocess.get", "Failure in remove(%s)", path);
-    }
-    return MAL_SUCCEED;
-}
-
 
 #endif

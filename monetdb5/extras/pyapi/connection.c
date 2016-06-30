@@ -107,8 +107,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
             int i;
             
             // get a pointer to the shared memory holding the return values
-            msg = init_mmap_memory(self->query_ptr->mmapid, 0, self->query_ptr->memsize, NULL, NULL, &ptr);
-            if (msg != MAL_SUCCEED) {
+            if (GDKinitmmap(self->query_ptr->mmapid + 0, self->query_ptr->memsize, (void**) &ptr, NULL, &msg) != GDK_SUCCEED) {
                 PyErr_Format(PyExc_Exception, "%s", msg);
                 return NULL;
             }
@@ -148,13 +147,13 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &msg, true);
                 if (!numpy_array) {
                     PyErr_Format(PyExc_Exception, "SQL Query Failed: %s", (msg ? msg : "<no error>"));
-                    release_mmap_memory(ptr, self->query_ptr->memsize, self->query_ptr->mmapid);
+                    GDKreleasemmap(ptr, self->query_ptr->memsize, self->query_ptr->mmapid, &msg);
                     return NULL;
                 }
                 PyDict_SetItem(result, PyString_FromString(colname), numpy_array);
                 Py_DECREF(numpy_array);
             }
-            release_mmap_memory(ptr, self->query_ptr->memsize, self->query_ptr->mmapid);
+            GDKreleasemmap(ptr, self->query_ptr->memsize, self->query_ptr->mmapid, &msg);
             return result;
         }
 

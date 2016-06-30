@@ -29,7 +29,7 @@ gdk_export size_t GDKuniqueid(size_t offset);
  */
 
 //! Create a memory mapped file if it does not exist and open it
-gdk_export gdk_return GDKinitmmap(size_t id, size_t size, void **return_ptr, str *msg);
+gdk_export gdk_return GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str *msg);
 //! Release a memory mapped file that was created through GDKinitmmap
 gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id, str *msg);
 //! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
@@ -52,17 +52,9 @@ gdk_export gdk_return GDKchangesemval_timeout(int sem_id, int number, int change
 //! Destroy an interprocess semaphore
 gdk_export gdk_return GDKreleasesem(int sem_id, str *msg);
 
-str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***return_ptr, size_t **return_size, char **single_ptr);
-str release_mmap_memory(void *ptr, size_t size, size_t id);
-str snprintf_mmap_file(str file, size_t max, size_t id);
-/*size_t get_unique_id(size_t offset);*/
-
-//str create_process_semaphore(int id, int count, int *semid);
-//str get_process_semaphore(int sem_id, int count, int *semid);
-//str get_semaphore_value(int sem_id, int number, int *semval);
-//str change_semaphore_value(int sem_id, int number, int change);
-//str change_semaphore_value_timeout(int sem_id, int number, int change, int timeout_mseconds, bool *succeed);
-//str release_process_semaphore(int sem_id);
+//str init_mmap_memory(size_t base_id, size_t id_offset, size_t maxsize, void ***return_ptr, size_t **return_size, char **single_ptr);
+//str release_mmap_memory(void *ptr, size_t size, size_t id);
+//str snprintf_mmap_file(str file, size_t max, size_t id);
 #endif
 
 #endif /* _GDK_INTERPROCES_H_ */
