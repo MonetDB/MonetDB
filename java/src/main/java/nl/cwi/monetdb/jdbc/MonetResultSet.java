@@ -1579,32 +1579,29 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public String getColumnClassName(int column) throws SQLException {
-				try {
-					if (conn == null) {
-						// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
-						if (getStatement() != null) {
-							// first time, get a Connection object and cache it for all next columns
-							conn = getStatement().getConnection();
-						}
+				final String MonetDBtype = getColumnTypeName(column);
+				Class<?> type = null;
+				if (conn == null) {
+					// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+					if (getStatement() != null) {
+						// first time, get a Connection object and cache it for all next columns
+						conn = getStatement().getConnection();
 					}
-					if (conn != null) {
-						Class type = null;
-						Map map = conn.getTypeMap();
-						if (map != null && map.containsKey(types[column - 1])) {
-							type = (Class)map.get(types[column - 1]);
-						} else {
-							type = getClassForType(getJavaType(types[column - 1]));
-						}
-						if (type != null)
-							return type.getName();
-					}
-					throw new SQLException("column type mapping null: " + types[column - 1], "M0M03");
-				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
-				} catch (NullPointerException npe) {
-					/* do nothing */
 				}
-				return "";
+				if (conn != null) {
+					Map map = conn.getTypeMap();
+					if (map != null && map.containsKey(MonetDBtype)) {
+						type = (Class)map.get(MonetDBtype);
+					}
+				}
+				if (type == null) {
+					// fallback to the standard Class mappings
+					type = getClassForType(getJavaType(MonetDBtype));
+				}
+				if (type != null) {
+					return type.getName();
+				}
+				throw new SQLException("column type mapping null: " + MonetDBtype, "M0M03");
 			}
 
 			/**
@@ -2005,18 +2002,18 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	/**
-	 * Helper method to support the getObject and
+	 * Internal Helper method to support the getObject and
 	 * ResultsetMetaData.getColumnClassName JDBC methods.
 	 *
 	 * @param type a value from java.sql.Types
 	 * @return a Class object from which an instance would be returned
 	 */
-	static Class<?> getClassForType(int type) {
+	private static Class<?> getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
 		 * Oracle's JDBC specification 4.1
 		 */
-		// keep this switch aligned with getObject(int, Map) !
+		// keep this switch regarding the returned classes aligned with getObject(int, Map) !
 		switch(type) {
 			case Types.CHAR:
 			case Types.VARCHAR:
@@ -2025,9 +2022,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			case Types.NUMERIC:
 			case Types.DECIMAL:
 				return BigDecimal.class;
-			case Types.BIT: // we don't use type BIT, it's here for completeness
 			case Types.BOOLEAN:
 				return Boolean.class;
+			case Types.BIT: // MonetDB doesn't support type BIT, it's here for completeness
 			case Types.TINYINT:
 			case Types.SMALLINT:
 				return Short.class;
