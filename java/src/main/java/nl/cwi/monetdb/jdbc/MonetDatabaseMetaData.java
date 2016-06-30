@@ -2476,7 +2476,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		if (table != null) {
 			query.append(" AND \"tables\".\"name\" ").append(composeMatchPart(table));
 		}
-		if (scope != DatabaseMetaData.bestRowSession) {
+		if (scope != DatabaseMetaData.bestRowSession && scope != DatabaseMetaData.bestRowTransaction && scope != DatabaseMetaData.bestRowTemporary) {
 			query.append(" AND 1 = 0");
 		}
 		if (!nullable) {
