@@ -582,11 +582,9 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
 #define VARFMT		OIDFMT
 
-#if SIZEOF_VAR_T == SIZEOF_INT	/* a type compatible with var_t */
-#define TYPE_var	TYPE_int
+#if SIZEOF_VAR_T == SIZEOF_INT
 #define VAR_MAX		((var_t) INT_MAX)
 #else
-#define TYPE_var	TYPE_lng
 #define VAR_MAX		((var_t) LLONG_MAX)
 #endif
 
