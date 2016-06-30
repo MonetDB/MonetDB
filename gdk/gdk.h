@@ -391,22 +391,18 @@
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
 
-#define GDKPROP		6	/* use one spare! */
-#define MONETHOME	"MONETHOME"
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
 #define DELDIR		"bat/DELETE_ME"
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
-#define HCDIR		"bat/HC"
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
-#define HCDIR		"bat\\HC"
 #endif
 
 #ifdef MAXPATHLEN
@@ -895,8 +891,6 @@ typedef struct BATiter {
 	BAT *b;
 	oid tvid;
 } BATiter;
-
-typedef int (*GDKfcn) ();
 
 /* macros's to hide complexity of BAT structure */
 #define batPersistence	S.persistence
