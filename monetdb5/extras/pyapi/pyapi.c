@@ -11,9 +11,10 @@
 
 #include "unicode.h"
 #include "pytypes.h"
-#include "interprocess.h"
 #include "type_conversion.h"
 #include "formatinput.h"
+
+#include "gdk_interprocess.h"
 
 #ifdef HAVE_FORK
 // These libraries are used for PYTHON_MAP when forking is enabled [to start new processes and wait on them]
@@ -624,7 +625,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 
         //create initial shared memory
         MT_lock_set(&pyapiLock);
-        mmap_id = get_unique_id(mmap_count); 
+        mmap_id = GDKuniqueid(mmap_count); 
         MT_lock_unset(&pyapiLock);
 
         mmap_ptrs = GDKzalloc(mmap_count * sizeof(void*));
@@ -654,8 +655,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
         //we need two semaphores
         //the main process waits on the first one (exiting when a query is requested or the child process is done)
         //the forked process waits for the second one when it requests a query (waiting for the result of the query)
-        msg = create_process_semaphore(mmap_id, 2, &query_sem);
-        if (msg != MAL_SUCCEED) {
+        if (GDKcreatesem(mmap_id, 2, &query_sem, &msg) != GDK_SUCCEED) {
             goto wrapup;
         }
 
@@ -709,8 +709,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 //wait for the child to finish
                 //note that we use a timeout here in case the child crashes for some reason
                 //in this case the semaphore value is never increased, so we would be stuck otherwise
-                msg = change_semaphore_value_timeout(query_sem, 0, -1, 100, &sem_success); 
-                if (msg != MAL_SUCCEED){
+                if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success, &msg) != GDK_SUCCEED) {
                     goto wrapup;
                 }
                 if (sem_success) 
@@ -725,7 +724,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                         msg = _connection_query(cntxt, query_ptr->query , &output);
                         if (msg != MAL_SUCCEED) {
                             MT_lock_unset(&queryLock);
-                            change_semaphore_value(query_sem, 1, 1); // free the forked process so it can exit in case of failure
+                            GDKchangesemval(query_sem, 1, 1, &msg); // free the forked process so it can exit in case of failure
                             goto wrapup;
                         }
                         MT_lock_unset(&queryLock);
@@ -784,14 +783,14 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 
                             // create the actual shared memory region
                             MT_lock_set(&pyapiLock);
-                            query_ptr->mmapid = get_unique_id(1); 
+                            query_ptr->mmapid = GDKuniqueid(1); 
                             MT_lock_unset(&pyapiLock);
 
                             msg = init_mmap_memory(query_ptr->mmapid, 0, size, NULL, NULL, &result_ptr);
 
                             if (msg != MAL_SUCCEED) {
                                 _connection_cleanup_result(output);
-                                change_semaphore_value(query_sem, 1, 1);
+                                GDKchangesemval(query_sem, 1, 1, &msg);
                                 goto wrapup;
                             }
 
@@ -827,7 +826,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                         //signal that we are finished processing this query
                         query_ptr->pending_query = false;
                         //after putting the return values in shared memory return control to the other process
-                        change_semaphore_value(query_sem, 1, 1);
+                        GDKchangesemval(query_sem, 1, 1, &msg);
                         continue;
                     } else {
                         break;
@@ -1436,9 +1435,9 @@ aggrwrapup:
             }
         }
         //now free the main process from the semaphore
-        msg = change_semaphore_value(query_sem, 0, 1);
-        if (msg != MAL_SUCCEED)
+        if (GDKchangesemval(query_sem, 0, 1, &msg) != GDK_SUCCEED) {
             goto wrapup;
+        }
         // Exit child process without an error code
         exit(0);
     }
@@ -1499,8 +1498,7 @@ wrapup:
 
         // Now we exit the program with an error code
         VERBOSE_MESSAGE("Failure in child process: %s\n", msg);
-        tmp_msg = change_semaphore_value(query_sem, 0, 1);
-        if (tmp_msg != MAL_SUCCEED) {
+        if (GDKchangesemval(query_sem, 0, 1, &tmp_msg) != GDK_SUCCEED) {
             VERBOSE_MESSAGE("Failed to increase value of semaphore in child process: %s\n", tmp_msg);
             exit(1);
         }
@@ -1544,8 +1542,7 @@ wrapup:
         MT_lock_unset(&pyapiLock);
     }
 
-    if (mapped)
-    {
+    if (mapped) {
         for(i = 0; i < retcols; i++) {
             PyReturn *ret = &pyreturn_values[i];
             if (ret->mmap_id < 0) {
@@ -1558,8 +1555,9 @@ wrapup:
                 release_mmap_memory(mmap_ptrs[i], mmap_sizes[i], mmap_id + i);
             }
         }
-        if (query_sem > 0)
-            release_process_semaphore(query_sem);
+        if (query_sem > 0) {
+            GDKreleasesem(query_sem, &msg);
+        }
     }
 #endif
     // Actual cleanup

@@ -1,7 +1,7 @@
 
 #include "connection.h"
 #include "type_conversion.h"
-#include "interprocess.h"
+#include "gdk_interprocess.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
@@ -73,6 +73,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
     else 
 #ifdef HAVE_FORK
     {
+        str msg;
         char *query;
 #ifndef IS_PY3K
         query = ((PyStringObject*)args)->ob_sval;
@@ -85,9 +86,9 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
         strncpy(self->query_ptr->query, query, 8192);
         self->query_ptr->pending_query = true;
         //free the main process so it can work on the query
-        change_semaphore_value(self->query_sem, 0, 1);
+        GDKchangesemval(self->query_sem, 0, 1, &msg);
         //now wait for the main process to finish
-        change_semaphore_value(self->query_sem, 1, -1);
+        GDKchangesemval(self->query_sem, 1, -1, &msg);
         if (self->query_ptr->pending_query) {
             //the query failed in the main process
             //           life is hopeless
