@@ -295,13 +295,11 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		s = BBPname(i);
 		sz = 0;
 		if (BBP_desc(i))
-			sz += BATSTORESIZE;
+			sz += sizeof(BAT);
 		if (BBP_logical(i))
 			n += strLen(BBP_logical(i));
 		if (BBP_physical(i))
 			n += strLen(BBP_physical(i));
-		if (b)
-			sz += sizeof(BAT);	/* mirror */
 
 		if (sz > *minsize) {
 			sprintf(buf, "desc/%s", s);

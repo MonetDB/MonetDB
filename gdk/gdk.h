@@ -886,9 +886,9 @@ typedef struct BAT {
 	oid hseqbase;		/* head seq base */
 
 	/* dynamic column properties */
-	COLrec *T;		/* column info */
+	COLrec T;		/* column info */
 
-	BATrec *S;		/* the BAT properties */
+	BATrec S;		/* the BAT properties */
 } BAT;
 
 typedef struct BATiter {
@@ -896,51 +896,48 @@ typedef struct BATiter {
 	oid tvid;
 } BATiter;
 
-typedef struct BATstore BATstore;
-#define BATSTORESIZE	(sizeof(BAT) + sizeof(COLrec) + sizeof(BATrec))
-
 typedef int (*GDKfcn) ();
 
 /* macros's to hide complexity of BAT structure */
-#define batPersistence	S->persistence
-#define batCopiedtodisk	S->copiedtodisk
-#define batDirty	S->dirty
-#define batConvert	S->convert
-#define batDirtyflushed	S->dirtyflushed
-#define batDirtydesc	S->descdirty
-#define batFirst	S->first
-#define batInserted	S->inserted
-#define batDeleted	S->deleted
-#define batCount	S->count
-#define batCapacity	S->capacity
-#define batStamp	S->stamp
-#define batSharecnt	S->sharecnt
-#define batRestricted	S->restricted
-#define batRole		S->role
-#define creator_tid	S->tid
-#define ttype		T->type
-#define tkey		T->key
-#define tvarsized	T->varsized
-#define tseqbase	T->seq
-#define tsorted		T->sorted
-#define trevsorted	T->revsorted
-#define tdense		T->dense
-#define tident		T->id
-#define talign		T->align
-#define torderidx	T->orderidx
-#define twidth		T->width
-#define tshift		T->shift
-#define tnonil		T->nonil
-#define tnil		T->nil
-#define tnokey		T->nokey
-#define tnosorted	T->nosorted
-#define tnorevsorted	T->norevsorted
-#define tnodense	T->nodense
-#define theap		T->heap
-#define tvheap		T->vheap
-#define thash		T->hash
-#define timprints	T->imprints
-#define tprops		T->props
+#define batPersistence	S.persistence
+#define batCopiedtodisk	S.copiedtodisk
+#define batDirty	S.dirty
+#define batConvert	S.convert
+#define batDirtyflushed	S.dirtyflushed
+#define batDirtydesc	S.descdirty
+#define batFirst	S.first
+#define batInserted	S.inserted
+#define batDeleted	S.deleted
+#define batCount	S.count
+#define batCapacity	S.capacity
+#define batStamp	S.stamp
+#define batSharecnt	S.sharecnt
+#define batRestricted	S.restricted
+#define batRole		S.role
+#define creator_tid	S.tid
+#define ttype		T.type
+#define tkey		T.key
+#define tvarsized	T.varsized
+#define tseqbase	T.seq
+#define tsorted		T.sorted
+#define trevsorted	T.revsorted
+#define tdense		T.dense
+#define tident		T.id
+#define talign		T.align
+#define torderidx	T.orderidx
+#define twidth		T.width
+#define tshift		T.shift
+#define tnonil		T.nonil
+#define tnil		T.nil
+#define tnokey		T.nokey
+#define tnosorted	T.nosorted
+#define tnorevsorted	T.norevsorted
+#define tnodense	T.nodense
+#define theap		T.heap
+#define tvheap		T.vheap
+#define thash		T.hash
+#define timprints	T.imprints
+#define tprops		T.props
 
 
 
@@ -1703,7 +1700,7 @@ typedef struct {
 	str logical;		/* logical name */
 	str bak;		/* logical name backup */
 	bat next;		/* next BBP slot in linked list */
-	BATstore *desc;		/* the BAT descriptor */
+	BAT *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */

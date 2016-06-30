@@ -761,7 +761,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             }
 
                             // first obtain the total size of the shared memory region
-                            // the region is structured as [COLNAME][BAT][COLREC][BATREC][DATA]([VHEAP][VHEAPDATA])
+                            // the region is structured as [COLNAME][BAT][DATA]([VHEAP][VHEAPDATA])
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
                                 BAT* b = BATdescriptor(col.b);
@@ -770,8 +770,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
 
                                 size += strlen(colname) + 1;                                          //[COLNAME]
                                 size += sizeof(BAT);                                                  //[BAT]
-                                size += sizeof(COLrec);                                               //[COLrec]
-                                size += sizeof(BATrec);                                               //[BATrec]
                                 size += batsize;                                                      //[DATA]
                                 
                                 if (b->tvheap != NULL) {
@@ -810,12 +808,6 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 //[BAT]
                                 memcpy(result_ptr + position, b, sizeof(BAT)); 
                                 position += sizeof(BAT);
-                                //[COLREC]
-                                memcpy(result_ptr + position, b->T, sizeof(COLrec)); 
-                                position += sizeof(COLrec);
-                                //[BATREC]
-                                memcpy(result_ptr + position, b->S, sizeof(BATrec)); 
-                                position += sizeof(BATrec);
                                 //[DATA]
                                 memcpy(result_ptr + position, Tloc(b, BUNfirst(b)), batsize);
                                 position += batsize;

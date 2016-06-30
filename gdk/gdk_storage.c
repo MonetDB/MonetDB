@@ -585,22 +585,20 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * merely copies the data into place.  Failure to read or write the
  * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
-static BATstore *
+static BAT *
 DESCload(int i)
 {
 	str s, nme = BBP_physical(i);
-	BATstore *bs;
 	BAT *b = NULL;
 	int tt;
 
 	IODEBUG {
 		fprintf(stderr, "#DESCload %s\n", nme ? nme : "<noname>");
 	}
-	bs = BBP_desc(i);
+	b = BBP_desc(i);
 
-	if (bs == NULL)
+	if (b == NULL)
 		return 0;
-	b = &bs->B;
 
 	tt = b->ttype;
 	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
@@ -618,7 +616,7 @@ DESCload(int i)
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
 	b->batCopiedtodisk = 1;
 	DESCclean(b);
-	return bs;
+	return b;
 }
 
 void
@@ -718,7 +716,7 @@ BATsave(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
 	char *nme;
-	BATstore bs;
+	BAT bs;
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
@@ -744,9 +742,7 @@ BATsave(BAT *bd)
 	 * only read it. */
 	bs = *BBP_desc(b->batCacheid);
 	/* fix up internal pointers */
-	b = &bs.B;
-	b->S = &bs.S;
-	b->T = &bs.T;
+	b = &bs;
 
 	if (b->tvheap) {
 		b->tvheap = (Heap *) GDKmalloc(sizeof(Heap));
@@ -786,18 +782,16 @@ BAT *
 BATload_intern(bat bid, int lock)
 {
 	str nme;
-	BATstore *bs;
 	BAT *b;
 
 	assert(bid > 0);
 
 	nme = BBP_physical(bid);
-	bs = DESCload(bid);
+	b = DESCload(bid);
 
-	if (bs == NULL) {
+	if (b == NULL) {
 		return NULL;
 	}
-	b = &bs->B;
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
@@ -826,7 +820,7 @@ BATload_intern(bat bid, int lock)
 	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(bs, lock);
+	BBPcacheit(b, lock);
 
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);

@@ -170,16 +170,14 @@ ALIGNsynced(BAT *b1, BAT *b2)
 BAT *
 VIEWcreate_(oid seq, BAT *b, int slice_view)
 {
-	BATstore *bs;
 	BAT *bn;
 	bat tp = 0;
 
 	BATcheck(b, "VIEWcreate_", NULL);
 
-	bs = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
-	if (bs == NULL)
+	bn = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
+	if (bn == NULL)
 		return NULL;
-	bn = &bs->B;
 
 	tp = -VIEWtparent(b);
 	if ((tp == 0 && b->ttype != TYPE_void) || b->theap.copied)
@@ -194,7 +192,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
-	*bn->T = *b->T;
+	bn->T = b->T;
 	if (bn->batFirst > 0) {
 		bn->theap.base += b->batFirst * b->twidth;
 		bn->batFirst = 0;
@@ -208,7 +206,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 		BBPshare(bn->tvheap->parentid);
 	}
 
-	/* note: theap points into bs which was just overwritten
+	/* note: theap points into bn which was just overwritten
 	 * with a copy from the parent.  Clear the copied flag since
 	 * our heap was not copied from our parent(s) even if our
 	 * parent's heap was copied from its parent. */
@@ -231,7 +229,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	bn->timprints = NULL;
 	/* Order OID index */
 	bn->torderidx = NULL;
-	BBPcacheit(bs, 1);	/* enter in BBP */
+	BBPcacheit(bn, 1);	/* enter in BBP */
 	return bn;
 }
 

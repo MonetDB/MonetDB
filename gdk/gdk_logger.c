@@ -519,12 +519,12 @@ la_bat_destroy(logger *lg, logaction *la)
 
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 #ifndef NDEBUG
-			assert(BBP_desc(bid)->S.role == PERSISTENT);
-			assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
-			if (BBP_desc(bid)->T.vheap) {
-				assert(0 <= BBP_desc(bid)->T.vheap->farmid && BBP_desc(bid)->T.vheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->T.vheap->farmid].roles & (1 << PERSISTENT));
+			assert(BBP_desc(bid)->batRole == PERSISTENT);
+			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
+			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+			if (BBP_desc(bid)->tvheap) {
+				assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
+				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 			}
 #endif
 			BUNappend(lg->dsnapshots, &p, FALSE);
@@ -2282,12 +2282,12 @@ log_bat_transient(logger *lg, const char *name)
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 		//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
 #ifndef NDEBUG
-		assert(BBP_desc(bid)->S.role == PERSISTENT);
-		assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
-		if (BBP_desc(bid)->T.vheap) {
-			assert(0 <= BBP_desc(bid)->T.vheap->farmid && BBP_desc(bid)->T.vheap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->T.vheap->farmid].roles & (1 << PERSISTENT));
+		assert(BBP_desc(bid)->batRole == PERSISTENT);
+		assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
+		assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+		if (BBP_desc(bid)->tvheap) {
+			assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
+			assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 		}
 #endif
 		//	if (lg->tid == tid)

@@ -65,11 +65,10 @@ BATinit_idents(BAT *bn)
 	bn->tident = BATstring_t;
 }
 
-BATstore *
+BAT *
 BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 {
 	BAT *bn;
-	BATstore *bs;
 
 	/*
 	 * Alloc space for the BAT and its dependent records.
@@ -77,19 +76,10 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	assert(tt >= 0);
 	assert(role >= 0 && role < 32);
 
-	bs = (BATstore *) GDKzalloc(sizeof(BATstore));
+	bn = GDKzalloc(sizeof(BAT));
 
-	if (bs == NULL)
+	if (bn == NULL)
 		return NULL;
-
-	/*
-	 * assert needed in the kernel to get symbol eprintf resolved.
-	 * Else modules using assert fail to load.
-	 */
-	bs->B.T = &bs->T;
-	bs->B.S = &bs->S;
-
-	bn = &bs->B;
 
 	/*
 	 * Fill in basic column info
@@ -111,7 +101,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	/*
 	 * add to BBP
 	 */
-	BBPinsert(bs);
+	BBPinsert(bn);
 	/*
  	* Default zero for order oid index
  	*/
@@ -141,7 +131,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 		}
 	}
 	bn->batDirty = TRUE;
-	return bs;
+	return bn;
       bailout:
 	if (tt)
 		HEAPfree(&bn->theap, 1);
@@ -149,7 +139,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 		HEAPfree(bn->tvheap, 1);
 		GDKfree(bn->tvheap);
 	}
-	GDKfree(bs);
+	GDKfree(bn);
 	return NULL;
 }
 
@@ -186,10 +176,9 @@ BATsetdims(BAT *b)
  * and memory map it. To make this possible, we must provide it with
  * filenames.
  */
-static BATstore *
+static BAT *
 BATnewstorage(oid hseq, int tt, BUN cap, int role)
 {
-	BATstore *bs;
 	BAT *bn;
 
 	/* and in case we don't have assertions enabled: limit the size */
@@ -198,10 +187,9 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		assert(0);
 		cap = BUN_MAX;
 	}
-	bs = BATcreatedesc(hseq, tt, tt != TYPE_void, role);
-	if (bs == NULL)
+	bn = BATcreatedesc(hseq, tt, tt != TYPE_void, role);
+	if (bn == NULL)
 		return NULL;
-	bn = &bs->B;
 
 	BATsetdims(bn);
 	bn->batCapacity = cap;
@@ -218,15 +206,13 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		return NULL;
 	}
 	DELTAinit(bn);
-	BBPcacheit(bs, 1);
-	return bs;
+	BBPcacheit(bn, 1);
+	return bn;
 }
 
 BAT *
 COLnew(oid hseq, int tt, BUN cap, int role)
 {
-	BATstore *bs;
-
 	assert(cap <= BUN_MAX);
 	assert(hseq <= oid_nil);
 	assert(tt != TYPE_bat);
@@ -241,10 +227,7 @@ COLnew(oid hseq, int tt, BUN cap, int role)
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
-	bs = BATnewstorage(hseq, tt, cap, role);
-	if (bs == NULL)
-		return NULL;
-	return &bs->B;
+	return BATnewstorage(hseq, tt, cap, role);
 }
 
 BAT *
@@ -263,7 +246,6 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 BAT *
 BATattach(int tt, const char *heapfile, int role)
 {
-	BATstore *bs;
 	BAT *bn;
 	struct stat st;
 	int atomsize;
@@ -284,10 +266,9 @@ BATattach(int tt, const char *heapfile, int role)
 	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n", NULL);
 	ERRORcheck((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX, "BATattach: heapfile too large\n", NULL);
 	cap = (BUN) (st.st_size / atomsize);
-	bs = BATcreatedesc(0, tt, 1, role);
-	if (bs == NULL)
+	bn = BATcreatedesc(0, tt, 1, role);
+	if (bn == NULL)
 		return NULL;
-	bn = &bs->B;
 	BATsetdims(bn);
 	path = GDKfilepath(bn->theap.farmid, BATDIR, bn->theap.filename, "new");
 	GDKcreatedir(path);
@@ -295,7 +276,7 @@ BATattach(int tt, const char *heapfile, int role)
 		GDKsyserror("BATattach: cannot rename heapfile\n");
 		GDKfree(path);
 		HEAPfree(&bn->theap, 1);
-		GDKfree(bs);
+		GDKfree(bn);
 		return NULL;
 	}
 	GDKfree(path);
@@ -318,10 +299,10 @@ BATattach(int tt, const char *heapfile, int role)
 	bn->theap.newstorage = bn->theap.storage = (bn->theap.size < GDK_mmap_minsize) ? STORE_MEM : STORE_MMAP;
 	if (HEAPload(&bn->theap, BBP_physical(bn->batCacheid), "tail", TRUE) != GDK_SUCCEED) {
 		HEAPfree(&bn->theap, 1);
-		GDKfree(bs);
+		GDKfree(bn);
 		return NULL;
 	}
-	BBPcacheit(bs, 1);
+	BBPcacheit(bn, 1);
 	return bn;
 }
 
@@ -504,16 +485,16 @@ BATfree(BAT *b)
 
 /* free a cached BAT descriptor */
 void
-BATdestroy( BATstore *bs )
+BATdestroy(BAT *b)
 {
-	if (bs->T.id && !default_ident(bs->T.id))
-		GDKfree(bs->T.id);
-	bs->T.id = BATstring_t;
-	if (bs->T.vheap)
-		GDKfree(bs->T.vheap);
-	if (bs->T.props)
-		PROPdestroy(bs->T.props);
-	GDKfree(bs);
+	if (b->tident && !default_ident(b->tident))
+		GDKfree(b->tident);
+	b->tident = BATstring_t;
+	if (b->tvheap)
+		GDKfree(b->tvheap);
+	if (b->tprops)
+		PROPdestroy(b->tprops);
+	GDKfree(b);
 }
 
 /*
@@ -1352,7 +1333,7 @@ BATmemsize(BAT *b, int dirty)
 	if (b->batDirty ||
 	    (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return (!dirty || b->batDirtydesc ? sizeof(BATstore) : 0) +
+	return (!dirty || b->batDirtydesc ? sizeof(BAT) : 0) +
 		(!dirty || b->theap.dirty ? HEAPmemsize(&b->theap) : 0) +
 		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPmemsize(b->tvheap) : 0);

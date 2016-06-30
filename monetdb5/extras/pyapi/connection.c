@@ -126,12 +126,6 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 //[BAT]
                 b = (BAT*) (ptr + position); 
                 position += sizeof(BAT);
-                //[COLrec]
-                b->T = (COLrec*) (ptr + position); 
-                position += sizeof(COLrec);
-                //[BATrec]
-                b->S = (BATrec*) (ptr + position); 
-                position += sizeof(BATrec);
                 //[DATA]
                 b->theap.base = (void*)(ptr + position); 
                 position += b->twidth * BATcount(b);
