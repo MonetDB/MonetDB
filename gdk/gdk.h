@@ -1097,20 +1097,20 @@ gdk_export bte ATOMelmshift(int sz);
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
 #if SIZEOF_VAR_T == 8
-#define HTputvalue(b, p, v, copyall, HT)				\
+#define Tputvalue(b, p, v, copyall)					\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMputVAR((b)->ttype, (b)->T->vheap, &_d, v);	\
+			if ((b)->T->width < SIZEOF_VAR_T &&		\
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b)->T, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->T->width) {			\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1125,16 +1125,16 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMputFIX((b)->HT->type, (p), v);		\
+			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
 	} while (0)
-#define HTreplacevalue(b, p, v, HT)					\
+#define Treplacevalue(b, p, v)						\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->T->width) {			\
 			case 1:						\
 				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
@@ -1148,15 +1148,15 @@ gdk_export bte ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMreplaceVAR((b)->ttype, (b)->T->vheap, &_d, v); \
+			if ((b)->T->width < SIZEOF_VAR_T &&		\
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b)->T, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->T->width) {			\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1171,24 +1171,24 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMreplaceFIX((b)->HT->type, (p), v);		\
+			ATOMreplaceFIX((b)->ttype, (p), v);		\
 		}							\
 	} while (0)
 #else
-#define HTputvalue(b, p, v, copyall, HT)				\
+#define Tputvalue(b, p, v, copyall)					\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMputVAR((b)->ttype, (b)->T->vheap, &_d, v);	\
+			if ((b)->T->width < SIZEOF_VAR_T &&		\
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b)->T, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->T->width) {			\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1200,16 +1200,16 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMputFIX((b)->HT->type, (p), v);		\
+			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
 	} while (0)
-#define HTreplacevalue(b, p, v, HT)					\
+#define Treplacevalue(b, p, v)						\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->T->width) {			\
 			case 1:						\
 				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
@@ -1220,15 +1220,15 @@ gdk_export bte ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMreplaceVAR((b)->ttype, (b)->T->vheap, &_d, v); \
+			if ((b)->T->width < SIZEOF_VAR_T &&		\
+			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b)->T, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->T->width) {			\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1240,19 +1240,16 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMreplaceFIX((b)->HT->type, (p), v);		\
+			ATOMreplaceFIX((b)->ttype, (p), v);		\
 		}							\
 	} while (0)
 #endif
-#define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
-#define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
-#define HTfastins_nocheck(b, p, v, s, HT)			\
-	do {							\
-		(b)->HT->heap.free += (s);			\
-		(b)->HT->heap.dirty |= (s) != 0;		\
-		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
+#define tfastins_nocheck(b, p, v, s)			\
+	do {						\
+		(b)->T->heap.free += (s);		\
+		(b)->T->heap.dirty |= (s) != 0;		\
+		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
 	} while (0)
-#define tfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, T)
 
 #define bunfastapp_nocheck(b, p, t, ts)		\
 	do {					\
