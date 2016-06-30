@@ -368,7 +368,6 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
-
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -816,7 +815,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 /********* Multiple inputs **********/
 /************************************/
 str
-wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *mBAT_id, int *zmFlag, int *srid)
+wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *mBAT_id, int *zmFlag)
 {
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL, *mBAT = NULL;
 	BATiter xBAT_iter, yBAT_iter, zBAT_iter, mBAT_iter;
@@ -868,7 +867,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		if (mBAT)
 			m = *((double *) BUNtail(mBAT_iter, i + BUNfirst(mBAT)));
 
-        if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag, srid)) != MAL_SUCCEED) {	//check
+        if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) {	//check
             BBPunfix(outBAT->batCacheid);
             goto clean;
         }

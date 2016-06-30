@@ -174,45 +174,24 @@ function BdMPolyFromText(wkt:str, srid:int) :wkb;
 end BdMPolyFromText;
 
 
-command MakePointXYZM(x:dbl, y:dbl, z:dbl, m:dbl, zmFlag:int, srid:int) :wkb address wkbMakePoint
+command MakePointXYZM(x:dbl, y:dbl, z:dbl, m:dbl, zmFlag:int) :wkb address wkbMakePoint
 comment "creates a point using the coordinates";
 function MakePoint(x:dbl, y:dbl) :wkb;
-	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0, 0);
+	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0);
 	return p;
 end MakePoint;
-function MakePoint(x:dbl, y:dbl, srid:int) :wkb;
-	p := MakePointXYZM(x, y, 0:dbl, 0:dbl, 0, srid);
-	return p;
-end MakePoint;
-
 function MakePoint(x:dbl, y:dbl, z:dbl) :wkb;
-	p := MakePointXYZM(x, y, z, 0:dbl, 10, 0);
+	p := MakePointXYZM(x, y, z, 0:dbl, 10);
 	return p;
 end MakePoint;
-function MakePoint(x:dbl, y:dbl, z:dbl, srid:int) :wkb;
-	p := MakePointXYZM(x, y, z, 0:dbl, 10, srid);
-	return p;
-end MakePoint;
-
 function MakePointM(x:dbl, y:dbl, m:dbl) :wkb;
-	p := MakePointXYZM(x, y, 0:dbl, m, 1, 0);
+	p := MakePointXYZM(x, y, 0:dbl, m, 1);
 	return p;
 end MakePointM;
-function MakePointM(x:dbl, y:dbl, m:dbl, srid:int) :wkb;
-	p := MakePointXYZM(x, y, 0:dbl, m, 1, srid);
-	return p;
-end MakePointM;
-
 function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl) :wkb;
-	p := MakePointXYZM(x, y, z, m, 11, 0);
+	p := MakePointXYZM(x, y, z, m, 11);
 	return p;
 end MakePoint;
-function MakePoint(x:dbl, y:dbl, z:dbl, m:dbl, srid:int) :wkb;
-	p := MakePointXYZM(x, y, z, m, 11, srid);
-	return p;
-end MakePoint;
-
-
 
 #command MakePoint(x:dbl, y:dbl) :wkb address geomMakePoint2D
 #comment "creates a point using the coordinates";
@@ -271,7 +250,7 @@ command Envelope(w:wkb) :wkb address wkbEnvelope
 comment "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).";
 command EnvelopeFromCoordinates(:dbl, :dbl, :dbl, :dbl, :int) :wkb address wkbEnvelopeFromCoordinates
 comment "A polygon created by the provided coordinates";
-command Polygon(:wkb, :bat[:oid,:wkb], :int) :wkb address wkbMakePolygon
+command Polygon(:wkb, :int) :wkb address wkbMakePolygon
 comment "Returns a Polygon created from the provided LineStrings";
 command ExteriorRing(w:wkb) :wkb address wkbExteriorRing
 comment "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.";
@@ -425,11 +404,11 @@ function MakeEnvelope(xmin:dbl, ymin:dbl, xmax:dbl, ymax:dbl) :wkb;
 end MakeEnvelope;
 
 function MakePolygon(external:wkb) :wkb;
-	x := Polygon(external, nil:bat, 0);
+	x := Polygon(external, 0);
 	return x;
 end MakePolygon;
 function MakePolygon(external:wkb, srid:int) :wkb;
-	x := Polygon(external, nil:bat, srid);
+	x := Polygon(external, srid);
 	return x;
 end MakePolygon;
 #function MakePolygon(external:wkb, internal:bat[:oid,:wkb]) :wkb;
@@ -640,42 +619,23 @@ function GeometryType2(w:bat[:oid,:wkb]) :bat[:oid,:str];
 	return x;
 end GeometryType2;
 
-command MakePointXYZM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], zmFlag:int, srid:int) :bat[:oid,:wkb] address wkbMakePoint_bat
+command MakePointXYZM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], zmFlag:int) :bat[:oid,:wkb] address wkbMakePoint_bat
 comment "creates a point using the coordinates";
 
 function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0, 0);
+	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0);
 	return p;
 end MakePoint;
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0, srid);
-	return p;
-end MakePoint;
-
 function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, nil:bat, 10, 0);
+	p := MakePointXYZM(x, y, z, nil:bat, 10);
 	return p;
 end MakePoint;
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, nil:bat, 10, srid);
-	return p;
-end MakePoint;
-
 function MakePointM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, m, 1, 0);
+	p := MakePointXYZM(x, y, nil:bat, m, 1);
 	return p;
 end MakePointM;
-function MakePointM(x:bat[:oid,:dbl], y:bat[:oid,:dbl], m:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, nil:bat, m, 1, srid);
-	return p;
-end MakePointM;
-
 function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl]) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, m, 11, 0);
-	return p;
-end MakePoint;
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl], m:bat[:oid,:dbl], srid:int) :bat[:oid,:wkb];
-	p := MakePointXYZM(x, y, z, m, 11, srid);
+	p := MakePointXYZM(x, y, z, m, 11);
 	return p;
 end MakePoint;
 

@@ -2916,7 +2916,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 			goto bailout;
 		}
 
-		ret = wkbMakePolygon(&polygonWKB, &linestringsWKB[i - 1], NULL, srid);
+		ret = wkbMakePolygon(&polygonWKB, &linestringsWKB[i - 1], srid);
 		if (ret != MAL_SUCCEED) {
 			itemsNum = i;
 			goto bailout;
@@ -3072,7 +3072,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 }
 
 str
-wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag, int *srid)
+wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag)
 {
 	GEOSGeom geosGeometry;
 	GEOSCoordSeq seq;
@@ -3113,9 +3113,6 @@ wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag, int *srid)
 		GEOSCoordSeq_destroy(seq);
 		throw(MAL, "geom.MakePoint", "Failed to create GEOSGeometry from the coordinates");
 	}
-
-    if (*srid)
-    	GEOSSetSRID(geosGeometry, *srid);
 
 	*out = geos2wkb(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
@@ -3362,7 +3359,7 @@ wkbEnvelopeFromCoordinates(wkb **out, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax
 }
 
 str
-wkbMakePolygon(wkb **out, wkb **external, bat *internalBAT_id, int *srid)
+wkbMakePolygon(wkb **out, wkb **external, int *srid)
 {
 	GEOSGeom geosGeometry, externalGeometry, linearRingGeometry;
 	bit closed = 0;
@@ -3404,19 +3401,13 @@ wkbMakePolygon(wkb **out, wkb **external, bat *internalBAT_id, int *srid)
 		throw(MAL, "geom.Polygon", "GEOSGeom_createLinearRing failed");
 	}
 
-	//create a polygon using the linearRing
-	if (internalBAT_id == NULL) {
-		geosGeometry = GEOSGeom_createPolygon(linearRingGeometry, NULL, 0);
-		if (geosGeometry == NULL) {
-			*out = NULL;
-			GEOSGeom_destroy(linearRingGeometry);
-			throw(MAL, "geom.Polygon", "Error creating Polygon from LinearRing");
-		}
-	} else {
-		/* TODO: Looks like incomplete code: what should be
-		 * done with internalBAT_id? --sjoerd */
-		geosGeometry = NULL;
-	}
+    //create a polygon using the linearRing
+    geosGeometry = GEOSGeom_createPolygon(linearRingGeometry, NULL, 0);
+    if (geosGeometry == NULL) {
+        *out = NULL;
+        GEOSGeom_destroy(linearRingGeometry);
+        throw(MAL, "geom.Polygon", "Error creating Polygon from LinearRing");
+    }
 
 	GEOSSetSRID(geosGeometry, *srid);
 

@@ -159,8 +159,8 @@ geom_export str wkbDWithin(bit*, wkb**, wkb**, dbl*);
 
 //geom_export str wkbFromString(wkb**, str*); 
 
-geom_export str wkbMakePoint(wkb**, dbl*, dbl*, dbl*, dbl*, int*, int*);
-geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*, int*);
+geom_export str wkbMakePoint(wkb**, dbl*, dbl*, dbl*, dbl*, int*);
+geom_export str wkbMakePoint_bat(bat*, bat*, bat*, bat*, bat*, int*);
 
 geom_export str wkbCoordDim(int* , wkb**);
 geom_export str wkbSetSRID(wkb**, wkb**, int*);
@@ -178,7 +178,7 @@ geom_export str numPointsGeometry(unsigned int *out, const GEOSGeometry* geosGeo
 geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbEnvelopeFromCoordinates(wkb** out, dbl* xmin, dbl* ymin, dbl* xmax, dbl* ymax, int* srid);
-geom_export str wkbMakePolygon(wkb** out, wkb** external, bat* internalBAT_id, int* srid);
+geom_export str wkbMakePolygon(wkb** out, wkb** external, int* srid); /*Only Polygons without holes*/
 geom_export str wkbMakeLine(wkb**, wkb**, wkb**);
 geom_export str wkbMakeLineAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbExteriorRing(wkb**, wkb**);
