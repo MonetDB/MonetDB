@@ -133,15 +133,15 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 b->S = (BATrec*) (ptr + position); 
                 position += sizeof(BATrec);
                 //[DATA]
-                b->T->heap.base = (void*)(ptr + position); 
-                position += b->T->width * BATcount(b);
-                if (b->T->vheap != NULL) {
+                b->theap.base = (void*)(ptr + position); 
+                position += b->twidth * BATcount(b);
+                if (b->tvheap != NULL) {
                     //[VHEAP]
-                    b->T->vheap = (Heap*) (ptr + position); 
+                    b->tvheap = (Heap*) (ptr + position); 
                     position += sizeof(Heap);
                     //[VHEAPDATA]
-                    b->T->vheap->base = (void*) (ptr + position); 
-                    position += b->T->vheap->size;
+                    b->tvheap->base = (void*) (ptr + position); 
+                    position += b->tvheap->size;
                 }
                 //initialize the PyInput structure
                 input.bat = b;

@@ -299,8 +299,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
 	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return bn;
 }
 
@@ -540,8 +540,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
 	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return bn;
 }
 
@@ -812,16 +812,16 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		bn->tkey = 1;
 		bn->tsorted = 1;
 		bn->trevsorted = ncnt <= 1;
-		bn->T->nil = 0;
-		bn->T->nonil = 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 	}
 	if (gids) {
 		BATsetcount(gn, ncnt);
 		gn->tkey = ncnt == top;
 		gn->tsorted = ncnt <= 1;
 		gn->trevsorted = ncnt <= 1;
-		gn->T->nil = 0;
-		gn->T->nonil = 1;
+		gn->tnil = 0;
+		gn->tnonil = 1;
 		*gids = gn;
 	} else
 		BBPreclaim(gn);
@@ -1119,16 +1119,16 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		bn->tkey = 1;
 		bn->tsorted = 1;
 		bn->trevsorted = ncnt <= 1;
-		bn->T->nil = 0;
-		bn->T->nonil = 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 	}
 	if (gids) {
 		BATsetcount(gn, ncnt);
 		gn->tkey = ncnt == top;
 		gn->tsorted = ncnt <= 1;
 		gn->trevsorted = ncnt <= 1;
-		gn->T->nil = 0;
-		gn->T->nonil = 1;
+		gn->tnil = 0;
+		gn->tnonil = 1;
 		*gids = gn;
 	} else
 		BBPreclaim(gn);

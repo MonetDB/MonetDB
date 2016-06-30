@@ -469,7 +469,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 	else
 		bnme = nme;
 
-	if (GDKmove(b->T->heap.farmid, srcdir, bnme, headtail, BAKDIR, bnme, headtail) != GDK_SUCCEED)
+	if (GDKmove(b->theap.farmid, srcdir, bnme, headtail, BAKDIR, bnme, headtail) != GDK_SUCCEED)
 		GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, headtail);
 
 	if ((tt = b->ttype) < 0) {
@@ -488,14 +488,14 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 	}
 
 	if (b->ttype == TYPE_str) {
-		if (GDKmove(b->T->vheap->farmid, srcdir, bnme, htheap, BAKDIR, bnme, htheap) != GDK_SUCCEED)
+		if (GDKmove(b->tvheap->farmid, srcdir, bnme, htheap, BAKDIR, bnme, htheap) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: cannot make backup of %s.%s\n", nme, htheap);
 
-		h1 = b->T->heap;
+		h1 = b->theap;
 		h1.filename = NULL;
 		h1.base = NULL;
 		h1.dirty = 0;
-		h2 = *b->T->vheap;
+		h2 = *b->tvheap;
 		h2.filename = NULL;
 		h2.base = NULL;
 		h2.dirty = 0;
@@ -509,28 +509,28 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", bid);
 
 		/* create new string heap */
-		b->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
-		if (b->T->heap.filename == NULL)
+		b->theap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
+		if (b->theap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		w = b->T->width; /* remember old width */
-		b->T->width = 1;
-		b->T->shift = 0;
-		if (HEAPalloc(&b->T->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
+		w = b->twidth; /* remember old width */
+		b->twidth = 1;
+		b->tshift = 0;
+		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
-		b->T->heap.dirty = TRUE;
-		b->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, htheap);
-		if (b->T->vheap->filename == NULL)
+		b->theap.dirty = TRUE;
+		b->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, htheap);
+		if (b->tvheap->filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		if (ATOMheap(TYPE_str, b->T->vheap, b->batCapacity) != GDK_SUCCEED)
+		if (ATOMheap(TYPE_str, b->tvheap, b->batCapacity) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: initializing new string "
 				 "heap for BAT %d failed\n", bid);
-		b->T->vheap->parentid = bid;
+		b->tvheap->parentid = bid;
 
 		/* do the conversion */
-		b->T->heap.dirty = TRUE;
-		b->T->vheap->dirty = TRUE;
+		b->theap.dirty = TRUE;
+		b->tvheap->dirty = TRUE;
 		for (i = 0; i < b->batCount; i++) {
 			/* s = h2.base + VarHeapVal(h1.base, i, w); */
 			switch (w) {
@@ -548,17 +548,17 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				/* cannot happen, but compiler doesn't know */
 				s = NULL;
 			}
-			b->T->heap.free += b->T->width;
+			b->theap.free += b->twidth;
 			Tputvalue(b, Tloc(b, i), s, 0);
 		}
 		HEAPfree(&h1, 0);
 		HEAPfree(&h2, 0);
-		HEAPsave(b->T->vheap, nme, htheap);
-		HEAPfree(b->T->vheap, 0);
+		HEAPsave(b->tvheap, nme, htheap);
+		HEAPfree(b->tvheap, 0);
 	} else {
 		assert(b->ttype == TYPE_oid ||
 		       (b->ttype != TYPE_void && b->tvarsized));
-		h1 = b->T->heap;
+		h1 = b->theap;
 		h1.filename = NULL;
 		h1.base = NULL;
 		h1.dirty = 0;
@@ -570,30 +570,30 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", headtail, bid);
 
 		/* create new heap */
-		b->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
-		if (b->T->heap.filename == NULL)
+		b->theap.filename = GDKfilepath(NOFARM, NULL, nme, headtail);
+		if (b->theap.filename == NULL)
 			GDKfatal("fixoidheap: GDKmalloc failed\n");
-		b->T->width = SIZEOF_OID;
-		b->T->shift = 3;
-		assert(b->T->width == (1 << b->T->shift));
-		if (HEAPalloc(&b->T->heap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
+		b->twidth = SIZEOF_OID;
+		b->tshift = 3;
+		assert(b->twidth == (1 << b->tshift));
+		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_OID) != GDK_SUCCEED)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
-		b->T->heap.dirty = TRUE;
+		b->theap.dirty = TRUE;
 		old = (int *) h1.base + b->batFirst;
-		new = (oid *) b->T->heap.base + b->batFirst;
+		new = (oid *) b->theap.base + b->batFirst;
 		if (b->tvarsized)
 			for (i = 0; i < b->batCount; i++)
 				new[i] = (oid) old[i] << 3;
 		else
 			for (i = 0; i < b->batCount; i++)
 				new[i] = old[i] == int_nil ? oid_nil : (oid) old[i];
-		b->T->heap.free = h1.free << 1;
+		b->theap.free = h1.free << 1;
 		HEAPfree(&h1, 0);
 	}
-	HEAPsave(&b->T->heap, nme, headtail);
-	HEAPfree(&b->T->heap, 0);
+	HEAPsave(&b->theap, nme, headtail);
+	HEAPfree(&b->theap, 0);
 
 	if (tt < 0)
 		b->ttype = tt;
@@ -805,8 +805,8 @@ fixwkbheap(void)
 		b = (BAT *) bs;	  /* bit of a hack: BATstore contents not known */
 		if (b->ttype != utypewkb || b->batCount == 0)
 			continue; /* nothing to do for this BAT */
-		assert(b->T->vheap);
-		assert(b->T->width == SIZEOF_VAR_T);
+		assert(b->tvheap);
+		assert(b->twidth == SIZEOF_VAR_T);
 
 		nme = BBP_physical(bid);
 		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
@@ -814,25 +814,25 @@ fixwkbheap(void)
 		else
 			bnme++;
 		snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
-		if ((oldname = GDKfilepath(b->T->heap.farmid, BATDIR, nme, "tail")) == NULL ||
-		    (newname = GDKfilepath(b->T->heap.farmid, BAKDIR, bnme, "tail")) == NULL ||
+		if ((oldname = GDKfilepath(b->theap.farmid, BATDIR, nme, "tail")) == NULL ||
+		    (newname = GDKfilepath(b->theap.farmid, BAKDIR, bnme, "tail")) == NULL ||
 		    GDKcreatedir(newname) != GDK_SUCCEED ||
 		    rename(oldname, newname) < 0)
 			GDKfatal("fixwkbheap: cannot make backup of %s.tail\n", nme);
 		GDKfree(oldname);
 		GDKfree(newname);
-		if ((oldname = GDKfilepath(b->T->vheap->farmid, BATDIR, nme, "theap")) == NULL ||
-		    (newname = GDKfilepath(b->T->vheap->farmid, BAKDIR, bnme, "theap")) == NULL ||
+		if ((oldname = GDKfilepath(b->tvheap->farmid, BATDIR, nme, "theap")) == NULL ||
+		    (newname = GDKfilepath(b->tvheap->farmid, BAKDIR, bnme, "theap")) == NULL ||
 		    rename(oldname, newname) < 0)
 			GDKfatal("fixwkbheap: cannot make backup of %s.theap\n", nme);
 		GDKfree(oldname);
 		GDKfree(newname);
 
-		h1 = b->T->heap;
+		h1 = b->theap;
 		h1.filename = NULL;
 		h1.base = NULL;
 		h1.dirty = 0;
-		h2 = *b->T->vheap;
+		h2 = *b->tvheap;
 		h2.filename = NULL;
 		h2.base = NULL;
 		h2.dirty = 0;
@@ -842,21 +842,21 @@ fixwkbheap(void)
 		    HEAPload(&h2, filename, "theap", 0) != GDK_SUCCEED)
 			GDKfatal("fixwkbheap: cannot load old heaps for BAT %d\n", bid);
 		/* create new heaps */
-		if ((b->T->heap.filename = GDKfilepath(NOFARM, NULL, nme, "tail")) == NULL ||
-		    (b->T->vheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
+		if ((b->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail")) == NULL ||
+		    (b->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
 			GDKfatal("fixwkbheap: out of memory\n");
-		if (HEAPalloc(&b->T->heap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
+		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
 			GDKfatal("fixwkbheap: cannot allocate heap\n");
-		b->T->heap.dirty = TRUE;
-		b->T->heap.free = h1.free;
-		HEAP_initialize(b->T->vheap, b->batCapacity, 0, (int) sizeof(var_t));
-		if (b->T->vheap->base == NULL)
+		b->theap.dirty = TRUE;
+		b->theap.free = h1.free;
+		HEAP_initialize(b->tvheap, b->batCapacity, 0, (int) sizeof(var_t));
+		if (b->tvheap->base == NULL)
 			GDKfatal("fixwkbheap: cannot allocate heap\n");
-		b->T->vheap->parentid = bid;
+		b->tvheap->parentid = bid;
 
 		/* do the conversion */
-		b->T->heap.dirty = TRUE;
-		b->T->vheap->dirty = TRUE;
+		b->theap.dirty = TRUE;
+		b->tvheap->dirty = TRUE;
 		old = (const var_t *) h1.base + BUNfirst(b);
 		new = (var_t *) Tloc(b, BUNfirst(b));
 		for (i = 0; i < b->batCount; i++) {
@@ -864,9 +864,9 @@ fixwkbheap(void)
 			owkb = (struct old_wkb *) (h2.base + (old[i] << GDK_VARSHIFT));
 			if ((len = owkb->len) == ~0)
 				len = 0;
-			if ((new[i] = HEAP_malloc(b->T->vheap, offsetof(struct new_wkb, data) + len)) == 0)
+			if ((new[i] = HEAP_malloc(b->tvheap, offsetof(struct new_wkb, data) + len)) == 0)
 				GDKfatal("fixwkbheap: cannot allocate heap space\n");
-			nwkb = (struct new_wkb *) (b->T->vheap->base + (new[i] << GDK_VARSHIFT));
+			nwkb = (struct new_wkb *) (b->tvheap->base + (new[i] << GDK_VARSHIFT));
 			nwkb->len = owkb->len;
 			nwkb->srid = 0;
 			if (len > 0)
@@ -874,10 +874,10 @@ fixwkbheap(void)
 		}
 		HEAPfree(&h1, 0);
 		HEAPfree(&h2, 0);
-		HEAPsave(&b->T->heap, nme, "tail");
-		HEAPfree(&b->T->heap, 0);
-		HEAPsave(b->T->vheap, nme, "theap");
-		HEAPfree(b->T->vheap, 0);
+		HEAPsave(&b->theap, nme, "tail");
+		HEAPfree(&b->theap, 0);
+		HEAPsave(b->tvheap, nme, "theap");
+		HEAPfree(b->tvheap, 0);
 	}
 }
 #endif
@@ -1827,37 +1827,37 @@ BBPdump(void)
 			BBP_lrefs(i),
 			BBP_status(i),
 			b->batCount,
-			HEAPmemsize(&b->T->heap),
-			HEAPvmsize(&b->T->heap),
-			HEAPmemsize(b->T->vheap),
-			HEAPvmsize(b->T->vheap),
-			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPmemsize(b->T->hash->heap) : 0,
-			b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1 ? HEAPvmsize(b->T->hash->heap) : 0);
+			HEAPmemsize(&b->theap),
+			HEAPvmsize(&b->theap),
+			HEAPmemsize(b->tvheap),
+			HEAPvmsize(b->tvheap),
+			b->thash && b->thash != (Hash *) -1 && b->thash != (Hash *) 1 ? HEAPmemsize(b->thash->heap) : 0,
+			b->thash && b->thash != (Hash *) -1 && b->thash != (Hash *) 1 ? HEAPvmsize(b->thash->heap) : 0);
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-			cmem += HEAPmemsize(&b->T->heap);
-			cvm += HEAPvmsize(&b->T->heap);
+			cmem += HEAPmemsize(&b->theap);
+			cvm += HEAPvmsize(&b->theap);
 			nc++;
 		} else {
-			mem += HEAPmemsize(&b->T->heap);
-			vm += HEAPvmsize(&b->T->heap);
+			mem += HEAPmemsize(&b->theap);
+			vm += HEAPvmsize(&b->theap);
 			n++;
 		}
-		if (b->T->vheap) {
+		if (b->tvheap) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->T->vheap);
-				cvm += HEAPvmsize(b->T->vheap);
+				cmem += HEAPmemsize(b->tvheap);
+				cvm += HEAPvmsize(b->tvheap);
 			} else {
-				mem += HEAPmemsize(b->T->vheap);
-				vm += HEAPvmsize(b->T->vheap);
+				mem += HEAPmemsize(b->tvheap);
+				vm += HEAPvmsize(b->tvheap);
 			}
 		}
-		if (b->T->hash && b->T->hash != (Hash *) -1 && b->T->hash != (Hash *) 1) {
+		if (b->thash && b->thash != (Hash *) -1 && b->thash != (Hash *) 1) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->T->hash->heap);
-				cvm += HEAPvmsize(b->T->hash->heap);
+				cmem += HEAPmemsize(b->thash->heap);
+				cvm += HEAPvmsize(b->thash->heap);
 			} else {
-				mem += HEAPmemsize(b->T->hash->heap);
-				vm += HEAPvmsize(b->T->hash->heap);
+				mem += HEAPmemsize(b->thash->heap);
+				vm += HEAPvmsize(b->thash->heap);
 			}
 		}
 	}
@@ -2387,9 +2387,9 @@ incref(bat i, int logical, int lock)
 		tp = tvp = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		tp = -bs->B.T->heap.parentid;
+		tp = -bs->B.theap.parentid;
 		assert(tp >= 0);
-		tvp = bs->B.T->vheap == 0 || bs->B.T->vheap->parentid == i ? 0 : bs->B.T->vheap->parentid;
+		tvp = bs->B.tvheap == 0 || bs->B.tvheap->parentid == i ? 0 : bs->B.tvheap->parentid;
 		refs = ++BBP_refs(i);
 		if (refs == 1 && (tp || tvp)) {
 			/* If this is a view, we must load the parent
@@ -2411,13 +2411,13 @@ incref(bat i, int logical, int lock)
 		if (tp) {
 			incref(tp, 0, lock);
 			b = getBBPdescriptor(tp, lock);
-			bs->B.T->heap.base = b->T->heap.base + (size_t) bs->B.T->heap.base;
+			bs->B.theap.base = b->theap.base + (size_t) bs->B.theap.base;
 			/* if we shared the hash before, share it
 			 * again note that if the parent's hash is
 			 * destroyed, we also don't have a hash
 			 * anymore */
-			if (bs->B.T->hash == (Hash *) -1)
-				bs->B.T->hash = b->T->hash;
+			if (bs->B.thash == (Hash *) -1)
+				bs->B.thash = b->thash;
 		}
 		if (tvp) {
 			incref(tvp, 0, lock);
@@ -2493,18 +2493,18 @@ decref(bat i, int logical, int releaseShare, int lock)
 			GDKerror("BBPdecref: %s does not have pointer fixes.\n", BBPname(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->T->heap.parentid == 0 || BBP_refs(-b->T->heap.parentid) > 0);
-			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
+			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(-b->theap.parentid) > 0);
+			assert(b == NULL || b->tvheap == NULL || b->tvheap->parentid == 0 || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((tp = -b->T->heap.parentid) != 0)
-					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->T->heap.base);
+				if ((tp = -b->theap.parentid) != 0)
+					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
 				/* if a view shared the hash with its
 				 * parent, indicate this, but only if
 				 * view isn't getting destroyed */
-				if (tp && b->T->hash &&
-				    b->T->hash == BBP_cache(tp)->T->hash)
-					b->T->hash = (Hash *) -1;
+				if (tp && b->thash &&
+				    b->thash == BBP_cache(tp)->thash)
+					b->thash = (Hash *) -1;
 				tvp = VIEWvtparent(b);
 			}
 		}
@@ -2760,7 +2760,7 @@ BBPsave(BAT *b)
 static void
 BBPdestroy(BAT *b)
 {
-	bat tp = -b->T->heap.parentid;
+	bat tp = -b->theap.parentid;
 	bat vtp = VIEWvtparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
@@ -3602,12 +3602,12 @@ BBPbackup(BAT *b, bit subcommit)
 	srcdir[s - srcdir] = 0;
 
 	if (b->ttype != TYPE_void &&
-	    do_backup(srcdir, nme, "tail", &b->T->heap,
-		      b->batDirty || b->T->heap.dirty, subcommit) != GDK_SUCCEED)
+	    do_backup(srcdir, nme, "tail", &b->theap,
+		      b->batDirty || b->theap.dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
-	if (b->T->vheap &&
-	    do_backup(srcdir, nme, "theap", b->T->vheap,
-		      b->batDirty || b->T->vheap->dirty, subcommit) != GDK_SUCCEED)
+	if (b->tvheap &&
+	    do_backup(srcdir, nme, "theap", b->tvheap,
+		      b->batDirty || b->tvheap->dirty, subcommit) != GDK_SUCCEED)
 		goto fail;
 	GDKfree(srcdir);
 	return GDK_SUCCEED;
@@ -4062,13 +4062,13 @@ BBPdiskscan(const char *parent)
 			delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->T->vheap || b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->tvheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 			if (!delete)
-				b->T->hash = (Hash *) 1;
+				b->thash = (Hash *) 1;
 #else
 			delete = TRUE;
 #endif
@@ -4076,7 +4076,7 @@ BBPdiskscan(const char *parent)
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 			if (!delete)
-				b->T->imprints = (Imprints *) 1;
+				b->timprints = (Imprints *) 1;
 		} else if (strncmp(p + 1, "torderidx", 9) == 0) {
 #ifdef PERSISTENTIDX
 			BAT *b = getdesc(bid);

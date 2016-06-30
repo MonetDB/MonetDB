@@ -81,7 +81,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 		}
 	}
-	assert(!bn->T->nil || !bn->T->nonil);
+	assert(!bn->tnil || !bn->tnonil);
 	BATsettrivprop(bn);
 	BATderiveProps(bn,FALSE);
 	BBPkeepref(*ret = bn->batCacheid);
@@ -113,14 +113,14 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings */
-		if ( b->T->vheap && bn->T->vheap && ATOMstorage(b->ttype) != TYPE_str){
-			newsize =  b->T->vheap->size * pieces;
-			if (HEAPextend(bn->T->vheap, newsize, TRUE) != GDK_SUCCEED)
+		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
+			newsize =  b->tvheap->size * pieces;
+			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED)
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
 		BATtseqbase(bn, b->tseqbase);
 		BATappend(bn,b,FALSE);
-		assert(!bn->T->nil || !bn->T->nonil);
+		assert(!bn->tnil || !bn->tnonil);
 		bn->talign = (pieces-1); /* misuse talign field */
 		BBPkeepref(*ret = bn->batCacheid);
 		BBPunfix(b->batCacheid);
@@ -137,7 +137,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		b->talign--;
 		if(b->talign == 0)
 			BATsetaccess(b, BAT_READ);
-		assert(!b->T->nil || !b->T->nonil);
+		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);
 		if( bb) 
 			BBPunfix(bb->batCacheid);

@@ -162,7 +162,7 @@ BATorderidx(BAT *b, int stable)
 		}
 		if (stable) {
 			if (GDKssort(Tloc(bn, BUNfirst(bn)), mv,
-				     bn->T->vheap ? bn->T->vheap->base : NULL,
+				     bn->tvheap ? bn->tvheap->base : NULL,
 				     BATcount(bn), Tsize(bn), SIZEOF_OID,
 				     bn->ttype) < 0) {
 				HEAPfree(m, 1);
@@ -173,7 +173,7 @@ BATorderidx(BAT *b, int stable)
 			}
 		} else {
 			GDKqsort(Tloc(bn, BUNfirst(bn)), mv,
-				 bn->T->vheap ? bn->T->vheap->base : NULL,
+				 bn->tvheap ? bn->tvheap->base : NULL,
 				 BATcount(bn), Tsize(bn), SIZEOF_OID,
 				 bn->ttype);
 		}

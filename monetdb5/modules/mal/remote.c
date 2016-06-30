@@ -1047,11 +1047,11 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->hseqbase, b->tseqbase,
 			b->tsorted, b->trevsorted,
 			b->tkey,
-			b->T->nonil,
+			b->tnonil,
 			b->tdense,
 			b->batCount,
 			(size_t)b->batCount * Tsize(b),
-			sendtheap && b->batCount > 0 ? b->T->vheap->free : 0
+			sendtheap && b->batCount > 0 ? b->tvheap->free : 0
 			);
 
 	if (b->batCount > 0) {
@@ -1059,7 +1059,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
-					Tbase(b), b->T->vheap->free, 1);
+					Tbase(b), b->tvheap->free, 1);
 	}
 	/* flush is done by the calling environment (MAL) */
 
@@ -1198,22 +1198,22 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
 	if (bb.Ttype == TYPE_str && bb.size) {
-		b->T->width = (unsigned short) (bb.tailsize / bb.size);
-		b->T->shift = ATOMelmshift(Tsize(b));
+		b->twidth = (unsigned short) (bb.tailsize / bb.size);
+		b->tshift = ATOMelmshift(Tsize(b));
 	}
 
 	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->T->heap, bb.tailsize, TRUE) != GDK_SUCCEED ||
-			mnstr_read(in, b->T->heap.base, bb.tailsize, 1) < 0)
+		if (HEAPextend(&b->theap, bb.tailsize, TRUE) != GDK_SUCCEED ||
+			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
 			goto bailout;
-		b->T->heap.dirty = TRUE;
+		b->theap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		if (HEAPextend(b->T->vheap, bb.theapsize, TRUE) != GDK_SUCCEED ||
-			mnstr_read(in, b->T->vheap->base, bb.theapsize, 1) < 0)
+		if (HEAPextend(b->tvheap, bb.theapsize, TRUE) != GDK_SUCCEED ||
+			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
-		b->T->vheap->free = bb.theapsize;
-		b->T->vheap->dirty = TRUE;
+		b->tvheap->free = bb.theapsize;
+		b->tvheap->dirty = TRUE;
 	}
 
 	/* set properties */
@@ -1221,10 +1221,10 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	b->tsorted = bb.Tsorted;
 	b->trevsorted = bb.Trevsorted;
 	b->tkey = bb.Tkey;
-	b->T->nonil = bb.Tnonil;
+	b->tnonil = bb.Tnonil;
 	b->tdense = bb.Tdense;
 	if (bb.Ttype == TYPE_str && bb.size)
-		BATsetcapacity(b, (BUN) (bb.tailsize >> b->T->shift));
+		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
 	BATsetcount(b, bb.size);
 	b->batDirty = TRUE;
 

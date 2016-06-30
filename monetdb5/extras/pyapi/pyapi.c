@@ -137,7 +137,7 @@ static bool enable_zerocopy_output = true;
 #ifdef HAVE_FORK
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
-        bat->T->nil = 0; bat->T->nonil = 1;                                                   \
+        bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
         if (mask != NULL)                                                                                               \
@@ -147,33 +147,33 @@ static bool enable_zerocopy_output = true;
                 if (mask[index_offset * ret->count + iu] == TRUE)                                                       \
                 {                                                                                                       \
                     (*(mtpe*)(&data[(index_offset * ret->count + iu) * ret->memory_size])) = mtpe##_nil;                \
-                    bat->T->nil = 1;                                                                                    \
+                    bat->tnil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
-            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+            bat->tnonil = 1 - bat->tnil;                                                                            \
         } else {                                                                                                        \
-            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
+            bat->tnil = 0; bat->tnonil = 0;                                                                         \
         }                                                                                                               \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
-        GDKfree(bat->T->heap.base);                                                                                     \
-        bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
-        bat->T->heap.size = ret->count * ret->memory_size;                                                              \
-        bat->T->heap.free = bat->T->heap.size;  /*There are no free places in the array*/                               \
+        GDKfree(bat->theap.base);                                                                                     \
+        bat->theap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
+        bat->theap.size = ret->count * ret->memory_size;                                                              \
+        bat->theap.free = bat->theap.size;  /*There are no free places in the array*/                               \
         /*If index_offset > 0, we are mapping part of a multidimensional array.*/                                       \
         /*The entire array will be cleared when the part with index_offset=0 is freed*/                                 \
         /*So we set this part of the mapping to 'NOWN'*/                                                                \
-        if (index_offset > 0) bat->T->heap.storage = STORE_NOWN;                                                        \
+        if (index_offset > 0) bat->theap.storage = STORE_NOWN;                                                        \
         else {                                                                                                          \
-            bat->T->heap.storage = batstore;                                                                            \
+            bat->theap.storage = batstore;                                                                            \
             if (batstore == STORE_MMAPABS) {                                                                            \
                 /* If we are taking data from a MMAP file, set the filename to the absolute path */                     \
                 char address[999];                                                                                      \
                 snprintf_mmap_file(address, 999, ret->mmap_id);                                                         \
-                bat->T->heap.filename = GDKfilepath(NOFARM, BATDIR, address, "tmp");                                    \
+                bat->theap.filename = GDKfilepath(NOFARM, BATDIR, address, "tmp");                                    \
                 ret->mmap_id = -1;                                                                                      \
             }                                                                                                           \
         }                                                                                                               \
-        bat->T->heap.newstorage = STORE_MEM;                                                                            \
+        bat->theap.newstorage = STORE_MEM;                                                                            \
         bat->batCount = ret->count;                                                                                     \
         bat->batCapacity = ret->count;                                                                                  \
         bat->batCopiedtodisk = false;                                                                                   \
@@ -183,7 +183,7 @@ static bool enable_zerocopy_output = true;
 #else
 #define CREATE_BAT_ZEROCOPY(bat, mtpe, batstore) {                                                                      \
         bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                                                             \
-        bat->T->nil = 0; bat->T->nonil = 1;                                                   \
+        bat->tnil = 0; bat->tnonil = 1;                                                   \
         bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                           \
         /*Change nil values to the proper values, if they exist*/                                                       \
         if (mask != NULL)                                                                                               \
@@ -193,26 +193,26 @@ static bool enable_zerocopy_output = true;
                 if (mask[index_offset * ret->count + iu] == TRUE)                                                       \
                 {                                                                                                       \
                     (*(mtpe*)(&data[(index_offset * ret->count + iu) * ret->memory_size])) = mtpe##_nil;                \
-                    bat->T->nil = 1;                                                                                    \
+                    bat->tnil = 1;                                                                                    \
                 }                                                                                                       \
             }                                                                                                           \
-            bat->T->nonil = 1 - bat->T->nil;                                                                            \
+            bat->tnonil = 1 - bat->tnil;                                                                            \
         } else {                                                                                                        \
-            bat->T->nil = 0; bat->T->nonil = 0;                                                                         \
+            bat->tnil = 0; bat->tnonil = 0;                                                                         \
         }                                                                                                               \
         /*When we create a BAT a small part of memory is allocated, free it*/                                           \
-        GDKfree(bat->T->heap.base);                                                                                     \
-        bat->T->heap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
-        bat->T->heap.size = ret->count * ret->memory_size;                                                              \
-        bat->T->heap.free = bat->T->heap.size;  /*There are no free places in the array*/                               \
+        GDKfree(bat->theap.base);                                                                                     \
+        bat->theap.base = &data[(index_offset * ret->count) * ret->memory_size];                                      \
+        bat->theap.size = ret->count * ret->memory_size;                                                              \
+        bat->theap.free = bat->theap.size;  /*There are no free places in the array*/                               \
         /*If index_offset > 0, we are mapping part of a multidimensional array.*/                                       \
         /*The entire array will be cleared when the part with index_offset=0 is freed*/                                 \
         /*So we set this part of the mapping to 'NOWN'*/                                                                \
-        if (index_offset > 0) bat->T->heap.storage = STORE_NOWN;                                                        \
+        if (index_offset > 0) bat->theap.storage = STORE_NOWN;                                                        \
         else {                                                                                                          \
-            bat->T->heap.storage = batstore;                                                                            \
+            bat->theap.storage = batstore;                                                                            \
         }                                                                                                               \
-        bat->T->heap.newstorage = STORE_MEM;                                                                            \
+        bat->theap.newstorage = STORE_MEM;                                                                            \
         bat->batCount = (BUN) ret->count;                                                                                     \
         bat->batCapacity = (BUN) ret->count;                                                                                  \
         bat->batCopiedtodisk = false;                                                                                   \
@@ -238,7 +238,7 @@ static bool enable_zerocopy_output = true;
         {                                                                                                                                        \
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                    \
             {                                                                                                                                    \
-                bat->T->nil = 1;                                                                                                                 \
+                bat->tnil = 1;                                                                                                                 \
                 ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = mtpe_to##_nil;                                                                       \
             }                                                                                                                                    \
             else                                                                                                                                 \
@@ -270,7 +270,7 @@ static bool enable_zerocopy_output = true;
         {                                                                                                                                             \
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
             {                                                                                                                                         \
-                bat->T->nil = 1;                                                                                                                      \
+                bat->tnil = 1;                                                                                                                      \
                 ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = mtpe_to##_nil;                                                                            \
             }                                                                                                                                         \
             else                                                                                                                                      \
@@ -301,7 +301,7 @@ static bool enable_zerocopy_output = true;
         {                                                                                                                                             \
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
             {                                                                                                                                         \
-                bat->T->nil = 1;                                                                                                                      \
+                bat->tnil = 1;                                                                                                                      \
                 BUNappend(b, str_nil, FALSE);                                                                                                         \
             }                                                                                                                                         \
             else                                                                                                                                      \
@@ -347,7 +347,7 @@ static bool enable_zerocopy_output = true;
             }                                                                                                                                                  \
         } else {                                                                                                                                               \
             bat = COLnew(seqbase, TYPE_##mtpe, (BUN) ret->count, TRANSIENT);                                                                                       \
-            bat->T->nil = 0; bat->T->nonil = 1;                                                                                      \
+            bat->tnil = 0; bat->tnonil = 1;                                                                                      \
             if (NOT_HGE(mtpe) && TYPE_##mtpe != PyType_ToBat(ret->result_type)) WARNING_MESSAGE("!PERFORMANCE WARNING: You are returning a Numpy Array of type %s, which has to be converted to a BAT of type %s. If you return a Numpy\
 Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type), BatType_Format(TYPE_##mtpe), PyType_Format(BatType_ToPyType(TYPE_##mtpe)));   \
             bat->tkey = 0; bat->tsorted = 0; bat->trevsorted = 0;                                                                                              \
@@ -375,8 +375,8 @@ Array of type %s no copying will be needed.\n", PyType_Format(ret->result_type),
                     msg = createException(MAL, "pyapi.eval", "Unrecognized type. Could not convert to %s.\n", BatType_Format(TYPE_##mtpe));                    \
                     goto wrapup;                                                                                                                               \
             }                                                                                                                                                  \
-            bat->T->nonil = 1 - bat->T->nil;                                                                                                                   \
-            if (!mask) { bat->T->nil = 0; bat->T->nonil = 0; }                                                                                                 \
+            bat->tnonil = 1 - bat->tnil;                                                                                                                   \
+            if (!mask) { bat->tnil = 0; bat->tnonil = 0; }                                                                                                 \
             BATsetcount(bat, (BUN) ret->count);                                                                                                                \
             BATsettrivprop(bat);                                                                                                                               \
         }                                                                                                                                                      \
@@ -765,7 +765,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                             for (i = 0; i < output->nr_cols; i++) {
                                 res_col col = output->cols[i];
                                 BAT* b = BATdescriptor(col.b);
-                                size_t batsize = b->T->width * BATcount(b);
+                                size_t batsize = b->twidth * BATcount(b);
                                 char *colname = col.name;
 
                                 size += strlen(colname) + 1;                                          //[COLNAME]
@@ -774,9 +774,9 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 size += sizeof(BATrec);                                               //[BATrec]
                                 size += batsize;                                                      //[DATA]
                                 
-                                if (b->T->vheap != NULL) {
+                                if (b->tvheap != NULL) {
                                     size += sizeof(Heap);                                             //[VHEAP]
-                                    size += b->T->vheap->size;                                        //[VHEAPDATA]
+                                    size += b->tvheap->size;                                        //[VHEAPDATA]
                                 }
                                 BBPunfix(b->batCacheid);
                             }
@@ -802,7 +802,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 res_col col = output->cols[i];
                                 BAT* b = BATdescriptor(col.b);
                                 char *colname = col.name;
-                                size_t batsize = b->T->width * BATcount(b);
+                                size_t batsize = b->twidth * BATcount(b);
 
                                 //[COLNAME]
                                 memcpy(result_ptr + position, colname, strlen(colname) + 1); 
@@ -819,13 +819,13 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                                 //[DATA]
                                 memcpy(result_ptr + position, Tloc(b, BUNfirst(b)), batsize);
                                 position += batsize;
-                                if (b->T->vheap != NULL) {
+                                if (b->tvheap != NULL) {
                                     //[VHEAP]
-                                    memcpy(result_ptr + position, b->T->vheap, sizeof(Heap));
+                                    memcpy(result_ptr + position, b->tvheap, sizeof(Heap));
                                     position += sizeof(Heap);
                                     //[VHEAPDATA]
-                                    memcpy(result_ptr + position, b->T->vheap->base, b->T->vheap->size);
-                                    position += b->T->vheap->size;
+                                    memcpy(result_ptr + position, b->tvheap->base, b->tvheap->size);
+                                    position += b->tvheap->size;
                                 }
                                 BBPunfix(b->batCacheid);
                             }
@@ -1102,7 +1102,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
                 goto aggrwrapup;
             }
 
-            aggr_group_arr = (oid*) aggr_group->T->heap.base;
+            aggr_group_arr = (oid*) aggr_group->theap.base;
             for(element_it = 0; element_it < elements; element_it++) {
                 group_counts[aggr_group_arr[element_it]]++;
             }
@@ -1118,7 +1118,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             // now split the columns one by one
             for(i = 0; i < named_columns; i++) {
                 PyInput input = pyinput_values[i];
-                void *basevals = input.bat->T->heap.base;
+                void *basevals = input.bat->theap.base;
 
                 if (!input.scalar) {
                     switch(input.bat_type) {
@@ -1850,7 +1850,7 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
     // The masked array structure is an object with two arrays of equal size, a data array and a mask array
     // The mask array is a boolean array that has the value 'True' when the element is NULL, and 'False' otherwise
     // If the BAT has Null values, we construct this masked array
-    if (!(b->T->nil == 0 && b->T->nonil == 1))
+    if (!(b->tnil == 0 && b->tnonil == 1))
     {
         PyObject *mask;
         PyObject *mafunc = PyObject_GetAttrString(PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
@@ -1958,15 +1958,15 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
                 PyObject *obj;
                 j = 0;
                 if (unicode) {                    
-                    if (GDK_ELIMDOUBLES(b->T->vheap)) {
-                        PyObject** pyptrs = GDKzalloc(b->T->vheap->free * sizeof(PyObject*));
+                    if (GDK_ELIMDOUBLES(b->tvheap)) {
+                        PyObject** pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject*));
                         if (!pyptrs) {
                             msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" PyObject strings.");
                             goto wrapup;
                         }
                         BATloop(b, p, q) {
                             const char *t = (const char *) BUNtail(li, p);
-                            ptrdiff_t offset = t - b->T->vheap->base;
+                            ptrdiff_t offset = t - b->tvheap->base;
                             if (!pyptrs[offset]) {
                                 if (strcmp(t, str_nil) == 0) {
                                      //str_nil isn't a valid UTF-8 character (it's 0x80), so we can't decode it as UTF-8 (it will throw an error)
@@ -2006,15 +2006,15 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char
                     }
                 } else {
                     /* special case where we exploit the duplicate-eliminated string heap */
-                    if (GDK_ELIMDOUBLES(b->T->vheap)) {
-                        PyObject** pyptrs = GDKzalloc(b->T->vheap->free * sizeof(PyObject*));
+                    if (GDK_ELIMDOUBLES(b->tvheap)) {
+                        PyObject** pyptrs = GDKzalloc(b->tvheap->free * sizeof(PyObject*));
                         if (!pyptrs) {
                             msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL" PyObject strings.");
                             goto wrapup;
                         }
                         BATloop(b, p, q) {
                             const char *t = (const char *) BUNtail(li, p);
-                            ptrdiff_t offset = t - b->T->vheap->base;
+                            ptrdiff_t offset = t - b->tvheap->base;
                             if (!pyptrs[offset]) {
                                 pyptrs[offset] = PyString_FromString(t);
                             } else {
@@ -2086,7 +2086,7 @@ wrapup:
 }
 
 #define CreateNullMask(tpe) {                                       \
-    tpe *bat_ptr = (tpe*)b->T->heap.base;                           \
+    tpe *bat_ptr = (tpe*)b->theap.base;                             \
     for(j = 0; j < count; j++) {                                    \
         mask_data[j] = bat_ptr[j] == tpe##_nil;                     \
         found_nil = found_nil || mask_data[j];                      \
@@ -2462,7 +2462,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
             }
 
             b = COLnew(seqbase, TYPE_str, (BUN) ret->count, TRANSIENT);
-            b->T->nil = 0; b->T->nonil = 1;
+            b->tnil = 0; b->tnonil = 1;
             b->tkey = 0; b->tsorted = 0; b->trevsorted = 0;
             VERBOSE_MESSAGE("- Collecting return values of type %s.\n", PyType_Format(ret->result_type));
             switch(ret->result_type)
@@ -2485,7 +2485,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                 case NPY_STRING:
                     for (iu = 0; iu < ret->count; iu++) {
                         if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->T->nil = 1;
+                            b->tnil = 1;
                             BUNappend(b, str_nil, FALSE);
                         }  else {
                             if (!string_copy(&data[(index_offset * ret->count + iu) * ret->memory_size], utf8_string, ret->memory_size, true)) {
@@ -2499,7 +2499,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                 case NPY_UNICODE:
                     for (iu = 0; iu < ret->count; iu++) {
                         if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->T->nil = 1;
+                            b->tnil = 1;
                             BUNappend(b, str_nil, FALSE);
                         }  else {
                             utf32_to_utf8(0, ret->memory_size / 4, utf8_string, (const Py_UNICODE*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));
@@ -2528,7 +2528,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
                     utf8_string = GDKzalloc(utf8_size);
                     for (iu = 0; iu < ret->count; iu++) {
                         if (mask != NULL && (mask[index_offset * ret->count + iu]) == TRUE) {
-                            b->T->nil = 1;
+                            b->tnil = 1;
                             BUNappend(b, str_nil, FALSE);
                         } else {
                             //we try to handle as many types as possible
@@ -2588,7 +2588,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i
             }
             GDKfree(utf8_string);
 
-            b->T->nonil = 1 - b->T->nil;
+            b->tnonil = 1 - b->tnil;
             BATsetcount(b, (BUN) ret->count);
             BATsettrivprop(b);
             break;

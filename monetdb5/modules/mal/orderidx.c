@@ -233,8 +233,8 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(bn, BATcount(b));
 	bn->tkey = 1;
 	bn->tsorted = bn->trevsorted = BATcount(b) <= 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);

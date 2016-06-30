@@ -517,7 +517,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		BAThseqbase(i, bat->ibase);
 	} else {
 		if (!isEbat(b)){
-			assert(b->T->heap.storage != STORE_PRIV);
+			assert(b->theap.storage != STORE_PRIV);
 		} else {
 			temp_destroy(bat->ibid);
 			bat->ibid = ebat2real(b->batCacheid, bat->ibase);
@@ -715,7 +715,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 		bat_destroy(b);
 		b = temp_descriptor(bat->dbid);
 	}
-	assert(b->T->heap.storage != STORE_PRIV);
+	assert(b->theap.storage != STORE_PRIV);
 	BATappend(b, i, TRUE);
 	BATkey(b, TRUE);
 	bat_destroy(b);
@@ -737,7 +737,7 @@ delta_delete_val( sql_dbat *bat, oid rid )
 		bat_destroy(b);
 		b = temp_descriptor(bat->dbid);
 	}
-	assert(b->T->heap.storage != STORE_PRIV);
+	assert(b->theap.storage != STORE_PRIV);
 	BUNappend(b, (ptr)&rid, TRUE);
 	BATkey(b, TRUE);
 	bat_destroy(b);
@@ -937,9 +937,9 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b && b->tvarsized) /* check double elimination */
-			de = GDK_ELIMDOUBLES(b->T->vheap);
+			de = GDK_ELIMDOUBLES(b->tvheap);
 		if (de)
-			de = b->T->width;
+			de = b->twidth;
 	}
 	return de;
 }
@@ -1643,9 +1643,9 @@ clear_del(sql_trans *tr, sql_table *t)
 static void
 BATcleanProps( BAT *b )
 {
-	if (b->T->props) {
-		PROPdestroy(b->T->props);
-		b->T->props = NULL;
+	if (b->tprops) {
+		PROPdestroy(b->tprops);
+		b->tprops = NULL;
 	}
 }
 
@@ -1663,7 +1663,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
 		(*changes)++;
-		assert(cur->T->heap.storage != STORE_PRIV);
+		assert(cur->theap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
 		cbat->cnt = cbat->ibase = BATcount(cur);
 		BATcleanProps(cur);
@@ -1909,7 +1909,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			ins = cur;
 			cur = newcur;
 		} else {
-			assert(cur->T->heap.storage != STORE_PRIV);
+			assert(cur->theap.storage != STORE_PRIV);
 			assert((BATcount(cur) + BATcount(ins)) == cbat->cnt);
 			//assert((BATcount(cur) + BATcount(ins)) == (obat->cnt + (BUNlast(ins) - ins->batInserted)));
 			assert(!BATcount(ins) || !isEbat(ins));

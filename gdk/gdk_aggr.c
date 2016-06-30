@@ -493,7 +493,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		return BATconvert(b, s, tp, abort_on_error);
@@ -509,7 +509,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	nils = dosum(Tloc(b, BUNfirst(b)), b->T->nonil, b->hseqbase, start, end,
+	nils = dosum(Tloc(b, BUNfirst(b)), b->tnonil, b->hseqbase, start, end,
 		     Tloc(bn, BUNfirst(bn)), ngrp, b->ttype, tp,
 		     cand, candend, gids, min, max,
 		     skip_nils, abort_on_error, 1, "BATgroupsum");
@@ -519,8 +519,8 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->T->nil = nils != 0;
-		bn->T->nonil = nils == 0;
+		bn->tnil = nils != 0;
+		bn->tnonil = nils == 0;
 	} else {
 		BBPunfix(bn->batCacheid);
 		bn = NULL;
@@ -638,7 +638,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	}
 	if (BATcount(b) == 0)
 		return GDK_SUCCEED;
-	nils = dosum(Tloc(b, BUNfirst(b)), b->T->nonil, b->hseqbase, start, end,
+	nils = dosum(Tloc(b, BUNfirst(b)), b->tnonil, b->hseqbase, start, end,
 		     res, 1, b->ttype, tp, cand, candend, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum");
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
@@ -1097,7 +1097,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		return BATconvert(b, s, tp, abort_on_error);
@@ -1123,8 +1123,8 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->T->nil = nils != 0;
-		bn->T->nonil = nils == 0;
+		bn->tnil = nils != 0;
+		bn->tnonil = nils == 0;
 	} else {
 		BBPunfix(bn->batCacheid);
 		bn = NULL;
@@ -1391,7 +1391,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		if ((bn = BATconvert(b, s, TYPE_dbl, abort_on_error)) == NULL)
@@ -1487,15 +1487,15 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		(*cntsp)->tkey = BATcount(*cntsp) <= 1;
 		(*cntsp)->tsorted = BATcount(*cntsp) <= 1;
 		(*cntsp)->trevsorted = BATcount(*cntsp) <= 1;
-		(*cntsp)->T->nil = 0;
-		(*cntsp)->T->nonil = 1;
+		(*cntsp)->tnil = 0;
+		(*cntsp)->tnonil = 1;
 	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	*bnp = bn;
 	return GDK_SUCCEED;
 
@@ -1814,8 +1814,8 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return bn;
 }
 
@@ -1892,8 +1892,8 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return bn;
 }
 
@@ -2266,8 +2266,8 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils,
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	return bn;
 }
 
@@ -2286,7 +2286,7 @@ BATminmax(BAT *b, void *aggr,
 	if ((VIEWtparent(b) == 0 ||
 	     BATcount(b) == BATcount(BBPdescriptor(-VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
-		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(-VIEWtparent(b))->T->imprints : b->T->imprints;
+		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(-VIEWtparent(b))->timprints : b->timprints;
 		pos = oid_nil;
 		if (minmax == do_groupmin) {
 			/* find first non-empty bin */
@@ -2521,8 +2521,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	return bn;
 
   bunins_failed:
@@ -2728,7 +2728,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to zero (population) or nil (sample) */
 		dbl v = issample ? dbl_nil : 0;
@@ -2808,8 +2808,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		(*avgb)->tkey = ngrp <= 1;
 		(*avgb)->tsorted = ngrp <= 1;
 		(*avgb)->trevsorted = ngrp <= 1;
-		(*avgb)->T->nil = nils != 0;
-		(*avgb)->T->nonil = nils == 0;
+		(*avgb)->tnil = nils != 0;
+		(*avgb)->tnonil = nils == 0;
 	} else {
 		GDKfree(mean);
 	}
@@ -2821,8 +2821,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	bn->tkey = ngrp <= 1;
 	bn->tsorted = ngrp <= 1;
 	bn->trevsorted = ngrp <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	return bn;
 
   alloc_fail:

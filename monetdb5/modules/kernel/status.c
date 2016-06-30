@@ -313,9 +313,9 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heap(1,&c->T->heap,tbuns,"tbuns");
-		heap(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
-		heap(c->T->vheap,c->T->vheap,tail,"tail");
+		heap(1,&c->theap,tbuns,"tbuns");
+		heap(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNappend(bn, "_tot/hbuns", FALSE);
@@ -408,9 +408,9 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heapvm(1,&c->T->heap,tbuns,"tcuns");
-		heapvm(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
-		heapvm(c->T->vheap,c->T->vheap,tail,"tail");
+		heapvm(1,&c->theap,tbuns,"tcuns");
+		heapvm(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNappend(bn, "_tot/hbuns", FALSE);

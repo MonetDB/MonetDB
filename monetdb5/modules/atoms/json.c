@@ -1217,7 +1217,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	}
 	bk->tsorted = 1;
 	bk->trevsorted = 0;
-	bk->T->nonil = 1;
+	bk->tnonil = 1;
 
 	if (od) {
 		bo = COLnew(0, TYPE_oid, 64, TRANSIENT);
@@ -1228,7 +1228,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		}
 		bo->tsorted = 1;
 		bo->trevsorted = 0;
-		bo->T->nonil = 1;
+		bo->tnonil = 1;
 	}
 
 	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
@@ -1241,7 +1241,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	}
 	bv->tsorted = 1;
 	bv->trevsorted = 0;
-	bv->T->nonil = 1;
+	bv->tnonil = 1;
 
 	if (jt->elm[0].kind == JSON_ARRAY || jt->elm[0].kind == JSON_OBJECT)
 		JSONunfoldContainer(jt, 0, (od ? bo : 0), bk, bv, &o);
@@ -1272,7 +1272,7 @@ JSONkeyTable(bat *ret, json *js)
 		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
-	bn->T->nonil = 1;
+	bn->tnonil = 1;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(jt, i);
@@ -1330,7 +1330,7 @@ JSONvalueTable(bat *ret, json *js)
 		throw(MAL, "json.values", MAL_MALLOC_FAIL);
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
-	bn->T->nonil = 1;
+	bn->tnonil = 1;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		if (jt->elm[i].kind == JSON_ELEMENT)
@@ -1995,8 +1995,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 				buflen = 0;
 			}
-			bn->T->nil = nils != 0;
-			bn->T->nonil = nils == 0;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
 			bn->tsorted = BATcount(bn) <= 1;
 			bn->trevsorted = BATcount(bn) <= 1;
 			bn->tkey = BATcount(bn) <= 1;
@@ -2139,8 +2139,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = BATcount(bn) <= 1;

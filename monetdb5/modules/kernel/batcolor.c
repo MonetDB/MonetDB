@@ -41,8 +41,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	}																	\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
-	bn->T->nil = 0;														\
-	bn->T->nonil = 1;													\
+	bn->tnil = 0;														\
+	bn->tnonil = 1;														\
 																		\
 	bi = bat_iterator(b);												\
 																		\
@@ -50,8 +50,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 		x= (TYPE1 *) BUNtail(bi,p);										\
 		if (x== 0 || *x == TYPE1##_nil) {								\
 			y = (TYPE2) TYPE2##_nil;									\
-			bn->T->nonil = 0;											\
-			bn->T->nil = 1;												\
+			bn->tnonil = 0;												\
+			bn->tnil = 1;												\
 		} else															\
 			FUNC(yp,x);													\
 		bunfastapp(bn, yp);												\
@@ -117,8 +117,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	}																	\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
-	bn->T->nil = 0;														\
-	bn->T->nonil = 1;													\
+	bn->tnil = 0;														\
+	bn->tnonil = 1;														\
 																		\
 	bi = bat_iterator(b);												\
 	b2i = bat_iterator(b2);												\
@@ -134,8 +134,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			x2== 0 || *x2 == TYPE##_nil ||								\
 			x3== 0 || *x3 == TYPE##_nil) {								\
 			y = color_nil;												\
-			bn->T->nonil = 0;											\
-			bn->T->nil = 1;												\
+			bn->tnonil = 0;												\
+			bn->tnil = 1;												\
 		} else															\
 			FUNC(yp,x,x2,x3);											\
 		bunfastapp(bn, yp);												\

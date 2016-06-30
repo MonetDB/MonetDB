@@ -171,8 +171,8 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 	BATsetcount(bn, c);
 	bn->tkey = 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	*result = bn;
 	return MAL_SUCCEED;
 }
@@ -406,8 +406,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn->tsorted = 1;
 			bn->trevsorted = BATcount(bn) <= 1;
 			bn->tkey = 1;
-			bn->T->nil = 0;
-			bn->T->nonil = 1;
+			bn->tnil = 0;
+			bn->tnonil = 1;
 			* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 			return MAL_SUCCEED;
@@ -438,8 +438,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				oid *op = (oid *) Tloc(bn, BUNfirst(bn));
 				const oid *cp = (const oid *) Tloc(cand, BUNfirst(cand));
 				BATsetcount(bn, n - (o2 - o1));
-				bn->T->nil = 0;
-				bn->T->nonil = 1;
+				bn->tnil = 0;
+				bn->tnonil = 1;
 				bn->tsorted = 1;
 				bn->trevsorted = BATcount(bn) <= 1;
 				bn->tkey = 1;
@@ -474,8 +474,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*op++ = o;
 			for (o = o2; o < (oid) n; o++)
 				*op++ = o;
-			bn->T->nil = 0;
-			bn->T->nonil = 1;
+			bn->tnil = 0;
+			bn->tnonil = 1;
 			bn->tsorted = 1;
 			bn->trevsorted = BATcount(bn) <= 1;
 			bn->tkey = 1;

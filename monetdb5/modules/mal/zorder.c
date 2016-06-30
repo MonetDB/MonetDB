@@ -140,18 +140,18 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	r = (int *) Tloc(by, BUNfirst(by));
 	z = (oid *) Tloc(bz, BUNfirst(bz));
 
-	if ( bx->T->nonil && by->T->nonil){
+	if ( bx->tnonil && by->tnonil){
 		for ( ; p<q; z++,p++,r++)
 			*z = Zencode_int_oid( *p, *r );
 	} else
-	if ( bx->T->nonil ){
+	if ( bx->tnonil ){
 		for ( ; p<q; z++,p++,r++)
 		if ( *r == int_nil)
 			*z = oid_nil;
 		else
 			*z = Zencode_int_oid( *p, *r );
 	} else
-	if ( by->T->nonil ){
+	if ( by->tnonil ){
 		for ( ; p<q; z++,p++,r++)
 		if ( *p == int_nil)
 			*z = oid_nil;
@@ -176,7 +176,7 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	BATsetcount(bz, BATcount(bx));
 	bz->tsorted = 0;
 	bz->trevsorted = 0;
-	bz->T->nonil = bx->T->nonil && by->T->nonil;
+	bz->tnonil = bx->tnonil && by->tnonil;
 
 	BBPkeepref(*zbid = bz->batCacheid);
 	return MAL_SUCCEED;
@@ -207,7 +207,7 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	x = (int *) Tloc(bx, BUNfirst(bx));
 	y = (int *) Tloc(by, BUNfirst(by));
 
-	if ( bz->T->nonil ){
+	if ( bz->tnonil ){
 		for ( ; z<q; z++,x++,y++)
 			Zdecode_int_oid(x,y,z);
 	} else {
@@ -224,14 +224,14 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	BATsetcount(bx, BATcount(bz));
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
-	bx->T->nonil = bz->T->nonil;
+	bx->tnonil = bz->tnonil;
 
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
 	by->tsorted = 0;
 	by->trevsorted = 0;
-	by->T->nonil = bz->T->nonil;
+	by->tnonil = bz->tnonil;
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*xbid = bx->batCacheid);
@@ -260,7 +260,7 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	q = (oid *) Tloc(bz, BUNlast(bz));
 	x = (int *) Tloc(bx, BUNfirst(bx));
 
-	if ( bz->T->nonil ){
+	if ( bz->tnonil ){
 		for ( ; z<q; z++,x++)
 			Zdecode_int_oid_x(x,z);
 	} else {
@@ -276,7 +276,7 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	BATsetcount(bx, BATcount(bz));
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
-	bx->T->nonil = bz->T->nonil;
+	bx->tnonil = bz->tnonil;
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*xbid = bx->batCacheid);
@@ -304,7 +304,7 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	q = (oid *) Tloc(bz, BUNlast(bz));
 	y = (int *) Tloc(by, BUNfirst(by));
 
-	if ( bz->T->nonil ){
+	if ( bz->tnonil ){
 		for ( ; z<q; z++,y++)
 			Zdecode_int_oid_y(y,z);
 	} else {
@@ -320,7 +320,7 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	BATsetcount(by, BATcount(bz));
 	by->tsorted = 0;
 	by->trevsorted = 0;
-	by->T->nonil = bz->T->nonil;
+	by->tnonil = bz->tnonil;
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*ybid = by->batCacheid);

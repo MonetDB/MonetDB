@@ -310,8 +310,8 @@ printBATproperties(stream *f, BAT *b)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->T->heap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->T->heap.parentid));
+	if (b->theap.parentid)
+		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
 }
 /* MAL debugger parser
  * The debugger structure is inherited from GDB.

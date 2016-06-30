@@ -116,7 +116,7 @@ log_find(BAT *b, BAT *d, int val)
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b, 0) == GDK_SUCCEED) {
-		HASHloop_int(cni, cni.b->T->hash, p, &val) {
+		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
@@ -638,11 +638,11 @@ la_bat_use(logger *lg, logaction *la)
 	logger_add_bat(lg, b, la->name);
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
-	assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
-	assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
-	if (b->T->vheap) {
-		assert(0 <= b->T->vheap->farmid && b->T->vheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
+	assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
+	assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+	if (b->tvheap) {
+		assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
+		assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
@@ -2210,11 +2210,11 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	if (flag == LOG_USE) {
 #ifndef NDEBUG
 		assert(b->batRole == PERSISTENT);
-		assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
-		assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
-		if (b->T->vheap) {
-			assert(0 <= b->T->vheap->farmid && b->T->vheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
+		assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
+		assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+		if (b->tvheap) {
+			assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
+			assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 		}
 #endif
 		l.nr = b->batCacheid;
@@ -2233,9 +2233,9 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 
 	if (flag == LOG_USE) {
 		assert(b->batRole == PERSISTENT);
-		assert(b->T->heap.farmid == 0);
-		assert(b->T->vheap == NULL ||
-		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
+		assert(b->theap.farmid == 0);
+		assert(b->tvheap == NULL ||
+		       BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
 			BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE);
@@ -2753,7 +2753,7 @@ logger_find_bat(logger *lg, const char *name)
 	BUN p;
 
 	if (BAThash(lg->catalog_nme, 0) == GDK_SUCCEED) {
-		HASHloop_str(cni, cni.b->T->hash, p, name) {
+		HASHloop_str(cni, cni.b->thash, p, name) {
 			oid pos = p;
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 				return *(log_bid *) Tloc(lg->catalog_bid, p);

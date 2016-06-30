@@ -2623,8 +2623,8 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 	}
 	res->tsorted = 0;
 	res->trevsorted = 0;
-	res->T->nil = 0;
-	res->T->nonil = 0;
+	res->tnil = 0;
+	res->tnonil = 0;
 	res->tkey = 0;
 	BBPunfix(c->batCacheid);
 	BBPunfix(l->batCacheid);
@@ -4966,8 +4966,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
 								BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
-								/*printf(" width %d", bn->T->width); */
-								w = bn->T->width;
+								/*printf(" width %d", bn->twidth); */
+								w = bn->twidth;
 								if (bn->ttype == TYPE_str) {
 									BUN p, q;
 									double sum = 0;
@@ -4989,13 +4989,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								BUNappend(atom, &w, FALSE);
 
-								sz = BATcount(bn) * bn->T->width; 
+								sz = BATcount(bn) * bn->twidth; 
 								BUNappend(size, &sz, FALSE);
 
-								sz = heapinfo(bn->T->vheap, bn->batCacheid);
+								sz = heapinfo(bn->tvheap, bn->batCacheid);
 								BUNappend(heap, &sz, FALSE);
 
-								sz = hashinfo(bn->T->hash, bn->batCacheid);
+								sz = hashinfo(bn->thash, bn->batCacheid);
 								BUNappend(indices, &sz, FALSE);
 
 								bitval = 0; /* HASHispersistent(bn); */
@@ -5003,7 +5003,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 								sz = IMPSimprintsize(bn);
 								BUNappend(imprints, &sz, FALSE);
-								/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
+								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
 								/*printf("\n"); */
 
 								w = BATtordered(bn);
@@ -5047,8 +5047,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 									/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
 									BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
-									/*printf(" width %d", bn->T->width); */
-									w = bn->T->width;
+									/*printf(" width %d", bn->twidth); */
+									w = bn->twidth;
 									if (bn->ttype == TYPE_str) {
 										BUN p, q;
 										double sum = 0;
@@ -5069,21 +5069,21 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											w = (int) (sum / cnt2);
 									}
 									BUNappend(atom, &w, FALSE);
-									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0)); */
+									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->tvheap? bn->tvheap->size:0)); */
 									sz = tailsize(bn, BATcount(bn));
 									BUNappend(size, &sz, FALSE);
 
-									sz = bn->T->vheap ? bn->T->vheap->size : 0;
+									sz = bn->tvheap ? bn->tvheap->size : 0;
 									BUNappend(heap, &sz, FALSE);
 
-									sz = bn->T->hash && bn->T->hash != (Hash *) 1 ? bn->T->hash->heap->size : 0; /* HASHsize() */
+									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap->size : 0; /* HASHsize() */
 									BUNappend(indices, &sz, FALSE);
 									bitval = 0; /* HASHispersistent(bn); */
 									BUNappend(phash, &bitval, FALSE);
 
 									sz = IMPSimprintsize(bn);
 									BUNappend(imprints, &sz, FALSE);
-									/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0); */
+									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
 									/*printf("\n"); */
 									w = BATtordered(bn);
 									BUNappend(sort, &w, FALSE);
@@ -5155,7 +5155,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 		throw(SQL, "calc.index", "Cannot access descriptor");
 
 	if (*u) {
-		Heap *h = s->T->vheap;
+		Heap *h = s->tvheap;
 		size_t pad, pos;
 		const size_t extralen = h->hashash ? EXTRALEN : 0;
 		int v;
@@ -5186,7 +5186,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 		}
 		r->ttype = TYPE_int;
 		r->tvarsized = 0;
-		r->T->vheap = NULL;
+		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -5210,7 +5210,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 		throw(SQL, "calc.index", "Cannot access descriptor");
 
 	if (*u) {
-		Heap *h = s->T->vheap;
+		Heap *h = s->tvheap;
 		size_t pad, pos;
 		const size_t extralen = h->hashash ? EXTRALEN : 0;
 		sht v;
@@ -5241,7 +5241,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 		}
 		r->ttype = TYPE_sht;
 		r->tvarsized = 0;
-		r->T->vheap = NULL;
+		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -5265,7 +5265,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 		throw(SQL, "calc.index", "Cannot access descriptor");
 
 	if (*u) {
-		Heap *h = s->T->vheap;
+		Heap *h = s->tvheap;
 		size_t pad, pos;
 		const size_t extralen = h->hashash ? EXTRALEN : 0;
 		bte v;
@@ -5296,7 +5296,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 		}
 		r->ttype = TYPE_bte;
 		r->tvarsized = 0;
-		r->T->vheap = NULL;
+		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -5322,7 +5322,7 @@ BATSTRstrings(bat *res, const bat *src)
 	if ((s = BATdescriptor(*src)) == NULL)
 		throw(SQL, "calc.strings", "Cannot access descriptor");
 
-	h = s->T->vheap;
+	h = s->tvheap;
 	extralen = h->hashash ? EXTRALEN : 0;
 	r = COLnew(0, TYPE_str, 1024, TRANSIENT);
 	if (r == NULL) {
