@@ -893,7 +893,7 @@ typedef struct BAT {
 
 typedef struct BATiter {
 	BAT *b;
-	oid hvid, tvid;
+	oid tvid;
 } BATiter;
 
 typedef struct BATstore BATstore;
@@ -1377,7 +1377,7 @@ bat_iterator(BAT *b)
 	BATiter bi;
 
 	bi.b = b;
-	bi.hvid = bi.tvid = 0;
+	bi.tvid = 0;
 	return bi;
 }
 
