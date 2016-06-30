@@ -189,7 +189,7 @@ BATcheckimprints(BAT *b)
 
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
-		b = BBPdescriptor(-VIEWtparent(b));
+		b = BBPdescriptor(VIEWtparent(b));
 	}
 
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
@@ -295,7 +295,7 @@ BATimprints(BAT *b)
 	assert(b->timprints == NULL);
 
 	if (VIEWtparent(b)) {
-		bat p = -VIEWtparent(b);
+		bat p = VIEWtparent(b);
 		o = b;
 		b = BATdescriptor(p);
 		if (BATcheckimprints(b)) {

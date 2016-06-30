@@ -172,7 +172,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 
 #ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(b)) {
-		BAT *b2 = BBPdescriptor(-VIEWtparent(b));
+		BAT *b2 = BBPdescriptor(VIEWtparent(b));
 		if (b2->batPersistence == PERSISTENT || BATcheckhash(b2)) {
 			/* only use parent's hash if it is persistent
 			 * or already has a hash */
@@ -546,7 +546,7 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	assert(lval);							\
 	assert(hval);							\
 	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BATdescriptor(-VIEWtparent(b));		\
+		BAT *parent = BATdescriptor(VIEWtparent(b));		\
 		basesrc = (const TYPE *) Tloc(parent, BUNfirst(parent)); \
 		imprints = parent->timprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
@@ -1415,12 +1415,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !(b->tsorted || b->trevsorted) &&
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(-VIEWtparent(b), 0)))))
+	     (VIEWtparent(b) && BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0)))))
 	{
 		BAT *view = NULL;
 		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
-			b = BBPdescriptor(-VIEWtparent(b));
+			b = BBPdescriptor(VIEWtparent(b));
 		}
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
@@ -1724,7 +1724,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	parent = -VIEWtparent(b);
+	parent = VIEWtparent(b);
 	assert(parent >= 0);
 	/* use hash only for equi-join, and then only if b or its
 	 * parent already has a hash, or if b or its parent is
@@ -2009,10 +2009,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	ll = l->hseqbase;
 	lh = ll + l->batCount;
 	if ((!sl || (sl && BATtdense(sl))) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(-VIEWtparent(l), 0))))) {
+	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), 0))))) {
 		use_orderidx = 1;
 		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
-			l = BBPdescriptor(-VIEWtparent(l));
+			l = BBPdescriptor(VIEWtparent(l));
 		}
 	}
 
@@ -2184,7 +2184,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	} else if ((BATcount(rl) > 2 ||
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
-		     (tmp = BBPquickdesc(-VIEWtparent(l), 0)) != NULL &&
+		     (tmp = BBPquickdesc(VIEWtparent(l), 0)) != NULL &&
 		     tmp->batPersistence == PERSISTENT) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {

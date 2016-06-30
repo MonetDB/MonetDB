@@ -2698,7 +2698,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	rl = BUNfirst(r);
 #ifndef DISABLE_PARENT_HASH
 	if (VIEWtparent(r)) {
-		BAT *b = BBPdescriptor(-VIEWtparent(r));
+		BAT *b = BBPdescriptor(VIEWtparent(r));
 		if (b->batPersistence == PERSISTENT || BATcheckhash(b)) {
 			/* only use parent's hash if it is persistent
 			 * or already has a hash */
@@ -3946,7 +3946,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
 
 #ifndef DISABLE_PARENT_HASH
-	lparent = -VIEWtparent(l);
+	lparent = VIEWtparent(l);
 	if (lparent) {
 		lpcount = BATcount(BBPdescriptor(lparent));
 		lhash = BATcheckhash(l) || BATcheckhash(BBPdescriptor(lparent));
@@ -3957,7 +3957,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		lhash = BATcheckhash(l);
 	}
 #ifndef DISABLE_PARENT_HASH
-	rparent = -VIEWtparent(r);
+	rparent = VIEWtparent(r);
 	if (rparent) {
 		rpcount = BATcount(BBPdescriptor(rparent));
 		rhash = BATcheckhash(r) || BATcheckhash(BBPdescriptor(rparent));
