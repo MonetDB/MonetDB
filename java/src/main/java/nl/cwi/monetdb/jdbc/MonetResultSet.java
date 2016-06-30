@@ -345,11 +345,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public InputStream getAsciiStream(String columnName) throws SQLException {
 		throw newSQLFeatureNotSupportedException("getAsciiStream");
 	}
+
 	@Override
+	@Deprecated
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
 		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
 	@Override
+	@Deprecated
 	public InputStream getUnicodeStream(String columnName) throws SQLException {
 		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
@@ -633,6 +636,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public BigDecimal getBigDecimal(int columnIndex, int scale)
 		throws SQLException
 	{
@@ -675,6 +679,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public BigDecimal getBigDecimal(String columnName, int scale)
 		throws SQLException
 	{
@@ -1797,8 +1802,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				throw new SQLException(ie.getMessage(), "M0M27");
 			} catch (IllegalAccessException iae) {
 				throw new SQLException(iae.getMessage(), "M0M27");
-			} catch (IllegalArgumentException ige) {
-				throw new SQLException(ige.getMessage(), "M0M27");
 			} catch (InvocationTargetException ite) {
 				throw new SQLException(ite.getMessage(), "M0M27");
 			}
