@@ -13,6 +13,7 @@ HAVE_JDBCTESTS?Test_PSlargebatchval
 HAVE_JDBCTESTS?Test_PStimedate
 HAVE_JDBCTESTS?Test_PStimezone
 HAVE_JDBCTESTS?Test_PStypes
+HAVE_JDBCTESTS?Test_PSgetObject
 HAVE_JDBCTESTS?Test_PSmanycon
 HAVE_JDBCTESTS?Test_PSmetadata
 HAVE_JDBCTESTS?Test_PSsqldata
