@@ -1190,7 +1190,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	@Override
 	public boolean supportsStoredProcedures() {
-		return false;
+		return true;
 	}
 
 	/**
