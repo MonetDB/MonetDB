@@ -189,13 +189,18 @@ insert_string_bat(BAT *b, BAT *n, int force)
 				tt = TYPE_sht;
 				tp = &tsv;
 				break;
+#if SIZEOF_VAR_T == 8
 			case 4:
 				tt = TYPE_int;
 				tp = &tiv;
 				break;
-#if SIZEOF_VAR_T == 8
 			case 8:
 				tt = TYPE_lng;
+				tp = &v;
+				break;
+#else
+			case 4:
+				tt = TYPE_int;
 				tp = &v;
 				break;
 #endif

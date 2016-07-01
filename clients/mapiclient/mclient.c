@@ -1995,6 +1995,8 @@ doFileBulk(Mapi mid, stream *fp)
 	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
+		if (fp)
+			close_stream(fp);
 		return 1;
 	}
 
@@ -2067,6 +2069,8 @@ doFileBulk(Mapi mid, stream *fp)
 
 	free(buf);
 	mnstr_flush(toConsole);
+	if (fp)
+		close_stream(fp);
 	return errseen;
 }
 
@@ -2637,11 +2641,12 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					 * convert filename from UTF-8
 					 * to locale */
 					if ((s = open_rastream(line)) == NULL ||
-					    mnstr_errnr(s))
+					    mnstr_errnr(s)) {
+						if (s)
+							close_stream(s);
 						fprintf(stderr, "%s: cannot open\n", line);
-					else
+					} else
 						doFile(mid, s, 0, 0, 0);
-					close_stream(s);
 					continue;
 				}
 				case '>':
@@ -2832,6 +2837,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	if (prompt)
 		deinit_readline();
 #endif
+	close_stream(fp);
 	return errseen;
 }
 
@@ -3381,7 +3387,9 @@ main(int argc, char **argv)
 			stream *s;
 
 			if (fp == NULL &&
-			    (fp = fopen(argv[optind], "r")) == NULL) {
+			    (fp = (strcmp(argv[optind], "-") == 0 ?
+				   stdin :
+				   fopen(argv[optind], "r"))) == NULL) {
 				fprintf(stderr, "%s: cannot open\n", argv[optind]);
 				c |= 1;
 			} else if ((s = file_rastream(fp, argv[optind])) == NULL) {
@@ -3389,7 +3397,6 @@ main(int argc, char **argv)
 				c |= 1;
 			} else {
 				c |= doFile(mid, s, useinserts, interactive, save_history);
-				close_stream(s);
 			}
 			fp = NULL;
 			optind++;
@@ -3400,7 +3407,6 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL) {
 		stream *s = file_rastream(stdin, "<stdin>");
 		c = doFile(mid, s, useinserts, interactive, save_history);
-		mnstr_destroy(s);
 	}
 
 	mapi_destroy(mid);

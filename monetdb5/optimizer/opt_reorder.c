@@ -252,6 +252,7 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pushInstruction(mb,old[i]);
 	}
 	GDKfree(appends);
+	GDKfree(old);
 	return actions;
 }
 
