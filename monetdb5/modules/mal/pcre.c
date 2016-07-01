@@ -33,7 +33,7 @@
 
 #include <pcre.h>
 
-#if PCRE_MAJOR < 8
+#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 13)
 #define pcre_free_study my_pcre_free
 #endif
 
