@@ -17,6 +17,7 @@ INCLUDES = \
 	../../../sql/include \
 	../../../sql/server \
 	../../../sql/storage \
+	../pyapi \
 	$(libpy3_CFLAGS)
 	
 
@@ -25,7 +26,7 @@ MTSAFE
 lib__pyapi3 = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = pyapi.c pyapi.h unicode.c unicode.h pytypes.c pytypes.h type_conversion.c type_conversion.h  formatinput.c formatinput.h connection.c connection.h unspecified_evil.h
+	SOURCES = pyapi3.c unicode3.c pytypes3.c type_conversion3.c formatinput3.c connection3.c
 	XDEPS = $(libpy3_LIBDEP)
 	LIBS = ../../tools/libmonetdb5 \
 	       ../../../gdk/libbat \
