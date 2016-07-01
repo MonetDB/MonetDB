@@ -399,6 +399,11 @@ BATclear(BAT *b, int force)
 
 	BATcheck(b, "BATclear", GDK_FAIL);
 
+	if (!force && b->batInserted > 0) {
+		GDKerror("BATclear: cannot clear committed BAT\n");
+		return GDK_FAIL;
+	}
+
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);

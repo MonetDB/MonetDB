@@ -1130,6 +1130,9 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			*s++ = DIR_SEP;
 #endif
 
+		if (first != 0)
+			GDKfatal("BBPinit: first != 0 (ID = "LLFMT").", batid);
+
 		bid = (bat) batid;
 		if (batid >= (lng) ATOMIC_GET(BBPsize, BBPsizeLock)) {
 			ATOMIC_SET(BBPsize, (ATOMIC_TYPE) (batid + 1), BBPsizeLock);
@@ -1560,6 +1563,7 @@ new_bbpentry(FILE *fp, bat i)
 	assert(BBP_desc(i));
 	assert(BBP_desc(i)->batCacheid == i);
 	assert(BBP_desc(i)->batRole == PERSISTENT);
+	assert(BBP_desc(i)->batFirst == 0);
 	assert(0 <= BBP_desc(i)->theap.farmid && BBP_desc(i)->theap.farmid < MAXFARMS);
 	assert(BBPfarms[BBP_desc(i)->theap.farmid].roles & (1 << PERSISTENT));
 	if (BBP_desc(i)->tvheap) {
