@@ -1635,7 +1635,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	src = Tloc(b, b->batFirst);
+	src = Tloc(b, 0);
 
 	switch (b->ttype) {
 	case TYPE_bte:

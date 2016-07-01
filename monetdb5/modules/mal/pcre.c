@@ -1364,7 +1364,7 @@ PCRElikesubselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 
 #include "gdk_cand.h"
 
-#define APPEND(b, o)	(((oid *) b->theap.base)[b->batFirst + b->batCount++] = (o))
+#define APPEND(b, o)	(((oid *) b->theap.base)[b->batCount++] = (o))
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 static char *
@@ -1587,9 +1587,9 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 					  BATgetId(l), BATgetId(r),

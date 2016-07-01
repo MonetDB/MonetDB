@@ -427,7 +427,7 @@ binsearch(const oid *rcand, oid offset,
 	return hi;
 }
 
-#define APPEND(b, o)		(((oid *) b->theap.base)[b->batFirst + b->batCount++] = (o))
+#define APPEND(b, o)		(((oid *) b->theap.base)[b->batCount++] = (o))
 
 static gdk_return
 nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
@@ -1219,13 +1219,13 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			/* a new higher value will be added to r2 */
 			r2->trevsorted = 0;
 			if (r1->tdense &&
-			    ((oid *) r1->theap.base)[r1->batFirst + r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
+			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
 				r1->tdense = 0;
 		}
 
 		if (BATcount(r2) > 0 &&
 		    r2->tdense &&
-		    ((oid *) r2->theap.base)[r2->batFirst + r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
 			r2->tdense = 0;
 
 		/* insert values */
@@ -1249,9 +1249,9 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 	assert(BATcount(r1) == BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#mergejoin_int(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -1516,13 +1516,13 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			/* a new higher value will be added to r2 */
 			r2->trevsorted = 0;
 			if (r1->tdense &&
-			    ((oid *) r1->theap.base)[r1->batFirst + r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
+			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
 				r1->tdense = 0;
 		}
 
 		if (BATcount(r2) > 0 &&
 		    r2->tdense &&
-		    ((oid *) r2->theap.base)[r2->batFirst + r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
 			r2->tdense = 0;
 
 		/* insert values */
@@ -1546,9 +1546,9 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 	assert(BATcount(r1) == BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#mergejoin_lng(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -2437,7 +2437,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		} else if (rcand && equal_order) {
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
-			    ((oid *) r2->theap.base)[r2->batFirst + r2->batCount - 1] + 1 != rcand[-(ssize_t)nr])
+			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != rcand[-(ssize_t)nr])
 				r2->tdense = 0;
 			do {
 				for (i = nr; i > 0; i--) {
@@ -2447,7 +2447,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		} else if (rcand) {
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
-			    ((oid *) r2->theap.base)[r2->batFirst + r2->batCount - 1] + 1 != rcandend[0])
+			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != rcandend[0])
 				r2->tdense = 0;
 			do {
 				for (i = 0; i < nr; i++) {
@@ -2457,7 +2457,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		} else if (equal_order) {
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
-			    ((oid *) r2->theap.base)[r2->batFirst + r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
 				r2->tdense = 0;
 			do {
 				for (i = nr; i > 0; i--) {
@@ -2467,7 +2467,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		} else {
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
-			    ((oid *) r2->theap.base)[r2->batFirst + r2->batCount - 1] + 1 != rend + r->hseqbase)
+			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != rend + r->hseqbase)
 				r2->tdense = 0;
 			do {
 				for (i = 0; i < nr; i++) {
@@ -2484,9 +2484,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2 && r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -3019,9 +3019,9 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	}
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2 && r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -3258,9 +3258,9 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s,%s#"BUNFMT"%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -3673,9 +3673,9 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#bandjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s,%s#"BUNFMT"%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),

@@ -794,10 +794,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 
 	    BUNappend(bk, "batInserted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "batDeleted", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->batDeleted), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "batFirst", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->batFirst), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->theap.free), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "batStamp", FALSE) != GDK_SUCCEED ||

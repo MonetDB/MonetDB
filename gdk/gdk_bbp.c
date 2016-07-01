@@ -581,8 +581,8 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", headtail, bid);
 
 		b->theap.dirty = TRUE;
-		old = (int *) h1.base + b->batFirst;
-		new = (oid *) b->theap.base + b->batFirst;
+		old = (int *) h1.base;
+		new = (oid *) b->theap.base;
 		if (b->tvarsized)
 			for (i = 0; i < b->batCount; i++)
 				new[i] = (oid) old[i] << 3;
@@ -687,9 +687,9 @@ fixsorted(void)
 				/* position should not be set */
 				b->batDirtydesc = 1;
 				b->tnosorted = 0;
-			} else if (b->tnosorted <= b->batFirst ||
-			    b->tnosorted >= b->batFirst + b->batCount ||
-				b->ttype < 0) {
+			} else if (b->tnosorted == 0 ||
+				   b->tnosorted >= b->batCount ||
+				   b->ttype < 0) {
 				/* out of range */
 				b->batDirtydesc = 1;
 				b->tnosorted = 0;
@@ -718,9 +718,9 @@ fixsorted(void)
 				/* position should not be set */
 				b->batDirtydesc = 1;
 				b->tnorevsorted = 0;
-			} else if (b->tnorevsorted <= b->batFirst ||
-			    b->tnorevsorted >= b->batFirst + b->batCount ||
-				b->ttype < 0) {
+			} else if (b->tnorevsorted == 0 ||
+				   b->tnorevsorted >= b->batCount ||
+				   b->ttype < 0) {
 				/* out of range */
 				b->batDirtydesc = 1;
 				b->tnorevsorted = 0;
@@ -1149,10 +1149,8 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bn->batPersistence = PERSISTENT;
 		bn->batCopiedtodisk = 1;
 		bn->batRestricted = (properties & 0x06) >> 1;
-		bn->batFirst = (BUN) first;
 		bn->batCount = (BUN) count;
-		bn->batInserted = bn->batFirst + bn->batCount;
-		bn->batDeleted = bn->batFirst;
+		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
 
 		if (bbpversion <= GDKLIBRARY_HEADED) {
@@ -1563,7 +1561,6 @@ new_bbpentry(FILE *fp, bat i)
 	assert(BBP_desc(i));
 	assert(BBP_desc(i)->batCacheid == i);
 	assert(BBP_desc(i)->batRole == PERSISTENT);
-	assert(BBP_desc(i)->batFirst == 0);
 	assert(0 <= BBP_desc(i)->theap.farmid && BBP_desc(i)->theap.farmid < MAXFARMS);
 	assert(BBPfarms[BBP_desc(i)->theap.farmid].roles & (1 << PERSISTENT));
 	if (BBP_desc(i)->tvheap) {
@@ -2775,9 +2772,6 @@ BBPdestroy(BAT *b)
 
 		assert(b->batSharecnt == 0);
 		if (tunfix) {
-			DELloop(b, p, q) {
-				(*tunfix) (BUNtail(bi, p));
-			}
 			BATloop(b, p, q) {
 				(*tunfix) (BUNtail(bi, p));
 			}

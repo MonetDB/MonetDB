@@ -876,10 +876,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	int t;
 	BUN p, q, cnt;
 	oid o, *restrict dst;
-	/* off must be signed as it can be negative,
-	 * e.g., if b->hseqbase == 0 and b->batFirst > 0;
-	 * instead of lng, we could also use ssize_t or int with
-	 * 32-bit OIDs */
 	lng off;
 	const oid *candlist;
 
@@ -906,7 +902,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		use_imprints = 0;
 	}
 
-	off = b->hseqbase - BUNfirst(b);
+	off = (lng) b->hseqbase;
 	dst = (oid *) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 

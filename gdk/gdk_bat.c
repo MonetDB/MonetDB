@@ -410,8 +410,7 @@ BATclear(BAT *b, int force)
 	OIDXdestroy(b);
 
 	/* we must dispose of all inserted atoms */
-	if ((b->batDeleted == b->batInserted || force) &&
-	    BATatoms[b->ttype].atomDel == NULL) {
+	if (force && BATatoms[b->ttype].atomDel == NULL) {
 		Heap th;
 
 		/* no stable elements: we do a quick heap clean */
@@ -447,9 +446,7 @@ BATclear(BAT *b, int force)
 	}
 
 	if (force)
-		b->batFirst = b->batDeleted = b->batInserted = 0;
-	else
-		b->batFirst = b->batInserted;
+		b->batInserted = 0;
 	BATsetcount(b,0);
 	BAThseqbase(b, 0);
 	BATtseqbase(b, 0);
@@ -687,7 +684,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			/* first/inserted must point equally far into
 			 * the heap as in the source */
-			bn->batFirst = b->batFirst;
 			bn->batInserted = b->batInserted;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
@@ -1069,7 +1065,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;
-	prv = p > b->batFirst ? p - 1 : BUN_NONE;
+	prv = p > 0 ? p - 1 : BUN_NONE;
 	nxt = p < last ? p + 1 : BUN_NONE;
 
 	if (BATtordered(b)) {
@@ -1993,21 +1989,21 @@ BATassertTailProps(BAT *b)
 	assert(!b->trevsorted || ATOMlinear(b->ttype));
 	if (ATOMlinear(b->ttype)) {
 		assert(b->tnosorted == 0 ||
-		       (b->tnosorted > b->batFirst &&
-			b->tnosorted < b->batFirst + b->batCount));
+		       (b->tnosorted > 0 &&
+			b->tnosorted < b->batCount));
 		assert(!b->tsorted || b->tnosorted == 0);
 		if (!b->tsorted &&
-		    b->tnosorted > b->batFirst &&
-		    b->tnosorted < b->batFirst + b->batCount)
+		    b->tnosorted > 0 &&
+		    b->tnosorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnosorted - 1),
 				    BUNtail(bi, b->tnosorted)) > 0);
 		assert(b->tnorevsorted == 0 ||
-		       (b->tnorevsorted > b->batFirst &&
-			b->tnorevsorted < b->batFirst + b->batCount));
+		       (b->tnorevsorted > 0 &&
+			b->tnorevsorted < b->batCount));
 		assert(!b->trevsorted || b->tnorevsorted == 0);
 		if (!b->trevsorted &&
-		    b->tnorevsorted > b->batFirst &&
-		    b->tnorevsorted < b->batFirst + b->batCount)
+		    b->tnorevsorted > 0 &&
+		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
 				    BUNtail(bi, b->tnorevsorted)) < 0);
 	}
@@ -2168,13 +2164,9 @@ BATassertProps(BAT *b)
 	/* general BAT sanity */
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
-	assert(b->batDeleted < BUN_MAX);
-	assert(b->batFirst >= b->batDeleted);
-	assert(b->batInserted >= b->batFirst);
-	assert(b->batFirst + b->batCount >= b->batInserted);
+	assert(b->batCount >= b->batInserted);
 
 	/* headless */
-	assert(b->batFirst == 0);
 	assert(b->hseqbase != oid_nil);
 
 	bbpstatus = BBP_status(b->batCacheid);
@@ -2244,10 +2236,8 @@ BATderiveTailProps(BAT *b, int expensive)
 	 * things up, if not set correctly, reset them now and set
 	 * them later */
 	if (!b->tkey &&
-	    b->tnokey[0] >= b->batFirst &&
-	    b->tnokey[0] < b->batFirst + b->batCount &&
-	    b->tnokey[1] >= b->batFirst &&
-	    b->tnokey[1] < b->batFirst + b->batCount &&
+	    b->tnokey[0] < b->batCount &&
+	    b->tnokey[1] < b->batCount &&
 	    b->tnokey[0] != b->tnokey[1] &&
 	    cmpf(BUNtail(bi, b->tnokey[0]),
 		 BUNtail(bi, b->tnokey[1])) == 0) {
@@ -2260,8 +2250,8 @@ BATderiveTailProps(BAT *b, int expensive)
 		b->tnokey[1] = 0;
 	}
 	if (!b->tsorted &&
-	    b->tnosorted > b->batFirst &&
-	    b->tnosorted < b->batFirst + b->batCount &&
+	    b->tnosorted > 0 &&
+	    b->tnosorted < b->batCount &&
 	    cmpf(BUNtail(bi, b->tnosorted - 1),
 		 BUNtail(bi, b->tnosorted)) > 0) {
 		sorted = 0;
@@ -2270,8 +2260,8 @@ BATderiveTailProps(BAT *b, int expensive)
 		b->tnosorted = 0;
 	}
 	if (!b->trevsorted &&
-	    b->tnorevsorted > b->batFirst &&
-	    b->tnorevsorted < b->batFirst + b->batCount &&
+	    b->tnorevsorted > 0 &&
+	    b->tnorevsorted < b->batCount &&
 	    cmpf(BUNtail(bi, b->tnorevsorted - 1),
 		 BUNtail(bi, b->tnorevsorted)) < 0) {
 		revsorted = 0;
@@ -2280,9 +2270,8 @@ BATderiveTailProps(BAT *b, int expensive)
 	}
 	if (dense &&
 	    !b->tdense &&
-	    b->tnodense >= b->batFirst &&
-	    b->tnodense < b->batFirst + b->batCount &&
-	    (b->tnodense == b->batFirst ?
+	    b->tnodense < b->batCount &&
+	    (b->tnodense == 0 ?
 	     * (oid *) BUNtail(bi, b->tnodense) == oid_nil :
 	     * (oid *) BUNtail(bi, b->tnodense - 1) + 1 != * (oid *) BUNtail(bi, b->tnodense))) {
 		dense = 0;

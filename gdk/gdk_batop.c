@@ -1209,7 +1209,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 	bn = COLnew(hseq, tailtype, n, role);
 	if (bn == NULL)
 		return NULL;
-	p = Tloc(bn, bn->batFirst);
+	p = Tloc(bn, 0);
 	switch (ATOMstorage(tailtype)) {
 	case TYPE_void:
 		v = &oid_nil;
@@ -1352,7 +1352,7 @@ BATcount_no_nil(BAT *b)
 	n = BATcount(b);
 	if (b->tnonil)
 		return n;
-	p = Tloc(b, b->batFirst);
+	p = Tloc(b, 0);
 	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:

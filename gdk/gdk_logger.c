@@ -2401,7 +2401,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	assert(b->batFirst == b->batDeleted);
 
 	if (ok != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: log_bat: write failed\n");

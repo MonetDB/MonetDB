@@ -187,16 +187,10 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	 * because in case of a mark, we are going to override a
 	 * column with a void. Take care to zero the accelerator data,
 	 * though. */
-	bn->batDeleted = b->batDeleted;
-	bn->batFirst = b->batFirst;
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
 	bn->T = b->T;
-	if (bn->batFirst > 0) {
-		bn->theap.base += b->batFirst * b->twidth;
-		bn->batFirst = 0;
-	}
 
 	if (tp)
 		BBPshare(tp);
@@ -490,7 +484,7 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		h = l;
 	cnt = h - l;
 	l += BUNfirst(b);
-	view->batFirst = view->batDeleted = view->batInserted = 0;
+	view->batInserted = 0;
 	view->theap.base = view->ttype ? BUNtloc(bi, l) : NULL;
 	view->theap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);
