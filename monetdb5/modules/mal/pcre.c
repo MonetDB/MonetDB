@@ -33,6 +33,10 @@
 
 #include <pcre.h>
 
+#if PCRE_MAJOR < 8
+#define pcre_free_study my_pcre_free
+#endif
+
 pcre_export str PCREquote(str *r, const str *v);
 pcre_export str PCREmatch(bit *ret, const str *val, const str *pat);
 pcre_export str PCREimatch(bit *ret, const str *val, const str *pat);
