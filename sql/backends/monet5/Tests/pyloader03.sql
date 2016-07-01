@@ -11,7 +11,7 @@ CREATE LOADER myloader(nvalues INTEGER) LANGUAGE PYTHON {
     _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 };
 
-COPY INTO restable FROM LOADER myloader(10);
+COPY LOADER INTO restable FROM myloader(10);
 
 SELECT * FROM restable;
 
@@ -28,7 +28,7 @@ CREATE LOADER myloader() LANGUAGE PYTHON {
     _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 };
 
-COPY INTO restable FROM LOADER myloader();
+COPY LOADER INTO restable FROM myloader();
 
 SELECT * FROM restable;
 
@@ -43,7 +43,7 @@ CREATE LOADER myloader() LANGUAGE PYTHON {
     _emit.emit({'a1': a1, 'a2': a2})
 };
 
-COPY INTO restable FROM LOADER myloader();
+COPY LOADER INTO restable FROM myloader();
 
 ROLLBACK;
 
@@ -60,7 +60,7 @@ CREATE LOADER myloader(nvalues INTEGER) LANGUAGE PYTHON {
     _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 };
 
-COPY INTO restable FROM LOADER myloader(50);
+COPY LOADER INTO restable FROM myloader(50);
 
 SELECT * FROM restable;
 
@@ -94,7 +94,7 @@ CREATE LOADER myloader() LANGUAGE PYTHON {
         _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 };
 
-COPY INTO restable FROM LOADER myloader();
+COPY LOADER INTO restable FROM myloader();
 
 SELECT * FROM restable;
 

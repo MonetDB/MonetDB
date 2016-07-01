@@ -2555,9 +2555,9 @@ copyfrom_stmt:
 	  append_int(l, $13);
 	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY INTO qname FROM sqlLOADER func_ref
+  | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
-	  append_list(l, $3);
+	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint

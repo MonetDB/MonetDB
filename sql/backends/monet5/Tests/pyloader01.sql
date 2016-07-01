@@ -23,10 +23,10 @@ SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHER
 
 
 -- there is a reason for this, functions with 0, 1, 2 and 3+ arguments are handled differently.
-COPY INTO mytable FROM LOADER myfunc3(46, 'asdf', 3.2);
-COPY INTO mytable FROM LOADER myfunc2(45, 'asdf');
-COPY INTO mytable FROM LOADER myfunc1(44);
-COPY INTO mytable FROM LOADER myfunc();
+COPY LOADER INTO mytable FROM myfunc3(46, 'asdf', 3.2);
+COPY LOADER INTO mytable FROM myfunc2(45, 'asdf');
+COPY LOADER INTO mytable FROM myfunc1(44);
+COPY LOADER INTO mytable FROM myfunc();
 
 SELECT * FROM mytable;
 

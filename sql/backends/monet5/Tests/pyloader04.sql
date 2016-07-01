@@ -5,7 +5,7 @@ CREATE TABLE pyloader04table(a1 int, a2 int);
 CREATE LOADER pyloader04() LANGUAGE PYTHON {
 	_emit.emit({'a1': 3, 'a2': 4, 'a3': 5})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 ROLLBACK;
 
 # use non-string type as key
@@ -14,7 +14,7 @@ CREATE TABLE pyloader04table(a1 int, a2 int);
 CREATE LOADER pyloader04() LANGUAGE PYTHON {
 	_emit.emit({'a1': 3, 'a2': 4, 3: 5})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 ROLLBACK;
 
 # return empty list
@@ -23,7 +23,7 @@ CREATE TABLE pyloader04table(a1 int, a2 int);
 CREATE LOADER pyloader04() LANGUAGE PYTHON {
 	_emit.emit({'a1': [], 'a2': numpy.array([])})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 ROLLBACK;
 
 # empty dictionary
@@ -32,7 +32,7 @@ CREATE TABLE pyloader04table(a1 int, a2 int);
 CREATE LOADER pyloader04() LANGUAGE PYTHON {
 	_emit.emit({})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 ROLLBACK;
 
 # unsupported python object
@@ -44,7 +44,7 @@ CREATE LOADER pyloader04() LANGUAGE PYTHON {
 
 	_emit.emit({'a1': MyClass()})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 ROLLBACK;
 
 # fail str -> int conversion
@@ -53,7 +53,7 @@ CREATE TABLE pyloader04table(a1 int, a2 int);
 CREATE LOADER pyloader04() LANGUAGE PYTHON {
 	_emit.emit({'a1': 'hello'})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 ROLLBACK;
 
 # test quoted names
@@ -62,7 +62,7 @@ CREATE TABLE pyloader04table("select" int, "from" int);
 CREATE LOADER pyloader04() LANGUAGE PYTHON {
 	_emit.emit({'select': 3, 'from': 4})
 };
-COPY INTO pyloader04table FROM LOADER pyloader04();
+COPY LOADER INTO pyloader04table FROM pyloader04();
 SELECT * FROM pyloader04table;
 DROP TABLE pyloader04table;
 DROP LOADER pyloader04;

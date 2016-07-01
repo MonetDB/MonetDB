@@ -28,8 +28,8 @@ stderr of test 'pyloader03` in directory 'sql/backends/monet5` itself:
 # 13:26:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30229" "--port=37683"
 # 13:26:40 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-30229/.s.monetdb.37683
-QUERY = COPY INTO restable FROM LOADER myloader();
+MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+QUERY = COPY LOADER INTO restable FROM myloader();
 ERROR = !Python exception
         !  2.   a1 = numpy.arange(100)
         !  3.   a2 = numpy.arange(200)

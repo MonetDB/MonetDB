@@ -19,7 +19,7 @@ CREATE LOADER pyloader05() LANGUAGE PYTHON {
     _emit.emit({'s': numpy.arange(3).astype(numpy.int32)});
     _emit.emit({'s': numpy.arange(3).astype(numpy.int64)});
 };
-COPY INTO pyloader05table FROM LOADER pyloader05();
+COPY LOADER INTO pyloader05table FROM pyloader05();
 SELECT * FROM pyloader05table;
 DROP TABLE pyloader05table;
 DROP LOADER pyloader05;

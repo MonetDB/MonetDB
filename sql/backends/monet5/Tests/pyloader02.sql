@@ -14,9 +14,9 @@ CREATE LOADER myfunc(nvalues int, ncols int) LANGUAGE PYTHON {
 		_emit.emit(res)
 };
 
-COPY INTO mytable3 FROM LOADER myfunc(10, 3);
-COPY INTO mytable4 FROM LOADER myfunc(10, 3);
-COPY INTO mytable2 FROM LOADER myfunc(20, 2);
+COPY LOADER INTO mytable3 FROM myfunc(10, 3);
+COPY LOADER INTO mytable4 FROM myfunc(10, 3);
+COPY LOADER INTO mytable2 FROM myfunc(20, 2);
 
 SELECT * FROM mytable4;
 SELECT * FROM mytable3;
