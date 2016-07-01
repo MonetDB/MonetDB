@@ -1075,7 +1075,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted = 0, deleted = 0, first, count, capacity, base = 0;
+		lng inserted = 0, deleted = 0, first = 0, count, capacity, base = 0;
 #ifdef GDKLIBRARY_HEADED
 		/* these variables are not used in later versions */
 		char tailname[129];
@@ -1110,12 +1110,12 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			   &map_theap,
 			   &nread) < 14 :
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %d %u %lld %lld %lld %lld"
+			   "%lld %hu %128s %128s %d %u %lld %lld %lld"
 			   "%n",
 			   &batid, &status, headname, filename,
-			   &lastused, &properties, &first,
+			   &lastused, &properties,
 			   &count, &capacity, &base,
-			   &nread) < 10)
+			   &nread) < 9)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1572,7 +1572,7 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " " BUNFMT " "
+	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " "
 		    BUNFMT " " OIDFMT, /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
@@ -1580,7 +1580,6 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->batRestricted << 1,
-		    BBP_desc(i)->batFirst,
 		    BBP_desc(i)->batCount,
 		    BBP_desc(i)->batCapacity,
 		    BBP_desc(i)->hseqbase) < 0 ||
