@@ -2165,12 +2165,6 @@ table_function_column_list:
 				  append_string($$, $3);
 			  	  append_type($$, &$4);
 				}
-  | '*'
-  {
-  	$$ = L();
-  	append_string($$, "*");
-  	append_type($$, NULL);
-  }
   ;
 
 func_data_type:

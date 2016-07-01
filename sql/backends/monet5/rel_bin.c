@@ -1407,18 +1407,14 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		}
 		l = sa_list(sql->sa);
 		if (f->func->varres) {
-			if (f->func->res) {
-				for(i = 0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
-					sql_exp *exp = en->data;
-					sql_subtype *st = n->data;
-					const char *rnme = exp->rname?exp->rname:exp->l;
-					stmt *s = stmt_rs_column(sql->sa, psub, i, st); 
-			
-					s = stmt_alias(sql->sa, s, rnme, exp->name);
-					list_append(l, s);
-				}
-			} else {
-				list_append(l, psub);	
+			for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
+				sql_exp *exp = en->data;
+				sql_subtype *st = n->data;
+				const char *rnme = exp->rname?exp->rname:exp->l;
+				stmt *s = stmt_rs_column(sql->sa, psub, i, st); 
+		
+				s = stmt_alias(sql->sa, s, rnme, exp->name);
+				list_append(l, s);
 			}
 		} else {
 			for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {

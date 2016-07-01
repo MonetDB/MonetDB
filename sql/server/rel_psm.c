@@ -694,7 +694,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	bit vararg = FALSE, varres = FALSE;
+	bit vararg = FALSE;
 
 	char is_table = (res && res->token == SQL_TABLE);
 	char is_aggr = (type == F_AGGR);
@@ -771,15 +771,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			if (!l)
 				l = sa_list(sql->sa);
 			if (res) {
-				if (strcmp(res->data.lval->h->data.sval, "*") == 0) {
-					varres = TRUE;
-					restype = NULL;
-				} else {
-					restype = result_type(sql, res);
-					if (!restype)
-						return sql_error(sql, 01,
-								"CREATE %s%s: failed to get restype", KF, F);
-				}
+				restype = result_type(sql, res);
+				if (!restype)
+					return sql_error(sql, 01,
+							"CREATE %s%s: failed to get restype", KF, F);
 			}
 			if (body && lang > FUNC_LANG_SQL) {
 				char *lang_body = body->h->data.sval;
@@ -791,7 +786,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
      					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 				sql->params = NULL;
 				if (create) {
-					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:varres, vararg);
+					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
 				} else if (!sf) {
 					return sql_error(sql, 01, "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
 				} /*else {
