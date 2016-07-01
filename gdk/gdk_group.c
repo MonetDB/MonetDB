@@ -560,14 +560,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case 2:
 			t = TYPE_sht;
 			break;
-#if SIZEOF_VAR_T == 8
 		case 4:
 			t = TYPE_int;
 			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			t = TYPE_lng;
+			break;
 #endif
 		default:
-			t = TYPE_var;
-			break;
+			assert(0);
 		}
 	}
 

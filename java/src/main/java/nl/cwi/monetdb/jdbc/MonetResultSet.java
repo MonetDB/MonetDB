@@ -1737,25 +1737,34 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Object getObject(int i, Map<String,Class<?>> map)
 		throws SQLException
 	{
-		Class<?> type;
-
-		if (tlp.values[i - 1] == null) {
-			lastColumnRead = i - 1;
-			return null;
+		String MonetDBtype = null;
+		try {
+			MonetDBtype = types[i - 1];
+			if (tlp.values[i - 1] == null) {
+				lastColumnRead = i - 1;
+				return null;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw new SQLException("No such column " + i, "M1M05");
 		}
 
-		if (map.containsKey(types[i - 1])) {
-			type = map.get(types[i - 1]);
-		} else {
-			type = getClassForType(getJavaType(types[i - 1]));
+		Class<?> type = null;
+		if (map != null && map.containsKey(MonetDBtype)) {
+			type = map.get(MonetDBtype);
+		}
+		if (type == null) {
+			// fallback to the standard Class mappings
+			type = getClassForType(getJavaType(MonetDBtype));
 		}
 
-		if (type == String.class) {
+		if (type == null || type == String.class) {
 			return getString(i);
 		} else if (type == BigDecimal.class) {
 			return getBigDecimal(i);
 		} else if (type == Boolean.class) {
 			return Boolean.valueOf(getBoolean(i));
+		} else if (type == Short.class) {
+			return Short.valueOf(getShort(i));
 		} else if (type == Integer.class) {
 			return Integer.valueOf(getInt(i));
 		} else if (type == Long.class) {
@@ -1931,7 +1940,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					return getRowId(colnum);
 				}
 			};
-			x.readSQL(input, types[i - 1]);
+			x.readSQL(input, MonetDBtype);
 			return x;
 		} else {
 			return getString(i);

@@ -63,23 +63,6 @@ ERROR = !column needs geometry(4, 0) and value is geometry(6, 0)
 MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
 QUERY = SELECT '' AS two, p.* FROM POINT_TBL_VW p WHERE p.f1 @ path '[(0,0),(-10,0),(-10,10)]';
 ERROR = !syntax error, unexpected STRING, expecting SCOLON in: "select '' as two, p.* from point_tbl_vw p where p.f1 @ path '[(0,0),(-10,0),(-10"
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
-QUERY = SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
-           FROM POINT_TBL p1, POINT_TBL p2
-           ORDER BY dist, point1 using <<, point2 using <<;
-ERROR = !syntax error, unexpected USING, expecting SCOLON in: "select '' as thirtysix, p1.f1 as point1, p2.f1 as point2, p1.f1 <-> p2.f1 as dis"
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
-QUERY = SELECT '' AS fifteen, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
-           FROM POINT_TBL p1, POINT_TBL p2
-           WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1
-           ORDER BY distance, point1 using <<, point2 using <<;
-ERROR = !syntax error, unexpected USING, expecting SCOLON in: "select '' as fifteen, p1.f1 as point1, p2.f1 as point2, (p1.f1 <-> p2.f1) as dis"
-MAPI  = (monetdb) /var/tmp/mtest-30019/.s.monetdb.34946
-QUERY = SELECT '' AS three, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
-           FROM POINT_TBL p1, POINT_TBL p2 
-           WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1 and p1.f1 >^ p2.f1
-           ORDER BY distance;
-ERROR = !syntax error, unexpected '^' in: "select '' as three, p1.f1 as point1, p2.f1 as point2, (p1.f1 <-> p2.f1) as dista"
 
 # 18:36:57 >  
 # 18:36:57 >  "Done."

@@ -1,7 +1,7 @@
 
 #include "connection.h"
 #include "type_conversion.h"
-#include "interprocess.h"
+#include "gdk_interprocess.h"
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
@@ -73,6 +73,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
     else 
 #ifdef HAVE_FORK
     {
+        str msg;
         char *query;
 #ifndef IS_PY3K
         query = ((PyStringObject*)args)->ob_sval;
@@ -85,9 +86,9 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
         strncpy(self->query_ptr->query, query, 8192);
         self->query_ptr->pending_query = true;
         //free the main process so it can work on the query
-        change_semaphore_value(self->query_sem, 0, 1);
+        GDKchangesemval(self->query_sem, 0, 1, &msg);
         //now wait for the main process to finish
-        change_semaphore_value(self->query_sem, 1, -1);
+        GDKchangesemval(self->query_sem, 1, -1, &msg);
         if (self->query_ptr->pending_query) {
             //the query failed in the main process
             //           life is hopeless
@@ -106,8 +107,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
             int i;
             
             // get a pointer to the shared memory holding the return values
-            msg = init_mmap_memory(self->query_ptr->mmapid, 0, self->query_ptr->memsize, NULL, NULL, &ptr);
-            if (msg != MAL_SUCCEED) {
+            if (GDKinitmmap(self->query_ptr->mmapid + 0, self->query_ptr->memsize, (void**) &ptr, NULL, &msg) != GDK_SUCCEED) {
                 PyErr_Format(PyExc_Exception, "%s", msg);
                 return NULL;
             }
@@ -116,27 +116,9 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
             for(i = 0; i < self->query_ptr->nr_cols; i++)
             {
                 BAT *b;
-                char *colname;
+                str colname;
                 PyInput input;
-
-                //load the data for this column from shared memory
-                //[COLNAME]
-                colname = ptr + position; 
-                position += strlen(colname) + 1;
-                //[BAT]
-                b = (BAT*) (ptr + position); 
-                position += sizeof(BAT);
-                //[DATA]
-                b->theap.base = (void*)(ptr + position); 
-                position += b->twidth * BATcount(b);
-                if (b->tvheap != NULL) {
-                    //[VHEAP]
-                    b->tvheap = (Heap*) (ptr + position); 
-                    position += sizeof(Heap);
-                    //[VHEAPDATA]
-                    b->tvheap->base = (void*) (ptr + position); 
-                    position += b->tvheap->size;
-                }
+                position += GDKbatread(ptr + position, &b, &colname);
                 //initialize the PyInput structure
                 input.bat = b;
                 input.count = BATcount(b);
@@ -147,13 +129,13 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
                 numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &msg, true);
                 if (!numpy_array) {
                     PyErr_Format(PyExc_Exception, "SQL Query Failed: %s", (msg ? msg : "<no error>"));
-                    release_mmap_memory(ptr, self->query_ptr->memsize, self->query_ptr->mmapid);
+                    GDKreleasemmap(ptr, self->query_ptr->memsize, self->query_ptr->mmapid, &msg);
                     return NULL;
                 }
                 PyDict_SetItem(result, PyString_FromString(colname), numpy_array);
                 Py_DECREF(numpy_array);
             }
-            release_mmap_memory(ptr, self->query_ptr->memsize, self->query_ptr->mmapid);
+            GDKreleasemmap(ptr, self->query_ptr->memsize, self->query_ptr->mmapid, &msg);
             return result;
         }
 
