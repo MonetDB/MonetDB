@@ -4447,6 +4447,10 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	node *n = find_sql_table_node(s, id);
 	sql_table *t = n->data;
 
+	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) && 
+	    tr->dropped && list_find_id(tr->dropped, t->base.id))
+		return;
+
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		int *local_id = MNEW(int);
 

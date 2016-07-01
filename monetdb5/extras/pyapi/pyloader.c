@@ -4,7 +4,7 @@
 
 #include "unicode.h"
 #include "pytypes.h"
-#include "interprocess.h"
+#include "gdk_interprocess.h"
 #include "type_conversion.h"
 #include "formatinput.h"
 
@@ -139,9 +139,9 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
             assert(i < pci->retc);
             cols[i].name = *((char**) n->data);
             n = n->next;
-            cols[i].b = BATnew(TYPE_void, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
-            cols[i].b->T->nil = 0;
-            cols[i].b->T->nonil = 0;
+            cols[i].b = COLnew(0, getColumnType(getArgType(mb, pci, i)), 0, TRANSIENT);
+            cols[i].b->tnil = 0;
+            cols[i].b->tnonil = 0;
             i++;
         }
     } else {

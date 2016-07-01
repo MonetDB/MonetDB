@@ -26,7 +26,7 @@ extern log_bid temp_create(BAT *b);
 extern log_bid temp_copy(log_bid b, int temp);
 
 extern void bat_destroy(BAT *b);
-extern BAT *bat_new(int ht, int tt, BUN size, int role);
+extern BAT *bat_new(int tt, BUN size, int role);
 
 extern BUN append_inserted(BAT *b, BAT *i );
 

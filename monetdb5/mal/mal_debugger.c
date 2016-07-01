@@ -305,13 +305,13 @@ static void
 printBATproperties(stream *f, BAT *b)
 {
 	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
-			BATcount(b), BBP_lrefs(abs(b->batCacheid)));
-	if (BBP_refs(abs(b->batCacheid)) - 1)
-		mnstr_printf(f, " refs=%d ", BBP_refs(abs(b->batCacheid)));
+			BATcount(b), BBP_lrefs(b->batCacheid));
+	if (BBP_refs(b->batCacheid) - 1)
+		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->T->heap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->T->heap.parentid));
+	if (b->theap.parentid)
+		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
 }
 /* MAL debugger parser
  * The debugger structure is inherited from GDB.
@@ -1257,11 +1257,9 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	printStackHdr(f, mb, v, index);
 
 	if (v && v->vtype == TYPE_bat) {
-		int i = v->val.ival;
-		BAT *b = BBPquickdesc(abs(i), TRUE);
+		bat i = v->val.bval;
+		BAT *b = BBPquickdesc(i, TRUE);
 
-		if (i < 0)
-			b = BATmirror(b);
 		if (b) {
 			nme = getTypeName(newColumnType(b->ttype));
 			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
@@ -1355,7 +1353,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 					BBPunfix(b[1]->batCacheid);
 				return;
 			}
-			p = BUNfnd(BATmirror(b[0]), props);
+			p = BUNfnd(b[0], props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b[1]);
 				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));

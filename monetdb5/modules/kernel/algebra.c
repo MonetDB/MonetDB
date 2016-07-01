@@ -26,15 +26,15 @@
  * and we have to de-reference them before entering the gdk library.
  * This calls for knowlegde on the underlying BAT typs`s
  */
-#define derefStr(b, s, v)					\
-	do {							\
-		int _tpe= ATOMstorage((b)->s##type);		\
-		if (_tpe >= TYPE_str) {				\
+#define derefStr(b, v)							\
+	do {										\
+		int _tpe= ATOMstorage((b)->ttype);		\
+		if (_tpe >= TYPE_str) {					\
 			if ((v) == 0 || *(str*) (v) == 0)	\
-				(v) = (str) str_nil;		\
-			else					\
-				(v) = *(str *) (v);		\
-		}						\
+				(v) = (str) str_nil;			\
+			else								\
+				(v) = *(str *) (v);				\
+		}										\
 	} while (0)
 
 #include "monetdb_config.h"
@@ -56,11 +56,10 @@ static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
 	lng j, gcnt = BATcount(gids);
-	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
+	BAT *r = COLnew(0, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
 	if (r == NULL)
 		return GDK_FAIL;
-	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->hseqbase;
 		lng *cnt = (lng*)Tloc(cnts, 0);
@@ -92,7 +91,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	r -> tdense = FALSE;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
-	r -> T ->nonil = gids->T->nonil;
+	r -> tnonil = gids->tnonil;
 	*result = r;
 	return GDK_SUCCEED;
 }
@@ -247,8 +246,8 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
+	derefStr(b, low);
+	derefStr(b, high);
 	nilptr = ATOMnilptr(b->ttype);
 	if (*li == 1 && *hi == 1 &&
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
@@ -286,7 +285,7 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, t, val);
+	derefStr(b, val);
 	bn = BATthetaselect(b, s, val, *op);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -835,7 +834,6 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.mark", RUNTIME_OBJECT_MISSING);
 	}
-	assert(BAThdense(b));
 	bn = BATdense(b->hseqbase, *base, BATcount(b));
 	if (bn != NULL) {
 		BBPunfix(b->batCacheid);
@@ -1025,7 +1023,7 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, h, val);
+	derefStr(b, val);
 	q = BUNfnd(b, val);
 	*ret = (q != BUN_NONE);
 	BBPunfix(b->batCacheid);
@@ -1042,7 +1040,7 @@ ALGfind(oid *ret, const bat *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, t, val);
+	derefStr(b, val);
 	q = BUNfnd(b, val);
 
 	if (q == BUN_NONE){
@@ -1096,7 +1094,7 @@ str ALGreuse(bat *ret, const bat *bid)
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
 			}
 		} else {
-			bn = BATnew(TYPE_void,b->ttype,BATcount(b), TRANSIENT);
+			bn = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
@@ -1105,8 +1103,6 @@ str ALGreuse(bat *ret, const bat *bid)
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
 			BATkey(bn,FALSE);
-			/* head is void */
-			BATseqbase(bn, b->hseqbase);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPunfix(b->batCacheid);

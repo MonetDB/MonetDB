@@ -83,15 +83,12 @@ MKEYbathash(bat *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, "mkey.bathash", RUNTIME_OBJECT_MISSING);
 
-	assert(BAThvoid(b) || BAThrestricted(b));
-
 	n = BATcount(b);
-	dst = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BATsetcount(dst, n);
 
 	r = (lng *) Tloc(dst, BUNfirst(dst));
@@ -171,14 +168,14 @@ MKEYbathash(bat *res, const bat *bid)
 	}
 
 	if (dst->batCount <= 1) {
-		BATkey(BATmirror(dst), 1);
+		BATkey(dst, 1);
 		dst->tsorted = dst->trevsorted = 1;
 	} else {
-		BATkey(BATmirror(dst), 0);
+		BATkey(dst, 0);
 		dst->tsorted = dst->trevsorted = 0;
 	}
-	dst->T->nonil = 0;
-	dst->T->nil = 0;
+	dst->tnonil = 0;
+	dst->tnil = 0;
 
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -257,13 +254,12 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BATsetcount(bn, n);
 
 	r = (lng *) Tloc(bn, BUNfirst(bn));
@@ -320,7 +316,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 #endif
 	case TYPE_str:
-		if (b->T->vheap->hashash) {
+		if (b->tvheap->hashash) {
 			BATiter bi = bat_iterator(b);
 			BUN i;
 			BATloop(b, i, n) {
@@ -344,14 +340,14 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 	}
 	if (bn->batCount <= 1) {
-		BATkey(BATmirror(bn), 1);
+		BATkey(bn, 1);
 		bn->tsorted = bn->trevsorted = 1;
 	} else {
-		BATkey(BATmirror(bn), 0);
+		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -382,12 +378,11 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 	n = BATcount(hb);
 
-	bn = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	bn = COLnew(hb->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, hb->hseqbase);
 	BATsetcount(bn, n);
 
 	switch (ATOMstorage(tpe)) {
@@ -427,14 +422,14 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 	if (bn->batCount <= 1) {
-		BATkey(BATmirror(bn), 1);
+		BATkey(bn, 1);
 		bn->tsorted = bn->trevsorted = 1;
 	} else {
-		BATkey(BATmirror(bn), 0);
+		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(hb->batCacheid);
@@ -456,12 +451,11 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 
 	n = BATcount(b);
 
-	bn = BATnew(TYPE_void, TYPE_lng, n, TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BATsetcount(bn, n);
 
 	r = (lng *) Tloc(bn, BUNfirst(bn));
@@ -512,7 +506,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 #endif
 	case TYPE_str:
-		if (b->T->vheap->hashash) {
+		if (b->tvheap->hashash) {
 			BATiter bi = bat_iterator(b);
 			BUN i;
 			BATloop(b, i, n) {
@@ -534,14 +528,14 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 	}
 	if (bn->batCount <= 1) {
-		BATkey(BATmirror(bn), 1);
+		BATkey(bn, 1);
 		bn->tsorted = bn->trevsorted = 1;
 	} else {
-		BATkey(BATmirror(bn), 0);
+		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->T->nonil = 1;
-	bn->T->nil = 0;
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);

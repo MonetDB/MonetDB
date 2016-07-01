@@ -139,7 +139,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (rel->op == op_basetable) {
 		rel->flag = REL_PARTITION;
-	} else if ((rel->op == op_topn || rel->op == op_select) && rel->l) {
+	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
 		rel_partition(sql, rel->l);
 	} else if (is_project(rel->op) && rel->l) {
 		rel_partition(sql, rel->l);

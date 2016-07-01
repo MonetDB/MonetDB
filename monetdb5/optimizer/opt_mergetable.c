@@ -27,7 +27,7 @@ typedef struct mat {
 	int pm;			/* parent mat, for sub relations */
 	mat_type_t type;	/* type of operation */
 	int packed;
-	int pushed;		 
+	int pushed;		 /* set if instruction pushed and shouldn't be freed */
 } mat_t;
 
 typedef struct matlist {
@@ -81,7 +81,7 @@ nr_of_bats(MalBlkPtr mb, InstrPtr p)
 /* some mat's have intermediates (with intermediate result variables), therefor
  * we pass the old output mat variable */
 inline static void
-mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type, int inputmat, int parentmat) 
+mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type, int inputmat, int parentmat, int pushed)
 {
 	mat_t *dst = &ml->v[ml->top];
 	if (ml->top == ml->size) {
@@ -102,15 +102,14 @@ mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type, int
 	dst->im = inputmat;
 	dst->pm = parentmat;
 	dst->packed = 0;
-	dst->pushed = 1;
+	dst->pushed = pushed;
 	++ml->top;
 }
 
 inline static void
-mat_add(matlist_t *ml, InstrPtr q, mat_type_t type, char *func) 
+mat_add(matlist_t *ml, InstrPtr q, mat_type_t type, const char *func)
 {
-	mat_add_var(ml, q, NULL, getArg(q,0), type, -1, -1);
-	ml->v[ml->top-1].pushed = 0;
+	mat_add_var(ml, q, NULL, getArg(q,0), type, -1, -1, 0);
 	(void)func;
 	//printf (" ml.top %d %s\n", ml.top, func);
 }
@@ -436,7 +435,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 		}
 	}
 	for(k=0; k < p->retc; k++) {
-		mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1);
+		mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1);
 		pushInstruction(mb, r[k]);
 	}
 	GDKfree(r);
@@ -1102,8 +1101,7 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 		}
 		if (push)
 			pushInstruction(mb,attr);
-		mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1);
-		ml->v[ml->top-1].pushed = push;
+		mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1, push);
 		/* keep new attribute with the group extend */
 		ml->v[aext].im = ml->top-1;
 	}	
@@ -1178,12 +1176,11 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 
 	/* create mat's for the intermediates */
 	a = ml->top;
-	mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1);
-	ml->v[a].pushed = push;
+	mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1, push);
 	g = ml->top;
-	mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, -1);
-	mat_add_var(ml, r1, p, getArg(p, 1), mat_ext, a, ml->top-1); /* point back at group */
-	mat_add_var(ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top-1); /* point back at ext */
+	mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, -1, 1);
+	mat_add_var(ml, r1, p, getArg(p, 1), mat_ext, a, ml->top-1, 1); /* point back at group */
+	mat_add_var(ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top-1, 1); /* point back at ext */
 	if (push)
 		mat_pack_group(mb, ml, g);
 }
@@ -1267,12 +1264,11 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 
 	/* create mat's for the intermediates */
 	a = ml->top;
-	mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1);
-	ml->v[a].pushed = push;
-	mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, g);
+	mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,  -1, -1, push);
+	mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, g, 1);
 	g = ml->top-1;
-	mat_add_var(ml, r1, p, getArg(p, 1), mat_ext, a, ml->top-1); /* point back at group */
-	mat_add_var(ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top-1); /* point back at ext */
+	mat_add_var(ml, r1, p, getArg(p, 1), mat_ext, a, ml->top-1, 1); /* point back at group */
+	mat_add_var(ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top-1, 1); /* point back at ext */
 
 	if (push)
 		mat_pack_group(mb, ml, g);
@@ -1409,10 +1405,9 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 	}
 
 	piv = ml->top;
-	mat_add_var(ml, pck, p, getArg(p,0), is_slice?mat_slc:mat_tpn, m, n);
-	ml->v[ml->top-1].pushed = 0;
+	mat_add_var(ml, pck, p, getArg(p,0), is_slice?mat_slc:mat_tpn, m, n, 0);
 	if (with_groups)
-		mat_add_var(ml, gpck, p, getArg(p,1), is_slice?mat_slc:mat_tpn, m, piv);
+		mat_add_var(ml, gpck, p, getArg(p,1), is_slice?mat_slc:mat_tpn, m, piv, 0);
 
 	if (is_slice || p->retc ==1 /* single result, ie last of the topn's */) {
 		if (ml->v[m].type == mat_tpn || !is_slice) 
@@ -1461,7 +1456,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	}
 
 	piv = ml->top;
-	mat_add_var(ml, pck, p, getArg(p,0), mat_slc, m, -1);
+	mat_add_var(ml, pck, p, getArg(p,0), mat_slc, m, -1, 1);
 	pushInstruction(mb,pck);
 
 	q = copyInstruction(p);
@@ -1549,7 +1544,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (getModuleId(p) == matRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
 			mat_set_prop(&ml, mb, p);
-			mat_add_var(&ml, p, NULL, getArg(p,0), mat_none, -1, -1);
+			mat_add_var(&ml, p, NULL, getArg(p,0), mat_none, -1, -1, 1);
 			continue;
 		}
 

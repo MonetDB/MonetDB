@@ -41,11 +41,11 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 
 	res = sphinx_query ( client, query, index, NULL );
 	if (!res || (res && res->num_matches == 0)) {
-		bn = BATnew(TYPE_void, TYPE_lng, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_lng, 0, TRANSIENT);
 		if (bn == NULL)
 			throw(MAL, "sphinx.searchIndex", MAL_MALLOC_FAIL);
 	} else {
-		bn = BATnew(TYPE_void, TYPE_lng, res->num_matches, TRANSIENT);
+		bn = COLnew(0, TYPE_lng, res->num_matches, TRANSIENT);
 		if (bn == NULL)
 			throw(MAL, "sphinx.searchIndex", MAL_MALLOC_FAIL);
 		for ( i = 0; i < res->num_matches; i++ ) {
@@ -56,11 +56,10 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 	}
 	sphinx_destroy (client);
 
-	bn->hseqbase = 0;
-	bn->T->sorted = 0;
-	bn->T->revsorted = 0;
-	bn->T->nonil = 1;
-	BATkey(BATmirror(bn), FALSE);
+	bn->tsorted = 0;
+	bn->trevsorted = 0;
+	bn->tnonil = 1;
+	BATkey(bn, FALSE);
 
 	*ret = bn;
 	return MAL_SUCCEED;

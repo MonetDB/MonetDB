@@ -146,12 +146,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		}
 	} else if (n >= cnt) {
 		/* trivial: return everything */
-		bn = BATnew(TYPE_void, TYPE_void, cnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, cnt);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), start + b->hseqbase);
+		BATtseqbase(bn, start + b->hseqbase);
 		return bn;
 	}
 	/* note, we want to do bot calls */
@@ -171,28 +170,26 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			i = (BUN) (candend - (const oid *) Tloc(s, 0));
 			return BATslice(s, i - n, i);
 		}
-		bn = BATnew(TYPE_void, TYPE_void, n, TRANSIENT);
+		bn = COLnew(0, TYPE_void, n, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, n);
-		BATseqbase(bn, 0);
 		if (asc ? b->tsorted : b->trevsorted) {
 			/* first n entries from b */
-			BATseqbase(BATmirror(bn), start + b->hseqbase);
+			BATtseqbase(bn, start + b->hseqbase);
 		} else {
 			/* last n entries from b */
-			BATseqbase(BATmirror(bn), start + cnt + b->hseqbase - n);
+			BATtseqbase(bn, start + cnt + b->hseqbase - n);
 		}
 		return bn;
 	}
 
 	assert(b->ttype != TYPE_void); /* tsorted above took care of this */
 
-	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
-	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
@@ -302,8 +299,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
 	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return bn;
 }
 
@@ -390,19 +387,17 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 		return bn;
 	}
 
-	bn = BATnew(TYPE_void, TYPE_oid, n, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
-	BATseqbase(bn, 0);
 	oids = (oid *) Tloc(bn, BUNfirst(bn));
 	gv = (const oid *) Tloc(g, BUNfirst(g));
 	goids = GDKmalloc(n * sizeof(oid));
@@ -545,8 +540,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
 	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return bn;
 }
 
@@ -638,19 +633,17 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 		if (gids) {
-			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(gn, 0);
-			BATseqbase(BATmirror(gn), 0);
+			BATtseqbase(gn, 0);
 			*gids = gn;
 		}
 		*topn = bn;
@@ -743,10 +736,10 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	top = i;
 	assert(ncnt <= cnt);
 	if (ncnt == cnt)
-		bn = BATnew(TYPE_void, TYPE_void, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, ncnt, TRANSIENT);
 	else
-		bn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
-	gn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
+	gn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
 	if (bn == NULL || gn == NULL) {
 		GDKfree(groups);
 		BBPreclaim(bn);
@@ -813,24 +806,22 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	}
 	GDKfree(groups);
 	BATsetcount(bn, ncnt);
-	BATseqbase(bn, 0);
 	if (ncnt == cnt) {
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 	} else {
 		bn->tkey = 1;
 		bn->tsorted = 1;
 		bn->trevsorted = ncnt <= 1;
-		bn->T->nil = 0;
-		bn->T->nonil = 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 	}
 	if (gids) {
 		BATsetcount(gn, ncnt);
-		BATseqbase(gn, 0);
 		gn->tkey = ncnt == top;
 		gn->tsorted = ncnt <= 1;
 		gn->trevsorted = ncnt <= 1;
-		gn->T->nil = 0;
-		gn->T->nonil = 1;
+		gn->tnil = 0;
+		gn->tnonil = 1;
 		*gids = gn;
 	} else
 		BBPreclaim(gn);
@@ -946,19 +937,17 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return GDK_FAIL;
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), 0);
+		BATtseqbase(bn, 0);
 		if (gids) {
-			gn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
-			BATseqbase(gn, 0);
-			BATseqbase(BATmirror(gn), 0);
+			BATtseqbase(gn, 0);
 			*gids = gn;
 		}
 		*topn = bn;
@@ -1052,10 +1041,10 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	top = i;
 	assert(ncnt <= cnt);
 	if (ncnt == cnt)
-		bn = BATnew(TYPE_void, TYPE_void, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_void, ncnt, TRANSIENT);
 	else
-		bn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
-	gn = BATnew(TYPE_void, TYPE_oid, ncnt, TRANSIENT);
+		bn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
+	gn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
 	if (bn == NULL || gn == NULL) {
 		GDKfree(groups);
 		BBPreclaim(bn);
@@ -1124,24 +1113,22 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 	GDKfree(groups);
 	BATsetcount(bn, ncnt);
-	BATseqbase(bn, 0);
 	if (ncnt == cnt) {
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 	} else {
 		bn->tkey = 1;
 		bn->tsorted = 1;
 		bn->trevsorted = ncnt <= 1;
-		bn->T->nil = 0;
-		bn->T->nonil = 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 	}
 	if (gids) {
 		BATsetcount(gn, ncnt);
-		BATseqbase(gn, 0);
 		gn->tkey = ncnt == top;
 		gn->tsorted = ncnt <= 1;
 		gn->trevsorted = ncnt <= 1;
-		gn->T->nil = 0;
-		gn->T->nonil = 1;
+		gn->tnil = 0;
+		gn->tnonil = 1;
 		*gids = gn;
 	} else
 		BBPreclaim(gn);
@@ -1158,10 +1145,6 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 		return GDK_SUCCEED;
 	}
 
-	/* all BATs must be dense-headed */
-	assert(BAThdense(b));
-	assert(s == NULL || BAThdense(s));
-	assert(g == NULL || BAThdense(g));
 	/* if g specified, then so must s */
 	assert(g == NULL || s != NULL);
 	/* g and s must be aligned (same size, same hseqbase) */
@@ -1170,19 +1153,17 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 
 	if (n == 0 || BATcount(b) == 0 || (s != NULL && BATcount(s) == 0)) {
 		/* trivial: empty result */
-		*topn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		*topn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (*topn == NULL)
 			return GDK_FAIL;
-		BATseqbase(*topn, 0);
-		BATseqbase(BATmirror(*topn), 0);
+		BATtseqbase(*topn, 0);
 		if (gids) {
-			*gids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+			*gids = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (*gids == NULL) {
 				BBPreclaim(*topn);
 				return GDK_FAIL;
 			}
-			BATseqbase(*gids, 0);
-			BATseqbase(BATmirror(*gids), 0);
+			BATtseqbase(*gids, 0);
 		}
 		return GDK_SUCCEED;
 	}

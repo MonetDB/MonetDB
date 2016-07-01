@@ -222,12 +222,12 @@ main(int argc, char **argv)
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
 
-	mapi_disconnect(mid);
+	mapi_destroy(mid);
 	if (mnstr_errnr(out)) {
 		fprintf(stderr, "%s: %s", argv[0], mnstr_error(out));
 		return 1;
 	}
 
+	mnstr_destroy(out);
 	return c;
-
 }

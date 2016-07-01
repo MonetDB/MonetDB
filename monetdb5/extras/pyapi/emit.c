@@ -1,7 +1,7 @@
 
 #include "emit.h"
 #include "type_conversion.h"
-#include "interprocess.h"
+#include "gdk_interprocess.h"
 
 #include "convert_loops.h"
 #include "unicode.h"
@@ -144,15 +144,15 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
             }
             if (!found) {
                 // unrecognized column, create the column in the table
-                self->cols[self->ncols].b = BATnew(TYPE_void, TYPE_int, 0, TRANSIENT);
+                self->cols[self->ncols].b = COLnew(0, TYPE_int, 0, TRANSIENT);
                 self->cols[self->ncols].name = GDKstrdup(val);
                 if (self->nvals > 0) {
                     // insert NULL values up until the current entry
                     for (ai = 0; ai < self->nvals; ai++) {
-                        BUNappend(self->cols[self->ncols].b, ATOMnil(self->cols[self->ncols].b->T->type), 0);
+                        BUNappend(self->cols[self->ncols].b, ATOMnil(self->cols[self->ncols].b->ttype), 0);
                     }
-                    self->cols[i].b->T->nil = 1;
-                    self->cols[i].b->T->nonil = 0;
+                    self->cols[i].b->tnil = 1;
+                    self->cols[i].b->tnonil = 0;
                     BATsetcount(self->cols[i].b, self->nvals);
                 }
                 self->ncols++;
@@ -164,7 +164,7 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
         PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
         if (dictEntry && dictEntry != Py_None) {
             if (PyType_IsPyScalar(dictEntry)) {
-                switch (self->cols[i].b->T->type)
+                switch (self->cols[i].b->ttype)
                     {
                     case TYPE_bit:
                         scalar_convert(bit);
@@ -210,7 +210,7 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                     }
                         break;
                     default:
-                        PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
+                        PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->ttype));
                         return NULL;
                 }
             } else {
@@ -234,7 +234,7 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                 }
                 data = (char*) ret->array_data;
                 assert((size_t) el_count == (size_t) ret->count);
-                switch (self->cols[i].b->T->type) {
+                switch (self->cols[i].b->ttype) {
                     case TYPE_bit:
                         NP_INSERT_BAT(self->cols[i].b, bit, self->nvals);
                         break;
@@ -276,17 +276,17 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
                     }
                         break;
                     default:
-                        PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->T->type));
+                        PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s", BatType_Format(self->cols[i].b->ttype));
                         return NULL;
                 }
-                self->cols[i].b->T->nonil = 1 - self->cols[i].b->T->nil;
+                self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
             }
         } else {
             for (ai = 0; ai < (size_t) el_count; ai++) {
-                BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->T->type), 0);
+                BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->ttype), 0);
             }
-            self->cols[i].b->T->nil = 1;
-            self->cols[i].b->T->nonil = 0;
+            self->cols[i].b->tnil = 1;
+            self->cols[i].b->tnonil = 0;
         }
         BATsetcount(self->cols[i].b, self->nvals + el_count);
     }

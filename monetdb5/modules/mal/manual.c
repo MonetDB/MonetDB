@@ -29,21 +29,14 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str hlp[25000];
 	char buf[BUFSIZ], *tt;
 
-	sig = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-	adr = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
-	com = BATnew(TYPE_void, TYPE_str, 0, TRANSIENT);
+	sig = COLnew(0, TYPE_str, 0, TRANSIENT);
+	adr = COLnew(0, TYPE_str, 0, TRANSIENT);
+	com = COLnew(0, TYPE_str, 0, TRANSIENT);
 	if( sig == NULL || adr == NULL || com == NULL){
 		if(sig) BBPunfix(sig->batCacheid);
 		if(adr) BBPunfix(adr->batCacheid);
 		if(com) BBPunfix(com->batCacheid);
 	}
-    BATseqbase(sig, 0);
-    BATseqbase(adr, 0);
-    BATseqbase(com, 0);
-
-    BATkey(sig, TRUE);
-    BATkey(adr, TRUE);
-    BATkey(com, TRUE);
 
 	if(s==NULL){
 		return MAL_SUCCEED;

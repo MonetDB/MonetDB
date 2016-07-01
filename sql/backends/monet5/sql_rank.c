@@ -9,17 +9,16 @@
 #include "monetdb_config.h"
 #include "sql_rank.h"
 
-#define voidresultBAT(r,tpe,cnt,b,err)                         \
-	do {                                                   \
-		r = BATnew(TYPE_void, tpe, cnt, TRANSIENT);    \
-		if (r == NULL) {                               \
-			BBPunfix(b->batCacheid);               \
-			throw(MAL, err, MAL_MALLOC_FAIL);      \
-		}                                              \
-		BATseqbase(r, b->hseqbase);                    \
-		r->tsorted = 0;                                \
-		r->trevsorted = 0;                             \
-		r->T->nonil = 1;                               \
+#define voidresultBAT(r,tpe,cnt,b,err)				\
+	do {							\
+		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);	\
+		if (r == NULL) {				\
+			BBPunfix(b->batCacheid);		\
+			throw(MAL, err, MAL_MALLOC_FAIL);	\
+		}						\
+		r->tsorted = 0;					\
+		r->trevsorted = 0;				\
+		r->tnonil = 1;					\
 	} while (0)
 
 str 

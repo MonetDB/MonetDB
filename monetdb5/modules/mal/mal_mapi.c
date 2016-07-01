@@ -1377,10 +1377,9 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	BAT *b;
 
 	accessTest(*key, "rpc");
-	b= BATnew(TYPE_void,TYPE_str,256, TRANSIENT);
+	b= COLnew(0,TYPE_str,256, TRANSIENT);
 	if( b == NULL)
 		throw(MAL,"mapi.fetch",MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
@@ -1607,10 +1606,9 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
 
-	b= BATnew(TYPE_void,tt,256, TRANSIENT);
+	b= COLnew(0,tt,256, TRANSIENT);
 	if ( b == NULL)
 		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);

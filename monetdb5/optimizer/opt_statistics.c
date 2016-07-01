@@ -35,11 +35,10 @@ QOT_create(str hnme, str tnme, int tt)
 	if (b)
 		return b;
 
-	b = BATnew(TYPE_void, tt, 256, PERSISTENT);
+	b = COLnew(0, tt, 256, PERSISTENT);
 	if (b == NULL)
 		return NULL;
 
-	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
 	return b;
@@ -52,17 +51,16 @@ static void QOTstatisticsSave(void) {
 		return;
 	MT_lock_set(&qotlock);
 	names[0] = 0;
-	names[1] = abs(qotStat[QOTnames]->batCacheid);
-	names[2] = abs(qotStat[QOTcalls]->batCacheid);
-	names[3] = abs(qotStat[QOTactions]->batCacheid);
-	names[4] = abs(qotStat[QOTtimings]->batCacheid);
+	names[1] = qotStat[QOTnames]->batCacheid;
+	names[2] = qotStat[QOTcalls]->batCacheid;
+	names[3] = qotStat[QOTactions]->batCacheid;
+	names[4] = qotStat[QOTtimings]->batCacheid;
 
 	TMsubcommit_list(names, 5);
 	MT_lock_unset(&qotlock);
 }
 
 static void QOTstatisticsInit(void){
-	oid o=0;
 	int i,j;
 
 	if (qotStat[QOTnames]) return;
@@ -72,13 +70,9 @@ static void QOTstatisticsInit(void){
 
 	MT_lock_set(&qotlock);
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_str);
-	BATseqbase(qotStat[QOTnames],o);
 	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_int);
-	BATseqbase(qotStat[QOTcalls],o);
 	qotStat[QOTactions]= QOT_create("opt","actions",TYPE_int);
-	BATseqbase(qotStat[QOTactions],o);
 	qotStat[QOTtimings]= QOT_create("opt","timings",TYPE_lng);
-	BATseqbase(qotStat[QOTtimings],o);
 
 	/* recover from errors */
 	for ( i=0; i<4; i++)
@@ -98,65 +92,39 @@ QOTupdateStatistics(str nme, int actions, lng val)
 {
 	BATiter bi;
 	BUN p;
-	oid idx;
 	int ival=0, *ip= &ival;
 	lng lval=0, *lp= &lval;
 
 	QOTstatisticsInit();
 	MT_lock_set(&qotlock);
-	p = BUNfnd(qotStat[QOTnames],(ptr)nme);
+	p = BUNfnd(qotStat[QOTnames], nme);
 	if (p == BUN_NONE) {
 		BUNappend(qotStat[QOTnames], nme, FALSE);
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
-		p = BUNfnd(qotStat[QOTnames],(ptr)nme);
+		p = BUNfnd(qotStat[QOTnames], nme);
 		if (p == BUN_NONE){
 			MT_lock_unset(&qotlock);
 			return;
 		}
 	}
-	bi = bat_iterator(qotStat[QOTnames]);
-	idx = *(oid*) BUNhead(bi,p);
+	p -= BUNfirst(qotStat[QOTnames]);
 
-	p = BUNfnd(BATmirror(qotStat[QOTcalls]),&idx);
-	if (p == BUN_NONE) {
-#ifdef _Q_STATISTICS_DEBUG
-		mnstr_printf(GDKout,"#Could not access 'calls'\n");
-#endif
-		MT_lock_unset(&qotlock);
-		return;
-	}
 	bi = bat_iterator(qotStat[QOTcalls]);
-	ip = (int*) BUNtail(bi,p);
+	ip = (int*) BUNtail(bi, p + BUNfirst(qotStat[QOTcalls]));
 	*ip = *ip+1;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
 
-	p = BUNfnd(BATmirror(qotStat[QOTactions]),&idx);
-	if (p == BUN_NONE){
-#ifdef _Q_STATISTICS_DEBUG
-		mnstr_printf(GDKout,"#Could not access 'actions'\n");
-#endif
-		MT_lock_unset(&qotlock);
-		return;
-	}
 	bi = bat_iterator(qotStat[QOTactions]);
-	ip = (int*) BUNtail(bi,p);
+	ip = (int*) BUNtail(bi, p + BUNfirst(qotStat[QOTactions]));
 	*ip = *ip+ actions;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
 
-	p = BUNfnd(BATmirror(qotStat[QOTtimings]),&idx);
-	if (p == BUN_NONE){
-#ifdef _Q_STATISTICS_DEBUG
-		mnstr_printf(GDKout, "#Could not access 'timings'\n");
-#endif
-		MT_lock_unset(&qotlock);
-		return ;
-	}
 	bi = bat_iterator(qotStat[QOTtimings]);
-	lp = (lng*) BUNtail(bi,p);
+	lp = (lng*) BUNtail(bi, p + BUNfirst(qotStat[QOTtimings]));
 	*lp = *lp+ val;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;

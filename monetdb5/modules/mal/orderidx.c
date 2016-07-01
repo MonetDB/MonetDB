@@ -221,7 +221,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
 	}
 
-	if ((bn = BATnew(TYPE_void, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
+	if ((bn = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.getorderidx", MAL_MALLOC_FAIL);
 	}
@@ -231,11 +231,10 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while (s < se)
 			 *d++ = *s++ & ~BUN_MSK;
 	BATsetcount(bn, BATcount(b));
-	BATseqbase(bn, 0);
 	bn->tkey = 1;
 	bn->tsorted = bn->trevsorted = BATcount(b) <= 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
@@ -253,7 +252,6 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 	if (b == NULL)
 		throw(MAL, "algebra.orderidx", RUNTIME_OBJECT_MISSING);
 
-	assert(BAThdense(b));
 	r = BATorderidx(b, *stable);
 	if (r != GDK_SUCCEED) {
 		BBPunfix(*bid);
@@ -291,7 +289,6 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
 
-	assert(BAThdense(b));	/* assert void headed */
 	assert(b->torderidx == NULL);
 
 	switch (ATOMbasetype(b->ttype)) {

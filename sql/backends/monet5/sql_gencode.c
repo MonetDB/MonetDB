@@ -3081,7 +3081,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg);
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
 	sql_allocator *sa, *osa = m->sa;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
@@ -3150,8 +3150,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			int varid = 0;
 			char *buf = GDKmalloc(MAXIDENTLEN);
 
-			if (buf == NULL)
+			if (buf == NULL) {
+				sa_destroy(sa);
 				return -1;
+			}
 			if (a->name)
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
 			else
@@ -3164,8 +3166,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	/* announce the transaction mode */
 
-	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0) {
+		sa_destroy(sa);
 		return -1;
+	}
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
@@ -3175,11 +3179,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p));
+		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)); 
+		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION)
+	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)
 		curBlk->inlineProp =1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
