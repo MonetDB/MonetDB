@@ -24,8 +24,7 @@ Module mal_scope;    /* the root of the tree */
 Module scopeJump[256][256];  /* to speedup access to correct scope */
 
 static void newSubScope(Module scope){
-	int len = (MAXSCOPE)*sizeof(Module);
-	scope->subscope = (Symbol *) GDKzalloc(len);
+	scope->subscope = (Symbol *) GDKzalloc(MAXSCOPE * sizeof(Symbol));
 }
 
 void
