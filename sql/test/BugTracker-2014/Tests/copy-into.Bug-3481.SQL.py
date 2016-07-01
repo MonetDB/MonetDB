@@ -1,5 +1,5 @@
 import os
-from monetdb import mapi
+from pymonetdb import mapi
 
 def open(conn):
     conn.connect(database=os.getenv('TSTDB'),username="monetdb",password="monetdb",language="sql",hostname=os.getenv('MAPIHOST'),port=int(os.getenv('MAPIPORT')))

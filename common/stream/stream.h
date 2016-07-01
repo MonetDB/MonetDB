@@ -87,6 +87,12 @@ typedef __int128_t hge;
 #define ST_READ  0
 #define ST_WRITE 1
 
+/* fwf gets turned into a csv with these parameters */
+#define STREAM_FWF_FIELD_SEP '|'
+#define STREAM_FWF_ESCAPE '\\'
+#define STREAM_FWF_RECORD_SEP '\n'
+#define STREAM_FWF_FILLER ' '
+
 typedef struct stream stream;
 
 /* some os specific initialization */
@@ -253,5 +259,7 @@ stream_export stream *callback_stream(
 	const char *name);
 
 stream_export stream* stream_blackhole_create(void);
+
+stream_export stream* stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler);
 
 #endif /*_STREAM_H_*/

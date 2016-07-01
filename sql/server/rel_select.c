@@ -721,13 +721,12 @@ rel_values( mvc *sql, symbol *tableref)
 	return r;
 }
 
-static sql_rel *
+sql_rel *
 table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 {
 	char *tname = NULL;
 	sql_table *t = NULL;
 
-	(void)rel;
 	if (tableref->token == SQL_NAME) {
 		dlist *name = tableref->data.lval->h->data.lval;
 		sql_rel *temp_table = NULL;

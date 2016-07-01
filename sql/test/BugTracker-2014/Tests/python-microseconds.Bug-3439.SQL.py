@@ -1,6 +1,6 @@
-import monetdb.sql, os
+import pymonetdb, os
 
-dbh = monetdb.sql.Connection(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
+dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
 cursor = dbh.cursor();
 
 cursor.execute('create table bug3439 (ts timestamp)')

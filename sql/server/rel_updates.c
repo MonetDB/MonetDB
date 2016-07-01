@@ -837,13 +837,12 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
+update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	sql_rel *bt = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
 		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
@@ -866,7 +865,9 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		list *exps;
 		dnode *n;
 		const char *rname = NULL;
+		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
 
+		res = bt;
 #if 0
 			dlist *selection = dlist_create(sql->sa);
 			dlist *from_list = dlist_create(sql->sa);
@@ -912,6 +913,19 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 		}
 #endif
 
+		if (opt_from) {
+			dlist *fl = opt_from->data.lval;
+			dnode *n = NULL;
+			sql_rel *fnd = NULL;
+
+			for (n = fl->h; n && res; n = n->next) {
+				fnd = table_ref(sql, NULL, n->data.sym);
+				if (fnd)
+					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+			}
+			if (!res) 
+				return NULL;
+		}
 		if (opt_where) {
 			int status = sql->session->status;
 	
@@ -920,21 +934,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
-
-				sql_rel *l = bt = rel_basetable(sql, t, t->base.name );
-				r = rel_crossproduct(sql->sa, l, r, op_semi);
+				r = rel_crossproduct(sql->sa, res, r, op_semi);
 			} else {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				bt = r = rel_basetable(sql, t, t->base.name );
-				r = rel_logical_exp(sql, r, opt_where, sql_where);
-				if (r && is_join(r->op))
+				r = rel_logical_exp(sql, res, opt_where, sql_where);
+				if (!opt_from && r && is_join(r->op))
 					r->op = op_semi;
 			}
 			if (!r) 
 				return NULL;
 		} else {	/* update all */
-			bt = r = rel_basetable(sql, t, t->base.name );
+			r = res;
 		}
 	
 		/* first create the project */
@@ -1136,7 +1147,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1144,7 +1155,8 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 9, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 10, F_UNION, NULL);
+	char* fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1157,16 +1169,36 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 		exp_atom_str(sql->sa, ssep, &tpe)), 
 		exp_atom_str(sql->sa, ns, &tpe));
 
+	if (fwf_widths && dlist_length(fwf_widths) > 0) {
+		dnode *dn;
+		int ncol = 0;
+		char* fwf_string_cur = fwf_string = GDKmalloc(20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
+
+		if (!fwf_string) 
+			return NULL;
+		for (dn = fwf_widths->h; dn; dn = dn->next) {
+			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			ncol++;
+		}
+		if(list_length(f->res) != ncol) {
+			(void) sql_error(sql, 02, "3F000!COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
+			return NULL;
+		}
+		*fwf_string_cur = '\0';
+	}
+
 	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
 	import = exp_op(sql->sa,  
 	append(
 		append(
 			append( 
-				append( args, 
-					exp_atom_lng(sql->sa, nr)), 
-					exp_atom_lng(sql->sa, offset)), 
-					exp_atom_int(sql->sa, locked)),
-					exp_atom_int(sql->sa, best_effort)), f); 
+				append(
+					append( args,
+						exp_atom_lng(sql->sa, nr)),
+						exp_atom_lng(sql->sa, offset)),
+						exp_atom_int(sql->sa, locked)),
+						exp_atom_int(sql->sa, best_effort)),
+						exp_atom_str(sql->sa, fwf_string, &tpe)), f);
 	
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -1179,7 +1211,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1194,7 +1226,6 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
 	int reorder = 0;
-
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
@@ -1296,7 +1327,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return sql_error(sql, 02, "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths);
 
 			if (!rel)
 				rel = nrel;
@@ -1306,7 +1337,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL);
 	}
 	if (headers) {
 		dnode *n;
@@ -1581,7 +1612,8 @@ rel_updates(mvc *sql, symbol *s)
 				l->h->next->next->next->next->next->next->data.sval, 
 				l->h->next->next->next->next->next->next->next->data.i_val, 
 				l->h->next->next->next->next->next->next->next->next->data.i_val, 
-				l->h->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1613,7 +1645,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;

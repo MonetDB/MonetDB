@@ -250,6 +250,11 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if ( mb->inlineProp)
         	return 0;
 
+	/* force at least once a complete type check by resetting the type check flag */
+	resetMalBlk(mb,mb->stop);
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 
 	do {
 		/* any errors should abort the optimizer */
@@ -681,19 +686,24 @@ int isLikeOp(InstrPtr p){
 		 getFunctionId(p) == not_ilikeRef));
 }
 
-int isTopn(InstrPtr p){
+int 
+isTopn(InstrPtr p)
+{
 	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
 			isSlice(p));
 }
 
-int isSlice(InstrPtr p){
+int 
+isSlice(InstrPtr p)
+{
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == subsliceRef); 
+	   (getFunctionId(p) == subsliceRef || getFunctionId(p) == sliceRef)); 
 }
 
-int isSample(InstrPtr p){
-	return (getModuleId(p) == sampleRef &&
-		getFunctionId(p) == subuniformRef);
+int 
+isSample(InstrPtr p)
+{
+	return (getModuleId(p) == sampleRef && getFunctionId(p) == subuniformRef);
 }
 
 int isOrderby(InstrPtr p){

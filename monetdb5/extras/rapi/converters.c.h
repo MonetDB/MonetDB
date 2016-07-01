@@ -9,7 +9,7 @@
 		retsxp = PROTECT(newfun(BATcount(bat)));		    \
 		if (!retsxp) break;                                 \
 		valptr = ptrfun(retsxp);                            \
-		if (bat->T->nonil && !bat->T->nil) {                \
+		if (bat->tnonil && !bat->tnil) {                    \
 			if (memcopy) {									\
 				memcpy(valptr, p,                           \
 					BATcount(bat) * sizeof(tpe));           \
@@ -37,14 +37,14 @@
 #define SXP_TO_BAT(tpe,access_fun,na_check)								\
 	do {																\
 		tpe *p, prev = tpe##_nil; size_t j;								\
-		b = BATnew(TYPE_void, TYPE_##tpe, cnt, TRANSIENT);				\
+		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);						\
 		if (!b) break;                                                  \
-		BATseqbase(b, 0); b->T->nil = 0; b->T->nonil = 1; b->tkey = 0;	\
+		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
 		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
 		p = (tpe*) Tloc(b, BUNfirst(b));								\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \
-			if (na_check){ b->T->nil = 1; 	b->T->nonil = 0; 	*p= tpe##_nil;} \
+			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
 			if (j > 0){													\
 				if (*p > prev && b->trevsorted){						\
 					b->trevsorted = 0;									\
@@ -55,14 +55,14 @@
 			}															\
 			prev = *p;													\
 		}																\
-		BATsetcount(b, cnt);												\
+		BATsetcount(b, cnt);											\
 		BATsettrivprop(b);												\
 	} while (0)
 
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
-	switch (ATOMstorage(getColumnType(b->T->type))) {
+	switch (ATOMstorage(getColumnType(b->ttype))) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -106,14 +106,14 @@ static SEXP bat_to_sexp(BAT* b) {
 				return NULL;
 			}
 			/* special case where we exploit the duplicate-eliminated string heap */
-			if (GDK_ELIMDOUBLES(b->T->vheap)) {
-				SEXP* sexp_ptrs = GDKzalloc(b->T->vheap->free * sizeof(SEXP));
+			if (GDK_ELIMDOUBLES(b->tvheap)) {
+				SEXP* sexp_ptrs = GDKzalloc(b->tvheap->free * sizeof(SEXP));
 				if (!sexp_ptrs) {
 					return NULL;
 				}
 				BATloop(b, p, q) {
 					const char *t = (const char *) BUNtail(li, p);
-					ptrdiff_t offset = t - b->T->vheap->base;
+					ptrdiff_t offset = t - b->tvheap->base;
 					if (!sexp_ptrs[offset]) {
 						if (strcmp(t, str_nil) == 0) {
 							sexp_ptrs[offset] = NA_STRING;
@@ -126,7 +126,7 @@ static SEXP bat_to_sexp(BAT* b) {
 				GDKfree(sexp_ptrs);
 			}
 			else {
-				if (b->T->nonil) {
+				if (b->tnonil) {
 					BATloop(b, p, q) {
 						SET_STRING_ELT(varvalue, j++, RSTR(
 							(const char *) BUNtail(li, p)));
@@ -196,11 +196,10 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		if (!IS_CHARACTER(s) && !isFactor(s)) {
 			return NULL;
 		}
-		b = BATnew(TYPE_void, TYPE_str, cnt, TRANSIENT);
+		b = COLnew(0, TYPE_str, cnt, TRANSIENT);
 		if (!b) return NULL;
-		BATseqbase(b, 0);
-		b->T->nil = 0;
-		b->T->nonil = 1;
+		b->tnil = 0;
+		b->tnonil = 1;
 		b->tkey = 0;
 		b->tsorted = 0;
 		b->trevsorted = 0;
@@ -220,8 +219,8 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 				rse = STRING_ELT(s, j);
 			}
 			if (rse == NA_STRING) {
-				b->T->nil = 1;
-				b->T->nonil = 0;
+				b->tnil = 1;
+				b->tnonil = 0;
 				BUNappend(b, str_nil, FALSE);
 			} else {
 				BUNappend(b, CHAR(rse), FALSE);

@@ -5,7 +5,7 @@
 	b:bat[:int]:= bat.new(:int);
 	bat.setName(b,"mybat");
 	#setPersistent(b);
-	bat.setColumn(b,"first","second");
+	bat.setColumn(b,"second");
 	io.print(b);
 	c:= bat.new(:str);
 	bat.setName(c,"mybat");

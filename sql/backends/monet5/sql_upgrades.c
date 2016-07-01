@@ -1390,6 +1390,18 @@ sql_update_jun2016(Client c, mvc *sql)
 		"('WHEN'), ('WHERE'), ('WHILE'), ('WITH'), ('WORK'), ('WRITE'),\n"
 		"('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');\n");
 
+	// Add new dependency_type 15 to table sys.dependency_types
+	pos += snprintf(buf + pos, bufsize - pos,
+		"insert into sys.dependency_types (dependency_type_id, dependency_type_name)\n"
+		" select 15 as id, 'TYPE' as name where 15 not in (select dependency_type_id from sys.dependency_types);\n");
+
+	// Add 46 missing sys.dependencies rows for new dependency_type: 15
+	pos += snprintf(buf + pos, bufsize - pos,
+		"insert into sys.dependencies (id, depend_id, depend_type)\n"
+		" select distinct types.id as type_id, args.func_id, 15 as depend_type from sys.args join sys.types on types.systemname = args.type where args.type in ('inet', 'json', 'url', 'uuid')\n"
+		" except\n"
+		" select distinct id, depend_id, depend_type from sys.dependencies where depend_type = 15;\n");
+
 	// Add the new storage inspection functions.
 	pos += snprintf(buf + pos, bufsize - pos,
 		"create function sys.\"storage\"( sname string)\n"

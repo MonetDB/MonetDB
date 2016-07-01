@@ -238,6 +238,17 @@ static struct PIPELINES {
  * as it is intended for internal use.",
  */
 #include "opt_pipes.h"
+#include "optimizer_private.h"
+
+static MT_Lock pipeLock MT_LOCK_INITIALIZER("pipeLock");
+
+void
+optPipeInit(void)
+{
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&pipeLock, "pipeLock");
+#endif
+}
 
 /* the session_pipe is the one defined by the user */
 str
@@ -247,14 +258,19 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	str msg;
 	struct PIPELINES oldpipe;
 
+	MT_lock_set(&pipeLock);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(name, pipes[i].name) == 0)
 			break;
 
-	if (i == MAXOPTPIPES)
+	if (i == MAXOPTPIPES) {
+		MT_lock_unset(&pipeLock);
 		throw(MAL, "optimizer.addPipeDefinition", "Out of slots");
-	if (pipes[i].name && pipes[i].builtin)
+	}
+	if (pipes[i].name && pipes[i].builtin) {
+		MT_lock_unset(&pipeLock);
 		throw(MAL, "optimizer.addPipeDefinition", "No overwrite of built in allowed");
+	}
 
 	/* save old value */
 	oldpipe = pipes[i];
@@ -262,15 +278,18 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	pipes[i].def = GDKstrdup(pipe);
 	pipes[i].status = GDKstrdup("experimental");
 	pipes[i].mb = NULL;
+	MT_lock_unset(&pipeLock);
 	msg = compileOptimizer(cntxt, name);
 	if (msg) {
 		/* failed: restore old value */
+		MT_lock_set(&pipeLock);
 		GDKfree(pipes[i].name);
 		GDKfree(pipes[i].def);
 		if (pipes[i].mb)
 			freeMalBlk(pipes[i].mb);
 		GDKfree(pipes[i].status);
 		pipes[i] = oldpipe;
+		MT_lock_unset(&pipeLock);
 	} else {
 		/* succeeded: destroy old value */
 		if (oldpipe.name)
@@ -281,11 +300,6 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 			freeMalBlk(oldpipe.mb);
 		if (oldpipe.status)
 			GDKfree(oldpipe.status);
-		if (++i < MAXOPTPIPES) {
-			pipes[i].name = pipes[i].def = pipes[i].status = pipes[i].prerequisite = NULL;
-			pipes[i].mb = NULL;
-			pipes[i].builtin = 0;
-		}
 	}
 	return msg;
 }
@@ -318,26 +332,23 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 	BAT *b, *bn, *bs;
 	int i;
 
-	b = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
+	b = COLnew(0, TYPE_str, 20, TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 
-	bn = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 	}
 
-	bs = BATnew(TYPE_void, TYPE_str, 20, TRANSIENT);
+	bs = COLnew(0, TYPE_str, 20, TRANSIENT);
 	if (bs == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
 	}
 
-	BATseqbase(b, 0);
-	BATseqbase(bn, 0);
-	BATseqbase(bs, 0);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
 		if (pipes[i].prerequisite && getAddress(GDKout, NULL, optimizerRef, pipes[i].prerequisite, TRUE) == NULL)
 			continue;
@@ -430,6 +441,7 @@ compileOptimizer(Client cntxt, str name)
 	ClientRec c;
 
 	memset((char*)&c, 0, sizeof(c));
+	MT_lock_set(&pipeLock);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
 			/* precompile the pipeline as MAL string */
@@ -437,8 +449,10 @@ compileOptimizer(Client cntxt, str name)
 			c.nspace = newModule(NULL, putName("user"));
 			c.father = cntxt;	/* to avoid conflicts on GDKin */
 			c.fdout = cntxt->fdout;
-			if (setScenario(&c, "mal"))
+			if (setScenario(&c, "mal")) {
+				MT_lock_unset(&pipeLock);
 				throw(MAL, "optimizer.addOptimizerPipe", "failed to set scenario");
+			}
 			(void) MCinitClientThread(&c);
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
@@ -466,12 +480,13 @@ compileOptimizer(Client cntxt, str name)
 				c.nspace = 0;
 			}
 			MCcloseClient(&c);
-			if (msg != MAL_SUCCEED || 
-			   (msg = validateOptimizerPipes()) != MAL_SUCCEED)
-				return msg;
+			if (msg != MAL_SUCCEED ||
+				(msg = validateOptimizerPipes()) != MAL_SUCCEED)
+				break;
 		}
 	}
-	return MAL_SUCCEED;
+	MT_lock_unset(&pipeLock);
+	return msg;
 }
 
 str
@@ -486,7 +501,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 			break;
 
 	if (i == MAXOPTPIPES)
-		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");;
+		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");
 
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);

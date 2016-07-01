@@ -795,6 +795,7 @@ helpInfo(Client cntxt, str *help)
 	if (MALkeyword(cntxt, "comment", 7)) {
 		skipSpace(cntxt);
 		if ((l = stringLength(cntxt))) {
+			GDKfree(*help);
 			*help = strCopy(cntxt, l);
 			if (*help)
 				advance(cntxt, l - 1);

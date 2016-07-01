@@ -63,12 +63,11 @@ gsl_bat_chisqprob_cst(bat * retval, bat chi2, dbl datapoints)
 		throw(MAL, "chisqprob", "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BATloop(b,p,q) {
 		dbl d = *(dbl*)BUNtail(bi,p);
 		if ((d == dbl_nil) || (d < 0))
@@ -76,7 +75,6 @@ gsl_bat_chisqprob_cst(bat * retval, bat chi2, dbl datapoints)
 		r = gsl_cdf_chisq_Q(d, datapoints);
 		BUNappend(bn, &r, FALSE);
 	}
-	BATseqbase(bn, b->hseqbase);
 	*retval = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -101,12 +99,11 @@ gsl_cst_chisqprob_bat(bat * retval, dbl chi2, bat datapoints)
 	if (chi2 < 0)
 		throw(MAL, "gsl.chi2prob", "Wrong value for chi2");
 	bi = bat_iterator(b);
-	bn = BATnew(TYPE_void, TYPE_dbl, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if( bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BATloop(b,p,q) {
 		dbl datapoints = *(dbl*)BUNtail(bi,p);
 
@@ -115,7 +112,6 @@ gsl_cst_chisqprob_bat(bat * retval, dbl chi2, bat datapoints)
 		r = gsl_cdf_chisq_Q(chi2, datapoints);
 		BUNappend(bn, &r, FALSE);
 	}
-	BATseqbase(bn, b->hseqbase);
 	BBPkeepref( *retval = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -135,15 +131,13 @@ gsl_bat_chisqprob_bat(bat * retval, bat chi2, bat datapoints)
 	if( (c = BATdescriptor(datapoints)) == NULL) {
 		throw(MAL, "chisqprob", "Cannot access descriptor datapoints");
 	}
-	assert(b->htype == TYPE_void);
-	bn = BATnew(TYPE_void, TYPE_dbl, cnt = BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_dbl, cnt = BATcount(b), TRANSIENT);
 	if( bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "gsl.chisqprob", MAL_MALLOC_FAIL);
 	}
 	chi2p = (dbl*)Tloc(b, 0);
 	datapointsp = (dbl*)Tloc(c, 0);
-	BATseqbase(bn, b->hseqbase);
 	for(i = 0; i<cnt; i++) { 
 		if ((chi2p[i] == dbl_nil) || (chi2p[i] < 0))
 			throw(MAL, "gsl.chi2prob", "Wrong value for chi2");

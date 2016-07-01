@@ -78,21 +78,22 @@ SELECT '' AS six, p.f1, p.f1 <-> ST_MakePoint(0,0) AS dist FROM POINT_TBL p ORDE
 
 SELECT '' AS thirtysix, p1.f1 AS point1, p2.f1 AS point2, p1.f1 <-> p2.f1 AS dist
    FROM POINT_TBL p1, POINT_TBL p2
-   ORDER BY dist, point1 using <<, point2 using <<;
+   ORDER BY dist, point1, point2; -- using <<, point2 using <<;
 
-SELECT '' AS thirty, p1.f1 AS point1, p2.f1 AS point2 FROM POINT_TBL p1, POINT_TBL p2 WHERE (p1.f1 <-> p2.f1) > 3;
+SELECT '' AS twenty, p1.f1 AS point1, p2.f1 AS point2 FROM POINT_TBL p1, POINT_TBL p2 WHERE (p1.f1 <-> p2.f1) > 3;
 
 -- put distance result into output to allow sorting with GEQ optimizer - tgl 97/05/10
-SELECT '' AS fifteen, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
+SELECT '' AS ten, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
    FROM POINT_TBL p1, POINT_TBL p2
    WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1
-   ORDER BY distance, point1 using <<, point2 using <<;
+   ORDER BY distance, point1, point2; -- using <<, point2 using <<;
 
 -- put distance result into output to allow sorting with GEQ optimizer - tgl 97/05/10
-SELECT '' AS three, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
+SELECT '' AS ten, p1.f1 AS point1, p2.f1 AS point2, (p1.f1 <-> p2.f1) AS distance
    FROM POINT_TBL p1, POINT_TBL p2 
-   WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1 and p1.f1 >^ p2.f1
+   WHERE (p1.f1 <-> p2.f1) > 3 and p1.f1 << p2.f1   -- and p1.f1 >^ p2.f1
    ORDER BY distance;
+
 
 /* RESET geqo; */
 

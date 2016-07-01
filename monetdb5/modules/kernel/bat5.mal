@@ -134,16 +134,9 @@ command getName ( b:bat[:oid,:any_1]) :str
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:oid,:any_1], h:str, t:str) :void
-address BKCsetRole
-comment "Give a logical name to the columns of a BAT.";
-
 command setColumn( b:bat[:oid,:any_1], t:str) :void
 address BKCsetColumn
 comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:oid,:any_1], h:str, t:str) :void
-address BKCsetColumns
-comment "Give both columns of a BAT a new name.";
 
 
 command isTransient( b:bat[:oid,:any_1]) :bit 

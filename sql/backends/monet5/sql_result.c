@@ -1720,7 +1720,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header)
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(abs(t->order), FALSE);
+			order = BBPquickdesc(t->order, FALSE);
 			if (!order)
 				return -1;
 

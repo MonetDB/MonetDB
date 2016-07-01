@@ -344,6 +344,7 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
     'HAVE_PHP'             : "",
+    'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
@@ -2711,7 +2712,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
                       PRELUDE and PRELUDE[0] or '', TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
-        if ttywidth > 0 and length + 10 + 21 > ttywidth:
+        if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
             # 21 - length of time plus result
             l = ttywidth - 10 - 21 - 1
@@ -3615,6 +3616,7 @@ def main(argv) :
     CONDITIONALS['RELEASERUN'] = releaserun
     jenkins = False
     addreqs = False
+    all_tests = False
     global global_timeout
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
@@ -3697,6 +3699,12 @@ def main(argv) :
     # hence, we set them at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    try:
+        import pymonetdb
+    except ImportError:
+        print('Python available, but pymonetdb package not available')
+    else:
+        CONDITIONALS['HAVE_PYMONETDB'] = '#'
     if CheckExec('php'):
         CONDITIONALS['HAVE_PHP'] = '#'
 #     else:
@@ -4164,7 +4172,6 @@ def main(argv) :
         if len(testdirs) == 1:
             if testlist:
                 tsts = "tests "+str(testlist)
-                all_tests = False
             else:
                 tsts = "all tests"
                 all_tests = True
@@ -4180,7 +4187,7 @@ def main(argv) :
             if verbose:
                 print("\nRunning all tests in directories %s.\n" % str(testdirs))
             for d in testdirs:
-                t, elem, diff = PerformDir(env, d, [], BusyPorts)
+                t, elem, diff = PerformDir(env, d, [], BusyPorts, True)
                 t_ = t_ + t
                 if elem is not None:
                     if diff <= F_OK:

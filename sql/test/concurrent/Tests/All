@@ -1,2 +1,2 @@
-HAVE_PYTHON?simple_select
-HAVE_PYTHON?crash_on_concurrent_use.SF-1411926
+HAVE_PYMONETDB?simple_select
+HAVE_PYMONETDB?crash_on_concurrent_use.SF-1411926

@@ -398,6 +398,8 @@ SQLtrans(mvc *m)
 		mvc_trans(m);
 		s = m->session;
 		if (!s->schema) {
+			if (s->schema_name)
+				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
 			assert(s->schema_name);
 			s->schema = find_sql_schema(s->tr, s->schema_name);

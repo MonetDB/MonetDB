@@ -14,6 +14,192 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
 
+Running database upgrade commands:
+set schema "sys";
+create procedure sys.createorderindex(sys string, tab string, col string)
+external name sql.createorderindex;
+create procedure sys.droporderindex(sys string, tab string, col string)
+external name sql.droporderindex;
+drop view sys.tablestoragemodel;
+drop view sys.storagemodel;
+drop function sys.storagemodel();
+drop procedure sys.storagemodelinit();
+drop function sys."storage"(string, string, string);
+drop function sys."storage"(string, string);
+drop function sys."storage"(string);
+drop view sys."storage";
+drop function sys."storage"();
+alter table sys.storagemodelinput add column "orderidx" bigint;
+create function sys."storage"()
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create view sys."storage" as select * from sys."storage"();
+create function sys."storage"( sname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create function sys."storage"( sname string, tname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create function sys."storage"( sname string, tname string, cname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create procedure sys.storagemodelinit()
+begin
+ delete from sys.storagemodelinput;
+ insert into sys.storagemodelinput
+ select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx from sys."storage"() X;
+ update sys.storagemodelinput
+ set reference = true
+ where concat(concat("schema","table"), "column") in (
+  SELECT concat( concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name" )
+  FROM "sys"."keys" AS    "fkkey",
+    "sys"."objects" AS "fkkeycol",
+    "sys"."tables" AS  "fktable",
+    "sys"."schemas" AS "fkschema"
+  WHERE   "fktable"."id" = "fkkey"."table_id"
+   AND "fkkey"."id" = "fkkeycol"."id"
+   AND "fkschema"."id" = "fktable"."schema_id"
+   AND "fkkey"."rkey" > -1);
+ update sys.storagemodelinput
+ set "distinct" = "count"
+ where "type" = 'varchar' or "type"='clob';
+end;
+create function sys.storagemodel()
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "count" bigint,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint)
+begin
+ return select I."schema", I."table", I."column", I."type", I."count",
+ columnsize(I."type", I.count, I."distinct"),
+ heapsize(I."type", I."distinct", I."atomwidth"),
+ hashsize(I."reference", I."count"),
+ imprintsize(I."count",I."type"),
+ I.sorted, I.orderidx
+ from sys.storagemodelinput I;
+end;
+create view sys.storagemodel as select * from sys.storagemodel();
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+ sum(columnsize) as columnsize,
+ sum(heapsize) as heapsize,
+ sum(hashes) as hashes,
+ sum("imprints") as "imprints",
+ sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.querylog_history;
+drop view sys.querylog_calls;
+drop function sys.querylog_calls();
+create function sys.querylog_calls()
+returns table(
+ id oid,
+ "start" timestamp,
+ "stop" timestamp,
+ arguments string,
+ tuples bigint,
+ run bigint,
+ ship bigint,
+ cpu int,
+ io int
+)
+external name sql.querylog_calls;
+create view sys.querylog_calls as select * from sys.querylog_calls();
+create view sys.querylog_history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
+from sys.querylog_catalog() qd, sys.querylog_calls() ql
+where qd.id = ql.id and qd.owner = user;
+update _tables set system = true where name in ('querylog_calls', 'querylog_history') and schema_id = (select id from schemas where name = 'sys');
+drop aggregate sys.stddev_pop(wrd);
+drop aggregate sys.stddev_samp(wrd);
+drop aggregate sys.var_pop(wrd);
+drop aggregate sys.var_samp(wrd);
+drop aggregate sys.median(wrd);
+drop aggregate sys.quantile(wrd, double);
+drop aggregate sys.corr(wrd, wrd);
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "testschema";
+
 
 Ready.
 Running database upgrade commands:
@@ -4947,6 +5133,12 @@ insert into sys.keywords values
 ('VALUES'), ('VARCHAR'), ('VARYING'), ('VIEW'),
 ('WHEN'), ('WHERE'), ('WHILE'), ('WITH'), ('WORK'), ('WRITE'),
 ('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');
+insert into sys.dependency_types (dependency_type_id, dependency_type_name)
+ select 15 as id, 'TYPE' as name where 15 not in (select dependency_type_id from sys.dependency_types);
+insert into sys.dependencies (id, depend_id, depend_type)
+ select distinct types.id as type_id, args.func_id, 15 as depend_type from sys.args join sys.types on types.systemname = args.type where args.type in ('inet', 'json', 'url', 'uuid')
+ except
+ select distinct id, depend_id, depend_type from sys.dependencies where depend_type = 15;
 create function sys."storage"( sname string)
 returns table (
     "schema" string,

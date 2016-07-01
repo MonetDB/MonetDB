@@ -61,10 +61,6 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
-	if (!BAThdense(v)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a dense head");
-	}
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
@@ -72,7 +68,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -83,7 +79,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	dst = (TYPE *) Tloc(res, BUNfirst(res));
 
 	nonil = TRUE;
-	if (v->T->nonil == TRUE) {
+	if (v->tnonil == TRUE) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -102,12 +98,12 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
-	res->T->nonil = nonil;
-	res->T->nil = !nonil;
+	res->tnonil = nonil;
+	res->tnil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -177,10 +173,6 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
-	if (!BAThdense(v)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a dense head");
-	}
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
@@ -188,7 +180,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
@@ -199,7 +191,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	dst = (TYPE *) Tloc(res, BUNfirst(res));
 
 	nonil = TRUE;
-	if (v->T->nonil == TRUE) {
+	if (v->tnonil == TRUE) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *r);
 	} else {
@@ -218,12 +210,12 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
-	res->T->nonil = nonil;
-	res->T->nil = !nonil;
+	res->tnonil = nonil;
+	res->tnil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);

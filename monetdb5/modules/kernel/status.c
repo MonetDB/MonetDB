@@ -142,15 +142,13 @@ SYScpuStatistics(bat *ret, bat *ret2)
 # endif
 #endif
 
-	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
-	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
+	b = COLnew(0, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0){
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 #ifdef HAVE_TIMES
 	if (clk == 0) {
 		clk = time(0);
@@ -204,15 +202,13 @@ SYSmemStatistics(bat *ret, bat *ret2)
 
 	m = MT_mallinfo();
 
-	bn = BATnew(TYPE_void,TYPE_str, 32, TRANSIENT);
-	b = BATnew(TYPE_void, TYPE_lng, 32, TRANSIENT);
+	bn = COLnew(0,TYPE_str, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 
 	/* store counters, ignore errors */
 	i = (lng) (GDKmem_cursize() - memincr);
@@ -277,8 +273,8 @@ str
 SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize(), TRANSIENT);
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_str, 2 * getBBPsize(), TRANSIENT);
+	BAT *b = COLnew(0, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
 	struct Mallinfo m;
 	char buf[1024];
 	bat i;
@@ -288,8 +284,6 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		BAT *c = BBPquickdesc(i,0);
@@ -301,15 +295,11 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		s = BBPname(i);
 		sz = 0;
 		if (BBP_desc(i))
-			sz += BATSTORESIZE;
+			sz += sizeof(BAT);
 		if (BBP_logical(i))
 			n += strLen(BBP_logical(i));
-		if (BBP_logical(-i))
-			n += strLen(BBP_logical(-i));
 		if (BBP_physical(i))
 			n += strLen(BBP_physical(i));
-		if (b)
-			sz += sizeof(BAT);	/* mirror */
 
 		if (sz > *minsize) {
 			sprintf(buf, "desc/%s", s);
@@ -321,12 +311,9 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heap(1,&c->H->heap,hbuns,"hbuns");
-		heap(1,&c->T->heap,tbuns,"tbuns");
-		heap(c->H->hash && c->H->hash != (Hash *) 1,c->H->hash->heap,hhsh,"hhsh");
-		heap(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
-		heap(c->H->vheap,c->H->vheap,head,"head");
-		heap(c->T->vheap,c->T->vheap,tail,"tail");
+		heap(1,&c->theap,tbuns,"tbuns");
+		heap(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNappend(bn, "_tot/hbuns", FALSE);
@@ -396,8 +383,8 @@ str
 SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * getBBPsize(), TRANSIENT);
-	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_str, 2 * getBBPsize(), TRANSIENT);
+	BAT *b = COLnew(0, TYPE_lng, 2 * getBBPsize(), TRANSIENT);
 	char buf[1024];
 	bat i;
 
@@ -406,8 +393,6 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		BAT *c;
@@ -421,12 +406,9 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 		if (c == NULL || isVIEW(c)) {
 			continue;
 		}
-		heapvm(1,&c->H->heap,hbuns,"hcuns");
-		heapvm(1,&c->T->heap,tbuns,"tcuns");
-		heapvm(c->H->hash && c->H->hash != (Hash *) 1,c->H->hash->heap,hhsh,"hshh");
-		heapvm(c->T->hash && c->T->hash != (Hash *) 1,c->T->hash->heap,thsh,"thsh");
-		heapvm(c->H->vheap,c->H->vheap,head,"head");
-		heapvm(c->T->vheap,c->T->vheap,tail,"tail");
+		heapvm(1,&c->theap,tbuns,"tcuns");
+		heapvm(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNappend(bn, "_tot/hbuns", FALSE);
@@ -518,15 +500,13 @@ SYSioStatistics(bat *ret, bat *ret2)
 #ifndef NATIVE_WIN32
 	getrusage(RUSAGE_SELF, &ru);
 #endif
-	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
-	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
+	b = COLnew(0, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 
 #ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
@@ -590,15 +570,13 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	int tmp = 0, per = 0;
 	BAT *b,*bn;
 
-	bn = BATnew(TYPE_void, TYPE_str, 32, TRANSIENT);
-	b = BATnew(TYPE_void, TYPE_int, 32, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
+	b = COLnew(0, TYPE_int, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBPvalid(i)) {
@@ -638,15 +616,13 @@ SYSgdkThread(bat *ret, bat *ret2)
 	BAT *b, *bn;
 	int i;
 
-	bn = BATnew(TYPE_void,TYPE_int, THREADS, TRANSIENT);
-	b = BATnew(TYPE_void, TYPE_str, THREADS, TRANSIENT);
+	bn = COLnew(0,TYPE_int, THREADS, TRANSIENT);
+	b = COLnew(0, TYPE_str, THREADS, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 
 	for (i = 0; i < THREADS; i++) {
 		if (GDKthreads[i].pid){

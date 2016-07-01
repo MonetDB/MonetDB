@@ -77,7 +77,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 	int  var[DEPTH];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
-	int retseen=0, yieldseen=0;
+	int endseen=0, retseen=0, yieldseen=0;
 	int fixed=1;
 	InstrPtr p;
 
@@ -200,6 +200,9 @@ void chkFlow(stream *out, MalBlkPtr mb)
 			break;
 	    case RAISEsymbol:
 	        break;
+	    case ENDsymbol:
+			endseen =1;
+	        break;
 		default:
 			if( isaSignature(p) ){
 				if( p->token == REMsymbol){
@@ -221,6 +224,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 #endif
 		mb->errors++;
 	}
+	if( endseen)
 	for(btop--; btop>=0;btop--){
 		showScriptException(out, mb,lastInstruction, SYNTAX,
 			"barrier '%s' without exit in %s[%d]",

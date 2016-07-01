@@ -26,7 +26,7 @@ install: targetdirs all
 	$(INSTALL) ..\NT\installer$(bits)\*.vdproj "$(prefix)"
 
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
-        cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&python buildtools\autogen\autogen.py
+        cd "$(srcdir)"&&set PYTHONPATH=buildtools\autogen&&$(PYTHON) buildtools\autogen\autogen.py
 
 monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(srcdir)\NT\monetdb_config.h.in"
 	$(CONFIGURE) "$(srcdir)\NT\monetdb_config.h.in" > monetdb_config.h

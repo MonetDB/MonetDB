@@ -58,7 +58,7 @@ AUTHfindUser(const char *username)
 	BUN p;
 
 	if (BAThash(user, 0) == GDK_SUCCEED) {
-		HASHloop_str(cni, cni.b->T->hash, p, username) {
+		HASHloop_str(cni, cni.b->thash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE)
 				return p;
@@ -123,11 +123,11 @@ AUTHcommit(void)
 	blist[0] = 0;
 
 	assert(user);
-	blist[1] = abs(user->batCacheid);
+	blist[1] = user->batCacheid;
 	assert(pass);
-	blist[2] = abs(pass->batCacheid);
+	blist[2] = pass->batCacheid;
 	assert(duser);
-	blist[3] = abs(duser->batCacheid);
+	blist[3] = duser->batCacheid;
 	TMsubcommit_list(blist, 4);
 }
 
@@ -157,12 +157,11 @@ AUTHinitTables(str *passwd) {
 	/* load/create users BAT */
 	bid = BBPindex("M5system_auth_user");
 	if (!bid) {
-		user = BATnew(TYPE_void, TYPE_str, 256, PERSISTENT);
+		user = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (user == NULL)
 			throw(MAL, "initTables.user", MAL_MALLOC_FAIL " user table");
-		BATseqbase(user,0);
 
-		BATkey(BATmirror(user), TRUE);
+		BATkey(user, TRUE);
 		BBPrename(BBPcacheid(user), "M5system_auth_user");
 		BATmode(user, PERSISTENT);
 	} else {
@@ -178,10 +177,9 @@ AUTHinitTables(str *passwd) {
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
-		pass = BATnew(TYPE_void, TYPE_str, 256, PERSISTENT);
+		pass = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (pass == NULL)
 			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL " password table");
-		BATseqbase(pass,0);
 
 		BBPrename(BBPcacheid(pass), "M5system_auth_passwd_v2");
 		BATmode(pass, PERSISTENT);
@@ -195,45 +193,12 @@ AUTHinitTables(str *passwd) {
 	}
 	assert(pass);
 
-	/* convert an old authorization table */
-	if (user->htype == TYPE_oid) {
-		BAT *b;
-		char name[10];
-		bat blist[5];
-		assert(pass->htype == TYPE_oid);
-		blist[0] = 0;
-		b = COLcopy(user, user->ttype, 1, PERSISTENT);
-		BATseqbase(b, 0);
-		BATmode(b, PERSISTENT);
-		BATmode(user, TRANSIENT);
-		snprintf(name, sizeof(name), "tmp_%o", user->batCacheid);
-		BBPrename(user->batCacheid, name);
-		BBPrename(b->batCacheid, "M5system_auth_user");
-		blist[1] = user->batCacheid;
-		blist[2] = b->batCacheid;
-		BBPunfix(user->batCacheid);
-		user = b;
-		b = COLcopy(pass, pass->ttype, 1, PERSISTENT);
-		BATseqbase(b, 0);
-		BATmode(b, PERSISTENT);
-		BATmode(pass, TRANSIENT);
-		snprintf(name, sizeof(name), "tmp_%o", pass->batCacheid);
-		BBPrename(pass->batCacheid, name);
-		BBPrename(b->batCacheid, "M5system_auth_passwd_v2");
-		blist[3] = pass->batCacheid;
-		blist[4] = b->batCacheid;
-		BBPunfix(pass->batCacheid);
-		pass = b;
-		TMsubcommit_list(blist, 5);
-	}
-
 	/* load/create password BAT */
 	bid = BBPindex("M5system_auth_deleted");
 	if (!bid) {
-		duser = BATnew(TYPE_void, TYPE_oid, 256, PERSISTENT);
+		duser = COLnew(0, TYPE_oid, 256, PERSISTENT);
 		if (duser == NULL)
 			throw(MAL, "initTables.duser", MAL_MALLOC_FAIL " deleted user table");
-		BATseqbase(duser,0);
 
 		BBPrename(BBPcacheid(duser), "M5system_auth_deleted");
 		BATmode(duser, PERSISTENT);

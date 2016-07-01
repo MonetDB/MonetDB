@@ -416,6 +416,7 @@ URLgetContent(str *retval, url *Str1)
 		(void)memcpy(retbuf + rlen, buf, len);
 		rlen += len;
 	}
+	mnstr_destroy(f);
 	if (len < 0) {
 		GDKfree(retbuf);
 		throw(MAL, "url.getContent", "read error");

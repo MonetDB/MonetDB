@@ -872,32 +872,6 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
-def msc_python_generic(fd, var, python, msc, PYTHON):
-    pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
-    for f in python['FILES']:
-        msc['SCRIPTS'].append('target_python_%s' % f)
-        srcs = map(lambda x: x.strip('\'" ').replace('.', '\\'),
-                   pyre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', '))
-        fd.write('target_python_%s: %s README.rst %s\n' % (f, ' '.join(srcs), f))
-        fd.write('\t$(%s) %s build\n' % (PYTHON, f))
-        for src in srcs:
-            fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
-            fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (src, src))
-            fd.write('\t$(INSTALL) "$(srcdir)\\%s"\\*.py "%s"\n' % (src, src))
-        fd.write('%s: "$(srcdir)\\%s"\n' % (f, f))
-        fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (f, f))
-        fd.write('README.rst: "$(srcdir)\\README.rst"\n')
-        fd.write('\t$(INSTALL) "$(srcdir)\\README.rst" "README.rst"\n')
-        msc['INSTALL'][f] = f, '', '', '', ''
-        fd.write('install_%s:\n' % f)
-        fd.write('\t$(%s) %s install --prefix "$(prefix)" --install-lib "$(prefix)\\lib\\%s\n' % (PYTHON, f, PYTHON.lower()))
-
-def msc_python2(fd, var, python, msc):
-    msc_python_generic(fd, var, python, msc, 'PYTHON2')
-
-def msc_python3(fd, var, python3, msc):
-    msc_python_generic(fd, var, python3, msc, 'PYTHON3')
-
 callantno = 0
 def msc_ant(fd, var, ant, msc):
     global callantno
@@ -966,8 +940,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
                 'ANT': msc_ant,
-                'PYTHON2': msc_python2,
-                'PYTHON3': msc_python3,
                 }
 
 def output(tree, cwd, topdir):

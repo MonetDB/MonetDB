@@ -307,7 +307,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	for (i = pci->retc + 2; i < pci->argc; i++) {
 		// check for BAT or scalar first, keep code left
 		if (!isaBatType(getArgType(mb,pci,i))) {
-			b = BATnew(TYPE_void, getArgType(mb, pci, i), 0, TRANSIENT);
+			b = COLnew(0, getArgType(mb, pci, i), 0, TRANSIENT);
 			if (b == NULL) {
 				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -317,7 +317,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			else
 				BUNappend(b, getArgReference(stk, pci, i), FALSE);
 			BATsetcount(b, 1);
-			BATseqbase(b, 0);
 			BATsettrivprop(b);
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));

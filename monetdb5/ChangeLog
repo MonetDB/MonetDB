@@ -1,6 +1,13 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Jun 29 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed bat.setColumn with two arguments and bat.setRole.  Use
+  bat.setColumn with one argument instead.
+
+* Mon Jun 27 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function BKCappend_reverse_val_wrap: it was unused.
+
 * Thu May 26 2016 Sjoerd Mullender <sjoerd@acm.org>
 - The "wrd" type has been removed from GDK and MAL.  The type was defined
   to be a 32 bit integer on 32 bit architectures and a 64 bit integer

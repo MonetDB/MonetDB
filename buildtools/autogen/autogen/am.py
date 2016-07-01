@@ -829,47 +829,6 @@ def am_library(fd, var, libmap, am):
 
     am_deps(fd, libmap['DEPS'], am)
 
-def am_python_generic(fd, var, python, am, PYTHON):
-    pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
-    pynmre = re.compile('name *= *([\'"])([^\'"]+)\\1')
-    fd.write('all-local-%s:\n' % var)
-    am['ALL'].append(var)
-    am['INSTALL'].append(var)
-    am['UNINSTALL'].append(var)
-    pkgdirs = []
-    pkgnams = []
-    for f in python['FILES']:
-        fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (f, f))
-        pkgs = map(lambda x: x.strip('\'" '),
-                   pyre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
-        pkgnams.append(pynmre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(2))
-        for pkg in pkgs:
-            pkgdir = posixpath.join(*pkg.split('.'))
-            pkgdirs.append(pkgdir)
-            fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
-            fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
-        fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/README.rst' .\n")
-        fd.write("\t$(%s) '%s' build\n" % (PYTHON, f))
-    fd.write('install-exec-local-%s:\n' % var)
-    for f in python['FILES']:
-        # see buildtools/conf/rules.mk for PY_INSTALL_LAYOUT
-        # it is needed to install into dist-packages on Debian/Ubuntu
-        fd.write("\t$(%s) '%s' install $(PY_INSTALL_LAYOUT) --prefix='$(DESTDIR)$(prefix)'\n" % (PYTHON, f))
-    fd.write('uninstall-local-%s:\n' % var)
-    for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\trm -r '$(DESTDIR)$(prefix)/$(%s_LIBDIR)/%s'\n" % (PYTHON, pkgdir))
-    for name in pkgnams:
-        fd.write("\trm '$(DESTDIR)$(prefix)/$(%s_LIBDIR)'/%s-*.egg-info\n" % (PYTHON, name.replace('-', '_')))
-    fd.write('mostlyclean-local:\n')
-    for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rm -r '%s'\n" % (pkgdir, pkgdir))
-
-def am_python2(fd, var, python, am):
-    am_python_generic(fd, var, python, am, 'PYTHON2')
-
-def am_python3(fd, var, python3, am):
-    am_python_generic(fd, var, python3, am, 'PYTHON3')
-
 def am_ant(fd, var, ant, am):
 
     target = var[4:]                    # the ant target to call
@@ -996,8 +955,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
                 'ANT': am_ant,
-                'PYTHON2': am_python2,
-                'PYTHON3': am_python3,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):

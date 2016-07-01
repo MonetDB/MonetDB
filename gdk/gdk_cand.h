@@ -25,10 +25,10 @@
 				start = end = 0;			\
 			} else {					\
 				if (BATtdense(s)) {			\
-					start = (s)->T->seq;		\
+					start = (s)->tseqbase;		\
 					end = start + BATcount(s);	\
 				} else {				\
-					oid x = (b)->H->seq;		\
+					oid x = (b)->hseqbase;		\
 					start = SORTfndfirst((s), &x);	\
 					x += BATcount(b);		\
 					end = SORTfndfirst((s), &x);	\
@@ -43,18 +43,18 @@
 					}				\
 				}					\
 				assert(start <= end);			\
-				if (start <= (b)->H->seq)		\
+				if (start <= (b)->hseqbase)		\
 					start = 0;			\
-				else if (start >= (b)->H->seq + cnt)	\
+				else if (start >= (b)->hseqbase + cnt)	\
 					start = cnt;			\
 				else					\
-					start -= (b)->H->seq;		\
-				if (end >= (b)->H->seq + cnt)		\
+					start -= (b)->hseqbase;		\
+				if (end >= (b)->hseqbase + cnt)		\
 					end = cnt;			\
-				else if (end <= (b)->H->seq)		\
+				else if (end <= (b)->hseqbase)		\
 					end = 0;			\
 				else					\
-					end -= (b)->H->seq;		\
+					end -= (b)->hseqbase;		\
 			}						\
 		}							\
 	} while (0)

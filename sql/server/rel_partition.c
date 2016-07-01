@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -139,7 +139,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (rel->op == op_basetable) {
 		rel->flag = REL_PARTITION;
-	} else if ((rel->op == op_topn || rel->op == op_select) && rel->l) {
+	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
 		rel_partition(sql, rel->l);
 	} else if (is_project(rel->op) && rel->l) {
 		rel_partition(sql, rel->l);
