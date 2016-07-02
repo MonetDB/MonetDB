@@ -219,13 +219,9 @@ sql_update_oct2014(Client c, mvc *sql)
 {
 	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
 	sql_table *t;
 	sql_schema *s;
-
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -488,10 +484,8 @@ sql_update_oct2014(Client c, mvc *sql)
 			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('bbp', 'db_users', 'env', 'generate_series', 'storage', 'storagemodel', 'var') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
 			F_UNION);
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	assert(pos < bufsize);
 
@@ -508,11 +502,7 @@ sql_update_oct2014_sp1(Client c, mvc *sql)
 {
 	size_t bufsize = 8192*2, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
-
-	if (schvar)
-		schema = strdup(schvar->val.sval);
+	char *schema = stack_get_string(sql, "current_schema");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
@@ -539,10 +529,8 @@ sql_update_oct2014_sp1(Client c, mvc *sql)
 			"drop table upgradeOct2014_changes;\n"
 			"drop table upgradeOct2014;\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -556,11 +544,7 @@ sql_update_oct2014_sp2(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
-
-	if (schvar)
-		schema = strdup(schvar->val.sval);
+	char *schema = stack_get_string(sql, "current_schema");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
@@ -575,10 +559,8 @@ sql_update_oct2014_sp2(Client c, mvc *sql)
 			"from sys.storagemodel() group by \"schema\",\"table\";\n"
 			"update _tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from schemas where name = 'sys');\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 	assert(pos < bufsize);
 
 	{
@@ -603,11 +585,7 @@ sql_update_oct2014_sp3(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
-
-	if (schvar)
-		schema = strdup(schvar->val.sval);
+	char *schema = stack_get_string(sql, "current_schema");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
@@ -617,10 +595,8 @@ sql_update_oct2014_sp3(Client c, mvc *sql)
 			"CREATE FUNCTION \"right_shift_assign\"(i1 inet, i2 inet) RETURNS boolean EXTERNAL NAME inet.\">>=\";\n"
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('left_shift', 'right_shift', 'left_shift_assign', 'right_shift_assign') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -635,11 +611,7 @@ sql_update_hugeint(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
-
-	if (schvar)
-		schema = strdup(schvar->val.sval);
+	char *schema = stack_get_string(sql, "current_schema");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -720,10 +692,8 @@ sql_update_hugeint(Client c, mvc *sql)
 		}
 	}
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -738,11 +708,8 @@ sql_update_jul2015(Client c, mvc *sql)
 {
 	size_t bufsize = 15360, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
 
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	/* change to 09_like */
@@ -1143,10 +1110,8 @@ sql_update_jul2015(Client c, mvc *sql)
 			"drop procedure sys.cluster1;\n"
 			"drop procedure sys.cluster2;\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1160,14 +1125,11 @@ sql_update_epoch(Client c, mvc *m)
 {
 	size_t bufsize = 1000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(m, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(m, "current_schema");
 	sql_subtype tp;
 	int n = 0;
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
@@ -1197,10 +1159,8 @@ create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	assert(pos < bufsize);
 	if (n) {
@@ -1216,14 +1176,11 @@ sql_update_jun2016(Client c, mvc *sql)
 {
 	size_t bufsize = 1000000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
 	node *n;
 	sql_schema *s;
 
 	s = mvc_bind_schema(sql, "sys");
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.dependencies where id < 2000;\n");
@@ -1473,10 +1430,8 @@ sql_update_jun2016(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1491,17 +1446,13 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 	size_t bufsize, pos = 0;
 	char *buf, *err = NULL;
 	char *geomupgrade;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
 	geomsqlfix_fptr fixfunc;
 	node *n;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 
 	if ((fixfunc = geomsqlfix_get()) == NULL)
 		return NULL;
-
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 
 	geomupgrade = (*fixfunc)(olddb);
 	bufsize = strlen(geomupgrade) + 512;
@@ -1521,10 +1472,8 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1538,13 +1487,10 @@ sql_update_default(Client c, mvc *sql)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
 	sql_schema *s;
 
 	s = mvc_bind_schema(sql, "sys");
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	{
@@ -1718,10 +1664,8 @@ sql_update_default(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1735,13 +1679,10 @@ sql_update_nowrd(Client c, mvc *sql)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	ValRecord *schvar = stack_get_var(sql, "current_schema");
-	char *schema = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
 	sql_schema *s;
 
 	s = mvc_bind_schema(sql, "sys");
-	if (schvar)
-		schema = strdup(schvar->val.sval);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	{
@@ -1794,10 +1735,8 @@ sql_update_nowrd(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
-	if (schema) {
+	if (schema) 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-		free(schema);
-	}
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);

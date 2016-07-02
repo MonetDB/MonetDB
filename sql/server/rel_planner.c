@@ -237,7 +237,7 @@ static atom *
 exp_getatom( mvc *sql, sql_exp *e, atom *m) 
 {
 	if (is_atom(e->type))
-		return exp_value(e, sql->args, sql->argc);
+		return exp_value(sql, e, sql->args, sql->argc);
 	else if (e->type == e_convert)
 		return exp_getatom(sql, e->l, m);
 	else if (e->type == e_func) {
