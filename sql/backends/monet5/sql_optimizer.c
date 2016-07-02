@@ -127,11 +127,11 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 str
 getSQLoptimizer(mvc *m)
 {
-	ValRecord *val = stack_get_var(m, "optimizer");
+	char *opt = stack_get_string(m, "optimizer");
 	char *pipe = "default_pipe";
 
-	if (val && val->val.sval)
-		pipe = val->val.sval;
+	if (opt)
+		pipe = opt;
 	return pipe;
 }
 

@@ -364,13 +364,15 @@ exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe)
 }
 
 atom *
-exp_value(sql_exp *e, atom **args, int maxarg)
+exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 {
 	if (!e || e->type != e_atom)
 		return NULL; 
 	if (e->l) {	   /* literal */
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
+		if (e->flag <= 1) /* global variable */
+			return stack_get_var(sql, e->r); 
 		return NULL; 
 	} else if (e->flag < maxarg) {
 		return args[e->flag]; 
@@ -1731,7 +1733,7 @@ atom *
 exp_flatten(mvc *sql, sql_exp *e) 
 {
 	if (e->type == e_atom) {
-		atom *v =  exp_value(e, sql->args, sql->argc);
+		atom *v =  exp_value(sql, e, sql->args, sql->argc);
 
 		if (v)
 			return atom_dup(sql->sa, v);

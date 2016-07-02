@@ -23,6 +23,16 @@ analyze sys.mt2 (id,posX) minmax;
 
 plan select * from test where id between 1 and 10000;
 plan select * from test where id between 1 and 1000;
+declare l integer;
+set l = 1;
+declare h integer;
+set h = 10000;
+plan select * from test where id between l and h;
+set h = 1000;
+plan select * from test where id between l and h;
+
+plan select * from test where id between 1 and 1000*10;
+plan select * from test where id between 1 and 100*10;
 
 drop table test;
 drop table mt1;

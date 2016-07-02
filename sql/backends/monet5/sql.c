@@ -1570,6 +1570,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	str varname = *getArgReference_str(stk, pci, 2);
+	atom *a;
 	ValRecord *dst, *src;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1578,12 +1579,13 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", "failed");
-	src = stack_get_var(m, varname);
-	if (!src) {
+	a = stack_get_var(m, varname);
+	if (!a) {
 		char buf[BUFSIZ];
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
 		throw(SQL, "sql.getVariable", "%s", buf);
 	}
+	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	VALcopy(dst, src);
 	return MAL_SUCCEED;
