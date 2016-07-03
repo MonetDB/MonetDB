@@ -43,6 +43,12 @@ int digits2bits(int digits)
 		return 8;
 	else if (digits < 5) 
 		return 16;
+	else if (digits <= 5) 
+		return 17;
+	else if (digits <= 6) 
+		return 20;
+	else if (digits <= 7) 
+		return 24;
 	else if (digits <= 8) 
 		return 27;
 	else if (digits < 10) 
