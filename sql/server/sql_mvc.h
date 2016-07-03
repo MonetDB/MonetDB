@@ -64,8 +64,7 @@
 
 typedef struct sql_var {
 	const char *name;
-	ValRecord value;
-	sql_subtype type;
+	atom a;
 	sql_table *t;
 	sql_rel *rel;	
 	char view;
@@ -237,7 +236,7 @@ extern int stack_find_frame(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern ValRecord * stack_get_var(mvc *sql, const char *name);
+extern atom * stack_get_var(mvc *sql, const char *name);
 extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);

@@ -4575,6 +4575,8 @@ cb_destroy(stream *s)
 
 	if (cb->destroy)
 		(*cb->destroy)(cb->private);
+	free(cb);
+	s->stream_data.p = NULL;
 	destroy(s);
 }
 

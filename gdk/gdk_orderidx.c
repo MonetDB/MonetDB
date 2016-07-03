@@ -162,7 +162,7 @@ BATorderidx(BAT *b, int stable)
 		}
 		if (stable) {
 			if (GDKssort(Tloc(bn, BUNfirst(bn)), mv,
-				     bn->T->vheap ? bn->T->vheap->base : NULL,
+				     bn->tvheap ? bn->tvheap->base : NULL,
 				     BATcount(bn), Tsize(bn), SIZEOF_OID,
 				     bn->ttype) < 0) {
 				HEAPfree(m, 1);
@@ -173,7 +173,7 @@ BATorderidx(BAT *b, int stable)
 			}
 		} else {
 			GDKqsort(Tloc(bn, BUNfirst(bn)), mv,
-				 bn->T->vheap ? bn->T->vheap->base : NULL,
+				 bn->tvheap ? bn->tvheap->base : NULL,
 				 BATcount(bn), Tsize(bn), SIZEOF_OID,
 				 bn->ttype);
 		}
@@ -392,7 +392,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		const oid *restrict p, *q;
 		/* One oid order bat, nothing to merge */
 		assert(BATcount(a[0]) == BATcount(b));
-		assert((-VIEWtparent(a[0]) == b->batCacheid ||
+		assert((VIEWtparent(a[0]) == b->batCacheid ||
 			VIEWtparent(a[0]) == VIEWtparent(b)) &&
 		       a[0]->torderidx);
 		p = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
@@ -420,10 +420,10 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		/* sort merge with 1 comparison per BUN */
 		const oid *restrict p0, *restrict p1, *q0, *q1;
 		assert(BATcount(a[0]) + BATcount(a[1]) == BATcount(b));
-		assert((-VIEWtparent(a[0]) == b->batCacheid ||
+		assert((VIEWtparent(a[0]) == b->batCacheid ||
 			VIEWtparent(a[0]) == VIEWtparent(b)) &&
 		       a[0]->torderidx);
-		assert((-VIEWtparent(a[1]) == b->batCacheid ||
+		assert((VIEWtparent(a[1]) == b->batCacheid ||
 			VIEWtparent(a[1]) == VIEWtparent(b)) &&
 		       a[1]->torderidx);
 		p0 = (const oid *) a[0]->torderidx->base + ORDERIDXOFF;
@@ -467,7 +467,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			return GDK_FAIL;
 		}
 		for (i = 0; i < n_ar; i++) {
-			assert((-VIEWtparent(a[i]) == b->batCacheid ||
+			assert((VIEWtparent(a[i]) == b->batCacheid ||
 				VIEWtparent(a[i]) == VIEWtparent(b)) &&
 			       a[i]->torderidx);
 			p[i] = (oid *) a[i]->torderidx->base + ORDERIDXOFF;

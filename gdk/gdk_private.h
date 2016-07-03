@@ -26,16 +26,6 @@ enum heaptype {
 	orderidxheap
 };
 
-/*
- * The different parts of which a BAT consists are physically stored
- * next to each other in the BATstore type.
- */
-struct BATstore {
-	BAT B;			/* storage for BAT descriptor */
-	COLrec T;		/* storage for tail column */
-	BATrec S;		/* the BAT properties */
-};
-
 __hidden void ALIGNcommit(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
@@ -59,11 +49,11 @@ __hidden gdk_return BATcheckmodes(BAT *b, int persistent)
 __hidden int BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
 
-__hidden BATstore *BATcreatedesc(oid hseq, int tt, int heapnames, int role)
+__hidden BAT *BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden void BATdestroy(BATstore *bs)
+__hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -81,16 +71,16 @@ __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden size_t BATvmsize(BAT *b, int dirty)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPcacheit(BATstore *bs, int lock)
+__hidden void BBPcacheit(BAT *bn, int lock)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void);		/* never called: for debugging only */
 __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden BATstore *BBPgetdesc(bat i)
+__hidden BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPinit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden bat BBPinsert(BATstore *bs)
+__hidden bat BBPinsert(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));

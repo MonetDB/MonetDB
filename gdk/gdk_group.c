@@ -526,9 +526,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	if (b->T->width <= 2 &&
-	    maxgrps > ((BUN) 1 << (8 << (b->T->width == 2))))
-		maxgrps = (BUN) 1 << (8 << (b->T->width == 2));
+	if (b->twidth <= 2 &&
+	    maxgrps > ((BUN) 1 << (8 << (b->twidth == 2))))
+		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
@@ -552,22 +552,24 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
-	if (t == TYPE_str && GDK_ELIMDOUBLES(b->T->vheap)) {
-		switch (b->T->width) {
+	if (t == TYPE_str && GDK_ELIMDOUBLES(b->tvheap)) {
+		switch (b->twidth) {
 		case 1:
 			t = TYPE_bte;
 			break;
 		case 2:
 			t = TYPE_sht;
 			break;
-#if SIZEOF_VAR_T == 8
 		case 4:
 			t = TYPE_int;
 			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			t = TYPE_lng;
+			break;
 #endif
 		default:
-			t = TYPE_var;
-			break;
+			assert(0);
 		}
 	}
 
@@ -757,7 +759,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		   (b->batPersistence == PERSISTENT &&
 		    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-		   || ((parent = -VIEWtparent(b)) != 0 &&
+		   || ((parent = VIEWtparent(b)) != 0 &&
 		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
@@ -777,12 +779,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 #ifndef DISABLE_PARENT_HASH
-		if (b->T->hash == NULL && (parent = -VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, hi) in the parent
 			 * that b uses */
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift) + BUNfirst(b);
 			hi = lo + BATcount(b);
 			hseqb = b->hseqbase;
 			b = b2;
@@ -793,7 +795,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			lo = BUNfirst(b);
 			hi = BUNlast(b);
 		}
-		hs = b->T->hash;
+		hs = b->thash;
 		gn->tsorted = 1; /* be optimistic */
 
 		switch (t) {
@@ -929,8 +931,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->tkey = 1;
 		en->tsorted = 1;
 		en->trevsorted = BATcount(en) <= 1;
-		en->T->nonil = 1;
-		en->T->nil = 0;
+		en->tnonil = 1;
+		en->tnil = 0;
 		*extents = en;
 	}
 	if (histo) {
@@ -944,14 +946,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			hn->tsorted = 0;
 			hn->trevsorted = 0;
 		}
-		hn->T->nonil = 1;
-		hn->T->nil = 0;
+		hn->tnonil = 1;
+		hn->tnil = 0;
 		*histo = hn;
 	}
 	gn->tkey = ngrp == BATcount(gn);
 	gn->trevsorted = BATcount(gn) <= 1;
-	gn->T->nonil = 1;
-	gn->T->nil = 0;
+	gn->tnonil = 1;
+	gn->tnil = 0;
 	*groups = gn;
 	return GDK_SUCCEED;
   error:

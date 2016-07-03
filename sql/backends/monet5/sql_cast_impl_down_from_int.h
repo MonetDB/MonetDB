@@ -113,8 +113,8 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	o = (TP2 *) Tloc(bn, BUNfirst(bn));
 	p = (TP1 *) Tloc(b, BUNfirst(b));
 	q = (TP1 *) Tloc(b, BUNlast(b));
-	bn->T->nonil = 1;
-	if (b->T->nonil) {
+	bn->tnonil = 1;
+	if (b->tnonil) {
 		for (; p < q; p++, o++) {
 			if (scale)
 				val = (TP1) ((*p + (*p < 0 ? -5 : 5) * scales[scale - 1]) / scales[scale]);
@@ -134,7 +134,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 		for (; p < q; p++, o++) {
 			if (*p == NIL(TP1)) {
 				*o = NIL(TP2);
-				bn->T->nonil = FALSE;
+				bn->tnonil = FALSE;
 			} else {
 				if (scale)
 					val = (TP1) ((*p + (*p < 0 ? -5 : 5) * scales[scale - 1]) / scales[scale]);

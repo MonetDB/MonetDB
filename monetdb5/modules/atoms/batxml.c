@@ -74,7 +74,7 @@ batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const 
 		}															\
 		(X)->tsorted =  0;											\
 		(X)->trevsorted =  0;										\
-		(X)->T->nonil = 1;											\
+		(X)->tnonil = 1;											\
 	} while (0)
 
 #define finalizeResult(X,Y,Z)					\
@@ -103,7 +103,7 @@ BATXMLxml2str(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			bunfastapp(bn, t);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 		} else {
 			assert(*t == 'A' || *t == 'C' || *t == 'D');
 			bunfastapp(bn, t + 1);
@@ -140,7 +140,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			bunfastapp(bn, t);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 			continue;
 		}
 		len = strlen(t);
@@ -196,7 +196,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		default:
 			assert(*t == 'A' || *t == 'C' || *t == 'D');
 			bunfastapp(bn, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 			continue;
 		}
 		assert(content != NULL || buf != NULL);
@@ -259,7 +259,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			bunfastapp(bn, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 			continue;
 		}
 
@@ -314,7 +314,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			bunfastapp(bn, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 			continue;
 		}
 		len = (int) strlen(t);
@@ -381,7 +381,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			bunfastapp(bn, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 			continue;
 		}
 		len = strlen(t);
@@ -441,7 +441,7 @@ BATXMLisdocument(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			val = bit_nil;
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 		} else {
 			doc = xmlParseMemory(t, (int) strlen(t));
 			if (doc == NULL) {
@@ -570,7 +570,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 
 		if (strNil(t)) {
 			bunfastapp(bn, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 			continue;
 		}
 		if (strstr(t, "--") != NULL) {
@@ -728,7 +728,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 		}
 		if (strNil(t)) {
 			strcpy(buf, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 		} else {
 			strcpy(buf, "D<?xml");
 			i = strlen(buf);
@@ -803,7 +803,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 		}
 		if (strNil(t)) {
 			strcpy(buf, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 		} else {
 			int n = snprintf(buf, size, "A%s = \"", *name);
 			size_t m = XMLquotestring(t, buf + n, size - n);
@@ -885,7 +885,7 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 		}
 		if (strNil(t) && (!attr || strNil(*attr))) {
 			strcpy(buf, str_nil);
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 		} else {
 			int i = snprintf(buf, size, "C<%s", *name);
 			if (nspace && !strNil(*nspace))
@@ -1007,7 +1007,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bunfastapp(bn, buf);
 		if (offset == 0)
-			bn->T->nonil = 0;
+			bn->tnonil = 0;
 
 		for (i = pci->retc; i < pci->argc; i++)
 			if (bi[i].b)
@@ -1081,7 +1081,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 		if (strNil(t)) {
 			if (strNil(v)) {
 				strcpy(buf, str_nil);
-				bn->T->nonil = 0;
+				bn->tnonil = 0;
 			} else
 				strcpy(buf, v);
 		} else {
@@ -1356,8 +1356,8 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = BATcount(bn) <= 1;

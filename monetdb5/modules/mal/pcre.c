@@ -33,6 +33,10 @@
 
 #include <pcre.h>
 
+#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 13)
+#define pcre_free_study my_pcre_free
+#endif
+
 pcre_export str PCREquote(str *r, const str *v);
 pcre_export str PCREmatch(bit *ret, const str *val, const str *pat);
 pcre_export str PCREimatch(bit *ret, const str *val, const str *pat);
@@ -1159,8 +1163,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 				if (*s == '\200') {
 					br[i] = bit_nil;
-					r->T->nonil = 0;
-					r->T->nil = 1;
+					r->tnonil = 0;
+					r->tnil = 1;
 				} else {
 					pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
 
@@ -1360,7 +1364,7 @@ PCRElikesubselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 
 #include "gdk_cand.h"
 
-#define APPEND(b, o)	(((oid *) b->T->heap.base)[b->batFirst + b->batCount++] = (o))
+#define APPEND(b, o)	(((oid *) b->theap.base)[b->batFirst + b->batCount++] = (o))
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 static char *
@@ -1420,10 +1424,10 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	lvals = (const char *) Tloc(l, BUNfirst(l));
 	rvals = (const char *) Tloc(r, BUNfirst(r));
 	assert(r->tvarsized && r->ttype);
-	lvars = l->T->vheap->base;
-	rvars = r->T->vheap->base;
-	lwidth = l->T->width;
-	rwidth = r->T->width;
+	lvars = l->tvheap->base;
+	rvars = r->tvheap->base;
+	lwidth = l->twidth;
+	rwidth = r->twidth;
 
 	r1->tkey = 1;
 	r1->tsorted = 1;
@@ -1583,9 +1587,9 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->T->heap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[r1->batFirst];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[r2->batFirst];
 	}
 	ALGODEBUG fprintf(stderr, "#pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 					  BATgetId(l), BATgetId(r),
@@ -1632,14 +1636,14 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
 		goto fail;
 	}
-	result1->T->nil = 0;
-	result1->T->nonil = 1;
+	result1->tnil = 0;
+	result1->tnonil = 1;
 	result1->tkey = 1;
 	result1->tsorted = 1;
 	result1->trevsorted = 1;
 	result1->tdense = 1;
-	result2->T->nil = 0;
-	result2->T->nonil = 1;
+	result2->tnil = 0;
+	result2->tnonil = 1;
 	result2->tkey = 1;
 	result2->tsorted = 1;
 	result2->trevsorted = 1;

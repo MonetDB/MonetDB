@@ -1342,17 +1342,17 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	v = sql->vars+var;
+
 	v->name = NULL;
-	v->value.vtype = 0;
+	atom_init( &v->a );
 	v->rel = rel;
 	v->t = t;
 	v->view = view;
 	v->frame = frame;
-	v->type.type = NULL;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].value, tpe, ATOMnilptr(tpe));
-		v->type = *type;
+		VALinit(&sql->vars[var].a.data, tpe, ATOMnilptr(tpe));
+		v->a.tpe = *type;
 	}
 	if (name)
 		v->name = _STRDUP(name);
@@ -1391,20 +1391,25 @@ stack_set_var(mvc *sql, const char *name, ValRecord *v)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
-			VALclear(&sql->vars[i].value);
-			VALcopy(&sql->vars[i].value, v);
+			VALclear(&sql->vars[i].a.data);
+			VALcopy(&sql->vars[i].a.data, v);
+			sql->vars[i].a.isnull = VALisnil(v);
+			if (v->vtype == TYPE_flt)
+				sql->vars[i].a.d = v->val.fval;
+			else if (v->vtype == TYPE_dbl)
+				sql->vars[i].a.d = v->val.dval;
 		}
 	}
 }
 
-ValRecord *
+atom *
 stack_get_var(mvc *sql, const char *name)
 {
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
-			return &sql->vars[i].value;
+			return &sql->vars[i].a;
 		}
 	}
 	return NULL;
@@ -1424,8 +1429,8 @@ stack_pop_until(mvc *sql, int top)
 		sql_var *v = &sql->vars[--sql->topvars];
 
 		c_delete(v->name);
-		VALclear(&v->value);
-		v->value.vtype = 0;
+		VALclear(&v->a.data);
+		v->a.data.vtype = 0;
 	}
 }
 
@@ -1436,8 +1441,8 @@ stack_pop_frame(mvc *sql)
 		sql_var *v = &sql->vars[sql->topvars];
 
 		c_delete(v->name);
-		VALclear(&v->value);
-		v->value.vtype = 0;
+		VALclear(&v->a.data);
+		v->a.data.vtype = 0;
 		if (v->t && v->view) 
 			table_destroy(v->t);
 		else if (v->rel)
@@ -1456,7 +1461,7 @@ stack_find_type(mvc *sql, const char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
-			return &sql->vars[i].type;
+			return &sql->vars[i].a.tpe;
 	}
 	return NULL;
 }
@@ -1570,9 +1575,11 @@ stack_nr_of_declared_tables(mvc *sql)
 void
 stack_set_string(mvc *sql, const char *name, const char *val)
 {
-	ValRecord *v = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, name);
 
-	if (v != NULL) {
+	if (a != NULL) {
+		ValRecord *v = &a->data;
+
 		if (v->val.sval)
 			_DELETE(v->val.sval);
 		v->val.sval = _STRDUP(val);
@@ -1582,11 +1589,11 @@ stack_set_string(mvc *sql, const char *name, const char *val)
 str
 stack_get_string(mvc *sql, const char *name)
 {
-	ValRecord *v = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, name);
 
-	if (!v || v->vtype != TYPE_str)
+	if (!a || a->data.vtype != TYPE_str)
 		return NULL;
-	return v->val.sval;
+	return a->data.val.sval;
 }
 
 void
@@ -1596,9 +1603,10 @@ stack_set_number(mvc *sql, const char *name, hge val)
 stack_set_number(mvc *sql, const char *name, lng val)
 #endif
 {
-	ValRecord *v = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, name);
 
-	if (v != NULL) {
+	if (a != NULL) {
+		ValRecord *v = &a->data;
 #ifdef HAVE_HGE
 		if (v->vtype == TYPE_hge) 
 			v->val.hval = val;
@@ -1655,8 +1663,8 @@ lng
 #endif
 stack_get_number(mvc *sql, const char *name)
 {
-	ValRecord *v = stack_get_var(sql, name);
-	return val_get_number(v);
+	atom *a = stack_get_var(sql, name);
+	return val_get_number(a?&a->data:NULL);
 }
 
 sql_column *

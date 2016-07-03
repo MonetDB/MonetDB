@@ -58,7 +58,7 @@ sphinx_searchIndexLimit(BAT **ret, /* put pointer to BAT[oid,int] record here. *
 
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
-	bn->T->nonil = 1;
+	bn->tnonil = 1;
 	BATkey(bn, FALSE);
 
 	*ret = bn;

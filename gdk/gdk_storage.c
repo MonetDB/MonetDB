@@ -585,22 +585,20 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
  * merely copies the data into place.  Failure to read or write the
  * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
-static BATstore *
+static BAT *
 DESCload(int i)
 {
 	str s, nme = BBP_physical(i);
-	BATstore *bs;
 	BAT *b = NULL;
 	int tt;
 
 	IODEBUG {
 		fprintf(stderr, "#DESCload %s\n", nme ? nme : "<noname>");
 	}
-	bs = BBP_desc(i);
+	b = BBP_desc(i);
 
-	if (bs == NULL)
+	if (b == NULL)
 		return 0;
-	b = &bs->B;
 
 	tt = b->ttype;
 	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
@@ -608,7 +606,7 @@ DESCload(int i)
 		return NULL;
 	}
 	b->ttype = tt;
-	b->T->hash = NULL;
+	b->thash = NULL;
 	/* mil shouldn't mess with just loaded bats */
 	if (b->batStamp > 0)
 		b->batStamp = -b->batStamp;
@@ -618,7 +616,7 @@ DESCload(int i)
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
 	b->batCopiedtodisk = 1;
 	DESCclean(b);
-	return bs;
+	return b;
 }
 
 void
@@ -627,9 +625,9 @@ DESCclean(BAT *b)
 	b->batDirtyflushed = DELTAdirty(b) ? TRUE : FALSE;
 	b->batDirty = 0;
 	b->batDirtydesc = 0;
-	b->T->heap.dirty = 0;
-	if (b->T->vheap)
-		b->T->vheap->dirty = 0;
+	b->theap.dirty = 0;
+	if (b->tvheap)
+		b->tvheap->dirty = 0;
 }
 
 /* spawning the background msync should be done carefully 
@@ -677,10 +675,10 @@ BATmsync(BAT *b)
 	struct msync *arg;
 
 	assert(b->batPersistence == PERSISTENT);
-	if (b->T->heap.storage == STORE_MMAP &&
+	if (b->theap.storage == STORE_MMAP &&
 	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
 		arg->id = b->batCacheid;
-		arg->h = &b->T->heap;
+		arg->h = &b->theap;
 		BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
 		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
@@ -693,10 +691,10 @@ BATmsync(BAT *b)
 #endif
 	}
 
-	if (b->T->vheap && b->T->vheap->storage == STORE_MMAP &&
+	if (b->tvheap && b->tvheap->storage == STORE_MMAP &&
 	    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
 		arg->id = b->batCacheid;
-		arg->h = b->T->vheap;
+		arg->h = b->tvheap;
 		BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
 		if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
@@ -718,7 +716,7 @@ BATsave(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
 	char *nme;
-	BATstore bs;
+	BAT bs;
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave", GDK_FAIL);
@@ -727,8 +725,8 @@ BATsave(BAT *bd)
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b) &&
-	    !(b->T->heap.copied && b->T->heap.storage == STORE_MMAP)) {
-		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(-VIEWtparent(b)));
+	    !(b->theap.copied && b->theap.storage == STORE_MMAP)) {
+		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
 	if (!BATdirty(b)) {
@@ -744,31 +742,29 @@ BATsave(BAT *bd)
 	 * only read it. */
 	bs = *BBP_desc(b->batCacheid);
 	/* fix up internal pointers */
-	b = &bs.B;
-	b->S = &bs.S;
-	b->T = &bs.T;
+	b = &bs;
 
-	if (b->T->vheap) {
-		b->T->vheap = (Heap *) GDKmalloc(sizeof(Heap));
-		if (b->T->vheap == NULL) {
+	if (b->tvheap) {
+		b->tvheap = (Heap *) GDKmalloc(sizeof(Heap));
+		if (b->tvheap == NULL) {
 			return GDK_FAIL;
 		}
-		*b->T->vheap = *bd->T->vheap;
+		*b->tvheap = *bd->tvheap;
 	}
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->T->heap.dirty)
+	if (b->batCopiedtodisk == 0 || b->batDirty || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
-			err = HEAPsave(&b->T->heap, nme, "tail");
-	if (b->T->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
+			err = HEAPsave(&b->theap, nme, "tail");
+	if (b->tvheap && (b->batCopiedtodisk == 0 || b->batDirty || b->tvheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == GDK_SUCCEED)
-				err = HEAPsave(b->T->vheap, nme, "theap");
+				err = HEAPsave(b->tvheap, nme, "theap");
 		}
 
-	if (b->T->vheap)
-		GDKfree(b->T->vheap);
+	if (b->tvheap)
+		GDKfree(b->tvheap);
 
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = 1;
@@ -786,47 +782,45 @@ BAT *
 BATload_intern(bat bid, int lock)
 {
 	str nme;
-	BATstore *bs;
 	BAT *b;
 
 	assert(bid > 0);
 
 	nme = BBP_physical(bid);
-	bs = DESCload(bid);
+	b = DESCload(bid);
 
-	if (bs == NULL) {
+	if (b == NULL) {
 		return NULL;
 	}
-	b = &bs->B;
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
-		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+		if (HEAPload(&b->theap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
 			return NULL;
 		}
-		assert(b->T->heap.size >> b->T->shift <= BUN_MAX);
-		b->batCapacity = (BUN) (b->T->heap.size >> b->T->shift);
+		assert(b->theap.size >> b->tshift <= BUN_MAX);
+		b->batCapacity = (BUN) (b->theap.size >> b->tshift);
 	} else {
-		b->T->heap.base = NULL;
+		b->theap.base = NULL;
 	}
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
-		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->T->heap, 0);
+		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
+			HEAPfree(&b->theap, 0);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
-			strCleanHash(b->T->vheap, FALSE);	/* ensure consistency */
+			strCleanHash(b->tvheap, FALSE);	/* ensure consistency */
 		}
 	}
 
 	/* initialize descriptor */
 	b->batDirtydesc = FALSE;
-	b->T->heap.parentid = 0;
+	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(bs, lock);
+	BBPcacheit(b, lock);
 
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);
@@ -869,21 +863,21 @@ BATdelete(BAT *b)
 		IMPSdestroy(b);
 		OIDXdestroy(b);
 	}
-	if (b->batCopiedtodisk || (b->T->heap.storage != STORE_MEM)) {
+	if (b->batCopiedtodisk || (b->theap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
-		    HEAPdelete(&b->T->heap, o, "tail") &&
+		    HEAPdelete(&b->theap, o, "tail") &&
 		    b->batCopiedtodisk)
 			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
-	} else if (b->T->heap.base) {
-		HEAPfree(&b->T->heap, 1);
+	} else if (b->theap.base) {
+		HEAPfree(&b->theap, 1);
 	}
-	if (b->T->vheap) {
-		assert(b->T->vheap->parentid == bid);
-		if (b->batCopiedtodisk || (b->T->vheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->T->vheap, o, "theap") && b->batCopiedtodisk)
+	if (b->tvheap) {
+		assert(b->tvheap->parentid == bid);
+		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
+			if (HEAPdelete(b->tvheap, o, "theap") && b->batCopiedtodisk)
 				IODEBUG fprintf(stderr, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->T->vheap, 1);
+			HEAPfree(b->tvheap, 1);
 		}
 	}
 	b->batCopiedtodisk = FALSE;

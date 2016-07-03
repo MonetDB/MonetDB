@@ -345,11 +345,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public InputStream getAsciiStream(String columnName) throws SQLException {
 		throw newSQLFeatureNotSupportedException("getAsciiStream");
 	}
+
 	@Override
+	@Deprecated
 	public InputStream getUnicodeStream(int columnIndex) throws SQLException {
 		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
 	@Override
+	@Deprecated
 	public InputStream getUnicodeStream(String columnName) throws SQLException {
 		throw newSQLFeatureNotSupportedException("getUnicodeStream");
 	}
@@ -633,6 +636,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public BigDecimal getBigDecimal(int columnIndex, int scale)
 		throws SQLException
 	{
@@ -675,6 +679,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	@Override
+	@Deprecated
 	public BigDecimal getBigDecimal(String columnName, int scale)
 		throws SQLException
 	{
@@ -1574,32 +1579,29 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			@Override
 			public String getColumnClassName(int column) throws SQLException {
-				try {
-					if (conn == null) {
-						// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
-						if (getStatement() != null) {
-							// first time, get a Connection object and cache it for all next columns
-							conn = getStatement().getConnection();
-						}
+				final String MonetDBtype = getColumnTypeName(column);
+				Class<?> type = null;
+				if (conn == null) {
+					// prevent NullPointerException when statement is null (i.c. MonetVirtualResultSet)
+					if (getStatement() != null) {
+						// first time, get a Connection object and cache it for all next columns
+						conn = getStatement().getConnection();
 					}
-					if (conn != null) {
-						Class type = null;
-						Map map = conn.getTypeMap();
-						if (map != null && map.containsKey(types[column - 1])) {
-							type = (Class)map.get(types[column - 1]);
-						} else {
-							type = getClassForType(getJavaType(types[column - 1]));
-						}
-						if (type != null)
-							return type.getName();
-					}
-					throw new SQLException("column type mapping null: " + types[column - 1], "M0M03");
-				} catch (IndexOutOfBoundsException e) {
-					throw new SQLException("No such column " + column, "M1M05");
-				} catch (NullPointerException npe) {
-					/* do nothing */
 				}
-				return "";
+				if (conn != null) {
+					Map map = conn.getTypeMap();
+					if (map != null && map.containsKey(MonetDBtype)) {
+						type = (Class)map.get(MonetDBtype);
+					}
+				}
+				if (type == null) {
+					// fallback to the standard Class mappings
+					type = getClassForType(getJavaType(MonetDBtype));
+				}
+				if (type != null) {
+					return type.getName();
+				}
+				throw new SQLException("column type mapping null: " + MonetDBtype, "M0M03");
 			}
 
 			/**
@@ -1737,25 +1739,34 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Object getObject(int i, Map<String,Class<?>> map)
 		throws SQLException
 	{
-		Class<?> type;
-
-		if (tlp.values[i - 1] == null) {
-			lastColumnRead = i - 1;
-			return null;
+		String MonetDBtype = null;
+		try {
+			MonetDBtype = types[i - 1];
+			if (tlp.values[i - 1] == null) {
+				lastColumnRead = i - 1;
+				return null;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			throw new SQLException("No such column " + i, "M1M05");
 		}
 
-		if (map.containsKey(types[i - 1])) {
-			type = map.get(types[i - 1]);
-		} else {
-			type = getClassForType(getJavaType(types[i - 1]));
+		Class<?> type = null;
+		if (map != null && map.containsKey(MonetDBtype)) {
+			type = map.get(MonetDBtype);
+		}
+		if (type == null) {
+			// fallback to the standard Class mappings
+			type = getClassForType(getJavaType(MonetDBtype));
 		}
 
-		if (type == String.class) {
+		if (type == null || type == String.class) {
 			return getString(i);
 		} else if (type == BigDecimal.class) {
 			return getBigDecimal(i);
 		} else if (type == Boolean.class) {
 			return Boolean.valueOf(getBoolean(i));
+		} else if (type == Short.class) {
+			return Short.valueOf(getShort(i));
 		} else if (type == Integer.class) {
 			return Integer.valueOf(getInt(i));
 		} else if (type == Long.class) {
@@ -1788,8 +1799,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				throw new SQLException(ie.getMessage(), "M0M27");
 			} catch (IllegalAccessException iae) {
 				throw new SQLException(iae.getMessage(), "M0M27");
-			} catch (IllegalArgumentException ige) {
-				throw new SQLException(ige.getMessage(), "M0M27");
 			} catch (InvocationTargetException ite) {
 				throw new SQLException(ite.getMessage(), "M0M27");
 			}
@@ -1931,7 +1940,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					return getRowId(colnum);
 				}
 			};
-			x.readSQL(input, types[i - 1]);
+			x.readSQL(input, MonetDBtype);
 			return x;
 		} else {
 			return getString(i);
@@ -2004,7 +2013,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		 * This switch returns the types as objects according to table B-3 from
 		 * Oracle's JDBC specification 4.1
 		 */
-		// keep this switch aligned with getObject(int, Map) !
+		// keep this switch regarding the returned classes aligned with getObject(int, Map) !
 		switch(type) {
 			case Types.CHAR:
 			case Types.VARCHAR:
@@ -2013,9 +2022,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			case Types.NUMERIC:
 			case Types.DECIMAL:
 				return BigDecimal.class;
-			case Types.BIT: // we don't use type BIT, it's here for completeness
 			case Types.BOOLEAN:
 				return Boolean.class;
+			case Types.BIT: // MonetDB doesn't support type BIT, it's here for completeness
 			case Types.TINYINT:
 			case Types.SMALLINT:
 				return Short.class;

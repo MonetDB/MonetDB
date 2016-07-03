@@ -391,22 +391,18 @@
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
 
-#define GDKPROP		6	/* use one spare! */
-#define MONETHOME	"MONETHOME"
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
 #define DELDIR		"bat/DELETE_ME"
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
-#define HCDIR		"bat/HC"
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
-#define HCDIR		"bat\\HC"
 #endif
 
 #ifdef MAXPATHLEN
@@ -586,11 +582,9 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
 #define VARFMT		OIDFMT
 
-#if SIZEOF_VAR_T == SIZEOF_INT	/* a type compatible with var_t */
-#define TYPE_var	TYPE_int
+#if SIZEOF_VAR_T == SIZEOF_INT
 #define VAR_MAX		((var_t) INT_MAX)
 #else
-#define TYPE_var	TYPE_lng
 #define VAR_MAX		((var_t) LLONG_MAX)
 #endif
 
@@ -637,12 +631,13 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 /* Heap storage modes */
 typedef enum {
-	STORE_MEM     = 0,		/* load into GDKmalloced memory */
-	STORE_MMAP    = 1,		/* mmap() into virtual memory */
-	STORE_PRIV    = 2,		/* BAT copy of copy-on-write mmap */
-    STORE_CMEM    = 3,      /* Indicates the value is stored in regular C memory rather than GDK memory.*/
-    STORE_NOWN    = 4,      /* Indicates that the bat does not own the chunk of memory and is not in charge of freeing it.*/
-    STORE_MMAPABS = 5,      /* mmap() into virtual memory from an absolute path (not part of dbfarm) */
+	STORE_MEM     = 0,	/* load into GDKmalloced memory */
+	STORE_MMAP    = 1,	/* mmap() into virtual memory */
+	STORE_PRIV    = 2,	/* BAT copy of copy-on-write mmap */
+	STORE_CMEM    = 3,	/* load into malloc (not GDKmalloc) memory*/
+	STORE_NOWN    = 4,	/* memory not owned by the BAT */
+	STORE_MMAPABS = 5,	/* mmap() into virtual memory from an
+				 * absolute path (not part of dbfarm) */
 	STORE_INVALID		/* invalid value, used to indicate error */
 } storage_t;
 
@@ -653,8 +648,8 @@ typedef struct {
 	str filename;		/* file containing image of the heap */
 
 	unsigned int copied:1,	/* a copy of an existing map. */
-		      hashash:1,/* the string heap contains hash values */
-		      forcemap:1;  /* force STORE_MMAP even if heap exists */
+		hashash:1,	/* the string heap contains hash values */
+		forcemap:1;	/* force STORE_MMAP even if heap exists */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
@@ -886,48 +881,56 @@ typedef struct BAT {
 	oid hseqbase;		/* head seq base */
 
 	/* dynamic column properties */
-	COLrec *T;		/* column info */
+	COLrec T;		/* column info */
 
-	BATrec *S;		/* the BAT properties */
+	BATrec S;		/* the BAT properties */
 } BAT;
 
 typedef struct BATiter {
 	BAT *b;
-	oid hvid, tvid;
+	oid tvid;
 } BATiter;
 
-typedef struct BATstore BATstore;
-#define BATSTORESIZE	(2 * (sizeof(BAT) + sizeof(COLrec)) + sizeof(BATrec))
-
-typedef int (*GDKfcn) ();
-
-/* macros's to hide complexity of BAT structure */
-#define batPersistence	S->persistence
-#define batCopiedtodisk	S->copiedtodisk
-#define batDirty	S->dirty
-#define batConvert	S->convert
-#define batDirtyflushed	S->dirtyflushed
-#define batDirtydesc	S->descdirty
-#define batFirst	S->first
-#define batInserted	S->inserted
-#define batDeleted	S->deleted
-#define batCount	S->count
-#define batCapacity	S->capacity
-#define batStamp	S->stamp
-#define batSharecnt	S->sharecnt
-#define batRestricted	S->restricted
-#define batRole		S->role
-#define creator_tid	S->tid
-#define ttype		T->type
-#define tkey		T->key
-#define tvarsized	T->varsized
-#define tseqbase	T->seq
-#define tsorted		T->sorted
-#define trevsorted	T->revsorted
-#define tdense		T->dense
-#define tident		T->id
-#define talign		T->align
-#define torderidx	T->orderidx
+/* macros to hide complexity of the BAT structure */
+#define batPersistence	S.persistence
+#define batCopiedtodisk	S.copiedtodisk
+#define batDirty	S.dirty
+#define batConvert	S.convert
+#define batDirtyflushed	S.dirtyflushed
+#define batDirtydesc	S.descdirty
+#define batFirst	S.first
+#define batInserted	S.inserted
+#define batDeleted	S.deleted
+#define batCount	S.count
+#define batCapacity	S.capacity
+#define batStamp	S.stamp
+#define batSharecnt	S.sharecnt
+#define batRestricted	S.restricted
+#define batRole		S.role
+#define creator_tid	S.tid
+#define ttype		T.type
+#define tkey		T.key
+#define tvarsized	T.varsized
+#define tseqbase	T.seq
+#define tsorted		T.sorted
+#define trevsorted	T.revsorted
+#define tdense		T.dense
+#define tident		T.id
+#define talign		T.align
+#define torderidx	T.orderidx
+#define twidth		T.width
+#define tshift		T.shift
+#define tnonil		T.nonil
+#define tnil		T.nil
+#define tnokey		T.nokey
+#define tnosorted	T.nosorted
+#define tnorevsorted	T.norevsorted
+#define tnodense	T.nodense
+#define theap		T.heap
+#define tvheap		T.vheap
+#define thash		T.hash
+#define timprints	T.imprints
+#define tprops		T.props
 
 
 
@@ -1097,20 +1100,20 @@ gdk_export bte ATOMelmshift(int sz);
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
 #if SIZEOF_VAR_T == 8
-#define HTputvalue(b, p, v, copyall, HT)				\
+#define Tputvalue(b, p, v, copyall)					\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
+			if ((b)->twidth < SIZEOF_VAR_T &&		\
+			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->twidth) {				\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1125,16 +1128,16 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMputFIX((b)->HT->type, (p), v);		\
+			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
 	} while (0)
-#define HTreplacevalue(b, p, v, HT)					\
+#define Treplacevalue(b, p, v)						\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->twidth) {				\
 			case 1:						\
 				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
@@ -1148,15 +1151,15 @@ gdk_export bte ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMreplaceVAR((b)->ttype, (b)->tvheap, &_d, v); \
+			if ((b)->twidth < SIZEOF_VAR_T &&		\
+			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->twidth) {				\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1171,24 +1174,24 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMreplaceFIX((b)->HT->type, (p), v);		\
+			ATOMreplaceFIX((b)->ttype, (p), v);		\
 		}							\
 	} while (0)
 #else
-#define HTputvalue(b, p, v, copyall, HT)				\
+#define Tputvalue(b, p, v, copyall)					\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMputVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
+			if ((b)->twidth < SIZEOF_VAR_T &&		\
+			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->twidth) {				\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1200,16 +1203,16 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMputFIX((b)->HT->type, (p), v);		\
+			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
 	} while (0)
-#define HTreplacevalue(b, p, v, HT)					\
+#define Treplacevalue(b, p, v)						\
 	do {								\
-		if ((b)->HT->varsized && (b)->HT->type) {		\
+		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
 			ptr _ptr;					\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->twidth) {				\
 			case 1:						\
 				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
@@ -1220,15 +1223,15 @@ gdk_export bte ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplaceVAR((b)->HT->type, (b)->HT->vheap, &_d, v); \
-			if ((b)->HT->width < SIZEOF_VAR_T &&		\
-			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
+			ATOMreplaceVAR((b)->ttype, (b)->tvheap, &_d, v); \
+			if ((b)->twidth < SIZEOF_VAR_T &&		\
+			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b)->HT, _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->HT->width) {			\
+			switch ((b)->twidth) {				\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1240,19 +1243,16 @@ gdk_export bte ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else {						\
-			ATOMreplaceFIX((b)->HT->type, (p), v);		\
+			ATOMreplaceFIX((b)->ttype, (p), v);		\
 		}							\
 	} while (0)
 #endif
-#define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
-#define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
-#define HTfastins_nocheck(b, p, v, s, HT)			\
-	do {							\
-		(b)->HT->heap.free += (s);			\
-		(b)->HT->heap.dirty |= (s) != 0;		\
-		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
+#define tfastins_nocheck(b, p, v, s)			\
+	do {						\
+		(b)->theap.free += (s);			\
+		(b)->theap.dirty |= (s) != 0;		\
+		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
 	} while (0)
-#define tfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, T)
 
 #define bunfastapp_nocheck(b, p, t, ts)		\
 	do {					\
@@ -1280,7 +1280,7 @@ gdk_export bte ATOMelmshift(int sz);
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
 	} while (0)
 
-gdk_export gdk_return GDKupgradevarheap(COLrec *c, var_t v, int copyall, int mayshare);
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare);
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force);
 gdk_export gdk_return BATappend(BAT *b, BAT *c, bit force);
 
@@ -1311,13 +1311,13 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
 			 TYPE_oid : (b)->ttype)
-#define Tbase(b)	((b)->T->vheap->base)
+#define Tbase(b)	((b)->tvheap->base)
 
-#define Tsize(b)	((b)->T->width)
+#define Tsize(b)	((b)->twidth)
 
-#define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->T->shift:0)
+#define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
 
-#define Tloc(b,p)	((b)->T->heap.base+((p)<<(b)->T->shift))
+#define Tloc(b,p)	((b)->theap.base+((p)<<(b)->tshift))
 
 #if SIZEOF_VAR_T < SIZEOF_VOID_P
 /* NEW 11/4/2009: when compiled with 32-bits oids/var_t on 64-bits
@@ -1364,7 +1364,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 	 ((var_t *) (b))[p])
 #endif
 #define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w)  << GDK_VARSHIFT)
-#define BUNtvaroff(bi,p) VarHeapVal((bi).b->T->heap.base, (p), (bi).b->T->width)
+#define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
@@ -1377,7 +1377,7 @@ bat_iterator(BAT *b)
 	BATiter bi;
 
 	bi.b = b;
-	bi.hvid = bi.tvid = 0;
+	bi.tvid = 0;
 	return bi;
 }
 
@@ -1455,8 +1455,8 @@ gdk_export int BATgetaccess(BAT *b);
 
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||	\
 			 (b)->batDirtydesc ||				\
-			 (b)->T->heap.dirty ||				\
-			 ((b)->T->vheap?(b)->T->vheap->dirty:0))
+			 (b)->theap.dirty ||				\
+			 ((b)->tvheap?(b)->tvheap->dirty:0))
 
 #define PERSISTENT		0
 #define TRANSIENT		1
@@ -1580,62 +1580,58 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
-#define COLsettrivprop(b, col)						\
-	do {								\
-		if ((col)->type == TYPE_void) {				\
-			if ((col)->seq == oid_nil) {			\
-				(col)->nonil = (b)->batCount == 0;	\
-				(col)->nil = !(col)->nonil;		\
-				(col)->revsorted = 1;			\
-				(col)->key = (b)->batCount <= 1;	\
-				(col)->dense = 0;			\
-			} else {					\
-				(col)->dense = 1;			\
-				(col)->nonil = 1;			\
-				(col)->nil = 0;				\
-				(col)->key = 1;				\
-				(col)->revsorted = (b)->batCount <= 1;	\
-			}						\
-			(col)->sorted = 1;				\
-		} else if ((b)->batCount <= 1) {			\
-			if (ATOMlinear((col)->type)) {			\
-				(col)->sorted = 1;			\
-				(col)->revsorted = 1;			\
-			}						\
-			(col)->key = 1;					\
-			if ((b)->batCount == 0) {			\
-				(col)->nonil = 1;			\
-				(col)->nil = 0;				\
-				if ((col)->type == TYPE_oid) {		\
-					(col)->dense = 1;		\
-					(col)->seq = 0;			\
-				}					\
-			} else if ((col)->type == TYPE_oid) {		\
-				/* b->batCount == 1 */			\
-				oid sqbs;				\
-				if ((sqbs = ((oid *) (col)->heap.base)[(b)->batFirst]) == oid_nil) { \
-					(col)->dense = 0;		\
-					(col)->nonil = 0;		\
-					(col)->nil = 1;			\
-				} else {				\
-					(col)->dense = 1;		\
-					(col)->nonil = 1;		\
-					(col)->nil = 0;			\
-				}					\
-				(col)->seq = sqbs;			\
-			}						\
-		}							\
-		if (!ATOMlinear((col)->type)) {				\
-			(col)->sorted = 0;				\
-			(col)->revsorted = 0;				\
-		}							\
-	} while (0)
 #define BATsettrivprop(b)						\
 	do {								\
 		assert((b)->hseqbase != oid_nil);			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
 		/* the other head properties should already be correct */ \
-		COLsettrivprop((b), (b)->T);				\
+		if ((b)->ttype == TYPE_void) {				\
+			if ((b)->tseqbase == oid_nil) {			\
+				(b)->tnonil = (b)->batCount == 0;	\
+				(b)->tnil = !(b)->tnonil;		\
+				(b)->trevsorted = 1;			\
+				(b)->tkey = (b)->batCount <= 1;		\
+				(b)->tdense = 0;			\
+			} else {					\
+				(b)->tdense = 1;			\
+				(b)->tnonil = 1;			\
+				(b)->tnil = 0;				\
+				(b)->tkey = 1;				\
+				(b)->trevsorted = (b)->batCount <= 1;	\
+			}						\
+			(b)->tsorted = 1;				\
+		} else if ((b)->batCount <= 1) {			\
+			if (ATOMlinear((b)->ttype)) {			\
+				(b)->tsorted = 1;			\
+				(b)->trevsorted = 1;			\
+			}						\
+			(b)->tkey = 1;					\
+			if ((b)->batCount == 0) {			\
+				(b)->tnonil = 1;			\
+				(b)->tnil = 0;				\
+				if ((b)->ttype == TYPE_oid) {		\
+					(b)->tdense = 1;		\
+					(b)->tseqbase = 0;		\
+				}					\
+			} else if ((b)->ttype == TYPE_oid) {		\
+				/* b->batCount == 1 */			\
+				oid sqbs;				\
+				if ((sqbs = ((oid *) (b)->theap.base)[(b)->batFirst]) == oid_nil) { \
+					(b)->tdense = 0;		\
+					(b)->tnonil = 0;		\
+					(b)->tnil = 1;			\
+				} else {				\
+					(b)->tdense = 1;		\
+					(b)->tnonil = 1;		\
+					(b)->tnil = 0;			\
+				}					\
+				(b)->tseqbase = sqbs;			\
+			}						\
+		}							\
+		if (!ATOMlinear((b)->ttype)) {				\
+			(b)->tsorted = 0;				\
+			(b)->trevsorted = 0;				\
+		}							\
 	} while (0)
 
 /*
@@ -1697,7 +1693,7 @@ typedef struct {
 	str logical;		/* logical name */
 	str bak;		/* logical name backup */
 	bat next;		/* next BBP slot in linked list */
-	BATstore *desc;		/* the BAT descriptor */
+	BAT *desc;		/* the BAT descriptor */
 	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
@@ -2723,7 +2719,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 #define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e);(x)->talign=0; } while (0)
 
 #define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(-VIEWtparent(b))->batRestricted : (b)->batRestricted)
+#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -2745,11 +2741,11 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  */
 #define isVIEW(x)							\
 	(assert((x)->batCacheid > 0),					\
-	 ((x)->T->heap.parentid ||					\
-	  ((x)->T->vheap && (x)->T->vheap->parentid != (x)->batCacheid)))
+	 ((x)->theap.parentid ||					\
+	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
 
-#define VIEWtparent(x)	((x)->T->heap.parentid)
-#define VIEWvtparent(x)	((x)->T->vheap == NULL || (x)->T->vheap->parentid == (x)->batCacheid ? 0 : (x)->T->vheap->parentid)
+#define VIEWtparent(x)	((x)->theap.parentid)
+#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
 /*
  * @+ BAT Iterators
@@ -2820,7 +2816,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 /*
  * @- hash-table supported loop over BUNs
  * The first parameter `b' is a BAT, the second (`h') should point to
- * `b->T->hash', and `v' a pointer to an atomic value (corresponding
+ * `b->thash', and `v' a pointer to an atomic value (corresponding
  * to the head column of `b'). The 'hb' is an integer index, pointing
  * out the `hb'-th BUN.
  */

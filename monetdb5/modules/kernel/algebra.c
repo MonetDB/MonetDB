@@ -91,7 +91,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	r -> tdense = FALSE;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
-	r -> T ->nonil = gids->T->nonil;
+	r -> tnonil = gids->tnonil;
 	*result = r;
 	return GDK_SUCCEED;
 }

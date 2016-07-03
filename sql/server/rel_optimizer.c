@@ -6330,8 +6330,8 @@ rel_project_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 					sql_exp *t = args->t->data;
 					atom *a;
 
-					if ((is_atom(h->type) && (a = exp_value(h, sql->args, sql->argc)) != NULL) ||
-					    (is_atom(t->type) && (a = exp_value(t, sql->args, sql->argc)) != NULL)) {
+					if ((is_atom(h->type) && (a = exp_value(sql, h, sql->args, sql->argc)) != NULL) ||
+					    (is_atom(t->type) && (a = exp_value(sql, t, sql->args, sql->argc)) != NULL)) {
 						int rs = reduce_scale(a);
 
 						res->scale -= rs; 
@@ -6406,7 +6406,7 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 							atom *a;
 
 							if (fst->scale == ft->scale &&
-							   (a = exp_value(ce, sql->args, sql->argc)) != NULL) {
+							   (a = exp_value(sql, ce, sql->args, sql->argc)) != NULL) {
 #ifdef HAVE_HGE
 								hge v = 1;
 #else

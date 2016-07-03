@@ -38,14 +38,14 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	bn1->trevsorted = BATcount(l) <= 1;
 	bn1->tkey = BATcount(r) <= 1;
 	bn1->tdense = bn1->tkey != 0;
-	bn1->T->nil = 0;
-	bn1->T->nonil = 1;
+	bn1->tnil = 0;
+	bn1->tnonil = 1;
 	bn2->tsorted = BATcount(l) <= 1;
 	bn2->trevsorted = BATcount(bn2) <= 1;
 	bn2->tkey = BATcount(l) <= 1;
 	bn2->tdense = bn2->tkey != 0;
-	bn2->T->nil = 0;
-	bn2->T->nonil = 1;
+	bn2->tnil = 0;
+	bn2->tnonil = 1;
 	BATtseqbase(bn1, l->hseqbase);
 	BATtseqbase(bn2, r->hseqbase);
 	*r1p = bn1;

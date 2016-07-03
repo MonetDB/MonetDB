@@ -69,13 +69,13 @@ void_bat_create(int adt, BUN nr)
 	/* disable all properties here */
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
-	b->T->nosorted = 0;
-	b->T->norevsorted = 0;
+	b->tnosorted = 0;
+	b->tnorevsorted = 0;
 	b->tdense = FALSE;
-	b->T->nodense = 0;
+	b->tnodense = 0;
 	b->tkey = FALSE;
-	b->T->nokey[0] = 0;
-	b->T->nokey[1] = 1;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 1;
 	return b;
 }
 
@@ -257,7 +257,7 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		BATderiveProps(bv, 0);
 
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
-		b->T->nonil &= bv->T->nonil;
+		b->tnonil &= bv->tnonil;
 		b->tdense &= bv->tdense;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
@@ -876,7 +876,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	/* include testing on the terminating null byte !! */
 	if (s == 0) {
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c->tnonil = 0;
 	} else
 		adt = fmt->frstr(fmt, fmt->adt, s);
 
@@ -919,7 +919,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		GDKfree(err);
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		fmt->c->tnonil = 0;
 	}
 	bunfastapp(fmt->c, adt);
 	return ret;
@@ -1848,7 +1848,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 			int width;
 
 			for (attr = 0; attr < as->nr_attrs; attr++) {
-				width = as->format[attr].c->T->width;
+				width = as->format[attr].c->twidth;
 				switch (width){
 				case 1:
 					trimerrors(bte);

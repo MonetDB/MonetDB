@@ -275,11 +275,11 @@ This information can be used to determine memory footprint and variable life tim
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
 						//if( isVIEW(d))
-							//bid = -VIEWtparent(d);
+							//bid = VIEWtparent(d);
 						cnt = BATcount(d);
-						total += cnt * d->T->width;
-						total += heapinfo(d->T->vheap, d->batCacheid); 
-						total += hashinfo(d->T->hash, d->batCacheid); 
+						total += cnt * d->twidth;
+						total += heapinfo(d->tvheap, d->batCacheid); 
+						total += hashinfo(d->thash, d->batCacheid); 
 						total += IMPSimprintsize(d);
 						BBPunfix(d->batCacheid);
 					} 
@@ -972,9 +972,9 @@ getDiskSpace(void)
 
 					size += tailsize(b, cnt);
 					/* the upperbound is used for the heaps */
-					if (b->T->vheap)
-						size += b->T->vheap->size;
-					if (b->T->hash)
+					if (b->tvheap)
+						size += b->tvheap->size;
+					if (b->thash)
 						size += sizeof(BUN) * cnt;
 				}
 				BBPunfix(i);

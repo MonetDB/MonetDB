@@ -58,7 +58,7 @@ AUTHfindUser(const char *username)
 	BUN p;
 
 	if (BAThash(user, 0) == GDK_SUCCEED) {
-		HASHloop_str(cni, cni.b->T->hash, p, username) {
+		HASHloop_str(cni, cni.b->thash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE)
 				return p;
