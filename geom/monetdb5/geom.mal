@@ -362,6 +362,10 @@ command Contains(a:wkb, x:dbl, y:dbl) :bit
 address wkbContains_point
 comment "Returns true if the Geometry a 'spatially contains' Geometry b";
 
+command Contains(a:wkb, px:bat[:oid,:dbl], py:bat[:oid,:dbl]) :bat[:oid,:bit]
+address wkbContains_point_bat
+comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
+
 
 command Translate3D(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb address wkbTranslate
 comment "Moves all points of the geometry by dx, dy, dz";
@@ -375,11 +379,6 @@ function Translate(g:wkb, dx:dbl, dy:dbl, dz:dbl) :wkb;
 	x := Translate3D(g,dx,dy,dz);
 	return x;
 end Translate;
-
-command Contains(a:wkb, px:bat[:oid,:dbl], py:bat[:oid,:dbl]) :bat[:oid,:bit]
-address wkbContains_point_bat
-comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
-
 
 command PointsNum(w:wkb, check:int) :int address wkbNumPoints
 comment "The number of points in the Geometry. If check=1, the geometry should be a linestring";
@@ -758,6 +757,9 @@ command Distance(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkb
 command Distance(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbDistance_geom_bat;
 command Distance(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:dbl] address wkbDistance_bat_geom;
 
+command Centroid(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbCentroid_bat
+comment "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.";
+
 command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
 command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
 command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
@@ -826,6 +828,8 @@ end YMaxFromMBR;
 command Area(:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbArea_bat
 comment "Returns the area of the surface if it is a polygon or multi-polygon";
 
+command Intersects(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIntersects_bat
+comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
 module calc;
 

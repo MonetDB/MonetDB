@@ -344,6 +344,11 @@ wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id)
 	return WKBtoWKB_bat(outBAT_id, inBAT_id, wkbBoundary, "batgeom.wkbBoundary");
 }
 
+str
+wkbCentroid_bat(bat *outBAT_id, bat *inBAT_id)
+{
+	return WKBtoWKB_bat(outBAT_id, inBAT_id, wkbCentroid, "batgeom.wkbCentroid");
+}
 
 /**************************************************************************************/
 /*************************** IN: wkb - OUT: wkb - FLAG:int ****************************/
@@ -501,6 +506,85 @@ wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id)
 	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsValid, "batgeom.wkbIsValid");
 }
 
+/***************************************************************************/
+/*************************** IN: wkb wkb - OUT: bit ****************************/
+/***************************************************************************/
+
+static str
+WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, wkb **, wkb **), const char *name)
+{
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter aBAT_iter, bBAT_iter;
+	str msg = MAL_SUCCEED;
+    static struct timeval start, stop;
+    unsigned long long t;
+
+	//get the descriptor of the BAT
+	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+    omp_set_dynamic(0);     // Explicitly disable dynamic teams
+    omp_set_num_threads(1);
+    q = BUNlast(aBAT);
+    fprintf(stdout, "%d %d\n", p, q);
+    gettimeofday(&start, NULL);
+	//BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
+        str err = NULL;
+	    wkb *aWKB = NULL, *bWKB = NULL;
+        bit out;
+
+        aWKB = (wkb *) BUNtail(aBAT_iter, p);
+        bWKB = (wkb *) BUNtail(bBAT_iter, p);
+        if ((err = (*func) (&out, &aWKB, &bWKB)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
+        }
+        BUNappend(outBAT, &out, TRUE);	//add the result to the new BAT
+    }
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%llu ms\n", t);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(aBAT->batCacheid);
+        BBPunfix(bBAT->batCacheid);
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+	//set the number of elements in the outBAT
+	//BATsetcount(outBAT, BATcount(inBAT));
+	BBPunfix(aBAT->batCacheid);
+	BBPunfix(bBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+{
+	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbIntersects, "batgeom.wkbIntersects");
+}
 
 /***************************************************************************/
 /*************************** IN: wkb - OUT: int ****************************/
@@ -730,25 +814,25 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 		str err = NULL;
 	    wkb *inWKB = NULL;
 		wkb *outSingle;
-        double *x = NULL, *y = NULL, *z = NULL;
+        double x, y, z;
 
 
         inWKB = (wkb *) BUNtail(inBAT_iter, p);
 
         if (*inXBAT_id != bat_nil)
-            x = (double *) BUNtail(inXBAT_iter, p);
+            x = *(double *) BUNtail(inXBAT_iter, p);
         else
-            *x = *dx;
+            x = *dx;
         if (*inYBAT_id != bat_nil)
-            y = (double *) BUNtail(inYBAT_iter, p);
+            y = *(double *) BUNtail(inYBAT_iter, p);
         else
-            *y = *dy;
+            y = *dy;
         if (*inZBAT_id != bat_nil)
-            z = (double *) BUNtail(inZBAT_iter, p);
+            z = *(double *) BUNtail(inZBAT_iter, p);
         else
-            *z = *dz;
+            z = *dz;
 
-        if ((err = (*func) (&outSingle, &inWKB, x, y, z)) != MAL_SUCCEED) {
+        if ((err = (*func) (&outSingle, &inWKB, &x, &y, &z)) != MAL_SUCCEED) {
             BBPunfix(inBAT->batCacheid);
             if (*inXBAT_id != bat_nil)
                 BBPunfix(inXBAT->batCacheid);
