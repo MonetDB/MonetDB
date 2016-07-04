@@ -1,11 +1,11 @@
 # the Multi Assocation Tables
 # use two mats at the same time.
 	mdb.List();
-    m0:= bat.new(:oid,:oid);
+    m0:= bat.new(:oid);
     bat.append(m0,0@0);
-    m1:= bat.new(:oid,:oid);
+    m1:= bat.new(:oid);
     bat.append(m1,1@0);
-    m2:= bat.new(:oid,:oid);
+    m2:= bat.new(:oid);
     bat.append(m2,2@0);
     b := mat.new(m0,m1,m2);
 	d := mat.new(m1,m2);
@@ -13,9 +13,9 @@
     i := aggr.count(s);
     io.print(s);
     io.print(i);
-    c0 := bat.new(:oid,:oid);
+    c0 := bat.new(:oid);
     bat.append(c0,4@0);
-    c1 := bat.new(:oid,:oid);
+    c1 := bat.new(:oid);
     bat.append(c1,5@0);
     c := mat.new(c0,c1);
     bat.append(c,6@0);

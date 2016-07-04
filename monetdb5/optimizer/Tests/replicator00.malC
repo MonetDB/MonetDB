@@ -7,7 +7,7 @@ function sql.delete(s:str,t:str,b:bat[:any_1,:any_2]);
 end delete;
 
 function sql.tst();
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,12);
 bat.append(b,34);
 bat.append(b,56);
