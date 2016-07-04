@@ -103,17 +103,24 @@ pyapi_export str PyAPIprelude(void *ret);
 int PyAPIEnabled(void);
 int PyAPIInitialized(void);
 
-pyapi_export void* lookup_function(char *func, char* library);
+#ifdef WIN32
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
+   typedef retval (*fcnname##_ptr_tpe)();            \
+   fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname, params) \
-    typedef retval (*fcnname##_ptr_tpe)params;                   \
-    fcnname##_ptr_tpe fcnname##_ptr = NULL;
-
-#define LOAD_SQL_FUNCTION_PTR(fcnname,libname)                                   \
-    fcnname##_ptr = (fcnname##_ptr_tpe) lookup_function(#fcnname, libname);        \
-    if (fcnname##_ptr == NULL) {                                         \
-        msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname); \
+#define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", NULL, #fcnname, 0); \
+    if (fcnname##_ptr == NULL) {                                                           \
+        msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname);  \
     }
+#else
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
+   typedef retval (*fcnname##_ptr_tpe)();            \
+   fcnname##_ptr_tpe fcnname##_ptr = (fcnname##_ptr_tpe)fcnname;
+
+#define LOAD_SQL_FUNCTION_PTR(fcnname) (void) fcnname
+#endif
+
 
 str _loader_init(void);
 

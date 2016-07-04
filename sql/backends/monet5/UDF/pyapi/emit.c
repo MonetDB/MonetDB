@@ -115,10 +115,10 @@ _emit_emit(Py_EmitObject *self, PyObject *args) {
         PyObject *keys;
         if (potential_size > self->maxcols) {
             // allocate space for new columns (if any new columns show up)
-            EmitCol *old = self->cols;
-            self->cols = GDKmalloc(sizeof(EmitCol) * potential_size);
+            sql_emit_col *old = self->cols;
+            self->cols = GDKmalloc(sizeof(sql_emit_col) * potential_size);
             if (old) {
-                memcpy(self->cols, old, sizeof(EmitCol) * self->maxcols);
+                memcpy(self->cols, old, sizeof(sql_emit_col) * self->maxcols);
                 GDKfree(old);
             }
             self->maxcols = potential_size;
@@ -364,7 +364,7 @@ PyTypeObject Py_EmitType = {
 
 
 
-PyObject *Py_Emit_Create(EmitCol *cols, size_t ncols)
+PyObject *Py_Emit_Create(sql_emit_col *cols, size_t ncols)
 {
     register Py_EmitObject *op;
 

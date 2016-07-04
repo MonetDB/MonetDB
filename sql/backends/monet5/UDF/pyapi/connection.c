@@ -9,10 +9,9 @@
 #define PyString_FromString PyUnicode_FromString
 #endif
 
-CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult,(res_table*));
-CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern,(Client, str *, str, int, bit, res_table **));
-CREATE_SQL_FUNCTION_PTR(str,mvc_append_wrap,(Client, MalBlkPtr, MalStkPtr, InstrPtr));
-CREATE_SQL_FUNCTION_PTR(int,sqlcleanup,(mvc*,int));
+CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
+CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
+CREATE_SQL_FUNCTION_PTR(str,create_table_from_emit);
 
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
@@ -221,75 +220,8 @@ str _connection_query(Client cntxt, char* query, res_table** result) {
 }
 
 
-str _connection_create_table(Client cntxt, char *sname, char *tname, EmitCol *columns, size_t ncols) {
-    size_t i;
-    sql_table *t;
-    sql_schema *s;
-    mvc *sql = NULL;
-    str msg = MAL_SUCCEED;
-
-	if ((msg = getSQLContext(cntxt, NULL, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	/* for some reason we don't have an allocator here so make one */
-	sql->sa = sa_create();
-
-    if (!sname) sname = "sys";
-	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
-		goto cleanup;
-	}
-	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1))) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create table '%s'", tname);
-		goto cleanup;
-	}
-
-    for(i = 0; i < ncols; i++) {
-        BAT *b = columns[i].b;
-        sql_subtype *tpe = sql_bind_localtype(ATOMname(b->ttype));
-        sql_column *col = NULL;
-
-        if (!tpe) {
-    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not find type for column");
-    		goto cleanup;
-        }
-
-        col = mvc_create_column(sql, t, columns[i].name, tpe);
-        if (!col) {
-    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create column %s", columns[i].name);
-    		goto cleanup;
-        }
-    }
-    msg = create_table_or_view(sql, sname, t, 0);
-    if (msg != MAL_SUCCEED) {
-    	goto cleanup;
-    }
-    t = mvc_bind_table(sql, s, tname);
-    if (!t) {
-		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind table %s", tname);
-		goto cleanup;
-    }
-    for(i = 0; i < ncols; i++) {
-        BAT *b = columns[i].b;
-        sql_column *col = NULL;
-
-        col = mvc_bind_column(sql,t, columns[i].name);
-        if (!col) {
-    		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not bind column %s", columns[i].name);
-    		goto cleanup;
-        }
-        msg = mvc_append_column(sql->session->tr, col, b);
-        if (msg != MAL_SUCCEED) {
-        	goto cleanup;
-        }
-    }
-
-cleanup:
-    sa_destroy(sql->sa);
-    sql->sa = NULL;
-    return msg;
+str _connection_create_table(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) {
+	return (*create_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
 }
 
 
@@ -319,10 +251,9 @@ str _connection_init(void)
     str msg = MAL_SUCCEED;
     _connection_import_array();
 
-    LOAD_SQL_FUNCTION_PTR(SQLdestroyResult, "lib_sql.dll");
-    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern, "lib_sql.dll");
-    LOAD_SQL_FUNCTION_PTR(mvc_append_wrap, "lib_sql.dll");
-    LOAD_SQL_FUNCTION_PTR(sqlcleanup, "lib_sql.dll");
+    LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
+    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
+    LOAD_SQL_FUNCTION_PTR(create_table_from_emit);
 
     if (msg != MAL_SUCCEED) {
         return msg;

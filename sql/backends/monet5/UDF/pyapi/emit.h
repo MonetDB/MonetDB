@@ -16,15 +16,9 @@
 
 #include "pytypes.h"
 
-
-typedef struct {
-	BAT *b;
-	char* name;
-} EmitCol;
-
 typedef struct {
     PyObject_HEAD
-	EmitCol *cols;
+	sql_emit_col *cols;
     size_t ncols;
     size_t nvals;
 	size_t maxcols;
@@ -33,7 +27,7 @@ typedef struct {
 
 extern PyTypeObject Py_EmitType;
 
-PyObject *Py_Emit_Create(EmitCol *cols, size_t ncols);
+PyObject *Py_Emit_Create(sql_emit_col *cols, size_t ncols);
 
 str _emit_init(void);
 

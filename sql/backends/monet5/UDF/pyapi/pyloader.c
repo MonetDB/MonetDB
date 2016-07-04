@@ -39,7 +39,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     node *argnode, *n;
     PyObject *pArgs = NULL, *pEmit = NULL, *pConnection; // this is going to be the parameter tuple
     PyObject *code_object = NULL;
-    EmitCol *cols = NULL;
+    sql_emit_col *cols = NULL;
     bool gstate = 0;
     int unnamedArgs = 0;
     int argcount = pci->argc;
@@ -129,7 +129,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
     if (sqlmorefun->colnames) {
         n = sqlmorefun->colnames->h;
-        cols = GDKmalloc(sizeof(EmitCol) * pci->retc);
+        cols = GDKmalloc(sizeof(sql_emit_col) * pci->retc);
         if (!cols) {
             msg = createException(MAL, "pyapi.eval_loader", MAL_MALLOC_FAIL"column list");
             goto wrapup;

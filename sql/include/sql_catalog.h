@@ -583,4 +583,9 @@ extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 
+typedef struct {
+	BAT *b;
+	char* name;
+} sql_emit_col;
+
 #endif /* SQL_CATALOG_H */
