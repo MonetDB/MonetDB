@@ -13,14 +13,14 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='python-monetdb',
-    version='11.23.4',
+    version='11.23.5',
     description='Native MonetDB client Python API',
     long_description=read('README.rst'),
     author='MonetDB BV',
     author_email='info@monetdb.org',
     url='http://www.monetdb.org/',
     packages=['monetdb', 'monetdb.sql'],
-    download_url='<will be filled in before a release>/python2-monetdb-11.23.4.tar.gz',
+    download_url='http://dev.monetdb.org/downloads/sources/Jun2016-SP1/python2-monetdb-11.23.5.tar.gz',
     classifiers=[
         "Topic :: Database",
         "Topic :: Database :: Database Engines/Servers",
