@@ -119,7 +119,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jun2016/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -962,6 +962,13 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Jul 04 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
+- Rebuilt.
+- BZ#4031: mclient doesn't accept - argument to refer to stdin
+
+* Fri Jul  1 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
+- MonetDB: Lots of memory leaks have been plugged across the whole system.
+
 * Fri Jun 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.3-20160610
 - Rebuilt.
 - BZ#4015: Daemon crashes on database release command

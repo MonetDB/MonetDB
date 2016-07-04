@@ -9,8 +9,8 @@
 #define PyString_FromString PyUnicode_FromString
 #endif
 
-CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult,(res_table*));
-CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern,(Client, str *, str, int, bit, res_table **));
+CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
+CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
 
 static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
@@ -260,10 +260,8 @@ str _connection_init(void)
 {
     str msg = MAL_SUCCEED;
     _connection_import_array();
-
-    LOAD_SQL_FUNCTION_PTR(SQLdestroyResult, "lib_sql.dll");
-    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern, "lib_sql.dll");
-
+    LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
+    LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
     if (msg != MAL_SUCCEED) {
         return msg;
     }

@@ -100,16 +100,16 @@ static char* FunctionBasePath(void) {
     return basepath;
 }
 
-CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batint_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batlng_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,bathge_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp,(bat*, bat*, int*));
-CREATE_SQL_FUNCTION_PTR(str,batstr_2time_daytime,(bat*, bat*, int*));
-CREATE_SQL_FUNCTION_PTR(str,batstr_2_date,(bat*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batdbl_num2dec_lng,(bat*, bat*, int*,int*));
-CREATE_SQL_FUNCTION_PTR(str,SQLbatstr_cast,(Client, MalBlkPtr, MalStkPtr, InstrPtr));
+CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str,batint_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str,batlng_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str,bathge_dec2_dbl);
+CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp);
+CREATE_SQL_FUNCTION_PTR(str,batstr_2time_daytime);
+CREATE_SQL_FUNCTION_PTR(str,batstr_2_date);
+CREATE_SQL_FUNCTION_PTR(str,batdbl_num2dec_lng);
+CREATE_SQL_FUNCTION_PTR(str,SQLbatstr_cast);
 
 static MT_Lock pyapiLock;
 static MT_Lock queryLock;
@@ -1589,19 +1589,16 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
                 return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
             }
             PyEval_SaveThread();
-            LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl, "lib_sql.dll");
-#ifdef HAVE_HGE
-            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
-#endif
-            LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batstr_2_date, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast, "lib_sql.dll");
+			LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl);
+			LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
+			LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
+			LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl);
+			LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
+			LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp);
+			LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
+			LOAD_SQL_FUNCTION_PTR(batstr_2_date);
+			LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
+			LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast);
             if (msg != MAL_SUCCEED) {
                 MT_lock_unset(&pyapiLock);
                 return msg;
@@ -2880,14 +2877,4 @@ bool Python_ReleaseGIL(bool state)
     return 0;
 }
 
-void* lookup_function(char *func, char* library) {
-    void *dl, *fun;
-    dl = mdlopen(library, RTLD_NOW | RTLD_GLOBAL);
-    if (dl == NULL) {
-        return NULL;
-    }
-    fun = dlsym(dl, func);
-    dlclose(dl);
-    return fun;
-}
 

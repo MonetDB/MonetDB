@@ -4330,9 +4330,11 @@ literal:
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  int len = sizeof(hge);
+		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  int len = sizeof(lng);
+		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -4350,7 +4352,7 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits);
 
-		    for (;(1<<(bits-1)) > value; bits--) ;
+		    for (;(one<<(bits-1)) > value; bits--) ;
 		   
 		    if (value > GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
