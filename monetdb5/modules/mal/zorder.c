@@ -135,10 +135,10 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 		BBPunfix(by->batCacheid);
 		throw(OPTIMIZER, "zorder.encode", MAL_MALLOC_FAIL);
 	}
-	p = (int *) Tloc(bx, BUNfirst(bx));
+	p = (int *) Tloc(bx, 0);
 	q = (int *) Tloc(bx, BUNlast(bx));
-	r = (int *) Tloc(by, BUNfirst(by));
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	r = (int *) Tloc(by, 0);
+	z = (oid *) Tloc(bz, 0);
 
 	if ( bx->tnonil && by->tnonil){
 		for ( ; p<q; z++,p++,r++)
@@ -202,10 +202,10 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	}
 	
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	z = (oid *) Tloc(bz, 0);
 	q = (oid *) Tloc(bz, BUNlast(bz));
-	x = (int *) Tloc(bx, BUNfirst(bx));
-	y = (int *) Tloc(by, BUNfirst(by));
+	x = (int *) Tloc(bx, 0);
+	y = (int *) Tloc(by, 0);
 
 	if ( bz->tnonil ){
 		for ( ; z<q; z++,x++,y++)
@@ -256,9 +256,9 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	}
 	
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	z = (oid *) Tloc(bz, 0);
 	q = (oid *) Tloc(bz, BUNlast(bz));
-	x = (int *) Tloc(bx, BUNfirst(bx));
+	x = (int *) Tloc(bx, 0);
 
 	if ( bz->tnonil ){
 		for ( ; z<q; z++,x++)
@@ -300,9 +300,9 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	}
 	
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	z = (oid *) Tloc(bz, 0);
 	q = (oid *) Tloc(bz, BUNlast(bz));
-	y = (int *) Tloc(by, BUNfirst(by));
+	y = (int *) Tloc(by, 0);
 
 	if ( bz->tnonil ){
 		for ( ; z<q; z++,y++)

@@ -772,8 +772,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bit    batDirtydesc;     // BAT descriptor specific dirty flag
  *           Heap*  batBuns;          // Heap where the buns are stored
  *           // DELTA status
- *           BUN    batDeleted;       // first deleted BUN
- *           BUN    batFirst;         // empty BUN before the first alive BUN
  *           BUN    batInserted;      // first inserted BUN
  *           BUN    batCount;         // Tuple count
  *           // Tail properties
@@ -823,8 +821,6 @@ typedef struct {
 	int sharecnt;		/* incoming view count */
 
 	/* delta status administration */
-	BUN deleted;		/* start of deleted elements */
-	BUN first;		/* to store next deletion */
 	BUN inserted;		/* start of inserted elements */
 	BUN count;		/* tuple count */
 	BUN capacity;		/* tuple capacity */
@@ -898,9 +894,7 @@ typedef struct BATiter {
 #define batConvert	S.convert
 #define batDirtyflushed	S.dirtyflushed
 #define batDirtydesc	S.descdirty
-#define batFirst	S.first
 #define batInserted	S.inserted
-#define batDeleted	S.deleted
 #define batCount	S.count
 #define batCapacity	S.capacity
 #define batStamp	S.stamp
@@ -1091,8 +1085,6 @@ gdk_export bte ATOMelmshift(int sz);
  * @itemize
  * @item
  * BAThtype(b) and  BATttype(b) find out the head and tail type of a BAT.
- * @item
- * BUNfirst(b) returns a BUN pointer to the first BUN as a BAT.
  * @item
  * BUNlast(b) returns the BUN pointer directly after the last BUN
  * in the BAT.
@@ -1307,7 +1299,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 		(*(const oid*)(v) < (b)->tseqbase) |			\
 		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
 	 BUN_NONE :							\
-	 BUNfirst((b)) + (BUN) (*(const oid*)(v) - (b)->tseqbase))
+	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
 #define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
 			 TYPE_oid : (b)->ttype)
@@ -1381,11 +1373,7 @@ bat_iterator(BAT *b)
 	return bi;
 }
 
-#define BUNfirst(b)	(assert((b)->batFirst <= BUN_MAX), (b)->batFirst)
-#define BUNlast(b)	(assert((b)->batFirst <= BUN_MAX),		\
-			 assert((b)->batCount <= BUN_MAX),		\
-			 assert((b)->batCount <= BUN_MAX - (b)->batFirst), \
-			 (b)->batFirst + (b)->batCount)
+#define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
 
@@ -1616,7 +1604,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs;				\
-				if ((sqbs = ((oid *) (b)->theap.base)[(b)->batFirst]) == oid_nil) { \
+				if ((sqbs = ((oid *) (b)->theap.base)[0]) == oid_nil) { \
 					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
@@ -2533,7 +2521,7 @@ Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
 	if (bi->tvid != oid_nil)
-		bi->tvid += p - BUNfirst(bi->b);
+		bi->tvid += p;
 	return (char*)&bi->tvid;
 }
 
@@ -2756,9 +2744,6 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  * @item BATloopDEL
  * @tab
  *  (BAT *b; BUN p; BUN q; int dummy)
- * @item DELloop
- * @tab
- *  (BAT *b; BUN p, BUN q, int dummy)
  * @item HASHloop
  * @tab
  *  (BAT *b; Hash *h, size_t dummy; ptr value)
@@ -2801,17 +2786,8 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  * The first parameter is a BAT, the p and q are BUN pointers, where p
  * is the iteration variable.
  */
-#define BATloop(r, p, q)					\
-	for (q = BUNlast(r), p = BUNfirst(r);p < q; p++)
-
-/*
- * @- sequential scan over deleted BUNs
- * Stable BUNS that were deleted, are conserved to transaction
- * end. You may inspect these data items.  Again, the b is a BAT, p
- * and q are BUNs, where p is the iteration variable.
- */
-#define DELloop(b, p, q)						\
-	for (q = (b)->batFirst, p = (b)->batDeleted; p < q; p++)
+#define BATloop(r, p, q)			\
+	for (q = BUNlast(r), p = 0; p < q; p++)
 
 /*
  * @- hash-table supported loop over BUNs

@@ -82,7 +82,7 @@ Ready.
 % sys.coalescetest,	sys.L # table_name
 % id,	isnull_not_isnull_name # name
 % int,	char # type
-% 1,	10 # length
+% 1,	32 # length
 [ 1,	"a"	]
 [ 2,	"26"	]
 [ 3,	"c"	]

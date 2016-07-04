@@ -126,10 +126,10 @@ static bool enable_zerocopy_output = true;
 #define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
         if (copy) {                                                                                                                 \
             vararray = PyArray_EMPTY(1, elements, nptpe, 0);                        \
-            memcpy(PyArray_DATA((PyArrayObject*)vararray), Tloc(bat, BUNfirst(bat)), sizeof(mtpe) * (t_end - t_start));             \
+            memcpy(PyArray_DATA((PyArrayObject*)vararray), Tloc(bat, 0), sizeof(mtpe) * (t_end - t_start));             \
         } else {                                                                                                                    \
             vararray = PyArray_New(&PyArray_Type, 1, elements,                                               \
-            nptpe, NULL, &((mtpe*) Tloc(bat, BUNfirst(bat)))[t_start], 0,                                                           \
+            nptpe, NULL, &((mtpe*) Tloc(bat, 0))[t_start], 0,                                                           \
             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);                                                                        \
         }
 
@@ -230,7 +230,7 @@ static bool enable_zerocopy_output = true;
     {                                                                                                                                            \
         for (iu = 0; iu < ret->count; iu++)                                                                                                      \
         {                                                                                                                                        \
-            ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));    \
+            ((mtpe_to*) Tloc(bat, 0))[iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));    \
         }                                                                                                                                        \
     }                                                                                                                                            \
     else                                                                                                                                         \
@@ -240,11 +240,11 @@ static bool enable_zerocopy_output = true;
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                    \
             {                                                                                                                                    \
                 bat->tnil = 1;                                                                                                                 \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = mtpe_to##_nil;                                                                       \
+                ((mtpe_to*) Tloc(bat, 0))[iu] = mtpe_to##_nil;                                                                       \
             }                                                                                                                                    \
             else                                                                                                                                 \
             {                                                                                                                                    \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
+                ((mtpe_to*) Tloc(bat, 0))[iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
             }                                                                                                                                    \
         }                                                                                                                                        \
     } }
@@ -262,7 +262,7 @@ static bool enable_zerocopy_output = true;
             if (msg != MAL_SUCCEED) {                                                                                                                 \
                 goto wrapup;                                                                                                                          \
             }                                                                                                                                         \
-            ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = value;                                                                                        \
+            ((mtpe_to*) Tloc(bat, 0))[iu] = value;                                                                                        \
         }                                                                                                                                             \
     }                                                                                                                                                 \
     else                                                                                                                                              \
@@ -272,7 +272,7 @@ static bool enable_zerocopy_output = true;
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
             {                                                                                                                                         \
                 bat->tnil = 1;                                                                                                                      \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = mtpe_to##_nil;                                                                            \
+                ((mtpe_to*) Tloc(bat, 0))[iu] = mtpe_to##_nil;                                                                            \
             }                                                                                                                                         \
             else                                                                                                                                      \
             {                                                                                                                                         \
@@ -280,7 +280,7 @@ static bool enable_zerocopy_output = true;
                 if (msg != MAL_SUCCEED) {                                                                                                             \
                     goto wrapup;                                                                                                                      \
                 }                                                                                                                                     \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[iu] = value;                                                                                    \
+                ((mtpe_to*) Tloc(bat, 0))[iu] = value;                                                                                    \
             }                                                                                                                                         \
         }                                                                                                                                             \
     } }
@@ -1438,7 +1438,7 @@ returnvalues:
         }
         else
         { // single value return, only for non-grouped aggregations
-            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, BUNfirst(b)));
+            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
         }
         if (argnode) {
             argnode = argnode->next;
@@ -2066,7 +2066,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
         {
             int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
             for (j = 0; j < count; j++) {
-                mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(BUNfirst(b) + j)), nil) == 0;
+                mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(j)), nil) == 0;
                 found_nil = found_nil || mask_data[j];
             }
             break;

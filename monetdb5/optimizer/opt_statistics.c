@@ -109,22 +109,21 @@ QOTupdateStatistics(str nme, int actions, lng val)
 			return;
 		}
 	}
-	p -= BUNfirst(qotStat[QOTnames]);
 
 	bi = bat_iterator(qotStat[QOTcalls]);
-	ip = (int*) BUNtail(bi, p + BUNfirst(qotStat[QOTcalls]));
+	ip = (int*) BUNtail(bi, p);
 	*ip = *ip+1;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
 
 	bi = bat_iterator(qotStat[QOTactions]);
-	ip = (int*) BUNtail(bi, p + BUNfirst(qotStat[QOTactions]));
+	ip = (int*) BUNtail(bi, p);
 	*ip = *ip+ actions;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
 
 	bi = bat_iterator(qotStat[QOTtimings]);
-	lp = (lng*) BUNtail(bi, p + BUNfirst(qotStat[QOTtimings]));
+	lp = (lng*) BUNtail(bi, p);
 	*lp = *lp+ val;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;

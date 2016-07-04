@@ -95,12 +95,9 @@ ALIGNsetH(BAT *b1, BAT *b2)
 void
 ALIGNsetT(BAT *b1, BAT *b2)
 {
-	ssize_t diff;
-
 	if (b1 == NULL || b2 == NULL)
 		return;
 
-	diff = (ssize_t) (BUNfirst(b1) - BUNfirst(b2));
 	if (b2->talign == 0) {
 		b2->talign = OIDnew(1);
 		b2->batDirtydesc = TRUE;
@@ -124,15 +121,15 @@ ALIGNsetT(BAT *b1, BAT *b2)
 	b1->trevsorted = BATtrevordered(b2);
 	b1->talign = b2->talign;
 	b1->batDirtydesc = TRUE;
-	b1->tnorevsorted = b2->tnorevsorted ? (BUN) (b2->tnorevsorted + diff) : 0;
+	b1->tnorevsorted = b2->tnorevsorted;
 	if (b2->tnokey[0] != b2->tnokey[1]) {
-		b1->tnokey[0] = (BUN) (b2->tnokey[0] + diff);
-		b1->tnokey[1] = (BUN) (b2->tnokey[1] + diff);
+		b1->tnokey[0] = b2->tnokey[0];
+		b1->tnokey[1] = b2->tnokey[1];
 	} else {
-		b1->tnokey[0] = b1->tnokey[1] = 0;
+		b1->tnokey[0] = b1->tnokey[1];
 	}
-	b1->tnosorted = b2->tnosorted ? (BUN) (b2->tnosorted + diff): 0;
-	b1->tnodense = b2->tnodense ? (BUN) (b2->tnodense + diff) : 0;
+	b1->tnosorted = b2->tnosorted;
+	b1->tnodense = b2->tnodense;
 }
 
 /*
@@ -187,16 +184,10 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	 * because in case of a mark, we are going to override a
 	 * column with a void. Take care to zero the accelerator data,
 	 * though. */
-	bn->batDeleted = b->batDeleted;
-	bn->batFirst = b->batFirst;
 	bn->batInserted = b->batInserted;
 	bn->batCount = b->batCount;
 	bn->batCapacity = b->batCapacity;
 	bn->T = b->T;
-	if (bn->batFirst > 0) {
-		bn->theap.base += b->batFirst * b->twidth;
-		bn->batFirst = 0;
-	}
 
 	if (tp)
 		BBPshare(tp);
@@ -259,7 +250,7 @@ BATmaterialize(BAT *b)
 	tt = b->ttype;
 	cnt = BATcapacity(b);
 	tail = b->theap;
-	p = BUNfirst(b);
+	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
 	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
@@ -489,8 +480,7 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	if (h < l)
 		h = l;
 	cnt = h - l;
-	l += BUNfirst(b);
-	view->batFirst = view->batDeleted = view->batInserted = 0;
+	view->batInserted = 0;
 	view->theap.base = view->ttype ? BUNtloc(bi, l) : NULL;
 	view->theap.size = tailsize(view, cnt);
 	BATsetcount(view, cnt);

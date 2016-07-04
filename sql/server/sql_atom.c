@@ -13,6 +13,16 @@
 
 static int atom_debug = 0;
 
+void
+atom_init( atom *a )
+{
+	a->isnull = 1;
+	a->data.vtype = 0;
+	a->tpe.type = NULL;
+	a->d = 0;
+	a->varid = 0;
+}
+
 static atom *
 atom_create( sql_allocator *sa )
 {

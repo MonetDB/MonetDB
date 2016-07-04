@@ -130,7 +130,7 @@ BATunique(BAT *b, BAT *s)
 	bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	vals = Tloc(b, BUNfirst(b));
+	vals = Tloc(b, 0);
 	if (b->tvarsized && b->ttype)
 		vars = b->tvheap->base;
 	else
@@ -261,13 +261,13 @@ BATunique(BAT *b, BAT *s)
 #ifndef DISABLE_PARENT_HASH
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift) + BUNfirst(b);
+			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			b = b2;
 			bi = bat_iterator(b);
 		} else
 #endif
 		{
-			lo = BUNfirst(b);
+			lo = 0;
 		}
 		hs = b->thash;
 		for (;;) {
@@ -369,7 +369,7 @@ BATunique(BAT *b, BAT *s)
 			}
 			if (hb == HASHnil(hs)) {
 				o = i + b->hseqbase;
-				p = i + BUNfirst(b);
+				p = i;
 				bunfastapp(bn, &o);
 				/* enter into hash table */
 				HASHputlink(hs, p, HASHget(hs, prb));

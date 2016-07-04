@@ -937,7 +937,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"fits.load", MAL_MALLOC_FAIL);
 		}
 		if (mtype != TYPE_str) {
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, nilptr, (void *)BUNtloc(bat_iterator(tmp), BUNfirst(tmp)), &anynull, &status);
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
 			BATsetcount(tmp, rows);
 			tmp->tsorted = 0;
 			tmp->trevsorted = 0;

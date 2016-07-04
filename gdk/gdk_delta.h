@@ -19,16 +19,14 @@
 	do {								\
 		BATsetcount((P1), 0);					\
 		(P1)->theap.free = 0;					\
-		(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 0; \
+		(P1)->batInserted = 0;					\
 		(P1)->tshift = ATOMelmshift(Tsize(P1));			\
 		DELTADEBUG fprintf(stderr,				\
 			"#DELTAinit %s free " SZFMT " ins " BUNFMT	\
-			" del " BUNFMT " first " BUNFMT " base " PTRFMT "\n", \
+			" base " PTRFMT "\n",				\
 			BATgetId(P1),					\
 			(P1)->theap.free,				\
 			(P1)->batInserted,				\
-			(P1)->batDeleted,				\
-			(P1)->batFirst,					\
 			PTRFMTCAST (P1)->theap.base);			\
 	} while (0)
 /*
@@ -41,7 +39,6 @@
  * be storage-clean, but transaction-dirty). For this we have
  * @%DELTAdirty(b)@.
  */
-#define DELTAdirty(b)	(((b)->batDeleted != BUNfirst(b)) ||\
-	((b)->batInserted < BUNlast(b)))
+#define DELTAdirty(b)	((b)->batInserted < BUNlast(b))
 
 #endif /* _GDK_DELTA_H_ */
