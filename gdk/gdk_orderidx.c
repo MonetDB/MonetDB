@@ -161,7 +161,7 @@ BATorderidx(BAT *b, int stable)
 			return GDK_FAIL;
 		}
 		if (stable) {
-			if (GDKssort(Tloc(bn, BUNfirst(bn)), mv,
+			if (GDKssort(Tloc(bn, 0), mv,
 				     bn->tvheap ? bn->tvheap->base : NULL,
 				     BATcount(bn), Tsize(bn), SIZEOF_OID,
 				     bn->ttype) < 0) {
@@ -172,7 +172,7 @@ BATorderidx(BAT *b, int stable)
 				return GDK_FAIL;
 			}
 		} else {
-			GDKqsort(Tloc(bn, BUNfirst(bn)), mv,
+			GDKqsort(Tloc(bn, 0), mv,
 				 bn->tvheap ? bn->tvheap->base : NULL,
 				 BATcount(bn), Tsize(bn), SIZEOF_OID,
 				 bn->ttype);
@@ -205,7 +205,7 @@ BATorderidx(BAT *b, int stable)
 
 #define UNARY_MERGE(TYPE)						\
 	do {								\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
+		TYPE *v = (TYPE *) Tloc(b, 0);				\
 		if (p < q) {						\
 			*mv++ = *p++;					\
 		}							\
@@ -221,7 +221,7 @@ BATorderidx(BAT *b, int stable)
 
 #define BINARY_MERGE(TYPE)						\
 	do {								\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
+		TYPE *v = (TYPE *) Tloc(b, 0);				\
 		if (p0 < q0 && p1 < q1) {				\
 			if (v[*p0 - b->hseqbase] <= v[*p1 - b->hseqbase]) { \
 				*mv++ = *p0++;				\
@@ -303,7 +303,7 @@ BATorderidx(BAT *b, int stable)
 #define NWAY_MERGE(TYPE)						\
 	do {								\
 		TYPE *minhp, t;						\
-		TYPE *v = (TYPE *) Tloc(b, BUNfirst(b));		\
+		TYPE *v = (TYPE *) Tloc(b, 0);				\
 		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) { \
 			goto bailout;					\
 		}							\

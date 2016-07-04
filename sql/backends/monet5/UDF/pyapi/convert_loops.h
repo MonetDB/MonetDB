@@ -2,10 +2,10 @@
 #define BAT_TO_NP(bat, mtpe, nptpe)                                                                                                 \
         if (copy) {                                                                                                                 \
             vararray = PyArray_EMPTY(1, elements, nptpe, 0);                        \
-            memcpy(PyArray_DATA((PyArrayObject*)vararray), Tloc(bat, BUNfirst(bat)), sizeof(mtpe) * (t_end - t_start));             \
+            memcpy(PyArray_DATA((PyArrayObject*)vararray), Tloc(bat, 0), sizeof(mtpe) * (t_end - t_start));             \
         } else {                                                                                                                    \
             vararray = PyArray_New(&PyArray_Type, 1, elements,                                               \
-            nptpe, NULL, &((mtpe*) Tloc(bat, BUNfirst(bat)))[t_start], 0,                                                           \
+            nptpe, NULL, &((mtpe*) Tloc(bat, 0))[t_start], 0,                                                           \
             NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);                                                                        \
         }
 
@@ -107,7 +107,7 @@
     {                                                                                                                                            \
         for (iu = 0; iu < ret->count; iu++)                                                                                                      \
         {                                                                                                                                        \
-            ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));    \
+            ((mtpe_to*) Tloc(bat, 0))[index + iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));    \
         }                                                                                                                                        \
     }                                                                                                                                            \
     else                                                                                                                                         \
@@ -117,11 +117,11 @@
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                    \
             {                                                                                                                                    \
                 bat->tnil = 1;                                                                                                                 \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = mtpe_to##_nil;                                                               \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                               \
             }                                                                                                                                    \
             else                                                                                                                                 \
             {                                                                                                                                    \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = (mtpe_to)(*(mtpe_from*)(&data[(index_offset * ret->count + iu) * ret->memory_size]));\
             }                                                                                                                                    \
         }                                                                                                                                        \
     } }
@@ -139,7 +139,7 @@
             if (msg != MAL_SUCCEED) {                                                                                                                 \
                 goto wrapup;                                                                                                                          \
             }                                                                                                                                         \
-            ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = value;                                                                                \
+            ((mtpe_to*) Tloc(bat, 0))[index + iu] = value;                                                                                \
             if (bat->tnil == 0) bat->tnil = value == mtpe_to##_nil ? 1 : 0;                                                                       \
         }                                                                                                                                             \
     }                                                                                                                                                 \
@@ -150,7 +150,7 @@
             if (mask[index_offset * ret->count + iu] == TRUE)                                                                                         \
             {                                                                                                                                         \
                 bat->tnil = 1;                                                                                                                      \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = mtpe_to##_nil;                                                                    \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = mtpe_to##_nil;                                                                    \
             }                                                                                                                                         \
             else                                                                                                                                      \
             {                                                                                                                                         \
@@ -158,7 +158,7 @@
                 if (msg != MAL_SUCCEED) {                                                                                                             \
                     goto wrapup;                                                                                                                      \
                 }                                                                                                                                     \
-                ((mtpe_to*) Tloc(bat, BUNfirst(bat)))[index + iu] = value;                                                                            \
+                ((mtpe_to*) Tloc(bat, 0))[index + iu] = value;                                                                            \
                 if (bat->tnil == 0) bat->tnil = value == mtpe_to##_nil ? 1 : 0;                                                                   \
             }                                                                                                                                         \
         }                                                                                                                                             \

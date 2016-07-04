@@ -399,14 +399,18 @@ BATclear(BAT *b, int force)
 
 	BATcheck(b, "BATclear", GDK_FAIL);
 
+	if (!force && b->batInserted > 0) {
+		GDKerror("BATclear: cannot clear committed BAT\n");
+		return GDK_FAIL;
+	}
+
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
 	/* we must dispose of all inserted atoms */
-	if ((b->batDeleted == b->batInserted || force) &&
-	    BATatoms[b->ttype].atomDel == NULL) {
+	if (force && BATatoms[b->ttype].atomDel == NULL) {
 		Heap th;
 
 		/* no stable elements: we do a quick heap clean */
@@ -442,9 +446,7 @@ BATclear(BAT *b, int force)
 	}
 
 	if (force)
-		b->batFirst = b->batDeleted = b->batInserted = 0;
-	else
-		b->batFirst = b->batInserted;
+		b->batInserted = 0;
 	BATsetcount(b,0);
 	BAThseqbase(b, 0);
 	BATtseqbase(b, 0);
@@ -682,11 +684,10 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			/* first/inserted must point equally far into
 			 * the heap as in the source */
-			bn->batFirst = b->batFirst;
 			bn->batInserted = b->batInserted;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
-			BUN p, q, r = BUNfirst(bn);
+			BUN p, q, r = 0;
 			BATiter bi = bat_iterator(b);
 
 			BATloop(b, p, q) {
@@ -709,11 +710,9 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			}
 		} else {
 			/* case (4): optimized for simple array copy */
-			BUN p = BUNfirst(b);
-
 			bn->theap.free = bunstocopy * Tsize(bn);
 			bn->theap.dirty |= bunstocopy > 0;
-			memcpy(Tloc(bn, 0), Tloc(b, p), bn->theap.free);
+			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap.free);
 		}
 		/* copy all properties (size+other) from the source bat */
 		BATsetcount(bn, cnt);
@@ -724,30 +723,30 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		ALIGNsetT(bn, b);
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
-		BUN l = BUNfirst(b), h = BUNlast(b);
+		BUN h = BUNlast(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
 			BATkey(bn, TRUE);
 		bn->tnonil = b->tnonil;
-		if (b->tnosorted > l && b->tnosorted < h)
-			bn->tnosorted = b->tnosorted - l + BUNfirst(bn);
+		if (b->tnosorted > 0 && b->tnosorted < h)
+			bn->tnosorted = b->tnosorted;
 		else
 			bn->tnosorted = 0;
-		if (b->tnorevsorted > l && b->tnorevsorted < h)
-			bn->tnorevsorted = b->tnorevsorted - l + BUNfirst(bn);
+		if (b->tnorevsorted > 0 && b->tnorevsorted < h)
+			bn->tnorevsorted = b->tnorevsorted;
 		else
 			bn->tnorevsorted = 0;
-		if (b->tnodense > l && b->tnodense < h)
-			bn->tnodense = b->tnodense - l + BUNfirst(bn);
+		if (b->tnodense > 0 && b->tnodense < h)
+			bn->tnodense = b->tnodense;
 		else
 			bn->tnodense = 0;
-		if (b->tnokey[0] >= l && b->tnokey[0] < h &&
-		    b->tnokey[1] >= l && b->tnokey[1] < h &&
+		if (b->tnokey[0] < h &&
+		    b->tnokey[1] < h &&
 		    b->tnokey[0] != b->tnokey[1]) {
-			bn->tnokey[0] = b->tnokey[0] - l + BUNfirst(bn);
-			bn->tnokey[1] = b->tnokey[1] - l + BUNfirst(bn);
+			bn->tnokey[0] = b->tnokey[0];
+			bn->tnokey[1] = b->tnokey[1];
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
@@ -860,7 +859,7 @@ setcolprops(BAT *b, const void *x)
 			b->tnonil = 1;
 		} else {
 			if (b->tkey) {
-				b->tnokey[0] = BUNfirst(b);
+				b->tnokey[0] = 0;
 				b->tnokey[1] = BUNlast(b);
 				b->tkey = 0;
 			}
@@ -987,7 +986,7 @@ BUNdelete(BAT *b, oid o)
 		return GDK_SUCCEED;
 	}
 	assert(BATcount(b) > 0); /* follows from "if" above */
-	p = o - b->hseqbase + BUNfirst(b);
+	p = o - b->hseqbase;
 	if (p < b->batInserted) {
 		GDKerror("BUNdelete: cannot delete committed value\n");
 		return GDK_FAIL;
@@ -1064,7 +1063,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;
-	prv = p > b->batFirst ? p - 1 : BUN_NONE;
+	prv = p > 0 ? p - 1 : BUN_NONE;
 	nxt = p < last ? p + 1 : BUN_NONE;
 
 	if (BATtordered(b)) {
@@ -1142,7 +1141,7 @@ BUNreplace(BAT *b, oid id, const void *t, bit force)
 			return GDK_FAIL;
 	}
 
-	return BUNinplace(b, id - b->hseqbase + BUNfirst(b), t, force);
+	return BUNinplace(b, id - b->hseqbase, t, force);
 }
 
 /* very much like BUNreplace, but this doesn't make any changes if the
@@ -1159,7 +1158,7 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 		return GDK_SUCCEED;
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
-	return BUNinplace(b, id - b->hseqbase + BUNfirst(b), val, force);
+	return BUNinplace(b, id - b->hseqbase, val, force);
 }
 
 BUN
@@ -1280,7 +1279,7 @@ BATsetcount(BAT *b, BUN cnt)
 
 	b->batCount = cnt;
 	b->batDirtydesc = TRUE;
-	b->theap.free = tailsize(b, BUNfirst(b) + cnt);
+	b->theap.free = tailsize(b, cnt);
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {
@@ -1421,7 +1420,7 @@ BATtseqbase(BAT *b, oid o)
 		b->tseqbase = o;
 		if (b->ttype == TYPE_oid && o == oid_nil) {
 			b->tdense = 0;
-			b->tnodense = BUNfirst(b);
+			b->tnodense = 0;
 		}
 
 		/* adapt keyness */
@@ -1433,8 +1432,8 @@ BATtseqbase(BAT *b, oid o)
 				b->tsorted = b->trevsorted = 1;
 				b->tnosorted = b->tnorevsorted = 0;
 				if (!b->tkey) {
-					b->tnokey[0] = BUNfirst(b);
-					b->tnokey[1] = BUNfirst(b) + 1;
+					b->tnokey[0] = 0;
+					b->tnokey[1] = 1;
 				} else {
 					b->tnokey[0] = b->tnokey[1] = 0;
 				}
@@ -1448,7 +1447,7 @@ BATtseqbase(BAT *b, oid o)
 				b->tsorted = 1;
 				b->trevsorted = b->batCount <= 1;
 				if (!b->trevsorted)
-					b->tnorevsorted = BUNfirst(b) + 1;
+					b->tnorevsorted = 1;
 			}
 		}
 	}
@@ -1927,8 +1926,6 @@ BATassertTailProps(BAT *b)
 
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
-	p = BUNfirst(b);
-	q = BUNlast(b);
 
 	assert(b->theap.free >= tailsize(b, BUNlast(b)));
 	if (b->ttype != TYPE_void) {
@@ -1980,7 +1977,7 @@ BATassertTailProps(BAT *b)
 		assert(b->tseqbase != oid_nil);
 		if (b->batCount > 0) {
 			assert(b->tseqbase != oid_nil);
-			assert(* (oid *) BUNtail(bi, p) == b->tseqbase);
+			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
 	}
 	/* only linear atoms can be sorted */
@@ -1988,21 +1985,21 @@ BATassertTailProps(BAT *b)
 	assert(!b->trevsorted || ATOMlinear(b->ttype));
 	if (ATOMlinear(b->ttype)) {
 		assert(b->tnosorted == 0 ||
-		       (b->tnosorted > b->batFirst &&
-			b->tnosorted < b->batFirst + b->batCount));
+		       (b->tnosorted > 0 &&
+			b->tnosorted < b->batCount));
 		assert(!b->tsorted || b->tnosorted == 0);
 		if (!b->tsorted &&
-		    b->tnosorted > b->batFirst &&
-		    b->tnosorted < b->batFirst + b->batCount)
+		    b->tnosorted > 0 &&
+		    b->tnosorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnosorted - 1),
 				    BUNtail(bi, b->tnosorted)) > 0);
 		assert(b->tnorevsorted == 0 ||
-		       (b->tnorevsorted > b->batFirst &&
-			b->tnorevsorted < b->batFirst + b->batCount));
+		       (b->tnorevsorted > 0 &&
+			b->tnorevsorted < b->batCount));
 		assert(!b->trevsorted || b->tnorevsorted == 0);
 		if (!b->trevsorted &&
-		    b->tnorevsorted > b->batFirst &&
-		    b->tnorevsorted < b->batFirst + b->batCount)
+		    b->tnorevsorted > 0 &&
+		    b->tnorevsorted < b->batCount)
 			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
 				    BUNtail(bi, b->tnorevsorted)) < 0);
 	}
@@ -2163,13 +2160,9 @@ BATassertProps(BAT *b)
 	/* general BAT sanity */
 	assert(b != NULL);
 	assert(b->batCacheid > 0);
-	assert(b->batDeleted < BUN_MAX);
-	assert(b->batFirst >= b->batDeleted);
-	assert(b->batInserted >= b->batFirst);
-	assert(b->batFirst + b->batCount >= b->batInserted);
+	assert(b->batCount >= b->batInserted);
 
 	/* headless */
-	assert(b->batFirst == 0);
 	assert(b->hseqbase != oid_nil);
 
 	bbpstatus = BBP_status(b->batCacheid);
@@ -2220,7 +2213,7 @@ BATderiveTailProps(BAT *b, int expensive)
 		/* BATsettrivprop has already taken care of all
 		 * properties except for (no)nil if count == 1 */
 		if (b->batCount == 1) {
-			valp = BUNtail(bi, BUNfirst(b));
+			valp = BUNtail(bi, 0);
 			if (cmpf(valp, nilp) == 0) {
 				b->tnil = 1;
 				b->tnonil = 0;
@@ -2239,10 +2232,8 @@ BATderiveTailProps(BAT *b, int expensive)
 	 * things up, if not set correctly, reset them now and set
 	 * them later */
 	if (!b->tkey &&
-	    b->tnokey[0] >= b->batFirst &&
-	    b->tnokey[0] < b->batFirst + b->batCount &&
-	    b->tnokey[1] >= b->batFirst &&
-	    b->tnokey[1] < b->batFirst + b->batCount &&
+	    b->tnokey[0] < b->batCount &&
+	    b->tnokey[1] < b->batCount &&
 	    b->tnokey[0] != b->tnokey[1] &&
 	    cmpf(BUNtail(bi, b->tnokey[0]),
 		 BUNtail(bi, b->tnokey[1])) == 0) {
@@ -2255,8 +2246,8 @@ BATderiveTailProps(BAT *b, int expensive)
 		b->tnokey[1] = 0;
 	}
 	if (!b->tsorted &&
-	    b->tnosorted > b->batFirst &&
-	    b->tnosorted < b->batFirst + b->batCount &&
+	    b->tnosorted > 0 &&
+	    b->tnosorted < b->batCount &&
 	    cmpf(BUNtail(bi, b->tnosorted - 1),
 		 BUNtail(bi, b->tnosorted)) > 0) {
 		sorted = 0;
@@ -2265,8 +2256,8 @@ BATderiveTailProps(BAT *b, int expensive)
 		b->tnosorted = 0;
 	}
 	if (!b->trevsorted &&
-	    b->tnorevsorted > b->batFirst &&
-	    b->tnorevsorted < b->batFirst + b->batCount &&
+	    b->tnorevsorted > 0 &&
+	    b->tnorevsorted < b->batCount &&
 	    cmpf(BUNtail(bi, b->tnorevsorted - 1),
 		 BUNtail(bi, b->tnorevsorted)) < 0) {
 		revsorted = 0;
@@ -2275,9 +2266,8 @@ BATderiveTailProps(BAT *b, int expensive)
 	}
 	if (dense &&
 	    !b->tdense &&
-	    b->tnodense >= b->batFirst &&
-	    b->tnodense < b->batFirst + b->batCount &&
-	    (b->tnodense == b->batFirst ?
+	    b->tnodense < b->batCount &&
+	    (b->tnodense == 0 ?
 	     * (oid *) BUNtail(bi, b->tnodense) == oid_nil :
 	     * (oid *) BUNtail(bi, b->tnodense - 1) + 1 != * (oid *) BUNtail(bi, b->tnodense))) {
 		dense = 0;
@@ -2316,7 +2306,7 @@ BATderiveTailProps(BAT *b, int expensive)
 				"hash table: not doing full check\n");
 		}
 	}
-	for (q = BUNlast(b), p = BUNfirst(b);
+	for (q = BUNlast(b), p = 0;
 	     p < q && (sorted || revsorted || (key && hs));
 	     p++) {
 		valp = BUNtail(bi, p);
@@ -2393,7 +2383,7 @@ BATderiveTailProps(BAT *b, int expensive)
 	if (sorted || revsorted) {
 		/* if sorted, we only need to check the extremes to
 		 * know whether there are any nils */
-		if (cmpf(BUNtail(bi, BUNfirst(b)), nilp) != 0 &&
+		if (cmpf(BUNtail(bi, 0), nilp) != 0 &&
 		    cmpf(BUNtail(bi, BUNlast(b) - 1), nilp) != 0) {
 			b->tnonil = 1;
 			b->tnil = 0;

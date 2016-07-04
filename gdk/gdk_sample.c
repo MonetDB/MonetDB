@@ -82,7 +82,7 @@ OIDTreeToBAT(struct oidtreenode *node, BAT *bat)
 {
 	if (node->left != NULL)
 		OIDTreeToBAT(node->left, bat);
-	((oid *) bat->theap.base)[bat->batFirst + bat->batCount++] = node->o;
+	((oid *) bat->theap.base)[bat->batCount++] = node->o;
 	if (node->right != NULL )
 		OIDTreeToBAT(node->right, bat);
 }
@@ -97,13 +97,13 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
         	OIDTreeToBATAntiset(node->left, bat, start, node->o);
 	else
 		for (noid = start; noid < node->o; noid++)
-			((oid *) bat->theap.base)[bat->batFirst + bat->batCount++] = noid;
+			((oid *) bat->theap.base)[bat->batCount++] = noid;
 
         if (node->right != NULL)
  		OIDTreeToBATAntiset(node->right, bat, node->o + 1, stop);
 	else
 		for (noid = node->o+1; noid < stop; noid++)
-                        ((oid *) bat->theap.base)[bat->batFirst + bat->batCount++] = noid;
+                        ((oid *) bat->theap.base)[bat->batCount++] = noid;
 }
 
 /* BATsample implements sampling for void headed BATs */
@@ -179,7 +179,7 @@ BATsample(BAT *b, BUN n)
 		bn->tkey = 1;
 		bn->tdense = bn->batCount <= 1;
 		if (bn->batCount == 1)
-			bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
+			bn->tseqbase = *(oid *) Tloc(bn, 0);
 	}
 	return bn;
 }

@@ -28,25 +28,25 @@ Ready.
 % .L1,	.L2,	.L3,	.L3 # table_name
 % L1,	L2,	L3,	round_single_value # name
 % decimal,	decimal,	decimal,	decimal # type
-% 10,	10,	10,	10 # length
+% 3,	4,	4,	5 # length
 [ 750.00,	700.00,	1000.00,	0.00	]
 #SELECT ROUND(123.9994, 3),ROUND(123.9995, 3);
 % .L1,	.L1 # table_name
 % L1,	round_single_value # name
 % decimal,	decimal # type
-% 10,	10 # length
+% 4,	4 # length
 [ 123.9990,	124.0000	]
 #SELECT ROUND(123.4545, 2);
 % .L # table_name
 % round_single_value # name
 % decimal # type
-% 10 # length
+% 4 # length
 [ 123.4500	]
 #SELECT ROUND(123.45, -2);
 % .L # table_name
 % round_single_value # name
 % decimal # type
-% 10 # length
+% 4 # length
 [ 100.00	]
 #SELECT ROUND(150.75, 0);
 % .L # table_name

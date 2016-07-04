@@ -950,7 +950,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++) {
 		if ((bi[i].b = BATdescriptor(*getArgReference_bat(stk, pci, i))) == NULL)
 			break;
-		p[i] = BUNfirst(bi[i].b);
+		p[i] = 0;
 		q[i] = BUNlast(bi[i].b);
 	}
 	/* check for errors */
@@ -1054,9 +1054,9 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 			BBPunfix(r->batCacheid);
 		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 	}
-	p = BUNfirst(b);
+	p = 0;
 	q = BUNlast(b);
-	rp = BUNfirst(r);
+	rp = 0;
 
 	prepareResult(bn, b, TYPE_xml, "concat",
 				  GDKfree(buf); BBPunfix(r->batCacheid));
@@ -1260,9 +1260,9 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			map = NULL;
 			mapoff = b->tseqbase;
 		} else {
-			map = (const oid *) Tloc(t2, BUNfirst(t2));
+			map = (const oid *) Tloc(t2, 0);
 		}
-		grps = (const oid *) Tloc(g, BUNfirst(g));
+		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
 		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
@@ -1282,7 +1282,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 			if (isnil)
 				continue;
-			v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+			v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
@@ -1319,7 +1319,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+		for (p = 0, q = p + BATcount(b); p < q; p++) {
 			v = (const char *) BUNtail(bi, p);
 			if (strNil(v)) {
 				if (skip_nils)

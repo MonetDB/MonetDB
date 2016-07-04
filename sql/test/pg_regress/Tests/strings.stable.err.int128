@@ -79,8 +79,8 @@ QUERY = select split_part('joeuser@mydatabase','@',0) AS "an error";
 ERROR = !field position must be greater than zero
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select to_hex(256*256*256 - 1) AS "ffffff";
-ERROR = !SELECT: no such unary operator 'to_hex(bigint)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SELECT: no such unary operator 'to_hex(int)'
+MAPI  = (monetdb) /var/tmp/mtest-11592/.s.monetdb.39445
 QUERY = select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff";
 ERROR = !SELECT: no such unary operator 'to_hex(hugeint)'
 

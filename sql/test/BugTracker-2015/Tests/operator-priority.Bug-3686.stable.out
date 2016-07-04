@@ -28,7 +28,7 @@ Ready.
 #select 12*5/3;
 % .L # table_name
 % sql_mul_single_value # name
-% smallint # type
+% tinyint # type
 % 2 # length
 [ 20	]
 

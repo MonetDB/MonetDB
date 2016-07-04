@@ -1167,7 +1167,7 @@ returnvalues:
         }
         else
         { // single value return, only for non-grouped aggregations
-            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, BUNfirst(b)));
+            VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0));
         }
         if (argnode) {
             argnode = argnode->next;
@@ -1796,7 +1796,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
         {
             int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
             for (j = 0; j < count; j++) {
-                mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(BUNfirst(b) + j)), nil) == 0;
+                mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(j)), nil) == 0;
                 found_nil = found_nil || mask_data[j];
             }
             break;
