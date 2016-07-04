@@ -227,7 +227,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 		if (rid < b->hseqbase || rid >= b->hseqbase + BATcount(b))
 			q = BUN_NONE;
 		else
-			q = rid - b->hseqbase + BUNfirst(b);
+			q = rid - b->hseqbase;
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);

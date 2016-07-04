@@ -860,8 +860,8 @@ fixwkbheap(void)
 		/* do the conversion */
 		b->theap.dirty = TRUE;
 		b->tvheap->dirty = TRUE;
-		old = (const var_t *) h1.base + BUNfirst(b);
-		new = (var_t *) Tloc(b, BUNfirst(b));
+		old = (const var_t *) h1.base;
+		new = (var_t *) Tloc(b, 0);
 		for (i = 0; i < b->batCount; i++) {
 			int len;
 			owkb = (struct old_wkb *) (h2.base + (old[i] << GDK_VARSHIFT));

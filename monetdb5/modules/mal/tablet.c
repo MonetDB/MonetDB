@@ -178,7 +178,7 @@ check_BATs(Tablet *as)
 		b = fmt[i].c;
 		if (b == NULL)
 			continue;
-		offset = BUNfirst(b) + as->offset;
+		offset = as->offset;
 
 		if (BATcount(b) != cnt || b->hseqbase != base)
 			return oid_nil;
@@ -328,7 +328,7 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 			continue;
 		if (id < fmt[i].c->hseqbase || id >= fmt[i].c->hseqbase + BATcount(fmt[i].c))
 			break;
-		fmt[i].p = id - fmt[i].c->hseqbase + BUNfirst(fmt[i].c);
+		fmt[i].p = id - fmt[i].c->hseqbase;
 	}
 	if (i == nr_attrs) {
 		for (i = 0; i < nr_attrs; i++) {
@@ -414,7 +414,7 @@ output_line_lookup(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, 
 		Column *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->ci, id - f->c->hseqbase + BUNfirst(f->c));
+			char *p = BUNtail(f->ci, id - f->c->hseqbase);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				size_t l = strlen(f->nullstr);
@@ -512,7 +512,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	BUN p, q;
 	oid id;
 	BUN i = 0;
-	BUN offset = BUNfirst(order) + as->offset;
+	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
 		if (buf)
@@ -521,7 +521,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 			GDKfree(localbuf);
 		return -1;
 	}
-	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset - BUNfirst(order); p < q; p++, id++) {
+	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q; p++, id++) {
 		if ((res = output_line(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
 			GDKfree(buf);
 			GDKfree(localbuf);
@@ -576,12 +576,12 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 	char *buf = GDKzalloc(len);
 	BUN p, q;
 	BUN i = 0;
-	BUN offset = BUNfirst(order) + as->offset;
+	BUN offset = as->offset;
 
 	if (buf == NULL)
 		return -1;
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
-		oid h = order->hseqbase + p - BUNfirst(order);
+		oid h = order->hseqbase + p;
 
 		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);

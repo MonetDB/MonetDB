@@ -1086,8 +1086,6 @@ gdk_export bte ATOMelmshift(int sz);
  * @item
  * BAThtype(b) and  BATttype(b) find out the head and tail type of a BAT.
  * @item
- * BUNfirst(b) returns a BUN pointer to the first BUN as a BAT.
- * @item
  * BUNlast(b) returns the BUN pointer directly after the last BUN
  * in the BAT.
  * @end itemize
@@ -1301,7 +1299,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 		(*(const oid*)(v) < (b)->tseqbase) |			\
 		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
 	 BUN_NONE :							\
-	 BUNfirst((b)) + (BUN) (*(const oid*)(v) - (b)->tseqbase))
+	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
 #define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
 			 TYPE_oid : (b)->ttype)
@@ -1375,7 +1373,6 @@ bat_iterator(BAT *b)
 	return bi;
 }
 
-#define BUNfirst(b)	0
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
@@ -2524,7 +2521,7 @@ Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
 	if (bi->tvid != oid_nil)
-		bi->tvid += p - BUNfirst(bi->b);
+		bi->tvid += p;
 	return (char*)&bi->tvid;
 }
 
@@ -2789,8 +2786,8 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  * The first parameter is a BAT, the p and q are BUN pointers, where p
  * is the iteration variable.
  */
-#define BATloop(r, p, q)					\
-	for (q = BUNlast(r), p = BUNfirst(r);p < q; p++)
+#define BATloop(r, p, q)			\
+	for (q = BUNlast(r), p = 0; p < q; p++)
 
 /*
  * @- hash-table supported loop over BUNs

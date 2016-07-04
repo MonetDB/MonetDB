@@ -24,8 +24,8 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 		BBPreclaim(bn2);
 		return GDK_FAIL;
 	}
-	p1 = (oid *) Tloc(bn1, BUNfirst(bn1));
-	p2 = (oid *) Tloc(bn2, BUNfirst(bn2));
+	p1 = (oid *) Tloc(bn1, 0);
+	p2 = (oid *) Tloc(bn2, 0);
 	for (i = 0; i < BATcount(l); i++) {
 		for (j = 0; j < BATcount(r); j++) {
 			*p1++ = i + l->hseqbase;

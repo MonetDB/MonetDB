@@ -1568,8 +1568,8 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", MAL_MALLOC_FAIL);
 	}
-	d = (const date *) Tloc(b, BUNfirst(b));
-	t = (timestamp *) Tloc(bn, BUNfirst(bn));
+	d = (const date *) Tloc(b, 0);
+	t = (timestamp *) Tloc(bn, 0);
 	bn->tnil = 0;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
 		if (*d == date_nil) {
@@ -1794,8 +1794,8 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.daytime", MAL_MALLOC_FAIL);
 	}
-	t = (const timestamp *) Tloc(b, BUNfirst(b));
-	dt = (daytime *) Tloc(bn, BUNfirst(bn));
+	t = (const timestamp *) Tloc(b, 0);
+	dt = (daytime *) Tloc(bn, 0);
 	bn->tnil = 0;
 	for (n = BATcount(b); n > 0; n--, t++, dt++) {
 		if (ts_isnil(*t)) {
@@ -1869,8 +1869,8 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.date", MAL_MALLOC_FAIL);
 	}
-	t = (const timestamp *) Tloc(b, BUNfirst(b));
-	d = (date *) Tloc(bn, BUNfirst(bn));
+	t = (const timestamp *) Tloc(b, 0);
+	d = (date *) Tloc(bn, 0);
 	bn->tnil = 0;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
 		if (ts_isnil(*t)) {
@@ -2026,9 +2026,9 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 		BBPunfix(b2->batCacheid);
 		throw(MAL, "batmtime.diff", MAL_MALLOC_FAIL);
 	}
-	t1 = (const date *) Tloc(b1, BUNfirst(b1));
-	t2 = (const date *) Tloc(b2, BUNfirst(b2));
-	tn = (int *) Tloc(bn, BUNfirst(bn));
+	t1 = (const date *) Tloc(b1, 0);
+	t2 = (const date *) Tloc(b2, 0);
+	tn = (int *) Tloc(bn, 0);
 	bn->tnonil = 1;
 	bn->tnil = 0;
 	for (i = 0; i < n; i++) {
@@ -2044,7 +2044,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 		tn++;
 	}
 	BBPunfix(b2->batCacheid);
-	BATsetcount(bn, (BUN) (tn - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (tn - (int *) Tloc(bn, 0)));
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	BBPunfix(b1->batCacheid);
@@ -2105,9 +2105,9 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 		BBPunfix(b2->batCacheid);
 		throw(MAL, "batmtime.diff", MAL_MALLOC_FAIL);
 	}
-	t1 = (const timestamp *) Tloc(b1, BUNfirst(b1));
-	t2 = (const timestamp *) Tloc(b2, BUNfirst(b2));
-	tn = (lng *) Tloc(bn, BUNfirst(bn));
+	t1 = (const timestamp *) Tloc(b1, 0);
+	t2 = (const timestamp *) Tloc(b2, 0);
+	tn = (lng *) Tloc(bn, 0);
 	bn->tnonil = 1;
 	bn->tnil = 0;
 	for (i = 0; i < n; i++) {
@@ -2123,7 +2123,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 		tn++;
 	}
 	BBPunfix(b2->batCacheid);
-	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, 0)));
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	BBPunfix(b1->batCacheid);
@@ -2538,8 +2538,8 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.daytime", MAL_MALLOC_FAIL);
 	}
-	s = (const lng *) Tloc(b, BUNfirst(b));
-	dt = (daytime *) Tloc(bn, BUNfirst(bn));
+	s = (const lng *) Tloc(b, 0);
+	dt = (daytime *) Tloc(bn, 0);
 	bn->tnil = 0;
 	for (n = BATcount(b); n > 0; n--, s++, dt++) {
 		if (*s == lng_nil ||
@@ -2665,8 +2665,8 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", MAL_MALLOC_FAIL);
 	}
-	s = (const int *) Tloc(b, BUNfirst(b));
-	t = (timestamp *) Tloc(bn, BUNfirst(bn));
+	s = (const int *) Tloc(b, 0);
+	t = (timestamp *) Tloc(bn, 0);
 	bn->tnil = 0;
 	for (n = BATcount(b); n > 0; n--, t++, s++) {
 		if (*s == int_nil) {
@@ -2723,8 +2723,8 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", MAL_MALLOC_FAIL);
 	}
-	ms = (const lng *) Tloc(b, BUNfirst(b));
-	t = (timestamp *) Tloc(bn, BUNfirst(bn));
+	ms = (const lng *) Tloc(b, 0);
+	t = (timestamp *) Tloc(bn, 0);
 	bn->tnil = 0;
 	for (n = BATcount(b); n > 0; n--, t++, ms++) {
 		if (*ms == lng_nil) {
@@ -3011,8 +3011,8 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 	bn->tnonil = 1;
 	bn->tnil = 0;
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	y = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	y = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*y = int_nil;
@@ -3026,7 +3026,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 
-	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = BATcount(bn)<2;
 	bn->trevsorted = BATcount(bn)<2;
@@ -3056,8 +3056,8 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	bn->tnonil = 1;
 	bn->tnil = 0;
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	m = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*m = int_nil;
@@ -3070,7 +3070,7 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 		m++;
 		t++;
 	}
-	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = BATcount(bn) < 2;
 	bn->trevsorted = BATcount(bn) < 2;
@@ -3100,8 +3100,8 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 	bn->tnonil = 1;
 	bn->tnil = 0;
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	d = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	d = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*d = int_nil;
@@ -3115,7 +3115,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 
-	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = BATcount(bn) <2;
 	bn->trevsorted = BATcount(bn) <2;
@@ -3145,8 +3145,8 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	bn->tnonil = 1;
 	bn->tnil = 0;
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	h = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	h = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*h = int_nil;
@@ -3159,7 +3159,7 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 		h++;
 		t++;
 	}
-	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = BATcount(bn) <2;;
 	bn->trevsorted = BATcount(bn) <2;;
@@ -3187,8 +3187,8 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
 	}
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	m = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*m = int_nil;
@@ -3201,7 +3201,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 		m++;
 		t++;
 	}
-	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
@@ -3229,8 +3229,8 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
 	}
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	s = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*s = int_nil;
@@ -3242,7 +3242,7 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 		}
 		s++; t++;
 	}
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;
@@ -3270,8 +3270,8 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
 	}
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	s = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*s = int_nil;
@@ -3285,7 +3285,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 		t++;
 	}
 
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = BATcount(bn) <2;
 	bn->trevsorted = BATcount(bn) <2;
@@ -3313,8 +3313,8 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
 	}
 
-	t = (const date *) Tloc(b, BUNfirst(b));
-	s = (int *) Tloc(bn, BUNfirst(bn));
+	t = (const date *) Tloc(b, 0);
+	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*s = int_nil;
@@ -3327,7 +3327,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 		s++;
 		t++;
 	}
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, BUNfirst(bn))));
+	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
 
 	bn->tsorted = FALSE;
 	bn->trevsorted = FALSE;

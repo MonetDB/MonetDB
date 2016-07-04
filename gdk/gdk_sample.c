@@ -179,7 +179,7 @@ BATsample(BAT *b, BUN n)
 		bn->tkey = 1;
 		bn->tdense = bn->batCount <= 1;
 		if (bn->batCount == 1)
-			bn->tseqbase = *(oid *) Tloc(bn, BUNfirst(bn));
+			bn->tseqbase = *(oid *) Tloc(bn, 0);
 	}
 	return bn;
 }

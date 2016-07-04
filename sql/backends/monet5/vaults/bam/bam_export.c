@@ -277,7 +277,7 @@ bind_export_result(Client cntxt, MalBlkPtr mb, bam_field fields[11], int *tuple_
 		}
 		cnt = cnt_tmp;
 		fields[i].iter = bat_iterator(fields[i].b);
-		fields[i].cur = BUNfirst(fields[i].b);
+		fields[i].cur = 0;
 	}
 	*tuple_count = cnt;
 	return MAL_SUCCEED;

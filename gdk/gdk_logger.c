@@ -125,7 +125,7 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = BUNfirst(b), q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BUNlast(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE)
@@ -2329,7 +2329,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (BUNlast(uval) - BUNfirst(uval));
+	l.nr = (BUNlast(uval));
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -2343,7 +2343,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		for (p = BUNfirst(uid); p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 			const void *id = BUNtail(ii, p);
 			const void *val = BUNtail(vi, p);
 

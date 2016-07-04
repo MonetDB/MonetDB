@@ -395,9 +395,9 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bats_dbl[1] = store_funcs.bind_col(tr, cols[1], 0);
 	bats_dbl[2] = store_funcs.bind_col(tr, cols[2], 0);
 
-	cols_dbl[0] = (dbl*)Tloc(bats_dbl[0], BUNfirst(bats_dbl[0]));
-	cols_dbl[1] = (dbl*)Tloc(bats_dbl[1], BUNfirst(bats_dbl[1]));
-	cols_dbl[2] = (dbl*)Tloc(bats_dbl[2], BUNfirst(bats_dbl[2]));
+	cols_dbl[0] = (dbl*)Tloc(bats_dbl[0], 0);
+	cols_dbl[1] = (dbl*)Tloc(bats_dbl[1], 0);
+	cols_dbl[2] = (dbl*)Tloc(bats_dbl[2], 0);
 
 	nrows = store_funcs.count_col(tr, cols[0], 1);
 
@@ -977,9 +977,9 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
-	px = (dbl *) Tloc(x, BUNfirst(x));
-	py = (dbl *) Tloc(y, BUNfirst(y));
-	pz = (dbl *) Tloc(z, BUNfirst(z));
+	px = (dbl *) Tloc(x, 0);
+	py = (dbl *) Tloc(y, 0);
+	pz = (dbl *) Tloc(z, 0);
 
 	p = LASReader_GetNextPoint(reader);
 	i = 0;

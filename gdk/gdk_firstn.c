@@ -87,10 +87,10 @@
 			siftup(OPER, i - 1, SWAP);	\
 	} while (0)
 
-#define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase + BUNfirst(b)), \
-			     BUNtail(bi, oids[p2] - b->hseqbase + BUNfirst(b))) < 0)
-#define GTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase + BUNfirst(b)), \
-			     BUNtail(bi, oids[p2] - b->hseqbase + BUNfirst(b))) > 0)
+#define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase), \
+			     BUNtail(bi, oids[p2] - b->hseqbase)) < 0)
+#define GTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase), \
+			     BUNtail(bi, oids[p2] - b->hseqbase)) > 0)
 #define LTfix(p1, p2)	(vals[oids[p1] - b->hseqbase] < vals[oids[p2] - b->hseqbase])
 #define GTfix(p1, p2)	(vals[oids[p1] - b->hseqbase] > vals[oids[p2] - b->hseqbase])
 #define SWAP1(p1, p2)				\
@@ -102,7 +102,7 @@
 
 #define shuffle_unique(TYPE, OP)					\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0); \
 		heapify(OP##fix, SWAP1);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -190,7 +190,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
-	oids = (oid *) Tloc(bn, BUNfirst(bn));
+	oids = (oid *) Tloc(bn, 0);
 	cmp = ATOMcompare(b->ttype);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
@@ -247,8 +247,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			heapify(LTany, SWAP1);
 			while (cand ? cand < candend : start < end) {
 				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (cmp(BUNtail(bi, i - b->hseqbase + BUNfirst(b)),
-					BUNtail(bi, oids[0] - b->hseqbase + BUNfirst(b))) < 0) {
+				if (cmp(BUNtail(bi, i - b->hseqbase),
+					BUNtail(bi, oids[0] - b->hseqbase)) < 0) {
 					oids[0] = i;
 					siftup(LTany, 0, SWAP1);
 				}
@@ -284,8 +284,8 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 			heapify(GTany, SWAP1);
 			while (cand ? cand < candend : start < end) {
 				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (cmp(BUNtail(bi, i - b->hseqbase + BUNfirst(b)),
-					BUNtail(bi, oids[0] - b->hseqbase + BUNfirst(b))) > 0) {
+				if (cmp(BUNtail(bi, i - b->hseqbase),
+					BUNtail(bi, oids[0] - b->hseqbase)) > 0) {
 					oids[0] = i;
 					siftup(GTany, 0, SWAP1);
 				}
@@ -318,16 +318,16 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 #define GTvoidgrp(p1, p2)					\
 	(goids[p1] < goids[p2] ||				\
 	 (goids[p1] == goids[p2] && oids[p1] > oids[p2]))
-#define LTanygrp(p1, p2)						\
-	(goids[p1] < goids[p2] ||					\
-	 (goids[p1] == goids[p2] &&					\
-	  cmp(BUNtail(bi, oids[p1] - b->hseqbase + BUNfirst(b)),	\
-	      BUNtail(bi, oids[p2] - b->hseqbase + BUNfirst(b))) < 0))
-#define GTanygrp(p1, p2)						\
-	(goids[p1] < goids[p2] ||					\
-	 (goids[p1] == goids[p2] &&					\
-	  cmp(BUNtail(bi, oids[p1] - b->hseqbase + BUNfirst(b)),	\
-	      BUNtail(bi, oids[p2] - b->hseqbase + BUNfirst(b))) > 0))
+#define LTanygrp(p1, p2)					\
+	(goids[p1] < goids[p2] ||				\
+	 (goids[p1] == goids[p2] &&				\
+	  cmp(BUNtail(bi, oids[p1] - b->hseqbase),		\
+	      BUNtail(bi, oids[p2] - b->hseqbase)) < 0))
+#define GTanygrp(p1, p2)					\
+	(goids[p1] < goids[p2] ||				\
+	 (goids[p1] == goids[p2] &&				\
+	  cmp(BUNtail(bi, oids[p1] - b->hseqbase),		\
+	      BUNtail(bi, oids[p2] - b->hseqbase)) > 0))
 #define SWAP2(p1, p2)				\
 	do {					\
 		item = oids[p1];		\
@@ -340,7 +340,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 
 #define shuffle_unique_with_groups(TYPE, OP)				\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, BUNfirst(b));	\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
 		heapify(OP##fixgrp, SWAP2);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -398,8 +398,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	if (bn == NULL)
 		return NULL;
 	BATsetcount(bn, n);
-	oids = (oid *) Tloc(bn, BUNfirst(bn));
-	gv = (const oid *) Tloc(g, BUNfirst(g));
+	oids = (oid *) Tloc(bn, 0);
+	gv = (const oid *) Tloc(g, 0);
 	goids = GDKmalloc(n * sizeof(oid));
 	if (goids == NULL) {
 		BBPreclaim(bn);
@@ -467,8 +467,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 				i = cand ? *cand++ : start++ + b->hseqbase;
 				if (gv[ci] < goids[0] ||
 				    (gv[ci] == goids[0] &&
-				     cmp(BUNtail(bi, i - b->hseqbase + BUNfirst(b)),
-					 BUNtail(bi, oids[0] - b->hseqbase + BUNfirst(b))) < 0)) {
+				     cmp(BUNtail(bi, i - b->hseqbase),
+					 BUNtail(bi, oids[0] - b->hseqbase)) < 0)) {
 					oids[0] = i;
 					goids[0] = gv[ci];
 					siftup(LTanygrp, 0, SWAP2);
@@ -522,8 +522,8 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 				i = cand ? *cand++ : start++ + b->hseqbase;
 				if (gv[ci] < goids[0] ||
 				    (gv[ci] == goids[0] &&
-				     cmp(BUNtail(bi, i - b->hseqbase + BUNfirst(b)),
-					 BUNtail(bi, oids[0] - b->hseqbase + BUNfirst(b))) > 0)) {
+				     cmp(BUNtail(bi, i - b->hseqbase),
+					 BUNtail(bi, oids[0] - b->hseqbase)) > 0)) {
 					oids[0] = i;
 					goids[0] = gv[ci];
 					siftup(GTanygrp, 0, SWAP2);
@@ -579,14 +579,14 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 
 #define shuffle_grouped1(TYPE, OPER)					\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict v = (const TYPE *) Tloc(b, 0);	\
 		shuffle_grouped1_body(OPER(v[i], v[groups[j].bun]),	\
 				      v[i] == v[groups[j].bun]);	\
 	} while (0)
 
 #define shuffle_grouped2(TYPE)						\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict v = (const TYPE *) Tloc(b, 0);	\
 		TYPE lastval = v[groups[top - 1].bun];			\
 		for (i = cand ? *cand++ - b->hseqbase : start;		\
 		     i < end;						\
@@ -688,7 +688,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			break;
 		default:
 			shuffle_grouped1_body(
-				(c = cmp(BUNtail(bi, i + BUNfirst(b)),
+				(c = cmp(BUNtail(bi, i),
 					 BUNtail(bi, groups[j].bun))) < 0,
 				c == 0);
 			break;
@@ -724,7 +724,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			break;
 		default:
 			shuffle_grouped1_body(
-				(c = cmp(BUNtail(bi, i + BUNfirst(b)),
+				(c = cmp(BUNtail(bi, i),
 					 BUNtail(bi, groups[j].bun))) > 0,
 				c == 0);
 			break;
@@ -749,8 +749,8 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 	if (ncnt == cnt)
 		bp = NULL;
 	else
-		bp = (oid *) Tloc(bn, BUNfirst(bn));
-	gp = (oid *) Tloc(gn, BUNfirst(gn));
+		bp = (oid *) Tloc(bn, 0);
+	gp = (oid *) Tloc(gn, 0);
 	switch (tpe) {
 	case TYPE_void:
 		for (i = cand ? *cand++ - b->hseqbase : start;
@@ -794,7 +794,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		     i < end;
 		     cand < candend ? (i = *cand++ - b->hseqbase) : i++) {
 			for (j = 0; j < top; j++) {
-				if (cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, groups[j].bun)) == 0) {
+				if (cmp(BUNtail(bi, i), BUNtail(bi, groups[j].bun)) == 0) {
 					if (bp)
 						*bp++ = i + b->hseqbase;
 					*gp++ = j;
@@ -868,14 +868,14 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 
 #define shuffle_grouped_with_groups1(TYPE, OPER)			\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict v = (const TYPE *) Tloc(b, 0);	\
 		shuffle_grouped_with_groups1_body(OPER(v[i], v[groups[j].bun]),	\
 						  v[i] == v[groups[j].bun]); \
 	} while (0)
 
 #define shuffle_grouped_with_groups2(TYPE)				\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *restrict v = (const TYPE *) Tloc(b, 0);	\
 		for (ci = 0, i = cand ? *cand++ - b->hseqbase : start;	\
 		     i < end;						\
 		     ci++, cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
@@ -960,7 +960,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	 * can use the base type */
 	tpe = ATOMbasetype(tpe); /* takes care of oid */
 	groups = GDKmalloc(sizeof(*groups) * n);
-	gv = (const oid *) Tloc(g, BUNfirst(g));
+	gv = (const oid *) Tloc(g, 0);
 	oldcand = cand;
 	if (asc) {
 		switch (tpe) {
@@ -993,7 +993,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			break;
 		default:
 			shuffle_grouped_with_groups1_body(
-				(c = cmp(BUNtail(bi, i + BUNfirst(b)),
+				(c = cmp(BUNtail(bi, i),
 					 BUNtail(bi, groups[j].bun))) < 0,
 				c == 0);
 			break;
@@ -1029,7 +1029,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			break;
 		default:
 			shuffle_grouped_with_groups1_body(
-				(c = cmp(BUNtail(bi, i + BUNfirst(b)),
+				(c = cmp(BUNtail(bi, i),
 					 BUNtail(bi, groups[j].bun))) > 0,
 				c == 0);
 			break;
@@ -1054,8 +1054,8 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (ncnt == cnt)
 		bp = NULL;
 	else
-		bp = (oid *) Tloc(bn, BUNfirst(bn));
-	gp = (oid *) Tloc(gn, BUNfirst(gn));
+		bp = (oid *) Tloc(bn, 0);
+	gp = (oid *) Tloc(gn, 0);
 	switch (tpe) {
 	case TYPE_void:
 		for (ci = 0, i = cand ? *cand++ - b->hseqbase : start;
@@ -1101,7 +1101,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		     ci++, cand < candend ? (i = *cand++ - b->hseqbase) : i++) {
 			for (j = 0; j < top; j++) {
 				if (gv[ci] == groups[j].grp &&
-				    cmp(BUNtail(bi, i + BUNfirst(b)), BUNtail(bi, groups[j].bun)) == 0) {
+				    cmp(BUNtail(bi, i), BUNtail(bi, groups[j].bun)) == 0) {
 					if (bp)
 						*bp++ = i + b->hseqbase;
 					*gp++ = j;

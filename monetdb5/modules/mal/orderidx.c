@@ -227,7 +227,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	s = (const oid *) b->torderidx->base + ORDERIDXOFF;
 	se = s + BATcount(b);
-	d = (oid *) Tloc(bn, BUNfirst(bn));
+	d = (oid *) Tloc(bn, 0);
 	while (s < se)
 			 *d++ = *s++ & ~BUN_MSK;
 	BATsetcount(bn, BATcount(b));

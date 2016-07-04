@@ -905,7 +905,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 
 		for (i = start; i < end; i++) {
 			CHECKCAND(dst, i, b->hseqbase, bit_nil);
-			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, i + BUNfirst(b)), nil) == 0) ^ notnil);
+			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, i), nil) == 0) ^ notnil);
 		}
 		break;
 	}
@@ -1002,8 +1002,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 			if (++cand == candend)
 				end = i + 1;
 		}
-		p1 = BUNtail(b1i, i + BUNfirst(b1));
-		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		p1 = BUNtail(b1i, i);
+		p2 = BUNtail(b2i, i);
 		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 			nils++;
 			p1 = nil;
@@ -1023,7 +1023,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 		bn->tkey = 1;
 		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
 		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
@@ -1083,8 +1083,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 			if (++cand == candend)
 				end = i + 1;
 		}
-		p1 = BUNtail(b1i, i + BUNfirst(b1));
-		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		p1 = BUNtail(b1i, i);
+		p2 = BUNtail(b2i, i);
 		if (cmp(p1, nil) == 0) {
 			if (cmp(p2, nil) == 0) {
 				/* both values are nil */
@@ -1108,7 +1108,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->tkey = 1;
 		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
 		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
@@ -1168,8 +1168,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 			if (++cand == candend)
 				end = i + 1;
 		}
-		p1 = BUNtail(b1i, i + BUNfirst(b1));
-		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		p1 = BUNtail(b1i, i);
+		p2 = BUNtail(b2i, i);
 		if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 			nils++;
 			p1 = nil;
@@ -1189,7 +1189,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 		bn->tkey = 1;
 		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
 		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
@@ -1249,8 +1249,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 			if (++cand == candend)
 				end = i + 1;
 		}
-		p1 = BUNtail(b1i, i + BUNfirst(b1));
-		p2 = BUNtail(b2i, i + BUNfirst(b2));
+		p1 = BUNtail(b1i, i);
+		p2 = BUNtail(b2i, i);
 		if (cmp(p1, nil) == 0) {
 			if (cmp(p2, nil) == 0) {
 				/* both values are nil */
@@ -1274,7 +1274,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->tkey = 1;
 		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
 		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,BUNfirst(bn)) : 0;
+			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
@@ -3054,7 +3054,7 @@ static BUN
 addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	    BUN cnt, BUN start, BUN end, const oid *restrict cand, const oid *candend)
 {
-	BUN i, j, k, frst = BUNfirst(bn);
+	BUN i;
 	BUN nils = start + (cnt - end);
 	char *s;
 	size_t slen, llen, rlen;
@@ -3069,27 +3069,26 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	s = GDKmalloc(slen);
 	if (s == NULL)
 		goto bunins_failed;
-	for (k = 0; k < start; k++)
-		tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
-	for (i = start + (b1 ? BUNfirst(b1) : 0), j = start + (b2 ? BUNfirst(b2) : 0), k = start;
-	     k < end; i++, j++, k++) {
+	for (i = 0; i < start; i++)
+		tfastins_nocheck(bn, i, str_nil, Tsize(bn));
+	for (i = start; i < end; i++) {
 		if (cand) {
-			if (k < *cand - candoff) {
+			if (i < *cand - candoff) {
 				nils++;
-				tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+				tfastins_nocheck(bn, i, str_nil, Tsize(bn));
 				continue;
 			}
-			assert(k == *cand - candoff);
+			assert(i == *cand - candoff);
 			if (++cand == candend)
-				end = k + 1;
+				end = i + 1;
 		}
 		if (b1)
 			l = BUNtvar(b1i, i);
 		if (b2)
-			r = BUNtvar(b2i, j);
+			r = BUNtvar(b2i, i);
 		if (strcmp(l, str_nil) == 0 || strcmp(r, str_nil) == 0) {
 			nils++;
-			tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+			tfastins_nocheck(bn, i, str_nil, Tsize(bn));
 		} else {
 			llen = strlen(l);
 			rlen = strlen(r);
@@ -3105,11 +3104,11 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 #else
 			snprintf(s, slen, "%s%s", l, r);
 #endif
-			tfastins_nocheck(bn, k + frst, s, Tsize(bn));
+			tfastins_nocheck(bn, i, s, Tsize(bn));
 		}
 	}
-	for (k = end; k < cnt; k++)
-		tfastins_nocheck(bn, k + frst, str_nil, Tsize(bn));
+	for (i = end; i < cnt; i++)
+		tfastins_nocheck(bn, i, str_nil, Tsize(bn));
 	GDKfree(s);
 	return nils;
 

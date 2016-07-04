@@ -100,9 +100,9 @@ UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN
 	assert(bres->ttype == UT(UO));
 
 	/* get direct access to the tail arrays	*/
-	one = (UI*) Tloc(bone, BUNfirst(bone));
-	two = (UI*) Tloc(btwo, BUNfirst(btwo));
-	res = (UO*) Tloc(bres, BUNfirst(bres));
+	one = (UI*) Tloc(bone, 0);
+	two = (UI*) Tloc(btwo, 0);
+	res = (UO*) Tloc(bres, 0);
 
 	/* call core function on arrays */
 	msg = UF(UDFarrayfuse_,UI,UO,) ( res, one, two , n );

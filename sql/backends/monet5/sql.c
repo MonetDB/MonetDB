@@ -1704,7 +1704,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str sname = BUNtail(bi, BUNfirst(b));
+		str sname = BUNtail(bi, 0);
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
@@ -2758,8 +2758,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
@@ -2867,8 +2867,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 12; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
@@ -2945,8 +2945,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtail(itertbl,o);
@@ -3042,8 +3042,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 12; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtail(itertbl,o);
@@ -3669,7 +3669,7 @@ zero_or_one(ptr ret, const bat *bid)
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1) {
 		BATiter bi = bat_iterator(b);
-		p = BUNtail(bi, BUNfirst(b));
+		p = BUNtail(bi, 0);
 	} else {
 		char buf[BUFSIZ];
 
@@ -3720,7 +3720,7 @@ SQLall(ptr ret, const bat *bid)
 		BUN q, r;
 		int (*ocmp) (const void *, const void *);
 		BATiter bi = bat_iterator(b);
-		q = BUNfirst(b);
+		q = 0;
 		r = BUNlast(b);
 		p = BUNtail(bi, q);
 		ocmp = ATOMcompare(b->ttype);
@@ -3773,9 +3773,9 @@ not_unique(bit *ret, const bat *bid)
 		return MAL_SUCCEED;
 	} else if (b->tsorted) {
 		BUN p, q;
-		oid c = *(oid *) Tloc(b, BUNfirst(b));
+		oid c = *(oid *) Tloc(b, 0);
 
-		for (p = BUNfirst(b) + 1, q = BUNlast(b); p < q; p++) {
+		for (p = 1, q = BUNlast(b); p < q; p++) {
 			oid v = *(oid *) Tloc(b, p);
 			if (v <= c) {
 				*ret = TRUE;
@@ -4466,8 +4466,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	gi = bat_iterator(g);
 	ocmp = ATOMcompare(b->ttype);
 	gcmp = ATOMcompare(g->ttype);
-	oc = BUNtail(bi, BUNfirst(b));
-	gc = BUNtail(gi, BUNfirst(g));
+	oc = BUNtail(bi, 0);
+	gc = BUNtail(gi, 0);
 	if (!ALIGNsynced(b, g)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
@@ -4523,7 +4523,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
-	cur = BUNtail(bi, BUNfirst(b));
+	cur = BUNtail(bi, 0);
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);

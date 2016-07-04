@@ -334,7 +334,7 @@ GDKbatcopy(char *dest, BAT *bat, str colname)
 	memcpy(dest + position, bat, sizeof(BAT));
 	position += align(sizeof(BAT));
 	//[DATA]
-	memcpy(dest + position, Tloc(bat, BUNfirst(bat)), batsize);
+	memcpy(dest + position, Tloc(bat, 0), batsize);
 	position += align(batsize);
 	if (bat->tvheap != NULL) {
 		//[VHEAP]
