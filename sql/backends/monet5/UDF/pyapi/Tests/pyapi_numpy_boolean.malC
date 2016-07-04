@@ -1,0 +1,54 @@
+
+# simple boolean operations
+bbit:= bat.new(:bit);
+bat.append(bbit,1:bit);
+bat.append(bbit,0:bit);
+bat.append(bbit,1:bit);
+bat.append(bbit,0:bit);
+bat.append(bbit,nil:bit);
+# any(x)
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return([[any(arg1)]])",bbit);
+io.print(rbit);
+# all(x)
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return([[all(arg1)]])",bbit);
+io.print(rbit);
+# logical_not(x)
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return([numpy.logical_not(arg1)])",bbit);
+io.print(rbit);
+
+# boolean operations on two boolean arrays
+bbit2:= bat.new(:bit);
+bat.append(bbit2,nil:bit);
+bat.append(bbit2,1:bit);
+bat.append(bbit2,1:bit);
+bat.append(bbit2,0:bit);
+bat.append(bbit2,nil:bit);
+# logical_and(x,y)
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return(numpy.logical_and(arg1, arg2))",bbit, bbit2);
+io.print(rbit);
+# logical_or
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return(numpy.logical_or(arg1, arg2))",bbit, bbit2);
+io.print(rbit);
+
+# numerical comparison operations
+bint:= bat.new(:int);
+bat.append(bint,1804289383:int);
+bat.append(bint,846930886:int);
+bat.append(bint,1681692777:int);
+bat.append(bint,1714636915:int);
+bat.append(bint,nil:int);
+
+bint2:= bat.new(:int);
+bat.append(bint2,74564463:int);
+bat.append(bint2,999123561:int);
+bat.append(bint2,1681592777:int);
+bat.append(bint2,nil:int);
+bat.append(bint2,9172498714:int);
+
+# greater_equal(x, y)
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return(numpy.greater_equal(arg1, arg2))",bint, bint2);
+io.print(rbit);
+
+# isclose(x, y, 10000000)
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return(numpy.isclose(arg1, arg2, atol=10000000))",bint, bint2);
+io.print(rbit);

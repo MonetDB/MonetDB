@@ -4318,9 +4318,11 @@ literal:
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  int len = sizeof(hge);
+		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  int len = sizeof(lng);
+		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -4338,7 +4340,7 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits), obits = bits;
 
-		    for (;(1<<(bits-1)) > value; bits--) ;
+		    for (;(one<<(bits-1)) > value; bits--) ;
 		   
  		    if (bits != obits && 
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))

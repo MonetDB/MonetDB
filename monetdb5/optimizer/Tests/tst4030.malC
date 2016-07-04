@@ -1,6 +1,6 @@
 # testing subsumption optimalisation
 function foo();
-r:= bat.new(:oid,:int);
+r:= bat.new(:int);
 bat.append(r,1);
 bat.append(r,2);
 bat.append(r,3);

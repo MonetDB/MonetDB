@@ -332,7 +332,7 @@ BAThash(BAT *b, BUN masksize)
 		unsigned int tpe = ATOMbasetype(b->ttype);
 		BUN cnt = BATcount(b);
 		BUN mask, maxmask = 0;
-		BUN p = BUNfirst(b), q = BUNlast(b), r;
+		BUN p = 0, q = BUNlast(b), r;
 		Hash *h = NULL;
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
@@ -396,7 +396,7 @@ BAThash(BAT *b, BUN masksize)
 		do {
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */
 
-			r = BUNfirst(b);
+			r = 0;
 			if (h) {
 				char *fnme;
 				bte farmid;

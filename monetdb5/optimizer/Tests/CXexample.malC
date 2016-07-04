@@ -1,8 +1,8 @@
 # The 4000 series deals with strategic optimizer constructs
 # common subexpression evaluation
 function foo();
-b:= bat.new(:oid,:int);
-c:= bat.new(:oid,:int);       
+b:= bat.new(:int);
+c:= bat.new(:int);       
 d:= algebra.subselect(b,0,100,true,true,false);
 e:= algebra.subselect(b,0,100,true,true,false);    
 k1:= 24;

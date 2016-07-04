@@ -7,7 +7,7 @@ inline function foo(a:int,b:int):int;
 end foo;
 
 function qry();
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 	bat.append(b,1);
 	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
 	z:bat[:oid,:dbl]:= mal.multiplex("user","foo",b,2);

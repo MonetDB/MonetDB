@@ -1,5 +1,5 @@
 function foo();
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,2);
 bat.append(b,5);
 bat.append(b,3);

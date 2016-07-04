@@ -1,0 +1,204 @@
+stdout of test 'pyapi_returntypes` in directory 'sql/backends/monet5/UDF/pyapi` itself:
+
+
+# 23:33:07 >  
+# 23:33:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36739" "--set" "mapi_usock=/var/tmp/mtest-20340/.s.monetdb.36739" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/mytherin/opt/var/mTests_monetdb5_extras_pyapi" "--set" "mal_listing=2" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 23:33:07 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_extras_pyapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.684 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://mytherin-N750JV:36739/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20340/.s.monetdb.36739
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 23:33:07 >  
+# 23:33:07 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20340" "--port=36739"
+# 23:33:07 >  
+
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	33	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	flt  # type
+#--------------------------#
+[ 0@0,	12.31	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"test"	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	33	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	33	]
+#io.print(r, s);
+#--------------------------#
+# h	t	t  # name
+# void	int	int  # type
+#--------------------------#
+[ 0@0,	33,	42	]
+#io.print(r, s, t);
+#--------------------------#
+# h	t	t	t  # name
+# void	int	int	int  # type
+#--------------------------#
+[ 0@0,	33,	42,	66	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	str	str  # type
+#--------------------------#
+[ 0@0,	"Hello",	"Hello Again Again"	]
+[ 1@0,	"Hello Again",	"That's quite enough."	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	33	]
+[ 1@0,	11	]
+[ 2@0,	332	]
+[ 3@0,	51	]
+[ 4@0,	88	]
+#io.print(r, s);
+#--------------------------#
+# h	t	t  # name
+# void	int	int  # type
+#--------------------------#
+[ 0@0,	33,	44	]
+#io.print(s);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	44	]
+[ 1@0,	66	]
+[ 2@0,	345	]
+[ 3@0,	77	]
+[ 4@0,	66	]
+#io.print(s);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	44	]
+[ 1@0,	45	]
+[ 2@0,	77	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	int	int  # type
+#--------------------------#
+[ 0@0,	33,	44	]
+[ 1@0,	24,	66	]
+[ 2@0,	55,	345	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	flt	flt  # type
+#--------------------------#
+[ 0@0,	27.42,	12.55	]
+[ 1@0,	18.62,	41.44	]
+[ 2@0,	33.81,	20.88	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	str	str  # type
+#--------------------------#
+[ 0@0,	"Hannes Mühleisen",	"Hannes Mühleisen"	]
+[ 1@0,	"héllo",	"héllo"	]
+[ 2@0,	"éáú üüäãö",	"éáú üüäãö"	]
+[ 3@0,	"幺巾乡阜阝测试一些中国符号",	"幺巾乡阜阝测试一些中国符号"	]
+[ 4@0,	"いくつかの日本のシンボルをテストします",	"いくつかの日本のシンボルをテストします"	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	str	str  # type
+#--------------------------#
+[ 0@0,	33,	44	]
+[ 1@0,	24,	66	]
+[ 2@0,	55,	345	]
+#--------------------------#
+# h	t	t  # name
+# void	int	flt  # type
+#--------------------------#
+[ 0@0,	33,	44.1	]
+[ 1@0,	24,	66.3	]
+[ 2@0,	55,	2.2	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	nil	]
+[ 1@0,	nil	]
+[ 2@0,	24	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	nil	]
+[ 1@0,	nil	]
+[ 2@0,	24	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	862	]
+[ 1@0,	43	]
+[ 2@0,	24	]
+#io.print(r);
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"Test"	]
+[ 1@0,	"Four"	]
+[ 2@0,	nil	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	int	int  # type
+#--------------------------#
+[ 0@0,	1,	nil	]
+[ 1@0,	2,	2	]
+[ 2@0,	3,	3	]
+#io.print(r,s);
+#--------------------------#
+# h	t	t  # name
+# void	str	str  # type
+#--------------------------#
+[ 0@0,	"str",	nil	]
+[ 1@0,	"test",	"test213"	]
+[ 2@0,	"k",	"test44"	]
+
+# 23:33:07 >  
+# 23:33:07 >  "Done."
+# 23:33:07 >  
+

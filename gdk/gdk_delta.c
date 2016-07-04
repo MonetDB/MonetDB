@@ -35,47 +35,23 @@ BATcommit(BAT *b)
 {
 	if (b == NULL)
 		return;
-	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT " ins " BUNFMT " base " PTRFMT "\n",
 			   BATgetId(b),
 			   b->theap.free,
 			   b->batInserted,
-			   b->batDeleted,
-			   b->batFirst,
 			   PTRFMTCAST b->theap.base);
 	ALIGNcommit(b);
-	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
-		BATiter bi = bat_iterator(b);
-		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
-		BUN p, q;
-
-		if (tatmdel || tunfix) {
-			DELloop(b, p, q) {
-				ptr t = BUNtail(bi, p);
-
-				if (tunfix) {
-					(*tunfix) (t);
-				}
-				if (tatmdel) {
-					(*tatmdel) (b->tvheap, (var_t *) BUNtloc(bi, p));
-				}
-			}
-		}
-	}
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = 0;
 	}
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = 1;
 	}
-	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT " ins " BUNFMT " base " PTRFMT "\n",
 			   BATgetId(b),
 			   b->theap.free,
 			   b->batInserted,
-			   b->batDeleted,
-			   b->batFirst,
 			   PTRFMTCAST b->theap.base);
 }
 
@@ -141,16 +117,5 @@ BATundo(BAT *b)
 	}
 	b->theap.free = tailsize(b, b->batInserted);
 
-	bunfirst = b->batDeleted;
-	bunlast = b->batFirst;
-	if (bunlast > b->batDeleted) {
-		/* elements are 'inserted' => zap properties */
-		b->tsorted = 0;
-		b->trevsorted = 0;
-		if (b->tkey)
-			BATkey(b, FALSE);
-		HASHdestroy(b);
-	}
-	b->batFirst = b->batDeleted;
 	BATsetcount(b, b->batInserted);
 }

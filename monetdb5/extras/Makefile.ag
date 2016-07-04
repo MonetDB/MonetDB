@@ -4,5 +4,5 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-SUBDIRS = HAVE_SPHINXCLIENT?sphinx mal_optimizer_template HAVE_LIBR?rapi HAVE_LIBPY?pyapi
+SUBDIRS = HAVE_SPHINXCLIENT?sphinx mal_optimizer_template HAVE_LIBR?rapi
 

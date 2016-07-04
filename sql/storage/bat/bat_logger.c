@@ -59,7 +59,7 @@ bl_postversion( void *lg)
 		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
 		if (!tne)
 			return;
-		for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+		for(p=0, q=BUNlast(te); p<q; p++) {
 			int eclass = *(int*)BUNtail(bi, p);
 
 			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
@@ -81,7 +81,7 @@ bl_postversion( void *lg)
 			tne = COLnew(te->hseqbase, TYPE_bte, BATcount(te), PERSISTENT);
 			if (!tne)
 				return;
-			for(p=BUNfirst(te), q=BUNlast(te); p<q; p++) {
+			for(p=0, q=BUNlast(te); p<q; p++) {
 				bte inout = (bte) *(bit*)BUNtail(bi, p);
 
 				BUNappend(tne, &inout, TRUE);
@@ -95,7 +95,7 @@ bl_postversion( void *lg)
 		 * regarding geometry types */
 		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
 		bi = bat_iterator(b);
-		for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+		for (p=0, q=BUNlast(b); p<q; p++) {
 			char *t = toLower(BUNtail(bi, p));
 			geomUpgrade = strcmp(t, "wkb") == 0;
 			GDKfree(t);
@@ -109,7 +109,7 @@ bl_postversion( void *lg)
 			 * information about geometry columns */
 			b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
 			bi = bat_iterator(b);
-			for (p=BUNfirst(b), q=BUNlast(b); p<q; p++) {
+			for (p=0, q=BUNlast(b); p<q; p++) {
 				char *t = toLower(BUNtail(bi, p));
 				geomUpgrade = strcmp(t, "point") == 0 ||
 					strcmp(t, "curve") == 0 ||
