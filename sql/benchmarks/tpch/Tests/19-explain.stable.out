@@ -51,7 +51,7 @@ Ready.
 % mal # name
 % clob # type
 % 1117 # length
-function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sht,A9:int,A10:int,A11:str,A12:str,A13:str,A14:str,A15:str,A16:str,A17:str,A18:str,A19:bte,A20:sht,A21:sht,A22:int,A23:int,A24:str,A25:str,A26:str,A27:str,A28:str,A29:str,A30:str,A31:str,A32:bte,A33:sht,A34:sht,A35:int,A36:int,A37:str,A38:str,A39:str):void;
+function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:bte,A8:bte,A9:int,A10:int,A11:str,A12:str,A13:str,A14:str,A15:str,A16:str,A17:str,A18:str,A19:bte,A20:bte,A21:bte,A22:int,A23:int,A24:str,A25:str,A26:str,A27:str,A28:str,A29:str,A30:str,A31:str,A32:bte,A33:bte,A34:bte,A35:int,A36:int,A37:str,A38:str,A39:str):void;
     X_250:void := querylog.define("explain select\n sum(l_extendedprice* (1 - l_discount)) as revenue\nfrom\n lineitem,\n part\nwhere\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#12\\'\n and p_container in (\\'SM CASE\\', \\'SM BOX\\', \\'SM PACK\\', \\'SM PKG\\')\n and l_quantity >= 1 and l_quantity <= 1 + 10\n and p_size between 1 and 5\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#23\\'\n and p_container in (\\'MED BAG\\', \\'MED BOX\\', \\'MED PKG\\', \\'MED PACK\\')\n and l_quantity >= 10 and l_quantity <= 10 + 10\n and p_size between 1 and 10\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n )\n or\n (\n p_partkey = l_partkey\n and p_brand = \\'Brand#34\\'\n and p_container in (\\'LG CASE\\', \\'LG BOX\\', \\'LG PACK\\', \\'LG PKG\\')\n and l_quantity >= 20 and l_quantity <= 20 + 10\n and p_size between 1 and 15\n and l_shipmode in (\\'AIR\\', \\'AIR REG\\')\n and l_shipinstruct = \\'DELIVER IN PERSON\\'\n );","sequential_pipe",172);
     X_41 := sql.mvc();
     C_42:bat[:oid] := sql.tid(X_41,"sys","part");
@@ -161,7 +161,7 @@ function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sh
     X_177 := bat.mergecand(X_175,C_176);
     X_167 := calc.lng(A6,15,2);
     C_178 := algebra.thetasubselect(X_163,X_177,X_167,">=");
-    X_164:sht := calc.+(A7,A8);
+    X_164:bte := calc.+(A7,A8);
     X_165 := calc.lng(X_164,15,2);
     C_180 := algebra.thetasubselect(X_163,C_178,X_165,"<=");
     C_182 := algebra.subselect(X_156,C_180,A9,A10,true,true,false);
@@ -179,7 +179,7 @@ function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sh
     X_197 := bat.mergecand(X_195,C_196);
     X_189 := calc.lng(A19,15,2);
     C_198 := algebra.thetasubselect(X_163,X_197,X_189,">=");
-    X_187:sht := calc.+(A20,A21);
+    X_187:bte := calc.+(A20,A21);
     X_188 := calc.lng(X_187,15,2);
     C_199 := algebra.thetasubselect(X_163,C_198,X_188,"<=");
     C_200 := algebra.subselect(X_156,C_199,A22,A23,true,true,false);
@@ -197,7 +197,7 @@ function user.s2_1(A0:bte,A1:str,A2:str,A3:str,A4:str,A5:str,A6:bte,A7:sht,A8:sh
     X_215 := bat.mergecand(X_213,C_214);
     X_207 := calc.lng(A32,15,2);
     C_216 := algebra.thetasubselect(X_163,X_215,X_207,">=");
-    X_205:sht := calc.+(A33,A34);
+    X_205:bte := calc.+(A33,A34);
     X_206 := calc.lng(X_205,15,2);
     C_217 := algebra.thetasubselect(X_163,C_216,X_206,"<=");
     C_218 := algebra.subselect(X_156,C_217,A35,A36,true,true,false);
