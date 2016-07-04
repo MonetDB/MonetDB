@@ -1,3 +1,16 @@
+monetdb (11.23.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4031: mclient doesn't accept - argument to refer to stdin
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 04 Jul 2016 12:57:25 +0200
+
+monetdb (11.23.5) unstable; urgency=low
+
+  * MonetDB: Lots of memory leaks have been plugged across the whole system.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Jul 2016 12:57:25 +0200
+
 monetdb (11.23.3) unstable; urgency=low
 
   * Rebuilt.
