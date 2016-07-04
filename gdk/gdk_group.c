@@ -71,13 +71,13 @@
 				BATsetcount(en, ngrp);			\
 				if (BATextend(en, maxgrps) != GDK_SUCCEED) \
 					goto error;			\
-				exts = (oid *) Tloc(en, BUNfirst(en));	\
+				exts = (oid *) Tloc(en, 0);		\
 			}						\
 			if (histo) {					\
 				BATsetcount(hn, ngrp);			\
 				if (BATextend(hn, maxgrps) != GDK_SUCCEED) \
 					goto error;			\
-				cnts = (lng *) Tloc(hn, BUNfirst(hn));	\
+				cnts = (lng *) Tloc(hn, 0);		\
 			}						\
 		}							\
 		if (extents)						\
@@ -92,7 +92,7 @@
 #define GRP_compare_consecutive_values(INIT_0,INIT_1,COMP,KEEP)		\
 	do {								\
 		INIT_0;							\
-		for (r = BUNfirst(b), p = r + 1, q = r + BATcount(b);	\
+		for (r = 0, p = r + 1, q = r + BATcount(b);		\
 		     p < q;						\
 		     p++) {						\
 			INIT_1;						\
@@ -112,7 +112,7 @@
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
-			TYPE pw = w[BUNfirst(b)]	,	\
+			TYPE pw = w[0]			,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] != pw			,	\
 	/* KEEP   */	pw = w[p]				\
@@ -120,7 +120,7 @@
 
 #define GRP_compare_consecutive_values_any()			\
 	GRP_compare_consecutive_values(				\
-	/* INIT_0 */	pv = BUNtail(bi, BUNfirst(b))	,	\
+	/* INIT_0 */	pv = BUNtail(bi, 0)		,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
 	/* COMP   */	cmp(v, pv) != 0			,	\
 	/* KEEP   */	pv = v					\
@@ -130,8 +130,8 @@
 #define GRP_subscan_old_groups(INIT_0,INIT_1,COMP,KEEP)			\
 	do {								\
 		INIT_0;							\
-		pgrp[grps[0]] = BUNfirst(b);				\
-		for (j = r = BUNfirst(b), p = r + 1, q = r + BATcount(b); \
+		pgrp[grps[0]] = 0;					\
+		for (j = r = 0, p = r + 1, q = r + BATcount(b);		\
 		     p < q;						\
 		     p++) {						\
 			INIT_1;						\
@@ -174,7 +174,7 @@
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
-		    	TYPE pw = w[BUNfirst(b)]	,	\
+		    	TYPE pw = w[0]			,	\
 	/* INIT_1 */					,	\
 	/* COMP   */	w[p] == pw			,	\
 	/* KEEP   */	pw = w[p]				\
@@ -182,7 +182,7 @@
 
 #define GRP_subscan_old_groups_any()				\
 	GRP_subscan_old_groups(					\
-	/* INIT_0 */	pv = BUNtail(bi, BUNfirst(b))	,	\
+	/* INIT_0 */	pv = BUNtail(bi, 0)		,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
 	/* COMP   */	cmp(v, pv) == 0			,	\
 	/* KEEP   */	pv = v					\
@@ -274,7 +274,7 @@
 #define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
 	do {								\
 		INIT_0;							\
-		for (r = BUNfirst(b), p = r, q = r + BATcount(b); 	\
+		for (r = 0, p = r, q = r + BATcount(b);			\
 		     p < q;						\
 		     p++) { 						\
 			INIT_1;						\
@@ -518,7 +518,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (gn == NULL)
 		goto error;
-	ngrps = (oid *) Tloc(gn, BUNfirst(gn));
+	ngrps = (oid *) Tloc(gn, 0);
 	maxgrps = BATcount(b) / 10;
 	if (e && maxgrps < BATcount(e))
 		maxgrps += BATcount(e);
@@ -533,18 +533,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
 			goto error;
-		exts = (oid *) Tloc(en, BUNfirst(en));
+		exts = (oid *) Tloc(en, 0);
 	}
 	if (histo) {
 		hn = COLnew(0, TYPE_lng, maxgrps, TRANSIENT);
 		if (hn == NULL)
 			goto error;
-		cnts = (lng *) Tloc(hn, BUNfirst(hn));
+		cnts = (lng *) Tloc(hn, 0);
 	}
 	ngrp = 0;
 	BATsetcount(gn, BATcount(b));
 	if (g)
-		grps = (const oid *) Tloc(g, BUNfirst(g));
+		grps = (const oid *) Tloc(g, 0);
 
 	/* figure out if we can use the storage type also for
 	 * comparing values */
@@ -709,7 +709,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 256 groups, so the group id
 		 * fits in an unsigned char */
 		unsigned char *restrict bgrps = GDKmalloc(256);
-		const unsigned char *restrict w = (const unsigned char *) Tloc(b, BUNfirst(b));
+		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
 		unsigned char v;
 		memset(bgrps, 0xFF, 256);
 		if (histo)
@@ -735,7 +735,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * possibly have more than 65536 groups, so the group
 		 * id fits in an unsigned short */
 		unsigned short *restrict sgrps = GDKmalloc(65536 * sizeof(short));
-		const unsigned short *restrict w = (const unsigned short *) Tloc(b, BUNfirst(b));
+		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
 		unsigned short v;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
 		if (histo)
@@ -784,7 +784,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * calculate the bounds [lo, hi) in the parent
 			 * that b uses */
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift) + BUNfirst(b);
+			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			hi = lo + BATcount(b);
 			hseqb = b->hseqbase;
 			b = b2;
@@ -792,7 +792,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		} else
 #endif
 		{
-			lo = BUNfirst(b);
+			lo = 0;
 			hi = BUNlast(b);
 		}
 		hs = b->thash;

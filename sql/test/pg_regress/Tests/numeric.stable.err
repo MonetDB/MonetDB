@@ -116,26 +116,26 @@ QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 20) as expected
             FROM num_result t1, num_exp_add t2
             WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
             AND t1.result <> round(t2.expected, 20);
-ERROR = !too many digits (19 > 8)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !too many digits (19 > 5)
+MAPI  = (monetdb) /var/tmp/mtest-11592/.s.monetdb.39445
 QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40) as expected
             FROM num_result t1, num_exp_sub t2
             WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
             AND t1.result <> round(t2.expected, 40);
-ERROR = !too many digits (19 > 8)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !too many digits (19 > 6)
+MAPI  = (monetdb) /var/tmp/mtest-11592/.s.monetdb.39445
 QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
             FROM num_result t1, num_exp_mul t2
             WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
             AND t1.result <> round(t2.expected, 30);
-ERROR = !too many digits (19 > 8)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !too many digits (19 > 5)
+MAPI  = (monetdb) /var/tmp/mtest-11592/.s.monetdb.39445
 QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 80) as expected
             FROM num_result t1, num_exp_div t2
             WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
             AND t1.result <> round(t2.expected, 80);
-ERROR = !too many digits (19 > 8)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !too many digits (19 > 7)
+MAPI  = (monetdb) /var/tmp/mtest-11592/.s.monetdb.39445
 QUERY = SELECT STDDEV(val) FROM num_data;
 ERROR = !SELECT: no such unary operator 'stddev(decimal)'
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395

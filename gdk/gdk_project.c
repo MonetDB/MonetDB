@@ -27,9 +27,9 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 	const oid *restrict o;						\
 	oid rseq, rend;							\
 									\
-	o = (const oid *) Tloc(l, BUNfirst(l));				\
-	rt = (const TYPE *) Tloc(r, BUNfirst(r));			\
-	bt = (TYPE *) Tloc(bn, BUNfirst(bn));				\
+	o = (const oid *) Tloc(l, 0);					\
+	rt = (const TYPE *) Tloc(r, 0);					\
+	bt = (TYPE *) Tloc(bn, 0);					\
 	rseq = r->hseqbase;						\
 	rend = rseq + BATcount(r);					\
 	lo = 0;								\
@@ -106,8 +106,8 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	oid rseq, rend;
 
 	assert(r->tseqbase != oid_nil);
-	o = (const oid *) Tloc(l, BUNfirst(l));
-	bt = (oid *) Tloc(bn, BUNfirst(bn));
+	o = (const oid *) Tloc(l, 0);
+	bt = (oid *) Tloc(bn, 0);
 	bn->tsorted = l->tsorted;
 	bn->trevsorted = l->trevsorted;
 	bn->tkey = l->tkey & 1;
@@ -149,8 +149,8 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	const oid *o;
 	oid rseq, rend;
 
-	o = (const oid *) Tloc(l, BUNfirst(l));
-	n = BUNfirst(bn);
+	o = (const oid *) Tloc(l, 0);
+	n = 0;
 	ri = bat_iterator(r);
 	rseq = r->hseqbase;
 	rend = rseq + BATcount(r);
@@ -168,7 +168,7 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 				goto bunins_failed;
 			}
 		} else {
-			v = BUNtail(ri, o[lo] - rseq + BUNfirst(r));
+			v = BUNtail(ri, o[lo] - rseq);
 			tfastins_nocheck(bn, n, v, Tsize(bn));
 			if (nilcheck && bn->tnonil && cmp(v, nil) == 0) {
 				bn->tnonil = 0;
@@ -493,7 +493,7 @@ BATprojectchain(BAT **bats)
 						tseq = oid_nil;
 						allnil = 1;
 					} else
-						ba[i].vals = (const oid *) Tloc(b, BUNfirst(b) + off);
+						ba[i].vals = (const oid *) Tloc(b, off);
 				}
 			} else {
 				ba[i].hlo = b->hseqbase;
@@ -508,7 +508,7 @@ BATprojectchain(BAT **bats)
 					    b->tseqbase == oid_nil)
 						allnil = 1;
 					else
-						ba[i].vals = (const oid *) Tloc(b, BUNfirst(b));
+						ba[i].vals = (const oid *) Tloc(b, 0);
 				}
 			}
 		}
@@ -577,7 +577,7 @@ BATprojectchain(BAT **bats)
 	if (ATOMstorage(bn->ttype) == ATOMstorage(TYPE_oid)) {
 		/* oids all the way (or the final tail type is a fixed
 		 * sized atom the same size as oid) */
-		oid *restrict v = (oid *) Tloc(bn, BUNfirst(bn));
+		oid *restrict v = (oid *) Tloc(bn, 0);
 
 		if (ba[n].vals == NULL) {
 			/* last BAT is dense-tailed */
@@ -630,11 +630,11 @@ BATprojectchain(BAT **bats)
 				*v++ = (o == oid_nil) & !stringtrick ? *(oid *) nil : o;
 			}
 		}
-		assert(v == (oid *) Tloc(bn, BUNfirst(bn) + cnt));
+		assert(v == (oid *) Tloc(bn, cnt));
 	} else if (ATOMstorage(b->ttype) == ATOMstorage(TOTPE)) {
 		/* one special case for a fixed sized BAT */
-		const OTPE *src = (const OTPE *) Tloc(b, BUNfirst(b) + off);
-		OTPE *restrict dst = (OTPE *) Tloc(bn, BUNfirst(bn));
+		const OTPE *src = (const OTPE *) Tloc(b, off);
+		OTPE *restrict dst = (OTPE *) Tloc(bn, 0);
 
 		for (p = 0; p < cnt; p++) {
 			o = ba[0].vals[p];
@@ -668,7 +668,6 @@ BATprojectchain(BAT **bats)
 		const void *v = nil; /* make compiler happy with init */
 
 		assert(!stringtrick);
-		off += BUNfirst(b);
 		for (p = 0; p < cnt; p++) {
 			o = ba[0].vals[p];
 			for (i = 1; i < n; i++) {
@@ -700,7 +699,6 @@ BATprojectchain(BAT **bats)
 		BATiter bi = bat_iterator(b);
 		const void *v = nil; /* make compiler happy with init */
 
-		off += BUNfirst(b);
 		for (p = 0; p < cnt; p++) {
 			o = ba[0].vals[p];
 			for (i = 1; i < n; i++) {

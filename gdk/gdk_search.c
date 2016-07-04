@@ -94,7 +94,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 	     (!use_orderidx || !BATcheckorderidx(b))))
 		return BUN_NONE;
 
-	lo = BUNfirst(b);
+	lo = 0;
 	hi = BUNlast(b);
 
 	if (BATtdense(b)) {
@@ -142,7 +142,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		end = lo;
 		if (lo >= hi ||
 		    (use_orderidx ?
-		     (atom_GE(BUNtail(bi, (o[lo]&BUN_UNMSK) - b->hseqbase + BUNfirst(b)), v, b->ttype)) :
+		     (atom_GE(BUNtail(bi, (o[lo]&BUN_UNMSK) - b->hseqbase), v, b->ttype)) :
 		     (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype)))) {
 			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v (if sorted)
@@ -154,7 +154,7 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		end = hi;
 		if (lo >= hi ||
 		    (use_orderidx ?
-		     (atom_LE(BUNtail(bi, (o[hi - 1]&BUN_UNMSK) - b->hseqbase + BUNfirst(b)), v, b->ttype)) :
+		     (atom_LE(BUNtail(bi, (o[hi - 1]&BUN_UNMSK) - b->hseqbase), v, b->ttype)) :
 		     (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype)))) {
 			/* shortcut: if BAT is empty or last (and
 			 * hence all) tail value is <= v (if sorted)
@@ -239,27 +239,27 @@ SORTfndwhich(BAT *b, const void *v, enum find_which which, int use_orderidx)
 		assert(use_orderidx);
 		switch (tp) {
 		case TYPE_bte:
-			SORTfndloop(bte, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(bte, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 		case TYPE_sht:
-			SORTfndloop(sht, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(sht, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 		case TYPE_int:
-			SORTfndloop(int, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(int, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 		case TYPE_lng:
-			SORTfndloop(lng, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(lng, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			SORTfndloop(hge, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(hge, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 #endif
 		case TYPE_flt:
-			SORTfndloop(flt, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(flt, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 		case TYPE_dbl:
-			SORTfndloop(dbl, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase + BUNfirst(b));
+			SORTfndloop(dbl, simple_CMP, BUNtloc, (o[cur]&BUN_UNMSK) - b->hseqbase);
 			break;
 		default:
 			assert(0);

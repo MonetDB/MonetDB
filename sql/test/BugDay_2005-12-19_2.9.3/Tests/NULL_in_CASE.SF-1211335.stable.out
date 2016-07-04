@@ -40,13 +40,13 @@ Ready.
 % .L1 # table_name
 % isnull_=_single_value # name
 % char # type
-% 3 # length
+% 1 # length
 [ "2"	]
 #select CASE WHEN 2=0 THEN 2 else cast(null as char) end;
 % .L1 # table_name
 % isnull_=_single_value # name
 % char # type
-% 3 # length
+% 1 # length
 [ NULL	]
 #select CASE WHEN 3=3 THEN 3 else cast(null as int) end;
 % .L1 # table_name

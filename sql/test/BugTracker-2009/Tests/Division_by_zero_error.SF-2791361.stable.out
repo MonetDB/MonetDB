@@ -69,7 +69,7 @@ Ready.
 #select case when (2 - 2) > 0 then (3 - 2)/(2 - 2) else 0 end as "test";
 % .L # table_name
 % test # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 0	]
 

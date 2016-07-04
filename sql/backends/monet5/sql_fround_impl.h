@@ -75,8 +75,8 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	}
 
 	/* access columns as arrays */
-	src = (TYPE *) Tloc(v, BUNfirst(v));
-	dst = (TYPE *) Tloc(res, BUNfirst(res));
+	src = (TYPE *) Tloc(v, 0);
+	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
 	if (v->tnonil == TRUE) {
@@ -187,8 +187,8 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	}
 
 	/* access columns as arrays */
-	src = (TYPE *) Tloc(v, BUNfirst(v));
-	dst = (TYPE *) Tloc(res, BUNfirst(res));
+	src = (TYPE *) Tloc(v, 0);
+	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
 	if (v->tnonil == TRUE) {

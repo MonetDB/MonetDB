@@ -45,7 +45,7 @@ do {					\
 do {									\
 	uint##B##_t mask, prvmask;					\
 	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
-	const TYPE *restrict col = (TYPE *) Tloc(b, b->batFirst);	\
+	const TYPE *restrict col = (TYPE *) Tloc(b, 0);			\
 	const TYPE *restrict bins = (TYPE *) inbins;			\
 	const TYPE nil = TYPE##_nil;					\
 	const BUN page = IMPS_PAGE / sizeof(TYPE);			\
@@ -155,7 +155,7 @@ imprints_create(BAT *b, void *inbins, BUN *stats, bte bits,
 #define FILL_HISTOGRAM(TYPE)						\
 do {									\
 	BUN k;								\
-	TYPE *restrict s = (TYPE *) Tloc(s4, s4->batFirst);		\
+	TYPE *restrict s = (TYPE *) Tloc(s4, 0);			\
 	TYPE *restrict h = imprints->bins;				\
 	if (cnt < 64-1) {						\
 		TYPE max = GDK_##TYPE##_max;				\
@@ -303,14 +303,6 @@ BATimprints(BAT *b)
 			return GDK_SUCCEED;
 		}
 		assert(b->timprints == NULL);
-	}
-	if (b->batFirst > 0) {
-		/* no imprints if batFirst is not 0
-		 * this shouldn't really happen */
-		if (o)
-			BBPunfix(b->batCacheid);
-		GDKerror("BATimprints: imprints not supported if batFirst > 0\n");
-		return GDK_FAIL;
 	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	t0 = GDKusec();

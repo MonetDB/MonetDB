@@ -4349,6 +4349,9 @@ literal:
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
 		    int bits = digits2bits(digits);
+
+		    for (;(1<<(bits-1)) > value; bits--) ;
+		   
 		    if (value > GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
 		    else if (value > GDK_sht_min && value <= GDK_sht_max)

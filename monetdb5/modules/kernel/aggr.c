@@ -57,7 +57,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 	if (quantilefunc) {
 		assert(BATcount(quantile)>0);
 		assert(quantile->ttype == TYPE_dbl);
-		qvalue = ((const double *)Tloc(quantile, BUNfirst(quantile)))[0];
+		qvalue = ((const double *)Tloc(quantile, 0))[0];
 		if (qvalue <  0|| qvalue > 1) {
 			char *s;
 			s = createException(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
@@ -404,7 +404,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 		if (BATcount(q) == 0) {
 			qvalue = 0.5;
 		} else {
-			qvalue = ((const dbl *)Tloc(q, BUNfirst(q)))[0];
+			qvalue = ((const dbl *)Tloc(q, 0))[0];
 			if (qvalue <  0|| qvalue > 1) {
 				char *s;
 				s = createException(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);

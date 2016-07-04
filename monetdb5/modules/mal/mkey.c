@@ -91,7 +91,7 @@ MKEYbathash(bat *res, const bat *bid)
 	}
 	BATsetcount(dst, n);
 
-	r = (lng *) Tloc(dst, BUNfirst(dst));
+	r = (lng *) Tloc(dst, 0);
 
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void: {
@@ -105,7 +105,7 @@ MKEYbathash(bat *res, const bat *bid)
 		break;
 	}
 	case TYPE_bte: {
-		bte *v = (bte *) Tloc(b, BUNfirst(b));
+		bte *v = (bte *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = MKEYHASH_bte(v);
 			v++;
@@ -113,7 +113,7 @@ MKEYbathash(bat *res, const bat *bid)
 		break;
 	}
 	case TYPE_sht: {
-		sht *v = (sht *) Tloc(b, BUNfirst(b));
+		sht *v = (sht *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = MKEYHASH_sht(v);
 			v++;
@@ -122,7 +122,7 @@ MKEYbathash(bat *res, const bat *bid)
 	}
 	case TYPE_int:
 	case TYPE_flt: {
-		int *v = (int *) Tloc(b, BUNfirst(b));
+		int *v = (int *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = MKEYHASH_int(v);
 			v++;
@@ -131,7 +131,7 @@ MKEYbathash(bat *res, const bat *bid)
 	}
 	case TYPE_lng:
 	case TYPE_dbl: {
-		lng *v = (lng *) Tloc(b, BUNfirst(b));
+		lng *v = (lng *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = MKEYHASH_lng(v);
 			v++;
@@ -140,7 +140,7 @@ MKEYbathash(bat *res, const bat *bid)
 	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
-		hge *v = (hge *) Tloc(b, BUNfirst(b));
+		hge *v = (hge *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = MKEYHASH_hge(v);
 			v++;
@@ -262,12 +262,12 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 	BATsetcount(bn, n);
 
-	r = (lng *) Tloc(bn, BUNfirst(bn));
-	h = (const lng *) Tloc(hb, BUNfirst(hb));
+	r = (lng *) Tloc(bn, 0);
+	h = (const lng *) Tloc(hb, 0);
 
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte: {
-		bte *v = (bte *) Tloc(b, BUNfirst(b));
+		bte *v = (bte *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_bte(v);
 			v++;
@@ -276,7 +276,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		break;
 	}
 	case TYPE_sht: {
-		sht *v = (sht *) Tloc(b, BUNfirst(b));
+		sht *v = (sht *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_sht(v);
 			v++;
@@ -286,7 +286,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 	case TYPE_int:
 	case TYPE_flt: {
-		int *v = (int *) Tloc(b, BUNfirst(b));
+		int *v = (int *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_int(v);
 			v++;
@@ -296,7 +296,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 	case TYPE_lng:
 	case TYPE_dbl: {
-		lng *v = (lng *) Tloc(b, BUNfirst(b));
+		lng *v = (lng *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_lng(v);
 			v++;
@@ -306,7 +306,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
-		hge *v = (hge *) Tloc(b, BUNfirst(b));
+		hge *v = (hge *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_hge(v);
 			v++;
@@ -413,8 +413,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		break;
 	}
 
-	r = (lng *) Tloc(bn, BUNfirst(bn));
-	h = (const lng *) Tloc(hb, BUNfirst(hb));
+	r = (lng *) Tloc(bn, 0);
+	h = (const lng *) Tloc(hb, 0);
 
 	while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ val;
@@ -458,11 +458,11 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 	BATsetcount(bn, n);
 
-	r = (lng *) Tloc(bn, BUNfirst(bn));
+	r = (lng *) Tloc(bn, 0);
 
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte: {
-		bte *v = (bte *) Tloc(b, BUNfirst(b));
+		bte *v = (bte *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_bte(v);
 			v++;
@@ -470,7 +470,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 		break;
 	}
 	case TYPE_sht: {
-		sht *v = (sht *) Tloc(b, BUNfirst(b));
+		sht *v = (sht *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_sht(v);
 			v++;
@@ -479,7 +479,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 	case TYPE_int:
 	case TYPE_flt: {
-		int *v = (int *) Tloc(b, BUNfirst(b));
+		int *v = (int *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_int(v);
 			v++;
@@ -488,7 +488,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 	case TYPE_lng:
 	case TYPE_dbl: {
-		lng *v = (lng *) Tloc(b, BUNfirst(b));
+		lng *v = (lng *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_lng(v);
 			v++;
@@ -497,7 +497,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
-		hge *v = (hge *) Tloc(b, BUNfirst(b));
+		hge *v = (hge *) Tloc(b, 0);
 		while (n-- > 0) {
 			*r++ = GDK_ROTATE(*h, lbit, rbit, mask) ^ MKEYHASH_hge(v);
 			v++;

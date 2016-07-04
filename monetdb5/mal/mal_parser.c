@@ -1163,6 +1163,11 @@ fcnHeader(Client cntxt, int kind)
 	curInstr = getInstrPtr(curBlk, 0);
 
 	if (currChar(cntxt) != '('){
+		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		}
 		parseError(cntxt, "function header '(' expected\n");
 		skipToEnd(cntxt);
 		return curBlk;
@@ -1174,6 +1179,7 @@ fcnHeader(Client cntxt, int kind)
 
 	if (isModuleDefined(cntxt->nspace, getModuleId(curInstr)) == FALSE) {
 		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
 		}
@@ -1195,6 +1201,7 @@ fcnHeader(Client cntxt, int kind)
 			if (ch == ')')
 				break;
 			if (cntxt->backup) {
+				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
 			}
@@ -1276,6 +1283,7 @@ fcnHeader(Client cntxt, int kind)
 		if (currChar(cntxt) != ')') {
 			freeInstruction(curInstr);
 			if (cntxt->backup) {
+				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
 			}

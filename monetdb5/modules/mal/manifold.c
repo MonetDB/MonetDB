@@ -302,11 +302,11 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				o = mat[i].b->tseqbase;
 				mat[i].first = mat[i].last = (void*) &o;
 			} else {
-				mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
+				mat[i].first = (void*)  Tloc(mat[i].b, 0);
 				mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
 			}
 			mat[i].bi = bat_iterator(mat[i].b);
-			mat[i].o = BUNfirst(mat[i].b);
+			mat[i].o = 0;
 			mat[i].q = BUNlast(mat[i].b);
 		} else {
 			mat[i].last = mat[i].first = (void *) getArgReference(stk,pci,i);
@@ -330,7 +330,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].b->tsorted=0;
 	mat[0].b->trevsorted=0;
 	mat[0].bi = bat_iterator(mat[0].b);
-	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
+	mat[0].first = (void *)  Tloc(mat[0].b, 0);
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
 
 	mut.pci = copyInstruction(pci);
