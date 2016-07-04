@@ -202,6 +202,7 @@ geom_export str wkbIsValidReason(char** out, wkb **geom);
 geom_export str wkbIsValidDetail(char** out, wkb **geom);
 
 geom_export str wkbArea(dbl *out, wkb **a);
+geom_export str wkbArea_bat(bat *inBAT_id, bat *outBAT_id);
 geom_export str wkbCentroid(wkb **out, wkb **geom);
 geom_export str wkbDistance(dbl *out, wkb **a, wkb **b);
 geom_export str wkbLength(dbl *out, wkb **a);
@@ -227,14 +228,17 @@ geom_export str wkbAddPointIdx(wkb**, wkb**, wkb**, int* idx);
 
 geom_export str wkbTransform(wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbTranslate(wkb**, wkb**, dbl*, dbl*, dbl*);
+geom_export str wkbTranslate_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz);
 geom_export str wkbDelaunayTriangles(wkb**, wkb**, dbl*, int*);
 geom_export str wkbPointOnSurface(wkb**, wkb**);
-geom_export str wkbForceDim(wkb**, wkb**, int*);
+geom_export str wkbForceDim(wkb**, wkb**, const int*);
+geom_export str wkbForceDim_bat(bat *outBAT_id, bat *inBAT_id, const int*);
 geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
+geom_export str dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
 geom_export str wkbPolygonize(wkb **res, wkb **geom);
 geom_export str wkbSimplifyPreserveTopology(wkb **res, wkb **geom, float *tolerance);
 

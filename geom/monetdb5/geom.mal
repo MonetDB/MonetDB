@@ -665,7 +665,61 @@ function Z(w:bat[:oid,:wkb]) :bat[:oid,:dbl];
 	return c;
 end Z;
 
+command ForceDimensions(g:bat[:oid,:wkb], d:int) :bat[:oid,:wkb] address wkbForceDim_bat
+comment "Removes or Adds additional coordinates in the geometry to make it d dimensions";
 
+function Force2D(g:bat[:oid,:wkb]) :bat[:oid,:wkb];
+	x := ForceDimensions(g, 2);
+	return x;
+end Force2D;
+
+function Force3D(g:bat[:oid,:wkb]) :bat[:oid,:wkb];
+	x := ForceDimensions(g, 3);
+	return x;
+end Force3D;
+
+command Translate3D(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dx:dbl, dyBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl], dz:dbl) :bat[:oid,:wkb] address wkbTranslate_bat
+comment "Moves all points of the geometry by dx, dy, dz";
+
+function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+	x := Translate3D(g,dxBAT,0,dyBAT,0,nil:bat,0);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+	x := Translate3D(g,dxBAT,0,dyBAT,0,dzBAT,0);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dx:dbl, dy:dbl, dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+	x := Translate3D(g, nil:bat, dx, nil:bat, dy, dzBAT, 0:dbl);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+	x := Translate3D(g, dxBAT, 0, nil:bat, dy, dzBAT, 0:dbl);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+	x := Translate3D(g, nil:bat, dx, dyBAT, 0, dzBAT, 0:dbl);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dz:dbl) :bat[:oid,:wkb];
+	x := Translate3D(g, dxBAT, 0, dyBAT, 0, nil:bat, dz);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dz:dbl) :bat[:oid,:wkb];
+	x := Translate3D(g, nil:bat, dx, dyBAT, 0, nil:bat, dz);
+	return x;
+end Translate;
+
+function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dz:dbl) :bat[:oid,:wkb];
+	x := Translate3D(g, dxBAT, 0, nil:bat, dy, nil:bat, dz);
+	return x;
+end Translate;
 
 command GeometryN(w:bat[:oid,:wkb], n:int) :bat[:oid,:wkb] address wkbGeometryN_bat
 comment "Returns the 1-based Nth geometry if the geometry is a GEOMETRYCOLLECTION, (MULTI)POINT, (MULTI)LINESTRING, MULTICURVE or (MULTI)POLYGON. Otherwise, return NULL";
@@ -769,6 +823,8 @@ function YMaxFromMBR(b:bat[:oid,:mbr]) :bat[:oid,:dbl];
 	return x;
 end YMaxFromMBR;
 
+command Area(:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbArea_bat
+comment "Returns the area of the surface if it is a polygon or multi-polygon";
 
 
 module calc;

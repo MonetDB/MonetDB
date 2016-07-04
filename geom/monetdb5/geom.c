@@ -770,7 +770,7 @@ forceDimGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, i
 }
 
 str
-wkbForceDim(wkb **outWKB, wkb **geomWKB, int *dim)
+wkbForceDim(wkb **outWKB, wkb **geomWKB, const int *dim)
 {
 	GEOSGeometry *outGeometry;
 	GEOSGeom geosGeometry;
@@ -1621,7 +1621,8 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 	return err;
 }
 
-static str dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
+static str dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
+
 static str
 dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
@@ -1650,7 +1651,7 @@ dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 		snprintf(newPath, pathLength, "%s%u,", path, lvl);
 
 		//*secondLevel = 0;
-		err = dumpGeometriesGeometry(idBAT, geomBAT, multiGeometry, newPath);
+		err = dumpGeometriesGeometry_(idBAT, geomBAT, multiGeometry, newPath);
 		if (err != MAL_SUCCEED)
 			break;
 	}
@@ -1659,7 +1660,7 @@ dumpGeometriesMulti(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, 
 }
 
 static str
-dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
@@ -1689,6 +1690,13 @@ dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometr
 	default:
 		throw(MAL, "geom.Dump", "%s Unknown geometry type", geom_type2str(geometryType, 0));
 	}
+    return MAL_SUCCEED;
+}
+
+str
+dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path)
+{
+    return dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, path);
 }
 
 static str
@@ -1768,7 +1776,7 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
         }
     }
 
-	if ((err = dumpGeometriesGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
+	if ((err = dumpGeometriesGeometry_(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
 		BBPunfix(idBAT->batCacheid);
 		BBPunfix(geomBAT->batCacheid);
         if (parent)
