@@ -11,6 +11,7 @@
  */
 
 #include "geom.h"
+#include <omp.h>
 
 /*******************************/
 /********** One input **********/
@@ -218,6 +219,77 @@ wkbGeometryType_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 }
 
 /***************************************************************************/
+/*************************** IN: wkb - OUT: dbl ****************************/
+/***************************************************************************/
+static str
+WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const char *name)
+{
+	BAT *outBAT = NULL, *inBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter inBAT_iter;
+	str msg = MAL_SUCCEED;
+    static struct timeval start, stop;
+    unsigned long long t;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	inBAT_iter = bat_iterator(inBAT);
+	
+    omp_set_dynamic(0);     // Explicitly disable dynamic teams
+    omp_set_num_threads(1);
+    q = BUNlast(inBAT);
+    fprintf(stdout, "%d %d\n", p, q);
+    gettimeofday(&start, NULL);
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
+		str err = NULL;
+	    wkb *inWKB = NULL;
+		double outSingle;
+
+		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
+		}
+		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+	}
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%llu ms\n", t);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(inBAT->batCacheid);
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+
+	BBPunfix(inBAT->batCacheid);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str 
+wkbArea_bat(bat *outBAT_id, bat *inBAT_id)
+{
+	return WKBtoDBL_bat(outBAT_id, inBAT_id, wkbArea, "batgeom.wkbArea");
+}
+
+
+/***************************************************************************/
 /*************************** IN: wkb - OUT: wkb ****************************/
 /***************************************************************************/
 
@@ -328,6 +400,11 @@ wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int *flag)
 	return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, flag, wkbGeometryN, "batgeom.wkbGeometryN");
 }
 
+str
+wkbForceDim_bat(bat *outBAT_id, bat *inBAT_id, const int *flag)
+{
+    return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, flag, wkbForceDim, "batgeom.wkbForceDim");
+}
 /***************************************************************************/
 /*************************** IN: wkb - OUT: bit ****************************/
 /***************************************************************************/
@@ -336,9 +413,11 @@ static str
 WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+	str msg = MAL_SUCCEED;
+    static struct timeval start, stop;
+    unsigned long long t;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -353,21 +432,38 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
-		str err = NULL;
-		bit outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
-		}
-		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
-	}
+    omp_set_dynamic(0);     // Explicitly disable dynamic teams
+    omp_set_num_threads(1);
+    q = BUNlast(inBAT);
+    fprintf(stdout, "%d %d\n", p, q);
+    gettimeofday(&start, NULL);
+	//BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
+        str err = NULL;
+	    wkb *inWKB = NULL;
+        bit outSingle;
+
+        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+        if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
+        }
+        BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+    }
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%llu ms\n", t);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(inBAT->batCacheid);
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
 
 	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+	//BATsetcount(outBAT, BATcount(inBAT));
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
@@ -572,6 +668,121 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 
 	return MAL_SUCCEED;
 
+}
+
+/******************************************************************************************/
+/************************** IN: wkb - OUT: wkb - X, Y and Z: dbl **************************/
+/******************************************************************************************/
+
+static str
+WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double * dz, str (*func) (wkb **, wkb **, double *x, double *y, double *z), const char *name)
+{
+	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inXBAT_id != bat_nil && (inXBAT = BATdescriptor(*inXBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inYBAT_id != bat_nil && (inYBAT = BATdescriptor(*inYBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+    		BBPunfix(inXBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inZBAT_id != bat_nil && (inZBAT = BATdescriptor(*inZBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+    		BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+	    	BBPunfix(inYBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	inBAT_iter = bat_iterator(inBAT);
+    
+    if (*inXBAT_id != bat_nil)
+    	inXBAT_iter = bat_iterator(inXBAT);
+    if (*inYBAT_id != bat_nil)
+    	inYBAT_iter = bat_iterator(inYBAT);
+    if (*inZBAT_id != bat_nil)
+        inZBAT_iter = bat_iterator(inZBAT);
+
+	BATloop(inBAT, p, q) {	//iterate over all valid elements
+		str err = NULL;
+	    wkb *inWKB = NULL;
+		wkb *outSingle;
+        double *x = NULL, *y = NULL, *z = NULL;
+
+
+        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+
+        if (*inXBAT_id != bat_nil)
+            x = (double *) BUNtail(inXBAT_iter, p);
+        else
+            *x = *dx;
+        if (*inYBAT_id != bat_nil)
+            y = (double *) BUNtail(inYBAT_iter, p);
+        else
+            *y = *dy;
+        if (*inZBAT_id != bat_nil)
+            z = (double *) BUNtail(inZBAT_iter, p);
+        else
+            *z = *dz;
+
+        if ((err = (*func) (&outSingle, &inWKB, x, y, z)) != MAL_SUCCEED) {
+            BBPunfix(inBAT->batCacheid);
+            if (*inXBAT_id != bat_nil)
+                BBPunfix(inXBAT->batCacheid);
+            if (*inYBAT_id != bat_nil)
+                BBPunfix(inYBAT->batCacheid);
+            if (*inZBAT_id != bat_nil)
+                BBPunfix(inZBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+			return err;
+		}
+		BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
+		GDKfree(outSingle);
+		outSingle = NULL;
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+
+    BBPunfix(inBAT->batCacheid);
+    if (*inXBAT_id != bat_nil)
+        BBPunfix(inXBAT->batCacheid);
+    if (*inYBAT_id != bat_nil)
+        BBPunfix(inYBAT->batCacheid);
+    if (*inZBAT_id != bat_nil)
+        BBPunfix(inZBAT->batCacheid);
+    BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbTranslate_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz)
+{
+	return WKBtoWKBxyzDBL_bat(outBAT_id, inBAT_id, inXBAT_id, dx, inYBAT_id, dy, inZBAT_id, dz, wkbTranslate, "batgeom.Translate");
 }
 
 /*******************************/
@@ -916,16 +1127,17 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+
+	BATloop(inBAT, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		wkb *outWKB = NULL;
 
 		wkb *inWKB = (wkb *) BUNtail(inBAT_iter, p);
 
-		if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) {	//set SRID
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+        if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) {	//set SRID
+            BBPunfix(inBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+            return err;
 		}
 		BUNappend(outBAT, outWKB, TRUE);	//add the point to the new BAT
 		GDKfree(outWKB);
@@ -1037,6 +1249,131 @@ wkbDistance_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 {
 	return wkbDistance_geom_bat(outBAT_id, geomWKB, inBAT_id);
 }
+
+static str
+wkbDump_bat(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id, bat *inParentBAT_id)
+{
+	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL, *inParentBAT = NULL, *inGeomBAT = NULL;
+    BATiter inGeomBAT_iter, inParentBAT_iter;
+	BUN p = 0, q = 0;
+	int geometriesCnt, i;
+	str err;
+
+    //Open input BATs
+	if ((inGeomBAT = BATdescriptor(*inGeomBAT_id)) == NULL) {
+		throw(MAL, "batgeom.Dump", "Problem retrieving BAT");
+	}
+    if (inParentBAT_id) {
+        if ((inParentBAT = BATdescriptor(*inParentBAT_id)) == NULL) {
+            BBPunfix(inGeomBAT->batCacheid);
+            throw(MAL, "batgeom.Dump", "Problem retrieving BAT");
+        }
+    }
+
+    //create new empty BAT for the output
+    if ((idBAT = COLnew(0, TYPE_str, 0, TRANSIENT)) == NULL) {
+        *idBAT_id = bat_nil;
+	    BBPunfix(inGeomBAT->batCacheid);
+        if (inParentBAT_id)
+    	    BBPunfix(inParentBAT->batCacheid);
+        throw(MAL, "geom.Dump", "Error creating new BAT");
+    }
+
+    if ((geomBAT = COLnew(0, ATOMindex("wkb"), 0, TRANSIENT)) == NULL) {
+	    BBPunfix(inGeomBAT->batCacheid);
+        if (inParentBAT_id)
+	        BBPunfix(inParentBAT->batCacheid);
+        BBPunfix(idBAT->batCacheid);
+        *geomBAT_id = bat_nil;
+        throw(MAL, "geom.Dump", "Error creating new BAT");
+    }
+
+    if (inParentBAT_id) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+	        BBPunfix(inGeomBAT->batCacheid);
+    	    BBPunfix(inParentBAT->batCacheid);
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            *parentBAT_id = bat_nil;
+            throw(MAL, "geom.Dump", "Error creating new BAT");
+        }
+    }
+
+	//iterator over the BATs
+	inGeomBAT_iter = bat_iterator(inGeomBAT);
+    if (inParentBAT_id)
+    	inParentBAT_iter = bat_iterator(inParentBAT);
+
+	BATloop(inGeomBAT, p, q) {	//iterate over all valid elements
+		str err = NULL;
+		int parent = 0, geometriesNum;
+	    GEOSGeom geosGeometry;
+
+		wkb *geomWKB = (wkb *) BUNtail(inGeomBAT_iter, p);
+        if (inParentBAT_id)
+		    parent = *(int *) BUNtail(inParentBAT_iter, p);
+
+	    geosGeometry = wkb2geos(geomWKB);
+
+    	//count the number of geometries
+    	geometriesNum = GEOSGetNumGeometries(geosGeometry);
+
+        /*Get the tail and add parentID geometriesNum types*/
+        if (inParentBAT_id) {
+            for (i = 0; i < geometriesNum; i++) {
+                if (BUNappend(parentBAT, &parent, TRUE) != GDK_SUCCEED) {
+                    err = createException(MAL, "geom.Dump", "BUNappend failed");
+	                BBPunfix(inGeomBAT->batCacheid);
+                    if (inParentBAT_id)
+            	        BBPunfix(inParentBAT->batCacheid);
+                    BBPunfix(idBAT->batCacheid);
+                    BBPunfix(geomBAT->batCacheid);
+                    if (inParentBAT_id)
+                        BBPunfix(parentBAT->batCacheid);
+                    return err;
+                }
+            }
+        }
+
+        geometriesCnt += geometriesNum;
+
+        if ((err = dumpGeometriesGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED) {
+            BBPunfix(inGeomBAT->batCacheid);
+            if (inParentBAT_id)
+                BBPunfix(inParentBAT->batCacheid);
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            if (inParentBAT_id)
+                BBPunfix(parentBAT->batCacheid);
+    		return err;
+    	}
+    }
+
+    /*Release input BATs*/
+    BBPunfix(inGeomBAT->batCacheid);
+    if (inParentBAT_id)
+        BBPunfix(inParentBAT->batCacheid);
+
+    /*Set counts*/
+	BATsetcount(idBAT, geometriesCnt);
+    BATderiveProps(idBAT, FALSE);
+	BATsetcount(geomBAT, geometriesCnt);
+    BATderiveProps(geomBAT, FALSE);
+    if (inParentBAT_id) {
+        BATsetcount(parentBAT, geometriesCnt);
+        BATderiveProps(parentBAT, FALSE);
+    }
+
+    /*Keep refs for output BATs*/
+	BBPkeepref(*idBAT_id = idBAT->batCacheid);
+	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+    if (inParentBAT_id)
+	    BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+
 
 /**
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
