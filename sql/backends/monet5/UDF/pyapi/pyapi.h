@@ -101,4 +101,23 @@ pyapi_export str PyAPIprelude(void *ret);
 
 int PyAPIEnabled(void);
 
+#ifdef WIN32
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
+   typedef retval (*fcnname##_ptr_tpe)();            \
+   fcnname##_ptr_tpe fcnname##_ptr = NULL;
+
+#define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", NULL, #fcnname, 0); \
+    if (fcnname##_ptr == NULL) {                                                           \
+        msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname);  \
+    }
+#else
+#define CREATE_SQL_FUNCTION_PTR(retval, fcnname)     \
+   typedef retval (*fcnname##_ptr_tpe)();            \
+   fcnname##_ptr_tpe fcnname##_ptr = (fcnname##_ptr_tpe)fcnname;
+
+#define LOAD_SQL_FUNCTION_PTR(fcnname) (void) fcnname
+#endif
+
+
 #endif /* _PYPI_LIB_ */
