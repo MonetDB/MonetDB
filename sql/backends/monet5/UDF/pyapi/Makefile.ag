@@ -5,18 +5,18 @@
 # Copyright 2008-2015 MonetDB B.V.
 
 INCLUDES = \
-	../../../clients/mapilib \
-	../../../common/options \
-	../../../common/stream \
-	../../modules/atoms \
-	../../modules/mal \
-	../../../gdk \
-	../../mal \
-	../../../sql/backends/monet5 \
-	../../../sql/common \
-	../../../sql/include \
-	../../../sql/server \
-	../../../sql/storage \
+	../../../../../clients/mapilib \
+	../../../../../common/options \
+	../../../../../common/stream \
+	../../../../../monetdb5/modules/atoms \
+	../../../../../monetdb5/modules/mal \
+	../../../../../gdk \
+	../../../../../monetdb5/mal \
+	../../../../../sql/backends/monet5 \
+	../../../../../sql/common \
+	../../../../../sql/include \
+	../../../../../sql/server \
+	../../../../../sql/storage \
 	$(libpy_CFLAGS)
 
 MTSAFE
@@ -26,8 +26,8 @@ lib__pyapi = {
 	DIR = libdir/monetdb5
 	SOURCES = pyapi.c pyapi.h unicode.c unicode.h pytypes.c pytypes.h type_conversion.c type_conversion.h  formatinput.c formatinput.h connection.c connection.h unspecified_evil.h
 	XDEPS = $(libpy_LIBDEP)
-	LIBS = ../../tools/libmonetdb5 \
-	       ../../../gdk/libbat \
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+	       ../../../../../gdk/libbat \
 	$(MALLOC_LIBS) $(libpy_LIBS)
 }
 

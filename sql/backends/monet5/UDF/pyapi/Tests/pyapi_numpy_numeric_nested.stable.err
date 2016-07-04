@@ -1,9 +1,9 @@
-stderr of test 'pyapi_types_huge` in directory 'monetdb5/extras/pyapi` itself:
+stderr of test 'pyapi_numpy_numeric_nested` in directory 'sql/backends/monet5/UDF/pyapi` itself:
 
 
-# 00:29:46 >  
-# 00:29:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32717" "--set" "mapi_usock=/var/tmp/mtest-30800/.s.monetdb.32717" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/usr/local/var/MonetDB/mTests_monetdb5_extras_pyapi" "--set" "mal_listing=2" "--set" "embedded_r=true" "--set" "embedded_py=true"
-# 00:29:46 >  
+# 00:29:49 >  
+# 00:29:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32717" "--set" "mapi_usock=/var/tmp/mtest-30800/.s.monetdb.32717" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/usr/local/var/MonetDB/mTests_monetdb5_extras_pyapi" "--set" "mal_listing=2" "--set" "embedded_r=true" "--set" "embedded_py=true"
+# 00:29:49 >  
 
 # builtin opt 	gdk_dbpath = /usr/local/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -27,12 +27,12 @@ stderr of test 'pyapi_types_huge` in directory 'monetdb5/extras/pyapi` itself:
 # cmdline opt 	embedded_py = true
 # cmdline opt 	gdk_debug = 536870922
 
-# 00:29:47 >  
-# 00:29:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30800" "--port=32717"
-# 00:29:47 >  
+# 00:29:50 >  
+# 00:29:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30800" "--port=32717"
+# 00:29:50 >  
 
 
-# 00:29:47 >  
-# 00:29:47 >  "Done."
-# 00:29:47 >  
+# 00:29:50 >  
+# 00:29:50 >  "Done."
+# 00:29:50 >  
 

@@ -1309,7 +1309,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
 
-#define Tloc(b,p)	((b)->theap.base+((p)<<(b)->tshift))
+#define Tloc(b,p)	((b)->theap.base+(((size_t)(p))<<(b)->tshift))
 
 #if SIZEOF_VAR_T < SIZEOF_VOID_P
 /* NEW 11/4/2009: when compiled with 32-bits oids/var_t on 64-bits
