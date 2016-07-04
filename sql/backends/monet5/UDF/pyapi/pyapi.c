@@ -96,17 +96,6 @@ static char* FunctionBasePath(void) {
     return basepath;
 }
 
-CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batint_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batlng_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,bathge_dec2_dbl,(bat*, int*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp,(bat*, bat*, int*));
-CREATE_SQL_FUNCTION_PTR(str,batstr_2time_daytime,(bat*, bat*, int*));
-CREATE_SQL_FUNCTION_PTR(str,batstr_2_date,(bat*, bat*));
-CREATE_SQL_FUNCTION_PTR(str,batdbl_num2dec_lng,(bat*, bat*, int*,int*));
-CREATE_SQL_FUNCTION_PTR(str,SQLbatstr_cast,(Client, MalBlkPtr, MalStkPtr, InstrPtr));
-
 static MT_Lock pyapiLock;
 static MT_Lock queryLock;
 static int pyapiInitialized = FALSE;
@@ -1585,19 +1574,6 @@ str
                 return createException(MAL, "pyapi.eval", "Failed to load function \"loads\" from Marshal module.");
             }
             PyEval_SaveThread();
-            LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl, "lib_sql.dll");
-#ifdef HAVE_HGE
-            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl, "lib_sql.dll");
-#endif
-            LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batstr_2_date, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng, "lib_sql.dll");
-            LOAD_SQL_FUNCTION_PTR(SQLbatstr_cast, "lib_sql.dll");
             if (msg != MAL_SUCCEED) {
                 MT_lock_unset(&pyapiLock);
                 return msg;
@@ -2651,7 +2627,7 @@ str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret
         stk->stk[6].val.ival = digits;
         stk->stk[6].vtype = TYPE_int;
 
-        res = (*SQLbatstr_cast_ptr)(cntxt, &mb, stk, pci);
+        res = SQLbatstr_cast(cntxt, &mb, stk, pci);
 
         if (res == MAL_SUCCEED) {
             *ret_bat = BATdescriptor(stk->stk[0].val.bval);
@@ -2673,20 +2649,20 @@ str ConvertFromSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret
         switch(bat_type) 
         {
             case TYPE_bte:
-                res = (*batbte_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+                res = batbte_dec2_dbl(&result, &hpos, &b->batCacheid);
                 break;
             case TYPE_sht:
-                res = (*batsht_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+                res = batsht_dec2_dbl(&result, &hpos, &b->batCacheid);
                 break;
             case TYPE_int:
-                res = (*batint_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+                res = batint_dec2_dbl(&result, &hpos, &b->batCacheid);
                 break;
             case TYPE_lng:
-                res = (*batlng_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+                res = batlng_dec2_dbl(&result, &hpos, &b->batCacheid);
                 break;
 #ifdef HAVE_HGE
             case TYPE_hge:
-                res = (*bathge_dec2_dbl_ptr)(&result, &hpos, &b->batCacheid);
+                res = bathge_dec2_dbl(&result, &hpos, &b->batCacheid);
                 break;
 #endif
             default: 
@@ -2718,16 +2694,16 @@ ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, 
     switch(sql_subtype->type->eclass)
     {
         case EC_TIMESTAMP:
-            res = (*batstr_2time_timestamp_ptr)(&result_bat, &b->batCacheid, &digits);
+            res = batstr_2time_timestamp(&result_bat, &b->batCacheid, &digits);
             break;
         case EC_TIME:
-            res = (*batstr_2time_daytime_ptr)(&result_bat, &b->batCacheid, &digits);
+            res = batstr_2time_daytime(&result_bat, &b->batCacheid, &digits);
             break;
         case EC_DATE:
-            res = (*batstr_2_date_ptr)(&result_bat, &b->batCacheid);
+            res = batstr_2_date(&result_bat, &b->batCacheid);
             break;
         case EC_DEC:
-            res = (*batdbl_num2dec_lng_ptr)(&result_bat, &b->batCacheid, &digits, &scale);
+            res = batdbl_num2dec_lng(&result_bat, &b->batCacheid, &digits, &scale);
             break;
         default: 
             return createException(MAL, "pyapi.eval", "Convert To SQL Type: Unrecognized SQL type %s (%d).", sql_subtype->type->sqlname, sql_subtype->type->eclass);
@@ -2872,14 +2848,4 @@ bool Python_ReleaseGIL(bool state)
     return 0;
 }
 
-void* lookup_function(char *func, char* library) {
-    void *dl, *fun;
-    dl = mdlopen(library, RTLD_NOW | RTLD_GLOBAL);
-    if (dl == NULL) {
-        return NULL;
-    }
-    fun = dlsym(dl, func);
-    dlclose(dl);
-    return fun;
-}
 

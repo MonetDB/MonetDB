@@ -101,16 +101,4 @@ pyapi_export str PyAPIprelude(void *ret);
 
 int PyAPIEnabled(void);
 
-pyapi_export void* lookup_function(char *func, char* library);
-
-#define CREATE_SQL_FUNCTION_PTR(retval, fcnname, params) \
-    typedef retval (*fcnname##_ptr_tpe)params;                   \
-    fcnname##_ptr_tpe fcnname##_ptr = NULL;
-
-#define LOAD_SQL_FUNCTION_PTR(fcnname,libname)                                   \
-    fcnname##_ptr = (fcnname##_ptr_tpe) lookup_function(#fcnname, libname);        \
-    if (fcnname##_ptr == NULL) {                                         \
-        msg = createException(MAL, "pyapi.eval", "Failed to load function %s", #fcnname); \
-    }
-
 #endif /* _PYPI_LIB_ */
