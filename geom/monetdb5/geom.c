@@ -4692,6 +4692,75 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 	return MAL_SUCCEED;
 }
 
+/* Gets a geometry and Point(X, Y, Z, SRID) and returns a Boolean by comparing them */
+static str
+wkbspatialXYZ(bit *out, wkb **geomWKB_a, double *x, double *y, double *z, int *srid, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
+{
+	int res;
+	GEOSGeom geosGeometry_a, geosGeometry_b;
+	GEOSCoordSeq seq;
+
+	if (wkb_isnil(*geomWKB_a)) {
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	geosGeometry_a = wkb2geos(*geomWKB_a);
+	if (geosGeometry_a == NULL) {
+		throw(MAL, name, "wkb2geos failed");
+	}
+
+    /*Build Geometry b*/
+	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil) {
+		GEOSGeom_destroy(geosGeometry_a);
+		*out = bit_nil;
+		return MAL_SUCCEED;
+	}
+
+	//create the point from the coordinates
+	seq = GEOSCoordSeq_create(1, 3);
+
+	if (seq == NULL) {
+		GEOSGeom_destroy(geosGeometry_a);
+		throw(MAL, name, "GEOSCoordSeq_create failed");
+    }
+
+	if (!GEOSCoordSeq_setOrdinate(seq, 0, 0, *x) ||
+	    !GEOSCoordSeq_setOrdinate(seq, 0, 1, *y) ||
+        !GEOSCoordSeq_setOrdinate(seq, 0, 2, *z)) {
+		GEOSGeom_destroy(geosGeometry_a);
+		GEOSCoordSeq_destroy(seq);
+		throw(MAL, name, "GEOSCoordSeq_setOrdinate failed");
+	}
+
+	if ((geosGeometry_b = GEOSGeom_createPoint(seq)) == NULL) {
+		GEOSGeom_destroy(geosGeometry_a);
+		GEOSCoordSeq_destroy(seq);
+		throw(MAL, name, "Failed to create GEOSGeometry from the coordinates");
+	}
+
+    if (*srid != int_nil)
+    	GEOSSetSRID(geosGeometry_b, *srid);
+
+	if (GEOSGetSRID(geosGeometry_a) != GEOSGetSRID(geosGeometry_b)) {
+		GEOSGeom_destroy(geosGeometry_a);
+		GEOSGeom_destroy(geosGeometry_b);
+		throw(MAL, name, "Geometries of different SRID");
+	}
+
+	res = (*func) (geosGeometry_a, geosGeometry_b);
+
+	GEOSGeom_destroy(geosGeometry_a);
+	GEOSGeom_destroy(geosGeometry_b);
+
+	if (res == 2)
+		throw(MAL, name, "GEOS%s failed", name + 5);
+
+	*out = res;
+
+	return MAL_SUCCEED;
+}
+
 /* Gets two geometries and returns a Boolean by comparing them */
 static str
 wkbspatial(bit *out, wkb **geomWKB_a, wkb **geomWKB_b, char (*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
@@ -4761,6 +4830,12 @@ str
 wkbIntersects(bit *out, wkb **geomWKB_a, wkb **geomWKB_b)
 {
 	return wkbspatial(out, geomWKB_a, geomWKB_b, GEOSIntersects, "geom.Intersects");
+}
+
+str
+wkbIntersectsXYZ(bit *out, wkb **geomWKB_a, dbl *x, dbl *y, dbl *z, int *srid)
+{
+	return wkbspatialXYZ(out, geomWKB_a, x, y, z, srid, GEOSIntersects, "geom.Intersects");
 }
 
 str

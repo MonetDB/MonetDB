@@ -586,6 +586,119 @@ wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbIntersects, "batgeom.wkbIntersects");
 }
 
+/******************************************************************************************/
+/************************* IN: wkb dbl dbl dbl - OUT: bit - SRID **************************/
+/******************************************************************************************/
+
+static str
+WKBtoBITxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double * dz, int *srid, str (*func) (bit *, wkb **, double *x, double *y, double *z, int *srid), const char *name)
+{
+	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+
+	//get the descriptor of the BAT
+	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inXBAT_id != bat_nil && (inXBAT = BATdescriptor(*inXBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inYBAT_id != bat_nil && (inYBAT = BATdescriptor(*inYBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+    		BBPunfix(inXBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if (*inZBAT_id != bat_nil && (inZBAT = BATdescriptor(*inZBAT_id)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+    		BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+	    	BBPunfix(inYBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
+		BBPunfix(inBAT->batCacheid);
+        if (*inXBAT_id != bat_nil)
+		    BBPunfix(inXBAT->batCacheid);
+        if (*inYBAT_id != bat_nil)
+    		BBPunfix(inYBAT->batCacheid);
+        if (*inZBAT_id != bat_nil)
+    		BBPunfix(inZBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	inBAT_iter = bat_iterator(inBAT);
+    
+    if (*inXBAT_id != bat_nil)
+    	inXBAT_iter = bat_iterator(inXBAT);
+    if (*inYBAT_id != bat_nil)
+    	inYBAT_iter = bat_iterator(inYBAT);
+    if (*inZBAT_id != bat_nil)
+        inZBAT_iter = bat_iterator(inZBAT);
+
+	BATloop(inBAT, p, q) {	//iterate over all valid elements
+		str err = NULL;
+	    wkb *inWKB = NULL;
+		bit outSingle;
+        double x, y, z;
+
+
+        inWKB = (wkb *) BUNtail(inBAT_iter, p);
+
+        if (*inXBAT_id != bat_nil)
+            x = *(double *) BUNtail(inXBAT_iter, p);
+        else
+            x = *dx;
+        if (*inYBAT_id != bat_nil)
+            y = *(double *) BUNtail(inYBAT_iter, p);
+        else
+            y = *dy;
+        if (*inZBAT_id != bat_nil)
+            z = *(double *) BUNtail(inZBAT_iter, p);
+        else
+            z = *dz;
+
+        if ((err = (*func) (&outSingle, &inWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
+            BBPunfix(inBAT->batCacheid);
+            if (*inXBAT_id != bat_nil)
+                BBPunfix(inXBAT->batCacheid);
+            if (*inYBAT_id != bat_nil)
+                BBPunfix(inYBAT->batCacheid);
+            if (*inZBAT_id != bat_nil)
+                BBPunfix(inZBAT->batCacheid);
+            BBPunfix(outBAT->batCacheid);
+			return err;
+		}
+		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+	}
+
+	//set the number of elements in the outBAT
+	BATsetcount(outBAT, BATcount(inBAT));
+
+    BBPunfix(inBAT->batCacheid);
+    if (*inXBAT_id != bat_nil)
+        BBPunfix(inXBAT->batCacheid);
+    if (*inYBAT_id != bat_nil)
+        BBPunfix(inYBAT->batCacheid);
+    if (*inZBAT_id != bat_nil)
+        BBPunfix(inZBAT->batCacheid);
+    BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbIntersectsXYZ_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, bat *inYBAT_id, double *dy, bat *inZBAT_id, double *dz, int* srid)
+{
+	return WKBtoBITxyzDBL_bat(outBAT_id, inBAT_id, inXBAT_id, dx, inYBAT_id, dy, inZBAT_id, dz, srid, wkbIntersectsXYZ, "batgeom.IntersectsXYZ");
+}
+
 /***************************************************************************/
 /*************************** IN: wkb - OUT: int ****************************/
 /***************************************************************************/
@@ -755,7 +868,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 }
 
 /******************************************************************************************/
-/************************** IN: wkb - OUT: wkb - X, Y and Z: dbl **************************/
+/***************************** IN: wkb dbl dbl dbl - OUT: wkb *****************************/
 /******************************************************************************************/
 
 static str

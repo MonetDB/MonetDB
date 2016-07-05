@@ -304,6 +304,8 @@ command Equals(a:wkb, b:wkb) :bit address wkbEquals
 comment "Returns true if the given geometries represent the same geometry. Directionality is ignored.";
 command Intersects(a:wkb, b:wkb) :bit address wkbIntersects
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
+command IntersectsXYZ(a:wkb, x:dbl, y:dbl, z:dbl, srid:int) :bit address wkbIntersectsXYZ
+comment "Returns true if these Geometries 'spatially intersect in 2D'";
 command Overlaps(a:wkb, b:wkb) :bit address wkbOverlaps
 comment " Returns TRUE if the Geometries intersect but are not completely contained by each other.";
 command Relate(a:wkb, b:wkb, intersection_matrix_pattern:str) :bit address wkbRelate
@@ -830,6 +832,44 @@ comment "Returns the area of the surface if it is a polygon or multi-polygon";
 
 command Intersects(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIntersects_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
+
+command Intersects3D(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dx:dbl, dyBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl], dz:dbl, srid:int) :bat[:oid,:bit] address wkbIntersectsXYZ_bat
+comment "Returns true if these Geometries 'spatially intersect in 2D'";
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, dzBAT, 0:dbl, srid);
+	return x;
+end IntersectsXYZ;
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dx:dbl, dy:dbl, dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, nil:bat, dx, nil:bat, dy, dzBAT, 0:dbl, srid);
+	return x;
+end IntersectsXYZ;
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, dzBAT, 0:dbl, srid);
+	return x;
+end IntersectsXYZ;
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, nil:bat, dx, dyBAT, 0:dbl, dzBAT, 0:dbl, srid);
+	return x;
+end IntersectsXYZ;
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dz:dbl, srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, nil:bat, dz, srid);
+	return x;
+end IntersectsXYZ;
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dz:dbl, srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, nil:bat, dx, dyBAT, 0:dbl, nil:bat, dz, srid);
+	return x;
+end IntersectsXYZ;
+
+function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dz:dbl, srid:int) :bat[:oid,:bit];
+	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, nil:bat, dz, srid);
+	return x;
+end IntersectsXYZ;
 
 module calc;
 
