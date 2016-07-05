@@ -99,7 +99,9 @@ CREATE_SQL_FUNCTION_PTR(str,batbte_dec2_dbl);
 CREATE_SQL_FUNCTION_PTR(str,batsht_dec2_dbl);
 CREATE_SQL_FUNCTION_PTR(str,batint_dec2_dbl);
 CREATE_SQL_FUNCTION_PTR(str,batlng_dec2_dbl);
+#ifdef HAVE_HGE
 CREATE_SQL_FUNCTION_PTR(str,bathge_dec2_dbl);
+#endif
 CREATE_SQL_FUNCTION_PTR(str,batstr_2time_timestamp);
 CREATE_SQL_FUNCTION_PTR(str,batstr_2time_daytime);
 CREATE_SQL_FUNCTION_PTR(str,batstr_2_date);
@@ -1588,7 +1590,9 @@ str
 			LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
 			LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
 			LOAD_SQL_FUNCTION_PTR(batlng_dec2_dbl);
+#ifdef HAVE_HGE
 			LOAD_SQL_FUNCTION_PTR(bathge_dec2_dbl);
+#endif
 			LOAD_SQL_FUNCTION_PTR(batstr_2time_timestamp);
 			LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
 			LOAD_SQL_FUNCTION_PTR(batstr_2_date);
