@@ -1,6 +1,6 @@
 
 # simple boolean operations
-bbit:= bat.new(:oid,:bit);
+bbit:= bat.new(:bit);
 bat.append(bbit,1:bit);
 bat.append(bbit,0:bit);
 bat.append(bbit,1:bit);
@@ -17,7 +17,7 @@ rbit:bat[:int] := pyapi.eval(nil:ptr,"return([numpy.logical_not(arg1)])",bbit);
 io.print(rbit);
 
 # boolean operations on two boolean arrays
-bbit2:= bat.new(:oid,:bit);
+bbit2:= bat.new(:bit);
 bat.append(bbit2,nil:bit);
 bat.append(bbit2,1:bit);
 bat.append(bbit2,1:bit);
@@ -31,14 +31,14 @@ rbit:bat[:int] := pyapi.eval(nil:ptr,"return(numpy.logical_or(arg1, arg2))",bbit
 io.print(rbit);
 
 # numerical comparison operations
-bint:= bat.new(:oid,:int);
+bint:= bat.new(:int);
 bat.append(bint,1804289383:int);
 bat.append(bint,846930886:int);
 bat.append(bint,1681692777:int);
 bat.append(bint,1714636915:int);
 bat.append(bint,nil:int);
 
-bint2:= bat.new(:oid,:int);
+bint2:= bat.new(:int);
 bat.append(bint2,74564463:int);
 bat.append(bint2,999123561:int);
 bat.append(bint2,1681592777:int);

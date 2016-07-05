@@ -1,9 +1,9 @@
 # test the joinpath expander
 function foo();
-    a:= bat.new(:oid,:oid);
-    b:= bat.new(:oid,:oid);
-    c:= bat.new(:oid,:oid);
-    d:= bat.new(:oid,:oid);
+    a:= bat.new(:oid);
+    b:= bat.new(:oid);
+    c:= bat.new(:oid);
+    d:= bat.new(:oid);
     j1:= algebra.projection(a,b);
     j2:= algebra.projection(j1,c);
     j3:= algebra.projectionpath(a,b,c,d);

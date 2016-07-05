@@ -6,7 +6,7 @@ inline function bar(a:int,b:int):int;
 end bar;
 
 function qry();
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 	bat.insert(b,0@0,1);
 	zz:= user.bar(1,2); # base line test for inlining
 

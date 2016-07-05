@@ -29,7 +29,7 @@ Ready.
 
 function user.tst903():void;
     t0 := alarm.usec();
-    b := bat.new(:oid,:lng);
+    b := bat.new(:lng);
 barrier i := 0:lng;
     k := mmath.rand();
     l := calc.lng(k);

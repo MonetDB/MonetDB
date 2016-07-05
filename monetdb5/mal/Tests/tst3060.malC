@@ -1,8 +1,0 @@
-# The direction for future expansion of the properties
-function tst(a:any_1{type="int,flt"}):any_1;
-	io.print(a);
-	return tst:=a;
-end tst;
-
-user.tst(1);
-user.tst("wrong");

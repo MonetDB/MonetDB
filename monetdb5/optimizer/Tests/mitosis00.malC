@@ -1,6 +1,6 @@
 #check the partition type resolution;
 
-a:= bat.new(:oid,:int);
+a:= bat.new(:int);
 (b{hlb=0@0,hub=10@0}):= bat.partition(a);
 (b{hlb=0@0,hub=10@0},c{hlb=0@0,hub=10@0}):= bat.partition(a);
 (b{hlb=0@0,hub=10@0},c{hlb=0@0,hub=10@0},e{hlb=0@0,hub=10@0}):= bat.partition(a);

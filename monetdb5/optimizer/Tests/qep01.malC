@@ -1,8 +1,8 @@
 function q();
-T1:= bat.new(:oid,:oid);
-T2:= bat.new(:oid,:oid);
-T3:= bat.new(:oid,:oid);
-T4:= bat.new(:oid,:oid);
+T1:= bat.new(:oid);
+T2:= bat.new(:oid);
+T3:= bat.new(:oid);
+T4:= bat.new(:oid);
 a:= algebra.subselect(T1,1@0,3@0,true,true,false);
 b:= algebra.subselect(T2,1@0,3@0,true,true,false);
 c:= algebra.subselect(T3,0@0,5@0,true,true,false);

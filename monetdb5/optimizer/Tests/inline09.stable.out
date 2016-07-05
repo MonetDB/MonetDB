@@ -30,14 +30,14 @@ Ready.
 # 06:41:01 >  
 
 function user.qry():void;               	#[0] (0)  0 
-    b:bat[:str] := bat.new(:oid,:str);  	#[1] (0) CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:str],"HELLO WORLD":str);	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
-    X_13:bat[:str] := b:bat[:str];      	#[3] (0)  13 <- 1 
-    X_13:bat[:str] := batstr.substring(X_13:bat[:str],1:int,5:int);	#[4] (0) STRbatsubstringcst 13 <- 13 14 15 
-    X_16:bat[:str] := b:bat[:str];      	#[5] (0)  16 <- 1 
-    X_16:bat[:str] := batstr.substring(X_16:bat[:str],1:int,3:int);	#[6] (0) STRbatsubstringcst 16 <- 16 14 17 
-    X_18:bat[:str] := batcalc.+(X_13:bat[:str],X_16:bat[:str]);	#[7] (0) CMDbatADD 18 <- 13 16 
-    z:bat[:str] := X_18:bat[:str];      	#[8] (0)  6 <- 18 
+    b:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    bat.append(b:bat[:str],"HELLO WORLD":str);	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    X_12:bat[:str] := b:bat[:str];      	#[3] (0)  12 <- 1 
+    X_12:bat[:str] := batstr.substring(X_12:bat[:str],1:int,5:int);	#[4] (0) STRbatsubstringcst 12 <- 12 13 14 
+    X_15:bat[:str] := b:bat[:str];      	#[5] (0)  15 <- 1 
+    X_15:bat[:str] := batstr.substring(X_15:bat[:str],1:int,3:int);	#[6] (0) STRbatsubstringcst 15 <- 15 13 16 
+    X_17:bat[:str] := batcalc.+(X_12:bat[:str],X_15:bat[:str]);	#[7] (0) CMDbatADD 17 <- 12 15 
+    z:bat[:str] := X_17:bat[:str];      	#[8] (0)  5 <- 17 
 end user.qry;                           	#[9] (0)  
 
 # 11:53:00 >  
