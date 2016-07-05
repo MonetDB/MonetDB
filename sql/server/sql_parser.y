@@ -4340,7 +4340,8 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits), obits = bits;
 
-		    for (;(one<<(bits-1)) > value; bits--) ;
+		    for (;(one<<(bits-1)) > value; bits--)
+			    ;
 		   
  		    if (bits != obits && 
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
