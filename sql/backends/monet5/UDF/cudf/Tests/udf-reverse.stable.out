@@ -84,17 +84,17 @@ end user.s2_1;
 % clob # type
 % 101 # length
 function user.s6_1():void;
-    X_33:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22);
-    X_17 := bat.new(nil:oid,nil:str);
-    X_25 := bat.append(X_17,"sys.L");
-    X_20 := bat.new(nil:oid,nil:str);
-    X_27 := bat.append(X_20,"reverse_x");
-    X_21 := bat.new(nil:oid,nil:str);
-    X_29 := bat.append(X_21,"clob");
-    X_22 := bat.new(nil:oid,nil:int);
-    X_31 := bat.append(X_22,0);
-    X_24 := bat.new(nil:oid,nil:int);
-    X_32 := bat.append(X_24,0);
+    X_32:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22);
+    X_17 := bat.new(nil:str);
+    X_24 := bat.append(X_17,"sys.L");
+    X_19 := bat.new(nil:str);
+    X_26 := bat.append(X_19,"reverse_x");
+    X_20 := bat.new(nil:str);
+    X_28 := bat.append(X_20,"clob");
+    X_21 := bat.new(nil:int);
+    X_30 := bat.append(X_21,0);
+    X_23 := bat.new(nil:int);
+    X_31 := bat.append(X_23,0);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","udf_reverse");
     X_5:bat[:str] := sql.bind(X_1,"sys","udf_reverse","x",0);
@@ -103,7 +103,7 @@ function user.s6_1():void;
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
     X_15:bat[:str] := batudf.reverse(X_14);
-    sql.resultSet(X_25,X_27,X_29,X_31,X_32,X_15);
+    sql.resultSet(X_24,X_26,X_28,X_30,X_31,X_15);
 end user.s6_1;
 #select reverse(x) from udf_reverse;
 % sys.L # table_name

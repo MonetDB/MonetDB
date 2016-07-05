@@ -29,17 +29,17 @@ Ready.
 % clob # type
 % 100 # length
 function user.s3_1(A0:dbl):void;
-    X_35:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",22);
-    X_18 := bat.new(nil:oid,nil:str);
-    X_26 := bat.append(X_18,"sys.L");
-    X_21 := bat.new(nil:oid,nil:str);
-    X_28 := bat.append(X_21,"power_x");
-    X_22 := bat.new(nil:oid,nil:str);
-    X_30 := bat.append(X_22,"double");
-    X_23 := bat.new(nil:oid,nil:int);
-    X_32 := bat.append(X_23,53);
-    X_25 := bat.new(nil:oid,nil:int);
-    X_34 := bat.append(X_25,0);
+    X_34:void := querylog.define("explain select power(x,2) from sf_2596114;","sequential_pipe",22);
+    X_18 := bat.new(nil:str);
+    X_25 := bat.append(X_18,"sys.L");
+    X_20 := bat.new(nil:str);
+    X_27 := bat.append(X_20,"power_x");
+    X_21 := bat.new(nil:str);
+    X_29 := bat.append(X_21,"double");
+    X_22 := bat.new(nil:int);
+    X_31 := bat.append(X_22,53);
+    X_24 := bat.new(nil:int);
+    X_33 := bat.append(X_24,0);
     X_2 := sql.mvc();
     C_3:bat[:oid] := sql.tid(X_2,"sys","sf_2596114");
     X_6:bat[:dbl] := sql.bind(X_2,"sys","sf_2596114","x",0);
@@ -48,7 +48,7 @@ function user.s3_1(A0:dbl):void;
     X_14 := sql.delta(X_6,C_9,r1_9,X_12);
     X_15 := algebra.projection(C_3,X_14);
     X_16:bat[:dbl] := batmmath.pow(X_15,A0);
-    sql.resultSet(X_26,X_28,X_30,X_32,X_34,X_16);
+    sql.resultSet(X_25,X_27,X_29,X_31,X_33,X_16);
 end user.s3_1;
 #explain select x*x from SF_2596114;
 % .explain # table_name
@@ -56,17 +56,17 @@ end user.s3_1;
 % clob # type
 % 93 # length
 function user.s4_1():void;
-    X_34:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",22);
-    X_17 := bat.new(nil:oid,nil:str);
-    X_25 := bat.append(X_17,"sys.L");
-    X_20 := bat.new(nil:oid,nil:str);
-    X_27 := bat.append(X_20,"sql_mul_x");
-    X_21 := bat.new(nil:oid,nil:str);
-    X_29 := bat.append(X_21,"double");
-    X_22 := bat.new(nil:oid,nil:int);
-    X_31 := bat.append(X_22,53);
-    X_24 := bat.new(nil:oid,nil:int);
-    X_33 := bat.append(X_24,0);
+    X_33:void := querylog.define("explain select x*x from sf_2596114;","sequential_pipe",22);
+    X_17 := bat.new(nil:str);
+    X_24 := bat.append(X_17,"sys.L");
+    X_19 := bat.new(nil:str);
+    X_26 := bat.append(X_19,"sql_mul_x");
+    X_20 := bat.new(nil:str);
+    X_28 := bat.append(X_20,"double");
+    X_21 := bat.new(nil:int);
+    X_30 := bat.append(X_21,53);
+    X_23 := bat.new(nil:int);
+    X_32 := bat.append(X_23,0);
     X_1 := sql.mvc();
     C_2:bat[:oid] := sql.tid(X_1,"sys","sf_2596114");
     X_5:bat[:dbl] := sql.bind(X_1,"sys","sf_2596114","x",0);
@@ -75,7 +75,7 @@ function user.s4_1():void;
     X_13 := sql.delta(X_5,C_8,r1_8,X_11);
     X_14 := algebra.projection(C_2,X_13);
     X_15:bat[:dbl] := batcalc.*(X_14,X_14);
-    sql.resultSet(X_25,X_27,X_29,X_31,X_33,X_15);
+    sql.resultSet(X_24,X_26,X_28,X_30,X_32,X_15);
 end user.s4_1;
 #drop table SF_2596114;
 
