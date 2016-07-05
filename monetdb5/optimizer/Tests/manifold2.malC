@@ -1,6 +1,6 @@
 # the manifold code blocks 
-b:= bat.new(:oid,:dbl);
-b2:= bat.new(:oid,:dbl);
+b:= bat.new(:dbl);
+b2:= bat.new(:dbl);
 
 function tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);
 	c:= aggr.count(b);

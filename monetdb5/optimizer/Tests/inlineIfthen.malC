@@ -7,7 +7,7 @@ exit go;
 end foo;
 
 function qry();
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 	bat.append(b,1);
 	bat.append(b,10);
 	bat.append(b,20);

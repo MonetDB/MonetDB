@@ -1,11 +1,11 @@
 function foo();
-    V7 := bat.new(:oid,:oid);
-    V10 := bat.new(:oid,:oid);
+    V7 := bat.new(:oid);
+    V10 := bat.new(:oid);
     V16 := V7;
 
     (V17,V17b) := algebra.subjoin(V16,V7,nil:bat[:oid,:oid],nil:bat[:oid,:oid],true, 0:lng);
-    V19 := bat.new(:oid,:oid);
-    V22 := bat.new(:oid,:oid);
+    V19 := bat.new(:oid);
+    V22 := bat.new(:oid);
     (V17,V17b) := algebra.subjoin(V16,V22,nil:bat[:oid,:oid],nil:bat[:oid,:oid],true, 0:lng);
 	io.print("done");
 end;

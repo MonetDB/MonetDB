@@ -1,6 +1,6 @@
-b := bat.new(:oid,:int);
-x:= bat.new(:oid,:oid);
-y:= bat.new(:oid,:oid);
+b := bat.new(:int);
+x:= bat.new(:oid);
+y:= bat.new(:oid);
 s1:= algebra.subselect(b,1,80,true,true,false);
 s2:= algebra.subselect(b,s1,5,95,true,true,false);
 s3:= algebra.subselect(b,s2,50,nil:int,true,true,false);

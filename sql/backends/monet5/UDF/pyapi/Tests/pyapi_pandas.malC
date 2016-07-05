@@ -1,7 +1,7 @@
 
 
 
-g:= bat.new(:oid,:int);
+g:= bat.new(:int);
 bat.append(g,1);
 bat.append(g,2);
 bat.append(g,3);
@@ -13,7 +13,7 @@ bat.append(g,2);
 bat.append(g,3);
 bat.append(g,1);
 
-b:= bat.new(:oid,:dbl);
+b:= bat.new(:dbl);
 bat.append(b,1804289383:dbl);
 bat.append(b,846930886:dbl);
 bat.append(b,1681692777:dbl);
@@ -33,7 +33,7 @@ io.print(r,s);
 ##############
 # --PANDAS-- #
 ##############
-c:= bat.new(:oid,:int);
+c:= bat.new(:int);
 bat.append(c,4:int);
 bat.append(c,24:int);
 bat.append(c,363:int);

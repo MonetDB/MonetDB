@@ -1,6 +1,6 @@
 b:= true;
-T1:= bat.new(:oid,:oid);
-T3:= bat.new(:oid,:oid);
+T1:= bat.new(:oid);
+T3:= bat.new(:oid);
 barrier b;
 	a:= algebra.select(T1,1@0,3@0);
 	c:= algebra.select(T3,0@0,5@0);

@@ -18,7 +18,7 @@ inline function bar(a:str,b:str):str;
 end bar;
 
 function qry();
-	b:= bat.new(:oid,:str);
+	b:= bat.new(:str);
 	bat.append(b,"1");
 	z:bat[:oid,:str]:= mal.multiplex("user","bar",b,b);
 end qry;

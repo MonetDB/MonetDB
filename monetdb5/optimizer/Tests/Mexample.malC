@@ -1,5 +1,5 @@
 function foo();
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 	bat.append(b,1);
 	c:bat[:oid,:int]:=mal.multiplex("calc","+",b,1);
 end;
