@@ -13,6 +13,10 @@
 #include "geom.h"
 #include <omp.h>
 
+#define GEOMBULK_DEBUG 0
+#define OPENCL_DYNAMIC 0
+#define OPENCL_THREADS 1
+
 /*******************************/
 /********** One input **********/
 /*******************************/
@@ -21,9 +25,14 @@ str
 geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL, *outWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+    wkb **outs = NULL;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -38,30 +47,67 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	//for (i = 0; i < BATcount(inBAT); i++) {
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "batcalc.wkb %d %d\n", p, q);
+    gettimeofday(&start, NULL);
+#endif
+    outs = (wkb**) GDKmalloc(sizeof(wkb*) * BATcount(inBAT));
+	//BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
+	    wkb *inWKB = NULL, *outWKB = NULL;
 
 		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i + BUNfirst(inBAT));
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) {	//check type
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, outWKB, TRUE);	//add the point to the new BAT
-		GDKfree(outWKB);
-		outWKB = NULL;
+        outs[p] = outWKB;
+		//BUNappend(outBAT, outWKB, TRUE);	//add the point to the new BAT
+		//GDKfree(outWKB);
+		//outWKB = NULL;
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batcalc.wkb %llu ms\n", t);
+#endif
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATsettrivprop(outBAT);
-	BATderiveProps(outBAT, FALSE);
 	BBPunfix(inBAT->batCacheid);
-	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
 
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    for (p = 0; p < q; p++) {
+		BUNappend(outBAT, outs[p], TRUE);	//add the point to the new BAT
+		GDKfree(outs[p]);
+		outs[p] = NULL;
+    }
+
+    if (outs)
+        GDKfree(outs);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
+#endif
+
+	BATsetcount(outBAT, BATcount(inBAT));
+	BATderiveProps(outBAT, FALSE);
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
 }
 
 /*create WKB from WKT */
@@ -118,9 +164,14 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	mbr *inMBR = NULL;
-	double outDbl = 0.0;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    double *outs;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -135,26 +186,50 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "batgeom.coordinateFromMBR %d %d\n", p, q);
+    gettimeofday(&start, NULL);
+#endif
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    outs = (double*) Tloc(outBAT, 0);
+    #pragma omp parallel for
+	//BATloop(inBAT, p, q) {	//iterate over all valid elements
+    for (p = 0; p < q; p++) {
 		str err = NULL;
+	    //double outDbl = 0.0;
 
 		inMBR = (mbr *) BUNtail(inBAT_iter, p);
-		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+		//if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
+		if ((err = wkbCoordinateFromMBR(&outs[p], &inMBR, coordinateIdx)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, &outDbl, TRUE);
+		//BUNappend(outBAT, &outDbl, TRUE);
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batgeom.coordinateFromMBR %llu ms\n", t);
+#endif
+
+	BBPunfix(inBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
 
 	//set some properties of the new BAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
-	BATderiveProps(outBAT, FALSE);
-	BBPunfix(inBAT->batCacheid);
+	//BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
-	return MAL_SUCCEED;
 
+	return MAL_SUCCEED;
 }
 
 /**************************************************************************/
@@ -228,8 +303,11 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
     unsigned long long t;
+#endif
+    double *outs;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -245,38 +323,44 @@ WKBtoDBL_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (dbl *, wkb **), const c
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
 	
-    omp_set_dynamic(0);     // Explicitly disable dynamic teams
-    omp_set_num_threads(1);
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
     q = BUNlast(inBAT);
-    fprintf(stdout, "%d %d\n", p, q);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
     gettimeofday(&start, NULL);
+#endif
     //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    outs = (double*) Tloc(outBAT, 0);
     #pragma omp parallel for
     for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
-		double outSingle;
+		//double outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+		//if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+		if ((err = (*func) (&outs[p], &inWKB)) != MAL_SUCCEED) {
             msg = err;
             #pragma omp cancelregion
 		}
-		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+		//BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
 	}
+#ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "%llu ms\n", t);
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+	BBPunfix(inBAT->batCacheid);
 
     if (msg != MAL_SUCCEED) {
-        BBPunfix(inBAT->batCacheid);
         BBPunfix(outBAT->batCacheid);
         return msg;
     }
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
 
-	BBPunfix(inBAT->batCacheid);
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -300,6 +384,12 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+    wkb **outs = NULL;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -314,25 +404,64 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+    outs = (wkb**) GDKmalloc(sizeof(wkb*) * BATcount(inBAT));
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
 		wkb *outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
-		GDKfree(outSingle);
-		outSingle = NULL;
+        outs[p] = outSingle;
+		//BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
+		//GDKfree(outSingle);
+		//outSingle = NULL;
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+	BBPunfix(inBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    for (p = 0; p < q; p++) {
+		BUNappend(outBAT, outs[p], TRUE);	//add the point to the new BAT
+		GDKfree(outs[p]);
+		outs[p] = NULL;
+    }
+
+    if (outs)
+        GDKfree(outs);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
+#endif
 
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
-
-	BBPunfix(inBAT->batCacheid);
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -361,6 +490,12 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+    wkb **outs = NULL;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -375,25 +510,63 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+    outs = (wkb**) GDKmalloc(sizeof(wkb*) * BATcount(inBAT));
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
 		wkb *outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
-		GDKfree(outSingle);
-		outSingle = NULL;
+        outs[p] = outSingle;
+		//BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
+		//GDKfree(outSingle);
+		//outSingle = NULL;
 	}
-
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
 
 	BBPunfix(inBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    for (p = 0; p < q; p++) {
+		BUNappend(outBAT, outs[p], TRUE);	//add the point to the new BAT
+		GDKfree(outs[p]);
+		outs[p] = NULL;
+    }
+
+    if (outs)
+        GDKfree(outs);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
+#endif
+
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -421,8 +594,11 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
     unsigned long long t;
+#endif
+    bit *outs;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -438,42 +614,47 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
 
-    omp_set_dynamic(0);     // Explicitly disable dynamic teams
-    omp_set_num_threads(1);
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(16);
     q = BUNlast(inBAT);
-    fprintf(stdout, "%d %d\n", p, q);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
     gettimeofday(&start, NULL);
+#endif
+	outs = (bit *) Tloc(outBAT, 0);
 	//BATloop(inBAT, p, q) {	//iterate over all valid elements
     #pragma omp parallel for
     for (p = 0; p < q; p++) {
         str err = NULL;
 	    wkb *inWKB = NULL;
-        bit outSingle;
+        //bit outSingle;
 
         inWKB = (wkb *) BUNtail(inBAT_iter, p);
-        if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+        //if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+        if ((err = (*func) (&outs[p], &inWKB)) != MAL_SUCCEED) {
             msg = err;
             #pragma omp cancelregion
         }
-        BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+        //BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
     }
+#ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "%llu ms\n", t);
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    BBPunfix(inBAT->batCacheid);
 
     if (msg != MAL_SUCCEED) {
-        BBPunfix(inBAT->batCacheid);
         BBPunfix(outBAT->batCacheid);
         return msg;
     }
 
-	//set the number of elements in the outBAT
-	//BATsetcount(outBAT, BATcount(inBAT));
-	BBPunfix(inBAT->batCacheid);
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
-
 }
 
 str
@@ -517,8 +698,11 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
 	BUN p = 0, q = 0;
 	BATiter aBAT_iter, bBAT_iter;
 	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
     static struct timeval start, stop;
     unsigned long long t;
+#endif
+    bit *outs = NULL;
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
@@ -540,41 +724,48 @@ WKBWKBtoBIT_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (bit *, 
 	aBAT_iter = bat_iterator(aBAT);
 	bBAT_iter = bat_iterator(bBAT);
 
-    omp_set_dynamic(0);     // Explicitly disable dynamic teams
-    omp_set_num_threads(1);
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+
     q = BUNlast(aBAT);
-    fprintf(stdout, "%d %d\n", p, q);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
     gettimeofday(&start, NULL);
+#endif
+	outs = (bit *) Tloc(outBAT, 0);
 	//BATloop(inBAT, p, q) {	//iterate over all valid elements
     #pragma omp parallel for
     for (p = 0; p < q; p++) {
+        wkb *aWKB = NULL, *bWKB = NULL;
+        //bit out;
         str err = NULL;
-	    wkb *aWKB = NULL, *bWKB = NULL;
-        bit out;
 
         aWKB = (wkb *) BUNtail(aBAT_iter, p);
         bWKB = (wkb *) BUNtail(bBAT_iter, p);
-        if ((err = (*func) (&out, &aWKB, &bWKB)) != MAL_SUCCEED) {
+        //if ((err = (*func) (&out, &aWKB, &bWKB)) != MAL_SUCCEED) {
+        if ((err = (*func) (&outs[p], &aWKB, &bWKB)) != MAL_SUCCEED) {
             msg = err;
             #pragma omp cancelregion
         }
-        BUNappend(outBAT, &out, TRUE);	//add the result to the new BAT
+        //outs[p] = out;
+        //BUNappend(outBAT, &out, TRUE);	//add the result to the new BAT
     }
+#ifdef GEOMBULK_DEBUG
     gettimeofday(&stop, NULL);
     t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
-    fprintf(stdout, "%llu ms\n", t);
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    BBPunfix(aBAT->batCacheid);
+    BBPunfix(bBAT->batCacheid);
 
     if (msg != MAL_SUCCEED) {
-        BBPunfix(aBAT->batCacheid);
-        BBPunfix(bBAT->batCacheid);
         BBPunfix(outBAT->batCacheid);
         return msg;
     }
 
-	//set the number of elements in the outBAT
-	//BATsetcount(outBAT, BATcount(inBAT));
-	BBPunfix(aBAT->batCacheid);
-	BBPunfix(bBAT->batCacheid);
+    BATsetcount(outBAT, q);
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -596,6 +787,12 @@ WKBtoBITxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -642,10 +839,20 @@ WKBtoBITxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
     if (*inZBAT_id != bat_nil)
         inZBAT_iter = bat_iterator(inZBAT);
 
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s, %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+	outs = (bit *) Tloc(outBAT, 0);
+	//BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
-		bit outSingle;
+		//bit outSingle;
         double x, y, z;
 
 
@@ -664,22 +871,18 @@ WKBtoBITxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
         else
             z = *dz;
 
-        if ((err = (*func) (&outSingle, &inWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
-            BBPunfix(inBAT->batCacheid);
-            if (*inXBAT_id != bat_nil)
-                BBPunfix(inXBAT->batCacheid);
-            if (*inYBAT_id != bat_nil)
-                BBPunfix(inYBAT->batCacheid);
-            if (*inZBAT_id != bat_nil)
-                BBPunfix(inZBAT->batCacheid);
-            BBPunfix(outBAT->batCacheid);
-			return err;
+        //if ((err = (*func) (&outSingle, &inWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
+        if ((err = (*func) (&outs[p], &inWKB, &x, &y, &z, srid)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+		//BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
 	}
-
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
 
     BBPunfix(inBAT->batCacheid);
     if (*inXBAT_id != bat_nil)
@@ -688,6 +891,13 @@ WKBtoBITxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
         BBPunfix(inYBAT->batCacheid);
     if (*inZBAT_id != bat_nil)
         BBPunfix(inZBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+    }
+
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
     BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -710,6 +920,12 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    int *outs;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -724,23 +940,44 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    outs = (int*) Tloc(outBAT, 0);
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
-		int outSingle;
+		//int outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+		//if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+		if ((err = (*func) (&outs[p], &inWKB)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+		//BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
 	}
-
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
 
 	BBPunfix(inBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -770,6 +1007,12 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    int *outs;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -784,27 +1027,48 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    outs = (int*) Tloc(outBAT, 0);
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
-		int outSingle;
+		//int outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+		//if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+		if ((err = (*func) (&outs[p], &inWKB, flag)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+		//BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
 	}
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+	BBPunfix(inBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
 
 	//set the number of elements in the outBAT
 	BATsetcount(outBAT, BATcount(inBAT));
-
-	BBPunfix(inBAT->batCacheid);
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
-
 }
 
 str
@@ -830,6 +1094,12 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    double *outs;
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -844,27 +1114,47 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "batgeom.wkbGetCoordinate %d %d\n", p, q);
+    gettimeofday(&start, NULL);
+#endif
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    outs = (double*) Tloc(outBAT, 0);
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
 		double outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
-		if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
-			BBPunfix(outBAT->batCacheid);
-			return err;
+		//if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+		if ((err = wkbGetCoordinate(&outs[p], &inWKB, flag)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
+		//BUNappend(outBAT, &outSingle, TRUE);	//add the result to the new BAT
 	}
-
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batgeom.wkbGetCoordinate %llu ms\n", t);
+#endif
 
 	BBPunfix(inBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
-
 }
 
 /******************************************************************************************/
@@ -877,6 +1167,12 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
 	BAT *outBAT = NULL, *inBAT = NULL, *inXBAT = NULL, *inYBAT = NULL, *inZBAT = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter, inXBAT_iter, inYBAT_iter, inZBAT_iter;
+	str msg = MAL_SUCCEED;
+    wkb **outs = NULL;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
@@ -923,7 +1219,18 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
     if (*inZBAT_id != bat_nil)
         inZBAT_iter = bat_iterator(inZBAT);
 
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+    q = BUNlast(inBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+    outs = (wkb**) GDKmalloc(sizeof(wkb*) * BATcount(inBAT));
+    //BATloop(inBAT, p, q) {	//iterate over all valid elements
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
 		str err = NULL;
 	    wkb *inWKB = NULL;
 		wkb *outSingle;
@@ -946,23 +1253,19 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
             z = *dz;
 
         if ((err = (*func) (&outSingle, &inWKB, &x, &y, &z)) != MAL_SUCCEED) {
-            BBPunfix(inBAT->batCacheid);
-            if (*inXBAT_id != bat_nil)
-                BBPunfix(inXBAT->batCacheid);
-            if (*inYBAT_id != bat_nil)
-                BBPunfix(inYBAT->batCacheid);
-            if (*inZBAT_id != bat_nil)
-                BBPunfix(inZBAT->batCacheid);
-            BBPunfix(outBAT->batCacheid);
-			return err;
+            msg = err;
+            #pragma omp cancelregion
 		}
-		BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
-		GDKfree(outSingle);
-		outSingle = NULL;
+        outs[p] = outSingle;
+		//BUNappend(outBAT, outSingle, TRUE);	//add the result to the new BAT
+		//GDKfree(outSingle);
+		//outSingle = NULL;
 	}
-
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batcalc.wkb %llu ms\n", t);
+#endif
 
     BBPunfix(inBAT->batCacheid);
     if (*inXBAT_id != bat_nil)
@@ -971,6 +1274,31 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
         BBPunfix(inYBAT->batCacheid);
     if (*inZBAT_id != bat_nil)
         BBPunfix(inZBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&start, NULL);
+#endif
+    for (p = 0; p < q; p++) {
+		BUNappend(outBAT, outs[p], TRUE);	//add the point to the new BAT
+		GDKfree(outs[p]);
+		outs[p] = NULL;
+    }
+
+    if (outs)
+        GDKfree(outs);
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
+#endif
+
+	BATsetcount(outBAT, BATcount(inBAT));
+    BATderiveProps(outBAT, FALSE);
     BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
