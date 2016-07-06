@@ -839,7 +839,7 @@ BATslice(BAT *b, BUN l, BUN h)
 }
 
 /* Return whether the BAT is ordered or not.  If we don't know, invest
-* in a scan and record the results in the bat descriptor.  */
+ * in a scan and record the results in the bat descriptor.  */
 int
 BATordered(BAT *b)
 {
