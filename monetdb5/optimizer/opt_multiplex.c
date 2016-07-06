@@ -100,7 +100,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tt = getColumnType(getArgType(mb, pci, i));
 
 		setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
-		q = pushType(mb, q, TYPE_oid);
 		q = pushType(mb, q, tt);
 	}
 

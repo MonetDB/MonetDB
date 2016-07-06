@@ -1,0 +1,68 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
+
+INCLUDES = ../.. \
+	../../../../include \
+	../../../../common \
+	../../../../storage \
+	../../../../server \
+	../../../../../monetdb5/modules/atoms \
+	../../../../../monetdb5/modules/kernel \
+	../../../../../monetdb5/mal \
+	../../../../../monetdb5/modules/mal \
+	../../../../../monetdb5/optimizer \
+	../../../../../common/options \
+	../../../../../common/stream \
+	../../../../../gdk
+
+lib__udf = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = udf.c udf.h udf_impl.h
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+		   ../../../../../gdk/libbat
+}
+
+headers_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = udf.mal
+}
+
+headers_mal_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = udf_hge.mal
+}
+
+headers_sql = {
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 80_udf.sql
+}
+
+headers_sql_hge = {
+	COND = HAVE_HGE
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 80_udf_hge.sql
+}
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 80_udf.mal
+}
+
+headers_autoload_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 80_udf_hge.mal
+}
+
+EXTRA_DIST_DIR = Tests

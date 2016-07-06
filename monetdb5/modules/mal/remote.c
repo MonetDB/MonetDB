@@ -1056,7 +1056,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (b->batCount > 0) {
 		mnstr_write(cntxt->fdout, /* tail */
-		Tloc(b, BUNfirst(b)), b->batCount * Tsize(b), 1);
+		Tloc(b, 0), b->batCount * Tsize(b), 1);
 		if (sendtheap)
 			mnstr_write(cntxt->fdout, /* theap */
 					Tbase(b), b->tvheap->free, 1);
@@ -1233,7 +1233,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
 	}
 
-	BATderiveTailProps(b, 1);
+	BATsettrivprop(b);
 
 	*ret = b;
 	return(MAL_SUCCEED);

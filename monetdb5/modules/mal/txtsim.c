@@ -915,10 +915,10 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 			  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
 
 	n = BATcount(qgram);
-	qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
-	ibuf = (int *) Tloc(id, BUNfirst(id));
-	pbuf = (int *) Tloc(pos, BUNfirst(pos));
-	lbuf = (int *) Tloc(len, BUNfirst(len));
+	qbuf = (oid *) Tloc(qgram, 0);
+	ibuf = (int *) Tloc(id, 0);
+	pbuf = (int *) Tloc(pos, 0);
+	lbuf = (int *) Tloc(len, 0);
 
 	/* if (BATcount(qgram)>1 && !BATtordered(qgram)) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
 

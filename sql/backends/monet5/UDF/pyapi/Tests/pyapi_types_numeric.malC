@@ -1,0 +1,95 @@
+
+
+a:= bat.new(:int);
+bat.append(a,1:int);
+bat.append(a,2:int);
+bat.append(a,3:int);
+bat.append(a,4:int);
+b:= bat.new(:int);
+bat.append(b,4:int);
+bat.append(b,3:int);
+bat.append(b,2:int);
+bat.append(b,1:int);
+result:bat[:int] := pyapi.eval(nil:ptr, "return(arg1*sum(arg2) * arg3)", a, b, 2);
+io.print(result);
+
+# bits with null value
+bbit:= bat.new(:bit);
+bat.append(bbit,1:bit);
+bat.append(bbit,0:bit);
+bat.append(bbit,1:bit);
+bat.append(bbit,0:bit);
+bat.append(bbit,nil:bit);
+rbit:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bbit);
+io.print(rbit);
+
+# bytes with null value
+bbte:= bat.new(:bte);
+bat.append(bbte,42:bte);
+bat.append(bbte,84:bte);
+bat.append(bbte,111:bte);
+bat.append(bbte,0:bte);
+bat.append(bbte,nil:bte);
+rbte:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bbte);
+io.print(rbte);
+
+# short with null value
+bsht:= bat.new(:sht);
+bat.append(bsht,42:sht);
+bat.append(bsht,82:sht);
+bat.append(bsht,0:sht);
+bat.append(bsht,240:sht);
+bat.append(bsht,nil:sht);
+rsht:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bsht);
+io.print(rsht);
+
+# int with null value
+bint:= bat.new(:int);
+bat.append(bint,1804289383:int);
+bat.append(bint,846930886:int);
+bat.append(bint,1681692777:int);
+bat.append(bint,1714636915:int);
+bat.append(bint,nil:int);
+rint:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",bint);
+io.print(rint);
+
+# long with null value
+blng:= bat.new(:lng);
+bat.append(blng,1804289383L);
+bat.append(blng,846930886L);
+bat.append(blng,1681692777L);
+bat.append(blng,1714636915L);
+bat.append(blng,nil:lng);
+rlng:bat[:int] := pyapi.eval(nil:ptr,"return(arg1)",blng);
+io.print(rlng);
+
+# float with null value
+bflt:= bat.new(:flt);
+bat.append(bflt,18042.89383:flt);
+bat.append(bflt,846.930886:flt);
+bat.append(bflt,16.81692777:flt);
+bat.append(bflt,1714636.915:flt);
+bat.append(bflt,nil:flt);
+rflt:bat[:flt] := pyapi.eval(nil:ptr,"return(arg1)",bflt);
+io.print(rflt);
+
+# double with null value
+bdbl:= bat.new(:dbl);
+bat.append(bdbl,180428.9383:dbl);
+bat.append(bdbl,84.6930886:dbl);
+bat.append(bdbl,168169.2777:dbl);
+bat.append(bdbl,17146369.15:dbl);
+bat.append(bdbl,nil:dbl);
+rdbl:bat[:dbl] := pyapi.eval(nil:ptr,"return(arg1)",bdbl);
+io.print(rdbl);
+
+# convert int to string, then convert string to int
+bint:= bat.new(:int);
+bat.append(bint,1804289383:int);
+bat.append(bint,846930886:int);
+bat.append(bint,67:int);
+bat.append(bint,124124124:int);
+rstr:bat[:str] := pyapi.eval(nil:ptr,"return(arg1)",bint);
+rint:bat[:int] := pyapi.eval(nil:ptr,"return([list(map(int, arg1))])",rstr);
+io.print(rint);
+

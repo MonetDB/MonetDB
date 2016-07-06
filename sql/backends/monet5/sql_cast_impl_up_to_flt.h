@@ -104,8 +104,8 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2_,TP2)), MAL_MALLOC_FAIL);
 	}
-	o = (TP2 *) Tloc(bn, BUNfirst(bn));
-	p = (TP1 *) Tloc(b, BUNfirst(b));
+	o = (TP2 *) Tloc(bn, 0);
+	p = (TP1 *) Tloc(b, 0);
 	q = (TP1 *) Tloc(b, BUNlast(b));
 	bn->tnonil = 1;
 	if (b->tnonil) {

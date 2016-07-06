@@ -43,27 +43,27 @@ Ready.
 % clob # type
 % 479 # length
 function user.s2_1(A0:str,A1:str,A2:str,A3:str):void;
-    X_171:void := querylog.define("explain\nselect d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1\n from dwdate, customer, supplier, part, lineorder\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_partkey = p_partkey\n and lo_orderdate = d_datekey\n and c_region = \\'AMERICA\\'\n and s_region = \\'AMERICA\\'\n and (p_mfgr = \\'MFGR#1\\' or p_mfgr = \\'MFGR#2\\')\n group by d_year, c_nation\n order by d_year, c_nation;","sequential_pipe",110);
-    X_139 := bat.new(nil:oid,nil:str);
-    X_147 := bat.append(X_139,"sys.dwdate");
-    X_155 := bat.append(X_147,"sys.customer");
-    X_162 := bat.append(X_155,"sys.L1");
-    X_142 := bat.new(nil:oid,nil:str);
-    X_149 := bat.append(X_142,"d_year");
-    X_157 := bat.append(X_149,"c_nation");
-    X_164 := bat.append(X_157,"profit1");
-    X_143 := bat.new(nil:oid,nil:str);
-    X_150 := bat.append(X_143,"int");
-    X_158 := bat.append(X_150,"clob");
-    X_166 := bat.append(X_158,"bigint");
-    X_144 := bat.new(nil:oid,nil:int);
-    X_152 := bat.append(X_144,32);
-    X_160 := bat.append(X_152,0);
-    X_168 := bat.append(X_160,64);
-    X_146 := bat.new(nil:oid,nil:int);
-    X_154 := bat.append(X_146,0);
-    X_161 := bat.append(X_154,0);
-    X_170 := bat.append(X_161,0);
+    X_170:void := querylog.define("explain\nselect d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1\n from dwdate, customer, supplier, part, lineorder\n where lo_custkey = c_custkey\n and lo_suppkey = s_suppkey\n and lo_partkey = p_partkey\n and lo_orderdate = d_datekey\n and c_region = \\'AMERICA\\'\n and s_region = \\'AMERICA\\'\n and (p_mfgr = \\'MFGR#1\\' or p_mfgr = \\'MFGR#2\\')\n group by d_year, c_nation\n order by d_year, c_nation;","sequential_pipe",110);
+    X_139 := bat.new(nil:str);
+    X_146 := bat.append(X_139,"sys.dwdate");
+    X_154 := bat.append(X_146,"sys.customer");
+    X_161 := bat.append(X_154,"sys.L1");
+    X_141 := bat.new(nil:str);
+    X_148 := bat.append(X_141,"d_year");
+    X_156 := bat.append(X_148,"c_nation");
+    X_163 := bat.append(X_156,"profit1");
+    X_142 := bat.new(nil:str);
+    X_149 := bat.append(X_142,"int");
+    X_157 := bat.append(X_149,"clob");
+    X_165 := bat.append(X_157,"bigint");
+    X_143 := bat.new(nil:int);
+    X_151 := bat.append(X_143,32);
+    X_159 := bat.append(X_151,0);
+    X_167 := bat.append(X_159,64);
+    X_145 := bat.new(nil:int);
+    X_153 := bat.append(X_145,0);
+    X_160 := bat.append(X_153,0);
+    X_169 := bat.append(X_160,0);
     X_5 := sql.mvc();
     C_6:bat[:oid] := sql.tid(X_5,"sys","lineorder");
     X_9:bat[:oid] := sql.bind_idxbat(X_5,"sys","lineorder","lineorder_lo_partkey_fkey",0);
@@ -150,7 +150,7 @@ function user.s2_1(A0:str,A1:str,A2:str,A3:str):void;
     X_117 := algebra.projection(r1_138,X_110);
     X_118 := algebra.projection(r1_138,X_109);
     X_137 := algebra.projection(r1_138,X_136);
-    sql.resultSet(X_162,X_164,X_166,X_168,X_170,X_117,X_118,X_137);
+    sql.resultSet(X_161,X_163,X_165,X_167,X_169,X_117,X_118,X_137);
 end user.s2_1;
 
 # 23:10:48 >  

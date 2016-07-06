@@ -4318,9 +4318,11 @@ literal:
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  int len = sizeof(hge);
+		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  int len = sizeof(lng);
+		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -4336,7 +4338,15 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = digits2bits(digits);
+		    int bits = digits2bits(digits), obits = bits;
+
+		    for (;(one<<(bits-1)) > value; bits--)
+			    ;
+		   
+ 		    if (bits != obits && 
+		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
+				bits++;
+		
 		    if (value > GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
 		    else if (value > GDK_sht_min && value <= GDK_sht_max)

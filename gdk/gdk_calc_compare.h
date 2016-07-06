@@ -550,7 +550,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	if (bn == NULL)
 		return NULL;
 
-	dst = (TPE *) Tloc(bn, bn->batFirst);
+	dst = (TPE *) Tloc(bn, 0);
 
 	nils = op_typeswitchloop(lft, tp1, incr1, hp1, wd1,
 				 rgt, tp2, incr2, hp2, wd2,
@@ -599,10 +599,10 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
 	}
 
-	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, b1->batFirst), ATOMbasetype(b1->ttype), 1,
+	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, 0), ATOMbasetype(b1->ttype), 1,
 			      b1->tvheap ? b1->tvheap->base : NULL,
 			      b1->twidth,
-			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, b2->batFirst), ATOMbasetype(b2->ttype), 1,
+			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, 0), ATOMbasetype(b2->ttype), 1,
 			      b2->tvheap ? b2->tvheap->base : NULL,
 			      b2->twidth,
 			      cnt, start, end, cand, candend, b1->hseqbase,
@@ -626,7 +626,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(Tloc(b, b->batFirst), ATOMbasetype(b->ttype), 1,
+	bn = BATcalcop_intern(Tloc(b, 0), ATOMbasetype(b->ttype), 1,
 			      b->tvheap ? b->tvheap->base : NULL,
 			      b->twidth,
 			      VALptr(v), ATOMbasetype(v->vtype), 0,
@@ -654,7 +654,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	bn = BATcalcop_intern(VALptr(v), ATOMbasetype(v->vtype), 0,
 			      NULL, 0,
-			      Tloc(b, b->batFirst), ATOMbasetype(b->ttype), 1,
+			      Tloc(b, 0), ATOMbasetype(b->ttype), 1,
 			      b->tvheap ? b->tvheap->base : NULL,
 			      b->twidth,
 			      cnt, start, end, cand, candend, b->hseqbase,

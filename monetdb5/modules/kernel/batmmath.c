@@ -47,8 +47,8 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);					\
 	}																\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);					\
-	o = (TYPE *) Tloc(bn, BUNfirst(bn));							\
-	p = (TYPE *) Tloc(b, BUNfirst(b));								\
+	o = (TYPE *) Tloc(bn, 0);										\
+	p = (TYPE *) Tloc(b, 0);										\
 	q = (TYPE *) Tloc(b, BUNlast(b));								\
 																	\
 	errno = 0;														\
@@ -92,8 +92,8 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
-	o = (TYPE *) Tloc(bn, BUNfirst(bn));								\
-	p = (TYPE *) Tloc(b, BUNfirst(b));									\
+	o = (TYPE *) Tloc(bn, 0);											\
+	p = (TYPE *) Tloc(b, 0);											\
 	q = (TYPE *) Tloc(b, BUNlast(b));									\
 																		\
 	errno = 0;															\
@@ -136,8 +136,8 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
-	o = (TYPE *) Tloc(bn, BUNfirst(bn));								\
-	p = (TYPE *) Tloc(b, BUNfirst(b));									\
+	o = (TYPE *) Tloc(bn, 0);											\
+	p = (TYPE *) Tloc(b, 0);											\
 	q = (TYPE *) Tloc(b, BUNlast(b));									\
 																		\
 	errno = 0;															\

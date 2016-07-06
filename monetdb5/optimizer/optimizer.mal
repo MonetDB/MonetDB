@@ -185,7 +185,7 @@ pattern optimizer.projectionpath(mod:str, fcn:str):str
 address OPTwrapper
 comment "Join path constructor";
 
-pattern algebra.projectionpath(l:bat[:oid,:any]...):bat[:oid,:any]
+pattern algebra.projectionpath(l:bat[:any]...):bat[:any]
 address ALGprojectionpath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
@@ -272,7 +272,7 @@ address OPTwrapper;
 pattern optimizer.prejoin(mod:str, fcn:str):str
 address OPTwrapper
 comment "Dead code optimizer";
-# command algebra.prejoin(a:bat[:oid,:oid],b:bat[:oid,:any_1])(c:bat[:oid,:oid],d:bat[:oid,:any_1])
+# command algebra.prejoin(a:bat[:oid],b:bat[:any_1])(c:bat[:oid],d:bat[:any_1])
 # address ALGprejoin
 # comment "Recluster the table to reduce random access behavior.";
 
@@ -326,7 +326,7 @@ comment "Selection cracking";
 
 #opt_statistics.mal
 
-command inspect.getStatistics(nme:str):bat[:oid,:any_2]
+command inspect.getStatistics(nme:str):bat[:any_2]
 address QOTgetStatistics
 comment "Get optimizer property statistics 
 such as #calls, #total actions, #total time";

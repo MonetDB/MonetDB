@@ -176,7 +176,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_148 := algebra.projection(r1_172,X_131);
     X_149 := algebra.projection(r1_172,X_130);
     X_150 := algebra.projection(r1_172,X_134);
-    sql.resultSet(X_182,X_184,X_186,X_188,X_190,X_147,X_148,X_149,X_150);
+    sql.resultSet(X_181,X_183,X_185,X_187,X_189,X_147,X_148,X_149,X_150);
 end user.s2_1;
 
 # 22:53:29 >  

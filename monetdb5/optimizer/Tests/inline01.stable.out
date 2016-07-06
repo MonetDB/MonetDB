@@ -30,21 +30,21 @@ Ready.
 # 16:09:46 >  
 
 function user.qry():void;               	#[0] (0)  0 
-    X_5:bat[:int] := bat.new(:oid,:int);	#[1] (0) CMDBATnew 5 <- 6 7 
-    X_8:bat[:int] := bat.new(:oid,:int);	#[2] (0) CMDBATnew 8 <- 6 7 
-    X_9:int := 1:int;                   	#[3] (0)  9 <- 10 
-    bat.append(X_5:bat[:int],1:int);    	#[4] (0) BKCappend_val_wrap 11 <- 5 10 
-barrier (X_12:oid,X_9:int) := iterator.new(X_5:bat[:int]);	#[5] (0) ITRbunIterator 12 9 <- 5 
-    io.print(X_12:oid);                 	#[6] (0) IOprint_val 13 <- 12 
-catch MALException:str;                 	#[7] (0)  14 
-exit MALException:str;                  	#[8] (0)  14 
-exit (X_12:oid,X_9:int);                	#[9] (0)  12 9 
-barrier (X_12:oid,X_9:int) := iterator.new(X_8:bat[:int]);	#[10] (0) ITRbunIterator 12 9 <- 8 
-    io.print(X_12:oid);                 	#[11] (0) IOprint_val 15 <- 12 
-    redo (X_12:oid,X_9:int) := iterator.next(X_8:bat[:int]);	#[12] (0) ITRbunNext 12 9 <- 8 
-catch MALException:str;                 	#[13] (0)  14 
-exit MALException:str;                  	#[14] (0)  14 
-exit (X_12:oid,X_16:any,X_9:int);       	#[15] (0)  12 16 9 
+    X_5:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnew 5 <- 6 
+    X_7:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnew 7 <- 6 
+    X_8:int := 1:int;                   	#[3] (0)  8 <- 9 
+    bat.append(X_5:bat[:int],1:int);    	#[4] (0) BKCappend_val_wrap 10 <- 5 9 
+barrier (X_11:oid,X_8:int) := iterator.new(X_5:bat[:int]);	#[5] (0) ITRbunIterator 11 8 <- 5 
+    io.print(X_11:oid);                 	#[6] (0) IOprint_val 12 <- 11 
+catch MALException:str;                 	#[7] (0)  13 
+exit MALException:str;                  	#[8] (0)  13 
+exit (X_11:oid,X_8:int);                	#[9] (0)  11 8 
+barrier (X_11:oid,X_8:int) := iterator.new(X_7:bat[:int]);	#[10] (0) ITRbunIterator 11 8 <- 7 
+    io.print(X_11:oid);                 	#[11] (0) IOprint_val 14 <- 11 
+    redo (X_11:oid,X_8:int) := iterator.next(X_7:bat[:int]);	#[12] (0) ITRbunNext 11 8 <- 7 
+catch MALException:str;                 	#[13] (0)  13 
+exit MALException:str;                  	#[14] (0)  13 
+exit (X_11:oid,X_15:any,X_8:int);       	#[15] (0)  11 15 8 
 end user.qry;                           	#[16] (0)  
 
 # 00:18:07 >  

@@ -30,7 +30,7 @@ Ready.
 # 10:38:21 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    z:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    z:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     b:bat[:int] := nil:bat[:int];       	#[2] (0)  3 <- 4 
     b:bat[:int] := z:bat[:int];         	#[3] (0)  3 <- 1 
 #io.print(b);                           

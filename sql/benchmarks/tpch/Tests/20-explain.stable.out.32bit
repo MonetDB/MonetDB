@@ -65,22 +65,22 @@ Ready.
 % clob # type
 % 618 # length
 function user.s2_1(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
-    X_211:void := querylog.define("explain select\n s_name,\n s_address\nfrom\n supplier,\n nation\nwhere\n s_suppkey in (\n select\n ps_suppkey\n from\n partsupp\n where\n ps_partkey in (\n select\n p_partkey\n from\n part\n where\n p_name like \\'forest%\\'\n )\n and ps_availqty > (\n select\n 0.5 * sum(l_quantity)\n from\n lineitem\n where\n l_partkey = ps_partkey\n and l_suppkey = ps_suppkey\n and l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n )\n )\n and s_nationkey = n_nationkey\n and n_name = \\'CANADA\\'\norder by\n s_name;","sequential_pipe",142);
-    X_188 := bat.new(nil:oid,nil:str);
-    X_196 := bat.append(X_188,"sys.supplier");
-    X_204 := bat.append(X_196,"sys.supplier");
-    X_191 := bat.new(nil:oid,nil:str);
-    X_198 := bat.append(X_191,"s_name");
-    X_205 := bat.append(X_198,"s_address");
-    X_192 := bat.new(nil:oid,nil:str);
-    X_199 := bat.append(X_192,"char");
-    X_206 := bat.append(X_199,"varchar");
-    X_193 := bat.new(nil:oid,nil:int);
-    X_201 := bat.append(X_193,25);
-    X_208 := bat.append(X_201,40);
-    X_195 := bat.new(nil:oid,nil:int);
-    X_203 := bat.append(X_195,0);
-    X_210 := bat.append(X_203,0);
+    X_210:void := querylog.define("explain select\n s_name,\n s_address\nfrom\n supplier,\n nation\nwhere\n s_suppkey in (\n select\n ps_suppkey\n from\n partsupp\n where\n ps_partkey in (\n select\n p_partkey\n from\n part\n where\n p_name like \\'forest%\\'\n )\n and ps_availqty > (\n select\n 0.5 * sum(l_quantity)\n from\n lineitem\n where\n l_partkey = ps_partkey\n and l_suppkey = ps_suppkey\n and l_shipdate >= date \\'1994-01-01\\'\n and l_shipdate < date \\'1994-01-01\\' + interval \\'1\\' year\n )\n )\n and s_nationkey = n_nationkey\n and n_name = \\'CANADA\\'\norder by\n s_name;","sequential_pipe",142);
+    X_188 := bat.new(nil:str);
+    X_195 := bat.append(X_188,"sys.supplier");
+    X_203 := bat.append(X_195,"sys.supplier");
+    X_190 := bat.new(nil:str);
+    X_197 := bat.append(X_190,"s_name");
+    X_204 := bat.append(X_197,"s_address");
+    X_191 := bat.new(nil:str);
+    X_198 := bat.append(X_191,"char");
+    X_205 := bat.append(X_198,"varchar");
+    X_192 := bat.new(nil:int);
+    X_200 := bat.append(X_192,25);
+    X_207 := bat.append(X_200,40);
+    X_194 := bat.new(nil:int);
+    X_202 := bat.append(X_194,0);
+    X_209 := bat.append(X_202,0);
     X_7 := sql.mvc();
     C_8:bat[:oid] := sql.tid(X_7,"sys","supplier");
     X_11:bat[:int] := sql.bind(X_7,"sys","supplier","s_suppkey",0);
@@ -204,7 +204,7 @@ function user.s2_1(A0:str,A1:bte,A2:date,A3:date,A4:int,A5:str):void;
     X_184:bat[:str] := sql.bind(X_7,"sys","supplier","s_address",1);
     X_185 := sql.delta(X_180,C_182,r1_237,X_184);
     X_186:bat[:str] := algebra.projectionpath(r1_231,X_167,C_142,C_8,X_185);
-    sql.resultSet(X_204,X_205,X_206,X_208,X_210,X_179,X_186);
+    sql.resultSet(X_203,X_204,X_205,X_207,X_209,X_179,X_186);
 end user.s2_1;
 
 # 22:53:30 >  

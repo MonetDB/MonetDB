@@ -178,7 +178,7 @@ check_BATs(Tablet *as)
 		b = fmt[i].c;
 		if (b == NULL)
 			continue;
-		offset = BUNfirst(b) + as->offset;
+		offset = as->offset;
 
 		if (BATcount(b) != cnt || b->hseqbase != base)
 			return oid_nil;
@@ -227,7 +227,10 @@ TABLETcollect(BAT **bats, Tablet *as)
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
-		BATderiveProps(fmt[i].c, 0);
+		fmt[i].c->tsorted = fmt[i].c->trevsorted = 0;
+		fmt[i].c->tkey = 0;
+		fmt[i].c->tnil = fmt[i].c->tnonil = 0;
+		BATsettrivprop(fmt[i].c);
 
 		if (cnt != BATcount(fmt[i].c))
 			throw(SQL, "copy", "Count " BUNFMT " differs from " BUNFMT "\n", BATcount(fmt[i].c), cnt);
@@ -251,10 +254,13 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		if (fmt[i].skip)
 			continue;
 		b = fmt[i].c;
+		b->tsorted = b->trevsorted = 0;
+		b->tkey = 0;
+		b->tnil = b->tnonil = 0;
+		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
-		BATderiveProps(bv, 0);
 
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
 		b->tnonil &= bv->tnonil;
@@ -328,7 +334,7 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 			continue;
 		if (id < fmt[i].c->hseqbase || id >= fmt[i].c->hseqbase + BATcount(fmt[i].c))
 			break;
-		fmt[i].p = id - fmt[i].c->hseqbase + BUNfirst(fmt[i].c);
+		fmt[i].p = id - fmt[i].c->hseqbase;
 	}
 	if (i == nr_attrs) {
 		for (i = 0; i < nr_attrs; i++) {
@@ -414,7 +420,7 @@ output_line_lookup(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, 
 		Column *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->ci, id - f->c->hseqbase + BUNfirst(f->c));
+			char *p = BUNtail(f->ci, id - f->c->hseqbase);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				size_t l = strlen(f->nullstr);
@@ -512,7 +518,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	BUN p, q;
 	oid id;
 	BUN i = 0;
-	BUN offset = BUNfirst(order) + as->offset;
+	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
 		if (buf)
@@ -521,7 +527,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 			GDKfree(localbuf);
 		return -1;
 	}
-	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset - BUNfirst(order); p < q; p++, id++) {
+	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q; p++, id++) {
 		if ((res = output_line(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
 			GDKfree(buf);
 			GDKfree(localbuf);
@@ -576,12 +582,12 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 	char *buf = GDKzalloc(len);
 	BUN p, q;
 	BUN i = 0;
-	BUN offset = BUNfirst(order) + as->offset;
+	BUN offset = as->offset;
 
 	if (buf == NULL)
 		return -1;
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
-		oid h = order->hseqbase + p - BUNfirst(order);
+		oid h = order->hseqbase + p;
 
 		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);

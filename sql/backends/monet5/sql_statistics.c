@@ -21,6 +21,37 @@ analysis by optimizers.
 #include "sql_statistics.h"
 #include "sql_scenario.h"
 
+#define atommem(TYPE, size)					\
+	do {							\
+		if (*dst == NULL || *len < (int) (size)) {	\
+			GDKfree(*dst);				\
+			*len = (size);				\
+			*dst = (TYPE *) GDKmalloc(*len);	\
+			if (*dst == NULL)			\
+				return -1;			\
+		}						\
+	} while (0)
+
+static int
+strToStrSQuote(char **dst, int *len, const void *src)
+{
+	int l = 0;
+
+	if (GDK_STRNIL((str) src)) {
+		atommem(char, 4);
+
+		return snprintf(*dst, *len, "nil");
+	} else {
+		int sz = escapedStrlen(src, NULL, NULL, '\'');
+		atommem(char, sz + 3);
+		l = escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '\'');
+		l++;
+		(*dst)[0] = (*dst)[l++] = '"';
+		(*dst)[l] = 0;
+	}
+	return l;
+}
+
 str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -86,9 +117,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BAT *bn = store_funcs.bind_col(tr, c, RDONLY), *br;
 						BAT *bsample;
 						lng sz = BATcount(bn);
-						int (*tostr)(str*,int*,const void*) = BATatoms[bn->ttype].atomToStr; \
+						int (*tostr)(str*,int*,const void*) = BATatoms[bn->ttype].atomToStr;
 						int len = 0;
 						void *val=0;
+
+						if (tostr == BATatoms[TYPE_str].atomToStr)
+							tostr = strToStrSQuote;
 
 						if (col && strcmp(bc->name, col))
 							continue;
@@ -132,8 +166,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							tostr(&minval, &len,val); 
 							GDKfree(val);
 						} else {
-							maxval = (char *) GDKzalloc(4);
-							minval = (char *) GDKzalloc(4);
+							maxval = GDKmalloc(4);
+							minval = GDKmalloc(4);
 							snprintf(maxval, 4, "nil");
 							snprintf(minval, 4, "nil");
 						}

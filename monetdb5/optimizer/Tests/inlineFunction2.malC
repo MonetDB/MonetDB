@@ -4,8 +4,8 @@ inline function my(A:int,B:int):int;
 end my;
 
 function tst();
-	b:= bat.new(:oid,:int);
-	z:bat[:oid,:int]:= mal.multiplex("user","my",b,1);
+	b:= bat.new(:int);
+	z:bat[:int]:= mal.multiplex("user","my",b,1);
 end tst;
 optimizer.multiplex("user","tst");
 optimizer.inline("user","tst");

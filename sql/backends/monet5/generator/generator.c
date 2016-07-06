@@ -68,19 +68,19 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TPE *v, f, l, s;					\
 		f = *getArgReference_##TPE(stk, pci, 1);		\
 		l = *getArgReference_##TPE(stk, pci, 2);		\
-		if ( pci->argc == 3) \
-			s = f<l? (TPE) 1: (TPE)-1;\
-		else s =  *getArgReference_##TPE(stk,pci, 3);\
-		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)\
+		if ( pci->argc == 3)					\
+			s = f<l? (TPE) 1: (TPE)-1;			\
+		else s =  *getArgReference_##TPE(stk,pci, 3);		\
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.table",			\
 			      "Illegal generator range");		\
 		n = (BUN) ((l - f) / s);				\
 		if ((TPE) (n * s + f) != l)				\
 			n++;						\
-		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);	\
+		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);		\
 		if (bn == NULL)						\
 			throw(MAL, "generator.table", MAL_MALLOC_FAIL);	\
-		v = (TPE*) Tloc(bn, BUNfirst(bn));			\
+		v = (TPE*) Tloc(bn, 0);					\
 		for (c = 0; c < n; c++)					\
 			*v++ = (TPE) (f + c * s);			\
 		bn->tsorted = s > 0 || n <= 1;				\
@@ -149,7 +149,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			bn = COLnew(0, TYPE_timestamp, n + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.table", MAL_MALLOC_FAIL);
-			v = (timestamp *) Tloc(bn, BUNfirst(bn));
+			v = (timestamp *) Tloc(bn, 0);
 			for (c = 0; c < n; c++) {
 				*v++ = f;
 				msg = MTIMEtimestamp_add(&f, &f, &s);
@@ -316,7 +316,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (cand == NULL)
 				throw(MAL, "generator.subselect",
 				      RUNTIME_OBJECT_MISSING);
-			cl = (oid *) Tloc(cand, BUNfirst(cand));
+			cl = (oid *) Tloc(cand, 0);
 		}
 		i = 3;
 	} else
@@ -378,7 +378,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "generator.subselect", MAL_MALLOC_FAIL);
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
-			ol = (oid *) Tloc(bn, BUNfirst(bn));
+			ol = (oid *) Tloc(bn, 0);
 			for (c=0, o1=0; o1 <= o2; o1++) {
 				if( (((tsf.days>tlow.days || (tsf.days== tlow.days && tsf.msecs >= tlow.msecs) || timestamp_isnil(tlow))) &&
 				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) || anti ){
@@ -435,8 +435,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (anti && o1 < o2) {
 			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
 			if (bn) {
-				oid *op = (oid *) Tloc(bn, BUNfirst(bn));
-				const oid *cp = (const oid *) Tloc(cand, BUNfirst(cand));
+				oid *op = (oid *) Tloc(bn, 0);
+				const oid *cp = (const oid *) Tloc(cand, 0);
 				BATsetcount(bn, n - (o2 - o1));
 				bn->tnil = 0;
 				bn->tnonil = 1;
@@ -469,7 +469,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "generator.subselect",
 				      MAL_MALLOC_FAIL);
 			BATsetcount(bn, n - (o2 - o1));
-			op = (oid *) Tloc(bn, BUNfirst(bn));
+			op = (oid *) Tloc(bn, 0);
 			for (o = 0; o < o1; o++)
 				*op++ = o;
 			for (o = o2; o < (oid) n; o++)
@@ -536,7 +536,7 @@ float nextafterf(float x, float y);
 	if( bn == NULL)\
 		throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);\
 	low= hgh = TPE##_nil;\
-	v = (oid*) Tloc(bn,BUNfirst(bn));\
+	v = (oid*) Tloc(bn,0);\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *getArgReference_##TPE(stk,pci,idx);\
 		hgh = PREVVALUE##TPE(hgh);\
@@ -592,7 +592,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
 				throw(MAL,"generator.subselect",RUNTIME_OBJECT_MISSING);
-			cl = (oid*) Tloc(cand,BUNfirst(cand));
+			cl = (oid*) Tloc(cand,0);
 		} 
 		idx = 3;
 	} else idx = 2;
@@ -654,7 +654,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
 			if( bn == NULL)
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
-			v = (oid*) Tloc(bn,BUNfirst(bn));
+			v = (oid*) Tloc(bn,0);
 
 			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			val = f;
@@ -677,8 +677,12 @@ wrapup:
 	if( cndid)
 		BBPunfix(cndid);
 	if( bn){
+		bn->tsorted = 1;
+		bn->trevsorted = 0;
+		bn->tkey = 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 		BATsetcount(bn,c);
-		BATderiveProps(bn,0);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return msg;
@@ -699,7 +703,7 @@ wrapup:
 		BBPunfix(bid);\
 		throw(MAL,"generator.projection",MAL_MALLOC_FAIL);\
 	}\
-	v = (TPE*) Tloc(bn,BUNfirst(bn));\
+	v = (TPE*) Tloc(bn,0);\
 	for(; cnt-- > 0; ol++, o++){\
 		val = f + ((TPE) ( b->ttype == TYPE_void?o:*ol)) * s;\
 		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val<l || val >=f))) \
@@ -741,7 +745,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if ( b->ttype == TYPE_void)
 		o = b->tseqbase;
 	else
-		ol = (oid*) Tloc(b,BUNfirst(b));
+		ol = (oid*) Tloc(b,0);
 
 	/* the actual code to perform a projection over generators */
 	switch( tpe = getArgType(mb,p,1)){
@@ -775,7 +779,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				throw(MAL,"generator.projection",MAL_MALLOC_FAIL);
 			}
 
-			v = (timestamp*) Tloc(bn,BUNfirst(bn));
+			v = (timestamp*) Tloc(bn,0);
 
 			for(; cnt-- > 0; ol++, o++){
 				t = ((lng) ( b->ttype == TYPE_void?o:*ol)) * s;
@@ -797,8 +801,11 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* adminstrative wrapup of the projection */
 	BBPunfix(bid);
 	if( bn){
+		bn->tsorted = bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tnil = 0;
+		bn->tnonil = 0;
 		BATsetcount(bn,c);
-		BATderiveProps(bn,0);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -813,7 +820,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		s = f<l? (TPE) 1: (TPE)-1;\
 	else s = * getArgReference_##TPE(stk, p, 3); \
 	incr = s > 0;\
-	v = (TPE*) Tloc(bl,BUNfirst(bl));\
+	v = (TPE*) Tloc(bl,0);\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.join","Illegal range");\
 	for( ; cnt >0; cnt--,o++,v++){\
@@ -879,8 +886,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(br) BBPunfix(br->batCacheid);
 		throw(MAL,"generator.join",MAL_MALLOC_FAIL);
 	}
-	ol = (oid*) Tloc(bln,BUNfirst(bln));
-	or = (oid*) Tloc(brn,BUNfirst(brn));
+	ol = (oid*) Tloc(bln,0);
+	or = (oid*) Tloc(brn,0);
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
@@ -894,7 +901,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	incr = s > 0;
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))
 		throw(MAL,"generator.join","Illegal range");
-	v = (bte*) Tloc(b,BUNfirst(b));
+	v = (bte*) Tloc(b,0);
 	for( ; cnt >0; cnt--,o++,v++){
 		w = (BUN) floor(abs(*v -f)/abs(s));
 		if ( f + (bte)( w * s) == *v ){
@@ -920,15 +927,21 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"generator.join","Illegal type");
 	}
 
+	bln->tsorted = bln->trevsorted = 0;
+	bln->tkey = 0;
+	bln->tnil = 0;
+	bln->tnonil = 0;
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	BATderiveProps(bln,0);
 	
+	brn->tsorted = brn->trevsorted = 0;
+	brn->tkey = 0;
+	brn->tnil = 0;
+	brn->tnonil = 0;
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BATderiveProps(brn,0);
 	if( q){
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= brn->batCacheid);
 		BBPkeepref(*getArgReference_bat(stk,pci,1)= bln->batCacheid);
@@ -961,8 +974,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(brn->batCacheid);\
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);\
 	}\
-	ol = (oid*) Tloc(bln,BUNfirst(bln)) + c;\
-	or = (oid*) Tloc(brn,BUNfirst(brn)) + c;\
+	ol = (oid*) Tloc(bln,0) + c;\
+	or = (oid*) Tloc(brn,0) + c;\
 }
 
 /* The operands of a join operation can either be defined on a generator */
@@ -976,8 +989,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	incr = s > 0;\
 	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
 		throw(MAL,"generator.rangejoin","Illegal range");\
-	vlow = (TPE*) Tloc(blow,BUNfirst(blow));\
-	vhgh = (TPE*) Tloc(bhgh,BUNfirst(bhgh));\
+	vlow = (TPE*) Tloc(blow,0);\
+	vhgh = (TPE*) Tloc(bhgh,0);\
 	for( ; cnt >0; cnt--, done++, o++,vlow++,vhgh++){\
 		f1 = f + FLOOR(ABS(*vlow-f)/ABS(s)) * s;\
 		if ( f1 < *vlow ) f1+= s;\
@@ -1033,8 +1046,8 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if(bhgh) BBPunfix(bhgh->batCacheid);
 		throw(MAL,"generator.rangejoin",MAL_MALLOC_FAIL);
 	}
-	ol = (oid*) Tloc(bln,BUNfirst(bln));
-	or = (oid*) Tloc(brn,BUNfirst(brn));
+	ol = (oid*) Tloc(bln,0);
+	or = (oid*) Tloc(brn,0);
 
 	/* The actual join code for generators be injected here */
 	switch(tpe){
@@ -1055,15 +1068,21 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		throw(MAL,"generator.rangejoin","Illegal type");
 	}
 
+	bln->tsorted = bln->trevsorted = 0;
+	bln->tkey = 0;
+	bln->tnil = 0;
+	bln->tnonil = 0;
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	BATderiveProps(bln,0);
 	
+	brn->tsorted = brn->trevsorted = 0;
+	brn->tkey = 0;
+	brn->tnil = 0;
+	brn->tnonil = 0;
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BATderiveProps(brn,0);
 	BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
 	BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
 	return msg;

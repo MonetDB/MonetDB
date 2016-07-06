@@ -5,70 +5,70 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 module batcolor;
-command str(b:bat[:oid,:color]):bat[:oid,:str]
+command str(b:bat[:color]):bat[:str]
 address CLRbatStr
 comment "Identity mapping for string bats";
 
-command color(s:bat[:oid,:str]):bat[:oid,:color]
+command color(s:bat[:str]):bat[:color]
 address CLRbatColor
 comment "Converts string to color";
 
-command rgb(r:bat[:oid,:int], g:bat[:oid,:int], b:bat[:oid,:int]):bat[:oid,:color] 
+command rgb(r:bat[:int], g:bat[:int], b:bat[:int]):bat[:color] 
 address CLRbatRgb
 comment	"Converts an RGB triplets to a color atom";
 
-command red(c:bat[:oid,:color]) :bat[:oid,:int] 
+command red(c:bat[:color]) :bat[:int] 
 address CLRbatRed
 comment	"Extracts red component from a color atom";
 
-command green(c:bat[:oid,:color]) :bat[:oid,:int] 
+command green(c:bat[:color]) :bat[:int] 
 address CLRbatGreen
 comment	"Extracts green component from a color atom";
 
-command blue (c:bat[:oid,:color]) :bat[:oid,:int] 
+command blue (c:bat[:color]) :bat[:int] 
 address CLRbatBlue
 comment	"Extracts blue component from a color atom";
 
-command hue(c:bat[:oid,:color]) :bat[:oid,:int] 
+command hue(c:bat[:color]) :bat[:int] 
 address CLRbatHueInt
 comment	"Extracts hue component from a color atom";
 
-command saturation(c:bat[:oid,:color]) :bat[:oid,:int]
+command saturation(c:bat[:color]) :bat[:int]
 address CLRbatSaturationInt
 comment	"Extracts saturation component from a color atom";
 
-command value(c:bat[:oid,:color]) :bat[:oid,:int] 
+command value(c:bat[:color]) :bat[:int] 
 address CLRbatValueInt
 comment	"Extracts value component from a color atom";
 
-command hsv(h:bat[:oid,:flt],s:bat[:oid,:flt], v:bat[:oid,:flt]) :bat[:oid,:color] 
+command hsv(h:bat[:flt],s:bat[:flt], v:bat[:flt]) :bat[:color] 
 address CLRbatHsv
 comment	"Converts an HSV triplets to a color atom";
 
-command hue(c:bat[:oid,:color]) :bat[:oid,:flt] 
+command hue(c:bat[:color]) :bat[:flt] 
 address CLRbatHue
 comment	"Extracts hue component from a color atom";
 
-command saturation(c:bat[:oid,:color]) :bat[:oid,:flt] 
+command saturation(c:bat[:color]) :bat[:flt] 
 address CLRbatSaturation
 comment	"Extracts saturation component from a color atom";
 
-command value(c:bat[:oid,:color]) :bat[:oid,:flt] 
+command value(c:bat[:color]) :bat[:flt] 
 address CLRbatValue
 comment	"Extracts value component from a color atom";
 
-command ycc(y:bat[:oid,:flt],cr:bat[:oid,:flt],cb:bat[:oid,:flt]) :bat[:oid,:color] 
+command ycc(y:bat[:flt],cr:bat[:flt],cb:bat[:flt]) :bat[:color] 
 address CLRbatycc
 comment	"Converts an YCC triplets to a color atom";
 
-command luminance (c:bat[:oid,:color]) :bat[:oid,:int] 
+command luminance (c:bat[:color]) :bat[:int] 
 address CLRbatLuminance
 comment	"Extracts Y(luminance) component from a color atom";
 
-command cr(c:bat[:oid,:color]) :bat[:oid,:int] 
+command cr(c:bat[:color]) :bat[:int] 
 address CLRbatCr
 comment	"Extracts Cr(red color) component from a color atom";
 
-command cb(c:bat[:oid,:color]) :bat[:oid,:int] 
+command cb(c:bat[:color]) :bat[:int] 
 address CLRbatCb
 comment	"Extracts Cb(blue color) component from a color atom";

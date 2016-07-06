@@ -38,7 +38,7 @@ Ready.
 % 106 # length
 function user.s4_1():void;
     X_15:void := querylog.define("explain select count(*) from tmp where i = 20160222;","default_pipe",8);
-    X_3 := bat.new(nil:oid,nil:int);
+    X_3 := bat.new(nil:int);
     C_4 := algebra.subselect(X_3,20160222,20160222,true,false,false);
     X_7 := algebra.projection(C_4,X_3);
     X_8 := aggr.count(X_7);
@@ -53,7 +53,7 @@ end user.s4_1;
 % 112 # length
 function user.s6_1():void;
     X_14:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';","default_pipe",8);
-    X_2 := bat.new(nil:oid,nil:int);
+    X_2 := bat.new(nil:int);
     C_3 := algebra.subselect(X_2,20160222:int,20160222:int,true,false,false);
     X_6 := algebra.projection(C_3,X_2);
     X_7 := aggr.count(X_6);
@@ -68,8 +68,8 @@ end user.s6_1;
 % 107 # length
 function user.s8_1():void;
     X_17:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",9);
-    X_3 := bat.new(nil:oid,nil:int);
-    X_4:bat[:lng] := batcalc.lng(0,X_3,10,0);
+    X_3 := bat.new(nil:int);
+    X_4:bat[:int] := batcalc.int(0,X_3,9,0);
     C_6 := algebra.subselect(X_4,201602221,201602221,true,false,false);
     X_9 := algebra.projection(C_6,X_3);
     X_10 := aggr.count(X_9);

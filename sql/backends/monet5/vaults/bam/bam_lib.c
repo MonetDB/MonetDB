@@ -305,8 +305,8 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	}
 	
 	init_props();
-	cur_in = (sht *) Tloc(input, BUNfirst(input));
-	cur_out = (bit *) Tloc(output, BUNfirst(output));
+	cur_in = (sht *) Tloc(input, 0);
+	cur_out = (bit *) Tloc(output, 0);
 	for(c = 0; c < BATcount(input); ++c) {
 		*cur_out = kth_bit(*cur_in, k);
 		update_props(bit);
@@ -399,7 +399,7 @@ seq_length_bat(bat * ret, bat * bid)
 
 	init_props();
 	li = bat_iterator(input);
-	cur_out = (int *) Tloc(output, BUNfirst(output));
+	cur_out = (int *) Tloc(output, 0);
 	BATloop(input, p, q) {
 		cur_in = (str) BUNtail(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
@@ -452,9 +452,9 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		goto cleanup;
 	}
 
-	seq = BUNfirst(seqs);
-	pos = BUNfirst(poss);
-	cigar = BUNfirst(cigars);
+	seq = 0;
+	pos = 0;
+	cigar = 0;
 	seq_end = BUNlast(seqs);
 
 	seq_it = bat_iterator(seqs);

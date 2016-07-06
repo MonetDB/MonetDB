@@ -563,9 +563,19 @@ BKCgetKey(bit *ret, const bat *bid)
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
+	} else if (b->twidth < SIZEOF_BUN &&
+			   BATcount(b) > ((BUN)1 << (8 * b->twidth))) {
+		/* more rows than possible bit combinations in the atom */
+		*ret = FALSE;
 	} else {
-		if (!b->tkey) {
-			BATderiveTailProps(b, 1);
+		if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
+			BAT *bn = BATunique(b, NULL);
+			if (bn) {
+				if (BATcount(bn) == BATcount(b)) {
+					BATkey(b, 1);
+				}
+				BBPunfix(bn->batCacheid);
+			}
 		}
 		*ret = b->tkey ? TRUE : FALSE;
 	}
@@ -794,10 +804,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 
 	    BUNappend(bk, "batInserted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "batDeleted", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->batDeleted), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "batFirst", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->batFirst), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->theap.free), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "batStamp", FALSE) != GDK_SUCCEED ||
@@ -1036,9 +1042,9 @@ BKCgetSequenceBase(oid *r, const bat *bid)
  */
 #define shrinkloop(Type)							\
 	do {											\
-		Type *p = (Type*)Tloc(b, BUNfirst(b));		\
+		Type *p = (Type*)Tloc(b, 0);				\
 		Type *q = (Type*)Tloc(b, BUNlast(b));		\
-		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
+		Type *r = (Type*)Tloc(bn, 0);				\
 		cnt=0;										\
 		for (;p<q; oidx++, p++) {					\
 			if ( o < ol && *o == oidx ){			\
@@ -1079,7 +1085,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
 
-	o = (oid*)Tloc(bs, BUNfirst(bs));
+	o = (oid*)Tloc(bs, 0);
 	ol= (oid*)Tloc(bs, BUNlast(bs));
 
 	switch(ATOMstorage(b->ttype) ){
@@ -1095,7 +1101,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	case TYPE_oid: shrinkloop(oid); break;
 	default:
 		if (ATOMvarsized(bn->ttype)) {
-			BUN p = BUNfirst(b);
+			BUN p = 0;
 			BUN q = BUNlast(b);
 			BATiter bi = bat_iterator(b);
 
@@ -1169,9 +1175,9 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
 
-	o = (oid*)Tloc(bs, BUNfirst(bs));
+	o = (oid*)Tloc(bs, 0);
 	ol= (oid*)Tloc(bs, BUNlast(bs));
-	r = (oid*)Tloc(bn, BUNfirst(bn));
+	r = (oid*)Tloc(bn, 0);
 
 	lim = BATcount(b);
 
@@ -1200,9 +1206,9 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
  */
 #define reuseloop(Type)								\
 	do {											\
-		Type *p = (Type*)Tloc(b, BUNfirst(b));		\
+		Type *p = (Type*)Tloc(b, 0);				\
 		Type *q = (Type*)Tloc(b, BUNlast(b));		\
-		Type *r = (Type*)Tloc(bn, BUNfirst(bn));	\
+		Type *r = (Type*)Tloc(bn, 0);				\
 		for (;p<q; oidx++, p++) {					\
 			if ( *o == oidx ){						\
 				while ( ol>o && ol[-1] == bidx) {	\
@@ -1248,7 +1254,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 
 	oidx = b->hseqbase;
 	bidx = oidx + BATcount(b)-1;
-	o = (oid*)Tloc(bs, BUNfirst(bs));
+	o = (oid*)Tloc(bs, 0);
 	ol= (oid*)Tloc(bs, BUNlast(bs));
 
 	switch(ATOMstorage(b->ttype) ){
@@ -1265,7 +1271,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	case TYPE_str: /* to be done based on its index width */
 	default:
 		if (ATOMvarsized(bn->ttype)) {
-			BUN p = BUNfirst(b);
+			BUN p = 0;
 			BUN q = BUNlast(b);
 			BATiter bi = bat_iterator(b);
 
@@ -1343,9 +1349,9 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 
 	oidx = b->hseqbase;
 	bidx = oidx + BATcount(b)-1;
-	o  = (oid*)Tloc(bs, BUNfirst(bs));
+	o  = (oid*)Tloc(bs, 0);
 	ol = (oid*)Tloc(bs, BUNlast(bs));
-	r  = (oid*)Tloc(bn, BUNfirst(bn));
+	r  = (oid*)Tloc(bn, 0);
 
 	for (; oidx <= bidx; oidx++) {
 		if ( *o == oidx ){

@@ -52,22 +52,22 @@ Ready.
 % clob # type
 % 422 # length
 function user.s4_1():void;
-    X_103:void := querylog.define("explain select\n o_orderpriority,\n count(*) as order_count\nfrom\n orders\nwhere\n o_orderdate >= date \\'1993-07-01\\'\n and o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n and exists (\n select\n *\n from\n lineitem\n where\n l_orderkey = o_orderkey\n and l_commitdate < l_receiptdate\n )\ngroup by\n o_orderpriority\norder by\n o_orderpriority;","sequential_pipe",66);
-    X_78 := bat.new(nil:oid,nil:str);
-    X_86 := bat.append(X_78,"sys.orders");
-    X_94 := bat.append(X_86,"sys.L1");
-    X_81 := bat.new(nil:oid,nil:str);
-    X_88 := bat.append(X_81,"o_orderpriority");
-    X_96 := bat.append(X_88,"order_count");
-    X_82 := bat.new(nil:oid,nil:str);
-    X_89 := bat.append(X_82,"char");
-    X_98 := bat.append(X_89,"bigint");
-    X_83 := bat.new(nil:oid,nil:int);
-    X_91 := bat.append(X_83,15);
-    X_100 := bat.append(X_91,64);
-    X_85 := bat.new(nil:oid,nil:int);
-    X_93 := bat.append(X_85,0);
-    X_102 := bat.append(X_93,0);
+    X_102:void := querylog.define("explain select\n o_orderpriority,\n count(*) as order_count\nfrom\n orders\nwhere\n o_orderdate >= date \\'1993-07-01\\'\n and o_orderdate < date \\'1993-07-01\\' + interval \\'3\\' month\n and exists (\n select\n *\n from\n lineitem\n where\n l_orderkey = o_orderkey\n and l_commitdate < l_receiptdate\n )\ngroup by\n o_orderpriority\norder by\n o_orderpriority;","sequential_pipe",66);
+    X_78 := bat.new(nil:str);
+    X_85 := bat.append(X_78,"sys.orders");
+    X_93 := bat.append(X_85,"sys.L1");
+    X_80 := bat.new(nil:str);
+    X_87 := bat.append(X_80,"o_orderpriority");
+    X_95 := bat.append(X_87,"order_count");
+    X_81 := bat.new(nil:str);
+    X_88 := bat.append(X_81,"char");
+    X_97 := bat.append(X_88,"bigint");
+    X_82 := bat.new(nil:int);
+    X_90 := bat.append(X_82,15);
+    X_99 := bat.append(X_90,64);
+    X_84 := bat.new(nil:int);
+    X_92 := bat.append(X_84,0);
+    X_101 := bat.append(X_92,0);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","orders");
     X_7:bat[:date] := sql.bind(X_3,"sys","orders","o_orderdate",0);
@@ -115,7 +115,7 @@ function user.s4_1():void;
     (X_71,r1_85,r2_85) := algebra.subsort(X_70,false,false);
     X_74 := algebra.projection(r1_85,X_70);
     X_76 := algebra.projection(r1_85,X_75);
-    sql.resultSet(X_94,X_96,X_98,X_100,X_102,X_74,X_76);
+    sql.resultSet(X_93,X_95,X_97,X_99,X_101,X_74,X_76);
 end user.s4_1;
 #inline               actions= 0 time=7 usec 
 #candidates           actions= 1 time=61 usec 

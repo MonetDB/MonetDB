@@ -58,27 +58,27 @@ Ready.
 % clob # type
 % 710 # length
 function user.s4_1():void;
-    X_145:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",100);
-    X_111 := bat.new(nil:oid,nil:str);
-    X_119 := bat.append(X_111,"sys.custsale");
-    X_127 := bat.append(X_119,"sys.L2");
-    X_136 := bat.append(X_127,"sys.L3");
-    X_114 := bat.new(nil:oid,nil:str);
-    X_121 := bat.append(X_114,"cntrycode");
-    X_129 := bat.append(X_121,"numcust");
-    X_138 := bat.append(X_129,"totacctbal");
-    X_115 := bat.new(nil:oid,nil:str);
-    X_123 := bat.append(X_115,"char");
-    X_131 := bat.append(X_123,"bigint");
-    X_140 := bat.append(X_131,"decimal");
-    X_116 := bat.new(nil:oid,nil:int);
-    X_125 := bat.append(X_116,15);
-    X_133 := bat.append(X_125,64);
-    X_142 := bat.append(X_133,39);
-    X_118 := bat.new(nil:oid,nil:int);
-    X_126 := bat.append(X_118,0);
-    X_135 := bat.append(X_126,0);
-    X_144 := bat.append(X_135,2);
+    X_144:void := querylog.define("explain select\n cntrycode,\n count(*) as numcust,\n sum(c_acctbal) as totacctbal\nfrom\n (\n select\n substring(c_phone from 1 for 2) as cntrycode,\n c_acctbal\n from\n customer\n where\n substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n and c_acctbal > (\n select\n avg(c_acctbal)\n from\n customer\n where\n c_acctbal > 0.00\n and substring(c_phone from 1 for 2) in\n (\\'13\\', \\'31\\', \\'23\\', \\'29\\', \\'30\\', \\'18\\', \\'17\\')\n )\n and not exists (\n select\n *\n from\n orders\n where\n o_custkey = c_custkey\n )\n ) as custsale\ngroup by\n cntrycode\norder by\n cntrycode;","sequential_pipe",100);
+    X_111 := bat.new(nil:str);
+    X_118 := bat.append(X_111,"sys.custsale");
+    X_126 := bat.append(X_118,"sys.L2");
+    X_135 := bat.append(X_126,"sys.L3");
+    X_113 := bat.new(nil:str);
+    X_120 := bat.append(X_113,"cntrycode");
+    X_128 := bat.append(X_120,"numcust");
+    X_137 := bat.append(X_128,"totacctbal");
+    X_114 := bat.new(nil:str);
+    X_122 := bat.append(X_114,"char");
+    X_130 := bat.append(X_122,"bigint");
+    X_139 := bat.append(X_130,"decimal");
+    X_115 := bat.new(nil:int);
+    X_124 := bat.append(X_115,15);
+    X_132 := bat.append(X_124,64);
+    X_141 := bat.append(X_132,39);
+    X_117 := bat.new(nil:int);
+    X_125 := bat.append(X_117,0);
+    X_134 := bat.append(X_125,0);
+    X_143 := bat.append(X_134,2);
     X_10 := sql.mvc();
     C_11:bat[:oid] := sql.tid(X_10,"sys","customer");
     X_14:bat[:str] := sql.bind(X_10,"sys","customer","c_phone",0);
@@ -155,7 +155,7 @@ function user.s4_1():void;
     X_104 := algebra.projection(r1_176,X_100);
     X_106 := algebra.projection(r1_176,X_105);
     X_109 := algebra.projection(r1_176,X_108);
-    sql.resultSet(X_136,X_138,X_140,X_142,X_144,X_104,X_106,X_109);
+    sql.resultSet(X_135,X_137,X_139,X_141,X_143,X_104,X_106,X_109);
 end user.s4_1;
 #inline               actions= 0 time=7 usec 
 #candidates           actions= 1 time=68 usec 

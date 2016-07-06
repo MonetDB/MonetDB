@@ -11,11 +11,11 @@ inline function bar(a:int,b:int):int;
 end bar;
 
 function qry();
-	b:= bat.new(:oid,:int);
+	b:= bat.new(:int);
 	bat.append(b,1);
 	zz:= user.bar(1,2); # base line test for inlining
 
-	z:bat[:oid,:int]:= mal.multiplex("user","bar",b,b);
+	z:bat[:int]:= mal.multiplex("user","bar",b,b);
 end qry;
 
 	optimizer.inline("user","qry");

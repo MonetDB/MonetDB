@@ -1,5 +1,5 @@
 # Error handling tests
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,1804289383);
 bat.append(b,846930886);
 bat.append(b,1681692777);
@@ -15,13 +15,13 @@ io.print(b);
 
 # illegal variables being used
 
-r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
-r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
-r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
-r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
-r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
 
 # illegal R expressions
-r:bat[:oid,:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
 
 io.print(r);
