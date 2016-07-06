@@ -565,7 +565,7 @@ BKCgetKey(bit *ret, const bat *bid)
 		*ret = TRUE;
 	} else {
 		if (!b->tkey) {
-			BATderiveTailProps(b, 1);
+			BATderiveProps(b, 1);
 		}
 		*ret = b->tkey ? TRUE : FALSE;
 	}

@@ -1901,15 +1901,63 @@ BATmode(BAT *b, int mode)
 #define assert(test)	((void) ((test) || fprintf(stderr, "!WARNING: %s:%d: assertion `%s' failed\n", __FILE__, __LINE__, #test)))
 #endif
 
-static void
-BATassertTailProps(BAT *b)
+/* Assert that properties are set correctly.
+ *
+ * A BAT can have a bunch of properties set.  Mostly, the property
+ * bits are set if we *know* the property holds, and not set if we
+ * don't know whether the property holds (or if we know it doesn't
+ * hold).  All properties are per column.
+ *
+ * The properties currently maintained are:
+ *
+ * dense	Only valid for TYPE_oid columns: each value in the
+ *		column is exactly one more than the previous value.
+ *		This implies sorted, key, nonil.
+ * nil		There is at least one NIL value in the column.
+ * nonil	There are no NIL values in the column.
+ * key		All values in the column are distinct.
+ * sorted	The column is sorted (ascending).  If also revsorted,
+ *		then all values are equal.
+ * revsorted	The column is reversely sorted (descending).  If
+ *		also sorted, then all values are equal.
+ *
+ * The "key" property consists of two bits.  The lower bit, when set,
+ * indicates that all values in the column are distinct.  The upper
+ * bit, when set, indicates that all values must be distinct
+ * (BOUND2BTRUE).
+ *
+ * Note that the functions BATtseqbase and BATkey also set more
+ * properties than you might suspect.  When setting properties on a
+ * newly created and filled BAT, you may want to first make sure the
+ * batCount is set correctly (e.g. by calling BATsetcount), then use
+ * BAThseqbase and BATkey, and finally set the other properties.
+ */
+
+void
+BATassertProps(BAT *b)
 {
+	int bbpstatus;
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
 	int seennil = 0;
+
+	/* general BAT sanity */
+	assert(b != NULL);
+	assert(b->batCacheid > 0);
+	assert(b->batCount >= b->batInserted);
+
+	/* headless */
+	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
+	assert(b->hseqbase + BATcount(b) < oid_nil);
+
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	assert(b != NULL);
 	assert(b->ttype >= TYPE_void);
@@ -2120,62 +2168,6 @@ BATassertTailProps(BAT *b)
 	}
 }
 
-/* Assert that properties are set correctly.
- *
- * A BAT can have a bunch of properties set.  Mostly, the property
- * bits are set if we *know* the property holds, and not set if we
- * don't know whether the property holds (or if we know it doesn't
- * hold).  All properties are per column.
- *
- * The properties currently maintained are:
- *
- * dense	Only valid for TYPE_oid columns: each value in the
- *		column is exactly one more than the previous value.
- *		This implies sorted, key, nonil.
- * nil		There is at least one NIL value in the column.
- * nonil	There are no NIL values in the column.
- * key		All values in the column are distinct.
- * sorted	The column is sorted (ascending).  If also revsorted,
- *		then all values are equal.
- * revsorted	The column is reversely sorted (descending).  If
- *		also sorted, then all values are equal.
- *
- * The "key" property consists of two bits.  The lower bit, when set,
- * indicates that all values in the column are distinct.  The upper
- * bit, when set, indicates that all values must be distinct
- * (BOUND2BTRUE).
- *
- * Note that the functions BATtseqbase and BATkey also set more
- * properties than you might suspect.  When setting properties on a
- * newly created and filled BAT, you may want to first make sure the
- * batCount is set correctly (e.g. by calling BATsetcount), then use
- * BAThseqbase and BATkey, and finally set the other properties.
- */
-
-void
-BATassertProps(BAT *b)
-{
-	int bbpstatus;
-
-	/* general BAT sanity */
-	assert(b != NULL);
-	assert(b->batCacheid > 0);
-	assert(b->batCount >= b->batInserted);
-
-	/* headless */
-	assert(b->hseqbase != oid_nil);
-
-	bbpstatus = BBP_status(b->batCacheid);
-	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
-	assert(((bbpstatus & BBPDELETED) != 0) +
-	       ((bbpstatus & BBPEXISTING) != 0) +
-	       ((bbpstatus & BBPNEW) != 0) <= 1);
-
-	BATassertTailProps(b);
-	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
-	assert(b->hseqbase + BATcount(b) < oid_nil);
-}
-
 /* derive properties that can be derived with a simple scan: sorted,
  * revsorted, dense; if expensive is set, we also check the key
  * property
@@ -2184,7 +2176,7 @@ BATassertProps(BAT *b)
  * nonil.
  */
 void
-BATderiveTailProps(BAT *b, int expensive)
+BATderiveProps(BAT *b, int expensive)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
@@ -2393,16 +2385,6 @@ BATderiveTailProps(BAT *b, int expensive)
 		}
 	}
 #ifndef NDEBUG
-	BATassertTailProps(b);
+	BATassertProps(b);
 #endif
-}
-
-void
-BATderiveProps(BAT *b, int expensive)
-{
-	if (b == NULL) {
-		assert(0);
-		return;
-	}
-	BATderiveTailProps(b, expensive);
 }

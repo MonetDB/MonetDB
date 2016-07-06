@@ -846,8 +846,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		/* not sorted, and no pre-existing hash table: we'll
 		 * build an incomplete hash table on the fly--also see
-		 * BATassertTailProps and BATderiveTailProps for
-		 * similar code;
+		 * BATassertProps and BATderiveProps for similar code;
 		 * we also exploit if g is clustered */
 		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
