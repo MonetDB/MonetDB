@@ -1479,6 +1479,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	old = mb->stmt;
 	oldtop= mb->stop;
+	OPTDEBUGmergetable {
+		mnstr_printf(GDKout,"#Start of multi table optimizer\n");
+		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+	}
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL){
