@@ -131,7 +131,6 @@ initSQLreferences(void)
 
 #define meta(Id,Tpe) \
 q = newStmt(mb, batRef, newRef);\
-q= pushType(mb,q, TYPE_oid);\
 q= pushType(mb,q, Tpe);\
 Id = getArg(q,0); \
 list = pushArgument(mb,list,Id);
@@ -569,7 +568,6 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 
 		type = newBatType(TYPE_oid, type);
 		p = newFcnCall(curBlk, batRef, newRef);
-		p = pushType(curBlk, p, TYPE_oid);
 		p = pushType(curBlk, p, getColumnType(type));
 		setArgType(curBlk, p, 0, type);
 		lret[i] = getArg(p, 0);
@@ -1054,7 +1052,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 			setVarUDFtype(mb, getArg(q, 0));
-			q = pushType(mb, q, TYPE_oid);
 			q = pushType(mb, q, tt);
 			if (q == NULL)
 				return -1;
@@ -1214,7 +1211,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
 				setVarUDFtype(mb, getArg(q, 0));
-				q = pushType(mb, q, TYPE_oid);
 				q = pushType(mb, q, tt);
 				if (q == NULL)
 					return -1;

@@ -314,7 +314,10 @@ list_cmp(list *l1, list *l2, fcmp cmp)
 
 	if (l1 == l2)
 		return 0;
-
+	if (!l1 && l2 && list_empty(l2))
+		return 0;
+	if (!l2 && l1 && list_empty(l1))
+		return 0;
 	if (!l1 || !l2 || (list_length(l1) != list_length(l2)))
 		return -1;
 

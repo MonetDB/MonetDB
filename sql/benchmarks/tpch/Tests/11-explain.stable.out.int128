@@ -58,7 +58,7 @@ Ready.
 % clob # type
 % 562 # length
 function user.s2_1(A0:str,A1:sht,A2:str):void;
-    X_128:void := querylog.define("explain select\n ps_partkey,\n sum(ps_supplycost * ps_availqty) as value\nfrom\n partsupp,\n supplier,\n nation\nwhere\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\ngroup by\n ps_partkey having\n sum(ps_supplycost * ps_availqty) > (\n select\n sum(ps_supplycost * ps_availqty) * 0.0100000000\n \n \n \n from\n partsupp,\n supplier,\n nation\n where\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\n )\norder by\n value desc;","sequential_pipe",84);
+    X_127:void := querylog.define("explain select\n ps_partkey,\n sum(ps_supplycost * ps_availqty) as value\nfrom\n partsupp,\n supplier,\n nation\nwhere\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\ngroup by\n ps_partkey having\n sum(ps_supplycost * ps_availqty) > (\n select\n sum(ps_supplycost * ps_availqty) * 0.0100000000\n \n \n \n from\n partsupp,\n supplier,\n nation\n where\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\n )\norder by\n value desc;","sequential_pipe",84);
     X_4 := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4,"sys","supplier");
     X_8:bat[:oid] := sql.bind_idxbat(X_4,"sys","supplier","supplier_s_nationkey_fkey",0);
@@ -117,21 +117,21 @@ function user.s2_1(A0:str,A1:sht,A2:str):void;
     X_58 := bat.setKey(X_57,true);
     X_59 := bat.mirror(X_58);
     X_92:hge := sql.dec_round(X_90,100);
-    X_104 := bat.new(nil:oid,nil:str);
-    X_112 := bat.append(X_104,"sys.partsupp");
-    X_120 := bat.append(X_112,"sys.L1");
-    X_107 := bat.new(nil:oid,nil:str);
-    X_114 := bat.append(X_107,"ps_partkey");
-    X_122 := bat.append(X_114,"value");
-    X_108 := bat.new(nil:oid,nil:str);
-    X_115 := bat.append(X_108,"int");
-    X_124 := bat.append(X_115,"decimal");
-    X_109 := bat.new(nil:oid,nil:int);
-    X_117 := bat.append(X_109,32);
-    X_126 := bat.append(X_117,39);
-    X_111 := bat.new(nil:oid,nil:int);
-    X_119 := bat.append(X_111,0);
-    X_127 := bat.append(X_119,2);
+    X_104 := bat.new(nil:str);
+    X_111 := bat.append(X_104,"sys.partsupp");
+    X_119 := bat.append(X_111,"sys.L1");
+    X_106 := bat.new(nil:str);
+    X_113 := bat.append(X_106,"ps_partkey");
+    X_121 := bat.append(X_113,"value");
+    X_107 := bat.new(nil:str);
+    X_114 := bat.append(X_107,"int");
+    X_123 := bat.append(X_114,"decimal");
+    X_108 := bat.new(nil:int);
+    X_116 := bat.append(X_108,32);
+    X_125 := bat.append(X_116,39);
+    X_110 := bat.new(nil:int);
+    X_118 := bat.append(X_110,0);
+    X_126 := bat.append(X_118,2);
     X_93 := sql.single(X_92);
     (X_94,r1_155) := algebra.subthetajoin(X_78,X_93,nil:BAT,nil:BAT,1,true,nil:lng);
     C_96 := algebra.subinter(X_59,X_94,nil:BAT,nil:BAT,false,nil:lng);
@@ -139,7 +139,7 @@ function user.s2_1(A0:str,A1:sht,A2:str):void;
     (X_98,r1_165,r2_165) := algebra.subsort(X_97,true,false);
     X_101:bat[:int] := algebra.projectionpath(r1_165,C_96,X_58);
     X_102 := algebra.projection(r1_165,X_97);
-    sql.resultSet(X_120,X_122,X_124,X_126,X_127,X_101,X_102);
+    sql.resultSet(X_119,X_121,X_123,X_125,X_126,X_101,X_102);
 end user.s2_1;
 
 # 22:53:28 >  

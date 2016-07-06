@@ -71,11 +71,11 @@ end user.s3_1;
 % mal # name
 % clob # type
 % 108 # length
-function user.s4_1(A0:lng):void;
+function user.s4_1(A0:int):void;
     X_22:void := querylog.define("explain select count(*) from tmp where i = 201602221;","default_pipe",11);
     X_2 := sql.mvc();
     X_6:bat[:int] := sql.bind(X_2,"sys","tmp","i",0);
-    X_9:bat[:lng] := batcalc.lng(0,X_6,10,0);
+    X_9:bat[:int] := batcalc.int(0,X_6,9,0);
     C_3:bat[:oid] := sql.tid(X_2,"sys","tmp");
     C_11 := algebra.subselect(X_9,C_3,A0,A0,true,false,false);
     X_14 := algebra.projection(C_11,X_6);

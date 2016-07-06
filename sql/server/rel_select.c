@@ -4145,7 +4145,12 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 				/* in the selection phase we should have project/groupbys, unless 
 				 * this is the value (column) for the aggregation then the 
 				 * crossproduct is pushed under the project/groupby.  */ 
-				if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
+				if (f == sql_sel && r->op == op_project && list_length(r->exps) == 1 && exps_are_atoms(r->exps)) {
+					sql_exp *ne = r->exps->h->data;
+
+					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+					e = ne;
+				} else if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
 					sql_rel *pp = p;
 					if (p->l) 
 						pp = p->l;
