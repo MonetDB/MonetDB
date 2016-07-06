@@ -38,6 +38,12 @@
 #define geom_export extern
 #endif
 
+#define BATrmprops(b)                                           \
+    b->tsorted = b->trevsorted = 0;     \
+    b->tnosorted = b->tnorevsorted = 1;                         \
+    b->tkey |= 0;                                               \
+    b->tnokey[0] = b->tnokey[1] = 1;                            \
+    b->tnodense = 1;                                            
 
 /* general functions */
 geom_export str geoHasZ(int* res, int* info);

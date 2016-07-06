@@ -6285,7 +6285,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	BATsetcount(bo, cnt);
-	BATderiveProps(bo, FALSE);
+	BATrmprops(bo)
+	BATsettrivprop(bo);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
@@ -6372,7 +6373,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		*cs++ = wn & 1;
 	}
 	BATsetcount(bo, cnt);
-	BATderiveProps(bo, FALSE);
+	BATrmprops(bo)
+	BATsettrivprop(bo);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
 	BBPkeepref(*out = bo->batCacheid);
@@ -6733,8 +6735,10 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
         }
         GDKfree(rGeometries);
     }
-    BATderiveProps(xl, FALSE);
-    BATderiveProps(xr, FALSE);
+    BATrmprops(xl)
+    BATsettrivprop(xl);
+    BATrmprops(xr)
+    BATsettrivprop(xr);
 	BBPunfix(*lid);
 	BBPunfix(*rid);
 	BBPkeepref(*lres = xl->batCacheid);
