@@ -478,9 +478,17 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			goto endofcompile;
 		}
 		/* generate MAL code */
+#ifdef _SQL_COMPILE
+		mnstr_printf(c->fdout, "#SQLstatement:pre-compile\n");
+		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+#endif
 		if( backend_callinline(be, c) < 0 ||
 			backend_dumpstmt(be, c->curprg->def, s, 1, 1) < 0)
 			err = 1;
+#ifdef _SQL_COMPILE
+		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
+		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+#endif
 		/* always keep it around for inspection */
 		SQLaddQueryToCache(c);
 		msg =SQLoptimizeFunction(c,c->curprg->def);
