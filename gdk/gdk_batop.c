@@ -792,8 +792,7 @@ BATslice(BAT *b, BUN l, BUN h)
 /* Return whether the BAT is ordered or not.  If we don't know, invest
  * in a scan and record the results in the bat descriptor.  If during
  * the scan we happen to find evidence that the BAT is not reverse
- * sorted, we record the location.
- */
+ * sorted, we record the location.  */
 int
 BATordered(BAT *b)
 {
