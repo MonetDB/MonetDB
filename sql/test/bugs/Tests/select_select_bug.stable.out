@@ -29,9 +29,9 @@ Ready.
 #SELECT (SELECT current_timestamp), count(DISTINCT mmsi) FROM vessels;
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% timestamptz,	wrd # type
-% 32,	1 # length
-[ 2016-07-05 19:07:43.000000+02:00,	0	]
+% tinyint,	wrd # type
+% 1,	1 # length
+[ 1,	0	]
 #drop table vessels;
 
 # 19:07:43 >  
