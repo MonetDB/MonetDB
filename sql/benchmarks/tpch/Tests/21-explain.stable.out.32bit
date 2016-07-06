@@ -177,7 +177,7 @@ function user.s2_1(A0:str,A1:str):void;
     X_148 := algebra.subslice(X_147,0,99:lng);
     X_149 := algebra.projection(X_148,X_147);
     X_150:bat[:lng] := algebra.projectionpath(X_148,r1_234,X_140);
-    sql.resultSet(X_168,X_170,X_172,X_174,X_176,X_149,X_150);
+    sql.resultSet(X_167,X_169,X_171,X_173,X_175,X_149,X_150);
 end user.s2_1;
 
 # 22:53:31 >  

@@ -61,32 +61,32 @@ Ready.
 % clob # type
 % 555 # length
 function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:int,A9:int,A10:str):void;
-    X_191:void := querylog.define("explain select\n p_brand,\n p_type,\n p_size,\n count(distinct ps_suppkey) as supplier_cnt\nfrom\n partsupp,\n part\nwhere\n p_partkey = ps_partkey\n and p_brand <> \\'Brand#45\\'\n and p_type not like \\'MEDIUM POLISHED%\\'\n and p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n and ps_suppkey not in (\n select\n s_suppkey\n from\n supplier\n where\n s_comment like \\'%Customer%Complaints%\\'\n )\ngroup by\n p_brand,\n p_type,\n p_size\norder by\n supplier_cnt desc,\n p_brand,\n p_type,\n p_size;","sequential_pipe",118);
-    X_152 := bat.new(nil:oid,nil:str);
-    X_160 := bat.append(X_152,"sys.part");
-    X_168 := bat.append(X_160,"sys.part");
-    X_175 := bat.append(X_168,"sys.part");
-    X_182 := bat.append(X_175,"sys.L4");
-    X_155 := bat.new(nil:oid,nil:str);
-    X_162 := bat.append(X_155,"p_brand");
-    X_169 := bat.append(X_162,"p_type");
-    X_176 := bat.append(X_169,"p_size");
-    X_184 := bat.append(X_176,"supplier_cnt");
-    X_156 := bat.new(nil:oid,nil:str);
-    X_163 := bat.append(X_156,"char");
-    X_170 := bat.append(X_163,"varchar");
-    X_177 := bat.append(X_170,"int");
-    X_186 := bat.append(X_177,"bigint");
-    X_157 := bat.new(nil:oid,nil:int);
-    X_165 := bat.append(X_157,10);
-    X_172 := bat.append(X_165,25);
-    X_179 := bat.append(X_172,32);
-    X_188 := bat.append(X_179,64);
-    X_159 := bat.new(nil:oid,nil:int);
-    X_167 := bat.append(X_159,0);
-    X_174 := bat.append(X_167,0);
-    X_181 := bat.append(X_174,0);
-    X_190 := bat.append(X_181,0);
+    X_190:void := querylog.define("explain select\n p_brand,\n p_type,\n p_size,\n count(distinct ps_suppkey) as supplier_cnt\nfrom\n partsupp,\n part\nwhere\n p_partkey = ps_partkey\n and p_brand <> \\'Brand#45\\'\n and p_type not like \\'MEDIUM POLISHED%\\'\n and p_size in (49, 14, 23, 45, 19, 3, 36, 9)\n and ps_suppkey not in (\n select\n s_suppkey\n from\n supplier\n where\n s_comment like \\'%Customer%Complaints%\\'\n )\ngroup by\n p_brand,\n p_type,\n p_size\norder by\n supplier_cnt desc,\n p_brand,\n p_type,\n p_size;","sequential_pipe",118);
+    X_152 := bat.new(nil:str);
+    X_159 := bat.append(X_152,"sys.part");
+    X_167 := bat.append(X_159,"sys.part");
+    X_174 := bat.append(X_167,"sys.part");
+    X_181 := bat.append(X_174,"sys.L4");
+    X_154 := bat.new(nil:str);
+    X_161 := bat.append(X_154,"p_brand");
+    X_168 := bat.append(X_161,"p_type");
+    X_175 := bat.append(X_168,"p_size");
+    X_183 := bat.append(X_175,"supplier_cnt");
+    X_155 := bat.new(nil:str);
+    X_162 := bat.append(X_155,"char");
+    X_169 := bat.append(X_162,"varchar");
+    X_176 := bat.append(X_169,"int");
+    X_185 := bat.append(X_176,"bigint");
+    X_156 := bat.new(nil:int);
+    X_164 := bat.append(X_156,10);
+    X_171 := bat.append(X_164,25);
+    X_178 := bat.append(X_171,32);
+    X_187 := bat.append(X_178,64);
+    X_158 := bat.new(nil:int);
+    X_166 := bat.append(X_158,0);
+    X_173 := bat.append(X_166,0);
+    X_180 := bat.append(X_173,0);
+    X_189 := bat.append(X_180,0);
     X_12 := sql.mvc();
     C_13:bat[:oid] := sql.tid(X_12,"sys","partsupp");
     X_16:bat[:int] := sql.bind(X_12,"sys","partsupp","ps_suppkey",0);
@@ -176,7 +176,7 @@ function user.s2_1(A0:str,A1:str,A2:int,A3:int,A4:int,A5:int,A6:int,A7:int,A8:in
     X_148 := algebra.projection(r1_172,X_131);
     X_149 := algebra.projection(r1_172,X_130);
     X_150 := algebra.projection(r1_172,X_134);
-    sql.resultSet(X_182,X_184,X_186,X_188,X_190,X_147,X_148,X_149,X_150);
+    sql.resultSet(X_181,X_183,X_185,X_187,X_189,X_147,X_148,X_149,X_150);
 end user.s2_1;
 
 # 22:53:29 >  
