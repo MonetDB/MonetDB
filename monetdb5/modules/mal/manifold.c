@@ -342,7 +342,6 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
-	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types

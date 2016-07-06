@@ -56,7 +56,6 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 	//set some properties of the new BAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
-	BATderiveProps(outBAT, FALSE);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
@@ -149,7 +148,6 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 	//set some properties of the new BAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
-	BATderiveProps(outBAT, FALSE);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
@@ -804,7 +802,6 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 	//set some properties of the new BAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
-	BATderiveProps(outBAT, FALSE);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
@@ -1105,11 +1102,9 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 	//set some properties of the new BATs
 	BATsetcount(aBATfiltered, remainingElements);
 	BATsettrivprop(aBATfiltered);
-	BATderiveProps(aBATfiltered, FALSE);
 
 	BATsetcount(bBATfiltered, remainingElements);
 	BATsettrivprop(bBATfiltered);
-	BATderiveProps(bBATfiltered, FALSE);
 
 	BBPunfix(aBAT->batCacheid);
 	BBPunfix(bBAT->batCacheid);
@@ -1191,7 +1186,6 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 	//set some properties of the new BATs
 	BATsetcount(BATfiltered, remainingElements);
 	BATsettrivprop(BATfiltered);
-	BATderiveProps(BATfiltered, FALSE);
 
 	BBPunfix(BAToriginal->batCacheid);
 	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
@@ -1248,7 +1242,6 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	//set some properties of the new BAT
 	BATsetcount(outBAT, BATcount(inBAT));
 	BATsettrivprop(outBAT);
-	BATderiveProps(outBAT, FALSE);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;

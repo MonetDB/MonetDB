@@ -678,7 +678,7 @@ wrapup:
 		BBPunfix(cndid);
 	if( bn){
 		BATsetcount(bn,c);
-		BATderiveProps(bn,0);
+		BATsettrivprop(bn);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return msg;
@@ -798,7 +798,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	BBPunfix(bid);
 	if( bn){
 		BATsetcount(bn,c);
-		BATderiveProps(bn,0);
+		BATsettrivprop(bn);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -923,12 +923,12 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	BATderiveProps(bln,0);
+	BATsettrivprop(bln);
 	
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BATderiveProps(brn,0);
+	BATsettrivprop(brn);
 	if( q){
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= brn->batCacheid);
 		BBPkeepref(*getArgReference_bat(stk,pci,1)= bln->batCacheid);
@@ -1058,12 +1058,12 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	BATderiveProps(bln,0);
+	BATsettrivprop(bln);
 	
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BATderiveProps(brn,0);
+	BATsettrivprop(brn);
 	BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
 	BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
 	return msg;
