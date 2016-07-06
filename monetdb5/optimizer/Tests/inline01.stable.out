@@ -30,8 +30,8 @@ Ready.
 # 16:09:46 >  
 
 function user.qry():void;               	#[0] (0)  0 
-    X_5:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnewColumn 5 <- 6 
-    X_7:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnewColumn 7 <- 6 
+    X_5:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnew 5 <- 6 
+    X_7:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnew 7 <- 6 
     X_8:int := 1:int;                   	#[3] (0)  8 <- 9 
     bat.append(X_5:bat[:int],1:int);    	#[4] (0) BKCappend_val_wrap 10 <- 5 9 
 barrier (X_11:oid,X_8:int) := iterator.new(X_5:bat[:int]);	#[5] (0) ITRbunIterator 11 8 <- 5 

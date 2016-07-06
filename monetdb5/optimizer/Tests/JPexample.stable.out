@@ -30,10 +30,10 @@ Ready.
 # 06:41:06 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    a:bat[:oid] := bat.new(:oid);       	#[1] (0) CMDBATnewColumn 1 <- 2 
-    b:bat[:oid] := bat.new(:oid);       	#[2] (0) CMDBATnewColumn 3 <- 2 
-    c:bat[:oid] := bat.new(:oid);       	#[3] (0) CMDBATnewColumn 4 <- 2 
-    d:bat[:oid] := bat.new(:oid);       	#[4] (0) CMDBATnewColumn 5 <- 2 
+    a:bat[:oid] := bat.new(:oid);       	#[1] (0) CMDBATnew 1 <- 2 
+    b:bat[:oid] := bat.new(:oid);       	#[2] (0) CMDBATnew 3 <- 2 
+    c:bat[:oid] := bat.new(:oid);       	#[3] (0) CMDBATnew 4 <- 2 
+    d:bat[:oid] := bat.new(:oid);       	#[4] (0) CMDBATnew 5 <- 2 
     j1:bat[:oid] := algebra.projection(a:bat[:oid],b:bat[:oid]);	#[5] (0) ALGprojection 6 <- 1 3 
     j2:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[6] (0) ALGprojectionpath 7 <- 1 3 4 
     j3:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],d:bat[:oid]);	#[7] (0) ALGprojectionpath 8 <- 1 3 4 5 

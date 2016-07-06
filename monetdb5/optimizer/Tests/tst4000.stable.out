@@ -26,8 +26,8 @@ Ready.
 # 06:40:49 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
-    c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnewColumn 3 <- 2 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
+    c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
 # identical until insert takes place 
     d:bat[:oid] := algebra.subselect(b:bat[:int],0:int,100:int,true:bit,true:bit,false:bit);	#[4] (0) ALGsubselect1 5 <- 1 6 7 8 9 10 
 # mapped onto one instruction 

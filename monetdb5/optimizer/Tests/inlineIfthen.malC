@@ -11,7 +11,7 @@ function qry();
 	bat.append(b,1);
 	bat.append(b,10);
 	bat.append(b,20);
-	r:bat[:oid,:int]:= mal.multiplex("user","foo",b);
+	r:bat[:int]:= mal.multiplex("user","foo",b);
 	io.print(r);
 end qry;
 

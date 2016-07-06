@@ -27,41 +27,10 @@
  * BAT enhancements
  * The code to enhance the kernel.
  */
-str
-CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	int ht, tt;
-	BUN cap = 0;
-	bat *res;
-
-	(void) cntxt;
-	res = getArgReference_bat(s, p, 0);
-	ht = getArgType(m, p, 1);
-	tt = getArgType(m, p, 2);
-	if (p->argc > 3) {
-		lng lcap;
-
-		if (getArgType(m, p, 3) == TYPE_lng)
-			lcap = *getArgReference_lng(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_int)
-			lcap = (lng) *getArgReference_int(s, p, 3);
-		else
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
-		if (lcap < 0)
-			throw(MAL, "bat.new", POSITIVE_EXPECTED);
-		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
-		cap = (BUN) lcap;
-	}
-
-	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
-		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
-}
 
 str
-CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	int tt;
+CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
+	int tt, kind = TRANSIENT;
 	BUN cap = 0;
 	bat *res;
 
@@ -82,43 +51,13 @@ CMDBATnewColumn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		if (lcap > (lng) BUN_MAX)
 			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
 		cap = (BUN) lcap;
+		if( p->argc == 4 && getVarConstant(m,getArg(p,3)).val.ival)
+			kind = PERSISTENT;
 	}
 
 	if (tt == TYPE_any || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res,  &tt, &cap, TRANSIENT);
-}
-
-str
-CMDBATnew_persistent(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	int ht, tt;
-	BUN cap = 0;
-	bat *res;
-
-	(void) cntxt;
-	res = getArgReference_bat(s, p, 0);
-	ht = getArgType(m, p, 1);
-	tt = getArgType(m, p, 2);
-	if (p->argc > 3) {
-		lng lcap;
-
-		if (getArgType(m, p, 3) == TYPE_lng)
-			lcap = *getArgReference_lng(s, p, 3);
-		else if (getArgType(m, p, 3) == TYPE_int)
-			lcap = (lng) *getArgReference_int(s, p, 3);
-		else
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Incorrect type for size");
-		if (lcap < 0)
-			throw(MAL, "bat.new", POSITIVE_EXPECTED);
-		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
-		cap = (BUN) lcap;
-	}
-
-	if (ht != TYPE_oid || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
-		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	return (str) BKCnewBAT(res, &tt, &cap, PERSISTENT);
+	return (str) BKCnewBAT(res,  &tt, &cap, kind);
 }
 
 str

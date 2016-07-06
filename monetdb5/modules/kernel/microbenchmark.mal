@@ -6,29 +6,29 @@
 
 module microbenchmark;
 
-command random(base:oid, size:lng, domain:int):bat[:oid,:int]
+command random(base:oid, size:lng, domain:int):bat[:int]
 address MBMrandom
 comment "Create a BAT with random integer distribution; domain == nil:int ? [0:RAND_MAX] : [0,domain)";
 
-command random(base:oid, size:lng, domain:int, seed:int):bat[:oid,:int]
+command random(base:oid, size:lng, domain:int, seed:int):bat[:int]
 address MBMrandom_seed
 comment "Create a BAT with random integer distribution,
          using given seed (seed == nil:int -> no seed used);
          domain == nil:int ? [0:RAND_MAX] : [0,domain)";
 
-command uniform(base:oid, size:lng, domain:int):bat[:oid,:int]
+command uniform(base:oid, size:lng, domain:int):bat[:int]
 address MBMuniform
 comment "Create a BAT with uniform integer distribution";
 
-command normal(base:oid, size:lng, domain:int, stddev:int, mean:int):bat[:oid,:int]
+command normal(base:oid, size:lng, domain:int, stddev:int, mean:int):bat[:int]
 address MBMnormal
 comment "Create a BAT with a normal integer distribution";
 
-command mix(b1:bat[:oid,:int]):bat[:oid,:int]
+command mix(b1:bat[:int]):bat[:int]
 address MBMmix
 comment "Mix the BUNs of this BAT";
 
-command skewed(base:oid, size:lng, domain:int, skew:int):bat[:oid,:int]
+command skewed(base:oid, size:lng, domain:int, skew:int):bat[:int]
 address MBMskewed
 comment "Create a BAT with skewed integer distribution";
 

@@ -26,9 +26,9 @@ Ready.
 # 13:14:25 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    X:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    X:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(X:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    Y:bat[:int] := bat.new(:int);       	#[3] (0) CMDBATnewColumn 5 <- 2 
+    Y:bat[:int] := bat.new(:int);       	#[3] (0) CMDBATnew 5 <- 2 
     bat.append(Y:bat[:int],2:int);      	#[4] (0) BKCappend_val_wrap 6 <- 5 7 
     (x:str,y:bat[:int]) := user.swap(X:bat[:int],Y:bat[:int]);	#[5] (0)  8 9 <- 1 5 
     io.print(x:str);                    	#[6] (0) IOprint_val 10 <- 8 

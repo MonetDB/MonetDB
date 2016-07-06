@@ -1,14 +1,14 @@
-b1:= bat.new(:oid,:dbl);
+b1:= bat.new(:dbl);
 bat.append(b1,1.0:dbl);
 bat.append(b1,2.0:dbl);
 bat.append(b1,3.0:dbl);
 
-b2:= bat.new(:oid,:int);
+b2:= bat.new(:int);
 bat.append(b2,1);
 bat.append(b2,2);
 bat.append(b2,3);
 
-(r:bat[:oid,:dbl], s:bat[:oid,:dbl]) := rapi.eval(nil:ptr,"print(arg1);print(arg2); print(arg3); print(arg4);data.frame(r=arg1,s=as.numeric((smooth(Re(fft(arg1)),kind=arg4)+arg2)/arg3))[1:2,]",b1,b2,42:int,"3RSR");
+(r:bat[:dbl], s:bat[:dbl]) := rapi.eval(nil:ptr,"print(arg1);print(arg2); print(arg3); print(arg4);data.frame(r=arg1,s=as.numeric((smooth(Re(fft(arg1)),kind=arg4)+arg2)/arg3))[1:2,]",b1,b2,42:int,"3RSR");
 
 io.print(r,s);
 
