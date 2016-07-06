@@ -103,9 +103,9 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATrmprops(outBAT)
-	BATsettrivprop(outBAT);
+	//BATsetcount(outBAT, BATcount(inBAT));
+	//BATrmprops(outBAT)
+	//BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -149,7 +149,7 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 	}
 
 	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+	//BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
@@ -273,7 +273,7 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 	}
 
 	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
+	//BATsetcount(outBAT, BATcount(inBAT));
 
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
@@ -462,9 +462,9 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 #endif
 
 	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(inBAT));
-    BATrmprops(outBAT)
-    BATsettrivprop(outBAT);
+	//BATsetcount(outBAT, BATcount(inBAT));
+    //BATrmprops(outBAT)
+    //BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -568,9 +568,9 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	BATsetcount(outBAT, BATcount(inBAT));
-    BATrmprops(outBAT)
-    BATsettrivprop(outBAT);
+	//BATsetcount(outBAT, BATcount(inBAT));
+    //BATrmprops(outBAT)
+    //BATsettrivprop(outBAT);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -1307,9 +1307,9 @@ WKBtoWKBxyzDBL_bat(bat *outBAT_id, bat *inBAT_id, bat *inXBAT_id, double *dx, ba
     fprintf(stdout, "batcalc.wkb BUNappend %llu ms\n", t);
 #endif
 
-	BATsetcount(outBAT, BATcount(inBAT));
-    BATrmprops(outBAT)
-    BATsettrivprop(outBAT);
+	//BATsetcount(outBAT, BATcount(inBAT));
+    //BATrmprops(outBAT)
+    //BATsettrivprop(outBAT);
     BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
 	return MAL_SUCCEED;
@@ -1624,8 +1624,6 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
         pointWKB = NULL;
     }
 
-	//set the number of elements in the outBAT
-	BATsetcount(outBAT, BATcount(xBAT));
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 
       clean:
@@ -1891,6 +1889,7 @@ wkbDump_bat(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id
         BBPunfix(inParentBAT->batCacheid);
 
     /*Set counts*/
+    /*
 	BATsetcount(idBAT, geometriesCnt);
     BATrmprops(idBAT)
     BATsettrivprop(idBAT);
@@ -1902,6 +1901,7 @@ wkbDump_bat(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, bat *inGeomBAT_id
         BATrmprops(parentBAT)
         BATsettrivprop(parentBAT);
     }
+    */
 
     /*Keep refs for output BATs*/
 	BBPkeepref(*idBAT_id = idBAT->batCacheid);
@@ -1978,13 +1978,6 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 			remainingElements++;
 		}
 	}
-
-	//set some properties of the new BATs
-	BATsetcount(aBATfiltered, remainingElements);
-	BATsettrivprop(aBATfiltered);
-
-	BATsetcount(bBATfiltered, remainingElements);
-	BATsettrivprop(bBATfiltered);
 
 	BBPunfix(aBAT->batCacheid);
 	BBPunfix(bBAT->batCacheid);
@@ -2064,8 +2057,8 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 	}
 
 	//set some properties of the new BATs
-	BATsetcount(BATfiltered, remainingElements);
-	BATsettrivprop(BATfiltered);
+	//BATsetcount(BATfiltered, remainingElements);
+	//BATsettrivprop(BATfiltered);
 
 	BBPunfix(BAToriginal->batCacheid);
 	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
@@ -2120,9 +2113,9 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	}
 
 	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATrmprops(outBAT)
-	BATsettrivprop(outBAT);
+	//BATsetcount(outBAT, BATcount(inBAT));
+	//BATrmprops(outBAT)
+	//BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;

@@ -6735,10 +6735,12 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
         }
         GDKfree(rGeometries);
     }
+    /*
     BATrmprops(xl)
     BATsettrivprop(xl);
     BATrmprops(xr)
     BATsettrivprop(xr);
+    */
 	BBPunfix(*lid);
 	BBPunfix(*rid);
 	BBPkeepref(*lres = xl->batCacheid);
