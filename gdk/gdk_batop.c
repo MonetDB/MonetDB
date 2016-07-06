@@ -839,7 +839,9 @@ BATslice(BAT *b, BUN l, BUN h)
 }
 
 /* Return whether the BAT is ordered or not.  If we don't know, invest
- * in a scan and record the results in the bat descriptor.  */
+ * in a scan and record the results in the bat descriptor.  If during
+ * the scan we happen to find evidence that the BAT is not reverse
+ * sorted, we record the location.  */
 int
 BATordered(BAT *b)
 {
@@ -866,6 +868,11 @@ BATordered(BAT *b)
 					b->T->nosorted = p;
 					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
+				} else if (!b->trevsorted &&
+					   b->T->norevsorted == 0 &&
+					   iptr[p - 1] < iptr[p]) {
+					b->T->norevsorted = p;
+					ALGODEBUG fprintf(stderr, "#BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
@@ -877,22 +884,41 @@ BATordered(BAT *b)
 					b->T->nosorted = p;
 					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
+				} else if (!b->trevsorted &&
+					   b->T->norevsorted == 0 &&
+					   lptr[p - 1] < lptr[p]) {
+					b->T->norevsorted = p;
+					ALGODEBUG fprintf(stderr, "#BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
 		}
 		default:
 			for (q = BUNlast(b), p = BUNfirst(b) + 1; p < q; p++) {
-				if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) > 0) {
+				int c;
+				if ((c = cmpf(BUNtail(bi, p - 1), BUNtail(bi, p))) > 0) {
 					b->T->nosorted = p;
 					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
+				} else if (!b->trevsorted &&
+					   b->T->norevsorted == 0 &&
+					   c < 0) {
+					b->T->norevsorted = p;
+					ALGODEBUG fprintf(stderr, "#BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
 		}
+		/* we only get here if we completed the scan; note
+		 * that if we didn't record evidence about *reverse*
+		 * sortedness, we know that the BAT is also reverse
+		 * sorted */
 		b->tsorted = 1;
 		ALGODEBUG fprintf(stderr, "#BATordered: fixed sorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
+		if (!b->trevsorted && b->T->norevsorted == 0) {
+			b->trevsorted = 1;
+			ALGODEBUG fprintf(stderr, "#BATordered: fixed revsorted for %s#" BUNFMT "\n", BATgetId(b), BATcount(b));
+		}
 	}
   doreturn:
 	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
