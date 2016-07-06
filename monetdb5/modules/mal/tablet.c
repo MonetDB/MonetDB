@@ -254,6 +254,10 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		if (fmt[i].skip)
 			continue;
 		b = fmt[i].c;
+		b->tsorted = b->trevsorted = 0;
+		b->tkey = 0;
+		b->tnil = b->tnonil = 0;
+		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
