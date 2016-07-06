@@ -5633,6 +5633,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		*cs++ = wn & 1;
 	}
 
+	bo->tsorted = bo->trevsorted = 0;
+	bo->tkey = 0;
 	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
@@ -5719,6 +5721,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
+	bo->tsorted = bo->trevsorted = 0;
+	bo->tkey = 0;
 	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);

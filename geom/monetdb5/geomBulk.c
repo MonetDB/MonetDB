@@ -53,9 +53,6 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 		outWKB = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
@@ -145,9 +142,6 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 		BUNappend(outBAT, &outDbl, TRUE);
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
@@ -799,9 +793,6 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 		outWKB = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;
@@ -1099,13 +1090,6 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 		}
 	}
 
-	//set some properties of the new BATs
-	BATsetcount(aBATfiltered, remainingElements);
-	BATsettrivprop(aBATfiltered);
-
-	BATsetcount(bBATfiltered, remainingElements);
-	BATsettrivprop(bBATfiltered);
-
 	BBPunfix(aBAT->batCacheid);
 	BBPunfix(bBAT->batCacheid);
 	BBPkeepref(*aBATfiltered_id = aBATfiltered->batCacheid);
@@ -1183,10 +1167,6 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		GDKfree(MBRoriginal);
 	}
 
-	//set some properties of the new BATs
-	BATsetcount(BATfiltered, remainingElements);
-	BATsettrivprop(BATfiltered);
-
 	BBPunfix(BAToriginal->batCacheid);
 	BBPkeepref(*BATfiltered_id = BATfiltered->batCacheid);
 
@@ -1239,9 +1219,6 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 		outMBR = NULL;
 	}
 
-	//set some properties of the new BAT
-	BATsetcount(outBAT, BATcount(inBAT));
-	BATsettrivprop(outBAT);
 	BBPunfix(inBAT->batCacheid);
 	BBPkeepref(*outBAT_id = outBAT->batCacheid);
 	return MAL_SUCCEED;

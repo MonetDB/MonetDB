@@ -82,7 +82,6 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	assert(!bn->tnil || !bn->tnonil);
-	BATsettrivprop(bn);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }

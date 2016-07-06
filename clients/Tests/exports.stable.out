@@ -108,7 +108,6 @@ BAT *BATconvert(BAT *b, BAT *s, int tp, int abort_on_error);
 BUN BATcount_no_nil(BAT *b);
 gdk_return BATdel(BAT *b, BAT *d);
 BAT *BATdense(oid hseq, oid tseq, BUN cnt) __attribute__((warn_unused_result));
-void BATderiveProps(BAT *b, int expensive);
 BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
 gdk_return BATextend(BAT *b, BUN newcap);
 void BATfakeCommit(BAT *b);

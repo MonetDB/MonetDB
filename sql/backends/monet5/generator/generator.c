@@ -677,8 +677,12 @@ wrapup:
 	if( cndid)
 		BBPunfix(cndid);
 	if( bn){
+		bn->tsorted = 1;
+		bn->trevsorted = 0;
+		bn->tkey = 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 		BATsetcount(bn,c);
-		BATsettrivprop(bn);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return msg;
@@ -797,8 +801,11 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* adminstrative wrapup of the projection */
 	BBPunfix(bid);
 	if( bn){
+		bn->tsorted = bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tnil = 0;
+		bn->tnonil = 0;
 		BATsetcount(bn,c);
-		BATsettrivprop(bn);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -920,15 +927,21 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"generator.join","Illegal type");
 	}
 
+	bln->tsorted = bln->trevsorted = 0;
+	bln->tkey = 0;
+	bln->tnil = 0;
+	bln->tnonil = 0;
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	BATsettrivprop(bln);
 	
+	brn->tsorted = brn->trevsorted = 0;
+	brn->tkey = 0;
+	brn->tnil = 0;
+	brn->tnonil = 0;
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BATsettrivprop(brn);
 	if( q){
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= brn->batCacheid);
 		BBPkeepref(*getArgReference_bat(stk,pci,1)= bln->batCacheid);
@@ -1055,15 +1068,21 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		throw(MAL,"generator.rangejoin","Illegal type");
 	}
 
+	bln->tsorted = bln->trevsorted = 0;
+	bln->tkey = 0;
+	bln->tnil = 0;
+	bln->tnonil = 0;
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
-	BATsettrivprop(bln);
 	
+	brn->tsorted = brn->trevsorted = 0;
+	brn->tkey = 0;
+	brn->tnil = 0;
+	brn->tnonil = 0;
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
-	BATsettrivprop(brn);
 	BBPkeepref(*getArgReference_bat(stk,pci,0)= bln->batCacheid);
 	BBPkeepref(*getArgReference_bat(stk,pci,1)= brn->batCacheid);
 	return msg;
