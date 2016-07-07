@@ -1480,11 +1480,12 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	/**
 	 * What is the maximum length of a catalog
 	 *
-	 * @return the max length
+	 * @return the maximum number of characters allowed in a catalog name;
+	 * a result of zero means that there is no limit or the limit is not known
 	 */
 	@Override
 	public int getMaxCatalogNameLength() {
-		return 1024;
+		return 0;  // MonetDB does not support catalog names
 	}
 
 	/**
