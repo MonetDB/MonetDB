@@ -1701,12 +1701,11 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"cast(null as char(1)) AS \"Field5\", " +
 			"cast(null as char(1)) AS \"Field6\", " +
 			"cast(null as char(1)) AS \"REMARKS\", " +
-			"CAST(CASE \"args\".\"type\" WHEN NULL THEN ").append(DatabaseMetaData.procedureNoResult)
-			.append(" ELSE ").append(DatabaseMetaData.procedureReturnsResult).append(" END AS smallint) AS \"PROCEDURE_TYPE\", " +
+			// in MonetDB procedures have no return value by design.
+			"CAST(").append(DatabaseMetaData.procedureNoResult).append(" AS smallint) AS \"PROCEDURE_TYPE\", " +
 			"CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\"" +
 			" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" " +
-		"FROM \"sys\".\"functions\" JOIN \"sys\".\"schemas\" ON (\"functions\".\"schema_id\" = \"schemas\".\"id\")" +
-		" LEFT OUTER JOIN \"sys\".\"args\" ON (\"args\".\"func_id\" = \"functions\".\"id\" and \"args\".\"number\" = 0) " +
+		"FROM \"sys\".\"functions\" JOIN \"sys\".\"schemas\" ON (\"functions\".\"schema_id\" = \"schemas\".\"id\") " +
 		// include procedures only (type = 2). Others will be returned via getFunctions()
 		"WHERE \"functions\".\"type\" = 2");
 
@@ -1771,7 +1770,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li><b>SQL_DATA_TYPE</b> int => reserved for future use
 	 * <li><b>SQL_DATETIME_SUB</b> int => reserved for future use
 	 * <li><b>CHAR_OCTET_LENGTH</b> int => the maximum length of binary and character based columns. For any other datatype the returned value is a NULL
-	 * <li><b>ORDINAL_POSITION</b> int => the ordinal position, starting from 1, for the input and output parameters for a procedure. A value of 0 is returned if this row describes the procedure's return value. For result set columns, it is the ordinal position of the column in the result set starting from 1. If there are multiple result sets, the column ordinal positions are implementation defined.
+	 * <li><b>ORDINAL_POSITION</b> int => the ordinal position, starting from 1, for the input and output parameters for a procedure.
+	 *	A value of 0 is returned if this row describes the procedure's return value. For result set columns, it is the ordinal position of the
+	 *	column in the result set starting from 1. If there are multiple result sets, the column ordinal positions are implementation defined.
 	 * <li><b>IS_NULLABLE</b> String => ISO rules are used to determine the nullability for a column.
 	 * <ul><li>YES --- if the parameter can include NULLs
 	 * <li>NO --- if the parameter cannot include NULLs
@@ -1815,7 +1816,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"CAST(0 as int) AS \"SQL_DATA_TYPE\", " +
 			"CAST(0 as int) AS \"SQL_DATETIME_SUB\", " +
 			"CAST(CASE WHEN \"args\".\"type\" IN ('char','varchar','clob') THEN \"args\".\"type_digits\" ELSE NULL END as int) AS \"CHAR_OCTET_LENGTH\", " +
-			"CAST(\"args\".\"number\" as int) AS \"ORDINAL_POSITION\", " +
+			// in MonetDB procedures have no return value by design. The arguments in sys.args are numbered from 0 so we must add 1 to comply with the API specification.
+			"CAST(\"args\".\"number\" + 1 as int) AS \"ORDINAL_POSITION\", " +
 			"CAST('' as varchar(3)) AS \"IS_NULLABLE\", " +
 			"CAST(null as char(1)) AS \"SPECIFIC_NAME\" " +
 		"FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" " +

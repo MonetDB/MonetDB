@@ -1,3 +1,10 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Thu Jul  7 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Corrected PROCEDURE_TYPE output value of method DatabaseMetaData.getProcedures().
+  It used to return procedureReturnsResult. Now it returns procedureNoResult.
+  Corrected ORDINAL_POSITION output value of method DatabaseMetaData.getProcedureColumns().
+  It used to start with 0 but as procedures do not return a result value.
+  It now starts with 1 for all the procedure arguments, as defined in the JDBC API.
+
