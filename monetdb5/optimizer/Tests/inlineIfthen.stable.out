@@ -30,7 +30,7 @@ Ready.
 # 21:52:28 >  
 
 function user.qry():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     bat.append(b:bat[:int],10:int);     	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
     bat.append(b:bat[:int],20:int);     	#[4] (0) BKCappend_val_wrap 7 <- 1 8 

@@ -5,7 +5,7 @@ end my;
 
 function tst();
 	b:= bat.new(:int);
-	z:bat[:oid,:int]:= mal.multiplex("user","my",b,1);
+	z:bat[:int]:= mal.multiplex("user","my",b,1);
 end tst;
 optimizer.multiplex("user","tst");
 optimizer.inline("user","tst");

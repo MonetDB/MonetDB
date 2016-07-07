@@ -563,9 +563,19 @@ BKCgetKey(bit *ret, const bat *bid)
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	if (BATcount(b) <= 1) {
 		*ret = TRUE;
+	} else if (b->twidth < SIZEOF_BUN &&
+			   BATcount(b) > ((BUN)1 << (8 * b->twidth))) {
+		/* more rows than possible bit combinations in the atom */
+		*ret = FALSE;
 	} else {
-		if (!b->tkey) {
-			BATderiveTailProps(b, 1);
+		if (!b->tkey && b->tnokey[0] == 0 && b->tnokey[1] == 0) {
+			BAT *bn = BATunique(b, NULL);
+			if (bn) {
+				if (BATcount(bn) == BATcount(b)) {
+					BATkey(b, 1);
+				}
+				BBPunfix(bn->batCacheid);
+			}
 		}
 		*ret = b->tkey ? TRUE : FALSE;
 	}

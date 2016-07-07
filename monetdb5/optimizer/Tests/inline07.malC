@@ -1,5 +1,5 @@
 # remapping inline functions
-inline function foo(a:int,b:bat[:oid,:int]):dbl;
+inline function foo(a:int,b:bat[:int]):dbl;
 	s:= aggr.sum(b);
 	c:= a+s;
 	return foo:=c;
@@ -8,7 +8,7 @@ end foo;
 function qry();
 	b:= bat.new(:int);
 	bat.append(b,1);
-	z:bat[:oid,:dbl]:= mal.multiplex("user","foo",b,b);
+	z:bat[:dbl]:= mal.multiplex("user","foo",b,b);
 end qry;
 
 	optimizer.inline("user","qry");

@@ -31,7 +31,7 @@ Ready.
 
 function user.foo():void;               	#[0] (0)  0 
     clients.setListing(15:int);         	#[1] (0) CLTsetListing 1 <- 2 
-    b:bat[:lng] := bat.new(:lng);       	#[2] (0) CMDBATnewColumn 3 <- 4 
+    b:bat[:lng] := bat.new(:lng);       	#[2] (0) CMDBATnew 3 <- 4 
     i:lng := -1:lng;                    	#[3] (0)  5 <- 6 
 barrier i:lng := 0:lng;                 	#[4] (0)  5 <- 7 
     bat.append(b:bat[:lng],i:lng);      	#[5] (0) BKCappend_val_wrap 8 <- 3 5 
@@ -39,7 +39,7 @@ barrier i:lng := 0:lng;                 	#[4] (0)  5 <- 7
 exit i:lng;                             	#[7] (0)  5 
     io.print(b:bat[:lng]);              	#[8] (0) IOprint_val 11 <- 3 
     c:int := 1:int;                     	#[9] (0)  12 <- 13 
-    X_18:bat[:lng] := bat.new(nil:lng); 	#[10] (0) CMDBATnewColumn 18 <- 19 
+    X_18:bat[:lng] := bat.new(nil:lng); 	#[10] (0) CMDBATnew 18 <- 19 
 barrier (X_21:oid,X_22:lng) := iterator.new(b:bat[:lng]);	#[11] (0) ITRbunIterator 21 22 <- 3 
     X_24:lng := calc.+(X_22:lng,c:int); 	#[12] (0) CMDvarADDsignal 24 <- 22 12 
     bat.append(X_18:bat[:lng],X_24:lng);	#[13] (0) BKCappend_val_wrap 25 <- 18 24 

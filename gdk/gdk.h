@@ -2686,8 +2686,6 @@ gdk_export void BATundo(BAT *b);
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
 gdk_export void BATassertProps(BAT *b);
-gdk_export void BATderiveProps(BAT *b, int expensive);
-gdk_export void BATderiveTailProps(BAT *b, int expensive);
 
 #define BATPROPS_QUICK  0	/* only derive easy (non-resource consuming) properties */
 #define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */

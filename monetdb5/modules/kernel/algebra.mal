@@ -9,39 +9,39 @@ module algebra;
 
 # TO BE REMOVED OR CHANGED FOR HEADLESS
 
-command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:lng]) :bat[:oid,:oid]
+command groupby(gids:bat[:oid], cnts:bat[:lng]) :bat[:oid]
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
 #END OF HEADLESS PLANS
 
-command find(b:bat[:oid,:any_1], t:any_1):oid
+command find(b:bat[:any_1], t:any_1):oid
 address ALGfind
 comment "Returns the index position of a value.  If no such BUN exists return OID-nil." ;
 
-command fetch(b:bat[:oid,:any_1], x:oid) :any_1
+command fetch(b:bat[:any_1], x:oid) :any_1
 address ALGfetchoid
 comment "Returns the value of the BUN at x-th position with 0 <= x < b.count";
 
-pattern project(b:bat[:oid,:any_1],v:any_3) :bat[:oid,:any_3]
+pattern project(b:bat[:any_1],v:any_3) :bat[:any_3]
 address ALGprojecttail
 comment "Fill the tail with a constant";
 
-command projection( left:bat[:oid,:oid], right:bat[:oid,:any_3] ) :bat[:oid,:any_3]
+command projection( left:bat[:oid], right:bat[:any_3] ) :bat[:any_3]
 address ALGprojection
 comment "Project left input onto right input.";
 
 # BAT copying
-command copy( b:bat[:oid,:any_1]) :bat[:oid,:any_1]
+command copy( b:bat[:any_1]) :bat[:any_1]
 address ALGcopy
 comment "Returns physical copy of a BAT.";
 
-command exist(b:bat[:oid,:any_1], val:any_1):bit
+command exist(b:bat[:any_1], val:any_1):bit
 address ALGexist
 comment "Returns whether 'val' occurs in b.";
 
 # The range selections are targeted at the tail of the BAT.
-command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+command subselect(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
 address ALGsubselect1
 comment "Select all head values for which the tail value is in range.
 	Input is a dense-headed BAT, output is a dense-headed BAT with in
@@ -56,7 +56,7 @@ comment "Select all head values for which the tail value is in range.
 	Note that the output is suitable as second input for the other
 	version of this function.";
 
-command subselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+command subselect(b:bat[:any_1], s:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
 address ALGsubselect2
 comment "Select all head values of the first input BAT for which the tail value
 	is in range and for which the head value occurs in the tail of the
@@ -74,7 +74,7 @@ comment "Select all head values of the first input BAT for which the tail value
 	Note that the output is suitable as second input for this
 	function.";
 
-command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
+command thetasubselect(b:bat[:any_1], val:any_1, op:str) :bat[:oid]
 address ALGthetasubselect1
 comment "Select all head values for which the tail value obeys the relation
 	value OP VAL.
@@ -82,7 +82,7 @@ comment "Select all head values for which the tail value obeys the relation
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
-command thetasubselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], val:any_1, op:str) :bat[:oid,:oid]
+command thetasubselect(b:bat[:any_1], s:bat[:oid], val:any_1, op:str) :bat[:oid]
 address ALGthetasubselect2
 comment "Select all head values of the first input BAT for which the tail value
 	obeys the relation value OP VAL and for which the head value occurs in
@@ -92,64 +92,64 @@ comment "Select all head values of the first input BAT for which the tail value
 	relationship holds.  The output BAT is sorted on the tail value.";
 
 
-command selectNotNil(b:bat[:oid,:any_2]):bat[:oid,:any_2]
+command selectNotNil(b:bat[:any_2]):bat[:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
 
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) :bat[:oid,:any_1]
+command subsort(b:bat[:any_1], reverse:bit, stable:bit) :bat[:any_1]
 address ALGsubsort11
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+command subsort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
 address ALGsubsort12
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+command subsort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
 address ALGsubsort13
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
+command subsort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
 address ALGsubsort21
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+command subsort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
 address ALGsubsort22
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+command subsort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
 address ALGsubsort23
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
+command subsort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
 address ALGsubsort31
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+command subsort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
 address ALGsubsort32
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+command subsort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
 address ALGsubsort33
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
@@ -157,7 +157,7 @@ comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
 
-command subunique(b:bat[:oid,:any_1], s:bat[:oid,:oid]) :bat[:oid,:oid]
+command subunique(b:bat[:any_1], s:bat[:oid]) :bat[:oid]
 address ALGsubunique2
 comment "Select all unique values from the tail of the first input.
 	Input is a dense-headed BAT, the second input is a
@@ -165,7 +165,7 @@ comment "Select all unique values from the tail of the first input.
 	BAT with in the tail the head value of the input BAT that was
 	selected.  The output BAT is sorted on the tail value.  The
 	second input BAT is a list of candidates.";
-command subunique(b:bat[:oid,:any_1]) :bat[:oid,:oid]
+command subunique(b:bat[:any_1]) :bat[:oid]
 address ALGsubunique1
 comment "Select all unique values from the tail of the input.
 	Input is a dense-headed BAT, output is a dense-headed BAT with
@@ -176,99 +176,99 @@ comment "Select all unique values from the tail of the input.
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
-command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
-		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+command crossproduct( left:bat[:any_1], right:bat[:any_2])
+		(l:bat[:oid],r:bat[:oid])
 address ALGcrossproduct2
 comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left'
 	  and 'right' with equal tails";
 
-command subjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubjoin
 comment "Join";
 
-command subleftjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subleftjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubleftjoin
 comment "Left join with candidate lists";
 
-command subouterjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subouterjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubouterjoin
 comment "Left outer join with candidate lists";
 
-command subsemijoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subsemijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubsemijoin
 comment "Semi join with candidate lists";
 
-command subthetajoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],op:int,nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subthetajoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],op:int,nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubthetajoin
 comment "Theta join with candidate lists";
 
-function subantijoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid]);
+function subantijoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid]);
 	 # JOIN_NE == -3
 	(r1,r2) := subthetajoin(l,r,sl,sr,-3:int,nil_matches,estimate);
 	return (r1,r2);
 end subantijoin;
 
-command subbandjoin(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subbandjoin(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],c1:any_1,c2:any_1,li:bit,hi:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubbandjoin
 comment "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2";
 
-command subrangejoin(l:bat[:oid,:any_1],r1:bat[:oid,:any_1],r2:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid,:oid],:bat[:oid,:oid])
+command subrangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:bat[:oid],li:bit,hi:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address ALGsubrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
 
-command subdiff(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) :bat[:oid,:oid]
+command subdiff(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
 address ALGsubdiff
 comment "Difference of l and r with candidate lists";
 
-command subinter(l:bat[:oid,:any_1],r:bat[:oid,:any_1],sl:bat[:oid,:oid],sr:bat[:oid,:oid],nil_matches:bit,estimate:lng) :bat[:oid,:oid]
+command subinter(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
 address ALGsubinter
 comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
 
 # @+ Projection operations
-pattern firstn(b:bat[:oid,:any], n:lng, asc:bit, distinct:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:any], n:lng, asc:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) :bat[:oid,:oid]
+pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], n:lng, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:any], n:lng, asc:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:oid,:any], s:bat[:oid,:oid], g:bat[:oid,:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid,:oid],:bat[:oid,:oid])
+pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 
-command reuse(b:bat[:oid,:any_1]):bat[:oid,:any_1]
+command reuse(b:bat[:any_1]):bat[:any_1]
 address ALGreuse
 comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
  	operation (not involving the heap)";
 
 # The second group uses the head to perform the range selection
-command slice(b:bat[:oid,:any_1], x:oid, y:oid) :bat[:oid,:any_1]
+command slice(b:bat[:any_1], x:oid, y:oid) :bat[:any_1]
 address ALGslice_oid
 comment "Return the slice based on head oid x till y (exclusive).";
 
-command slice(b:bat[:oid,:any_1], x:lng, y:lng) :bat[:oid,:any_1]
+command slice(b:bat[:any_1], x:lng, y:lng) :bat[:any_1]
 address ALGslice
 comment "Return the slice with the BUNs at position x till y.";
 
-command slice(b:bat[:oid,:any_1], x:int, y:int) :bat[:oid,:any_1]
+command slice(b:bat[:any_1], x:int, y:int) :bat[:any_1]
 address ALGslice_int
 comment "Return the slice with the BUNs at position x till y.";
 
-command slice(b:bat[:oid,:any_1], x:lng, y:lng) :bat[:oid,:any_1]
+command slice(b:bat[:any_1], x:lng, y:lng) :bat[:any_1]
 address ALGslice_lng
 comment "Return the slice with the BUNs at position x till y.";
 
-command subslice(b:bat[:oid,:any_1], x:lng, y:lng) :bat[:oid,:oid]
+command subslice(b:bat[:any_1], x:lng, y:lng) :bat[:oid]
 address ALGsubslice_lng
 comment "Return the oids of the slice with the BUNs at position x till y.";
 
@@ -278,14 +278,14 @@ comment "Return the oids of the slice with the BUNs at position x till y.";
 #  BAT size
 module aggr;
 
-command count( b:bat[:oid,:any] ) :lng
+command count( b:bat[:any] ) :lng
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:oid,:any], ignore_nils:bit ) :lng
+command count ( b:bat[:any], ignore_nils:bit ) :lng
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores
 		BUNs with nil-tail iff ignore_nils==TRUE.";
-command count_no_nil ( b:bat[:oid,:any_2]) :lng
+command count_no_nil ( b:bat[:any_2]) :lng
 address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
@@ -295,7 +295,7 @@ comment "Return the number of elements currently
 # @emph{min()} and @emph{max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
-command cardinality( b:bat[:oid,:any_2] ) :lng
+command cardinality( b:bat[:any_2] ) :lng
 address ALGcard
 comment "Return the cardinality of the BAT tail values.";
 # Implementations a generic Min and Max routines get declared first. The
@@ -304,15 +304,15 @@ comment "Return the cardinality of the BAT tail values.";
 # override these any implementations.
 
 #SQL uses variable head types
-command min(b:bat[:oid,:any_2]):any_2
+command min(b:bat[:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
 
-command max(b:bat[:oid,:any_2]):any_2
+command max(b:bat[:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-pattern avg (b:bat[:oid,:any_2] ) :dbl
+pattern avg (b:bat[:any_2] ) :dbl
 address CMDcalcavg
 comment "Gives the avg of all tail values";
 
@@ -320,16 +320,16 @@ comment "Gives the avg of all tail values";
 # The standard deviation of a set is the square root of its variance.
 # The variance is the sum of squares of the deviation of each value in the set
 # from the mean (average) value, divided by the population of the set.
-command stdev(b:bat[:oid,:any_2]) :dbl
+command stdev(b:bat[:any_2]) :dbl
 address ALGstdev
 comment "Gives the standard deviation of all tail values";
-command stdevp(b:bat[:oid,:any_2]) :dbl
+command stdevp(b:bat[:any_2]) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
-command variance(b:bat[:oid,:any_2]) :dbl
+command variance(b:bat[:any_2]) :dbl
 address ALGvariance
 comment "Gives the variance of all tail values";
-command variancep(b:bat[:oid,:any_2]) :dbl
+command variancep(b:bat[:any_2]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 

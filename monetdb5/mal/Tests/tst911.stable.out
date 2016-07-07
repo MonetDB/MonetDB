@@ -30,7 +30,7 @@ Ready.
 # 22:45:41 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:lng] := bat.new(:lng);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:lng] := bat.new(:lng);       	#[1] (0) CMDBATnew 1 <- 2 
     INT_MAX:int := 2147483647:int;      	#[2] (0)  3 <- 4 
     dbgmsk_restore:int := mdb.getDebug();	#[3] (0) MDBgetDebug 5 
     dbgmsk_unset:int := calc.+(8:int,8388608:int);	#[4] (0) CMDvarADDsignal 6 <- 7 8 

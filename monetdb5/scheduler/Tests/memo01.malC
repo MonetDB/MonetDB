@@ -3,7 +3,7 @@
 # Use the backward scheduling.
 
 include run_memo;
-	A:= bat.new(:oid,:oid);
+	A:= bat.new(:oid);
 	bat.append(A,1@0);
 	B:= algebra.copy(A);
 	bat.setAccess(B,"w");

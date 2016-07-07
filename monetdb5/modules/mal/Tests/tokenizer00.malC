@@ -24,21 +24,21 @@ io.print(t);
 id := tokenizer.locate(t);
 io.print(id);
 
-d:bat[:oid,:oid] := tokenizer.getIndex();
+d:bat[:oid] := tokenizer.getIndex();
 io.print(d);
 
-level0:bat[:oid,:str] := tokenizer.getLevel(0);
-level1:bat[:oid,:str] := tokenizer.getLevel(1);
-level2:bat[:oid,:str] := tokenizer.getLevel(2);
-level3:bat[:oid,:str] := tokenizer.getLevel(3);
+level0:bat[:str] := tokenizer.getLevel(0);
+level1:bat[:str] := tokenizer.getLevel(1);
+level2:bat[:str] := tokenizer.getLevel(2);
+level3:bat[:str] := tokenizer.getLevel(3);
 io.print(level0);
 io.print(level1);
 io.print(level2);
 io.print(level3);
 
-cnt:bat[:oid,:lng] := tokenizer.getCount();
+cnt:bat[:lng] := tokenizer.getCount();
 io.print(cnt);
-cnt:bat[:oid,:lng] := tokenizer.getCardinality();
+cnt:bat[:lng] := tokenizer.getCardinality();
 io.print(cnt);
 
 tokenizer.close();

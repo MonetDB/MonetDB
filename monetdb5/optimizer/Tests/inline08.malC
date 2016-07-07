@@ -20,7 +20,7 @@ end bar;
 function qry();
 	b:= bat.new(:str);
 	bat.append(b,"1");
-	z:bat[:oid,:str]:= mal.multiplex("user","bar",b,b);
+	z:bat[:str]:= mal.multiplex("user","bar",b,b);
 end qry;
 
 	optimizer.inline("user","bar");

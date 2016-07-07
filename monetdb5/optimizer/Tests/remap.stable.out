@@ -30,12 +30,12 @@ Ready.
 # 11:30:41 >  
 
 function user.tst():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
 # a correct call                        
     z:bat[:int] := batcalc.+(b:bat[:int],1:int);	#[3] (0) CMDbatADDsignal 4 <- 1 7 
     f:bat[:bit] := batcalc.<(b:bat[:int],3:int);	#[4] (0) CMDbatLT 8 <- 1 10 
     f:bat[:bit] := batcalc.<(3:int,b:bat[:int]);	#[5] (0) CMDbatLT 8 <- 11 1 
-    d:bat[:str] := bat.new(:str);       	#[6] (0) CMDBATnewColumn 12 <- 13 
+    d:bat[:str] := bat.new(:str);       	#[6] (0) CMDBATnew 12 <- 13 
     a:bat[:bit] := batcalc.isnil(d:bat[:str]);	#[7] (0) CMDbatISNIL 14 <- 12 
 end user.tst;                           	#[8] (0)  
 

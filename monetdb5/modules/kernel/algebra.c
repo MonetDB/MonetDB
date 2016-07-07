@@ -516,13 +516,13 @@ ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat 
 				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.subdiff");
 }
 
-/* algebra.firstn(b:bat[:oid,:any],
- *                [ s:bat[:oid,:oid],
- *                [ g:bat[:oid,:oid], ] ]
+/* algebra.firstn(b:bat[:any],
+ *                [ s:bat[:oid],
+ *                [ g:bat[:oid], ] ]
  *                n:lng,
  *                asc:bit,
  *                distinct:bit)
- * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
+ * returns :bat[:oid] [ , :bat[:oid] ]
  */
 str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

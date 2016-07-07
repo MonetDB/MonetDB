@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Jul  6 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed BATderiveTailProps and BATderiveProps.  Just set the properties
+  you know about, or use BATsettrivprop.
+
 * Fri Jul  1 2016 Sjoerd Mullender <sjoerd@acm.org>
 - Removed the macro BUNfirst.  It can be replaced by 0.
 

@@ -153,7 +153,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 		BATtseqbase(bn, start + b->hseqbase);
 		return bn;
 	}
-	/* note, we want to do bot calls */
+	/* note, we want to do both calls */
 	if (BATordered(b) | BATordered_rev(b)) {
 		/* trivial: b is sorted so we just need to return the
 		 * initial or final part of it (or of the candidate

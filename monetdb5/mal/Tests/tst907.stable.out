@@ -33,10 +33,10 @@ function user.foo():void;               	#[0] (0)  0
     k:int := user.one(1:int);           	#[1] (0)  1 <- 2 
     l:int := user.three(1:int,2:int,3:int);	#[2] (0)  3 <- 2 4 5 
     p:int := user.pow(1:int,2:int);     	#[3] (0)  6 <- 2 4 
-    b:bat[:int] := bat.new(:int);       	#[4] (0) CMDBATnewColumn 7 <- 8 
+    b:bat[:int] := bat.new(:int);       	#[4] (0) CMDBATnew 7 <- 8 
     bat.append(b:bat[:int],1:int);      	#[5] (0) BKCappend_val_wrap 9 <- 7 2 
     io.print("do multiplex three test":str);	#[6] (0) IOprint_val 10 <- 11 
-    X_22:bat[:int] := bat.new(nil:int); 	#[7] (0) CMDBATnewColumn 22 <- 23 
+    X_22:bat[:int] := bat.new(nil:int); 	#[7] (0) CMDBATnew 22 <- 23 
 barrier (X_25:oid,X_26:int) := iterator.new(b:bat[:int]);	#[8] (0) ITRbunIterator 25 26 <- 7 
     X_28:int := user.three(X_26:int,2:int,3:int);	#[9] (0)  28 <- 26 4 5 
     bat.append(X_22:bat[:int],X_28:int);	#[10] (0) BKCappend_val_wrap 29 <- 22 28 
@@ -44,7 +44,7 @@ barrier (X_25:oid,X_26:int) := iterator.new(b:bat[:int]);	#[8] (0) ITRbunIterato
 exit (X_25:oid,X_26:int);               	#[12] (0)  25 26 
     z:bat[:int] := X_22:bat[:int];      	#[13] (0)  12 <- 22 
     io.print("do multiplex one test":str);	#[14] (0) IOprint_val 15 <- 16 
-    X_33:bat[:int] := bat.new(nil:int); 	#[15] (0) CMDBATnewColumn 33 <- 23 
+    X_33:bat[:int] := bat.new(nil:int); 	#[15] (0) CMDBATnew 33 <- 23 
 barrier (X_35:oid,X_36:int) := iterator.new(b:bat[:int]);	#[16] (0) ITRbunIterator 35 36 <- 7 
     X_38:int := user.one(X_36:int);     	#[17] (0)  38 <- 36 
     bat.append(X_33:bat[:int],X_38:int);	#[18] (0) BKCappend_val_wrap 39 <- 33 38 
@@ -52,7 +52,7 @@ barrier (X_35:oid,X_36:int) := iterator.new(b:bat[:int]);	#[16] (0) ITRbunIterat
 exit (X_35:oid,X_36:int);               	#[20] (0)  35 36 
     z:bat[:int] := X_33:bat[:int];      	#[21] (0)  12 <- 33 
     io.print("do multiplex pow test":str);	#[22] (0) IOprint_val 18 <- 19 
-    X_43:bat[:int] := bat.new(nil:int); 	#[23] (0) CMDBATnewColumn 43 <- 23 
+    X_43:bat[:int] := bat.new(nil:int); 	#[23] (0) CMDBATnew 43 <- 23 
 barrier (X_45:oid,X_46:int) := iterator.new(b:bat[:int]);	#[24] (0) ITRbunIterator 45 46 <- 7 
     X_48:int := user.pow(X_46:int,2:int);	#[25] (0)  48 <- 46 4 
     bat.append(X_43:bat[:int],X_48:int);	#[26] (0) BKCappend_val_wrap 49 <- 43 48 
