@@ -1678,11 +1678,13 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * </ol>
 	 * <li><b>SPECIFIC_NAME</b> String => The name which uniquely identifies this procedure within its schema. 
 	 *
-	 * @param catalog - a catalog name; "" retrieves those without a
-	 *	catalog; null means drop catalog name from criteria
-	 * @param schemaPattern - a schema name pattern; "" retrieves those
-	 *	without a schema - we ignore this parameter
-	 * @param procedureNamePattern - a procedure name pattern
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog;
+	 *	null means that the catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored in the database;
+	 *	"" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param procedureNamePattern - a procedure name pattern; must match the procedure name as it is stored in the database
 	 * @return ResultSet - each row is a procedure description
 	 * @throws SQLException if a database access error occurs
 	 */
@@ -1694,17 +1696,17 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	) throws SQLException
 	{
 		StringBuilder query = new StringBuilder(980);
-		query.append("SELECT DISTINCT cast(null as varchar(1)) AS \"PROCEDURE_CAT\", " +
+		query.append("SELECT cast(null as varchar(1)) AS \"PROCEDURE_CAT\", " +
 			"\"schemas\".\"name\" AS \"PROCEDURE_SCHEM\", " +
 			"\"functions\".\"name\" AS \"PROCEDURE_NAME\", " +
 			"cast(null as char(1)) AS \"Field4\", " +
 			"cast(null as char(1)) AS \"Field5\", " +
 			"cast(null as char(1)) AS \"Field6\", " +
-			"cast(null as char(1)) AS \"REMARKS\", " +
+			"cast(\"functions\".\"func\" as varchar(9999)) AS \"REMARKS\", " +
 			// in MonetDB procedures have no return value by design.
 			"CAST(").append(DatabaseMetaData.procedureNoResult).append(" AS smallint) AS \"PROCEDURE_TYPE\", " +
-			"CAST(CASE \"functions\".\"language\" WHEN 0 THEN \"functions\".\"mod\" || '.' || \"functions\".\"func\"" +
-			" ELSE \"schemas\".\"name\" || '.' || \"functions\".\"name\" END AS VARCHAR(1500)) AS \"SPECIFIC_NAME\" " +
+			// only the id value uniquely identifies a procedure. Use it to be able to differentiate between multiple overloaded procedures with the same name
+			"cast(\"functions\".\"id\" as varchar(10)) AS \"SPECIFIC_NAME\" " +
 		"FROM \"sys\".\"functions\" JOIN \"sys\".\"schemas\" ON (\"functions\".\"schema_id\" = \"schemas\".\"id\") " +
 		// include procedures only (type = 2). Others will be returned via getFunctions()
 		"WHERE \"functions\".\"type\" = 2");
@@ -1730,10 +1732,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Get a description of a catalog's stored procedure parameters
 	 * and result columns.
 	 *
-	 * <p>Only descriptions matching the schema, procedure and parameter
-	 * name criteria are returned. They are ordered by PROCEDURE_SCHEM
-	 * and PROCEDURE_NAME. Within this, the return value, if any, is
-	 * first. Next are the parameter descriptions in call order. The
+	 * <p>Only descriptions matching the schema, procedure and parameter name
+	 * criteria are returned. They are ordered by PROCEDURE_SCHEM, PROCEDURE_NAME
+	 * and SPECIFIC_NAME. Within this, the return value, if any, is first.
+	 * Next are the parameter descriptions in call order. The
 	 * column descriptions follow in column number order.
 	 *
 	 * <p>Each row in the ResultSet is a parameter description or column
@@ -1780,11 +1782,15 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * </ul>
 	 * <li><b>SPECIFIC_NAME</b> String => the name which uniquely identifies this procedure within its schema. 
 	 * </ol>
-	 * @param catalog   not used
-	 * @param schemaPattern not used
-	 * @param procedureNamePattern a procedure name pattern
-	 * @param columnNamePattern a column name pattern
-	 * @return each row is a stored procedure parameter or column description
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog;
+	 *	null means that the catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored in the database;
+	 *	"" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param procedureNamePattern - a procedure name pattern; must match the procedure name as it is stored in the database
+	 * @param columnNamePattern - a column name pattern; must match the column name as it is stored in the database
+	 * @return ResultSet - each row describes a stored procedure parameter or column
 	 * @throws SQLException if a database-access error occurs
 	 * @see #getSearchStringEscape
 	 */
@@ -1796,7 +1802,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String columnNamePattern
 	) throws SQLException {
 		StringBuilder query = new StringBuilder(2900);
-		query.append("SELECT DISTINCT CAST(null as char(1)) AS \"PROCEDURE_CAT\", " +
+		query.append("SELECT cast(null as varchar(1)) AS \"PROCEDURE_CAT\", " +
 			"\"schemas\".\"name\" AS \"PROCEDURE_SCHEM\", " +
 			"\"functions\".\"name\" AS \"PROCEDURE_NAME\", " +
 			"\"args\".\"name\" AS \"COLUMN_NAME\", " +
@@ -1819,7 +1825,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			// in MonetDB procedures have no return value by design. The arguments in sys.args are numbered from 0 so we must add 1 to comply with the API specification.
 			"CAST(\"args\".\"number\" + 1 as int) AS \"ORDINAL_POSITION\", " +
 			"CAST('' as varchar(3)) AS \"IS_NULLABLE\", " +
-			"CAST(null as char(1)) AS \"SPECIFIC_NAME\" " +
+			// the specific name contains the function id, in order to be able to match the args to the correct overloaded procedure name
+			"cast(\"functions\".\"id\" as varchar(10)) AS \"SPECIFIC_NAME\" " +
 		"FROM \"sys\".\"args\", \"sys\".\"functions\", \"sys\".\"schemas\" " +
 		"WHERE \"args\".\"func_id\" = \"functions\".\"id\" " +
 		"AND \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
@@ -1840,7 +1847,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		if (columnNamePattern != null) {
 			query.append(" AND \"args\".\"name\" ").append(composeMatchPart(columnNamePattern));
 		}
-		query.append(" ORDER BY \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"ORDINAL_POSITION\"");
+		query.append(" ORDER BY \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"ORDINAL_POSITION\"");
 
 		return executeMetaDataQuery(query.toString());
 	}

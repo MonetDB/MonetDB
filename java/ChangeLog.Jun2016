@@ -5,6 +5,17 @@
 - Corrected PROCEDURE_TYPE output value of method DatabaseMetaData.getProcedures().
   It used to return procedureReturnsResult. Now it returns procedureNoResult.
   Corrected ORDINAL_POSITION output value of method DatabaseMetaData.getProcedureColumns().
-  It used to start with 0 but as procedures do not return a result value.
-  It now starts with 1 for all the procedure arguments, as defined in the JDBC API.
+  It used to start with 0, but as procedures do not return a result value it now
+  starts with 1 for all the procedure arguments, as defined by the JDBC API.
+* Thu Jul  7 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved output of method DatabaseMetaData.getProcedures(). The REMARKS
+  column now contains the procedure definition as stored in sys.functions.func.
+  The SPECIFIC_NAME column now contains the procedure unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the specific
+  overloaded  procedure which have the same name, but different arguments.
+  Also improved output of method DatabaseMetaData.getProcedureColumns().
+  The SPECIFIC_NAME column now contains the procedure unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the proper
+  arguments of the specific overloaded procedures by matching the SPECIFIC_NAME
+  values.
 
