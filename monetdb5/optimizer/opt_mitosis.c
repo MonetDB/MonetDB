@@ -88,7 +88,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		r = getRowCnt(mb, getArg(p, 0));
 		if (r >= rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
-			row_size = ATOMsize(getColumnType(getArgType(mb,p,0)));
+			row_size = ATOMsize(getBatType(getArgType(mb,p,0)));
 			rowcnt = r;
 			target = p;
 			estimate++;

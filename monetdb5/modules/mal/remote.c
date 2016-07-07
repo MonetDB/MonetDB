@@ -522,7 +522,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(tmp);
 			return var;
 		}
-		t = getColumnType(rtype);
+		t = getBatType(rtype);
 		newColumn(b, t, 0, "remote.get");
 
 		if (ATOMvarsized(t)) {
@@ -689,7 +689,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str tailv;
 		stream *sout;
 
-		tail = getTypeIdentifier(getColumnType(type));
+		tail = getTypeIdentifier(getBatType(type));
 
 		bid = *(bat *)value;
 		if (bid != 0) {
@@ -716,8 +716,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
 				tailv = NULL;
-				ATOMformat(getColumnType(type), BUNtail(bi, p), &tailv);
-				if (getColumnType(type) > TYPE_str)
+				ATOMformat(getBatType(type), BUNtail(bi, p), &tailv);
+				if (getBatType(type) > TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				else
 					mnstr_printf(sout, "%s\n", tailv);

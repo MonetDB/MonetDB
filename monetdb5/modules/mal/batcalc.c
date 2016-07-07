@@ -310,7 +310,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
 	tp3 = getArgType(mb, pci, 0);
 	assert(isaBatType(tp3));
-	tp3 = getColumnType(tp3);
+	tp3 = getBatType(tp3);
 	if (pci->argc == 4) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)

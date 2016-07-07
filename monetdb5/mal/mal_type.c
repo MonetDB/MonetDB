@@ -19,7 +19,7 @@
  * Within the MAL layer types are encoded in 32-bit integers using
  * bit stuffing to save some space.
  * The integer contains the following fields:
- * anyHeadIndex (bit 25-22), anyColumnIndex (bit 21-18),
+ * anyHeadIndex (bit 25-22), anyTypeIndex (bit 21-18),
  * batType (bit 17) headType (16-9) and tailType(8-0)
  * This encoding scheme permits a limited number of different bat types.
  * The headless case assumes all head types are TYPE_void/TYPE_oid
@@ -44,20 +44,20 @@ getTypeName(malType tpe)
 		snprintf(buf, l, "bat[");
 		l -= strlen(buf);
 		s = buf + strlen(buf);
-		k = getColumnIndex(tpe);
+		k = getTypeIndex(tpe);
 		if (k)
 			snprintf(s, l, ":any%c%d]",TMPMARKER,  k);
-		else if (getColumnType(tpe) == TYPE_any)
+		else if (getBatType(tpe) == TYPE_any)
 			snprintf(s, l, ":any]");
 		else
-			snprintf(s, l, ":%s]", ATOMname(getColumnType(tpe)));
+			snprintf(s, l, ":%s]", ATOMname(getBatType(tpe)));
 		return GDKstrdup(buf);
 	}
 	if (isAnyExpression(tpe)) {
 		strncpy(buf, "any", 4);
 		if (isAnyExpression(tpe))
 			snprintf(buf + 3, PATHLENGTH - 3, "%c%d",
-					TMPMARKER, getColumnIndex(tpe));
+					TMPMARKER, getTypeIndex(tpe));
 		return GDKstrdup(buf);
 	}
 	return GDKstrdup(ATOMname(tpe));
@@ -101,7 +101,7 @@ getTypeIdentifier(malType tpe){
 #define qt(x) (nme[1]==x[1] && nme[2]==x[2] )
 
 int
-getTypeIndex(str nme, int len, int deftype)
+getAtomIndex(str nme, int len, int deftype)
 {
 	int i,k=0;
 	char old=0;

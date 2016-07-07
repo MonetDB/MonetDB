@@ -573,7 +573,7 @@ str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit group
             }
             seqbase = b->hseqbase;
             inp->count = BATcount(b);
-            inp->bat_type = ATOMstorage(getColumnType(getArgType(mb,pci,i)));
+            inp->bat_type = ATOMstorage(getBatType(getArgType(mb,pci,i)));
             inp->bat = b;
         }
         if (argnode) {
@@ -1345,7 +1345,7 @@ aggrwrapup:
                 // WARNING: Because we could be converting to a NPY_STRING or NPY_UNICODE array (if the desired type is TYPE_str or TYPE_hge), this means that memory usage can explode
                 //   because NPY_STRING/NPY_UNICODE arrays are 2D string arrays with fixed string length (so if there's one very large string the size explodes quickly)
                 //   if someone has some problem with memory size exploding when using PYTHON_MAP but it being fine in regular PYTHON this is probably the issue
-                int bat_type = getColumnType(getArgType(mb,pci,i));
+                int bat_type = getBatType(getArgType(mb,pci,i));
                 PyObject *new_array = PyArray_FromAny(ret->numpy_array, PyArray_DescrFromType(BatType_ToPyType(bat_type)), 1, 1, NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
                 if (new_array == NULL) {
                     msg = createException(MAL, "pyapi.eval", "Could not convert the returned NPY_OBJECT array to the desired array of type %s.\n", BatType_Format(bat_type));
@@ -1417,7 +1417,7 @@ returnvalues:
         int bat_type = TYPE_any;
         sql_subtype *sql_subtype = argnode ? &((sql_arg*)argnode->data)->type : NULL;
         if (!varres) {
-            bat_type = getColumnType(getArgType(mb,pci,i));
+            bat_type = getBatType(getArgType(mb,pci,i));
 
             if (bat_type == TYPE_any || bat_type == TYPE_void) {
                 bat_type = PyType_ToBat(ret->result_type);
@@ -2050,7 +2050,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
     BATiter bi = bat_iterator(b);
     bool *mask_data = (bool*)PyArray_DATA(nullmask);
 
-    switch(ATOMstorage(getColumnType(b->ttype)))
+    switch(ATOMstorage(getBatType(b->ttype)))
     {
         case TYPE_bit: CreateNullMask(bit); break;
         case TYPE_bte: CreateNullMask(bte); break;
