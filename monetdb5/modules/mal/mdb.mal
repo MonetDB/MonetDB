@@ -115,19 +115,19 @@ pattern getStackDepth():int
 address MDBStkDepth
 comment "Return the depth of the calling stack.";
 
-pattern getStackFrame(i:int)(:bat[:oid,:str] ,:bat[:oid,:str])
+pattern getStackFrame(i:int)(:bat[:str] ,:bat[:str])
 address MDBgetStackFrameN;
-pattern getStackFrame()(:bat[:oid,:str] ,:bat[:oid,:str])
+pattern getStackFrame()(:bat[:str] ,:bat[:str])
 address MDBgetStackFrame
 comment "Collect variable binding of current (n-th) stack frame.";
-pattern getStackTrace()(:bat[:oid,:int], :bat[:oid,:str])
+pattern getStackTrace()(:bat[:int], :bat[:str])
 address MDBStkTrace;
 
 pattern dump()
 address MDBdump
 comment "Dump instruction, stacktrace, and stack";
 
-pattern getDefinition():bat[:oid,:str] 
+pattern getDefinition():bat[:str] 
 address MDBgetDefinition
 comment "Returns a string representation of the current function 
 	with typing information attached";

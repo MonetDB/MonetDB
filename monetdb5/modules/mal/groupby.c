@@ -19,14 +19,14 @@
  * snippet in MAL would become something like:
  *
  * @verbatim
- * _1:bat[:oid,:int]  := sql.bind("sys","r","a",0);
- * _2:bat[:oid,:str]  := sql.bind("sys","r","b",0);
- * _3:bat[:oid,:date]  := sql.bind("sys","r","c",0);
+ * _1:bat[:int]  := sql.bind("sys","r","a",0);
+ * _2:bat[:str]  := sql.bind("sys","r","b",0);
+ * _3:bat[:date]  := sql.bind("sys","r","c",0);
  * ...
  * _9 := algebra.select(_1,0,100);
  * ..
- * (grp_4:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.count(_9,_2);
- * (grp_5:bat[:oid,:lng], gid:bat[:oid,:oid]) := groupby.max(_9,_2,_3);
+ * (grp_4:bat[:lng], gid:bat[:oid]) := groupby.count(_9,_2);
+ * (grp_5:bat[:lng], gid:bat[:oid]) := groupby.max(_9,_2,_3);
  * @end verbatim
  *
  * The id() function merely becomes the old-fashioned oid-based group identification list.

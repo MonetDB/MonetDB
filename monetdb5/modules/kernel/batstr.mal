@@ -6,146 +6,146 @@
 
 module batstr;
 
-command batstr.length( s:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.length( s:bat[:str] ) :bat[:int]
 address STRbatLength
 comment "Return the length of a string.";
 
-command batstr.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.nbytes( s:bat[:str] ) :bat[:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-command batstr.toLower( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.toLower( s:bat[:str] ) :bat[:str]
 address STRbatLower
 comment "Convert a string to lower case.";
-command batstr.toUpper( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.toUpper( s:bat[:str] ) :bat[:str]
 address STRbatUpper
 comment "Convert a string to upper case.";
 
-command batstr.trim( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.trim( s:bat[:str] ) :bat[:str]
 address STRbatStrip
 comment "Strip whitespaces around a string.";
-command batstr.ltrim( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.ltrim( s:bat[:str] ) :bat[:str]
 address STRbatLtrim
 comment "Strip whitespaces from start of a string.";
-command batstr.rtrim( s:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.rtrim( s:bat[:str] ) :bat[:str]
 address STRbatRtrim
 comment "Strip whitespaces from end of a string.";
 
-command batstr.trim( s:bat[:oid,:str], s2:str ) :bat[:oid,:str]
+command batstr.trim( s:bat[:str], s2:str ) :bat[:str]
 address STRbatStrip2_const
 comment "Strip characters in the second string around the first strings.";
-command batstr.ltrim( s:bat[:oid,:str], s2:str ) :bat[:oid,:str]
+command batstr.ltrim( s:bat[:str], s2:str ) :bat[:str]
 address STRbatLtrim2_const
 comment "Strip characters in the second string from start of the first strings.";
-command batstr.rtrim( s:bat[:oid,:str], s2:str ) :bat[:oid,:str]
+command batstr.rtrim( s:bat[:str], s2:str ) :bat[:str]
 address STRbatRtrim2_const
 comment "Strip characters in the second string from end of the first strings.";
 
-command batstr.trim( s:bat[:oid,:str], s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.trim( s:bat[:str], s2:bat[:str] ) :bat[:str]
 address STRbatStrip2_bat
 comment "Strip characters in the second strings around the first strings.";
-command batstr.ltrim( s:bat[:oid,:str], s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.ltrim( s:bat[:str], s2:bat[:str] ) :bat[:str]
 address STRbatLtrim2_bat
 comment "Strip characters in the second strings from start of the first strings.";
-command batstr.rtrim( s:bat[:oid,:str], s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.rtrim( s:bat[:str], s2:bat[:str] ) :bat[:str]
 address STRbatRtrim2_bat
 comment "Strip characters in the second strings from end of the first strings.";
 
-command batstr.lpad( s:bat[:oid,:str], n:int ) :bat[:oid,:str]
+command batstr.lpad( s:bat[:str], n:int ) :bat[:str]
 address STRbatLpad_const
 comment "Prepend whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.";
-command batstr.rpad( s:bat[:oid,:str], n:int ) :bat[:oid,:str]
+command batstr.rpad( s:bat[:str], n:int ) :bat[:str]
 address STRbatRpad_const
 comment "Append whitespaces to the strings to reach the given length. Truncate the strings on the right if their lengths is larger than the given length.";
 
-command batstr.lpad( s:bat[:oid,:str], n:bat[:oid,:int] ) :bat[:oid,:str]
+command batstr.lpad( s:bat[:str], n:bat[:int] ) :bat[:str]
 address STRbatLpad_bat
 comment "Prepend whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.";
-command batstr.rpad( s:bat[:oid,:str], n:bat[:oid,:int] ) :bat[:oid,:str]
+command batstr.rpad( s:bat[:str], n:bat[:int] ) :bat[:str]
 address STRbatRpad_bat
 comment "Append whitespaces to the strings to reach the given lengths. Truncate the strings on the right if their lengths is larger than the given lengths.";
 
-command batstr.lpad( s:bat[:oid,:str], n:int, s2:str ) :bat[:oid,:str]
+command batstr.lpad( s:bat[:str], n:int, s2:str ) :bat[:str]
 address STRbatLpad2_const_const
 comment "Prepend the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.";
-command batstr.rpad( s:bat[:oid,:str], n:int, s2:str ) :bat[:oid,:str]
+command batstr.rpad( s:bat[:str], n:int, s2:str ) :bat[:str]
 address STRbatRpad2_const_const
 comment "Append the second string to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.";
 
-command batstr.lpad( s:bat[:oid,:str], n:bat[:oid,:int], s2:str ) :bat[:oid,:str]
+command batstr.lpad( s:bat[:str], n:bat[:int], s2:str ) :bat[:str]
 address STRbatLpad2_bat_const
 comment "Prepend the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.";
-command batstr.rpad( s:bat[:oid,:str], n:bat[:oid,:int], s2:str ) :bat[:oid,:str]
+command batstr.rpad( s:bat[:str], n:bat[:int], s2:str ) :bat[:str]
 address STRbatRpad2_bat_const
 comment "Append the second string to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.";
 
-command batstr.lpad( s:bat[:oid,:str], n:int, s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.lpad( s:bat[:str], n:int, s2:bat[:str] ) :bat[:str]
 address STRbatLpad2_const_bat
 comment "Prepend the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.";
-command batstr.rpad( s:bat[:oid,:str], n:int, s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.rpad( s:bat[:str], n:int, s2:bat[:str] ) :bat[:str]
 address STRbatRpad2_const_bat
 comment "Append the second strings to the first strings to reach the given length. Truncate the first strings on the right if their lengths is larger than the given length.";
 
-command batstr.lpad( s:bat[:oid,:str], n:bat[:oid,:int], s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.lpad( s:bat[:str], n:bat[:int], s2:bat[:str] ) :bat[:str]
 address STRbatLpad2_bat_bat
 comment "Prepend the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.";
-command batstr.rpad( s:bat[:oid,:str], n:bat[:oid,:int], s2:bat[:oid,:str] ) :bat[:oid,:str]
+command batstr.rpad( s:bat[:str], n:bat[:int], s2:bat[:str] ) :bat[:str]
 address STRbatRpad2_bat_bat
 comment "Append the second strings to the first strings to reach the given lengths. Truncate the first strings on the right if their lengths is larger than the given lengths.";
 
-command batstr.startsWith(s:bat[:oid,:str],prefix:bat[:oid,:str]):bat[:oid,:bit]
+command batstr.startsWith(s:bat[:str],prefix:bat[:str]):bat[:bit]
 address STRbatPrefix
 comment "Prefix check.";
-command batstr.startsWith(s:bat[:oid,:str],prefix:str):bat[:oid,:bit]
+command batstr.startsWith(s:bat[:str],prefix:str):bat[:bit]
 address STRbatPrefixcst
 comment "Prefix check.";
 
-command batstr.endsWith( s:bat[:oid,:str], suffix:bat[:oid,:str] ) :bat[:oid,:bit]
+command batstr.endsWith( s:bat[:str], suffix:bat[:str] ) :bat[:bit]
 address STRbatSuffix
 comment "Suffix check.";
-command batstr.endsWith( s:bat[:oid,:str], suffix:str ) :bat[:oid,:bit]
+command batstr.endsWith( s:bat[:str], suffix:str ) :bat[:bit]
 address STRbatSuffixcst
 comment "Suffix check.";
 
-command batstr.search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.search( s:bat[:str], c:bat[:str] ) :bat[:int]
 address STRbatstrSearch
 comment "Search for a substring. Returns position, -1 if not found.";
-command batstr.search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
+command batstr.search( s:bat[:str], c:str ) :bat[:int]
 address STRbatstrSearchcst
 comment "Search for a substring. Returns position, -1 if not found.";
 
-command batstr.r_search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
+command batstr.r_search( s:bat[:str], c:bat[:str] ) :bat[:int]
 address STRbatRstrSearch
 comment "Reverse search for a substring. Returns position, -1 if not found.";
-command batstr.r_search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
+command batstr.r_search( s:bat[:str], c:str ) :bat[:int]
 address STRbatRstrSearchcst
 comment "Reverse search for a substring. Returns position, -1 if not found.";
 
-command batstr.string(b:bat[:oid,:str],offset:bat[:oid,:int]) :bat[:oid,:str]
+command batstr.string(b:bat[:str],offset:bat[:int]) :bat[:str]
 address STRbatTail
 comment "Return the tail s[offset..n] of a string s[0..n].";
-command batstr.string(b:bat[:oid,:str],offset:int) :bat[:oid,:str]
+command batstr.string(b:bat[:str],offset:int) :bat[:str]
 address STRbatTailcst
 comment "Return the tail s[offset..n] of a string s[0..n].";
 
-command batstr.substring( s:bat[:oid,:str], start:bat[:oid,:int], 
-	index:bat[:oid,:int]) :bat[:oid,:str]
+command batstr.substring( s:bat[:str], start:bat[:int], 
+	index:bat[:int]) :bat[:str]
 address STRbatsubstring
 comment "Substring extraction using [start,start+length]";
 
-command batstr.substring( s:bat[:oid,:str], start:int, index:int)
-	:bat[:oid,:str]
+command batstr.substring( s:bat[:str], start:int, index:int)
+	:bat[:str]
 address STRbatsubstringcst
 comment "Substring extraction using [start,start+length]";
 
-command batstr.unicodeAt(s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:int]
+command batstr.unicodeAt(s:bat[:str], index:bat[:int]) :bat[:int]
 address STRbatWChrAt
 comment "get a unicode character (as an int) from a string position.";
-command batstr.unicodeAt(s:bat[:oid,:str], index:int) :bat[:oid,:int]
+command batstr.unicodeAt(s:bat[:str], index:int) :bat[:int]
 address STRbatWChrAtcst
 comment "get a unicode character (as an int) from a string position.";
 
-command batstr.substitute(s:bat[:oid,:str],src:str,dst:str,rep:bit):bat[:oid,:str]
+command batstr.substitute(s:bat[:str],src:str,dst:str,rep:bit):bat[:str]
 address STRbatSubstitutecst
 comment "Substitute first occurrence of 'src' by
 	'dst'.  Iff repeated = true this is

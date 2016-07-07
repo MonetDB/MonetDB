@@ -30,8 +30,8 @@ Ready.
 # 16:09:46 >  
 
 inline function user.help():void;       	#[0] (0)  0 
-    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
-    c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnewColumn 3 <- 2 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
+    c:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 3 <- 2 
     bat.append(b:bat[:int],1:int);      	#[3] (0) BKCappend_val_wrap 4 <- 1 5 
 barrier (y:oid,z:int) := iterator.new(b:bat[:int]);	#[4] (0) ITRbunIterator 6 7 <- 1 
     io.print(y:oid);                    	#[5] (0) IOprint_val 8 <- 6 
@@ -46,8 +46,8 @@ exit MALException:str;                  	#[13] (0)  9
 exit (x:oid,z:int);                     	#[14] (0)  10 7 
 end user.help;                          	#[15] (0)  
 function user.qry():void;               	#[0] (0)  0 
-    X_3:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnewColumn 3 <- 4 
-    X_5:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnewColumn 5 <- 4 
+    X_3:bat[:int] := bat.new(:int);     	#[1] (0) CMDBATnew 3 <- 4 
+    X_5:bat[:int] := bat.new(:int);     	#[2] (0) CMDBATnew 5 <- 4 
     bat.append(X_3:bat[:int],1:int);    	#[3] (0) BKCappend_val_wrap 6 <- 3 7 
 barrier (X_8:oid,X_9:int) := iterator.new(X_3:bat[:int]);	#[4] (0) ITRbunIterator 8 9 <- 3 
     io.print(X_8:oid);                  	#[5] (0) IOprint_val 10 <- 8 

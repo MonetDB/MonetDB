@@ -1,17 +1,17 @@
-gv:= bat.new(:oid,:int);
+gv:= bat.new(:int);
 bat.append(gv,1);
 bat.append(gv,1);
 bat.append(gv,2);
 bat.append(gv,2);
 
-dv:= bat.new(:oid,:int);
+dv:= bat.new(:int);
 bat.append(dv,42);
 bat.append(dv,84);
 bat.append(dv,42);
 bat.append(dv,20);
 
 # tuple identifiers
-ti:= bat.new(:oid,:oid);
+ti:= bat.new(:oid);
 bat.append(ti,0:oid);
 bat.append(ti,1:oid);
 bat.append(ti,2:oid);
@@ -23,6 +23,6 @@ X_12 := algebra.projection(r1_9,X_8);
 X_15 := algebra.projection(ti,dv); 
 
 io.print(X_9);
-X_16:bat[:oid,:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",X_8,X_15);
+X_16:bat[:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",X_8,X_15);
 io.print(X_16);
 

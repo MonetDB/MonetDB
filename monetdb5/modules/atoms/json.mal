@@ -100,23 +100,23 @@ command length(val:json):int
 address JSONlength
 comment "Returns the number of elements in the outermost JSON object.";
 
-pattern unfold(val:json)(k:bat[:oid,:str],v:bat[:oid,:json])
+pattern unfold(val:json)(k:bat[:str],v:bat[:json])
 address JSONunfold
 comment "Expands the outermost JSON object into key-value pairs.";
 
-pattern unfold(val:json)(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:json])
+pattern unfold(val:json)(o:bat[:oid],k:bat[:str],v:bat[:json])
 address JSONunfold
 comment "Expands the outermost JSON object into key-value pairs.";
 
-pattern fold(o:bat[:oid,:oid],k:bat[:oid,:str],v:bat[:oid,:any]):json
+pattern fold(o:bat[:oid],k:bat[:str],v:bat[:any]):json
 address JSONfold
 comment "Combine the key-value pairs into a single json object list.";
 
-pattern fold(k:bat[:oid,:str],v:bat[:oid,:any]):json
+pattern fold(k:bat[:str],v:bat[:any]):json
 address JSONfold
 comment "Combine the key-value pairs into a single json object list.";
 
-pattern fold(v:bat[:oid,:any]):json
+pattern fold(v:bat[:any]):json
 address JSONfold
 comment "Combine the value list into a single json array object.";
 
@@ -128,19 +128,19 @@ command valuearray(val:json):json
 address JSONvalueArray
 comment "Expands the outermost JSON object values into a JSON value array.";
 
-command keys(val:json):bat[:oid,:str]
+command keys(val:json):bat[:str]
 address JSONkeyTable
 comment "Expands the outermost JSON object names.";
 
-command values(val:json):bat[:oid,:json]
+command values(val:json):bat[:json]
 address JSONvalueTable
 comment "Expands the outermost JSON values.";
 
-command output(b:bat[:oid,:any_1]):str
+command output(b:bat[:any_1]):str
 address JSONtextString
 comment "Pack the values into a single json structure";
 
-command suboutput(b:bat[:oid,:any_1], gid:bat[:oid,:oid], ext:bat[:oid,:lng], flg:bit):bat[:oid,:str]
+command suboutput(b:bat[:any_1], gid:bat[:oid], ext:bat[:lng], flg:bit):bat[:str]
 address JSONtextGrouped
 comment "Pack the values into a json structure";
 
@@ -153,27 +153,27 @@ address JSONrenderobject;
 pattern renderarray(val:any...):json
 address JSONrenderarray;
 
-command aggr.jsonaggr(val:bat[:oid,:str]):str
+command aggr.jsonaggr(val:bat[:str]):str
 address JSONgroupStr
 comment "Aggregate the string values to array.";
 
-command aggr.jsonaggr(val:bat[:oid,:dbl]):str
+command aggr.jsonaggr(val:bat[:dbl]):str
 address JSONgroupStr
 comment "Aggregate the double values to array.";
 
-command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1], skip_nils:bit) :bat[:str]
 address JSONsubjson
 comment "Grouped aggregation of values.";
 
-command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1], skip_nils:bit) :bat[:str]
 address JSONsubjson
 comment "Grouped aggregation of values.";
 
-command aggr.subjsonaggr(val:bat[:oid,:str],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 
-command aggr.subjsonaggr(val:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:str]
+command aggr.subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 
@@ -205,27 +205,27 @@ comment "Return V1 >= V2";
 
 module batcalc;
 
-pattern ==(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+pattern ==(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
 
-pattern !=(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+pattern !=(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
 
-pattern <(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+pattern <(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatLT
 comment "Return B1 < B2";
 
-pattern <=(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+pattern <=(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatLE
 comment "Return B1 <= B2";
 
-pattern >(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+pattern >(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatGT
 comment "Return B1 > B2";
 
-pattern >=(b1:bat[:oid,:json],b2:bat[:oid,:json]) :bat[:oid,:bit]
+pattern >=(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2";
 

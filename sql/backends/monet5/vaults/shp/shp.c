@@ -516,7 +516,6 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
-		//BATderiveProps(colsBAT[i], TRUE);
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
 		//BBPdecref(colsBAT[i]->batCacheid, TRUE);
@@ -709,7 +708,6 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
-		//BATderiveProps(colsBAT[i], TRUE);
 		store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat);
 		BBPunfix(colsBAT[i]->batCacheid);
 		BBPdecref(colsBAT[i]->batCacheid, TRUE);

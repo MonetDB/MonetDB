@@ -15,7 +15,7 @@ function qry();
 	bat.append(b,1);
 	zz:= user.bar(1,2); # base line test for inlining
 
-	z:bat[:oid,:int]:= mal.multiplex("user","bar",b,b);
+	z:bat[:int]:= mal.multiplex("user","bar",b,b);
 end qry;
 
 	optimizer.inline("user","qry");

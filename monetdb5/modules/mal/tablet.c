@@ -227,7 +227,10 @@ TABLETcollect(BAT **bats, Tablet *as)
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
-		BATderiveProps(fmt[i].c, 0);
+		fmt[i].c->tsorted = fmt[i].c->trevsorted = 0;
+		fmt[i].c->tkey = 0;
+		fmt[i].c->tnil = fmt[i].c->tnonil = 0;
+		BATsettrivprop(fmt[i].c);
 
 		if (cnt != BATcount(fmt[i].c))
 			throw(SQL, "copy", "Count " BUNFMT " differs from " BUNFMT "\n", BATcount(fmt[i].c), cnt);
@@ -251,10 +254,13 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		if (fmt[i].skip)
 			continue;
 		b = fmt[i].c;
+		b->tsorted = b->trevsorted = 0;
+		b->tkey = 0;
+		b->tnil = b->tnonil = 0;
+		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
-		BATderiveProps(bv, 0);
 
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
 		b->tnonil &= bv->tnonil;

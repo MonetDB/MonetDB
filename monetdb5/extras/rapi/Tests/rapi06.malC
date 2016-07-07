@@ -1,10 +1,10 @@
-ts:= bat.new(:oid,:int);
+ts:= bat.new(:int);
 bat.append(ts,1387360138);
 bat.append(ts,451665720);
 bat.append(ts,514382400);
 bat.append(ts,1000209600);
 bat.append(ts,1326272400);
 
-r:bat[:oid,:int] := rapi.eval(nil:ptr,"library(moonsun);options(latitude=arg2,longitude=arg3);angles <- sapply(arg1,FUN=function(x){ts <- as.POSIXlt(x,origin = \"1970-01-01\",tz=\"UTC\");moon(jd(epoch=ts)+ts$hour/24)$angle});return(arg1[angles > 0])",ts,52.3,4.8);
+r:bat[:int] := rapi.eval(nil:ptr,"library(moonsun);options(latitude=arg2,longitude=arg3);angles <- sapply(arg1,FUN=function(x){ts <- as.POSIXlt(x,origin = \"1970-01-01\",tz=\"UTC\");moon(jd(epoch=ts)+ts$hour/24)$angle});return(arg1[angles > 0])",ts,52.3,4.8);
 
 io.print(r);

@@ -1901,15 +1901,63 @@ BATmode(BAT *b, int mode)
 #define assert(test)	((void) ((test) || fprintf(stderr, "!WARNING: %s:%d: assertion `%s' failed\n", __FILE__, __LINE__, #test)))
 #endif
 
-static void
-BATassertTailProps(BAT *b)
+/* Assert that properties are set correctly.
+ *
+ * A BAT can have a bunch of properties set.  Mostly, the property
+ * bits are set if we *know* the property holds, and not set if we
+ * don't know whether the property holds (or if we know it doesn't
+ * hold).  All properties are per column.
+ *
+ * The properties currently maintained are:
+ *
+ * dense	Only valid for TYPE_oid columns: each value in the
+ *		column is exactly one more than the previous value.
+ *		This implies sorted, key, nonil.
+ * nil		There is at least one NIL value in the column.
+ * nonil	There are no NIL values in the column.
+ * key		All values in the column are distinct.
+ * sorted	The column is sorted (ascending).  If also revsorted,
+ *		then all values are equal.
+ * revsorted	The column is reversely sorted (descending).  If
+ *		also sorted, then all values are equal.
+ *
+ * The "key" property consists of two bits.  The lower bit, when set,
+ * indicates that all values in the column are distinct.  The upper
+ * bit, when set, indicates that all values must be distinct
+ * (BOUND2BTRUE).
+ *
+ * Note that the functions BATtseqbase and BATkey also set more
+ * properties than you might suspect.  When setting properties on a
+ * newly created and filled BAT, you may want to first make sure the
+ * batCount is set correctly (e.g. by calling BATsetcount), then use
+ * BAThseqbase and BATkey, and finally set the other properties.
+ */
+
+void
+BATassertProps(BAT *b)
 {
+	int bbpstatus;
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
 	int seennil = 0;
+
+	/* general BAT sanity */
+	assert(b != NULL);
+	assert(b->batCacheid > 0);
+	assert(b->batCount >= b->batInserted);
+
+	/* headless */
+	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
+	assert(b->hseqbase + BATcount(b) < oid_nil);
+
+	bbpstatus = BBP_status(b->batCacheid);
+	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
+	assert(((bbpstatus & BBPDELETED) != 0) +
+	       ((bbpstatus & BBPEXISTING) != 0) +
+	       ((bbpstatus & BBPNEW) != 0) <= 1);
 
 	assert(b != NULL);
 	assert(b->ttype >= TYPE_void);
@@ -2118,291 +2166,4 @@ BATassertTailProps(BAT *b)
 	  abort_check:
 		assert(!b->tnil || seennil);
 	}
-}
-
-/* Assert that properties are set correctly.
- *
- * A BAT can have a bunch of properties set.  Mostly, the property
- * bits are set if we *know* the property holds, and not set if we
- * don't know whether the property holds (or if we know it doesn't
- * hold).  All properties are per column.
- *
- * The properties currently maintained are:
- *
- * dense	Only valid for TYPE_oid columns: each value in the
- *		column is exactly one more than the previous value.
- *		This implies sorted, key, nonil.
- * nil		There is at least one NIL value in the column.
- * nonil	There are no NIL values in the column.
- * key		All values in the column are distinct.
- * sorted	The column is sorted (ascending).  If also revsorted,
- *		then all values are equal.
- * revsorted	The column is reversely sorted (descending).  If
- *		also sorted, then all values are equal.
- *
- * The "key" property consists of two bits.  The lower bit, when set,
- * indicates that all values in the column are distinct.  The upper
- * bit, when set, indicates that all values must be distinct
- * (BOUND2BTRUE).
- *
- * Note that the functions BATtseqbase and BATkey also set more
- * properties than you might suspect.  When setting properties on a
- * newly created and filled BAT, you may want to first make sure the
- * batCount is set correctly (e.g. by calling BATsetcount), then use
- * BAThseqbase and BATkey, and finally set the other properties.
- */
-
-void
-BATassertProps(BAT *b)
-{
-	int bbpstatus;
-
-	/* general BAT sanity */
-	assert(b != NULL);
-	assert(b->batCacheid > 0);
-	assert(b->batCount >= b->batInserted);
-
-	/* headless */
-	assert(b->hseqbase != oid_nil);
-
-	bbpstatus = BBP_status(b->batCacheid);
-	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
-	assert(((bbpstatus & BBPDELETED) != 0) +
-	       ((bbpstatus & BBPEXISTING) != 0) +
-	       ((bbpstatus & BBPNEW) != 0) <= 1);
-
-	BATassertTailProps(b);
-	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
-	assert(b->hseqbase + BATcount(b) < oid_nil);
-}
-
-/* derive properties that can be derived with a simple scan: sorted,
- * revsorted, dense; if expensive is set, we also check the key
- * property
- * note that we don't check nil/nonil: we usually know pretty quickly
- * that a column is not sorted, but we usually need a full scan for
- * nonil.
- */
-void
-BATderiveTailProps(BAT *b, int expensive)
-{
-	BATiter bi = bat_iterator(b);
-	BUN p, q;
-	int (*cmpf)(const void *, const void *);
-	int cmp;
-	const void *prev = NULL, *valp, *nilp;
-	int sorted, revsorted, key, dense;
-	const char *nme = NULL;
-	char *ext = NULL;
-	size_t nmelen;
-	Heap *hp = NULL;
-	Hash *hs = NULL;
-	BUN hb, prb;
-	oid sqbs = oid_nil;
-
-	if (b == NULL) {
-		assert(0);
-		return;
-	}
-	assert((b->tkey & BOUND2BTRUE) == 0);
-	BATsettrivprop(b);
-	cmpf = ATOMcompare(b->ttype);
-	nilp = ATOMnilptr(b->ttype);
-	b->batDirtydesc = 1;	/* we will be changing things */
-	if (b->ttype == TYPE_void || b->batCount <= 1) {
-		/* BATsettrivprop has already taken care of all
-		 * properties except for (no)nil if count == 1 */
-		if (b->batCount == 1) {
-			valp = BUNtail(bi, 0);
-			if (cmpf(valp, nilp) == 0) {
-				b->tnil = 1;
-				b->tnonil = 0;
-			} else {
-				b->tnil = 0;
-				b->tnonil = 1;
-			}
-		}
-		return;
-	}
-	/* tentatively set until proven otherwise */
-	key = 1;
-	sorted = revsorted = (ATOMlinear(b->ttype) != 0);
-	dense = (b->ttype == TYPE_oid);
-	/* if no* props already set correctly, we can maybe speed
-	 * things up, if not set correctly, reset them now and set
-	 * them later */
-	if (!b->tkey &&
-	    b->tnokey[0] < b->batCount &&
-	    b->tnokey[1] < b->batCount &&
-	    b->tnokey[0] != b->tnokey[1] &&
-	    cmpf(BUNtail(bi, b->tnokey[0]),
-		 BUNtail(bi, b->tnokey[1])) == 0) {
-		/* we found proof that the column doesn't deserve the
-		 * key property, no need to check the hard way */
-		expensive = 0;
-		key = 0;
-	} else {
-		b->tnokey[0] = 0;
-		b->tnokey[1] = 0;
-	}
-	if (!b->tsorted &&
-	    b->tnosorted > 0 &&
-	    b->tnosorted < b->batCount &&
-	    cmpf(BUNtail(bi, b->tnosorted - 1),
-		 BUNtail(bi, b->tnosorted)) > 0) {
-		sorted = 0;
-		dense = 0;
-	} else {
-		b->tnosorted = 0;
-	}
-	if (!b->trevsorted &&
-	    b->tnorevsorted > 0 &&
-	    b->tnorevsorted < b->batCount &&
-	    cmpf(BUNtail(bi, b->tnorevsorted - 1),
-		 BUNtail(bi, b->tnorevsorted)) < 0) {
-		revsorted = 0;
-	} else {
-		b->tnorevsorted = 0;
-	}
-	if (dense &&
-	    !b->tdense &&
-	    b->tnodense < b->batCount &&
-	    (b->tnodense == 0 ?
-	     * (oid *) BUNtail(bi, b->tnodense) == oid_nil :
-	     * (oid *) BUNtail(bi, b->tnodense - 1) + 1 != * (oid *) BUNtail(bi, b->tnodense))) {
-		dense = 0;
-	} else {
-		b->tnodense = 0;
-	}
-	if (expensive) {
-		BUN mask;
-
-		nme = BBP_physical(b->batCacheid);
-		nmelen = strlen(nme);
-		if (ATOMsize(b->ttype) == 1)
-			mask = 1 << 8;
-		else if (ATOMsize(b->ttype) == 2)
-			mask = 1 << 16;
-		else
-			mask = HASHmask(b->batCount);
-		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    snprintf(hp->filename, nmelen + 30,
-			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
-			if (hp) {
-				if (hp->filename)
-					GDKfree(hp->filename);
-				GDKfree(hp);
-			}
-			if (ext)
-				GDKfree(ext);
-			hp = NULL;
-			ext = NULL;
-			fprintf(stderr,
-				"#BATderiveProps: cannot allocate "
-				"hash table: not doing full check\n");
-		}
-	}
-	for (q = BUNlast(b), p = 0;
-	     p < q && (sorted || revsorted || (key && hs));
-	     p++) {
-		valp = BUNtail(bi, p);
-		if (prev) {
-			cmp = cmpf(prev, valp);
-			if (cmp < 0) {
-				revsorted = 0;
-				if (b->tnorevsorted == 0)
-					b->tnorevsorted = p;
-				if (dense &&
-				    * (oid *) prev + 1 != * (oid *) valp) {
-					dense = 0;
-					if (b->tnodense == 0)
-						b->tnodense = p;
-				}
-			} else {
-				if (cmp > 0) {
-					sorted = 0;
-					if (b->tnosorted == 0)
-						b->tnosorted = p;
-				} else {
-					key = 0;
-					if (b->tnokey[0] == 0 &&
-					    b->tnokey[1] == 0) {
-						b->tnokey[0] = p - 1;
-						b->tnokey[1] = p;
-					}
-				}
-				if (dense) {
-					dense = 0;
-					if (b->tnodense == 0)
-						b->tnodense = p;
-				}
-			}
-		} else if (dense && (sqbs = * (oid *) valp) == oid_nil) {
-			dense = 0;
-			b->tnodense = p;
-		}
-		prev = valp;
-		if (key && hs) {
-			prb = HASHprobe(hs, valp);
-			for (hb = HASHget(hs,prb);
-			     hb != HASHnil(hs);
-			     hb = HASHgetlink(hs,hb)) {
-				if (cmpf(valp, BUNtail(bi, hb)) == 0) {
-					key = 0;
-					b->tnokey[0] = hb;
-					b->tnokey[1] = p;
-					break;
-				}
-			}
-			HASHputlink(hs,p, HASHget(hs,prb));
-			HASHput(hs,prb,p);
-		}
-	}
-	if (hs) {
-		HEAPfree(hp, 1);
-		GDKfree(hp);
-		GDKfree(hs);
-		GDKfree(ext);
-	}
-	b->tsorted = sorted;
-	b->trevsorted = revsorted;
-	b->tdense = dense;
-	if (dense)
-		b->tseqbase = sqbs;
-	if (hs) {
-		b->tkey = key;
-	} else {
-		/* we can only say something about keyness if the
-		 * column is sorted */
-		b->tkey = key & (sorted | revsorted);
-	}
-	if (sorted || revsorted) {
-		/* if sorted, we only need to check the extremes to
-		 * know whether there are any nils */
-		if (cmpf(BUNtail(bi, 0), nilp) != 0 &&
-		    cmpf(BUNtail(bi, BUNlast(b) - 1), nilp) != 0) {
-			b->tnonil = 1;
-			b->tnil = 0;
-		} else {
-			b->tnonil = 0;
-			b->tnil = 1;
-		}
-	}
-#ifndef NDEBUG
-	BATassertTailProps(b);
-#endif
-}
-
-void
-BATderiveProps(BAT *b, int expensive)
-{
-	if (b == NULL) {
-		assert(0);
-		return;
-	}
-	BATderiveTailProps(b, expensive);
 }

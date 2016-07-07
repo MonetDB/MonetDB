@@ -30,7 +30,7 @@ Ready.
 # 22:45:46 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:str],"true":str); 	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     bat.append(b:bat[:str],"TRUE":str); 	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
     bat.append(b:bat[:str],"FALSE":str);	#[4] (0) BKCappend_val_wrap 7 <- 1 8 

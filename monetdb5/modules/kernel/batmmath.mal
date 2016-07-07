@@ -6,117 +6,117 @@
 
 module batmmath;
 	
-	command asin(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command asin(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_asin;
-	command asin(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command asin(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_asin;
 	
-	command acos(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command acos(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_acos;
-	command acos(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command acos(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_acos;
 	
-	command atan(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command atan(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_atan;
-	command atan(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command atan(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_atan;
 	
-	command cos(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command cos(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_cos;
-	command cos(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command cos(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_cos;
 	
-	command sin(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command sin(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_sin;
-	command sin(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command sin(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_sin;
 	
-	command tan(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command tan(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_tan;
-	command tan(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command tan(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_tan;
 	
-	command cosh(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command cosh(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_cosh;
-	command cosh(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command cosh(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_cosh;
 	
-	command sinh(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command sinh(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_sinh;
-	command sinh(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command sinh(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_sinh;
 	
-	command tanh(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command tanh(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_tanh;
-	command tanh(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command tanh(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_tanh;
 	
-	command radians(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command radians(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_radians;
-	command radians(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command radians(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_radians;
 	
-	command degrees(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command degrees(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_degrees;
-	command degrees(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command degrees(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_degrees;
 	
-	command exp(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command exp(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_exp;
-	command exp(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command exp(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_exp;
 	
-	command log(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command log(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_log;
-	command log(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command log(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_log;
 	
-	command log10(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command log10(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_log10;
-	command log10(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command log10(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_log10;
 	
-	command sqrt(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command sqrt(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_sqrt;
-	command sqrt(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command sqrt(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_sqrt;
 	
-	command ceil(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command ceil(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_ceil;
-	command ceil(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command ceil(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_ceil;
 	
-	command fabs(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command fabs(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_fabs;
-	command fabs(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command fabs(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_fabs;
 	
-	command floor(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
+	command floor(x:bat[:dbl])  :bat[:dbl] 
 	address CMDscience_bat_dbl_floor;
-	command floor(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	command floor(x:bat[:flt])  :bat[:flt] 
 	address CMDscience_bat_flt_floor;
 
-	pattern fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+	pattern fmod(x:bat[:dbl],y:dbl):bat[:dbl] 
 	address CMDbatMODsignal;
-	pattern fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+	pattern fmod(x:bat[:flt],y:flt):bat[:flt] 
 	address CMDbatMODsignal;
 	
-	command atan2(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+	command atan2(x:bat[:dbl],y:dbl):bat[:dbl] 
 	address CMDscience_bat_cst_atan2_dbl;
-	command atan2(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+	command atan2(x:bat[:flt],y:flt):bat[:flt] 
 	address CMDscience_bat_cst_atan2_flt;
 	
-	command atan2(x:dbl,y:bat[:oid,:dbl]):bat[:oid,:dbl] 
+	command atan2(x:dbl,y:bat[:dbl]):bat[:dbl] 
 	address CMDscience_cst_bat_atan2_dbl;
-	command atan2(x:flt,y:bat[:oid,:flt]):bat[:oid,:flt] 
+	command atan2(x:flt,y:bat[:flt]):bat[:flt] 
 	address CMDscience_cst_bat_atan2_flt;
 	
-	command pow(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+	command pow(x:bat[:dbl],y:dbl):bat[:dbl] 
 	address CMDscience_bat_cst_pow_dbl;
-	command pow(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+	command pow(x:bat[:flt],y:flt):bat[:flt] 
 	address CMDscience_bat_cst_pow_flt;
 	
-	command pow(x:dbl,y:bat[:oid,:dbl]):bat[:oid,:dbl] 
+	command pow(x:dbl,y:bat[:dbl]):bat[:dbl] 
 	address CMDscience_cst_bat_pow_dbl;
-	command pow(x:flt,y:bat[:oid,:flt]):bat[:oid,:flt] 
+	command pow(x:flt,y:bat[:flt]):bat[:flt] 
 	address CMDscience_cst_bat_pow_flt;

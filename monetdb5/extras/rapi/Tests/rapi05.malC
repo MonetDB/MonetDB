@@ -1,4 +1,4 @@
-g:= bat.new(:oid,:int);
+g:= bat.new(:int);
 bat.append(g,1);
 bat.append(g,2);
 bat.append(g,3);
@@ -10,7 +10,7 @@ bat.append(g,2);
 bat.append(g,3);
 bat.append(g,1);
 
-b:= bat.new(:oid,:dbl);
+b:= bat.new(:dbl);
 bat.append(b,1804289383:dbl);
 bat.append(b,846930886:dbl);
 bat.append(b,1681692777:dbl);
@@ -22,6 +22,6 @@ bat.append(b,1649760492:dbl);
 bat.append(b,596516649:dbl);
 bat.append(b,1189641421:dbl);
 
-(r:bat[:oid,:int], s:bat[:oid,:dbl]) := rapi.eval(nil:ptr,"aggregate(arg1,by=list(arg2),FUN=function(x){sort(x)[max(length(x)-arg3,0)]})",b,g,1);
+(r:bat[:int], s:bat[:dbl]) := rapi.eval(nil:ptr,"aggregate(arg1,by=list(arg2),FUN=function(x){sort(x)[max(length(x)-arg3,0)]})",b,g,1);
 
 io.print(r,s);

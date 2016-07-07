@@ -690,28 +690,30 @@ parseTypeId(Client cntxt, int defaultType)
 			return TYPE_bat;
 		}
 
+/*
 		if (currChar(cntxt) == ']') {
 			i = newBatType(TYPE_void, tt);
 			if (kt > 0)
 				setAnyColumnIndex(i, kt);
-			nextChar(cntxt); /* skip ] */
+			nextChar(cntxt); // skip ] 
 			skipSpace(cntxt);
 			return i;
 		}
-		/* Backward compatibility parsing of :bat[:oid,:type] */
+		 Backward compatibility parsing of :bat[:oid,:type] 
 		if( tt != TYPE_oid){
 			parseError(cntxt, "':oid' expected\n");
 			return i;
 		}
 		if (currChar(cntxt) != ',')
 				parseError(cntxt, "',' expected\n");
-		nextChar(cntxt); /* skip , */
+		nextChar(cntxt); // skip , 
 		skipSpace(cntxt);
 		if (currChar(cntxt) == ':') {
 			tt = simpleTypeId(cntxt);
 			kt = typeAlias(cntxt, tt);
 		} else
 			tt = TYPE_any;
+	*/
 
 		i = newBatType(TYPE_void, tt);
 		if (kt > 0)
@@ -719,7 +721,7 @@ parseTypeId(Client cntxt, int defaultType)
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
-		nextChar(cntxt); /* skip ']' */
+		nextChar(cntxt); // skip ']' 
 		skipSpace(cntxt);
 		return i;
 	}

@@ -15,8 +15,8 @@ end foo;
 function qry();
 	b:= bat.new(:int);
 	bat.append(b,1);
-	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
-	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
+	z:bat[:int]:= mal.multiplex("user","foo",b,b);
+	z:bat[:int]:= mal.multiplex("user","foo",b,2);
 end qry;
 
 	optimizer.inline("user","qry");

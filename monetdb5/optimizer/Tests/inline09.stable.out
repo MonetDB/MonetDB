@@ -30,7 +30,7 @@ Ready.
 # 06:41:01 >  
 
 function user.qry():void;               	#[0] (0)  0 
-    b:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:str] := bat.new(:str);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:str],"HELLO WORLD":str);	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     X_12:bat[:str] := b:bat[:str];      	#[3] (0)  12 <- 1 
     X_12:bat[:str] := batstr.substring(X_12:bat[:str],1:int,5:int);	#[4] (0) STRbatsubstringcst 12 <- 12 13 14 
