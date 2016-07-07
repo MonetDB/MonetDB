@@ -13,7 +13,7 @@
 #include "geom.h"
 #include <omp.h>
 
-#define GEOMBULK_DEBUG 0
+#define GEOMBULK_DEBUG 1
 #define OPENCL_DYNAMIC 1
 #define OPENCL_THREADS 8
 
@@ -164,7 +164,6 @@ str
 wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	mbr *inMBR = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 	str msg = MAL_SUCCEED;
@@ -201,6 +200,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 	//BATloop(inBAT, p, q) {	//iterate over all valid elements
     for (p = 0; p < q; p++) {
 		str err = NULL;
+	    mbr *inMBR = NULL;
 	    //double outDbl = 0.0;
 
 		inMBR = (mbr *) BUNtail(inBAT_iter, p);
@@ -383,7 +383,6 @@ static str
 WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
     wkb **outs = NULL;
@@ -420,6 +419,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
     for (p = 0; p < q; p++) {
 		str err = NULL;
 		wkb *outSingle;
+	    wkb *inWKB = NULL;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
@@ -490,7 +490,6 @@ static str
 WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) (wkb **, wkb **, const int *), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
     wkb **outs = NULL;
@@ -527,6 +526,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
     for (p = 0; p < q; p++) {
 		str err = NULL;
 		wkb *outSingle;
+	    wkb *inWKB = NULL;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
@@ -924,7 +924,6 @@ static str
 WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 	str msg = MAL_SUCCEED;
@@ -960,6 +959,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
     #pragma omp parallel for
     for (p = 0; p < q; p++) {
 		str err = NULL;
+	    wkb *inWKB = NULL;
 		//int outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
@@ -1012,7 +1012,6 @@ static str
 WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *, wkb **, int *), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 	str msg = MAL_SUCCEED;
@@ -1048,6 +1047,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
     #pragma omp parallel for
     for (p = 0; p < q; p++) {
 		str err = NULL;
+	    wkb *inWKB = NULL;
 		//int outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
@@ -1100,7 +1100,6 @@ str
 wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
-	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
 	str msg = MAL_SUCCEED;
@@ -1136,7 +1135,8 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
     #pragma omp parallel for
     for (p = 0; p < q; p++) {
 		str err = NULL;
-		double outSingle;
+	    wkb *inWKB = NULL;
+	//	double outSingle;
 
 		inWKB = (wkb *) BUNtail(inBAT_iter, p);
 		//if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
