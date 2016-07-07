@@ -505,14 +505,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			" UNION SELECT 'extract'" +
 			" UNION SELECT 'ifthenelse'" +
 			" UNION SELECT 'isnull'" +
-			" UNION SELECT 'nullif'" +
-			// for completeness include also some pseudo columns
-			" UNION SELECT 'current_role'" +
-			" UNION SELECT 'current_schema'" +
-			" UNION SELECT 'current_timezone'" +
-			" UNION SELECT 'current_user'" +
-			" UNION SELECT 'session_user'" +
-			" UNION SELECT 'user'";
+			" UNION SELECT 'nullif'";
 		return getConcatenatedStringFromQuery(FunctionsSelect + wherePart + " ORDER BY 1");
 	}
 
