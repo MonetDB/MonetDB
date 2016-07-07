@@ -50,7 +50,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
 
                 input.bat = b;
                 input.count = BATcount(b);
-                input.bat_type = getColumnType(b->ttype);
+                input.bat_type = getBatType(b->ttype);
                 input.scalar = false;
                 input.sql_subtype = &col.type;
 

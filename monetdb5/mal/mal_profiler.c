@@ -271,7 +271,7 @@ This information can be used to determine memory footprint and variable life tim
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( isaBatType(tpe) ){
 					BAT *d= BATdescriptor( bid = stk->stk[getArg(pci,j)].val.bval);
-					tname = getTypeName(getColumnType(tpe));
+					tname = getTypeName(getBatType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
 						//if( isVIEW(d))

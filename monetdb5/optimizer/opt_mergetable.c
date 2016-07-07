@@ -227,7 +227,7 @@ mat_set_prop(matlist_t *ml, MalBlkPtr mb, InstrPtr p)
 {
 	int k, tpe = getArgType(mb, p, 0);
 
-	tpe = getColumnType(tpe);
+	tpe = getBatType(tpe);
 	for(k=1; k < p->argc; k++) {
 		setPartnr(ml, -1, getArg(p,k), k);
 		if (tpe == TYPE_oid)
@@ -695,7 +695,7 @@ static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng;
-	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_oid,tp):tp, battp2 = 0;
+	int battp = (getModuleId(p)==aggrRef)?newBatType(tp):tp, battp2 = 0;
 	int isAvg = (getFunctionId(p) == avgRef);
 	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL;
 
@@ -706,7 +706,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	getArg(r,0) = newTmpVariable(mb, battp);
 
 	if (isAvg) { /* counts */
-		battp2 = newBatType(TYPE_oid, tp2);
+		battp2 = newBatType( tp2);
 		u = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(u,matRef);
 		setFunctionId(u,packRef);
@@ -777,7 +777,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		v = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(v, batcalcRef);
 		setFunctionId(v, dblRef); 
-		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		v = pushArgument(mb, v, getArg(u, 0));
 		pushInstruction(mb, v);
 
@@ -785,7 +785,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		x = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(x, batcalcRef);
 		setFunctionId(x, divRef); 
-		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		x = pushArgument(mb, x, getArg(v, 0));
 		x = pushArgument(mb, x, getArg(y, 0));
 		pushInstruction(mb, x);
@@ -904,7 +904,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	getArg(ai1,0) = newTmpVariable(mb, tp);
 
 	if (isAvg) { /* counts */
-		tp2 = newBatType(TYPE_oid, TYPE_lng);
+		tp2 = newBatType(TYPE_lng);
 		ai10 = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(ai10,matRef);
 		setFunctionId(ai10,packRef);
@@ -956,7 +956,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		cond = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(cond, batcalcRef);
 		setFunctionId(cond, eqRef); 
-		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bit));
+		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 		cond = pushArgument(mb, cond, getArg(s, 0));
 		cond = pushLng(mb, cond, 0);
 		pushInstruction(mb,cond);
@@ -984,7 +984,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		v = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(v, batcalcRef);
 		setFunctionId(v, dblRef); 
-		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		v = pushArgument(mb, v, getArg(ai10, 0));
 		pushInstruction(mb, v);
 
@@ -992,7 +992,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		r = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(r, batcalcRef);
 		setFunctionId(r, divRef); 
-		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		r = pushArgument(mb, r, getArg(v, 0));
 		r = pushArgument(mb, r, getArg(s, 0));
 		pushInstruction(mb,r);
@@ -1045,7 +1045,7 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 		
 		getArg(grp,0) = mat[ogrp].mv;
 		grp = pushReturn(mb, grp, mat[oext].mv);
-		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType( TYPE_oid, TYPE_lng)));
+		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType(TYPE_lng)));
 		grp = pushArgument(mb, grp, getArg(mat[attr].mi, 0));
 		if (cur) 
 			grp = pushArgument(mb, grp, getArg(cur, 0));
@@ -1085,7 +1085,7 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 
 			setModuleId(r, algebraRef);
 			setFunctionId(r, projectionRef);
-			getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_oid));
+			getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 			r = pushArgument(mb, r, getArg(cext,k));
 			r = pushArgument(mb, r, getArg(ml->v[ogrp].mi,k));
 			pushInstruction(mb,r);

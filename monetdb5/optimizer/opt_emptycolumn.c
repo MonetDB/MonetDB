@@ -34,7 +34,7 @@
 		setModuleId(p,batRef);							\
 		setFunctionId(p,newRef);						\
 		p->argc = p->retc;								\
-		p = pushType(mb,p, getColumnType(tpe));			\
+		p = pushType(mb,p, getBatType(tpe));			\
 		setVarType(mb, getArg(p,0), tpe);				\
 		setVarFixed(mb, getArg(p,0));					\
 	} while (0)
@@ -154,14 +154,14 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			if( marked[getArg(p,0)]){
                 int tpe;
 				if( p->retc == 2){
-					tpe = getColumnType(getVarType(mb,getArg(p,1)));
+					tpe = getBatType(getVarType(mb,getArg(p,1)));
 					q= newStmt(mb,batRef,newRef);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb, getArg(p,0));
 				}
 
-                tpe = getColumnType(getVarType(mb,getArg(p,0)));
+                tpe = getBatType(getVarType(mb,getArg(p,0)));
                 clrFunction(p);
                 setModuleId(p,batRef);
                 setFunctionId(p,newRef);
@@ -202,14 +202,14 @@ OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			if( marked[getArg(p,0)]){
 				int tpe;
 				if( p->retc == 2){
-					tpe = getColumnType(getVarType(mb,getArg(p,1)));
+					tpe = getBatType(getVarType(mb,getArg(p,1)));
 					q= newStmt(mb,batRef,newRef);
 					q = pushType(mb,q,tpe);
 					getArg(q,0)= getArg(p,1);
 					setVarFixed(mb,getArg(q,0));
 				}
 				
-				tpe = getColumnType(getVarType(mb,getArg(p,0)));
+				tpe = getBatType(getVarType(mb,getArg(p,0)));
 				clrFunction(p);
 				setModuleId(p,batRef);
 				setFunctionId(p,newRef);

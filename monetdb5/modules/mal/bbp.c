@@ -53,7 +53,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
 
 	/* check conformity of the actual type and the one requested */
-	tt= getColumnType(getArgType(mb,pci,0));
+	tt= getBatType(getArgType(mb,pci,0));
 	if( b->ttype == TYPE_void && tt== TYPE_oid) tt= TYPE_void;
 
 	if( tt != b->ttype){

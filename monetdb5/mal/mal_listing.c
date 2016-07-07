@@ -77,10 +77,10 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
 			GDKfree(cv);
-			showtype =getColumnType(getVarType(mb,varid)) > TYPE_str || 
+			showtype =getBatType(getVarType(mb,varid)) > TYPE_str || 
 				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid)); 
 		} else{
-			if ( !isaBatType(getVarType(mb,varid)) && getColumnType(getVarType(mb,varid)) > TYPE_str ){
+			if ( !isaBatType(getVarType(mb,varid)) && getBatType(getVarType(mb,varid)) > TYPE_str ){
 				closequote = 1;
 				strcat(buf+len,"\"");
 				len++;

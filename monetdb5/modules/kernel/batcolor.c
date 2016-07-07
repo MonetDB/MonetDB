@@ -34,7 +34,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
-	bn= COLnew(b->hseqbase,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= COLnew(b->hseqbase,getAtomIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
@@ -108,7 +108,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b3->batCacheid);									\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
 	}																	\
-	bn= COLnew(b->hseqbase,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\

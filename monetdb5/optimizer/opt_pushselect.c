@@ -200,7 +200,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		lastbat = lastbat_arg(mb, p);
 		if (isSubSelect(p) && p->retc == 1 &&
-		   /* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid, TYPE_oid)) {
+		   /* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
 
@@ -312,7 +312,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			if (isLikeOp(q)) { /* TODO check if getArg(p, 3) value == TRUE */
 				InstrPtr r = newInstruction(mb, ASSIGNsymbol);
-				int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid, TYPE_oid)); 
+				int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)); 
 				int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
 				setModuleId(r, algebraRef);
@@ -484,7 +484,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
-				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(s, 1); 
 				cst.vtype = getArgType(mb, r, 2);
@@ -525,23 +525,23 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr t = copyInstruction(p);
 				InstrPtr u = copyInstruction(q);
 		
-				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(q, 1); /* column */
 				r->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,r);
-				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(s,0));
 				getArg(s, 1) = getArg(q, 3); /* updates */
 				s = ReplaceWithNil(mb, s, 2, TYPE_bat); /* no candidate list */
-				setArgType(mb, s, 2, newBatType(TYPE_oid,TYPE_oid));
+				setArgType(mb, s, 2, newBatType(TYPE_oid));
 				/* make sure to resolve again */
 				s->token = ASSIGNsymbol; 
 				s->typechk = TYPE_UNKNOWN;
         			s->fcn = NULL;
         			s->blk = NULL;
 				pushInstruction(mb,s);
-				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 				setVarCList(mb,getArg(t,0));
 				getArg(t, 1) = getArg(q, 4); /* inserts */
 				pushInstruction(mb,t);

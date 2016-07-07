@@ -536,7 +536,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 
 	if (q == NULL)
 		return NULL;
-	idx= getTypeIndex(tpe, -1, TYPE_any);
+	idx= getAtomIndex(tpe, -1, TYPE_any);
 	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS)
 		return NULL;
 	cst.vtype=TYPE_void;
@@ -606,7 +606,7 @@ pushEmptyBAT(MalBlkPtr mb, InstrPtr q, int tpe)
 	getFunctionId(q) = getName("new");
 
 	q = pushArgument(mb, q, newTypeVariable(mb,TYPE_void));
-	q = pushArgument(mb, q, newTypeVariable(mb,getColumnType(tpe)));
+	q = pushArgument(mb, q, newTypeVariable(mb,getBatType(tpe)));
 	q = pushZero(mb,q,TYPE_lng);
 	return q;
 }

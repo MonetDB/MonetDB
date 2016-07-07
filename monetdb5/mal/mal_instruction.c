@@ -738,7 +738,7 @@ getType(MalBlkPtr mb, str nme)
 
 	i = findVariable(mb, nme);
 	if (i < 0)
-		return getTypeIndex(nme, -1, TYPE_any);
+		return getAtomIndex(nme, -1, TYPE_any);
 	return getVarType(mb, i);
 }
 
@@ -1573,7 +1573,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 	}
 	v = findVariable(mb, name);
 	if (v < 0) {
-		if ((v = newVariable(mb, name, getTypeIndex(name, -1, TYPE_any))) < 0) {
+		if ((v = newVariable(mb, name, getAtomIndex(name, -1, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}
@@ -1680,9 +1680,9 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 		return;
 	if (isaBatType(tpe)) 
 		c1= TYPE_oid;
-	if (getColumnIndex(tpe) > 0)
-		c2 = getColumnIndex(tpe);
-	else if (getColumnType(tpe) == TYPE_any)
+	if (getTypeIndex(tpe) > 0)
+		c2 = getTypeIndex(tpe);
+	else if (getBatType(tpe) == TYPE_any)
 		c2 = 1;
 	c1 = c1 > c2 ? c1 : c2;
 	if (c1 > 0 && c1 >= p->polymorphic)
