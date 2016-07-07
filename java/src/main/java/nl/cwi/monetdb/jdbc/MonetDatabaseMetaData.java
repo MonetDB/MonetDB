@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 /**
  * A DatabaseMetaData object suitable for the MonetDB database.
- * 
  *
  * @author Fabian Groffen, Martin van Dinther
  * @version 0.6
@@ -239,8 +238,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * What is the version string of this JDBC driver?	Again, this is
-	 * static.
+	 * Retrieves the version number of this JDBC driver as a String.
 	 *
 	 * @return the JDBC driver version string
 	 */
@@ -1893,11 +1891,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 
 	/**
-	 * Get a description of tables available in a catalog.
-	 *
-	 * <p>Only table descriptions matching the catalog, schema, table
-	 * name and type criteria are returned. They are ordered by
-	 * TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME.
+	 * Retrieves a description of the tables available in the given catalog.
+	 * Only table descriptions matching the catalog, schema, table name and type criteria are returned.
+	 * They are ordered by TABLE_TYPE, TABLE_CAT, TABLE_SCHEM and TABLE_NAME.
 	 *
 	 * <p>Each table description has the following columns:
 	 *
@@ -1912,14 +1908,20 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * <li><b>TYPE_SCHEM</b> String => the types schema (may be null)
 	 * <li><b>TYPE_NAME</b> String => type name (may be null)
 	 * <li><b>SELF_REFERENCING_COL_NAME</b> String => name of the designated "identifier" column of a typed table (may be null)
-	 * <li><b>REF_GENERATION</b> String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null) 
+	 * <li><b>REF_GENERATION</b> String => specifies how values in SELF_REFERENCING_COL_NAME are created. Values are "SYSTEM", "USER", "DERIVED". (may be null)
 	 * </ol>
 	 *
-	 * @param catalog a catalog name; this parameter is currently ignored
-	 * @param schemaPattern a schema name pattern
-	 * @param tableNamePattern a table name pattern. For all tables this should be "%"
-	 * @param types a list of table types, which must be from the list of table types returned from getTableTypes(), to include; null returns all types;
-	 * @return each row is a table description
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog; null means that the
+	 *	catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored
+	 *	in the database; "" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param tableNamePattern - a table name pattern; must match the table name as it is stored in the database
+	 *	For all tables this should be "%"
+	 * @param types - a list of table types, which must be from the list of table types returned
+	 *	from getTableTypes(),to include; null returns all types
+	 * @return ResultSet - each row is a table description
 	 * @throws SQLException if a database-access error occurs.
 	 */
 	@Override
@@ -2150,24 +2152,28 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		<UL>
 	 *		<LI> YES --- if the column is auto incremented
 	 *		<LI> NO --- if the column is not auto incremented
-    	 *		<LI> empty string --- if it cannot be determined whether the column is auto incremented 
+    	 *		<LI> empty string --- if it cannot be determined whether the column is auto incremented
 	 *		</UL>
 	 *	<LI><B>IS_GENERATEDCOLUMN</B> String => Indicates whether this is a generated column
 	 *		<UL>
 	 *		<LI> YES --- if this a generated column
 	 *		<LI> NO --- if this not a generated column
-	 *		<LI> empty string --- if it cannot be determined whether this is a generated column 
+	 *		<LI> empty string --- if it cannot be determined whether this is a generated column
 	 *		</UL>
 	 *	</OL>
 	 *
-	 * @param catalog a catalog name; "" retrieves those without a catalog;
-	 *                currently ignored
-	 * @param schemaPattern a schema name pattern; "" retrieves those without a schema
-	 * @param tableNamePattern a table name pattern
-	 * @param columnNamePattern a column name pattern
-	 * @return ResultSet each row is a column description
-	 * @see #getSearchStringEscape
+	 * @param catalog - a catalog name; must match the catalog name as it is stored in the database;
+	 *	"" retrieves those without a catalog; null means that the
+	 *	catalog name should not be used to narrow the search
+	 * @param schemaPattern - a schema name pattern; must match the schema name as it is stored
+	 *	in the database; "" retrieves those without a schema;
+	 *	null means that the schema name should not be used to narrow the search
+	 * @param tableNamePattern - a table name pattern; must match the table name as it is stored in the database
+	 *	For all tables this should be "%"
+	 * @param columnNamePattern - a column name pattern; must match the column name as it is stored in the database
+	 * @return ResultSet - each row is a column description
 	 * @throws SQLException if a database error occurs
+	 * @see #getSearchStringEscape
 	 */
 	@Override
 	public ResultSet getColumns(
@@ -2913,7 +2919,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * Get a description of all the SQL data types supported by
 	 * this database. They are ordered by DATA_TYPE and then by how
 	 * closely the data type maps to the corresponding JDBC SQL type.
-	 * 
+	 *
 	 * If the database supports SQL distinct types, then getTypeInfo() will
 	 * return a single row with a TYPE_NAME of DISTINCT and a DATA_TYPE of Types.DISTINCT.
 	 * If the database supports SQL structured types, then getTypeInfo() will
@@ -3239,7 +3245,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * 6 REMARKS String => explanatory comment on the type
 	 * 7 BASE_TYPE short => type code of the source type of a DISTINCT type or the type that implements the
 	 *   user-generated reference type of the SELF_REFERENCING_COLUMN of a structured type as defined
-	 *   in java.sql.Types (null if DATA_TYPE is not DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED) 
+	 *   in java.sql.Types (null if DATA_TYPE is not DISTINCT or not STRUCT with REFERENCE_GENERATION = USER_DEFINED)
 	 *
 	 * @throws SQLException
 	 */
@@ -3768,9 +3774,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *       property
 	 *    4. DESCRIPTION String=> A description of the
 	 *       property. This will typically contain information as
-	 *       to where this property is stored in the database. 
+	 *       to where this property is stored in the database.
 	 *
-	 * The ResultSet is sorted by the NAME column 
+	 * The ResultSet is sorted by the NAME column
 	 *
 	 * @return A ResultSet object; each row is a supported client info
 	 *         property, none in case of MonetDB's current JDBC driver
