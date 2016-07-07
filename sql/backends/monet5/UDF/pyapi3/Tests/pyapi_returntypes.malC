@@ -62,7 +62,7 @@ io.print(r12,s12);
 io.print(r13,s13);
 
 # return a multi-dimensional numpy array containing unicode strings
-bstr:= bat.new(:oid,:str);
+bstr:= bat.new(:str);
 bat.append(bstr,"Hannes Mühleisen":str);
 bat.append(bstr,"héllo":str);
 bat.append(bstr,"éáú üüäãö":str);
