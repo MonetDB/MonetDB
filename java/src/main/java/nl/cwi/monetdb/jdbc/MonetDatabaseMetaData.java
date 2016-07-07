@@ -3777,7 +3777,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		"SELECT 'port', 5, '50000', 'communication port number of MonetDB server process' UNION ALL " +
 		"SELECT 'user', 128, '', 'user name to login to MonetDB server' UNION ALL " +
 		"SELECT 'password', 128, '', 'password for user name to login to MonetDB server' UNION ALL " +
-		"SELECT 'langauge', 16, 'sql', 'language (sql or mal) used to parse commands in MonetDB server' UNION ALL " +
+		"SELECT 'language', 16, 'sql', 'language (sql or mal) used to parse commands in MonetDB server' UNION ALL " +
 		"SELECT 'debug', 5, 'false', 'boolean flag true or false' UNION ALL " +
 		"SELECT 'hash', 128, '', 'hash string' UNION ALL " +
 		"SELECT 'treat_blob_as_binary', 5, 'false', 'boolean flag true or false' UNION ALL " +
