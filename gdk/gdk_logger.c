@@ -1258,7 +1258,6 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	n[i++] = abs(catalog_bid->batCacheid);
 	n[i++] = abs(catalog_nme->batCacheid);
 	n[i++] = abs(dcatalog->batCacheid);
-	assert((BUN) i <= nn);
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
 		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
 
@@ -1284,6 +1283,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		lg->catalog_bid = catalog_bid = bids;
 		lg->catalog_nme = catalog_nme = nmes;
 	}
+	assert((BUN) i <= nn);
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);
 	BATcommit(dcatalog);
