@@ -16,7 +16,7 @@ all: _all
 
 !INCLUDE "$(TOPDIR)\..\NT\rules.msc"
 
-_all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h inttypes.h .monetdb
+_all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h .monetdb
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
@@ -45,14 +45,6 @@ unistd.h:
 	$(ECHO) #define isatty _isatty >> unistd.h
 	$(ECHO) #endif >> unistd.h
 	$(ECHO) #endif >> unistd.h
-
-inttypes.h:
-	$(ECHO) typedef signed char int8_t; > inttypes.h
-	$(ECHO) typedef unsigned char uint8_t; >> inttypes.h
-	$(ECHO) typedef short int16_t; >> inttypes.h
-	$(ECHO) typedef unsigned short uint16_t; >> inttypes.h
-	$(ECHO) typedef int int32_t; >> inttypes.h
-	$(ECHO) typedef unsigned int uint32_t; >> inttypes.h
 
 .monetdb:
 	$(ECHO) user=monetdb> .monetdb
