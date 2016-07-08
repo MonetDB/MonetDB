@@ -1,0 +1,9 @@
+compression
+compressionRLE
+compressionRLE2
+xqueries
+xqueries_rle
+xqueries_delta
+
+session_init
+session_exit

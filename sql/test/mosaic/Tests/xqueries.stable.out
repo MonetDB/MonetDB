@@ -1,0 +1,242 @@
+stdout of test 'xqueries` in directory 'sql/test/mosaic` itself:
+
+
+# 21:09:37 >  
+# 21:09:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30051" "--set" "mapi_usock=/var/tmp/mtest-28373/.s.monetdb.30051" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_mosaic" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 21:09:37 >  
+
+# MonetDB 5 server v11.20.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2014 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30051/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28373/.s.monetdb.30051
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 21:09:37 >  
+# 21:09:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28373" "--port=30051"
+# 21:09:37 >  
+
+#set optimizer='sequential_pipe';
+#drop table tmp3;
+#create table tmp3( i integer, b boolean, f real,t timestamp);
+#insert into tmp3 values
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+[ 86	]
+#alter table tmp3 set read only;
+#select sum(i) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from tmp3 where i <4;
+% .explain # table_name
+% mal # name
+% clob # type
+% 103 # length
+function user.s7_1(A0:int):void;
+    X_19:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
+    X_2 := sql.mvc();
+    X_6:bat[:int] := sql.bind(X_2,"sys","tmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","tmp3");
+    C_9 := mosaic.thetasubselect(X_6,C_3,A0,"<");
+    X_11 := mosaic.projection(C_9,X_6);
+    X_12 := aggr.count(X_11);
+    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
+end user.s7_1;
+#select count(*) from tmp3 where i <4;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 44	]
+#explain select count(*) from tmp3 where i = 7;
+% .explain # table_name
+% mal # name
+% clob # type
+% 104 # length
+function user.s9_1(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
+    X_2 := sql.mvc();
+    X_6:bat[:int] := sql.bind(X_2,"sys","tmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","tmp3");
+    C_9 := mosaic.subselect(X_6,C_3,A0,A0,true,false,false);
+    X_12 := mosaic.projection(C_9,X_6);
+    X_13 := aggr.count(X_12);
+    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
+end user.s9_1;
+#select count(*) from tmp3 where i = 7;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#select count(*) from tmp3 where f <0.316;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 42	]
+#select count(*) from tmp3 where b = true;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 66	]
+#alter table tmp3 alter column i set storage 'literal';
+#alter table tmp3 alter column b set storage 'literal';
+#alter table tmp3 alter column f set storage 'literal';
+#select sum(i) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% hugeint # type
+% 3 # length
+[ 270	]
+#select sum(f) from tmp3;
+% sys.L1 # table_name
+% L1 # name
+% real # type
+% 15 # length
+[ 27.104	]
+#explain select count(*) from tmp3 where i <4;
+% .explain # table_name
+% mal # name
+% clob # type
+% 103 # length
+function user.s18_1(A0:int):void;
+    X_19:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
+    X_2 := sql.mvc();
+    X_6:bat[:int] := sql.bind(X_2,"sys","tmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","tmp3");
+    C_9 := mosaic.thetasubselect(X_6,C_3,A0,"<");
+    X_11 := mosaic.projection(C_9,X_6);
+    X_12 := aggr.count(X_11);
+    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
+end user.s18_1;
+#select count(*) from tmp3 where i <4;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 44	]
+#explain select count(*) from tmp3 where i = 7;
+% .explain # table_name
+% mal # name
+% clob # type
+% 104 # length
+function user.s20_1(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
+    X_2 := sql.mvc();
+    X_6:bat[:int] := sql.bind(X_2,"sys","tmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","tmp3");
+    C_9 := mosaic.subselect(X_6,C_3,A0,A0,true,false,false);
+    X_12 := mosaic.projection(C_9,X_6);
+    X_13 := aggr.count(X_12);
+    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
+end user.s20_1;
+#select count(*) from tmp3 where i = 7;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#select count(*) from tmp3 where f <0.316;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 42	]
+#select count(*) from tmp3 where b = true;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 66	]
+#alter table tmp3 alter column i set storage NULL;
+#alter table tmp3 alter column b set storage NULL;
+#alter table tmp3 alter column f set storage NULL;
+#explain select count(*) from tmp3 where i <4;
+% .explain # table_name
+% mal # name
+% clob # type
+% 103 # length
+function user.s27_1(A0:int):void;
+    X_19:void := querylog.define("explain select count(*) from tmp3 where i <4;","sequential_pipe",10);
+    X_2 := sql.mvc();
+    X_6:bat[:int] := sql.bind(X_2,"sys","tmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","tmp3");
+    C_9 := mosaic.thetasubselect(X_6,C_3,A0,"<");
+    X_11 := mosaic.projection(C_9,X_6);
+    X_12 := aggr.count(X_11);
+    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_12);
+end user.s27_1;
+#select count(*) from tmp3 where i <4;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 44	]
+#explain select count(*) from tmp3 where i = 7;
+% .explain # table_name
+% mal # name
+% clob # type
+% 104 # length
+function user.s29_1(A0:int):void;
+    X_20:void := querylog.define("explain select count(*) from tmp3 where i = 7;","sequential_pipe",10);
+    X_2 := sql.mvc();
+    X_6:bat[:int] := sql.bind(X_2,"sys","tmp3","i",0);
+    C_3:bat[:oid] := sql.tid(X_2,"sys","tmp3");
+    C_9 := mosaic.subselect(X_6,C_3,A0,A0,true,false,false);
+    X_12 := mosaic.projection(C_9,X_6);
+    X_13 := aggr.count(X_12);
+    sql.resultSet("sys.L1","L1","wrd",64,0,7,X_13);
+end user.s29_1;
+#select count(*) from tmp3 where i = 7;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 1 # length
+[ 2	]
+#select count(*) from tmp3 where f <0.316;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 42	]
+#select count(*) from tmp3 where b = true;
+% sys.L1 # table_name
+% L1 # name
+% wrd # type
+% 2 # length
+[ 66	]
+#alter table tmp3 set read write;
+
+# 21:09:37 >  
+# 21:09:37 >  "Done."
+# 21:09:37 >  
+
