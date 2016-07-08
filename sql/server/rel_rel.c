@@ -630,7 +630,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_exp *e;
 			sql_idx *i = cn->data;
-			sql_subtype *t = sql_bind_localtype("wrd"); /* hash "wrd" */
+			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
 			if (i->type == join_idx)
@@ -715,6 +715,18 @@ rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 	return rel;
 }
 
+static void
+exps_has_nil(list *exps)
+{
+	node *m;
+
+	for (m = exps->h; m; m = m->next) {
+		sql_exp *e = m->data;
+
+		set_has_nil(e);
+	}
+}
+
 list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
 {
@@ -731,8 +743,12 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_full:
 	case op_apply:
 		exps = rel_projections(sql, rel->l, tname, settname, intern );
+		if (rel->op == op_full || rel->op == op_right)
+			exps_has_nil(exps);
 		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
 			rexps = rel_projections(sql, rel->r, tname, settname, intern );
+			if (rel->op == op_full || rel->op == op_left)
+				exps_has_nil(rexps);
 			exps = list_merge( exps, rexps, (fdup)NULL);
 		}
 		return exps;
@@ -893,8 +909,7 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 		    lrel->op != op_left)
 			break;
 		/* pushing through left head of a left join is allowed */
-		if (lrel->op == op_left && (
-					!n->next || lrel->l != n->next->data))
+		if (lrel->op == op_left && (!n->next || lrel->l != n->next->data))
 			break;
 		p = lrel;
 	}
@@ -908,11 +923,8 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 		if (p && p != lrel) {
 			assert(p->op == op_join || p->op == op_left || is_semi(p->op));
 			if (p->l == lrel) {
-				assert(p->l != n);
 				p->l = n;
 			} else {
-				assert(p->op == op_join && p->r == lrel);
-				assert(p->r != n);
 				p->r = n;
 			}
 		} else {
@@ -954,7 +966,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 			rrel = rn->data;
 			rrel2 = rn2->data;
 			
-			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2))
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2) || is_processed(lrel) || is_processed(rrel))
 				break;
 
 			/* push down as long as the operators allow this
@@ -976,7 +988,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 			lrel = ln->data;
 			rrel = rn->data;
 			
-			if (rel_is_ref(lrel) || rel_is_ref(rrel))
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || is_processed(lrel) || is_processed(rrel))
 				break;
 
 			/* push down as long as the operators allow this

@@ -22,11 +22,10 @@
 #define DEBUG_MAL_INSTR
 /* #define DEBUG_REDUCE */
 #define MAXARG 4				/* BEWARE the code depends on this knowledge */
-#define STMT_INCREMENT 32
+#define STMT_INCREMENT 512
 #define MAL_VAR_WINDOW  32
-#define MAXVARS 32
+#define MAXVARS 512				/* >= STMT_INCREMENT */
 #define MAXLISTING 64*1024
-#define SMALLBUFSIZ 64
 
 /* Allocation of space assumes a rather exotic number of
  * arguments. Access to module and function name are cast in macros to
@@ -52,7 +51,6 @@
 #define isTmpVar(M,I)		((M)->var[I]->tmpindex)
 #define getVarType(M,I)		((M)->var[I]->type)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
-#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 #define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
 #define setVarFixed(M,I)		((M)->var[I]->flags |= VAR_FIXTYPE)
@@ -111,8 +109,8 @@
 #define getArgName(M,P,I)	getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)	getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
+#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
-#define getEndOfLife(X,Y)	(X)->var[Y]->eolife
 
 mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
 mal_export InstrPtr copyInstruction(InstrPtr p);
@@ -132,10 +130,8 @@ mal_export void resizeMalBlk(MalBlkPtr mb, int maxstmt, int maxvar);
 mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
-mal_export void addtoMalBlkHistory(MalBlkPtr mb, str marker);
+mal_export void addtoMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
-mal_export MalBlkPtr gotoMalBlkMarker(MalBlkPtr mb, str marker);
-mal_export MalBlkPtr getMalBlkMarker(MalBlkPtr mb, str marker);
 mal_export void expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void trimMalBlk(MalBlkPtr mb);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);

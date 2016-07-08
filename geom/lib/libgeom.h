@@ -26,13 +26,24 @@
 #define libgeom_export extern
 #endif
 
-#include "geos_c.h"
+#include <geos_c.h>
 
+#ifdef HAVE_PROJ
+#include "proj_api.h" //it is needed to transform from one srid to another
+#endif
+
+/* geos does not support 3d envelope */
 typedef struct mbr {
 	float xmin;
 	float ymin;
+//	float zmin;
+//	float mmin;
+	
 	float xmax;
 	float ymax;
+//	float zmax;
+//	float mmax;
+	
 } mbr;
 
 /*
@@ -67,7 +78,8 @@ Flags values:
 
 Type values:
 
-0 = GEOMETRY1 = POINT
+0 = GEOMETRY
+1 = POINT
 2 = CURVE
 3 = LINESTRING
 4 = SURFACE
@@ -82,21 +94,29 @@ Type values:
 */
 
 typedef enum wkb_type {
-	wkbPoint = 1,
-	wkbLineString = 2,
-	wkbPolygon = 3,
-	wkbMultiPoint = 4,
-	wkbMultiLineString = 5,
-	wkbMultiPolygon = 6,
-	wkbGeometryCollection = 7
+	//wkbGeometry_mbd = 0,
+	wkbPoint_mdb = 1,
+	wkbLineString_mdb = 2,
+	wkbLinearRing_mdb = 3,
+	wkbPolygon_mdb = 4,
+	wkbMultiPoint_mdb = 5,
+	wkbMultiLineString_mdb = 6,
+	wkbMultiPolygon_mdb = 7,
+	wkbGeometryCollection_mdb = 8
 } wkb_type;
 
-libgeom_export const char *geom_type2str(int t);
+libgeom_export const char *geom_type2str(int t, int flag);
 
 typedef struct wkb {
 	int len;
+	int srid;
 	char data[FLEXIBLE_ARRAY_MEMBER];
 } wkb;
+
+typedef struct wkba {
+	int itemsNum; //the number of wkbs
+	wkb* data[FLEXIBLE_ARRAY_MEMBER]; //the wkbs
+} wkba;
 
 typedef struct {
 	unsigned char type;
@@ -108,16 +128,19 @@ typedef struct {
 libgeom_export void libgeom_init(void);
 libgeom_export void libgeom_exit(void);
 
+
 /* Macro wkb2geos
  * Returns a GEOSGeom, created from a geom_geometry.
  * On failure, returns NULL.
  */
-#define wkb2geos( geom ) \
-	wkb_isnil((geom))? NULL: \
-	GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
+//#define wkb2geos( geom ) wkb_isnil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
+#define mbr_nil mbrFromGeos(NULL); 
 
 libgeom_export int wkb_isnil(wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
 libgeom_export int getMbrGeom(mbr *res, wkb *geom);
+libgeom_export GEOSGeom wkb2geos(wkb* geomWKB);
+
+//libgeom_export str geomerty_2_geometry(wkb *res, wkb **geom, int* columnType, int* columnSRID, int* valueSRID);
 
 #endif /* LIBGEOM_H */

@@ -37,7 +37,6 @@ stderr of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` its
 
 Error on line 1: [42000] SQL debugging only supported in interactive mode in: "debug"
 Error on line 1: [25005] current transaction is aborted (please ROLLBACK)
-Error on line 5: [22000] mosaic file not available
 
 # 13:05:27 >  
 # 13:05:27 >  "Done."

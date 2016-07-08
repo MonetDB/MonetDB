@@ -30,7 +30,7 @@ stderr of test 'name_conflict.Bug-3650` in directory 'sql/test/BugTracker-2015` 
 # 18:58:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24602" "--port=35483"
 # 18:58:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-12423/.s.monetdb.35490
+MAPI  = (monetdb) /var/tmp/mtest-32037/.s.monetdb.32270
 QUERY = create table foo_bar (id integer);
 ERROR = !CREATE TABLE: sys_foo_bar_id conflicts
 

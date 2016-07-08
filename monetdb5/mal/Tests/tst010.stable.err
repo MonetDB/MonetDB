@@ -78,7 +78,6 @@ ERROR = !SyntaxException:user.main[6]:label 'Z' not in guarded block
         !SyntaxException:user.main[30]:exit-label 'B' doesnot match 'A'
         !SyntaxException:user.main[32]:exit-label 'F' without begin-label
         !SyntaxException:user.main[42]:exit-label 'A' without begin-label
-        !SyntaxException:user.main[45]:barrier 'unfinished' without exit in main[46]
         !SyntaxException:parseError:end foo;
         !SyntaxException:parseError:   ^non matching end label
 

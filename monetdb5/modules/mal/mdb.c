@@ -52,7 +52,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
 	if (BBPindex(buf) <= 0)
 		BATname(b,buf);
-	BATroles(b,X1,X2);
+	BATroles(b,X2);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
 	*ret = b->batCacheid;
@@ -245,11 +245,11 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		fcnnme = getArgDefault(mb, p, 2);
 	}
 
-	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
-	return runMALDebugger(cntxt, s);
+	return runMALDebugger(cntxt, s->def);
 }
 
 /*
@@ -295,6 +295,8 @@ MDBgetFrame(BAT *b, BAT*bn, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
 			ATOMformat(v->vtype, VALptr(v), &buf);
 			BUNappend(b, getVarName(mb, i), FALSE);
 			BUNappend(bn, buf, FALSE);
+			GDKfree(buf);
+			buf = NULL;
 		}
 	return MAL_SUCCEED;
 }
@@ -304,16 +306,14 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	bat *ret = getArgReference_bat(s, p, 0);
 	bat *ret2 = getArgReference_bat(s, p, 1);
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0 || bn == 0) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 	pseudo(ret,b,"view","stk","frame");
 	pseudo(ret2,bn,"view","stk","frame");
 	return MDBgetFrame(b,bn, cntxt, m, s, 0);
@@ -325,16 +325,14 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int n;
 	bat *ret = getArgReference_bat(s, p, 0);
 	bat *ret2 = getArgReference_bat(s, p, 1);
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
-	BAT *bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_str, 256, TRANSIENT);
 	
 	if (b == 0 || bn == 0) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 
 	n = *getArgReference_int(s, p, 2);
 	if (n < 0 || n >= getStkDepth(s)){
@@ -357,16 +355,14 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int k = 0;
 	size_t len,l;
 
-	b = BATnew(TYPE_void, TYPE_int, 256, TRANSIENT);
+	b = COLnew(0, TYPE_int, 256, TRANSIENT);
 	if ( b== NULL)
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
-	bn = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if ( bn== NULL) {
 		BBPreclaim(b);
 		throw(MAL, "mdb.getStackTrace", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(b,0);
-	BATseqbase(bn,0);
 	(void) cntxt;
 	msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG);
 	len = strlen(msg);
@@ -415,37 +411,6 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
  * Display routines
  */
 str
-MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	Lifespan span;
-	str modnme;
-	str fcnnme;
-	Symbol s = NULL;
-
-	(void) cntxt;
-	if (stk != 0) {
-		modnme = *getArgReference_str(stk, p, 1);
-		fcnnme = *getArgReference_str(stk, p, 2);
-	} else {
-		modnme = getArgDefault(mb, p, 1);
-		fcnnme = getArgDefault(mb, p, 2);
-	}
-
-	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
-
-	if (s == NULL)
-		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
-	span = setLifespan(s->def);
-	if( span == NULL)
-		throw(MAL,"mdb.inspect", MAL_MALLOC_FAIL);
-	debugLifespan(cntxt, s->def, span);
-	GDKfree(span);
-	(void) p;
-	(void) stk;
-	return MAL_SUCCEED;
-}
-
-str
 MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
@@ -470,7 +435,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME );
@@ -494,7 +459,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	debugFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS , 0, s->def->stop);
@@ -518,7 +483,7 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	printStack(cntxt->fdout, s->def, (s->def == mb ? stk : 0));
@@ -536,12 +501,11 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	int i;
 	bat *ret = getArgReference_bat(stk, p, 0);
 	str ps;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	(void) cntxt;
 	if (b == 0)
 		throw(MAL, "mdb.getDefinition",  MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m,0, getInstrPtr(m, i), 1);
@@ -630,7 +594,7 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 	if (modnme != NULL) {
-		s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+		s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
 
 		if (s == NULL) {
 			char buf[1024];
@@ -678,7 +642,7 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static BAT *
 TBL_getdir(void)
 {
-	BAT *b = BATnew(TYPE_void, TYPE_str, 100, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
 	int i = 0;
 
 	char *mod_path;
@@ -689,7 +653,6 @@ TBL_getdir(void)
 
 	if ( b == 0)
 		return 0;
-	BATseqbase(b,0);
 	mod_path = GDKgetenv("monet_mod_path");
 	if (mod_path == NULL)
 		return b;

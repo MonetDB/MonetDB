@@ -17,19 +17,15 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	BUN i, j;
 	oid *restrict p1, *restrict p2;
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
-	bn1 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
-	bn2 = BATnew(TYPE_void, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
+	bn1 = COLnew(0, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
+	bn2 = COLnew(0, TYPE_oid, BATcount(l) * BATcount(r), TRANSIENT);
 	if (bn1 == NULL || bn2 == NULL) {
 		BBPreclaim(bn1);
 		BBPreclaim(bn2);
 		return GDK_FAIL;
 	}
-	BATseqbase(bn1, 0);
-	BATseqbase(bn2, 0);
-	p1 = (oid *) Tloc(bn1, BUNfirst(bn1));
-	p2 = (oid *) Tloc(bn2, BUNfirst(bn2));
+	p1 = (oid *) Tloc(bn1, 0);
+	p2 = (oid *) Tloc(bn2, 0);
 	for (i = 0; i < BATcount(l); i++) {
 		for (j = 0; j < BATcount(r); j++) {
 			*p1++ = i + l->hseqbase;
@@ -42,16 +38,16 @@ BATcross1(BAT **r1p, BAT **r2p, BAT *l, BAT *r)
 	bn1->trevsorted = BATcount(l) <= 1;
 	bn1->tkey = BATcount(r) <= 1;
 	bn1->tdense = bn1->tkey != 0;
-	bn1->T->nil = 0;
-	bn1->T->nonil = 1;
+	bn1->tnil = 0;
+	bn1->tnonil = 1;
 	bn2->tsorted = BATcount(l) <= 1;
 	bn2->trevsorted = BATcount(bn2) <= 1;
 	bn2->tkey = BATcount(l) <= 1;
 	bn2->tdense = bn2->tkey != 0;
-	bn2->T->nil = 0;
-	bn2->T->nonil = 1;
-	BATseqbase(BATmirror(bn1), l->hseqbase);
-	BATseqbase(BATmirror(bn2), r->hseqbase);
+	bn2->tnil = 0;
+	bn2->tnonil = 1;
+	BATtseqbase(bn1, l->hseqbase);
+	BATtseqbase(bn2, r->hseqbase);
 	*r1p = bn1;
 	*r2p = bn2;
 	return GDK_SUCCEED;

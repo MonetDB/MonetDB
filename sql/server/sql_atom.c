@@ -13,6 +13,16 @@
 
 static int atom_debug = 0;
 
+void
+atom_init( atom *a )
+{
+	a->isnull = 1;
+	a->data.vtype = 0;
+	a->tpe.type = NULL;
+	a->d = 0;
+	a->varid = 0;
+}
+
 static atom *
 atom_create( sql_allocator *sa )
 {
@@ -92,9 +102,6 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 		case TYPE_int:
 			a->data.val.ival = (int) val;
 			break;
-		case TYPE_wrd:
-			a->data.val.wval = (wrd) val;
-			break;
 		case TYPE_oid:
 			a->data.val.oval = (oid) val;
 			break;
@@ -107,7 +114,7 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 			break;
 #endif
 		default:
-			printf("atom_int %d\n", a->data.vtype);
+			fprintf(stderr, "atom_int %d\n", a->data.vtype);
 			assert(0);
 		}
 		a->d = (dbl) val;
@@ -144,9 +151,6 @@ atom_get_int(atom *a)
 			break;
 		case TYPE_oid:
 			r = a->data.val.oval;
-			break;
-		case TYPE_wrd:
-			r = a->data.val.wval;
 			break;
 		case TYPE_lng:
 			r = a->data.val.lval;
@@ -258,8 +262,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			VALset(&a->data, a->data.vtype, p);
 			SA_VALcopy(sa, &a->data, &a->data);
 
-			if (p && ATOMextern(a->data.vtype) == 0)
-				GDKfree(p);
+			GDKfree(p);
 			/*_DELETE(val);*/
 		}
 	} else { 
@@ -301,9 +304,6 @@ atom2string(sql_allocator *sa, atom *a)
 #endif
 	case TYPE_lng:
 		sprintf(buf, LLFMT, a->data.val.lval);
-		break;
-	case TYPE_wrd:
-		sprintf(buf, SSZFMT, a->data.val.wval);
 		break;
 	case TYPE_oid:
 		sprintf(buf, OIDFMT "@0", a->data.val.oval);
@@ -652,9 +652,6 @@ atom_cast(atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.ival = a->data.val.btval;
 				else if (at->type->localtype == TYPE_sht) 
@@ -665,9 +662,6 @@ atom_cast(atom *a, sql_subtype *tp)
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.lval = a->data.val.btval;
@@ -724,9 +718,6 @@ atom_cast(atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.ival = a->data.val.btval;
 				else if (at->type->localtype == TYPE_sht) 
@@ -737,9 +728,6 @@ atom_cast(atom *a, sql_subtype *tp)
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.lval = a->data.val.btval;
@@ -954,9 +942,6 @@ atom_cast(atom *a, sql_subtype *tp)
 #if SIZEOF_OID == SIZEOF_INT
 			case TYPE_oid:
 #endif
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.ival = a->data.val.btval;
 				else if (at->type->localtype == TYPE_sht) 
@@ -967,9 +952,6 @@ atom_cast(atom *a, sql_subtype *tp)
 			case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			case TYPE_oid:
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
 #endif
 				if (at->type->localtype == TYPE_bte) 
 					a->data.val.lval = a->data.val.btval;
@@ -1099,6 +1081,26 @@ atom_cast(atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			return 1;
 		}
+		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
+			int type = tp->type->localtype, res = 0, len = (int) strlen(a->data.val.sval);
+			ptr p = NULL;
+				
+			a->data.len = 0;
+			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval);
+			/* no result or nil means error (SQL has NULL not nil) */
+			if (res < len || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+				if (p)
+					GDKfree(p);
+				a->data.len = (int) strlen(a->data.val.sval);
+				return 0;
+			}
+			a->tpe = *tp;
+			a->data.vtype = type;
+			VALset(&a->data, a->data.vtype, p);
+			if (p && ATOMextern(a->data.vtype) == 0)
+				GDKfree(p);
+			return 1;
+		}	
 	} else {
 		ptr p = NULL;
 

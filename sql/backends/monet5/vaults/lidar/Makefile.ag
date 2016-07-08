@@ -4,8 +4,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
-INCLUDES = ../ \
-       ../../ \
+INCLUDES = .. \
+       ../.. \
        ../../../../include \
 	   ../../../../common \
 	   ../../../../storage \
@@ -16,7 +16,6 @@ INCLUDES = ../ \
 	   ../../../../../monetdb5/modules/mal \
 	   ../../../../../monetdb5/optimizer \
 	   ../../../../../monetdb5/scheduler \
-	   ../../../../../clients/mapilib \
 	   ../../../../../common/options \
 	   ../../../../../common/stream \
 	   ../../../../../common/utils \
@@ -27,7 +26,7 @@ INCLUDES = ../ \
 lib__lidar = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = lidar.c
+	SOURCES = lidar.c lidar.h
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       $(LIBLAS_LIBS)
 }
@@ -49,5 +48,3 @@ headers_lidarautoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 75_lidar.mal
 }
-
-EXTRA_DIST = 75_lidar.mal  lidar.mal  75_lidar.sql  lidar.h

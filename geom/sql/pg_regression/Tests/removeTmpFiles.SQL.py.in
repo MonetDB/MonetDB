@@ -1,0 +1,10 @@
+import os
+
+filename="$TSTSRCDIR/tmpfile_1"
+if os.path.isfile(filename):
+	os.remove(filename);
+
+filename="$TSTSRCDIR/tmpfile_2"
+if os.path.isfile(filename):
+	os.remove(filename);
+

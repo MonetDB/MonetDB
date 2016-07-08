@@ -10,7 +10,7 @@ stderr of test 'crash_on_fkey_update.SF-1703497` in directory 'sql/test/BugTrack
 # 13:27:58 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37133 
 # 13:27:58 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update t1703497b set id = 10 where id =3;
 ERROR = !UPDATE: FOREIGN KEY constraint 't1703497b.t1703497b_id_fkey' violated
 

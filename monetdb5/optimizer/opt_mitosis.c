@@ -29,20 +29,6 @@ eligible(MalBlkPtr mb)
 	return 1;
 }
 
-/* The plans are marked with the concurrent user load.
- *  * If this has changed, we may want to recompile the query
- *   */
-int
-OPTmitosisPlanOverdue(Client cntxt, str fname)
-{
-    Symbol s;
-
-    s = findSymbol(cntxt->nspace, userRef, fname);
-    if(s )
-        return s->def->activeClients != MCactiveClients();
-    return 0;
-}
-
 int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -54,6 +40,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -76,7 +64,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		    	getFunctionId(p) != subprodRef)
 			return 0;
 
-		if (p->argc > 2 && getModuleId(p) == rapiRef && 
+		if (p->argc > 2 && (getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef) && 
 		        getFunctionId(p) == subeval_aggrRef)
 			return 0;
 
@@ -100,7 +88,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		r = getRowCnt(mb, getArg(p, 0));
 		if (r >= rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
-			row_size = ATOMsize(getColumnType(getArgType(mb,p,0)));
+			row_size = ATOMsize(getBatType(getArgType(mb,p,0)));
 			rowcnt = r;
 			target = p;
 			estimate++;
@@ -268,5 +256,16 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( 1){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mitosis",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

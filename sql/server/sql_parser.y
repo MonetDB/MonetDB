@@ -49,6 +49,9 @@
 
 #define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
+#define SET_Z(info)(info = info | 0x02)
+#define SET_M(info)(info = info | 0x01)
+
 #ifdef HAVE_HGE
 #define MAX_DEC_DIGITS (have_hge ? 38 : 18)
 #define MAX_HEX_DIGITS (have_hge ? 32 : 16)
@@ -56,6 +59,40 @@
 #define MAX_DEC_DIGITS 18
 #define MAX_HEX_DIGITS 16
 #endif
+
+static inline int
+UTF8_strlen(const char *val)
+{
+	const unsigned char *s = (const unsigned char *) val;
+	int pos = 0;
+
+	while (*s) {
+		int c = *s++;
+
+		pos++;
+		if (c < 0xC0)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xE0)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xF0)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xF8)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+		if (c < 0xFC)
+			continue;
+		if (*s++ < 0x80)
+			return int_nil;
+	}
+	return pos;
+}
 
 %}
 /* KNOWN NOT DONE OF sql'99
@@ -73,7 +110,6 @@
 %pure-parser
 %union {
 	int		i_val,bval;
-	wrd		w_val;
 	lng		l_val,operation;
 	double		fval;
 	char *		sval;
@@ -295,6 +331,7 @@ int yydebug=1;
 	forest_element_name
 	XML_namespace_prefix
 	XML_PI_target
+	function_body
 
 %type <l>
 	passwd_schema
@@ -305,6 +342,8 @@ int yydebug=1;
 	assignment_commalist
 	opt_column_list
 	column_commalist_parens
+	opt_fwf_widths
+	fwf_widthlist
 	opt_header_list
 	header_list
 	header
@@ -435,11 +474,7 @@ int yydebug=1;
 	XML_whitespace_option
 	window_frame_units
 	window_frame_exclusion
-
-%type <w_val>
-	wrdval
-	poswrd
-	nonzerowrd
+	subgeometry_type
 
 %type <l_val>
 	lngval
@@ -481,6 +516,9 @@ int yydebug=1;
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR 
+	
+/* the tokens used in geom */
+%token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA 
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
@@ -490,7 +528,7 @@ int yydebug=1;
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
-%token <sval> ASYMMETRIC SYMMETRIC ORDER BY
+%token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
@@ -533,7 +571,10 @@ int yydebug=1;
 %left <operation> '%'
 %left <operation> '~'
 
-	/* literal keyword tokens */
+%left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
+%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST
+
+/* literal keyword tokens */
 /*
 CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
@@ -544,7 +585,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE SQL_DOT PREPARE EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -560,7 +601,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN STDOUT
+%token COPY RECORDS DELIMITERS STDIN STDOUT FWF
 %token INDEX
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
@@ -616,21 +657,6 @@ sqlstmt:
 			  m->scanner.key = 0;
 			}
    sql SCOLON 		{
-			  if (m->sym) {
-				append_symbol(m->sym->data.lval, $3);
-				$$ = m->sym;
-			  } else {
-				m->sym = $$ = $3;
-			  }
-			  YYACCEPT;
-			}
-
- | SQL_DOT 		{
-		  	  m->emod |= mod_dot;
-			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
-			}
-	sql SCOLON 	{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -729,7 +755,7 @@ set_statement:
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
-	        sql_find_subtype(&t, "char", _strlen($4), 0 );
+	        sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
@@ -737,7 +763,7 @@ set_statement:
   |	set SCHEMA ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", _strlen($3), 0 );
+		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
 		append_string(l, sa_strdup(SA, "current_schema"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
@@ -745,7 +771,7 @@ set_statement:
   |	set user '=' ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", _strlen($4), 0 );
+		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($4))) );
@@ -753,7 +779,7 @@ set_statement:
   |	set ROLE ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", _strlen($3), 0);
+		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
 		append_string(l, sa_strdup(SA, "current_role"));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, sql2str($3))) );
@@ -1218,6 +1244,8 @@ index_def:
 
 opt_index_type:
      UNIQUE		{ $$ = hash_idx; }
+ |   ORDERED		{ $$ = ordered_idx; }
+ |   IMPRINTS		{ $$ = imprints_idx; }
  |   /* empty */	{ $$ = hash_idx; }
  ;
 
@@ -1365,7 +1393,8 @@ as_subquery_clause:
  ;
 
 with_or_without_data:
-     WITH NO DATA  	{ $$ = 0; }
+	 /* empty */	{ $$ = 1; }
+ |   WITH NO DATA  	{ $$ = 0; }
  |   WITH DATA 		{ $$ = 1; }
  ;
 
@@ -1717,6 +1746,12 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
+
+function_body:
+	X_BODY
+|	string
+;
+
 func_def:
     create FUNCTION qname
 	'(' opt_paramlist ')'
@@ -1747,19 +1782,25 @@ func_def:
   | create FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                    lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -1798,19 +1839,25 @@ func_def:
   | create AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT X_BODY { 
+    LANGUAGE IDENT function_body { 
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
+			else if (l == 'P' || l == 'p')
+            {
+                if (strcasecmp($10, "PYTHON_MAP") == 0)
+                     lang = FUNC_LANG_MAP_PY;
+                else lang = FUNC_LANG_PY;
+            }
 			else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else
-				yyerror(m, sql_message("Language name R, C, or J(avascript):expected, received '%c'", l));
+				yyerror(m, sql_message("Language name R, C, P(ython), PYTHON_MAP or J(avascript):expected, received '%c'", l));
 
 			append_list(f, $3);
 			append_list(f, $5);
@@ -2436,7 +2483,7 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2448,8 +2495,9 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
+	  append_list(l, $14);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint 
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2461,6 +2509,7 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
+	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */ opt_constraint
 	{ dlist *l = L();
@@ -2487,7 +2536,22 @@ copyfrom_stmt:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
+  
 
+
+opt_fwf_widths:
+       /* empty */		{ $$ = NULL; }
+| FWF '(' fwf_widthlist ')' { $$ = $3; }
+ 
+ ;
+ 
+ fwf_widthlist:
+    poslng		{ $$ = append_lng(L(), $1); }
+ |  fwf_widthlist ',' poslng
+			{ $$ = append_lng($1, $3); }
+ ;
+
+ 
 opt_header_list:
        /* empty */		{ $$ = NULL; }
  | '(' header_list ')'		{ $$ = $2; }
@@ -2590,12 +2654,13 @@ delete_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_where_clause
+    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
@@ -3124,8 +3189,8 @@ opt_order_by_clause:
 
 opt_limit:
     /* empty */ 	{ $$ = NULL; }
- |  LIMIT nonzerowrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  LIMIT nonzerolng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  LIMIT param		{ $$ = $2; }
@@ -3133,8 +3198,8 @@ opt_limit:
 
 opt_offset:
 	/* empty */	{ $$ = NULL; }
- |  OFFSET poswrd	{ 
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  OFFSET poslng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
  |  OFFSET param	{ $$ = $2; }
@@ -3142,8 +3207,8 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poswrd	{
-		  	  sql_subtype *t = sql_bind_localtype("wrd");
+ |  SAMPLE poslng	{
+		  	  sql_subtype *t = sql_bind_localtype("lng");
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SAMPLE INTNUM	{
@@ -3346,6 +3411,13 @@ all_or_any_predicate:
 		  append_symbol(l, $4);
 		  append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
+ |  pred_exp '=' any_all_some pred_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_string(l, sa_strdup(SA, "="));
+		  append_symbol(l, $4);
+		  append_int(l, $3);
+		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 
 any_all_some:
@@ -3436,12 +3508,88 @@ simple_scalar_exp:
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_LEFT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_left")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp  GEOM_OVERLAP_OR_RIGHT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_right")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_BELOW scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_below")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_BELOW scalar_exp
+			{ dlist *l = L();
+			  append_list(l, append_string(L(), sa_strdup(SA, "mbr_below")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_OVERLAP_OR_ABOVE scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_above")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_ABOVE scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_above")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ | scalar_exp GEOM_DIST scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_distance")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp AT scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_contained")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '|' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_or")));
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '~' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_contains")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $3);
+	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
+ |  scalar_exp '~''=' scalar_exp
+			{ dlist *l = L();
+			  append_list(l, 
+			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
+	  		  append_symbol(l, $1);
+	  		  append_symbol(l, $4);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  '~' scalar_exp
 			{ dlist *l = L();
@@ -4065,7 +4213,7 @@ user:
 
 literal:
     string 	{ const char *s = sql2str($1);
-		  int len = _strlen(s);
+		  int len = UTF8_strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
@@ -4170,9 +4318,11 @@ literal:
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  int len = sizeof(hge);
+		  const hge one = 1;
 #else
 		  lng value, *p = &value;
 		  int len = sizeof(lng);
+		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
@@ -4188,7 +4338,15 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = digits2bits(digits);
+		    int bits = digits2bits(digits), obits = bits;
+
+		    for (;(one<<(bits-1)) > value; bits--)
+			    ;
+		   
+ 		    if (bits != obits && 
+		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
+				bits++;
+		
 		    if (value > GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
 		    else if (value > GDK_sht_min && value <= GDK_sht_max)
@@ -4597,29 +4755,8 @@ nonzerolng:
 		}
 	;
 
-nonzerowrd:
-	wrdval
-		{ $$ = $1;
-		  if ($$ <= 0) {
-			$$ = -1;
-			yyerror(m, "Positive value greater than 0 expected");
-			YYABORT;
-		  }
-		}
-	;
-
 poslng:
 	lngval 	{ $$ = $1;
-		  if ($$ < 0) {
-			$$ = -1;
-			yyerror(m, "Positive value expected");
-			YYABORT;
-		  }
-		}
-	;
-
-poswrd:
-	wrdval  { $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
 			yyerror(m, "Positive value expected");
@@ -4794,8 +4931,87 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
+| GEOMETRY {
+		sql_find_subtype(&$$, "geometry", 0, 0 );
+	}
+| GEOMETRY '(' subgeometry_type ')' {
+		int geoSubType = $3; 
 
+		if(geoSubType == 0) {
+			$$.type = NULL;
+			YYABORT;
+		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		}
+		
+	}
+| GEOMETRY '(' subgeometry_type ',' intval ')' {
+		int geoSubType = $3; 
+		int srid = $5; 
+
+		if(geoSubType == 0) {
+			$$.type = NULL;
+			YYABORT;
+		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, srid )) {
+			char *msg = sql_message("\b22000!type (%s) unknown", $1);
+			yyerror(m, msg);
+			_DELETE(msg);
+			$$.type = NULL;
+			YYABORT;
+		}
+	}
+| GEOMETRYA {
+		sql_find_subtype(&$$, "geometrya", 0, 0 );
+	}
+| GEOMETRYSUBTYPE {
+	int geoSubType = find_subgeometry_type($1);
+
+	if(geoSubType == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		$$.type = NULL;
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
+	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
+	char *msg = sql_message("\b22000!type (%s) unknown", $1);
+		yyerror(m, msg);
+		_DELETE(msg);
+		$$.type = NULL;
+		YYABORT;
+	}
+}
  ;
+
+subgeometry_type:
+  GEOMETRYSUBTYPE {
+	int subtype = find_subgeometry_type($1);
+	char* geoSubType = $1;
+
+	if(subtype == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		
+	} 
+	$$ = subtype;	
+}
+| string {
+	int subtype = find_subgeometry_type($1);
+	char* geoSubType = $1;
+
+	if(subtype == 0) {
+		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		
+	} 
+	$$ = subtype;	
+}
+;
 
 type_alias:
  ALIAS
@@ -4895,11 +5111,11 @@ non_reserved_word:
 |  TIME 	{ $$ = sa_strdup(SA, "time"); }
 |  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
 |  INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
+|  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
-|  SQL_DOT	{ $$ = sa_strdup(SA, "dot"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
@@ -4928,6 +5144,7 @@ non_reserved_word:
 |  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 |  MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
+|  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 ;
 
 name_commalist:
@@ -4936,30 +5153,13 @@ name_commalist:
 			{ $$ = append_string($1, $3); }
  ;
 
-wrdval:
-	lngval 	{ 
-		lng l = $1;
-#if SIZEOF_WRD == SIZEOF_INT
-
-		if (l > GDK_int_max) {
-			char *msg = sql_message("\b22000!constant (" LLFMT ") has wrong type (number expected)", l);
-
-			yyerror(m, msg);
-			_DELETE(msg);
-			$$ = 0;
-			YYABORT;
-		}
-#endif
-		$$ = (wrd) l;
-	}
-;
-
 lngval:
 	sqlINT	
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 19) {
 		  	$$ = strtoll(s,&end,10);
 		  } else {
@@ -4981,7 +5181,8 @@ intval:
  		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-
+		  // errno might be non-zero due to other people's code
+		  errno = 0;
 		  if (l <= 10) {
 		  	$$ = strtol(s,&end,10);
 		  } else {
@@ -5580,6 +5781,46 @@ XML_aggregate:
  ;
 
 %%
+int find_subgeometry_type(char* geoSubType) {
+	int subType = 0;
+	if(strcmp(geoSubType, "point") == 0 )
+		subType = (1 << 2);
+	else if(strcmp(geoSubType, "linestring") == 0)
+		subType = (2 << 2);
+	else if(strcmp(geoSubType, "polygon") == 0)
+		subType = (4 << 2);
+	else if(strcmp(geoSubType, "multipoint") == 0)
+		subType = (5 << 2);
+	else if(strcmp(geoSubType, "multilinestring") == 0)
+		subType = (6 << 2);
+	else if(strcmp(geoSubType, "multipolygon") == 0)
+		subType = (7 << 2);
+	else if(strcmp(geoSubType, "geometrycollection") == 0)
+		subType = (8 << 2);
+	else {
+		size_t strLength = strlen(geoSubType);
+		if(strLength > 0 ) {
+			char *typeSubStr = malloc(strLength);
+			char flag = geoSubType[strLength-1]; 
+			
+			memcpy(typeSubStr, geoSubType, strLength-1);
+			typeSubStr[strLength-1]='\0';
+			if(flag == 'z' || flag == 'm' ) {
+				subType = find_subgeometry_type(typeSubStr);
+			
+			
+				if(flag == 'z')
+					SET_Z(subType);
+				if(flag == 'm')
+					SET_M(subType);
+			}
+			free(typeSubStr);
+		}
+
+	}
+	return subType;	
+}
+
 char *token2string(int token)
 {
 	switch (token) {

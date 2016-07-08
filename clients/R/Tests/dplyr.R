@@ -1,18 +1,10 @@
-ll <- NULL
-if (Sys.getenv("TSTTRGDIR") != "") {
-	ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
-}
 ff <- textConnection("asdf", open="w")
 # hide output from connect and attach since it would blow up the test output
 # dangerous since it might hide useful warnings
 # so if things go south it might be a good idea to uncomment the cat(dd) below
 dd <- capture.output( suppressMessages ( {
 
-library(MonetDB.R,quietly=T,lib.loc=ll)
-library(dplyr,quietly=T)
-library(Lahman,quietly=T)
-
-options(monetdb.profile=F)
+library(dplyr, quietly = T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -22,20 +14,10 @@ if (length(args) > 0)
 if (length(args) > 1) 
 	dbname <- args[[2]]
 
+dps <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport)
+copy_lahman(dps)
 
-# old way
-if (exists("lahman_monetdb")) {
-	# overwrite all args because lahman_monetdb sets a default arg in the first pos.
-	dps <- lahman_monetdb(host="localhost", dbname=dbname, port=dbport ,
-		user="monetdb",password="monetdb",timeout=100,wait=T,language="sql")
-# new way
-} else {
-	dps <- src_monetdb(dbname=dbname, port=dbport)
-	copy_lahman(dps)
-}
 }))
-
-#cat(dd)
 
 # the remainder is pretty much the example from the manpage.
 
@@ -109,7 +91,7 @@ print(nrow(sample_n(player_info, 24L)))
 print(nrow(head(sample_frac(player_info, .5), n=25L)))
 
 
-dbWriteTable(dps$con, "mtcars", mtcars)
+DBI::dbWriteTable(dps$con, "mtcars", mtcars)
 my_tbl <- tbl(dps, "mtcars") 
 
 # https://github.com/hadley/dplyr/issues/1165
@@ -140,7 +122,7 @@ print(nrow(aa))
 
 
 
-dbRemoveTable(dps$con, "mtcars")
+DBI::dbRemoveTable(dps$con, "mtcars")
 
 
 print("SUCCESS")

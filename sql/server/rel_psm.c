@@ -602,6 +602,14 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 	return l;
 }
 
+static int
+arg_cmp(void *A, void *N) 
+{
+	sql_arg *a = A;
+	char *name = N;
+	return strcmp(a->name, name);
+}
+
 static list *
 result_type(mvc *sql, symbol *res) 
 {
@@ -617,6 +625,9 @@ result_type(mvc *sql, symbol *res)
 
 		for(;n; n = n->next->next) {
 			sql_subtype *ct = &n->next->data.typeval;
+
+			if (list_find(types, n->data.sval, &arg_cmp) != NULL)
+				return sql_error(sql, ERR_AMBIGUOUS, "CREATE FUNC: identifier '%s' ambiguous", n->data.sval);
 
 		       	a = sql_create_arg(sql->sa, n->data.sval, ct, ARG_OUT);
 			list_append(types, a);
@@ -714,8 +725,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				char *tpe =  subtype2string((sql_subtype *) n->data);
 				
 				if (arg_list) {
+					char *t = arg_list;
 					arg_list = sql_message("%s, %s", arg_list, tpe);
-					_DELETE(tpe);	
+					_DELETE(t);
+					_DELETE(tpe);
 				} else {
 					arg_list = tpe;
 				}
@@ -763,9 +776,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 			if (body && lang > FUNC_LANG_SQL) {
 				char *lang_body = body->h->data.sval;
-				char *mod = 	(lang == FUNC_LANG_R)?"rapi":
+				char *mod = 	
+						(lang == FUNC_LANG_R)?"rapi":
 						(lang == FUNC_LANG_C)?"capi":
-						(lang == FUNC_LANG_J)?"japi":"unknown";
+						(lang == FUNC_LANG_J)?"japi":
+						(lang == FUNC_LANG_PY)?"pyapi":
+     					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 				sql->params = NULL;
 				if (create) {
 					f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, FALSE, vararg);
@@ -900,19 +916,24 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 			node *n;
 			
 			if (type_list->cnt > 0) {
+				void *e;
 				for (n = type_list->h; n; n = n->next) {
 					char *tpe =  subtype2string((sql_subtype *) n->data);
 				
 					if (arg_list) {
+						char *t = arg_list;
 						arg_list = sql_message("%s, %s", arg_list, tpe);
-						_DELETE(tpe);	
+						_DELETE(tpe);
+						_DELETE(t);
 					} else {
 						arg_list = tpe;
 					}
 				}
 				list_destroy(list_func);
 				list_destroy(type_list);
-				return sql_error(sql, 02, "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
+				e = sql_error(sql, 02, "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
+				_DELETE(arg_list);
+				return e;
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);

@@ -1,0 +1,37 @@
+stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
+
+
+# 15:17:06 >  
+# 15:17:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36250" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_testdb-upgrade-chain" "--set" "mal_listing=0"
+# 15:17:06 >  
+
+# MonetDB 5 server v11.11.8 (hg id: 34fcf4e7226d+)
+# This is an unreleased version
+# Serving database 'mTests_test_testdb-upgrade-chain', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36250/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:10:52 >  
+# 11:10:52 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 11:10:52 >  
+
+#select count(*) from testschema.smallstring;
+% testschema.L1 # table_name
+% L1 # name
+% bigint # type
+% 2 # length
+[ 66	]
+
+# 15:17:06 >  
+# 15:17:06 >  "Done."
+# 15:17:06 >  
+

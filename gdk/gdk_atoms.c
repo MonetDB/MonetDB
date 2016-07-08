@@ -239,7 +239,6 @@ const lng lng_nil = GDK_lng_min;
 const hge hge_nil = GDK_hge_min;
 #endif
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
-const wrd wrd_nil = GDK_wrd_min;
 const char str_nil[2] = { '\200', 0 };
 const ptr ptr_nil = NULL;
 
@@ -854,8 +853,11 @@ dblFromStr(const char *src, int *len, dbl **dst)
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
 		errno = 0;
-		d = strtod(src, &pe);
-		p = pe;
+		d = strtod(p, &pe);
+		if (p == pe)
+			p = src; /* nothing converted */
+		else
+			p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
 #ifdef isfinite
@@ -917,8 +919,11 @@ fltFromStr(const char *src, int *len, flt **dst)
 		 * ERANGE.  We accept underflow, but not overflow. */
 		char *pe;
 		errno = 0;
-		f = strtof(src, &pe);
-		p = pe;
+		f = strtof(p, &pe);
+		if (p == pe)
+			p = src; /* nothing converted */
+		else
+			p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #else /* no strtof, try sscanf */
@@ -1068,6 +1073,7 @@ strHeap(Heap *d, size_t cap)
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
 	if (HEAPalloc(d, size, 1) == GDK_SUCCEED) {
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		d->dirty = 1;
 		memset(d->base, 0, d->free);
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
 #ifndef NDEBUG
@@ -1316,6 +1322,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 #endif
 	}
 	h->free += pad + len + extralen;
+	h->dirty = 1;
 
 	/* maintain hash table */
 	pos -= extralen;
@@ -1756,7 +1763,6 @@ OIDinit(void)
 	GDKflushed = 0;
 	GDKoid = OIDrand();
 	assert(oid_nil == * (const oid *) ATOMnilptr(TYPE_oid));
-	assert(wrd_nil == * (const wrd *) ATOMnilptr(TYPE_wrd));
 	return 0;
 }
 
@@ -2041,39 +2047,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
 	 (BUN (*)(const void *)) intHash,		     /* atomHash */
 #else
-	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
-#endif
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"wrd",			/* name */
-#if SIZEOF_WRD == SIZEOF_INT
-	 TYPE_int,		/* storage */
-#else
-	 TYPE_lng,		/* storage */
-#endif
-	 1,			/* linear */
-	 sizeof(wrd),		/* size */
-	 sizeof(wrd),		/* align */
-#if SIZEOF_WRD == SIZEOF_INT
-	 (ptr) &int_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) intToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		     /* atomHash */
-#else
-	 (ptr) &lng_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) lngFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) lngToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */

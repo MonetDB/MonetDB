@@ -80,6 +80,7 @@
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
 #define SCALE_EQ	7	/* user defined functions need equal scales */
+#define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
 #define TR_OLD 0
 #define TR_NEW 1
@@ -166,6 +167,7 @@ typedef struct sql_base {
 	int rtime;
 	int allocated;
 	int flag;
+	int refcnt;
 	sqlid id;
 	char *name;
 } sql_base;
@@ -293,6 +295,8 @@ typedef struct sql_arg {
 #define FUNC_LANG_R   3 /* create .. language R */
 #define FUNC_LANG_C   4
 #define FUNC_LANG_J   5
+#define FUNC_LANG_PY  6 /* create .. language Python */
+#define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
 
 #define LANG_EXT(l)  (l>FUNC_LANG_SQL)
 
@@ -356,11 +360,14 @@ typedef enum idx_type {
 	join_idx,
 	oph_idx,		/* order preserving hash */
 	no_idx,			/* no idx, ie no storage */
+	imprints_idx,
+	ordered_idx,
 	new_idx_types
 } idx_type;
 
 #define hash_index(t) 		(t == hash_idx || t == oph_idx )
 #define idx_has_column(t) 	(hash_index(t) || t == join_idx)
+#define oid_index(t)		(t == join_idx)
 
 typedef struct sql_idx {
 	sql_base base;
@@ -368,7 +375,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
-	char *storage_type;
+	struct sql_idx *po;	/* the outer transactions idx */
 	void *data;
 } sql_idx;
 
@@ -446,6 +453,7 @@ typedef struct sql_column {
 	char *max;
 
 	struct sql_table *t;
+	struct sql_column *po;	/* the outer transactions column */
 	void *data;
 } sql_column;
 
@@ -492,6 +500,7 @@ typedef struct sql_table {
 	void *data;
 	struct sql_schema *s;
 	struct sql_table *p;	/* The table is part of this merge table */
+	struct sql_table *po;	/* the outer transactions table */
 } sql_table;
 
 typedef struct res_col {

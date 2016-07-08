@@ -34,7 +34,7 @@ Ready.
 #select count(y),sum(z) from (select '',false,a=200 from foo union all select '',null,a=200 from foo) as t(x,y,z) group by x;
 % .L7,	.L10 # table_name
 % L7,	L10 # name
-% wrd,	hugeint # type
+% bigint,	hugeint # type
 % 1,	1 # length
 #ROLLBACK;
 

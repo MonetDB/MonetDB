@@ -5,7 +5,7 @@
 
 function tst903();
     t0:= alarm.usec();
-    b:= bat.new(:oid,:lng);
+    b:= bat.new(:lng);
     barrier i:= 0:lng;
         k:= mmath.rand();
         l:= calc.lng(k);

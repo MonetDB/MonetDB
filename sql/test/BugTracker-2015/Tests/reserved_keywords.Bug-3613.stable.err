@@ -32,23 +32,13 @@ stderr of test 'reserved_keywords.Bug-3613` in directory 'sql/test/BugTracker-20
 ## HASHnew(tpe=6,size=256,mask=1024): width = 2 ##
 ## HASHnew(tpe=6,size=256,mask=1024): width = 2 ##
 
-# 18:58:09 >  
-# 18:58:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21543" "--port=39106"
-# 18:58:09 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-12423/.s.monetdb.35490
-QUERY = SELECT tbl.schema FROM sys.statistics tbl;
-ERROR = !SELECT: no such column 'tbl.schema'
-MAPI  = (monetdb) /var/tmp/mtest-12423/.s.monetdb.35490
-QUERY = SELECT tbl.user FROM sys.tracelog tbl;
-ERROR = !SELECT: no such column 'tbl.user'
-MAPI  = (monetdb) /var/tmp/mtest-12423/.s.monetdb.35490
-QUERY = SELECT schema FROM sys.statistics;
-ERROR = !SELECT: identifier 'schema' unknown
+# 13:11:58 >  
+# 13:11:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20832" "--port=35803"
+# 13:11:58 >  
 
 
 
-# 18:58:09 >  
-# 18:58:09 >  "Done."
-# 18:58:09 >  
+# 13:11:59 >  
+# 13:11:59 >  "Done."
+# 13:11:59 >  
 

@@ -107,13 +107,13 @@ Ready.
 #SELECT count(oid) FROM wi;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 9136	]
 #SELECT count(i) FROM wo;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 9136	]
 #SELECT * FROM sys.storage
@@ -122,7 +122,7 @@ Ready.
 % schema,	table,	column,	type,	count,	typewidth,	columnsize,	heapsize,	hashes,	imprints,	sorted # name
 % clob,	clob,	clob,	clob,	bigint,	int,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 3,	2,	3,	3,	4,	1,	5,	1,	1,	1,	5 # length
-[ "sys",	"wi",	"oid",	"oid",	9136,	4,	36544,	0,	0,	0,	false	]
+[ "sys",	"wi",	"oid",	"oid",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"i",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n1",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
 [ "sys",	"wi",	"n2",	"int",	9136,	4,	36544,	0,	0,	0,	true	]
@@ -156,13 +156,13 @@ Ready.
 #SELECT count(oid) FROM create_table_test2;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM create_table_test3;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 2	]
 #DROP TABLE create_table_test;

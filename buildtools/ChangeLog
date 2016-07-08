@@ -1,7 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Sat Jan 23 2016 Sjoerd Mullender <sjoerd@acm.org>
-- Implemented a systemd configuration file for a monetdbd.service
-  on Fedora.
-

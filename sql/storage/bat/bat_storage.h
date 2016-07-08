@@ -42,7 +42,5 @@ extern int dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat,
 extern sql_delta * timestamp_delta( sql_delta *d, int ts);
 extern sql_dbat * timestamp_dbat( sql_dbat *d, int ts);
 
-extern void allocate_delta(sql_trans *tr, sql_column *c);
-
 #endif /*BATSTORAGE_H */
 

@@ -108,12 +108,12 @@ void RECYCLEinit(void){
 	MT_lock_init(&recycleLock,"recycleLock");
 	ATOMIC_INIT(statementsLock);
 #endif
-	sqlRef = putName("sql",3);
-	bindRef = putName("bind",4);
-	bind_idxRef = putName("bind_idxbat",11);
-	subselectRef = putName("subselect",9);
-	thetasubselectRef = putName("thetasubselect",14);
-	likesubselectRef= putName("likesubselect",14);
+	sqlRef = putName("sql");
+	bindRef = putName("bind");
+	bind_idxRef = putName("bind_idxbat");
+	subselectRef = putName("subselect");
+	thetasubselectRef = putName("thetasubselect");
+	likesubselectRef= putName("likesubselect");
 	recycleCacheLimit=HARDLIMIT_STMT;
 }
 
@@ -143,7 +143,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 		v= &getVarConstant(mb,getArg(q,j));
 		if(isaBatType(getArgType(mb, q,j)) ){
 			if( v->val.bval != bat_nil ){
-				BBPdecref(abs(v->val.bval), TRUE);
+				BBPdecref(v->val.bval, TRUE);
 				if (!BBP_lrefs(v->val.bval)){
 					v->vtype= TYPE_int;
 					v->val.ival= 0;
@@ -424,6 +424,8 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 			c = fndConstant(recycleBlk, &cst, recycleBlk->vtop);
 			if (c<0)
 				c = defConstant(recycleBlk, v->vtype, &cst);
+			else
+				VALclear(&cst);
 		} else {
 			c = newTmpVariable(recycleBlk, v->vtype);
 			setVarConstant(recycleBlk, c);
@@ -434,6 +436,7 @@ RECYCLEkeep(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, RuntimeProfile 
 				clrVarCleanup(recycleBlk, c);
 			v = &getVarConstant(recycleBlk, c);
 			VALcopy(v,&cst);
+			VALclear(&cst);
 		}
 		if (v->vtype == TYPE_bat)
 			BBPincref( *(const int*)VALptr(v), TRUE);
@@ -739,8 +742,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 					bid = nbid;
 					pc = i;
 				} else {
-					b1 = BBPquickdesc(abs(bid), FALSE);
-					b2 = BBPquickdesc(abs(nbid), FALSE);
+					b1 = BBPquickdesc(bid, FALSE);
+					b2 = BBPquickdesc(nbid, FALSE);
 					if (b1 && b2 && BATcount(b1) > BATcount(b2)){
 						bid = nbid;
 						pc = i;
@@ -785,7 +788,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfi
 #endif
 		nbid = stk->stk[getArg(p,2)].val.bval;
         stk->stk[getArg(p,2)].val.bval = bid;
-        BBPincref(abs(bid), TRUE);
+        BBPincref(bid, TRUE);
         /* make sure the garbage collector is not called, it is taken care of by the current call */
         j = stk->keepAlive ;
         stk->keepAlive = TRUE;
@@ -864,7 +867,7 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, RuntimeProfil
 
 	/* infinite case, admit all new instructions */
 	if (RECYCLEfind(cntxt,mb,stk,p)<0 )
-		(void) RECYCLEkeep(cntxt,mb, stk, p, prof);
+		RECYCLEkeep(cntxt,mb, stk, p, prof);
 	recycleSearchTime += GDKusec()-clk;
 	recycleSearchCalls++;
 	MT_lock_unset(&recycleLock);
@@ -1000,7 +1003,7 @@ RECYCLEcolumn(Client cntxt,str sch,str tbl, str col)
 			release[getArg(p,j)]=1;//propagate the removal request
 			if (j < p->retc && isaBatType(getArgType(recycleBlk,p,j)) ){
 				v = &getVarConstant(recycleBlk,getArg(p,j));
-				BBPdecref(abs(v->val.bval), TRUE);
+				BBPdecref(v->val.bval, TRUE);
 			}
 		}
 		freeInstruction(p);
@@ -1065,7 +1068,7 @@ RECYCLEresetBAT(Client cntxt, bat bid)
 			release[getArg(p,j)]=1;//propagate the removal request
 			if (j < p->retc && isaBatType(getArgType(recycleBlk,p,j)) ){
 				v = &getVarConstant(recycleBlk,getArg(p,j));
-				BBPdecref(abs(v->val.bval), TRUE);
+				BBPdecref(v->val.bval, TRUE);
 			}
 		}
 		actions++;
@@ -1100,12 +1103,14 @@ RECYCLEdumpInternal(stream *s)
     /* and dump the statistics per instruction*/
 	mnstr_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
     for(i=0; i< recycleBlk->stop; i++){
+		str inst = instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),0);
         mnstr_printf(s,"#%d\t%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
             recycleBlk->stmt[i]->calls,
             recycleBlk->stmt[i]->ticks,
             recycleBlk->stmt[i]->rbytes,
             recycleBlk->stmt[i]->wbytes,
-            instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),0));
+            inst);
+		GDKfree(inst);
     }
 #else
 	(void) i;

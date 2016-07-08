@@ -68096,26 +68096,26 @@ Ready.
 #and v.departure_harbour ='Texel');
 % voc.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 7 # length
 [ 1305366	]
 #select count(*) from craftsmen c, passengers p
 #where c.trip = p.trip and exists (select 1) ;
 % voc.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 7 # length
 [ 1308285	]
 #select count(*) from craftsmen c ;
 % voc.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 2349	]
 #select count(*) from craftsmen c where exists (select 1) ;
 % voc.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 4 # length
 [ 2349	]
 #commit;
@@ -68141,7 +68141,7 @@ Ready.
 #SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
 % .onboard_people,	.L1 # table_name
 % type,	total # name
-% char,	wrd # type
+% char,	bigint # type
 % 10,	4 # length
 [ "craftsmen",	2349	]
 [ "impotenten",	938	]
@@ -68152,13 +68152,13 @@ Ready.
 #select count(*) from impotenten;
 % voc.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 938	]
 #SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%';
 % voc.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 3 # length
 [ 358	]
 #SELECT chamber, CAST(AVG(invoice) AS integer) AS average

@@ -144,8 +144,8 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 		mdb->brkBlock[mdb->brkTop] = sym ? sym->def : mb;
 		mdb->brkPc[mdb->brkTop] = -1;
 		mdb->brkVar[mdb->brkTop] = -1;
-		mdb->brkMod[mdb->brkTop] = putName(modnme, strlen(modnme));
-		mdb->brkFcn[mdb->brkTop] = putName(fcnnme, strlen(fcnnme));
+		mdb->brkMod[mdb->brkTop] = putName(modnme);
+		mdb->brkFcn[mdb->brkTop] = putName(fcnnme);
 		fcnnme--;
 		*fcnnme = '.';
 		mdb->brkRequest[mdb->brkTop] = GDKstrdup(request);
@@ -255,8 +255,8 @@ int
 mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag)
 {
 	Symbol s;
-	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)),
-			putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme),
+			putName(fcnnme));
 	if (s == NULL)
 		return -1;
 	while (s) {
@@ -305,13 +305,13 @@ static void
 printBATproperties(stream *f, BAT *b)
 {
 	mnstr_printf(f, " count=" BUNFMT " lrefs=%d ",
-			BATcount(b), BBP_lrefs(abs(b->batCacheid)));
-	if (BBP_refs(abs(b->batCacheid)) - 1)
-		mnstr_printf(f, " refs=%d ", BBP_refs(abs(b->batCacheid)));
+			BATcount(b), BBP_lrefs(b->batCacheid));
+	if (BBP_refs(b->batCacheid) - 1)
+		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->T->heap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->T->heap.parentid));
+	if (b->theap.parentid)
+		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
 }
 /* MAL debugger parser
  * The debugger structure is inherited from GDB.
@@ -358,7 +358,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 			if( idx < 0)
 				return NULL;
 		}
-		fsym = findSymbolInModule(findModule(cntxt->nspace, putName(b, strlen(b))), fcnname + 1);
+		fsym = findSymbolInModule(findModule(cntxt->nspace, putName(b)), fcnname + 1);
 		*fcnname = '.';
 		if (h)
 			*h = '[';
@@ -383,7 +383,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
 	int first = pc;
-	int stepsize = 10;
+	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	do {
 		int r;
@@ -413,12 +413,15 @@ retryRead:
 				cntxt->fdin->pos = cntxt->fdin->len;
 				goto retryRead;
 			}
-		} else if (cntxt == mal_clients) {
+		}
+#ifndef HAVE_EMBEDDED
+		else if (cntxt == mal_clients) {
 			/* switch to mdb streams */
 			r = readConsole(cntxt);
 			if (r <= 0)
 				break;
 		}
+#endif
 		b = CURRENT(cntxt);
 
 		/* terminate the line with zero */
@@ -481,14 +484,7 @@ retryRead:
 		case 'f':   /* finish */
 		case 'n':   /* next */
 		case 's':   /* step */
-			if (strncmp("span", b, 4) == 0) {
-				Lifespan span = setLifespan(mb);
-				if ( span){
-					debugLifespan(cntxt, mb, span);
-					GDKfree(span);
-				}
-				continue;
-			} else if (strncmp("scenarios", b, 9) == 0) {
+			if (strncmp("scenarios", b, 9) == 0) {
 				showAllScenarios(out);
 				continue;
 			} else if (strncmp("scenario", b, 3) == 0) {
@@ -514,7 +510,7 @@ retryRead:
 					*fcnname = 0;
 					fcnname++;
 				}
-				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				fsym = findModule(cntxt->nspace, putName(modname));
 
 				if (fsym == cntxt->nspace && strcmp(modname, "user")) {
 					mnstr_printf(out, "#module '%s' not found\n", modname);
@@ -584,7 +580,7 @@ retryRead:
 				modname = b;
 				fcnname = strchr(b, '.');
 				if (fcnname == NULL) {
-					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+					fsym = findModule(cntxt->nspace, putName(modname));
 					if (fsym == 0) {
 						mnstr_printf(out, "#%s module not found\n", modname);
 						continue;
@@ -600,7 +596,7 @@ retryRead:
 				}
 				*fcnname = 0;
 				fcnname++;
-				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				fsym = findModule(cntxt->nspace, putName(modname));
 				if (fsym == 0) {
 					mnstr_printf(out, "#%s module not found\n", modname);
 					continue;
@@ -872,7 +868,7 @@ retryRead:
 						continue;
 					}
 					/* optionally dump the complete module */
-					fsym = findModule(cntxt->nspace, putName(b, strlen(b)));
+					fsym = findModule(cntxt->nspace, putName(b));
 					if (fsym == 0) {
 						mnstr_printf(out, "#'%s' not found\n", b);
 						continue;
@@ -1141,10 +1137,26 @@ mdbTrapClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * creation of a minimal execution environment first.
  */
 str
-runMALDebugger(Client cntxt, Symbol s)
+runMALDebugger(Client cntxt, MalBlkPtr mb)
 {
+	str oldprompt= cntxt->prompt;
+	int oldtrace = cntxt->itrace;
+	int oldopt = cntxt->debugOptimizer;
+	int oldhist = cntxt->curprg->def->keephistory;
+	str msg;
+
 	cntxt->itrace = 'n';
-	return runMAL(cntxt, s->def, 0, 0);
+	cntxt->debugOptimizer = TRUE;
+	cntxt->curprg->def->keephistory = TRUE;
+
+	msg = runMAL(cntxt, mb, 0, 0);
+
+	cntxt->curprg->def->keephistory = oldhist;
+	cntxt->prompt =oldprompt;
+	cntxt->itrace = oldtrace;
+	cntxt->debugOptimizer = oldopt;
+	mnstr_printf(cntxt->fdout, "mdb>#EOD\n");
+	return msg;
 }
 
 /* Utilities
@@ -1180,7 +1192,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newColumnType(b->ttype));
+		tpe = getTypeName(newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
 		GDKfree(tpe);
 		printBATproperties(f, b);
@@ -1228,7 +1240,8 @@ printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
 		nme = nmebuf;
 	} else
 		nme = n->name;
-	mnstr_printf(f, "#[%d] %5s = ", index, nme);
+	mnstr_printf(f, "#[%2d] %5s", index, nme);
+	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb,index), getLastUpdate(mb,index),getEndScope(mb, index));
 	if (v)
 		ATOMprint(v->vtype, VALptr(v), f);
 }
@@ -1244,13 +1257,11 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	printStackHdr(f, mb, v, index);
 
 	if (v && v->vtype == TYPE_bat) {
-		int i = v->val.ival;
-		BAT *b = BBPquickdesc(abs(i), TRUE);
+		bat i = v->val.bval;
+		BAT *b = BBPquickdesc(i, TRUE);
 
-		if (i < 0)
-			b = BATmirror(b);
 		if (b) {
-			nme = getTypeName(newColumnType(b->ttype));
+			nme = getTypeName(newBatType(b->ttype));
 			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
 		} else {
 			nme = getTypeName(n->type);
@@ -1267,8 +1278,6 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
 	/* mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));*/
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
-	if (getEndOfLife(mb, index))
-		mnstr_printf(f, " eolife=%d ", getEndOfLife(mb, index));
 	GDKfree(nme);
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
@@ -1344,7 +1353,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 					BBPunfix(b[1]->batCacheid);
 				return;
 			}
-			p = BUNfnd(BATmirror(b[0]), props);
+			p = BUNfnd(b[0], props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b[1]);
 				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));
@@ -1415,27 +1424,4 @@ debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci)
 		removeInstruction(mb, pci);
 	return MAL_SUCCEED;
-}
-
-void
-debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
-{
-	int i;
-	char name[BUFSIZ];
-
-	for (i = 0; i < mb->vtop; i++) {
-		if (isTmpVar(mb, i))
-			snprintf(name, BUFSIZ, "%c%d ", TMPMARKER, getVar(mb, i)->tmpindex);
-		else
-			snprintf(name, BUFSIZ, "%s ", getVar(mb, i)->name);
-		mnstr_printf(cntxt->fdout, "#%8s eolife=%4d range %4d - %4d  ",
-				name,
-				getEndOfLife(mb,i),
-				getBeginLifespan(span, i),
-				getEndLifespan(span, i));
-		if (getLastUpdate(span, i))
-			mnstr_printf(cntxt->fdout, "last update %d \n", getLastUpdate(span, i));
-		else
-			mnstr_printf(cntxt->fdout, "constant \n");
-	}
 }

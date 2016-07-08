@@ -36,7 +36,7 @@ Ready.
 % L1 # name
 % wrd # type
 % 2 # length
-[ 46	]
+[ 37	]
 #TRACE SELECT count(*) FROM types;
 % .trace,	.trace # table_name
 % ticks,	stmt # name

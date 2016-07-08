@@ -150,7 +150,6 @@ struct OPTcatalog {
 {"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
-{"mosaic",		0,	0,	0,	DEBUG_OPT_MOSAIC},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
@@ -211,23 +210,25 @@ OPTsetDebugStr(void *ret, str *nme)
 str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec)
 {
+	char buf[256];
+	lng clk = GDKusec();
+
 	if (cntxt->mode == FINISHCLIENT)
 		throw(MAL, name, "prematurely stopped client");
 	if( actions > 0){
 		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 		chkFlow(cntxt->fdout, mb);
 		chkDeclarations(cntxt->fdout, mb);
+		usec += GDKusec() - clk;
 	}
-	if( cntxt->debugOptimizer){
-		/* keep the actions taken as a post block comments */
-		char buf[BUFSIZ];
-		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
-		newComment(mb,buf);
-		if (mb->errors)
-			throw(MAL, name, PROGRAM_GENERAL);
-	}
+	/* keep all actions taken as a post block comment */
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
+	newComment(mb,buf);
+	if (mb->errors)
+		throw(MAL, name, PROGRAM_GENERAL);
 	return MAL_SUCCEED;
 }
+
 /*
  * Limit the loop count in the optimizer to guard against indefinite
  * recursion, provided the optimizer does not itself generate
@@ -242,12 +243,18 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 	lng clk = GDKusec();
+	char buf[256];
 
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
 	if ( mb->inlineProp)
         	return 0;
 
+	/* force at least once a complete type check by resetting the type check flag */
+	resetMalBlk(mb,mb->stop);
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 
 	do {
 		/* any errors should abort the optimizer */
@@ -272,6 +279,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 		}
 	} while (qot && cnt++ < mb->stop);
 	mb->optimize= GDKusec() - clk;
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","total",1,mb->optimize);
+	newComment(mb,buf);
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return 0;
@@ -490,13 +499,17 @@ isProcedure(MalBlkPtr mb, InstrPtr p)
 
 int
 isUpdateInstruction(InstrPtr p){
-	if ( (getModuleId(p) == batRef || getModuleId(p)==sqlRef) &&
-	   (getFunctionId(p) == insertRef ||
-		getFunctionId(p) == inplaceRef ||
+	if ( getModuleId(p) == sqlRef &&
+	   ( getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == deleteRef ))
+		getFunctionId(p) == replaceRef ))
+			return TRUE;
+	if ( getModuleId(p) == batRef &&
+	   ( getFunctionId(p) == inplaceRef ||
+		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == updateRef ||
+		getFunctionId(p) == replaceRef ))
 			return TRUE;
 	return FALSE;
 }
@@ -660,7 +673,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == batcalcRef) ||
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
-		 getModuleId(p) != batrapiRef;
+		 getModuleId(p) != batrapiRef &&
+		 getModuleId(p) != batpyapiRef;
 }
 
 int isLikeOp(InstrPtr p){
@@ -671,14 +685,24 @@ int isLikeOp(InstrPtr p){
 		 getFunctionId(p) == not_ilikeRef));
 }
 
-int isTopn(InstrPtr p){
+int 
+isTopn(InstrPtr p)
+{
 	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
 			isSlice(p));
 }
 
-int isSlice(InstrPtr p){
+int 
+isSlice(InstrPtr p)
+{
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == subsliceRef);
+	   (getFunctionId(p) == subsliceRef || getFunctionId(p) == sliceRef)); 
+}
+
+int 
+isSample(InstrPtr p)
+{
+	return (getModuleId(p) == sampleRef && getFunctionId(p) == subuniformRef);
 }
 
 int isOrderby(InstrPtr p){

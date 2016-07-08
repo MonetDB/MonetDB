@@ -61,19 +61,19 @@ Ready.
 #SELECT COUNT(*) AS val FROM simple_table ORDER BY val DESC;
 % sys.L1 # table_name
 % val # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 5	]
 #SELECT COUNT(*) AS val FROM simple_table ORDER BY val DESC LIMIT 5;
 % .L1 # table_name
 % val # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 5	]
 #SELECT COUNT(*) AS val FROM simple_table HAVING 1 > 0 ORDER BY val DESC LIMIT 5;
 % .L1 # table_name
 % val # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 5	]
 #ROLLBACK;

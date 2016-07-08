@@ -6,14 +6,14 @@ time00
 
 strmax
 
-xml00
-xml01
-xml02
-xml03
-xml04
-xml05
-xml10
-xml100
+HAVE_LIBXML?xml00
+HAVE_LIBXML?xml01
+HAVE_LIBXML?xml02
+HAVE_LIBXML?xml03
+HAVE_LIBXML?xml04
+HAVE_LIBXML?xml05
+HAVE_LIBXML?xml10
+HAVE_LIBXML?xml100
 
 json00
 json01

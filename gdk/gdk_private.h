@@ -14,6 +14,7 @@
 
 #define DISABLE_PARENT_HASH 1
 /* #define PERSISTENTHASH 1 */
+#define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
 
@@ -22,19 +23,8 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
+	orderidxheap,
 	mosaicheap
-};
-
-/*
- * The different parts of which a BAT consists are physically stored
- * next to each other in the BATstore type.
- */
-struct BATstore {
-	BAT B;			/* storage for BAT descriptor */
-	BAT BM;			/* mirror (reverse) BAT */
-	COLrec H;		/* storage for head column */
-	COLrec T;		/* storage for tail column */
-	BATrec S;		/* the BAT properties */
 };
 
 __hidden void ALIGNcommit(BAT *b)
@@ -57,13 +47,14 @@ __hidden int BATcheckimprints(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATcheckmodes(BAT *b, int persistent)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATcheckmodes(BAT *b, int persistent)
+__hidden int BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden BATstore *BATcreatedesc(int tt, int heapnames, int role)
+
+__hidden BAT *BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden void BATdestroy(BATstore *bs)
+__hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -81,16 +72,16 @@ __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden size_t BATvmsize(BAT *b, int dirty)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPcacheit(BATstore *bs, int lock)
+__hidden void BBPcacheit(BAT *bn, int lock)
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void);		/* never called: for debugging only */
 __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden BATstore *BBPgetdesc(bat i)
+__hidden BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPinit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden bat BBPinsert(BATstore *bs)
+__hidden bat BBPinsert(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
@@ -133,7 +124,7 @@ __hidden void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emerg
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
+__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 	__attribute__((__visibility__("hidden")));
 __hidden int GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__visibility__("hidden")));
@@ -148,8 +139,6 @@ __hidden int HASHgonebad(BAT *b, const void *v)
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
 __hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
-	__attribute__((__visibility__("hidden")));
-__hidden void HASHremove(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__visibility__("hidden")));
@@ -167,8 +156,6 @@ __hidden gdk_return HEAPshrink(Heap *h, size_t size)
 	__attribute__((__visibility__("hidden")));
 __hidden int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
-__hidden void IMPSdestroy(BAT *b)
-	__attribute__((__visibility__("hidden")));
 __hidden void IMPSfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
@@ -178,8 +165,6 @@ __hidden void IMPSprint(BAT *b)
 	__attribute__((__visibility__("hidden")));
 #endif
 __hidden gdk_return unshare_string_heap(BAT *b)
-	__attribute__((__visibility__("hidden")));
-__hidden oid MAXoid(BAT *i)
 	__attribute__((__visibility__("hidden")));
 __hidden void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
@@ -194,6 +179,8 @@ __hidden int OIDinit(void)
 __hidden oid OIDread(str buf)
 	__attribute__((__visibility__("hidden")));
 __hidden int OIDwrite(FILE *f)
+	__attribute__((__visibility__("hidden")));
+__hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
 	__attribute__((__visibility__("hidden")));
@@ -210,6 +197,8 @@ __hidden void VIEWdestroy(BAT *b)
 __hidden gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *virtualize(BAT *bn)
+	__attribute__((__visibility__("hidden")));
+__hidden int binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
@@ -292,16 +281,9 @@ extern MT_Lock MT_system_lock;
 	do {								\
 		ERRORcheck((P1) == NULL, F ": BAT required\n", E);	\
 		ERRORcheck((P2) == NULL, F ": BAT required\n", E);	\
-		if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||		\
-		    TYPEerror(BATttype(P1),BATttype(P2)))		\
-		{							\
+		if (TYPEerror(BATttype(P1),BATttype(P2))) {		\
 			GDKerror("Incompatible operands.\n");		\
 			return (E);					\
-		}							\
-		if (BAThtype(P1) != BAThtype(P2) &&			\
-		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 		}							\
 		if (BATttype(P1) != BATttype(P2) &&			\
 		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
@@ -322,37 +304,6 @@ extern MT_Lock MT_system_lock;
 #define GDKtrimLock(y)	GDKbbpLock[y].trim
 #define GDKcacheLock(y)	GDKbbpLock[y].alloc
 #define BBP_free(y)	GDKbbpLock[y].free
-
-#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
-
-#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
-
-#define bunfastins_nocheck(b, p, h, t, hs, ts)		\
-	do {						\
-		hfastins_nocheck(b, p, h, hs);		\
-		tfastins_nocheck(b, p, t, ts);		\
-		(b)->batCount++;			\
-	} while (0)
-
-#define bunfastins_nocheck_inc(b, p, h, t)				\
-	do {								\
-		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
-		p++;							\
-	} while (0)
-
-#define bunfastins(b, h, t)						\
-	do {								\
-		register BUN _p = BUNlast(b);				\
-		if (_p >= BATcapacity(b)) {				\
-			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastins: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
-	} while (0)
 
 /* extra space in front of strings in string heaps when hashash is set
  * if at least (2*SIZEOF_BUN), also store length (heaps are then

@@ -4,7 +4,7 @@ Test if server doesn't crash when remote and local table definitions do not matc
 Current result is an mal error (compilation failed)
 """
 
-import os, sys, socket, glob, monetdb.sql, threading, time, codecs, shutil, tempfile
+import os, sys, socket, glob, pymonetdb, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -40,7 +40,7 @@ tmpdir = tempfile.mkdtemp()
 try:
     masterport = freeport()
     masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
-    masterconn = monetdb.sql.connect(database='', port=masterport, autocommit=True)
+    masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
 
     # load data (in parallel)
     def worker_load(workerrec):
@@ -66,7 +66,7 @@ try:
             'tpf'      : '_' + str(i)
         }
         workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
-        workerrec['conn'] = monetdb.sql.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
+        workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
         t = threading.Thread(target=worker_load, args = [workerrec])
         t.start()
         workerrec['loadthread'] = t
@@ -88,9 +88,16 @@ try:
         c.execute(rtable)
         c.execute(atable)
 
-    c.execute("select * from " + shardtable + workers[0]['tpf'] )
-    print str(c.fetchall())
+    try:
+        c.execute("select * from " + shardtable + workers[0]['tpf'] )
+    except pymonetdb.OperationalError as e:
+        print(e)
+    else:
+        print(str(c.fetchall()))
 
 finally:
+    masterproc.communicate()
+    for worker in workers:
+        workerrec['proc'].communicate()
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)

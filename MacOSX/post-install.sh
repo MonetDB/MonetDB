@@ -2,6 +2,14 @@
 
 monetdb_path=/usr/local/monetdb/bin
 
-if [[ ":$PATH:" != *":$monetdb_path:"* ]]; then
-    printf '\n# Set MonetDB path\nexport PATH=$PATH:'$monetdb_path'\n' >> ~/.profile
-fi
+case $PATH in
+*:$monetdb_path|*:$monetdb_path:*|$monetdb_path:*)
+    ;;
+*)
+    cat >> ~/.profile <<EOF
+
+# Set MonetDB path
+export PATH=\$PATH:$monetdb_path
+EOF
+    ;;
+esac

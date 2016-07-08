@@ -1,11 +1,11 @@
 stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 
 
-# 23:12:08 >  
-# 23:12:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30565" "--set" "mapi_usock=/var/tmp/mtest-23626/.s.monetdb.30565" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "mal_listing=2" "--set" "embedded_r=yes"
-# 23:12:08 >  
+# 13:32:04 >  
+# 13:32:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38272" "--set" "mapi_usock=/var/tmp/mtest-30987/.s.monetdb.38272" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "embedded_r=yes"
+# 13:32:04 >  
 
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-devel/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,20 +17,18 @@ stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 30565
-# cmdline opt 	mapi_usock = /var/tmp/mtest-23626/.s.monetdb.30565
+# cmdline opt 	mapi_port = 38272
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30987/.s.monetdb.38272
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal
-# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-devel/var/MonetDB/mTests_monetdb5_modules_mal
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 23:12:08 >  
-# 23:12:08 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23626" "--port=30565"
-# 23:12:08 >  
+# 13:32:05 >  
+# 13:32:05 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-30987" "--port=38272"
+# 13:32:05 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-25315/.s.monetdb.30153
+MAPI  = (monetdb) /var/tmp/mtest-30987/.s.monetdb.38272
 QUERY = # let connect figure out itself how to connect to the running db
         uri := sabaoth.getLocalConnectionURI();
         conn:str := remote.connect(uri, "monetdb", "monetdb");

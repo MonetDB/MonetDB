@@ -38,7 +38,7 @@ Ready.
 #select count(dval), count(nval) from type_test;
 % sys.L1,	sys.L2 # table_name
 % L1,	L2 # name
-% wrd,	wrd # type
+% bigint,	bigint # type
 % 1,	1 # length
 [ 3,	3	]
 #select sum(dval), sum(nval) from type_test;

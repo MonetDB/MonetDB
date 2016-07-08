@@ -10,19 +10,19 @@ stderr of test 'create_in_schema` in directory 'sql/test` itself:
 # 15:21:44 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38268  < create_in_schema.sql
 # 15:21:44 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from bla3;	-- should fail
 ERROR = !SELECT: no such table 'bla3'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop view tmp.v_bla5;
 ERROR = !DROP VIEW: unknown view 'v_bla5'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop view v_bla4;	-- should fail
 ERROR = !DROP VIEW: unknown view 'v_bla4'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table sys.bla4;	-- should fail
 ERROR = !DROP TABLE: no such table 'bla4'
-MAPI  = (monetdb) /var/tmp/mtest-24128/.s.monetdb.36271
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table bla3;	-- should fail
 ERROR = !DROP TABLE: no such table 'bla3'
 

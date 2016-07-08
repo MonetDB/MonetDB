@@ -1,10 +1,10 @@
 function qry();
-empty:= bat.new(:oid,:oid);
-a:= bat.new(:oid,:oid);
-b:= bat.new(:oid,:oid);
-c:= bat.new(:oid,:oid);
-d:= bat.new(:oid,:str);
-k:= bat.new(:oid,:int);
+empty:= bat.new(:oid);
+a:= bat.new(:oid);
+b:= bat.new(:oid);
+c:= bat.new(:oid);
+d:= bat.new(:str);
+k:= bat.new(:int);
 
 bat.append(a,0@0);
 bat.append(a,3@0);

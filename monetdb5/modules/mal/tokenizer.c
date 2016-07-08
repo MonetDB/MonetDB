@@ -66,14 +66,25 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 {
 	BATiter bi = bat_iterator(b);
 	BATiter biidx = bat_iterator(bidx);
-
 	BUN p;
-	BAThash(b, 2 * BATcount(b));
-	HASHloop_str(bi, b->T->hash, p, part)
-	{
-		if (*((oid *) BUNtail(biidx, p)) == *prv) {
-			*prv = (oid) p;
-			return TRUE;
+
+	if (BAThash(b, 2 * BATcount(b)) == GDK_SUCCEED) {
+		HASHloop_str(bi, b->thash, p, part) {
+			if (*((oid *) BUNtail(biidx, p)) == *prv) {
+				*prv = (oid) p;
+				return TRUE;
+			}
+		}
+	} else {
+		/* hash failed, slow scan */
+		BUN q;
+
+		BATloop(b, p, q) {
+			if (*((oid *) BUNtail(biidx, p)) == *prv &&
+				strcmp(BUNtail(bi, p), part) == 0) {
+				*prv = (oid) p;
+				return TRUE;
+			}
 		}
 	}
 	return FALSE;
@@ -105,14 +116,13 @@ TKNZRopen(void *ret, str *in)
 	}
 	tokenDepth = 0;
 
-	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
+	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
 	if (TRANS == NULL) {
 		MT_lock_unset(&mal_contextLock);
 		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 	}
 	/* now we are sure that none overwrites the tokenizer table*/
 	MT_lock_unset(&mal_contextLock);
-	BATseqbase(TRANS, 0);
 
 	snprintf(name, 128, "%s", *in);
 	batname = (str) GDKmalloc(134 * sizeof(char));
@@ -123,10 +133,9 @@ TKNZRopen(void *ret, str *in)
 	idx = BBPindex(batname);
 
 	if (idx == 0) { /* new tokenizer */
-		b = BATnew(TYPE_void, TYPE_oid, 1024, PERSISTENT);
+		b = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
-		BATseqbase(b, 0);
 		tokenBAT[INDEX].val = b;
 		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED)
 			throw(MAL, "tokenizer.open", OPERATION_FAILED);
@@ -254,39 +263,37 @@ TKNZRappend(oid *pos, str *s)
 			/* make new bat for value */
 			batname = (str) GDKmalloc(132 * sizeof(char));
 			snprintf(batname, 128, "%s_%d", name, i);
-			bVal = BATnew(TYPE_void, TYPE_str, 1024, PERSISTENT);
+			bVal = COLnew(0, TYPE_str, 1024, PERSISTENT);
 			if (bVal == NULL) {
 				GDKfree(batname);
 				GDKfree(url);
 				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
 			}
-			BATseqbase(bVal, 0);
 			
 			tokenBAT[i].val = bVal;
 
-			if (BKCsetName(&r, &bVal->batCacheid, (const char*const*) &batname)
+			if ((msg = BKCsetName(&r, &bVal->batCacheid, (const char*const*) &batname))
 				!= MAL_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				throw(MAL, "tokenizer.open", OPERATION_FAILED);
+				return msg;
 			}
-			if (BKCsetPersistent(&r, &bVal->batCacheid)
+			if ((msg = BKCsetPersistent(&r, &bVal->batCacheid))
 				!= MAL_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				throw(MAL, "tokenizer.open", OPERATION_FAILED);
+				return msg;
 			}
 			BUNappend(TRANS, batname, FALSE);
 
 			/* make new bat for index */
 			snprintf(batname, 132, "%s_idx_%d", name, i);
-			bIdx = BATnew(TYPE_void, TYPE_oid, 1024, PERSISTENT);
+			bIdx = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 			if (bIdx == NULL) {
 				GDKfree(batname);
 				GDKfree(url);
 				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
 			}
-			BATseqbase(bIdx, 0);
 			
 			tokenBAT[i].idx = bIdx;
 
@@ -344,9 +351,9 @@ TKNZRappend(oid *pos, str *s)
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");
 		}
-		if (tokenBAT[i].val->T->hash == NULL ||
-			tokenBAT[i].val->T->hash == (Hash *) 1 ||
-			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->T->hash->mask) {
+		if (tokenBAT[i].val->thash == NULL ||
+			tokenBAT[i].val->thash == (Hash *) 1 ||
+			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->thash->mask) {
 			HASHdestroy(tokenBAT[i].val);
 			BAThash(tokenBAT[i].val, 2 * BATcount(tokenBAT[i].val));
 		}
@@ -363,9 +370,9 @@ TKNZRappend(oid *pos, str *s)
 	*pos = (oid) BATcount(tokenBAT[INDEX].val);
 	comp = COMP(prv, depth);
 	BUNappend(tokenBAT[INDEX].val, (ptr) & comp, TRUE);
-	if (tokenBAT[INDEX].val->T->hash == NULL ||
-		tokenBAT[INDEX].val->T->hash == (Hash *) 1 ||
-		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->T->hash->mask) {
+	if (tokenBAT[INDEX].val->thash == NULL ||
+		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
+		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->thash->mask) {
 		HASHdestroy(tokenBAT[INDEX].val);
 		BAThash(tokenBAT[INDEX].val, 2 * BATcount(tokenBAT[INDEX].val));
 	}
@@ -579,9 +586,11 @@ TKNZRgetLevel(bat *r, int *level)
 	if (*level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
 	view = VIEWcreate(tokenBAT[*level].val->hseqbase, tokenBAT[*level].val);
+	if (view == NULL)
+		throw(MAL, "tokenizer.getLevel", MAL_MALLOC_FAIL);
 	*r = view->batCacheid;
 
-	BBPincref(*r, TRUE);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 
@@ -590,20 +599,17 @@ TKNZRgetCount(bat *r)
 {
 	BAT *b;
 	int i;
-	wrd cnt;
+	lng cnt;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
-	b = BATnew(TYPE_void, TYPE_wrd, tokenDepth + 1, TRANSIENT);
+	b = COLnew(0, TYPE_lng, tokenDepth + 1, TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
-	BATseqbase(b, 0);
 	for (i = 0; i < tokenDepth; i++) {
-		cnt = (wrd) BATcount(tokenBAT[i].val);
+		cnt = (lng) BATcount(tokenBAT[i].val);
 		BUNappend(b, &cnt, FALSE);
 	}
-	b->hdense = TRUE;
-	BATseqbase(b, 0);
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -615,26 +621,23 @@ TKNZRgetCardinality(bat *r)
 {
 	BAT *b, *en;
 	int i;
-	wrd cnt;
+	lng cnt;
 
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
-	b = BATnew(TYPE_void, TYPE_wrd, tokenDepth + 1, TRANSIENT);
+	b = COLnew(0, TYPE_lng, tokenDepth + 1, TRANSIENT);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
-	BATseqbase(b, 0);
 	for (i = 0; i < tokenDepth; i++) {
 		if ((en = BATunique(tokenBAT[i].val, NULL)) == NULL) {
 			BBPreclaim(b);
 			throw(MAL, "tokenizer.getCardinality", GDK_EXCEPTION);
 		}
-		cnt = (wrd) BATcount(en);
+		cnt = (lng) BATcount(en);
 		BBPunfix(en->batCacheid);
 		BUNappend(b, &cnt, FALSE);
 	}
 
-	b->hdense = TRUE;
-	BATseqbase(b, 0);
 	BATsetcount(b, tokenDepth);
 	*r = b->batCacheid;
 	BBPkeepref(*r);

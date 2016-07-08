@@ -38,6 +38,8 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i;
 	BUN c1, c2;
 	InstrPtr p;
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) cntxt;
 	(void) stk;
@@ -67,6 +69,10 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else
 			if (getFunctionId(p) == crossRef) {
 				newRows(1,2,((log((double) c1) + log((double) c2) > log(INT_MAX) ? INT_MAX : c1 * c2 +1)),0);
+				/* log sets errno if it cannot compute the log. This will then screw with code that checks errno */
+				if (errno == ERANGE || errno == EDOM) {
+					errno = 0;
+				}
 			}
 		} else if (getModuleId(p) == batcalcRef) {
 			if( getFunctionId(p) == ifthenelseRef) {
@@ -83,8 +89,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else if (getModuleId(p) == batstrRef) {
 				newRows(1,1, c1,0);
 		} else if (getModuleId(p) == batRef) {
-			if (getFunctionId(p) == appendRef ||
-				   getFunctionId(p) == insertRef ){
+			if (getFunctionId(p) == appendRef ){
 				/*
 				 * Updates are a little more complicated, because you have to
 				 * propagate changes in the expected size up the expression tree.
@@ -113,9 +118,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					/* insert scalars */
 					newRows(1, 1, (c1 <= 1 ? 1 : c1 - 1), 1);
 				}
-			} else if (getFunctionId(p) == insertRef){
-				newRows(1,1,( c1 + 1),0); /* faked */
-			}
+			} 
 		} else if (getModuleId(p)==groupRef) {
 			if (getFunctionId(p) ==subgroupRef ) {
 				newRows(1,1,( c1 / 10+1),0);
@@ -140,5 +143,14 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				setRowCnt(mb, getArg(p,0), c1);
 		}
 	}
+    /* Defense line against incorrect plans */
+	/* plan remains unaffected */
+	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	//chkFlow(cntxt->fdout, mb);
+	//chkDeclarations(cntxt->fdout, mb);
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","costmodel",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

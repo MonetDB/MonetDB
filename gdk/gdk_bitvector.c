@@ -44,19 +44,18 @@ void
 setBitVector(BitVector vector, const BUN i, const int bits, const int value)
 {
 	BUN cid;
-	unsigned int m1,  m2, shift;
+	unsigned int m1,  m2;
 
+    //printf("#setBitVector %ld i "BUNFMT" bits %d value %d\n",(long)vector,i,bits, value);
 	cid = (i * bits) / BITS;
-	shift  = (i * bits) % BITS;
-    if ( (shift + bits) <= BITS){
-        vector[cid]= (vector[cid]  & ~( masks[bits] << shift)) | ((value & masks[bits]) << (shift));
-		//printf("#setBitVector i "BUNFMT" bits %d value %d shift %d vector[cid]=%o\n",i,bits,value,shift, vector[cid]);
-    }else{ 
-		m1 = BITS - shift;
+	m1  = ((i * bits) % BITS)/bits;
+    if ( m1 * bits <= BITS)
+        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ((value & masks[bits]) << (m1 * bits));
+    else{ 
+		m1 = (m1 * bits) % BITS;
 		m2 = bits - m1;
-        vector[cid]= (vector[cid]  & ~( masks[m1] << shift)) | ( (value & masks[m1]) << shift);
-        vector[cid+1]= 0 |  ((value >> m1) & masks[m2]) ;
-		//printf("#setBitVector i "BUNFMT" bits %d value %d shift=%d m1=%d m2=%d vector[cid]=%o vector[cid+1]=%o\n",i,bits,value,shift,m1,m2, vector[cid],vector[cid+1]);
+        vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ( (value & masks[bits]) << (BITS-m1));
+        vector[cid+1]= 0 | ( (value & masks[bits])  >> m2);
 	}
 }
 
@@ -72,19 +71,18 @@ int
 getBitVector(BitVector vector, BUN i, int bits)
 {
 	BUN cid;
-	unsigned int value = 0, m1,m2= 0, shift;
+	unsigned int value = 0, m1,m2;
 	
 	cid = (i * bits) / BITS;
-	shift  = (i * bits) % BITS;
-	if ( (shift + bits) <= BITS){
-		value = (vector[cid] >> shift) & masks[bits];
-		//printf("#getBitVector i "BUNFMT" bits %d value %d shift %d vector[cid]=%o\n",i,bits,value,shift, vector[cid]);
-	} else{ 
-		m1 = BITS-shift;
+	m1  = ((i * bits) % BITS)/bits;
+	if ( m1 * bits <= BITS)
+		value = (vector[cid] >> (m1 * bits)) & masks[bits];
+	else{ 
+		m1 = (m1 * bits) % BITS;
 		m2 = bits - m1;
-		value = ((vector[cid] >> shift) & masks[m1]) | ((vector[cid+1] & masks[m2])<< m1);
-		//printf("#getBitVector i "BUNFMT" bits %d value %d m1=%d m2=%d vector[cid]=%o vector[cid+1]=%o\n",i,bits,value,m1,m2, vector[cid],vector[cid+1]);
+		value  = (((vector[cid] >> (BITS - m1)) & masks[bits - m1]) << m2) | (vector[cid+1] & masks[m2]);
 	  }
+    //printf("#getBitVector %ld i "BUNFMT" bits %d value %d\n",(long)vector,i,bits,value);
 	return value;
 }
 
@@ -94,3 +92,40 @@ tstBitVector(BitVector m, BUN idx, int width)
 	return getBitVector(m,idx,width) > 0;
 }
 
+
+/* Unit testing
+static void
+printVector(BitVector v, BUN cnt, int width)
+{
+	int i;
+	for ( i = 0; i< cnt; i++)
+		printf("[%d] %d\n",i, getBitVector(v,i,width));
+}
+
+int main(int argc, char **argv)
+{
+	int cnt, width,i,j,k;
+	BitVector vector;
+
+	if( argc != 3){
+		printf("use:%s <cnt> <width>\n",argv[0]);
+		exit(-1);
+	}
+	cnt = atoi(argv[1]);
+	width= atoi(argv[2]);
+	printf("testing bitvectors %d %d %d\n",cnt,width, BITS);
+	initBitMasks();
+	vector = newBitVector(cnt,width);
+
+	printVector(vector,cnt,width);
+	for(i = 0; i< cnt; i++)
+		setBitVector(vector,i,width, i);
+	printVector(vector,cnt,width);
+	for(i = 0; i < cnt; i++){
+		j = rand() % width;
+		setBitVector(vector,i,width, j );
+		if( j != (k = getBitVector(vector,i,width)) )
+			printf("mismatch[%d] %d %d\n",i,j,k);
+	}
+}
+*/

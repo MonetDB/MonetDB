@@ -95,13 +95,13 @@ Ready.
 #select count(f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 5	]
 #select count(distinct f1) from interval_tbl;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 5	]
 #DROP TABLE INTERVAL_TBL;

@@ -48,7 +48,7 @@ HAVE_PERL?perl-short-read-bug.Bug-2897
 device-self-ref-fk
 missing_refine_reverse.Bug-2898
 rand-with-seed.Bug-2900
-python-connections-Bug.2901
+HAVE_PYMONETDB?python-connections-Bug.2901
 many-connects-cache.Bug-2904
 alter-table-set-read-only.bug-2906
 predicate.Bug-2908
@@ -64,4 +64,4 @@ user_create_temp_table.Bug-2916
 exists-select.Bug-2933
 jena-optional-1-test.Bug-2915
 and-power.Bug-3013
-DBD-manyrows.Bug-2889
+HAVE_PERL?DBD-manyrows.Bug-2889

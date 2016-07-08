@@ -29,7 +29,7 @@ static void setAtomName(InstrPtr pci)
 {
 	char buf[PATHLENGTH];
 	snprintf(buf, PATHLENGTH, "#%s", getFunctionId(pci));
-	setFunctionId(pci, putName(buf, strlen(buf)));
+	setFunctionId(pci, putName(buf));
 }
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
@@ -39,7 +39,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	(void)mb;  /* fool compilers */
 	assert(pci != 0);
 	name = getFunctionId(pci);
-	tpe = getTypeIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
+	tpe = getAtomIndex(getModuleId(pci), (int)strlen(getModuleId(pci)), TYPE_any);
 	if (tpe < 0 || tpe >= GDKatomcnt || tpe >= MAXATOMS)
 		return 0;
 	assert(pci->fcn != NULL);
@@ -170,7 +170,9 @@ void malAtomDefinition(stream *out, str name, int tpe)
 		return;
 	}
 	if (ATOMindex(name) >= 0) {
+#ifndef HAVE_EMBEDDED /* we can restart embedded MonetDB, making this an expected error */
 		showException(out, TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
+#endif
 		return;
 	}
 	if (tpe < 0 || tpe >= GDKatomcnt) {

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -91,8 +91,8 @@ find_basetables( sql_rel *rel, list *tables )
 	}
 }
 
-sql_rel *
-rel_partition(mvc *sql, sql_rel *rel) 
+static sql_rel *
+_rel_partition(mvc *sql, sql_rel *rel) 
 {
 	list *tables = sa_list(sql->sa); 
 	/* find basetable relations */
@@ -117,6 +117,45 @@ rel_partition(mvc *sql, sql_rel *rel)
 		r = n->data;
 		/*  TODO, we now pick first (okay?)! In case of self joins we need to pick the correct table */
 		r->flag = REL_PARTITION;
+	}
+	return rel;
+}
+
+static int 
+has_groupby(sql_rel *rel)
+{
+	if (rel->op == op_groupby) 
+		return 1;
+	if (is_join(rel->op)) 
+		return has_groupby(rel->l) || has_groupby(rel->r);
+	if ((is_select(rel->op) || is_project(rel->op)) && rel->l) 
+		return has_groupby(rel->l);
+	return 0;
+}
+
+sql_rel *
+rel_partition(mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	if (rel->op == op_basetable) {
+		rel->flag = REL_PARTITION;
+	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
+		rel_partition(sql, rel->l);
+	} else if (is_project(rel->op) && rel->l) {
+		rel_partition(sql, rel->l);
+	} else if (rel->op == op_semi && rel->l && rel->r) {
+		rel_partition(sql, rel->l);
+		rel_partition(sql, rel->r);
+	} else if (rel->op == op_anti && rel->l && rel->r) {
+		rel_partition(sql, rel->l);
+		rel_partition(sql, rel->r);
+	} else if (is_join(rel->op)) {
+		if (has_groupby(rel->l) || has_groupby(rel->r)) {
+			rel_partition(sql, rel->l);
+			rel_partition(sql, rel->r);
+		}
+		else
+			_rel_partition(sql, rel);
 	}
 	return rel;
 }

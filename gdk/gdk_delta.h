@@ -18,23 +18,16 @@
 #define DELTAinit(P1)							\
 	do {								\
 		BATsetcount((P1), 0);					\
-		(P1)->H->heap.free = 0;					\
-		(P1)->T->heap.free = 0;					\
-		(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 0; \
-		(P1)->H->shift = ATOMelmshift(Hsize(P1));		\
-		(P1)->T->shift = ATOMelmshift(Tsize(P1));		\
+		(P1)->theap.free = 0;					\
+		(P1)->batInserted = 0;					\
+		(P1)->tshift = ATOMelmshift(Tsize(P1));			\
 		DELTADEBUG fprintf(stderr,				\
-			"#DELTAinit %s free " SZFMT "," SZFMT " ins " BUNFMT \
-			" del " BUNFMT " first " BUNFMT " base " PTRFMT "," \
-			PTRFMT "\n",					\
+			"#DELTAinit %s free " SZFMT " ins " BUNFMT	\
+			" base " PTRFMT "\n",				\
 			BATgetId(P1),					\
-			(P1)->H->heap.free,				\
-			(P1)->T->heap.free,				\
+			(P1)->theap.free,				\
 			(P1)->batInserted,				\
-			(P1)->batDeleted,				\
-			(P1)->batFirst,					\
-			PTRFMTCAST (P1)->H->heap.base,			\
-			PTRFMTCAST (P1)->T->heap.base);			\
+			PTRFMTCAST (P1)->theap.base);			\
 	} while (0)
 /*
  * Upon saving a BAT, we should convert the delta marker BUN pointers
@@ -46,7 +39,6 @@
  * be storage-clean, but transaction-dirty). For this we have
  * @%DELTAdirty(b)@.
  */
-#define DELTAdirty(b)	(((b)->batDeleted != BUNfirst(b)) ||\
-	((b)->batInserted < BUNlast(b)))
+#define DELTAdirty(b)	((b)->batInserted < BUNlast(b))
 
 #endif /* _GDK_DELTA_H_ */

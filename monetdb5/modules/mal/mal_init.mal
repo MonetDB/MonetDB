@@ -31,6 +31,7 @@ include streams;
 include bat5;
 include batExtensions;
 include algebra;
+include orderidx;
 #include calc; --- moved to autoload/01_calc
 include status;
 include groupby;
@@ -71,8 +72,7 @@ include factories;
 include recycle;
 include remote;
 
-include mat; 	# experimental
-# include histogram; 	# experimental
+include mat;
 include inspect;
 include manual;
 include language;
@@ -89,13 +89,9 @@ include txtsim;
 include tokenizer;
 include zorder;
 
-include mosaic;
-# include logger;
 # include transaction; no direct access anymore to avoid SQL interference
 
-# scheduler components
-include run_isolate;
-include run_memo;
+# scheduler components, experimental components
 include srvpool;
 
 include mal_mapi;

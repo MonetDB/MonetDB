@@ -20,7 +20,7 @@
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
 #endif
-#ifndef HAVE_UUID
+#if !defined(HAVE_UUID) && defined(HAVE_OPENSSL)
 #include <openssl/rand.h>		/* for RAND_bytes */
 #endif
 
@@ -164,23 +164,28 @@ str
 UUIDgenerateUuid(uuid **retval)
 {
 	uuid *u;
+	int i = 0, r = 0;
 
 	if (*retval == NULL)
 		*retval = GDKmalloc(UUID_SIZE);
 	u = *retval;
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
+	(void) i;
+	(void) r;
 #else
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes(u->u, 16) < 0) {
+#endif
 		/* if it failed, use rand */
-		int i, r;
-
 		for (i = 0; i < UUID_SIZE;) {
 			r = rand() % 65536;
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
+#ifdef HAVE_OPENSSL
 	}
+#endif
 #endif
 	return MAL_SUCCEED;
 }

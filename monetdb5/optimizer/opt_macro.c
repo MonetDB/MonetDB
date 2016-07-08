@@ -181,6 +181,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 				clrVarFixed(mb,getArg(ns[k],n)); /* for typing */
 			setModuleId(ns[k],getModuleId(q));
 			setFunctionId(ns[k],getFunctionId(q));
+			ns[k]->typechk = TYPE_UNKNOWN;
 			ns[k]->barrier = 0;
 			ns[k]->token = ASSIGNsymbol;
 		}
@@ -390,14 +391,14 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else {
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
-		t= findSymbol(cntxt->nspace, putName(mod, strlen(mod)), fcn);
+		t= findSymbol(cntxt->nspace, putName(mod), fcn);
 		if( t == 0)
 			return 0;
 		target= t->def;
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	s = findModule(cntxt->nspace, putName(mod, strlen(mod)));
+	s = findModule(cntxt->nspace, putName(mod));
 	if (s == 0)
 		return 0;
 	if (s->subscope) {
@@ -438,14 +439,14 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else {
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
-		t= findSymbol(cntxt->nspace, putName(mod, strlen(mod)), fcn);
+		t= findSymbol(cntxt->nspace, putName(mod), fcn);
 		if( t == 0)
 			return 0;
 		target= t->def;
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	s = findModule(cntxt->nspace, putName(mod, strlen(mod)));
+	s = findModule(cntxt->nspace, putName(mod));
 	if (s == 0)
 		return 0;
 	if (s->subscope) {
@@ -493,7 +494,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	t= findSymbol(cntxt->nspace, putName(mod, strlen(mod)), fcn);
+	t= findSymbol(cntxt->nspace, putName(mod), fcn);
 	if( t == 0)
 		return 0;
 
@@ -521,7 +522,7 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	t= findSymbol(cntxt->nspace, putName(mod, strlen(mod)), fcn);
+	t= findSymbol(cntxt->nspace, putName(mod), fcn);
 	if( t == 0)
 		return 0;
 

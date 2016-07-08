@@ -308,7 +308,7 @@
 		if ($merovingian_iter == NULL) {
 			if (socket_connect($socket, $host, $port) == FALSE) {
             	$last_error = socket_strerror(socket_last_error());
-              	exit();
+              	throw new Exception('Cannot connect to server: ' . $last_error);
             }
 		}
 
@@ -417,7 +417,7 @@
 		# get the first 2 bytes
 		if ( ($header = socket_read($socket, 2)) == FALSE) {
 			$last_error = socket_strerror(socket_last_error());
-			exit();
+			throw new Exception('Lost connection with the server: ' . $last_error);
 		}
 		$data = "";
 
@@ -431,7 +431,7 @@
 		while ((ord($header[0]) & 1) == 0 ) {
 			if ( ($header = socket_read($socket, 2)) == FALSE) {
 				$last_error = socket_strerror(socket_last_error());
-				exit();
+				throw new Exception('Lost connection with the server: ' . $last_error);
 			}
 
 			$chunk_size = ( ((ord($header[1]))  << 7) | (ord($header[0]) >> 1) );
@@ -440,7 +440,7 @@
 			while (strlen($block) < $chunk_size) {
 				if ( ($block .= socket_read($socket, $chunk_size - strlen($block))) == FALSE) {
 					$last_error = socket_strerror(socket_last_error());
-					exit();
+					throw new Exception('Lost connection with the server: ' . $last_error);
 				}
 			}
 

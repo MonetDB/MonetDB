@@ -76,7 +76,7 @@ Ready.
 #select count(*) from test_fn where get_r(c1, '01', '2015-08-31 23:59:59')>1.0;
 % sys.L1 # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 1 # length
 [ 0	]
 #alter table sys.chg drop constraint chg_pk_chg_rate_pkey;

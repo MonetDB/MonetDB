@@ -1,0 +1,23 @@
+pattern bat.orderidx(bv:bat[:any_1]):void
+address OIDXcreate
+comment "Introduces the OID index arrangement of ordered values";
+
+pattern bat.orderidx(bv:bat[:any_1], pieces:int):void
+address OIDXcreate
+comment "Introduces the OID index arrangement of ordered values";
+
+pattern bat.orderidx(bv:bat[:any_1], l:bat[:any_1]...):void
+address OIDXmerge
+comment "Consolidates the OID index arrangement";
+
+pattern bat.hasorderidx(bv:bat[:any_1]):bit
+address OIDXhasorderidx
+comment "Return true if order index exists";
+
+pattern bat.getorderidx(bv:bat[:any_1]):bat[:oid]
+address OIDXgetorderidx
+comment "Return the order index if it exists";
+
+command algebra.orderidx(bv:bat[:any_1], stable:bit):bat[:any_1]
+address OIDXorderidx
+comment "Create an order index";

@@ -35,44 +35,40 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	btech = BATnew(TYPE_void, TYPE_str,0, TRANSIENT);
+	btech = COLnew((oid)0, TYPE_str,0, TRANSIENT);
 	if( btech == NULL)
 		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
-	BATseqbase(btech,0);
 	tech = getArgReference_bat(stk, pci, 0);
 	*tech = btech->batCacheid;
 
-	bcount = BATnew(TYPE_void, TYPE_lng,0, TRANSIENT);
+	bcount = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
 	if( bcount == NULL){
 		BBPunfix(btech->batCacheid);
 		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bcount,0);
 	count = getArgReference_bat(stk, pci, 1);
 	*count = bcount->batCacheid;
 
-	binput = BATnew(TYPE_void, TYPE_lng,0, TRANSIENT);
+	binput = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
 	if( binput == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(bcount->batCacheid);
 		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(binput,0);
 	input = getArgReference_bat(stk, pci, 2);
 	*input = binput->batCacheid;
 
-	boutput = BATnew(TYPE_void, TYPE_lng,0, TRANSIENT);
+	boutput = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
 	if( boutput == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(bcount->batCacheid);
 		BBPunfix(binput->batCacheid);
 		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(boutput,0);
 	output = getArgReference_bat(stk, pci, 3);
 	*output = boutput->batCacheid;
 
-	bproperties = BATnew(TYPE_void, TYPE_str,0, TRANSIENT);
+	bproperties = COLnew((oid)0, TYPE_str,0, TRANSIENT);
 	if( bproperties == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(bcount->batCacheid);
@@ -80,7 +76,6 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(boutput->batCacheid);
 		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bproperties,0);
 	properties = getArgReference_bat(stk, pci, 4);
 	*properties = bproperties->batCacheid;
 
@@ -146,40 +141,36 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	btech = BATnew(TYPE_void, TYPE_str,0, TRANSIENT);
+	btech = COLnew((oid)0, TYPE_str,0, TRANSIENT);
 	if( btech == NULL)
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
-	BATseqbase(btech,0);
 	tech = getArgReference_bat(stk, pci, 0);
 	*tech = btech->batCacheid;
 
-	boutput = BATnew(TYPE_void, TYPE_lng,0, TRANSIENT);
+	boutput = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
 	if( boutput == NULL){
 		BBPunfix(btech->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(boutput,0);
 	output = getArgReference_bat(stk, pci, 1);
 	*output = boutput->batCacheid;
 
-	bfactor = BATnew(TYPE_void, TYPE_dbl,0, TRANSIENT);
+	bfactor = COLnew((oid)0, TYPE_dbl,0, TRANSIENT);
 	if( bfactor == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(boutput->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bfactor,0);
 	factor = getArgReference_bat(stk, pci, 2);
 	*factor = bfactor->batCacheid;
 
-	brun = BATnew(TYPE_void, TYPE_lng,0, TRANSIENT);
+	brun = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
 	if( brun == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(boutput->batCacheid);
 		BBPunfix(bfactor->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(brun,0);
 	run = getArgReference_bat(stk, pci, 3);
 	*run = brun->batCacheid;
 

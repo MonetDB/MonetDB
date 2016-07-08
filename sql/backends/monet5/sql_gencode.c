@@ -46,7 +46,6 @@
 #include <rel_remote.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
-static int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int addend);
 
 /*
  * @+ MAL code support
@@ -132,7 +131,6 @@ initSQLreferences(void)
 
 #define meta(Id,Tpe) \
 q = newStmt(mb, batRef, newRef);\
-q= pushType(mb,q, TYPE_oid);\
 q= pushType(mb,q, Tpe);\
 Id = getArg(q,0); \
 list = pushArgument(mb,list,Id);
@@ -287,7 +285,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 {
 	int nr;
 	node *n;
-	InstrPtr k = newStmt1(mb, sqlRef, "declaredTable");
+	InstrPtr k = newStmt(mb, sqlRef, putName("declaredTable"));
 
 	nr = getDestVar(k);
 	k = pushStr(mb, k, t->base.name);
@@ -302,7 +300,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 
 		if (tn == NULL)
 			return -1;
-		q = newStmt1(mb, sqlRef, "dtColumn");
+		q = newStmt(mb, sqlRef, putName("dtColumn"));
 		q = pushArgument(mb, q, nr);
 		q = pushStr(mb, q, tn);
 		q = pushStr(mb, q, cn);
@@ -319,7 +317,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 static int
 drop_table(MalBlkPtr mb, str n)
 {
-	InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTable");
+	InstrPtr k = newStmt(mb, sqlRef, putName("dropDeclaredTable"));
 	int nr = getDestVar(k);
 
 	k = pushStr(mb, k, n);
@@ -367,7 +365,7 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 			sql_subtype *st = n->data;
 			int type = st->type->localtype;
 
-			type = newBatType(TYPE_oid, type);
+			type = newBatType(type);
 			if (i) {
 				if ((q = pushReturn(mb, q, newTmpVariable(mb, type))) == NULL)
 					return NULL;
@@ -380,7 +378,7 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 
-			type = newBatType(TYPE_oid, type);
+			type = newBatType(type);
 			if (i) {
 				if ((q = pushReturn(mb, q, newTmpVariable(mb, type))) == NULL)
 					return NULL;
@@ -410,7 +408,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
-		type = newBatType(TYPE_oid, type);
+		type = newBatType(type);
 		q = pushReturn(mb, q, newTmpVariable(mb, type));
 	}
 	return q;
@@ -445,7 +443,7 @@ _create_relational_function(mvc *m, char *mod, char *name, sql_rel *rel, stmt *c
 	s = stmt_return(m->sa, s, 0);
 
 	backup = c->curprg;
-	c->curprg = newFunction(putName(mod, strlen(mod)), putName(name, strlen(name)), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -537,7 +535,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	/* create stub */
 	name[0] = old;
 	backup = c->curprg;
-	c->curprg = newFunction(putName(mod, strlen(mod)), putName(name, strlen(name)), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	name[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -568,10 +566,9 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
-		type = newBatType(TYPE_oid, type);
+		type = newBatType(type);
 		p = newFcnCall(curBlk, batRef, newRef);
-		p = pushType(curBlk, p, TYPE_oid);
-		p = pushType(curBlk, p, getColumnType(type));
+		p = pushType(curBlk, p, getBatType(type));
 		setArgType(curBlk, p, 0, type);
 		lret[i] = getArg(p, 0);
 	}
@@ -587,7 +584,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 #define REL
 #ifndef REL
 	/* remote.register(q, "mod", "fcn"); */
-	p = newStmt(curBlk, remoteRef, putName("register", 8));
+	p = newStmt(curBlk, remoteRef, registerRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, name);
@@ -598,7 +595,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	setFunctionId(p, execRef);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
-	p = pushStr(curBlk, p, putName("register", 8));
+	p = pushStr(curBlk, p, registerRef);
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
@@ -700,7 +697,7 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 	pushInstruction(curBlk, p);
 	pushEndInstruction(curBlk);
 
-	/* SQL function definitions meant f r inlineing should not be optimized before */
+	/* SQL function definitions meant for inlineing should not be optimized before */
 	curBlk->inlineProp = 1;
 	addQueryToCache(c);
 	if (backup)
@@ -786,7 +783,7 @@ _dump_1(MalBlkPtr mb, char *mod, char *name, int o1)
 {
 	InstrPtr q;
 
-	q = newStmt2(mb, mod, name);
+	q = newStmt(mb, mod, name);
 	q = pushArgument(mb, q, o1);
 	if (q == NULL)
 		return -1;
@@ -809,7 +806,7 @@ _dump_2(MalBlkPtr mb, char *mod, char *name, int o1, int o2)
 {
 	InstrPtr q;
 
-	q = newStmt2(mb, mod, name);
+	q = newStmt(mb, mod, name);
 	q = pushArgument(mb, q, o1);
 	q = pushArgument(mb, q, o2);
 	if (q == NULL)
@@ -820,8 +817,7 @@ _dump_2(MalBlkPtr mb, char *mod, char *name, int o1, int o2)
 static int
 dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 {
-	int o1 = _dumpstmt(sql, mb, s->op1);
-	int o2 = _dumpstmt(sql, mb, s->op2);
+	int o1, o2;
 
 	if ((o1 = _dumpstmt(sql, mb, s->op1)) < 0)
 		return -1;
@@ -842,7 +838,7 @@ dump_2_(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	if ((o2 = _dumpstmt(sql, mb, s->op2)) < 0)
 		return -1;
 
-	q = newStmt1(mb, mod, name);
+	q = newStmt(mb, mod, name);
 	q = pushArgument(mb, q, o1);
 	q = pushArgument(mb, q, o2);
 	if (q == NULL)
@@ -856,10 +852,10 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 {
 	InstrPtr q;
 
-	q = newStmt(mb, "mal", "multiplex");
+	q = newStmt(mb, malRef, multiplexRef);
 	if (q == NULL)
 		return NULL;
-	setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, rtype));
+	setVarType(mb, getArg(q, 0), newBatType(rtype));
 	setVarUDFtype(mb, getArg(q, 0));
 	q = pushStr(mb, q, convertMultiplexMod(mod, name));
 	q = pushStr(mb, q, convertMultiplexFcn(name));
@@ -871,7 +867,6 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 static int backend_create_subfunc(backend *be, sql_subfunc *f, list *ops);
 static int backend_create_subaggr(backend *be, sql_subaggr *f);
 
-#define SMALLBUFSIZ 64
 static int
 dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
@@ -884,7 +879,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 		return -1;
 	mod = sql_func_mod(s->op4.funcval->func);
 	fimp = sql_func_imp(s->op4.funcval->func);
-	fimp = strconcat(fimp, "subjoin");
+	fimp = sa_strconcat(sql->mvc->sa, fimp, "subjoin");
 
 	/* dump left and right operands */
 	_dumpstmt(sql, mb, s->op1);
@@ -971,7 +966,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (VAR_GLOBAL(s->flag)) {	/* globals */
 					int tt = tail_type(s)->type->localtype;
 
-					q = newStmt1(mb, sqlRef, "getVariable");
+					q = newStmt(mb, sqlRef, putName("getVariable"));
 					q = pushArgument(mb, q, sql->mvc_var);
 					q = pushStr(mb, q, s->op1->op4.aval->data.val.sval);
 					if (q == NULL)
@@ -1023,10 +1018,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (sql->mvc->argc && sql->mvc->args[s->flag]->varid >= 0) {
 					q = pushArgument(mb, q, sql->mvc->args[s->flag]->varid);
 				} else {
-					char *buf = GDKmalloc(SMALLBUFSIZ);
+					char *buf = GDKmalloc(IDLENGTH);
 					if (buf == NULL)
 						return -1;
-					(void) snprintf(buf, SMALLBUFSIZ, "A%d", s->flag);
+					(void) snprintf(buf, IDLENGTH, "A%d", s->flag);
 					q = pushArgumentId(mb, q, buf);
 				}
 				if (q == NULL)
@@ -1040,10 +1035,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (val < 0)
 				return -1;
-			q = newStmt1(mb, sqlRef, "single");
+			q = newStmt(mb, sqlRef, singleRef);
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+			setVarType(mb, getArg(q, 0), newBatType(tt));
 			q = pushArgument(mb, q, val);
 			if (q == NULL)
 				return -1;
@@ -1052,12 +1047,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_temp:{
 			int tt = s->op4.typeval.type->localtype;
 
-			q = newStmt1(mb, batRef, "new");
+			q = newStmt(mb, batRef, newRef);
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+			setVarType(mb, getArg(q, 0), newBatType(tt));
 			setVarUDFtype(mb, getArg(q, 0));
-			q = pushType(mb, q, TYPE_oid);
 			q = pushType(mb, q, tt);
 			if (q == NULL)
 				return -1;
@@ -1068,10 +1062,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int tt = TYPE_oid;
 			sql_table *t = s->op4.tval;
 
-			q = newStmt1(mb, sqlRef, "tid");
+			q = newStmt(mb, sqlRef, tidRef);
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+			setVarType(mb, getArg(q, 0), newBatType(tt));
 			setVarUDFtype(mb, getArg(q, 0));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
@@ -1093,13 +1087,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_column *c = s->op4.cval;
 			sql_table *t = c->t;
 
-			q = newStmt2(mb, sqlRef, bindRef);
+			q = newStmt(mb, sqlRef, bindRef);
 			if (q == NULL)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 			} else {
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
 			}
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -1132,13 +1126,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_idx *i = s->op4.idxval;
 			sql_table *t = i->t;
 
-			q = newStmt2(mb, sqlRef, bindidxRef);
+			q = newStmt(mb, sqlRef, bindidxRef);
 			if (q == NULL)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 			} else {
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
 			}
 
@@ -1212,18 +1206,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int tt = tail_type(s->op1)->type->localtype;
 
 				assert(0);
-				q = newStmt1(mb, batRef, "new");
+				q = newStmt(mb, batRef, newRef);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
-				q = pushType(mb, q, TYPE_oid);
 				q = pushType(mb, q, tt);
 				if (q == NULL)
 					return -1;
 				k = getDestVar(q);
 
-				q = newStmt2(mb, batRef, appendRef);
+				q = newStmt(mb, batRef, appendRef);
 				q = pushArgument(mb, q, k);
 				q = pushArgument(mb, q, c);
 				if (q == NULL)
@@ -1236,7 +1229,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int dir = (flag & 4);
 				int distinct = (flag & 8);
 
-				q = newStmt1(mb, calcRef, "+");
+				q = newStmt(mb, calcRef, "+");
 				q = pushArgument(mb, q, offset);
 				q = pushArgument(mb, q, len);
 				if (q == NULL)
@@ -1262,7 +1255,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					renameVariable(mb, getArg(q, 1), "r1_%d", s->nr);
 				l = getDestVar(q);
 			} else {
-				q = newStmt1(mb, calcRef, "+");
+				q = newStmt(mb, calcRef, "+");
 				q = pushArgument(mb, q, offset);
 				q = pushArgument(mb, q, len);
 				if (q == NULL)
@@ -1272,14 +1265,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				/* since both arguments of algebra.subslice are
 				   inclusive correct the LIMIT value by
 				   subtracting 1 */
-				q = newStmt1(mb, calcRef, "-");
+				q = newStmt(mb, calcRef, "-");
 				q = pushArgument(mb, q, len);
 				q = pushInt(mb, q, 1);
 				if (q == NULL)
 					return -1;
 				len = getDestVar(q);
 
-				q = newStmt1(mb, algebraRef, "subslice");
+				q = newStmt(mb, algebraRef, subsliceRef);
 				q = pushArgument(mb, q, c);
 				q = pushArgument(mb, q, offset);
 				q = pushArgument(mb, q, len);
@@ -1289,7 +1282,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			/* retrieve the single values again */
 			if (s->nrcols == 0) {
-				q = newStmt1(mb, algebraRef, "find");
+				q = newStmt(mb, algebraRef, findRef);
 				q = pushArgument(mb, q, l);
 				q = pushOid(mb, q, 0);
 				if (q == NULL)
@@ -1306,7 +1299,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if ((r = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
-			q = newStmt(mb, "sample", "subuniform");
+			q = newStmt(mb, sampleRef, subuniformRef);
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			if (q == NULL)
@@ -1319,7 +1312,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (l < 0)
 				return -1;
-			q = newStmt1(mb, algebraRef, "subsort");
+			q = newStmt(mb, algebraRef, subsortRef);
 			/* both ordered result and oid's order en subgroups */
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1347,7 +1340,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			reverse = (s->flag <= 0);
 
-			q = newStmt1(mb, algebraRef, "subsort");
+			q = newStmt(mb, algebraRef, subsortRef);
 			/* both ordered result and oid's order en subgroups */
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1407,8 +1400,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					op = sql_func_imp(s->op4.funcval->func);
 					mod = sql_func_mod(s->op4.funcval->func);
 
-					q = newStmt(mb, "mal", "multiplex");
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, TYPE_bit));
+					q = newStmt(mb, malRef, multiplexRef);
+					setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
 					setVarUDFtype(mb, getArg(q, 0));
 					q = pushStr(mb, q, convertMultiplexMod(mod, op));
 					q = pushStr(mb, q, convertMultiplexFcn(op));
@@ -1431,7 +1424,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				k = getDestVar(q);
 
-				q = newStmt1(mb, algebraRef, "subselect");
+				q = newStmt(mb, algebraRef, subselectRef);
 				q = pushArgument(mb, q, k);
 				if (sub > 0)
 					q = pushArgument(mb, q, sub);
@@ -1459,14 +1452,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					mod = sql_func_mod(f);
 					fimp = sql_func_imp(f);
-					fimp = strconcat(fimp, "subselect");
+					fimp = sa_strconcat(sql->mvc->sa, fimp, subselectRef);
 					q = newStmt(mb, mod, convertOperator(fimp));
 					// push pointer to the SQL structure into the MAL call
 					// allows getting argument names for example
 					if (LANG_EXT(f->lang))
 						q = pushPtr(mb, q, f);
 					// f->query contains the R code to be run
-					if (f->lang == FUNC_LANG_R)
+					if (f->lang == FUNC_LANG_R || f->lang == FUNC_LANG_PY || f->lang == FUNC_LANG_MAP_PY)
 						q = pushStr(mb, q, f->query);
 
 					for (n = s->op1->op4.lval->h; n; n = n->next) {
@@ -1495,7 +1488,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				switch (s->flag) {
 				case cmp_equal:{
-					q = newStmt2(mb, algebraRef, cmd);
+					q = newStmt(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1509,7 +1502,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				case cmp_notequal:{
-					q = newStmt2(mb, algebraRef, cmd);
+					q = newStmt(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1523,7 +1516,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					break;
 				}
 				case cmp_lt:
-					q = newStmt2(mb, algebraRef, cmd);
+					q = newStmt(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1533,7 +1526,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				case cmp_lte:
-					q = newStmt2(mb, algebraRef, cmd);
+					q = newStmt(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1543,7 +1536,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				case cmp_gt:
-					q = newStmt2(mb, algebraRef, cmd);
+					q = newStmt(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1553,7 +1546,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						return -1;
 					break;
 				case cmp_gte:
-					q = newStmt2(mb, algebraRef, cmd);
+					q = newStmt(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					if (sub > 0)
 						q = pushArgument(mb, q, sub);
@@ -1606,9 +1599,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				if (s->flag&1 && s->flag&2) {
 					if (symmetric)
-						p = newStmt1(mb, batcalcRef, "between_symmetric");
+						p = newStmt(mb, batcalcRef, betweensymmetricRef);
 					else
-						p = newStmt1(mb, batcalcRef, "between");
+						p = newStmt(mb, batcalcRef, betweenRef);
 					p = pushArgument(mb, p, l);
 					p = pushArgument(mb, p, r1);
 					p = pushArgument(mb, p, r2);
@@ -1619,7 +1612,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					if ((r = multiplex2(mb, mod, convertOperator(op2), l, r2, TYPE_bit)) == NULL)
 						return -1;
-					p = newStmt1(mb, batcalcRef, "and");
+					p = newStmt(mb, batcalcRef, andRef);
 					p = pushArgument(mb, p, getDestVar(q));
 					p = pushArgument(mb, p, getDestVar(r));
 					if (p == NULL)
@@ -1627,7 +1620,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					k = getDestVar(p);
 				}
 
-				q = newStmt1(mb, algebraRef, "subselect");
+				q = newStmt(mb, algebraRef, subselectRef);
 				q = pushArgument(mb, q, k);
 				if (sub > 0)
 					q = pushArgument(mb, q, sub);
@@ -1667,7 +1660,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if ((r2 = _dumpstmt(sql, mb, s->op3)) < 0)
 					return -1;
 			}
-			q = newStmt2(mb, algebraRef, cmd);
+			q = newStmt(mb, algebraRef, cmd);
 			if (s->type == st_join2)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, l);
@@ -1759,7 +1752,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if ((o2 = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
 
-			q = newStmt1(mb, algebraRef, s->type == st_tdiff ? subdiffRef : subinterRef);
+			q = newStmt(mb, algebraRef, s->type == st_tdiff ? subdiffRef : subinterRef);
 			q = pushArgument(mb, q, o1); /* left */
 			q = pushArgument(mb, q, o2); /* right */
 			q = pushNil(mb, q, TYPE_bat); /* left candidate */
@@ -1796,7 +1789,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int op3;
 				if ((op3 = _dumpstmt(sql, mb, s->op3)) < 0)
 					return -1;
-				q = newStmt2(mb, sqlRef, projectRef);
+				q = newStmt(mb, sqlRef, projectRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushArgument(mb, q, op3);
@@ -1810,16 +1803,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* delta bat */
 				if (s->op3) {
-					char nme[SMALLBUFSIZ];
+					char nme[IDLENGTH];
 					int uval = -1;
 
-					snprintf(nme, SMALLBUFSIZ, "r1_%d", r);
+					snprintf(nme, IDLENGTH, "r1_%d", r);
 					uval = findVariable(mb, nme);
 					assert(uval >= 0);
 
 					if ((ins = _dumpstmt(sql, mb, s->op3)) < 0)
 						return -1;
-					q = newStmt2(mb, sqlRef, deltaRef);
+					q = newStmt(mb, sqlRef, deltaRef);
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, uval);
@@ -1830,19 +1823,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return s->nr;
 				}
 				/* projections, ie left is void headed */
-				q = newStmt1(mb, algebraRef, "projection");
+				q = newStmt(mb, algebraRef, projectionRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				if (q == NULL)
 					return -1;
 				s->nr = getDestVar(q);
+				if (cmp == cmp_project && s->key) {
+					q = newStmt(mb, batRef, putName("setKey"));
+					q = pushArgument(mb, q, s->nr);
+					q = pushBit(mb, q, TRUE);
+					s->nr = getDestVar(q);
+				}
 				return s->nr;
 			}
 
 
 			switch (cmp) {
 			case cmp_equal:
-				q = newStmt1(mb, algebraRef, sjt);
+				q = newStmt(mb, algebraRef, sjt);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1854,7 +1853,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				break;
 			case cmp_equal_nil: /* nil == nil */
-				q = newStmt1(mb, algebraRef, sjt);
+				q = newStmt(mb, algebraRef, sjt);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1866,7 +1865,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				break;
 			case cmp_notequal:
-				q = newStmt1(mb, algebraRef, subantijoinRef);
+				q = newStmt(mb, algebraRef, subantijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1881,7 +1880,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			case cmp_lte:
 			case cmp_gt:
 			case cmp_gte:
-				q = newStmt1(mb, algebraRef, subthetajoinRef);
+				q = newStmt(mb, algebraRef, subthetajoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1901,7 +1900,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 				break;
 			case cmp_all:	/* aka cross table */
-				q = newStmt2(mb, algebraRef, crossRef);
+				q = newStmt(mb, algebraRef, crossRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1934,7 +1933,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 			}
 
-			q = newStmt2(mb, groupRef, s->flag & GRP_DONE ? subgroupdoneRef : subgroupRef);
+			q = newStmt(mb, groupRef, s->flag & GRP_DONE ? subgroupdoneRef : subgroupRef);
 
 			/* output variables extend and hist */
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1967,10 +1966,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (s->flag)
 					s->nr = s->op1->op2->nr;
 			} else if (s->flag) {
-				char nme[SMALLBUFSIZ];
+				char nme[IDLENGTH];
 				int v = -1;
 
-				snprintf(nme, SMALLBUFSIZ, "r%d_%d", s->flag, l);
+				snprintf(nme, IDLENGTH, "r%d_%d", s->flag, l);
 				v = findVariable(mb, nme);
 				assert(v >= 0);
 
@@ -2012,21 +2011,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			 * for single value vs bat, this is handled by the
 			 * mal function resolution */
 			if (s->nrcols == 0) {	/* simple calc */
-				q = newStmt1(mb, calcRef, convert);
+				q = newStmt(mb, calcRef, convert);
 			} else if (s->nrcols > 0 &&
 				   (t->type->localtype > TYPE_str || f->type->eclass == EC_DEC || t->type->eclass == EC_DEC || EC_INTERVAL(t->type->eclass) || EC_TEMP(t->type->eclass) ||
 				    (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0)))) {
 				int type = t->type->localtype;
 
-				q = newStmt(mb, "mal", "multiplex");
+				q = newStmt(mb, malRef, multiplexRef);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, type));
+				setVarType(mb, getArg(q, 0), newBatType(type));
 				setVarUDFtype(mb, getArg(q, 0));
-				q = pushStr(mb, q, convertMultiplexMod("calc", convert));
+				q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 				q = pushStr(mb, q, convertMultiplexFcn(convert));
 			} else
-				q = newStmt1(mb, batcalcRef, convert);
+				q = newStmt(mb, batcalcRef, convert);
 
 			/* convert to string is complex, we need full type info
 			   and mvc for the timezone */
@@ -2052,6 +2051,28 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* convert a string to a time(stamp) with time zone */
 			if (EC_VARCHAR(f->type->eclass) && EC_TEMP_FRAC(t->type->eclass) && type_has_tz(t))
 				q = pushInt(mb, q, type_has_tz(t));
+			if (t->type->eclass == EC_GEOM) {
+				/* push the type and coordinates of the column */
+				q = pushInt(mb, q, t->digits);
+				/* push the SRID of the whole columns */
+				q = pushInt(mb, q, t->scale);
+				/* push the type and coordinates of the inserted value */
+				//q = pushInt(mb, q, f->digits);
+				/* push the SRID of the inserted value */
+				//q = pushInt(mb, q, f->scale);
+
+/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
+				/* push the SRID provided for this value */
+				/* GEOS library is able to store in the returned wkb the type an
+ 				* number if coordinates but not the SRID so SRID should be provided 
+ 				* from this level */
+/*				if(sql->mvc->argc > 1)
+					f->scale = ((ValRecord)((atom*)((mvc*)sql->mvc)->args[1])->data).val.ival;
+				
+				q = pushInt(mb, q, f->digits);
+				q = pushInt(mb, q, f->scale);
+*/				//q = pushInt(mb, q, ((ValRecord)((atom*)((mvc*)sql->mvc)->args[1])->data).val.ival);
+			}
 			if (q == NULL)
 				return -1;
 			s->nr = getDestVar(q);
@@ -2076,26 +2097,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				fimp = convertMultiplexFcn(fimp);
 				q = NULL;
 				if (strcmp(fimp, "rotate_xor_hash") == 0 &&
-				    strcmp(mod, "calc") == 0 &&
-				    (q = newStmt(mb, "mkey", "bulk_rotate_xor_hash")) == NULL)
+				    strcmp(mod, calcRef) == 0 &&
+				    (q = newStmt(mb, mkeyRef, putName("bulk_rotate_xor_hash"))) == NULL)
 					return -1;
 				if (!q) {
 					if (f->func->type == F_UNION)
-						q = newStmt(mb, "batmal", "multiplex");
+						q = newStmt(mb, batmalRef, multiplexRef);
 					else
-						q = newStmt(mb, "mal", "multiplex");
+						q = newStmt(mb, malRef, multiplexRef);
 					if (q == NULL)
 						return -1;
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
+					setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 					setVarUDFtype(mb, getArg(q, 0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_any, res->type->localtype));
+					setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			} else {
-
 				fimp = convertOperator(fimp);
 				q = newStmt(mb, mod, fimp);
 				
@@ -2108,7 +2128,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			if (LANG_EXT(f->func->lang))
 				q = pushPtr(mb, q, f->func);
-			if (f->func->lang == FUNC_LANG_R)
+			if (f->func->lang == FUNC_LANG_R || f->func->lang == FUNC_LANG_PY || f->func->lang == FUNC_LANG_MAP_PY)
 				q = pushStr(mb, q, f->func->query);
 			/* first dynamic output of copy* functions */
 			if (f->func->type == F_UNION) 
@@ -2196,7 +2216,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, mod, aggrfunc);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
+				setVarType(mb, getArg(q, 0), newBatType(restype));
 				setVarUDFtype(mb, getArg(q, 0));
 			} else {
 				q = newStmt(mb, mod, aggrfunc);
@@ -2210,7 +2230,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (LANG_EXT(s->op4.aggrval->aggr->lang))
 				q = pushPtr(mb, q, s->op4.aggrval->aggr);
-			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R){
+			if (s->op4.aggrval->aggr->lang == FUNC_LANG_R || s->op4.aggrval->aggr->lang == FUNC_LANG_PY || s->op4.aggrval->aggr->lang == FUNC_LANG_MAP_PY){
 				if (!g) {
 					setVarType(mb, getArg(q, 0), restype);
 					setVarUDFtype(mb, getArg(q, 0));
@@ -2248,7 +2268,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_atom:{
 			atom *a = s->op4.aval;
-			q = newStmt1(mb, calcRef, atom_type(a)->type->base.name);
+			q = newStmt(mb, calcRef, atom_type(a)->type->base.name);
 			if (atom_null(a)) {
 				q = pushNil(mb, q, atom_type(a)->type->localtype);
 			} else {
@@ -2272,7 +2292,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if ((l = _dumpstmt(sql, mb, s->op1)) < 0)
 				return -1;
-			q = newStmt2(mb, batRef, appendRef);
+			q = newStmt(mb, batRef, appendRef);
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
@@ -2293,7 +2313,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->type == st_append_col && s->flag) {	/* fake append */
 				s->nr = tids;
 			} else {
-				q = newStmt2(mb, sqlRef, n);
+				q = newStmt(mb, sqlRef, n);
 				q = pushArgument(mb, q, sql->mvc_var);
 				if (q == NULL)
 					return -1;
@@ -2321,7 +2341,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if (s->op2 && (upd = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
-			q = newStmt2(mb, sqlRef, n);
+			q = newStmt(mb, sqlRef, n);
 			q = pushArgument(mb, q, sql->mvc_var);
 			if (q == NULL)
 				return -1;
@@ -2344,7 +2364,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (r < 0)
 				return -1;
-			q = newStmt1(mb, mod, "delete");
+			q = newStmt(mb, mod, deleteRef);
 			q = pushArgument(mb, q, sql->mvc_var);
 			if (q == NULL)
 				return -1;
@@ -2360,7 +2380,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_table *t = s->op4.tval;
 			str mod = sqlRef;
 
-			q = newStmt1(mb, mod, "clear_table");
+			q = newStmt(mb, mod, clear_tableRef);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			if (q == NULL)
@@ -2376,7 +2396,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 
 			/* if(bit(l)) { error(r);}  ==raising an exception */
-			q = newStmt1(mb, sqlRef, "assert");
+			q = newStmt(mb, sqlRef, assertRef);
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			if (q == NULL)
@@ -2391,7 +2411,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 			if (s->op2 && (r = _dumpstmt(sql, mb, s->op2)) < 0)
 				return -1;
-			q = newStmt1(mb, sqlRef, "trans");
+			q = newStmt(mb, sqlRef, "trans");
 			q = pushInt(mb, q, s->flag);
 			q = pushArgument(mb, q, l);
 			if (r > 0)
@@ -2407,7 +2427,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (_dumpstmt(sql, mb, s->op1) < 0)
 				return -1;
 
-			q = newStmt1(mb, sqlRef, "catalog");
+			q = newStmt(mb, sqlRef, catalogRef);
 			q = pushInt(mb, q, s->flag);
 			for (n = s->op1->op4.lval->h; n; n = n->next) {
 				stmt *c = n->data;
@@ -2441,7 +2461,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (o1 < 0)
 				return -1;
-			q = newStmt1(mb, sqlRef, "affectedRows");
+			q = newStmt(mb, sqlRef, affectedRowsRef);
 			q = pushArgument(mb, q, sql->mvc_var);
 			if (q == NULL)
 				return -1;
@@ -2482,7 +2502,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 					snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
-					q = newStmt2(mb, sqlRef, resultSetRef);
+					q = newStmt(mb, sqlRef, resultSetRef);
 					if (q) {
 						s->nr = getDestVar(q);
 						q = pushStr(mb, q, fqtn);
@@ -2505,7 +2525,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					return -1;
 
 			} else {
-				q = newStmt1(mb, sqlRef, "raise");
+				q = newStmt(mb, sqlRef, raiseRef);
 				q = pushStr(mb, q, "not a valid output list\n");
 				if (q == NULL)
 					return -1;
@@ -2544,7 +2564,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if ( (s->nr =dump_export_header(sql->mvc, mb, l, file, "csv", sep,rsep,ssep,ns)) < 0)
 					return -1;
 			} else {
-				q = newStmt1(mb, sqlRef, "raise");
+				q = newStmt(mb, sqlRef, raiseRef);
 				q = pushStr(mb, q, "not a valid output list\n");
 				if (q == NULL)
 					return -1;
@@ -2560,7 +2580,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return -1;
 
 			if (lst->type != st_list) {
-				q = newStmt1(mb, sqlRef, "print");
+				q = newStmt(mb, sqlRef, printRef);
 				q = pushStr(mb, q, "not a valid output list\n");
 				if (q == NULL)
 					return -1;
@@ -2590,7 +2610,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (outer < 0)
 					return -1;
 				/* leave barrier */
-				q = newStmt1(mb, calcRef, "not");
+				q = newStmt(mb, calcRef, notRef);
 				q = pushArgument(mb, q, c);
 				if (q == NULL)
 					return -1;
@@ -2631,7 +2651,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q->argc = q->retc = 1;
 				q->barrier = EXITsymbol;
 			}
-			q = newStmt1(mb, sqlRef, "mvc");
+			q = newStmt(mb, sqlRef, mvcRef);
 			if (q == NULL)
 				return -1;
 			sql->mvc_var = getDestVar(q);
@@ -2644,7 +2664,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (c < 0)
 				return -1;
 			if (s->flag) {	/* drop declared tables */
-				InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTables");
+				InstrPtr k = newStmt(mb, sqlRef, "dropDeclaredTables");
 				(void) pushInt(mb, k, s->flag);
 			}
 			q = newInstruction(mb, RETURNsymbol);
@@ -2702,7 +2722,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int vn = _dumpstmt(sql, mb, s->op1);
 				if (vn < 0)
 					return -1;
-				q = newStmt1(mb, sqlRef, "setVariable");
+				q = newStmt(mb, sqlRef, setVariableRef);
 				q = pushArgument(mb, q, sql->mvc_var);
 				q = pushArgument(mb, q, vn);
 				if (q == NULL)
@@ -2731,7 +2751,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
  * by using the SQLstatment.
  */
 
-static int
+int
 backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 {
 	mvc *c = be->mvc;
@@ -2740,7 +2760,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 	int old_mv = be->mvc_var, nr = 0;
 
 	/* announce the transaction mode */
-	q = newStmt1(mb, sqlRef, "mvc");
+	q = newStmt(mb, sqlRef, "mvc");
 	if (q == NULL)
 		return -1;
 	be->mvc_var = getDestVar(q);
@@ -2757,7 +2777,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 
 	be->mvc_var = old_mv;
 	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
-		q = newStmt2(mb, sqlRef, exportOperationRef);
+		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
 	}
@@ -2774,14 +2794,13 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s, int top, int add_end)
 	return 0;
 }
 
+/* Generate the assignments of the query arguments to the query template*/
 int
-backend_callinline(backend *be, Client c, stmt *s, int add_end)
+backend_callinline(backend *be, Client c)
 {
 	mvc *m = be->mvc;
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
-
-	curInstr = getInstrPtr(curBlk, 0);
 
 	if (m->argc) {	
 		int argc = 0;
@@ -2807,8 +2826,6 @@ backend_callinline(backend *be, Client c, stmt *s, int add_end)
 			}
 		}
 	}
-	if (backend_dumpstmt(be, curBlk, s, 1, add_end) < 0)
-		return -1;
 	c->curprg->def = curBlk;
 	return 0;
 }
@@ -2821,14 +2838,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0;
-	char arg[SMALLBUFSIZ];
+	char arg[IDLENGTH];
 	node *n;
 
 	backup = c->curprg;
 
 	/* later we change this to a factory ? */
 	if (cq)
-		c->curprg = newFunction(userRef, putName(cq->name, strlen(cq->name)), FUNCTIONsymbol);
+		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
 	else
 		c->curprg = newFunction(userRef, "tmp", FUNCTIONsymbol);
 	if (c->curprg == NULL)
@@ -2849,7 +2866,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
 
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
+			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)
@@ -2864,7 +2881,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int type = a->type.type->localtype;
 			int varid = 0;
 
-			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
+			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (curInstr == NULL)
@@ -2891,7 +2908,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			tt = t = GDKstrdup("-- no query");
 		}
 
-		q = newStmt1(mb, "querylog", "define");
+		q = newStmt(mb, querylogRef, defineRef);
 		if (q == NULL) {
 			GDKfree(tt);
 			return NULL;
@@ -2919,7 +2936,7 @@ backend_call(backend *be, Client c, cq *cq)
 	InstrPtr q;
 	MalBlkPtr mb = c->curprg->def;
 
-	q = newStmt1(mb, userRef, cq->name);
+	q = newStmt(mb, userRef, cq->name);
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
 		setVarType(mb, getArg(q, 0), TYPE_bit);
@@ -3009,6 +3026,44 @@ backend_create_r_func(backend *be, sql_func *f)
 }
 
 static int
+backend_create_py_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "pyapi";
+		f->imp = "eval_aggr";
+		break;
+	case  F_PROC: /* no output */
+	case  F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "pyapi";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
+static int
+backend_create_map_py_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "pyapimap";
+		f->imp = "eval_aggr";
+		break;
+	case  F_PROC: /* no output */
+	case  F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "pyapimap";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
+static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
@@ -3018,7 +3073,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg);
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
 	sql_allocator *sa, *osa = m->sa;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
@@ -3045,7 +3100,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	assert(s);
 
 	backup = c->curprg;
-	c->curprg = newFunction(userRef, putName(f->base.name, strlen(f->base.name)), FUNCTIONsymbol);
+	c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -3087,8 +3142,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			int varid = 0;
 			char *buf = GDKmalloc(MAXIDENTLEN);
 
-			if (buf == NULL)
+			if (buf == NULL) {
+				sa_destroy(sa);
 				return -1;
+			}
 			if (a->name)
 				(void) snprintf(buf, MAXIDENTLEN, "A%s", a->name);
 			else
@@ -3101,8 +3158,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 	/* announce the transaction mode */
 
-	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0)
+	if (backend_dumpstmt(be, curBlk, s, 0, 1) < 0) {
+		sa_destroy(sa);
 		return -1;
+	}
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
 	/* and only if we see a single return value */
@@ -3112,11 +3171,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		InstrPtr p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
-		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p));
+		sideeffects = sideeffects || hasSideEffects(p, FALSE) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)); 
+		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION)
+	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)
 		curBlk->inlineProp =1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
@@ -3139,6 +3199,10 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 		return backend_create_sql_func(be, f, restypes, ops);
 	case FUNC_LANG_R:
 		return backend_create_r_func(be, f);
+	case FUNC_LANG_PY:
+		return backend_create_py_func(be, f);
+	case FUNC_LANG_MAP_PY:
+		return backend_create_map_py_func(be, f);
 	case FUNC_LANG_C:
 	case FUNC_LANG_J:
 	default:

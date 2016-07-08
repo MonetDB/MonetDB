@@ -1,18 +1,10 @@
-ll <- NULL
-if (Sys.getenv("TSTTRGDIR") != "") {
-  ll <- paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")
-}
 ff <- textConnection("asdf", open="w")
 # hide output from connect and attach since it would blow up the test output
 # dangerous since it might hide useful warnings
 # so if things go south it might be a good idea to uncomment the cat(dd) below
 dd <- capture.output( suppressMessages ( {
 
-library(MonetDB.R,quietly=T,lib.loc=ll)
-library(dplyr,quietly=T)
-library(nycflights13,quietly=T)
-
-options(monetdb.profile=F)
+library(dplyr, quietly=T)
 
 args <- commandArgs(trailingOnly = TRUE)
 dbport <- 50000
@@ -27,8 +19,8 @@ so <- function(x) {
   print(dim(collect(head(x, 42))))
 }
 
-my_db <- src_monetdb(dbname=dbname, port=dbport, wait=T)
-if (!dbExistsTable(my_db$con , 'flights')) dbWriteTable( my_db$con , 'flights' , flights , csvdump=T, overwrite=T)
+my_db <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport, wait=T)
+if (!DBI::dbExistsTable(my_db$con , 'flights')) DBI::dbWriteTable( my_db$con , 'flights' , nycflights13::flights , csvdump=T, overwrite=T)
 flights <- tbl( my_db , 'flights')
 
 dim(flights)

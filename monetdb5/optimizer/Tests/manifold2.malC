@@ -1,11 +1,11 @@
 # the manifold code blocks 
-b:= bat.new(:oid,:dbl);
-b2:= bat.new(:oid,:dbl);
+b:= bat.new(:dbl);
+b2:= bat.new(:dbl);
 
-function tst(b:bat[:oid,:dbl],b2:bat[:oid,:dbl]);
+function tst(b:bat[:dbl],b2:bat[:dbl]);
 	c:= aggr.count(b);
 	c2:= aggr.count(b2);
-	z:bat[:oid,:dbl]:= mal.multiplex("calc","max",b,b2);
+	z:bat[:dbl]:= mal.multiplex("calc","max",b,b2);
 	io.print(z,b,b2);
 end tst;
 

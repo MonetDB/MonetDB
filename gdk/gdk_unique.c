@@ -65,12 +65,11 @@ BATunique(BAT *b, BAT *s)
 		/* we can return all values */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=NULL): trivial case: already unique, return all\n",
 				  BATgetId(b), BATcount(b));
-		bn = BATnew(TYPE_void, TYPE_void, BATcount(b), TRANSIENT);
+		bn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, BATcount(b));
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 		return bn;
 	}
 
@@ -82,12 +81,11 @@ BATunique(BAT *b, BAT *s)
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
-		bn = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, 0);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), b->hseqbase);
+		BATtseqbase(bn, b->hseqbase);
 		return bn;
 	}
 
@@ -98,12 +96,11 @@ BATunique(BAT *b, BAT *s)
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
-		bn = BATnew(TYPE_void, TYPE_void, 1, TRANSIENT);
+		bn = COLnew(0, TYPE_void, 1, TRANSIENT);
 		if (bn == NULL)
 			return NULL;
 		BATsetcount(bn, 1);
-		BATseqbase(bn, 0);
-		BATseqbase(BATmirror(bn), cand ? *cand : b->hseqbase);
+		BATtseqbase(bn, cand ? *cand : b->hseqbase);
 		return bn;
 	}
 
@@ -130,13 +127,12 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	bn = BATnew(TYPE_void, TYPE_oid, 1024, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	BATseqbase(bn, 0);
-	vals = Tloc(b, BUNfirst(b));
+	vals = Tloc(b, 0);
 	if (b->tvarsized && b->ttype)
-		vars = b->T->vheap->base;
+		vars = b->tvheap->base;
 	else
 		vars = NULL;
 	width = Tsize(b);
@@ -248,7 +244,7 @@ BATunique(BAT *b, BAT *s)
 		    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
 		   || ((parent = VIEWtparent(b)) != 0 &&
-		       BATcheckhash(BBPdescriptor(-parent)))
+		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
 		BUN lo;
@@ -263,17 +259,17 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATcount(s) : 0);
 		seq = b->hseqbase;
 #ifndef DISABLE_PARENT_HASH
-		if (b->T->hash == NULL && (parent = VIEWtparent(b)) != 0) {
-			BAT *b2 = BBPdescriptor(-parent);
-			lo = (BUN) ((b->T->heap.base - b2->T->heap.base) >> b->T->shift) + BUNfirst(b);
+		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+			BAT *b2 = BBPdescriptor(parent);
+			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			b = b2;
 			bi = bat_iterator(b);
 		} else
 #endif
 		{
-			lo = BUNfirst(b);
+			lo = 0;
 		}
-		hs = b->T->hash;
+		hs = b->thash;
 		for (;;) {
 			if (cand) {
 				if (cand == candend)
@@ -373,7 +369,7 @@ BATunique(BAT *b, BAT *s)
 			}
 			if (hb == HASHnil(hs)) {
 				o = i + b->hseqbase;
-				p = i + BUNfirst(b);
+				p = i;
 				bunfastapp(bn, &o);
 				/* enter into hash table */
 				HASHputlink(hs, p, HASHget(hs, prb));
@@ -389,8 +385,8 @@ BATunique(BAT *b, BAT *s)
 	bn->tsorted = 1;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = 1;
-	bn->T->nil = 0;
-	bn->T->nonil = 1;
+	bn->tnil = 0;
+	bn->tnonil = 1;
 	return virtualize(bn);
 
   bunins_failed:

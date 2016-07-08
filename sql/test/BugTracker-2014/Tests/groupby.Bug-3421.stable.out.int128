@@ -73,34 +73,34 @@ Ready.
 #select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
 % sys.t2,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
 % sys.t2,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 group by toplevelorderid;
 % sys.t2,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from t2 where
 #toplevelorderid = 5508 group by toplevelorderid;
 % sys.t2,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #select toplevelorderid, count(*), sum(numberoffills) from
 #orderconnectormetrics where toplevelorderid = 5508 group by toplevelorderid;
 % sys.orderconnectormetrics,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 4,	1,	1 # length
 [ 5508,	2,	6	]
 #delete from t2;
@@ -115,7 +115,7 @@ Ready.
 #toplevelorderid = 5508 group by toplevelorderid;
 % sys.t2,	sys.L1,	sys.L2 # table_name
 % toplevelorderid,	L1,	L2 # name
-% bigint,	wrd,	hugeint # type
+% bigint,	bigint,	hugeint # type
 % 4,	1,	2 # length
 [ 5508,	4,	12	]
 #drop table t2;

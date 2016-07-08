@@ -16,7 +16,6 @@
 #include <glob.h>
 
 /* clash with GDK? */
-#undef htype
 #undef ttype
 #include <fitsio.h>
 #include <fitsio2.h>
@@ -929,7 +928,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		nilptr = ATOMnilptr(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
 
-		tmp = BATnew(TYPE_void, mtype, rows, TRANSIENT);
+		tmp = COLnew(0, mtype, rows, TRANSIENT);
 		if ( tmp == NULL){
 			GDKfree(tpcode);
 			GDKfree(rep);
@@ -937,9 +936,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(cname);
 			throw(MAL,"fits.load", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(tmp, 0);
 		if (mtype != TYPE_str) {
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, nilptr, (void *)BUNtloc(bat_iterator(tmp), BUNfirst(tmp)), &anynull, &status);
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
 			BATsetcount(tmp, rows);
 			tmp->tsorted = 0;
 			tmp->trevsorted = 0;

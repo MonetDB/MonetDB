@@ -31,7 +31,7 @@ Ready.
 #select "eId", count(*) from t3225 where "uId" = 312459 group by "eId";
 % sys.t3225,	sys.L1 # table_name
 % eId,	L1 # name
-% bigint,	wrd # type
+% bigint,	bigint # type
 % 7,	5 # length
 [ 1000761,	11603	]
 [ 1000763,	4985	]
@@ -39,25 +39,25 @@ Ready.
 #select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000761 group by "eId";
 % sys.t3225,	sys.L1,	sys.L2,	sys.L3 # table_name
 % eId,	L1,	L2,	L3 # name
-% bigint,	timestamp,	timestamp,	wrd # type
+% bigint,	timestamp,	timestamp,	bigint # type
 % 7,	26,	26,	5 # length
 [ 1000761,	2012-11-02 09:53:57.000000,	2012-12-18 19:12:38.000000,	11603	]
 #select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000763 group by "eId";
 % sys.t3225,	sys.L1,	sys.L2,	sys.L3 # table_name
 % eId,	L1,	L2,	L3 # name
-% bigint,	timestamp,	timestamp,	wrd # type
+% bigint,	timestamp,	timestamp,	bigint # type
 % 7,	26,	26,	4 # length
 [ 1000763,	2012-11-21 17:42:25.000000,	2012-12-18 07:48:32.000000,	4985	]
 #select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000807 group by "eId";
 % sys.t3225,	sys.L1,	sys.L2,	sys.L3 # table_name
 % eId,	L1,	L2,	L3 # name
-% bigint,	timestamp,	timestamp,	wrd # type
+% bigint,	timestamp,	timestamp,	bigint # type
 % 7,	26,	26,	1 # length
 [ 1000807,	2012-12-10 17:22:59.000000,	2012-12-10 17:22:59.000000,	1	]
 #select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 group by "eId";
 % sys.t3225,	sys.L1,	sys.L2,	sys.L3 # table_name
 % eId,	L1,	L2,	L3 # name
-% bigint,	timestamp,	timestamp,	wrd # type
+% bigint,	timestamp,	timestamp,	bigint # type
 % 7,	26,	26,	5 # length
 [ 1000761,	2012-11-02 09:53:57.000000,	2012-12-18 19:12:38.000000,	11603	]
 [ 1000763,	2012-11-21 17:42:25.000000,	2012-12-18 07:48:32.000000,	4985	]

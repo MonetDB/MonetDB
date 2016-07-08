@@ -10,7 +10,7 @@ stderr of test 'case.SF-929151` in directory 'sql/test/BugDay_2005-10-06_2.9.3` 
 # 23:52:37 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44194  < case.SF-929151.sql
 # 23:52:37 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select case i
         when 0 then 'base table'
         when 1 then 'system table'

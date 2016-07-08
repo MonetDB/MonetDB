@@ -26,10 +26,10 @@ public class SQLExporter extends Exporter {
 	private int outputMode;
 	private Stack<String> lastSchema;
 
-	public final static int TYPE_OUTPUT		= 1;
+	public final static int TYPE_OUTPUT	= 1;
 	public final static int VALUE_INSERT	= 0;
-	public final static int VALUE_COPY		= 1;
-	public final static int VALUE_TABLE		= 2;
+	public final static int VALUE_COPY	= 1;
+	public final static int VALUE_TABLE	= 2;
 
 	public SQLExporter(PrintWriter out) {
 		super(out);
@@ -40,11 +40,11 @@ public class SQLExporter extends Exporter {
 	 * This method performs all required lookups to find all relations and
 	 * column information, as well as additional indices.
 	 *
-	 * @param dbmd a DatabaseMetaData object to query on
-	 * @param type the type of the object, e.g. VIEW, TABLE
+	 * @param dbmd a DatabaseMetaData object to query on (not null)
+	 * @param type the type of the object, e.g. VIEW, TABLE (not null)
 	 * @param catalog the catalog the object is in
-	 * @param schema the schema the object is in
-	 * @param name the table to describe in SQL CREATE format
+	 * @param schema the schema the object is in (not null)
+	 * @param name the table to describe in SQL CREATE format (not null)
 	 * @throws SQLException if a database related error occurs
 	 */
 	public void dumpSchema(
@@ -55,6 +55,13 @@ public class SQLExporter extends Exporter {
 			String name)
 		throws SQLException
 	{
+		assert dbmd != null;
+		assert type != null;
+		assert schema != null;
+		assert name != null;
+
+		String fqname = (!useSchema ? dq(schema) + "." : "") + dq(name);
+
 		if (useSchema)
 			changeSchema(schema);
 
@@ -63,18 +70,14 @@ public class SQLExporter extends Exporter {
 			String[] types = new String[1];
 			types[0] = type;
 			ResultSet tbl = dbmd.getTables(catalog, schema, name, types);
-			if (!tbl.next()) throw new SQLException("Whoops no data for " + name);
+			if (!tbl.next()) throw new SQLException("Whoops no meta data for view " + fqname);
 
 			// This will probably only work for MonetDB
-			String remarks = tbl.getString("REMARKS");
+			String remarks = tbl.getString("REMARKS");	// for MonetDB driver this contains the view definition
 			if (remarks == null) {
-				out.println("-- invalid " + type + " " +
-						(!useSchema ? dq(schema) + "." : "") + dq(name) +
-						": no definition found");
+				out.println("-- invalid " + type + " " + fqname + ": no definition found");
 			} else {
-				out.print("CREATE " + type + " " +
-					(!useSchema ? dq(schema) + "." : "") + dq(name));
-				out.print(" AS ");
+				out.print("CREATE " + type + " " + fqname + " AS ");
 				out.println(remarks.replaceFirst("create view [^ ]+ as", "").trim());
 			}
 			return;
@@ -82,10 +85,9 @@ public class SQLExporter extends Exporter {
 
 		int i;
 		String s;
-		out.println("CREATE " + type + " " +
-			(!useSchema ? dq(schema) + "." : "") + dq(name) + " (");
+		out.println("CREATE " + type + " " + fqname + " (");
 
-		// put all columns with their type in place
+		// add all columns with their type, nullability and default definition
 		ResultSet cols = dbmd.getColumns(catalog, schema, name, null);
 		ResultSetMetaData rsmd = cols.getMetaData();
 		int colwidth = rsmd.getColumnDisplaySize(cols.findColumn("COLUMN_NAME"));
@@ -113,28 +115,31 @@ public class SQLExporter extends Exporter {
 			// print column type
 			out.print(s + repeat(' ', typewidth - s.length()));
 
-			// do some type specifics 
-		 	if (ctype == Types.FLOAT ||
-				ctype == Types.VARCHAR ||
-				ctype == Types.LONGVARCHAR ||
-				ctype == Types.CHAR
-			) {
-				if (size <= 0) throw
-					new SQLException("Illegal value for precision of type " + cols.getString("TYPE_NAME") + " (" + size + ")");
-		 		out.print("(" + size + ")");
-			} else if (ctype == Types.CLOB) {
-				if (size > 0) out.print("(" + size + ")");
-			} else if (ctype == Types.DECIMAL ||
-				ctype == Types.NUMERIC
-			) {
-				if (digits < 0) throw
-					new SQLException("Illegal value for scale of decimal type (" + digits + ")");
-		 		out.print("(" + size + "," + digits + ")");
-			} else if (ctype == Types.TIMESTAMP ||
-				ctype == Types.TIME
-			) {
-		 		out.print("(" + (size  - 1) + ")");
-				if (digits != 0) out.print(" WITH TIME ZONE");
+			// do some MonetDB type specifics
+			switch (ctype) {
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+				case Types.CLOB:
+				case Types.BLOB:
+				case Types.FLOAT:
+					if (size > 0)
+						out.print("(" + size + ")");
+					break;
+				case Types.TIME:
+				case Types.TIMESTAMP:
+					if (size > 1)
+				 		out.print("(" + (size - 1) + ")");
+					if (digits != 0)
+						out.print(" WITH TIME ZONE");
+					break;
+				case Types.DECIMAL:
+				case Types.NUMERIC:
+					if (digits != 0)
+				 		out.print("(" + size + "," + digits + ")");
+					else
+				 		out.print("(" + size + ")");
+					break;
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
 				out.print("\tNOT NULL");
@@ -143,14 +148,11 @@ public class SQLExporter extends Exporter {
 		}
 		cols.close();
 
-		// the primary key constraint
+		// add the primary key constraint definition
 		// unfortunately some idiot defined that getPrimaryKeys()
 		// returns the primary key columns sorted by column name, not
 		// key sequence order.  So we have to sort ourself :(
-		cols = dbmd.getPrimaryKeys(
-				catalog,
-				schema,
-				name);
+		cols = dbmd.getPrimaryKeys(catalog, schema, name);
 		// first make an 'index' of the KEY_SEQ column
 		SortedMap<Integer, Integer> seqIndex = new TreeMap<Integer, Integer>();
 		for (i = 1; cols.next(); i++) {
@@ -177,7 +179,7 @@ public class SQLExporter extends Exporter {
 		}
 		cols.close();
 
-		// unique constraints
+		// add unique constraint definitions
 		cols = dbmd.getIndexInfo(catalog, schema, name, true, true);
 		while (cols.next()) {
 			String idxname = cols.getString("INDEX_NAME");
@@ -197,7 +199,7 @@ public class SQLExporter extends Exporter {
 		}
 		cols.close();
 
-		// foreign keys
+		// add foreign keys definitions
 		cols = dbmd.getImportedKeys(catalog, schema, name);
 		while (cols.next()) {
 			out.println(",");
@@ -210,7 +212,7 @@ public class SQLExporter extends Exporter {
 			pk.add(cols.getString("PKCOLUMN_NAME").intern());
 
 			while ((next = cols.next()) &&
-				cols.getInt("KEY_SEQ") != 0)
+				cols.getInt("KEY_SEQ") != 1)
 			{
 				fk.add(cols.getString("FKCOLUMN_NAME").intern());
 				pk.add(cols.getString("PKCOLUMN_NAME").intern());
@@ -236,14 +238,14 @@ public class SQLExporter extends Exporter {
 		}
 		cols.close();
 		out.println();
-		// end the create statement
+		// end the create table statement
 		out.println(");");
 
-		// create indexes
+		// create the non unique indexes defined for this table
 		cols = dbmd.getIndexInfo(catalog, schema, name, false, true);
 		while (cols.next()) {
 			if (!cols.getBoolean("NON_UNIQUE")) {
-				// we already covered this one as UNIQUE
+				// we already covered this one as UNIQUE constraint in the CREATE TABLE
 				continue;
 			} else {
 				String idxname = cols.getString("INDEX_NAME");
@@ -333,13 +335,14 @@ public class SQLExporter extends Exporter {
 		statement += dq(rsmd.getTableName(1)) + " VALUES (";
 
 		int cols = rsmd.getColumnCount();
-		int[] types = new int[cols];
-		for (int i = 0; i < cols; i++) {
-			switch (rsmd.getColumnType(i + 1)) {
+		short[] types = new short[cols +1];
+		for (int i = 1; i <= cols; i++) {
+			switch (rsmd.getColumnType(i)) {
 				case Types.CHAR:
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
 				case Types.CLOB:
+				case Types.BLOB:
 				case Types.DATE:
 				case Types.TIME:
 				case Types.TIMESTAMP:
@@ -367,17 +370,18 @@ public class SQLExporter extends Exporter {
 		while (rs.next()) {
 			out.print(statement);
 			for (int i = 1; i <= cols; i++) {
+				String val = rs.getString(i);
 				if (i > 1) out.print(", ");
-				if (rs.getString(i) == null) {
+				if (val == null || rs.wasNull()) {
 					out.print("NULL");
 					continue;
 				}
-				switch (types[i - 1]) {
+				switch (types[i]) {
 					case AS_IS:
-						out.print(rs.getString(i));
+						out.print(val);
 					break;
 					case QUOTE:
-						out.print(q(rs.getString(i)));
+						out.print(q(val));
 					break;
 				}
 			}
@@ -386,7 +390,7 @@ public class SQLExporter extends Exporter {
 	}
 
 	public void resultSetToSQLDump(ResultSet rs) {
-		// write copy into statement
+		// TODO: write copy into statement
 	}
 
 	/**
@@ -397,60 +401,72 @@ public class SQLExporter extends Exporter {
 	 */
 	public void resultSetToTable(ResultSet rs) throws SQLException {
 		ResultSetMetaData md = rs.getMetaData();
-		// find the widths of the columns
-		int[] width = new int[md.getColumnCount()];
-		for (int j = 0; j < md.getColumnCount(); j++) {
-			if (md.getColumnDisplaySize(j + 1) == 0) {
-				width[j] = md.getColumnLabel(j + 1).length();
-			} else {
-				width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnLabel(j + 1).length());
-			}
-			if (md.isNullable(j + 1) != ResultSetMetaData.columnNoNulls) {
-				width[j] = Math.max("<NULL>".length(), width[j]);
-			}
+		int cols = md.getColumnCount();
+		// find the optimal display widths of the columns
+		int[] width = new int[cols + 1];
+		boolean[] isSigned = new boolean[cols + 1];
+		for (int j = 1; j < width.length; j++) {
+			int coldisplaysize = md.getColumnDisplaySize(j);
+			int collabellength = md.getColumnLabel(j).length();
+			int maxwidth = (coldisplaysize > collabellength) ? coldisplaysize : collabellength;
+			// the minimum width should be 4 to represent: "NULL"
+			width[j] = (maxwidth > 4) ? maxwidth : 4;
+			isSigned[j] = md.isSigned(j);
 		}
 
+		// print the header text
 		out.print("+");
-		for (int j = 0; j < width.length; j++)
-			out.print("-" + repeat('-', width[j]) + "-+");
+		for (int j = 1; j < width.length; j++)
+			out.print(repeat('-', width[j] + 1) + "-+");
 		out.println();
 
 		out.print("|");
-		for (int j = 0; j < width.length; j++) {
-			out.print(" " + md.getColumnLabel(j + 1) + repeat(' ', width[j] - md.getColumnLabel(j + 1).length()) +  " |");
+		for (int j = 1; j < width.length; j++) {
+			String colLabel = md.getColumnLabel(j);
+			out.print(" " + colLabel + repeat(' ', width[j] - colLabel.length()) +  " |");
 		}
 		out.println();
 
 		out.print("+");
-		for (int j = 0; j < width.length; j++)
+		for (int j = 1; j < width.length; j++)
 			out.print("=" + repeat('=', width[j]) + "=+");
 		out.println();
 
+		// print data of each row from resultset
 		int count = 0;
 		for (; rs.next(); count++) {
 			out.print("|");
-			for (int j = 0; j < width.length; j++) {
-				Object rdata = rs.getObject(j + 1);
+			for (int j = 1; j < width.length; j++) {
+				Object rdata = rs.getObject(j);
 				String data;
-				if (rdata == null) {
-					data = "<NULL>";
+				if (rdata == null || rs.wasNull()) {
+					data = "NULL";
 				} else {
 					data = rdata.toString();
+					if (data == null)
+						data = "NULL";
 				}
-				if (md.isSigned(j + 1)) {
-					// we have a numeric type here
-					out.print(" " + repeat(' ', Math.max(width[j] - data.length(), 0)) + data +  " |");
+
+				int filler_length = width[j] - data.length();
+				if (filler_length <= 0) {
+					out.print(" " + data + " |");
 				} else {
-					// something else
-					out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
+					if (isSigned[j]) {
+						// we have a numeric type here, right align
+						out.print(" " + repeat(' ', filler_length) + data + " |");
+					} else {
+						// all other left align
+						out.print(" " + data + repeat(' ', filler_length) + " |");
+					}
 				}
 			}
 			out.println();
 		}
 
+		// print the footer text
 		out.print("+");
-		for (int j = 0; j < width.length; j++)
-			out.print("-" + repeat('-', width[j]) + "-+");
+		for (int j = 1; j < width.length; j++)
+			out.print(repeat('-', width[j] + 1) + "-+");
 		out.println();
 
 		out.println(count + " row" + (count != 1 ? "s" : ""));

@@ -25,7 +25,7 @@ Ready.
 % 7,	4,	1,	0,	3,	5 # length
 [ "varchar",	1024,	0,	"",	"env",	"name"	]
 [ "varchar",	2048,	0,	"",	"env",	"value"	]
-[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select * from env() as env where name in (?);
 #prepare select * from env() as env where name in (?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name

@@ -74,10 +74,6 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
-	if (!BAThdense(v)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a dense head");
-	}
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
@@ -85,18 +81,18 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
-	src = (TYPE *) Tloc(v, BUNfirst(v));
-	dst = (TYPE *) Tloc(res, BUNfirst(res));
+	src = (TYPE *) Tloc(v, 0);
+	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->T->nonil == TRUE) {
+	if (v->tnonil == TRUE) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -115,12 +111,12 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
-	res->T->nonil = nonil;
-	res->T->nil = !nonil;
+	res->tnonil = nonil;
+	res->tnil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -148,7 +144,7 @@ round_body_nonil(TYPE v, int d, int s, int r)
 			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
-#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG) && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
+#if TPE(TYPE) != TYPE_lng && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
 		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
 #endif
 		res = (TYPE) lres;
@@ -160,7 +156,7 @@ round_body_nonil(TYPE v, int d, int s, int r)
 			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
-#if TPE(TYPE) != TYPE_lng && (TPE(TYPE) != TYPE_wrd || SIZEOF_WRD != SIZEOF_LNG) && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
+#if TPE(TYPE) != TYPE_lng && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
 		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
 #endif
 		res = (TYPE) lres;
@@ -207,10 +203,6 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
-	if (!BAThdense(v)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a dense head");
-	}
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
@@ -218,18 +210,18 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = BATnew(TYPE_void, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
-	src = (TYPE *) Tloc(v, BUNfirst(v));
-	dst = (TYPE *) Tloc(res, BUNfirst(res));
+	src = (TYPE *) Tloc(v, 0);
+	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->T->nonil == TRUE) {
+	if (v->tnonil == TRUE) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *d, *s, *r);
 	} else {
@@ -248,12 +240,12 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	/* result head is aligned with argument head */
 	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
-	res->T->nonil = nonil;
-	res->T->nil = !nonil;
+	res->tnonil = nonil;
+	res->tnil = !nonil;
 	res->tdense = FALSE;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(BATmirror(res), FALSE);
+	BATkey(res, FALSE);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -295,6 +287,8 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 		digits--;
 	}
 	if (digits < 0)
+		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+	if (*d < 0 || *d >= (int) (sizeof(scales) / sizeof(scales[0])))
 		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 
 	value = decimal_from_str(s, &end);
@@ -356,17 +350,15 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), "Cannot access descriptor");
 	}
-	dst = BATnew(TYPE_void, TPE(TYPE), BATcount(b), TRANSIENT);
+	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BATloop(b, p, q) {
 		TYPE r = NIL(TYPE);
 		BUNappend(dst, &r, FALSE);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -384,12 +376,11 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(TYPE_void, TPE(TYPE), BATcount(b), TRANSIENT);
+	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
 		TYPE r;
@@ -401,7 +392,6 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -426,12 +416,11 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 		throw(SQL, "batcalc.str_2num_" STRING(TYPE), "Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
-	dst = BATnew(TYPE_void, TPE(TYPE), BATcount(b), TRANSIENT);
+	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
 		TYPE r;
@@ -443,7 +432,6 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 		}
 		BUNappend(dst, &r, FALSE);
 	}
-	BATseqbase(dst, b->hseqbase);
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

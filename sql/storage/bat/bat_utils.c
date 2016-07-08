@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "bat_utils.h"
+#include "mal.h"		/* for have_hge */
 
 void
 bat_destroy(BAT *b)
@@ -17,15 +18,12 @@ bat_destroy(BAT *b)
 }
 
 BAT *
-bat_new(int ht, int tt, BUN size, int role)
+bat_new(int tt, BUN size, int role)
 {
-	BAT *nb = BATnew(ht, tt, size, role);
-
-	if (nb != NULL && ht == TYPE_void) {
-		BATseqbase(nb, 0);
-		nb->H->dense = 1;
-	}
-	return nb;
+	BAT *bn = COLnew(0, tt, size, role);
+	if (bn)
+		BAThseqbase(bn, 0);
+	return bn;
 }
 
 BAT *
@@ -72,14 +70,13 @@ temp_copy(log_bid b, int temp)
 	if (!o)
 		return BID_NIL;
 	if (!temp) {
-		assert(o->htype == TYPE_void);
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
 		if (!c)
 			return BID_NIL;
 		bat_set_access(c, BAT_READ);
 		BATcommit(c);
 	} else {
-		c = bat_new(o->htype, o->ttype, COLSIZE, PERSISTENT);
+		c = bat_new(o->ttype, COLSIZE, PERSISTENT);
 		if (!c)
 			return BID_NIL;
 	}
@@ -112,8 +109,7 @@ ebat2real(log_bid b, oid ibase)
 	BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
 	log_bid r;
 
-	BATseqbase(c, ibase );
-	c->H->dense = 1;
+	BAThseqbase(c, ibase );
 	r = temp_create(c);
 	bat_destroy(c);
 	bat_destroy(o);
@@ -124,7 +120,7 @@ log_bid
 e_bat(int type)
 {
 	if (!ebats[type]) 
-		ebats[type] = bat_new(TYPE_void, type, 0, TRANSIENT);
+		ebats[type] = bat_new(type, 0, TRANSIENT);
 	return temp_create(ebats[type]);
 }
 
@@ -132,7 +128,7 @@ BAT *
 e_BAT(int type)
 {
 	if (!ebats[type]) 
-		ebats[type] = bat_new(TYPE_void, type, 0, TRANSIENT);
+		ebats[type] = bat_new(type, 0, TRANSIENT);
 	return temp_descriptor(ebats[type]->batCacheid);
 }
 
@@ -147,14 +143,13 @@ ebat_copy(log_bid b, oid ibase, int temp)
 	if (!o)
 		return BID_NIL;
 	if (!ebats[o->ttype]) 
-		ebats[o->ttype] = bat_new(TYPE_void, o->ttype, 0, TRANSIENT);
+		ebats[o->ttype] = bat_new(o->ttype, 0, TRANSIENT);
 
 	if (!temp && BATcount(o)) {
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
 		if (!c)
 			return BID_NIL;
-		BATseqbase(c, ibase );
-		c->H->dense = 1;
+		BAThseqbase(c, ibase );
 		BATcommit(c);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);
@@ -175,70 +170,50 @@ bat_utils_init(void)
 	int t;
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (t != TYPE_bat && BATatoms[t].name[0]) {
-			ebats[t] = bat_new(TYPE_void, t, 0, TRANSIENT);
+		if (t != TYPE_bat && BATatoms[t].name[0]
+#ifdef HAVE_HGE
+		    && (have_hge || t != TYPE_hge)
+#endif
+		) {
+			ebats[t] = bat_new(t, 0, TRANSIENT);
 			bat_set_access(ebats[t], BAT_READ);
 		}
 	}
 }
 
-sql_schema *
-tr_find_schema( sql_trans *tr, sql_schema *s)
-{
-	sql_schema *ns = NULL;
-
-	while (!ns && tr) {
-	 	ns = find_sql_schema_id(tr, s->base.id);
-		tr = tr->parent;
-	}
-	return ns;
-}
-
 sql_table *
 tr_find_table( sql_trans *tr, sql_table *t)
 {
-	sql_table *nt = NULL;
-
-	while ((!nt || !nt->data) && tr) {
-		sql_schema *s = tr_find_schema( tr, t->s);
-
-		if (list_length(s->tables.set) < HASH_MIN_SIZE)
-			nt = find_sql_table_id(s, t->base.id);
-		else
-			nt = find_sql_table(s, t->base.name);
-		assert(nt->base.id == t->base.id);
+	while (t && t->po && !t->base.allocated && tr)  {
+		t = t->po;
 		tr = tr->parent;
 	}
-	return nt;
+	if (t->data)
+		return t;
+	return NULL;
 }
 
 sql_column *
 tr_find_column( sql_trans *tr, sql_column *c)
 {
-	sql_column *nc = NULL;
-
-	while ((!nc || !nc->data) && tr) {
-		sql_table *t =  tr_find_table(tr, c->t);
-		node *n = cs_find_id(&t->columns, c->base.id);
-		if (n)
-			nc = n->data;
+	while (c && c->po && !c->base.allocated && tr)  {
+		c = c->po;
 		tr = tr->parent;
 	}
-	return nc;
+	if (c->data)
+		return c;
+	return NULL;
 }
 
 sql_idx *
 tr_find_idx( sql_trans *tr, sql_idx *i)
 {
-	sql_idx *ni = NULL;
-
-	while ((!ni || !ni->data) && tr) {
-		sql_table *t =  tr_find_table(tr, i->t);
-		node *n = cs_find_id(&t->idxs, i->base.id);
-		if (n)
-			ni = n->data;
+	while (i && i->po && !i->base.allocated && tr)  {
+		i = i->po;
 		tr = tr->parent;
 	}
-	return ni;
+	if (i->data)
+		return i;
+	return NULL;
 }
 

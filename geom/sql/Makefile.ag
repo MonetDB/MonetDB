@@ -10,4 +10,4 @@ headers_sql = {
 	SOURCES = 40_geom.sql
 }
 
-EXTRA_DIST_DIR = Tests
+EXTRA_DIST_DIR = Tests conformance functions pg_regression

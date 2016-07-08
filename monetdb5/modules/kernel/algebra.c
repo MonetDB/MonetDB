@@ -26,15 +26,15 @@
  * and we have to de-reference them before entering the gdk library.
  * This calls for knowlegde on the underlying BAT typs`s
  */
-#define derefStr(b, s, v)					\
-	do {							\
-		int _tpe= ATOMstorage((b)->s##type);		\
-		if (_tpe >= TYPE_str) {				\
+#define derefStr(b, v)							\
+	do {										\
+		int _tpe= ATOMstorage((b)->ttype);		\
+		if (_tpe >= TYPE_str) {					\
 			if ((v) == 0 || *(str*) (v) == 0)	\
-				(v) = (str) str_nil;		\
-			else					\
-				(v) = *(str *) (v);		\
-		}						\
+				(v) = (str) str_nil;			\
+			else								\
+				(v) = *(str *) (v);				\
+		}										\
 	} while (0)
 
 #include "monetdb_config.h"
@@ -55,17 +55,16 @@
 static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
-	wrd j, gcnt = BATcount(gids);
-	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2, TRANSIENT);
+	lng j, gcnt = BATcount(gids);
+	BAT *r = COLnew(0, TYPE_oid, BATcount(gids)*2, TRANSIENT);
 
 	if (r == NULL)
 		return GDK_FAIL;
-	BATseqbase(r, 0);
 	if (gids->ttype == TYPE_void) {
 		oid id = gids->hseqbase;
-		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		lng *cnt = (lng*)Tloc(cnts, 0);
 		for(j = 0; j < gcnt; j++) {
-			wrd i, sz = cnt[j];
+			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, &id, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(r);
@@ -76,9 +75,9 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		}
 	} else {
 		oid *id = (oid*)Tloc(gids, 0);
-		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		lng *cnt = (lng*)Tloc(cnts, 0);
 		for(j = 0; j < gcnt; j++) {
-			wrd i, sz = cnt[j];
+			lng i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
 				if (BUNappend(r, id, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(r);
@@ -92,7 +91,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	r -> tdense = FALSE;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
-	r -> T ->nonil = gids->T->nonil;
+	r -> tnonil = gids->tnonil;
 	*result = r;
 	return GDK_SUCCEED;
 }
@@ -142,7 +141,7 @@ ALGminany(ptr result, const bat *bid)
 							  "atom '%s' cannot be ordered linearly",
 							  ATOMname(b->ttype));
 	} else {
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmin(b, NULL);
 		} else {
 			p = BATmin(b, result);
@@ -170,7 +169,7 @@ ALGmaxany(ptr result, const bat *bid)
 							  "atom '%s' cannot be ordered linearly",
 							  ATOMname(b->ttype));
 	} else {
-		if (ATOMvarsized(b->ttype)) {
+		if (ATOMextern(b->ttype)) {
 			* (ptr *) result = p = BATmax(b, NULL);
 		} else {
 			p = BATmax(b, result);
@@ -247,8 +246,8 @@ ALGsubselect2(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.subselect", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, t, low);
-	derefStr(b, t, high);
+	derefStr(b, low);
+	derefStr(b, high);
 	nilptr = ATOMnilptr(b->ttype);
 	if (*li == 1 && *hi == 1 &&
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
@@ -286,7 +285,7 @@ ALGthetasubselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.thetasubselect", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, t, val);
+	derefStr(b, val);
 	bn = BATthetaselect(b, s, val, *op);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -517,13 +516,13 @@ ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat 
 				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.subdiff");
 }
 
-/* algebra.firstn(b:bat[:oid,:any],
- *                [ s:bat[:oid,:oid],
- *                [ g:bat[:oid,:oid], ] ]
- *                n:wrd,
+/* algebra.firstn(b:bat[:any],
+ *                [ s:bat[:oid],
+ *                [ g:bat[:oid], ] ]
+ *                n:lng,
  *                asc:bit,
  *                distinct:bit)
- * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
+ * returns :bat[:oid] [ , :bat[:oid] ]
  */
 str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -532,7 +531,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat bid, sid, gid;
 	BAT *b, *s = NULL, *g = NULL;
 	BAT *bn, *gn;
-	wrd n;
+	lng n;
 	bit asc, distinct;
 	gdk_return rc;
 
@@ -542,7 +541,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1 || pci->retc == 2);
 	assert(pci->argc - pci->retc >= 4 && pci->argc - pci->retc <= 6);
 
-	n = * getArgReference_wrd(stk, pci, pci->argc - 3);
+	n = * getArgReference_lng(stk, pci, pci->argc - 3);
 	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference_bat(stk, pci, 0);
@@ -789,20 +788,20 @@ ALGsubsort11(bat *result, const bat *bid, const bit *reverse, const bit *stable)
 }
 
 str
-ALGcount_bat(wrd *result, const bat *bid)
+ALGcount_bat(lng *result, const bat *bid)
 {
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
 	}
-	*result = (wrd) BATcount(b);
+	*result = (lng) BATcount(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGcount_nil(wrd *result, const bat *bid, const bit *ignore_nils)
+ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 {
 	BAT *b;
 	BUN cnt;
@@ -814,13 +813,13 @@ ALGcount_nil(wrd *result, const bat *bid, const bit *ignore_nils)
 		cnt = BATcount_no_nil(b);
 	else
 		cnt = BATcount(b);
-	*result = (wrd) cnt;
+	*result = (lng) cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGcount_no_nil(wrd *result, const bat *bid)
+ALGcount_no_nil(lng *result, const bat *bid)
 {
 	bit ignore_nils = 1;
 
@@ -835,7 +834,6 @@ ALGtmark(bat *result, const bat *bid, const oid *base)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.mark", RUNTIME_OBJECT_MISSING);
 	}
-	assert(BAThdense(b));
 	bn = BATdense(b->hseqbase, *base, BATcount(b));
 	if (bn != NULL) {
 		BBPunfix(b->batCacheid);
@@ -902,10 +900,10 @@ ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 }
 
 str
-ALGslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
+ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	lng s = *start;
-	lng e = (*end == wrd_nil ? lng_nil : *end);
+	lng e = *end;
 
 	return ALGslice(ret, bid, &s, &e);
 }
@@ -922,20 +920,20 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 }
 
 str
-ALGsubslice_wrd(bat *ret, const bat *bid, const wrd *start, const wrd *end)
+ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	BAT *b, *bn;
 	BUN s, e;
 
-	if (*start < 0 || *start > (wrd) BUN_MAX ||
-		(*end < 0 && *end != wrd_nil) || *end >= (wrd) BUN_MAX)
+	if (*start < 0 || *start > (lng) BUN_MAX ||
+		(*end < 0 && *end != lng_nil) || *end >= (lng) BUN_MAX)
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.subslice", RUNTIME_OBJECT_MISSING);
 	s = (BUN) *start;
 	if (s > BATcount(b))
 		s = BATcount(b);
-	e = *end == wrd_nil ? BATcount(b) : (BUN) *end + 1;
+	e = *end == lng_nil ? BATcount(b) : (BUN) *end + 1;
 	if (e > BATcount(b))
 		e = BATcount(b);
 	if (e < s)
@@ -972,7 +970,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		} else if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)
-				*(oid*)ret += pos - BUNfirst(b);
+				*(oid*)ret += pos;
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) Tloc(b, pos);
 		} else if (_s == 1) {
@@ -1001,7 +999,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.fetch", RUNTIME_OBJECT_MISSING);
 	}
-	if ((*pos < (lng) BUNfirst(b)) || (*pos >= (lng) BUNlast(b)))
+	if ((*pos < (lng) 0) || (*pos >= (lng) BUNlast(b)))
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
 	msg = doALGfetch(ret, b, (BUN) *pos);
 	BBPunfix(b->batCacheid);
@@ -1025,7 +1023,7 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, h, val);
+	derefStr(b, val);
 	q = BUNfnd(b, val);
 	*ret = (q != BUN_NONE);
 	BBPunfix(b->batCacheid);
@@ -1042,7 +1040,7 @@ ALGfind(oid *ret, const bat *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
 	}
-	derefStr(b, t, val);
+	derefStr(b, val);
 	q = BUNfnd(b, val);
 
 	if (q == BUN_NONE){
@@ -1068,7 +1066,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"algebra.project","Scalar value expected");
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
-	bn = BATconst(b, v->vtype, VALptr(v), TRANSIENT);
+	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		*ret = bat_nil;
 		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
@@ -1096,7 +1094,7 @@ str ALGreuse(bat *ret, const bat *bid)
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
 			}
 		} else {
-			bn = BATnew(TYPE_void,b->ttype,BATcount(b), TRANSIENT);
+			bn = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
 				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
@@ -1105,8 +1103,6 @@ str ALGreuse(bat *ret, const bat *bid)
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
 			BATkey(bn,FALSE);
-			/* head is void */
-			BATseqbase(bn, b->hseqbase);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPunfix(b->batCacheid);

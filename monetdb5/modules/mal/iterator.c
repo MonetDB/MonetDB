@@ -49,23 +49,21 @@ str
 ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 {
 	BAT *b, *view;
-	BUN cnt, first;
+	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
 	}
 	cnt = BATcount(b);
-	first = BUNfirst(b);
 	view = VIEWcreate_(b->hseqbase, b, TRUE);
 
-	/*  printf("set bat chunk bound to " LLFMT " " BUNFMT " - " BUNFMT "\n",
-	 *granule, first, MIN(cnt,(BUN) *granule)); */
-	VIEWbounds(b, view, (BUN) first, first + MIN(cnt, (BUN) * granule));
-	BATseqbase(view, b->hseqbase);
+	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
+	 *granule, MIN(cnt,(BUN) *granule)); */
+	VIEWbounds(b, view, 0, MIN(cnt, (BUN) * granule));
 	*vid = view->batCacheid;
 	BBPkeepref(view->batCacheid);
 	BBPunfix(b->batCacheid);
-	*res = first;
+	*res = 0;
 	return MAL_SUCCEED;
 }
 
@@ -98,7 +96,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
 	   i, i+(BUN) *granule-1); */
 	VIEWbounds(b, view, i, i + (BUN) * granule);
-	BATseqbase(view, b->hseqbase == oid_nil ? oid_nil : b->hseqbase + i - BUNfirst(b));
+	BAThseqbase(view, b->hseqbase == oid_nil ? oid_nil : b->hseqbase + i);
 	BBPkeepref(*vid = view->batCacheid);
 	BBPunfix(b->batCacheid);
 	*res = i;
@@ -138,7 +136,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	*head = BUNfirst(b);
+	*head = 0;
 
  	bi = bat_iterator(b);
 	VALinit(tail, b->ttype, BUNtail(bi, *(BUN*) head));

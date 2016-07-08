@@ -25,31 +25,31 @@ stdout of test 'tst005` in directory 'monetdb5/mal` itself:
 
 Ready.
 
-# 08:15:16 >  
-# 08:15:16 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26338" "--port=32746"
-# 08:15:16 >  
+# 10:52:47 >  
+# 10:52:47 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-5303" "--port=30531"
+# 10:52:47 >  
 
-function user.foo():void;               	#[0]  0 
-    i:int := 1:int;                     	#[1]  1 <- 2 
-    j:int := 2:int;                     	#[2]  3 <- 4 
-barrier v:int := i:int;                 	#[3]  5 <- 1 
-    io.print("entered":str);            	#[4] IOprint_val 6 <- 7 
-    io.print(v:int);                    	#[5] IOprint_val 8 <- 5 
-    redo v:int := iterator.next(-1:int,0:int);	#[6] ITRnext_int 5 <- 9 10 
-exit v:int;                             	#[7]  5 
-    io.print("doubles":str);            	#[8] IOprint_val 11 <- 12 
-    i:int := 1:int;                     	#[9]  1 <- 2 
-barrier (v:int,w:int) := (i:int,j:int); 	#[10]  5 13 <- 1 3 
-    io.print("entered2":str);           	#[11] IOprint_val 14 <- 15 
-    io.print(v:int);                    	#[12] IOprint_val 16 <- 5 
-    v:int := calc.-(v:int,1:int);       	#[13] CMDvarSUBsignal 5 <- 5 2 
-barrier b:bit := calc.==(v:int,0:int);  	#[14] CMDvarEQ 17 <- 5 10 
-    leave (v:int,w:int);                	#[15]  5 13 
-exit b:bit;                             	#[16]  17 
-    redo (v:int,w:int) := (v:int,w:int);	#[17]  5 13 <- 5 13 
-exit (v:int,w:int);                     	#[18]  5 13 
-    io.print("finished":str);           	#[19] IOprint_val 18 <- 19 
-end user.foo;                           	#[20]  
+function user.foo():void;               	#[0] (0)  0 
+    i:int := 1:int;                     	#[1] (0)  1 <- 2 
+    j:int := 2:int;                     	#[2] (0)  3 <- 4 
+barrier v:int := i:int;                 	#[3] (0)  5 <- 1 
+    io.print("entered":str);            	#[4] (0) IOprint_val 6 <- 7 
+    io.print(v:int);                    	#[5] (0) IOprint_val 8 <- 5 
+    redo v:int := iterator.next(-1:int,0:int);	#[6] (0) ITRnext_int 5 <- 9 10 
+exit v:int;                             	#[7] (0)  5 
+    io.print("doubles":str);            	#[8] (0) IOprint_val 11 <- 12 
+    i:int := 1:int;                     	#[9] (0)  1 <- 2 
+barrier (v:int,w:int) := (i:int,j:int); 	#[10] (0)  5 13 <- 1 3 
+    io.print("entered2":str);           	#[11] (0) IOprint_val 14 <- 15 
+    io.print(v:int);                    	#[12] (0) IOprint_val 16 <- 5 
+    v:int := calc.-(v:int,1:int);       	#[13] (0) CMDvarSUBsignal 5 <- 5 2 
+barrier b:bit := calc.==(v:int,0:int);  	#[14] (0) CMDvarEQ 17 <- 5 10 
+    leave (v:int,w:int);                	#[15] (0)  5 13 
+exit b:bit;                             	#[16] (0)  17 
+    redo (v:int,w:int) := (v:int,w:int);	#[17] (0)  5 13 <- 5 13 
+exit (v:int,w:int);                     	#[18] (0)  5 13 
+    io.print("finished":str);           	#[19] (0) IOprint_val 18 <- 19 
+end user.foo;                           	#[20] (0)  
 [ "entered" ]
 [ 1 ]
 [ "doubles" ]

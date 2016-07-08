@@ -22,8 +22,7 @@
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
-
-#include <mapi.h>
+#include <sql_query.h>
 
 #define ERRSIZE 8192
 
@@ -60,14 +59,12 @@
 #define mod_debug 	1
 #define mod_trace 	2
 #define mod_explain 	4 
-#define mod_dot 	8 
 /* locked needs unlocking */
 #define mod_locked 	16 
 
 typedef struct sql_var {
 	const char *name;
-	ValRecord value;
-	sql_subtype type;
+	atom a;
 	sql_table *t;
 	sql_rel *rel;	
 	char view;
@@ -97,7 +94,7 @@ typedef struct mvc {
 	int argc;
 	int argmax;
 	struct symbol *sym;
-	int point_query;	/* mark when a query is a point query */
+	int no_mitosis;		/* run query without mitosis */
 
 	int user_id;
 	int role_id;
@@ -239,7 +236,7 @@ extern int stack_find_frame(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern ValRecord * stack_get_var(mvc *sql, const char *name);
+extern atom * stack_get_var(mvc *sql, const char *name);
 extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);

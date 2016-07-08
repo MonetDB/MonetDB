@@ -54,12 +54,6 @@
 #include <bat/bat_storage.h>
 #include <bat/bat_utils.h>
 
-#if SIZEOF_WRD == SIZEOF_INT
-#define wrdToStr(sptr, lptr, p) intToStr(sptr, lptr, (int*)p)
-#else
-#define wrdToStr(sptr, lptr, p) lngToStr(sptr, lptr, (lng*)p)
-#endif
-
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
 extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
@@ -124,6 +118,7 @@ sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 sql5_export str mvc_getVersion(lng *r, const int *clientid);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one(ptr ret, const bat *bid);
+sql5_export str SQLall(ptr ret, const bat *bid);
 sql5_export str not_unique(bit *ret, const bat *bid);
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -196,21 +191,6 @@ sql5_export str nil_2dec_int(int *res, const void *val, const int *d, const int 
 sql5_export str nil_2num_int(int *res, const void *v, const int *len);
 sql5_export str batnil_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
 sql5_export str batnil_2num_int(bat *res, const bat *v, const int *len);
-
-sql5_export str wrd_dec_round_wrap(wrd *res, const wrd *v, const wrd *r);
-sql5_export str wrd_bat_dec_round_wrap(bat *res, const bat *v, const wrd *r);
-sql5_export str wrd_round_wrap(wrd *res, const wrd *v, const int *d, const int *s, const bte *r);
-sql5_export str wrd_bat_round_wrap(bat *res, const bat *v, const int *d, const int *s, const bte *r);
-sql5_export str str_2dec_wrd(wrd *res, const str *val, const int *d, const int *sc);
-sql5_export str str_2num_wrd(wrd *res, const str *v, const int *len);
-sql5_export str batstr_2dec_wrd(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batstr_2num_wrd(bat *res, const bat *v, const int *len);
-sql5_export str wrd_dec2second_interval(lng *res, const int *sc, const wrd *dec, const int *ek, const int *sk);
-
-sql5_export str nil_2dec_wrd(wrd *res, const void *val, const int *d, const int *sc);
-sql5_export str nil_2num_wrd(wrd *res, const void *v, const int *len);
-sql5_export str batnil_2dec_wrd(bat *res, const bat *val, const int *d, const int *sc);
-sql5_export str batnil_2num_wrd(bat *res, const bat *v, const int *len);
 
 sql5_export str lng_dec_round_wrap(lng *res, const lng *v, const lng *r);
 sql5_export str lng_bat_dec_round_wrap(bat *res, const bat *v, const lng *r);

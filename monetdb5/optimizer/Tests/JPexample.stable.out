@@ -29,18 +29,17 @@ Ready.
 # 06:41:06 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
 # 06:41:06 >  
 
-#mdb.List("user","foo");
-function user.foo():void;               	#[0]  0 
-    a:bat[:oid] := bat.new(:oid,:oid);  	#[1] CMDBATnew 1 <- 2 2 
-    b:bat[:oid] := bat.new(:oid,:oid);  	#[2] CMDBATnew 3 <- 2 2 
-    c:bat[:oid] := bat.new(:oid,:oid);  	#[3] CMDBATnew 4 <- 2 2 
-    d:bat[:oid] := bat.new(:oid,:oid);  	#[4] CMDBATnew 5 <- 2 2 
-    j1:bat[:oid] := algebra.projection(a:bat[:oid],b:bat[:oid]);	#[5] ALGprojection 6 <- 1 3 
-    j2:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[6] ALGprojectionpath 7 <- 1 3 4 
-    j3:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],d:bat[:oid]);	#[7] ALGprojectionpath 8 <- 1 3 4 5 
-    j4:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[8] ALGprojectionpath 9 <- 1 3 4 
-    j5:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],b:bat[:oid]);	#[9] ALGprojectionpath 10 <- 1 3 4 3 
-end user.foo;                           	#[10]  
+function user.foo():void;               	#[0] (0)  0 
+    a:bat[:oid] := bat.new(:oid);       	#[1] (0) CMDBATnew 1 <- 2 
+    b:bat[:oid] := bat.new(:oid);       	#[2] (0) CMDBATnew 3 <- 2 
+    c:bat[:oid] := bat.new(:oid);       	#[3] (0) CMDBATnew 4 <- 2 
+    d:bat[:oid] := bat.new(:oid);       	#[4] (0) CMDBATnew 5 <- 2 
+    j1:bat[:oid] := algebra.projection(a:bat[:oid],b:bat[:oid]);	#[5] (0) ALGprojection 6 <- 1 3 
+    j2:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[6] (0) ALGprojectionpath 7 <- 1 3 4 
+    j3:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],d:bat[:oid]);	#[7] (0) ALGprojectionpath 8 <- 1 3 4 5 
+    j4:bat[:any] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid]);	#[8] (0) ALGprojectionpath 9 <- 1 3 4 
+    j5:bat[:oid] := algebra.projectionpath(a:bat[:oid],b:bat[:oid],c:bat[:oid],b:bat[:oid]);	#[9] (0) ALGprojectionpath 10 <- 1 3 4 3 
+end user.foo;                           	#[10] (0)  
 
 # 06:41:06 >  
 # 06:41:06 >  "Done."

@@ -28,10 +28,10 @@ stderr of test 'subselect_cardinality.SF-1240701.1242164` in directory 'sql/test
 # 11:09:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26111" "--port=34323"
 # 11:09:03 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26111/.s.monetdb.34323
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from tab where i = (select 0 from tab where i < 3) order by i;
 ERROR = !cardinality violation (2>1)
-MAPI  = (monetdb) /var/tmp/mtest-26111/.s.monetdb.34323
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from tab where i = (select i from tab where i < 3) order by i;
 ERROR = !cardinality violation (2>1)
 

@@ -9,7 +9,7 @@
 import sys
 import getopt
 
-from monetdb import mapi
+from pymonetdb import mapi
 
 def main() :
     hostname = 'localhost'

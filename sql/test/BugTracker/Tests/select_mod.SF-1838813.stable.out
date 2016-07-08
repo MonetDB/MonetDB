@@ -33,7 +33,7 @@ Ready.
 % .L # table_name
 % mod_single_value # name
 % decimal # type
-% 6 # length
+% 4 # length
 [ 2.0	]
 
 # 00:15:33 >  

@@ -214,8 +214,8 @@ keyvalueparser(char *txt, EventRecord *ev)
 		memset(&stm, 0, sizeof(struct tm));
 		c = strptime(val + 1, "%H:%M:%S", &stm);
 		ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
-		c=  strchr(val,(int)'.');
-		if (*c == '.') {
+		c=  strchr(val,'.');
+		if (c != NULL) {
 			lng usec;
 			/* microseconds */
 			usec = strtoll(c + 1, NULL, 10);
@@ -260,21 +260,23 @@ keyvalueparser(char *txt, EventRecord *ev)
 			}
 			c= strstr(key,"\\\":str");
 			if(c) *c = 0;
-			c= strchr(key,(int)'(');
-			while(*c && *c != '"') c++;
-			if( *c == '"') c++;
-			currentquery = strdup(stripQuotes(c));
+			c= strchr(key,'(');
+			if (c) {
+				while(*c && *c != '"') c++;
+				if( *c == '"') c++;
+				currentquery = stripQuotes(c);
+			}
 		}
 		s= strstr(val," := ");
 		if( s) {
 			s += 4;
-			c= strchr(s,(int)'(');
+			c= strchr(s,'(');
 			if( c){
 				*c =0;
 				ev->fcn= strdup(s); 
 			}
 		} else{
-			c= strchr(val,(int)'(');
+			c= strchr(val,'(');
 			if( c){
 				*c =0;
 				ev->fcn= strdup(val); 

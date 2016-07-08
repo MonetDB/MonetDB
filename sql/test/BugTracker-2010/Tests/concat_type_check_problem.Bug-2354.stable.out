@@ -33,7 +33,7 @@ Ready.
 % 91 # length
 [ "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 1 test"	]
 #select cast(a||' '||b as varchar(256))||' '||c from test2;
-% sys.L # table_name
+% sys.L1 # table_name
 % truncate_concat_concat_a # name
 % varchar # type
 % 91 # length

@@ -29,17 +29,15 @@ Ready.
 # 06:13:00 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4792" "--port=30372"
 # 06:13:00 >  
 
-#mdb.List("user","welcome");
-function user.welcome(lim:int):int;     	#[0]  0 <- 1 
-    i:int := 0:int;                     	#[1]  2 <- 3 
-barrier j:bit := calc.<(i:int,lim:int); 	#[2] CMDvarLT 4 <- 2 1 
-    io.print("Welcome":str);            	#[3] IOprint_val 5 <- 6 
-    i:int := calc.+(i:int,1:int);       	#[4] CMDvarADDsignal 2 <- 2 7 
-    redo j:bit := calc.<(i:int,lim:int);	#[5] CMDvarLT 4 <- 2 1 
-exit j:bit;                             	#[6]  4 
-    return welcome:int := i:int;        	#[7]  0 <- 2 
-end user.welcome;                       	#[8]  
-#io.print("test expansion");
+function user.welcome(lim:int):int;     	#[0] (0)  0 <- 1 
+    i:int := 0:int;                     	#[1] (0)  2 <- 3 
+barrier j:bit := calc.<(i:int,lim:int); 	#[2] (0) CMDvarLT 4 <- 2 1 
+    io.print("Welcome":str);            	#[3] (0) IOprint_val 5 <- 6 
+    i:int := calc.+(i:int,1:int);       	#[4] (0) CMDvarADDsignal 2 <- 2 7 
+    redo j:bit := calc.<(i:int,lim:int);	#[5] (0) CMDvarLT 4 <- 2 1 
+exit j:bit;                             	#[6] (0)  4 
+    return welcome:int := i:int;        	#[7] (0)  0 <- 2 
+end user.welcome;                       	#[8] (0)  
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]

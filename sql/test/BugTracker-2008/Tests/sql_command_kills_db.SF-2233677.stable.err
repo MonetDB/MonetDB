@@ -82,7 +82,7 @@ stderr of test 'sql_command_kills_db.SF-2233677` in directory 'sql/test/BugTrack
 # 16:15:09 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39774  -G
 # 16:15:09 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9576/.s.monetdb.31254
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into t1 values ((select id from tbls));
 ERROR = !cardinality violation (3>1)
 

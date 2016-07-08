@@ -71,7 +71,7 @@ stderr of test 'select_X_where_bla_EQ_whatever.SF-282597` in directory 'sql/test
 # 09:39:48 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=30225 
 # 09:39:48 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * where bla = "whatever";
 ERROR = !SELECT: identifier 'bla' unknown
 

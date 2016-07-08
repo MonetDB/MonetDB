@@ -81,12 +81,12 @@ function user.s2_1(A0:bte,A1:str):void;
     X_3 := sql.mvc();
     X_7:bat[:str] := sql.bind(X_3,"sys","part","p_name",0);
     C_4:bat[:oid] := sql.tid(X_3,"sys","part");
-    C_198 := algebra.likesubselect(X_7,C_4,A1,"",false);
+    C_205 := algebra.likesubselect(X_7,C_4,A1,"",false);
     (C_10,r1_10) := sql.bind(X_3,"sys","part","p_name",2);
-    C_199 := algebra.likesubselect(r1_10,nil:bat[:oid],A1,"",false);
+    C_206 := algebra.likesubselect(r1_10,nil:bat[:oid],A1,"",false);
     X_13:bat[:str] := sql.bind(X_3,"sys","part","p_name",1);
-    C_201 := algebra.likesubselect(X_13,C_4,A1,"",false);
-    C_16 := sql.subdelta(C_198,C_4,C_10,C_199,C_201);
+    C_208 := algebra.likesubselect(X_13,C_4,A1,"",false);
+    C_16 := sql.subdelta(C_205,C_4,C_10,C_206,C_208);
     X_19:bat[:int] := sql.bind(X_3,"sys","part","p_partkey",0);
     (C_21,r1_25) := sql.bind(X_3,"sys","part","p_partkey",2);
     X_23:bat[:int] := sql.bind(X_3,"sys","part","p_partkey",1);
@@ -175,7 +175,7 @@ function user.s2_1(A0:bte,A1:str):void;
     X_116 := algebra.projection(r1_141,X_108);
     X_117 := algebra.projection(r1_141,X_107);
     X_153 := algebra.projection(r1_141,X_152);
-    sql.resultSet(X_179,X_181,X_183,X_185,X_187,X_116,X_117,X_153);
+    sql.resultSet(X_178,X_180,X_182,X_184,X_186,X_116,X_117,X_153);
 end user.s2_1;
 
 # 22:53:27 >  

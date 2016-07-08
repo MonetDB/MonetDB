@@ -27,8 +27,8 @@ Ready.
 # 12:52:57 >  
 
 function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
-    c:wrd := aggr.count(b:bat[:dbl]);   	#[1] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[2] ALGcount_bat 4 <- 2 
+    c:lng := aggr.count(b:bat[:dbl]);   	#[1] ALGcount_bat 3 <- 1 
+    c2:lng := aggr.count(b2:bat[:dbl]); 	#[2] ALGcount_bat 4 <- 2 
     X_9:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[3] CMDBATnew 9 <- 10 11 
 barrier (X_13:oid,X_14:dbl) := iterator.new(b:bat[:dbl]);	#[4] ITRbunIterator 13 14 <- 1 
     X_16:dbl := algebra.fetch(b2:bat[:dbl],X_13:oid);	#[5] ALGfetchoid 16 <- 2 13 
@@ -52,8 +52,8 @@ end user.tst;                           	#[12]
 #[16]   _16 =  :dbl  
 #[18]   _18 =  :dbl  
 function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0]  0 <- 1 2 
-    c:wrd := aggr.count(b:bat[:dbl]);   	#[1] ALGcount_bat 3 <- 1 
-    c2:wrd := aggr.count(b2:bat[:dbl]); 	#[2] ALGcount_bat 4 <- 2 
+    c:lng := aggr.count(b:bat[:dbl]);   	#[1] ALGcount_bat 3 <- 1 
+    c2:lng := aggr.count(b2:bat[:dbl]); 	#[2] ALGcount_bat 4 <- 2 
     X_9:bat[:dbl] := bat.new(nil:oid,nil:dbl);	#[3] CMDBATnew 9 <- 10 11 
 barrier (X_13:oid,X_14:dbl) := iterator.new(b:bat[:dbl]);	#[4] ITRbunIterator 13 14 <- 1 
     X_16:dbl := algebra.fetch(b2:bat[:dbl],X_13:oid);	#[5] ALGfetchoid 16 <- 2 13 

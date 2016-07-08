@@ -27,43 +27,44 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
 
-	logger_settings *log_settings = (struct logger_settings *) GDKmalloc(sizeof(struct logger_settings));
+	logger_settings log_settings;
 	/* Set the default WAL directory. "sql_logs" by default */
-	log_settings->logdir = "sql_logs";
+	log_settings.logdir = "sql_logs";
 	/* Get and pass on the WAL directory location, if set */
 	if (GDKgetenv("gdk_logdir") != NULL) {
-		log_settings->logdir = GDKgetenv("gdk_logdir");
+		log_settings.logdir = GDKgetenv("gdk_logdir");
 	}
 	/* Get and pass on the shared WAL directory location, if set */
-	log_settings->shared_logdir = GDKgetenv("gdk_shared_logdir");
+	log_settings.shared_logdir = GDKgetenv("gdk_shared_logdir");
 	/* Get and pass on the shared WAL drift threshold, if set.
 	 * -1 by default, meaning it should be ignored, since it is not set */
-	log_settings->shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
+	log_settings.shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
 
 	/* Get and pass on the flag how many WAL files should be preserved.
 	 * 0 by default - keeps only the current WAL file. */
-	log_settings->keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
+	log_settings.keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
 
 	mvc_debug = debug&4;
 	if (mvc_debug) {
-		fprintf(stderr, "#mvc_init logdir %s\n", log_settings->logdir);
-		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings->keep_persisted_log_files);
-		if (log_settings->shared_logdir != NULL) {
-			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings->shared_logdir);
+		fprintf(stderr, "#mvc_init logdir %s\n", log_settings.logdir);
+		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings.keep_persisted_log_files);
+		if (log_settings.shared_logdir != NULL) {
+			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings.shared_logdir);
 		}
-		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings->shared_drift_threshold);
+		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings.shared_drift_threshold);
 	}
 	keyword_init();
 	scanner_init_keywords();
 
 
-	if ((first = store_init(debug, store, ro, su, log_settings, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, &log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
 	if (first || catalog_version) {
 		sql_schema *s;
 		sql_table *t;
+		sqlid tid = 0, ntid, cid = 0, ncid;
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
 
 		m->sa = sa_create();
@@ -80,12 +81,15 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 
 		if (!first) {
 			t = mvc_bind_table(m, s, "tables");
+			tid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
 			t = mvc_bind_table(m, s, "columns");
+			cid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
 		}
 
 		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";", 1);
+		ntid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
@@ -101,10 +105,18 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			int p = PRIV_SELECT;
 			int zero = 0;
 			sql_table *privs = find_sql_table(s, "privileges");
+			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_column *depids = find_sql_column(deps, "id");
+			oid rid;
+
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)) != oid_nil) {
+				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
+			}
 		}
 
 		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
+		ncid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "type", "varchar", 1024);
@@ -121,7 +133,14 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			int p = PRIV_SELECT;
 			int zero = 0;
 			sql_table *privs = find_sql_table(s, "privileges");
+			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_column *depids = find_sql_column(deps, "id");
+			oid rid;
+
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)) != oid_nil) {
+				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
+			}
 		} else { 
 			sql_create_env(m, s);
 			sql_create_privileges(m, s);
@@ -216,10 +235,44 @@ mvc_trans(mvc *m)
 	store_unlock();
 }
 
+static sql_trans *
+sql_trans_deref( sql_trans *tr ) 
+{
+	node *n, *m, *o;
+
+	for ( n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data;
+
+		if (s->tables.set)
+		for ( m = s->tables.set->h; m; m = m->next) {
+			sql_table *t = m->data;
+
+			if (t->po) 
+				t->po = t->po->po;
+
+			if (t->columns.set)
+			for ( o = t->columns.set->h; o; o = o->next) {
+				sql_column *c = o->data;
+
+				if (c->po) 
+					c->po = c->po->po;
+			}
+			if (t->idxs.set)
+			for ( o = t->idxs.set->h; o; o = o->next) {
+				sql_idx *i = o->data;
+
+				if (i->po) 
+					i->po = i->po->po;
+			}
+		}
+	}
+	return tr->parent;
+}
+
 int
 mvc_commit(mvc *m, int chain, const char *name)
 {
-	sql_trans *cur, *tr = m->session->tr;
+	sql_trans *cur, *tr = m->session->tr, *ctr;
 	int ok = SQL_OK;//, wait = 0;
 
 	assert(tr);
@@ -253,11 +306,15 @@ build up the hash (not copied in the trans dup)) */
 	}
 
 	/* first release all intermediate savepoints */
-	cur = tr;
+	ctr = cur = tr;
 	tr = tr->parent;
 	if (tr->parent) {
 		store_lock();
 		while (tr->parent != NULL && ok == SQL_OK) {
+			/* first free references to tr objects, ie
+			 * c->po = c->po->po etc
+			 */
+			ctr = sql_trans_deref(ctr);
 			tr = sql_trans_destroy(tr);
 		}
 		store_unlock();
@@ -1285,17 +1342,17 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	v = sql->vars+var;
+
 	v->name = NULL;
-	v->value.vtype = 0;
+	atom_init( &v->a );
 	v->rel = rel;
 	v->t = t;
 	v->view = view;
 	v->frame = frame;
-	v->type.type = NULL;
 	if (type) {
 		int tpe = type->type->localtype;
-		VALinit(&sql->vars[var].value, tpe, ATOMnilptr(tpe));
-		v->type = *type;
+		VALinit(&sql->vars[var].a.data, tpe, ATOMnilptr(tpe));
+		v->a.tpe = *type;
 	}
 	if (name)
 		v->name = _STRDUP(name);
@@ -1334,20 +1391,25 @@ stack_set_var(mvc *sql, const char *name, ValRecord *v)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
-			VALclear(&sql->vars[i].value);
-			VALcopy(&sql->vars[i].value, v);
+			VALclear(&sql->vars[i].a.data);
+			VALcopy(&sql->vars[i].a.data, v);
+			sql->vars[i].a.isnull = VALisnil(v);
+			if (v->vtype == TYPE_flt)
+				sql->vars[i].a.d = v->val.fval;
+			else if (v->vtype == TYPE_dbl)
+				sql->vars[i].a.d = v->val.dval;
 		}
 	}
 }
 
-ValRecord *
+atom *
 stack_get_var(mvc *sql, const char *name)
 {
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
-			return &sql->vars[i].value;
+			return &sql->vars[i].a;
 		}
 	}
 	return NULL;
@@ -1367,8 +1429,8 @@ stack_pop_until(mvc *sql, int top)
 		sql_var *v = &sql->vars[--sql->topvars];
 
 		c_delete(v->name);
-		VALclear(&v->value);
-		v->value.vtype = 0;
+		VALclear(&v->a.data);
+		v->a.data.vtype = 0;
 	}
 }
 
@@ -1379,8 +1441,8 @@ stack_pop_frame(mvc *sql)
 		sql_var *v = &sql->vars[sql->topvars];
 
 		c_delete(v->name);
-		VALclear(&v->value);
-		v->value.vtype = 0;
+		VALclear(&v->a.data);
+		v->a.data.vtype = 0;
 		if (v->t && v->view) 
 			table_destroy(v->t);
 		else if (v->rel)
@@ -1399,7 +1461,7 @@ stack_find_type(mvc *sql, const char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
-			return &sql->vars[i].type;
+			return &sql->vars[i].a.tpe;
 	}
 	return NULL;
 }
@@ -1513,9 +1575,11 @@ stack_nr_of_declared_tables(mvc *sql)
 void
 stack_set_string(mvc *sql, const char *name, const char *val)
 {
-	ValRecord *v = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, name);
 
-	if (v != NULL) {
+	if (a != NULL) {
+		ValRecord *v = &a->data;
+
 		if (v->val.sval)
 			_DELETE(v->val.sval);
 		v->val.sval = _STRDUP(val);
@@ -1525,11 +1589,11 @@ stack_set_string(mvc *sql, const char *name, const char *val)
 str
 stack_get_string(mvc *sql, const char *name)
 {
-	ValRecord *v = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, name);
 
-	if (!v || v->vtype != TYPE_str)
+	if (!a || a->data.vtype != TYPE_str)
 		return NULL;
-	return v->val.sval;
+	return a->data.val.sval;
 }
 
 void
@@ -1539,9 +1603,10 @@ stack_set_number(mvc *sql, const char *name, hge val)
 stack_set_number(mvc *sql, const char *name, lng val)
 #endif
 {
-	ValRecord *v = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, name);
 
-	if (v != NULL) {
+	if (a != NULL) {
+		ValRecord *v = &a->data;
 #ifdef HAVE_HGE
 		if (v->vtype == TYPE_hge) 
 			v->val.hval = val;
@@ -1586,7 +1651,7 @@ val_get_number(ValRecord *v)
 		if (v->vtype == TYPE_bit) 
 			if (v->val.btval)
 				return 1;
-			return 0;
+		return 0;
 	}
 	return 0;
 }
@@ -1598,8 +1663,8 @@ lng
 #endif
 stack_get_number(mvc *sql, const char *name)
 {
-	ValRecord *v = stack_get_var(sql, name);
-	return val_get_number(v);
+	atom *a = stack_get_var(sql, name);
+	return val_get_number(a?&a->data:NULL);
 }
 
 sql_column *

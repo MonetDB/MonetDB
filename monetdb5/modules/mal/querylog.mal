@@ -26,14 +26,14 @@ command empty()
 address QLOGempty
 comment "Clear the query log tables";
 
-pattern insert(q:str, pipe:str, usr:str, tick:timestamp)
-address QLOGinsert
+pattern append(q:str, pipe:str, usr:str, tick:timestamp)
+address QLOGappend
 comment "Add a new query call to the query log";
 
 command define(q:str, pipe:str, size:int)
 address QLOGdefineNaive
 comment "Noop operation, just marking the query";
 
-pattern call(tick1:timestamp, tick2:timestamp, arg:str, tuples:wrd, xtime:lng, rtime:lng, cpu:int, iowait:int)
+pattern call(tick1:timestamp, tick2:timestamp, arg:str, tuples:lng, xtime:lng, rtime:lng, cpu:int, iowait:int)
 address QLOGcall
 comment "Add a new query call to the query log";

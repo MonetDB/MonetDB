@@ -6,7 +6,6 @@
 
 INCLUDES = ../../mal ../atoms ../kernel \
 	../../../clients/mapilib \
-   ../../../monetdb5/optimizer \
 	../../../common/options \
 	../../../common/stream \
 	../../../common/utils \
@@ -25,6 +24,7 @@ lib_mal = {
 		factories.c factories.h \
 		groupby.c groupby.h \
 		inspect.c inspect.h \
+		orderidx.c orderidx.h \
 		iterator.c  iterator.h \
 		projectionpath.c  projectionpath.h \
 		language.c language.h \
@@ -49,15 +49,6 @@ lib_mal = {
 		zorder.c zorder.h \
 		sample.c sample.h \
 		json_util.c json_util.h \
-		mosaic.c mosaic.h \
-		mosaic_hdr.c mosaic_hdr.h \
-		mosaic_literal.c mosaic_literal.h \
-		mosaic_runlength.c mosaic_runlength.h \
-		mosaic_dictionary.c mosaic_dictionary.h \
-		mosaic_delta.c mosaic_delta.h \
-		mosaic_linear.c mosaic_linear.h \
-		mosaic_frame.c mosaic_frame.h \
-		mosaic_prefix.c mosaic_prefix.h \
 		calc.c batcalc.c
 }
 
@@ -65,14 +56,13 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = language.mal mal_init.mal bbp.mal \
-		profiler.mal batExtensions.mal \
+		profiler.mal batExtensions.mal orderidx.mal \
 		inspect.mal manual.mal mal_io.mal mkey.mal manifold.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
 		transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
-		mosaic.mal \
 		tokenizer.mal zorder.mal sample.mal json_util.mal \
 		batmtime.mal querylog.mal sysmon.mal
 }
@@ -94,7 +84,7 @@ headers_hge = {
 
 EXTRA_DIST = batExtensions.mal iterator.mal \
 	groupby.mal mal_init.mal manual.mal mkey.mal manifold.mal pcre.mal \
-	profiler.mal recycle.mal remote.mal sabaoth.mal \
+	profiler.mal recycle.mal remote.mal sabaoth.mal orderidx.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal json_util.mal \
 	mal_mapi.mal mat.mal tokenizer.mal \
 	batmtime.mal querylog.mal sysmon.mal \

@@ -1,2 +1,1 @@
-HAVE_RUBY?rubytest
-HAVE_RUBY&HAVE_RUBYGEM?gemtest
+HAVE_RUBY?gemtest

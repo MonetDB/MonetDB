@@ -129,29 +129,29 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 		throw(OPTIMIZER, "zorder.encode", ILLEGAL_ARGUMENT);
 	}
 	
-	bz = BATnew(TYPE_void, TYPE_oid, BATcount(bx), TRANSIENT);
+	bz = COLnew(bx->hseqbase, TYPE_oid, BATcount(bx), TRANSIENT);
 	if (bz == 0){
 		BBPunfix(bx->batCacheid);
 		BBPunfix(by->batCacheid);
 		throw(OPTIMIZER, "zorder.encode", MAL_MALLOC_FAIL);
 	}
-	p = (int *) Tloc(bx, BUNfirst(bx));
+	p = (int *) Tloc(bx, 0);
 	q = (int *) Tloc(bx, BUNlast(bx));
-	r = (int *) Tloc(by, BUNfirst(by));
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	r = (int *) Tloc(by, 0);
+	z = (oid *) Tloc(bz, 0);
 
-	if ( bx->T->nonil && by->T->nonil){
+	if ( bx->tnonil && by->tnonil){
 		for ( ; p<q; z++,p++,r++)
 			*z = Zencode_int_oid( *p, *r );
 	} else
-	if ( bx->T->nonil ){
+	if ( bx->tnonil ){
 		for ( ; p<q; z++,p++,r++)
 		if ( *r == int_nil)
 			*z = oid_nil;
 		else
 			*z = Zencode_int_oid( *p, *r );
 	} else
-	if ( by->T->nonil ){
+	if ( by->tnonil ){
 		for ( ; p<q; z++,p++,r++)
 		if ( *p == int_nil)
 			*z = oid_nil;
@@ -174,13 +174,9 @@ ZORDbatencode_int_oid(bat *zbid, bat *xbid, bat *ybid)
 	if (!(bz->batDirty&2)) 
 		BATsetaccess(bz, BAT_READ);
 	BATsetcount(bz, BATcount(bx));
-	BATseqbase(bz, bx->hseqbase);
-	bz->hsorted = 1;
-	bz->hrevsorted = 0;
 	bz->tsorted = 0;
 	bz->trevsorted = 0;
-	bz->H->nonil = 1;
-	bz->T->nonil = bx->T->nonil && by->T->nonil;
+	bz->tnonil = bx->tnonil && by->tnonil;
 
 	BBPkeepref(*zbid = bz->batCacheid);
 	return MAL_SUCCEED;
@@ -197,8 +193,8 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
-	by = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	bx = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
+	by = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( bx == 0 || by == 0 ){
 		if ( bx ) BBPunfix(bx->batCacheid);
 		if ( by ) BBPunfix(by->batCacheid);
@@ -206,12 +202,12 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	}
 	
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	z = (oid *) Tloc(bz, 0);
 	q = (oid *) Tloc(bz, BUNlast(bz));
-	x = (int *) Tloc(bx, BUNfirst(bx));
-	y = (int *) Tloc(by, BUNfirst(by));
+	x = (int *) Tloc(bx, 0);
+	y = (int *) Tloc(by, 0);
 
-	if ( bz->T->nonil ){
+	if ( bz->tnonil ){
 		for ( ; z<q; z++,x++,y++)
 			Zdecode_int_oid(x,y,z);
 	} else {
@@ -226,24 +222,16 @@ ZORDbatdecode_int_oid(bat *xbid, bat *ybid, bat *zbid)
 	if (!(bx->batDirty&2)) 
 		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
-	BATseqbase(bx, bz->hseqbase);
-	bx->hsorted = 1;
-	bx->hrevsorted = 0;
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
-	bx->H->nonil = 1;
-	bx->T->nonil = bz->T->nonil;
+	bx->tnonil = bz->tnonil;
 
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
-	BATseqbase(by, bz->hseqbase);
-	by->hsorted = 1;
-	by->hrevsorted = 0;
 	by->tsorted = 0;
 	by->trevsorted = 0;
-	by->H->nonil = 1;
-	by->T->nonil = bz->T->nonil;
+	by->tnonil = bz->tnonil;
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*xbid = bx->batCacheid);
@@ -262,17 +250,17 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	bx = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	bx = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( bx == 0 ){
 		BBPunfix(bz->batCacheid);
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	}
 	
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	z = (oid *) Tloc(bz, 0);
 	q = (oid *) Tloc(bz, BUNlast(bz));
-	x = (int *) Tloc(bx, BUNfirst(bx));
+	x = (int *) Tloc(bx, 0);
 
-	if ( bz->T->nonil ){
+	if ( bz->tnonil ){
 		for ( ; z<q; z++,x++)
 			Zdecode_int_oid_x(x,z);
 	} else {
@@ -286,13 +274,9 @@ ZORDbatdecode_int_oid_x(bat *xbid, bat *zbid)
 	if (!(bx->batDirty&2)) 
 		BATsetaccess(bx, BAT_READ);
 	BATsetcount(bx, BATcount(bz));
-	BATseqbase(bx, bz->hseqbase);
-	bx->hsorted = 1;
-	bx->hrevsorted = 0;
 	bx->tsorted = 0;
 	bx->trevsorted = 0;
-	bx->H->nonil = 1;
-	bx->T->nonil = bz->T->nonil;
+	bx->tnonil = bz->tnonil;
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*xbid = bx->batCacheid);
@@ -310,17 +294,17 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	if ( bz == 0 )
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	
-	by = BATnew(TYPE_void, TYPE_int, BATcount(bz), TRANSIENT);
+	by = COLnew(bz->hseqbase, TYPE_int, BATcount(bz), TRANSIENT);
 	if ( by == 0 ){
 		BBPunfix(bz->batCacheid);
 		throw(OPTIMIZER, "zorder.decode", RUNTIME_OBJECT_MISSING);
 	}
 	
-	z = (oid *) Tloc(bz, BUNfirst(bz));
+	z = (oid *) Tloc(bz, 0);
 	q = (oid *) Tloc(bz, BUNlast(bz));
-	y = (int *) Tloc(by, BUNfirst(by));
+	y = (int *) Tloc(by, 0);
 
-	if ( bz->T->nonil ){
+	if ( bz->tnonil ){
 		for ( ; z<q; z++,y++)
 			Zdecode_int_oid_y(y,z);
 	} else {
@@ -334,13 +318,9 @@ ZORDbatdecode_int_oid_y(bat *ybid, bat *zbid)
 	if (!(by->batDirty&2)) 
 		BATsetaccess(by, BAT_READ);
 	BATsetcount(by, BATcount(bz));
-	BATseqbase(by, bz->hseqbase);
-	by->hsorted = 1;
-	by->hrevsorted = 0;
 	by->tsorted = 0;
 	by->trevsorted = 0;
-	by->H->nonil = 1;
-	by->T->nonil = bz->T->nonil;
+	by->tnonil = bz->tnonil;
 
 	BBPunfix(bz->batCacheid);
 	BBPkeepref(*ybid = by->batCacheid);
@@ -353,10 +333,9 @@ str ZORDslice_int(bat *r, int *xb, int *yb, int *xt, int *yt)
 	int i,j;
 	oid zv;
 
-	bn = BATnew(TYPE_void, TYPE_oid, 0, TRANSIENT);
+	bn = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( bn == 0)
 		throw(OPTIMIZER, "zorder.slice", MAL_MALLOC_FAIL);
-	BATseqbase(bn, 0);
 	/* use the expensive road, could be improved by bit masking */
 	for ( i= *xb; i < *xt; i++)
 	{

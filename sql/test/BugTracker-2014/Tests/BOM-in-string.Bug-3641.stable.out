@@ -64,7 +64,7 @@ Ready.
 % .L # table_name
 % single_value # name
 % char # type
-% 5 # length
+% 3 # length
 [ "  ﻿"	]
 
 # 09:47:46 >  

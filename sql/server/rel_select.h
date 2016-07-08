@@ -19,7 +19,6 @@ extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
 extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f);
 extern sql_exp *rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f);
 
-extern void rel_add_intern(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
@@ -34,5 +33,6 @@ extern sql_exp *rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char
 extern sql_exp *rel_nop_(mvc *sql, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s, char *fname, int card);
 
 extern sql_rel *rel_with_query(mvc *sql, symbol *q);
+extern sql_rel *table_ref(mvc *sql, sql_rel *rel, symbol *tableref);
 
 #endif /*_REL_SELECT_H_*/

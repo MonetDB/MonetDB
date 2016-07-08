@@ -12,7 +12,7 @@
 
 module sample;
 
-command subuniform(b:bat[:any],s:wrd):bat[:oid]
+command subuniform(b:bat[:any],s:lng):bat[:oid]
 address SAMPLEuniform
 comment "Returns the oids of a uniform sample of size s";
 

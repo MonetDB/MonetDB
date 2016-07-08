@@ -39,7 +39,7 @@ Ready.
 % .L # table_name
 % Liever euro # name
 % char # type
-% 13 # length
+% 11 # length
 [ "Liever €uro"	]
 
 # 20:06:13 >  

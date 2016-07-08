@@ -1,0 +1,45 @@
+stdout of test 'rename_exps.Bug-3974` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 12:27:17 >  
+# 12:27:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39847" "--set" "mapi_usock=/var/tmp/mtest-21445/.s.monetdb.39847" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 12:27:17 >  
+
+# MonetDB 5 server v11.21.18
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39847/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21445/.s.monetdb.39847
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.11'
+# Finished reading the write-ahead log 'sql_logs/sql/log.11'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 12:27:17 >  
+# 12:27:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21445" "--port=39847"
+# 12:27:17 >  
+
+#create table foo (a int, b int);
+#prepare select count(b) from (select a,b from foo union all select null,null from foo) t;
+#prepare select count(b) from (select a,b from foo union all select null,null from foo) t;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 6,	2,	1,	0,	2,	2 # length
+[ "bigint",	64,	0,	"",	"L3",	"L3"	]
+#drop table foo;
+
+# 12:27:17 >  
+# 12:27:17 >  "Done."
+# 12:27:17 >  
+

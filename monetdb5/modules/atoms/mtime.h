@@ -125,6 +125,7 @@ mtime_export str MTIMEdaytime2daytime(daytime *ret, const daytime *src);
 mtime_export str MTIMEsecs2daytime(daytime *ret, const lng *src);
 mtime_export str MTIMEsecs2daytime_bulk(bat *ret, bat *bid);
 mtime_export str MTIMEtimestamp2timestamp(timestamp *ret, const timestamp *src);
+mtime_export void MTIMEreset(void);
 mtime_export str MTIMEprelude(void *ret);
 mtime_export str MTIMEepilogue(void *ret);
 mtime_export str MTIMEsynonyms(void *ret, const bit *allow);

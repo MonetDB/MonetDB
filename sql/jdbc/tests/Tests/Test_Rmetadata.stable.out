@@ -25,7 +25,7 @@ Ready.
 
 0. false	false
 0. 4 columns:	5
-1.	null
+Colnr 1.
 	classname     java.lang.Integer
 	displaysize   1
 	label         myint
@@ -34,6 +34,7 @@ Ready.
 	typename      int
 	precision     32
 	scale         0
+	catalogname   null
 	schemaname    sys
 	tablename     table_test_rmetadata
 	autoincrement false
@@ -45,7 +46,7 @@ Ready.
 	searchable    true
 	signed        true
 	writable      false
-2.	null
+Colnr 2.
 	classname     java.lang.Double
 	displaysize   24
 	label         mydouble
@@ -54,6 +55,7 @@ Ready.
 	typename      double
 	precision     53
 	scale         0
+	catalogname   null
 	schemaname    sys
 	tablename     table_test_rmetadata
 	autoincrement false
@@ -65,7 +67,7 @@ Ready.
 	searchable    true
 	signed        true
 	writable      false
-3.	null
+Colnr 3.
 	classname     java.lang.Boolean
 	displaysize   5
 	label         mybool
@@ -74,6 +76,7 @@ Ready.
 	typename      boolean
 	precision     1
 	scale         0
+	catalogname   null
 	schemaname    sys
 	tablename     table_test_rmetadata
 	autoincrement false
@@ -85,7 +88,7 @@ Ready.
 	searchable    true
 	signed        false
 	writable      false
-4.	null
+Colnr 4.
 	classname     java.lang.String
 	displaysize   8
 	label         myvarchar
@@ -94,10 +97,11 @@ Ready.
 	typename      varchar
 	precision     15
 	scale         0
+	catalogname   null
 	schemaname    sys
 	tablename     table_test_rmetadata
 	autoincrement false
-	casesensitive false
+	casesensitive true
 	currency      false
 	defwritable   false
 	nullable      1
@@ -105,19 +109,20 @@ Ready.
 	searchable    true
 	signed        false
 	writable      false
-5.	null
+Colnr 5.
 	classname     java.sql.Clob
 	displaysize   11
 	label         myclob
 	name          myclob
 	type          2005
 	typename      clob
-	precision     0
+	precision     11
 	scale         0
+	catalogname   null
 	schemaname    sys
 	tablename     table_test_rmetadata
 	autoincrement false
-	casesensitive false
+	casesensitive true
 	currency      false
 	defwritable   false
 	nullable      1

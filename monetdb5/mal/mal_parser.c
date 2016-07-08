@@ -663,7 +663,7 @@ simpleTypeId(Client cntxt)
 		cntxt->yycur--; /* keep it */
 		return -1;
 	}
-	tpe = getTypeIndex(CURRENT(cntxt), l, -1);
+	tpe = getAtomIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
 		cntxt->yycur -= l; /* keep it */
@@ -690,53 +690,21 @@ parseTypeId(Client cntxt, int defaultType)
 			return TYPE_bat;
 		}
 
-		if (currChar(cntxt) == ']') {
-			i = newBatType(TYPE_void, tt);
-			if (kt > 0)
-				setAnyColumnIndex(i, kt);
-			nextChar(cntxt); /* skip ] */
-			skipSpace(cntxt);
-			return i;
-		}
-		/* Backward compatibility parsing of :bat[:oid,:type] */
-		if( tt != TYPE_oid){
-			parseError(cntxt, "':oid' expected\n");
-			return i;
-		}
-		if (currChar(cntxt) != ',')
-				parseError(cntxt, "',' expected\n");
-		nextChar(cntxt); /* skip , */
-		skipSpace(cntxt);
-		if (currChar(cntxt) == ':') {
-			tt = simpleTypeId(cntxt);
-			kt = typeAlias(cntxt, tt);
-		} else
-			tt = TYPE_any;
-
-		i = newBatType(TYPE_void, tt);
+		i = newBatType(tt);
 		if (kt > 0)
-			setAnyColumnIndex(i, kt);
+			setTypeIndex(i, kt);
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
-		nextChar(cntxt); /* skip ']' */
+		nextChar(cntxt); // skip ']' 
 		skipSpace(cntxt);
 		return i;
-	}
-	/* A pure BAT as generic type should be avoided .*/
-	if (s[0] == ':' && 
-	   ((s[1] == 'b' && s[2] == 'a' && s[3] == 't')  || 
-	    (s[1] == 'B' && s[2] == 'A' && s[3] == 'T')) && 
-	   !idCharacter[(int) s[4]]) {
-		advance(cntxt, 4);
-		//parseError(cntxt, "':bat[:oid,:any]' expected\n");
-		return TYPE_bat;
 	}
 	if (currChar(cntxt) == ':') {
 		tt = simpleTypeId(cntxt);
 		kt = typeAlias(cntxt, tt);
 		if (kt > 0)
-			setAnyColumnIndex(tt, kt);
+			setTypeIndex(tt, kt);
 		return tt;
 	}
 	parseError(cntxt, "<type identifier> expected\n");
@@ -795,6 +763,7 @@ helpInfo(Client cntxt, str *help)
 	if (MALkeyword(cntxt, "comment", 7)) {
 		skipSpace(cntxt);
 		if ((l = stringLength(cntxt))) {
+			GDKfree(*help);
 			*help = strCopy(cntxt, l);
 			if (*help)
 				advance(cntxt, l - 1);
@@ -944,7 +913,7 @@ parseAtom(Client cntxt)
 		return parseError(cntxt, "atom name expected\n");
 
 	/* parse: ATOM id:type */
-	modnme = putName(nxt, l);
+	modnme = putNameLen(nxt, l);
 	advance(cntxt, l);
 	if (currChar(cntxt) != ':')
 		tpe = TYPE_void;  /* no type qualifier */
@@ -970,13 +939,13 @@ parseLibrary(Client cntxt)
 	if ((l = idLength(cntxt)) <= 0) {
 		if ((l = cstToken(cntxt, &cst)) && cst.vtype == TYPE_str) {
 			advance(cntxt, l);
-			libnme = putName(nxt + 1, l - 2);
+			libnme = putNameLen(nxt + 1, l - 2);
 		} else
 			return parseError(cntxt, "<library name> or <library path> expected\n");
 	} else
-		libnme = putName(nxt, l);
+		libnme = putNameLen(nxt, l);
 	s = loadLibrary(libnme, TRUE);
-	(void) putName(nxt, l);
+	(void) putNameLen(nxt, l);
 	if (s){
 		mnstr_printf(cntxt->fdout, "#WARNING: %s\n", s);
 		GDKfree(s);
@@ -998,7 +967,7 @@ static str parseModule(Client cntxt)
 	nxt = CURRENT(cntxt);
 	if ((l = idLength(cntxt)) <= 0)
 		return parseError(cntxt, "<module path> expected\n");
-	modnme = putName(nxt, l);
+	modnme = putNameLen(nxt, l);
 	advance(cntxt, l);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	skipSpace(cntxt);
@@ -1037,10 +1006,10 @@ parseInclude(Client cntxt)
 	nxt = CURRENT(cntxt);
 
 	if ((x = idLength(cntxt)) > 0) {
-		modnme = putName(nxt, x);
+		modnme = putNameLen(nxt, x);
 		advance(cntxt, x);
 	} else if ((x = stringLength(cntxt)) > 0) {
-		modnme = putName(nxt + 1, x - 1);
+		modnme = putNameLen(nxt + 1, x - 1);
 		advance(cntxt, x);
 	} else
 		return parseError(cntxt, "<module name> expected\n");
@@ -1115,7 +1084,7 @@ fcnHeader(Client cntxt, int kind)
 		return 0;
 	}
 
-	fnme = putName(((char *) CURRENT(cntxt)), l);
+	fnme = putNameLen(((char *) CURRENT(cntxt)), l);
 	advance(cntxt, l);
 
 	if (currChar(cntxt) == '.') {
@@ -1129,7 +1098,7 @@ fcnHeader(Client cntxt, int kind)
 			skipToEnd(cntxt);
 			return 0;
 		}
-		fnme = putName(((char *) CURRENT(cntxt)), l);
+		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
 		advance(cntxt, l);
 	}
 
@@ -1140,7 +1109,7 @@ fcnHeader(Client cntxt, int kind)
 		return 0;
 	}
 	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction(putName("user", 4), fnme, kind);
+	cntxt->curprg = newFunction(putName("user"), fnme, kind);
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curBlk->flowfixed = 0;
@@ -1148,17 +1117,23 @@ fcnHeader(Client cntxt, int kind)
 	curInstr = getInstrPtr(curBlk, 0);
 
 	if (currChar(cntxt) != '('){
+		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		}
 		parseError(cntxt, "function header '(' expected\n");
 		skipToEnd(cntxt);
 		return curBlk;
 	}
 	advance(cntxt, 1);
 
-	setModuleId(curInstr, modnme ? putName(modnme, strlen(modnme)) :
-			putName(cntxt->nspace->name, strlen(cntxt->nspace->name)));
+	setModuleId(curInstr, modnme ? putName(modnme) :
+			putName(cntxt->nspace->name));
 
 	if (isModuleDefined(cntxt->nspace, getModuleId(curInstr)) == FALSE) {
 		if (cntxt->backup) {
+			freeSymbol(cntxt->curprg);
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
 		}
@@ -1180,6 +1155,7 @@ fcnHeader(Client cntxt, int kind)
 			if (ch == ')')
 				break;
 			if (cntxt->backup) {
+				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
 			}
@@ -1261,6 +1237,7 @@ fcnHeader(Client cntxt, int kind)
 		if (currChar(cntxt) != ')') {
 			freeInstruction(curInstr);
 			if (cntxt->backup) {
+				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
 			}
@@ -1349,7 +1326,7 @@ parseCommandPattern(Client cntxt, int kind)
 	modnme = modnme ? modnme : cntxt->nspace->name;
 
 	l = strlen(modnme);
-	modnme = putName(modnme, l);
+	modnme = putNameLen(modnme, l);
 	if (isModuleDefined(cntxt->nspace, modnme))
 		insertSymbol(findModule(cntxt->nspace, modnme), curPrg);
 	else
@@ -1695,7 +1672,7 @@ FCNcallparse:
 		goto FCNcallparse2;
 	} else if ((l = idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
 		/* continue with parseing a function/operator call */
-		arg = putName(CURRENT(cntxt), l);
+		arg = putNameLen(CURRENT(cntxt), l);
 		advance(cntxt, l + 1); /* skip '.' too */
 		setModuleId(curInstr, arg);
 		i = idLength(cntxt);
@@ -1703,7 +1680,7 @@ FCNcallparse:
 			i = operatorLength(cntxt);
 FCNcallparse2:
 		if (i) {
-			setFunctionId(curInstr, putName(((char *) CURRENT(cntxt)), i));
+			setFunctionId(curInstr, putNameLen(((char *) CURRENT(cntxt)), i));
 			advance(cntxt, i);
 		} else {
 			parseError(cntxt, "<functionname> expected\n");
@@ -1734,9 +1711,9 @@ FCNcallparse2:
 part2:  /* consume <operator><term> part of expression */
 	if ((i = operatorLength(cntxt))) {
 		/* simple arithmetic operator expression */
-		setFunctionId(curInstr, putName(((char *) CURRENT(cntxt)), i));
+		setFunctionId(curInstr, putNameLen(((char *) CURRENT(cntxt)), i));
 		advance(cntxt, i);
-		curInstr->modname = putName("calc", 4);
+		curInstr->modname = putName("calc");
 		if ((l = idLength(cntxt)) && !(l == 3 && strncmp(CURRENT(cntxt), "nil", 3) == 0)) {
 			GETvariable;
 			curInstr = pushArgument(curBlk, curInstr, varid);

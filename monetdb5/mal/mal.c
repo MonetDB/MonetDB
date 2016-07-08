@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2008-2015 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -34,7 +34,7 @@ int have_hge;
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
-
+#include "opt_statistics.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -125,6 +125,7 @@ void mserver_reset(void)
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler();
+	QOTstatisticsExit();
 	RECYCLEdrop(mal_clients); 
 	AUTHreset(); 
 	if ((err = msab_wildRetreat()) != NULL) {
@@ -135,11 +136,14 @@ void mserver_reset(void)
 		fprintf(stderr, "!%s", err);
 		free(err);
 	}
+	/* TODO: make sure this is still required
 #ifdef HAVE_EMBEDDED
 	MTIMEreset();
 #endif
+*/
 	mal_factory_reset();
 	mal_dataflow_reset();
+	THRdel(mal_clients->mythread);
 	GDKreset(0);	// terminate all other threads
 	mal_client_reset();
 	mal_module_reset();

@@ -181,6 +181,7 @@ typedef enum jt {
 	jt_union = 4
 } jt;
 
+extern int find_subgeometry_type(char*);
 extern char *token2string(int token);
 extern int sqlparse(mvc *m);
 extern int sqlerror(mvc *sql, const char *s);

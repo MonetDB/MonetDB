@@ -21,6 +21,11 @@
 #include "mal_private.h"
 #include <gdk.h>	/* for opendir and friends */
 
+#ifdef HAVE_EMBEDDED
+// FIXME:
+//#include "mal_init_inline.h"
+#endif
+
 /*
  * The MonetDB server uses a startup script to boot the system.
  * This script is an ordinary MAL program, but will mostly
@@ -31,11 +36,11 @@ int
 malBootstrap(void)
 {
 	Client c;
-	str msg, bootfile = "mal_init", s;
+	str msg, bootfile = "mal_init", s = NULL;
 
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
-	c->nspace = newModule(NULL, putName("user", 4));
+	c->nspace = newModule(NULL, putName("user"));
 	initLibraries();
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
@@ -108,7 +113,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		MSresetClientPrg(cntxt);
 		return;
 	}
-	cntxt->curprg = newFunction(putName("user", 4), putName(nme, strlen(nme)), FUNCTIONsymbol);
+	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	if (mod)
@@ -288,7 +293,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 		/* move this back !! */
 		if (c->nspace == 0) {
-			c->nspace = newModule(NULL, putName("user", 4));
+			c->nspace = newModule(NULL, putName("user"));
 			c->nspace->outer = mal_clients[0].nspace->outer;
 		}
 
@@ -504,14 +509,16 @@ str
 MALreader(Client c)
 {
 	int r = 1;
-
+#ifndef HAVE_EMBEDDED
 	if (c == mal_clients) {
 		r = readConsole(c);
 		if (r < 0 && c->fdin->eof == 0)
 			r = MCreadClient(c);
 		if (r > 0)
 			return MAL_SUCCEED;
-	} else if (MCreadClient(c) > 0)
+	} else
+#endif
+	if (MCreadClient(c) > 0)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_contextLock);
 	c->mode = FINISHCLIENT;

@@ -292,28 +292,28 @@ Ready.
 #SELECT -2+3 AS one;
 % .L # table_name
 % one # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 1 ]
 
 #SELECT 4-2 AS two;
 % .L # table_name
 % two # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 2 ]
 
 #SELECT 2- -1 AS three;
 % .L # table_name
 % three # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 3 ]
 
 #SELECT 2 - -2 AS four;
 % .L # table_name
 % four # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 4 ]
 #SELECT cast('2' as smallint) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as smallint) AS "true";
@@ -357,7 +357,7 @@ Ready.
 #SELECT (2 + 2) / 2 AS two;
 % .L # table_name
 % two # name
-% smallint # type
+% tinyint # type
 % 1 # length
 [ 2 ]
 

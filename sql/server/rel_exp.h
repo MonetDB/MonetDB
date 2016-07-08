@@ -13,6 +13,8 @@
 #include "sql_mvc.h"
 #include "sql_atom.h"
 
+#define ERR_AMBIGUOUS		050000
+
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
 
@@ -55,7 +57,6 @@ extern sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
 #ifdef HAVE_HGE
 extern sql_exp * exp_atom_hge(sql_allocator *sa, hge l);
 #endif
-extern sql_exp * exp_atom_wrd(sql_allocator *sa, wrd w);
 extern sql_exp * exp_atom_flt(sql_allocator *sa, flt f);
 extern sql_exp * exp_atom_dbl(sql_allocator *sa, dbl d);
 extern sql_exp * exp_atom_str(sql_allocator *sa, const char *s, sql_subtype *st);
@@ -63,7 +64,7 @@ extern sql_exp * exp_atom_clob(sql_allocator *sa, const char *s);
 extern sql_exp * exp_atom_ptr(sql_allocator *sa, void *s);
 extern sql_exp * exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe);
 extern sql_exp * exp_param(sql_allocator *sa, const char *name, sql_subtype *tpe, int frame);
-extern atom * exp_value(sql_exp *e, atom **args, int maxarg);
+extern atom * exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg);
 extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);

@@ -10,6 +10,9 @@
 #include "opt_remoteQueries.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
+
+#define OPTDEBUGremote  if ( optDebug & ((lng) 1 <<DEBUG_OPT_REMOTE) )
+
 /*
  * The instruction sent is produced with a variation of call2str
  * from the debugger.
@@ -153,6 +156,8 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int dbtop,k;
 	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
+	lng usec = GDKusec();
+
 	cst.vtype= TYPE_int;
 	cst.val.ival= 0;
 	cst.len = 0;
@@ -268,10 +273,10 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				putRemoteVariables()
 				remoteAction()
 			} else {
-#ifdef DEBUG_OPT_REMOTE
-				printf("found remote variable %s ad %d\n",
-					getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
-#endif
+				OPTDEBUGremote {
+					fprintf(stderr, "found remote variable %s ad %d\n",
+						getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
+				}
 				pushInstruction(mb,p);
 			}
 		} else
@@ -366,5 +371,16 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 	GDKfree(location);
 	GDKfree(dbalias);
+
+    /* Defense line against incorrect plans */
+    if( doit){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remoteQueries",doit, GDKusec() - usec);
+    newComment(mb,buf);
+
 	return doit;
 }

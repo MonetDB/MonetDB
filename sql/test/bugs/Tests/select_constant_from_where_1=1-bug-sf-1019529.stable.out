@@ -68,19 +68,19 @@ Ready.
 #select 1, count(*) from t1019529;
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	3	]
 #select 1, count(*) from t1019529 where 0=1;
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 #select 1, count(*) where 0=1;
 % .L1,	.L2 # table_name
 % L1,	L2 # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 

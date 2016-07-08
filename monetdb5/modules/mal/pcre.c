@@ -33,6 +33,10 @@
 
 #include <pcre.h>
 
+#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 13)
+#define pcre_free_study my_pcre_free
+#endif
+
 pcre_export str PCREquote(str *r, const str *v);
 pcre_export str PCREmatch(bit *ret, const str *val, const str *pat);
 pcre_export str PCREimatch(bit *ret, const str *val, const str *pat);
@@ -306,7 +310,6 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	const char *v;
 	int ovector[10];
 
-	assert(BAThdense(b));
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	assert(anti == 0 || anti == 1);
 
@@ -318,23 +321,22 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	pe = pcre_study(re, 0, &error);
 	if (error != NULL) {
 		my_pcre_free(re);
-		my_pcre_free(pe);
+		pcre_free_study(pe);
 		throw(MAL, "pcre.likesubselect",
 			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
 	}
-	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		my_pcre_free(re);
-		my_pcre_free(pe);
+		pcre_free_study(pe);
 		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
 	}
-	off = b->hseqbase - BUNfirst(b);
+	off = b->hseqbase;
 
 	if (s && !BATtdense(s)) {
 		const oid *candlist;
 		BUN r;
 
-		assert(BAThdense(s));
 		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
 		assert(s->tsorted);
 		assert(s->tkey);
@@ -359,10 +361,8 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 				p = b->hseqbase;
 			if ((oid) q > b->hseqbase + BATcount(b))
 				q = b->hseqbase + BATcount(b);
-			p += BUNfirst(b);
-			q += BUNfirst(b);
 		} else {
-			p = BUNfirst(b) + off;
+			p = off;
 			q = BUNlast(b) + off;
 		}
 		if (anti)
@@ -373,25 +373,21 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
 	}
 	my_pcre_free(re);
-	my_pcre_free(pe);
+	pcre_free_study(pe);
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
 	if (bn->batCount == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
+		bn->tseqbase =  * (oid *) Tloc(bn, 0);
 	*bnp = bn;
 	return MAL_SUCCEED;
 
   bunins_failed:
 	BBPreclaim(bn);
 	my_pcre_free(re);
-	my_pcre_free(pe);
+	pcre_free_study(pe);
 	*bnp = NULL;
 	throw(MAL, "pcre.likesubselect", OPERATION_FAILED);
 }
@@ -407,14 +403,13 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 	int nr;
 	RE *re = NULL;
 
-	assert(BAThdense(b));
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	assert(anti == 0 || anti == 1);
 
-	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
+	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
-	off = b->hseqbase - BUNfirst(b);
+	off = b->hseqbase;
 
 	nr = re_simple(pat);
 	re = re_create(pat, nr);
@@ -424,7 +419,6 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 		const oid *candlist;
 		BUN r;
 
-		assert(BAThdense(s));
 		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
 		assert(s->tsorted);
 		assert(s->tkey);
@@ -458,10 +452,8 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 				p = b->hseqbase;
 			if ((oid) q > b->hseqbase + BATcount(b))
 				q = b->hseqbase + BATcount(b);
-			p += BUNfirst(b);
-			q += BUNfirst(b);
 		} else {
-			p = BUNfirst(b) + off;
+			p = off;
 			q = BUNlast(b) + off;
 		}
 		if (caseignore) {
@@ -480,17 +472,13 @@ re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int
 					re_match_no_ignore(v, re));
 		}
 	}
+	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
 	if (bn->batCount == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
-	bn->hsorted = 1;
-	bn->hdense = 1;
-	bn->hseqbase = 0;
-	bn->hkey = 1;
-	bn->hrevsorted = bn->batCount <= 1;
+		bn->tseqbase =  * (oid *) Tloc(bn, 0);
 	*bnp = bn;
 	re_destroy(re);
 	return MAL_SUCCEED;
@@ -567,6 +555,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 			offset = ovector[1];
 		}
 	} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
+	pcre_free_study(extra);
 
 	if (ncaptures > 0){
 		tmpres = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
@@ -661,7 +650,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 
-	tmpbat = BATnew(TYPE_void, TYPE_str, BATcount(origin_strs), TRANSIENT);
+	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL) {
 		my_pcre_free(pcre_code);
 		GDKfree(ovector);
@@ -688,6 +677,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
 			if (!replaced_str) {
 				my_pcre_free(pcre_code);
+				pcre_free_study(extra);
 				GDKfree(ovector);
 				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 			}
@@ -725,9 +715,9 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		}
 	}
 
+	pcre_free_study(extra);
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
-	BATseqbase(tmpbat, origin_strs->hseqbase);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 }
@@ -736,8 +726,12 @@ str
 pcre_init(void *ret)
 {
 	(void) ret;
+#if defined(HAVE_EMBEDDED) && defined(WIN32)
+	// TODO: what should we do here?
+#else
 	pcre_malloc = my_pcre_malloc;
 	pcre_free = my_pcre_free;
+#endif
 	return NULL;
 }
 
@@ -1121,12 +1115,12 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 			throw(MAL, "batstr.like", OPERATION_FAILED);
 		}
 
-		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs), TRANSIENT);
+		r = COLnew(strs->hseqbase, TYPE_bit, BATcount(strs), TRANSIENT);
 		if( r==NULL) {
 			GDKfree(ppat);
 			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
 		}
-		br = (bit*)Tloc(r, BUNfirst(r));
+		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
 
 		if (strcmp(ppat, str_nil) == 0) {
@@ -1165,8 +1159,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 				if (*s == '\200') {
 					br[i] = bit_nil;
-					r->T->nonil = 0;
-					r->T->nil = 1;
+					r->tnonil = 0;
+					r->tnil = 1;
 				} else {
 					pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
 
@@ -1190,8 +1184,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;
-		BATkey(BATmirror(r),FALSE);
-		BATseqbase(r, strs->hseqbase);
+		BATkey(r,FALSE);
 
 		if (!(r->batDirty&2)) BATsetaccess(r, BAT_READ);
 
@@ -1367,7 +1360,7 @@ PCRElikesubselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, con
 
 #include "gdk_cand.h"
 
-#define APPEND(b, o)	(((oid *) b->T->heap.base)[b->batFirst + b->batCount++] = (o))
+#define APPEND(b, o)	(((oid *) b->theap.base)[b->batCount++] = (o))
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 static char *
@@ -1416,8 +1409,6 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					  sr && sr->tsorted ? "-sorted" : "",
 					  sr && sr->trevsorted ? "-revsorted" : "");
 
-	assert(BAThdense(l));
-	assert(BAThdense(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 	assert(sl == NULL || sl->tsorted);
@@ -1426,13 +1417,13 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
 
-	lvals = (const char *) Tloc(l, BUNfirst(l));
-	rvals = (const char *) Tloc(r, BUNfirst(r));
+	lvals = (const char *) Tloc(l, 0);
+	rvals = (const char *) Tloc(r, 0);
 	assert(r->tvarsized && r->ttype);
-	lvars = l->T->vheap->base;
-	rvars = r->T->vheap->base;
-	lwidth = l->T->width;
-	rwidth = r->T->width;
+	lvars = l->tvheap->base;
+	rvars = r->tvheap->base;
+	lwidth = l->twidth;
+	rwidth = r->twidth;
 
 	r1->tkey = 1;
 	r1->tsorted = 1;
@@ -1572,7 +1563,7 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (pcrere) {
 			my_pcre_free(pcrere);
-			my_pcre_free(pcreex);
+			pcre_free_study(pcreex);
 			pcrere = NULL;
 			pcreex = NULL;
 		}
@@ -1592,9 +1583,9 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->T->heap.base)[r1->batFirst];
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
 		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->T->heap.base)[r2->batFirst];
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
 	ALGODEBUG fprintf(stderr, "#pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 					  BATgetId(l), BATgetId(r),
@@ -1614,7 +1605,7 @@ pcresubjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (pcrere)
 		my_pcre_free(pcrere);
 	if (pcreex)
-		my_pcre_free(pcreex);
+		pcre_free_study(pcreex);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }
@@ -1635,22 +1626,20 @@ PCREsubjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		goto fail;
 	if (srid != bat_nil && (candright = BATdescriptor(srid)) == NULL)
 		goto fail;
-	result1 = BATnew(TYPE_void, TYPE_oid, BATcount(left), TRANSIENT);
-	result2 = BATnew(TYPE_void, TYPE_oid, BATcount(left), TRANSIENT);
+	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
+	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	if (result1 == NULL || result2 == NULL) {
 		msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
 		goto fail;
 	}
-	BATseqbase(result1, 0);
-	BATseqbase(result2, 0);
-	result1->T->nil = 0;
-	result1->T->nonil = 1;
+	result1->tnil = 0;
+	result1->tnonil = 1;
 	result1->tkey = 1;
 	result1->tsorted = 1;
 	result1->trevsorted = 1;
 	result1->tdense = 1;
-	result2->T->nil = 0;
-	result2->T->nonil = 1;
+	result2->tnil = 0;
+	result2->tnonil = 1;
 	result2->tkey = 1;
 	result2->tsorted = 1;
 	result2->trevsorted = 1;

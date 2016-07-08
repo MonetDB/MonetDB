@@ -32,7 +32,7 @@ Ready.
 #where kvks between fr and t group by kvks;
 % sys.L3 # table_name
 % L3 # name
-% wrd # type
+% bigint # type
 % 1 # length
 #drop table test;
 

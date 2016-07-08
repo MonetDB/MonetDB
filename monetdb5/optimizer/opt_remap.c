@@ -35,8 +35,8 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 
 	snprintf(buf,1024,"bat%s",mod);
 	p= newInstruction(mb,ASSIGNsymbol);
-	setModuleId(p,putName(buf, strlen(buf)));
-	setFunctionId(p,putName(fcn, strlen(fcn)));
+	setModuleId(p,putName(buf));
+	setFunctionId(p,putName(fcn));
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)
@@ -139,7 +139,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		return 0;
 	}
 
-	setVarType(mq, 0,newBatType(TYPE_oid, getArgType(mb,p,0)));
+	setVarType(mq, 0,newBatType(getArgType(mb,p,0)));
 	clrVarFixed(mq,getArg(getInstrPtr(mq,0),0)); /* for typing */
 	upgrade[getArg(getInstrPtr(mq,0),0)] = TRUE;
 
@@ -147,14 +147,14 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		if( !isaBatType( getArgType(mq,sig,i-2)) &&
 			isaBatType( getArgType(mb,p,i)) ){
 
-			if( getColumnType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
+			if( getBatType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
 				OPTDEBUGremap
 					mnstr_printf(cntxt->fdout,"#Type mismatch %d\n",i);
 				goto terminateMX;
 			}
 			OPTDEBUGremap
 				mnstr_printf(cntxt->fdout,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
-			setVarType(mq, i-2,newBatType(TYPE_oid, getArgType(mb,p,i)));
+			setVarType(mq, i-2,newBatType(getArgType(mb,p,i)));
 			upgrade[getArg(sig,i-2)]= TRUE;
 			refbat= getArg(sig,i-2);
 		}
@@ -173,7 +173,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		for(j=0; j<q->argc && !fnd; j++) 
 			if (upgrade[getArg(q,j)]) {
 				for(k=0; k<q->retc; k++){
-					setVarType(mq,getArg(q,j),newBatType(TYPE_oid,getArgType(mq, q, j)));
+					setVarType(mq,getArg(q,j),newBatType(getArgType(mq, q, j)));
 					/* for typing */
 					clrVarFixed(mq,getArg(q,k)); 
 					if (!upgrade[getArg(q,k)]) {
@@ -195,7 +195,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					VALptr(&getVar(mq, getArg(q,1))->value),
 					ATOMnilptr(getArgType(mq, q, 1))) == 0) {
 				ValRecord cst;
-				int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));
+				int tpe = newBatType(getArgType(mq, q, 1));
 
 				setVarType(mq,getArg(q,0),tpe);
 				cst.vtype = TYPE_bat;
@@ -205,7 +205,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				setVarType(mq, getArg(q,1), tpe);
 			} else{
 				/* handle constant tail setting */
-				int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));
+				int tpe = newBatType(getArgType(mq, q, 1));
 
 				setVarType(mq,getArg(q,0),tpe);
 				setModuleId(q,algebraRef);
@@ -228,7 +228,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					goto terminateMX;
 				if (getModuleId(q)){
 					snprintf(buf,1024,"bat%s",getModuleId(q));
-					setModuleId(q,putName(buf,strlen(buf)));
+					setModuleId(q,putName(buf));
+					q->typechk = TYPE_UNKNOWN;
 
 					actions++;
 					/* now see if we can resolve the instruction */
@@ -247,6 +248,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					getArg(q,1)= refbat;
 				
 					actions++;
+					q->typechk = TYPE_UNKNOWN;
 					typeChecker(cntxt->fdout, cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
@@ -324,7 +326,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 	for(i=0;OperatorMap[i].src;i++)
 	if( strcmp(fcn,OperatorMap[i].src)==0){
 		/* found a candidate for a switch */
-		getVarConstant(mb, getArg(pci, 2)).val.sval = putName(OperatorMap[i].dst,OperatorMap[i].len);
+		getVarConstant(mb, getArg(pci, 2)).val.sval = putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
 		r= OPTremapDirect(cntxt,mb, stk, pci, scope);
@@ -348,6 +350,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *old, p;
 	int i, limit, slimit, doit= 0;
 	Module scope = cntxt->nspace;
+	lng usec = GDKusec();
+	char buf[256];
 
 	(void) pci;
 	old = mb->stmt;
@@ -378,7 +382,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) )
 					doit++;
 				OPTDEBUGremap
-					mnstr_printf(cntxt->fdout,"#doit %d\n",doit);
+					mnstr_printf(cntxt->fdout,"#actions %d\n",doit);
 			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
 				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
 				freeInstruction(p); 
@@ -395,16 +399,16 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
 			getArg(sum,0) = newTmpVariable(mb, getArgType(mb, p, 1));
-			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_wrd));
+			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_lng));
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 
 			t = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(t, batcalcRef);
-			setFunctionId(t, putName("==", strlen("==")));
-			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bit));
+			setFunctionId(t, putName("=="));
+			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 			t = pushArgument(mb, t, getDestVar(cnt));
-			t = pushWrd(mb, t, 0);
+			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
@@ -418,7 +422,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(t, batcalcRef);
-			setFunctionId(t, putName("ifthenelse", strlen("ifthenelse")));
+			setFunctionId(t, putName("ifthenelse"));
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = pushArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
@@ -458,5 +462,15 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (doit) 
 		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
+    /* Defense line against incorrect plans */
+    if( mb->errors == 0 && doit > 0){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","remap",doit,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return mb->errors? 0: doit;
 }

@@ -14,7 +14,7 @@ comment "Sleep a few seconds";
 #address ALARMsetalarm
 #comment "Execute a MAL action after a few secs. NYI";
 
-#unsafe command alarm.timers() (time:bat[:oid,:str],action:bat[:oid,:str])
+#unsafe command alarm.timers() (time:bat[:str],action:bat[:str])
 #address ALARMtimers
 #comment "Give the list of all active timers. NYI";
 

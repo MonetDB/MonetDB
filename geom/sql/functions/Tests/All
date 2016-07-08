@@ -1,0 +1,70 @@
+HAVE_GEOM?loadTestWKT
+
+HAVE_GEOM?ST_PointFromText
+HAVE_GEOM?ST_LineFromText
+HAVE_GEOM?ST_PolygonFromText
+HAVE_GEOM?ST_MPointFromText
+HAVE_GEOM?ST_MLineFromText
+HAVE_GEOM?ST_MPolygonFromText
+HAVE_GEOM?ST_GeomFromText
+
+HAVE_GEOM?dropTestWKT
+
+HAVE_GEOM?ST_MakePoint
+
+HAVE_GEOM?loadTestGeometries
+
+
+HAVE_GEOM?ST_GeometryType
+HAVE_GEOM?ST_AsText
+
+HAVE_GEOM?ST_IsClosed #ignores Z coordinate
+HAVE_GEOM?ST_IsEmpty 
+HAVE_GEOM?ST_IsSimple #ignores Z coordinate
+HAVE_GEOM?ST_IsValid #ignores Z coordinate
+HAVE_GEOM?ST_IsRing #ignores Z coordinate
+
+HAVE_GEOM?XYZ
+HAVE_GEOM?XYZMinMax
+#HAVE_GEOM?srid
+HAVE_GEOM?ST_GeometryN
+HAVE_GEOM?ST_NumGeometries
+HAVE_GEOM?ST_NumPoints
+HAVE_GEOM?ST_NPoints
+
+HAVE_GEOM?ST_NumInteriorRings
+HAVE_GEOM?ST_NRings
+
+#HAVE_GEOM?transform
+
+HAVE_GEOM?ST_Contains #ignores Z coordinate
+
+#HAVE_GEOM?equals
+
+HAVE_GEOM?ST_Boundary #Missing geom_bat + bat_geom
+
+HAVE_GEOM?ST_Dimension
+HAVE_GEOM?ST_CoordDim
+
+HAVE_GEOM?ST_AsEWKT
+
+#HAVE_GEOM?ST_Covers #Look at ST_Covers.sql for more details on the problem
+#HAVE_GEOM?ST_CoveredBy #Look at ST_CoveredBy.sql for more details on the problem
+
+HAVE_GEOM?ST_MakeBox2D
+#HAVE_GEOM?makeEnvelope
+
+#HAVE_GEOM?mbr_overlap
+#HAVE_GEOM?mbr_contains
+#HAVE_GEOM?mbr_equal
+#HAVE_GEOM?mbr_contained
+#HAVE_GEOM?mbr_overlap_or_right
+#HAVE_GEOM?mbr_overlap_or_left
+#HAVE_GEOM?mbr_below
+#HAVE_GEOM?mbr_overlap_or_above
+#HAVE_GEOM?mbr_above
+#HAVE_GEOM?mbr_overlap_or_below
+#HAVE_GEOM?mbr_distance
+
+
+HAVE_GEOM?dropTestGeometries

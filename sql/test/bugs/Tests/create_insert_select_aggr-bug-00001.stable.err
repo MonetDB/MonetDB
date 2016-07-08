@@ -10,7 +10,7 @@ stderr of test 'create_insert_select_aggr-bug-00001` in directory 'sql/test/bugs
 # 21:23:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51365  < create_insert_select_aggr-bug-00001.sql
 # 21:23:44 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select name, count(*) from _tables;
 ERROR = !cannot use non GROUP BY column 'name' in query results without an aggregate function
 

@@ -62,12 +62,18 @@ stderr of test 'lost_update.SF-2790020` in directory 'sql/test/BugTracker-2009` 
 # cmdline opt 	mapi_port = 35847
 # cmdline opt 	xrpc_port = 45795
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_BugTracker-2009
-# cmdline opt 	gdk_debug = 536870922
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
-# builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_vmtrim = no
+#warning: please don't forget to set your vault key!
+#(see /ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf)
+# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
+# builtin opt 	gdk_version = 1.30.0
+# builtin opt 	prefix = /ufs/sjoerd/Monet-virgin-stable
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${prefix}/lib64/MonetDB
@@ -115,12 +121,18 @@ stderr of test 'lost_update.SF-2790020` in directory 'sql/test/BugTracker-2009` 
 # cmdline opt 	mapi_port = 35847
 # cmdline opt 	xrpc_port = 45795
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_BugTracker-2009
-# cmdline opt 	gdk_debug = 536870922
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
-# builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_vmtrim = no
+#warning: please don't forget to set your vault key!
+#(see /ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf)
+# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
+# builtin opt 	gdk_version = 1.30.0
+# builtin opt 	prefix = /ufs/sjoerd/Monet-virgin-stable
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${prefix}/lib64/MonetDB
@@ -168,12 +180,18 @@ stderr of test 'lost_update.SF-2790020` in directory 'sql/test/BugTracker-2009` 
 # cmdline opt 	mapi_port = 35847
 # cmdline opt 	xrpc_port = 45795
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_BugTracker-2009
-# cmdline opt 	gdk_debug = 536870922
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
-# builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_vmtrim = no
+#warning: please don't forget to set your vault key!
+#(see /ufs/sjoerd/Monet-virgin-stable/etc/monetdb5.conf)
+# builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
+# builtin opt 	gdk_version = 1.30.0
+# builtin opt 	prefix = /ufs/sjoerd/Monet-virgin-stable
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
 # builtin opt 	monet_mod_path = ${prefix}/lib64/MonetDB

@@ -29,7 +29,7 @@ stderr of test 'verify_load` in directory 'sql/backends/monet5/vaults/bam` itsel
 # 10:22:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
 # 10:22:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16074/.s.monetdb.32986
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT *
         FROM bam.alignments_3;
 ERROR = !SELECT: no such table 'alignments_3'

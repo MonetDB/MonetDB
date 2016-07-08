@@ -8,7 +8,7 @@ function scheduler.mutation(m:str,f:str)(mn:str,fn:str);
 	return (mn,fn);
 end mutation;
 
-function initialize():bat[:oid,:lng];
+function initialize():bat[:lng];
 	b:= bat.new(:oid,:lng);
 
 	INT_MAX := 2147483647;

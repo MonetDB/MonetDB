@@ -829,7 +829,7 @@ file_fgetpos(stream *s, lng *p)
 
 	if (fp == NULL || p == NULL)
 		return -1;
-#if defined(NATIVE_WIN32) && _MSC_VER >= 1400	/* Visual Studio 2005 */
+#ifdef WIN32
 	*p = (lng) _ftelli64(fp);	/* returns __int64 */
 #else
 #ifdef HAVE_FSEEKO
@@ -849,7 +849,7 @@ file_fsetpos(stream *s, lng p)
 
 	if (fp == NULL)
 		return -1;
-#if defined(NATIVE_WIN32) && _MSC_VER >= 1400	/* Visual Studio 2005 */
+#ifdef WIN32
 	res = _fseeki64(fp, (__int64) p, SEEK_SET);
 #else
 #ifdef HAVE_FSEEKO
@@ -2113,7 +2113,11 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #ifdef _MSC_VER
 		    WSAGetLastError() == WSAEWOULDBLOCK &&
 #else
-		    (errno == EAGAIN || errno == EWOULDBLOCK) && /* it was! */
+		    (errno == EAGAIN
+#if EAGAIN != EWOULDBLOCK
+		     || errno == EWOULDBLOCK
+#endif
+			    ) && /* it was! */
 #endif
 		    s->timeout_func != NULL && /* callback function exists */
 		    !(*s->timeout_func)())     /* callback says don't stop */
@@ -2139,7 +2143,11 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #ifdef _MSC_VER
 		    WSAGetLastError() == WSAEWOULDBLOCK
 #else
-		    (errno == EAGAIN || errno == EWOULDBLOCK)
+		    (errno == EAGAIN
+#if EAGAIN != EWOULDBLOCK
+		     || errno == EWOULDBLOCK
+#endif
+			    )
 #endif
 			)
 			s->errnr = MNSTR_TIMEOUT;
@@ -4567,6 +4575,8 @@ cb_destroy(stream *s)
 
 	if (cb->destroy)
 		(*cb->destroy)(cb->private);
+	free(cb);
+	s->stream_data.p = NULL;
 	destroy(s);
 }
 
@@ -4632,3 +4642,186 @@ getFile(stream *s)
 		return NULL;
 	return (FILE *) s->stream_data.p;
 }
+
+static ssize_t
+stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	s = (stream*)s;
+	buf = (const void*) buf;
+	elmsize = (size_t) elmsize;
+	return (ssize_t) cnt;
+}
+
+static void
+stream_blackhole_close(stream *s)
+{
+	s = (stream*)s;
+	// no resources to close
+}
+
+stream * stream_blackhole_create (void)
+{
+	stream *s;
+	if ((s = create_stream("blackhole")) == NULL) {
+		return NULL;
+	}
+
+	s->read = NULL;
+	s->write = stream_blackhole_write;
+	s->close = stream_blackhole_close;
+	s->flush = NULL;
+	s->access = ST_WRITE;
+	return s;
+}
+
+
+/* fixed-width format streams */
+#define STREAM_FWF_NAME "fwf_ftw"
+
+typedef struct {
+	stream *s;
+	// config
+	size_t num_fields;
+	size_t *widths;
+	char filler;
+	// state
+	size_t line_len;
+	char* in_buf;
+	char* out_buf;
+	size_t out_buf_start;
+	size_t out_buf_remaining;
+	char* nl_buf;
+} stream_fwf_data;
+
+
+static ssize_t
+stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	stream_fwf_data *fsd;
+	size_t to_write = cnt;
+	size_t buf_written = 0;
+	if (strcmp(s->name, STREAM_FWF_NAME) != 0 || elmsize != 1) {
+		return -1;
+	}
+	fsd = (stream_fwf_data*) s->stream_data.p;
+
+	while (to_write > 0) {
+		// input conversion
+		if (fsd->out_buf_remaining == 0) { // need to convert next line
+			size_t field_idx, in_buf_pos = 0, out_buf_pos = 0;
+			ssize_t actually_read = fsd->s->read(fsd->s, fsd->in_buf, 1, fsd->line_len);
+			if (actually_read < (ssize_t) fsd->line_len) { // incomplete last line
+				if (actually_read < 0) {
+					return actually_read; // this is an error
+				}
+				return buf_written; // skip last line
+			}
+			// consume to next newline
+			while (fsd->s->read(fsd->s, fsd->nl_buf, 1, 1) == 1 && *fsd->nl_buf != '\n');
+
+			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
+				char *val_start, *val_end;
+				val_start = fsd->in_buf + in_buf_pos;
+				in_buf_pos += fsd->widths[field_idx];
+				val_end = fsd->in_buf + in_buf_pos - 1;
+				while (*val_start == fsd->filler) val_start++;
+				while (*val_end == fsd->filler) val_end--;
+				while (val_start <= val_end) {
+					if (*val_start == STREAM_FWF_FIELD_SEP) {
+						fsd->out_buf[out_buf_pos++] = STREAM_FWF_ESCAPE;
+					}
+					fsd->out_buf[out_buf_pos++] = *val_start++;
+				}
+				fsd->out_buf[out_buf_pos++] = STREAM_FWF_FIELD_SEP;
+			}
+			fsd->out_buf[out_buf_pos++] = STREAM_FWF_RECORD_SEP;
+			fsd->out_buf_remaining = out_buf_pos;
+			fsd->out_buf_start = 0;
+		}
+
+		// now we know something is in output_buf so deliver it
+		if (fsd->out_buf_remaining <= to_write) {
+			memcpy((char*)buf + buf_written, fsd->out_buf + fsd->out_buf_start, fsd->out_buf_remaining);
+			to_write -= fsd->out_buf_remaining;
+			buf_written += fsd->out_buf_remaining;
+			fsd->out_buf_remaining = 0;
+		} else {
+			memcpy((char*) buf + buf_written, fsd->out_buf + fsd->out_buf_start, to_write);
+			fsd->out_buf_start += to_write;
+			fsd->out_buf_remaining -= to_write;
+			buf_written += to_write;
+			to_write = 0;
+		}
+	}
+	return buf_written;
+}
+
+
+static void
+stream_fwf_close(stream *s)
+{
+	if (strcmp(s->name, STREAM_FWF_NAME) == 0) {
+		stream_fwf_data *fsd = (stream_fwf_data*) s->stream_data.p;
+		mnstr_close(fsd->s);
+		free(fsd->widths);
+		free(fsd->in_buf);
+		free(fsd->out_buf);
+		free(fsd->nl_buf);
+		free(fsd);
+	}
+	// FIXME destroy(s);
+}
+
+stream*
+stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
+{
+	stream *ns;
+	stream_fwf_data *fsd = malloc(sizeof(stream_fwf_data));
+	size_t i, out_buf_len;
+	if (!fsd) {
+		return NULL;
+	}
+	fsd->s = s;
+	fsd->num_fields = num_fields;
+	fsd->widths = widths;
+	fsd->filler = filler;
+	fsd->line_len = 0;
+	for (i = 0; i < num_fields; i++) {
+		fsd->line_len += widths[i];
+	}
+	fsd->in_buf = malloc(fsd->line_len);
+	if (!fsd->in_buf) {
+		free(fsd);
+		return NULL;
+	}
+	out_buf_len = fsd->line_len * 3;
+	fsd->out_buf = malloc(out_buf_len);
+	if (!fsd->out_buf) {
+		free(fsd->in_buf);
+		free(fsd);
+		return NULL;
+	}
+	fsd->out_buf_remaining = 0;
+	fsd->nl_buf = malloc(1);
+	if (!fsd->nl_buf) {
+		free(fsd->in_buf);
+		free(fsd->out_buf);
+		free(fsd);
+		return NULL;
+	}
+	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
+		free(fsd->in_buf);
+		free(fsd->out_buf);
+		free(fsd->nl_buf);
+		free(fsd);
+		return NULL;
+	}
+	ns->read = stream_fwf_read;
+	ns->close = stream_fwf_close;
+	ns->write = NULL;
+	ns->flush = NULL;
+	ns->access = ST_READ;
+	ns->stream_data.p = fsd;
+	return ns;
+}
+

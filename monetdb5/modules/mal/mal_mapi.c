@@ -29,12 +29,14 @@
  * the module remote.
  */
 #include "monetdb_config.h"
+#ifdef HAVE_MAPI
 #include "mal_mapi.h"
 #include <sys/types.h>
 #include <stream_socket.h>
 #include <mapi.h>
-#include <openssl/rand.h>		/* RAND_bytes() */
-
+#ifdef HAVE_OPENSSL
+# include <openssl/rand.h>		/* RAND_bytes() */
+#endif
 #ifdef _WIN32   /* Windows specific */
 # include <winsock.h>
 #else           /* UNIX specific */
@@ -76,19 +78,25 @@ static void generateChallenge(str buf, int min, int max) {
 
 	/* don't seed the randomiser here, or you get the same challenge
 	 * during the same second */
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) &size, (int) sizeof(size)) < 0)
+#endif
 		size = rand();
 	size = (size % (max - min)) + min;
+#ifdef HAVE_OPENSSL
 	if (RAND_bytes((unsigned char *) buf, (int) size) >= 0) {
 		for (i = 0; i < size; i++)
 			buf[i] = seedChars[((unsigned char *) buf)[i] % 62];
 	} else {
+#endif
 		for (i = 0; i < size; i++) {
 			bte = rand();
 			bte %= 62;
 			buf[i] = seedChars[bte];
 		}
+#ifdef HAVE_OPENSSL
 	}
+#endif
 	buf[i] = '\0';
 }
 
@@ -445,6 +453,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	accept_any = GDKgetenv_istrue("mapi_open");
 	autosense = GDKgetenv_istrue("mapi_autosense");
+
+	/* early way out, we do not want to listen on any port when running in embedded mode */
+	if (GDKgetenv_istrue("mapi_disable")) {
+		return MAL_SUCCEED;
+	}
 
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 	if (psock == NULL)
@@ -1364,10 +1377,9 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	BAT *b;
 
 	accessTest(*key, "rpc");
-	b= BATnew(TYPE_void,TYPE_str,256, TRANSIENT);
+	b= COLnew(0,TYPE_str,256, TRANSIENT);
 	if( b == NULL)
 		throw(MAL,"mapi.fetch",MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
@@ -1455,11 +1467,6 @@ static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		if(fld==0 || strcmp(fld,"nil")==0)
 			v->val.shval = sht_nil;
 		else v->val.shval= (sht)  atol(fld);
-		break;
-	case TYPE_wrd:
-		if(fld==0 || strcmp(fld,"nil")==0)
-			v->val.wval = int_nil;
-		else v->val.wval= (wrd)  atol(fld);
 		break;
 	case TYPE_int:
 		if(fld==0 || strcmp(fld,"nil")==0)
@@ -1549,7 +1556,6 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_bte:
 			case TYPE_sht:
 			case TYPE_int:
-			case TYPE_wrd:
 			case TYPE_lng:
 #ifdef HAVE_HGE
 			case TYPE_hge:
@@ -1595,15 +1601,14 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	key= getArgReference_int(stk,pci,pci->retc);
 	qry= getArgReference_str(stk,pci,pci->retc+1);
 	accessTest(*key, "rpc");
-	tt= getColumnType(getVarType(mb,getArg(pci,0)));
+	tt= getBatType(getVarType(mb,getArg(pci,0)));
 
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
 
-	b= BATnew(TYPE_void,tt,256, TRANSIENT);
+	b= COLnew(0,tt,256, TRANSIENT);
 	if ( b == NULL)
 		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
-	BATseqbase(b,0);
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);
@@ -1645,7 +1650,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
-		tt = getTypeName(getColumnType(tpe));
+		tt = getTypeName(getBatType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
 		len = (int) strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
@@ -1724,8 +1729,8 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		tab= getArgReference_str(stk,pci,pci->retc+2);
 		col= getArgReference_str(stk,pci,pci->retc+3);
 		i= *getArgReference_int(stk,pci,pci->retc+4);
-		tn = getTypeName(getColumnType(getVarType(mb,getDestVar(pci))));
-		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
+		tn = getTypeName(getBatType(getVarType(mb,getDestVar(pci))));
+		snprintf(buf,BUFSIZ,"%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
 			tn,
 			*nme, *tab,*col,i);
@@ -1733,15 +1738,15 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else if( pci->argc == 5) {
 		tab= getArgReference_str(stk,pci,pci->retc+2);
 		i= *getArgReference_int(stk,pci,pci->retc+3);
-		snprintf(buf,BUFSIZ,"%s:bat[:void,:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
+		snprintf(buf,BUFSIZ,"%s:bat[:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
 			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
 	} else {
 		str hn,tn;
 		int target= getArgType(mb,pci,0);
 		hn= getTypeName(TYPE_oid);
-		tn= getTypeName(getColumnType(target));
-		snprintf(buf,BUFSIZ,"%s:bat[:%s,:%s]:=bbp.bind(\"%s\");",
-			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
+		tn= getTypeName(getBatType(target));
+		snprintf(buf,BUFSIZ,"%s:bat[:%s]:=bbp.bind(\"%s\");",
+			getVarName(mb,getDestVar(pci)), tn, *nme);
 		GDKfree(hn);
 		GDKfree(tn);
 	}
@@ -1751,3 +1756,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	catchErrors("mapi.bind");
 	return MAL_SUCCEED;
 }
+#else
+// this avoids a compiler warning w.r.t. empty compilation units.
+int SERVERdummy = 42;
+#endif // HAVE_MAPI

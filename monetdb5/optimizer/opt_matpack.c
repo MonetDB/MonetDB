@@ -20,7 +20,9 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
-	char *packIncrementRef = putName("packIncrement", 13);
+	char *packIncrementRef = putName("packIncrement");
+	char buf[256];
+	lng usec = GDKusec();
 
 	(void) pci;
 	(void) cntxt;
@@ -38,6 +40,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			setVarType(mb,v,getArgType(mb,p,1));
 			q = pushArgument(mb, q, getArg(p,1));
 			q = pushInt(mb,q, p->argc - p->retc);
+			typeChecker(cntxt->fdout, cntxt->nspace,mb,q,TRUE);
 
 			for ( j = 2; j < p->argc; j++) {
 				q = newStmt(mb,matRef, packIncrementRef);
@@ -45,6 +48,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				q = pushArgument(mb, q, getArg(p,j));
 				setVarType(mb,getArg(q,0),getVarType(mb,v));
 				v = getArg(q,0);
+				typeChecker(cntxt->fdout, cntxt->nspace,mb,q,TRUE);
 			}
 			getArg(q,0) = getArg(p,0);
 			freeInstruction(p);
@@ -57,5 +61,16 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if (old[i]) 
 			freeInstruction(old[i]);
 	GDKfree(old);
+
+    /* Defense line against incorrect plans */
+    if( actions > 0){
+        //chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        //chkFlow(cntxt->fdout, mb);
+        //chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","matpack",actions,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return actions;
 }

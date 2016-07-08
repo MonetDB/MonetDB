@@ -21,6 +21,37 @@ analysis by optimizers.
 #include "sql_statistics.h"
 #include "sql_scenario.h"
 
+#define atommem(TYPE, size)					\
+	do {							\
+		if (*dst == NULL || *len < (int) (size)) {	\
+			GDKfree(*dst);				\
+			*len = (size);				\
+			*dst = (TYPE *) GDKmalloc(*len);	\
+			if (*dst == NULL)			\
+				return -1;			\
+		}						\
+	} while (0)
+
+static int
+strToStrSQuote(char **dst, int *len, const void *src)
+{
+	int l = 0;
+
+	if (GDK_STRNIL((str) src)) {
+		atommem(char, 4);
+
+		return snprintf(*dst, *len, "nil");
+	} else {
+		int sz = escapedStrlen(src, NULL, NULL, '\'');
+		atommem(char, sz + 3);
+		l = escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '\'');
+		l++;
+		(*dst)[0] = (*dst)[l++] = '"';
+		(*dst)[l] = 0;
+	}
+	return l;
+}
+
 str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -38,6 +69,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int argc = pci->argc;
 	int width = 0;
 	int minmax = *getArgReference_int(stk, pci, 1);
+	int sfnd = 0, tfnd = 0, cfnd = 0;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -69,6 +101,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (sch && strcmp(sch, b->name))
 			continue;
+		sfnd = 1;
 		if (s->tables.set)
 			for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 				sql_base *bt = ntab->data;
@@ -76,6 +109,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
+				tfnd = 1;
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;
@@ -83,13 +117,17 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BAT *bn = store_funcs.bind_col(tr, c, RDONLY), *br;
 						BAT *bsample;
 						lng sz = BATcount(bn);
-						int (*tostr)(str*,int*,const void*) = BATatoms[bn->ttype].atomToStr; \
+						int (*tostr)(str*,int*,const void*) = BATatoms[bn->ttype].atomToStr;
 						int len = 0;
 						void *val=0;
+
+						if (tostr == BATatoms[TYPE_str].atomToStr)
+							tostr = strToStrSQuote;
 
 						if (col && strcmp(bc->name, col))
 							continue;
 						snprintf(dquery, 8192, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+						cfnd = 1;
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
@@ -118,7 +156,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sorted = BATtordered(bn);
 
 						// Gather the min/max value for builtin types
-						width = bn->T->width;
+						width = bn->twidth;
 
 						if (tostr) { 
 							val = BATmax(bn,0); len = 0;
@@ -128,8 +166,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							tostr(&minval, &len,val); 
 							GDKfree(val);
 						} else {
-							maxval = (char *) GDKzalloc(4);
-							minval = (char *) GDKzalloc(4);
+							maxval = GDKmalloc(4);
+							minval = GDKmalloc(4);
 							snprintf(maxval, 4, "nil");
 							snprintf(minval, 4, "nil");
 						}
@@ -162,5 +200,11 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(query);
 	GDKfree(maxval);
 	GDKfree(minval);
+	if (sch && !sfnd)
+		throw(SQL, "analyze", "Schema '%s' does not exist", sch);
+	if (tbl && !tfnd)
+		throw(SQL, "analyze", "Table '%s' does not exist", tbl);
+	if (col && !cfnd)
+		throw(SQL, "analyze", "Column '%s' does not exist", col);
 	return MAL_SUCCEED;
 }

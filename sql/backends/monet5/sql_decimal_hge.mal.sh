@@ -11,78 +11,78 @@ cat <<EOF
 
 EOF
 
-integer="bte sht int wrd lng"	# all integer types
+integer="bte sht int lng"	# all integer types
 numeric="$integer flt dbl"	# all numeric types
 
 for tp1 in hge ; do
-	for tp2 in flt dbl ; do
-	    cat <<EOF
-command calc.${tp1}( v:${tp2}, digits:int, scale:int ) :${tp1}
+    for tp2 in flt dbl ; do
+	cat <<EOF
+command calc.${tp1}(v:${tp2}, digits:int, scale:int) :${tp1}
 address ${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
-command batcalc.${tp1}( v:bat[:${tp2}], digits:int, scale:int ) :bat[:${tp1}]
+command batcalc.${tp1}(v:bat[:${tp2}], digits:int, scale:int) :bat[:${tp1}]
 address bat${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
 EOF
-done
+    done
 done
 
 for tp1 in hge ; do
-	for tp2 in $integer hge ; do
-	    cat <<EOF
-command calc.${tp1}( v:${tp2}, digits:int, scale:int ) :${tp1}
+    for tp2 in $integer hge ; do
+	cat <<EOF
+command calc.${tp1}(v:${tp2}, digits:int, scale:int) :${tp1}
 address ${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
-command batcalc.${tp1}( v:bat[:${tp2}], digits:int, scale:int ) :bat[:${tp1}]
+command batcalc.${tp1}(v:bat[:${tp2}], digits:int, scale:int) :bat[:${tp1}]
 address bat${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
-command calc.${tp1}( s1:int, v:${tp2}) :${tp1} 
+command calc.${tp1}(s1:int, v:${tp2}) :${tp1}
 address ${tp2}_dec2_${tp1}
 comment "cast decimal(${tp2}) to ${tp1} and check for overflow";
-command calc.${tp1}( s1:int, v:${tp2}, d2:int, s2:int ) :${tp1} 
+command calc.${tp1}(s1:int, v:${tp2}, d2:int, s2:int) :${tp1}
 address ${tp2}_dec2dec_${tp1}
 comment "cast decimal(${tp2}) to decimal(${tp1}) and check for overflow";
 
-command batcalc.${tp1}( s1:int, v:bat[:${tp2}]) :bat[:${tp1}]
+command batcalc.${tp1}(s1:int, v:bat[:${tp2}]) :bat[:${tp1}]
 address bat${tp2}_dec2_${tp1}
 comment "cast decimal(${tp2}) to ${tp1} and check for overflow";
-command batcalc.${tp1}( s1:int, v:bat[:${tp2}], d2:int, s2:int ) :bat[:${tp1}] 
+command batcalc.${tp1}(s1:int, v:bat[:${tp2}], d2:int, s2:int) :bat[:${tp1}]
 address bat${tp2}_dec2dec_${tp1}
 comment "cast decimal(${tp2}) to decimal(${tp1}) and check for overflow";
 
 EOF
-done
+    done
 done
 
 for tp1 in $numeric ; do
-	for tp2 in hge ; do
-	    cat <<EOF
-command calc.${tp1}( v:${tp2}, digits:int, scale:int ) :${tp1}
+    for tp2 in hge ; do
+	cat <<EOF
+command calc.${tp1}(v:${tp2}, digits:int, scale:int) :${tp1}
 address ${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
-command batcalc.${tp1}( v:bat[:${tp2}], digits:int, scale:int ) :bat[:${tp1}]
+command batcalc.${tp1}(v:bat[:${tp2}], digits:int, scale:int) :bat[:${tp1}]
 address bat${tp2}_num2dec_${tp1}
 comment "cast number to decimal(${tp1}) and check for overflow";
 
-command calc.${tp1}( s1:int, v:${tp2}) :${tp1} 
+command calc.${tp1}(s1:int, v:${tp2}) :${tp1}
 address ${tp2}_dec2_${tp1}
 comment "cast decimal(${tp2}) to ${tp1} and check for overflow";
-command calc.${tp1}( s1:int, v:${tp2}, d2:int, s2:int ) :${tp1} 
+command calc.${tp1}(s1:int, v:${tp2}, d2:int, s2:int) :${tp1}
 address ${tp2}_dec2dec_${tp1}
 comment "cast decimal(${tp2}) to decimal(${tp1}) and check for overflow";
 
-command batcalc.${tp1}( s1:int, v:bat[:${tp2}]) :bat[:${tp1}]
+command batcalc.${tp1}(s1:int, v:bat[:${tp2}]) :bat[:${tp1}]
 address bat${tp2}_dec2_${tp1}
 comment "cast decimal(${tp2}) to ${tp1} and check for overflow";
-command batcalc.${tp1}( s1:int, v:bat[:${tp2}], d2:int, s2:int ) :bat[:${tp1}] 
+command batcalc.${tp1}(s1:int, v:bat[:${tp2}], d2:int, s2:int) :bat[:${tp1}]
 address bat${tp2}_dec2dec_${tp1}
 comment "cast decimal(${tp2}) to decimal(${tp1}) and check for overflow";
 
 EOF
-done
+    done
 done

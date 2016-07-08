@@ -11,8 +11,10 @@
 
 mal_export void initNamespace(void);
 mal_export void finishNamespace(void);
-mal_export str putName(const char *nme, size_t len);
-mal_export str getName(const char *nme, size_t len);
+mal_export str putName(const char *nme);
+mal_export str putNameLen(const char *nme, size_t len);
+mal_export str getName(const char *nme);
+mal_export str getNameLen(const char *nme, size_t len);
 mal_export void delName(const char *nme, size_t len);
 
 #define MAXIDENTLEN    1024

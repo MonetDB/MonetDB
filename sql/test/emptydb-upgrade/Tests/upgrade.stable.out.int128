@@ -1,0 +1,272 @@
+stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade` itself:
+
+
+# 16:53:30 >  
+# 16:53:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39660" "--set" "mapi_usock=/var/tmp/mtest-30908/.s.monetdb.39660" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb-upgrade" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:53:30 >  
+
+# MonetDB 5 server v11.21.16 (hg id: c20b591c1c70+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_emptydb-upgrade', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:39660/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30908/.s.monetdb.39660
+# MonetDB/GIS module loaded
+# Start processing logs sql/sql_logs version 52200
+# Start reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished reading the write-ahead log 'sql_logs/sql/log.3'
+# Finished processing logs sql/sql_logs
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+Running database upgrade commands:
+set schema "sys";
+create function fuse(one bigint, two bigint)
+returns hugeint
+external name udf.fuse;
+create function sys.generate_series(first hugeint, last hugeint)
+returns table (value hugeint)
+external name generator.series;
+create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
+returns table (value hugeint)
+external name generator.series;
+create aggregate stddev_samp(val HUGEINT) returns DOUBLE
+    external name "aggr"."stdev";
+create aggregate stddev_pop(val HUGEINT) returns DOUBLE
+    external name "aggr"."stdevp";
+create aggregate var_samp(val HUGEINT) returns DOUBLE
+    external name "aggr"."variance";
+create aggregate var_pop(val HUGEINT) returns DOUBLE
+    external name "aggr"."variancep";
+create aggregate median(val HUGEINT) returns HUGEINT
+    external name "aggr"."median";
+create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+    external name "aggr"."quantile";
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT
+    external name "aggr"."corr";
+create function json.filter(js json, name hugeint)
+returns json
+external name json.filter;
+drop view sys.tablestoragemodel;
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+  sum(columnsize) as columnsize,
+  sum(heapsize) as heapsize,
+  sum(hashes) as hashes,
+  sum(imprints) as imprints,
+  sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));
+update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.types values (13, 'hge', 'hugeint', 128, 1, 2, 7, 0);
+insert into sys.types values (18, 'hge', 'decimal', 39, 1, 10, 10, 0);
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+create procedure sys.createorderindex(sys string, tab string, col string)
+external name sql.createorderindex;
+create procedure sys.droporderindex(sys string, tab string, col string)
+external name sql.droporderindex;
+drop view sys.tablestoragemodel;
+drop view sys.storagemodel;
+drop function sys.storagemodel();
+drop procedure sys.storagemodelinit();
+drop function sys."storage"(string, string, string);
+drop function sys."storage"(string, string);
+drop function sys."storage"(string);
+drop view sys."storage";
+drop function sys."storage"();
+alter table sys.storagemodelinput add column "orderidx" bigint;
+create function sys."storage"()
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create view sys."storage" as select * from sys."storage"();
+create function sys."storage"( sname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create function sys."storage"( sname string, tname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create function sys."storage"( sname string, tname string, cname string)
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "mode" string,
+ location string,
+ "count" bigint,
+ typewidth int,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ phash boolean,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint
+)
+external name sql."storage";
+create procedure sys.storagemodelinit()
+begin
+ delete from sys.storagemodelinput;
+ insert into sys.storagemodelinput
+ select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx from sys."storage"() X;
+ update sys.storagemodelinput
+ set reference = true
+ where concat(concat("schema","table"), "column") in (
+  SELECT concat( concat("fkschema"."name", "fktable"."name"), "fkkeycol"."name" )
+  FROM "sys"."keys" AS    "fkkey",
+    "sys"."objects" AS "fkkeycol",
+    "sys"."tables" AS  "fktable",
+    "sys"."schemas" AS "fkschema"
+  WHERE   "fktable"."id" = "fkkey"."table_id"
+   AND "fkkey"."id" = "fkkeycol"."id"
+   AND "fkschema"."id" = "fktable"."schema_id"
+   AND "fkkey"."rkey" > -1);
+ update sys.storagemodelinput
+ set "distinct" = "count"
+ where "type" = 'varchar' or "type"='clob';
+end;
+create function sys.storagemodel()
+returns table (
+ "schema" string,
+ "table" string,
+ "column" string,
+ "type" string,
+ "count" bigint,
+ columnsize bigint,
+ heapsize bigint,
+ hashes bigint,
+ "imprints" bigint,
+ sorted boolean,
+ orderidx bigint)
+begin
+ return select I."schema", I."table", I."column", I."type", I."count",
+ columnsize(I."type", I.count, I."distinct"),
+ heapsize(I."type", I."distinct", I."atomwidth"),
+ hashsize(I."reference", I."count"),
+ imprintsize(I."count",I."type"),
+ I.sorted, I.orderidx
+ from sys.storagemodelinput I;
+end;
+create view sys.storagemodel as select * from sys.storagemodel();
+create view sys.tablestoragemodel
+as select "schema","table",max(count) as "count",
+ sum(columnsize) as columnsize,
+ sum(heapsize) as heapsize,
+ sum(hashes) as hashes,
+ sum("imprints") as "imprints",
+ sum(case when sorted = false then 8 * count else 0 end) as auxiliary
+from sys.storagemodel() group by "schema","table";
+update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = 2 and f.schema_id = s.id and s.name = 'sys');
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.querylog_history;
+drop view sys.querylog_calls;
+drop function sys.querylog_calls();
+create function sys.querylog_calls()
+returns table(
+ id oid,
+ "start" timestamp,
+ "stop" timestamp,
+ arguments string,
+ tuples bigint,
+ run bigint,
+ ship bigint,
+ cpu int,
+ io int
+)
+external name sql.querylog_calls;
+create view sys.querylog_calls as select * from sys.querylog_calls();
+create view sys.querylog_history as
+select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io
+from sys.querylog_catalog() qd, sys.querylog_calls() ql
+where qd.id = ql.id and qd.owner = user;
+update _tables set system = true where name in ('querylog_calls', 'querylog_history') and schema_id = (select id from schemas where name = 'sys');
+drop aggregate sys.stddev_pop(wrd);
+drop aggregate sys.stddev_samp(wrd);
+drop aggregate sys.var_pop(wrd);
+drop aggregate sys.var_samp(wrd);
+drop aggregate sys.median(wrd);
+drop aggregate sys.quantile(wrd, double);
+drop aggregate sys.corr(wrd, wrd);
+insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls') and f.type = 5 and f.schema_id = s.id and s.name = 'sys');
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "sys";
+
+
+# 16:19:08 >  
+# 16:19:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27430" "--port=38597"
+# 16:19:08 >  
+
+#select 1;
+% .L # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+
+# 16:53:31 >  
+# 16:53:31 >  "Done."
+# 16:53:31 >  
+

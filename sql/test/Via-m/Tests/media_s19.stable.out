@@ -24,7 +24,20 @@ Ready.
 # 16:40:48 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=36631 
 # 16:40:48 >  
 
-% . # table_name
+# 15:42:48 >  
+# 15:42:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29638" "--port=30099"
+# 15:42:48 >  
+
+#declare id_event1 integer;
+#set id_event1 = -1234567890;
+#declare id_media1 integer;
+#set id_media1 = -1234567890;
+#declare id_media_description1 integer;
+#set id_media_description1 = -1234567890;
+#set id_event1 = (select event_id from event where event_name = 'event 1');
+#set id_media_description1 = (select max(media_description_id) + 1 from media_description);
+#select id_media1;
+% .L # table_name
 % single_value # name
 % int # type
 % 11 # length

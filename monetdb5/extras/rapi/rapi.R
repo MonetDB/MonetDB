@@ -51,3 +51,20 @@ rewireFunc("q", quit, "base")
 #rewireFunc("system2", system, "base")
 
 rm(rewireFunc)
+
+loopback_query <- function(query) {
+	dyn.load(file.path(MONETDB_LIBDIR, "monetdb5", "lib_rapi.so"))
+	res <- .Call("RAPIloopback", paste0(query, "\n;"), package="lib_rapi")
+	if (is.character(res)) {
+		stop(res)
+	}
+	if (is.logical(res)) { # no result set, but successful
+		return(data.frame())
+	}
+	if (is.list(res)) {
+		attr(res, "row.names") <- c(NA_integer_, length(res[[1]]))
+  		class(res) <- "data.frame"
+		names(res) <- gsub("\\", "", names(res), fixed=T)
+		return(res)
+	}
+}

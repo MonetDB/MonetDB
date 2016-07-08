@@ -77,7 +77,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 	int  var[DEPTH];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
-	int retseen=0, yieldseen=0;
+	int endseen=0, retseen=0, yieldseen=0;
 	int fixed=1;
 	InstrPtr p;
 
@@ -200,6 +200,9 @@ void chkFlow(stream *out, MalBlkPtr mb)
 			break;
 	    case RAISEsymbol:
 	        break;
+	    case ENDsymbol:
+			endseen =1;
+	        break;
 		default:
 			if( isaSignature(p) ){
 				if( p->token == REMsymbol){
@@ -221,6 +224,7 @@ void chkFlow(stream *out, MalBlkPtr mb)
 #endif
 		mb->errors++;
 	}
+	if( endseen)
 	for(btop--; btop>=0;btop--){
 		showScriptException(out, mb,lastInstruction, SYNTAX,
 			"barrier '%s' without exit in %s[%d]",
@@ -290,14 +294,14 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 		if( isaBatType(x)){
 			int tail;
 			int tx;
-			tail = getColumnType(x);
-			tx = getColumnIndex(x);
+			tail = getBatType(x);
+			tx = getTypeIndex(x);
 			if(v && tx == v && tail == TYPE_any){
 			    tx= 0;
 			    tail = t;
 			}
-			y= newBatType(TYPE_void,tail);
-			setAnyColumnIndex(y,tx);
+			y= newBatType(tail);
+			setTypeIndex(y,tx);
 			setArgType(mb,p,i,y);
 #ifdef DEBUG_MAL_FCN
 			{
@@ -308,7 +312,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			}
 #endif
 		} else
-		if(getColumnIndex(x) == v){
+		if(getTypeIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
 			char *xnme = getTypeName(x);
 			mnstr_printf(GDKout," replace x= %s polymorphic\n",xnme);
@@ -319,7 +323,7 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #ifdef DEBUG_MAL_FCN
 		else {
 			char *xnme = getTypeName(x);
-			mnstr_printf(GDKout," non x= %s %d\n",xnme,getColumnIndex(x));
+			mnstr_printf(GDKout," non x= %s %d\n",xnme,getTypeIndex(x));
 			GDKfree(xnme);
 		}
 #endif
@@ -402,10 +406,10 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			if (v == TYPE_any)
 				replaceTypeVar(new->def, pp, v, t);
 			if (isaBatType(v)) {
-				if (getColumnIndex(v))
-					replaceTypeVar(new->def, pp, getColumnIndex(v), getColumnType(t));
+				if (getTypeIndex(v))
+					replaceTypeVar(new->def, pp, getTypeIndex(v), getBatType(t));
 			} else
-				replaceTypeVar(new->def, pp, getColumnIndex(v), t);
+				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
 		}
 #ifdef DEBUG_MAL_FCN
 		else {
@@ -476,7 +480,7 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 			if (p->token == REMsymbol)
 				mnstr_printf(fd,"%-40s\n",ps);
 			else {
-				mnstr_printf(fd,"%-40s\t#[%d] %s ",ps, i, (p->blk && p->blk->binding? p->blk->binding:""));
+				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk && p->blk->binding? p->blk->binding:""));
 				for(j =0; j < p->retc; j++)
 					mnstr_printf(fd,"%d ",getArg(p,j));
 				if( p->argc - p->retc > 0)
@@ -530,23 +534,24 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
-Lifespan
-setLifespan(MalBlkPtr mb)
+/* initialize the static scope boundaries for all variables */
+void
+setVariableScope(MalBlkPtr mb)
 {
 	int pc, k, depth=0, dflow= -1;
 	InstrPtr p;
-	int *blk;
-	Lifespan span= newLifespan(mb);
-	str lang = putName("language",8), dataflow= putName("dataflow",8);
+	str lang = putName("language"), dataflow= putName("dataflow");
 
-	if (span == NULL)
-		return NULL;
-
-	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
-	if( blk == NULL){
-		GDKerror("setLifeSpan" MAL_MALLOC_FAIL);
-		GDKfree(span);
-		return NULL;
+	/* reset the scope admin */
+	for (k = 0; k < mb->vtop; k++)
+	if( isVarConstant(mb,k)){
+		mb->var[k]->depth = 0;
+		mb->var[k]->declared = 0;
+		mb->var[k]->eolife = mb->stop;
+	} else {
+		mb->var[k]->depth = 0;
+		mb->var[k]->declared = 0;
+		mb->var[k]->eolife = 0;
 	}
 
 	for (pc = 0; pc < mb->stop; pc++) {
@@ -567,18 +572,20 @@ setLifespan(MalBlkPtr mb)
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
+			if( isVarConstant(mb,v) && mb->var[v]->updated == 0)
+				mb->var[v]->updated= pc;
 
-			if (span[v].beginLifespan == 0 ){
-				span[v].beginLifespan = pc;
-				blk[v]= depth;
+			if (mb->var[v]->declared == 0 ){
+				mb->var[v]->declared = pc;
+				mb->var[v]->depth = depth;
 			}
 			if (k < p->retc )
-				span[v].lastUpdate= pc;
-			if ( blk[v] == depth )
-				span[v].endLifespan = pc;
+				mb->var[v]->updated= pc;
+			if ( mb->var[v]->depth == depth )
+				mb->var[v]->eolife = pc;
 
-			if ( k >= p->retc && blk[v] < depth )
-				span[v].endLifespan = -1;	/* declared in outer scope*/
+			if ( k >= p->retc && mb->var[v]->depth < depth )
+				mb->var[v]->eolife = -1;
 		}
 		/*
 		 * At a block exit we can finalize all variables defined within that block.
@@ -587,21 +594,19 @@ setLifespan(MalBlkPtr mb)
 		 */
 		if( blockExit(p) ){
 			for (k = 0; k < mb->vtop; k++)
-			if ( span[k].endLifespan == -1 )
-				span[k].endLifespan = pc;
-			else
-			if ( span[k].endLifespan == 0 && blk[k]==depth )
-				span[k].endLifespan = pc;
+			if ( mb->var[k]->eolife == 0 && mb->var[k]->depth==depth )
+				mb->var[k]->eolife = pc;
+			else if ( mb->var[k]->eolife == -1 )
+				mb->var[k]->eolife = pc;
+			
 			if( dflow == depth)
 				dflow= -1;
 			else depth--;
 		}
 	}
 	for (k = 0; k < mb->vtop; k++)
-	if ( span[k].endLifespan == 0 )
-		span[k].endLifespan = pc-2;/* generate them before the end */
-	GDKfree(blk);
-	return span;
+		if( mb->var[k]->eolife == 0)
+			mb->var[k]->eolife = mb->stop-1;
 }
 
 int
@@ -669,18 +674,14 @@ void
 malGarbageCollector(MalBlkPtr mb)
 {
 	int i;
-	Lifespan span;
 
-	span = setLifespan(mb);
-	if ( span == NULL)
-		return ;
+	setVariableScope(mb);
 
 	for (i = 0; i < mb->vtop; i++)
-		if( isVarCleanup(mb,i) && getEndLifespan(span,i) >= 0) {
-			mb->var[i]->eolife = getEndLifespan(span,i);
+		if( isVarCleanup(mb,i) && getEndScope(mb,i) >= 0) {
+			mb->var[i]->eolife = getEndScope(mb,i);
 			mb->stmt[mb->var[i]->eolife]->gc |= GARBAGECONTROL;
 		}
-	GDKfree(span);
 }
 /*
  * Variable declaration
@@ -715,7 +716,7 @@ void chkDeclarations(stream *out, MalBlkPtr mb){
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int *decl;
-	str lang = putName("language",8), dataflow= putName("dataflow",8);
+	str lang = putName("language"), dataflow= putName("dataflow");
 	int dflow = -1;
 
 	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -1033,7 +1034,8 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 			oline = line;
 		}
 		free(buf);
-	} else if (f != GDKout) {
+	}
+	if (f != GDKout) {
 		if (!stethoscope ) {
 			MT_sleep_ms(4000); /* delay for stethoscope */
 			close_stream(f);

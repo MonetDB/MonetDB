@@ -31,7 +31,7 @@
 
 static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 {	int type;
-	switch(type = getColumnType( getArgType(mb,pci,idx))){
+	switch(type = getBatType( getArgType(mb,pci,idx))){
 	case TYPE_bte:
 	case TYPE_bit:
 	case TYPE_sht:
@@ -41,7 +41,6 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	case TYPE_hge:
 #endif
 	case TYPE_oid:
-	case TYPE_wrd:
 	case TYPE_flt:
 	case TYPE_dbl:
 	case TYPE_str:

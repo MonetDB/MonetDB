@@ -97,8 +97,12 @@ mal_dataflow_reset(void)
 {
 	stopMALdataflow();
 	memset((char*) workers, 0,  sizeof(workers));
-	if( todo)
+	if( todo) {
+		GDKfree(todo->data);
+		MT_lock_destroy(&todo->l);
+		MT_sema_destroy(&todo->s);
 		GDKfree(todo);
+	}
 	todo = 0;	/* pending instructions */
 	exiting = 0;
 }
@@ -413,6 +417,8 @@ DFLOWworker(void *T)
 			/* only collect one error (from one thread, needed for stable testing) */
 			if (!flow->error)
 				flow->error = error;
+			else
+				GDKfree(error);
 			MT_lock_unset(&flow->flowlock);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
@@ -596,7 +602,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			if (!isVarConstant(mb, getArg(p, j))) {
 				/* be careful, watch out for garbage collection interference */
 				/* those should be scheduled after all its other uses */
-				l = getEndOfLife(mb, getArg(p, j));
+				l = getEndScope(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
 					PARDEBUG fprintf(stderr, "#endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);

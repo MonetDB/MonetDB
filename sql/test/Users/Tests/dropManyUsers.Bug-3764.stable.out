@@ -59,36 +59,36 @@ Ready.
 # 14:28:37 >  
 
 #CREATE SCHEMA newSchema;
-#select * from "sys"."users";
-% .users,	.users,	.users # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 7,	13,	4 # length
-[ "monetdb",	"MonetDB Admin",	2000	]
+#select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id;
+% .u,	.u,	.s # table_name
+% name,	fullname,	name # name
+% varchar,	varchar,	varchar # type
+% 7,	13,	3 # length
+[ "monetdb",	"MonetDB Admin",	"sys"	]
 #CREATE USER user1 with password '1' name '1st user' schema newSchema;
 #CREATE USER user2 with password '2' name '2nd user' schema newSchema;
 #CREATE USER user3 with password '3' name '3rd user' schema newSchema;
 #CREATE USER user4 with password '4' name '4th user' schema newSchema;
-#select * from "sys"."users";
-% .users,	.users,	.users # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 7,	13,	4 # length
-[ "monetdb",	"MonetDB Admin",	2000	]
-[ "user1",	"1st user",	7418	]
-[ "user2",	"2nd user",	7418	]
-[ "user3",	"3rd user",	7418	]
-[ "user4",	"4th user",	7418	]
+#select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id;
+% .u,	.u,	.s # table_name
+% name,	fullname,	name # name
+% varchar,	varchar,	varchar # type
+% 7,	13,	9 # length
+[ "monetdb",	"MonetDB Admin",	"sys"	]
+[ "user1",	"1st user",	"newschema"	]
+[ "user2",	"2nd user",	"newschema"	]
+[ "user3",	"3rd user",	"newschema"	]
+[ "user4",	"4th user",	"newschema"	]
 #DROP USER user1;
 #DROP USER user2;
 #DROP USER user3;
 #DROP USER user4;
-#select * from "sys"."users";
-% .users,	.users,	.users # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 7,	13,	4 # length
-[ "monetdb",	"MonetDB Admin",	2000	]
+#select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id;
+% .u,	.u,	.s # table_name
+% name,	fullname,	name # name
+% varchar,	varchar,	varchar # type
+% 7,	13,	3 # length
+[ "monetdb",	"MonetDB Admin",	"sys"	]
 
 # 14:28:37 >  
 # 14:28:37 >  "Done."

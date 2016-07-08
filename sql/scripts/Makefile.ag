@@ -18,6 +18,7 @@ headers_sql = {
 		15_querylog.sql \
 		16_tracelog.sql \
 		17_temporal.sql \
+		18_index.sql \
 		20_vacuum.sql \
 		21_dependency_functions.sql \
 		22_clients.sql \
@@ -33,7 +34,6 @@ headers_sql = {
 		46_profiler.sql \
 		51_sys_schema_extension.sql \
 		75_storagemodel.sql \
-		76_compression.sql \
 		80_statistics.sql \
 		99_system.sql
 }

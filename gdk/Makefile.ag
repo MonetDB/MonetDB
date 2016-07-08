@@ -15,6 +15,7 @@ lib_gdk = {
 		gdk.h gdk_cand.h gdk_atomic.h gdk_batop.c \
 		gdk_select.c \
 		gdk_search.c gdk_hash.c gdk_hash.h gdk_tm.c \
+		gdk_orderidx.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_utils.c gdk_utils.h \
 		gdk_atoms.c gdk_atoms.h \
@@ -29,11 +30,12 @@ lib_gdk = {
 		gdk_imprints.c gdk_imprints.h \
 		gdk_join.c gdk_project.c \
 		gdk_unique.c \
+		gdk_interprocess.c gdk_interprocess.h \
+		gdk_bitvector.c gdk_bitvector.h \
 		gdk_firstn.c \
 		gdk_mosaic.c \
-		gdk_bitvector.c \
 		bat.feps bat1.feps bat2.feps \
-		libbat.rc
+		libbat.rc 
 	LIBS = ../common/options/libmoptions \
 		../common/stream/libstream \
 		../common/utils/libmutils \
@@ -49,7 +51,6 @@ headers_h = {
 		gdk_atomic.h \
 		gdk_atoms.h \
 		gdk_bbp.h \
-		gdk_bitvector.h \
 		gdk_calc.h \
 		gdk_delta.h \
 		gdk_posix.h \

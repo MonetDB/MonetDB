@@ -30,7 +30,7 @@ stderr of test 'negative_oid_crash.Bug-3667` in directory 'sql/test/BugTracker-2
 # 18:39:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18114" "--port=30454"
 # 18:39:12 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-12423/.s.monetdb.35490
+MAPI  = (monetdb) /var/tmp/mtest-18114/.s.monetdb.30454
 QUERY = INSERT INTO OID_TBL(f1) VALUES (-1040);
 ERROR = !overflow in conversion of -1040 to oid.
 

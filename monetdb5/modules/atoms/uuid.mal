@@ -69,30 +69,30 @@ comment "Return V1 >= V2";
 
 module batcalc;
 
-pattern ==(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+pattern ==(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
 
-pattern !=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+pattern !=(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
 
-pattern <(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+pattern <(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatLT
 comment "Return B1 < B2";
 
-pattern <=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+pattern <=(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatLE
 comment "Return B1 <= B2";
 
-pattern >(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+pattern >(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatGT
 comment "Return B1 > B2";
 
-pattern >=(b1:bat[:oid,:uuid],b2:bat[:oid,:uuid]) :bat[:oid,:bit]
+pattern >=(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2";
 
-function uuid(u:bat[:oid,:uuid]):bat[:oid,:uuid];
+function uuid(u:bat[:uuid]):bat[:uuid];
  return u;
 end uuid;

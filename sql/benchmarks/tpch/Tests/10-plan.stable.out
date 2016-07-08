@@ -60,32 +60,27 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 306 # length
+% 420 # length
 top N (
 | project (
-| | project (
+| | group by (
 | | | join (
-| | | | group by (
+| | | | join (
 | | | | | join (
-| | | | | | join (
-| | | | | | | join (
-| | | | | | | | select (
-| | | | | | | | | table(sys.lineitem) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_returnflag NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
-| | | | | | | | ) [ lineitem.l_returnflag NOT NULL = char(1) "R" ],
-| | | | | | | | select (
-| | | | | | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
-| | | | | | | | ) [ date "1993-10-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1993-10-01", month_interval "3") ]
-| | | | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
-| | | | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.%TID% NOT NULL, customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
-| | | | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
-| | | | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
-| | | | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ]
-| | | | ) [ customer.c_custkey NOT NULL HASHCOL , nation.n_name NOT NULL ] [ customer.c_custkey NOT NULL HASHCOL , nation.n_name NOT NULL, sys.sum no nil (sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ],
-| | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL  as L2.c_custkey, customer.c_name NOT NULL as L2.c_name, customer.c_address NOT NULL as L2.c_address, customer.c_phone NOT NULL as L2.c_phone, customer.c_acctbal NOT NULL as L2.c_acctbal, customer.c_comment NOT NULL as L2.c_comment ] COUNT 
-| | | ) [ customer.c_custkey NOT NULL = L2.c_custkey NOT NULL HASHCOL  FETCH  ]
-| | ) [ customer.c_custkey NOT NULL HASHCOL , L2.c_name NOT NULL as customer.c_name, L2.c_acctbal NOT NULL as customer.c_acctbal, L2.c_phone NOT NULL as customer.c_phone, nation.n_name NOT NULL, L2.c_address NOT NULL as customer.c_address, L2.c_comment NOT NULL as customer.c_comment, L1.L1 ]
+| | | | | | select (
+| | | | | | | table(sys.lineitem) [ lineitem.l_extendedprice NOT NULL, lineitem.l_discount NOT NULL, lineitem.l_returnflag NOT NULL, lineitem.%lineitem_l_orderkey_fkey NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ] COUNT 
+| | | | | | ) [ lineitem.l_returnflag NOT NULL = char(1) "R" ],
+| | | | | | select (
+| | | | | | | table(sys.orders) [ orders.o_orderdate NOT NULL, orders.%TID% NOT NULL, orders.%orders_o_custkey_fkey NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ] COUNT 
+| | | | | | ) [ date "1993-10-01" <= orders.o_orderdate NOT NULL < sys.sql_add(date "1993-10-01", month_interval "3") ]
+| | | | | ) [ lineitem.%lineitem_l_orderkey_fkey NOT NULL = orders.%TID% NOT NULL JOINIDX sys.lineitem.lineitem_l_orderkey_fkey ],
+| | | | | table(sys.customer) [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_acctbal NOT NULL, customer.c_comment NOT NULL, customer.%TID% NOT NULL, customer.%customer_c_nationkey_fkey NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ] COUNT 
+| | | | ) [ orders.%orders_o_custkey_fkey NOT NULL = customer.%TID% NOT NULL JOINIDX sys.orders.orders_o_custkey_fkey ],
+| | | | table(sys.nation) [ nation.n_name NOT NULL, nation.%TID% NOT NULL ] COUNT 
+| | | ) [ customer.%customer_c_nationkey_fkey NOT NULL = nation.%TID% NOT NULL JOINIDX sys.customer.customer_c_nationkey_fkey ]
+| | ) [ customer.c_custkey NOT NULL HASHCOL , nation.n_name NOT NULL ] [ customer.c_custkey NOT NULL HASHCOL , customer.c_name NOT NULL, customer.c_acctbal NOT NULL, customer.c_phone NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_comment NOT NULL, sys.sum no nil (sys.sql_mul(lineitem.l_extendedprice NOT NULL, sys.sql_sub(decimal(15,2)[tinyint "1"], lineitem.l_discount NOT NULL))) as L1.L1 ]
 | ) [ customer.c_custkey NOT NULL, customer.c_name NOT NULL, L1 as L1.revenue, customer.c_acctbal NOT NULL, nation.n_name NOT NULL, customer.c_address NOT NULL, customer.c_phone NOT NULL, customer.c_comment NOT NULL ] [ L1.revenue ]
-) [ wrd "20" ]
+) [ bigint "20" ]
 
 # 22:46:31 >  
 # 22:46:31 >  "Done."

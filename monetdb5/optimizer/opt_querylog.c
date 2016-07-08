@@ -19,6 +19,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int argc, io, user,nice,sys,idle,iowait,load, arg, start,finish, name;
 	int xtime=0, rtime = 0, tuples=0;
 	InstrPtr defineQuery = NULL;
+	char buf[256];
+	lng usec = GDKusec();
 
 
 	// query log needed?
@@ -47,7 +49,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
 	defineQuery = copyInstruction(defineQuery);
-	setFunctionId(defineQuery, insertRef);
+	setFunctionId(defineQuery, appendRef);
 	getArg(defineQuery,0) = newTmpVariable(mb,TYPE_any);
 	defineQuery->token = ASSIGNsymbol;
 	setModuleId(defineQuery,querylogRef);
@@ -61,7 +63,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = pushArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
-	q = newStmt1(mb, sqlRef, "argRecord");
+	q = newStmt(mb, sqlRef, "argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 
@@ -83,8 +85,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	q = pushReturn(mb,q,idle);
 	q = pushReturn(mb,q,iowait);
 	q = newAssignment(mb);
-	tuples= getArg(q,0) = newVariable(mb,GDKstrdup("tuples"),TYPE_wrd);
-	(void) pushWrd(mb,q,1);
+	tuples= getArg(q,0) = newVariable(mb,GDKstrdup("tuples"),TYPE_lng);
+	(void) pushLng(mb,q,1);
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
@@ -94,7 +96,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			 idcmp(getFunctionId(p),"exportResult")==0  ) ) {
 
 			q = newStmt(mb, "alarm", "usec");
-			r = newStmt1(mb, calcRef, "-");
+			r = newStmt(mb, calcRef, "-");
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, xtime);
 			getArg(r,0)=xtime;
@@ -114,7 +116,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if ( rtime == 0){
 				q = newStmt(mb, "alarm", "usec");
-				r = newStmt1(mb, calcRef, "-");
+				r = newStmt(mb, calcRef, "-");
 				r = pushArgument(mb, r, getArg(q,0));
 				r = pushArgument(mb, r, xtime);
 				getArg(r,0)=xtime;
@@ -122,7 +124,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				rtime= getArg(q,0)= newVariable(mb,GDKstrdup("rtime"),TYPE_lng);
 			}
 			q = newStmt(mb, "alarm", "usec");
-			r = newStmt1(mb, calcRef, "-");
+			r = newStmt(mb, calcRef, "-");
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, rtime);
 			getArg(r,0)=rtime;
@@ -161,18 +163,18 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* the factory yield may return */
 			q = newStmt(mb, "mtime", "current_timestamp");
 			start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_any);
-			q = newStmt1(mb, sqlRef, "argRecord");
+			q = newStmt(mb, sqlRef, "argRecord");
 			for ( argc=1; argc < old[0]->argc; argc++)
 				q = pushArgument(mb, q, getArg(old[0],argc));
 			arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
 			q = newAssignment(mb);
 			q = pushLng(mb,q,0);
 			q = newAssignment(mb);
-			q = pushWrd(mb,q,0);
-			tuples= getArg(q,0)= newVariable(mb,GDKstrdup("tuples"),TYPE_wrd);
+			q = pushLng(mb,q,0);
+			tuples= getArg(q,0)= newVariable(mb,GDKstrdup("tuples"),TYPE_lng);
 			newFcnCall(mb,"profiler","setMemoryFlag");
 			q->argc--;
-			pushWrd(mb,q,1);
+			pushLng(mb,q,1);
 			q = newStmt(mb, "alarm", "usec");
 			xtime = getArg(q,0)= newVariable(mb,GDKstrdup("xtime"),TYPE_lng);
 		}
@@ -182,5 +184,15 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if(old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
+	    /* Defense line against incorrect plans */
+    if( 1){
+        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+        chkFlow(cntxt->fdout, mb);
+        chkDeclarations(cntxt->fdout, mb);
+    }
+    /* keep all actions taken as a post block comment */
+    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","querylog",1,GDKusec() - usec);
+    newComment(mb,buf);
+
 	return 1;
 }

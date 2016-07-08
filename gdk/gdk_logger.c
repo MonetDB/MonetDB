@@ -75,6 +75,10 @@
 #define LOG_CLEAR	9
 #define LOG_SEQ		10
 
+#ifdef HAVE_EMBEDDED
+#define printf(fmt,...) ((void) 0)
+#endif
+
 static char *log_commands[] = {
 	NULL,
 	"LOG_START",
@@ -95,6 +99,11 @@ typedef struct logformat_t {
 	lng nr;
 } logformat;
 
+/* When reading an old format database, we may need to read the geom
+ * Well-known Binary (WKB) type differently.  This variable is used to
+ * indicate that to the function wkbREAD during reading of the log. */
+static int geomisoldversion;
+
 static int bm_commit(logger *lg);
 static int tr_grow(trans *tr);
 
@@ -107,7 +116,7 @@ log_find(BAT *b, BAT *d, int val)
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
 	if (BAThash(b, 0) == GDK_SUCCEED) {
-		HASHloop_int(cni, cni.b->T->hash, p, &val) {
+		HASHloop_int(cni, cni.b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE)
 				return p;
@@ -116,7 +125,7 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = BUNfirst(b), q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BUNlast(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE)
@@ -137,10 +146,9 @@ logbat_destroy(BAT *b)
 static BAT *
 logbat_new(int tt, BUN size, int role)
 {
-	BAT *nb = BATnew(TYPE_void, tt, size, role);
+	BAT *nb = COLnew(0, tt, size, role);
 
 	if (nb) {
-		BATseqbase(nb, 0);
 		if (role == PERSISTENT)
 			BATmode(nb, PERSISTENT);
 	} else {
@@ -298,15 +306,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	log_bid bid = logger_find_bat(lg, name);
 	BAT *b = BATdescriptor(bid);
 	int res = LOG_OK;
-	int ht = -1, tt = -1, hseq = 0, tseq = 0;
+	int ht = -1, tt = -1, tseq = 0;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
 
 	if (b) {
-		ht = b->htype;
-		if (ht == TYPE_void && b->hseqbase != oid_nil)
-			hseq = 1;
+		ht = TYPE_void;
 		tt = b->ttype;
 		if (tt == TYPE_void && b->tseqbase != oid_nil)
 			tseq = 1;
@@ -317,7 +323,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			if (tr->changes[i].type == LOG_CREATE && strcmp(tr->changes[i].name, name) == 0) {
 				ht = tr->changes[i].ht;
 				if (ht < 0) {
-					hseq = 1;
 					ht = TYPE_void;
 				}
 				tt = tr->changes[i].tt;
@@ -347,17 +352,15 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 #endif
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
-			uid = BATnew(TYPE_void, ht, (BUN) l->nr, PERSISTENT);
-			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
+			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		} else {
 			assert(ht == TYPE_void);
-			r = BATnew(TYPE_void, tt, (BUN) l->nr, PERSISTENT);
+			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		}
 
-		if (hseq)
-			BATseqbase(r, 0);
 		if (tseq)
-			BATseqbase(BATmirror(r), 0);
+			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
 			for (; l->nr > 0; l->nr--) {
@@ -459,7 +462,7 @@ la_bat_updates(logger *lg, logaction *la)
 	b = BATdescriptor(bid);
 	assert(b);
 	if (b) {
-		if (b->htype == TYPE_void && la->type == LOG_INSERT) {
+		if (la->type == LOG_INSERT) {
 			BATappend(b, la->b, TRUE);
 		} else if (la->type == LOG_UPDATE) {
 			BATiter vi = bat_iterator(la->b);
@@ -470,7 +473,6 @@ la_bat_updates(logger *lg, logaction *la)
 				oid h = * (const oid *) BUNtail(ii, p);
 				const void *t = BUNtail(vi, p);
 
-				assert(b->htype == TYPE_void);
 				if (h < b->hseqbase || h >= b->hseqbase + BATcount(b)) {
 					/* if value doesn't exist,
 					 * insert it; if b void headed,
@@ -517,18 +519,12 @@ la_bat_destroy(logger *lg, logaction *la)
 
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 #ifndef NDEBUG
-			assert(BBP_desc(bid)->S.role == PERSISTENT);
-			assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->H.heap.farmid].roles & (1 << PERSISTENT));
-			if (BBP_desc(bid)->H.vheap) {
-				assert(0 <= BBP_desc(bid)->H.vheap->farmid && BBP_desc(bid)->H.vheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->H.vheap->farmid].roles & (1 << PERSISTENT));
-			}
-			assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
-			if (BBP_desc(bid)->T.vheap) {
-				assert(0 <= BBP_desc(bid)->T.vheap->farmid && BBP_desc(bid)->T.vheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->T.vheap->farmid].roles & (1 << PERSISTENT));
+			assert(BBP_desc(bid)->batRole == PERSISTENT);
+			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
+			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+			if (BBP_desc(bid)->tvheap) {
+				assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
+				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 			}
 #endif
 			BUNappend(lg->dsnapshots, &p, FALSE);
@@ -556,10 +552,24 @@ log_read_create(logger *lg, trans *tr, char *name)
 		}
 		*ta = 0;
 		ta++;		/* skip over , */
+		if (strcmp(ha, "wrd") == 0) {
+#if SIZEOF_SSIZE_T == SIZEOF_INT
+			ha = "int";
+#else
+			ha = "lng";
+#endif
+		}
 		if (strcmp(ha, "vid") == 0) {
 			ht = -1;
 		} else {
 			ht = ATOMindex(ha);
+		}
+		if (strcmp(ta, "wrd") == 0) {
+#if SIZEOF_SSIZE_T == SIZEOF_INT
+			ta = "int";
+#else
+			ta = "lng";
+#endif
 		}
 		if (strcmp(ta, "vid") == 0) {
 			tt = -1;
@@ -583,15 +593,16 @@ log_read_create(logger *lg, trans *tr, char *name)
 static void
 la_bat_create(logger *lg, logaction *la)
 {
-	int ht = (la->ht < 0) ? TYPE_void : la->ht;
 	int tt = (la->tt < 0) ? TYPE_void : la->tt;
-	BAT *b = BATnew(ht, tt, BATSIZE, PERSISTENT);
+	BAT *b;
+
+	/* formerly head column type, should be void */
+	assert(((la->ht < 0) ? TYPE_void : la->ht) == TYPE_void);
+	b = COLnew(0, tt, BATSIZE, PERSISTENT);
 
 	if (b != NULL) {
-		if (la->ht < 0)
-			BATseqbase(b, 0);
 		if (la->tt < 0)
-			BATseqbase(BATmirror(b), 0);
+			BATtseqbase(b, 0);
 
 		BATsetaccess(b, BAT_READ);
 		logger_add_bat(lg, b, la->name);
@@ -627,17 +638,11 @@ la_bat_use(logger *lg, logaction *la)
 	logger_add_bat(lg, b, la->name);
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
-	assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
-	assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-	if (b->H->vheap) {
-		assert(0 <= b->H->vheap->farmid && b->H->vheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-	}
-	assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
-	assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
-	if (b->T->vheap) {
-		assert(0 <= b->T->vheap->farmid && b->T->vheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
+	assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
+	assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+	if (b->tvheap) {
+		assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
+		assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 	}
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
@@ -843,13 +848,14 @@ logger_open(logger *lg)
 	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
-	GDKfree(filename);
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != LOG_OK) {
 		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
+		GDKfree(filename);
 		return LOG_ERR;
 	}
+	GDKfree(filename);
 	if ((bid = logger_find_bat(lg, "seqs_id")) != 0) {
 		int dbg = GDKdebug;
 		BAT *b;
@@ -890,14 +896,12 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	lng fpos;
-	char *path = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), NULL, filename, NULL);
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlog opening %s\n", filename);
 	}
 
-	lg->log = open_rstream(path);
-	GDKfree(path);
+	lg->log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || mnstr_errnr(lg->log)) {
@@ -915,8 +919,10 @@ logger_readlog(logger *lg, char *filename)
 		return 1;
 	}
 	t0 = time(NULL);
-	printf("# Start reading the write-ahead log '%s'\n", filename);
-	fflush(stdout);
+	if (lg->debug & 1) {
+		printf("# Start reading the write-ahead log '%s'\n", filename);
+		fflush(stdout);
+	}
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
@@ -1015,8 +1021,10 @@ logger_readlog(logger *lg, char *filename)
 	while (tr)
 		tr = tr_abort(lg, tr);
 	t0 = time(NULL);
-	printf("# Finished reading the write-ahead log '%s'\n", filename);
-	fflush(stdout);
+	if (lg->debug & 1) {
+		printf("# Finished reading the write-ahead log '%s'\n", filename);
+		fflush(stdout);
+	}
 	return LOG_OK;
 }
 
@@ -1080,9 +1088,11 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			if (lid < lg->id) {
 				lg->id = lid;
 			}
-			/* if this is a shared logger, write the id in
-			 * the shared file */
-			logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
+			if (lg->shared) {
+				/* if this is a shared logger, write the id in
+				 * the shared file */
+				logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
+			}
 		}
 	}
 	return res;
@@ -1152,18 +1162,14 @@ static BAT *
 bm_tids(BAT *b, BAT *d)
 {
 	BUN sz = BATcount(b);
-	BAT *tids = BATnew(TYPE_void, TYPE_void, 0, TRANSIENT);
+	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 
-	tids->H->seq = 0;
-	tids->T->seq = 0;
+	BATtseqbase(tids, 0);
 	BATsetcount(tids, sz);
-	tids->H->revsorted = 0;
-	tids->T->revsorted = 0;
+	tids->trevsorted = 0;
 
-	tids->T->key = 1;
-	tids->T->dense = 1;
-	tids->H->key = 1;
-	tids->H->dense = 1;
+	tids->tkey = 1;
+	tids->tdense = 1;
 
 	if (BATcount(d)) {
 		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
@@ -1174,11 +1180,40 @@ bm_tids(BAT *b, BAT *d)
 }
 
 
+static void
+logger_fatal(const char *format, const char *arg1, const char *arg2, const char *arg3)
+{
+	char *buf;
+
+	GDKfatal(format, arg1, arg2, arg3);
+	GDKlog(format, arg1, arg2, arg3);
+	if ((buf = GDKerrbuf) != NULL) {
+		fprintf(stderr, "%s", buf);
+		fflush(stderr);
+	}
+	GDKexit(1);
+}
+
+static void
+logger_switch_bat( BAT *old, BAT *new, const char *fn, const char *name)
+{
+	char bak[BUFSIZ];
+
+	if (BATmode(old, TRANSIENT) != GDK_SUCCEED)
+		logger_fatal("Logger_new: cannot convert old %s to transient", name, 0, 0);
+	snprintf(bak, sizeof(bak), "tmp_%o", old->batCacheid);
+	if (BBPrename(old->batCacheid, bak) != 0)
+		logger_fatal("Logger_new: cannot rename old %s", name, 0, 0);
+	snprintf(bak, sizeof(bak), "%s_%s", fn, name);
+	if (BBPrename(new->batCacheid, bak) != 0)
+		logger_fatal("Logger_new: cannot rename new %s", name, 0, 0);
+}
+
 static gdk_return
-bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *dcatalog, BAT *extra, int debug)
+bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *dcatalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	BUN nn = 4 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
+	BUN nn = 6 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
 	bat *n = GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
@@ -1196,7 +1231,7 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 				BBPname(col), col,
 				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
 		assert(col);
-		n[i++] = abs(col);
+		n[i++] = col;
 	}
 	if (extra) {
 		iter = bat_iterator(extra);
@@ -1212,24 +1247,34 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 		}
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	n[i++] = abs(catalog_bid->batCacheid);
-	n[i++] = abs(catalog_nme->batCacheid);
-	n[i++] = abs(dcatalog->batCacheid);
+	n[i++] = catalog_bid->batCacheid;
+	n[i++] = catalog_nme->batCacheid;
+	n[i++] = dcatalog->batCacheid;
 	assert((BUN) i <= nn);
-	if (BATcount(dcatalog) && catalog_bid == list_bid && catalog_nme == list_nme) {
-		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog);
+	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
+		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
 
-		bids = BATproject(tids, catalog_bid);
-		nmes = BATproject(tids, catalog_nme);
+		bids = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		nmes = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
+		b = BATproject(tids, catalog_bid);
+		BATappend(bids, b, TRUE);
+		logbat_destroy(b);
+		b = BATproject(tids, catalog_nme);
+		BATappend(nmes, b, TRUE);
+		logbat_destroy(b);
 		logbat_destroy(tids);
-		BATclear(catalog_bid, TRUE);
-		BATclear(catalog_nme, TRUE);
 		BATclear(dcatalog, TRUE);
 
-		BATappend(catalog_bid, bids, FALSE);
-		BATappend(catalog_nme, nmes, FALSE);
-		logbat_destroy(bids);
-		logbat_destroy(nmes);
+		logger_switch_bat(catalog_bid, bids, lg->fn, "catalog_bid");
+		logger_switch_bat(catalog_nme, nmes, lg->fn, "catalog_nme");
+		n[i++] = bids->batCacheid;
+		n[i++] = nmes->batCacheid;
+
+		logbat_destroy(lg->catalog_bid);
+		logbat_destroy(lg->catalog_nme);
+
+		lg->catalog_bid = catalog_bid = bids;
+		lg->catalog_nme = catalog_nme = nmes;
 	}
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);
@@ -1239,20 +1284,6 @@ bm_subcommit(BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, B
 	if (res != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");
 	return res;
-}
-
-static void
-logger_fatal(const char *format, const char *arg1, const char *arg2, const char *arg3)
-{
-	char *buf;
-
-	GDKfatal(format, arg1, arg2, arg3);
-	GDKlog(format, arg1, arg2, arg3);
-	if ((buf = GDKerrbuf) != NULL) {
-		fprintf(stderr, "%s", buf);
-		fflush(stderr);
-	}
-	GDKexit(1);
 }
 
 /* Set the logdir path, add a dbfarm if needed.
@@ -1308,24 +1339,27 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 	int id = LOG_SID;
 	FILE *fp;
 	char bak[PATHLENGTH];
+	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	snprintf(filename, PATHLENGTH, "%s%s", lg->dir, LOGFILE);
+	filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL);
+	snprintf(filename, PATHLENGTH, "%s", filenamestr);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
+	GDKfree(filenamestr);
 
 	/* try to open logfile backup, or failing that, the file
 	 * itself. we need to know whether this file exists when
 	 * checking the database consistency later on */
-	if ((fp = GDKfileopen(farmid, NULL, bak, NULL, "r")) != NULL) {
+	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
 		(void) GDKunlink(farmid, lg->dir, LOGFILE, NULL);
 		if (GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 			logger_fatal("logger_new: cannot move log.bak "
 				     "file back.\n", 0, 0, 0);
 	}
-	fp = GDKfileopen(farmid, NULL, filename, NULL, "r");
+	fp = fopen(filename, "r");
 
 	snprintf(bak, sizeof(bak), "%s_catalog", fn);
 	bid = BBPindex(bak);
@@ -1400,14 +1434,22 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			logger_fatal("logger_load: writing log file %s failed",
 				     filename, 0, 0);
 		}
-		if (fclose(fp) < 0) {
+		if (fflush(fp) < 0 ||
+#if defined(_MSC_VER)
+		    _commit(_fileno(fp)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fileno(fp)) < 0 ||
+#elif defined(HAVE_FSYNC)
+		    fsync(fileno(fp)) < 0 ||
+#endif
+		    fclose(fp) < 0) {
 			unlink(filename);
 			logger_fatal("logger_load: closing log file %s failed",
 				     filename, 0, 0);
 		}
 		fp = NULL;
 
-		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
+		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
 			unlink(filename);
 			goto error;
@@ -1442,60 +1484,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			BBPincref(d->batCacheid, TRUE);
 			if (BBPrename(d->batCacheid, bak) < 0)
 				logger_fatal("logger_load: BBPrename to %s failed", bak, 0, 0);
-			if (!BAThdense(b) || !BAThdense(n)) {
-				/* we need to convert catalog_bid and
-				 * catalog_nme to be dense-headed; we
-				 * do this by replacing the two with
-				 * new, dense versions */
-				BATiter bi, ni;
-				BUN r;
-				const oid *o;
-				BAT *b2, *n2;
-				bat list[5];
-
-				list[0] = 0;
-				list[1] = b->batCacheid;
-				list[2] = n->batCacheid;
-				if ((b2 = logbat_new(b->ttype, BATSIZE, PERSISTENT)) == NULL)
-					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
-				if ((n2 = logbat_new(n->ttype, BATSIZE, PERSISTENT)) == NULL)
-					logger_fatal("logger_load: cannot create BAT", 0, 0, 0);
-				list[3] = b2->batCacheid;
-				list[4] = n2->batCacheid;
-				if (BATmode(b, TRANSIENT) != GDK_SUCCEED)
-					logger_fatal("logger_load: cannot convert old catalog_bid to transient", 0, 0, 0);
-				if (BATmode(n, TRANSIENT) != GDK_SUCCEED)
-					logger_fatal("logger_load: cannot convert old catalog_nme to transient", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "tmp_%o", b->batCacheid);
-				if (BBPrename(b->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename old catalog_bid", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "tmp_%o", n->batCacheid);
-				if (BBPrename(n->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename old catalog_nme", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "%s_catalog_bid", fn);
-				if (BBPrename(b2->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename new catalog_bid", 0, 0, 0);
-				snprintf(bak, sizeof(bak), "%s_catalog_nme", fn);
-				if (BBPrename(n2->batCacheid, bak) != 0)
-					logger_fatal("logger_load: cannot rename new catalog_nme", 0, 0, 0);
-				bi = bat_iterator(b);
-				ni = bat_iterator(n);
-				BATloop(b, p, q) {
-					o = (const oid *) BUNhloc(bi, p);
-					r = BUNfnd(BATmirror(n), o);
-					if (r != BUN_NONE) {
-						if (BUNappend(b2, BUNtloc(bi, p), 0) != GDK_SUCCEED ||
-						    BUNappend(n2, BUNtvar(ni, r), 0) != GDK_SUCCEED)
-							logger_fatal("logger_load: cannot append to new catalog BATs", 0, 0, 0);
-					}
-				}
-				BBPunfix(b->batCacheid);
-				BBPunfix(n->batCacheid);
-				b = b2;
-				n = n2;
-				if (TMsubcommit_list(list, 5) != GDK_SUCCEED)
-					logger_fatal("logger_load: committing new catalog_bid/catalog_nme failed", 0, 0, 0);
-			}
 		}
 
 		/* the catalog exists, and so should the log file */
@@ -1571,7 +1559,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				     bak, 0, 0);
 		logger_add_bat(lg, lg->dsnapshots, "dsnapshots");
 
-		if (bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
+		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED)
 			logger_fatal("Logger_new: commit failed", 0, 0, 0);
 	} else {
 		bat seqs_id = logger_find_bat(lg, "seqs_id");
@@ -1598,8 +1586,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 			lg->seqs_val = COLcopy(o_val, TYPE_lng, 1, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
-			BATseqbase(lg->seqs_id, 0);
-			BATseqbase(lg->seqs_val, 0);
+			BAThseqbase(lg->seqs_id, 0);
+			BAThseqbase(lg->seqs_val, 0);
 		} else {
 			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
 			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
@@ -1619,33 +1607,6 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		if (lg->snapshots_tid == 0)
 			logger_fatal("logger_load: inconsistent database, snapshots_tid does not exist", 0, 0, 0);
 		GDKdebug = dbg;
-		if (lg->snapshots_bid->htype == TYPE_oid) {
-			BAT *b;
-			assert(lg->snapshots_tid->htype == TYPE_oid);
-			b = COLcopy(lg->snapshots_bid, lg->snapshots_bid->ttype, 1, PERSISTENT);
-			BATseqbase(b, 0);
-			BATsetaccess(b, BAT_READ);
-			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_bid->batCacheid);
-			BBPrename(lg->snapshots_bid->batCacheid, bak);
-			BATmode(lg->snapshots_bid, TRANSIENT);
-			snprintf(bak, sizeof(bak), "%s_snapshots_bid", fn);
-			BBPrename(b->batCacheid, bak);
-			logbat_destroy(lg->snapshots_bid);
-			lg->snapshots_bid = b;
-			logger_add_bat(lg, b, "snapshots_bid");
-			b = COLcopy(lg->snapshots_tid, lg->snapshots_tid->ttype, 1, PERSISTENT);
-			BATseqbase(b, 0);
-			BATsetaccess(b, BAT_READ);
-			snprintf(bak, sizeof(bak), "tmp_%o", lg->snapshots_tid->batCacheid);
-			BBPrename(lg->snapshots_tid->batCacheid, bak);
-			BATmode(lg->snapshots_tid, TRANSIENT);
-			snprintf(bak, sizeof(bak), "%s_snapshots_tid", fn);
-			BBPrename(b->batCacheid, bak);
-			logbat_destroy(lg->snapshots_tid);
-			lg->snapshots_tid = b;
-			logger_add_bat(lg, b, "snapshots_tid");
-			needcommit = 1;
-		}
 
 		if (dsnapshots) {
 			lg->dsnapshots = BATdescriptor(dsnapshots);
@@ -1701,7 +1662,7 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 		 * what we expect, the conversion was apparently done
 		 * already, and so we can delete the file. */
 
-		/* Do not do conversion logger is shared/read-only */
+		/* Do not do conversion if logger is shared/read-only */
 		if (!lg->shared) {
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-32-64", lg->dir);
 			snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
@@ -1713,6 +1674,8 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 				/* read the current log id without disturbing
 				 * the file pointer */
 				off = ftell(fp);
+				if (off < 0) /* should never happen */
+					goto error;
 				if (fscanf(fp, "%d", &curid) != 1)
 					curid = -1; /* shouldn't happen? */
 				fseek(fp, off, SEEK_SET);
@@ -1782,6 +1745,9 @@ logger_load(int debug, const char* fn, char filename[PATHLENGTH], logger* lg)
 #endif
 		if (lg->postfuncp)
 			(*lg->postfuncp)(lg);
+
+		/* done reading the log, revert to "normal" behavior */
+		geomisoldversion = 0;
 	}
 
 	return LOG_OK;
@@ -1809,6 +1775,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 
 	lg->debug = debug;
 	lg->shared = shared;
+	lg->local_dbfarm_role = 0; /* only used if lg->shared */
 
 	lg->changes = 0;
 	lg->version = version;
@@ -1819,7 +1786,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->read32bitoid = 0;
 #endif
 
-	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);
+	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;
@@ -1918,19 +1885,20 @@ logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
 {
 	logger *lg;
-
-	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
-	fflush(stdout);
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
-
 	if (!lg)
-		return NULL;
+			return NULL;
+	if (lg->debug & 1) {
+		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
+		fflush(stdout);
+	}
 	if (logger_open(lg) == LOG_ERR) {
 		logger_destroy(lg);
-
 		return NULL;
 	}
-	printf("# Finished processing logs %s/%s\n",fn,logdir);
+	if (lg->debug & 1) {
+		printf("# Finished processing logs %s/%s\n",fn,logdir);
+	}
 	GDKsetenv("recovery","finished");
 	fflush(stdout);
 	if (lg->changes &&
@@ -1949,11 +1917,11 @@ logger *
 logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg;
-
-	printf("# Start processing logs %s/%s version %d\n",fn,logdir,version);
-	fflush(stdout);
 	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, local_logdir);
-
+	if (lg->debug & 1) {
+		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
+		fflush(stdout);
+	}
 	return lg;
 }
 
@@ -2028,6 +1996,20 @@ logger_exit(logger *lg)
 			return LOG_ERR;
 		}
 
+		if (fflush(fp) < 0 ||
+#if defined(WIN32)
+		    _commit(_fileno(fp)) < 0
+#elif defined(HAVE_FDATASYNC)
+		    fdatasync(fileno(fp)) < 0
+#elif defined(HAVE_FSYNC)
+		    fsync(fileno(fp)) < 0
+#endif
+			) {
+			(void) fclose(fp);
+			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
+				filename);
+			return LOG_ERR;
+		}
 		if (fclose(fp) < 0) {
 			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
@@ -2176,12 +2158,13 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
-		goto error;
+		return LOG_ERR;
 	}
 
 	if (check_version(lg, fp) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: inconsistent log version for file %s\n", filename);
-		goto error;
+		fclose(fp);
+		return LOG_ERR;
 	}
 
 	/* read the last id */
@@ -2191,15 +2174,8 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 			fprintf(stderr, "#logger_read_last_transaction_id last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 	}
-
+	fclose(fp);
 	return lid;
-
-  error:
-	if (fp)
-		fclose(fp);
-	if (lg)
-		GDKfree(lg);
-	return LOG_ERR;
 }
 
 int
@@ -2227,7 +2203,6 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	int len;
 	char buf[BUFSIZ];
 	logformat l;
-	int havevoid = 0;
 	int flag = (b->batPersistence == PERSISTENT) ? LOG_USE : LOG_CREATE;
 	BUN p;
 
@@ -2235,17 +2210,11 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 	if (flag == LOG_USE) {
 #ifndef NDEBUG
 		assert(b->batRole == PERSISTENT);
-		assert(0 <= b->H->heap.farmid && b->H->heap.farmid < MAXFARMS);
-		assert(BBPfarms[b->H->heap.farmid].roles & (1 << PERSISTENT));
-		if (b->H->vheap) {
-			assert(0 <= b->H->vheap->farmid && b->H->vheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-		}
-		assert(0 <= b->T->heap.farmid && b->T->heap.farmid < MAXFARMS);
-		assert(BBPfarms[b->T->heap.farmid].roles & (1 << PERSISTENT));
-		if (b->T->vheap) {
-			assert(0 <= b->T->vheap->farmid && b->T->vheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
+		assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
+		assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+		if (b->tvheap) {
+			assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
+			assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 		}
 #endif
 		l.nr = b->batCacheid;
@@ -2264,12 +2233,9 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 
 	if (flag == LOG_USE) {
 		assert(b->batRole == PERSISTENT);
-		assert(b->H->heap.farmid == 0);
-		assert(b->H->vheap == NULL ||
-		       BBPfarms[b->H->vheap->farmid].roles & (1 << PERSISTENT));
-		assert(b->T->heap.farmid == 0);
-		assert(b->T->vheap == NULL ||
-		       BBPfarms[b->T->vheap->farmid].roles & (1 << PERSISTENT));
+		assert(b->theap.farmid == 0);
+		assert(b->tvheap == NULL ||
+		       BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
 			BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE);
@@ -2284,15 +2250,8 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		return LOG_OK;
 	}
 
-	ha = ATOMname(b->htype);
-	if (b->htype == TYPE_void && BAThdense(b)) {
-		ha = "vid";
-		havevoid = 1;
-	}
+	ha = "vid";
 	ta = ATOMname(b->ttype);
-	if (!havevoid && b->ttype == TYPE_void && BATtdense(b)) {
-		ta = "vid";
-	}
 	len = snprintf(buf, sizeof(buf), "%s,%s", ha, ta);
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
@@ -2323,18 +2282,12 @@ log_bat_transient(logger *lg, const char *name)
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 		//	int tid = *(int*)Tloc(lg->snapshots_tid, p);
 #ifndef NDEBUG
-		assert(BBP_desc(bid)->S.role == PERSISTENT);
-		assert(0 <= BBP_desc(bid)->H.heap.farmid && BBP_desc(bid)->H.heap.farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(bid)->H.heap.farmid].roles & (1 << PERSISTENT));
-		if (BBP_desc(bid)->H.vheap) {
-			assert(0 <= BBP_desc(bid)->H.vheap->farmid && BBP_desc(bid)->H.vheap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->H.vheap->farmid].roles & (1 << PERSISTENT));
-		}
-		assert(0 <= BBP_desc(bid)->T.heap.farmid && BBP_desc(bid)->T.heap.farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(bid)->T.heap.farmid].roles & (1 << PERSISTENT));
-		if (BBP_desc(bid)->T.vheap) {
-			assert(0 <= BBP_desc(bid)->T.vheap->farmid && BBP_desc(bid)->T.vheap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->T.vheap->farmid].roles & (1 << PERSISTENT));
+		assert(BBP_desc(bid)->batRole == PERSISTENT);
+		assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
+		assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+		if (BBP_desc(bid)->tvheap) {
+			assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
+			assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 		}
 #endif
 		//	if (lg->tid == tid)
@@ -2376,7 +2329,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (BUNlast(uval) - BUNfirst(uval));
+	l.nr = (BUNlast(uval));
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -2390,7 +2343,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		for (p = BUNfirst(uid); p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 			const void *id = BUNtail(ii, p);
 			const void *val = BUNtail(vi, p);
 
@@ -2424,7 +2377,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
-		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_INSERT;
@@ -2432,8 +2384,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		if (b->htype == TYPE_void &&
-		    b->ttype > TYPE_void &&
+		if (b->ttype > TYPE_void &&
 		    b->ttype < TYPE_str &&
 		    !isVIEW(b)) {
 			const void *t = BUNtail(bi, b->batInserted);
@@ -2441,10 +2392,8 @@ log_bat(logger *lg, BAT *b, const char *name)
 			ok = wt(t, lg->log, (size_t)l.nr);
 		} else {
 			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-				const void *h = BUNhead(bi, p);
 				const void *t = BUNtail(bi, p);
 
-				ok = wh(h, lg->log, 1);
 				ok = (ok != GDK_SUCCEED) ? ok : wt(t, lg->log, 1);
 			}
 		}
@@ -2452,7 +2401,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	assert(b->batFirst == b->batDeleted);
 
 	if (ok != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: log_bat: write failed\n");
@@ -2507,8 +2455,9 @@ static char zeros[DBLKSZ] = { 0 };
 static gdk_return
 pre_allocate(logger *lg)
 {
+	// FIXME: this causes serious issues on Windows at least with MinGW
+#ifndef WIN32
 	lng p;
-
 	if (mnstr_fgetpos(lg->log, &p) != 0)
 		return GDK_FAIL;
 	if (p + DBLKSZ > lg->end) {
@@ -2533,6 +2482,9 @@ pre_allocate(logger *lg)
 		if (mnstr_fsetpos(lg->log, s) < 0)
 			return GDK_FAIL;
 	}
+#else
+	(void) lg;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -2563,13 +2515,14 @@ log_tend(logger *lg)
 			fprintf(stderr, "!ERROR: log_tend: semijoin failed\n");
 			return LOG_ERR;
 		}
-		res = bm_subcommit(bids, NULL, lg->snapshots_bid,
+		res = bm_subcommit(lg, bids, NULL, lg->snapshots_bid,
 				   lg->snapshots_tid, lg->dsnapshots, NULL, lg->debug);
 		BBPunfix(bids->batCacheid);
 	}
 	l.flag = LOG_END;
 	l.tid = lg->tid;
 	l.nr = lg->tid;
+
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) == LOG_ERR ||
 	    mnstr_flush(lg->log) ||
@@ -2679,7 +2632,6 @@ bm_commit(logger *lg)
 	gdk_return res;
 
 	/* subcommit the freed bats */
-	BATseqbase(n, 0);
 	if (BATcount(lg->freed)) {
 
 		BATloop(lg->freed, p, q) {
@@ -2720,7 +2672,7 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
-	res = bm_subcommit(lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, n, lg->debug);
+	res = bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, n, lg->debug);
 	BBPreclaim(n);
 	BATclear(lg->freed, FALSE);
 	BATcommit(lg->freed);
@@ -2753,6 +2705,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name)
 	bid = b->batCacheid;
 	if (lg->debug & 1)
 		fprintf(stderr, "#create %s\n", name);
+	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
 	lg->changes += BATcount(b) + 1;
 	BUNappend(lg->catalog_bid, &bid, FALSE);
 	BUNappend(lg->catalog_nme, name, FALSE);
@@ -2799,11 +2752,48 @@ logger_find_bat(logger *lg, const char *name)
 	BUN p;
 
 	if (BAThash(lg->catalog_nme, 0) == GDK_SUCCEED) {
-		HASHloop_str(cni, cni.b->T->hash, p, name) {
+		HASHloop_str(cni, cni.b->thash, p, name) {
 			oid pos = p;
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 				return *(log_bid *) Tloc(lg->catalog_bid, p);
 		}
 	}
 	return 0;
+}
+
+static geomcatalogfix_fptr geomcatalogfix = NULL;
+static geomsqlfix_fptr geomsqlfix = NULL;
+
+void
+geomcatalogfix_set(geomcatalogfix_fptr f)
+{
+	geomcatalogfix = f;
+}
+
+geomcatalogfix_fptr
+geomcatalogfix_get(void)
+{
+	return geomcatalogfix;
+}
+
+void
+geomsqlfix_set(geomsqlfix_fptr f)
+{
+	geomsqlfix = f;
+}
+
+geomsqlfix_fptr
+geomsqlfix_get(void)
+{
+	return geomsqlfix;
+}
+
+void
+geomversion_set(void)
+{
+	geomisoldversion = 1;
+}
+int geomversion_get(void)
+{
+	return geomisoldversion;
 }

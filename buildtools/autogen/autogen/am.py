@@ -829,203 +829,6 @@ def am_library(fd, var, libmap, am):
 
     am_deps(fd, libmap['DEPS'], am)
 
-def am_libs(fd, var, libsmap, am):
-
-    ld = "libdir"
-    if ("DIR" in libsmap):
-        ld = libsmap["DIR"][0] # use first name given
-    ld = am_translate_dir(ld, am)
-
-    sep = ""
-    if 'SEP' in libsmap:
-        sep = libsmap['SEP'][0]
-
-    scripts_ext = []
-    if 'SCRIPTS' in libsmap:
-        scripts_ext = libsmap['SCRIPTS']
-
-    if 'MTSAFE' in libsmap:
-        fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-
-    libnames = []
-    for libsrc in libsmap['SOURCES']:
-        SCRIPTS = []
-        libname, libext = split_filename(libsrc)
-        am['EXTRA_DIST'].append(libsrc)
-
-        libnames.append(sep+libname)
-
-# temporarily switched off, the scripts created by libtool cause problems
-# for so-so linking
-#    if libname + "_LIBS" in libsmap:
-#      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"], am))
-#    elif "LIBS" in libsmap:
-#      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"], am))
-        _libs = []
-        if libname + "_DLIBS" in libsmap:
-            _libs += libsmap[libname + "_DLIBS"]
-            fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"], am))
-
-        if "LIBS" in libsmap:
-            _libs += libsmap["LIBS"]
-        if "LDFLAGS" in libsmap:
-            _libs += libsmap["LDFLAGS"]
-        if 'VERSION' in libsmap:
-            version = ['-version-info', libsmap['VERSION'][0]]
-        elif 'MODULE' in libsmap:
-            version = ['-module', '-avoid-version']
-        else:
-            version = []
-        fd.write(am_additional_flags(libname, sep, "LIB", version, am))
-        if len(_libs) > 0:
-            fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
-
-        fullpref = "lib"+sep+libname+'_la'
-        nsrcs = "nodist_"+fullpref+"_SOURCES ="
-        srcs = "dist_"+fullpref+" ="
-        for target in libsmap['TARGETS']:
-            t, ext = split_filename(target)
-            if t == libname:
-                if ext in scripts_ext:
-                    if target not in SCRIPTS:
-                        SCRIPTS.append(target)
-                else:
-                    dist, src = am_find_srcs(target, libsmap['DEPS'], am, None)
-                    if src == libsrc:
-                        dist = True
-                    if dist:
-                        srcs = srcs + " " + src
-                    else:
-                        nsrcs = nsrcs + " " + src
-                if target[-2:] == '.o' and target in libsmap['DEPS']:
-                    am_dep(fd, target, libsmap['DEPS'][target], am, fullpref+"-")
-                    basename = target[:-2]
-                    fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) $(%s_CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, basename, fullpref, basename, basename, basename))
-        fd.write(nsrcs + "\n")
-        fd.write(srcs + "\n")
-
-        if len(SCRIPTS) > 0:
-            fd.write("%s_scripts = %s\n\n" % (libname, am_list2string(SCRIPTS, " ", "")))
-            am['BUILT_SOURCES'].append("$(" + libname + "_scripts)")
-            fd.write("all-local-%s: $(%s_scripts)\n" % (libname, libname))
-            am['ALL'].append(libname)
-
-        fd.write("%sdir = %s\n" % (libname, ld))
-        fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,libname.upper()))
-        am['LIBS'].append(('lib', libname, sep, ''))
-        am['InstallList'].append("\t"+ld+sep+libname+".so\n")
-
-    if 'HEADERS' in libsmap:
-        HDRS = []
-        hdrs_ext = libsmap['HEADERS']
-        for target in libsmap['DEPS'].keys():
-            t, ext = split_filename(target)
-            if ext in hdrs_ext:
-                am['HDRS'].append(target)
-                if ext not in automake_ext:
-                    am['EXTRA_DIST'].append(target)
-
-    am_find_ins(am, libsmap)
-    am_deps(fd, libsmap['DEPS'], am)
-
-def am_gem(fd, var, gem, am):
-    gemre = re.compile(r'\.files *= *\[ *(.*[^ ]) *\]')
-    rd = 'RUBY_DIR'
-    if 'DIR' in gem:
-        rd = gem['DIR'][0]
-    rd = am_translate_dir(rd, am)
-    fd.write('if HAVE_RUBYGEM\n')
-    fd.write('all-local-%s:' % var)
-    am['ALL'].append(var)
-    for f in gem['FILES']:
-        fd.write(' %s' % f[:-4])
-    fd.write('\n')
-    for f in gem['FILES']:
-        srcs = list(map(lambda x: x.strip('" '),
-                   gemre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', ')))
-        srcs.append(f)
-        sf = f.replace('.', '_')
-        am['INSTALL'].append(sf)
-        am['UNINSTALL'].append(sf)
-        fd.write('%s: %s\n' % (f[:-4], ' '.join(srcs)))
-        dirs = []
-        for src in srcs:
-            if '/' in src:
-                d = posixpath.dirname(src)
-                if d not in dirs:
-                    fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % posixpath.dirname(src))
-                    dirs.append(d)
-                    while '/' in d:
-                        d = posixpath.dirname(d)
-                        dirs.append(d)
-            fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (src, src))
-        fd.write("\tgem build '%s'\n" % f)
-        # use deprecated --rdoc and --ri options instead of --document=rdoc,ri
-        # since we're still building on systems with old gem
-        fd.write("\tgem install --local --install-dir ./'%s' --bindir .'%s' --force --rdoc --ri %s\n" % (rd, am_translate_dir('bindir', am), f[:-4]))
-        fd.write('mostlyclean-local: mostlyclean-local-%s\n' % sf)
-        fd.write('.PHONY: mostlyclean-local-%s\n' % sf)
-        fd.write('mostlyclean-local-%s:\n' % sf)
-        for src in srcs:
-            fd.write("\t[ '$(srcdir)' -ef . ] || rm -f '%s'\n" % src)
-        for d in sorted(dirs, reverse = True):
-            fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rmdir '%s'\n" % (d, d))
-        fd.write("install-exec-local-%s: %s\n" % (sf, f[:-4]))
-        fd.write("\tmkdir -p $(DESTDIR)'%s'\n" % rd)
-        fd.write("\tcp -a ./'%s'/* $(DESTDIR)'%s'\n" % (rd, rd))
-        fd.write("uninstall-local-%s: %s\n" % (sf, f[:-4]))
-        # remove "-0.1.gemspec" from end of `f'
-        fd.write("\tgem uninstall --install-dir $(DESTDIR)'%s' '%s'\n" % (rd, f[:-12]))
-        am['BUILT_SOURCES'].append(f[:-4])
-        am['CLEAN'].append(f[:-4])
-    fd.write('else\n')
-    for f in gem['FILES']:
-        sf = f.replace('.', '_')
-        fd.write("install-exec-local-%s:\n" % sf)
-        fd.write('uninstall-local-%s:\n' % sf)
-    fd.write('endif\n')
-
-def am_python_generic(fd, var, python, am, PYTHON):
-    pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
-    pynmre = re.compile('name *= *([\'"])([^\'"]+)\\1')
-    fd.write('all-local-%s:\n' % var)
-    am['ALL'].append(var)
-    am['INSTALL'].append(var)
-    am['UNINSTALL'].append(var)
-    pkgdirs = []
-    pkgnams = []
-    for f in python['FILES']:
-        fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s' '%s'\n" % (f, f))
-        pkgs = map(lambda x: x.strip('\'" '),
-                   pyre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
-        pkgnams.append(pynmre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(2))
-        for pkg in pkgs:
-            pkgdir = posixpath.join(*pkg.split('.'))
-            pkgdirs.append(pkgdir)
-            fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
-            fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
-        fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/README.rst' .\n")
-        fd.write("\t$(%s) '%s' build\n" % (PYTHON, f))
-    fd.write('install-exec-local-%s:\n' % var)
-    for f in python['FILES']:
-        # see buildtools/conf/rules.mk for PY_INSTALL_LAYOUT
-        # it is needed to install into dist-packages on Debian/Ubuntu
-        fd.write("\t$(%s) '%s' install $(PY_INSTALL_LAYOUT) --prefix='$(DESTDIR)$(prefix)'\n" % (PYTHON, f))
-    fd.write('uninstall-local-%s:\n' % var)
-    for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\trm -r '$(DESTDIR)$(prefix)/$(%s_LIBDIR)/%s'\n" % (PYTHON, pkgdir))
-    for name in pkgnams:
-        fd.write("\trm '$(DESTDIR)$(prefix)/$(%s_LIBDIR)'/%s-*.egg-info\n" % (PYTHON, name.replace('-', '_')))
-    fd.write('mostlyclean-local:\n')
-    for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\t[ '$(srcdir)' -ef . -o ! -d '%s' ] || rm -r '%s'\n" % (pkgdir, pkgdir))
-
-def am_python2(fd, var, python, am):
-    am_python_generic(fd, var, python, am, 'PYTHON2')
-
-def am_python3(fd, var, python3, am):
-    am_python_generic(fd, var, python3, am, 'PYTHON3')
-
 def am_ant(fd, var, ant, am):
 
     target = var[4:]                    # the ant target to call
@@ -1140,7 +943,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'EXTRA_DIST_DIR': am_extra_dist_dir,
                 'EXTRA_HEADERS': am_extra_headers,
                 'LIBDIR': am_libdir,
-                'LIBS': am_libs,
                 'LIB': am_library,
                 'BINS': am_bins,
                 'BIN': am_binary,
@@ -1153,9 +955,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
                 'ANT': am_ant,
-                'GEM': am_gem,
-                'PYTHON2': am_python2,
-                'PYTHON3': am_python3,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):
@@ -1201,7 +1000,7 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     am['BUILT_SOURCES'] = []            # generated source files
     am['CLEAN'] = []                    # files to be cleaned with make clean
     am['EXTRA_DIST'] = []
-    am['LIBS'] = []                     # all libraries (am_libs and am_library)
+    am['LIBS'] = []                     # all libraries (am_library)
     am['NLIBS'] = []                    # all libraries which are not installed
     am['BINS'] = []
     am['NBINS'] = []

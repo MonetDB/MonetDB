@@ -97,7 +97,7 @@ mal_export void mserver_reset(void);
 #define LIST_INPUT      1       /* echo original input */
 #define LIST_MAL_NAME   2       /* show variable name */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_VALUE  8		/* list bat tuple count */
+#define LIST_MAL_VALUE  8       /* list bat tuple count */
 #define LIST_MAL_PROPS 16       /* show variable properties */
 #define LIST_MAL_MAPI  32       /* output Mapi compatible output */
 #define LIST_MAL_REMOTE  64       /* output MAL for remote execution */
@@ -149,7 +149,10 @@ typedef struct VARRECORD {
 	int flags;					/* see below, reserve some space */
 	int tmpindex;				/* temporary variable */
 	ValRecord value;
+	int declared;				/* pc index when it was first assigned */
+	int updated;				/* pc index when it was first updated */
 	int eolife;					/* pc index when it should be garbage collected */
+	int depth;					/* scope block depth */
 	int worker;					/* tread id of last worker producing it */
 	str stc;					/* rendering schema.table.column */
 	BUN rowcnt;					/* estimated row count*/
@@ -210,7 +213,6 @@ typedef struct MALBLK {
 	struct MALBLK *history;		/* of optimizer actions */
 	short keephistory;			/* do we need the history at all */
 	short dotfile;				/* send dot file to stethoscope? */
-	str marker;					/* history points are marked for backtracking */
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
 	sht recycle;				/* execution subject to recycler control */

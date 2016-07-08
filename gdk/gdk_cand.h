@@ -9,11 +9,11 @@
 /* This macro initializes the variables start, end, cnt, cand, and
  * candend that were passed as arguments from the input parameters b
  * and s (the candidate list).  Start and end are the start and end
- * BUNs of b that need to be considered.  They are relative to
- * BUNfirst(b) (i.e. not necessarily the start of the heap).  Cand and
- * candend point into the candidate list, if present.
- * Note that if the tail of the candidate list is dense, cand and
- * candend are set to NULL and start and end are adjusted instead. */
+ * BUNs of b that need to be considered.  They are relative to the
+ * start of the heap.  Cand and candend point into the candidate list,
+ * if present.  Note that if the tail of the candidate list is dense,
+ * cand and candend are set to NULL and start and end are adjusted
+ * instead. */
 #define CANDINIT(b, s, start, end, cnt, cand, candend)			\
 	do {								\
 		start = 0;						\
@@ -25,10 +25,10 @@
 				start = end = 0;			\
 			} else {					\
 				if (BATtdense(s)) {			\
-					start = (s)->T->seq;		\
+					start = (s)->tseqbase;		\
 					end = start + BATcount(s);	\
 				} else {				\
-					oid x = (b)->H->seq;		\
+					oid x = (b)->hseqbase;		\
 					start = SORTfndfirst((s), &x);	\
 					x += BATcount(b);		\
 					end = SORTfndfirst((s), &x);	\
@@ -43,18 +43,18 @@
 					}				\
 				}					\
 				assert(start <= end);			\
-				if (start <= (b)->H->seq)		\
+				if (start <= (b)->hseqbase)		\
 					start = 0;			\
-				else if (start >= (b)->H->seq + cnt)	\
+				else if (start >= (b)->hseqbase + cnt)	\
 					start = cnt;			\
 				else					\
-					start -= (b)->H->seq;		\
-				if (end >= (b)->H->seq + cnt)		\
+					start -= (b)->hseqbase;		\
+				if (end >= (b)->hseqbase + cnt)		\
 					end = cnt;			\
-				else if (end <= (b)->H->seq)		\
+				else if (end <= (b)->hseqbase)		\
 					end = 0;			\
 				else					\
-					end -= (b)->H->seq;		\
+					end -= (b)->hseqbase;		\
 			}						\
 		}							\
 	} while (0)

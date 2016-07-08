@@ -54,7 +54,6 @@ mdb_export str MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 mdb_export str MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p);

@@ -1,0 +1,53 @@
+stderr of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/BugTracker-2016` itself:
+
+
+# 12:19:53 >  
+# 12:19:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31701" "--set" "mapi_usock=/var/tmp/mtest-12389/.s.monetdb.31701" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
+# 12:19:53 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31701
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12389/.s.monetdb.31701
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:19:54 >  
+# 12:19:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12389" "--port=31701"
+# 12:19:54 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
+QUERY = SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "A" < "B";
+ERROR = !SELECT: identifier 'A' unknown
+MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
+QUERY = SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias WHERE "B" >99;
+ERROR = !SELECT: identifier 'B' unknown
+MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
+QUERY = SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "C" LIKE '%en';
+ERROR = !SELECT: identifier 'C' unknown
+MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" = NULL;
+ERROR = !SELECT: identifier 'CAT' unknown
+MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL;
+ERROR = !SELECT: identifier 'CAT' unknown
+MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL or "CAT" = NULL;
+ERROR = !SELECT: identifier 'CAT' unknown
+
+# 12:19:54 >  
+# 12:19:54 >  "Done."
+# 12:19:54 >  
+

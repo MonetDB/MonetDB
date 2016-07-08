@@ -69,7 +69,7 @@ create_function.Bug-3172
 currenttime.Bug-2781
 timestamp_minus_date.Bug-2977
 null_except_null.Bug-3040
-create_index_update.Bug-3098.sql
+create_index_update.Bug-3098
 algebra_find.Bug-2728
 row_number_does_not_work_in_complex_query.Bug-2805
 day-of-month-localization.Bug-2962
@@ -82,7 +82,7 @@ large-number-operation-strange-results.Bug-2929
 inet-casts.Bug-3205
 fixed_limit_for_prepare.Bug-3208
 exp_bin_assertion.Bug-3209
-querycache.Bug-3212.sql
+querycache.Bug-3212
 url_script_test.Bug-2972
 huge_insert.Bug-2803
 huge_table_update.Bug-2803

@@ -1,12 +1,12 @@
-import monetdb.sql, time, threading, os
+import pymonetdb, time, threading, os
 
 def monetSchema(tbl, host = os.getenv('MAPIHOST', 'localhost'),
                 port = int(os.getenv('MAPIPORT', '50000')),
                 database = os.getenv('TSTDB', 'demo'),
                 username = 'monetdb', password = 'monetdb'):
-    dbh = monetdb.sql.Connection(hostname = host, port = port,
-                                 database = database, username = username,
-                                 password = password, autocommit = True)
+    dbh = pymonetdb.connect(hostname = host, port = port,
+                            database = database, username = username,
+                            password = password, autocommit = True)
     cursor = dbh.cursor();
     drop = 'drop table %s' % tbl
     create = 'create table %s (' \
@@ -34,10 +34,10 @@ def monetSchema(tbl, host = os.getenv('MAPIHOST', 'localhost'),
         for j in range(100):
             try:
                 cursor.execute(drop)
-            except monetdb.exceptions.OperationalError as e1:
+            except pymonetdb.OperationalError as e1:
                 if 'no such table' in e1.args[0]:
                     break
-            except monetdb.exceptions.ProgrammingError as e2:
+            except pymonetdb.ProgrammingError as e2:
                 pass
             else:
                 break
@@ -45,10 +45,10 @@ def monetSchema(tbl, host = os.getenv('MAPIHOST', 'localhost'),
         for j in range(100):
             try:
                 cursor.execute(create)
-            except monetdb.exceptions.OperationalError as e1:
+            except pymonetdb.OperationalError as e1:
                 if 'already in use' in e1.args[0]:
                     break
-            except monetdb.exceptions.ProgrammingError as e2:
+            except pymonetdb.ProgrammingError as e2:
                 pass
             else:
                 break

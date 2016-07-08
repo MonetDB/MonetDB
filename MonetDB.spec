@@ -1,6 +1,6 @@
 %define name MonetDB
-%define version 11.22.0
-%{!?buildno: %define buildno %(date +%Y%m%d)}
+%define version 11.24.0
+%{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
@@ -9,6 +9,7 @@
 %define bits 32
 %else
 %define bits 64
+%define with_int128 1
 %endif
 
 # only add .oidXX suffix if oid size differs from bit size
@@ -44,16 +45,34 @@
 # and build the geom modules.  On RedHat Enterprise Linux and
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
-# Packages for Enterprise Linux (EPEL).  In other words, we can check
-# the fedpkgs macro (see above).
+# Packages for Enterprise Linux (EPEL).  However, On RHEL 6, the geos
+# library is too old for us, so we need an extra check for an
+# up-to-date version of RHEL.
 %if %{fedpkgs}
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %define with_geos 1
+%endif
+%endif
+
+# On Fedora, the liblas library is available, and so we can require it
+# and build the lidar modules.  On RedHat Enterprise Linux and
+# derivatives (CentOS, Scientific Linux), the liblas library is only
+# available if EPEL is enabled, and then only on version 7.
+%if %{fedpkgs}
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# If the _without_lidar macro is not set, the MonetDB-lidar RPM will
+# be created.  The macro can be set when using mock by passing it the
+# flag --without=lidar.
+%if %{?_without_lidar:0}%{!?_without_lidar:1}
+%define with_lidar 1
+%endif
+%endif
 %endif
 
 %if %{?rhel:0}%{!?rhel:1}
-# If the _without_samtools macro is set, the MonetDB-bam-MonetDB5 RPM
-# will be created.  The macro can be set when using mock by passing it
-# the flag --without=samtools.
+# If the _without_samtools macro is not set, the MonetDB-bam-MonetDB5
+# RPM will be created.  The macro can be set when using mock by
+# passing it the flag --without=samtools.
 # Note that the samtools-devel RPM is not available on RedHat
 # Enterprise Linux and derivatives, even with EPEL availabe.
 # (Actually, at the moment of writing, samtools-devel is available in
@@ -82,6 +101,15 @@
 %endif
 %endif
 
+%{!?__python2: %global __python2 %__python}
+%{!?python2_sitelib: %global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+
+%if 0%{?fedora}
+%bcond_without python3
+%else
+%bcond_with python3
+%endif
+
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -89,21 +117,34 @@ Summary: MonetDB - Monet Database Management System
 Vendor: MonetDB BV <info@monetdb.org>
 
 Group: Applications/Databases
-License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
+License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2015-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP1/%{name}-%{version}.tar.bz2
 
+# we need systemd for the _unitdir macro to exist
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
+BuildRequires: systemd
+%endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
 %if %{?with_fits:1}%{!?with_fits:0}
 BuildRequires: cfitsio-devel
 %endif
 %if %{?with_geos:1}%{!?with_geos:0}
-BuildRequires: geos-devel >= 3.0.0
+BuildRequires: geos-devel >= 3.4.0
 %endif
 BuildRequires: gsl-devel
+%if %{?with_lidar:1}%{!?with_lidar:0}
+BuildRequires: liblas-devel >= 1.8.0
+BuildRequires: gdal-devel
+BuildRequires: libgeotiff-devel
+# Fedora 22 liblas-devel does not depend on liblas:
+BuildRequires: liblas >= 1.8.0
+%endif
 BuildRequires: libatomic_ops-devel
 BuildRequires: libcurl-devel
+BuildRequires: xz-devel
 # BuildRequires: libmicrohttpd-devel
 # BuildRequires: libsphinxclient-devel
 BuildRequires: libuuid-devel
@@ -112,19 +153,7 @@ BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
 BuildRequires: python-devel
-%if %{?rhel:0}%{!?rhel:1}
-BuildRequires: python3-devel
-%endif
 BuildRequires: readline-devel
-# On RedHat Enterprise Linux and derivatives (CentOS, Scientific
-# Linux), the rubygem-activerecord package is not available (also not
-# in the Extra Packages for Enterprise Linux EPEL), so it makes no
-# sense providing our ruby packages.
-%if %{?rhel:0}%{!?rhel:1}
-BuildRequires: ruby
-BuildRequires: rubygems
-BuildRequires: rubygems-devel
-%endif
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: zlib-devel
@@ -139,12 +168,6 @@ BuildRequires: R-core-devel
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
-
-# need to define python_sitelib on RHEL 5 and older
-# no need to define python3_sitelib: it's defined by python3-devel
-%if 0%{?rhel} && 0%{?rhel} <= 5
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
 
 %description
@@ -384,33 +407,6 @@ program.
 %defattr(-,root,root)
 %{perl_vendorlib}/*
 
-%if %{?rhel:0}%{!?rhel:1}
-%package -n rubygem-monetdb-sql
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: ruby(release)
-Obsoletes: %{name}-client-ruby
-BuildArch: noarch
-
-%description -n rubygem-monetdb-sql
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Ruby
-program.
-
-%files -n rubygem-monetdb-sql
-%defattr(-,root,root)
-%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.2
-%{gem_dir}/doc/ruby-monetdb-sql-0.2/*
-%{gem_dir}/cache/ruby-monetdb-sql-0.2.gem
-# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/gems/ruby-monetdb-sql-0.2
-%{gem_dir}/specifications/ruby-monetdb-sql-0.2.gemspec
-%endif
-
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
@@ -420,7 +416,7 @@ Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-perl = %{version}-%{release}
 Requires: %{name}-client-php = %{version}-%{release}
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-monetdb = %{version}-%{release}
+Requires: python-monetdb >= 1.0
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -471,6 +467,28 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/createdb/*_geom.sql
 %{_libdir}/monetdb5/geom.mal
 %{_libdir}/monetdb5/lib_geom.so
+%endif
+
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%package lidar
+Summary: MonetDB5 SQL support for working with LiDAR data
+Group: Applications/Databases
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+
+%description lidar
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains support for reading and writing LiDAR data.
+
+%files lidar
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_lidar.mal
+%{_libdir}/monetdb5/createdb/*_lidar.sql
+%{_libdir}/monetdb5/lidar.mal
+%{_libdir}/monetdb5/lib_lidar.so
 %endif
 
 %package gsl-MonetDB5
@@ -628,6 +646,9 @@ fi
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/gsl.mal
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/lidar.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
@@ -641,6 +662,9 @@ fi
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/*_gsl.mal
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
@@ -650,6 +674,9 @@ fi
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
 %exclude %{_libdir}/monetdb5/lib_gsl.so
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/lib_lidar.so
+%endif
 %if %{?with_rintegration:1}%{!?with_rintegration:0}
 %exclude %{_libdir}/monetdb5/lib_rapi.so
 %endif
@@ -668,7 +695,7 @@ fi
 %if %{bits} == 64
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
-Group: Application/Databases
+Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa}
 
 %description -n MonetDB5-server-hugeint
@@ -748,13 +775,15 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+# no _unitdir macro
+%exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
-%{_unitdir}/monetdbd.service
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
@@ -763,6 +792,9 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %exclude %{_libdir}/monetdb5/createdb/*_gsl.sql
+%if %{?with_lidar:1}%{!?with_lidar:0}
+%exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
+%endif
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
@@ -801,55 +833,6 @@ frontend of MonetDB.
 %{_libdir}/monetdb5/sql*_hge.mal
 %endif
 
-%package -n python-monetdb
-Summary: Native MonetDB client Python API
-Group: Applications/Databases
-Requires: python
-BuildArch: noarch
-Obsoletes: MonetDB-client-python
-
-%description -n python-monetdb
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Python
-program.  This package is for Python version 2.  If you want to use
-Python version 3, you need %{name}-python3-monetdb.
-
-%files -n python-monetdb
-%defattr(-,root,root)
-%dir %{python_sitelib}/monetdb
-%{python_sitelib}/monetdb/*
-%{python_sitelib}/python_monetdb-*.egg-info
-%doc clients/python2/README.rst
-
-%if %{?rhel:0}%{!?rhel:1}
-%package -n python3-monetdb
-Summary: Native MonetDB client Python3 API
-Group: Applications/Databases
-Requires: python3
-BuildArch: noarch
-
-%description -n python3-monetdb
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL frontend.
-
-This package contains the files needed to use MonetDB from a Python3
-program.  This package is for Python version 3.  If you want to use
-Python version 2, you need %{name}-python-monetdb.
-
-%files -n python3-monetdb
-%defattr(-,root,root)
-%dir %{python3_sitelib}/monetdb
-%{python3_sitelib}/monetdb/*
-%{python3_sitelib}/python_monetdb-*.egg-info
-%doc clients/python3/README.rst
-%endif
-
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -878,7 +861,6 @@ Group: Applications/Databases
 Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python
-BuildArch: noarch
 
 %description testing-python
 MonetDB is a database management system that is developed from a
@@ -894,8 +876,8 @@ developer, but if you do want to test, this is the package you need.
 %defattr(-,root,root)
 %{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
-%dir %{python_sitelib}/MonetDBtesting
-%{python_sitelib}/MonetDBtesting/*
+%dir %{python2_sitelib}/MonetDBtesting
+%{python2_sitelib}/MonetDBtesting/*
 
 %prep
 %setup -q
@@ -907,38 +889,50 @@ developer, but if you do want to test, this is the package you need.
 	--enable-console=yes \
 	--enable-debug=no \
 	--enable-developer=no \
+	--enable-embedded=no \
+	--enable-embedded-r=no \
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
 	--enable-gsl=yes \
 	--enable-instrument=no \
+	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
 	--enable-jdbc=no \
+	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
+	--enable-mapi=yes \
 	--enable-merocontrol=no \
 	--enable-microhttpd=no \
 	--enable-monetdb5=yes \
+	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
 	--enable-profile=no \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
+	--enable-shp=no \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
 	--with-ant=no \
 	--with-bz2=yes \
+	--with-curl=yes \
+	--with-gdal=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-java=no \
+	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
+	--with-libxml2=yes \
+	--with-lzma=yes \
+	--with-openssl=yes \
 	--with-perl=yes \
 	--with-perl-libdir=lib/perl5 \
+	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=yes \
-	--with-python3=%{?rhel:no}%{!?rhel:yes} \
+	--with-python=yes \
 	--with-readline=yes \
-	--with-rubygem=%{?rhel:no}%{!?rhel:yes} \
-	--with-rubygem-dir=%{?rhel:no}%{!?rhel:"%{gem_dir}"} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
+	--with-uuid=yes \
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
@@ -968,6 +962,413 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Jul 04 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
+- Rebuilt.
+- BZ#4031: mclient doesn't accept - argument to refer to stdin
+
+* Fri Jul  1 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
+- MonetDB: Lots of memory leaks have been plugged across the whole system.
+
+* Fri Jun 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.3-20160610
+- Rebuilt.
+- BZ#4015: Daemon crashes on database release command
+
+* Wed Jun 01 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- Rebuilt.
+- BZ#2407: Merovingian: allow binds to given ip/interface
+- BZ#2815: No SRID support
+- BZ#3460: incomplete implementation of JDBC driver supportsConvert(),
+  supportsConvert(int fromType, int toType) methods in
+  MonetDatabaseMetaData.java
+- BZ#3711: JDBC connection using jdbcclient.jar is very slow
+- BZ#3877: MonetDBLite should allow close then re-open databases?
+  without restarting R
+- BZ#3911: Invalid connect() call in 'redirect' mode
+- BZ#3920: query with DISTINCT and correlated scalar subquery in SELECT
+  list causes Assertion failure and crash of mserver5
+- BZ#3927: COUNT( distinct my_clob ) , QUANTILE( my_double , number )
+  fails in dev build
+- BZ#3956: MonetDBLite unable to execute LIMIT 1 statement
+- BZ#3972: Drastic Memory leak of 600GBs while generating plan for Query
+  with 25 joins
+- BZ#3974: Prepared statement rel_bin.c:2378: rel2bin_project: Assertion
+  `0' failed.
+- BZ#3975: Suspicious code in store_manager() on exit path
+- BZ#3978: SQL returns TypeException 'aggr.subcorr' undefined for
+  sys.corr function
+- BZ#3980: JOIN with references on both sides crashes mserver
+- BZ#3981: Incorrect LEFT JOIN when FROM clause contains nested subqueries
+- BZ#3983: Creation of a Foreign Key which partially maps to a primary
+  key is accepted without a warning
+- BZ#3984: Multiple paths in the .profile
+- BZ#3985: ruby-monetdb-sql gem fails for negative timezone offset
+  (USA, etc.)
+- BZ#3987: Segfault on malformed csv import
+- BZ#3991: MonetDBLite feature request: default monetdb.sequential to
+  FALSE on windows
+- BZ#3994: MonetDBLite dbDisconnect with shutdown=TRUE freezes the
+  console on windows
+- BZ#3995: NullPointerException when calling getObject()
+- BZ#3997: calling scalar functions sys.isaUUID(str) or sys.isaUUID(uuid)
+  fail
+- BZ#3999: length() returns wrong length for strings which have spaces
+  at the end of the string
+- BZ#4010: RELEASE SAVEPOINT after ALTER TABLE crashes mserver5
+- BZ#4011: sys.sessions.user column always shows 'monetdb'
+- BZ#4013: GDKextendf does not free up memory when it fails due to
+  insufficient resources
+
+* Thu May 26 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Fixed problem in DatabaseMetaData.getUDTs() when it was called with
+  types parameter filled.  It used to throw SQException with message:
+  SELECT: identifier 'DATA_TYPE' unknown. Now it returns the UDTs which
+  match the provided array of data types.
+
+* Thu May 19 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Implemented MonetDatabaseMetaData.supportsConvert() and
+  MonetDatabaseMetaData.supportsConvert(int fromType, int toType) methods.
+  It used to always return false. Now it returns true for the supported conversions.
+  This fixes Bug 3460.
+
+* Thu May 12 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Corrected MonetResultSet.getObject(String columnName). It no longer
+  throws a NullPointerException in cases where internally a
+  MonetVirtualResultSet is used.
+
+* Thu May 12 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Improved JdbcClient program when presenting query data to console.
+  It used to send an SQL catalog query for each query result column
+  which slowed down the interactive response considerably.
+  These additional SQL catalog queries have been eliminated.
+
+* Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl> - 11.23.1-20160601
+- java: Fixed Connection.isValid(): this method should never attempt to
+  close the connection, even if an error has occurred.
+
+* Sun May  8 2016 Jennie Zhang <y.zhang@cwi.nl> - 11.23.1-20160601
+- java: ResultSet.setFetchSize(): added a dummy implementation to get rid
+  of the SQLFeatureNotSupportedException. In MonetDB, it does not
+  make sense to set the fetch size of a result set. If one really
+  wants to set the fetch size, one should use Statement.setFetchSize()
+  instead.
+
+* Thu Apr 21 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Fixed resource leak in ResultSetMetaData. It created and cached a ResultSet
+  object for each column but never closed the ResultSet objects.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Corrected DatabaseMetaData methods which accept a catalog filter argument.
+  Those methods will now filter the results on the specified catalog name,
+  whereas previously the catalog filter argument was ignored.
+- java: Corrected output of column KEY_SEQ of DatabaseMetaData methods:
+  getPrimaryKeys(), getImportedKeys(), getExportedKeys() and
+  getCrossReference(). It now starts at 1 instead of 0 previously.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Corrected DatabaseMetaData.getSchemas() by returning 2 instead of 3 columns.
+- java: Improved DatabaseMetaData.getColumns() by returning two additional
+  columns: IS_AUTOINCREMENT and IS_GENERATEDCOLUMN.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed BATconst.  Use BATconstant instead.
+- gdk: Changed BATconstant.  It now has a new first argument with the seqbase
+  for the head column.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Improved DatabaseMetaData.getTypeInfo(). It now returns better information
+  on LITERAL_PREFIX, LITERAL_SUFFIX, CREATE_PARAMS, CASE_SENSITIVE,
+  FIXED_PREC_SCALE and MAXIMUM_SCALE for some data types. Also the returned rows
+  are now ordered by DATA_TYPE, TYPE_NAME, PRECISION as required by the specs.
+  Also corrected output column names "searchable" into "SEARCHABLE" and
+  "MAXIMUM SCALE" into "MAXIMUM_SCALE" to match the JDBC specification.
+- java: Corrected DatabaseMetaData.getPseudoColumns(). It used to return 12 empty rows.
+  Now it returns no rows as MonetDB does not have pseudo columns.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- clients: The Ruby client is now in a separate repository
+  (http://dev.monetdb.org/hg/monetdb-ruby) and released independently.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Implemented method DatabaseMetaData.getClientProperties(). It used to always
+  return a resultset with 4 completely empty rows.  It now returns a
+  resultset with the possible connection properties.
+- java: Implemented method DatabaseMetaData.getUDTs(). It used to return an empty
+  resultset. Now it returns the User Defined Types such as inet, json, url and uuid.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- buildtools: A new package MonetDB-lidar (Fedora) or libmonetdb5-server-lidar
+  (Debian/Ubuntu) has been created to work with LiDAR data.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- geom: The geom module has been completely overhauled.  Types are now specified
+  as GEOMETRY(POINT) instead of POINT, old functions have been removed,
+  new ones introduced.  However, even with all the changes, a database
+  upgrade should still be possible (as always, make a backup first).
+
+* Tue Apr  5 2016 Martin Kersten <mk@cwi.nl> - 11.23.1-20160601
+- monetdb5: Extended the storage() table producing function to also accept
+  storage([schemaname [, tablename [, columnname]]])
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Corrected the returned table types in DatabaseMetaData.getTableTypes().
+  It now returns all 10 table types (as stored in sys.table_types) instead
+  of the previously 8 hardcoded table types.
+  For old MonetDB servers which do not have the sys.table_types table,
+  the old behavior is retained.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Implemented methods DatabaseMetadata.getProcedures() and
+  DatabaseMetadata.getProcedureColumns(). They used to return an empty resultset.
+  Now they return the expected Procedures and ProcedureColumns.
+  Also getProcedureColumns() now returns a resultset with all 20 columns
+  instead of 13 columns previously.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Method getFunctionColumns() in DatabaseMetadata used to throw an
+  SQLException:  getFunctionColumns(String, String, String, String) is
+  not implemented.
+  This method is now implemented and returns a resultset.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Method getFunctions() in DatabaseMetadata used to throw an SQLException:
+   SELECT: no such column 'functions.sql'
+  This has been corrected. It now returns a resultset as requested.
+- java: The resultsets of DatabaseMetadata methods now no longer return a
+  value for the *_CAT columns as MonetDB does not support Catalogs.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- buildtools: Implemented a systemd configuration file for a monetdbd.service
+  on systems that support it (Fedora, newer Ubuntu).
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed BATmmap.  It was no longer used.
+
+* Tue Apr  5 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.1-20160601
+- java: Fixed a memory leak in MonetDatabaseMetaData.java for a static cache
+  which kept references to closed Connection objects.
+
+* Tue Apr  5 2016 Martin Kersten <mk@cwi.nl> - 11.23.1-20160601
+- monetdb5: The :bat[:oid,:any] type descriptor has been turned into its columnar
+  version :bat[:any]
+
+* Tue Apr  5 2016 Martin Kersten <mk@cwi.nl> - 11.23.1-20160601
+- monetdb5: Converted the *.mal scripts into *.malC versions to prepare for removal
+  of the mserver console.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: BUNdelete and BATdel don't accept a foce argument and only allow
+  deleting values that have not yet been committed.  BUNdelete exchanges
+  the deleted value with the last value (if the deleted value isn't the
+  last value).  BATdel compacts the BAT by shifting values after the
+  deleted values up.  The list of to-be-deleted values in BATdel must
+  be sorted and unique.
+- gdk: Removed BUNreplace from list of exported functions.  It wasn't used,
+  and there is still BUNinplace and void_inplace that do more-or-less
+  the same thing.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Changed BATderiveHeadProps to BATderiveTailProps (and it now works on
+  the tail column).
+- gdk: Removed unused functions BATalpha, BATdelta, and BATprev.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed functions mat.hasMoreElements, mat.info, mat.mergepack,
+  mat. newIterator, mat.project, mat.pack2, mat.sortReverse, mat.sort,
+  and mat.slice.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed function VIEWcombine.  Use BATdense instead.
+- gdk: Removed "left" parameter from BUNinplace.  It wasn't used since the
+  BAT it works on is dense headed.
+- gdk: Created function BATdense to easily create a [void,void] BAT with
+  specified seqbases for head and tail and a count.
+- gdk: Removed function BATmark.  When all head columns are dense, BATmark
+  basically only created a new [void,void] BAT.
+- gdk: Renamed BATsubsort to BATsort.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed grouped aggregate functions from the aggr module in which the
+  groups were indicated by the head column of the bat to be aggregated.
+  Use the interface with a separate group bat instead.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: The server now stops executing a query when the client disconnects.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed "sub" from the names of the function BATsubselect,
+  BATthetasubselect, BATsubcross, BATsubleftjoin, BATsubouterjoin,
+  BATsubthetajoin, BATsubsemijoin, BATsubdiff, BATsubjoin, BATsubbandjoin,
+  BATsubrangejoin, and BATsubunique.
+- gdk: Removed BATsubleftfetchjoin: it was not used.
+- gdk: Removed BATcross1.  Use BATsubcross instead.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.join.  Use algebra.subjoin instead.
+- monetdb5: Removed algebra.antijoin.  Use algebra.subantijoin or
+  algebra.subthetajoin instead.
+
+* Tue Apr  5 2016 Martin Kersten <mk@cwi.nl> - 11.23.1-20160601
+- monetdb5: The MAL function 'leftfetchjoin' is renamed to its relational algebra
+  version 'projection'
+
+* Tue Apr  5 2016 Martin Kersten <mk@cwi.nl> - 11.23.1-20160601
+- monetdb5: The generic property handling scheme has been removed. It was used in
+  just a few places, for widely different purposes and contained cruft.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed functions str.iconv and str.codeset.  Internally, strings are
+  always in UTF-8 encoding, so we can't allow code set conversions.
+
+* Tue Apr  5 2016 Jennie Zhang <y.zhang@cwi.nl> - 11.23.1-20160601
+- sql: Disallow GRANT <some-user> TO <role-or-use>.  Only explicitly
+  created roles can be granted.
+
+* Tue Apr  5 2016 Jennie Zhang <y.zhang@cwi.nl> - 11.23.1-20160601
+- sql: Extended grantable schema privileges: when a user is granted the
+  "sysadmin" role, the user now hcan not only create schemas, but
+  also drop schemas.
+- sql: Introduced COPY INTO/ COPY FROM global privileges. These privileges
+  allows other users than 'monetdb' to be granted the privileges
+  to use the MonetDB bulk data loading/exporting features, i.e.,
+  COPY FROM <file> and COPY INTO <file>.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed all versions of the SORTloop macro.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.like with a BAT argument.  Use algebra.likesubselect
+  instead.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed Batkdiff.  Use BATsubdiff instead.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed BATselect.  Use BATsubselect instead.
+- gdk: Removed BATsemijoin.  Use BATsubsemijoin instead.
+- gdk: Removed BATjoin.  Use BATsubjoin instead.
+- gdk: Removed BATleftjoin.  Use BATsubleftjoin or BATproject instead.
+- gdk: Removed BATleftfetchjoin.  Use BATproject instead.
+- gdk: Removed BUNins from the list of exported functions.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.leftjoin.  Use algebra.subleftjoin or
+  algebra.leftfetchjoin instead.
+- monetdb5: Removed algebra.tdiff and algebra.tinter.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.sample.  Use sample.subuniform instead.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.select.  Use algebra.subselect instead.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed legacy functions BATuselect and BATuselect_.
+- gdk: Removed legacy functions BATantijoin, BATbandjoin, BATouterjoin,
+  BATrangejoin, and BATthetajoin.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed function BATrevert.
+- gdk: BATordered now works on the TAIL column.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.revert.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed obsolete functions BATorder() and BATorder_rev().
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed bat.order and bat.orderReverse functions.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Changed client.getUsers to return two bats, one with the user id
+  and one with the user name.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Implemented algebra.subdiff and algebra.subinter.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Implemented BATsubdiff which returns a list of OIDs (sorted, i.e. usable
+  as candidate list) of tuples in the left input whose value does not
+  occur in the right input.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.tdifference and algebra.tintersect.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed function BATkintersect.  It wasn't used anymore.  It's
+  functionality can be obtained by using BATsubsemijoin.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- gdk: Removed the function BATkunion.
+
+* Tue Apr  5 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.1-20160601
+- monetdb5: Removed algebra.tunion.
+
+* Tue Apr 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
+- Rebuilt.
+- BZ#3905: MonetDB doesn't handle ANY/SOME/ALL operator correctly
+- BZ#3929: R aggregate not recognized when using 3 or more parameters
+- BZ#3965: Not possible to quote/escape single quote character in the
+  name of the file to load.
+- BZ#3968: Missing double use of column names
+
+* Mon Apr  4 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.19-20160405
+- gdk: Fixed a bug that caused various instances where old data returned or
+  where crashes occurred.  The problem was that internally data wasn't
+  always marked dirty when it was being changed, causing later processing
+  to not deal with the changed data correctly.
+
+* Thu Mar 24 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.17-20160324
+- Rebuilt.
+- BZ#2972: SQL URL functionality contains errors
+- BZ#3881: Server crashes on bulk load
+- BZ#3890: Window function + group by in subselect, rel2bin_project:
+  Assertion `0' failed
+- BZ#3891: MonetDB crashes when executing SQL with window function
+- BZ#3900: null handling in some sql statements is incorrect
+- BZ#3906: Multi-column 1-N table-function with mitosis produces different
+  column counts
+- BZ#3917: Date difference returns month_interval instead of day_interval
+- BZ#3938: Wrong error message on violating foreign key constraint
+- BZ#3941: Wrong coercion priority
+- BZ#3948: SQL: select * from sys.sys.table_name; is accepted but should
+  return an error
+- BZ#3951: extern table_funcs not visible from Windows DLL for extensions
+  like vaults (crashes)
+- BZ#3952: Stream table gives segfault
+- BZ#3953: MIN/MAX of a UUID column produces wrong results
+- BZ#3954: Consolidate table assertion error
+- BZ#3955: (incorrect) MAL loop instead of manifold triggered by simple
+  change in target list
+
+* Thu Mar 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.15-20160310
+- Rebuilt.
+- BZ#3549: bulk string operations very slow
+- BZ#3908: LEFT JOIN with OR conditions triggers assertion
+- BZ#3909: Incorrect column name in OR condition of LEFT JOIN crashes
+  mserver
+- BZ#3910: COPY INTO table (column1, column2) got wrong result
+- BZ#3912: When table/column names conflicts, data ends in multiple
+  tables!
+- BZ#3918: MonetDB.R version 1.0.1 incorrectly constructs the batfile
+  script
+- BZ#3919: Table conflict when the table name and fields are identical
+- BZ#3921: Creating a table from a complex query crashes mserver or
+  triggers assertion
+- BZ#3922: AVG( column ) returns NaN rather than Inf when column
+  contains Inf
+- BZ#3928: When killing a virtual machine, sql_logs/sql/log is empty
+- BZ#3930: Wrong typecast on character columns in prepared statements
+  when using Umlaute
+- BZ#3932: CASE expressions with constants are not evaluated correctly
+- BZ#3933: replace "exit" by "throw new Exception"
+- BZ#3937: bad BAT properties with binary copy into and NULL values
+- BZ#3940: Date calculation and comparison produce wrong result
+
+* Tue Jan  5 2016 Martin Kersten <mk@cwi.nl> - 11.21.15-20160310
+- monetdb5: Fixed potential crash in MAL debugger when accessing BATs by
+  index. Functionality dropped as it is also a security leak.
+
 * Tue Jan 05 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.21.13-20160105
 - Rebuilt.
 - BZ#2014: 'null' from copy into gets wrong

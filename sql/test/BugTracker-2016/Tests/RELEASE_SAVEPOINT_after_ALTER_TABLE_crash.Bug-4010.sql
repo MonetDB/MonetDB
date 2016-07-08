@@ -1,0 +1,10 @@
+CREATE TABLE test (a int);
+START TRANSACTION ;
+SAVEPOINT failsafe;
+ALTER TABLE test ADD COLUMN b int;
+RELEASE SAVEPOINT failsafe;
+COMMIT;
+
+SELECT * FROM test;
+DROP TABLE test;
+

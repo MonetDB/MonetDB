@@ -76,11 +76,11 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		if( strcmp(cv,"nil") == 0){
 			strcat(buf+len,cv);
 			len += strlen(buf+len);
-			if( cv) GDKfree(cv);
-			showtype =getColumnType(getVarType(mb,varid)) > TYPE_str || 
+			GDKfree(cv);
+			showtype =getBatType(getVarType(mb,varid)) > TYPE_str || 
 				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid)); 
 		} else{
-			if ( !isaBatType(getVarType(mb,varid)) && getColumnType(getVarType(mb,varid)) > TYPE_str ){
+			if ( !isaBatType(getVarType(mb,varid)) && getBatType(getVarType(mb,varid)) > TYPE_str ){
 				closequote = 1;
 				strcat(buf+len,"\"");
 				len++;
@@ -96,8 +96,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			showtype =closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & LIST_MAL_REMOTE)) && isVarConstant(mb,varid)) ||
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
-			if (stk && isaBatType(getVarType(mb,varid)) && abs(stk->stk[varid].val.ival) ){
-				BAT *d= BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
+			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
+				BAT *d= BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 				if( d)
 					len += snprintf(buf+len,maxlen-len,"[" BUNFMT "]", BATcount(d));
 			}
@@ -398,7 +398,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 		if( nme == NULL) 
 			nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
-			b = BBPquickdesc(abs(stk->stk[varid].val.ival),TRUE);
+			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
 		} else
 		if( cv)
@@ -581,10 +581,6 @@ printSignature(stream *fd, Symbol s, int flg)
 	} else GDKerror("printSignature"MAL_MALLOC_FAIL);
 }
 
-/*
- * For clarity we show the last optimizer applied
- * also as the last of the list, although it is linked with mb.
-*/
 void showMalBlkHistory(stream *out, MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
@@ -605,14 +601,5 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 			}
 		} 
 		m= m->history;
-	}
-	p=getInstrPtr(mb,mb->stop-1);
-	if( p->token == REMsymbol){
-		msg= instruction2str(mb, 0, p, FALSE);
-		if (msg) {
-			mnstr_printf(out,"%s.%s[%2d] %s\n", 
-				getModuleId(sig), getFunctionId(sig),j++,msg+3);
-				GDKfree(msg);
-		}
 	}
 }

@@ -36,11 +36,16 @@
 			(J)++;								\
 	} while (0)
 
-#define CHECK_JSON(jt) 			\
-	if (jt && jt->error) { 		\
-		char *msg = jt->error;	\
-		JSONfree(jt);		\
-		return msg;		\
+#define CHECK_JSON(jt)													\
+	if (jt == NULL || jt->error) {										\
+		char *msg;														\
+		if (jt) {														\
+			msg = jt->error;											\
+			JSONfree(jt);												\
+		} else {														\
+			msg = createException(MAL, "json.new", MAL_MALLOC_FAIL);	\
+		}																\
+		return msg;														\
 	}
 
 #define SEPARATOR ' '
@@ -61,6 +66,8 @@ JSONnewtree(int size)
 	if (size == 0)
 		size = jsonhint;
 	js = (JSON *) GDKzalloc(sizeof(JSON));
+	if (js == NULL)
+		return NULL;
 	js->elm = (JSONterm *) GDKzalloc(sizeof(JSONterm) * size);
 	js->size = size;
 	return js;
@@ -259,7 +266,8 @@ JSONjson2str(str *ret, json *j)
 
 	if (*s == '"')
 		s++;
-	s = GDKstrdup(s);
+	if ((s = GDKstrdup(s)) == NULL)
+		throw(MAL, "json.str", MAL_MALLOC_FAIL);
 	c = s + strlen(s) - 1;
 	if (*c == '"')
 		*c = 0;
@@ -273,9 +281,9 @@ JSONstr2json(json *ret, str *j)
 	JSON *jt = JSONparse(*j, FALSE);
 
 	CHECK_JSON(jt);
-	if (jt)
-		JSONfree(jt);
-	*ret = GDKstrdup(*j);
+	JSONfree(jt);
+	if ((*ret = GDKstrdup(*j)) == NULL)
+		throw(MAL, "json.new", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -284,10 +292,11 @@ JSONisvalid(bit *ret, json *j)
 {
 	JSON *jt = JSONparse(*j, FALSE);
 
-	if (jt) {
-		*ret = jt->error == MAL_SUCCEED;
-		JSONfree(jt);
-	}
+	if (jt == NULL)
+		throw(MAL, "json.isvalid", MAL_MALLOC_FAIL);
+	*ret = jt->error == MAL_SUCCEED;
+	GDKfree(jt->error);
+	JSONfree(jt);
 	return MAL_SUCCEED;
 }
 
@@ -479,25 +488,21 @@ JSONglue(str res, str r, char sep)
 		return res;
 	len = strlen(r);
 	if (res == 0)
-		res = GDKstrdup(r);
-	else {
-		l = strlen(res);
-		n = GDKzalloc(l + len + 3);
-		strcpy(n, res);
-		if (sep) {
-			n[l] = ',';
-			strncpy(n + l + 1, r, len);
-			n[l + 1 + len] = 0;
-		} else {
-			strncpy(n + l, r, len);
-			n[l + len] = 0;
-		}
-		GDKfree(res);
-		res = n;
+		return r;
+	l = strlen(res);
+	n = GDKzalloc(l + len + 3);
+	strcpy(n, res);
+	GDKfree(res);
+	if (sep) {
+		n[l] = ',';
+		strncpy(n + l + 1, r, len);
+		n[l + 1 + len] = 0;
+	} else {
+		strncpy(n + l, r, len);
+		n[l + len] = 0;
 	}
-	if (r)
-		GDKfree(r);
-	return res;
+	GDKfree(r);
+	return n;
 }
 
 static str
@@ -529,7 +534,7 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 					else
 						r = 0;
 				} else if (terms[ti + 1].token == END_STEP) {
-					if (jt->elm[i].kind == JSON_VALUE || jt->elm[i].kind == JSON_VALUE)
+					if (jt->elm[i].kind == JSON_VALUE)
 						r = JSONgetValue(jt, jt->elm[i].child);
 					else
 						r = JSONgetValue(jt, i);
@@ -578,12 +583,12 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 		*ret = GDKstrdup(j);
 		return MAL_SUCCEED;
 	}
-	memset((char *) terms, 0, MAXTERMS * sizeof(pattern));
-	msg = JSONcompile(*expr, terms);
-	if (msg)
-		return msg;
 	jt = JSONparse(j, FALSE);
 	CHECK_JSON(jt);
+	memset(terms, 0, sizeof(terms));
+	msg = JSONcompile(*expr, terms);
+	if (msg)
+		goto bailout;
 
 	result = s = JSONmatch(jt, 0, terms, tidx);
 	// process all other PATH expression
@@ -601,12 +606,13 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 	s = GDKzalloc(l + 3);
 	snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	GDKfree(result);
+	*ret = s;
 
-	for (l = 0; terms[l].token; l++)
+  bailout:
+	for (l = 0; l < MAXTERMS; l++)
 		if (terms[l].name)
 			GDKfree(terms[l].name);
 	JSONfree(jt);
-	*ret = s;
 	return msg;
 }
 
@@ -883,19 +889,19 @@ JSONparse(char *j, int silent)
 {
 	JSON *jt = JSONnewtree(0);
 
+	if (jt == NULL)
+		return NULL;
 	skipblancs(j);
 	if (!*j || !(*j == '{' || *j == '[')) {
 		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed, expecting '{', '['");
 		return jt;
 	}
 	JSONtoken(jt, j, &j, silent);
-	if (jt && jt->error)
+	if (jt->error)
 		return jt;
 	skipblancs(j);
-	if (*j) {
-		if (!silent)
-			jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
-	}
+	if (*j && !silent)
+		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
 	return jt;
 }
 
@@ -909,6 +915,7 @@ JSONlength(int *ret, json *j)
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
 	*ret = cnt;
+	JSONfree(jt);
 	return MAL_SUCCEED;
 }
 
@@ -1169,26 +1176,25 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 			GDKfree(r);
 			r = JSONgetValue(jt, jt->elm[i].child);
 			BUNappend(bv, r, FALSE);
+			GDKfree(r);
 			if (bo)
 				BUNappend(bo, o, FALSE);
 			(*o)++;
-			GDKfree(r);
 			if (i == last)
 				break;
 	} else if (jt->elm[idx].kind == JSON_ARRAY)
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next) {
-			r = GDKstrdup(str_nil);
-			BUNappend(bk, r, FALSE);
+			BUNappend(bk, str_nil, FALSE);
 			if (jt->elm[i].kind == JSON_VALUE)
 				r = JSONgetValue(jt, jt->elm[i].child);
 			else
 				r = JSONgetValue(jt, i);
 			BUNappend(bv, r, FALSE);
+			GDKfree(r);
 			if (bo)
 				BUNappend(bo, o, FALSE);
 			(*o)++;
 			cnt++;
-			GDKfree(r);
 			if (i == last)
 				break;
 		}
@@ -1204,36 +1210,28 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	JSON *jt = JSONparse(*js, FALSE);
 
 	CHECK_JSON(jt);
-	bk = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL) {
 		JSONfree(jt);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bk, 0);
-	bk->hsorted = 1;
-	bk->hrevsorted = 0;
-	bk->H->nonil = 1;
 	bk->tsorted = 1;
 	bk->trevsorted = 0;
-	bk->T->nonil = 1;
+	bk->tnonil = 1;
 
 	if (od) {
-		bo = BATnew(TYPE_void, TYPE_oid, 64, TRANSIENT);
+		bo = COLnew(0, TYPE_oid, 64, TRANSIENT);
 		if (bo == NULL) {
 			BBPunfix(bk->batCacheid);
 			JSONfree(jt);
 			throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(bo, 0);
-		bo->hsorted = 1;
-		bo->hrevsorted = 0;
-		bo->H->nonil = 1;
 		bo->tsorted = 1;
 		bo->trevsorted = 0;
-		bo->T->nonil = 1;
+		bo->tnonil = 1;
 	}
 
-	bv = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
+	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bv == NULL) {
 		JSONfree(jt);
 		if (od)
@@ -1241,13 +1239,9 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 		BBPunfix(bk->batCacheid);
 		throw(MAL, "json.unfold", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(bv, 0);
-	bv->hsorted = 1;
-	bv->hrevsorted = 0;
-	bv->H->nonil = 1;
 	bv->tsorted = 1;
 	bv->trevsorted = 0;
-	bv->T->nonil = 1;
+	bv->tnonil = 1;
 
 	if (jt->elm[0].kind == JSON_ARRAY || jt->elm[0].kind == JSON_OBJECT)
 		JSONunfoldContainer(jt, 0, (od ? bo : 0), bk, bv, &o);
@@ -1273,22 +1267,19 @@ JSONkeyTable(bat *ret, json *js)
 
 	jt = JSONparse(*js, FALSE);	// already validated
 	CHECK_JSON(jt);
-	bn = BATnew(TYPE_void, TYPE_str, 64, TRANSIENT);
+	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.keys", MAL_MALLOC_FAIL);
-	BATseqbase(bn, 0);
-	bn->hsorted = 1;
-	bn->hrevsorted = 0;
-	bn->H->nonil = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
-	bn->T->nonil = 1;
+	bn->tnonil = 1;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(jt, i);
 		BUNappend(bn, r, FALSE);
 		GDKfree(r);
 	}
+	JSONfree(jt);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1304,14 +1295,18 @@ JSONkeyArray(json *ret, json *js)
 	jt = JSONparse(*js, FALSE);	// already validated
 
 	CHECK_JSON(jt);
-	if (jt->elm[0].kind == JSON_OBJECT)
+	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 			r = GDKzalloc(jt->elm[i].valuelen + 3);
 			if (jt->elm[i].valuelen)
 				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
 			result = JSONglue(result, r, ',');
-	} else
+		}
+		JSONfree(jt);
+	} else {
+		JSONfree(jt);
 		throw(MAL, "json.keyarray", "Object expected");
+	}
 	r = (char *) GDKstrdup("[");
 	result = JSONglue(r, result, 0);
 	r = (char *) GDKstrdup("]");
@@ -1330,16 +1325,12 @@ JSONvalueTable(bat *ret, json *js)
 
 	jt = JSONparse(*js, FALSE);	// already validated
 	CHECK_JSON(jt);
-	bn = BATnew(TYPE_void, TYPE_json, 64, TRANSIENT);
+	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "json.values", MAL_MALLOC_FAIL);
-	BATseqbase(bn, 0);
-	bn->hsorted = 1;
-	bn->hrevsorted = 0;
-	bn->H->nonil = 1;
 	bn->tsorted = 1;
 	bn->trevsorted = 0;
-	bn->T->nonil = 1;
+	bn->tnonil = 1;
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		if (jt->elm[i].kind == JSON_ELEMENT)
@@ -1349,6 +1340,7 @@ JSONvalueTable(bat *ret, json *js)
 		BUNappend(bn, r, FALSE);
 		GDKfree(r);
 	}
+	JSONfree(jt);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1364,12 +1356,16 @@ JSONvalueArray(json *ret, json *js)
 	jt = JSONparse(*js, FALSE);	// already validated
 
 	CHECK_JSON(jt);
-	if (jt->elm[0].kind == JSON_OBJECT)
+	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 			r = JSONgetValue(jt, jt->elm[i].child);
 			result = JSONglue(result, r, ',');
-	} else
+		}
+		JSONfree(jt);
+	} else {
+		JSONfree(jt);
 		throw(MAL, "json.valuearray", "Object expected");
+	}
 	r = (char *) GDKstrdup("[");
 	result = JSONglue(r, result, 0);
 	r = (char *) GDKstrdup("]");
@@ -1385,6 +1381,8 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT **bl;
 
 	bl = (BAT **) GDKzalloc(sizeof(*bl) * pci->argc);
+	if (bl == NULL)
+		return NULL;
 	for (i = pci->retc; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			bats++;
@@ -1395,10 +1393,24 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			cnt = BATcount(bl[i]);
 		}
 	if (error + error2 || bats == 0) {
+		for (i = pci->retc; i < pci->argc; i++)
+			if (bl[i])
+				BBPunfix(bl[i]->batCacheid);
 		GDKfree(bl);
-		bl = 0;
+		return NULL;
 	}
 	return bl;
+}
+
+static void
+JSONfreeArgumentlist(BAT **bl, InstrPtr pci)
+{
+	int i;
+
+	for (i = pci->retc; i < pci->argc; i++)
+		if (bl[i])
+			BBPunfix(bl[i]->batCacheid);
+	GDKfree(bl);
 }
 
 static str
@@ -1418,8 +1430,8 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 	for (i = pci->retc; i < pci->argc; i += 2) {
 		name = stk->stk[getArg(pci, i)].val.sval;
 		bi = bat_iterator(bl[i + 1]);
-		p = BUNtail(bi, BUNfirst(bl[i + 1]) + idx);
-		tpe = getColumnType(getArgType(mb, pci, i + 1));
+		p = BUNtail(bi, idx);
+		tpe = getBatType(getArgType(mb, pci, i + 1));
 		ATOMformat(tpe, p, &val);
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
@@ -1477,6 +1489,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	result[len - 1] = ']';
 	ret = getArgReference_TYPE(stk, pci, 0, json);
 	*ret = result;
+	JSONfreeArgumentlist(bl, pci);
 	return MAL_SUCCEED;
 }
 
@@ -1496,8 +1509,8 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	val = (char *) GDKmalloc(BUFSIZ);
 	for (i = pci->retc; i < pci->argc; i++) {
 		bi = bat_iterator(bl[i]);
-		p = BUNtail(bi, BUNfirst(bl[i]) + idx);
-		tpe = getColumnType(getArgType(mb, pci, i));
+		p = BUNtail(bi, idx);
+		tpe = getBatType(getArgType(mb, pci, i));
 		ATOMformat(tpe, p, &val);
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
@@ -1551,6 +1564,7 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	result[len - 1] = ']';
 	ret = getArgReference_TYPE(stk, pci, 0, json);
 	*ret = result;
+	JSONfreeArgumentlist(bl, pci);
 	return MAL_SUCCEED;
 }
 
@@ -1600,10 +1614,9 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	row[0] = '[';
 	row[1] = 0;
 	len = 1;
-	val = (char *) GDKmalloc(BUFSIZ);
 	if (id) {
 		boi = bat_iterator(bo);
-		o = *(oid *) BUNtail(boi, BUNfirst(bo));
+		o = *(oid *) BUNtail(boi, 0);
 	}
 	if (bk)
 		bki = bat_iterator(bk);
@@ -1611,7 +1624,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 
 	for (i = 0; i < cnt; i++) {
 		if (id &&bk) {
-			p = BUNtail(boi, BUNfirst(bo) + i);
+			p = BUNtail(boi, i);
 			if (*(oid *) p != o) {
 				snprintf(row + len, lim - len, ", ");
 				len += 2;
@@ -1620,7 +1633,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		}
 
 		if (bk) {
-			nme = (str) BUNtail(bki, BUNfirst(bk) + i);
+			nme = (str) BUNtail(bki, i);
 			l = strlen(nme);
 			while (l + 3 > lim - len)
 				row = (char *) GDKrealloc(row, lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3);
@@ -1640,13 +1653,15 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		}
 
 		bvi = bat_iterator(bv);
-		p = BUNtail(bvi, BUNfirst(bv) + i);
+		p = BUNtail(bvi, i);
 		if (tpe == TYPE_json)
 			val = p;
 		else {
 			ATOMformat(tpe, p, &val);
-			if (strncmp(val, "nil", 3) == 0)
-				strcpy(val, "null");
+			if (val && strncmp(val, "nil", 3) == 0) {
+				GDKfree(val);
+				val = GDKstrdup("null");
+			}
 		}
 		l = strlen(val);
 		while (l > lim - len)
@@ -1658,6 +1673,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 			if (bk)
 				BBPunfix(bk->batCacheid);
 			BBPunfix(bv->batCacheid);
+			if (tpe != TYPE_json)
+				GDKfree(val);
 			*ret = GDKstrdup(str_nil);
 			throw(MAL, "json.fold", MAL_MALLOC_FAIL);
 		}
@@ -1665,6 +1682,9 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		len += l;
 		row[len++] = ',';
 		row[len] = 0;
+		if (tpe != TYPE_json)
+			GDKfree(val);
+		val = NULL;
 	}
 	if (row[1]) {
 		row[len - 1] = ']';
@@ -1673,8 +1693,6 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		row[1] = ']';
 		row[2] = 0;
 	}
-	if (tpe != TYPE_json)
-		GDKfree(val);
 	if (bo)
 		BBPunfix(bo->batCacheid);
 	if (bk)
@@ -1693,16 +1711,20 @@ JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (pci->retc == 1) {
-		val = getArgReference_bat(stk, pci, 0);
-	} else if (pci->retc == 2) {
+	switch (pci->retc) {
+	case 2:
 		id = 0;
 		key = getArgReference_bat(stk, pci, 0);
 		val = getArgReference_bat(stk, pci, 1);
-	} else if (pci->retc == 3) {
+		break;
+	case 3:
 		id = getArgReference_bat(stk, pci, 0);
 		key = getArgReference_bat(stk, pci, 1);
 		val = getArgReference_bat(stk, pci, 2);
+		break;
+	default:
+		assert(0);
+		throw(MAL, "json.unfold", ILLEGAL_ARGUMENT);
 	}
 	js = getArgReference_TYPE(stk, pci, pci->retc, json);
 	return JSONunfoldInternal(id, key, val, js);
@@ -1861,10 +1883,9 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	}
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 	if (BATcount(b) == 0 || ngrp == 0) {
-		bn = BATconstant(TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
+		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
 		if (bn == NULL)
 			return MAL_MALLOC_FAIL;
-		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		*bnp = bn;
 		return NULL;
 	}
@@ -1891,7 +1912,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		goto out;
 	}
 	buflen = 0;
-	bn = BATnew(TYPE_void, TYPE_str, ngrp, TRANSIENT);
+	bn = COLnew(min, TYPE_str, ngrp, TRANSIENT);
 	if (bn == NULL) {
 		err = MAL_MALLOC_FAIL;
 		goto out;
@@ -1913,16 +1934,16 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			map = NULL;
 			mapoff = b->tseqbase;
 		} else {
-			map = (const oid *) Tloc(t2, BUNfirst(t2));
+			map = (const oid *) Tloc(t2, 0);
 		}
 		if (g && BATtdense(g)) {
 			for (p = 0, q = BATcount(g); p < q; p++) {
 				switch (b->ttype) {
 				case TYPE_str:
-					v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 					break;
 				case TYPE_dbl:
-					val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 					if (*val != dbl_nil) {
 						snprintf(temp, sizeof(temp), "%f", *val);
 						v = (const char *) temp;
@@ -1974,15 +1995,14 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 				buflen = 0;
 			}
-			BATseqbase(bn, min);
-			bn->T->nil = nils != 0;
-			bn->T->nonil = nils == 0;
-			bn->T->sorted = BATcount(bn) <= 1;
-			bn->T->revsorted = BATcount(bn) <= 1;
-			bn->T->key = BATcount(bn) <= 1;
+			bn->tnil = nils != 0;
+			bn->tnonil = nils == 0;
+			bn->tsorted = BATcount(bn) <= 1;
+			bn->trevsorted = BATcount(bn) <= 1;
+			bn->tkey = BATcount(bn) <= 1;
 			goto out;
 		}
-		grps = (const oid *) Tloc(g, BUNfirst(g));
+		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
 		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
@@ -2012,10 +2032,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				continue;
 			switch (b->ttype) {
 			case TYPE_str:
-				v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 				break;
 			case TYPE_dbl:
-				val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 				if (*val != dbl_nil) {
 					snprintf(temp, sizeof(temp), "%f", *val);
 					v = (const char *) temp;
@@ -2064,7 +2084,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+		for (p = 0, q = p + BATcount(b); p < q; p++) {
 			switch (b->ttype) {
 			case TYPE_str:
 				v = (const char *) BUNtail(bi, p);
@@ -2119,12 +2139,11 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
 	}
-	BATseqbase(bn, min);
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
-	bn->T->sorted = BATcount(bn) <= 1;
-	bn->T->revsorted = BATcount(bn) <= 1;
-	bn->T->key = BATcount(bn) <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->tkey = BATcount(bn) <= 1;
 
       out:
 	if (t2)

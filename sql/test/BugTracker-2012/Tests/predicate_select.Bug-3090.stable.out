@@ -51,7 +51,7 @@ Ready.
 % sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	smallint # type
-% 17,	4,	522,	1,	5,	1,	5,	1 # length
+% 17,	4,	379,	1,	5,	1,	5,	1 # length
 [ "schemas",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "types",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "functions",	2000,	NULL,	0,	true,	0,	false,	0	]
@@ -89,7 +89,7 @@ Ready.
 [ "storage",	2000,	"create view sys.storage as select * from sys.storage();",	1,	true,	0,	false,	0	]
 [ "storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "storagemodel",	2000,	"create view sys.storagemodel as select * from sys.storagemodel();",	1,	true,	0,	false,	0	]
-[ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(imprints) as imprints,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(",	1,	true,	0,	false,	0	]
 [ "statistics",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ "systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
 

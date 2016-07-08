@@ -30,10 +30,10 @@ newSymbol(str nme, int kind)
 		GDKerror("newSymbol:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	cur->name = putName(nme, strlen(nme));
+	cur->name = putName(nme);
 	cur->kind = kind;
 	cur->peer = NULL;
-	cur->def = newMalBlk(MAXVARS, STMT_INCREMENT);
+	cur->def = newMalBlk(kind == FUNCTIONsymbol?MAXVARS : MAXARG, kind == FUNCTIONsymbol? STMT_INCREMENT : 1);
 	if ( cur->def == NULL){
 		GDKfree(cur);
 		return NULL;
@@ -118,7 +118,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->history = NULL;
 	mb->keephistory = 0;
 	mb->dotfile = 0;
-	mb->marker = 0;
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
@@ -175,6 +174,10 @@ wrapup:
 void
 resetMalBlk(MalBlkPtr mb, int stop)
 {
+	int i;
+
+	for(i=0; i<stop; i++) 
+		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
 }
 
@@ -233,7 +236,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->history = NULL;
 	mb->keephistory = old->keephistory;
 	mb->dotfile = old->dotfile;
-	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
 	mb->activeClients = 1;
 
@@ -290,7 +292,7 @@ copyMalBlk(MalBlkPtr old)
 }
 
 void
-addtoMalBlkHistory(MalBlkPtr mb, str marker)
+addtoMalBlkHistory(MalBlkPtr mb)
 {
 	MalBlkPtr cpy, h;
 	if (mb->keephistory) {
@@ -298,7 +300,6 @@ addtoMalBlkHistory(MalBlkPtr mb, str marker)
 		if (cpy == NULL)
 			return;				/* ignore history */
 		cpy->history = NULL;
-		mb->marker = GDKstrdup(marker);
 		if (mb->history == NULL)
 			mb->history = cpy;
 		else {
@@ -318,34 +319,6 @@ getMalBlkHistory(MalBlkPtr mb, int idx)
 	return h ? h : mb;
 }
 
-/* You can retrieve the history by its marker as well. */
-MalBlkPtr
-getMalBlkMarker(MalBlkPtr mb, str marker)
-{
-	MalBlkPtr h = mb;
-	while (h && h->marker && strcmp(h->marker, marker))
-		h = h->history;
-	return h ? h : mb;
-}
-
-/* You can roll back the history to a specific marker. A NULL is
- * returned when the marker can not be found. */
-MalBlkPtr
-gotoMalBlkMarker(MalBlkPtr mb, str marker)
-{
-	MalBlkPtr h = mb, g;
-	while (h && h->marker && strcmp(h->marker, marker))
-		h = h->history;
-	if (h == NULL)
-		return NULL;			/* marker not found */
-	while (h && h->marker && strcmp(h->marker, marker)) {
-		g = h;
-		h = h->history;
-		g->history = 0;
-		freeMalBlk(g);
-	}
-	return h;
-}
 
 /* The MalBlk structures potentially consume a lot a of space, because
  * it is not possible to precisely estimate the default sizes of the
@@ -544,6 +517,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 	memcpy((char *) new, (char *) p, space);
 	setFunctionId(new, getFunctionId(p));
 	setModuleId(new, getModuleId(p));
+	new->typechk = TYPE_UNKNOWN;
 }
 
 /* Query optimizers walk their way through a MAL program block. They
@@ -643,6 +617,7 @@ getVarName(MalBlkPtr mb, int i)
 	nme = mb->var[i]->name;
 
 	if (nme == 0 || *nme =='_') {
+		GDKfree(nme);
 		snprintf(buf, IDLENGTH, "%c_%d", refMarker(mb,i), mb->var[i]->tmpindex);
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
@@ -763,7 +738,7 @@ getType(MalBlkPtr mb, str nme)
 
 	i = findVariable(mb, nme);
 	if (i < 0)
-		return getTypeIndex(nme, -1, TYPE_any);
+		return getAtomIndex(nme, -1, TYPE_any);
 	return getVarType(mb, i);
 }
 
@@ -960,7 +935,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	return res;
 }
 
-/* generate a new variable name based on a patter with 1 %d argument*/
+/* generate a new variable name based on a pattern with 1 %d argument*/
 void
 renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 {
@@ -971,9 +946,9 @@ renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 
 	if (v->name)
 		GDKfree(v->name);
-	nme= GDKmalloc(SMALLBUFSIZ);
+	nme= GDKmalloc(IDLENGTH);
 	if( nme) {
-		snprintf(nme,SMALLBUFSIZ,pattern,newid);
+		snprintf(nme,IDLENGTH,pattern,newid);
 		v->name = nme;
 		v->tmpindex = 0;
 	} else
@@ -1114,9 +1089,7 @@ freeVariable(MalBlkPtr mb, int varid)
 
 /* A special action is to reduce the variable space by removing all
  * that do not contribute.
- * Beware that properties are represented as variables as well. They
- * must be retained and the references must be corrected after the
- * stack has been reduced. */
+ */
 void
 trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 {
@@ -1286,7 +1259,6 @@ convertConstant(int type, ValPtr vr)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
-	case TYPE_wrd:
 	case TYPE_lng:
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -1538,7 +1510,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 			freeInstruction(p);
 			return NULL;
 		}
-		memcpy((char *) pn, (char *) p, space);
+		memcpy(pn, p, space);
 		GDKfree(p);
 		pn->maxarg += MAXARG;
 		/* we have to keep track on the maximal arguments/block
@@ -1601,7 +1573,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 	}
 	v = findVariable(mb, name);
 	if (v < 0) {
-		if ((v = newVariable(mb, name, getTypeIndex(name, -1, TYPE_any))) < 0) {
+		if ((v = newVariable(mb, name, getAtomIndex(name, -1, TYPE_any))) < 0) {
 			freeInstruction(p);
 			return NULL;
 		}
@@ -1708,9 +1680,9 @@ setPolymorphic(InstrPtr p, int tpe, int force)
 		return;
 	if (isaBatType(tpe)) 
 		c1= TYPE_oid;
-	if (getColumnIndex(tpe) > 0)
-		c2 = getColumnIndex(tpe);
-	else if (getColumnType(tpe) == TYPE_any)
+	if (getTypeIndex(tpe) > 0)
+		c2 = getTypeIndex(tpe);
+	else if (getBatType(tpe) == TYPE_any)
 		c2 = 1;
 	c1 = c1 > c2 ? c1 : c2;
 	if (c1 > 0 && c1 >= p->polymorphic)
