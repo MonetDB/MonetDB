@@ -1,6 +1,6 @@
 # Linear range compressions
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,0);
 bat.append(b,2);
 bat.append(b,4);

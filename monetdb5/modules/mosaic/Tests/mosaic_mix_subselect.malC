@@ -2,7 +2,7 @@
 
 o := 19531025:int;
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,0);
 bat.append(b,1);
 bat.append(b,2);
@@ -67,7 +67,7 @@ xs:= mosaic.subselect(x,nil:int,nil:int,false,false,true);
 io.print(xs);
 
 # using candidatelists
-c:= bat.new(:oid,:oid);
+c:= bat.new(:oid);
 bat.append(c,2@0);
 bat.append(c,5@0);
 

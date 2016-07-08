@@ -1,6 +1,6 @@
 # Range compressions
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,0);
 bat.append(b,2);
 bat.append(b,4);
@@ -21,7 +21,7 @@ x:= mosaic.compress(b,"linear");
 z:= mosaic.decompress(x);
 io.print(z);
 
-bs:= bat.new(:oid,:timestamp);
+bs:= bat.new(:timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
@@ -37,7 +37,7 @@ xs:= mosaic.compress(bs,"linear");
 zs:= mosaic.decompress(xs);
 io.print(zs);
 
-d:= bat.new(:oid,:date);
+d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);

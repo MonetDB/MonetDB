@@ -1,6 +1,6 @@
 # Compression of noncompressable column
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,19531015);
 bat.append(b,9);
@@ -40,7 +40,7 @@ io.print(s);
 xs:= mosaic.thetasubselect(x,50,"!=");
 io.print(xs);
 
-c:= bat.new(:oid,:oid);
+c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);
 io.print(c);

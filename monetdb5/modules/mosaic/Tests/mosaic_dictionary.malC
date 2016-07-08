@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:timestamp);
+b:= bat.new(:timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:01:00":timestamp);
@@ -13,7 +13,7 @@ x:= mosaic.compress(b,"dictionary");
 z:= mosaic.decompress(x);
 io.print(z);
 
-d:= bat.new(:oid,:date);
+d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);

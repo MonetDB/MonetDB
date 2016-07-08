@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,51);
 bat.append(b,51);
@@ -34,7 +34,7 @@ z:= mosaic.decompress(x);
 io.print(z);
 # Linear range compressions
 
-c:= bat.new(:oid,:oid);
+c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);
 bat.append(c,4@0);
@@ -46,7 +46,7 @@ io.print(s);
 xs:= mosaic.projection(c,x);
 io.print(xs);
 
-d:= bat.new(:oid,:int);
+d:= bat.new(:int);
 bat.append(d,50);
 bat.append(d,67);
 bat.append(d,nil:int);

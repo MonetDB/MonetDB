@@ -1,6 +1,6 @@
 # Compression of noncompressable column
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,19531015);
 bat.append(b,9);
@@ -10,7 +10,7 @@ base:= algebra.copy(b);
 io.print(base);
 x:= mosaic.compress(b,"zone");
 
-c:= bat.new(:oid,:oid);
+c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);
 bat.append(c,5@0);
@@ -22,7 +22,7 @@ io.print(s);
 xs:= mosaic.projection(c,x);
 io.print(xs);
 
-d:= bat.new(:oid,:int);
+d:= bat.new(:int);
 bat.append(d,9);
 bat.append(d,11);
 bat.append(d,nil:int);

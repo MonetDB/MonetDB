@@ -118,6 +118,7 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
+	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 "optimizer.garbageCollector();",

@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,19531015);
 bat.append(b,9);

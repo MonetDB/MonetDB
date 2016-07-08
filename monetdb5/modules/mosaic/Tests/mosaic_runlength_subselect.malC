@@ -1,5 +1,5 @@
 # Compression of noncompressable column
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,50);
 bat.append(b,9);

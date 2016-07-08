@@ -1,5 +1,5 @@
 # Delta compression
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,0);
 bat.append(b,1);
 bat.append(b,4);
@@ -18,7 +18,7 @@ x:= mosaic.compress(b,"delta");
 z:= mosaic.decompress(x);
 io.print(z);
 
-bs:= bat.new(:oid,:timestamp);
+bs:= bat.new(:timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
@@ -34,7 +34,7 @@ xs:= mosaic.compress(bs,"delta");
 zs:= mosaic.decompress(xs);
 io.print(zs);
 
-d:= bat.new(:oid,:date);
+d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);

@@ -1,5 +1,5 @@
 #zone compression
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,19531015);
 bat.append(b,9);
@@ -11,7 +11,7 @@ x:= mosaic.compress(b,"zone");
 mosaic.dump(x);
 z:= mosaic.decompress(x);
 io.print(z);
-bs:= bat.new(:oid,:timestamp);
+bs:= bat.new(:timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
@@ -27,7 +27,7 @@ xs:= mosaic.compress(bs,"zone");
 zs:= mosaic.decompress(xs);
 io.print(zs);
 
-d:= bat.new(:oid,:date);
+d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);

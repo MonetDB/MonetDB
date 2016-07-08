@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,19531015);
 bat.append(b,9);
@@ -12,7 +12,7 @@ z:= mosaic.decompress(x);
 io.print(z);
 
 
-s:= bat.new(:oid,:str);
+s:= bat.new(:str);
 bat.append(s,"the");
 bat.append(s,"big");
 bat.append(s,"brown");

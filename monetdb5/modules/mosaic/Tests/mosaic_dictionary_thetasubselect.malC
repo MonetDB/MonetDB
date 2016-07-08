@@ -1,5 +1,5 @@
 # Compression of noncompressable column
-b:= bat.new(:oid,:timestamp);
+b:= bat.new(:timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:01:00":timestamp);
@@ -44,7 +44,7 @@ io.print(s);
 xs:= mosaic.thetasubselect(x,"2014-08-14 12:01:00":timestamp,"!=");
 io.print(xs);
 
-c:= bat.new(:oid,:oid);
+c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,3@0);
 io.print(c);

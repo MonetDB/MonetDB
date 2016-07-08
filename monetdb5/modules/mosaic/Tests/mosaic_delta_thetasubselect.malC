@@ -1,5 +1,5 @@
 # Delta compression
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,0);
 bat.append(b,1);
 bat.append(b,4);
@@ -45,7 +45,7 @@ io.print(s);
 xs:= mosaic.thetasubselect(x,4,"!=");
 io.print(xs);
 
-c:= bat.new(:oid,:oid);
+c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);
 io.print(c);

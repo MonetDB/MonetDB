@@ -44,6 +44,7 @@
 #include "opt_json.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
+#include "opt_mosaic.h"
 #include "opt_multiplex.h"
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
@@ -78,6 +79,7 @@ struct{
 	{"json", &OPTjsonImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
+	{"mosaic", &OPTmosaicImplementation},
 	{"multiplex", &OPTmultiplexImplementation},
 	{"profiler", &OPTprofilerImplementation},
 	{"pushselect", &OPTpushselectImplementation},

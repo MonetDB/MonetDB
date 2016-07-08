@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50:int);
 bat.append(b,51:int);
 bat.append(b,51:int);
@@ -32,7 +32,7 @@ x:= mosaic.compress(b,"prefix");
 z:= mosaic.decompress(x);
 io.print(z);
 
-c:= bat.new(:oid,:sht);
+c:= bat.new(:sht);
 bat.append(c,50:sht);
 bat.append(c,51:sht);
 bat.append(c,51:sht);

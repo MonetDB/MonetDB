@@ -2,7 +2,7 @@
 
 o := 19531025:int;
 
-b:= bat.new(:oid,:int);
+b:= bat.new(:int);
 bat.append(b,50);
 bat.append(b,50);
 bat.append(b,o);
@@ -68,7 +68,7 @@ io.print(z);
 
 o := 19531025:int;
 
-f:= bat.new(:oid,:flt);
+f:= bat.new(:flt);
 bat.append(f,0.314);
 bat.append(f,0.314);
 bat.append(f,0.314);
@@ -163,7 +163,7 @@ xf:= mosaic.compress(f,"runlength");
 zf:= mosaic.decompress(xf);
 io.print(zf);
 
-bs:= bat.new(:oid,:timestamp);
+bs:= bat.new(:timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
 bat.append(bs,"2014-08-14 12:00:00":timestamp);
@@ -179,7 +179,7 @@ xs:= mosaic.compress(bs,"runlength");
 zs:= mosaic.decompress(xs);
 io.print(zs);
 
-d:= bat.new(:oid,:date);
+d:= bat.new(:date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
 bat.append(d,"2014-08-14":date);
@@ -195,7 +195,7 @@ io.print(zd);
 
 
 # handle compression of strings
-s:= bat.new(:oid,:str);
+s:= bat.new(:str);
 bat.append(s,"hello world");
 bat.append(s,"hello world");
 bat.append(s,"hello world");

@@ -1,4 +1,4 @@
-b:= bat.new(:oid,:timestamp);
+b:= bat.new(:timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:00:00":timestamp);
 bat.append(b,"2014-08-14 12:01:00":timestamp);
