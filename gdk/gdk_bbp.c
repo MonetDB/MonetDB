@@ -3797,6 +3797,18 @@ BBPsync(int cnt, bat *subcommit)
 			if (BBP_status(i) & BBPEXISTING) {
 				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)
 					break;
+			} else if (subcommit && (b = &BBP_desc(i)->B) && BBP_status(i) & BBPDELETED) {
+				char o[10];
+				char *f;
+				snprintf(o, sizeof(o), "%o", b->batCacheid);
+				f = GDKfilepath(b->T->heap.farmid, BAKDIR, o, "tail");
+				if (access(f, F_OK) == 0)
+					file_move(b->T->heap.farmid, BAKDIR, SUBDIR, o, "tail");
+				GDKfree(f);
+				f = GDKfilepath(b->T->heap.farmid, BAKDIR, o, "theap");
+				if (access(f, F_OK) == 0)
+					file_move(b->T->heap.farmid, BAKDIR, SUBDIR, o, "theap");
+				GDKfree(f);
 			}
 		}
 		if (idx < cnt)
