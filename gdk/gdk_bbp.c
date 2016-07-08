@@ -76,6 +76,14 @@
 #include "gdk_private.h"
 #include "gdk_storage.h"
 #include "mutils.h"
+
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)	_access(f, m)
+#endif
+
 /*
  * The BBP has a fixed address, so re-allocation due to a growing BBP
  * caused by one thread does not disturb reads to the old entries by
