@@ -192,6 +192,8 @@ SQLrun(Client c, mvc *m){
 	if( m->emod & mod_debug)
 		msg = runMALDebugger(c, c->curprg->def);
 	 else{
+		if( c->curprg->def->errors)
+			throw(SQL,"sql.run","Program contains errors");
 		if( m->emod & mod_trace){
 			c->curprg->def = copyMalBlk(old = c->curprg->def);
 			SQLsetTrace(c);

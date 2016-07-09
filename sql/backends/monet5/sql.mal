@@ -504,7 +504,7 @@ pattern storage()(
 	imprints:bat[:lng],
 	sorted:bat[:bit],
 	orderidx:bat[:lng],
-	compress:bat[:bit])
+	compressed:bat[:bit])
 address sql_storage
 comment "return a table with storage information ";
 
@@ -523,7 +523,8 @@ pattern storage(sname:str)(
 	phash:bat[:bit],
 	imprints:bat[:lng],
 	sorted:bat[:bit],
-	orderidx:bat[:lng])
+	orderidx:bat[:lng],
+	compressed:bat[:bit])
 address sql_storage
 comment "return a table with storage information for a particular schema ";
 
@@ -543,7 +544,7 @@ pattern storage(sname:str, tname:str)(
 	imprints:bat[:lng],
 	sorted:bat[:bit],
 	orderidx:bat[:lng],
-	compress:bat[:bit])
+	compressed:bat[:bit])
 address sql_storage
 comment "return a table with storage information for a particular table";
 
@@ -563,7 +564,7 @@ pattern storage(sname:str, tname:str, cname:str)(
 	imprints:bat[:lng],
 	sorted:bat[:bit],
 	orderidx:bat[:lng],
-	compress:bat[:bit])
+	compressed:bat[:bit])
 address sql_storage
 comment "return a table with storage information for a particular column";
 

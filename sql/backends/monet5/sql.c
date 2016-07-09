@@ -4895,7 +4895,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rimprints = getArgReference_bat(stk, pci, 12);
 	bat *rsort = getArgReference_bat(stk, pci, 13);
 	bat *roidx = getArgReference_bat(stk, pci, 14);
-	bat *rcompressed = getArgReference_bat(stk, pci, 14);
+	bat *rcompressed = getArgReference_bat(stk, pci, 15);
 	str sname = 0;
 	str tname = 0;
 	str cname = 0;
