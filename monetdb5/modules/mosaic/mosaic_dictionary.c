@@ -323,7 +323,7 @@ MOScompress_dictionary(Client cntxt, MOStask task)
 	MosaicHdr hdr = task->hdr;
 	BitVector base;
 
-	task->dst = ((char*) task->blk)+ MosaicBlkSize;
+	task->dst = MOScodevector(task);
 	base  = (BitVector) task->dst; 
 
 	(void) cntxt;

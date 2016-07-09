@@ -200,7 +200,7 @@ MOSestimate_delta(Client cntxt, MOStask task)
 #define DELTAcompress(TYPE,EXPR)\
 {	TYPE *v = ((TYPE*)task->src) + task->start, val= *v, delta =0;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit():task->stop - task->start;\
-	task->dst = ((char*) task->blk) + MosaicBlkSize;\
+	task->dst = MOScodevector(task); \
 	*(TYPE*)task->dst = val;\
 	task->dst += sizeof(TYPE);\
 	for(v++,i =1; i<limit; i++,v++){\
@@ -236,7 +236,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 	case TYPE_lng:
 		{	lng *v = ((lng*)task->src) + task->start, val= *v, delta;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit():task->stop - task->start;
-			task->dst = ((char*) task->blk) + MosaicBlkSize;
+			task->dst = MOScodevector(task);
 			*(lng*)task->dst = val;
 			task->dst += sizeof(lng);
 			for(v++, i =1; i<limit; i++, v++){
@@ -269,7 +269,7 @@ MOScompress_delta(Client cntxt, MOStask task)
 #define DELTAdecompress(TYPE)\
 { 	TYPE val;\
 	BUN lim = MOSgetCnt(blk);\
-	task->dst = ((char*) task->blk) + MosaicBlkSize;\
+	task->dst = MOScodevector(task);\
 	val = *(TYPE*)task->dst ;\
 	task->dst += sizeof(TYPE);\
 	for(i = 0; i < lim; i++) {\
@@ -299,7 +299,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	case TYPE_lng:
 	{ 	lng val;
 		BUN lim = MOSgetCnt(blk);
-		task->dst = ((char*) task->blk) + MosaicBlkSize;
+		task->dst = MOScodevector(task);
 		val = *(lng*)task->dst ;
 		task->dst += sizeof(lng);
 		for(i = 0; i < lim; i++) {
@@ -327,7 +327,7 @@ MOSdecompress_delta(Client cntxt, MOStask task)
 	
 #define subselect_delta(TPE) {\
 		TPE val= * (TPE*) (((char*) task->blk) + MosaicBlkSize);\
-		task->dst = ((char*)task->blk)+ MosaicBlkSize + sizeof(TYPE);\
+		task->dst = MOScodevector(task)  + sizeof(TYPE);\
 		if( !*anti){\
 			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
 				for( ; first < last; first++){\
@@ -418,7 +418,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	case TYPE_int:
 	// Expanded MOSselect_delta for debugging
 		{ 	int val= *(int*) (((char*) task->blk) + MosaicBlkSize);
-			task->dst = ((char *)task->blk) +MosaicBlkSize + sizeof(int);
+			task->dst = MOScodevector(task) + sizeof(int);
 
 			if( !*anti){
 				if( *(int*) low == int_nil && *(int*) hgh == int_nil){
@@ -592,7 +592,7 @@ MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 		hgh= low= *(TPE*) val;\
 	} \
 	v= *(TPE*) (((char*) task->blk) + MosaicBlkSize);\
-	task->dst = ((char *)task->blk) +MosaicBlkSize + sizeof(int);\
+	task->dst = MOScodevector(task) + sizeof(int);\
 	for( ; first < last; first++, v+= *(bte*)task->dst, task->dst++){\
 		if( (low == TPE##_nil || v >= low) && (v <= hgh || hgh == TPE##_nil) ){\
 			if ( !anti) {\
@@ -657,7 +657,7 @@ MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper)
 				hgh= low= *(int*) val;
 			} 
 		 	v= *(int*) (((char*) task->blk) + MosaicBlkSize);
-			task->dst = ((char *)task->blk) +MosaicBlkSize + sizeof(int);
+			task->dst = MOScodevector(task) + sizeof(int);
 			for( ; first < last; first++, v+= *(bte*)task->dst, task->dst++){
 				if( (low == int_nil || v >= low) && (v <= hgh || hgh == int_nil) ){
 					if ( !anti) {

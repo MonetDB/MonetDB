@@ -52,7 +52,7 @@ MOSinit(MOStask task, BAT *b){
 	task->hdr = (MosaicHdr) base;
 	base += MosaicHdrSize;
 	task->blk = (MosaicBlk)  base;
-	task->dst = base + MosaicBlkSize;
+	task->dst = MOScodevector(task);
 }
 
 void MOSblk(MosaicBlk blk)
@@ -280,7 +280,7 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
 #define MOSnewBlk(TASK)\
 			MOSsetTag(TASK->blk,MOSAIC_EOL);\
 			MOSsetCnt(TASK->blk,0);\
-			TASK->dst = ((char*) TASK->blk)+ MosaicBlkSize;
+			TASK->dst = MOScodevector(TASK);
 
 /* The compression orchestration is dealt with here.
  * We assume that the estimates for each scheme returns
@@ -450,7 +450,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 				MOSupdateHeader(cntxt,task);
 				MOSadvance_literal(cntxt,task);
 				// always start with an EOL block
-				task->dst = ((char*) task->blk)+ MosaicBlkSize;
+				task->dst = MOScodevector(task);
 				MOSsetTag(task->blk,MOSAIC_EOL);
 				MOSsetCnt(task->blk,0);
 			}
@@ -461,7 +461,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 				MOSupdateHeader(cntxt,task);
 				MOSadvance_literal(cntxt,task);
 				// always start with an EOL block
-				task->dst = ((char*) task->blk)+ MosaicBlkSize;
+				task->dst = MOScodevector(task);
 				MOSsetTag(task->blk,MOSAIC_EOL);
 				MOSsetCnt(task->blk,0);
 			}
@@ -513,10 +513,10 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	if( MOSgetTag(task->blk) == MOSAIC_NONE && MOSgetCnt(task->blk)){
 		MOSupdateHeader(cntxt,task);
 		MOSadvance_literal(cntxt,task);
-		task->dst = ((char*) task->blk)+ MosaicBlkSize;
+		task->dst = MOScodevector(task);
 		MOSsetTag(task->blk,MOSAIC_EOL);
 	} else
-		task->dst = ((char*) task->blk)+ MosaicBlkSize;
+		task->dst = MOScodevector(task);
 	task->bsrc->tmosaic->free = (task->dst - (char*)task->hdr);
 	task->timer = GDKusec() - task->timer;
 	if(debug) 

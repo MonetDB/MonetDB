@@ -109,6 +109,9 @@ typedef struct MOSAICBLK{
 #define MOSgetCnt(Blk) (BUN)((Blk)->cnt)
 #define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < MOSAICMAXCNT), (Blk)->cnt+= (unsigned int)(I))
 
+/* The start of the encoding withing a Mosaic block */
+#define MOScodevector(Task) (((char*) Task->blk)+ MosaicBlkSize)
+
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements
  */

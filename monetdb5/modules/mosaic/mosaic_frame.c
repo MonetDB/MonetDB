@@ -340,7 +340,7 @@ MOSestimate_frame(Client cntxt, MOStask task)
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	TPE *dict = (TPE*)hdr->frame;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
-	task->dst = ((char*) task->blk)+ MosaicBlkSize;\
+	task->dst = MOScodevector(task); \
     *(TPE*) task->dst = frame;\
 	task->dst += sizeof(TPE);\
 	base = (BitVector) (((char*) task->blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
