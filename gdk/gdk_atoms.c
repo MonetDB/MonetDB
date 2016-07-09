@@ -663,7 +663,7 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 		}
 	} while (num10(*p));
 	if (expbase > -1) {
-		dbl checkval = fabs(expbase * pow(10, base));
+		dbl checkval = fabs(((dbl) expbase) * (dbl) pow(10, base));
 		if (checkval >= maxdiv10 * 10) {
 			memcpy(*dst, ATOMnilptr(tp), sz);
 			return 0;
