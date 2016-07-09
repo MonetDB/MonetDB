@@ -18,7 +18,7 @@
  */
 
 /*
- * 2014-2015 author Martin Kersten
+ * 2014-2016 author Martin Kersten
  * Byte-wise delta encoding for SHT,INT,LNG, OID, WRD, STR-offsets, TIMESTAMP
  */
 

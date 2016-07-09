@@ -18,7 +18,7 @@
  */
 
 /*
- * 2014-2015 author Martin Kersten
+ * 2014-2016 author Martin Kersten
  * Use a chunk that has not been compressed
  */
 

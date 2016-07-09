@@ -18,7 +18,7 @@
  */
 
 /*
- * 2014-2015 author Martin Kersten
+ * 2014-2016 author Martin Kersten
  * Bit_prefix compression
  * Factor out the leading bits from a series of values.
  * The prefix size is determined by the first two non-identical values.

@@ -18,7 +18,7 @@
  */
 
 /*
- *2014-2015 author Martin Kersten
+ *2014-2016 author Martin Kersten
  * Frame of reference compression with dictionary
  * A chunk is beheaded by a reference value F from the column. The elements V in the
  * chunk are replaced by an index into a global dictionary of V-F offsets.

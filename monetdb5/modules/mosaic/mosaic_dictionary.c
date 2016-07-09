@@ -18,7 +18,7 @@
  */
 
 /*
- * 2014-2015 author Martin Kersten
+ * 2014-2016 author Martin Kersten
  * Global dictionary encoding
  * Index value zero is not used to easy detection of filler
  * The dictionary index size is derived from the number of entries covered.
