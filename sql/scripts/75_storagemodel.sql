@@ -33,7 +33,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -56,7 +57,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -76,7 +78,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -96,7 +99,8 @@ returns table (
 	phash boolean,
 	"imprints" bigint,
 	sorted boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -114,7 +118,8 @@ create table sys.storagemodelinput(
 	"atomwidth" int,	-- average width of strings or clob
 	"reference" boolean,	-- used as foreign key reference
 	"sorted" boolean,	-- if set there is no need for an index
-	"orderidx" bigint	-- an ordered oid index
+	"orderidx" bigint,	-- an ordered oid index
+	"compressed" boolean -- comes with compressed store
 );
 -- this table can be adjusted to reflect the anticipated final database size
 
@@ -124,7 +129,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx from sys."storage"() X;
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.orderidx, X.compressed from sys."storage"() X;
 
 	update sys.storagemodelinput
 	set reference = true
@@ -224,14 +229,15 @@ returns table (
 	hashes bigint,
 	"imprints" bigint,
 	sorted boolean,
-	orderidx bigint)
+	orderidx bigint,
+	compressed boolean)
 begin
 	return select I."schema", I."table", I."column", I."type", I."count",
 	columnsize(I."type", I.count, I."distinct"),
 	heapsize(I."type", I."distinct", I."atomwidth"),
 	hashsize(I."reference", I."count"),
 	imprintsize(I."count",I."type"),
-	I.sorted, I.orderidx
+	I.sorted, I.orderidx, I.compressed
 	from sys.storagemodelinput I;
 end;
 
