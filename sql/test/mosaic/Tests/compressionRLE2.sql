@@ -9,7 +9,6 @@ alter table tmp3RLE alter column i set storage NULL;
 alter table tmp3RLE alter column b set storage NULL;
 alter table tmp3RLE alter column f set storage NULL;
 alter table tmp3RLE alter column t set storage NULL;
-alter table tmp3RLE alter column d set storage NULL;
 explain select * from tmp3RLE;
 select * from tmp3RLE;
 

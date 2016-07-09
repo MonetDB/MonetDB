@@ -203,6 +203,7 @@ Dependencies between database objects
 % 11,	35,	8 # length
 [ "atomwidth",	"storagemodel",	"DEP_FUNC"	]
 [ "column",	"storagemodel",	"DEP_FUNC"	]
+[ "compressed",	"storagemodel",	"DEP_FUNC"	]
 [ "count",	"storagemodel",	"DEP_FUNC"	]
 [ "depend_id",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
 [ "depend_id",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
@@ -576,6 +577,7 @@ Cleanup
 % 11,	35,	8 # length
 [ "atomwidth",	"storagemodel",	"DEP_FUNC"	]
 [ "column",	"storagemodel",	"DEP_FUNC"	]
+[ "compressed",	"storagemodel",	"DEP_FUNC"	]
 [ "count",	"storagemodel",	"DEP_FUNC"	]
 [ "depend_id",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
 [ "depend_id",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
