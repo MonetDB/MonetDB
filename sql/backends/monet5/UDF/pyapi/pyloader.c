@@ -45,7 +45,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     int argcount = pci->argc;
     int retvals = pci->retc;
     bool create_table = false;
-    size_t nval = 0;
+    BUN nval = 0;
 
     char * loader_additional_args[] = {"_emit", "_conn"};
 
@@ -204,7 +204,7 @@ str PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
         cols = ((Py_EmitObject *) pEmit)->cols;
         nval = ((Py_EmitObject *) pEmit)->nvals;
-        retvals = (ssize_t)((Py_EmitObject *) pEmit)->ncols;
+        retvals = (int) ((Py_EmitObject *) pEmit)->ncols;
         Py_DECREF(pFunc);
         Py_DECREF(pArgs);
 
