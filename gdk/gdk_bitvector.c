@@ -29,13 +29,16 @@ void initBitMasks(void)
 
 BitVector
 newBitVector(BUN cnt, int width)  
-{ 
+{   int size;
 	BitVector m;
 	if( (unsigned) width > BITS)
 		return 0;
 	
-	m = (BitVector) malloc( (cnt * width)/ 8 + (((cnt * width) % 8) > 0)* 8);
-	memset((char*) m, 0,  (cnt * width)/ 8 + (((cnt * width) % 8) > 0)* 8);
+	size = (cnt * width)/8 + ((cnt * width)%8) >0;
+	size = (size / sizeof(int)) * sizeof(int) + ((size % sizeof(int)) > 0) * sizeof(int);
+
+	m = (BitVector) GDKzalloc( size);
+	initBitMasks();
 	return m;
 }
 
@@ -46,9 +49,9 @@ setBitVector(BitVector vector, const BUN i, const int bits, const int value)
 	BUN cid;
 	unsigned int m1,  m2;
 
-    //printf("#setBitVector %ld i "BUNFMT" bits %d value %d\n",(long)vector,i,bits, value);
 	cid = (i * bits) / BITS;
 	m1  = ((i * bits) % BITS)/bits;
+    //mnstr_printf(GDKout,"#setBitVector %ld i "BUNFMT" bits %d value %d cid %d ",(long)vector,i,bits, value, vector[cid]);
     if ( m1 * bits <= BITS)
         vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ((value & masks[bits]) << (m1 * bits));
     else{ 
@@ -57,6 +60,7 @@ setBitVector(BitVector vector, const BUN i, const int bits, const int value)
         vector[cid]= (vector[cid]  & ~( masks[bits] << (m1 * bits))) | ( (value & masks[bits]) << (BITS-m1));
         vector[cid+1]= 0 | ( (value & masks[bits])  >> m2);
 	}
+    //mnstr_printf(GDKout,"-> %o\n",vector[cid]);
 }
 
 // clear a cell
@@ -82,7 +86,7 @@ getBitVector(BitVector vector, BUN i, int bits)
 		m2 = bits - m1;
 		value  = (((vector[cid] >> (BITS - m1)) & masks[bits - m1]) << m2) | (vector[cid+1] & masks[m2]);
 	  }
-    //printf("#getBitVector %ld i "BUNFMT" bits %d value %d\n",(long)vector,i,bits,value);
+    //mnstr_printf(GDKout,"#getBitVector %ld i "BUNFMT" bits %d value %d cid %o\n",(long)vector,i,bits,value,vector[cid]);
 	return value;
 }
 
