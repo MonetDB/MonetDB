@@ -35,6 +35,7 @@ int have_hge;
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "opt_statistics.h"
+#include "gdk_bitvector.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -100,6 +101,7 @@ int mal_init(void){
 #endif
 	initResource();
 	RECYCLEinit();
+	initBitMasks();
 	if( malBootstrap() == 0)
 		return -1;
 	/* set up the profiler if needed, output sent to console */
