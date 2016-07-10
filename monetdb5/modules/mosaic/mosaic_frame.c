@@ -20,7 +20,7 @@
 /*
  *2014-2016 author Martin Kersten
  * Frame of reference compression with dictionary
- * A chunk is beheaded by a reference value F from the column. The elements V in the
+ * A codevector chunk is beheaded by a reference value F from the column. The elements V in the
  * chunk are replaced by an index into a global dictionary of V-F offsets.
  *
  * The dictionary is limited to 256 entries and all indices are at most one byte.
@@ -57,24 +57,23 @@ MOSadvance_frame(Client cntxt, MOStask task)
 static void
 MOSdump_frameInternal(char *buf, size_t len, MOStask task, int i)
 {
-	void * val = (void*) task->hdr->frame;
 	switch(ATOMbasetype(task->type)){
 	case TYPE_sht:
-		snprintf(buf,len,"%hd", ((sht*) val)[i]); break;
+		snprintf(buf,len,"%hd", task->hdr->frame.valsht[i]); break;
 	case TYPE_int:
-		snprintf(buf,len,"%d", ((int*) val)[i]); break;
+		snprintf(buf,len,"%d", task->hdr->frame.valint[i]); break;
 	case  TYPE_oid:
-		snprintf(buf,len,OIDFMT, ((oid*) val)[i]); break;
+		snprintf(buf,len,OIDFMT, task->hdr->frame.valoid[i]); break;
 	case  TYPE_lng:
-		snprintf(buf,len,LLFMT, ((lng*) val)[i]); break;
+		snprintf(buf,len,LLFMT, task->hdr->frame.vallng[i]); break;
 #ifdef HAVE_HGE
 	case  TYPE_hge:
-		snprintf(buf,len,"%.40g", (dbl) ((hge*) val)[i]); break;
+		snprintf(buf,len,"%.40g", (dbl)task->hdr->frame.valhge[i]); break;
 #endif
 	case TYPE_flt:
-		snprintf(buf,len,"%f", ((flt*) val)[i]); break;
+		snprintf(buf,len,"%f", task->hdr->frame.valflt[i]); break;
 	case TYPE_dbl:
-		snprintf(buf,len,"%g", ((dbl*) val)[i]); break;
+		snprintf(buf,len,"%g", task->hdr->frame.valdbl[i]); break;
 	}
 }
 
@@ -134,14 +133,14 @@ MOSskip_frame(Client cntxt, MOStask task)
 		task->blk = 0; // ENDOFLIST
 }
 
-#define MOSfind(X,VAL,F,L)\
+#define MOSfind(RES,DICT,VAL,F,L)\
 { int m,f= F, l=L; \
    while( l-f > 0 ) { \
 	m = f + (l-f)/2;\
-	if ( VAL < dict[m] ) l=m-1; else f= m;\
-	if ( VAL > dict[m] ) f=m+1; else l= m;\
+	if ( VAL < DICT[m] ) l=m-1; else f= m;\
+	if ( VAL > DICT[m] ) f=m+1; else l= m;\
    }\
-   X= f;\
+   RES= f;\
 }
 
 /* old mask may be out of date for new piece
@@ -155,12 +154,11 @@ MOSskip_frame(Client cntxt, MOStask task)
  */
 #define estimateFrame(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	TPE *dict= (TPE*)hdr->frame;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
-		MOSfind(j,delta,0,hdr->framesize);\
-		if( j == hdr->framesize || dict[j] != delta )\
+		MOSfind(j,task->hdr->frame.val##TPE,delta,0,hdr->framesize);\
+		if( j == hdr->framesize || task->hdr->frame.val##TPE[j] != delta )\
 			break;\
 	}\
 	if( i * sizeof(TPE) <= chunk_size(task,i) )\
@@ -173,13 +171,12 @@ MOSskip_frame(Client cntxt, MOStask task)
 // store it in the compressed heap header directly
 // filter out the most frequent ones
 #define makeFrame(TPE)\
-{	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	TPE *dict = (TPE*)hdr->frame,v;\
+{	TPE v,*val = ((TPE*)task->src) + task->start, frame = *val, delta;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	for(i =0; i< limit; i++, val++){\
 		delta = *val - frame;\
 		for(j= 0; j< hdr->framesize; j++)\
-			if( dict[j] == delta) break;\
+			if( task->hdr->frame.val##TPE[j] == delta) break;\
 		if ( j == hdr->framesize){\
 			if ( hdr->framesize == 256){\
 				int min = 0;\
@@ -189,7 +186,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 				cnt[j]=0;\
 				break;\
 			}\
-			dict[j] = delta;\
+			task->hdr->frame.val##TPE[j] = delta;\
 			cnt[j]++;\
 			hdr->framesize++;\
 		} else\
@@ -197,10 +194,10 @@ MOSskip_frame(Client cntxt, MOStask task)
 	}\
 	for(i=0; i< (BUN) hdr->framesize; i++)\
 		for(j=i+1; j< hdr->framesize; j++)\
-			if(dict[i] >dict[j]){\
-				v= dict[i];\
-				dict[i] = dict[j];\
-				dict[j] = v;\
+			if(task->hdr->frame.val##TPE[i] >task->hdr->frame.val##TPE[j]){\
+				v= task->hdr->frame.val##TPE[i];\
+				task->hdr->frame.val##TPE[i] = task->hdr->frame.val##TPE[j];\
+				task->hdr->frame.val##TPE[j] = v;\
 			}\
 	hdr->framebits = 1;\
 	hdr->mask =1;\
@@ -232,13 +229,12 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
-			int *dict = (int*)hdr->frame,v;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			for(i =0; i< limit; i++, val++){
 				delta = *val - frame;
 				for(j= 0; j< hdr->framesize; j++)
-					if( dict[j] == delta) break;
+					if( task->hdr->frame.valint[j] == delta) break;
 				if ( j == hdr->framesize){
 					if ( hdr->framesize == 256){
 						int min = 0;
@@ -249,7 +245,7 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 						cnt[j]=0;
 						break;
 					}
-					dict[j] = delta;
+					task->hdr->frame.valint[j] = delta;
 					cnt[j]++;
 					hdr->framesize++;
 				} else
@@ -259,10 +255,10 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 			// sort it
 			for(i=0; i< (BUN) hdr->framesize; i++)
 				for(j=i+1; j< hdr->framesize; j++)
-					if(dict[i] >dict[j]){
-						v= dict[i];
-						dict[i] = dict[j];
-						dict[j] = v;
+					if(task->hdr->frame.valint[i] >task->hdr->frame.valint[j]){
+						int v= task->hdr->frame.valint[i];
+						task->hdr->frame.valint[i] = task->hdr->frame.valint[j];
+						task->hdr->frame.valint[j] = v;
 					}
 			hdr->framebits = 1;
 			hdr->mask =1;
@@ -298,7 +294,6 @@ MOSestimate_frame(Client cntxt, MOStask task)
 #endif
 	case TYPE_int:
 		{	int *val = ((int*)task->src) + task->start, frame = *val, delta;
-			int *dict = (int*)hdr->frame;
 			BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;
 
 			/* frame mask may not be valid anymore
@@ -313,8 +308,8 @@ MOSestimate_frame(Client cntxt, MOStask task)
 
 			for(i =0; i<limit; i++, val++){
 				delta= *val - frame;
-				MOSfind(j,delta,0,hdr->framesize);
-				if( j == hdr->framesize || dict[j] != delta)
+				MOSfind(j,task->hdr->frame.valint,delta,0,hdr->framesize);
+				if( j == hdr->framesize || task->hdr->frame.valint[j] != delta)
 					break;
 			}
 			if ( i > MOSlimit() ) i = MOSlimit();
@@ -338,7 +333,6 @@ MOSestimate_frame(Client cntxt, MOStask task)
 
 #define FRAMEcompress(TPE)\
 {	TPE *val = ((TPE*)task->src) + task->start, frame = *val, delta;\
-	TPE *dict = (TPE*)hdr->frame;\
 	BUN limit = task->stop - task->start > MOSlimit()? MOSlimit(): task->stop - task->start;\
 	task->dst = MOScodevector(task); \
     *(TPE*) task->dst = frame;\
@@ -348,8 +342,8 @@ MOSestimate_frame(Client cntxt, MOStask task)
 	for(i =0; i<limit; i++, val++){\
 		delta = *val - frame;\
 		hdr->checksum.sum##TPE += delta;\
-		MOSfind(j,delta,0,hdr->framesize);\
-		if(j == hdr->framesize || dict[j] != delta) \
+		MOSfind(j,task->hdr->frame.val##TPE,delta,0,hdr->framesize);\
+		if(j == hdr->framesize || task->hdr->frame.val##TPE[j] != delta) \
 			break;\
 		else {\
 			hdr->framefreq[j]++;\
@@ -390,14 +384,13 @@ MOScompress_frame(Client cntxt, MOStask task)
 #define framedecompress(I) j = getBitVector(base,I,hdr->framebits)
 
 #define FRAMEdecompress(TPE)\
-{	TPE *dict =(TPE*)((char*)hdr->frame), frame;\
-	BUN lim = MOSgetCnt(blk);\
-	frame = *(TPE*)(((char*)blk) +  MosaicBlkSize);\
+{	BUN lim = MOSgetCnt(blk);\
+    TPE frame = *(TPE*)MOScodevector(task);\
 	base = (BitVector) (((char*) blk) +  MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	for(i = 0; i < lim; i++){\
 		framedecompress(i);\
-		((TPE*)task->src)[i] = frame + dict[j];\
-		hdr->checksum2.sum##TPE += dict[j];\
+		((TPE*)task->src)[i] = frame + task->hdr->frame.val##TPE[j];\
+		hdr->checksum2.sum##TPE += task->hdr->frame.val##TPE[j];\
 	}\
 	task->src += i * sizeof(TPE);\
 }
@@ -430,8 +423,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 // They are bound by an oid range and possibly a candidate list
 
 #define subselect_frame(TPE) {\
- 	TPE *dict= (TPE*) hdr->frame, frame;\
-	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
+    TPE frame = *(TPE*)MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	if( !*anti){\
 		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
@@ -444,7 +436,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
-				cmp  =  ((*hi && frame + dict[j] <= * (TPE*)hgh ) || (!*hi && frame + dict[j] < *(TPE*)hgh ));\
+				cmp  =  ((*hi && frame + task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame + task->hdr->frame.val##TPE[j] < *(TPE*)hgh ));\
 				if (cmp )\
 					*o++ = (oid) first;\
 			}\
@@ -453,7 +445,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			for(i=0; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
-				cmp  =  ((*li && frame + dict[j] >= * (TPE*)low ) || (!*li && frame + dict[j] > *(TPE*)low ));\
+				cmp  =  ((*li && frame + task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame + task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
 				if (cmp )\
 					*o++ = (oid) first;\
 			}\
@@ -461,8 +453,8 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
-				cmp  =  ((*hi && frame + dict[j] <= * (TPE*)hgh ) || (!*hi && frame + dict[j] < *(TPE*)hgh )) &&\
-						((*li && frame + dict[j] >= * (TPE*)low ) || (!*li && frame + dict[j] > *(TPE*)low ));\
+				cmp  =  ((*hi && frame + task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame + task->hdr->frame.val##TPE[j] < *(TPE*)hgh )) &&\
+						((*li && frame + task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame + task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
 				if (cmp )\
 					*o++ = (oid) first;\
 			}\
@@ -475,7 +467,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
-				cmp  =  ((*hi && frame + dict[j] <= * (TPE*)hgh ) || (!*hi && frame + dict[j] < *(TPE*)hgh ));\
+				cmp  =  ((*hi && frame + task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame + task->hdr->frame.val##TPE[j] < *(TPE*)hgh ));\
 				if ( !cmp )\
 					*o++ = (oid) first;\
 			}\
@@ -484,7 +476,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
-				cmp  =  ((*li && frame + dict[j] >= * (TPE*)low ) || (!*li && frame + dict[j] > *(TPE*)low ));\
+				cmp  =  ((*li && frame +task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame +task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
 				if ( !cmp )\
 					*o++ = (oid) first;\
 			}\
@@ -492,8 +484,8 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
-				cmp  =  ((*hi && frame + dict[j] <= * (TPE*)hgh ) || (!*hi && frame + dict[j] < *(TPE*)hgh )) &&\
-						((*li && frame + dict[j] >= * (TPE*)low ) || (!*li && frame + dict[j] > *(TPE*)low ));\
+				cmp  =  ((*hi && frame +task->hdr->frame.val##TPE[j] <= * (TPE*)hgh ) || (!*hi && frame +task->hdr->frame.val##TPE[j] < *(TPE*)hgh )) &&\
+						((*li && frame +task->hdr->frame.val##TPE[j] >= * (TPE*)low ) || (!*li && frame +task->hdr->frame.val##TPE[j] > *(TPE*)low ));\
 				if ( !cmp )\
 					*o++ = (oid) first;\
 			}\
@@ -522,7 +514,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: subselect_frame(sht); break;
 	case TYPE_int: subselect_frame(int); break;
 	case TYPE_lng: subselect_frame(lng); break;
@@ -532,85 +524,6 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 #ifdef HAVE_HGE
 	case TYPE_hge: subselect_frame(hge); break;
 #endif
-	default:
-		if( task->type == TYPE_date)
-			subselect_frame(date);
-		if( task->type == TYPE_daytime)
-			subselect_frame(daytime);
-		if( task->type == TYPE_timestamp)
-		{ lng *dict= (lng*) hdr->frame, frame;
-			int lownil = timestamp_isnil(*(timestamp*)low);
-			int hghnil = timestamp_isnil(*(timestamp*)hgh);
-			frame = *(lng*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);
-
-			if( !*anti){
-				if( lownil && hghnil){
-					for( ; first < last; first++){
-						MOSskipit();
-						*o++ = (oid) first;
-					}
-				} else
-				if( lownil){
-					for( i=0 ; first < last; first++, i++){
-						MOSskipit();
-						framedecompress(i);
-						cmp  =  ((*hi && frame + dict[j] <= * (lng*)hgh ) || (!*hi && frame + dict[j] < *(lng*)hgh ));
-						if (cmp )
-							*o++ = (oid) first;
-					}
-				} else
-				if( hghnil){
-					for(i=0 ; first < last; first++, i++){
-						MOSskipit();
-						framedecompress(i);
-						cmp  =  ((*li && frame + dict[j] >= * (lng*)low ) || (!*li && frame + dict[j] > *(lng*)low ));
-						if (cmp )
-							*o++ = (oid) first;
-					}
-				} else{
-					for(i=0 ; first < last; first++, i++){
-						MOSskipit();
-						framedecompress(i);
-						cmp  =  ((*hi && frame + dict[j] <= * (lng*)hgh ) || (!*hi && frame + dict[j] < *(lng*)hgh )) &&
-								((*li && frame + dict[j] >= * (lng*)low ) || (!*li && frame + dict[j] > *(lng*)low ));
-						if (cmp )
-							*o++ = (oid) first;
-					}
-				}
-			} else {
-				if( lownil && hghnil){
-					/* nothing is matching */
-				} else
-				if( lownil){
-					for(i=0 ; first < last; first++, i++){
-						MOSskipit();
-						framedecompress(i);
-						cmp  =  ((*hi && frame + dict[i] <= * (lng*)hgh ) || (!*hi && frame + dict[i] < *(lng*)hgh ));
-						if ( !cmp )
-							*o++ = (oid) first;
-					}
-				} else
-				if( hghnil){
-					for(i=0 ; first < last; first++, i++){
-						MOSskipit();
-						framedecompress(i);
-						cmp  =  ((*li && frame + dict[i] >= * (lng*)low ) || (!*li && frame + dict[i] > *(lng*)low ));
-						if ( !cmp )
-							*o++ = (oid) first;
-					}
-				} else{
-					for( i=0 ; first < last; first++, i++){
-						MOSskipit();
-						framedecompress(i);
-						cmp  =  ((*hi && frame + dict[j] <= * (lng*)hgh ) || (!*hi && frame + dict[j] < *(lng*)hgh )) &&
-								((*li && frame + dict[j] >= * (lng*)low ) || (!*li && frame + dict[j] > *(lng*)low ));
-						if ( !cmp )
-							*o++ = (oid) first;
-					}
-				}
-			}
-		}
 	}
 	MOSskip_frame(cntxt,task);
 	task->lb = o;
@@ -619,8 +532,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 
 #define thetasubselect_frame(TPE)\
 { 	TPE low,hgh;\
- 	TPE *dict= (TPE*) hdr->frame, frame;\
-	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
+	TPE frame = *(TPE*) MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
@@ -647,7 +559,7 @@ MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	for( ; first < last; first++){\
 		MOSskipit();\
 		framedecompress(first); \
-		if( (low == TPE##_nil || frame + dict[j] >= low) && (frame + dict[j] <= hgh || hgh == TPE##_nil) ){\
+		if( (low == TPE##_nil || frame + task->hdr->frame.val##TPE[j] >= low) && (frame + task->hdr->frame.val##TPE[j] <= hgh || hgh == TPE##_nil) ){\
 			if ( !anti) {\
 				*o++ = (oid) first;\
 			}\
@@ -663,7 +575,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 {
 	oid *o;
 	int anti=0;
-	BUN i,first,last;
+	BUN first,last;
 	int j;
 	MosaicHdr hdr = task->hdr;
 	BitVector base;
@@ -679,7 +591,7 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 	}
 	o = task->lb;
 
-	switch(task->type){
+	switch(ATOMbasetype(task->type)){
 	case TYPE_sht: thetasubselect_frame(sht); break;
 	case TYPE_lng: thetasubselect_frame(lng); break;
 	case TYPE_int: thetasubselect_frame(int); break;
@@ -689,48 +601,6 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 #ifdef HAVE_HGE
 	case TYPE_hge: thetasubselect_frame(hge); break;
 #endif
-	default:
-		if( task->type == TYPE_timestamp)
-		{ 	lng low,hgh;
-			lng *dict= (lng*) hdr->frame, frame;
-			frame = *(lng*)(((char*)task->blk) +  MosaicBlkSize);
-			base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);
-
-			low= hgh = int_nil;
-			if ( strcmp(oper,"<") == 0){
-				hgh= *(lng*) val;
-				hgh = PREVVALUElng(hgh);
-			} else
-			if ( strcmp(oper,"<=") == 0){
-				hgh= *(lng*) val;
-			} else
-			if ( strcmp(oper,">") == 0){
-				low = *(lng*) val;
-				low = NEXTVALUElng(low);
-			} else
-			if ( strcmp(oper,">=") == 0){
-				low = *(lng*) val;
-			} else
-			if ( strcmp(oper,"!=") == 0){
-				hgh= low= *(lng*) val;
-				anti++;
-			} else
-			if ( strcmp(oper,"==") == 0){
-				hgh= low= *(lng*) val;
-			} 
-			for(i=0 ; first < last; first++,i++){
-				MOSskipit();
-				framedecompress(i);
-				if( (low == int_nil || frame + dict[j] >= low) && (frame + dict[j] <= hgh || hgh == int_nil) ){
-					if ( !anti) {
-						*o++ = (oid) first;
-					}
-				} else
-				if( anti){
-					*o++ = (oid) first;
-				}
-			}
-		} 
 	}
 	MOSskip_frame(cntxt,task);
 	task->lb =o;
@@ -739,14 +609,13 @@ MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 
 #define projection_frame(TPE)\
 {	TPE *v;\
-	TPE *dict= (TPE*) hdr->frame, frame;\
-	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
+	TPE frame = *(TPE*) MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++){\
 		MOSskipit();\
 		framedecompress(i);\
-		*v++ = frame + dict[j];\
+		*v++ = frame + task->hdr->frame.val##TPE[j];\
 		task->n--;\
 	}\
 	task->src = (char*) v;\
@@ -781,15 +650,14 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 
 #define join_frame(TPE)\
 {	TPE *w;\
-	TPE *dict= (TPE*) hdr->frame, frame;\
-	frame = *(TPE*)(((char*)task->blk) +  MosaicBlkSize);\
+	TPE frame = *(TPE*) MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			framedecompress(i);\
-			if ( *w == frame + dict[j]){\
+			if ( *w == frame + task->hdr->frame.val##TPE [j]){\
 				BUNappend(task->lbat, &oo, FALSE);\
 				BUNappend(task->rbat, &o, FALSE);\
 			}\

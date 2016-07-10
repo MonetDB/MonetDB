@@ -653,6 +653,7 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 
 	// continue with all work
 	bsrc->batDirty = 1;
+	BATsettrivprop(bsrc);
 
 	MCexitMaintenance(cntxt);
 	BBPkeepref( *ret = bsrc->batCacheid);
@@ -684,9 +685,9 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 	}
 	if(error)
 		mnstr_printf(cntxt->fdout,"#incompatible compression\n");
-	GDKfree(task);
 
 	task->timer = GDKusec() - task->timer;
+	GDKfree(task);
 	return MAL_SUCCEED;
 }
 
@@ -874,9 +875,7 @@ MOSsubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(bn,cnt);
 	bn->tnil = 0;
 	bn->tnonil = 1;
-	bn->tsorted = 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tkey = 1;
+	bn->tsorted = bn->trevsorted = cnt <=1;
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	GDKfree(task);
 	BBPkeepref(bn->batCacheid);
@@ -1005,9 +1004,7 @@ str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATsetcount(bn,cnt);
 		bn->tnil = 0;
 		bn->tnonil = 1;
-		bn->tsorted = 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->tkey = 1;
+		bn->tsorted = bn->trevsorted = cnt <= 1;
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
 	GDKfree(task);
@@ -1135,9 +1132,7 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(bn,task->cnt);
 	bn->tnil = 0;
 	bn->tnonil = 1;
-	bn->tsorted = 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tkey = 1;
+	bn->tsorted = bn->trevsorted = cnt <= 1;
 	BBPkeepref(*ret = bn->batCacheid);
 	GDKfree(task);
 	return msg;
@@ -1262,11 +1257,8 @@ MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			assert(0);
 		}
 
-    bln->tsorted = cnt <= 1;
-    bln->trevsorted = cnt <= 1;
-
-    brn->tsorted = cnt<= 1;
-    brn->trevsorted = cnt <= 1;
+	BATsettrivprop(bln);
+	BATsettrivprop(brn);
     if( swapped){
         BBPkeepref(*ret= brn->batCacheid);
         BBPkeepref(*ret2= bln->batCacheid);

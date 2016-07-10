@@ -81,18 +81,33 @@ typedef struct MOSAICHEADER{
 	bte mask, bits, framebits;	// global compression type properties
 	int dictsize;		// used by dictionary compression, it is a small table
 	int framesize;		// used by frame compression, it is a small table
+	union{
+		sht valsht[256];
+		int valint[256];
+		lng vallng[256];
+		oid valoid[256];
+		flt valflt[256];
+		dbl valdbl[256];
 #ifdef HAVE_HGE
-	hge dict[256];
-	hge frame[256];
-#else
-	lng dict[256];
-	lng frame[256];
+		hge valhge[256];
 #endif
+	}dict;
+	lng dictfreq[256];// keep track on their use
+	union{
+		sht valsht[256];
+		int valint[256];
+		lng vallng[256];
+		oid valoid[256];
+		flt valflt[256];
+		dbl valdbl[256];
+#ifdef HAVE_HGE
+		hge valhge[256];
+#endif
+	}frame;
 	// collect compression statistics for the particular task
 	flt ratio;	//compresion ratio
 	lng blks[MOSAIC_METHODS];	
 	lng elms[MOSAIC_METHODS];	
-	lng dictfreq[256];// keep track on their use
 	lng framefreq[256];
 } * MosaicHdr;
 
@@ -110,7 +125,7 @@ typedef struct MOSAICBLK{
 #define MOSincCnt(Blk,I) (assert((Blk)->cnt +I < MOSAICMAXCNT), (Blk)->cnt+= (unsigned int)(I))
 
 /* The start of the encoding withing a Mosaic block */
-#define MOScodevector(Task) (((char*) Task->blk)+ MosaicBlkSize)
+#define MOScodevector(Task) (((char*) (Task)->blk)+ MosaicBlkSize)
 
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements
