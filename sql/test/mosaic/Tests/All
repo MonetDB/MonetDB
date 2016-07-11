@@ -5,5 +5,7 @@ xqueries
 xqueries_rle
 xqueries_delta
 
+mix
+
 session_init
 session_exit
