@@ -4088,6 +4088,11 @@ BBPdiskscan(const char *parent)
 #else
 			delete = TRUE;
 #endif
+		} else if (strncmp(p + 1, "tmosaic", 9) == 0) {
+			BAT *b = getdesc(bid);
+			delete = b == NULL;
+			if (!delete)
+				b->tmosaic = (Heap *) 1;
 		} else if (strncmp(p + 1, "timprints", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;

@@ -336,6 +336,10 @@ VIEWunlink(BAT *b)
 		/* unlink imprints shared with parent */
 		if (tpb && b->timprints && b->timprints == tpb->timprints)
 			b->timprints = NULL;
+
+		/* unlink mosaic shared with parent */
+		if (tpb && b->tmosaic && b->tmosaic == tpb->tmosaic)
+			b->tmosaic = NULL;
 	}
 }
 

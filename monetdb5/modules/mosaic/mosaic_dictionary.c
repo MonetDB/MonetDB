@@ -245,8 +245,8 @@ MOScreatedictionary(Client cntxt, MOStask task)
 	default:
 		mnstr_printf(cntxt->fdout,"#does not support dictionary type %d\n",ATOMbasetype(task->type));
 	}
-	MOSdump_dictionary(cntxt, task);
 #ifdef _DEBUG_MOSAIC_
+	MOSdump_dictionary(cntxt, task);
 #endif
 }
 

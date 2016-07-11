@@ -14,19 +14,93 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-gdk_return
-MOSalloc(BAT *bn, BUN cap)
-{
-    const char *nme = BBP_physical(bn->batCacheid);
+#ifdef PERSISTENTMOSAIC
+struct mosaicsync {
+    Heap *hp;
+    bat id;
+    const char *func;
+};
 
-    if ( (bn->tmosaic = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-        (bn->tmosaic->filename = GDKfilepath(NOFARM, NULL, nme, "mosaic")) == NULL)
-        return GDK_FAIL;
+static void
+BATmosaicsync(void *arg)
+{
+    struct mosaicsync *hs = arg;
+    Heap *hp = hs->hp;
+    int fd;
+    lng t0 = GDKusec();
+
+    if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||
+        (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
+        BBPunfix(hs->id);
+        GDKfree(arg);
+        return;
+    }
+    ((oid *) hp->base)[0] |= (oid) 1 << 24;
+    if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
+        perror("write mosaic");
+    if (!(GDKdebug & FORCEMITOMASK)) {
+#if defined(NATIVE_WIN32)
+        _commit(fd);
+#elif defined(HAVE_FDATASYNC)
+        fdatasync(fd);
+#elif defined(HAVE_FSYNC)
+        fsync(fd);
+#endif
+    }
+    close(fd);
+    BBPunfix(hs->id);
+    ALGODEBUG fprintf(stderr, "#%s: persisting mosaic %s (" LLFMT " usec)\n", hs->func, hp->filename, GDKusec() - t0);
+    GDKfree(arg);
+}
+#endif
+
+gdk_return
+BATmosaic(BAT *bn, BUN cap)
+{
+    const char *nme;
+	Heap *m;
+
+    MT_lock_set(&GDKmosaicLock(bn->batCacheid));
+	if( bn->tmosaic){
+		MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
+		return GDK_SUCCEED;
+	}
+
+    nme = BBP_physical(bn->batCacheid);
+    if ( (m = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
+		(m->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0 ||
+        (m->filename = GDKfilepath(NOFARM, NULL, nme, "mosaic")) == NULL){
+			if( m)
+				GDKfree(m->filename);
+			GDKfree(m);
+			MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
+			return GDK_FAIL;
+		}
 	
-    if( HEAPalloc(bn->tmosaic, cap, Tsize(bn)) != GDK_SUCCEED)
+    if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED){
+		MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
         return GDK_FAIL;
-    bn->tmosaic->parentid = bn->batCacheid;
-    bn->tmosaic->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap);
+	}
+    m->parentid = bn->batCacheid;
+
+#ifdef PERSISTENTMOSAIC
+    if ((BBP_status(bn->batCacheid) & BBPEXISTING) &&
+        bn->batInserted == bn->batCount) {
+        MT_Id tid;
+        struct mosaicsync *hs = GDKmalloc(sizeof(*hs));
+        if (hs != NULL) {
+            BBPfix(bn->batCacheid);
+            hs->id = bn->batCacheid;
+            hs->hp = m;
+            hs->func = "BATmosaic";
+            MT_create_thread(&tid, BATmosaicsync, hs, MT_THR_DETACHED);
+        }
+    } else
+        ALGODEBUG fprintf(stderr, "#BATmosaic: NOT persisting index %d\n", bn->batCacheid);
+#endif
+	bn->batDirtydesc = TRUE;
+	bn->tmosaic = m;
+	MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
     return GDK_SUCCEED;
 }
 
@@ -51,19 +125,26 @@ BATcheckmosaic(BAT *b)
 	int ret;
 	lng t;
 
+    if (VIEWtparent(b)) {
+        assert(b->tmosaic == NULL);
+        b = BBPdescriptor(VIEWtparent(b));
+    }
+
 	assert(b->batCacheid > 0);
 	t = GDKusec();
-	MT_lock_set(&GDKhashLock(abs(b->batCacheid)));
+	MT_lock_set(&GDKmosaicLock(abs(b->batCacheid)));
 	t = GDKusec() - t;
-	if (b->tmosaic == NULL) {
+	if (b->tmosaic == (Heap *) 1) {
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
 		const char *ext = "mosaic";
 		int fd;
 
+		b->tmosaic = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 &&
 		    (hp->filename = GDKmalloc(strlen(nme) + 10)) != NULL) {
+
 			sprintf(hp->filename, "%s.%s", nme, ext);
 
 			/* check whether a persisted mosaic can be found */
@@ -79,7 +160,7 @@ BATcheckmosaic(BAT *b)
 					close(fd);
 					b->tmosaic = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckmosaic: reusing persisted mosaic %d\n", b->batCacheid);
-					MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+					MT_lock_unset(&GDKmosaicLock(abs(b->batCacheid)));
 					return 1;
 				}
 				close(fd);
@@ -92,7 +173,7 @@ BATcheckmosaic(BAT *b)
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
 	ret = b->tmosaic != NULL;
-	MT_lock_unset(&GDKhashLock(abs(b->batCacheid)));
+	MT_lock_unset(&GDKmosaicLock(abs(b->batCacheid)));
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckmosaic: already has mosaic %d, waited " LLFMT " usec\n", b->batCacheid, t);
 	return ret;
 }

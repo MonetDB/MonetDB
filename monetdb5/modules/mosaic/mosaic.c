@@ -354,10 +354,11 @@ MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 str
 MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 {
-	BAT *bsrc;		// the BAT to be augmented with a compressed heap
+	BAT *o = NULL, *bsrc;		// the BAT to be augmented with a compressed heap
 	str msg = MAL_SUCCEED;
 	int cand;
 	int tpe, typewidth;
+	lng t0,t1;
 	
 	*ret = 0;
 
@@ -377,7 +378,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 	case TYPE_flt:
 	case TYPE_dbl:
 	case TYPE_str:
-		typewidth = ATOMsize(tpe) * 8;
+		typewidth = ATOMsize(tpe) * 8; // size in bits
 		break;
 	default:
 		// don't compress them
@@ -385,7 +386,25 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 		return msg;
 	}
 
-	if ( BATcount(bsrc) < MIN_INPUT_COUNT  || BATcheckmosaic(bsrc)){
+    if (BATcheckmosaic(bsrc)){
+		/* already compressed */
+		BBPkeepref(*ret = bsrc->batCacheid);
+		return msg;
+	}
+    assert(bsrc->tmosaic == NULL);
+
+    if (VIEWtparent(bsrc)) {
+        bat p = VIEWtparent(bsrc);
+        o = bsrc;
+        bsrc = BATdescriptor(p);
+        if (BATcheckmosaic(bsrc)) {
+            BBPunfix(bsrc->batCacheid);
+            return MAL_SUCCEED;
+        }
+        assert(bsrc->timprints == NULL);
+    }
+
+	if ( BATcount(bsrc) < MIN_INPUT_COUNT  ){
 		/* no need to compress */
 		BBPkeepref(*ret = bsrc->batCacheid);
 		return msg;
@@ -394,8 +413,9 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 #ifdef _DEBUG_MOSAIC_
 	mnstr_printf(cntxt->fdout,"#compress bat %d \n",*bid);
 #endif
+    t0 = GDKusec();
 
-	if( bsrc->tmosaic == NULL && MOSalloc(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
+	if( bsrc->tmosaic == NULL && BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
 		// create the mosaic heap if not available.
 		// The final size should be smaller then the original
 		// It may, however, be the case that we mix a lot of LITERAL and, say, DELTA small blocks
@@ -537,6 +557,13 @@ finalize:
 #ifdef _DEBUG_MOSAIC_
 	MOSdumpInternal(cntxt,bsrc);
 #endif
+    t1 = GDKusec();
+    ALGODEBUG fprintf(stderr, "#BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
+    if (o != NULL) {
+        o->tmosaic = NULL;  /* views always keep null pointer and
+                       need to obtain the latest mosaic
+                       from the parent at query time */
+    }
 	return msg;
 }
 
