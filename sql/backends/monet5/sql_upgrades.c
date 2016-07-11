@@ -1751,6 +1751,42 @@ sql_update_nowrd(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_mosaic(Client c, mvc *sql)
+{
+	size_t bufsize = 10240, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+
+	(void) sql;
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 76_mosaic.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function mosaic_layout(sch string, tbl string, col string,compression string);"
+			"drop function mosaic_layout(sch string, tbl string, col string);"
+			"drop function mosaic_analyse(sch string, tbl string, col string,compression string);"
+			"drop function mosaic_analyse(sch string, tbl string, col string);"
+			"create function mosaic_layout(sch string, tbl string, col string,compression string)"
+			"returns table(technique string, \"count\" bigint, inputsize bigint, outputsize bigint,properties string)"
+			"external name sql.mosaiclayout;"
+			"create function mosaic_layout(sch string, tbl string, col string)"
+			"returns table(technique string, \"count\" bigint, inputsize bigint, outputsize bigint,properties string)"
+			"external name sql.mosaiclayout;"
+			"create function mosaic_analysis(sch string, tbl string, col string)"
+			"returns table(technique string, outputsize bigint, factor float, run bigint)"
+			"external name sql.mosaicanalysis;"
+			"create function mosaic_analysis(sch string, tbl string, col string, compression string)"
+			"returns table(technique string, outputsize bigint, factor float, run bigint)"
+			"external name sql.mosaicanalysis;"
+	);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1877,4 +1913,5 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(err);
 		}
 	}
+	if(0)	sql_update_mosaic(c, m);
 }

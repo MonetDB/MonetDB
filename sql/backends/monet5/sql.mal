@@ -576,14 +576,14 @@ pattern droporderindex(sch:str,tbl:str,col:str)
 address sql_droporderindex
 comment "Drop the order index on a column";
 
-pattern mosaicLayout(sch:str,tbl:str,col:str,compressionscheme:str)(
+pattern mosaiclayout(sch:str,tbl:str,col:str,compressionscheme:str)(
 	technique:bat[:str],
 	count:bat[:lng],
 	inputsize:bat[:lng],
 	outputsize:bat[:lng],
 	properties:bat[:str])
 address sql_mosaicLayout;
-pattern mosaicLayout(sch:str,tbl:str,col:str)(
+pattern mosaiclayout(sch:str,tbl:str,col:str)(
 	technique:bat[:str],
 	count:bat[:lng],
 	inputsize:bat[:lng],
@@ -592,13 +592,13 @@ pattern mosaicLayout(sch:str,tbl:str,col:str)(
 address sql_mosaicLayout
 comment "Return a table with detailed compression information ";
 
-pattern mosaicAnalysis(sch:str,tbl:str,col:str,compression:str)(
+pattern mosaicanalysis(sch:str,tbl:str,col:str,compression:str)(
 	technique:bat[:str],
 	outputsize:bat[:lng],
 	factor:bat[:dbl],
 	run:bat[:lng])
 address sql_mosaicAnalysis;
-pattern mosaicAnalysis(sch:str,tbl:str,col:str)(
+pattern mosaicanalysis(sch:str,tbl:str,col:str)(
 	technique:bat[:str],
 	outputsize:bat[:lng],
 	factor:bat[:dbl],
