@@ -45,6 +45,7 @@ MOSinit(MOStask task, BAT *b){
 	if( isVIEW(b))
 		b= BATdescriptor(VIEWtparent(b));
 	assert(b);
+	assert( b->tmosaic);
 	base = b->tmosaic->base;
 	assert(base);
 	task->type = b->ttype;
@@ -87,6 +88,8 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	if( task == NULL)
 		throw(SQL,"mosaic",MAL_MALLOC_FAIL);
 
+	if( b->tmosaic == NULL)
+			throw(MAL,"mosaic.layout","Compression heap missing");
 	if(compressionscheme){
 		//create a tempory compressed column 
 		for( i = 0; i< MOSAIC_METHODS; i++)
@@ -290,7 +293,7 @@ inheritCOL( BAT *bn, COLrec *cn, BAT *b, COLrec *c, bat p )
  * sequence is found with high compression factor.
  */
 static int
-MOSoptimizer(Client cntxt, MOStask task, int typewidth)
+MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 {
 	int cand = MOSAIC_NONE;
 	float ratio = 1.0, fac = 1.0;
@@ -427,7 +430,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
 
 	while(task->start < task->stop ){
 		// default is to extend the non-compressed block with a single element
-		cand = MOSoptimizer(cntxt, task, typewidth);
+		cand = MOSoptimizerCost(cntxt, task, typewidth);
 		if( task->dst >= bsrc->tmosaic->base + bsrc->tmosaic->size - 16 ){
 			MOSdestroy(bsrc);
 			msg= createException(MAL,"mosaic","abort compression due to size");
@@ -1644,7 +1647,7 @@ MOSanalyse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MOSoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	MOStask task;
 	int cases;

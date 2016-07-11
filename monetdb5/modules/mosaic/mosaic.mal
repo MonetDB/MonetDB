@@ -33,16 +33,16 @@ address MOSanalyse
 comment "Apply default heap compression on a specific column";
 
 pattern optimize(bid:int)
-address MOSoptimize
+address MOSoptimizer
 comment "Perform a search thru the compression space using depth 1";
 
 pattern optimize(bid:int)
-address MOSoptimize
+address MOSoptimizer
 comment "Perform a search thru the compression space using up to 2^ply
 candidate combinations";
 
 pattern optimize(bid:int, blk:int)
-address MOSoptimize
+address MOSoptimizer
 comment "Perform a search thru the compression space using up to 2^ply
 candidate combinations and blk*1000 blocksize limits";
 

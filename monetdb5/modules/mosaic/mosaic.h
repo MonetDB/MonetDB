@@ -246,7 +246,7 @@ mosaic_export str MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *
 mosaic_export str MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b);
 mosaic_export int MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid);
 mosaic_export void MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *run, str compressions);
-mosaic_export str MOSoptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mosaic_export str MOSoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export str MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mosaic_export void MOSblk(MosaicBlk blk);
 mosaic_export BUN MOSlimit(void);
