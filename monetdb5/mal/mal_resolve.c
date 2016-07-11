@@ -586,7 +586,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 
 	p->typechk = TYPE_UNKNOWN;
 	olderrors = mb->errors;
-	if (p->fcn && p->token >= FCNcall && p->token <= PATcall) {
+	if ((p->fcn || p->blk) && p->token >= FCNcall && p->token <= PATcall) {
 		p->token = ASSIGNsymbol;
 		p->fcn = NULL;
 		p->blk = NULL;
