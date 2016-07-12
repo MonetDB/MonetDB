@@ -940,7 +940,7 @@ def CreateSrcIndex (env, TST, EXT) :
     tr = Element('tr', {},
                  Element('th', {'class': 'header'},
                          Text(TST)))
-    for s in os.listdir(TSTSRCDIR):
+    for s in listdir(TSTSRCDIR):
         if s.startswith(TST):
             slink = Text(s)
             if URLPREFIX:
@@ -1110,7 +1110,7 @@ def find_test_dirs(thisdir) :
     testdirs = []
     thisdir = os.path.realpath(thisdir)
     dirnme = os.path.basename(thisdir)
-    dirlst = os.listdir(thisdir)
+    dirlst = listdir(thisdir)
     if dirnme == TSTSUFF  and  "All" in dirlst  and  os.path.isfile(os.path.join(thisdir,"All")):
         testdirs.append(os.path.dirname(thisdir))
     for d in dirlst:
@@ -1254,7 +1254,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
 
         # remove extra files created by tests
-        for f in os.listdir(TSTTRGDIR):
+        for f in listdir(TSTTRGDIR):
             ff = os.path.join(TSTTRGDIR, f)
             if os.path.islink(ff):
                 continue
@@ -1399,7 +1399,7 @@ def ApproveOutput (env, TST) :
                 test = re.compile('^%s.*$' % re.escape(file))
                 list = []
                 if not NOPATCH:
-                    for f in os.listdir(dir or os.curdir):
+                    for f in listdir(dir or os.curdir):
                         if f.endswith('.rej') or f.endswith('.orig') or f.endswith('~'):
                             pass
                         elif f != thefile and test.match(f):
@@ -1693,7 +1693,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     dir,file = os.path.split(TST)
     outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, INT128, SINGLE, STATIC))
     bestout = besterr = ''
-    for f in os.listdir(dir or os.curdir):
+    for f in listdir(dir or os.curdir):
         res = outre.match(f)
         if res is not None:
             if res.group('tp') == 'out':
@@ -1943,7 +1943,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        for f in os.listdir(RELSRCDIR):
+        for f in listdir(RELSRCDIR):
             if test.match(f):
                 try:
                     SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
@@ -1982,7 +1982,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 MAPIsockets[1].close()
                 return TX,Failed,Failed,elem,reason,links
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
-        for ff in os.listdir(TSTTRGDIR):
+        for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
                 f = open(ff,"r")
                 TSTSRC = expandvars(path(f.readline().strip()), env)
@@ -1997,7 +1997,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
         test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
-        for ff in os.listdir(TSTTRGDIR):
+        for ff in listdir(TSTTRGDIR):
             fff = ff[:-3]
             if test.match(ff) and not os.path.isfile(fff):
                 f = open(fff,"w")
@@ -2038,7 +2038,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
         elif CALL in ["malXs", "sqlXs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
+            d = listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
@@ -2869,7 +2869,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(os.getcwd())
+                d = listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
@@ -2884,7 +2884,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(os.getcwd())
+                d = listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
@@ -2906,7 +2906,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(os.getcwd())
+                d = listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
@@ -3147,7 +3147,7 @@ def CheckClassPath() :
     cpx += _configure(os.path.join('@QXdatadir@','monetdb','lib'))
     for d in cpx.split(os.pathsep):
         if os.path.isdir(d):
-            for f in os.listdir(d):
+            for f in listdir(d):
                 p = os.path.join(d,f)
                 if os.path.isfile(p):
                     if f == 'BugConcurrent_clients_SF_1504657.class':
@@ -3232,9 +3232,12 @@ TSTSUFF = "Tests"
 
 if hasattr(os,"symlink"):
     SymlinkOrCopy = os.symlink
+    listdir = os.listdir
 else:
     def SymlinkOrCopy(src, dst):
         shutil.copy(os.path.normpath(os.path.join(os.getcwd(), src)), dst)
+    def listdir(d):
+        return os.listdir(os.path.abspath(d))
 
 os.environ['CYGPATH_W'] = '@CYGPATH_W@'
 os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
