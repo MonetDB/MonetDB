@@ -223,6 +223,9 @@ geom_export str wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id
 geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
 geom_export str wkbUnionAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbUnionCascade(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbCollect(wkb **out, wkb **a, wkb **b);
+geom_export str wkbCollectAggr(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbCollectCascade(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
@@ -248,6 +251,7 @@ geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
 geom_export str wkbDumpPoints(bat* idBAT_id, bat* geomBAT_id, wkb**);
+geom_export str wkbDumpPointsP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);
 geom_export str dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
 geom_export str wkbPolygonize(wkb **res, wkb **geom);
 geom_export str wkbSimplifyPreserveTopology(wkb **res, wkb **geom, float *tolerance);

@@ -284,10 +284,18 @@ command ConvexHull(w:wkb) :wkb address wkbConvexHull
 comment "Returns a geometry that represents the convex hull of this geometry. The convex hull of a geometry represents the minimum convex geometry that encloses all geometries within the set.";
 command Intersection(a:wkb, b:wkb) :wkb address wkbIntersection
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
+
 command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
 command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionCascade
 comment "Gets a BAT with geometries and returns their union"; 
+
+command Collect(a:wkb, b:wkb) :wkb address wkbCollect
+comment "Returns a geometry that represents the point set union of the Geometries a, b";
+command Collect(a:bat[:oid,:wkb]) :wkb address wkbCollectCascade
+comment "Gets a BAT with geometries and returns their union"; 
+
+
 command Difference(a:wkb, b:wkb) :wkb address wkbDifference
 comment "Returns a geometry that represents that part of geometry A that does not intersect with geometry B";
 command SymDifference(a:wkb, b:wkb) :wkb address wkbSymDifference
@@ -339,6 +347,8 @@ comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpP(a:wkb, p:int) (parent:bat[:oid, :int], id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpP
 comment "Gets a MultiPolygon and returns the Polygons in it";
 command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
+comment "Gets a Geometry and returns the Points in it";
+command DumpPointsP(a:wkb, p:int) (parent:bat[:oid, :int], id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPointsP
 comment "Gets a Geometry and returns the Points in it";
 command Polygonize(a:wkb) :wkb address wkbPolygonize
 comment "Creates a GeometryCollection containing possible polygons formed from the constituent linework of a set of geometries.";

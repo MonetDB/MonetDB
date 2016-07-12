@@ -1783,6 +1783,7 @@ wkbDump_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *
 		    BBPunfix(parentBAT->batCacheid);
 		return err;
 	}
+	GEOSGeom_destroy(geosGeometry);
 
 	BBPkeepref(*idBAT_id = idBAT->batCacheid);
 	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
@@ -1963,13 +1964,13 @@ dumpPointsGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, c
 	}
 }
 
-str
-wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
+static str
+wkbDumpPoints_(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent)
 {
-	BAT *idBAT = NULL, *geomBAT = NULL;
+	BAT *idBAT = NULL, *geomBAT = NULL, *parentBAT = NULL;
 	GEOSGeom geosGeometry;
 	int check = 0;
-	int pointsNum;
+	int pointsNum, i = 0;
 	str err;
 
 	if (wkb_isnil(*geomWKB)) {
@@ -1986,9 +1987,22 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 			throw(MAL, "geom.DumpPoints", "Error creating new BAT");
 		}
 
+        if (parent) {
+            if ((parentBAT = COLnew(0, ATOMindex("int"), 0, TRANSIENT)) == NULL) {
+                BBPunfix(idBAT->batCacheid);
+                BBPunfix(geomBAT->batCacheid);
+                *parentBAT_id = bat_nil;
+                throw(MAL, "geom.DumpPoints", "Error creating new BAT");
+            }
+        }
+
 		BBPkeepref(*idBAT_id = idBAT->batCacheid);
 
 		BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+
+        if (parent) {
+    		BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
+        }
 
 		return MAL_SUCCEED;
 	}
@@ -2011,17 +2025,50 @@ wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 		throw(MAL, "geom.Dump", "Error creating new BAT");
 	}
 
-	err = dumpPointsGeometry(idBAT, geomBAT, geosGeometry, "");
-	GEOSGeom_destroy(geosGeometry);
-	if (err != MAL_SUCCEED) {
+    if (parent) {
+        if ((parentBAT = COLnew(0, ATOMindex("int"), pointsNum, TRANSIENT)) == NULL) {
+            BBPunfix(idBAT->batCacheid);
+            BBPunfix(geomBAT->batCacheid);
+            throw(MAL, "geom.Dump", "Error creating new BAT");
+        }
+        /*Get the tail and add parentID geometriesNum types*/
+        for (i = 0; i < pointsNum; i++) {
+            if (BUNappend(parentBAT, parent, TRUE) != GDK_SUCCEED) {
+                err = createException(MAL, "geom.Dump", "BUNappend failed");
+                BBPunfix(idBAT->batCacheid);
+                BBPunfix(geomBAT->batCacheid);
+                if (parent)
+                    BBPunfix(parentBAT->batCacheid);
+                return err;
+            }
+        }
+    }
+
+	if ( (err = dumpPointsGeometry(idBAT, geomBAT, geosGeometry, "")) != MAL_SUCCEED )
+    {
 		BBPunfix(idBAT->batCacheid);
 		BBPunfix(geomBAT->batCacheid);
+        if (parent)
+		    BBPunfix(parentBAT->batCacheid);
 		return err;
 	}
+	GEOSGeom_destroy(geosGeometry);
 
 	BBPkeepref(*idBAT_id = idBAT->batCacheid);
 	BBPkeepref(*geomBAT_id = geomBAT->batCacheid);
+    if (parent)
+	    BBPkeepref(*parentBAT_id = parentBAT->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+wkbDumpPoints(bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB) {
+    return wkbDumpPoints_(NULL, idBAT_id, geomBAT_id, geomWKB, NULL);
+}
+
+str
+wkbDumpPointsP(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB, int *parent) {
+    return wkbDumpPoints_(parentBAT_id, idBAT_id, geomBAT_id, geomWKB, parent);
 }
 
 str wkbPolygonize(wkb** outWKB, wkb** geom){
@@ -4633,6 +4680,198 @@ wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
     }
 
     if ((err = wkbUnaryUnion(outWKB, geoms, j)) != MAL_SUCCEED) {
+        BBPunfix(inBAT->batCacheid);
+        if (geoms)
+            GDKfree(geoms);
+        return err;
+    }
+
+	BBPunfix(inBAT->batCacheid);
+    if (geoms)
+        GDKfree(geoms);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbCollect(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
+{
+	GEOSGeom outGeometry, geom1Geometry, geom2Geometry, geomGeometries[2];
+	str err = MAL_SUCCEED;
+    int type, geometryType;
+
+	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
+		if ((*out = wkbNULLcopy()) == NULL)
+			throw(MAL, "geom.collect", MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
+	geom1Geometry = wkb2geos(*geom1WKB);
+	geom2Geometry = wkb2geos(*geom2WKB);
+	if (geom1Geometry == NULL || geom2Geometry == NULL) {
+		*out = NULL;
+		if (geom1Geometry)
+			GEOSGeom_destroy(geom1Geometry);
+		if (geom2Geometry)
+			GEOSGeom_destroy(geom2Geometry);
+		throw(MAL, "geom.collect" , "wkb2geos failed");
+	}
+
+	//make sure the geometries are of the same srid
+    if (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
+        err = createException(MAL, "geom.collect", "Geometries of different SRID");
+    } else 
+        if ((geometryType = GEOSGeomTypeId(geom1Geometry)) != GEOSGeomTypeId(geom2Geometry)) {
+            err = createException(MAL, "geom.collect", "Geometries of different GEOM type");
+        } else {
+            switch (geometryType + 1) {
+                case wkbPoint_mdb:
+                    type = wkbMultiPoint_mdb - 1;
+                    break;
+                case wkbLineString_mdb:
+                case wkbLinearRing_mdb:
+                    type = wkbMultiLineString_mdb - 1;
+                    break;
+                case wkbPolygon_mdb:
+                    type = wkbMultiPolygon_mdb - 1;
+                    break;
+                case wkbMultiPoint_mdb:
+                case wkbMultiLineString_mdb:
+                case wkbMultiPolygon_mdb:
+                    type = wkbGeometryCollection_mdb - 1;
+                    break;
+                default:
+                    *out = NULL;
+	                GEOSGeom_destroy(geom1Geometry);
+                	GEOSGeom_destroy(geom2Geometry);
+                    throw(MAL, "geom.Collect", "Unknown geometry type");
+            }
+            geomGeometries[0] = geom1Geometry;
+            geomGeometries[1] = geom2Geometry;
+
+            if ( (outGeometry = GEOSGeom_createCollection(type, geomGeometries, 2)) == NULL ) {
+                err = createException(MAL, "geom.Collect", "GEOSGeom_createCollection failed!!!");
+            } else {
+                *out = geos2wkb(outGeometry);
+            }
+        }
+
+	GEOSGeom_destroy(geom1Geometry);
+	GEOSGeom_destroy(geom2Geometry);
+
+	return err;
+}
+
+static str
+wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
+{
+    int i = 0, j = 0, type, geometryType;
+	GEOSGeom outGeometry, *geomGeometries = NULL, geomCollection;
+
+    if ( (geomGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom)*num_geoms)) == NULL) {
+		*out = NULL;
+        throw(MAL, "GEOSUnaryCollection", "GDKmalloc failed");
+    }
+
+    for (i = 0; i < num_geoms; i++) {
+        if (wkb_isnil(geoms[i])) {
+            if ((*out = wkbNULLcopy()) == NULL)
+                throw(MAL, "GEOSUnaryCollection", MAL_MALLOC_FAIL);
+            return MAL_SUCCEED;
+        }
+
+        geomGeometries[i] = wkb2geos(geoms[i]);
+        if (!geomGeometries[i]) {
+            for (j = 0; j < i; j++)
+		        GEOSGeom_destroy(geomGeometries[j]);
+            GDKfree(geomGeometries);
+            *out = NULL;
+            throw(MAL, "GEOSUnaryCollection", "wkb2geos failed");
+        }
+        geometryType = GEOSGeomTypeId(geomGeometries[i]);
+        if (type == -1) {
+            switch (geometryType + 1) {
+                case wkbPoint_mdb:
+                    type = wkbMultiPoint_mdb - 1;
+                    break;
+                case wkbLineString_mdb:
+                case wkbLinearRing_mdb:
+                    type = wkbMultiLineString_mdb - 1;
+                    break;
+                case wkbPolygon_mdb:
+                    type = wkbMultiPolygon_mdb - 1;
+                    break;
+                case wkbMultiPoint_mdb:
+                case wkbMultiLineString_mdb:
+                case wkbMultiPolygon_mdb:
+                    type = wkbGeometryCollection_mdb - 1;
+                    break;
+                default:
+                    for (j = 0; j < i; j++)
+                        GEOSGeom_destroy(geomGeometries[j]);
+                    GDKfree(geomGeometries);
+                    *out = NULL;
+                    throw(MAL, "geom.Collect", "Unknown geometry type");
+            }
+        } else if (type != geometryType)
+            type = wkbGeometryCollection_mdb - 1;
+
+    }
+
+	if ( (geomCollection = GEOSGeom_createCollection(wkbGeometryCollection_mdb - 1, geomGeometries, num_geoms)) == NULL ) {
+		*out = NULL;
+        for (i = 0; i < num_geoms; i++)
+            GEOSGeom_destroy(geomGeometries[i]);
+        GDKfree(geomGeometries);
+		throw(MAL, "GEOSUnaryCollection", "GEOSGeom_createCollection failed");
+    }
+
+	GEOSSetSRID(geomCollection, GEOSGetSRID(geomGeometries[0]));
+	*out = geos2wkb(geomCollection);
+    GDKfree(geomGeometries);
+
+	return MAL_SUCCEED;
+}
+
+//Gets a BAT with geometries and returns a single LineString
+str
+wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
+{
+	BAT *inBAT = NULL;
+	BATiter inBAT_iter;
+	BUN i;
+    int j = 0;
+    wkb *geomWKB = wkbNULL(), **geoms = NULL;
+	str err;
+
+	//get the BATs
+	if (!(inBAT = BATdescriptor(*inBAT_id))) {
+		throw(MAL, "geom.Collect", "Problem retrieving BATs");
+	}
+
+    /*TODO: We need a better way to handle the cases where the BAT was created, but it has zero elements*/
+    if (!BATcount(inBAT)) {
+		BBPunfix(inBAT->batCacheid);
+		if ((err = wkbCollect(outWKB,&geomWKB, &geomWKB)) != MAL_SUCCEED) {
+			BBPunfix(inBAT->batCacheid);
+			return err;
+		}
+        return MAL_SUCCEED;
+    }
+	//iterator over the BATs
+	inBAT_iter = bat_iterator(inBAT);
+
+    /*Collect all geoms*/
+    if ( (geoms = (wkb**) GDKmalloc(sizeof(wkb*)*BATcount(inBAT))) == NULL) {
+        BBPunfix(inBAT->batCacheid);
+		throw(MAL, "geom.Collect", "GDKmalloc failed");
+    }
+
+	for (j = 0, i = BUNfirst(inBAT); i < BATcount(inBAT); i++, j++) {
+        geoms[j] = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+    }
+
+    if ((err = wkbUnaryCollect(outWKB, geoms, j)) != MAL_SUCCEED) {
         BBPunfix(inBAT->batCacheid);
         if (geoms)
             GDKfree(geoms);
