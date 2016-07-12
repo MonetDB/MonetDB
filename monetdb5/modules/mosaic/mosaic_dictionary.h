@@ -31,17 +31,17 @@
 #define DICTTHRESHOLD 4192
 #define DICTSIZE 256 
 
-mosaic_export void MOScreatedictionary(Client cntxt, MOStask task);
-mosaic_export void MOSdump_dictionary(Client cntxt, MOStask task);
-mosaic_export void MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mosaic_export void MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mosaic_export void MOSadvance_dictionary(Client cntxt, MOStask task);
-mosaic_export void MOSskip_dictionary(Client cntxt, MOStask task);
-mosaic_export flt  MOSestimate_dictionary(Client cntxt, MOStask task);
-mosaic_export void MOScompress_dictionary(Client cntxt, MOStask task);
-mosaic_export void MOSdecompress_dictionary(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSprojection_dictionary(Client cntxt,  MOStask task);
-mosaic_export str MOSsubjoin_dictionary(Client cntxt,  MOStask task);
+mal_export void MOScreatedictionary(Client cntxt, MOStask task);
+mal_export void MOSdump_dictionary(Client cntxt, MOStask task);
+mal_export void MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_dictionary(Client cntxt, MOStask task);
+mal_export void MOSskip_dictionary(Client cntxt, MOStask task);
+mal_export flt  MOSestimate_dictionary(Client cntxt, MOStask task);
+mal_export void MOScompress_dictionary(Client cntxt, MOStask task);
+mal_export void MOSdecompress_dictionary(Client cntxt, MOStask task);
+mal_export str MOSsubselect_dictionary(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetasubselect_dictionary(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSprojection_dictionary(Client cntxt,  MOStask task);
+mal_export str MOSsubjoin_dictionary(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_DICT_ */

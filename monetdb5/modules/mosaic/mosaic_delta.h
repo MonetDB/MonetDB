@@ -29,15 +29,15 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-mosaic_export void MOSdump_delta(Client cntxt, MOStask task);
-mosaic_export void MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mosaic_export void MOSadvance_delta(Client cntxt, MOStask task);
-mosaic_export void MOSskip_delta(Client cntxt, MOStask task);
-mosaic_export flt  MOSestimate_delta(Client cntxt, MOStask task);
-mosaic_export void MOScompress_delta(Client cntxt, MOStask task);
-mosaic_export void MOSdecompress_delta(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSprojection_delta(Client cntxt,  MOStask task);
-mosaic_export str MOSsubjoin_delta(Client cntxt,  MOStask task);
+mal_export void MOSdump_delta(Client cntxt, MOStask task);
+mal_export void MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_delta(Client cntxt, MOStask task);
+mal_export void MOSskip_delta(Client cntxt, MOStask task);
+mal_export flt  MOSestimate_delta(Client cntxt, MOStask task);
+mal_export void MOScompress_delta(Client cntxt, MOStask task);
+mal_export void MOSdecompress_delta(Client cntxt, MOStask task);
+mal_export str MOSsubselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetasubselect_delta(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSprojection_delta(Client cntxt,  MOStask task);
+mal_export str MOSsubjoin_delta(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_DELTA_ */

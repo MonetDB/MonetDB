@@ -29,15 +29,15 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-mosaic_export void MOSdump_prefix(Client cntxt, MOStask task);
-mosaic_export void MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mosaic_export void MOSadvance_prefix(Client cntxt, MOStask task);
-mosaic_export void MOSskip_prefix(Client cntxt, MOStask task);
-mosaic_export flt  MOSestimate_prefix(Client cntxt, MOStask task);
-mosaic_export void MOScompress_prefix(Client cntxt, MOStask task);
-mosaic_export void MOSdecompress_prefix(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSprojection_prefix(Client cntxt,  MOStask task);
-mosaic_export str MOSsubjoin_prefix(Client cntxt,  MOStask task);
+mal_export void MOSdump_prefix(Client cntxt, MOStask task);
+mal_export void MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_prefix(Client cntxt, MOStask task);
+mal_export void MOSskip_prefix(Client cntxt, MOStask task);
+mal_export flt  MOSestimate_prefix(Client cntxt, MOStask task);
+mal_export void MOScompress_prefix(Client cntxt, MOStask task);
+mal_export void MOSdecompress_prefix(Client cntxt, MOStask task);
+mal_export str MOSsubselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSprojection_prefix(Client cntxt,  MOStask task);
+mal_export str MOSsubjoin_prefix(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_PREFIX_ */

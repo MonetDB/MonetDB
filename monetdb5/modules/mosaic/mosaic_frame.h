@@ -29,17 +29,17 @@
 #include "mal_client.h"
 #include "mosaic_dictionary.h"
 
-mosaic_export void MOScreateframeDictionary(Client cntxt, MOStask task);
-mosaic_export void MOSdump_frame(Client cntxt, MOStask task);
-mosaic_export void MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mosaic_export void MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mosaic_export void MOSadvance_frame(Client cntxt, MOStask task);
-mosaic_export void MOSskip_frame(Client cntxt, MOStask task);
-mosaic_export flt  MOSestimate_frame(Client cntxt, MOStask task);
-mosaic_export void MOScompress_frame(Client cntxt, MOStask task);
-mosaic_export void MOSdecompress_frame(Client cntxt, MOStask task);
-mosaic_export str MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
-mosaic_export str MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper);
-mosaic_export str MOSprojection_frame(Client cntxt,  MOStask task);
-mosaic_export str MOSsubjoin_frame(Client cntxt,  MOStask task);
+mal_export void MOScreateframeDictionary(Client cntxt, MOStask task);
+mal_export void MOSdump_frame(Client cntxt, MOStask task);
+mal_export void MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSadvance_frame(Client cntxt, MOStask task);
+mal_export void MOSskip_frame(Client cntxt, MOStask task);
+mal_export flt  MOSestimate_frame(Client cntxt, MOStask task);
+mal_export void MOScompress_frame(Client cntxt, MOStask task);
+mal_export void MOSdecompress_frame(Client cntxt, MOStask task);
+mal_export str MOSsubselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *hi, bit *anti);
+mal_export str MOSthetasubselect_frame(Client cntxt,  MOStask task, void *val, str oper);
+mal_export str MOSprojection_frame(Client cntxt,  MOStask task);
+mal_export str MOSsubjoin_frame(Client cntxt,  MOStask task);
 #endif /* _MOSAIC_FRAME_ */
