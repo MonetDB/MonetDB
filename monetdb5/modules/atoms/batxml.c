@@ -35,32 +35,26 @@
 #include "mal_function.h"
 #include "xml.h"
 
-#ifdef WIN32
-#define batxml_export extern __declspec(dllexport)
-#else
-#define batxml_export extern
-#endif
-
-batxml_export str BATXMLxml2str(bat *ret, const bat *bid);
-batxml_export str BATXMLxmltext(bat *ret, const bat *bid);
-batxml_export str BATXMLstr2xml(bat *ret, const bat *bid);
-batxml_export str BATXMLdocument(bat *ret, const bat *bid);
-batxml_export str BATXMLcontent(bat *ret, const bat *bid);
-batxml_export str BATXMLisdocument(bat *ret, const bat *bid);
-batxml_export str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid);
-batxml_export str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid);
-batxml_export str BATXMLcomment(bat *ret, const bat *bid);
-batxml_export str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option);
-batxml_export str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr);
-batxml_export str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid);
-batxml_export str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone);
-batxml_export str BATXMLattribute(bat *ret, const char * const *name, const bat *bid);
-batxml_export str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid);
-batxml_export str BATXMLconcat(bat *ret, const bat *bid, const bat *rid);
-batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLgroup(xml *ret, const bat *bid);
-batxml_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
-batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+mal_export str BATXMLxml2str(bat *ret, const bat *bid);
+mal_export str BATXMLxmltext(bat *ret, const bat *bid);
+mal_export str BATXMLstr2xml(bat *ret, const bat *bid);
+mal_export str BATXMLdocument(bat *ret, const bat *bid);
+mal_export str BATXMLcontent(bat *ret, const bat *bid);
+mal_export str BATXMLisdocument(bat *ret, const bat *bid);
+mal_export str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid);
+mal_export str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid);
+mal_export str BATXMLcomment(bat *ret, const bat *bid);
+mal_export str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option);
+mal_export str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr);
+mal_export str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid);
+mal_export str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone);
+mal_export str BATXMLattribute(bat *ret, const char * const *name, const bat *bid);
+mal_export str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid);
+mal_export str BATXMLconcat(bat *ret, const bat *bid, const bat *rid);
+mal_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str BATXMLgroup(xml *ret, const bat *bid);
+mal_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 
 #ifdef HAVE_LIBXML
 

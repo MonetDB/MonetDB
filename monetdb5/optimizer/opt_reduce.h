@@ -14,6 +14,6 @@
 
 #define OPTDEBUGreduce  if ( optDebug & ((lng)1 <<DEBUG_OPT_REDUCE) )
 
-opt_export int OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

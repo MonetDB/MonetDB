@@ -23,21 +23,11 @@
 
 typedef str identifier;
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define identifier_export extern __declspec(dllimport)
-#else
-#define identifier_export extern __declspec(dllexport)
-#endif
-#else
-#define identifier_export extern
-#endif
-
-identifier_export int TYPE_identifier;
-identifier_export str IDprelude(void *ret);
-identifier_export int IDfromString(str src, int *len, identifier *retval);
-identifier_export int IDtoString(str *retval, int *len, identifier handle);
-identifier_export str IDentifier(identifier *retval, str *in);
+mal_export int TYPE_identifier;
+mal_export str IDprelude(void *ret);
+mal_export int IDfromString(str src, int *len, identifier *retval);
+mal_export int IDtoString(str *retval, int *len, identifier handle);
+mal_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
 

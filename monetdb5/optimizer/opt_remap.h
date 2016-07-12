@@ -16,7 +16,7 @@
 #include "mal_function.h"
 #include "mal_exception.h"
 
-opt_export int OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGremap  if ( optDebug & ((lng)1 <<DEBUG_OPT_REMAP) )
 

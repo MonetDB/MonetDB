@@ -17,20 +17,10 @@
 
 /* #define _DEBUG_SAMPLE_ */
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define sample_export extern __declspec(dllimport)
-#else
-#define sample_export extern __declspec(dllexport)
-#endif
-#else
-#define sample_export extern
-#endif
-
-sample_export str
+mal_export str
 SAMPLEuniform(bat *r, bat *b, lng *s);
 
-sample_export str
+mal_export str
 SAMPLEuniform_dbl(bat *r, bat *b, dbl *p);
 
 #endif

@@ -54,43 +54,33 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define inet_export extern __declspec(dllimport)
-#else
-#define inet_export extern __declspec(dllexport)
-#endif
-#else
-#define inet_export extern
-#endif
-
-inet_export int INETfromString(const char *src, int *len, inet **retval);
-inet_export int INETtoString(str *retval, int *len, const inet *handle);
-inet_export int INETcompare(const inet *l, const inet *r);
-inet_export str INETnew(inet *retval, str *in);
-inet_export str INET_isnil(bit *retval, const inet *val);
-inet_export str INET_comp_EQ(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_LT(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_GT(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_LE(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_GE(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_CW(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_CWE(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_CS(bit *retval, const inet *val1, const inet *val2);
-inet_export str INET_comp_CSE(bit *retval, const inet *val1, const inet *val2);
-inet_export str INETbroadcast(inet *retval, const inet *val);
-inet_export str INEThost(str *retval, const inet *val);
-inet_export str INETmasklen(int *retval, const inet *val);
-inet_export str INETsetmasklen(inet *retval, const inet *val, const int *mask);
-inet_export str INETnetmask(inet *retval, const inet *val);
-inet_export str INEThostmask(inet *retval, const inet *val);
-inet_export str INETnetwork(inet *retval, const inet *val);
-inet_export str INETtext(str *retval, const inet *val);
-inet_export str INETabbrev(str *retval, const inet *val);
-inet_export str INET_inet(inet *d, const inet *s);
-inet_export str INET_fromstr(inet *ret, str *s);
-inet_export inet *INETnull(void);
+mal_export int INETfromString(const char *src, int *len, inet **retval);
+mal_export int INETtoString(str *retval, int *len, const inet *handle);
+mal_export int INETcompare(const inet *l, const inet *r);
+mal_export str INETnew(inet *retval, str *in);
+mal_export str INET_isnil(bit *retval, const inet *val);
+mal_export str INET_comp_EQ(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_LT(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_GT(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_LE(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_GE(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_CW(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_CWE(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_CS(bit *retval, const inet *val1, const inet *val2);
+mal_export str INET_comp_CSE(bit *retval, const inet *val1, const inet *val2);
+mal_export str INETbroadcast(inet *retval, const inet *val);
+mal_export str INEThost(str *retval, const inet *val);
+mal_export str INETmasklen(int *retval, const inet *val);
+mal_export str INETsetmasklen(inet *retval, const inet *val, const int *mask);
+mal_export str INETnetmask(inet *retval, const inet *val);
+mal_export str INEThostmask(inet *retval, const inet *val);
+mal_export str INETnetwork(inet *retval, const inet *val);
+mal_export str INETtext(str *retval, const inet *val);
+mal_export str INETabbrev(str *retval, const inet *val);
+mal_export str INET_inet(inet *d, const inet *s);
+mal_export str INET_fromstr(inet *ret, str *s);
+mal_export inet *INETnull(void);
 
 static inet inet_nil = {0,0,0,0,0,0,0,1};
 

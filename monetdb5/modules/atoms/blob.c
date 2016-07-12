@@ -35,31 +35,31 @@
 int TYPE_blob;
 int TYPE_sqlblob;
 
-blob_export str BLOBprelude(void *ret);
+mal_export str BLOBprelude(void *ret);
 
-blob_export int BLOBtostr(str *tostr, int *l, blob *pin);
-blob_export int BLOBfromstr(char *instr, int *l, blob **val);
-blob_export int BLOBnequal(blob *l, blob *r);
-blob_export BUN BLOBhash(blob *b);
-blob_export blob * BLOBnull(void);
-blob_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
-blob_export void BLOBdel(Heap *h, var_t *index);
-blob_export int BLOBlength(blob *p);
-blob_export void BLOBheap(Heap *heap, size_t capacity);
-blob_export int SQLBLOBfromstr(char *instr, int *l, blob **val);
-blob_export int SQLBLOBtostr(str *tostr, int *l, blob *pin);
-blob_export str BLOBtoblob(blob **retval, str *s);
-blob_export str BLOBfromblob(str *retval, blob **b);
-blob_export str BLOBfromidx(str *retval, blob **binp, int *index);
-blob_export str BLOBnitems(int *ret, blob *b);
-blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
-blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
-blob_export gdk_return BLOBwrite(blob *a, stream *s, size_t cnt);
+mal_export int BLOBtostr(str *tostr, int *l, blob *pin);
+mal_export int BLOBfromstr(char *instr, int *l, blob **val);
+mal_export int BLOBnequal(blob *l, blob *r);
+mal_export BUN BLOBhash(blob *b);
+mal_export blob * BLOBnull(void);
+mal_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
+mal_export void BLOBdel(Heap *h, var_t *index);
+mal_export int BLOBlength(blob *p);
+mal_export void BLOBheap(Heap *heap, size_t capacity);
+mal_export int SQLBLOBfromstr(char *instr, int *l, blob **val);
+mal_export int SQLBLOBtostr(str *tostr, int *l, blob *pin);
+mal_export str BLOBtoblob(blob **retval, str *s);
+mal_export str BLOBfromblob(str *retval, blob **b);
+mal_export str BLOBfromidx(str *retval, blob **binp, int *index);
+mal_export str BLOBnitems(int *ret, blob *b);
+mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
+mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
+mal_export gdk_return BLOBwrite(blob *a, stream *s, size_t cnt);
 
-blob_export str BLOBblob_blob(blob **d, blob **s);
-blob_export str BLOBblob_fromstr(blob **b, str *d);
+mal_export str BLOBblob_blob(blob **d, blob **s);
+mal_export str BLOBblob_fromstr(blob **b, str *d);
 
-blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
+mal_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
 
 str
 BLOBprelude(void *ret)

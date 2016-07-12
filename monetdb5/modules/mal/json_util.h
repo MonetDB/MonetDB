@@ -15,19 +15,9 @@
 
 /* #define _DEBUG_JSON_ */
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define jsonutil_export extern __declspec(dllimport)
-#else
-#define jsonutil_export extern __declspec(dllexport)
-#endif
-#else
-#define jsonutil_export extern
-#endif
-
 #include "json.h"
 
-jsonutil_export str
+mal_export str
 JSONresultSet(json *res,bat *u, bat *rev, bat *js);
 
 #endif
