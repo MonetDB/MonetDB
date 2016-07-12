@@ -100,11 +100,12 @@ MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 
 	(void) cntxt;
 	for(i=0; i< task->hdr->framesize; i++, j++){
-		MOSdump_frameInternal(buf, BUFSIZ, task,i);
-		BUNappend(btech, "frame_hdr", FALSE);
+		snprintf(buf,BUFSIZ,"frame[%d]",i);
+		BUNappend(btech, buf, FALSE);
 		BUNappend(bcount, &j, FALSE);
 		BUNappend(binput, &cnt, FALSE);
 		BUNappend(boutput, &task->hdr->framefreq[i], FALSE);
+		MOSdump_frameInternal(buf, BUFSIZ, task,i);
 		BUNappend(bproperties, buf, FALSE);
 	}
 }

@@ -232,7 +232,7 @@ mal_export str MOSthetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 mal_export str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSsubjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties, str compressionscheme);
+mal_export str MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export str MOSsliceInternal(Client cntxt, bat *slices, BUN size, BAT *b);
 mal_export int MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid);
 mal_export void MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *run, str compressions);

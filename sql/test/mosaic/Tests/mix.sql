@@ -18,8 +18,8 @@ select * from mix0;
 
 -- analyse the impact of the various compression schemes
 alter table mix0 set read only;
---select * from mosaic_analysis('sys','mix0','i') order by factor desc;
+select * from mosaic_analysis('sys','mix0','i') order by factor desc;
 
-alter table mix0 alter column i set storage 'dictionary';
+alter table mix0 alter column i set storage 'mosaic';
 select * from mosaic_layout('sys','mix0','i') ;
 

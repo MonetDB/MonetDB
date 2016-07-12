@@ -114,11 +114,12 @@ MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BA
 
 	(void) cntxt;
 	for(i=0; i< task->hdr->dictsize; i++){
-		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
-		BUNappend(btech, "dictionary_hdr", FALSE);
+		snprintf(buf, BUFSIZ,"dictionary[%d]",i);
+		BUNappend(btech, buf, FALSE);
 		BUNappend(bcount, &zero, FALSE);
 		BUNappend(binput, &zero, FALSE);
 		BUNappend(boutput, &task->hdr->dictfreq[i], FALSE);
+		MOSdump_dictionaryInternal(buf, BUFSIZ, task,i);
 		BUNappend(bproperties, buf, FALSE);
 	}
 }

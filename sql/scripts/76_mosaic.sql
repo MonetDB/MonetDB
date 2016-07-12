@@ -7,10 +7,6 @@
 -- support routines for the compressed store
 set schema sys;
 
-create function mosaic_layout(sch string, tbl string, col string,compression string) 
-returns table(technique string, "count" bigint, inputsize bigint, outputsize bigint,properties string)
-external name sql.mosaiclayout;
-
 create function mosaic_layout(sch string, tbl string, col string) 
 returns table(technique string, "count" bigint, inputsize bigint, outputsize bigint,properties string)
 external name sql.mosaiclayout;

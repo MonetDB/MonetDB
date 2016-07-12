@@ -576,13 +576,6 @@ pattern droporderindex(sch:str,tbl:str,col:str)
 address sql_droporderindex
 comment "Drop the order index on a column";
 
-pattern mosaiclayout(sch:str,tbl:str,col:str,compressionscheme:str)(
-	technique:bat[:str],
-	count:bat[:lng],
-	inputsize:bat[:lng],
-	outputsize:bat[:lng],
-	properties:bat[:str])
-address sql_mosaicLayout;
 pattern mosaiclayout(sch:str,tbl:str,col:str)(
 	technique:bat[:str],
 	count:bat[:lng],

@@ -76,11 +76,10 @@ MOSdumpTask(Client cntxt,MOStask task)
 }
 
 str
-MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties, str compressionscheme)
+MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MOStask task=0;
-	int i,ret,bid;
-	BAT *bn= NULL;
+	int i;
 	char buf[BUFSIZ];
 	lng zero=0;
 
@@ -90,19 +89,6 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 
 	if( b->tmosaic == NULL)
 			throw(MAL,"mosaic.layout","Compression heap missing");
-	if(compressionscheme){
-		//create a tempory compressed column 
-		for( i = 0; i< MOSAIC_METHODS; i++)
-			task->filter[i]= strstr(compressionscheme, MOSfiltername[i]) != 0;
-		bid = b->batCacheid;
-		MOScompressInternal(cntxt, &ret, &bid, task,FALSE);
-		if( ret == 0)
-			throw(MAL,"mosaic.layout","Compression failed");
-		bn = BATdescriptor(ret);
-		if( bn == NULL)
-			throw(MAL,"mosaic.layout", RUNTIME_OBJECT_MISSING);
-		b = bn;
-	}
 
 	MOSinit(task,b);
 	MOSinitializeScan(cntxt,task,0,task->hdr->top);
@@ -116,25 +102,23 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		BUNappend(bproperties, buf, FALSE);
 	for(i=0; i < MOSAIC_METHODS-1; i++){
 		lng zero = 0;
-		snprintf(buf,BUFSIZ,"%s_blks", MOSfiltername[i]);
+		snprintf(buf,BUFSIZ,"%s blocks", MOSfiltername[i]);
 		BUNappend(btech, buf, FALSE);
-		BUNappend(bcount, &zero, FALSE);
-		BUNappend(binput, &task->hdr->blks[i], FALSE);
-		BUNappend(boutput, &zero , FALSE);
-		BUNappend(bproperties, "", FALSE);
-
-		snprintf(buf,BUFSIZ,"%s_elms", MOSfiltername[i]);
-		BUNappend(btech, buf, FALSE);
-		BUNappend(bcount, &zero, FALSE);
+		BUNappend(bcount, &task->hdr->blks[i], FALSE);
 		BUNappend(binput, &task->hdr->elms[i], FALSE);
 		BUNappend(boutput, &zero , FALSE);
 		BUNappend(bproperties, "", FALSE);
-
 	}
 	if( task->hdr->blks[MOSAIC_FRAME])
 		MOSlayout_frame_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
 	if( task->hdr->blks[MOSAIC_DICT])
 		MOSlayout_dictionary_hdr(cntxt,task,btech,bcount,binput,boutput,bproperties);
+
+	BUNappend(btech, "========", FALSE);
+	BUNappend(bcount, &zero, FALSE);
+	BUNappend(binput, &zero, FALSE);
+	BUNappend(boutput, &zero , FALSE);
+	BUNappend(bproperties, "", FALSE);
 
 	while(task->start< task->stop){
 		switch(MOSgetTag(task->blk)){
@@ -170,8 +154,6 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 			assert(0);
 		}
 	}
-	if( bn)
-		BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
