@@ -34,7 +34,7 @@
 //#define _DEBUG_MOSAIC_
 
 /* do not invest in compressing BATs smaller than this */
-#define MIN_INPUT_COUNT 1
+#define MOSAIC_THRESHOLD 1
 
 /* The compressor kinds currently hardwired */
 #define MOSAIC_METHODS	8

@@ -404,7 +404,7 @@ MOScompressInternal(Client cntxt, bat *ret, bat *bid, MOStask task, int debug)
         assert(bsrc->timprints == NULL);
     }
 
-	if ( BATcount(bsrc) < MIN_INPUT_COUNT  ){
+	if ( BATcount(bsrc) < MOSAIC_THRESHOLD  ){
 		/* no need to compress */
 		BBPkeepref(*ret = bsrc->batCacheid);
 		return msg;
@@ -1378,7 +1378,7 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 		BBPunfix(bid);
 		return 0;
 	}
-	if ( BATcount(b) < MIN_INPUT_COUNT  ){
+	if ( BATcount(b) < MOSAIC_THRESHOLD  ){
 		mnstr_printf(cntxt->fdout,"#ignore small %d %s\n",bid, BBP_logical(bid));
 		BBPunfix(bid);
 		return 0;

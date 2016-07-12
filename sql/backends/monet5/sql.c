@@ -596,9 +596,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 
 			b = store_funcs.bind_col(sql->session->tr, nc, 0);
-			cnt = BATcount(b);
 			assert(b);
-			if (cnt <10000){
+			cnt = BATcount(b);
+			if (cnt < MOSAIC_THRESHOLD){
 				BBPunfix(b->batCacheid);
 				continue;
 			}
@@ -625,7 +625,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			d = nc->data;
 			d->bid = bid;
 			d->cnt = cnt;
-			mvc_storage(sql, nc, c->storage_type);
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
