@@ -598,7 +598,8 @@ MOSdecompressInternal(Client cntxt, bat *ret, bat *bid)
 
 	if (BATcheckmosaic(bsrc) == 0 ){
 		BBPunfix(bsrc->batCacheid);
-		throw(MAL, "mosaic.decompress", "mosaic file not available");
+		BBPkeepref(*ret = bsrc->batCacheid);
+		return MAL_SUCCEED;
 	}
 	if (!bsrc->tmosaic) {
 		BBPkeepref(*ret = bsrc->batCacheid);
