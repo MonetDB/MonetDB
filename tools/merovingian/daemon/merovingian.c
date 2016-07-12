@@ -715,7 +715,12 @@ main(int argc, char *argv[])
 						"expected '%s', disabling passphrase\n",
 						h, MONETDB5_PASSWDHASH);
 			} else {
-				setConfVal(kv, p + 1);
+				/* p points into kv->val which gets freed before p
+				 * gets copied inside setConfVal, hence we need to
+				 * make a temporary copy */
+				p = strdup(p + 1);
+				setConfVal(kv, p);
+				free(p);
 			}
 		}
 	}
