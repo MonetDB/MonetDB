@@ -14,16 +14,6 @@
 
 #define DEBUG_RUN_ISOLATION
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define run_isolate_export extern __declspec(dllimport)
-#else
-#define run_isolate_export extern __declspec(dllexport)
-#endif
-#else
-#define run_isolate_export extern
-#endif
-
-run_isolate_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_ISOLATION */
 

@@ -12,7 +12,7 @@
 #include "mal_interpreter.h"
 #include "opt_support.h"
 
-opt_export int OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGcoercion  if ( optDebug & ((lng)1 << DEBUG_OPT_COERCION) )
 

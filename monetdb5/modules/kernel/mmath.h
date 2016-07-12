@@ -63,25 +63,15 @@ extern double sin(double x);
 extern double cos(double x);
 extern double fabs(double x);
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define mmath_export extern __declspec(dllimport)
-#else
-#define mmath_export extern __declspec(dllexport)
-#endif
-#else
-#define mmath_export extern
-#endif
-
 #define unopbaseM5_export(X1,X2)\
-mmath_export str MATHunary##X1##X2(X2 *res, const X2 *a);
+mal_export str MATHunary##X1##X2(X2 *res, const X2 *a);
 
 #define unopM5_export(X1)\
   unopbaseM5_export(X1,dbl)\
   unopbaseM5_export(X1,flt)
 
 #define binopbaseM5_export(X1,X2,X3)\
-mmath_export str MATHbinary##X1##X2(X2 *res, const X2 *a, const X3 *b);
+mal_export str MATHbinary##X1##X2(X2 *res, const X2 *a, const X3 *b);
 
 #define binopM5_export(X1)\
   binopbaseM5_export(X1,dbl,dbl)\
@@ -115,12 +105,12 @@ unopM5_export(_FLOOR)
 binopbaseM5_export(_ROUND,dbl,int)
 binopbaseM5_export(_ROUND,flt,int)
 
-mmath_export str MATHunary_ISNAN(bit *res, const dbl *a);
-mmath_export str MATHunary_ISINF(int *res, const dbl *a);
-mmath_export str MATHunary_FINITE(bit *res, const dbl *a);
-mmath_export str MATHrandint(int *res);
-mmath_export str MATHrandintarg(int *res, const int *dummy);
-mmath_export str MATHsrandint(void *ret, const int *seed);
-mmath_export str MATHsqlrandint(int *res, const int *seed);
-mmath_export str MATHpi(dbl *pi);
+mal_export str MATHunary_ISNAN(bit *res, const dbl *a);
+mal_export str MATHunary_ISINF(int *res, const dbl *a);
+mal_export str MATHunary_FINITE(bit *res, const dbl *a);
+mal_export str MATHrandint(int *res);
+mal_export str MATHrandintarg(int *res, const int *dummy);
+mal_export str MATHsrandint(void *ret, const int *seed);
+mal_export str MATHsqlrandint(int *res, const int *seed);
+mal_export str MATHpi(dbl *pi);
 #endif /* __MMATH_H__ */

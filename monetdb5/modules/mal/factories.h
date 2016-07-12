@@ -16,20 +16,10 @@
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define factories_export extern __declspec(dllimport)
-#else
-#define factories_export extern __declspec(dllexport)
-#endif
-#else
-#define factories_export extern
-#endif
-
-factories_export str FCTgetPlants(bat *ret, bat *ret2);
-factories_export str FCTgetCaller(int *ret);
-factories_export str FCTgetOwners(bat *ret);
-factories_export str FCTgetArrival(bat *ret);
-factories_export str FCTgetDeparture(bat *ret);
-factories_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str FCTgetPlants(bat *ret, bat *ret2);
+mal_export str FCTgetCaller(int *ret);
+mal_export str FCTgetOwners(bat *ret);
+mal_export str FCTgetArrival(bat *ret);
+mal_export str FCTgetDeparture(bat *ret);
+mal_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _FACTORIES_H */
