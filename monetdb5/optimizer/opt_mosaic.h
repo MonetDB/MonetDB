@@ -25,7 +25,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-opt_export int OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGmosaic  if ( optDebug & (1 <<DEBUG_OPT_MOSAIC) )
 

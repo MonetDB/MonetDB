@@ -13,6 +13,6 @@
 #include "mal_interpreter.h"
 
 #define OPTDEBUGprojectionpath  if ( optDebug & ((lng)1 <<DEBUG_OPT_PROJECTIONPATH) )
-opt_export int OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif

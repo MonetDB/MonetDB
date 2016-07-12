@@ -23,36 +23,26 @@
 #include "mal_profiler.h"
 #include "bat5.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define bbp_export extern __declspec(dllimport)
-#else
-#define bbp_export extern __declspec(dllexport)
-#endif
-#else
-#define bbp_export extern
-#endif
-
 #ifdef _MSC_VER
 #define getcwd _getcwd
 #endif
 
-bbp_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpDiskSpace(lng *ret);
-bbp_export str CMDgetPageSize(int *ret);
-bbp_export str CMDbbpNames(bat *ret);
-bbp_export str CMDbbpName(str *ret, bat *bid);
-bbp_export str CMDbbpCount(bat *ret);
-bbp_export str CMDbbpLocation(bat *ret);
-bbp_export str CMDbbpHeat(bat *ret);
-bbp_export str CMDbbpDirty(bat *ret);
-bbp_export str CMDbbpStatus(bat *ret);
-bbp_export str CMDbbpKind(bat *ret);
-bbp_export str CMDbbpRefCount(bat *ret);
-bbp_export str CMDbbpLRefCount(bat *ret);
-bbp_export str CMDbbpgetIndex(int *res, bat *bid);
-bbp_export str CMDgetBATrefcnt(int *res, bat *bid);
-bbp_export str CMDgetBATlrefcnt(int *res, bat *bid);
-bbp_export str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
-bbp_export str CMDsetName(str *rname, const bat *b, str *name);
+mal_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpDiskSpace(lng *ret);
+mal_export str CMDgetPageSize(int *ret);
+mal_export str CMDbbpNames(bat *ret);
+mal_export str CMDbbpName(str *ret, bat *bid);
+mal_export str CMDbbpCount(bat *ret);
+mal_export str CMDbbpLocation(bat *ret);
+mal_export str CMDbbpHeat(bat *ret);
+mal_export str CMDbbpDirty(bat *ret);
+mal_export str CMDbbpStatus(bat *ret);
+mal_export str CMDbbpKind(bat *ret);
+mal_export str CMDbbpRefCount(bat *ret);
+mal_export str CMDbbpLRefCount(bat *ret);
+mal_export str CMDbbpgetIndex(int *res, bat *bid);
+mal_export str CMDgetBATrefcnt(int *res, bat *bid);
+mal_export str CMDgetBATlrefcnt(int *res, bat *bid);
+mal_export str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND);
+mal_export str CMDsetName(str *rname, const bat *b, str *name);
 #endif /* _BBP_H_*/

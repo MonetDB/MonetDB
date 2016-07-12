@@ -14,21 +14,11 @@
 #define _MBM_H_
 #include <mal.h>
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define mb_export extern __declspec(dllimport)
-#else
-#define mb_export extern __declspec(dllexport)
-#endif
-#else
-#define mb_export extern
-#endif
-
-mb_export str MBMrandom(bat *ret, oid *base, lng *size, int *domain);
-mb_export str MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed);
-mb_export str MBMuniform(bat *ret, oid *base, lng *size, int *domain);
-mb_export str MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean);
-mb_export str MBMmix(bat *ret, bat *batid);
-mb_export str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
+mal_export str MBMrandom(bat *ret, oid *base, lng *size, int *domain);
+mal_export str MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed);
+mal_export str MBMuniform(bat *ret, oid *base, lng *size, int *domain);
+mal_export str MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean);
+mal_export str MBMmix(bat *ret, bat *batid);
+mal_export str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
 
 #endif /* _MBM_H_ */

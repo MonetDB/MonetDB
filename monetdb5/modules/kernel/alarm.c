@@ -25,21 +25,15 @@
 #include <signal.h>
 #include <time.h>
 
-#ifdef WIN32
-#define alarm_export extern __declspec(dllexport)
-#else
-#define alarm_export extern
-#endif
-
-alarm_export str ALARMprelude(void *ret);
-alarm_export str ALARMepilogue(void *ret);
-alarm_export str ALARMusec(lng *ret);
-alarm_export str ALARMsleep(void *res, int *secs);
-alarm_export str ALARMsetalarm(void *res, int *secs, str *action);
-alarm_export str ALARMtimers(bat *res, bat *actions);
-alarm_export str ALARMctime(str *res);
-alarm_export str ALARMepoch(int *res);
-alarm_export str ALARMtime(int *res);
+mal_export str ALARMprelude(void *ret);
+mal_export str ALARMepilogue(void *ret);
+mal_export str ALARMusec(lng *ret);
+mal_export str ALARMsleep(void *res, int *secs);
+mal_export str ALARMsetalarm(void *res, int *secs, str *action);
+mal_export str ALARMtimers(bat *res, bat *actions);
+mal_export str ALARMctime(str *res);
+mal_export str ALARMepoch(int *res);
+mal_export str ALARMtime(int *res);
 
 #define MAXtimer                200
 
