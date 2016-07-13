@@ -437,7 +437,7 @@ command MakeLine(a:wkb, b:wkb) :wkb address wkbMakeLine
 comment "Gets two point or linestring geometries and returns a linestring geometry"; 
 command MakeLine(a:bat[:oid,:wkb]) :wkb address wkbMakeLineAggr
 comment "Gets a BAT with point or linestring geometries and returns a single linestring geometry"; 
-command subMakeLine(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubMakeLine
+command subMakeLine(a:bat[:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubMakeLine
 comment "Gets a BAT with point or linestring geometries, a candidate group list and returns a single linestring geometry per group."; 
 
 command PointOnSurface(w:wkb) :wkb address wkbPointOnSurface

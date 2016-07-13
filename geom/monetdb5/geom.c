@@ -15,6 +15,8 @@
 
 int TYPE_mbr;
 
+static str BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), const char* name);
+
 static inline int
 geometryHasZ(int info)
 {
@@ -3633,6 +3635,51 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 	return err;
 }
 
+str
+wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
+{
+    (void) flag;
+    int skip_nils = 1, i = 0;
+    const char *msg = MAL_SUCCEED;
+    str err;
+    BAT *b = NULL, *g = NULL, *e = NULL;
+    oid min, max;
+    BUN ngrp;
+    BUN start, end, cnt;
+    wkb **empty_geoms = NULL;
+    const oid *cand = NULL, *candend = NULL;
+
+	if ((b = BATdescriptor(*bBAT_id)) == NULL) {
+		throw(MAL, "geom.subMakeLine", RUNTIME_OBJECT_MISSING);
+	}
+	if ((g = BATdescriptor(*gBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "geom.subMakeLine", RUNTIME_OBJECT_MISSING);
+	}
+	if ((e = BATdescriptor(*eBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(MAL, "geom.subMakeLine", RUNTIME_OBJECT_MISSING);
+	}
+
+    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+                    &start, &end, &cnt,
+                    &cand, &candend)) != NULL) {
+        throw(MAL, "BATgroupMakeLine: %s\n", msg);
+    }
+
+    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbMakeLine, "wkbMakeLine");
+	BBPkeepref(*outBAT_id);
+
+    GDKfree(empty_geoms);
+    BBPunfix(b->batCacheid);
+    BBPunfix(g->batCacheid);
+    BBPunfix(e->batCacheid);
+
+	return err;
+    return MAL_SUCCEED;
+}
+
 /* Returns the first or last point of a linestring */
 static str
 wkbBorderPoint(wkb **out, wkb **geom, GEOSGeometry *(*func) (const GEOSGeometry *), const char *name)
@@ -4952,29 +4999,49 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
                 "start " BUNFMT ", end " BUNFMT
                 ", nonil = %d\n",
                 name, start, end, nonil);
+        gid = 0;
         if (nonil) {
-            aWKBs[0] = empty_geoms[0];
+            if (empty_geoms)
+                aWKBs[gid] = empty_geoms[gid];
 
             // add one more segment for each following row
             for (i = start; i < end; i++) {
-                bWKB = (wkb *) BUNtail(bBAT_iter, i);
-                outWKBs[0] = NULL;
+                if (aWKBs[gid] == NULL) {
+                    aWKBs[gid] = (wkb *) BUNtail(bBAT_iter, i);
+                    continue;
+                }
 
-                if ( (err = (*func)(&outWKBs[0], &aWKBs[0], &bWKB)) != MAL_SUCCEED )
-                    break;
-                else
-                    *aWKBs[0] = *outWKBs[0];
+                bWKB = (wkb *) BUNtail(bBAT_iter, i);
+
+                if ( (msg = (*func)(&outWKBs[gid], &aWKBs[gid], &bWKB)) != MAL_SUCCEED ) {
+                    GDKfree(aWKBs);
+                    GDKfree(outWKBs);
+                    GDKfree(grpWKBs);
+                    BBPunfix(outBAT->batCacheid);
+                    outBAT = NULL;
+                    err = createException(MAL, name, msg);
+                    GDKfree(msg);
+                    return err;
+                } else
+                    aWKBs[gid] = outWKBs[gid];
             }
+            if (!outWKBs[gid])
+                outWKBs[gid] = aWKBs[gid];
         } else {
             nils = 1;
-            aWKBs[0] = empty_geoms[0];
+            if (empty_geoms)
+                aWKBs[gid] = empty_geoms[gid];
 
             for (i = start; i < end && nils == 0; i++) {
+                if (aWKBs[gid] == NULL) {
+                    aWKBs[gid] = (wkb *) BUNtail(bBAT_iter, i);
+                    continue;
+                }
                 bWKB = (wkb *) BUNtail(bBAT_iter, i);
 
                 if (wkb_isnil(bWKB)) {
                     if (!skip_nils) {
-                        if ((outWKBs[0] = wkbNULLcopy()) == NULL) {
+                        if ((outWKBs[gid] = wkbNULLcopy()) == NULL) {
                             GDKfree(aWKBs);
                             GDKfree(outWKBs);
                             GDKfree(grpWKBs);
@@ -4985,14 +5052,23 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
                         nils = 1;
                     }
                 } else {
-                    if ( (err = (*func) (&outWKBs[0], &aWKBs[0], &bWKB)) != MAL_SUCCEED )
-                        break;
-                    else
-                        aWKBs[0] = outWKBs[0];
+                    if ( (err = (*func) (&outWKBs[gid], &aWKBs[gid], &bWKB)) != MAL_SUCCEED ) {
+                        GDKfree(aWKBs);
+                        GDKfree(outWKBs);
+                        GDKfree(grpWKBs);
+                        BBPunfix(outBAT->batCacheid);
+                        outBAT = NULL;
+                        err = createException(MAL, name, msg);
+                        GDKfree(msg);
+                        return err;
+                    } else
+                        aWKBs[gid] = outWKBs[gid];
                 }
             }
+            if (!outWKBs[gid])
+                outWKBs[gid] = aWKBs[gid];
         }
-        grpWKBs[0] = outWKBs[0];
+        grpWKBs[gid] = outWKBs[gid];
     } else {
         /* multiple groups, no candidate list */
         ALGODEBUG fprintf(stderr,
@@ -5011,7 +5087,12 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
 
                 /*Check if you already have aWKB*/
                 if (aWKBs[gid] == NULL) {
-                    aWKBs[gid] = empty_geoms[gid];
+                    if (empty_geoms)
+                        aWKBs[gid] = empty_geoms[gid];
+                    else {
+                        aWKBs[gid] = (wkb *) BUNtail(bBAT_iter, i);
+                        continue;
+                    }
                 }
                 /*Lets look for bWKB*/
                 bWKB = (wkb *) BUNtail(bBAT_iter, i);

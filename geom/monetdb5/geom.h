@@ -190,6 +190,7 @@ geom_export str wkbEnvelopeFromCoordinates(wkb** out, dbl* xmin, dbl* ymin, dbl*
 geom_export str wkbMakePolygon(wkb** out, wkb** external, int* srid); /*Only Polygons without holes*/
 geom_export str wkbMakeLine(wkb**, wkb**, wkb**);
 geom_export str wkbMakeLineAggr(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla);
 geom_export str wkbExteriorRing(wkb**, wkb**);
 geom_export str wkbInteriorRingN(wkb**, wkb**, int*);
 
@@ -223,6 +224,7 @@ geom_export str wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id
 geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
 geom_export str wkbUnionAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbUnionCascade(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla);
 geom_export str wkbCollect(wkb **out, wkb **a, wkb **b);
 geom_export str wkbCollectCascade(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag);
