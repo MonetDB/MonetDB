@@ -4384,7 +4384,7 @@ CREATE AGGREGATE ST_Polygonize(geom Geometry) RETURNS Geometry EXTERNAL NAME geo
 --CREATE FUNCTION ST_RemoveRepeatedPoints RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_SharedPaths RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Shift_Longitude RETURNS EXTERNAL NAME
---CREATE FUNCTION ST_Simplify RETURNS EXTERNAL NAME
+CREATE FUNCTION ST_Simplify(geom1 Geometry, tolerance real) RETURNS Geometry EXTERNAL NAME geom."Simplify";
 CREATE FUNCTION ST_SimplifyPreserveTopology(geom1 Geometry, tolerance real) RETURNS Geometry EXTERNAL NAME geom."SimplifyPreserveTopology";
 --CREATE FUNCTION ST_Split RETURNS EXTERNAL NAME
 --CREATE FUNCTION ST_Union(geometry set geoms)?????

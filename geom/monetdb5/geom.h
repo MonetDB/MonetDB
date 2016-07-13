@@ -257,6 +257,7 @@ geom_export str wkbDumpPointsP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_i
 geom_export str dumpGeometriesGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, const char *path);
 geom_export str wkbPolygonize(wkb **res, wkb **geom);
 geom_export str wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag);
+geom_export str wkbSimplify(wkb **res, wkb **geom, float *tolerance);
 geom_export str wkbSimplifyPreserveTopology(wkb **res, wkb **geom, float *tolerance);
 
 geom_export str geom_2_geom(wkb** resWKB, wkb **valueWKB, int* columnType, int* columnSRID); 

@@ -360,6 +360,8 @@ comment "Creates a GeometryCollection containing possible polygons formed from t
 command subPolygonize(a:bat[:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubPolygonize
 comment "Creates a GeometryCollection containing possible polygons formed from the constituent linework of a set of geometries.";
 
+command Simplify(a:wkb, t:flt) :wkb address wkbSimplify
+comment "Returns a \"simplified\" version of the given geometry using the Douglas-Peucker algorithm.";
 command SimplifyPreserveTopology(a:wkb, t:flt) :wkb address wkbSimplifyPreserveTopology
 comment "Returns a \"simplified\" version of the given geometry using the Douglas-Peucker algorithm.";
 

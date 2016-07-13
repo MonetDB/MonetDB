@@ -2232,6 +2232,24 @@ wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* 
 	return err;
 }
 
+str wkbSimplify(wkb** outWKB, wkb** geom, float* tolerance){
+	GEOSGeom geosGeometry = wkb2geos(*geom);
+	GEOSGeometry* outGeometry;
+
+	if(!(outGeometry = GEOSSimplify(geosGeometry, *tolerance))) {
+		*outWKB = NULL;
+		GEOSGeom_destroy(geosGeometry);
+		return createException(MAL, "geom.Simplify", "GEOSSimplify failed");
+	}
+
+	GEOSGeom_destroy(geosGeometry);
+
+	*outWKB = geos2wkb(outGeometry);
+	GEOSGeom_destroy(outGeometry);
+
+	return MAL_SUCCEED;
+}
+
 str wkbSimplifyPreserveTopology(wkb** outWKB, wkb** geom, float* tolerance){
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 	GEOSGeometry* outGeometry;
@@ -2239,7 +2257,7 @@ str wkbSimplifyPreserveTopology(wkb** outWKB, wkb** geom, float* tolerance){
 	if(!(outGeometry = GEOSTopologyPreserveSimplify(geosGeometry, *tolerance))) {
 		*outWKB = NULL;
 		GEOSGeom_destroy(geosGeometry);
-		return createException(MAL, "geom.SimplifyPreserveTopology", "GEOSSimplifyPreserveTopology failed");
+		return createException(MAL, "geom.SimplifyPreserveTopology", "GEOSTopologyPreserveSimplify failed");
 	}
 
 	GEOSGeom_destroy(geosGeometry);
