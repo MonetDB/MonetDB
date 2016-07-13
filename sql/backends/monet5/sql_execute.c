@@ -415,13 +415,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		if (result) { /* return all results sets */
 			*result = m->results;
 		} else {
-			int i;
-			for (i = 0; i < m->results->nr_cols; i++) {
-				GDKfree(m->results->cols[i].tn);
-				GDKfree(m->results->cols[i].name);
-			}
-			GDKfree(m->results->cols);
-			GDKfree(m->results);
+			if (m->results == o->results)
+				o->results = NULL;
+			res_tables_destroy(m->results);
 		}
 		m->results = NULL;
 	}
