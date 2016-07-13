@@ -11,7 +11,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-opt_export int
+mal_export int
 OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define DEBUG_OPT_REMOTEQUERIES DEBUG_OPT_REMOTE

@@ -555,8 +555,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		c->glb = oldglb;
 
 	}
-	if (m->results && result) { /* return all results sets */
-		*result = m->results;
+	if (m->results) {
+		if (result) { /* return all results sets */
+			*result = m->results;
+		} else {
+			if (m->results == o->results)
+				o->results = NULL;
+			res_tables_destroy(m->results);
+		}
 		m->results = NULL;
 	}
 /*

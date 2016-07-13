@@ -11,27 +11,17 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define qlog_export extern __declspec(dllimport)
-#else
-#define qlog_export extern __declspec(dllexport)
-#endif
-#else
-#define qlog_export extern
-#endif
-
-qlog_export int initQlog(void);
-qlog_export void QLOGcatalog(BAT **r);
-qlog_export void QLOGcalls(BAT **r);
-qlog_export str QLOGenable(void *ret);
-qlog_export str QLOGenableThreshold(void *ret, int *threshold);
-qlog_export str QLOGdisable(void *ret);
-qlog_export int QLOGisset(void);
-qlog_export str QLOGissetFcn(int *ret);
-qlog_export str QLOGempty(void *ret);
-qlog_export str QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-qlog_export str QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr);
-qlog_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int initQlog(void);
+mal_export void QLOGcatalog(BAT **r);
+mal_export void QLOGcalls(BAT **r);
+mal_export str QLOGenable(void *ret);
+mal_export str QLOGenableThreshold(void *ret, int *threshold);
+mal_export str QLOGdisable(void *ret);
+mal_export int QLOGisset(void);
+mal_export str QLOGissetFcn(int *ret);
+mal_export str QLOGempty(void *ret);
+mal_export str QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr);
+mal_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _QLOG_H */

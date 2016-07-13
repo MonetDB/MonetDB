@@ -131,7 +131,8 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
+	int i, j, limit, slimit, actions=0, *vars, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
+	char *rslices = NULL;
 	InstrPtr p, *old;
 	subselect_t subselects;
 	char buf[256];
@@ -456,9 +457,13 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	slimit= mb->ssize;
 	old = mb->stmt;
 
-	if (newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
+	slices = (int*) GDKzalloc(sizeof(int)* mb->vtop);
+	rslices = (char*) GDKzalloc(sizeof(char)* mb->vtop);
+	if (!slices || !rslices || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
 		mb->stmt = old;
 		GDKfree(vars);
+		GDKfree(slices);
+		GDKfree(rslices);
 		return actions;
 
 	}
@@ -480,17 +485,15 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getModuleId(q) == sqlRef && getFunctionId(q) == projectdeltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(q);
-				ValRecord cst;
 
+				/* keep new output of slice */
+				slices[getArg(s, 1)] = getArg(p, 0); 
+				rslices[getArg(p,0)] = 1;
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
-				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				getArg(r, 0) = getArg(p, 0); 
 				setVarCList(mb,getArg(r,0));
 				getArg(r, 1) = getArg(s, 1); 
-				cst.vtype = getArgType(mb, r, 2);
-				cst.val.lval = 0;
-				cst.len = 0;
-				getArg(r, 2) = defConstant(mb, cst.vtype, &cst); /* start from zero */
 				pushInstruction(mb,r);
 
 				/* dummy result for the old q, will be removed by deadcode optimizer */
@@ -498,8 +501,35 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				getArg(s, 1) = getArg(r, 0); /* use result of subslice */
 				pushInstruction(mb, s);
+
+				freeInstruction(p);
+				old[i] = r; 
+				continue;
 			}
 		}
+		/* Leftfetchjoins involving rewriten sliced candidates ids need to be flattend
+		 * l = projection(t, c); => l = c;
+		 * and
+		 * l = projection(s, ntids); => l = s;
+		 */
+		else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
+			int var = getArg(p, 1);
+			InstrPtr r = old[vars[var]];
+			
+			if (isSlice(r) && rslices[getArg(p,1)] != 0 && getArg(r, 0) == getArg(p, 1)) {
+				InstrPtr q = newAssignment(mb);
+
+				getArg(q, 0) = getArg(p, 0); 
+				(void) pushArgument(mb, q, getArg(p, 2));
+				actions++;
+				freeInstruction(p);
+				continue;
+			}
+		} else if (p->argc >= 2 && slices[getArg(p, 1)] != 0) {
+			/* use new slice candidate list */
+			getArg(p, 1) = slices[getArg(p, 1)];
+		}
+
 		/* c = delta(b, uid, uvl, ins)
 		 * s = subselect(c, C1..)
 		 *
@@ -565,6 +595,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (old[i])
 			pushInstruction(mb,old[i]);
 	GDKfree(vars);
+	GDKfree(slices);
+	GDKfree(rslices);
 	GDKfree(old);
 
     /* Defense line against incorrect plans */

@@ -22,7 +22,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-opt_export int OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int OPTemptycolumnImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTDEBUGemptycolumn  if ( optDebug & ((lng) 1 <<DEBUG_OPT_EMPTYCOLUMN) )
 
