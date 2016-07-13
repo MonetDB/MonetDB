@@ -29,7 +29,7 @@ Ready.
 #SELECT (SELECT current_timestamp), count(DISTINCT mmsi) FROM vessels;
 % .L1,	sys.L2 # table_name
 % L1,	L2 # name
-% tinyint,	wrd # type
+% tinyint,	bigint # type
 % 1,	1 # length
 [ 1,	0	]
 #drop table vessels;

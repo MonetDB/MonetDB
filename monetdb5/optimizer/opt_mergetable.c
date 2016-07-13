@@ -1859,7 +1859,8 @@ cleanup:
     }
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions,GDKusec() - usec);
-    newComment(mb,buf);
+    if ( mb->errors == 0) 
+   	 newComment(mb,buf);
 
 	return actions;
 }
