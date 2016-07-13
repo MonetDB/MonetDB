@@ -2073,33 +2073,163 @@ wkbDumpPointsP(bat *parentBAT_id, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB,
     return wkbDumpPoints_(parentBAT_id, idBAT_id, geomBAT_id, geomWKB, parent);
 }
 
-str wkbPolygonize(wkb** outWKB, wkb** geom){
-	GEOSGeom geosGeometry = wkb2geos(*geom);
-	int i = 0, geometriesNum = GEOSGetNumGeometries(geosGeometry);
-	GEOSGeometry* outGeometry;
-	const GEOSGeometry **multiGeometry;
+static str
+wkbPolygonize_(wkb** outWKB, wkb** geom1, wkb** geom2){
+    str msg = MAL_SUCCEED;
+	GEOSGeom geos1Geometry = NULL, geos2Geometry = NULL;
+	GEOSGeometry* outGeometry = NULL;
+	int i = 0, geos1Num = 0, geos2Num = 0, geos1Type, geos2Type;
+	const GEOSGeometry **multiGeometry = NULL;
+    bit single1 = 0, single2 = 0;
 
-	multiGeometry = malloc(sizeof(GEOSGeometry*) * geometriesNum);
-	for(i=0; i<geometriesNum; i++) {
-		multiGeometry[i] = GEOSGetGeometryN(geosGeometry, i);
-	}
 
-	if(!(outGeometry = GEOSPolygonize(multiGeometry, geometriesNum))) {
+    if ((geos1Geometry = wkb2geos(*geom1)) == NULL) {
 		*outWKB = NULL;
-		for (i = 0; i < geometriesNum; i++) {
-			GEOSGeom_destroy((GEOSGeometry *)multiGeometry[i]);
-		}
-		return createException(MAL, "geom.Polygonize", "GEOSPolygonize failed");
+		throw(MAL, "geom.wkbPolygonize_", "wkb2geos failed");
+    }
+
+	geos1Type = GEOSGeomTypeId(geos1Geometry) + 1;
+    switch(geos1Type) {
+        case wkbPoint_mdb:
+        case wkbLineString_mdb:
+        case wkbLinearRing_mdb:
+        case wkbPolygon_mdb:
+            geos1Num = 1;
+            single1 = 1;
+            break;
+        case wkbMultiPoint_mdb:
+        case wkbMultiLineString_mdb:
+        case wkbMultiPolygon_mdb:
+        case wkbGeometryCollection_mdb:
+            if ( (geos1Num = GEOSGetNumGeometries(geos1Geometry)) < 0) {
+        		GEOSGeom_destroy(geos1Geometry);
+        		*outWKB = NULL;
+        		throw(MAL, "geom.wkbPolygonize_", "GEOSGetNumGeometries failed");
+            }
+            break;
+        default:
+            return createException(MAL, "geom.wkbPolygonize", "%s Unknown geometry type", geom_type2str(geos1Type,0));
+    }
+
+    if ( (geos2Geometry = wkb2geos(*geom2)) == NULL) {
+        GEOSGeom_destroy(geos1Geometry);
+        *outWKB = NULL;
+        throw(MAL, "geom.wkbPolygonize_", "wkb2geos failed");
+    }
+
+	geos2Type = GEOSGeomTypeId(geos2Geometry) + 1;
+    switch(geos2Type) {
+        case wkbPoint_mdb:
+        case wkbLineString_mdb:
+        case wkbLinearRing_mdb:
+        case wkbPolygon_mdb:
+            geos2Num = 1;
+            single2 = 1;
+            break;
+        case wkbMultiPoint_mdb:
+        case wkbMultiLineString_mdb:
+        case wkbMultiPolygon_mdb:
+        case wkbGeometryCollection_mdb:
+            if ( (geos2Num = GEOSGetNumGeometries(geos2Geometry)) < 0) {
+        		GEOSGeom_destroy(geos1Geometry);
+        		GEOSGeom_destroy(geos2Geometry);
+        		*outWKB = NULL;
+        		throw(MAL, "geom.wkbPolygonize_", "GEOSGetNumGeometries failed");
+            }
+            break;
+        default:
+            return createException(MAL, "geom.wkbPolygonize", "%s Unknown geometry type", geom_type2str(geos2Type,0));
+    }
+
+	multiGeometry = GDKzalloc(sizeof(GEOSGeometry*) * (geos1Num + geos2Num));
+
+    for(i=0; i < geos1Num; i++) {
+        if (single1)
+            multiGeometry[i] = geos1Geometry;
+        else
+            multiGeometry[i] = GEOSGetGeometryN(geos1Geometry, i);
+    }
+
+    for(i=0; i< geos2Num; i++) {
+        if (single2)
+            multiGeometry[i+geos1Num] = geos2Geometry;
+        else
+            multiGeometry[i+geos1Num] = GEOSGetGeometryN(geos2Geometry, i);
+    }	
+
+    if(!(outGeometry = GEOSPolygonize(multiGeometry, (geos1Num + geos2Num)))) {
+		*outWKB = NULL;
+		msg = createException(MAL, "geom.Polygonize", "GEOSPolygonize failed");
+	} else {
+	    *outWKB = geos2wkb(outGeometry);
+    	GEOSGeom_destroy(outGeometry);
+    }
+
+    for(i = 0; i < geos1Num; i++) {
+        GEOSGeom_destroy((GEOSGeometry *)multiGeometry[i]);
+    }
+    for(i = 0; i < geos2Num; i++) {
+        GEOSGeom_destroy((GEOSGeometry *)multiGeometry[i+geos1Num]);
+    }
+    if (multiGeometry)
+        GDKfree(multiGeometry);
+
+	return msg;
+}
+
+str
+wkbPolygonize(wkb** outWKB, wkb** geom1) {
+    wkb *geom2 = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
+    return wkbPolygonize_(outWKB, geom1, &geom2);
+}
+
+str
+wkbsubPolygonize(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
+{
+    (void) flag;
+    int skip_nils = 1, i = 0;
+    const char *msg = MAL_SUCCEED;
+    str err;
+    BAT *b = NULL, *g = NULL, *e = NULL;
+    oid min, max;
+    BUN ngrp;
+    BUN start, end, cnt;
+    wkb **empty_geoms = NULL;
+    const oid *cand = NULL, *candend = NULL;
+
+	if ((b = BATdescriptor(*bBAT_id)) == NULL) {
+		throw(MAL, "geom.wkbPolygonize", RUNTIME_OBJECT_MISSING);
+	}
+	if ((g = BATdescriptor(*gBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "geom.wkbPolygonize", RUNTIME_OBJECT_MISSING);
+	}
+	if ((e = BATdescriptor(*eBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(MAL, "geom.wkbPolygonize", RUNTIME_OBJECT_MISSING);
 	}
 
-	for (i = 0; i < geometriesNum; i++) {
-		GEOSGeom_destroy((GEOSGeometry *)multiGeometry[i]);
-	}
+    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+                    &start, &end, &cnt,
+                    &cand, &candend)) != NULL) {
+        throw(MAL, "BATgroupPolygonize: %s\n", msg);
+    }
 
-	*outWKB = geos2wkb(outGeometry);
-	GEOSGeom_destroy(outGeometry);
+    /*Create the empty geoms*/
+    empty_geoms = (wkb**) GDKmalloc(sizeof(wkb*)*ngrp);
+    for (i = 0; i < ngrp; i++)
+        empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
 
-	return MAL_SUCCEED;
+    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbPolygonize_, "wkbPolygonize");
+	BBPkeepref(*outBAT_id);
+
+    GDKfree(empty_geoms);
+    BBPunfix(b->batCacheid);
+    BBPunfix(g->batCacheid);
+    BBPunfix(e->batCacheid);
+
+	return err;
 }
 
 str wkbSimplifyPreserveTopology(wkb** outWKB, wkb** geom, float* tolerance){
@@ -4754,22 +4884,22 @@ wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag)
     const oid *cand = NULL, *candend = NULL;
 
 	if ((b = BATdescriptor(*bBAT_id)) == NULL) {
-		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.wkbUnion", RUNTIME_OBJECT_MISSING);
 	}
 	if ((g = BATdescriptor(*gBAT_id)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.wkbUnion", RUNTIME_OBJECT_MISSING);
 	}
 	if ((e = BATdescriptor(*eBAT_id)) == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
-		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.wkbUnion", RUNTIME_OBJECT_MISSING);
 	}
 
     if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
                     &start, &end, &cnt,
                     &cand, &candend)) != NULL) {
-        throw(MAL, "BATgroupCollect: %s\n", msg);
+        throw(MAL, "BATgroupUnion: %s\n", msg);
     }
 
     /*Create the empty geoms*/
