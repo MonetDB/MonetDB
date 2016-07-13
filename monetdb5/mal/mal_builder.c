@@ -96,7 +96,7 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 InstrPtr
 newComment(MalBlkPtr mb, const char *val)
 {
-	InstrPtr q = newInstruction(NULL,REMsymbol);
+	InstrPtr q = newInstruction(mb, REMsymbol);
 	ValRecord cst;
 
 	if (q == NULL)
