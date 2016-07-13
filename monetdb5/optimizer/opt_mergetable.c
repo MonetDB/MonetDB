@@ -53,7 +53,7 @@ static int
 is_a_mat(int idx, matlist_t *ml){
 	int i;
 	for(i =0; i<ml->top; i++)
-		if (ml->v[i].mv == idx) 
+		if (!ml->v[i].packed && ml->v[i].mv == idx) 
 			return i;
 	return -1;
 }
@@ -1444,7 +1444,8 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			pushInstruction(mb,r);
 
 			q = copyInstruction(p);
-			setFunctionId(q, subsliceRef);
+			//setFunctionId(q, subsliceRef);
+			setFunctionId(q, sliceRef);
 			if (ml->v[m].type != mat_tpn || is_slice) 
 				getArg(q,1) = getArg(r,0);
 			pushInstruction(mb,q);
@@ -1491,7 +1492,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	InstrPtr *old;
 	matlist_t ml;
-	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit;
+	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
 	char buf[256];
 	lng usec = GDKusec();
@@ -1527,7 +1528,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getModuleId(q) == groupRef && getFunctionId(q) == subgroupdoneRef)
 				groupdone = 1;
 		}
-
+		if (getModuleId(p) == algebraRef && 
+		    getFunctionId(p) == selectNotNilRef ) 
+			bailout = 1;
 		/*
 		if (isTopn(p))
 			topn_res = getArg(p, 0);
@@ -1536,6 +1539,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			//distinct_topn = 1;
 	}
 	GDKfree(vars);
+
+	if (bailout)
+		goto cleanup;
 
 	/* the number of MATs is limited to the variable stack*/
 	ml.size = mb->vtop;
@@ -1863,7 +1869,8 @@ cleanup:
     }
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions,GDKusec() - usec);
-    newComment(mb,buf);
+    if ( mb->errors == 0) 
+   	 newComment(mb,buf);
 
 	return actions;
 }
