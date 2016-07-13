@@ -334,7 +334,7 @@ MOSdecompress_linear(Client cntxt, MOStask task)
 			int step = *(int*) linear_step(task,blk);
 			BUN lim= MOSgetCnt(blk);
 			for(i = 0; i < lim; i++){
-				((int*)task->src)[i] = val + i * step;
+				((int*)task->src)[i] = val + (int)(i * step);
 				hdr->checksum2.sumint += ((int*)task->src)[i];
 			}
 			task->src += i * sizeof(int);
