@@ -45,7 +45,7 @@ Ready.
 % clob # type
 % 206 # length
 function user.s5_1(A0:timestamp,A1:timestamp,A2:void):void;
-    X_67:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",44);
+    X_67:void := querylog.define("explain select (t-(select timestamp \\'1970-1-1\\')),v from foo_nil_2dec union all select (t-(select timestamp \\'1970-1-1\\')),null from foo_nil_2dec;","default_pipe",42);
     X_45 := bat.new(nil:oid,nil:str);
     X_52 := bat.append(X_45,".L5");
     X_61 := bat.append(X_52,".L5");
@@ -70,18 +70,16 @@ function user.s5_1(A0:timestamp,A1:timestamp,A2:void):void;
     X_19 := sql.delta(X_11,C_14,r1_14,X_17);
     X_20 := algebra.projection(C_8,X_19);
     X_21 := calc.timestamp(A0,7);
-    X_23 := algebra.project(X_20,X_21);
-    X_24:bat[:lng] := batmtime.diff(X_20,X_23);
-    X_25 := bat.append(X_5,X_24,true);
-    X_27 := calc.timestamp(A1,7);
-    X_28 := algebra.project(X_20,X_27);
-    X_29:bat[:lng] := batmtime.diff(X_20,X_28);
-    X_30 := bat.append(X_25,X_29,true);
+    X_23:bat[:lng] := mal.manifold("mtime","diff",X_20,X_21);
+    X_26 := bat.append(X_5,X_23,true);
+    X_28 := calc.timestamp(A1,7);
+    X_29:bat[:lng] := mal.manifold("mtime","diff",X_20,X_28);
+    X_30 := bat.append(X_26,X_29,true);
     X_31:bat[:lng] := bat.new(nil:oid,nil:lng);
     X_32:bat[:lng] := sql.bind(X_4,"sys","foo_nil_2dec","v",0);
-    (C_34,r1_47) := sql.bind(X_4,"sys","foo_nil_2dec","v",2);
+    (C_34,r1_45) := sql.bind(X_4,"sys","foo_nil_2dec","v",2);
     X_36:bat[:lng] := sql.bind(X_4,"sys","foo_nil_2dec","v",1);
-    X_37 := sql.delta(X_32,C_34,r1_47,X_36);
+    X_37 := sql.delta(X_32,C_34,r1_45,X_36);
     X_38 := algebra.projection(C_8,X_37);
     X_39 := bat.append(X_31,X_38,true);
     X_42 := algebra.project(X_29,nil:lng);
