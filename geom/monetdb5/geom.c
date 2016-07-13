@@ -4741,6 +4741,54 @@ wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
 }
 
 str
+wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag) {
+    (void) flag;
+    int skip_nils = 1, i = 0;
+    const char *msg = MAL_SUCCEED;
+    str err;
+    BAT *b = NULL, *g = NULL, *e = NULL;
+    oid min, max;
+    BUN ngrp;
+    BUN start, end, cnt;
+    wkb **empty_geoms = NULL;
+    const oid *cand = NULL, *candend = NULL;
+
+	if ((b = BATdescriptor(*bBAT_id)) == NULL) {
+		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+	}
+	if ((g = BATdescriptor(*gBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+	}
+	if ((e = BATdescriptor(*eBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+	}
+
+    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+                    &start, &end, &cnt,
+                    &cand, &candend)) != NULL) {
+        throw(MAL, "BATgroupCollect: %s\n", msg);
+    }
+
+    /*Create the empty geoms*/
+    empty_geoms = (wkb**) GDKmalloc(sizeof(wkb*)*ngrp);
+    for (i = 0; i < ngrp; i++)
+        empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyPolygon());
+
+    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbUnion, "wkbUnion");
+	BBPkeepref(*outBAT_id);
+
+    GDKfree(empty_geoms);
+    BBPunfix(b->batCacheid);
+    BBPunfix(g->batCacheid);
+    BBPunfix(e->batCacheid);
+
+	return err;
+}
+
+str
 wkbCollect(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 {
 	GEOSGeom outGeometry, geom1Geometry, geom2Geometry, geomGeometries[2];
@@ -5028,7 +5076,6 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
             if (!outWKBs[gid])
                 outWKBs[gid] = aWKBs[gid];
         } else {
-            nils = 1;
             if (empty_geoms)
                 aWKBs[gid] = empty_geoms[gid];
 

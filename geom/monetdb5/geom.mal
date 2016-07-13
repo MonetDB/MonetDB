@@ -289,7 +289,7 @@ command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
 command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionCascade
 comment "Gets a BAT with geometries and returns their union"; 
-command subUnion(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubUnion
+command subUnion(b:bat[:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubUnion
 comment "Gets a BAT with geometries, candidate group list and returns the union of each group element."; 
 
 command Collect(a:wkb, b:wkb) :wkb address wkbCollect

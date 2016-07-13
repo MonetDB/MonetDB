@@ -224,7 +224,7 @@ geom_export str wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id
 geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
 geom_export str wkbUnionAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbUnionCascade(wkb** outWKB, bat* inBAT_id);
-geom_export str wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla);
+geom_export str wkbsubUnion(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag);
 geom_export str wkbCollect(wkb **out, wkb **a, wkb **b);
 geom_export str wkbCollectCascade(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag);
