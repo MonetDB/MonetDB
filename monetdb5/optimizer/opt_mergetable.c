@@ -238,8 +238,9 @@ mat_set_prop(matlist_t *ml, MalBlkPtr mb, InstrPtr p)
 static InstrPtr
 mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
 {
-	int tpe, k, j, is_subdelta = (getFunctionId(p) == subdeltaRef);
+	int tpe, k, j, is_subdelta = (getFunctionId(p) == subdeltaRef), is_projectdelta = (getFunctionId(p) == projectdeltaRef);
 	InstrPtr r = NULL;
+	int pushed = 0;
 
 	//printf("# %s.%s(%d,%d,%d,%d)", getModuleId(p), getFunctionId(p), m, n, o, e);
 
@@ -303,7 +304,24 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			setPartnr(ml, is_subdelta?getArg(mat[m].mi, k):-1, getArg(q,0), k);
 			r = pushArgument(mb, r, getArg(q, 0));
 		}
+		if (evar == 1 && e >= 0 && mat[e].type == mat_slc && is_projectdelta) {
+ 			InstrPtr q = newInstruction(mb, ASSIGNsymbol);
+
+			setModuleId(q, algebraRef);
+			setFunctionId(q, projectionRef);
+			getArg(q, 0) = getArg(r, 0);
+			q = pushArgument(mb, q, getArg(mat[e].mi, 0));
+			getArg(r, 0) = newTmpVariable(mb, tpe);
+			q = pushArgument(mb, q, getArg(r, 0));
+			pushInstruction(mb, r);
+			pushInstruction(mb, q);
+			pushed = 1;
+			r = q;
+		}
 	}
+	mat_add_var(ml, r, NULL, getArg(r, 0), mat_type(mat, m),  -1, -1, pushed);
+	if (pushed)
+		mat[ml->top-1].packed = 1;
 	return r;
 }
 
@@ -1426,6 +1444,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			pushInstruction(mb,r);
 
 			q = copyInstruction(p);
+			setFunctionId(q, subsliceRef);
 			if (ml->v[m].type != mat_tpn || is_slice) 
 				getArg(q,1) = getArg(r,0);
 			pushInstruction(mb,q);
@@ -1729,8 +1748,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
 			if ((r = mat_delta(&ml, mb, p, ml.v, m, n, o, -1, fm, fn, fo, 0)) != NULL)
-				mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p));
-			actions++;
+				actions++;
+
 			continue;
 		}
 		if (match == 4 && bats == 5 && isDelta(p) && 
@@ -1739,8 +1758,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
 		   (e=is_a_mat(getArg(p,fe), &ml)) >= 0){
 			if ((r = mat_delta(&ml, mb, p, ml.v, m, n, o, e, fm, fn, fo, fe)) != NULL)
-				mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p));
-			actions++;
+				actions++;
 			continue;
 		}
 

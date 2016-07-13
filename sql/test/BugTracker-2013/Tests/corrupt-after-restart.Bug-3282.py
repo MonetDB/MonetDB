@@ -7,7 +7,8 @@ import sys
 
 s = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-out, err = c.communicate('''create table table3282 (i int);
+out, err = c.communicate('''start transaction;
+create table table3282 (i int);
 insert into table3282 values (0);
 insert into table3282 select * from table3282;
 insert into table3282 select * from table3282;
@@ -31,6 +32,7 @@ insert into table3282 select * from table3282;
 insert into table3282 select * from table3282;
 insert into table3282 select * from table3282;
 select * from table3282 offset 2097140;
+commit;
 ''')
 sys.stdout.write(out)
 sys.stderr.write(err)
