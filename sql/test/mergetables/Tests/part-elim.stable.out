@@ -79,6 +79,72 @@ project (
 | | table(sys.mt2) [ test.id, test.posx, test.%TID% NOT NULL ] COUNT 
 | ) [ bigint "1" <= test.id <= bigint "1000" ]
 ) [ test.id, test.posx ]
+#declare l integer;
+#set l = 1;
+#declare h integer;
+#set h = 10000;
+#plan select * from test where id between l and h;
+% .plan # table_name
+% rel # name
+% clob # type
+% 106 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ mt1.id as test.id, mt1.posx as test.posx, mt1.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint[l] <= test.id <= bigint[h] ]
+| ) [ test.id, test.posx ],
+| project (
+| | select (
+| | | table(sys.mt2) [ mt2.id as test.id, mt2.posx as test.posx, mt2.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint[l] <= test.id <= bigint[h] ]
+| ) [ test.id, test.posx ]
+) [ test.id, test.posx ]
+#set h = 1000;
+#plan select * from test where id between l and h;
+% .plan # table_name
+% rel # name
+% clob # type
+% 69 # length
+project (
+| select (
+| | table(sys.mt2) [ test.id, test.posx, test.%TID% NOT NULL ] COUNT 
+| ) [ bigint[l] <= test.id <= bigint[h] ]
+) [ test.id, test.posx ]
+#plan select * from test where id between 1 and 1000*10;
+% .plan # table_name
+% rel # name
+% clob # type
+% 106 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ mt1.id as test.id, mt1.posx as test.posx, mt1.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint "1" <= test.id <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] ]
+| ) [ test.id, test.posx ],
+| project (
+| | select (
+| | | table(sys.mt2) [ mt2.id as test.id, mt2.posx as test.posx, mt2.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint "1" <= test.id <= bigint[sys.sql_mul(smallint "1000", tinyint "10")] ]
+| ) [ test.id, test.posx ]
+) [ test.id, test.posx ]
+#plan select * from test where id between 1 and 100*10;
+% .plan # table_name
+% rel # name
+% clob # type
+% 106 # length
+union (
+| project (
+| | select (
+| | | table(sys.mt1) [ mt1.id as test.id, mt1.posx as test.posx, mt1.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint "1" <= test.id <= bigint[sys.sql_mul(smallint "100", tinyint "10")] ]
+| ) [ test.id, test.posx ],
+| project (
+| | select (
+| | | table(sys.mt2) [ mt2.id as test.id, mt2.posx as test.posx, mt2.%TID% NOT NULL as test.%TID% ] COUNT 
+| | ) [ bigint "1" <= test.id <= bigint[sys.sql_mul(smallint "100", tinyint "10")] ]
+| ) [ test.id, test.posx ]
+) [ test.id, test.posx ]
 #drop table test;
 #drop table mt1;
 #drop table mt2;
