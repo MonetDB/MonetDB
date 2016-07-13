@@ -224,8 +224,8 @@ geom_export str wkbUnion(wkb **out, wkb **a, wkb **b);
 geom_export str wkbUnionAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbUnionCascade(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbCollect(wkb **out, wkb **a, wkb **b);
-geom_export str wkbCollectAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbCollectCascade(wkb** outWKB, bat* inBAT_id);
+geom_export str wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag);
 geom_export str wkbDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbSymDifference(wkb **out, wkb **a, wkb **b);
 geom_export str wkbBuffer(wkb **out, wkb **geom, dbl *distance);
@@ -311,6 +311,7 @@ geom_export str wkbFilter_bat_geom(bat* BATfiltered_id, bat* BAToriginal_id, wkb
 
 geom_export str wkbMakeLine_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id);
 geom_export str wkbUnion_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id);
+geom_export str wkbCollect_bat(bat* outBAT_id, bat* aBAT_id, bat* bBAT_id);
 
 geom_export str wkbSetSRID_bat(bat* outBAT_id, bat* inBAT_id, int* srid);
 

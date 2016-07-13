@@ -289,11 +289,15 @@ command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
 command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionCascade
 comment "Gets a BAT with geometries and returns their union"; 
+command subUnion(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubUnion
+comment "Gets a BAT with geometries, candidate group list and returns the union of each group element."; 
 
 command Collect(a:wkb, b:wkb) :wkb address wkbCollect
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
 command Collect(a:bat[:oid,:wkb]) :wkb address wkbCollectCascade
 comment "Gets a BAT with geometries and returns their union"; 
+command subCollect(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubCollect
+comment "Gets a BAT with geometries, candidate group list and returns a collection per each group element."; 
 
 
 command Difference(a:wkb, b:wkb) :wkb address wkbDifference
@@ -426,11 +430,15 @@ end MakePolygon;
 #	x := Polygon(external, internal, 0);
 #	return x;
 #end MakePolygon;
+command subMakePolygon(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubMakePolygon
+comment "Gets a BAT with linestring geometries, a candidate group list and returns a single polygon geometry per group."; 
 
 command MakeLine(a:wkb, b:wkb) :wkb address wkbMakeLine
 comment "Gets two point or linestring geometries and returns a linestring geometry"; 
 command MakeLine(a:bat[:oid,:wkb]) :wkb address wkbMakeLineAggr
 comment "Gets a BAT with point or linestring geometries and returns a single linestring geometry"; 
+command subMakeLine(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubMakeLine
+comment "Gets a BAT with point or linestring geometries, a candidate group list and returns a single linestring geometry per group."; 
 
 command PointOnSurface(w:wkb) :wkb address wkbPointOnSurface
 comment "Returns a point guaranteed to lie on the surface. Similar to postGIS it works for points and lines in addition to surfaces and for 3d geometries.";
@@ -792,8 +800,11 @@ comment "Sets the Reference System ID for this Geometry.";
 
 command MakeLine(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbMakeLine_bat
 comment "Gets two BATS of point or linestring geometries and returns a bat with linestring geometries"; 
+
 command Union(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbUnion_bat
 comment "Gets two BATS of geometries and returns the pairwise unions"; 
+command Collect(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbCollect_bat
+comment "Gets two BATS of geometries and returns the pairwise collection"; 
 
 
 command mbr(:bat[:oid,:wkb]) :bat[:oid,:mbr] address wkbMBR_bat

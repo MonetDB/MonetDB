@@ -403,7 +403,7 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 	(void) srid_dst;
 	(void) proj4_src_str;
 	(void) proj4_dst_str;
-	throw(MAL, "geom.Transform", "Function Not Implemented");
+	throw(MAL, "geom.Transform", "Function Not Implemented because proj4 is not available.");
 #else
 	projPJ proj4_src, proj4_dst;
 	GEOSGeom geosGeometry, transformedGeosGeometry;
@@ -4883,6 +4883,387 @@ wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
         GDKfree(geoms);
 
 	return MAL_SUCCEED;
+}
+
+static str wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB);
+
+static str
+BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid min, oid max, BUN ngrp, BUN start, BUN end, wkb **empty_geoms, str (*func) (wkb **, wkb **, wkb**), const char* name)
+{
+    BAT *outBAT = NULL;
+    BATiter bBAT_iter;
+    BUN nils = 0;
+    str err, msg;
+    int nonil, i = 0, j = 0;
+    wkb **aWKBs = NULL, **outWKBs = NULL, **grpWKBs = NULL;
+	const oid *restrict gids;
+    wkb *bWKB = NULL;
+    int gid;
+
+    if (g == NULL) {
+        throw(MAL, "BATgroup%s: b and g must be aligned\n", name);
+    }
+
+    if (BATcount(b) == 0 || ngrp == 0) {
+        /* trivial: no collects, so return bat aligned with g with
+         *          * nil in the tail */
+        outBAT = BATconstant(ngrp == 0 ? 0 : min, ATOMindex("wkb"), ATOMnilptr(ATOMindex("wkb")), ngrp, TRANSIENT);
+        *outBAT_id = outBAT->batCacheid;
+        return MAL_SUCCEED;
+    }
+
+    outBAT = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT);
+    if (outBAT == NULL) {
+        *outBAT_id = bat_nil;
+        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+    }
+
+    if (BATtdense(g))
+        gids = NULL;
+    else
+        gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+    /*Allocate structures*/
+    if ((aWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {
+        BBPunfix(outBAT->batCacheid);
+        *outBAT_id = bat_nil;
+        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+    }
+    if ((outWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {
+        GDKfree(aWKBs);
+        BBPunfix(outBAT->batCacheid);
+        *outBAT_id = bat_nil;
+        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+    }
+    if ((grpWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {
+        GDKfree(aWKBs);
+        GDKfree(outWKBs);
+        BBPunfix(outBAT->batCacheid);
+        *outBAT_id = bat_nil;
+        throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+    }
+
+    bBAT_iter = bat_iterator(b);
+    nonil = b->tnonil;
+    if (ngrp == 1) {
+        /* single group, no candidate list */
+        ALGODEBUG fprintf(stderr,
+                "#%s: no candidates, no groups; "
+                "start " BUNFMT ", end " BUNFMT
+                ", nonil = %d\n",
+                name, start, end, nonil);
+        if (nonil) {
+            aWKBs[0] = empty_geoms[0];
+
+            // add one more segment for each following row
+            for (i = start; i < end; i++) {
+                bWKB = (wkb *) BUNtail(bBAT_iter, i);
+                outWKBs[0] = NULL;
+
+                if ( (err = (*func)(&outWKBs[0], &aWKBs[0], &bWKB)) != MAL_SUCCEED )
+                    break;
+                else
+                    *aWKBs[0] = *outWKBs[0];
+            }
+        } else {
+            nils = 1;
+            aWKBs[0] = empty_geoms[0];
+
+            for (i = start; i < end && nils == 0; i++) {
+                bWKB = (wkb *) BUNtail(bBAT_iter, i);
+
+                if (wkb_isnil(bWKB)) {
+                    if (!skip_nils) {
+                        if ((outWKBs[0] = wkbNULLcopy()) == NULL) {
+                            GDKfree(aWKBs);
+                            GDKfree(outWKBs);
+                            GDKfree(grpWKBs);
+                            BBPunfix(outBAT->batCacheid);
+                            outBAT = NULL;
+                            throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+                        }
+                        nils = 1;
+                    }
+                } else {
+                    if ( (err = (*func) (&outWKBs[0], &aWKBs[0], &bWKB)) != MAL_SUCCEED )
+                        break;
+                    else
+                        aWKBs[0] = outWKBs[0];
+                }
+            }
+        }
+        grpWKBs[0] = outWKBs[0];
+    } else {
+        /* multiple groups, no candidate list */
+        ALGODEBUG fprintf(stderr,
+                "#%s: no candidates, with groups; "
+                "start " BUNFMT ", end " BUNFMT
+                "\n",
+                name, start, end);
+        for (i = start; i < end; i++) {
+            if (gids == NULL ||
+                    (gids[i] >= min && gids[i] <= max)) {
+                gid = gids ? gids[i] - min : (oid) i;
+                
+                /*It will be empty anyway*/
+                if (grpWKBs[gid])
+                    continue;
+
+                /*Check if you already have aWKB*/
+                if (aWKBs[gid] == NULL) {
+                    aWKBs[gid] = empty_geoms[gid];
+                }
+                /*Lets look for bWKB*/
+                bWKB = (wkb *) BUNtail(bBAT_iter, i);
+                if (wkb_isnil(bWKB)) {
+                    if (!skip_nils) {
+                        if ((grpWKBs[gid] = empty_geoms[gid]) == NULL) {
+                            GDKfree(aWKBs);
+                            GDKfree(outWKBs);
+                            GDKfree(grpWKBs);
+                            BBPunfix(outBAT->batCacheid);
+                            outBAT = NULL;
+                            throw(MAL, "geom.", name, MAL_MALLOC_FAIL);
+                        }
+                        nils++;
+                    }
+                } else {
+                    if ( (msg = (*func)(&outWKBs[gid], &aWKBs[gid], &bWKB)) != MAL_SUCCEED ) {
+                        GDKfree(aWKBs);
+                        GDKfree(outWKBs);
+                        GDKfree(grpWKBs);
+                        BBPunfix(outBAT->batCacheid);
+                        outBAT = NULL;
+                        err = createException(MAL, name, msg);
+                        GDKfree(msg);
+                        return err;
+                    }
+                    else
+                        aWKBs[gid] = outWKBs[gid];
+                }
+            }
+            if (!outWKBs[gid])
+                outWKBs[gid] = aWKBs[gid];
+        }
+
+        for (i = start; i < end; i++) {
+            if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
+                gid = gids ? gids[i] - min : (oid) i;
+                if (grpWKBs[gid] == NULL) {
+                    bit empty = 0;
+                    assert(!wkb_isnil(outWKBs[gid]));
+                    grpWKBs[gid] = outWKBs[gid];
+                }
+            }
+        }
+    }
+
+    /*Debug*/
+#ifdef GEOM_DEBUG
+    for (i = 0; i < ngrp; i++) {
+		char *geomSTR;
+		if ((err = wkbAsText(&geomSTR, &grpWKBs[i], NULL)) != MAL_SUCCEED) {
+            GDKfree(aWKBs);
+            GDKfree(outWKBs);
+            GDKfree(grpWKBs);
+            BBPunfix(outBAT->batCacheid);
+            outBAT = NULL;
+    		throw(MAL, "geom.", name, "wkbAsText failed");
+        }
+        fprintf(stdout, "%d, %s\n", i, geomSTR);
+    }
+#endif
+
+    /*Add the wkbs to the output bat*/
+    for (i = 0; i < ngrp; i++) {
+        if ( (BUNappend(outBAT, grpWKBs[i], TRUE) != GDK_SUCCEED) ) {
+            GDKfree(aWKBs);
+            GDKfree(outWKBs);
+            GDKfree(grpWKBs);
+            BBPunfix(outBAT->batCacheid);
+            outBAT = NULL;
+    		throw(MAL, "geom.", name, "BUNappend failed");
+        }
+    }
+
+    if (nils < BUN_NONE) {
+        BATsetcount(outBAT, ngrp);
+        outBAT->tkey = BATcount(outBAT) <= 1; 
+        outBAT->tsorted = BATcount(outBAT) <= 1; 
+        outBAT->trevsorted = BATcount(outBAT) <= 1;
+        outBAT->tnil = nils != 0;
+        outBAT->tnonil = nils == 0;
+    } else {
+        BBPunfix(outBAT->batCacheid);
+        outBAT = NULL;
+    }
+
+    if (aWKBs)
+        GDKfree(aWKBs);
+    if (outWKBs)
+        GDKfree(outWKBs);
+    if (grpWKBs)
+        GDKfree(grpWKBs);
+
+    *outBAT_id = outBAT->batCacheid;
+    return MAL_SUCCEED;
+}
+
+static str
+wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
+{
+	GEOSGeom outGeometry, geom1Geometry, geom2Geometry;
+    GEOSGeometry **geomGeometries = NULL;
+	str err = MAL_SUCCEED;
+    int i, type, geometry1Type, geometry2Type, num_geoms = 0;
+
+	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
+		if ((*out = wkbNULLcopy()) == NULL)
+            throw(MAL, "geom.collect", MAL_MALLOC_FAIL);
+        return MAL_SUCCEED;
+    }
+
+    geom1Geometry = wkb2geos(*geom1WKB);
+    geom2Geometry = wkb2geos(*geom2WKB);
+    if (geom1Geometry == NULL || geom2Geometry == NULL) {
+        *out = NULL;
+        if (geom1Geometry)
+            GEOSGeom_destroy(geom1Geometry);
+        if (geom2Geometry)
+            GEOSGeom_destroy(geom2Geometry);
+        throw(MAL, "geom.collect" , "wkb2geos failed");
+    }
+
+    //make sure the geometries are of the same srid
+    if (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
+        err = createException(MAL, "geom.collect", "Geometries of different SRID");
+    } else { 
+        geometry1Type = GEOSGeomTypeId(geom1Geometry);
+        geometry2Type = GEOSGeomTypeId(geom2Geometry);
+        if ( (GEOSisEmpty(geom1Geometry) != 1) &&  (geometry1Type != geometry2Type)) {
+            type = geometry1Type;
+            switch (geometry1Type + 1) {
+                case wkbMultiPoint_mdb:
+                    if (geometry2Type == (wkbPoint_mdb-1))
+                        break;
+                case wkbMultiLineString_mdb:
+                    if (geometry2Type == (wkbLineString_mdb-1) || geometry2Type == (wkbLinearRing_mdb-1))
+                        break;
+                case wkbMultiPolygon_mdb:
+                    if (geometry2Type == (wkbPolygon_mdb-1))
+                        break;
+                case wkbPoint_mdb:
+                case wkbLineString_mdb:
+                case wkbLinearRing_mdb:
+                case wkbPolygon_mdb:
+                    type = wkbGeometryCollection_mdb - 1;
+                    break;
+                default:
+                    *out = NULL;
+                    GEOSGeom_destroy(geom1Geometry);
+                    GEOSGeom_destroy(geom2Geometry);
+                    throw(MAL, "geom.Collect", "Unknown1 geometry type");
+            } 
+        } else {
+            switch (geometry2Type + 1) {
+                case wkbPoint_mdb:
+                    type = wkbMultiPoint_mdb - 1;
+                    break;
+                case wkbLineString_mdb:
+                case wkbLinearRing_mdb:
+                    type = wkbMultiLineString_mdb - 1;
+                    break;
+                case wkbPolygon_mdb:
+                    type = wkbMultiPolygon_mdb - 1;
+                    break;
+                case wkbMultiPoint_mdb:
+                case wkbMultiLineString_mdb:
+                case wkbMultiPolygon_mdb:
+                case wkbGeometryCollection_mdb:
+                    type = wkbGeometryCollection_mdb - 1;
+                    break;
+                default:
+                    *out = NULL;
+                    GEOSGeom_destroy(geom1Geometry);
+                    GEOSGeom_destroy(geom2Geometry);
+                    throw(MAL, "geom.Collect", "Unknown2 geometry type %d", geometry2Type);
+            }
+        }
+        if ( (num_geoms = GEOSGetNumGeometries(geom1Geometry)) < 0) {
+            *out = NULL;
+            GEOSGeom_destroy(geom1Geometry);
+            GEOSGeom_destroy(geom2Geometry);
+            throw(MAL, "geom.Collect", "GEOSGetNumGeometries failed");
+        }
+        geomGeometries = (GEOSGeometry **) GDKmalloc(sizeof(GEOSGeometry *)*(num_geoms+1));
+
+        for (i = 0; i < num_geoms; i++)
+            geomGeometries[i] = GEOSGeom_clone(GEOSGetGeometryN(geom1Geometry, i));
+
+        geomGeometries[num_geoms] = geom2Geometry;
+
+        if ( (outGeometry = GEOSGeom_createCollection(type, geomGeometries, num_geoms+1)) == NULL ) {
+            err = createException(MAL, "geom.Collect", "GEOSGeom_createCollection failed!!!");
+        } else {
+            *out = geos2wkb(outGeometry);
+        }
+    }
+
+    if (geomGeometries)
+        GDKfree(geomGeometries);
+
+    GEOSGeom_destroy(geom1Geometry);
+    GEOSGeom_destroy(geom2Geometry);
+
+    return err;
+}
+
+str
+wkbsubCollect(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* flag) {
+    (void) flag;
+    int skip_nils = 1, i = 0;
+    const char *msg = MAL_SUCCEED;
+    str err;
+    BAT *b = NULL, *g = NULL, *e = NULL;
+    oid min, max;
+    BUN ngrp;
+    BUN start, end, cnt;
+    wkb **empty_geoms = NULL;
+    const oid *cand = NULL, *candend = NULL;
+
+	if ((b = BATdescriptor(*bBAT_id)) == NULL) {
+		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+	}
+	if ((g = BATdescriptor(*gBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+	}
+	if ((e = BATdescriptor(*eBAT_id)) == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(MAL, "geom.wkbCollect", RUNTIME_OBJECT_MISSING);
+	}
+
+    if ((msg = BATgroupaggrinit(b, g, e, NULL, &min, &max, &ngrp,
+                    &start, &end, &cnt,
+                    &cand, &candend)) != NULL) {
+        throw(MAL, "BATgroupCollect: %s\n", msg);
+    }
+
+    /*Create the empty geoms*/
+    empty_geoms = (wkb**) GDKmalloc(sizeof(wkb*)*ngrp);
+    for (i = 0; i < ngrp; i++)
+        empty_geoms[i] = geos2wkb(GEOSGeom_createEmptyCollection(wkbGeometryCollection_mdb - 1));
+
+    err = BATgroupWKBWKBtoWKB(outBAT_id, b, g, e, skip_nils, min, max, ngrp, start, end, empty_geoms, wkbCollectAppend, "wkbCollect");
+	BBPkeepref(*outBAT_id);
+
+    GDKfree(empty_geoms);
+    BBPunfix(b->batCacheid);
+    BBPunfix(g->batCacheid);
+    BBPunfix(e->batCacheid);
+
+	return err;
 }
 
 str
