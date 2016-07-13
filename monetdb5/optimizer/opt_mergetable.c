@@ -1444,14 +1444,12 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			pushInstruction(mb,r);
 
 			q = copyInstruction(p);
-			//setFunctionId(q, subsliceRef);
-			setFunctionId(q, sliceRef);
+			setFunctionId(q, subsliceRef);
 			if (ml->v[m].type != mat_tpn || is_slice) 
 				getArg(q,1) = getArg(r,0);
 			pushInstruction(mb,q);
 		}
 
-		ml->v[piv].packed = 1;
 		ml->v[piv].type = mat_slc;
 	}
 }
