@@ -783,6 +783,102 @@ wkbIntersects_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	return WKBWKBtoBIT_bat(outBAT_id, aBAT_id, bBAT_id, wkbIntersects, "batgeom.wkbIntersects");
 }
 
+/***************************************************************************/
+/************************ IN: wkb wkb - OUT: wkb ***************************/
+/***************************************************************************/
+
+static str
+WKBWKBtoWKB_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, str (*func) (wkb **, wkb **, wkb **), const char *name)
+{
+	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
+	BUN p = 0, q = 0;
+	BATiter aBAT_iter, bBAT_iter;
+	str msg = MAL_SUCCEED;
+#ifdef GEOMBULK_DEBUG
+    static struct timeval start, stop;
+    unsigned long long t;
+#endif
+    bit *outs = NULL;
+
+	//get the descriptor of the BAT
+	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+	}
+
+	//create a new for the output BAT
+	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
+		BBPunfix(aBAT->batCacheid);
+		BBPunfix(bBAT->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+
+	//iterator over the input BAT
+	aBAT_iter = bat_iterator(aBAT);
+	bBAT_iter = bat_iterator(bBAT);
+
+    omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
+    omp_set_num_threads(OPENCL_THREADS);
+
+    q = BUNlast(aBAT);
+#ifdef GEOMBULK_DEBUG
+    fprintf(stdout, "%s %d %d\n", name, p, q);
+    gettimeofday(&start, NULL);
+#endif
+	outs = (bit *) Tloc(outBAT, 0);
+    #pragma omp parallel for
+    for (p = 0; p < q; p++) {
+        wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
+        str err = NULL;
+
+        aWKB = (wkb *) BUNtail(aBAT_iter, p);
+        bWKB = (wkb *) BUNtail(bBAT_iter, p);
+        if ((err = (*func) (&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {
+            msg = err;
+            #pragma omp cancelregion
+        }
+        BUNappend(outBAT, &outWKB, TRUE);	//add the result to the new BAT
+    }
+#ifdef GEOMBULK_DEBUG
+    gettimeofday(&stop, NULL);
+    t = 1000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec) / 1000;
+    fprintf(stdout, "%s %llu ms\n", name, t);
+#endif
+
+    BBPunfix(aBAT->batCacheid);
+    BBPunfix(bBAT->batCacheid);
+
+    if (msg != MAL_SUCCEED) {
+        BBPunfix(outBAT->batCacheid);
+        return msg;
+    }
+
+	BBPkeepref(*outBAT_id = outBAT->batCacheid);
+
+	return MAL_SUCCEED;
+}
+
+str
+wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+{
+	return WKBWKBtoWKB_bat(outBAT_id, aBAT_id, bBAT_id, wkbMakeLine, "batgeom.wkbMakeLine");
+}
+
+str
+wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+{
+	return WKBWKBtoWKB_bat(outBAT_id, aBAT_id, bBAT_id, wkbUnion, "batgeom.wkbUnion");
+}
+
+str
+wkbCollect_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+{
+	return WKBWKBtoWKB_bat(outBAT_id, aBAT_id, bBAT_id, wkbCollect, "batgeom.wkbCollect");
+}
+
 /******************************************************************************************/
 /************************* IN: wkb dbl dbl dbl - OUT: bit - SRID **************************/
 /******************************************************************************************/
@@ -2135,6 +2231,7 @@ wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 	return wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
 }
 
+/*
 str
 wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 {
@@ -2248,6 +2345,7 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	return MAL_SUCCEED;
 }
+*/
 
 /* sets the srid of the geometry - BULK version*/
 str
