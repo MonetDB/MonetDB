@@ -31,14 +31,12 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 84 # length
+% 97 # length
 project (
 | group by (
-| | project (
-| | | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
-| | ) [ dbg.a, dbg.b, tinyint "2" as L3.L3 ]
-| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2, L3.L3 ]
-) [ dbg.d, L1 as L1.L1, sys.sql_mul(sys.sql_div(L2, L3.L3), tinyint "2") as L3.f ]
+| | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
+| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2 ]
+) [ dbg.d, L1 as L1.L1, sys.sql_mul(sys.sql_div(L2, tinyint "2" as L3.L3), tinyint "2") as L3.f ]
 #set optimizer = 'sequential_pipe';
 #explain SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % .explain # table_name
@@ -99,14 +97,12 @@ end user.s4_1;
 % .plan # table_name
 % rel # name
 % clob # type
-% 84 # length
+% 96 # length
 project (
 | group by (
-| | project (
-| | | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
-| | ) [ dbg.a, dbg.b, tinyint "2" as L3.L3 ]
-| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2, L3.L3 ]
-) [ dbg.d, L1 as L1.e, sys.sql_mul(sys.sql_div(L2, L3.L3), tinyint "2") as L3.f ]
+| | table(sys.dbg) [ dbg.a, dbg.b ] COUNT 
+| ) [ dbg.a as d ] [ dbg.d, sys.sum no nil (dbg.b) as L1.L1, L1.L1 as L2.L2 ]
+) [ dbg.d, L1 as L1.e, sys.sql_mul(sys.sql_div(L2, tinyint "2" as L3.L3), tinyint "2") as L3.f ]
 #set optimizer = 'sequential_pipe';
 #explain SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % .explain # table_name
