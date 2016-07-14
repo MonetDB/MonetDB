@@ -5026,7 +5026,7 @@ wkbCollect(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 static str
 wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
 {
-    int i = 0, j = 0, type, geometryType, srid;
+    int i = 0, j = 0, type = -1, prev_type = -1, geometryType, srid;
 	GEOSGeom outGeometry, *geomGeometries = NULL, geomCollection;
 
     if ( (geomGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom)*num_geoms)) == NULL) {
@@ -5074,12 +5074,13 @@ wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
                     *out = NULL;
                     throw(MAL, "geom.Collect", "Unknown geometry type");
             }
-        } else if (type != geometryType)
+            prev_type = geometryType;
+        } else if (geometryType != prev_type)
             type = wkbGeometryCollection_mdb - 1;
     }
     srid = GEOSGetSRID(geomGeometries[0]);
 
-	if ( (geomCollection = GEOSGeom_createCollection(wkbGeometryCollection_mdb - 1, geomGeometries, num_geoms)) == NULL ) {
+	if ( (geomCollection = GEOSGeom_createCollection(type, geomGeometries, num_geoms)) == NULL ) {
 		*out = NULL;
         for (i = 0; i < num_geoms; i++)
             GEOSGeom_destroy(geomGeometries[i]);
