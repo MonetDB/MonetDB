@@ -4849,7 +4849,7 @@ wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
 
 	//get the BATs
 	if (!(inBAT = BATdescriptor(*inBAT_id))) {
-		throw(MAL, "geom.Collect", "Problem retrieving BATs");
+		throw(MAL, "geom.Union", "Problem retrieving BATs");
 	}
 
     /*TODO: We need a better way to handle the cases where the BAT was created, but it has zero elements*/
@@ -4864,10 +4864,10 @@ wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 
-    /*Collect all geoms*/
+    /*Union all geoms*/
     if ( (geoms = (wkb**) GDKmalloc(sizeof(wkb*)*BATcount(inBAT))) == NULL) {
         BBPunfix(inBAT->batCacheid);
-		throw(MAL, "geom.Collect", "GDKmalloc failed");
+		throw(MAL, "geom.Union", "GDKmalloc failed");
     }
 
 	for (j = 0, i = BUNfirst(inBAT); i < BATcount(inBAT); i++, j++) {
