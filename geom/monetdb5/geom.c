@@ -5202,12 +5202,14 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
 
             // add one more segment for each following row
             for (i = start; i < end; i++) {
+                bit empty;
                 if (aWKBs[gid] == NULL) {
                     aWKBs[gid] = (wkb *) BUNtail(bBAT_iter, i);
                     continue;
                 }
 
                 bWKB = (wkb *) BUNtail(bBAT_iter, i);
+                wkbIsEmpty(&empty, &bWKB);
 
                 if ( (msg = (*func)(&outWKBs[gid], &aWKBs[gid], &bWKB)) != MAL_SUCCEED ) {
                     GDKfree(aWKBs);
@@ -5391,7 +5393,7 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 	GEOSGeom outGeometry, geom1Geometry, geom2Geometry;
     GEOSGeometry **geomGeometries = NULL;
 	str err = MAL_SUCCEED;
-    int i, type, geometry1Type, geometry2Type, num_geoms = 0;
+    int i, type, geometry1Type, geometry2Type, num_geoms = 0, srid;
 
 	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
 		if ((*out = wkbNULLcopy()) == NULL)
@@ -5409,14 +5411,15 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
             GEOSGeom_destroy(geom2Geometry);
         throw(MAL, "geom.collect" , "wkb2geos failed");
     }
+    srid = GEOSGetSRID(geom2Geometry);
 
     //make sure the geometries are of the same srid
-    if ((GEOSisEmpty(geom1Geometry) != 1) && GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
+    if ((GEOSisEmpty(geom1Geometry) == 0) && (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry))) {
         err = createException(MAL, "geom.collect", "Geometries of different SRID");
     } else { 
         geometry1Type = GEOSGeomTypeId(geom1Geometry);
         geometry2Type = GEOSGeomTypeId(geom2Geometry);
-        if ( (GEOSisEmpty(geom1Geometry) != 1) &&  (geometry1Type != geometry2Type)) {
+        if ( (GEOSisEmpty(geom1Geometry) == 0) &&  (geometry1Type != geometry2Type)) {
             type = geometry1Type;
             switch (geometry1Type + 1) {
                 case wkbMultiPoint_mdb:
@@ -5481,7 +5484,7 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
         if ( (outGeometry = GEOSGeom_createCollection(type, geomGeometries, num_geoms+1)) == NULL ) {
             err = createException(MAL, "geom.Collect", "GEOSGeom_createCollection failed!!!");
         } else {
-	        GEOSSetSRID(outGeometry, GEOSGetSRID(geom1Geometry));
+	        GEOSSetSRID(outGeometry, srid);
             *out = geos2wkb(outGeometry);
         }
     }
