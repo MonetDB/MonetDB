@@ -5411,7 +5411,7 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
     }
 
     //make sure the geometries are of the same srid
-    if (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
+    if ((GEOSisEmpty(geom1Geometry) != 1) && GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
         err = createException(MAL, "geom.collect", "Geometries of different SRID");
     } else { 
         geometry1Type = GEOSGeomTypeId(geom1Geometry);
@@ -5481,6 +5481,7 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
         if ( (outGeometry = GEOSGeom_createCollection(type, geomGeometries, num_geoms+1)) == NULL ) {
             err = createException(MAL, "geom.Collect", "GEOSGeom_createCollection failed!!!");
         } else {
+	        GEOSSetSRID(outGeometry, GEOSGetSRID(geom1Geometry));
             *out = geos2wkb(outGeometry);
         }
     }
