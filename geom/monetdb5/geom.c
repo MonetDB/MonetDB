@@ -5677,13 +5677,13 @@ wkbspatial(bit *out, wkb **geomWKB_a, wkb **geomWKB_b, char (*func) (const GEOSG
 			GEOSGeom_destroy(geosGeometry_a);
 		if (geosGeometry_b)
 			GEOSGeom_destroy(geosGeometry_b);
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, name, "%s: wkb2geos failed", name);
 	}
 
 	if (GEOSGetSRID(geosGeometry_a) != GEOSGetSRID(geosGeometry_b)) {
 		GEOSGeom_destroy(geosGeometry_a);
 		GEOSGeom_destroy(geosGeometry_b);
-		throw(MAL, name, "Geometries of different SRID");
+		throw(MAL, name, "%s: Geometries of different SRID", name);
 	}
 
 	res = (*func) (geosGeometry_a, geosGeometry_b);
@@ -7612,7 +7612,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
                 if ((out = GEOSIntersects(lGeometry, rGeometry)) == 2){
                     GEOSGeom_destroy(lGeometry);
                     GEOSGeom_destroy(rGeometry);
-		            throw(MAL, "geom.Contains", "GEOSIntersects failed");
+		            throw(MAL, "geom.Intersects", "GEOSIntersects failed");
                 }
                 if (out) {
                     BUNappend(xl, &lo, FALSE);
