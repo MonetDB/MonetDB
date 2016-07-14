@@ -255,7 +255,7 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 			//assert(hdr->framesize);
 			// sort it
 			for(i=0; i< (BUN) hdr->framesize; i++)
-				for(j=i+1; j< hdr->framesize; j++)
+				for(j= (BUN)(i+1); j< hdr->framesize; j++)
 					if(task->hdr->frame.valint[i] >task->hdr->frame.valint[j]){
 						int v= task->hdr->frame.valint[i];
 						task->hdr->frame.valint[i] = task->hdr->frame.valint[j];

@@ -962,7 +962,32 @@ MOSsubjoin_prefix(Client cntxt,  MOStask task)
 		case TYPE_bte: join_prefix(bte,unsigned char); break;
 		case TYPE_sht: join_prefix(sht,unsigned short); break;
 		case TYPE_int: join_prefix(int,unsigned short); break;
-		case TYPE_lng: join_prefix(lng,ulng); break;
+		case TYPE_lng: //join_prefix(lng,ulng); break;
+{   lng *w;
+	ulng *dst =  (ulng*)  (((char*) blk) + MosaicBlkSize);
+	ulng mask = *dst++;
+	ulng  val  =  (ulng) *dst++,v;
+	ulng m;
+	BitVector base;
+	int residu;
+	lng value;
+	m = ~mask;
+	residu = val & m;
+	val = val & mask;
+	base = (BitVector) dst;
+	w = (lng*) task->src;
+	for(n = task->elm, o = 0; n -- > 0; w++,o++){
+		for(i=0, oo= (oid) first; oo < (oid) last; v++, oo++,i++){
+			v = decompress(base,i,residu);
+			value =  (lng) ((ulng)val |(ulng) v);
+			if ( *w == value){
+				BUNappend(task->lbat, &oo, FALSE);
+				BUNappend(task->rbat, &o, FALSE);
+			}
+		}
+	}
+}
+	break;
 		case TYPE_oid: join_prefix(oid,BUN); break;
 		case TYPE_flt: join_prefix(flt,unsigned int); break;
 		case TYPE_dbl: join_prefix(dbl,unsigned int); break;
