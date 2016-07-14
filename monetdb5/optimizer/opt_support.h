@@ -75,6 +75,7 @@ mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 mal_export void showOptimizerStep(str fnme,int i, int flg);
 mal_export void showOptimizerHistory(void);
 
+mal_export int optimizerIsApplied(MalBlkPtr mb, str name);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
 mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
