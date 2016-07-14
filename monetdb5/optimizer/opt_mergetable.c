@@ -1540,6 +1540,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 	GDKfree(vars);
 
+	ml.horigin = 0;
+	ml.torigin = 0;
+	ml.v = 0;
 	if (bailout)
 		goto cleanup;
 
