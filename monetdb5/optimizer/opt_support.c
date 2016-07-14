@@ -203,6 +203,24 @@ OPTsetDebugStr(void *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
+/* some optimizers can only be applied once.
+ * The optimizer trace at the end of the MAL block
+ * can be used to check for this.
+ */
+int
+optimizerIsApplied(MalBlkPtr mb, str optname)
+{
+	InstrPtr p;
+	int i;
+	for( i = mb->stop; i < mb->ssize; i++){
+		p = getInstrPtr(mb,i);
+		if( p == NULL)
+			return 0;
+		if (getModuleId(p) == optimizerRef && p->token == REMsymbol && strcmp(getFunctionId(p),optname) == 0) 
+			return 1;
+	}
+	return 0;
+}
 /*
  * All optimizers should pass the optimizerCheck for defense against
  * incomplete and malicious MAL code.
