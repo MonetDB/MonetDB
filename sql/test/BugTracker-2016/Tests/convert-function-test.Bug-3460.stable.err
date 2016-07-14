@@ -32,7 +32,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_BOOLEAN; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_BOOLEAN;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_BOOLEAN; -- conversion not supported
 ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -116,7 +120,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_BOOLEAN; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_BOOLEAN;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_BOOLEAN; -- conversion not supported
 ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -247,8 +255,9 @@ QUERY = SELECT v, convert(v, bigint) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, hugeint) from T_blob where v between '00' and '11';
-ERROR = !types blob(0,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -349,8 +358,9 @@ QUERY = SELECT v, cast(v as bigint) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as hugeint) from T_blob where v between '00' and '11';
-ERROR = !types blob(0,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -434,7 +444,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_tinyint; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_tinyint;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_tinyint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -485,7 +499,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_tinyint; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_tinyint;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_tinyint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -536,7 +554,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_smallint; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_smallint;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_smallint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -587,7 +609,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_smallint; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_smallint;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_smallint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -638,7 +664,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_int; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_int;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_int; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -689,7 +719,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_int; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_int;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_int; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -740,7 +774,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_bigint; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_bigint;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_bigint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -791,7 +829,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_bigint; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_bigint;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_bigint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -845,7 +887,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, convert(v, bit) from T_float; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_float;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_float; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -899,7 +945,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, cast(v as bit) from T_float; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_float;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_float; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -956,7 +1006,11 @@ ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
 MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
 QUERY = SELECT v, convert(v, integer) from T_real;
 ERROR = !overflow in conversion of -2.14748365e+09 to int.
-MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_real;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, char) from T_real where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
@@ -1016,7 +1070,11 @@ ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
 MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
 QUERY = SELECT v, cast(v as integer) from T_real;
 ERROR = !overflow in conversion of -2.14748365e+09 to int.
-MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_real;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as char) from T_real where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
@@ -1073,7 +1131,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, convert(v, bit) from T_double; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_double;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, char) from T_double where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
@@ -1130,7 +1192,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, cast(v as bit) from T_double; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_double;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as char) from T_double where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
@@ -1187,7 +1253,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, convert(v, bit) from T_num; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_num;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_num; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1241,7 +1311,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, cast(v as bit) from T_num; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_num;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_num; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1295,7 +1369,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, convert(v, bit) from T_dec; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_dec;
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, char) from T_dec where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
@@ -1352,7 +1430,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, cast(v as bit) from T_dec; -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_dec;
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as char) from T_dec where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
@@ -1406,7 +1488,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13167/.s.monetdb.35147
 QUERY = SELECT v, convert(v, bit) from T_char where v in ('0', '1'); -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_char where v in ('0', '1');
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_char; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1454,7 +1540,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_char where v in ('0', '1'); -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_char where v in ('0', '1');
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_char; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1502,7 +1592,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_varchar where v in ('0', '1'); -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_varchar where v in ('0', '1');
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_varchar; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1550,7 +1644,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_varchar where v in ('0', '1'); -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_varchar where v in ('0', '1');
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_varchar; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1598,7 +1696,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_clob where v in ('0', '1'); -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, convert(v, hugeint) from T_clob where v in ('0', '1');
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, varchar) from T_clob; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1646,7 +1748,11 @@ MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as bit) from T_clob where v in ('0', '1'); -- BIT not valid data type
 ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
+QUERY = SELECT v, cast(v as hugeint) from T_clob where v in ('0', '1');
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as varchar) from T_clob; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
@@ -1711,8 +1817,9 @@ QUERY = SELECT v, convert(v, bigint) from T_date;
 ERROR = !types date(0,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, hugeint) from T_date;
-ERROR = !types date(0,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_date;
 ERROR = !types date(0,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -1807,8 +1914,9 @@ QUERY = SELECT v, cast(v as bigint) from T_date;
 ERROR = !types date(0,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as hugeint) from T_date;
-ERROR = !types date(0,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_date;
 ERROR = !types date(0,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -1903,8 +2011,9 @@ QUERY = SELECT v, convert(v, bigint) from T_time;
 ERROR = !types time(1,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, hugeint) from T_time;
-ERROR = !types time(1,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_time;
 ERROR = !types time(1,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2002,8 +2111,9 @@ QUERY = SELECT v, cast(v as bigint) from T_time;
 ERROR = !types time(1,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as hugeint) from T_time;
-ERROR = !types time(1,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_time;
 ERROR = !types time(1,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2101,8 +2211,9 @@ QUERY = SELECT v, convert(v, bigint) from T_timestamp;
 ERROR = !types timestamp(7,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, hugeint) from T_timestamp;
-ERROR = !types timestamp(7,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_timestamp;
 ERROR = !types timestamp(7,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2191,8 +2302,9 @@ QUERY = SELECT v, cast(v as bigint) from T_timestamp;
 ERROR = !types timestamp(7,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as hugeint) from T_timestamp;
-ERROR = !types timestamp(7,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_timestamp;
 ERROR = !types timestamp(7,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2281,8 +2393,9 @@ QUERY = SELECT v, convert(v, bigint) from T_timetz;
 ERROR = !types timetz(7,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, hugeint) from T_timetz;
-ERROR = !types timetz(7,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_timetz;
 ERROR = !types timetz(7,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2380,8 +2493,9 @@ QUERY = SELECT v, cast(v as bigint) from T_timetz;
 ERROR = !types timetz(7,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as hugeint) from T_timetz;
-ERROR = !types timetz(7,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_timetz;
 ERROR = !types timetz(7,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2479,8 +2593,9 @@ QUERY = SELECT v, convert(v, bigint) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, hugeint) from T_timestamptz;
-ERROR = !types timestamptz(7,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, convert(v, hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, convert(v, float) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
@@ -2569,8 +2684,9 @@ QUERY = SELECT v, cast(v as bigint) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and bigint(64,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, cast(v as hugeint) from T_timestamptz;
-ERROR = !types timestamptz(7,0) and hugeint(128,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
+ERROR = !type (hugeint) unknown in: "select v, cast(v as hugeint)"
+        !syntax error, unexpected FROM in: "from"
+MAPI  = (monetdb) /var/tmp/mtest-14226/.s.monetdb.39491
 QUERY = SELECT v, cast(v as float) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and double(53,0) are not equal for column 'v'
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
