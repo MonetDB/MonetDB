@@ -19,7 +19,7 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-opt_export str QOTgetStatistics(bat *ret, str *nme);
-opt_export void QOTupdateStatistics(str nme, int prop, lng val);
-opt_export void QOTstatisticsExit(void);
+mal_export str QOTgetStatistics(bat *ret, str *nme);
+mal_export void QOTupdateStatistics(str nme, int prop, lng val);
+mal_export void QOTstatisticsExit(void);
 #endif /* _Q_STATISTICS_H */

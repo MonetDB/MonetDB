@@ -23926,34 +23926,18 @@ command bat.mirror(b:bat[:any_2]):bat[:oid]
 address BKCmirror;
 comment Returns the head-mirror image of a BAT (two head columns).
 
-pattern bat.new_persistent(ht:oid,tt:any_1,size:lng):bat[:any_1] 
-address CMDBATnew_persistent;
-comment Creates a new BAT in the persistent farm and allocate space.
-
-pattern bat.new_persistent(ht:oid,tt:any_1,size:int):bat[:any_1] 
-address CMDBATnew_persistent;
-pattern bat.new_persistent(ht:oid,tt:any_1):bat[:any_1] 
-address CMDBATnew_persistent;
-comment Creates a new empty transient BAT in the persistent farm, with head- and tail-types as indicated.
-
-pattern bat.new(ht:oid,tt:any_1,size:lng):bat[:any_1] 
-address CMDBATnew;
-comment Creates a new BAT with sufficient space.
-
-pattern bat.new(ht:oid,tt:any_1,size:int):bat[:any_1] 
-address CMDBATnew;
-pattern bat.new(ht:oid,tt:any_1):bat[:any_1] 
-address CMDBATnew;
-comment Creates a new empty transient BAT, with head- and tail-types as indicated.
-
 pattern bat.new(tt:any_1,size:lng):bat[:any_1] 
-address CMDBATnewColumn;
+address CMDBATnew;
 comment Creates a new empty transient BAT, with tail-types as indicated.
 
+pattern bat.new(tt:any_1,size:int,persist:bit):bat[:any_1] 
+address CMDBATnew;
+pattern bat.new(tt:any_1,size:lng,persist:bit):bat[:any_1] 
+address CMDBATnew;
 pattern bat.new(tt:any_1,size:int):bat[:any_1] 
-address CMDBATnewColumn;
+address CMDBATnew;
 pattern bat.new(tt:any_1):bat[:any_1] 
-address CMDBATnewColumn;
+address CMDBATnew;
 pattern bat.orderidx(bv:bat[:any_1],l:bat[:any_1]...):void 
 address OIDXmerge;
 comment Consolidates the OID index arrangement

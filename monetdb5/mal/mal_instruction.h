@@ -51,7 +51,6 @@
 #define isTmpVar(M,I)		((M)->var[I]->tmpindex)
 #define getVarType(M,I)		((M)->var[I]->type)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
-#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 #define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
 #define setVarFixed(M,I)		((M)->var[I]->flags |= VAR_FIXTYPE)
@@ -110,6 +109,8 @@
 #define getArgName(M,P,I)	getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)	getVarType((M),(P)->argv[I])
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
+#define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
+
 
 mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
 mal_export InstrPtr copyInstruction(InstrPtr p);

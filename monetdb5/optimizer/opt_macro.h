@@ -9,12 +9,12 @@
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
-opt_export str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
-opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-opt_export int OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
+mal_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
+mal_export int OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTDEBUGmacro  if ( optDebug & ((lng) 1 <<DEBUG_OPT_MACRO) )
 #define OPTDEBUGorcam  if ( optDebug & ((lng) 1 <<DEBUG_OPT_ORCAM) )

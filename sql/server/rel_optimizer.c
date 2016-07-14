@@ -1847,6 +1847,32 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 
 		if (r && r->op == op_project && need_distinct(r)) 
 			return rel;
+		/* duplicate topn direct under union */
+
+		if (r && r->exps && r->op == op_union && !(rel_is_ref(r)) && r->l) {
+			sql_rel *u = r, *x;
+			sql_rel *ul = u->l;
+			sql_rel *ur = u->r;
+
+			/* only push topn once */
+			x = ul;
+			while(x->op == op_project && x->l)
+				x = x->l;
+			if (x && x->op == op_topn)
+				return rel;
+			x = ur;
+			while(x->op == op_project && x->l)
+				x = x->l;
+			if (x && x->op == op_topn)
+				return rel;
+
+			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql, rel->exps));
+			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
+			u->l = ul;
+			u->r = ur;
+			(*changes)++;
+			return rel;
+		}
 		/* duplicate topn + [ project-order ] under union */
 		if (r)
 			rp = r->l;

@@ -21,21 +21,11 @@ typedef struct blob {
 
 #define sqlblob blob
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define blob_export extern __declspec(dllimport)
-#else
-#define blob_export extern __declspec(dllexport)
-#endif
-#else
-#define blob_export extern
-#endif
+mal_export int TYPE_blob;
+mal_export int TYPE_sqlblob;
 
-blob_export int TYPE_blob;
-blob_export int TYPE_sqlblob;
-
-blob_export var_t blobsize(size_t nitems);
-blob_export int sqlblob_tostr(str *tostr, int *l, const blob *p);
-blob_export int sqlblob_fromstr(char *instr, int *l, blob **val);
+mal_export var_t blobsize(size_t nitems);
+mal_export int sqlblob_tostr(str *tostr, int *l, const blob *p);
+mal_export int sqlblob_fromstr(char *instr, int *l, blob **val);
 
 #endif /* __BLOB_H__ */

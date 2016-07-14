@@ -15,7 +15,7 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-opt_export int OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGcostModel  if ( optDebug & ((lng) 1 <<DEBUG_OPT_COSTMODEL) )
 

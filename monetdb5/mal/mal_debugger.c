@@ -1192,7 +1192,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newColumnType(b->ttype));
+		tpe = getTypeName(newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
 		GDKfree(tpe);
 		printBATproperties(f, b);
@@ -1261,7 +1261,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 		BAT *b = BBPquickdesc(i, TRUE);
 
 		if (b) {
-			nme = getTypeName(newColumnType(b->ttype));
+			nme = getTypeName(newBatType(b->ttype));
 			mnstr_printf(f, " :%s rows="BUNFMT, nme, BATcount(b));
 		} else {
 			nme = getTypeName(n->type);

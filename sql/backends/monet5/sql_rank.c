@@ -25,7 +25,7 @@ str
 SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
-	if (isaColumnType(getArgType(mb, pci, 1))) {
+	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		BAT *b = BATdescriptor(*bid), *c;
@@ -86,12 +86,12 @@ str
 SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	if (pci->argc != 4 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getColumnType(getArgType(mb, pci, 2)) != TYPE_bit) || 
-		(getArgType(mb, pci, 3) != TYPE_bit && getColumnType(getArgType(mb, pci, 3)) != TYPE_bit)){
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, "sql.row_number", "row_number(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
-	if (isaColumnType(getArgType(mb, pci, 1))) {
+	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *r;
 		int i, j, cnt, *rp;
@@ -102,7 +102,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = (int)BATcount(b);
 	 	voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
-		if (isaColumnType(getArgType(mb, pci, 2))) { 
+		if (isaBatType(getArgType(mb, pci, 2))) { 
 			/* order info not used */
 			p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 			if (!p) {
@@ -135,12 +135,12 @@ str
 SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	if (pci->argc != 4 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getColumnType(getArgType(mb, pci, 2)) != TYPE_bit) || 
-		(getArgType(mb, pci, 3) != TYPE_bit && getColumnType(getArgType(mb, pci, 3)) != TYPE_bit)){
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, "sql.rank", "rank(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
-	if (isaColumnType(getArgType(mb, pci, 1))) {
+	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
 		int i, j, k, cnt, *rp;
@@ -151,8 +151,8 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
-		if (isaColumnType(getArgType(mb, pci, 2))) { 
-			if (isaColumnType(getArgType(mb, pci, 3))) { 
+		if (isaBatType(getArgType(mb, pci, 2))) { 
+			if (isaBatType(getArgType(mb, pci, 3))) { 
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!p || !o) {
@@ -187,7 +187,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(p->batCacheid);
 			}
 		} else { /* single value, ie no partitions */
-			if (isaColumnType(getArgType(mb, pci, 3))) { 
+			if (isaBatType(getArgType(mb, pci, 3))) { 
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!o) {
 					BBPunfix(b->batCacheid);
@@ -220,12 +220,12 @@ str
 SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	if (pci->argc != 4 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getColumnType(getArgType(mb, pci, 2)) != TYPE_bit) || 
-		(getArgType(mb, pci, 3) != TYPE_bit && getColumnType(getArgType(mb, pci, 3)) != TYPE_bit)){
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, "sql.rank", "rank(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
-	if (isaColumnType(getArgType(mb, pci, 1))) {
+	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
 		int i, j, cnt, *rp;
@@ -236,8 +236,8 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
-		if (isaColumnType(getArgType(mb, pci, 2))) { 
-			if (isaColumnType(getArgType(mb, pci, 3))) { 
+		if (isaBatType(getArgType(mb, pci, 2))) { 
+			if (isaBatType(getArgType(mb, pci, 3))) { 
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!p || !o) {
@@ -272,7 +272,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(p->batCacheid);
 			}
 		} else { /* single value, ie no partitions */
-			if (isaColumnType(getArgType(mb, pci, 3))) { 
+			if (isaBatType(getArgType(mb, pci, 3))) { 
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!o) {
 					BBPunfix(b->batCacheid);

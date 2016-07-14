@@ -18,22 +18,17 @@
 #define REFMARKERC 'C'
 #define refMarker(M,I)  (isVarCList(M,I)? 'C':'X')
 
-#define newBatType(H,T)  (1<<16 | (((TYPE_oid & 0377) <<8) | (T & 0377) ))
+#define newBatType(T)  (1<<16 |  (T & 0377) )
+#define getBatType(X)  ((X) & 0377 )
 #define isaBatType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
-#define setAnyHeadIndex(X,I) X |= ((I & 017)<<22);
+
 #define isAnyExpression(X) ((X) >> 17)
-#define isPolymorphic(X) (((X) >> 17) || (X)== TYPE_any)
+#define isPolymorphic(X) (isAnyExpression(X) || (X)== TYPE_any)
 
-/* introduce gradually the column type macros, sharing the
- * representation with BAT type
- */
-#define newColumnType(T)  (1<<16 | (T & 0377) )
-#define getColumnType(X)  ((X) & 0377 )
-#define isaColumnType(X)   ((1<<16) & (X) && (X)!= TYPE_any)
-#define setAnyColumnIndex(X,I) X |= ((I & 017)<<18);
-#define getColumnIndex(X)  (((X)>>18) & 017)
+#define setTypeIndex(X,I) X |= ((I & 017)<<18);
+#define getTypeIndex(X)  (((X)>>18) & 017)
 
-#define isPolyType(X) (isAnyExpression(X) && getColumnIndex(X)>0)
+#define isPolyType(X) (isAnyExpression(X) && getTypeIndex(X)>0)
 /*
  * The symbol/instruction kinds are introduced here instead of reusing the defines
  * derived from the parser to avoid a loop in the define-structure.
@@ -68,9 +63,7 @@
 
 mal_export str getTypeName(malType tpe);
 mal_export str getTypeIdentifier(malType tpe);
-mal_export int getTypeIndex(str nme, int len, int deftpe);
-mal_export malType reverseBatType(malType v);
-mal_export malType malAnyBatType(malType t1, malType t2);
+mal_export int getAtomIndex(str nme, int len, int deftpe);
 #define idcmp(n, m)	strcmp(n, m)
 mal_export int isTmpName(const char *n);
 mal_export int isIdentifier(str s);

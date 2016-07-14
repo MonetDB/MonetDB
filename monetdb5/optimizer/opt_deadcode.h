@@ -14,7 +14,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-opt_export int OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGdeadcode  if ( optDebug & ((lng) 1 <<DEBUG_OPT_DEADCODE) )
 
