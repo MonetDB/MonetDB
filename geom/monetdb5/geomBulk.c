@@ -619,7 +619,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 	inBAT_iter = bat_iterator(inBAT);
 
     omp_set_dynamic(OPENCL_DYNAMIC);     // Explicitly disable dynamic teams
-    omp_set_num_threads(16);
+    omp_set_num_threads(OPENCL_THREADS);
     q = BUNlast(inBAT);
 #ifdef GEOMBULK_DEBUG
     fprintf(stdout, "%s %d %d\n", name, p, q);
