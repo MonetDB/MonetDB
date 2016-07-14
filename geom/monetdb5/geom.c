@@ -777,6 +777,7 @@ wkbForceDim(wkb **outWKB, wkb **geomWKB, const int *dim)
 	GEOSGeometry *outGeometry;
 	GEOSGeom geosGeometry;
 	str err;
+    int srid;
 
 	if (wkb_isnil(*geomWKB) || *dim == int_nil) {
 		if ((*outWKB = wkbNULLcopy()) == NULL)
@@ -789,6 +790,7 @@ wkbForceDim(wkb **outWKB, wkb **geomWKB, const int *dim)
 		*outWKB = NULL;
 		throw(MAL, "geom.ForceDim", "wkb2geos failed");
 	}
+    srid = GEOSGetSRID(geosGeometry);
 
 	if ((err = forceDimGeometry(&outGeometry, geosGeometry, *dim)) != MAL_SUCCEED) {
 		GEOSGeom_destroy(geosGeometry);
@@ -796,7 +798,7 @@ wkbForceDim(wkb **outWKB, wkb **geomWKB, const int *dim)
 		return err;
 	}
 
-	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));
+	GEOSSetSRID(outGeometry, srid);
 
 	*outWKB = geos2wkb(outGeometry);
 
@@ -1155,6 +1157,7 @@ wkbSegmentize(wkb **outWKB, wkb **geomWKB, dbl *sz)
 {
 	GEOSGeometry *outGeometry;
 	GEOSGeom geosGeometry;
+    int srid;
 	str err;
 
 	if (wkb_isnil(*geomWKB) || *sz == dbl_nil) {
@@ -1168,6 +1171,7 @@ wkbSegmentize(wkb **outWKB, wkb **geomWKB, dbl *sz)
 		*outWKB = NULL;
 		throw(MAL, "geom.Segmentize", "wkb2geos failed");
 	}
+    srid = GEOSGetSRID(geosGeometry);
 
 	if ((err = segmentizeGeometry(&outGeometry, geosGeometry, *sz)) != MAL_SUCCEED) {
 		GEOSGeom_destroy(geosGeometry);
@@ -1175,7 +1179,7 @@ wkbSegmentize(wkb **outWKB, wkb **geomWKB, dbl *sz)
 		return err;
 	}
 
-	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));
+	GEOSSetSRID(outGeometry, srid);
 
 	*outWKB = geos2wkb(outGeometry);
 
@@ -1477,6 +1481,7 @@ wkbTranslate(wkb **outWKB, wkb **geomWKB, dbl *dx, dbl *dy, dbl *dz)
 {
 	GEOSGeometry *outGeometry;
 	GEOSGeom geosGeometry;
+    int srid;
 	str err;
 
 	if (wkb_isnil(*geomWKB) || *dx == dbl_nil || *dy == dbl_nil || *dz == dbl_nil) {
@@ -1490,6 +1495,7 @@ wkbTranslate(wkb **outWKB, wkb **geomWKB, dbl *dx, dbl *dy, dbl *dz)
 		*outWKB = NULL;
 		throw(MAL, "geom.Translate", "wkb2geos failed");
 	}
+    srid = GEOSGetSRID(geosGeometry);
 
 	if ((err = translateGeometry(&outGeometry, geosGeometry, *dx, *dy, *dz)) != MAL_SUCCEED) {
 		GEOSGeom_destroy(geosGeometry);
@@ -1497,7 +1503,7 @@ wkbTranslate(wkb **outWKB, wkb **geomWKB, dbl *dx, dbl *dy, dbl *dz)
 		return err;
 	}
 
-	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));
+	GEOSSetSRID(outGeometry, srid);
 
 	*outWKB = geos2wkb(outGeometry);
 
@@ -1545,6 +1551,7 @@ wkbDelaunayTriangles(wkb **outWKB, wkb **geomWKB, dbl *tolerance, int *flag)
 str
 wkbPointOnSurface(wkb **resWKB, wkb **geomWKB)
 {
+    int srid;
 	GEOSGeom geosGeometry, resGeosGeometry;
 
 	if (wkb_isnil(*geomWKB)) {
@@ -1558,6 +1565,7 @@ wkbPointOnSurface(wkb **resWKB, wkb **geomWKB)
 		*resWKB = NULL;
 		throw(MAL, "geom.PointOnSurface", "wkb2geos failed");
 	}
+    srid = GEOSGetSRID(geosGeometry);
 
 	resGeosGeometry = GEOSPointOnSurface(geosGeometry);
 	if (resGeosGeometry == NULL) {
@@ -1566,7 +1574,7 @@ wkbPointOnSurface(wkb **resWKB, wkb **geomWKB)
 		throw(MAL, "geom.PointOnSurface", "GEOSPointOnSurface failed");
 	}
 	//set the srid of the point the same as the srid of the input geometry
-	GEOSSetSRID(resGeosGeometry, GEOSGetSRID(geosGeometry));
+	GEOSSetSRID(resGeosGeometry, srid);
 
 	*resWKB = geos2wkb(resGeosGeometry);
 
@@ -1666,6 +1674,7 @@ dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 {
 	int geometryType = GEOSGeomTypeId(geosGeometry) + 1;
 	unsigned int lvl = 0;
+    bit empty;
 
 	//check the type of the geometry
 	switch (geometryType) {
@@ -1681,7 +1690,8 @@ dumpGeometriesGeometry_(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 	case wkbGeometryCollection_mdb:
 		//Multi Geometry
 		//check if the geometry was empty
-		if (GEOSisEmpty(geosGeometry) == 1) {
+        empty = GEOSisEmpty(geosGeometry);
+		if (empty) {
 			str err;
 			//handle it as single
 			if ((err = dumpGeometriesSingle(idBAT, geomBAT, geosGeometry, &lvl, path)) != MAL_SUCCEED)
@@ -3632,6 +3642,7 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 	unsigned int i = 0, geom1Size = 0, geom2Size = 0;
 	unsigned geom1Dimension = 0, geom2Dimension = 0;
 	double x, y, z;
+    int srid;
 	str err = MAL_SUCCEED;
 
 	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
@@ -3652,6 +3663,8 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 		GEOSGeom_destroy(geom1Geometry);
 		throw(MAL, "geom.MakeLine", "wkb2geos failed");
 	}
+    srid = GEOSGetSRID(geom1Geometry);
+
 	//make sure the geometries are of the same srid
 	if (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
 		err = createException(MAL, "geom.MakeLine", "Geometries of different SRID");
@@ -3720,7 +3733,7 @@ wkbMakeLine(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 		throw(MAL, "geom.MakeLine", "GEOSGeom_createLineString failed");
 	}
 
-	GEOSSetSRID(outGeometry, GEOSGetSRID(geom1Geometry));
+	GEOSSetSRID(outGeometry, srid);
 	*out = geos2wkb(outGeometry);
 	GEOSGeom_destroy(outGeometry);
 	GEOSGeom_destroy(geom1Geometry);
@@ -4558,6 +4571,7 @@ wkbCentroid(wkb **out, wkb **geom)
 {
 	GEOSGeom geosGeometry;
 	GEOSGeom outGeometry;
+    int srid;
 
 	if (wkb_isnil(*geom)) {
 		if ((*out = wkbNULLcopy()) == NULL)
@@ -4567,9 +4581,10 @@ wkbCentroid(wkb **out, wkb **geom)
 	geosGeometry = wkb2geos(*geom);
 	if (geosGeometry == NULL)
 		throw(MAL, "geom.Centroid", MAL_MALLOC_FAIL);
+    srid = GEOSGetSRID(geosGeometry);
 
 	outGeometry = GEOSGetCentroid(geosGeometry);
-	GEOSSetSRID(outGeometry, GEOSGetSRID(geosGeometry));	//the centroid has the same SRID with the the input geometry
+	GEOSSetSRID(outGeometry, srid);	//the centroid has the same SRID with the the input geometry
 	*out = geos2wkb(outGeometry);
 
 	GEOSGeom_destroy(geosGeometry);
@@ -4677,6 +4692,7 @@ static str
 wkbanalysis(wkb **out, wkb **geom1WKB, wkb **geom2WKB, GEOSGeometry *(*func) (const GEOSGeometry *, const GEOSGeometry *), const char *name)
 {
 	GEOSGeom outGeometry, geom1Geometry, geom2Geometry;
+    int srid;
 	str err = MAL_SUCCEED;
 
 	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
@@ -4695,6 +4711,7 @@ wkbanalysis(wkb **out, wkb **geom1WKB, wkb **geom2WKB, GEOSGeometry *(*func) (co
 			GEOSGeom_destroy(geom2Geometry);
 		throw(MAL, name, "wkb2geos failed");
 	}
+    srid = GEOSGetSRID(geom1Geometry);
 
 	//make sure the geometries are of the same srid
 	if (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry)) {
@@ -4702,7 +4719,7 @@ wkbanalysis(wkb **out, wkb **geom1WKB, wkb **geom2WKB, GEOSGeometry *(*func) (co
 	} else if ((outGeometry = (*func) (geom1Geometry, geom2Geometry)) == NULL) {
 		err = createException(MAL, name, "GEOS%s failed", name + 5);
 	} else {
-		GEOSSetSRID(outGeometry, GEOSGetSRID(geom1Geometry));
+		GEOSSetSRID(outGeometry, srid);
 		*out = geos2wkb(outGeometry);
 		GEOSGeom_destroy(outGeometry);
 	}
@@ -4790,7 +4807,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 static str
 wkbUnaryUnion(wkb **out, wkb **geoms, int num_geoms)
 {
-    int i = 0, j = 0;
+    int i = 0, j = 0, srid;
 	GEOSGeom outGeometry, *geomGeometries = NULL, geomCollection;
 
     if ( (geomGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom)*num_geoms)) == NULL) {
@@ -4814,6 +4831,7 @@ wkbUnaryUnion(wkb **out, wkb **geoms, int num_geoms)
             throw(MAL, "GEOSUnaryUnion", "wkb2geos failed");
         }
     }
+    srid = GEOSGetSRID(geomGeometries[0]);
 
 	if ( (geomCollection = GEOSGeom_createCollection(wkbMultiPoint_mdb - 1, geomGeometries, num_geoms)) == NULL ) {
 		*out = NULL;
@@ -4829,7 +4847,7 @@ wkbUnaryUnion(wkb **out, wkb **geoms, int num_geoms)
 		throw(MAL, "GEOSUnaryUnion", "GEOSUnaryUnion failed");
 	}
 
-	GEOSSetSRID(outGeometry, GEOSGetSRID(geomGeometries[0]));
+	GEOSSetSRID(outGeometry, srid);
 	*out = geos2wkb(outGeometry);
     GDKfree(geomGeometries);
 
@@ -5008,7 +5026,7 @@ wkbCollect(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 static str
 wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
 {
-    int i = 0, j = 0, type, geometryType;
+    int i = 0, j = 0, type, geometryType, srid;
 	GEOSGeom outGeometry, *geomGeometries = NULL, geomCollection;
 
     if ( (geomGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom)*num_geoms)) == NULL) {
@@ -5058,8 +5076,8 @@ wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
             }
         } else if (type != geometryType)
             type = wkbGeometryCollection_mdb - 1;
-
     }
+    srid = GEOSGetSRID(geomGeometries[0]);
 
 	if ( (geomCollection = GEOSGeom_createCollection(wkbGeometryCollection_mdb - 1, geomGeometries, num_geoms)) == NULL ) {
 		*out = NULL;
@@ -5069,7 +5087,7 @@ wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
 		throw(MAL, "GEOSUnaryCollection", "GEOSGeom_createCollection failed");
     }
 
-	GEOSSetSRID(geomCollection, GEOSGetSRID(geomGeometries[0]));
+	GEOSSetSRID(geomCollection, srid);
 	*out = geos2wkb(geomCollection);
     GDKfree(geomGeometries);
 
@@ -5394,6 +5412,7 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
     GEOSGeometry **geomGeometries = NULL;
 	str err = MAL_SUCCEED;
     int i, type, geometry1Type, geometry2Type, num_geoms = 0, srid;
+    bit empty;
 
 	if (wkb_isnil(*geom1WKB) || wkb_isnil(*geom2WKB)) {
 		if ((*out = wkbNULLcopy()) == NULL)
@@ -5412,14 +5431,15 @@ wkbCollectAppend(wkb **out, wkb **geom1WKB, wkb **geom2WKB)
         throw(MAL, "geom.collect" , "wkb2geos failed");
     }
     srid = GEOSGetSRID(geom2Geometry);
+    empty = GEOSisEmpty(geom1Geometry);
 
     //make sure the geometries are of the same srid
-    if ((GEOSisEmpty(geom1Geometry) == 0) && (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry))) {
+    if ( !empty && (GEOSGetSRID(geom1Geometry) != GEOSGetSRID(geom2Geometry))) {
         err = createException(MAL, "geom.collect", "Geometries of different SRID");
     } else { 
         geometry1Type = GEOSGeomTypeId(geom1Geometry);
         geometry2Type = GEOSGeomTypeId(geom2Geometry);
-        if ( (GEOSisEmpty(geom1Geometry) == 0) &&  (geometry1Type != geometry2Type)) {
+        if ( !empty &&  (geometry1Type != geometry2Type)) {
             type = geometry1Type;
             switch (geometry1Type + 1) {
                 case wkbMultiPoint_mdb:
@@ -5904,11 +5924,13 @@ wkbAddPointIdx(wkb** out, wkb** lineWKB, wkb** pointWKB, int *idxPoint) {
     const GEOSCoordSequence *gcs_old = NULL;
     GEOSCoordSeq gcs_new = NULL;
     double px, py, pz, x, y, z;
+    int srid;
     uint32_t lineDim, numGeom, i, idx = 0, jump = 0;
     const GEOSGeometry *line;
     GEOSGeom point, outGeometry;
     line = wkb2geos(*lineWKB);
     point = wkb2geos(*pointWKB);
+    srid = GEOSGetSRID(line);
 
     if (idxPoint)
         idx = *idxPoint;
@@ -5990,7 +6012,7 @@ wkbAddPointIdx(wkb** out, wkb** lineWKB, wkb** pointWKB, int *idxPoint) {
 		throw(MAL, "geom.AddPoint", "GEOSGeom_createLineString failed");
 	}
 
-	GEOSSetSRID(outGeometry, GEOSGetSRID(line));
+	GEOSSetSRID(outGeometry, srid);
 	*out = geos2wkb(outGeometry);
     
     return ret;
