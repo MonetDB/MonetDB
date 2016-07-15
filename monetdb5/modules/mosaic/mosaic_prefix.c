@@ -929,7 +929,7 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 	int residu;\
 	TPE value;\
 	m = ~mask;\
-	residu = val & m;\
+	residu = (int)(val & m);\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	w = (TPE*) task->src;\
@@ -972,7 +972,7 @@ MOSsubjoin_prefix(Client cntxt,  MOStask task)
 	int residu;
 	lng value;
 	m = ~mask;
-	residu = val & m;
+	residu = (int)(val & m);
 	val = val & mask;
 	base = (BitVector) dst;
 	w = (lng*) task->src;

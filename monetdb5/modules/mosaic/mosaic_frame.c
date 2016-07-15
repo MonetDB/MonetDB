@@ -194,7 +194,7 @@ MOSskip_frame(Client cntxt, MOStask task)
 			cnt[j]++;\
 	}\
 	for(i=0; i< (BUN) hdr->framesize; i++)\
-		for(j=i+1; j< hdr->framesize; j++)\
+		for(j=(int)(i+1); j< hdr->framesize; j++)\
 			if(task->hdr->frame.val##TPE[i] >task->hdr->frame.val##TPE[j]){\
 				v= task->hdr->frame.val##TPE[i];\
 				task->hdr->frame.val##TPE[i] = task->hdr->frame.val##TPE[j];\
@@ -255,7 +255,7 @@ MOScreateframeDictionary(Client cntxt, MOStask task)
 			//assert(hdr->framesize);
 			// sort it
 			for(i=0; i< (BUN) hdr->framesize; i++)
-				for(j= (BUN)(i+1); j< hdr->framesize; j++)
+				for(j= (int)(i+1); j< hdr->framesize; j++)
 					if(task->hdr->frame.valint[i] >task->hdr->frame.valint[j]){
 						int v= task->hdr->frame.valint[i];
 						task->hdr->frame.valint[i] = task->hdr->frame.valint[j];
