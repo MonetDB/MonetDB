@@ -4362,7 +4362,7 @@ CREATE FUNCTION ST_Length2D(geom Geometry) RETURNS double EXTERNAL NAME geom."Le
 --CREATE FUNCTION ST_Buffer(geog Geography, radius double) RETURNS Geometry EXTERNAL NAME geom."Buffer";
 --CREATE FUNCTION ST_BuildArea RETURNS EXTERNAL NAME
 --collect is the same to union. POstGIS just has a more efficient implementation for it compared to union
-CREATE FUNCTION ST_Collect(geom1 Geometry) RETURNS Geometry EXTERNAL NAME geom."Collect";
+CREATE FUNCTION ST_Collect(geom1 Geometry, geom2 Geometry) RETURNS Geometry EXTERNAL NAME geom."Collect";
 CREATE AGGREGATE ST_Collect(geom Geometry) RETURNS Geometry external name geom."Collect";
 --CREATE FUNCTION ST_ConcaveHull RETURNS EXTERNAL NAME
 CREATE FUNCTION ST_DelaunayTriangles(geom Geometry, tolerance double, flags integer) RETURNS Geometry EXTERNAL NAME geom."DelaunayTriangles";
