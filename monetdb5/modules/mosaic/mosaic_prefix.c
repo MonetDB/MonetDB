@@ -905,7 +905,7 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 {	dbl *r;
     ulng *dst =  (ulng*)  (((char*) blk) + MosaicBlkSize);
     ulng mask = *dst++;
-    ulng  val  =  (dbl) *dst++,v;
+    ulng  val  =  *dst++,v;
     ulng m;
     BitVector base;
     int residu;
