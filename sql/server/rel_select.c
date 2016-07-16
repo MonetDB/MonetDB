@@ -2599,7 +2599,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
-	sql_exp *e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
+	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
@@ -2609,14 +2609,16 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	if (!s)
 		return NULL;
-	if (!e)
-		f = find_func(sql, s, fname, 1, F_AGGR, NULL);
-	if (!e && f) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return rel_aggr(sql, rel, se, fs);
+	f = find_func(sql, s, fname, 1, F_AGGR, NULL);
+	if (f) { 
+		e = rel_aggr(sql, rel, se, fs);
+		if (e)
+			return e;
 	}
+	/* reset error */
+	sql->session->status = 0;
+	sql->errstr[0] = '\0';
+       	e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
 	if (!e)
 		return NULL;
 

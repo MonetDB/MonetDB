@@ -629,8 +629,10 @@ setVarName(MalBlkPtr mb, int i, str nme)
 {
 	char buf[IDLENGTH];
 
-	if ( mb->var[i]->name)
+	if ( mb->var[i]->name){
 		GDKfree(mb->var[i]->name);
+		mb->var[i]->name = NULL;
+	}
 
 	if (nme == 0) {
 		snprintf(buf, IDLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
@@ -648,6 +650,7 @@ resetVarName(MalBlkPtr mb, int i)
 	nme = mb->var[i]->name;
 	if (mb->var[i]->tmpindex && nme) {
 		GDKfree(nme);
+		mb->var[i]->name = NULL;
 		nme = 0;
 	}
 
@@ -944,8 +947,10 @@ renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 	assert(id >=0 && id <mb->vtop);
 	v = getVar(mb, id);
 
-	if (v->name)
+	if (v->name){
 		GDKfree(v->name);
+		v->name = NULL;	
+	}
 	nme= GDKmalloc(IDLENGTH);
 	if( nme) {
 		snprintf(nme,IDLENGTH,pattern,newid);
