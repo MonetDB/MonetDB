@@ -867,7 +867,7 @@ MOSthetasubselect_prefix(Client cntxt,  MOStask task, void *input, str oper)
     int residu;\
     TPE value;\
 	m = ~mask;\
-	residu = val & m;\
+	residu = (int) val & m;\
 	val = val & mask;\
 	base = (BitVector) dst;\
 	r= (TPE*) task->src;\
@@ -901,7 +901,30 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 		case TYPE_lng: projection_prefix(lng, ulng); break;
 		case TYPE_oid: projection_prefix(oid, ulng); break;
 		case TYPE_flt: projection_prefix(flt, unsigned int); break;
-		case TYPE_dbl: projection_prefix(dbl, ulng); break;
+		case TYPE_dbl: //projection_prefix(dbl, ulng); break;
+{	dbl *r;
+    ulng *dst =  (ulng*)  (((char*) blk) + MosaicBlkSize);
+    ulng mask = *dst++;
+    ulng  val  =  (dbl) *dst++,v;
+    ulng m;
+    BitVector base;
+    int residu;
+    dbl value;
+	m = ~mask;
+	residu = (int) val & m;
+	val = val & mask;
+	base = (BitVector) dst;
+	r= (dbl*) task->src;
+	for(; first < last; first++,i++){
+		MOSskipit();
+		v = decompress(base,i,residu);
+		value =  (dbl) ((ulng)val |(ulng) v);
+		*r++ = value;
+		task->n--;
+		task->cnt++;
+	}
+	task->src = (char*) r;
+}
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_prefix(hge, unsigned long long); break;
 #endif
