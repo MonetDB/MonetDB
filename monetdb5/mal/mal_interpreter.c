@@ -1432,8 +1432,9 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 		printStack(cntxt->fdout, mb, stk, 0);
 	}
 #endif
+	(void) flag;
 	for (k = 0; k < mb->vtop; k++) {
-		if (isVarCleanup(mb, k) && (flag || isTmpVar(mb, k))) {
+		if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
 			v->val.ival = int_nil;

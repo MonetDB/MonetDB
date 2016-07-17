@@ -47,9 +47,8 @@
 #define getPrgSize(M)		(M)->stop
 
 #define getVar(M,I)			(M)->var[I]
-#define getVarTmp(M,I)		(M)->var[I]->tmpindex
-#define isTmpVar(M,I)		((M)->var[I]->tmpindex)
 #define getVarType(M,I)		((M)->var[I]->type)
+#define getVarName(M,I)		((M)->var[I]->id)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I]->type)
 
 #define clrVarFixed(M,I)		((M)->var[I]->flags &= ~VAR_FIXTYPE)
@@ -59,6 +58,7 @@
 #define clrVarCleanup(M,I)		((M)->var[I]->flags &= ~VAR_CLEANUP)
 #define setVarCleanup(M,I)		((M)->var[I]->flags |= VAR_CLEANUP)
 #define isVarCleanup(M,I)		((M)->var[I]->flags & VAR_CLEANUP)
+#define isTmpVar(M,I)			(*getVarName(M,I) == REFMARKER && *(getVarName(M,I)+1) == TMPMARKER)
 
 #define clrVarUsed(M,I)		((M)->var[I]->flags &= ~VAR_USED)
 #define setVarUsed(M,I)		((M)->var[I]->flags |= VAR_USED)
@@ -132,8 +132,6 @@ mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
-mal_export void expandMalBlk(MalBlkPtr mb, int lines);
-mal_export void trimMalBlk(MalBlkPtr mb);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -143,22 +141,16 @@ mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);
-mal_export int findTmpVariable(MalBlkPtr mb, int type);
 mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
 mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
-mal_export str getVarName(MalBlkPtr mb, int i);
 mal_export void setVarName(MalBlkPtr mb, int i, str nme);
-mal_export int newVariable(MalBlkPtr mb, str name, malType type);
+mal_export int newVariable(MalBlkPtr mb, str name, int len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str pattern, int newid);
-mal_export void resetVarName(MalBlkPtr mb, int i);
 mal_export int copyVariable(MalBlkPtr dst, VarPtr v);
-mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
-mal_export int newTmpSink(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);
-mal_export void delVariable(MalBlkPtr mb, int varid);
 mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);

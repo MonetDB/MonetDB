@@ -785,7 +785,8 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 	if (l > 0) {
 		varid = findVariableLength(curBlk, CURRENT(cntxt), l);
 		if (varid < 0) {
-			varid = newVariable(curBlk, idCopy(cntxt, l), TYPE_any);
+			varid = newVariable(curBlk, CURRENT(cntxt), l, TYPE_any);
+			advance(cntxt, l);
 			if ( varid < 0)
 				return curInstr;
 			type = typeElm(cntxt, TYPE_any);
@@ -832,7 +833,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 {
 	int i, idx, flag, free = 1;
 	ValRecord cst;
-	str v = NULL;
 	int cstidx = -1;
 	malType tpe = TYPE_any;
 
@@ -882,8 +882,8 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		}
 	} else if ((i = idLength(cntxt))) {
 		if ((idx = findVariableLength(curBlk, CURRENT(cntxt), i)) == -1) {
-			v = idCopy(cntxt, i);
-			idx = newVariable(curBlk, v, TYPE_any);
+			idx = newVariable(curBlk, CURRENT(cntxt), i, TYPE_any);
+			advance(cntxt, i);
 			if( idx <0)
 				return 0;
 		} else {
@@ -1331,7 +1331,6 @@ parseCommandPattern(Client cntxt, int kind)
 		insertSymbol(findModule(cntxt->nspace, modnme), curPrg);
 	else
 		return (MalBlkPtr) parseError(cntxt, "<module> not found\n");
-	trimMalBlk(curBlk);
 	chkProgram(cntxt->fdout, cntxt->nspace, curBlk);
 	if (cntxt->backup) {
 		cntxt->curprg = cntxt->backup;
@@ -1456,7 +1455,6 @@ parseEnd(Client cntxt)
 		}
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
-		trimMalBlk(cntxt->curprg->def);
 		cntxt->blkmode = 0;
 		curBlk->typefixed = 0;
 		chkProgram(cntxt->fdout, cntxt->nspace, cntxt->curprg->def);
@@ -1503,8 +1501,8 @@ parseEnd(Client cntxt)
 
 #define GETvariable	\
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
-		arg = idCopy(cntxt, l);	 \
-		varid = newVariable(curBlk, arg, TYPE_any);	\
+		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);	\
+		advance(cntxt, l);\
 		assert(varid >=  0);\
 	} else \
 		advance(cntxt, l);
