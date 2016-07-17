@@ -39,13 +39,13 @@ barrier i:lng := 0:lng;                 	#[4] (0)  5 <- 7
 exit i:lng;                             	#[7] (0)  5 
     io.print(b:bat[:lng]);              	#[8] (0) IOprint_val 11 <- 3 
     c:int := 1:int;                     	#[9] (0)  12 <- 13 
-    X_18:bat[:lng] := bat.new(nil:lng); 	#[10] (0) CMDBATnew 18 <- 19 
-barrier (X_21:oid,X_22:lng) := iterator.new(b:bat[:lng]);	#[11] (0) ITRbunIterator 21 22 <- 3 
-    X_24:lng := calc.+(X_22:lng,c:int); 	#[12] (0) CMDvarADDsignal 24 <- 22 12 
-    bat.append(X_18:bat[:lng],X_24:lng);	#[13] (0) BKCappend_val_wrap 25 <- 18 24 
-    redo (X_21:oid,X_22:lng) := iterator.next(b:bat[:lng]);	#[14] (0) ITRbunNext 21 22 <- 3 
-exit (X_21:oid,X_22:lng);               	#[15] (0)  21 22 
-    xz:bat[:lng] := X_18:bat[:lng];     	#[16] (0)  14 <- 18 
+    X_13:bat[:lng] := bat.new(nil:lng); 	#[10] (0) CMDBATnew 18 <- 19 
+barrier (X_16:oid,X_17:lng) := iterator.new(b:bat[:lng]);	#[11] (0) ITRbunIterator 21 22 <- 3 
+    X_19:lng := calc.+(X_17:lng,c:int); 	#[12] (0) CMDvarADDsignal 24 <- 22 12 
+    bat.append(X_13:bat[:lng],X_19:lng);	#[13] (0) BKCappend_val_wrap 25 <- 18 24 
+    redo (X_16:oid,X_17:lng) := iterator.next(b:bat[:lng]);	#[14] (0) ITRbunNext 21 22 <- 3 
+exit (X_16:oid,X_17:lng);               	#[15] (0)  21 22 
+    xz:bat[:lng] := X_13:bat[:lng];     	#[16] (0)  14 <- 18 
     io.print(xz:bat[:lng]);             	#[17] (0) IOprint_val 17 <- 14 
 end user.foo;                           	#[18] (0)  
 #--------------------------#

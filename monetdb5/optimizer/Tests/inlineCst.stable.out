@@ -41,8 +41,8 @@ function user.qry():void;               	#[0] (0)  0
     bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     bat.append(b:bat[:int],10:int);     	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
     bat.append(b:bat[:int],20:int);     	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
-    X_16:int := 213:int;                	#[5] (0)  16 <- 17 
-    r:bat[:int] := algebra.project(b:bat[:int],X_16:int);	#[6] (0) ALGprojecttail 9 <- 1 16 
+    X_13:int := 213:int;                	#[5] (0)  16 <- 17 
+    r:bat[:int] := algebra.project(b:bat[:int],X_13:int);	#[6] (0) ALGprojecttail 9 <- 1 16 
     io.print(r:bat[:int]);              	#[7] (0) IOprint_val 12 <- 9 
 end user.qry;                           	#[8] (0)  
 
