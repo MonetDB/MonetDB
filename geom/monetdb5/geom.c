@@ -4888,8 +4888,8 @@ wkbUnionCascade(wkb **outWKB, bat *inBAT_id)
 		throw(MAL, "geom.Union", "GDKmalloc failed");
     }
 
-	for (j = 0, i = BUNfirst(inBAT); i < BATcount(inBAT); i++, j++) {
-        geoms[j] = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+	for (j = 0, i = 0; i < BATcount(inBAT); i++, j++) {
+        geoms[j] = (wkb *) BUNtail(inBAT_iter, i);
     }
 
     if ((err = wkbUnaryUnion(outWKB, geoms, j)) != MAL_SUCCEED) {
@@ -5129,8 +5129,8 @@ wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
 		throw(MAL, "geom.Collect", "GDKmalloc failed");
     }
 
-	for (j = 0, i = BUNfirst(inBAT); i < BATcount(inBAT); i++, j++) {
-        geoms[j] = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+	for (j = 0, i = 0; i < BATcount(inBAT); i++, j++) {
+        geoms[j] = (wkb *) BUNtail(inBAT_iter, i);
     }
 
     if ((err = wkbUnaryCollect(outWKB, geoms, j)) != MAL_SUCCEED) {
@@ -5183,7 +5183,7 @@ BATgroupWKBWKBtoWKB(bat *outBAT_id, BAT *b, BAT *g, BAT *e, int skip_nils, oid m
     if (BATtdense(g))
         gids = NULL;
     else
-        gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+        gids = (const oid *) Tloc(g, start);
 
     /*Allocate structures*/
     if ((aWKBs = (wkb **) GDKzalloc(sizeof(wkb*)*ngrp)) == NULL) {

@@ -2427,12 +2427,12 @@ wkbIntersection_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	aBAT_iter = bat_iterator(aBAT);
 	bBAT_iter = bat_iterator(bBAT);
 
-	for (i = BUNfirst(aBAT); i < BATcount(aBAT); i++) {
+	for (i = 0; i < BATcount(aBAT); i++) {
 		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
-		aWKB = (wkb *) BUNtail(aBAT_iter, i + BUNfirst(aBAT));
-		bWKB = (wkb *) BUNtail(bBAT_iter, i + BUNfirst(bBAT));
+		aWKB = (wkb *) BUNtail(aBAT_iter, i);
+		bWKB = (wkb *) BUNtail(bBAT_iter, i);
 
 		if ((err = wkbIntersection(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//set SRID
 			BBPunfix(aBAT->batCacheid);
@@ -2513,13 +2513,13 @@ wkbIntersection_bat_s(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id, bat *saBAT_id,
 	saBAT_iter = bat_iterator(saBAT);
 	sbBAT_iter = bat_iterator(sbBAT);
 
-	for (i = BUNfirst(saBAT); i < BATcount(saBAT); i++) {
+	for (i = 0; i < BATcount(saBAT); i++) {
 		str err = NULL;
         oid aOID = 0, bOID = 0;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
-		aOID = *(oid *) BUNtail(saBAT_iter, i + BUNfirst(saBAT));
-		bOID = *(oid *) BUNtail(sbBAT_iter, i + BUNfirst(sbBAT));
+		aOID = *(oid *) BUNtail(saBAT_iter, i);
+		bOID = *(oid *) BUNtail(sbBAT_iter, i);
 
 		aWKB = (wkb *) BUNtail(aBAT_iter, aOID);
 		bWKB = (wkb *) BUNtail(bBAT_iter, bOID);
