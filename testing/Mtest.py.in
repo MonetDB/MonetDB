@@ -4118,7 +4118,7 @@ def main(argv) :
                 print("OIDs: " + env['TST_OIDS'])
                 if env['TST_INT128']:
                     print("Integers: 128bit")
-                print("Modules: " + env['TST_MODS'])
+                print("Modules: " + str(env['TST_MODS']))
             STDOUT.flush()
 
             port = int(env['MAPIPORT'])
