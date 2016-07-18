@@ -1,3 +1,7 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Mon Jul 18 2016 Sjoerd Mullender <sjoerd@acm.org>
+- Removed configure option --enable-oid32 to compile with 32 bit OIDs
+  on a 64 bit architecture.
+

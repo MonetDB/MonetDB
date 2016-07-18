@@ -299,7 +299,6 @@ CONDITIONALS = {
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
     'BITS32'               : "@BITS32_FALSE@",
     'BITS64'               : "@BITS64_FALSE@",
-    'BITS64OID32'          : "@BITS64OID32_FALSE@",
     'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_DEVELOPER'       : "@HAVE_DEVELOPER_FALSE@",
@@ -1590,7 +1589,6 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
-    env['TST_OIDS'] = ""
     env['TST_INT128'] = ""
     env['TST_STATIC'] = ""
     env['TST_SINGLE'] = ""
@@ -1605,8 +1603,6 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             if obs:
                 env['TST_BITS'] = obs.group(1)
                 os.environ['TST_BITS'] = env['TST_BITS']
-                env['TST_OIDS'] = "oid" + obs.group(2)
-                os.environ['TST_OIDS'] = env['TST_OIDS']
                 if obs.group(3) == " and 128bit integers":
                     env['TST_INT128'] = "int128"
                     os.environ['TST_INT128'] = env['TST_INT128']
@@ -1628,11 +1624,9 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             #       os.environ['TST_STATIC'] = env['TST_STATIC']
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
-        if not env['TST_OIDS']:
-            ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
             ErrMsg("Checking for Modules failed!")
-        if not env['TST_BITS'] or not env['TST_OIDS'] or not env['TST_MODS']:
+        if not env['TST_BITS'] or not env['TST_MODS']:
             STDERR.write(' '.join(cmd) + "\n\n")
             STDERR.write(qOut)
             STDERR.write("\n")
@@ -1642,7 +1636,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             rtrn = 1
     else:
         rtrn = 1
-        ErrMsg("No output from Mserver/mserver5 when checking for Bits, OIDs, Modules & Threads!?")
+        ErrMsg("No output from Mserver/mserver5 when checking for Bits, Modules & Threads!?")
         if qErr:
             STDERR.write(' '.join(cmd) + "\n\n")
             STDERR.write(qErr)
@@ -1687,7 +1681,6 @@ def CheckTests(env, TST, oktests):
 
 def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
-    OIDS = env['TST_OIDS']
     INT128 = env['TST_INT128']
     if INT128:
         INT128 = r"(\.int128)?"
@@ -1698,7 +1691,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     if STATIC:
         STATIC = r"(\.STATIC)?"
     dir,file = os.path.split(TST)
-    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, INT128, SINGLE, STATIC))
+    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?%s%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, INT128, SINGLE, STATIC))
     bestout = besterr = ''
     for f in listdir(dir or os.curdir):
         res = outre.match(f)
@@ -3217,7 +3210,6 @@ def ReadMapproveRc(f) :
     v['DIST'] = DIST
     v['VERSION'] = VERSION
     v['BITS'] = ''
-    v['OIDS'] = ''
     v['INT128'] = ''
     v['SINGLE'] = ''
     v['STATIC'] = ''
@@ -3528,7 +3520,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'INT128', 'SINGLE', 'STATIC':
+        for i in 'BITS', 'INT128', 'SINGLE', 'STATIC':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3538,8 +3530,8 @@ def main(argv) :
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
              "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.int128][.single][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['INT128'], v['SINGLE'], v['STATIC'])),
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ('nopatch', None, 'nopatch', None,
@@ -3815,17 +3807,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'INT128', 'SINGLE', 'STATIC':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'INT128', 'SINGLE', 'STATIC':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'INT128', 'SINGLE', 'STATIC':
+        for i in 'BITS', 'INT128', 'SINGLE', 'STATIC':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['INT128'], v['SINGLE'], v['STATIC'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['INT128'], w['SINGLE'], w['STATIC'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'], v['STATIC'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['INT128'], w['SINGLE'], w['STATIC'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -4106,7 +4098,6 @@ def main(argv) :
 
             env['TST_MODS'] = []
             env['TST_BITS'] = ""
-            env['TST_OIDS'] = ""
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
@@ -4125,7 +4116,6 @@ def main(argv) :
             STDERR.flush()
             if verbose:
                 print("Bits: " + env['TST_BITS'])
-                print("OIDs: " + env['TST_OIDS'])
                 if env['TST_INT128']:
                     print("Integers: 128bit")
                 print("Modules: " + env['TST_MODS'])
@@ -4146,7 +4136,7 @@ def main(argv) :
             env['VERSION'] = os.environ['VERSION']
             n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
             f = open(n, 'w')
-            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_INT128', 'TST_SINGLE', 'TST_STATIC':
+            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_INT128', 'TST_SINGLE', 'TST_STATIC':
                 w = v.replace('TST_','')
                 f.write('%s = "%s"\n' % (w, env[v]))
             f.close()
@@ -4248,7 +4238,6 @@ def main(argv) :
 
             # ok, we're not prepared for the 128 bits world yet
             bits = env['TST_BITS'][:2]
-            oids = env['TST_OIDS'][-2:]
 
             # we write in SQL the same codes as testweb uses in the HTML
             # pages, for readability
@@ -4281,7 +4270,7 @@ VALUES (%s, '%s', '%s', '%s',
     '%s', '%s', '%s',
     %s, '%s', '%s');
 """ % (now, host, env['SYST'], env['RELEASE'],
-           ccname, ccopts, bits, oids, isInt128, isSingle, isStatic,
+           ccname, ccopts, bits, bits, isInt128, isSingle, isStatic,
            product, TSTDIR, TST,
            tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
             fl.close()
