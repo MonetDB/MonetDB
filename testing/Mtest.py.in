@@ -755,10 +755,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
         else:
             diffclass = 'error'
 
-    if COMPBITSOIDSLINK:
-        SYSTEM = '%s, %s:' % (DISTVER, COMPBITSOIDSLINK)
-    else:
-        SYSTEM = "%s:" % DISTVER
+    SYSTEM = "%s:" % DISTVER
 
     html = Element('html', {},
                    Element('head', {},
@@ -3407,18 +3404,10 @@ os.environ['DIST'] = DIST
 os.environ['DISTVER'] = DISTVER
 os.environ['VERSION'] = VERSION
 
-if 'COMPBITSOIDSLINK' in os.environ:
-    COMPBITSOIDSLINK = os.environ['COMPBITSOIDSLINK']
-else:
-    COMPBITSOIDSLINK = ""
-
 if 'HTMLTITLE' in os.environ:
     HTMLTITLE = os.environ['HTMLTITLE']
 else:
-    HTMLTITLE = ""
-    if COMPBITSOIDSLINK:
-        HTMLTITLE = " for "+COMPBITSOIDSLINK
-    HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+DISTVER       #"+ ("`date`")"
+    HTMLTITLE = ""+THISFILE+" results on "+DISTVER       #"+ ("`date`")"
 
 URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 
