@@ -287,16 +287,16 @@ comment "Returns a geometry that represents the point set intersection of the Ge
 
 command Union(a:wkb, b:wkb) :wkb address wkbUnion
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
-command Union(a:bat[:oid,:wkb]) :wkb address wkbUnionCascade
+command Union(a:bat[:wkb]) :wkb address wkbUnionCascade
 comment "Gets a BAT with geometries and returns their union"; 
 command subUnion(b:bat[:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubUnion
 comment "Gets a BAT with geometries, candidate group list and returns the union of each group element."; 
 
 command Collect(a:wkb, b:wkb) :wkb address wkbCollect
 comment "Returns a geometry that represents the point set union of the Geometries a, b";
-command Collect(a:bat[:oid,:wkb]) :wkb address wkbCollectCascade
+command Collect(a:bat[:wkb]) :wkb address wkbCollectCascade
 comment "Gets a BAT with geometries and returns their union"; 
-command subCollect(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubCollect
+command subCollect(a:bat[:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubCollect
 comment "Gets a BAT with geometries, candidate group list and returns a collection per each group element."; 
 
 
@@ -348,11 +348,11 @@ command DelaunayTriangles(a:wkb, tolerance:dbl, flag:int) :wkb address wkbDelaun
 comment "Returns a Delaunay triangulation, flag=0 => collection of polygons, flag=1 => multilinestring";
 command Dump(a:wkb) (id:bat[ :str], geom:bat[ :wkb]) address wkbDump
 comment "Gets a MultiPolygon and returns the Polygons in it";
-command DumpP(a:wkb, p:int) (parent:bat[:oid, :int], id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpP
+command DumpP(a:wkb, p:int) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpP
 comment "Gets a MultiPolygon and returns the Polygons in it";
-command DumpPoints(a:wkb) (id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPoints
+command DumpPoints(a:wkb) (id:bat[:str], geom:bat[:wkb]) address wkbDumpPoints
 comment "Gets a Geometry and returns the Points in it";
-command DumpPointsP(a:wkb, p:int) (parent:bat[:oid, :int], id:bat[:oid, :str], geom:bat[:oid, :wkb]) address wkbDumpPointsP
+command DumpPointsP(a:wkb, p:int) (parent:bat[:int], id:bat[:str], geom:bat[:wkb]) address wkbDumpPointsP
 comment "Gets a Geometry and returns the Points in it";
 
 command Polygonize(a:wkb) :wkb address wkbPolygonize
@@ -384,7 +384,7 @@ command Contains(a:wkb, x:dbl, y:dbl) :bit
 address wkbContains_point
 comment "Returns true if the Geometry a 'spatially contains' Geometry b";
 
-command Contains(a:wkb, px:bat[:oid,:dbl], py:bat[:oid,:dbl]) :bat[:oid,:bit]
+command Contains(a:wkb, px:bat[:dbl], py:bat[:dbl]) :bat[:bit]
 address wkbContains_point_bat
 comment "Returns true if the Geometry-BAT a 'spatially contains' Geometry-B b";
 
@@ -441,7 +441,7 @@ end MakePolygon;
 #	x := Polygon(external, internal, 0);
 #	return x;
 #end MakePolygon;
-command subMakePolygon(a:bat[:oid,:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubMakePolygon
+command subMakePolygon(a:bat[:wkb], g:bat[:oid], e:bat[:oid], :bit) :bat[:wkb] address wkbsubMakePolygon
 comment "Gets a BAT with linestring geometries, a candidate group list and returns a single polygon geometry per group."; 
 
 command MakeLine(a:wkb, b:wkb) :wkb address wkbMakeLine
@@ -652,7 +652,7 @@ end GeometryType2;
 command MakePointXYZM(x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], m:bat[:dbl], zmFlag:int) :bat[:wkb] address wkbMakePoint_bat
 comment "creates a point using the coordinates";
 
-function MakePoint(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function MakePoint(x:bat[:dbl], y:bat[:dbl]) :bat[:wkb];
 	p := MakePointXYZM(x, y, nil:bat, nil:bat, 0);
 	return p;
 end MakePoint;
@@ -695,58 +695,58 @@ function Z(w:bat[:wkb]) :bat[:dbl];
 	return c;
 end Z;
 
-command ForceDimensions(g:bat[:oid,:wkb], d:int) :bat[:oid,:wkb] address wkbForceDim_bat
+command ForceDimensions(g:bat[:wkb], d:int) :bat[:wkb] address wkbForceDim_bat
 comment "Removes or Adds additional coordinates in the geometry to make it d dimensions";
 
-function Force2D(g:bat[:oid,:wkb]) :bat[:oid,:wkb];
+function Force2D(g:bat[:wkb]) :bat[:wkb];
 	x := ForceDimensions(g, 2);
 	return x;
 end Force2D;
 
-function Force3D(g:bat[:oid,:wkb]) :bat[:oid,:wkb];
+function Force3D(g:bat[:wkb]) :bat[:wkb];
 	x := ForceDimensions(g, 3);
 	return x;
 end Force3D;
 
-command Translate3D(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dx:dbl, dyBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl], dz:dbl) :bat[:oid,:wkb] address wkbTranslate_bat
+command Translate3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl) :bat[:wkb] address wkbTranslate_bat
 comment "Moves all points of the geometry by dx, dy, dz";
 
-function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl]) :bat[:wkb];
 	x := Translate3D(g,dxBAT,0,dyBAT,0,nil:bat,0);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dzBAT:bat[:dbl]) :bat[:wkb];
 	x := Translate3D(g,dxBAT,0,dyBAT,0,dzBAT,0);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dx:dbl, dy:dbl, dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dx:dbl, dy:dbl, dzBAT:bat[:dbl]) :bat[:wkb];
 	x := Translate3D(g, nil:bat, dx, nil:bat, dy, dzBAT, 0:dbl);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl]) :bat[:wkb];
 	x := Translate3D(g, dxBAT, 0, nil:bat, dy, dzBAT, 0:dbl);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl]) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dzBAT:bat[:dbl]) :bat[:wkb];
 	x := Translate3D(g, nil:bat, dx, dyBAT, 0, dzBAT, 0:dbl);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dz:dbl) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dz:dbl) :bat[:wkb];
 	x := Translate3D(g, dxBAT, 0, dyBAT, 0, nil:bat, dz);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dz:dbl) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dz:dbl) :bat[:wkb];
 	x := Translate3D(g, nil:bat, dx, dyBAT, 0, nil:bat, dz);
 	return x;
 end Translate;
 
-function Translate(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dz:dbl) :bat[:oid,:wkb];
+function Translate(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl) :bat[:wkb];
 	x := Translate3D(g, dxBAT, 0, nil:bat, dy, nil:bat, dz);
 	return x;
 end Translate;
@@ -788,12 +788,12 @@ command Distance(a:bat[:wkb], b:bat[:wkb]) :bat[:dbl] address wkbDistance_bat;
 command Distance(a:wkb, b:bat[:wkb]) :bat[:dbl] address wkbDistance_geom_bat;
 command Distance(a:bat[:wkb], b:wkb) :bat[:dbl] address wkbDistance_bat_geom;
 
-command Centroid(w:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbCentroid_bat
+command Centroid(w:bat[:wkb]) :bat[:wkb] address wkbCentroid_bat
 comment "Computes the geometric center of a geometry, or equivalently, the center of mass of the geometry as a POINT.";
 
-command Contains(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_bat;
-command Contains(a:wkb, b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbContains_geom_bat;
-command Contains(a:bat[:oid,:wkb], b:wkb) :bat[:oid,:bit] address wkbContains_bat_geom;
+command Contains(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbContains_bat;
+command Contains(a:wkb, b:bat[:wkb]) :bat[:bit] address wkbContains_geom_bat;
+command Contains(a:bat[:wkb], b:wkb) :bat[:bit] address wkbContains_bat_geom;
 
 #only one argument should be BAT
 #command Filter(a:bat[:wkb], b:bat[:wkb]) (aFiltered:bat[:wkb], bFiltered:bat[:wkb]) address wkbFilter_bat
@@ -812,9 +812,9 @@ comment "Sets the Reference System ID for this Geometry.";
 command MakeLine(a:bat[:wkb], b:bat[:wkb]) :bat[:wkb] address wkbMakeLine_bat
 comment "Gets two BATS of point or linestring geometries and returns a bat with linestring geometries"; 
 
-command Union(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbUnion_bat
+command Union(a:bat[:wkb], b:bat[:wkb]) :bat[:wkb] address wkbUnion_bat
 comment "Gets two BATS of geometries and returns the pairwise unions"; 
-command Collect(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbCollect_bat
+command Collect(a:bat[:wkb], b:bat[:wkb]) :bat[:wkb] address wkbCollect_bat
 comment "Gets two BATS of geometries and returns the pairwise collection"; 
 
 
@@ -859,46 +859,46 @@ function YMaxFromMBR(b:bat[:mbr]) :bat[:dbl];
 	return x;
 end YMaxFromMBR;
 
-command Area(:bat[:oid,:wkb]) :bat[:oid,:dbl] address wkbArea_bat
+command Area(:bat[:wkb]) :bat[:dbl] address wkbArea_bat
 comment "Returns the area of the surface if it is a polygon or multi-polygon";
 
-command Intersects(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:bit] address wkbIntersects_bat
+command Intersects(a:bat[:wkb], b:bat[:wkb]) :bat[:bit] address wkbIntersects_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
-command Intersects3D(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dx:dbl, dyBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl], dz:dbl, srid:int) :bat[:oid,:bit] address wkbIntersectsXYZ_bat
+command Intersects3D(g:bat[:wkb], dxBAT:bat[:dbl], dx:dbl, dyBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit] address wkbIntersectsXYZ_bat
 comment "Returns true if these Geometries 'spatially intersect in 2D'";
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, dzBAT, 0:dbl, srid);
 	return x;
 end IntersectsXYZ;
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dx:dbl, dy:dbl, dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dx:dbl, dy:dbl, dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, nil:bat, dx, nil:bat, dy, dzBAT, 0:dbl, srid);
 	return x;
 end IntersectsXYZ;
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, dzBAT, 0:dbl, srid);
 	return x;
 end IntersectsXYZ;
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dzBAT:bat[:oid,:dbl], srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dzBAT:bat[:dbl], srid:int) :bat[:bit];
 	x := Intersects3D(g, nil:bat, dx, dyBAT, 0:dbl, dzBAT, 0:dbl, srid);
 	return x;
 end IntersectsXYZ;
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dyBAT:bat[:oid,:dbl], dz:dbl, srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dyBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, dyBAT, 0:dbl, nil:bat, dz, srid);
 	return x;
 end IntersectsXYZ;
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dx:dbl, dyBAT:bat[:oid,:dbl], dz:dbl, srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dx:dbl, dyBAT:bat[:dbl], dz:dbl, srid:int) :bat[:bit];
 	x := Intersects3D(g, nil:bat, dx, dyBAT, 0:dbl, nil:bat, dz, srid);
 	return x;
 end IntersectsXYZ;
 
-function IntersectsXYZ(g:bat[:oid,:wkb], dxBAT:bat[:oid,:dbl], dy:dbl, dz:dbl, srid:int) :bat[:oid,:bit];
+function IntersectsXYZ(g:bat[:wkb], dxBAT:bat[:dbl], dy:dbl, dz:dbl, srid:int) :bat[:bit];
 	x := Intersects3D(g, dxBAT, 0:dbl, nil:bat, dy, nil:bat, dz, srid);
 	return x;
 end IntersectsXYZ;
@@ -943,26 +943,26 @@ command PatchToGeom(geom:wkb, x:dbl, y:dbl, z:dbl) :wkb
 address wkbPachToGeom
 comment "Return the geometry with the z values rounded to the closest value at the vertexes.";
 
-command PatchToGeom(geom:wkb, x:bat[:oid,:dbl], y:bat[:oid,:dbl], z:bat[:oid,:dbl]) :wkb
+command PatchToGeom(geom:wkb, x:bat[:dbl], y:bat[:dbl], z:bat[:dbl]) :wkb
 address wkbPachToGeom_bat
 comment "Return the geometry with the z values rounded to the closest value at the vertexes.";
 
 module batgeom;
-command asX3D(geom:bat[:oid,:wkb], maxDecDigits:int, options:int) :bat[:oid,:str] address wkbAsX3D_bat
+command asX3D(geom:bat[:wkb], maxDecDigits:int, options:int) :bat[:str] address wkbAsX3D_bat
 comment "Returns a Geometry in X3D xml node element format: ISO-IEC-19776-1.2-X3DEncodings-XML";
 
 #Bulk functions
 module batgeom;
 
-command Intersection(a:bat[:oid,:wkb], b:bat[:oid,:wkb]) :bat[:oid,:wkb] address wkbIntersection_bat
+command Intersection(a:bat[:wkb], b:bat[:wkb]) :bat[:wkb] address wkbIntersection_bat
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
 
-command Intersection(a:bat[:oid,:wkb], b:bat[:oid,:wkb], sa:bat[:oid], sb:bat[:oid]) :bat[:oid,:wkb] address wkbIntersection_bat_s
+command Intersection(a:bat[:wkb], b:bat[:wkb], sa:bat[:oid], sb:bat[:oid]) :bat[:wkb] address wkbIntersection_bat_s
 comment "Returns a geometry that represents the point set intersection of the Geometries a, b";
 
 
 #Filter functions and joins
 
-command geom.Intersectssubjoin(l:bat[:oid,:wkb], r:bat[:oid,:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
+command geom.Intersectssubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
 address Intersectssubjoin
 comment "Return the geometry pairs that intersect";
