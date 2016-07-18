@@ -209,8 +209,6 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPalgorithms;
 	if( strcmp("optimizers",*flg)==0)
 		GDKdebug |= GRPoptimizers;
-	if( strcmp("recycler",*flg)==0)
-		GDKdebug |= GRPrecycler;
 	if( strcmp("performance",*flg)==0)
 		GDKdebug |= GRPperformance;
 	if( strcmp("forcemito",*flg)==0)

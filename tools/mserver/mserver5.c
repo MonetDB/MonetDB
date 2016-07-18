@@ -389,10 +389,6 @@ main(int argc, char **av)
 				grpdebug |= GRPforcemito;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "recycler") == 0) {
-				grpdebug |= GRPrecycler;
-				break;
-			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {
 				grpdebug |= GRPperformance;
 				break;

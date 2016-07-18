@@ -379,7 +379,6 @@ SQLautocommit(Client c, mvc *m)
 {
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
-			RECYCLEdrop(0);
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
 			return handle_error(m, c->fdout, 0);
@@ -606,7 +605,6 @@ SQLexitClient(Client c)
 				(void) handle_error(m, c->fdout, 0);
 		}
 		if (m->session->active) {
-			RECYCLEdrop(0);
 			mvc_rollback(m, 0, NULL);
 		}
 
@@ -983,7 +981,6 @@ SQLparser(Client c)
 					mnstr_printf(out, "!COMMIT: commit failed while " "enabling auto_commit\n");
 					msg = createException(SQL, "SQLparser", "Xauto_commit (commit) failed");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
-					RECYCLEdrop(0);
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
 					msg = createException(SQL, "SQLparser", "Xauto_commit (rollback) failed");
 				}

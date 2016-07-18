@@ -70,7 +70,6 @@ int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
-	static lng recycleSeq=0;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL) {
@@ -80,7 +79,6 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->stmt = p;
 	mb->stop = 0;
 	mb->ssize = maxstmts;
-	mb->recid = recycleSeq++;
 	return 0;
 }
 
@@ -126,8 +124,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->unsafeProp = 0;
 	mb->ptop = mb->psize = 0;
 	mb->replica = NULL;
-	mb->recycle = 0;
-	mb->recid = 0;
 	mb->trap = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
@@ -281,8 +277,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->tag = old->tag;
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
-	mb->recycle = old->recycle;
-	mb->recid = old->recid;
 	mb->trap = old->trap;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
@@ -427,7 +421,6 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->blk = NULL;
 	p->polymorphic = 0;
 	p->varargs = 0;
-	p->recycle = 0;
 	p->argc = 1;
 	p->retc = 1;
 	p->mitosis = -1;
