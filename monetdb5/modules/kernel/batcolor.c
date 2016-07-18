@@ -34,7 +34,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
-	bn= COLnew(b->hseqbase,getTypeIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= COLnew(b->hseqbase,getAtomIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
@@ -92,7 +92,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 {																		\
 	BATiter bi, b2i, b3i;												\
 	BAT *bn, *b2,*b3, *b;												\
-	BUN p,q,p2,p3;														\
+	BUN p,q;															\
 	TYPE *x, *x2, *x3;													\
 	color y, *yp = &y;													\
 																		\
@@ -108,7 +108,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b3->batCacheid);									\
 		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
 	}																	\
-	bn= COLnew(b->hseqbase,getTypeIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
+	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
@@ -124,8 +124,6 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	b2i = bat_iterator(b2);												\
 	b3i = bat_iterator(b3);												\
 																		\
-	p2= BUNfirst(b2);													\
-	p3= BUNfirst(b3);													\
 	BATloop(b, p, q) {													\
 		x= (TYPE *) BUNtail(bi,p);										\
 		x2= (TYPE *) BUNtail(b2i,p);									\
@@ -139,8 +137,6 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		} else															\
 			FUNC(yp,x,x2,x3);											\
 		bunfastapp(bn, yp);												\
-		p2++;															\
-		p3++;															\
 	}																	\
 	if (!(bn->batDirty & 2))											\
 		BATsetaccess(bn, BAT_READ);										\

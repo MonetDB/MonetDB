@@ -1,0 +1,40 @@
+stdout of test 'select_select_bug` in directory 'sql/test/bugs` itself:
+
+
+# 19:07:43 >  
+# 19:07:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34274" "--set" "mapi_usock=/var/tmp/mtest-17024/.s.monetdb.34274" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_bugs" "--set" "embedded_r=yes"
+# 19:07:43 >  
+
+# MonetDB 5 server v11.23.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Found 7.332 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34274/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17024/.s.monetdb.34274
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 19:07:43 >  
+# 19:07:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17024" "--port=34274"
+# 19:07:43 >  
+
+#CREATE TABLE vessels (implicit_timestamp timestamp, mmsi int, lat real, lon real, nav_status tinyint, cog real, sog real, true_heading smallint, rotais smallint);
+#SELECT (SELECT current_timestamp), count(DISTINCT mmsi) FROM vessels;
+% .L1,	sys.L2 # table_name
+% L1,	L2 # name
+% tinyint,	bigint # type
+% 1,	1 # length
+[ 1,	0	]
+#drop table vessels;
+
+# 19:07:43 >  
+# 19:07:43 >  "Done."
+# 19:07:43 >  
+

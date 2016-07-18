@@ -6,32 +6,32 @@
 
 module sphinx;
 
-command searchIndexLimit(q:str, i:str, l:int) :bat[:oid,:lng]
+command searchIndexLimit(q:str, i:str, l:int) :bat[:lng]
 address SPHINXsearchIndexLimit
 comment "Search the query on the specified index, with limit";
 
-function search(q:str) :bat[:oid,:lng];
+function search(q:str) :bat[:lng];
 	ret := searchIndexLimit(q, "*", 20);
 	return ret;
 end search;
 
-function searchIndex(q:str, i:str) :bat[:oid,:lng];
+function searchIndex(q:str, i:str) :bat[:lng];
 	ret := searchIndexLimit(q, i, 20);
 	return ret;
 end searchIndex;
 
 
-function sphinx_search(q:str)(id:bat[:oid,:lng]);
+function sphinx_search(q:str)(id:bat[:lng]);
 	ret := searchIndexLimit(q, "*", 20);
 	return ret;
 end sphinx_search;
 
-function sphinx_searchIndex(q:str, i:str)(id:bat[:oid,:lng]);
+function sphinx_searchIndex(q:str, i:str)(id:bat[:lng]);
 	ret := searchIndexLimit(q, i, 20);
 	return ret;
 end sphinx_searchIndex;
 
-function sphinx_searchIndexLimit(q:str, i:str, l:int)(id:bat[:oid,:lng]);
+function sphinx_searchIndexLimit(q:str, i:str, l:int)(id:bat[:lng]);
 	ret := searchIndexLimit(q, i, l);
 	return ret;
 end sphinx_searchIndexLimit;

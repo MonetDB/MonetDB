@@ -35,32 +35,26 @@
 #include "mal_function.h"
 #include "xml.h"
 
-#ifdef WIN32
-#define batxml_export extern __declspec(dllexport)
-#else
-#define batxml_export extern
-#endif
-
-batxml_export str BATXMLxml2str(bat *ret, const bat *bid);
-batxml_export str BATXMLxmltext(bat *ret, const bat *bid);
-batxml_export str BATXMLstr2xml(bat *ret, const bat *bid);
-batxml_export str BATXMLdocument(bat *ret, const bat *bid);
-batxml_export str BATXMLcontent(bat *ret, const bat *bid);
-batxml_export str BATXMLisdocument(bat *ret, const bat *bid);
-batxml_export str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid);
-batxml_export str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid);
-batxml_export str BATXMLcomment(bat *ret, const bat *bid);
-batxml_export str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option);
-batxml_export str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr);
-batxml_export str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid);
-batxml_export str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone);
-batxml_export str BATXMLattribute(bat *ret, const char * const *name, const bat *bid);
-batxml_export str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid);
-batxml_export str BATXMLconcat(bat *ret, const bat *bid, const bat *rid);
-batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-batxml_export str BATXMLgroup(xml *ret, const bat *bid);
-batxml_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
-batxml_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+mal_export str BATXMLxml2str(bat *ret, const bat *bid);
+mal_export str BATXMLxmltext(bat *ret, const bat *bid);
+mal_export str BATXMLstr2xml(bat *ret, const bat *bid);
+mal_export str BATXMLdocument(bat *ret, const bat *bid);
+mal_export str BATXMLcontent(bat *ret, const bat *bid);
+mal_export str BATXMLisdocument(bat *ret, const bat *bid);
+mal_export str BATXMLelementSmall(bat *ret, const char * const *name, const bat *bid);
+mal_export str BATXMLoptions(bat *ret, const char * const *name, const char * const *options, const bat *bid);
+mal_export str BATXMLcomment(bat *ret, const bat *bid);
+mal_export str BATXMLparse(bat *ret, const char * const *doccont, const bat *bid, const char * const *option);
+mal_export str BATXMLxquery(bat *ret, const bat *bid, const char * const *expr);
+mal_export str BATXMLpi(bat *ret, const char * const *tgt, const bat *bid);
+mal_export str BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * const *standalone);
+mal_export str BATXMLattribute(bat *ret, const char * const *name, const bat *bid);
+mal_export str BATXMLelement(bat *ret, const char * const *name, xml *ns, xml *attr, const bat *bid);
+mal_export str BATXMLconcat(bat *ret, const bat *bid, const bat *rid);
+mal_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str BATXMLgroup(xml *ret, const bat *bid);
+mal_export str AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 
 #ifdef HAVE_LIBXML
 
@@ -950,7 +944,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = pci->retc; i < pci->argc; i++) {
 		if ((bi[i].b = BATdescriptor(*getArgReference_bat(stk, pci, i))) == NULL)
 			break;
-		p[i] = BUNfirst(bi[i].b);
+		p[i] = 0;
 		q[i] = BUNlast(bi[i].b);
 	}
 	/* check for errors */
@@ -1054,9 +1048,9 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 			BBPunfix(r->batCacheid);
 		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 	}
-	p = BUNfirst(b);
+	p = 0;
 	q = BUNlast(b);
-	rp = BUNfirst(r);
+	rp = 0;
 
 	prepareResult(bn, b, TYPE_xml, "concat",
 				  GDKfree(buf); BBPunfix(r->batCacheid));
@@ -1260,9 +1254,9 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			map = NULL;
 			mapoff = b->tseqbase;
 		} else {
-			map = (const oid *) Tloc(t2, BUNfirst(t2));
+			map = (const oid *) Tloc(t2, 0);
 		}
-		grps = (const oid *) Tloc(g, BUNfirst(g));
+		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
 		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
@@ -1282,7 +1276,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 			if (isnil)
 				continue;
-			v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+			v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
@@ -1319,7 +1313,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+		for (p = 0, q = p + BATcount(b); p < q; p++) {
 			v = (const char *) BUNtail(bi, p);
 			if (strNil(v)) {
 				if (skip_nils)

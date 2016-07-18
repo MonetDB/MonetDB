@@ -28,15 +28,15 @@ Ready.
 # 15:36:19 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
-    X_9:bat[:int] := bat.new(nil:oid,nil:int);	#[3] (0) CMDBATnew 9 <- 10 11 
-barrier (X_13:oid,X_14:int) := iterator.new(b:bat[:int]);	#[4] (0) ITRbunIterator 13 14 <- 1 
-    X_16:int := calc.+(X_14:int,1:int); 	#[5] (0) CMDvarADDsignal 16 <- 14 5 
-    bat.append(X_9:bat[:int],X_16:int); 	#[6] (0) BKCappend_val_wrap 17 <- 9 16 
-    redo (X_13:oid,X_14:int) := iterator.next(b:bat[:int]);	#[7] (0) ITRbunNext 13 14 <- 1 
-exit (X_13:oid,X_14:int);               	#[8] (0)  13 14 
-    c:bat[:int] := X_9:bat[:int];       	#[9] (0)  6 <- 9 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    X_8:bat[:int] := bat.new(nil:int);  	#[3] (0) CMDBATnew 8 <- 9 
+barrier (X_11:oid,X_12:int) := iterator.new(b:bat[:int]);	#[4] (0) ITRbunIterator 11 12 <- 1 
+    X_14:int := calc.+(X_12:int,1:int); 	#[5] (0) CMDvarADDsignal 14 <- 12 4 
+    bat.append(X_8:bat[:int],X_14:int); 	#[6] (0) BKCappend_val_wrap 15 <- 8 14 
+    redo (X_11:oid,X_12:int) := iterator.next(b:bat[:int]);	#[7] (0) ITRbunNext 11 12 <- 1 
+exit (X_11:oid,X_12:int);               	#[8] (0)  11 12 
+    c:bat[:int] := X_8:bat[:int];       	#[9] (0)  5 <- 8 
 end user.foo;                           	#[10] (0)  
 
 # 23:53:03 >  

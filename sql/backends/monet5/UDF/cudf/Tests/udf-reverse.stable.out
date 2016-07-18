@@ -1,0 +1,121 @@
+stdout of test 'udf-reverse` in directory 'sql/backends/monet5/UDF/cudf` itself:
+
+
+# 18:44:21 >  
+# 18:44:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36851" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5_UDF" "--set" "mal_listing=0"
+# 18:44:21 >  
+
+# MonetDB 5 server v11.8.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_UDF', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36851/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 18:44:21 >  
+# 18:44:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36851"
+# 18:44:21 >  
+
+#explain select reverse('MonetDB');
+% .explain # table_name
+% mal # name
+% clob # type
+% 94 # length
+function user.s2_1(A0:str):void;
+    X_9:void := querylog.define("explain select reverse(\\'MonetDB\\');","sequential_pipe",5);
+    X_2:str := udf.reverse(A0);
+    sql.resultSet(".L","reverse_single_value","clob",0,0,4,X_2);
+end user.s2_1;
+#select reverse('MonetDB');
+% .L # table_name
+% reverse_single_value # name
+% clob # type
+% 7 # length
+[ "BDtenoM"	]
+#create table udf_reverse ( x string );
+#insert into udf_reverse values ('MonetDB');
+[ 1	]
+#insert into udf_reverse values ('Database Architecture');
+[ 1	]
+#insert into udf_reverse values ('Information Systems');
+[ 1	]
+#insert into udf_reverse values ('Centrum Wiskunde & Informatica');
+[ 1	]
+#select * from udf_reverse;
+% sys.udf_reverse # table_name
+% x # name
+% clob # type
+% 30 # length
+[ "MonetDB"	]
+[ "Database Architecture"	]
+[ "Information Systems"	]
+[ "Centrum Wiskunde & Informatica"	]
+#explain select reverse(x) from udf_reverse;
+% .explain # table_name
+% mal # name
+% clob # type
+% 101 # length
+function user.s6_1():void;
+    X_32:void := querylog.define("explain select reverse(x) from udf_reverse;","sequential_pipe",22);
+    X_17 := bat.new(nil:str);
+    X_24 := bat.append(X_17,"sys.L");
+    X_19 := bat.new(nil:str);
+    X_26 := bat.append(X_19,"reverse_x");
+    X_20 := bat.new(nil:str);
+    X_28 := bat.append(X_20,"clob");
+    X_21 := bat.new(nil:int);
+    X_30 := bat.append(X_21,0);
+    X_23 := bat.new(nil:int);
+    X_31 := bat.append(X_23,0);
+    X_1 := sql.mvc();
+    C_2:bat[:oid] := sql.tid(X_1,"sys","udf_reverse");
+    X_5:bat[:str] := sql.bind(X_1,"sys","udf_reverse","x",0);
+    (C_8,r1_8) := sql.bind(X_1,"sys","udf_reverse","x",2);
+    X_11:bat[:str] := sql.bind(X_1,"sys","udf_reverse","x",1);
+    X_13 := sql.delta(X_5,C_8,r1_8,X_11);
+    X_14 := algebra.projection(C_2,X_13);
+    X_15:bat[:str] := batudf.reverse(X_14);
+    sql.resultSet(X_24,X_26,X_28,X_30,X_31,X_15);
+end user.s6_1;
+#select reverse(x) from udf_reverse;
+% sys.L # table_name
+% reverse_x # name
+% clob # type
+% 30 # length
+[ "BDtenoM"	]
+[ "erutcetihcrA esabataD"	]
+[ "smetsyS noitamrofnI"	]
+[ "acitamrofnI & ednuksiW murtneC"	]
+
+# 18:44:22 >  
+# 18:44:22 >  "Done."
+# 18:44:22 >  
+

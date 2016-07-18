@@ -49,7 +49,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 1070 # length
+% 1064 # length
 project (
 | group by (
 | | select (

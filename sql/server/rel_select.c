@@ -101,21 +101,6 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 	}
 }
 
-sql_rel *
-rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
-{
-	sql_rel *rel = rel_create(sa);
-
-	rel->flag = kind;
-	rel->l = l; /* relation before call */
-	rel->r = f; /* expression (table func call) */
-	rel->op = op_table;
-	rel->exps = exps;
-	rel->card = CARD_MULTI;
-	rel->nrcols = list_length(exps);
-	return rel;
-}
-
 static sql_rel*
 rel_project_exp(sql_allocator *sa, sql_exp *e)
 {
@@ -2599,7 +2584,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
-	sql_exp *e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
+	sql_exp *e = NULL;
 	sql_subfunc *f = NULL;
 	sql_subtype *t = NULL;
 	int type = (ek.card == card_none)?F_PROC:F_FUNC;
@@ -2609,14 +2594,16 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	if (!s)
 		return NULL;
-	if (!e)
-		f = find_func(sql, s, fname, 1, F_AGGR, NULL);
-	if (!e && f) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return rel_aggr(sql, rel, se, fs);
+	f = find_func(sql, s, fname, 1, F_AGGR, NULL);
+	if (f) { 
+		e = rel_aggr(sql, rel, se, fs);
+		if (e)
+			return e;
 	}
+	/* reset error */
+	sql->session->status = 0;
+	sql->errstr[0] = '\0';
+       	e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
 	if (!e)
 		return NULL;
 
@@ -4145,7 +4132,12 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 				/* in the selection phase we should have project/groupbys, unless 
 				 * this is the value (column) for the aggregation then the 
 				 * crossproduct is pushed under the project/groupby.  */ 
-				if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
+				if (f == sql_sel && r->op == op_project && list_length(r->exps) == 1 && exps_are_atoms(r->exps)) {
+					sql_exp *ne = r->exps->h->data;
+
+					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+					e = ne;
+				} else if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
 					sql_rel *pp = p;
 					if (p->l) 
 						pp = p->l;

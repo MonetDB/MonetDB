@@ -131,7 +131,6 @@ initSQLreferences(void)
 
 #define meta(Id,Tpe) \
 q = newStmt(mb, batRef, newRef);\
-q= pushType(mb,q, TYPE_oid);\
 q= pushType(mb,q, Tpe);\
 Id = getArg(q,0); \
 list = pushArgument(mb,list,Id);
@@ -366,7 +365,7 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 			sql_subtype *st = n->data;
 			int type = st->type->localtype;
 
-			type = newBatType(TYPE_oid, type);
+			type = newBatType(type);
 			if (i) {
 				if ((q = pushReturn(mb, q, newTmpVariable(mb, type))) == NULL)
 					return NULL;
@@ -379,7 +378,7 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 
-			type = newBatType(TYPE_oid, type);
+			type = newBatType(type);
 			if (i) {
 				if ((q = pushReturn(mb, q, newTmpVariable(mb, type))) == NULL)
 					return NULL;
@@ -409,7 +408,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
-		type = newBatType(TYPE_oid, type);
+		type = newBatType(type);
 		q = pushReturn(mb, q, newTmpVariable(mb, type));
 	}
 	return q;
@@ -567,10 +566,9 @@ _create_relational_remote(mvc *m, char *mod, char *name, sql_rel *rel, stmt *cal
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
-		type = newBatType(TYPE_oid, type);
+		type = newBatType(type);
 		p = newFcnCall(curBlk, batRef, newRef);
-		p = pushType(curBlk, p, TYPE_oid);
-		p = pushType(curBlk, p, getColumnType(type));
+		p = pushType(curBlk, p, getBatType(type));
 		setArgType(curBlk, p, 0, type);
 		lret[i] = getArg(p, 0);
 	}
@@ -857,7 +855,7 @@ multiplex2(MalBlkPtr mb, char *mod, char *name /* should be eaten */ , int o1, i
 	q = newStmt(mb, malRef, multiplexRef);
 	if (q == NULL)
 		return NULL;
-	setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, rtype));
+	setVarType(mb, getArg(q, 0), newBatType(rtype));
 	setVarUDFtype(mb, getArg(q, 0));
 	q = pushStr(mb, q, convertMultiplexMod(mod, name));
 	q = pushStr(mb, q, convertMultiplexFcn(name));
@@ -1040,7 +1038,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt(mb, sqlRef, singleRef);
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+			setVarType(mb, getArg(q, 0), newBatType(tt));
 			q = pushArgument(mb, q, val);
 			if (q == NULL)
 				return -1;
@@ -1052,9 +1050,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt(mb, batRef, newRef);
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+			setVarType(mb, getArg(q, 0), newBatType(tt));
 			setVarUDFtype(mb, getArg(q, 0));
-			q = pushType(mb, q, TYPE_oid);
 			q = pushType(mb, q, tt);
 			if (q == NULL)
 				return -1;
@@ -1068,7 +1065,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt(mb, sqlRef, tidRef);
 			if (q == NULL)
 				return -1;
-			setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+			setVarType(mb, getArg(q, 0), newBatType(tt));
 			setVarUDFtype(mb, getArg(q, 0));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
@@ -1094,9 +1091,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 			} else {
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
 			}
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -1133,9 +1130,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (q == NULL)
 				return -1;
 			if (s->flag == RD_UPD_ID) {
-				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_oid, tt)));
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 			} else {
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
 			}
 
@@ -1212,9 +1209,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, batRef, newRef);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, tt));
+				setVarType(mb, getArg(q, 0), newBatType(tt));
 				setVarUDFtype(mb, getArg(q, 0));
-				q = pushType(mb, q, TYPE_oid);
 				q = pushType(mb, q, tt);
 				if (q == NULL)
 					return -1;
@@ -1405,7 +1401,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					mod = sql_func_mod(s->op4.funcval->func);
 
 					q = newStmt(mb, malRef, multiplexRef);
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, TYPE_bit));
+					setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
 					setVarUDFtype(mb, getArg(q, 0));
 					q = pushStr(mb, q, convertMultiplexMod(mod, op));
 					q = pushStr(mb, q, convertMultiplexFcn(op));
@@ -2024,7 +2020,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, malRef, multiplexRef);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, type));
+				setVarType(mb, getArg(q, 0), newBatType(type));
 				setVarUDFtype(mb, getArg(q, 0));
 				q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 				q = pushStr(mb, q, convertMultiplexFcn(convert));
@@ -2111,12 +2107,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						q = newStmt(mb, malRef, multiplexRef);
 					if (q == NULL)
 						return -1;
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_oid, res->type->localtype));
+					setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 					setVarUDFtype(mb, getArg(q, 0));
 					q = pushStr(mb, q, mod);
 					q = pushStr(mb, q, fimp);
 				} else {
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_any, res->type->localtype));
+					setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 					setVarUDFtype(mb, getArg(q, 0));
 				}
 			} else {
@@ -2220,7 +2216,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, mod, aggrfunc);
 				if (q == NULL)
 					return -1;
-				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
+				setVarType(mb, getArg(q, 0), newBatType(restype));
 				setVarUDFtype(mb, getArg(q, 0));
 			} else {
 				q = newStmt(mb, mod, aggrfunc);

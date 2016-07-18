@@ -5,7 +5,7 @@
 	do {													\
 		tpe v; size_t j;									\
 		ctype *valptr = NULL;                               \
-		tpe* p = (tpe*) Tloc(bat, BUNfirst(bat));           \
+		tpe* p = (tpe*) Tloc(bat, 0);           \
 		retsxp = PROTECT(newfun(BATcount(bat)));		    \
 		if (!retsxp) break;                                 \
 		valptr = ptrfun(retsxp);                            \
@@ -41,7 +41,7 @@
 		if (!b) break;                                                  \
 		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
 		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
-		p = (tpe*) Tloc(b, BUNfirst(b));								\
+		p = (tpe*) Tloc(b, 0);								\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
@@ -62,7 +62,7 @@
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
-	switch (ATOMstorage(getColumnType(b->ttype))) {
+	switch (ATOMstorage(getBatType(b->ttype))) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));

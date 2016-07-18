@@ -28,35 +28,25 @@
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define profiler_export extern __declspec(dllimport)
-#else
-#define profiler_export extern __declspec(dllexport)
-#endif
-#else
-#define profiler_export extern
-#endif
+mal_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDstartTrace(void *res);
+mal_export str CMDstartTracePath(void *res, str *path);
+mal_export str CMDstopTrace(void *res);
+mal_export str CMDstopTracePath(void *res, str *path);
+mal_export str CMDnoopProfiler(void *res);
+mal_export str CMDsetHeartbeat(void *res, int *ev);
+mal_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDcloseProfilerStream(void *res);
+mal_export str CMDcleanup(void *ret);
+mal_export str CMDclearTrace(void *res);
+mal_export str CMDcleanupTraces(void *res);
+mal_export str CMDgetTrace(bat *res, str *ev);
 
-profiler_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstartTrace(void *res);
-profiler_export str CMDstartTracePath(void *res, str *path);
-profiler_export str CMDstopTrace(void *res);
-profiler_export str CMDstopTracePath(void *res, str *path);
-profiler_export str CMDnoopProfiler(void *res);
-profiler_export str CMDsetHeartbeat(void *res, int *ev);
-profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDcloseProfilerStream(void *res);
-profiler_export str CMDcleanup(void *ret);
-profiler_export str CMDclearTrace(void *res);
-profiler_export str CMDcleanupTraces(void *res);
-profiler_export str CMDgetTrace(bat *res, str *ev);
-
-profiler_export str CMDgetDiskReads(lng *ret);
-profiler_export str CMDgetDiskWrites(lng *ret);
-profiler_export str CMDgetUserTime(lng *ret);
-profiler_export str CMDgetSystemTime(lng *ret);
-profiler_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
-profiler_export str CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
+mal_export str CMDgetDiskReads(lng *ret);
+mal_export str CMDgetDiskWrites(lng *ret);
+mal_export str CMDgetUserTime(lng *ret);
+mal_export str CMDgetSystemTime(lng *ret);
+mal_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
+mal_export str CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 #endif  /* _PROFILER_*/

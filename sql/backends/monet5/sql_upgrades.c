@@ -1749,6 +1749,7 @@ void
 SQLupgrades(Client c, mvc *m)
 {
 	sql_subtype tp;
+	sql_subfunc *f;
 	char *err;
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
@@ -1821,6 +1822,14 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			GDKfree(err);
 		}
+	}
+
+	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
+	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
+		sql_table *privs = find_sql_table(s, "privileges");
+		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
+
+		table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 	}
 
 	/* If the point type exists, but the geometry type does not

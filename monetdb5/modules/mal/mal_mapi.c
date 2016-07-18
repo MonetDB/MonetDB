@@ -1601,7 +1601,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	key= getArgReference_int(stk,pci,pci->retc);
 	qry= getArgReference_str(stk,pci,pci->retc+1);
 	accessTest(*key, "rpc");
-	tt= getColumnType(getVarType(mb,getArg(pci,0)));
+	tt= getBatType(getVarType(mb,getArg(pci,0)));
 
 	hdl= mapi_query(mid, *qry);
 	catchErrors("mapi.rpc");
@@ -1650,7 +1650,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
-		tt = getTypeName(getColumnType(tpe));
+		tt = getTypeName(getBatType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
 		len = (int) strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
@@ -1729,8 +1729,8 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		tab= getArgReference_str(stk,pci,pci->retc+2);
 		col= getArgReference_str(stk,pci,pci->retc+3);
 		i= *getArgReference_int(stk,pci,pci->retc+4);
-		tn = getTypeName(getColumnType(getVarType(mb,getDestVar(pci))));
-		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
+		tn = getTypeName(getBatType(getVarType(mb,getDestVar(pci))));
+		snprintf(buf,BUFSIZ,"%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
 			tn,
 			*nme, *tab,*col,i);
@@ -1738,15 +1738,15 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	} else if( pci->argc == 5) {
 		tab= getArgReference_str(stk,pci,pci->retc+2);
 		i= *getArgReference_int(stk,pci,pci->retc+3);
-		snprintf(buf,BUFSIZ,"%s:bat[:void,:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
+		snprintf(buf,BUFSIZ,"%s:bat[:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
 			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
 	} else {
 		str hn,tn;
 		int target= getArgType(mb,pci,0);
 		hn= getTypeName(TYPE_oid);
-		tn= getTypeName(getColumnType(target));
-		snprintf(buf,BUFSIZ,"%s:bat[:%s,:%s]:=bbp.bind(\"%s\");",
-			getVarName(mb,getDestVar(pci)), hn,tn, *nme);
+		tn= getTypeName(getBatType(target));
+		snprintf(buf,BUFSIZ,"%s:bat[:%s]:=bbp.bind(\"%s\");",
+			getVarName(mb,getDestVar(pci)), tn, *nme);
 		GDKfree(hn);
 		GDKfree(tn);
 	}

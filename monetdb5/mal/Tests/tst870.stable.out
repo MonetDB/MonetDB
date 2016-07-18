@@ -30,7 +30,7 @@ Ready.
 # 12:36:18 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:oid] := bat.new(:oid);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:oid] := bat.new(:oid);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:oid],0@0:oid);    	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
     bat.append(b:bat[:oid],1@0:oid);    	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
     bat.append(b:bat[:oid],2@0:oid);    	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
@@ -40,7 +40,7 @@ function user.foo():void;               	#[0] (0)  0
     bat.append(b:bat[:oid],3@0:oid);    	#[8] (0) BKCappend_val_wrap 13 <- 1 10 
     bat.append(b:bat[:oid],nil:oid);    	#[9] (0) BKCappend_val_wrap 14 <- 1 15 
     bat.append(b:bat[:oid],1@0:oid);    	#[10] (0) BKCappend_val_wrap 16 <- 1 6 
-    g:bat[:oid] := bat.new(:oid);       	#[11] (0) CMDBATnewColumn 17 <- 2 
+    g:bat[:oid] := bat.new(:oid);       	#[11] (0) CMDBATnew 17 <- 2 
     bat.append(g:bat[:oid],0@0:oid);    	#[12] (0) BKCappend_val_wrap 18 <- 17 4 
     bat.append(g:bat[:oid],1@0:oid);    	#[13] (0) BKCappend_val_wrap 19 <- 17 6 
     bat.append(g:bat[:oid],1@0:oid);    	#[14] (0) BKCappend_val_wrap 20 <- 17 6 
@@ -52,7 +52,7 @@ function user.foo():void;               	#[0] (0)  0
     bat.append(g:bat[:oid],3@0:oid);    	#[20] (0) BKCappend_val_wrap 26 <- 17 10 
     io.print(g:bat[:oid],b:bat[:oid]);  	#[21] (0) IOtable 27 <- 17 1 
 # only head is used                     
-    e:bat[:oid] := bat.new(:oid);       	#[23] (0) CMDBATnewColumn 29 <- 2 
+    e:bat[:oid] := bat.new(:oid);       	#[23] (0) CMDBATnew 29 <- 2 
     bat.append(e:bat[:oid],0@0:oid);    	#[24] (0) BKCappend_val_wrap 30 <- 29 4 
     bat.append(e:bat[:oid],1@0:oid);    	#[25] (0) BKCappend_val_wrap 31 <- 29 6 
     bat.append(e:bat[:oid],2@0:oid);    	#[26] (0) BKCappend_val_wrap 32 <- 29 8 

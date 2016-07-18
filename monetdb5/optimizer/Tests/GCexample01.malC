@@ -1,8 +1,8 @@
 #checking proper handling of scopes for the garbage collector
 function qry();
-b:= bat.new(:oid,:int);
-c:= bat.new(:oid,:int);
-d:= bat.new(:oid,:int);
+b:= bat.new(:int);
+c:= bat.new(:int);
+d:= bat.new(:int);
 bat.append(b,1);
 
 barrier (x,z):= iterator.new(b);

@@ -563,7 +563,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				OIDXcreateImplementation(cntxt, newBatType(TYPE_void,b->ttype), b, -1);
+				OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 			}
 			if (i->type == imprints_idx) {
@@ -1660,7 +1660,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str sname = BUNtail(bi, BUNfirst(b));
+		str sname = BUNtail(bi, 0);
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
@@ -1808,7 +1808,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL, *bn;
 	bat *bid = getArgReference_bat(stk, pci, 0);
-	int coltype = getColumnType(getArgType(mb, pci, 0));
+	int coltype = getBatType(getArgType(mb, pci, 0));
 	mvc *m = NULL;
 	str msg;
 	str *sname = getArgReference_str(stk, pci, 2 + upd);
@@ -1906,7 +1906,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL, *bn;
 	bat *bid = getArgReference_bat(stk, pci, 0);
-	int coltype = getColumnType(getArgType(mb, pci, 0));
+	int coltype = getBatType(getArgType(mb, pci, 0));
 	mvc *m = NULL;
 	str msg;
 	str *sname = getArgReference_str(stk, pci, 2 + upd);
@@ -2669,7 +2669,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-/* unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:bat[:oid,:any]...) :int */
+/* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int */
 /* New result set rendering infrastructure */
 
 static str
@@ -2714,8 +2714,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
@@ -2823,8 +2823,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 12; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
@@ -2864,7 +2864,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* unsafe pattern resultSet(tbl:bat[:oid,:str], attr:bat[:oid,:str], tpe:bat[:oid,:str], len:bat[:oid,:int],scale:bat[:oid,:int], cols:any...) :int */
+/* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int */
 str
 mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2901,8 +2901,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtail(itertbl,o);
@@ -2998,8 +2998,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
-	digits = (int*) Tloc(len,BUNfirst(len));
-	scaledigits = (int*) Tloc(scale,BUNfirst(scale));
+	digits = (int*) Tloc(len,0);
+	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 12; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtail(itertbl,o);
@@ -3574,7 +3574,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (c == NULL)
 				throw(SQL, "sql", "Failed to attach file %s", *getArgReference_str(stk, pci, i));
 			BATsetaccess(c, BAT_READ);
-			BATderiveProps(c, 0);
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = COLnew(0, TYPE_str, 0, PERSISTENT);
@@ -3625,7 +3624,7 @@ zero_or_one(ptr ret, const bat *bid)
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1) {
 		BATiter bi = bat_iterator(b);
-		p = BUNtail(bi, BUNfirst(b));
+		p = BUNtail(bi, 0);
 	} else {
 		char buf[BUFSIZ];
 
@@ -3676,7 +3675,7 @@ SQLall(ptr ret, const bat *bid)
 		BUN q, r;
 		int (*ocmp) (const void *, const void *);
 		BATiter bi = bat_iterator(b);
-		q = BUNfirst(b);
+		q = 0;
 		r = BUNlast(b);
 		p = BUNtail(bi, q);
 		ocmp = ATOMcompare(b->ttype);
@@ -3729,9 +3728,9 @@ not_unique(bit *ret, const bat *bid)
 		return MAL_SUCCEED;
 	} else if (b->tsorted) {
 		BUN p, q;
-		oid c = *(oid *) Tloc(b, BUNfirst(b));
+		oid c = *(oid *) Tloc(b, 0);
 
-		for (p = BUNfirst(b) + 1, q = BUNlast(b); p < q; p++) {
+		for (p = 1, q = BUNlast(b); p < q; p++) {
 			oid v = *(oid *) Tloc(b, p);
 			if (v <= c) {
 				*ret = TRUE;
@@ -4422,8 +4421,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	gi = bat_iterator(g);
 	ocmp = ATOMcompare(b->ttype);
 	gcmp = ATOMcompare(g->ttype);
-	oc = BUNtail(bi, BUNfirst(b));
-	gc = BUNtail(gi, BUNfirst(g));
+	oc = BUNtail(bi, 0);
+	gc = BUNtail(gi, 0);
 	if (!ALIGNsynced(b, g)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
@@ -4479,7 +4478,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
-	cur = BUNtail(bi, BUNfirst(b));
+	cur = BUNtail(bi, 0);
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		BBPunfix(b->batCacheid);

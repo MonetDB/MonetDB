@@ -125,7 +125,7 @@ log_find(BAT *b, BAT *d, int val)
 		BUN q;
 		int *t = (int *) Tloc(b, 0);
 
-		for (p = BUNfirst(b), q = BUNlast(b); p < q; p++) {
+		for (p = 0, q = BUNlast(b); p < q; p++) {
 			if (t[p] == val) {
 				oid pos = p;
 				if (BUNfnd(d, &pos) == BUN_NONE)
@@ -1250,7 +1250,6 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	n[i++] = catalog_bid->batCacheid;
 	n[i++] = catalog_nme->batCacheid;
 	n[i++] = dcatalog->batCacheid;
-	assert((BUN) i <= nn);
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) && catalog_bid == list_bid && catalog_nme == list_nme && lg->catalog_bid == catalog_bid) {
 		BAT *bids, *nmes, *tids = bm_tids(catalog_bid, dcatalog), *b;
 
@@ -1276,6 +1275,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		lg->catalog_bid = catalog_bid = bids;
 		lg->catalog_nme = catalog_nme = nmes;
 	}
+	assert((BUN) i <= nn);
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);
 	BATcommit(dcatalog);
@@ -2329,7 +2329,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (BUNlast(uval) - BUNfirst(uval));
+	l.nr = (BUNlast(uval));
 	lg->changes += l.nr;
 
 	if (l.nr) {
@@ -2343,7 +2343,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name)
 		    log_write_string(lg, name) == LOG_ERR)
 			return LOG_ERR;
 
-		for (p = BUNfirst(uid); p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
+		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
 			const void *id = BUNtail(ii, p);
 			const void *val = BUNtail(vi, p);
 
@@ -2401,7 +2401,6 @@ log_bat(logger *lg, BAT *b, const char *name)
 		if (lg->debug & 1)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
-	assert(b->batFirst == b->batDeleted);
 
 	if (ok != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: log_bat: write failed\n");

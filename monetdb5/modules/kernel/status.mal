@@ -6,26 +6,26 @@
 
 module status;
 
-command cpuStatistics()(:bat[:oid,:str],:bat[:oid,:int] )
+command cpuStatistics()(:bat[:str],:bat[:int] )
 address SYScpuStatistics
 comment "Global cpu usage information";
-command memStatistics() (:bat[:oid,:str],:bat[:oid,:lng] )
+command memStatistics() (:bat[:str],:bat[:lng] )
 address SYSmemStatistics
 comment "Global memory usage information";
-command ioStatistics()(:bat[:oid,:str],:bat[:oid,:int] )
+command ioStatistics()(:bat[:str],:bat[:int] )
 address SYSioStatistics
 comment "Global IO activity information";
-command vmStatistics(minsize:lng)(:bat[:oid,:str],:bat[:oid,:lng] )
+command vmStatistics(minsize:lng)(:bat[:str],:bat[:lng] )
 address SYSvm_usage
 comment "Get a split-up of how much virtual memory blocks are in use";
-command memUsage(minsize:lng)(:bat[:oid,:str],:bat[:oid,:lng] )
+command memUsage(minsize:lng)(:bat[:str],:bat[:lng] )
 address SYSmem_usage
 comment "Get a split-up of how much memory blocks are in use";
 
-command batStatistics()(:bat[:oid,:str],:bat[:oid,:str] )
+command batStatistics()(:bat[:str],:bat[:str] )
 address SYSgdkEnv
 comment "Show distribution of bats by kind";
-command getThreads()(:bat[:oid,:int],:bat[:oid,:str] )
+command getThreads()(:bat[:int],:bat[:str] )
 address SYSgdkThread
 comment "Produce overview of active threads";
 

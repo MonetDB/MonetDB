@@ -639,7 +639,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (isaBatType(t)) {
 							bat bid = stk->stk[a].val.bval;
 							BAT *_b = BATdescriptor(bid);
-							t = getColumnType(t);
+							t = getBatType(t);
 							assert(stk->stk[a].vtype == TYPE_bat);
 							assert(bid == 0 ||
 								   bid == bat_nil ||
@@ -664,7 +664,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 					if (isaBatType(t)) {
 						bat bid = stk->stk[a].val.bval;
-						t = getColumnType(t);
+						t = getBatType(t);
 						assert(stk->stk[a].vtype == TYPE_bat);
 						assert(bid == 0 ||
 							   bid == bat_nil ||

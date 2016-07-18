@@ -77,7 +77,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			/* create the factored out prefix projection */
 			r = copyInstruction(p);
 			r->argc = prefixlength;
-			getArg(r,0) = newTmpVariable(mb, newBatType( TYPE_oid, getColumnType(getArgType(mb,r,r->argc-1))));
+			getArg(r,0) = newTmpVariable(mb, newBatType(getBatType(getArgType(mb,r,r->argc-1))));
 			setVarUDFtype(mb, getArg(r,0));
 			if( r->argc == 3)
 				setFunctionId(r,projectionRef);
@@ -245,7 +245,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			 * We already know that all heads are void. Only the last element may have a non-oid type.
 			 */
 			for(j=1; j<q->argc-1; j++)
-				if( getColumnType(getArgType(mb,q,j)) != TYPE_oid  && getColumnType(getArgType(mb,q,j)) != TYPE_void ){
+				if( getBatType(getArgType(mb,q,j)) != TYPE_oid  && getBatType(getArgType(mb,q,j)) != TYPE_void ){
 					/* don't use the candidate list */
 					freeInstruction(q);
 					goto wrapup;
@@ -253,7 +253,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			/* fix the type */
 			setVarUDFtype(mb, getArg(q,0));
-			setVarType(mb, getArg(q,0), newBatType( TYPE_oid, getColumnType(getArgType(mb,q,q->argc-1))));
+			setVarType(mb, getArg(q,0), newBatType(getBatType(getArgType(mb,q,q->argc-1))));
 			if ( getFunctionId(q) == projectionRef )
 				setFunctionId(q,projectionpathRef);
 			q->typechk = TYPE_UNKNOWN;

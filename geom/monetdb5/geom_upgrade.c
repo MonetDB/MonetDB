@@ -122,7 +122,7 @@ geom_catalog_upgrade(void *lg, int olddb)
 		if (!cnt || !cnd || !cns || !ct || !cd || !cs)
 			return 0;
 
-		for(p=BUNfirst(ct), q=BUNlast(ct); p<q; p++) {
+		for(p=0, q=BUNlast(ct); p<q; p++) {
 			const char *type = BUNtail(cti, p);
 			int digits = *(int*)BUNtail(cdi, p);
 			int scale = *(int*)BUNtail(csi, p);

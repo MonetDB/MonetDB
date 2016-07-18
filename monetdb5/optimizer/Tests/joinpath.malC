@@ -1,16 +1,16 @@
 function tst0();
-	a:= bat.new(:oid,:oid);
-	b:= bat.new(:oid,:oid);
-	c:= bat.new(:oid,:oid);
+	a:= bat.new(:oid);
+	b:= bat.new(:oid);
+	c:= bat.new(:oid);
 	j1:= algebra.projection(a,b);
 	j2:= algebra.projection(c,j1);
 	io.print(j2);
 end tst0;
 
 function tst1();
-	a:= bat.new(:oid,:oid);
-	b:= bat.new(:oid,:oid);
-	c:= bat.new(:oid,:oid);
+	a:= bat.new(:oid);
+	b:= bat.new(:oid);
+	c:= bat.new(:oid);
 	j1:= algebra.leftjoin(a,b);
 	j2:= algebra.leftjoin(c,j1);
 	io.print(j2);

@@ -39,26 +39,20 @@ typedef struct {
 #endif
 } uuid;
 
-#ifdef WIN32
-#define uuid_export extern __declspec(dllexport)
-#else
-#define uuid_export extern
-#endif
+mal_export str UUIDprelude(void *ret);
+mal_export int UUIDcompare(const uuid *l, const uuid *r);
+mal_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
+mal_export BUN UUIDhash(const void *u);
+mal_export uuid *UUIDnull(void);
+mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
+mal_export int UUIDtoString(str *retval, int *len, const uuid *value);
+mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
-uuid_export str UUIDprelude(void *ret);
-uuid_export int UUIDcompare(const uuid *l, const uuid *r);
-uuid_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
-uuid_export BUN UUIDhash(const void *u);
-uuid_export uuid *UUIDnull(void);
-uuid_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
-uuid_export int UUIDtoString(str *retval, int *len, const uuid *value);
-uuid_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
-
-uuid_export str UUIDgenerateUuid(uuid **retval);
-uuid_export str UUIDstr2uuid(uuid **retval, str *s);
-uuid_export str UUIDuuid2str(str *retval, uuid **u);
-uuid_export str UUIDisaUUID(bit *retval, str *u);
-uuid_export str UUIDequal(bit *retval, uuid **l, uuid **r);
+mal_export str UUIDgenerateUuid(uuid **retval);
+mal_export str UUIDstr2uuid(uuid **retval, str *s);
+mal_export str UUIDuuid2str(str *retval, uuid **u);
+mal_export str UUIDisaUUID(bit *retval, str *u);
+mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
 

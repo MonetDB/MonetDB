@@ -14,16 +14,6 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define group_by_export extern __declspec(dllimport)
-#else
-#define group_by_export extern __declspec(dllexport)
-#endif
-#else
-#define group_by_export extern
-#endif
-
-group_by_export str GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _GROUPBY_H */

@@ -2,14 +2,14 @@
 #The second step step is perform parallel execution
 
 module octopus;
-function octopus.tentacle_1():bat[:oid,:int];
+function octopus.tentacle_1():bat[:int];
 	alarm.sleep(5);
 	b:= bat.new(:oid,:int);
 	bat.append(b,5);
 	return tentactle_1:= b;
 end tentacle_1;
 
-function octopus.tentacle_2():bat[:oid,:int];
+function octopus.tentacle_2():bat[:int];
 	alarm.sleep(2);
 	b:= bat.new(:oid,:int);
 	bat.append(b,2);

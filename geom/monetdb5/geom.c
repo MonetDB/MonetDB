@@ -3767,7 +3767,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 			throw(MAL, "geom.MakeLine", MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	aWKB = (wkb *) BUNtail(inBAT_iter, BUNfirst(inBAT));
+	aWKB = (wkb *) BUNtail(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
@@ -3777,14 +3777,14 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		}
 		return MAL_SUCCEED;
 	}
-	bWKB = (wkb *) BUNtail(inBAT_iter, BUNfirst(inBAT) + 1);
+	bWKB = (wkb *) BUNtail(inBAT_iter, 1);
 	//create the first line using the first two geometries
 	err = wkbMakeLine(outWKB, &aWKB, &bWKB);
 
 	// add one more segment for each following row
 	for (i = 2; err == MAL_SUCCEED && i < BATcount(inBAT); i++) {
 		aWKB = *outWKB;
-		bWKB = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+		bWKB = (wkb *) BUNtail(inBAT_iter, i);
 		*outWKB = NULL;
 
 		err = wkbMakeLine(outWKB, &aWKB, &bWKB);
@@ -4776,7 +4776,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 
-	aWKB = (wkb *) BUNtail(inBAT_iter, BUNfirst(inBAT));
+	aWKB = (wkb *) BUNtail(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
@@ -4786,12 +4786,12 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		}
 		return MAL_SUCCEED;
 	}
-	bWKB = (wkb *) BUNtail(inBAT_iter, BUNfirst(inBAT) + 1);
+	bWKB = (wkb *) BUNtail(inBAT_iter, 1);
 	//create the first union using the first two geometries
 	err = wkbUnion(outWKB, &aWKB, &bWKB);
 	for (i = 2; err == MAL_SUCCEED && i < BATcount(inBAT); i++) {
 		aWKB = *outWKB;
-		bWKB = (wkb *) BUNtail(inBAT_iter, i + BUNfirst(inBAT));
+		bWKB = (wkb *) BUNtail(inBAT_iter, i);
 		*outWKB = NULL;
 
 		err = wkbUnion(outWKB, &aWKB, &bWKB);
@@ -7185,12 +7185,12 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
-	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
+	px = (dbl *) Tloc(bpx, 0);
+	py = (dbl *) Tloc(bpy, 0);
 
 	nv = nvert - 1;
 	cnt = BATcount(bpx);
-	cs = (bit *) Tloc(bo, BUNfirst(bo));
+	cs = (bit *) Tloc(bo, 0);
 	for (i = 0; i < cnt; i++) {
 		int wn = 0;
 		for (j = 0; j < nv; j++) {
@@ -7207,6 +7207,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		*cs++ = wn & 1;
 	}
 
+	bo->tsorted = bo->trevsorted = 0;
+	bo->tkey = 0;
 	BATsetcount(bo, cnt);
 	BATrmprops(bo)
 	BATsettrivprop(bo);
@@ -7249,10 +7251,10 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 	}
 
 	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
-	px = (dbl *) Tloc(bpx, BUNfirst(bpx));
-	py = (dbl *) Tloc(bpy, BUNfirst(bpx));
+	px = (dbl *) Tloc(bpx, 0);
+	py = (dbl *) Tloc(bpy, 0);
 	cnt = BATcount(bpx);
-	cs = (bit *) Tloc(bo, BUNfirst(bo));
+	cs = (bit *) Tloc(bo, 0);
 	for (i = 0; i < cnt; i++) {
 		int wn = 0;
 
@@ -7295,6 +7297,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
+	bo->tsorted = bo->trevsorted = 0;
+	bo->tkey = 0;
 	BATsetcount(bo, cnt);
 	BATrmprops(bo)
 	BATsettrivprop(bo);

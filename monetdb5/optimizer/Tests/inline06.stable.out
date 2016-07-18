@@ -30,18 +30,18 @@ Ready.
 # 10:12:44 >  
 
 function user.qry():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:oid,:int);  	#[1] (0) CMDBATnew 1 <- 2 3 
-    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 4 <- 1 5 
-    X_15:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] (0) CMDbatADDsignal 15 <- 1 1 
-    X_16:int := mmath.rand();           	#[4] (0) MATHrandint 16 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
+    bat.append(b:bat[:int],1:int);      	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    X_14:bat[:int] := batcalc.+(b:bat[:int],b:bat[:int]);	#[3] (0) CMDbatADDsignal 14 <- 1 1 
+    X_15:int := mmath.rand();           	#[4] (0) MATHrandint 15 
 #                                       
-    X_15:bat[:int] := batcalc.*(X_15:bat[:int],X_16:int);	#[6] (0) CMDbatMULsignal 15 <- 15 16 
-    z:bat[:int] := X_15:bat[:int];      	#[7] (0)  6 <- 15 
-    X_23:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 23 <- 1 10 
-    X_24:int := mmath.rand();           	#[9] (0) MATHrandint 24 
+    X_14:bat[:int] := batcalc.*(X_14:bat[:int],X_15:int);	#[6] (0) CMDbatMULsignal 14 <- 14 15 
+    z:bat[:int] := X_14:bat[:int];      	#[7] (0)  5 <- 14 
+    X_22:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[8] (0) CMDbatADDsignal 22 <- 1 9 
+    X_23:int := mmath.rand();           	#[9] (0) MATHrandint 23 
 #                                       
-    X_23:bat[:int] := batcalc.*(X_23:bat[:int],X_24:int);	#[11] (0) CMDbatMULsignal 23 <- 23 24 
-    z:bat[:int] := X_23:bat[:int];      	#[12] (0)  6 <- 23 
+    X_22:bat[:int] := batcalc.*(X_22:bat[:int],X_23:int);	#[11] (0) CMDbatMULsignal 22 <- 22 23 
+    z:bat[:int] := X_22:bat[:int];      	#[12] (0)  5 <- 22 
 end user.qry;                           	#[13] (0)  
 
 # 18:00:44 >  

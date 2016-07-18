@@ -58,7 +58,7 @@ Ready.
 % clob # type
 % 562 # length
 function user.s2_1(A0:str,A1:sht,A2:str):void;
-    X_128:void := querylog.define("explain select\n ps_partkey,\n sum(ps_supplycost * ps_availqty) as value\nfrom\n partsupp,\n supplier,\n nation\nwhere\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\ngroup by\n ps_partkey having\n sum(ps_supplycost * ps_availqty) > (\n select\n sum(ps_supplycost * ps_availqty) * 0.0100000000\n \n \n \n from\n partsupp,\n supplier,\n nation\n where\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\n )\norder by\n value desc;","sequential_pipe",84);
+    X_127:void := querylog.define("explain select\n ps_partkey,\n sum(ps_supplycost * ps_availqty) as value\nfrom\n partsupp,\n supplier,\n nation\nwhere\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\ngroup by\n ps_partkey having\n sum(ps_supplycost * ps_availqty) > (\n select\n sum(ps_supplycost * ps_availqty) * 0.0100000000\n \n \n \n from\n partsupp,\n supplier,\n nation\n where\n ps_suppkey = s_suppkey\n and s_nationkey = n_nationkey\n and n_name = \\'GERMANY\\'\n )\norder by\n value desc;","sequential_pipe",84);
     X_4 := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4,"sys","supplier");
     X_8:bat[:oid] := sql.bind_idxbat(X_4,"sys","supplier","supplier_s_nationkey_fkey",0);

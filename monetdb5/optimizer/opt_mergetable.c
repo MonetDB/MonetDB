@@ -53,7 +53,7 @@ static int
 is_a_mat(int idx, matlist_t *ml){
 	int i;
 	for(i =0; i<ml->top; i++)
-		if (ml->v[i].mv == idx) 
+		if (!ml->v[i].packed && ml->v[i].mv == idx) 
 			return i;
 	return -1;
 }
@@ -227,7 +227,7 @@ mat_set_prop(matlist_t *ml, MalBlkPtr mb, InstrPtr p)
 {
 	int k, tpe = getArgType(mb, p, 0);
 
-	tpe = getColumnType(tpe);
+	tpe = getBatType(tpe);
 	for(k=1; k < p->argc; k++) {
 		setPartnr(ml, -1, getArg(p,k), k);
 		if (tpe == TYPE_oid)
@@ -238,8 +238,9 @@ mat_set_prop(matlist_t *ml, MalBlkPtr mb, InstrPtr p)
 static InstrPtr
 mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
 {
-	int tpe, k, j, is_subdelta = (getFunctionId(p) == subdeltaRef);
+	int tpe, k, j, is_subdelta = (getFunctionId(p) == subdeltaRef), is_projectdelta = (getFunctionId(p) == projectdeltaRef);
 	InstrPtr r = NULL;
+	int pushed = 0;
 
 	//printf("# %s.%s(%d,%d,%d,%d)", getModuleId(p), getFunctionId(p), m, n, o, e);
 
@@ -303,7 +304,24 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			setPartnr(ml, is_subdelta?getArg(mat[m].mi, k):-1, getArg(q,0), k);
 			r = pushArgument(mb, r, getArg(q, 0));
 		}
+		if (evar == 1 && e >= 0 && mat[e].type == mat_slc && is_projectdelta) {
+ 			InstrPtr q = newInstruction(mb, ASSIGNsymbol);
+
+			setModuleId(q, algebraRef);
+			setFunctionId(q, projectionRef);
+			getArg(q, 0) = getArg(r, 0);
+			q = pushArgument(mb, q, getArg(mat[e].mi, 0));
+			getArg(r, 0) = newTmpVariable(mb, tpe);
+			q = pushArgument(mb, q, getArg(r, 0));
+			pushInstruction(mb, r);
+			pushInstruction(mb, q);
+			pushed = 1;
+			r = q;
+		}
 	}
+	mat_add_var(ml, r, NULL, getArg(r, 0), mat_type(mat, m),  -1, -1, pushed);
+	if (pushed)
+		mat[ml->top-1].packed = 1;
 	return r;
 }
 
@@ -695,7 +713,7 @@ static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng;
-	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_oid,tp):tp, battp2 = 0;
+	int battp = (getModuleId(p)==aggrRef)?newBatType(tp):tp, battp2 = 0;
 	int isAvg = (getFunctionId(p) == avgRef);
 	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL;
 
@@ -706,7 +724,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	getArg(r,0) = newTmpVariable(mb, battp);
 
 	if (isAvg) { /* counts */
-		battp2 = newBatType(TYPE_oid, tp2);
+		battp2 = newBatType( tp2);
 		u = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(u,matRef);
 		setFunctionId(u,packRef);
@@ -777,7 +795,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		v = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(v, batcalcRef);
 		setFunctionId(v, dblRef); 
-		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		v = pushArgument(mb, v, getArg(u, 0));
 		pushInstruction(mb, v);
 
@@ -785,7 +803,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		x = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(x, batcalcRef);
 		setFunctionId(x, divRef); 
-		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		x = pushArgument(mb, x, getArg(v, 0));
 		x = pushArgument(mb, x, getArg(y, 0));
 		pushInstruction(mb, x);
@@ -904,7 +922,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	getArg(ai1,0) = newTmpVariable(mb, tp);
 
 	if (isAvg) { /* counts */
-		tp2 = newBatType(TYPE_oid, TYPE_lng);
+		tp2 = newBatType(TYPE_lng);
 		ai10 = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(ai10,matRef);
 		setFunctionId(ai10,packRef);
@@ -956,7 +974,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		cond = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(cond, batcalcRef);
 		setFunctionId(cond, eqRef); 
-		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bit));
+		getArg(cond,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 		cond = pushArgument(mb, cond, getArg(s, 0));
 		cond = pushLng(mb, cond, 0);
 		pushInstruction(mb,cond);
@@ -984,7 +1002,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		v = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(v, batcalcRef);
 		setFunctionId(v, dblRef); 
-		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(v,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		v = pushArgument(mb, v, getArg(ai10, 0));
 		pushInstruction(mb, v);
 
@@ -992,7 +1010,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		r = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(r, batcalcRef);
 		setFunctionId(r, divRef); 
-		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		r = pushArgument(mb, r, getArg(v, 0));
 		r = pushArgument(mb, r, getArg(s, 0));
 		pushInstruction(mb,r);
@@ -1045,7 +1063,7 @@ mat_pack_group(MalBlkPtr mb, matlist_t *ml, int g)
 		
 		getArg(grp,0) = mat[ogrp].mv;
 		grp = pushReturn(mb, grp, mat[oext].mv);
-		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType( TYPE_oid, TYPE_lng)));
+		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType(TYPE_lng)));
 		grp = pushArgument(mb, grp, getArg(mat[attr].mi, 0));
 		if (cur) 
 			grp = pushArgument(mb, grp, getArg(cur, 0));
@@ -1085,7 +1103,7 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push )
 
 			setModuleId(r, algebraRef);
 			setFunctionId(r, projectionRef);
-			getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_oid));
+			getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
 			r = pushArgument(mb, r, getArg(cext,k));
 			r = pushArgument(mb, r, getArg(ml->v[ogrp].mi,k));
 			pushInstruction(mb,r);
@@ -1426,12 +1444,12 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			pushInstruction(mb,r);
 
 			q = copyInstruction(p);
+			setFunctionId(q, subsliceRef);
 			if (ml->v[m].type != mat_tpn || is_slice) 
 				getArg(q,1) = getArg(r,0);
 			pushInstruction(mb,q);
 		}
 
-		ml->v[piv].packed = 1;
 		ml->v[piv].type = mat_slc;
 	}
 }
@@ -1472,11 +1490,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 {
 	InstrPtr *old;
 	matlist_t ml;
-	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit;
+	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
 	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
 	char buf[256];
 	lng usec = GDKusec();
 
+	if( optimizerIsApplied(mb, "mergetable"))
+		return 0;
 	old = mb->stmt;
 	oldtop= mb->stop;
 
@@ -1504,7 +1524,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getModuleId(q) == groupRef && getFunctionId(q) == subgroupdoneRef)
 				groupdone = 1;
 		}
-
+		if (getModuleId(p) == algebraRef && 
+		    getFunctionId(p) == selectNotNilRef ) 
+			bailout = 1;
 		/*
 		if (isTopn(p))
 			topn_res = getArg(p, 0);
@@ -1513,6 +1535,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			//distinct_topn = 1;
 	}
 	GDKfree(vars);
+
+	if (bailout)
+		goto cleanup;
 
 	/* the number of MATs is limited to the variable stack*/
 	ml.size = mb->vtop;
@@ -1731,8 +1756,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
 			if ((r = mat_delta(&ml, mb, p, ml.v, m, n, o, -1, fm, fn, fo, 0)) != NULL)
-				mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p));
-			actions++;
+				actions++;
+
 			continue;
 		}
 		if (match == 4 && bats == 5 && isDelta(p) && 
@@ -1741,8 +1766,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
 		   (e=is_a_mat(getArg(p,fe), &ml)) >= 0){
 			if ((r = mat_delta(&ml, mb, p, ml.v, m, n, o, e, fm, fn, fo, fe)) != NULL)
-				mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p));
-			actions++;
+				actions++;
 			continue;
 		}
 
@@ -1841,7 +1865,8 @@ cleanup:
     }
     /* keep all actions taken as a post block comment */
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions,GDKusec() - usec);
-    newComment(mb,buf);
+    if ( mb->errors == 0) 
+   	 newComment(mb,buf);
 
 	return actions;
 }

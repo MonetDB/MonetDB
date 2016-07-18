@@ -14,7 +14,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-opt_export int OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define OPTDEBUGgenerator  if ( optDebug & ((lng) 1 <<DEBUG_OPT_GENERATOR) )
 

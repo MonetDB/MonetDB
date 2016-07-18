@@ -1,0 +1,37 @@
+stderr of test 'udf-fuse` in directory 'sql/backends/monet5/UDF/cudf` itself:
+
+
+# 18:49:07 >  
+# 18:49:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=31089" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5_UDF" "--set" "mal_listing=0"
+# 18:49:07 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/manegold/_/Monet/HG/default/prefix/--disable-debug_--enable-optimize_--disable-assert/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/Monet/HG/default/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31089
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_backends_monet5_UDF
+# cmdline opt 	mal_listing = 0
+
+# 18:49:07 >  
+# 18:49:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=31089"
+# 18:49:07 >  
+
+
+# 18:49:07 >  
+# 18:49:07 >  "Done."
+# 18:49:07 >  
+

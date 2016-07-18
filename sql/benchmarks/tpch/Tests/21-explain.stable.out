@@ -62,22 +62,22 @@ Ready.
 % clob # type
 % 729 # length
 function user.s2_1(A0:str,A1:str):void;
-    X_177:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",121);
-    X_152 := bat.new(nil:oid,nil:str);
-    X_160 := bat.append(X_152,"sys.supplier");
-    X_168 := bat.append(X_160,"sys.L1");
-    X_155 := bat.new(nil:oid,nil:str);
-    X_162 := bat.append(X_155,"s_name");
-    X_170 := bat.append(X_162,"numwait");
-    X_156 := bat.new(nil:oid,nil:str);
-    X_163 := bat.append(X_156,"char");
-    X_172 := bat.append(X_163,"bigint");
-    X_157 := bat.new(nil:oid,nil:int);
-    X_165 := bat.append(X_157,25);
-    X_174 := bat.append(X_165,64);
-    X_159 := bat.new(nil:oid,nil:int);
-    X_167 := bat.append(X_159,0);
-    X_176 := bat.append(X_167,0);
+    X_176:void := querylog.define("explain select\n s_name,\n count(*) as numwait\nfrom\n supplier,\n lineitem l1,\n orders,\n nation\nwhere\n s_suppkey = l1.l_suppkey\n and o_orderkey = l1.l_orderkey\n and o_orderstatus = \\'F\\'\n and l1.l_receiptdate > l1.l_commitdate\n and exists (\n select\n *\n from\n lineitem l2\n where\n l2.l_orderkey = l1.l_orderkey\n and l2.l_suppkey <> l1.l_suppkey\n )\n and not exists (\n select\n *\n from\n lineitem l3\n where\n l3.l_orderkey = l1.l_orderkey\n and l3.l_suppkey <> l1.l_suppkey\n and l3.l_receiptdate > l3.l_commitdate\n )\n and s_nationkey = n_nationkey\n and n_name = \\'SAUDI ARABIA\\'\ngroup by\n s_name\norder by\n numwait desc,\n s_name\nlimit 100;","sequential_pipe",121);
+    X_152 := bat.new(nil:str);
+    X_159 := bat.append(X_152,"sys.supplier");
+    X_167 := bat.append(X_159,"sys.L1");
+    X_154 := bat.new(nil:str);
+    X_161 := bat.append(X_154,"s_name");
+    X_169 := bat.append(X_161,"numwait");
+    X_155 := bat.new(nil:str);
+    X_162 := bat.append(X_155,"char");
+    X_171 := bat.append(X_162,"bigint");
+    X_156 := bat.new(nil:int);
+    X_164 := bat.append(X_156,25);
+    X_173 := bat.append(X_164,64);
+    X_158 := bat.new(nil:int);
+    X_166 := bat.append(X_158,0);
+    X_175 := bat.append(X_166,0);
     X_3 := sql.mvc();
     C_4:bat[:oid] := sql.tid(X_3,"sys","lineitem");
     X_7:bat[:date] := sql.bind(X_3,"sys","lineitem","l_receiptdate",0);
@@ -180,7 +180,7 @@ function user.s2_1(A0:str,A1:str):void;
     X_148 := algebra.subslice(X_147,0,99:lng);
     X_149 := algebra.projection(X_148,X_147);
     X_150:bat[:lng] := algebra.projectionpath(X_148,r1_234,X_140);
-    sql.resultSet(X_168,X_170,X_172,X_174,X_176,X_149,X_150);
+    sql.resultSet(X_167,X_169,X_171,X_173,X_175,X_149,X_150);
 end user.s2_1;
 
 # 22:53:31 >  

@@ -45,34 +45,23 @@ typedef struct _connection {
 /* #define _DEBUG_REMOTE_	    trace the interaction */
 /* #define _DEBUG_MAPI_		    trace mapi interaction */
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+mal_export str RMTprelude(void *ret);
+mal_export str RMTepilogue(void *ret);
+mal_export str RMTresolve(bat *ret, str *pat);
+mal_export str RMTconnectScen( str *ret, str *ouri, str *user, str *passwd, str *scen);
+mal_export str RMTconnect( str *ret, str *uri, str *user, str *passwd);
 
-#define remote_export extern __declspec(dllimport)
-#else
-#define remote_export extern __declspec(dllexport)
-#endif
-#else
-#define remote_export extern
-#endif
-
-remote_export str RMTprelude(void *ret);
-remote_export str RMTepilogue(void *ret);
-remote_export str RMTresolve(bat *ret, str *pat);
-remote_export str RMTconnectScen( str *ret, str *ouri, str *user, str *passwd, str *scen);
-remote_export str RMTconnect( str *ret, str *uri, str *user, str *passwd);
-
-remote_export str RMTdisconnect(void *ret, str *conn);
-remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
-remote_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-remote_export str RMTisalive(int *ret, str *conn);
+mal_export str RMTdisconnect(void *ret, str *conn);
+mal_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
+mal_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RMTisalive(int *ret, str *conn);
 #endif /* HAVE_MAPI */
 #endif /* _REMOTE_DEF */
 

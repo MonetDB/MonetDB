@@ -1,7 +1,7 @@
 # testing join path optimizations
 # the common part should not be replicated
 
-function qry( a:bat[:oid,:any_2], b:bat[:oid,:any_3], c:bat[:oid,:any_4]):bat[:oid,:any_4];
+function qry( a:bat[:any_2], b:bat[:any_3], c:bat[:any_4]):bat[:any_4];
 	a1:= a;
 	b1:=b;
 	c1:=c;

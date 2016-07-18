@@ -463,7 +463,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 		throw(MAL, "algebra.xmatch", "sorted input required");
 	}
 
-	l= (lng*) Tloc(bl, BUNfirst(bl));
+	l= (lng*) Tloc(bl, 0);
 	lend= (lng*) Tloc(bl, BUNlast(bl));
 	rend= (lng*) Tloc(br, BUNlast(br));
 
@@ -485,7 +485,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	for (lo = bl->hseqbase; l < lend; lo++, l++) {
 		if (*l != lng_nil) {
 			lhtm = *l >> shift;
-			r= (lng*) Tloc(br, BUNfirst(br));
+			r= (lng*) Tloc(br, 0);
 			ro = br->hseqbase;
 			for(; r < rend; ro++, r++) {
 				if (*r != lng_nil) {
@@ -576,9 +576,9 @@ LSSTxmatchsubselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 		return MAL_SUCCEED;
 	}
 	rhtm = *r >> shift;
-	l = (const lng *) Tloc(b, BUNfirst(b));
+	l = (const lng *) Tloc(b, 0);
 	if (s && !BATtdense(s)) {
-		const oid *sval = (const oid *) Tloc(s, BUNfirst(s));
+		const oid *sval = (const oid *) Tloc(s, 0);
 		oid o;
 		BUN i, scnt = BATcount(s);
 

@@ -8,7 +8,7 @@ l:= aggr.min(s);
 h:= l;
 #mdb.setTimer(true);
 #mdb.setThread(true);
-z:= nil:bat[:oid,:oid];
+z:= nil:bat[:oid];
 	t1:= algebra.subselect(s,l,h,true,true,false);
 	t2:= algebra.subselect(s,l,h,true,true,false);
 	t3:= algebra.subselect(s,l,h,true,true,false);

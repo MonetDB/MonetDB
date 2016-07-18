@@ -54,7 +54,7 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int *) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with random distribution */
 	if (seed != int_nil)
@@ -114,7 +114,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int *) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with uniform distribution */
         for (v = 0, i = 0; i < n; i++) {
@@ -177,7 +177,7 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int *) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with skewed distribution */
 	for (i = 0; i < skewedSize; i++)
@@ -258,7 +258,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 		*bn = b;
 		return GDK_SUCCEED;
 	}
-	val = (int *) Tloc(b, BUNfirst(b));
+	val = (int *) Tloc(b, 0);
 
 	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
 	if (abs == NULL) {
@@ -365,24 +365,20 @@ str
 MBMmix(bat *bn, bat *batid)
 {
 	BUN n, r, i;
-	BUN firstbun, p, q;
 	BAT *b;
 
 	if ((b = BATdescriptor(*batid)) == NULL)
                 throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
-	firstbun = BUNfirst(b);
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
 		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 
-		p = firstbun + i;
-		q = firstbun + idx;
-		val = *(int *) Tloc(b, p);
-		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
-		*(int *) Tloc(b, q) = val;
+		val = *(int *) Tloc(b, i);
+		*(int *) Tloc(b, i) = *(int *) Tloc(b, idx);
+		*(int *) Tloc(b, idx) = val;
 	}
 
 	BBPunfix(b->batCacheid);

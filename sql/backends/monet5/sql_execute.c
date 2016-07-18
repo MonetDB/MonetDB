@@ -94,8 +94,7 @@ SQLsetTrace(Client cntxt)
 
 	/* build table defs */
 	tbls = newStmt(mb,batRef, newRef);
-	setVarType(mb, getArg(tbls,0), newBatType(TYPE_oid, TYPE_str));
-	tbls = pushType(mb, tbls, TYPE_oid);
+	setVarType(mb, getArg(tbls,0), newBatType(TYPE_str));
 	tbls = pushType(mb, tbls, TYPE_str);
 	resultset= pushArgument(mb,resultset, getArg(tbls,0));
 
@@ -110,8 +109,7 @@ SQLsetTrace(Client cntxt)
 
 	/* build colum defs */
 	cols = newStmt(mb,batRef, newRef);
-	setVarType(mb, getArg(cols,0), newBatType(TYPE_oid, TYPE_str));
-	cols = pushType(mb, cols, TYPE_oid);
+	setVarType(mb, getArg(cols,0), newBatType(TYPE_str));
 	cols = pushType(mb, cols, TYPE_str);
 	resultset= pushArgument(mb,resultset, getArg(cols,0));
 
@@ -126,8 +124,7 @@ SQLsetTrace(Client cntxt)
 
 	/* build type defs */
 	types = newStmt(mb,batRef, newRef);
-	setVarType(mb, getArg(types,0), newBatType(TYPE_oid, TYPE_str));
-	types = pushType(mb, types, TYPE_oid);
+	setVarType(mb, getArg(types,0), newBatType(TYPE_str));
 	types = pushType(mb, types, TYPE_str);
 	resultset= pushArgument(mb,resultset, getArg(types,0));
 
@@ -142,8 +139,7 @@ SQLsetTrace(Client cntxt)
 
 	/* build scale defs */
 	clen = newStmt(mb,batRef, newRef);
-	setVarType(mb, getArg(clen,0), newBatType(TYPE_oid, TYPE_int));
-	clen = pushType(mb, clen, TYPE_oid);
+	setVarType(mb, getArg(clen,0), newBatType(TYPE_int));
 	clen = pushType(mb, clen, TYPE_int);
 	resultset= pushArgument(mb,resultset, getArg(clen,0));
 
@@ -158,8 +154,7 @@ SQLsetTrace(Client cntxt)
 
 	/* build scale defs */
 	scale = newStmt(mb,batRef, newRef);
-	setVarType(mb, getArg(scale,0), newBatType(TYPE_oid, TYPE_int));
-	scale = pushType(mb, scale, TYPE_oid);
+	setVarType(mb, getArg(scale,0), newBatType(TYPE_int));
 	scale = pushType(mb, scale, TYPE_int);
 	resultset= pushArgument(mb,resultset, getArg(scale,0));
 
@@ -416,8 +411,14 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		c->glb = oldglb;
 
 	}
-	if (m->results && result) { /* return all results sets */
-		*result = m->results;
+	if (m->results) {
+		if (result) { /* return all results sets */
+			*result = m->results;
+		} else {
+			if (m->results == o->results)
+				o->results = NULL;
+			res_tables_destroy(m->results);
+		}
 		m->results = NULL;
 	}
 /*

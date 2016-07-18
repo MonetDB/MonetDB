@@ -27,60 +27,60 @@ Operation successful
 | mal    |
 +======================================================================================================+
 | function user.s2_1():void;                                                                           |
-|     X_46:void := querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe",33); |
-|     X_32 := bat.new(nil:oid,nil:str);                                                                |
-|     X_38 := bat.append(X_32,".tables");                                                              |
-|     X_33 := bat.new(nil:oid,nil:str);                                                                |
-|     X_40 := bat.append(X_33,"name");                                                                 |
-|     X_34 := bat.new(nil:oid,nil:str);                                                                |
-|     X_41 := bat.append(X_34,"varchar");                                                              |
-|     X_35 := bat.new(nil:oid,nil:int);                                                                |
-|     X_43 := bat.append(X_35,1024);                                                                   |
-|     X_37 := bat.new(nil:oid,nil:int);                                                                |
-|     X_45 := bat.append(X_37,0);                                                                      |
-|     X_2:bat[:str] := bat.new(nil:oid,nil:str);                                                       |
+|     X_45:void := querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe",33); |
+|     X_31 := bat.new(nil:str);                                                                        |
+|     X_37 := bat.append(X_31,".tables");                                                              |
+|     X_32 := bat.new(nil:str);                                                                        |
+|     X_39 := bat.append(X_32,"name");                                                                 |
+|     X_33 := bat.new(nil:str);                                                                        |
+|     X_40 := bat.append(X_33,"varchar");                                                              |
+|     X_34 := bat.new(nil:int);                                                                        |
+|     X_42 := bat.append(X_34,1024);                                                                   |
+|     X_36 := bat.new(nil:int);                                                                        |
+|     X_44 := bat.append(X_36,0);                                                                      |
+|     X_2:bat[:str] := bat.new(nil:str);                                                               |
 |     X_1 := sql.mvc();                                                                                |
-|     X_8:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                         |
-|     C_5:bat[:oid] := sql.tid(X_1,"sys","_tables");                                                   |
-|     C_62 := algebra.subselect(X_8,C_5,2,2,true,true,true);                                           |
-|     (C_11,r1_11) := sql.bind(X_1,"sys","_tables","type",2);                                          |
-|     C_63 := algebra.subselect(r1_11,nil:bat[:oid],2,2,true,true,true);                               |
-|     X_14:bat[:sht] := sql.bind(X_1,"sys","_tables","type",1);                                        |
-|     C_65 := algebra.subselect(X_14,C_5,2,2,true,true,true);                                          |
-|     C_17 := sql.subdelta(C_62,C_5,C_11,C_63,C_65);                                                   |
-|     X_19:bat[:str] := sql.bind(X_1,"sys","_tables","name",0);                                        |
-|     (C_21,r1_25) := sql.bind(X_1,"sys","_tables","name",2);                                          |
-|     X_23:bat[:str] := sql.bind(X_1,"sys","_tables","name",1);                                        |
-|     X_24 := sql.projectdelta(C_17,X_19,C_21,r1_25,X_23);                                             |
-|     X_25 := bat.append(X_2,X_24,true);                                                               |
-|     C_26:bat[:oid] := sql.tid(X_1,"tmp","_tables");                                                  |
-|     X_28:bat[:str] := sql.bind(X_1,"tmp","_tables","name",0);                                        |
-|     X_29 := algebra.projection(C_26,X_28);                                                        |
-|     X_30 := bat.append(X_25,X_29,true);                                                              |
-|     sql.resultSet(X_38,X_40,X_41,X_43,X_45,X_30);                                                    |
+|     X_7:bat[:sht] := sql.bind(X_1,"sys","_tables","type",0);                                         |
+|     C_4:bat[:oid] := sql.tid(X_1,"sys","_tables");                                                   |
+|     C_61 := algebra.subselect(X_7,C_4,2,2,true,true,true);                                           |
+|     (C_10,r1_10) := sql.bind(X_1,"sys","_tables","type",2);                                          |
+|     C_62 := algebra.subselect(r1_10,nil:bat[:oid],2,2,true,true,true);                               |
+|     X_13:bat[:sht] := sql.bind(X_1,"sys","_tables","type",1);                                        |
+|     C_64 := algebra.subselect(X_13,C_4,2,2,true,true,true);                                          |
+|     C_16 := sql.subdelta(C_61,C_4,C_10,C_62,C_64);                                                   |
+|     X_18:bat[:str] := sql.bind(X_1,"sys","_tables","name",0);                                        |
+|     (C_20,r1_24) := sql.bind(X_1,"sys","_tables","name",2);                                          |
+|     X_22:bat[:str] := sql.bind(X_1,"sys","_tables","name",1);                                        |
+|     X_23 := sql.projectdelta(C_16,X_18,C_20,r1_24,X_22);                                             |
+|     X_24 := bat.append(X_2,X_23,true);                                                               |
+|     C_25:bat[:oid] := sql.tid(X_1,"tmp","_tables");                                                  |
+|     X_27:bat[:str] := sql.bind(X_1,"tmp","_tables","name",0);                                        |
+|     X_28 := algebra.projection(C_25,X_27);                                                           |
+|     X_29 := bat.append(X_24,X_28,true);                                                              |
+|     sql.resultSet(X_37,X_39,X_40,X_42,X_44,X_29);                                                    |
 | end user.s2_1;                                                                                     |
 | #inline               actions= 0 time=1 usec                                                         |
-| #alias                actions= 0 time=3 usec                                                         |
-| #costmodel            actions= 1 time=6 usec                                                         |
-| #coercion             actions= 1 time=6 usec                                                         |
+| #remap                actions= 0 time=3 usec                                                         |
+| #costmodel            actions= 1 time=2 usec                                                         |
+| #coercion             actions= 1 time=7 usec                                                         |
 | #evaluate             actions= 0 time=4 usec                                                         |
-| #aliases              actions= 0 time=7 usec                                                         |
-| #pushselect           actions= 4 time=29 usec                                                        |
-| #mergetable           actions= 0 time=33 usec                                                        |
-| #deadcode             actions= 4 time=12 usec                                                        |
-| #aliases              actions= 0 time=7 usec                                                         |
-| #constants            actions= 4 time=11 usec                                                        |
+| #aliases              actions= 0 time=6 usec                                                         |
+| #pushselect           actions= 4 time=27 usec                                                        |
+| #mergetable           actions= 0 time=31 usec                                                        |
+| #deadcode             actions= 4 time=7 usec                                                         |
+| #aliases              actions= 0 time=5 usec                                                         |
+| #constants            actions= 3 time=6 usec                                                         |
 | #commonTerms          actions= 0 time=6 usec                                                         |
-| #alias                actions= 0 time=4 usec                                                         |
-| #alias                actions= 1 time=25 usec                                                        |
+| #projectionpath       actions= 0 time=4 usec                                                         |
+| #reorder              actions= 1 time=24 usec                                                        |
 | #deadcode             actions= 0 time=6 usec                                                         |
-| #reduce               actions=27 time=26 usec                                                        |
+| #reduce               actions=26 time=22 usec                                                        |
 | #matpack              actions= 0 time=2 usec                                                         |
 | #multiplex            actions= 0 time=3 usec                                                         |
-| #alias                actions= 1 time=9 usec                                                         |
-| #candidates           actions= 1 time=4 usec                                                         |
-| #garbagecollctor      actions= 1 time=14 usec                                                        |
-| #total                actions= 1 time=290 usec                                                       |
+| #profiler             actions= 1 time=5 usec                                                         |
+| #candidates           actions= 1 time=1 usec                                                         |
+| #garbagecollector     actions= 1 time=16 usec                                                        |
+| #total                actions= 1 time=265 usec                                                       |
 +------------------------------------------------------------------------------------------------------+
 55 rows
 

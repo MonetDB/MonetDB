@@ -1430,8 +1430,8 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 	for (i = pci->retc; i < pci->argc; i += 2) {
 		name = stk->stk[getArg(pci, i)].val.sval;
 		bi = bat_iterator(bl[i + 1]);
-		p = BUNtail(bi, BUNfirst(bl[i + 1]) + idx);
-		tpe = getColumnType(getArgType(mb, pci, i + 1));
+		p = BUNtail(bi, idx);
+		tpe = getBatType(getArgType(mb, pci, i + 1));
 		ATOMformat(tpe, p, &val);
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
@@ -1509,8 +1509,8 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	val = (char *) GDKmalloc(BUFSIZ);
 	for (i = pci->retc; i < pci->argc; i++) {
 		bi = bat_iterator(bl[i]);
-		p = BUNtail(bi, BUNfirst(bl[i]) + idx);
-		tpe = getColumnType(getArgType(mb, pci, i));
+		p = BUNtail(bi, idx);
+		tpe = getBatType(getArgType(mb, pci, i));
 		ATOMformat(tpe, p, &val);
 		if (strncmp(val, "nil", 3) == 0)
 			strcpy(val, "null");
@@ -1616,7 +1616,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	len = 1;
 	if (id) {
 		boi = bat_iterator(bo);
-		o = *(oid *) BUNtail(boi, BUNfirst(bo));
+		o = *(oid *) BUNtail(boi, 0);
 	}
 	if (bk)
 		bki = bat_iterator(bk);
@@ -1624,7 +1624,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 
 	for (i = 0; i < cnt; i++) {
 		if (id &&bk) {
-			p = BUNtail(boi, BUNfirst(bo) + i);
+			p = BUNtail(boi, i);
 			if (*(oid *) p != o) {
 				snprintf(row + len, lim - len, ", ");
 				len += 2;
@@ -1633,7 +1633,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		}
 
 		if (bk) {
-			nme = (str) BUNtail(bki, BUNfirst(bk) + i);
+			nme = (str) BUNtail(bki, i);
 			l = strlen(nme);
 			while (l + 3 > lim - len)
 				row = (char *) GDKrealloc(row, lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3);
@@ -1653,7 +1653,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		}
 
 		bvi = bat_iterator(bv);
-		p = BUNtail(bvi, BUNfirst(bv) + i);
+		p = BUNtail(bvi, i);
 		if (tpe == TYPE_json)
 			val = p;
 		else {
@@ -1934,16 +1934,16 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			map = NULL;
 			mapoff = b->tseqbase;
 		} else {
-			map = (const oid *) Tloc(t2, BUNfirst(t2));
+			map = (const oid *) Tloc(t2, 0);
 		}
 		if (g && BATtdense(g)) {
 			for (p = 0, q = BATcount(g); p < q; p++) {
 				switch (b->ttype) {
 				case TYPE_str:
-					v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 					break;
 				case TYPE_dbl:
-					val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+					val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 					if (*val != dbl_nil) {
 						snprintf(temp, sizeof(temp), "%f", *val);
 						v = (const char *) temp;
@@ -2002,7 +2002,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			bn->tkey = BATcount(bn) <= 1;
 			goto out;
 		}
-		grps = (const oid *) Tloc(g, BUNfirst(g));
+		grps = (const oid *) Tloc(g, 0);
 		prev = grps[0];
 		isnil = 0;
 		for (p = 0, q = BATcount(g); p <= q; p++) {
@@ -2032,10 +2032,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				continue;
 			switch (b->ttype) {
 			case TYPE_str:
-				v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 				break;
 			case TYPE_dbl:
-				val = (const double *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
+				val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
 				if (*val != dbl_nil) {
 					snprintf(temp, sizeof(temp), "%f", *val);
 					v = (const char *) temp;
@@ -2084,7 +2084,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(t2->batCacheid);
 		t2 = NULL;
 	} else {
-		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+		for (p = 0, q = p + BATcount(b); p < q; p++) {
 			switch (b->ttype) {
 			case TYPE_str:
 				v = (const char *) BUNtail(bi, p);

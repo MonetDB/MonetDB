@@ -34,3 +34,6 @@ isaUUID_function.Bug-3997
 string-length.Bug-3999
 RELEASE_SAVEPOINT_after_ALTER_TABLE_crash.Bug-4010
 RELEASE_SAVEPOINT_after_UPDATE_crash.Bug-4010
+analyze-quotes-incorrectly.Bug-4021
+boolean-evaluation.Bug-4025
+HAVE_GEOM?nested-mal-with-multiplex.Bug-4035

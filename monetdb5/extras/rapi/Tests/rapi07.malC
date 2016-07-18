@@ -1,4 +1,4 @@
-(x:bat[:oid,:dbl], y:bat[:oid,:dbl]) := rapi.eval(nil:ptr,"x <- seq(arg1,arg2,by=arg3);y <- dnorm(x,mean=arg4,sd=arg5);return(data.frame(x,y))",-10,10,0.1,10,3);
+(x:bat[:dbl], y:bat[:dbl]) := rapi.eval(nil:ptr,"x <- seq(arg1,arg2,by=arg3);y <- dnorm(x,mean=arg4,sd=arg5);return(data.frame(x,y))",-10,10,0.1,10,3);
 io.printf("#~BeginVariableOutput~#\n");
 io.print(x,y);
 io.printf("#~EndVariableOutput~#\n");

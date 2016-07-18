@@ -207,7 +207,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		getVarConstant(mb,getArg(pci,pci->retc+1)).val.sval);
 
 	// Prepare the single result variable
-	tpe =getColumnType(getArgType(mb,pci,0));
+	tpe =getBatType(getArgType(mb,pci,0));
 	k= getArg(q,0);
 	setVarType(nmb,k,tpe);
 	if ( isVarFixed(nmb,k)) 
@@ -217,7 +217,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
-		tpe = getColumnType(getArgType(mb,pci,i));
+		tpe = getBatType(getArgType(mb,pci,i));
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
 		setVarUDFtype(nmb,k);
@@ -237,7 +237,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 		fcn = q->fcn;
 		// retain the type detected
 		if ( !isVarFixed(mb, getArg(pci,0)))
-			setVarType( mb, getArg(pci,0), newBatType(TYPE_void,getArgType(nmb,q,0)) );
+			setVarType( mb, getArg(pci,0), newBatType(getArgType(nmb,q,0)) );
 	}
 #ifdef _DEBUG_MANIFOLD_
 	mnstr_printf(cntxt->fdout,"success? %s\n",(fcn == NULL? "no":"yes"));
@@ -284,7 +284,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				msg = createException(MAL,"mal.manifold", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			mat[i].type = tpe = getColumnType(getArgType(mb,pci,i));
+			mat[i].type = tpe = getBatType(getArgType(mb,pci,i));
 			if (mut.fvar == 0){
 				mut.fvar = i;
 				cnt = BATcount(mat[i].b);
@@ -302,11 +302,11 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				o = mat[i].b->tseqbase;
 				mat[i].first = mat[i].last = (void*) &o;
 			} else {
-				mat[i].first = (void*)  Tloc(mat[i].b, BUNfirst(mat[i].b));
+				mat[i].first = (void*)  Tloc(mat[i].b, 0);
 				mat[i].last = (void*) Tloc(mat[i].b, BUNlast(mat[i].b));
 			}
 			mat[i].bi = bat_iterator(mat[i].b);
-			mat[i].o = BUNfirst(mat[i].b);
+			mat[i].o = 0;
 			mat[i].q = BUNlast(mat[i].b);
 		} else {
 			mat[i].last = mat[i].first = (void *) getArgReference(stk,pci,i);
@@ -321,7 +321,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 
 	// prepare result variable
-	mat[0].b =COLnew(mat[mut.fvar].b->hseqbase, getColumnType(getArgType(mb,pci,0)), cnt, TRANSIENT);
+	mat[0].b =COLnew(mat[mut.fvar].b->hseqbase, getBatType(getArgType(mb,pci,0)), cnt, TRANSIENT);
 	if ( mat[0].b == NULL){
 		msg= createException(MAL,"mal.manifold",MAL_MALLOC_FAIL);
 		goto wrapup;
@@ -330,7 +330,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mat[0].b->tsorted=0;
 	mat[0].b->trevsorted=0;
 	mat[0].bi = bat_iterator(mat[0].b);
-	mat[0].first = (void *)  Tloc(mat[0].b, BUNfirst(mat[0].b));
+	mat[0].first = (void *)  Tloc(mat[0].b, 0);
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));
 
 	mut.pci = copyInstruction(pci);
@@ -342,7 +342,6 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (ATOMstorage(mat[0].b->ttype) < TYPE_str)
 		BATsetcount(mat[0].b,cnt);
 	BATsettrivprop(mat[0].b);
-	BATderiveProps(mat[0].b, TRUE);
 	BBPkeepref(*getArgReference_bat(stk,pci,0)=mat[0].b->batCacheid);
 wrapup:
 	// restore the argument types

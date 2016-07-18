@@ -30,7 +30,7 @@ Ready.
 # 12:36:19 >  
 
 function user.foo():void;               	#[0] (0)  0 
-    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnewColumn 1 <- 2 
+    b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.setName(b:bat[:int],"b":str);   	#[2] (0) BKCsetName 3 <- 1 4 
     bat.append(b:bat[:int],1:int);      	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
     c:bat[:int] := batcalc.+(b:bat[:int],2:int);	#[4] (0) CMDbatADDsignal 7 <- 1 8 

@@ -36,7 +36,7 @@
 	res = COLnew(0, TYPE_##tpe, sz, TRANSIENT); \
 	if ( res == NULL ) \
 		return createException(MAL, "netcdf.importvar", MAL_MALLOC_FAIL); \
-	databuf = (tpe *)Tloc(res, BUNfirst(res)); \
+	databuf = (tpe *)Tloc(res, 0); \
 	if ( (retval = nc_get_var_##ncdftpe(ncid, varid, databuf)) ) \
 		return createException(MAL, "netcdf.importvar", \
 						   "Cannot read variable %d values: %s", \
@@ -154,7 +154,7 @@ NCDF2SQL(nc_type type)
 
 #define array_series(sta, ste, sto, TYPE) { 				\
 	int s,g;							\
-	TYPE i, *o = (TYPE*)Tloc(bn, BUNfirst(bn)); 			\
+	TYPE i, *o = (TYPE*)Tloc(bn, 0);				\
 	TYPE start = sta, step = ste, stop = sto; 			\
 	if ( start < stop && step > 0) {				\
 		for ( s = 0; s < series; s++)				\

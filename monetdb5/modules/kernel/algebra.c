@@ -516,13 +516,13 @@ ALGsubinter(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat 
 				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.subdiff");
 }
 
-/* algebra.firstn(b:bat[:oid,:any],
- *                [ s:bat[:oid,:oid],
- *                [ g:bat[:oid,:oid], ] ]
+/* algebra.firstn(b:bat[:any],
+ *                [ s:bat[:oid],
+ *                [ g:bat[:oid], ] ]
  *                n:lng,
  *                asc:bit,
  *                distinct:bit)
- * returns :bat[:oid,:oid] [ , :bat[:oid,:oid] ]
+ * returns :bat[:oid] [ , :bat[:oid] ]
  */
 str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -970,7 +970,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		} else if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)
-				*(oid*)ret += pos - BUNfirst(b);
+				*(oid*)ret += pos;
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) Tloc(b, pos);
 		} else if (_s == 1) {
@@ -999,7 +999,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.fetch", RUNTIME_OBJECT_MISSING);
 	}
-	if ((*pos < (lng) BUNfirst(b)) || (*pos >= (lng) BUNlast(b)))
+	if ((*pos < (lng) 0) || (*pos >= (lng) BUNlast(b)))
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
 	msg = doALGfetch(ret, b, (BUN) *pos);
 	BBPunfix(b->batCacheid);

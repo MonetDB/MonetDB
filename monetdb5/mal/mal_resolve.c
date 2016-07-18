@@ -88,9 +88,8 @@ int polyVector[MAXTYPEVAR];
  */
 #define prepostProcess(tp, p, b, mb)					\
 	do {												\
-		if (findGDKtype(tp) == TYPE_bat ||				\
-			isaBatType(tp) ||							\
-			findGDKtype(tp) == TYPE_str ||				\
+		if( isaBatType(tp) ||							\
+			ATOMtype(tp) == TYPE_str ||				\
 			(!isPolyType(tp) && tp < TYPE_any &&		\
 			 tp >= 0 && ATOMextern(tp))) {				\
 			getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;	\
@@ -418,7 +417,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		 * to be garbage collected.
 		 */
 		for (i = p->retc; i < p->argc; i++)
-			if (findGDKtype(getArgType(mb, p, i)) == TYPE_str ||
+			if (ATOMtype(getArgType(mb, p, i)) == TYPE_str ||
 				getArgType(mb, p, i) == TYPE_bat ||
 				isaBatType(getArgType(mb, p, i)) ||
 				(!isPolyType(getArgType(mb, p, i)) &&
@@ -506,8 +505,8 @@ resolveType(int dsttype, int srctype)
 		return dsttype;
 	if (isaBatType(dsttype) && isaBatType(srctype)) {
 		int t1, t2, t3;
-		t1 = getColumnType(dsttype);
-		t2 = getColumnType(srctype);
+		t1 = getBatType(dsttype);
+		t2 = getBatType(srctype);
 		if (t1 == t2)
 			t3 = t1;
 		else if (t1 == TYPE_any)
@@ -523,7 +522,7 @@ resolveType(int dsttype, int srctype)
 		}
 #ifdef DEBUG_MAL_RESOLVE
 		if (tracefcn) {
-			int i2 = getColumnIndex(dsttype);
+			int i2 = getTypeIndex(dsttype);
 			char *tpe1, *tpe2, *tpe3; 
 			tpe1 = getTypeName(t1);
 			tpe2 = getTypeName(t2);
@@ -535,7 +534,7 @@ resolveType(int dsttype, int srctype)
 			GDKfree(tpe3);
 		}
 #endif
-		return newBatType(TYPE_void, t3);
+		return newBatType(t3);
 	}
 #ifdef DEBUG_MAL_RESOLVE
 	if (tracefcn)
@@ -587,7 +586,7 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 
 	p->typechk = TYPE_UNKNOWN;
 	olderrors = mb->errors;
-	if (p->fcn && p->token >= FCNcall && p->token <= PATcall) {
+	if ((p->fcn || p->blk) && p->token >= FCNcall && p->token <= PATcall) {
 		p->token = ASSIGNsymbol;
 		p->fcn = NULL;
 		p->blk = NULL;
@@ -696,8 +695,8 @@ typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	if (p->barrier && p->retc == p->argc)
 		for (k = 0; k < p->retc; k++) {
 			int tpe = getArgType(mb, p, k);
-			if (findGDKtype(tpe) == TYPE_bat ||
-				findGDKtype(tpe) == TYPE_str ||
+			if (isaBatType(tpe)  ||
+				ATOMtype(tpe) == TYPE_str ||
 				(!isPolyType(tpe) && tpe < MAXATOMS && ATOMextern(tpe)))
 				setVarCleanup(mb, getArg(p, k));
 		}
@@ -804,13 +803,13 @@ getPolyType(malType t, int *polytype)
 	int ti;
 	int tail;
 
-	ti = getColumnIndex(t);
+	ti = getTypeIndex(t);
 	if (!isaBatType(t) && ti > 0)
 		return polytype[ti];
 
-	tail = ti == 0 ? getColumnType(t) : polytype[ti];
+	tail = ti == 0 ? getBatType(t) : polytype[ti];
 	if (isaBatType(t)) 
-		return newBatType(TYPE_void, tail);
+		return newBatType(tail);
 	return tail;
 }
 
@@ -839,14 +838,14 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 	}
 #endif
 
-	if ((h = getColumnIndex(formal))) {
+	if ((h = getTypeIndex(formal))) {
 		if (isaBatType(actual) && !isaBatType(formal) &&
 			(polytype[h] == TYPE_any || polytype[h] == actual)) {
 			polytype[h] = actual;
 			ret = 0;
 			goto updLabel;
 		}
-		t = getColumnType(actual);
+		t = getBatType(actual);
 		if (t != polytype[h]) {
 			if (polytype[h] == TYPE_bat && isaBatType(actual))
 				ret = 0;

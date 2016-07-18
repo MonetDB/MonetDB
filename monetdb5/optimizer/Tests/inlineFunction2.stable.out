@@ -27,15 +27,15 @@ Ready.
 #io.printf("#result of inline\n");
 #result of inline
 function user.tst():void;
-    b := bat.new(:oid,:int);
-    X_8 := bat.new(nil:oid,nil:int);
-barrier (X_12,X_13) := iterator.new(b);
-    X_24 := calc.+(X_13,1);
-    X_15 := X_24;
-    bat.append(X_8,X_15);
-    redo (X_12,X_13) := iterator.next(b);
-exit (X_12,X_13);
-    z:bat[:int] := X_8;
+    b := bat.new(:int);
+    X_7 := bat.new(nil:int);
+barrier (X_10,X_11) := iterator.new(b);
+    X_22 := calc.+(X_11,1);
+    X_13 := X_22;
+    bat.append(X_7,X_13);
+    redo (X_10,X_11) := iterator.next(b);
+exit (X_10,X_11);
+    z:bat[:int] := X_7;
 end user.tst;
 
 # 23:12:13 >  

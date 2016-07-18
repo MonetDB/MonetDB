@@ -90,7 +90,7 @@ struct{
 	{"volcano", &OPTvolcanoImplementation},
 	{0,0}
 };
-opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTIMIZERDEBUG if (0) 
 

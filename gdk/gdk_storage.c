@@ -945,7 +945,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
-			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, BUNfirst(argv[i]) + n));
+			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n));
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
 			mnstr_write(s, buf, 1, len);

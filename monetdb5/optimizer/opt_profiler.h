@@ -12,7 +12,7 @@
 #include "opt_support.h"
 #include "mal_exception.h"
 
-opt_export int OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export int OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define OPTDEBUGprofiler  if ( optDebug & ((lng) 1 <<DEBUG_OPT_PROFILER) )
 

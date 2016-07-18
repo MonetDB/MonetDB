@@ -14,7 +14,7 @@
 #include "mal_instruction.h"
 #include "mal_function.h"
 
-opt_export int OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export int OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* #define _DEBUG_OPT_MATPACK_ */
 #undef DEBUG_OPT_MATPACK

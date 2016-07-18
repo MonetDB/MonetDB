@@ -112,7 +112,7 @@ function user.s2_1(A0:date,A1:date,A2:int):void;
     (X_72,r1_85,r2_85) := algebra.subsort(X_71,false,false);
     X_75 := algebra.projection(r1_85,X_71);
     X_77 := algebra.projection(r1_85,X_76);
-    sql.resultSet(X_95,X_97,X_99,X_101,X_103,X_75,X_77);
+    sql.resultSet(X_94,X_96,X_98,X_100,X_102,X_75,X_77);
 end user.s2_1;
 
 # 22:53:26 >  

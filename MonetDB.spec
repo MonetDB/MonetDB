@@ -119,7 +119,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jun2016/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jun2016-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
@@ -962,6 +962,51 @@ rm -f %{buildroot}%{_bindir}/Maddlog
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Jul 13 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.7-20160713
+- Rebuilt.
+- BZ#4014: KILL signal
+- BZ#4021: Analyze query does not escape input [security]
+- BZ#4026: JDBC driver incorrectly converts TINYINT fields to String
+  instead of an integer type.
+- BZ#4028: inputs not the same size
+- BZ#4032: no decimal places after update. ODBC driver
+- BZ#4035: SQL Function call bug
+- BZ#4036: Possible sql_catalog corruption due to unclean backuped tail
+
+* Thu Jul  7 2016 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.23.7-20160713
+- java: Corrected PROCEDURE_TYPE output value of method DatabaseMetaData.getProcedures().
+  It used to return procedureReturnsResult. Now it returns procedureNoResult.
+  Corrected ORDINAL_POSITION output value of method DatabaseMetaData.getProcedureColumns().
+  It used to start with 0, but as procedures do not return a result value it now
+  starts with 1 for all the procedure arguments, as defined by the JDBC API.
+- java: Improved output of method DatabaseMetaData.getProcedures(). The REMARKS
+  column now contains the procedure definition as stored in sys.functions.func.
+  The SPECIFIC_NAME column now contains the procedure unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the specific
+  overloaded procedure which has the same name, but different arguments.
+  Also improved output of method DatabaseMetaData.getProcedureColumns().
+  The SPECIFIC_NAME column now contains the procedure unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the proper
+  arguments of the specific overloaded procedure by matching the SPECIFIC_NAME
+  value.
+- java: Improved output of method DatabaseMetaData.getFunctions(). The REMARKS
+  column now contains the function definition as stored in sys.functions.func.
+  The SPECIFIC_NAME column now contains the function unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the specific
+  overloaded function which has the same name, but different arguments.
+  Also improved output of method DatabaseMetaData.getFunctionColumns().
+  The SPECIFIC_NAME column now contains the function unique identifier as
+  stored in sys.functions.id. This allows the caller to retrieve the proper
+  arguments of the specific overloaded function by matching the SPECIFIC_NAME
+  value.
+
+* Mon Jul 04 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
+- Rebuilt.
+- BZ#4031: mclient doesn't accept - argument to refer to stdin
+
+* Fri Jul  1 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.5-20160704
+- MonetDB: Lots of memory leaks have been plugged across the whole system.
+
 * Fri Jun 10 2016 Sjoerd Mullender <sjoerd@acm.org> - 11.23.3-20160610
 - Rebuilt.
 - BZ#4015: Daemon crashes on database release command

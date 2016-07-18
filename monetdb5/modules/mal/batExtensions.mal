@@ -5,32 +5,16 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2016 MonetDB B.V.
 
 pattern bat.new(tt:any_1) :bat[:any_1]
-address CMDBATnewColumn;
-pattern bat.new(tt:any_1, size:int) :bat[:any_1]
-address CMDBATnewColumn;
-pattern bat.new(tt:any_1, size:lng) :bat[:any_1]
-address CMDBATnewColumn
-comment "Creates a new empty transient BAT, with tail-types as indicated.";
-
-pattern bat.new(ht:oid, tt:any_1) :bat[:oid,:any_1]
-address CMDBATnew
-comment "Creates a new empty transient BAT, with head- and tail-types as indicated.";
-
-pattern bat.new(ht:oid, tt:any_1, size:int) :bat[:oid,:any_1]
 address CMDBATnew;
-pattern bat.new(ht:oid, tt:any_1, size:lng) :bat[:oid,:any_1]
+pattern bat.new(tt:any_1, size:int) :bat[:any_1]
+address CMDBATnew;
+pattern bat.new(tt:any_1, size:lng, persist:bit) :bat[:any_1]
+address CMDBATnew;
+pattern bat.new(tt:any_1, size:int, persist:bit) :bat[:any_1]
+address CMDBATnew;
+pattern bat.new(tt:any_1, size:lng) :bat[:any_1]
 address CMDBATnew
-comment "Creates a new BAT with sufficient space.";
-
-pattern bat.new_persistent(ht:oid, tt:any_1) :bat[:any_1]
-address CMDBATnew_persistent
-comment "Creates a new empty transient BAT in the persistent farm, with head- and tail-types as indicated.";
-
-pattern bat.new_persistent(ht:oid, tt:any_1, size:int) :bat[:any_1]
-address CMDBATnew_persistent;
-pattern bat.new_persistent(ht:oid, tt:any_1, size:lng) :bat[:any_1]
-address CMDBATnew_persistent
-comment "Creates a new BAT in the persistent farm and allocate space.";
+comment "Creates a new empty transient BAT, with tail-types as indicated.";
 
 pattern bat.single(val:any_1):bat[:any_1]
 address CMDBATsingle

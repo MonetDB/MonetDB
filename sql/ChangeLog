@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jul  6 2016 Martin Kersten <mk@cwi.nl>
+- The syntax of bat.new(:oid,:any) has been changed by dropping the
+  superflous :oid.  All BATs are now binary associations between a void
+  column and a materialized value column.  (except for the internal
+  :bat[:void,:void] representation of simple oid ranged tails.)
+

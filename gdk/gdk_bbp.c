@@ -76,6 +76,14 @@
 #include "gdk_private.h"
 #include "gdk_storage.h"
 #include "mutils.h"
+
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)	_access(f, m)
+#endif
+
 /*
  * The BBP has a fixed address, so re-allocation due to a growing BBP
  * caused by one thread does not disturb reads to the old entries by
@@ -581,8 +589,8 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 				 "for BAT %d failed\n", headtail, bid);
 
 		b->theap.dirty = TRUE;
-		old = (int *) h1.base + b->batFirst;
-		new = (oid *) b->theap.base + b->batFirst;
+		old = (int *) h1.base;
+		new = (oid *) b->theap.base;
 		if (b->tvarsized)
 			for (i = 0; i < b->batCount; i++)
 				new[i] = (oid) old[i] << 3;
@@ -687,9 +695,9 @@ fixsorted(void)
 				/* position should not be set */
 				b->batDirtydesc = 1;
 				b->tnosorted = 0;
-			} else if (b->tnosorted <= b->batFirst ||
-			    b->tnosorted >= b->batFirst + b->batCount ||
-				b->ttype < 0) {
+			} else if (b->tnosorted == 0 ||
+				   b->tnosorted >= b->batCount ||
+				   b->ttype < 0) {
 				/* out of range */
 				b->batDirtydesc = 1;
 				b->tnosorted = 0;
@@ -718,9 +726,9 @@ fixsorted(void)
 				/* position should not be set */
 				b->batDirtydesc = 1;
 				b->tnorevsorted = 0;
-			} else if (b->tnorevsorted <= b->batFirst ||
-			    b->tnorevsorted >= b->batFirst + b->batCount ||
-				b->ttype < 0) {
+			} else if (b->tnorevsorted == 0 ||
+				   b->tnorevsorted >= b->batCount ||
+				   b->ttype < 0) {
 				/* out of range */
 				b->batDirtydesc = 1;
 				b->tnorevsorted = 0;
@@ -860,8 +868,8 @@ fixwkbheap(void)
 		/* do the conversion */
 		b->theap.dirty = TRUE;
 		b->tvheap->dirty = TRUE;
-		old = (const var_t *) h1.base + BUNfirst(b);
-		new = (var_t *) Tloc(b, BUNfirst(b));
+		old = (const var_t *) h1.base;
+		new = (var_t *) Tloc(b, 0);
 		for (i = 0; i < b->batCount; i++) {
 			int len;
 			owkb = (struct old_wkb *) (h2.base + (old[i] << GDK_VARSHIFT));
@@ -1075,7 +1083,7 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted = 0, deleted = 0, first, count, capacity, base = 0;
+		lng inserted = 0, deleted = 0, first = 0, count, capacity, base = 0;
 #ifdef GDKLIBRARY_HEADED
 		/* these variables are not used in later versions */
 		char tailname[129];
@@ -1110,12 +1118,12 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 			   &map_theap,
 			   &nread) < 14 :
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %d %u %lld %lld %lld %lld"
+			   "%lld %hu %128s %128s %d %u %lld %lld %lld"
 			   "%n",
 			   &batid, &status, headname, filename,
-			   &lastused, &properties, &first,
+			   &lastused, &properties,
 			   &count, &capacity, &base,
-			   &nread) < 10)
+			   &nread) < 9)
 			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
@@ -1129,6 +1137,9 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		while ((s = strchr(s, '\\')) != NULL)
 			*s++ = DIR_SEP;
 #endif
+
+		if (first != 0)
+			GDKfatal("BBPinit: first != 0 (ID = "LLFMT").", batid);
 
 		bid = (bat) batid;
 		if (batid >= (lng) ATOMIC_GET(BBPsize, BBPsizeLock)) {
@@ -1146,10 +1157,8 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		bn->batPersistence = PERSISTENT;
 		bn->batCopiedtodisk = 1;
 		bn->batRestricted = (properties & 0x06) >> 1;
-		bn->batFirst = (BUN) first;
 		bn->batCount = (BUN) count;
-		bn->batInserted = bn->batFirst + bn->batCount;
-		bn->batDeleted = bn->batFirst;
+		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
 
 		if (bbpversion <= GDKLIBRARY_HEADED) {
@@ -1568,7 +1577,7 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " " BUNFMT " "
+	if (fprintf(fp, SSZFMT " %d %s %s %d %d " BUNFMT " "
 		    BUNFMT " " OIDFMT, /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
@@ -1576,7 +1585,6 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_physical(i),
 		    BBP_lastused(i),
 		    BBP_desc(i)->batRestricted << 1,
-		    BBP_desc(i)->batFirst,
 		    BBP_desc(i)->batCount,
 		    BBP_desc(i)->batCapacity,
 		    BBP_desc(i)->hseqbase) < 0 ||
@@ -2772,9 +2780,6 @@ BBPdestroy(BAT *b)
 
 		assert(b->batSharecnt == 0);
 		if (tunfix) {
-			DELloop(b, p, q) {
-				(*tunfix) (BUNtail(bi, p));
-			}
 			BATloop(b, p, q) {
 				(*tunfix) (BUNtail(bi, p));
 			}
@@ -3656,6 +3661,18 @@ BBPsync(int cnt, bat *subcommit)
 			if (BBP_status(i) & BBPEXISTING) {
 				if (b != NULL && BBPbackup(b, subcommit != NULL) != GDK_SUCCEED)
 					break;
+			} else if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
+				char o[10];
+				char *f;
+				snprintf(o, sizeof(o), "%o", b->batCacheid);
+				f = GDKfilepath(b->theap.farmid, BAKDIR, o, "tail");
+				if (access(f, F_OK) == 0)
+					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "tail");
+				GDKfree(f);
+				f = GDKfilepath(b->theap.farmid, BAKDIR, o, "theap");
+				if (access(f, F_OK) == 0)
+					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "theap");
+				GDKfree(f);
 			}
 		}
 		if (idx < cnt)

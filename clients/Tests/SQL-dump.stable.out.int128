@@ -5648,6 +5648,7 @@ drop function pcre_replace(string, string, string, string);
 [ "alpha",	"public",	16,	"monetdb",	0	]
 [ "date_to_str",	"public",	16,	"monetdb",	0	]
 [ "degrees",	"public",	16,	"monetdb",	0	]
+[ "env",	"public",	16,	NULL,	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]

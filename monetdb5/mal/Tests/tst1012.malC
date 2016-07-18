@@ -1,4 +1,4 @@
-b:= bat.new_persistent(:oid,:int);
+b:= bat.new(:int,0:int,true:bit);
 bat.append(b,2);
 bat.setPersistent(b);
 x:= bat.isPersistent(b);

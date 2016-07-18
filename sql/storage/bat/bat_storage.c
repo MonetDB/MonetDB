@@ -1661,7 +1661,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 	cur = temp_descriptor(cbat->bid);
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
-	if (BUNlast(ins) > BUNfirst(ins)) {
+	if (BUNlast(ins) > 0) {
 		(*changes)++;
 		assert(cur->theap.storage != STORE_PRIV);
 		BATappend(cur,ins,TRUE);
@@ -1676,7 +1676,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 		BAT *ui = temp_descriptor(cbat->uibid);
 		BAT *uv = temp_descriptor(cbat->uvbid);
 		/* any updates */
-		if (BUNlast(ui) > BUNfirst(ui)) {
+		if (BUNlast(ui) > 0) {
 			(*changes)++;
 			void_replace_bat(cur, ui, uv, TRUE);
 			temp_destroy(cbat->uibid);
@@ -1893,7 +1893,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 	}
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
-	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
+	if (BUNlast(ins) > 0 || cleared) {
 		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
@@ -1936,7 +1936,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		BAT *uv = temp_descriptor(cbat->uvbid);
 
 		/* any updates */
-		if (BUNlast(ui) > BUNfirst(ui)) {
+		if (BUNlast(ui) > 0) {
 			void_replace_bat(cur, ui, uv, TRUE);
 			/* cleanup the old deltas */
 			temp_destroy(obat->uibid);
@@ -1978,7 +1978,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(obat->ibid);
 	/* any inserts */
-	if (BUNlast(ins) > BUNfirst(ins) || cleared) {
+	if (BUNlast(ins) > 0 || cleared) {
 		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
@@ -2009,7 +2009,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		BAT *uv = temp_descriptor(obat->uvbid);
 
 		/* any updates */
-		if (BUNlast(ui) > BUNfirst(ui)) {
+		if (BUNlast(ui) > 0) {
 			void_replace_bat(cur, ui, uv, TRUE);
 			/* cleanup the old deltas */
 			temp_destroy(obat->uibid);
@@ -2319,7 +2319,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared)
 		log_bat_clear(bat_logger, cbat->name);
 
 	/* any inserts */
-	if (BUNlast(ins) > BUNfirst(ins)) {
+	if (BUNlast(ins) > 0) {
 		assert(store_nr_active>0);
 		if (BUNlast(ins) > ins->batInserted && (store_nr_active != 1 || cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE)) 
 			ok = log_bat(bat_logger, ins, cbat->name);
@@ -2359,7 +2359,7 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared)
 		log_bat_clear(bat_logger, fdb->dname);
 
 	db = temp_descriptor(fdb->dbid);
-	if (BUNlast(db) > BUNfirst(db)) {
+	if (BUNlast(db) > 0) {
 		assert(store_nr_active>0);
 		if (BUNlast(db) > db->batInserted) 
 			ok = log_bat(bat_logger, db, fdb->dname);
@@ -2411,7 +2411,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 		BAT *ins = temp_descriptor(cbat->ibid);
 
 		/* any inserts */
-		if (BUNlast(ins) > BUNfirst(ins)) {
+		if (BUNlast(ins) > 0) {
 			bat_set_access(ins, BAT_READ);
 			BATmode(ins, PERSISTENT);
 		}
