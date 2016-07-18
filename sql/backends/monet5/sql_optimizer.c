@@ -209,7 +209,6 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	chkProgram(c->fdout, c->nspace, mb);
 

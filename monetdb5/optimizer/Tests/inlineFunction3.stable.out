@@ -29,8 +29,8 @@ Ready.
 #io.printf("#result of inline\n");
 #result of inline
 function user.tst():void;
-    X_5 := false:bit;
-    X_11 := false:bit;
+    X_3 := false:bit;
+    X_9 := false:bit;
     z := 1:int;
 end user.tst;
 

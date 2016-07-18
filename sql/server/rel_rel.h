@@ -61,6 +61,8 @@ extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 extern sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
 
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
+extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
+
 
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 

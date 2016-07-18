@@ -1229,18 +1229,11 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 void
 printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
 {
-	str nme;
-	char nmebuf[PATHLENGTH];
 	VarPtr n = getVar(mb, index);
 
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
-	if (n->tmpindex) {
-		snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, n->tmpindex);
-		nme = nmebuf;
-	} else
-		nme = n->name;
-	mnstr_printf(f, "#[%2d] %5s", index, nme);
+	mnstr_printf(f, "#[%2d] %5s", index, n->id);
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb,index), getLastUpdate(mb,index),getEndScope(mb, index));
 	if (v)
 		ATOMprint(v->vtype, VALptr(v), f);

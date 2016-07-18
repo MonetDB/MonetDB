@@ -36,29 +36,29 @@ function user.foo():void;               	#[0] (0)  0
     b:bat[:int] := bat.new(:int);       	#[4] (0) CMDBATnew 7 <- 8 
     bat.append(b:bat[:int],1:int);      	#[5] (0) BKCappend_val_wrap 9 <- 7 2 
     io.print("do multiplex three test":str);	#[6] (0) IOprint_val 10 <- 11 
-    X_22:bat[:int] := bat.new(nil:int); 	#[7] (0) CMDBATnew 22 <- 23 
-barrier (X_25:oid,X_26:int) := iterator.new(b:bat[:int]);	#[8] (0) ITRbunIterator 25 26 <- 7 
-    X_28:int := user.three(X_26:int,2:int,3:int);	#[9] (0)  28 <- 26 4 5 
-    bat.append(X_22:bat[:int],X_28:int);	#[10] (0) BKCappend_val_wrap 29 <- 22 28 
-    redo (X_25:oid,X_26:int) := iterator.next(b:bat[:int]);	#[11] (0) ITRbunNext 25 26 <- 7 
-exit (X_25:oid,X_26:int);               	#[12] (0)  25 26 
-    z:bat[:int] := X_22:bat[:int];      	#[13] (0)  12 <- 22 
+    X_16:bat[:int] := bat.new(nil:int); 	#[7] (0) CMDBATnew 22 <- 23 
+barrier (X_19:oid,X_20:int) := iterator.new(b:bat[:int]);	#[8] (0) ITRbunIterator 25 26 <- 7 
+    X_22:int := user.three(X_20:int,2:int,3:int);	#[9] (0)  28 <- 26 4 5 
+    bat.append(X_16:bat[:int],X_22:int);	#[10] (0) BKCappend_val_wrap 29 <- 22 28 
+    redo (X_19:oid,X_20:int) := iterator.next(b:bat[:int]);	#[11] (0) ITRbunNext 25 26 <- 7 
+exit (X_19:oid,X_20:int);               	#[12] (0)  25 26 
+    z:bat[:int] := X_16:bat[:int];      	#[13] (0)  12 <- 22 
     io.print("do multiplex one test":str);	#[14] (0) IOprint_val 15 <- 16 
-    X_33:bat[:int] := bat.new(nil:int); 	#[15] (0) CMDBATnew 33 <- 23 
-barrier (X_35:oid,X_36:int) := iterator.new(b:bat[:int]);	#[16] (0) ITRbunIterator 35 36 <- 7 
-    X_38:int := user.one(X_36:int);     	#[17] (0)  38 <- 36 
-    bat.append(X_33:bat[:int],X_38:int);	#[18] (0) BKCappend_val_wrap 39 <- 33 38 
-    redo (X_35:oid,X_36:int) := iterator.next(b:bat[:int]);	#[19] (0) ITRbunNext 35 36 <- 7 
-exit (X_35:oid,X_36:int);               	#[20] (0)  35 36 
-    z:bat[:int] := X_33:bat[:int];      	#[21] (0)  12 <- 33 
+    X_27:bat[:int] := bat.new(nil:int); 	#[15] (0) CMDBATnew 33 <- 23 
+barrier (X_29:oid,X_30:int) := iterator.new(b:bat[:int]);	#[16] (0) ITRbunIterator 35 36 <- 7 
+    X_32:int := user.one(X_30:int);     	#[17] (0)  38 <- 36 
+    bat.append(X_27:bat[:int],X_32:int);	#[18] (0) BKCappend_val_wrap 39 <- 33 38 
+    redo (X_29:oid,X_30:int) := iterator.next(b:bat[:int]);	#[19] (0) ITRbunNext 35 36 <- 7 
+exit (X_29:oid,X_30:int);               	#[20] (0)  35 36 
+    z:bat[:int] := X_27:bat[:int];      	#[21] (0)  12 <- 33 
     io.print("do multiplex pow test":str);	#[22] (0) IOprint_val 18 <- 19 
-    X_43:bat[:int] := bat.new(nil:int); 	#[23] (0) CMDBATnew 43 <- 23 
-barrier (X_45:oid,X_46:int) := iterator.new(b:bat[:int]);	#[24] (0) ITRbunIterator 45 46 <- 7 
-    X_48:int := user.pow(X_46:int,2:int);	#[25] (0)  48 <- 46 4 
-    bat.append(X_43:bat[:int],X_48:int);	#[26] (0) BKCappend_val_wrap 49 <- 43 48 
-    redo (X_45:oid,X_46:int) := iterator.next(b:bat[:int]);	#[27] (0) ITRbunNext 45 46 <- 7 
-exit (X_45:oid,X_46:int);               	#[28] (0)  45 46 
-    z:bat[:int] := X_43:bat[:int];      	#[29] (0)  12 <- 43 
+    X_37:bat[:int] := bat.new(nil:int); 	#[23] (0) CMDBATnew 43 <- 23 
+barrier (X_39:oid,X_40:int) := iterator.new(b:bat[:int]);	#[24] (0) ITRbunIterator 45 46 <- 7 
+    X_42:int := user.pow(X_40:int,2:int);	#[25] (0)  48 <- 46 4 
+    bat.append(X_37:bat[:int],X_42:int);	#[26] (0) BKCappend_val_wrap 49 <- 43 48 
+    redo (X_39:oid,X_40:int) := iterator.next(b:bat[:int]);	#[27] (0) ITRbunNext 45 46 <- 7 
+exit (X_39:oid,X_40:int);               	#[28] (0)  45 46 
+    z:bat[:int] := X_37:bat[:int];      	#[29] (0)  12 <- 43 
     io.print(z:bat[:int]);              	#[30] (0) IOprint_val 21 <- 12 
 end user.foo;                           	#[31] (0)  
 [ 1 ]

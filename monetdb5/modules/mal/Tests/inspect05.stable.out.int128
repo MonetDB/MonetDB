@@ -68,7 +68,7 @@ Ready.
 [ 36@0,	"isSortedReverse",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCisSortedReverse;"	]
 [ 37@0,	"isSynced",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCisSorted;"	]
 [ 38@0,	"isTransient",	"command",	"bat",	"(b:bat[:any_1]):bit ",	"BKCgetKey;"	]
-[ 39@0,	"isaKey",	"command",	"bat",	"(b:bat[:any_1]) (X_2:bat[:str],X_3:bat[:str]) ",	"BKCinfo;"	]
+[ 39@0,	"isaKey",	"command",	"bat",	"(b:bat[:any_1]) (X_0:bat[:str],X_1:bat[:str]) ",	"BKCinfo;"	]
 [ 40@0,	"mergecand",	"command",	"bat",	"(a:bat[:oid],b:bat[:oid]):bat[:oid] ",	"BKCmergecand;"	]
 [ 41@0,	"mirror",	"command",	"bat",	"(b:bat[:any_2]):bat[:oid] ",	"BKCmirror;"	]
 [ 42@0,	"new",	"pattern",	"bat",	"(tt:any_1,size:lng):bat[:any_1] ",	"CMDBATnew;"	]

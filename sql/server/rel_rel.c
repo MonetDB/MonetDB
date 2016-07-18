@@ -715,6 +715,21 @@ rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 	return rel;
 }
 
+sql_rel *
+rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
+{
+	sql_rel *rel = rel_create(sa);
+
+	rel->flag = kind;
+	rel->l = l; /* relation before call */
+	rel->r = f; /* expression (table func call) */
+	rel->op = op_table;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = list_length(exps);
+	return rel;
+}
+
 static void
 exps_has_nil(list *exps)
 {

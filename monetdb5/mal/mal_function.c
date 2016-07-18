@@ -32,7 +32,7 @@ Symbol newFunction(str mod, str nme,int kind){
 	}
 	setModuleId(p, mod);
 	setFunctionId(p, nme);
-	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
+	setDestVar(p, newVariable(s->def,nme,strlen(nme),TYPE_any));
 	pushInstruction(s->def,p);
 	return s;
 }

@@ -1,11 +1,11 @@
 stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 
 
-# 13:32:04 >  
-# 13:32:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38272" "--set" "mapi_usock=/var/tmp/mtest-30987/.s.monetdb.38272" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "embedded_r=yes"
-# 13:32:04 >  
+# 04:04:13 >  
+# 04:04:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32121" "--set" "mapi_usock=/var/tmp/mtest-3168/.s.monetdb.32121" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal"
+# 04:04:13 >  
 
-# builtin opt 	gdk_dbpath = /ufs/sjoerd/Monet-devel/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,18 +17,17 @@ stderr of test 'remote03` in directory 'monetdb5/modules/mal` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38272
-# cmdline opt 	mapi_usock = /var/tmp/mtest-30987/.s.monetdb.38272
+# cmdline opt 	mapi_port = 32121
+# cmdline opt 	mapi_usock = /var/tmp/mtest-3168/.s.monetdb.32121
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbpath = /ufs/sjoerd/Monet-devel/var/MonetDB/mTests_monetdb5_modules_mal
-# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/default//Linux/var/MonetDB/mTests_monetdb5_modules_mal
 # cmdline opt 	gdk_debug = 536870922
 
-# 13:32:05 >  
-# 13:32:05 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-30987" "--port=38272"
-# 13:32:05 >  
+# 04:04:13 >  
+# 04:04:13 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-3168" "--port=32121"
+# 04:04:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-30987/.s.monetdb.38272
+MAPI  = (monetdb) /var/tmp/mtest-3168/.s.monetdb.32121
 QUERY = # let connect figure out itself how to connect to the running db
         uri := sabaoth.getLocalConnectionURI();
         conn:str := remote.connect(uri, "monetdb", "monetdb");
@@ -94,10 +93,9 @@ QUERY = # let connect figure out itself how to connect to the running db
         	io.print("Received an error from the remote site");
         exit MALException;
         
-ERROR = !SyntaxException:remote.exec:(mapi:monetdb://monetdb@lab02.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_3_void := io.print.bla();
+ERROR = !SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.da.cwi.nl/mTests_monetdb5_modules_mal) rmt0_X_0_void := io.print.bla();
 
-
-# 23:12:09 >  
-# 23:12:09 >  "Done."
-# 23:12:09 >  
+# 04:04:13 >  
+# 04:04:13 >  "Done."
+# 04:04:13 >  
 
