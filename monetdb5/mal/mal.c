@@ -28,7 +28,6 @@ int have_hge;
 #include "mal_namespace.h"  /* for initNamespace() */
 #include "mal_client.h"
 #include "mal_sabaoth.h"
-#include "mal_recycle.h"
 #include "mal_dataflow.h"
 #include "mal_profiler.h"
 #include "mal_private.h"
@@ -99,7 +98,6 @@ int mal_init(void){
 	initHeartbeat();
 #endif
 	initResource();
-	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
 	/* set up the profiler if needed, output sent to console */
@@ -126,7 +124,6 @@ void mserver_reset(void)
 	setHeartbeat(-1);
 	stopProfiler();
 	QOTstatisticsExit();
-	RECYCLEdrop(mal_clients); 
 	AUTHreset(); 
 	if ((err = msab_wildRetreat()) != NULL) {
 		fprintf(stderr, "!%s", err);

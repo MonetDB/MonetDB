@@ -543,22 +543,9 @@ typedef signed char bit;
 typedef signed char bte;
 typedef short sht;
 
-#ifdef MONET_OID32
-#define SIZEOF_OID	SIZEOF_INT
-typedef unsigned int oid;
-#else
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
-#endif
-#if SIZEOF_OID == SIZEOF_SIZE_T
 #define OIDFMT		SZFMT
-#else
-#if SIZEOF_OID == SIZEOF_INT
-#define OIDFMT		"%u"
-#else
-#define OIDFMT		ULLFMT
-#endif
-#endif
 
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */

@@ -18,15 +18,23 @@ public class Test_CisValid {
 		Connection conn = DriverManager.getConnection(args[0]);
 		Statement stmt = conn.createStatement();
 
-		conn.setAutoCommit(false); // start a transaction
 		try {
+			conn.setAutoCommit(false); // start a transaction
 			stmt.execute("SELECT COUNT(*) FROM doesnotexist;"); // let's trigger an error
 		} catch (SQLException e) {
-			e.printStackTrace();
-			System.out.println("Validating connection: conn.isValid? " + conn.isValid(30)); // Can we rollback on this connection?
-			conn.rollback();
+			// e.printStackTrace();
+			System.err.println("Expected error: " + e);
+
+			try {
+				// test calling conn.isValid()
+				System.out.println("Validating connection: conn.isValid? " + conn.isValid(30));
+				// Can we rollback on this connection without causing an error?
+				conn.rollback();
+			} catch (SQLException e2) {
+				System.err.println("UnExpected error: " + e2);
+			}
 		}
-			
+
 		stmt.close();
 		conn.close();
 	}

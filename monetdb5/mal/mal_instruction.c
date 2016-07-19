@@ -70,7 +70,6 @@ int
 newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 {
 	InstrPtr *p;
-	static lng recycleSeq=0;
 
 	p = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * maxstmts);
 	if (p == NULL) {
@@ -80,7 +79,6 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	mb->stmt = p;
 	mb->stop = 0;
 	mb->ssize = maxstmts;
-	mb->recid = recycleSeq++;
 	return 0;
 }
 
@@ -126,8 +124,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->unsafeProp = 0;
 	mb->ptop = mb->psize = 0;
 	mb->replica = NULL;
-	mb->recycle = 0;
-	mb->recid = 0;
 	mb->trap = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
@@ -281,8 +277,6 @@ copyMalBlk(MalBlkPtr old)
 	mb->tag = old->tag;
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
-	mb->recycle = old->recycle;
-	mb->recid = old->recid;
 	mb->trap = old->trap;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
@@ -416,8 +410,10 @@ newInstruction(MalBlkPtr mb, int kind)
 	}
 	if (p == NULL) {
 		p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
-		if (p == NULL)
+		if (p == NULL) {
+			showException(GDKout, MAL, "pushEndInstruction", "memory allocation failure");
 			return NULL;
+		}
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
@@ -427,7 +423,6 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->blk = NULL;
 	p->polymorphic = 0;
 	p->varargs = 0;
-	p->recycle = 0;
 	p->argc = 1;
 	p->retc = 1;
 	p->mitosis = -1;
@@ -607,7 +602,7 @@ findVariableLength(MalBlkPtr mb, str name, int len)
 	int j;
 
 	for (i = mb->vtop - 1; i >= 0; i--)
-		if (mb->var[i] && mb->var[i]->id) {
+		if (mb->var[i]) { /* mb->var[i]->id will always evaluate to true */
 			str s = mb->var[i]->id;
 
 			j = 0;
@@ -751,7 +746,7 @@ makeVarSpace(MalBlkPtr mb)
 
 /* create and initialize a variable record*/
 int
-newVariable(MalBlkPtr mb, str name, int len, malType type)
+newVariable(MalBlkPtr mb, str name, size_t len, malType type)
 {
 	int n;
 
@@ -1547,6 +1542,9 @@ pushEndInstruction(MalBlkPtr mb)
 	InstrPtr p;
 
 	p = newInstruction(mb, ENDsymbol);
+	if (!p) {
+		return;
+	}
 	p->argc = 0;
 	p->retc = 0;
 	p->argv[0] = 0;

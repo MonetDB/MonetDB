@@ -131,11 +131,6 @@ usage(char *prog, int xit)
 static void
 monet_hello(void)
 {
-#ifdef MONETDB_STATIC
-	char *linkinfo = "statically";
-#else
-	char *linkinfo = "dynamically";
-#endif
 	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
@@ -157,14 +152,14 @@ monet_hello(void)
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s%s linked\n",
-			HOST, sizeof(ptr) * 8, sizeof(oid) * 8,
+	printf("# Compiled for %s/" SZFMT "bit%s\n",
+			HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
-			"and 128bit integers ",
+			" with 128bit integers"
 #else
-			"",
+			""
 #endif
-			linkinfo);
+			);
 	printf("# Found %.3f %ciB available main-memory.\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
@@ -387,10 +382,6 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "recycler") == 0) {
-				grpdebug |= GRPrecycler;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {

@@ -776,3 +776,11 @@ IOimport(void *ret, bat *bid, str *fnme)
 	return MAL_SUCCEED;
 }
 
+
+
+str
+IOsetmemorylimit(void *res, lng *nbytes) {
+	(void) res;
+	GDKsetmemorylimit(*nbytes);
+	return MAL_SUCCEED;
+}
