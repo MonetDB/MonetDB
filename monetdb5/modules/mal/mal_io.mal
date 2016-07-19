@@ -60,3 +60,8 @@ address IOimport
 comment "Import a BAT from an ASCII dump. The tuples are appended to the
  first argument. Its signature must match the dump,
  else parsing errors will occur as an exception.";
+
+# used for testing malloc failures
+command setmemorylimit(nbytes:lng):void
+address IOsetmemorylimit
+comment "Set memory limit for testing";
