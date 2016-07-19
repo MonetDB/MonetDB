@@ -32,9 +32,8 @@ monet_version(void)
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
-	printf("(" SZFMT "-bit, " SZFMT "-bit oids%s)\n",
+	printf("(" SZFMT "-bit%s)\n",
 			(size_t) (sizeof(ptr) * 8),
-			(size_t) (sizeof(oid) * 8),
 #ifdef HAVE_HGE
 			", 128-bit integers"
 #else
@@ -78,9 +77,5 @@ monet_version(void)
 #endif
 	printf("Compiled by: %s (" HOST ")\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
-#ifdef MONETDB_STATIC
-	printf("Linking    : %s (static)\n", "@linkercall@");
-#else
 	printf("Linking    : %s\n", "@linkercall@");
-#endif
 }

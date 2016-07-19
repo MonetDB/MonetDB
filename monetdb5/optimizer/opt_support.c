@@ -154,7 +154,6 @@ struct OPTcatalog {
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},
 {"origin",		0,	0,	0,	DEBUG_OPT_ORIGIN},
 {"peephole",	0,	0,	0,	DEBUG_OPT_PEEPHOLE},
-{"recycler",	0,	0,	0,	DEBUG_OPT_RECYCLE},
 {"reduce",		0,	0,	0,	DEBUG_OPT_REDUCE},
 {"remap",		0,	0,	0,	DEBUG_OPT_REMAP},
 {"remote",		0,	0,	0,	DEBUG_OPT_REMOTE},
@@ -559,7 +558,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == optimizerRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
-		getModuleId(p) == recycleRef ||
 		getModuleId(p) == alarmRef)
 		return TRUE;
 
@@ -603,8 +601,6 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 
 	if ( getModuleId(p) == remoteRef)
-		return TRUE;
-	if ( getModuleId(p) == recycleRef)
 		return TRUE;
 	return FALSE;
 }

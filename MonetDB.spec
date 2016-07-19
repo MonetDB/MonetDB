@@ -12,12 +12,7 @@
 %define with_int128 1
 %endif
 
-# only add .oidXX suffix if oid size differs from bit size
-%if %{bits} == 64 && %{?oid32:1}%{!?oid32:0}
-%define oidsuf .oid32
-%endif
-
-%define release %{buildno}%{?dist}%{?oidsuf}
+%define release %{buildno}%{?dist}
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can define
@@ -905,7 +900,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
 	--enable-profile=no \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \

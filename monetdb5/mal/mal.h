@@ -72,7 +72,6 @@ mal_export int have_hge;
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
-#define GRPrecycler (1<<30)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
@@ -170,7 +169,6 @@ typedef struct {
 	bit gc;						/* garbage control flags */
 	bit polymorphic;			/* complex type analysis */
 	bit varargs;				/* variable number of arguments */
-	int recycle;				/* <0 or index into recycle cache */
 	int jump;					/* controlflow program counter */
 	int pc;						/* location in MAL plan for profiler*/
 	MALfcn fcn;					/* resolved function address */
@@ -215,8 +213,6 @@ typedef struct MALBLK {
 	short dotfile;				/* send dot file to stethoscope? */
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
-	sht recycle;				/* execution subject to recycler control */
-	lng recid;					/* Recycler identifier */
 	sht trap;					/* call debugger when called */
 	lng starttime;				/* track when the query started, for resource management */
 	lng runtime;				/* average execution time of block in ticks */
@@ -251,7 +247,7 @@ typedef struct MALSTK {
 
 /*
  * It is handy to administer the timing in the stack frame
- * for use in profiling and recylcing instructions.
+ * for use in profiling instructions.
  */
 	struct timeval clock;		/* time this stack was created */
 	char cmd;		/* debugger and runtime communication */

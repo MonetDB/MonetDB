@@ -141,7 +141,9 @@ showException(stream *out, enum malexception type, const char *fcn, const char *
 	va_end(ap);
 
 	dumpExceptionsToStream(out, msg);
-	GDKfree(msg);
+	if (msg && msg != M5OutOfMemory) {
+		GDKfree(msg);
+	}
 }
 
 /**

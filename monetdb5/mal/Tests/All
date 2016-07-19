@@ -190,18 +190,6 @@ tst920
 tst901a
 #tst901b
 
-recycle00
-recycle01
-recycle02
-recycle03
-recycle04
-recycle05
-recycle07
-recycle08
-recycle10
-recycle11
-recycle12
-
 parseErrors
 
 dataflow01

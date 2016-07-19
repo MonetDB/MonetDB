@@ -310,6 +310,7 @@ int GDK_vm_trim = 1;
  * fall-back for other compilers. */
 #include "gdk_atomic.h"
 static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
+static volatile ATOMIC_TYPE GDK_mallocedbytes_limit = 0;
 static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
 #ifdef GDK_VM_KEEPHISTO
 volatile ATOMIC_TYPE GDK_vm_nallocs[MAX_BIT] = { 0 };
@@ -1682,6 +1683,11 @@ GDKmalloc_prefixsize(size_t size)
 	return s;
 }
 
+gdk_export void GDKsetmemorylimit(size_t nbytes) {
+	GDK_mallocedbytes_limit = nbytes;
+}
+
+
 /*
  * The emergency flag can be set to force a fatal error if needed.
  * Otherwise, the caller is able to deal with the lack of memory.
@@ -1699,6 +1705,13 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 		GDKfatal("GDKmallocmax: called with size " SZFMT "", size);
 #endif
 	}
+#ifndef NDEBUG
+	/* fail malloc for testing purposes depending on set limit */
+	if (GDK_mallocedbytes_limit > 0 &&
+			(GDK_mallocedbytes_estimate + size + MALLOC_EXTRA_SPACE) > GDK_mallocedbytes_limit) {
+		return NULL;
+	}
+#endif
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
 	s = GDKmalloc_prefixsize(size);
 	if (s == NULL) {
@@ -1711,6 +1724,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 			}
 			GDKfatal("GDKmallocmax: failed for " SZFMT " bytes", size);
 		} else {
+			/* TODO why are we printing this on stderr? */
 			fprintf(stderr, "#GDKmallocmax: recovery ok. Continuing..\n");
 		}
 	}

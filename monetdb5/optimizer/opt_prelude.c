@@ -188,7 +188,6 @@ str rankRef;
 str dense_rankRef;
 str raiseRef;
 str reconnectRef;
-str recycleRef;
 str refineRef;
 str registerRef;
 str remapRef;
@@ -417,7 +416,6 @@ void optimizerInit(void)
 	dense_rankRef = putName("dense_rank");
 	raiseRef = putName("raise");
 	reconnectRef = putName("reconnect");
-	recycleRef = putName("recycle");
 	refineRef = putName("refine");
 	registerRef = putName("register");
 	remapRef = putName("remap");

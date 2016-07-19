@@ -181,7 +181,6 @@ mal_export  str rankRef;
 mal_export  str dense_rankRef;
 mal_export	str raiseRef;
 mal_export  str reconnectRef;
-mal_export  str recycleRef;
 mal_export  str refineRef;
 mal_export  str registerRef;
 mal_export  str remapRef;
