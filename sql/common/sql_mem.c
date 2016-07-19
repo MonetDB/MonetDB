@@ -44,7 +44,9 @@ sql_ref_dec(sql_ref *r)
 sql_allocator *sa_create(void)
 {
 	sql_allocator *sa = MNEW(sql_allocator);
-	
+	if (!sa) {
+		return NULL;
+	}
 	sa->size = 64;
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);

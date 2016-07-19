@@ -367,8 +367,9 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if (!data) {
 			closesocket(msgsock);
-			msg = "memory allocation failed";
-			goto error;
+			showException(GDKstdout, MAL, "initClient",
+						  "cannot allocate memory");
+			continue;
 		}
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");

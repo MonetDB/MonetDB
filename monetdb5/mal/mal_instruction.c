@@ -1543,6 +1543,8 @@ pushEndInstruction(MalBlkPtr mb)
 
 	p = newInstruction(mb, ENDsymbol);
 	if (!p) {
+		mb->errors++;
+		showException(GDKout, MAL, "pushEndInstruction", "failed to create instruction (out of memory?)");
 		return;
 	}
 	p->argc = 0;
