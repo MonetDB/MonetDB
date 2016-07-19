@@ -410,8 +410,10 @@ newInstruction(MalBlkPtr mb, int kind)
 	}
 	if (p == NULL) {
 		p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
-		if (p == NULL)
+		if (p == NULL) {
+			showException(GDKout, MAL, "pushEndInstruction", "memory allocation failure");
 			return NULL;
+		}
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
@@ -1540,6 +1542,9 @@ pushEndInstruction(MalBlkPtr mb)
 	InstrPtr p;
 
 	p = newInstruction(mb, ENDsymbol);
+	if (!p) {
+		return;
+	}
 	p->argc = 0;
 	p->retc = 0;
 	p->argv[0] = 0;
