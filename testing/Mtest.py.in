@@ -1525,7 +1525,7 @@ def returnCode(proc, f = None):
             return 'error'
     return None                 # no error
 
-def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
+def GetBitsAndOIDsAndModsAndThreads(env) :
     global setpgrp
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
@@ -1536,7 +1536,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     if procdebug:
-        print('GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+        print('GetBitsAndOIDsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
@@ -1566,12 +1566,12 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if procdebug:
-            print('GetBitsAndOIDsAndModsAndStaticAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
+            print('GetBitsAndOIDsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
         if procdebug:
-            print('GetBitsAndOIDsAndModsAndStaticAndThreads: process killed "%s"\n' % '" "'.join(cmd))
+            print('GetBitsAndOIDsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
         raise
     returncode = returnCode(proc)
     if returncode is not None:
@@ -1586,18 +1586,16 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             STDERR.write(qErr)
             STDERR.write("\n")
         STDERR.flush()
-        ErrExit('GetBitsAndOIDsAndModsAndStaticAndThreads: subcommand failed: %s' % returncode)
+        ErrExit('GetBitsAndOIDsAndModsAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
-    env['TST_STATIC'] = ""
     env['TST_SINGLE'] = ""
     env['TST_THREADS'] = ""
     if qOut:
-        tbos = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;?(| and 128bit integers) ([^ ]*) linked", re.MULTILINE)
+        tbos = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;?( and 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
         tm = re.compile("^Modules: (.+)$", re.MULTILINE)
-        #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
         for l in qOut.split('\n'):
             obs = tbos.match(l)
             if obs:
@@ -1606,9 +1604,6 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
                 if obs.group(3) == " and 128bit integers":
                     env['TST_INT128'] = "int128"
                     os.environ['TST_INT128'] = env['TST_INT128']
-                if obs.group(4) == "statically":
-                    env['TST_STATIC'] = "STATIC"
-                    os.environ['TST_STATIC'] = env['TST_STATIC']
             t = tt.match(l)
             if t:
                 if t.group(1) == "1":
@@ -1618,10 +1613,6 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             m = tm.match(l)
             if m:
                 env['TST_MODS'] = eval(m.group(1))
-            #s = ts.match(l)
-            #if s:
-            #       env['TST_STATIC'] = "1"
-            #       os.environ['TST_STATIC'] = env['TST_STATIC']
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
@@ -1644,7 +1635,7 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
     return rtrn
-### GetBitsAndOIDsAndModsAndStaticAndThreads(env) #
+### GetBitsAndOIDsAndModsAndThreads(env) #
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
@@ -1687,11 +1678,8 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     SINGLE = env['TST_SINGLE']
     if SINGLE:
         SINGLE = r"(\.single)?"
-    STATIC = env['TST_STATIC']
-    if STATIC:
-        STATIC = r"(\.STATIC)?"
     dir,file = os.path.split(TST)
-    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?%s%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, INT128, SINGLE, STATIC))
+    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, INT128, SINGLE))
     bestout = besterr = ''
     for f in listdir(dir or os.curdir):
         res = outre.match(f)
@@ -3212,7 +3200,6 @@ def ReadMapproveRc(f) :
     v['BITS'] = ''
     v['INT128'] = ''
     v['SINGLE'] = ''
-    v['STATIC'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z][A-Z0-9_]*) = "(.*)".*$')
         for l in open(f):
@@ -3520,7 +3507,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'INT128', 'SINGLE', 'STATIC':
+        for i in 'BITS', 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3529,9 +3516,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.int128][.single][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'], v['STATIC'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.int128][.single]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ('nopatch', None, 'nopatch', None,
@@ -3807,17 +3794,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'INT128', 'SINGLE', 'STATIC':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'INT128', 'SINGLE':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'INT128', 'SINGLE', 'STATIC':
+        for i in 'BITS', 'INT128', 'SINGLE':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'], v['STATIC'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['INT128'], w['SINGLE'], w['STATIC'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['INT128'], w['SINGLE'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -4101,7 +4088,6 @@ def main(argv) :
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
-            env['TST_STATIC'] = ""
             cmd = splitcommand(env['exe']['Mserver'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
             if env.get('MULTIFARM'):
@@ -4111,7 +4097,7 @@ def main(argv) :
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
             if Check(cmd, 'clients.quit();\n'):
                 sys.exit(1)
-            if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
+            if GetBitsAndOIDsAndModsAndThreads(env):
                 sys.exit(1)
             STDERR.flush()
             if verbose:
@@ -4136,7 +4122,7 @@ def main(argv) :
             env['VERSION'] = os.environ['VERSION']
             n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
             f = open(n, 'w')
-            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_INT128', 'TST_SINGLE', 'TST_STATIC':
+            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_INT128', 'TST_SINGLE':
                 w = v.replace('TST_','')
                 f.write('%s = "%s"\n' % (w, env[v]))
             f.close()
@@ -4231,11 +4217,6 @@ def main(argv) :
             else:
                 isSingle = 'false'
 
-            if env['TST_STATIC'] != '':
-                isStatic = 'true'
-            else:
-                isStatic = 'false'
-
             # ok, we're not prepared for the 128 bits world yet
             bits = env['TST_BITS'][:2]
 
@@ -4270,7 +4251,7 @@ VALUES (%s, '%s', '%s', '%s',
     '%s', '%s', '%s',
     %s, '%s', '%s');
 """ % (now, host, env['SYST'], env['RELEASE'],
-           ccname, ccopts, bits, bits, isInt128, isSingle, isStatic,
+           ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
            product, TSTDIR, TST,
            tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
             fl.close()
