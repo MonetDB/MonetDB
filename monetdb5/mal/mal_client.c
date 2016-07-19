@@ -223,7 +223,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
-	/* remove garbage from previous connection */
+	/* remove garbage from previous connection 
+	 * be aware, a user can introduce several modules 
+	 * that should be freed to avoid memory leaks */
 	if (c->nspace) {
 		freeModule(c->nspace);
 		c->nspace = 0;
