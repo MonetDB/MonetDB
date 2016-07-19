@@ -144,16 +144,15 @@ typedef struct SYMDEF {
 } *Symbol, SymRecord;
 
 typedef struct VARRECORD {
-	str name;					/* argname or lexical value repr */
+	char id[IDLENGTH];			/* use the space for the full name */
 	malType type;				/* internal type signature */
 	int flags;					/* see below, reserve some space */
-	int tmpindex;				/* temporary variable */
 	ValRecord value;
 	int declared;				/* pc index when it was first assigned */
 	int updated;				/* pc index when it was first updated */
 	int eolife;					/* pc index when it should be garbage collected */
 	int depth;					/* scope block depth */
-	int worker;					/* tread id of last worker producing it */
+	int worker;					/* thread id of last worker producing it */
 	str stc;					/* rendering schema.table.column */
 	BUN rowcnt;					/* estimated row count*/
 } *VarPtr, VarRecord;
@@ -198,6 +197,7 @@ typedef struct MALBLK {
 	struct MALBLK *alternative;
 	int vtop;					/* next free slot */
 	int vsize;					/* size of variable arena */
+	int vid;	 				/* generate local variable counter */
 	VarRecord **var;			/* Variable table */
 	int stop;					/* next free slot */
 	int ssize;					/* byte size of arena */

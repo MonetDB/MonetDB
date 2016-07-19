@@ -148,7 +148,7 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		mb->stmt[k++] = first[i];
 
 	/* added control block */
-	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
+	v = newVariable(mb, "always", 6, TYPE_bit);
 	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = BARRIERsymbol;
 	getArg(p,0) = v;

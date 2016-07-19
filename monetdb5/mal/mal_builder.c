@@ -96,7 +96,7 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 InstrPtr
 newComment(MalBlkPtr mb, const char *val)
 {
-	InstrPtr q = newInstruction(NULL,REMsymbol);
+	InstrPtr q = newInstruction(mb, REMsymbol);
 	ValRecord cst;
 
 	if (q == NULL)
@@ -128,7 +128,7 @@ newCatchStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -146,7 +146,7 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -165,7 +165,7 @@ newExitStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str)) < 0) {
+		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0) {
 			freeInstruction(q);
 			return NULL;
 		}

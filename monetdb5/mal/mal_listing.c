@@ -282,7 +282,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case ASSIGNsymbol :
 		// is any variable explicit or used
 		for (i = 0; i < p->retc; i++)
-			if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
+			if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
 				break;
 
 		if (i == p->retc)
@@ -443,7 +443,7 @@ shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
 	}
 	// handle the result variables
 	for (i = 0; i < p->retc; i++)
-		if (!getVarTmp(mb, getArg(p, i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
+		if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
 			break;
 
 	if (i == p->retc) // no result arguments

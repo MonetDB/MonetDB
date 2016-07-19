@@ -1847,6 +1847,32 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 
 		if (r && r->op == op_project && need_distinct(r)) 
 			return rel;
+		/* duplicate topn direct under union */
+
+		if (r && r->exps && r->op == op_union && !(rel_is_ref(r)) && r->l) {
+			sql_rel *u = r, *x;
+			sql_rel *ul = u->l;
+			sql_rel *ur = u->r;
+
+			/* only push topn once */
+			x = ul;
+			while(x->op == op_project && x->l)
+				x = x->l;
+			if (x && x->op == op_topn)
+				return rel;
+			x = ur;
+			while(x->op == op_project && x->l)
+				x = x->l;
+			if (x && x->op == op_topn)
+				return rel;
+
+			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql, rel->exps));
+			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
+			u->l = ul;
+			u->r = ur;
+			(*changes)++;
+			return rel;
+		}
 		/* duplicate topn + [ project-order ] under union */
 		if (r)
 			rp = r->l;
@@ -5322,18 +5348,26 @@ exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 	}
 }
 
+static void exps_used(list *l);
+
+static void
+exp_used(sql_exp *e)
+{
+	if (e) {
+		e->used = 1;
+		if ((e->type == e_func || e->type == e_aggr) && e->l)
+			exps_used(e->l);
+	}
+}
+
 static void
 exps_used(list *l)
 {
-	node *n;
-
 	if (l) {
-		for (n = l->h; n; n = n->next) {
-			sql_exp *e = n->data;
-	
-			if (e)
-				e->used = 1;
-		}
+		node *n;
+
+		for (n = l->h; n; n = n->next) 
+			exp_used(n->data);
 	}
 }
 
@@ -5348,6 +5382,8 @@ rel_used(sql_rel *rel)
 	} else if (is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		rel_used(rel->l);
 		rel = rel->l;
+	} else if (rel->op == op_table && rel->r) {
+		exp_used(rel->r);
 	}
 	if (rel->exps) {
 		exps_used(rel->exps);
@@ -5367,6 +5403,13 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	switch(rel->op) {
 	case op_basetable:
 	case op_table:
+
+		if (rel->op == op_table && rel->l) {
+			rel_used(rel);
+			if (rel->r)
+				exp_mark_used(rel->l, rel->r);
+			rel_mark_used(sql, rel->l, proj);
+		}
 		break;
 
 	case op_topn:
@@ -5577,6 +5620,8 @@ rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj)
 	case op_basetable:
 	case op_table:
 
+		if (skip_proj && rel->l && rel->op == op_table)
+			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel, refs);
 

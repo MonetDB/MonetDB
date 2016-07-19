@@ -162,7 +162,6 @@ optimizeQuery(Client c)
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	mb = c->curprg->def;
 	chkProgram(c->fdout, c->nspace, mb);
