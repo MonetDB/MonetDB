@@ -600,7 +600,7 @@ findVariableLength(MalBlkPtr mb, str name, int len)
 	int j;
 
 	for (i = mb->vtop - 1; i >= 0; i--)
-		if (mb->var[i] && mb->var[i]->id) {
+		if (mb->var[i]) { /* mb->var[i]->id will always evaluate to true */
 			str s = mb->var[i]->id;
 
 			j = 0;
