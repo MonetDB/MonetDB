@@ -187,7 +187,8 @@ geom_export str numPointsGeometry(unsigned int *out, const GEOSGeometry* geosGeo
 geom_export str wkbPointN(wkb **out, wkb **geom, int *n);
 geom_export str wkbEnvelope(wkb **out, wkb **geom);
 geom_export str wkbEnvelopeFromCoordinates(wkb** out, dbl* xmin, dbl* ymin, dbl* xmax, dbl* ymax, int* srid);
-geom_export str wkbMakePolygon(wkb** out, wkb** external, int* srid); /*Only Polygons without holes*/
+geom_export str wkbMakePolygon(wkb** out, wkb** external, const int* srid); /*Only Polygons without holes*/
+geom_export str wkbMakePolygon_bat(bat *outBAT_id, bat *inBAT_id, const int* srid); /*Only Polygons without holes*/
 geom_export str wkbMakeLine(wkb**, wkb**, wkb**);
 geom_export str wkbMakeLineAggr(wkb** outWKB, bat* inBAT_id);
 geom_export str wkbsubMakeLine(bat *outBAT_id, bat* bBAT_id, bat *gBAT_id, bat *eBAT_id, bit* fla);

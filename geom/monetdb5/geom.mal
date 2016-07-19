@@ -680,6 +680,18 @@ function NPoints(w:bat[:wkb]) :bat[:int];
 	return x;
 end NPoints;
 
+command Polygon_bat(w:bat[:wkb], srid:int) :bat[:wkb] address wkbMakePolygon_bat
+comment "Returns a Polygon created from the provided LineStrings";
+
+function MakePolygon(w:bat[:wkb]) :bat[:wkb];
+	x := Polygon_bat(w, 0);
+	return x;
+end MakePolygon;
+function MakePolygon(w:bat[:wkb], srid:int) :bat[:wkb];
+	x := Polygon_bat(w, srid);
+	return x;
+end MakePolygon;
+
 command GetCoordinate(w:bat[:wkb], idx:int) :bat[:dbl] address wkbGetCoordinate_bat
 comment "Returns the coordinate at position idx of a point, or NULL if not available. idx=0 -> X, idx=1 -> Y, idx=2 -> Z. Input must be point";
 function X(w:bat[:wkb]) :bat[:dbl];

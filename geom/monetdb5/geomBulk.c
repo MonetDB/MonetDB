@@ -587,6 +587,12 @@ wkbForceDim_bat(bat *outBAT_id, bat *inBAT_id, const int *flag)
 {
     return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, flag, wkbForceDim, "batgeom.wkbForceDim");
 }
+
+str
+wkbMakePolygon_bat(bat *outBAT_id, bat *inBAT_id, const int *srid)
+{
+    return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, srid, wkbMakePolygon, "batgeom.wkbMakePolygon");
+}
 /***************************************************************************/
 /*************************** IN: wkb - OUT: bit ****************************/
 /***************************************************************************/

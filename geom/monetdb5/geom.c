@@ -3574,7 +3574,7 @@ wkbEnvelopeFromCoordinates(wkb **out, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax
 }
 
 str
-wkbMakePolygon(wkb **out, wkb **external, int *srid)
+wkbMakePolygon(wkb **out, wkb **external, const int *srid)
 {
 	GEOSGeom geosGeometry, externalGeometry, linearRingGeometry;
 	bit closed = 0;
@@ -5089,9 +5089,13 @@ wkbUnaryCollect(wkb **out, wkb **geoms, int num_geoms)
     }
 
 	GEOSSetSRID(geomCollection, srid);
-	*out = geos2wkb(geomCollection);
-    GDKfree(geomGeometries);
-
+    *out = geos2wkb(geomCollection);
+    if (geomGeometries) {
+        for (i = 0; i < num_geoms; i++) {
+            GEOSGeom_destroy(geomGeometries[i]);
+        }
+        GDKfree(geomGeometries);
+    }
 	return MAL_SUCCEED;
 }
 
@@ -5101,8 +5105,7 @@ wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
 {
 	BAT *inBAT = NULL;
 	BATiter inBAT_iter;
-	BUN i;
-    int j = 0;
+	BUN i = 0;
     wkb *geomWKB = wkbNULL(), **geoms = NULL;
 	str err;
 
@@ -5115,7 +5118,6 @@ wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
     if (!BATcount(inBAT)) {
 		BBPunfix(inBAT->batCacheid);
 		if ((err = wkbCollect(outWKB,&geomWKB, &geomWKB)) != MAL_SUCCEED) {
-			BBPunfix(inBAT->batCacheid);
 			return err;
 		}
         return MAL_SUCCEED;
@@ -5129,11 +5131,11 @@ wkbCollectCascade(wkb **outWKB, bat *inBAT_id)
 		throw(MAL, "geom.Collect", "GDKmalloc failed");
     }
 
-	for (j = 0, i = 0; i < BATcount(inBAT); i++, j++) {
-        geoms[j] = (wkb *) BUNtail(inBAT_iter, i);
+	for (i = 0; i < BATcount(inBAT); i++) {
+        geoms[i] = (wkb *) BUNtail(inBAT_iter, i);
     }
 
-    if ((err = wkbUnaryCollect(outWKB, geoms, j)) != MAL_SUCCEED) {
+    if ((err = wkbUnaryCollect(outWKB, geoms, BATcount(inBAT))) != MAL_SUCCEED) {
         BBPunfix(inBAT->batCacheid);
         if (geoms)
             GDKfree(geoms);
