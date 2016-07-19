@@ -1525,7 +1525,7 @@ def returnCode(proc, f = None):
             return 'error'
     return None                 # no error
 
-def GetBitsAndOIDsAndModsAndThreads(env) :
+def GetBitsAndModsAndThreads(env) :
     global setpgrp
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
@@ -1536,7 +1536,7 @@ def GetBitsAndOIDsAndModsAndThreads(env) :
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     if procdebug:
-        print('GetBitsAndOIDsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+        print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
@@ -1566,12 +1566,12 @@ def GetBitsAndOIDsAndModsAndThreads(env) :
         qOut, qErr = proc.communicate(input = input)
         t.cancel()
         if procdebug:
-            print('GetBitsAndOIDsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
+            print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
     except KeyboardInterrupt:
         t.cancel()
         killProc(proc, proc.stderr, cmd)
         if procdebug:
-            print('GetBitsAndOIDsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
+            print('GetBitsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
         raise
     returncode = returnCode(proc)
     if returncode is not None:
@@ -1586,14 +1586,14 @@ def GetBitsAndOIDsAndModsAndThreads(env) :
             STDERR.write(qErr)
             STDERR.write("\n")
         STDERR.flush()
-        ErrExit('GetBitsAndOIDsAndModsAndThreads: subcommand failed: %s' % returncode)
+        ErrExit('GetBitsAndModsAndThreads: subcommand failed: %s' % returncode)
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
     env['TST_SINGLE'] = ""
     env['TST_THREADS'] = ""
     if qOut:
-        tbos = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;?( and 128bit integers|)", re.MULTILINE)
+        tbos = re.compile("^# Compiled for .*/([63][42]bit)( with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
         tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
@@ -1601,7 +1601,7 @@ def GetBitsAndOIDsAndModsAndThreads(env) :
             if obs:
                 env['TST_BITS'] = obs.group(1)
                 os.environ['TST_BITS'] = env['TST_BITS']
-                if obs.group(3) == " and 128bit integers":
+                if obs.group(2) == " with 128bit integers":
                     env['TST_INT128'] = "int128"
                     os.environ['TST_INT128'] = env['TST_INT128']
             t = tt.match(l)
@@ -1635,7 +1635,7 @@ def GetBitsAndOIDsAndModsAndThreads(env) :
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
     return rtrn
-### GetBitsAndOIDsAndModsAndThreads(env) #
+### GetBitsAndModsAndThreads(env) #
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
@@ -3516,7 +3516,7 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.int128][.single]',\n"
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.int128][.single]',\n"
              "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
               % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])),
             (None, 'f', 'force', None,
@@ -4097,7 +4097,7 @@ def main(argv) :
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
             if Check(cmd, 'clients.quit();\n'):
                 sys.exit(1)
-            if GetBitsAndOIDsAndModsAndThreads(env):
+            if GetBitsAndModsAndThreads(env):
                 sys.exit(1)
             STDERR.flush()
             if verbose:

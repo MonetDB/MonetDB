@@ -152,10 +152,10 @@ monet_hello(void)
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs%s\n",
-			HOST, sizeof(ptr) * 8, sizeof(oid) * 8,
+	printf("# Compiled for %s/" SZFMT "bit%s\n",
+			HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
-			" and 128bit integers"
+			" with 128bit integers"
 #else
 			""
 #endif
