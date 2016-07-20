@@ -969,3 +969,7 @@ comment "Returns a geometry that represents the point set intersection of the Ge
 command geom.Intersectssubjoin(l:bat[:wkb], r:bat[:wkb], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],rr:bat[:oid])
 address Intersectssubjoin
 comment "Return the geometry pairs that intersect";
+
+command geom.IntersectsXYZsubjoin(l:bat[:wkb], x:bat[:dbl], y:bat[:dbl], z:bat[:dbl], srid:int, sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (lr:bat[:oid],sr:bat[:oid])
+address IntersectsXYZsubjoin
+comment "Return the geometry pairs that intersect";
