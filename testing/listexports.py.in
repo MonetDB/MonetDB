@@ -45,12 +45,16 @@ def extract(f):
     res = expre.search(data)
     while res is not None:
         pos = res.end(0)
-        decl = exportutils.normalize(res.group('decl'))
-        res = nmere.search(decl)
-        if res is not None:
-            decls.append((res.group('name'), decl))
+        decl = res.group('decl')
+        if '{' in decl:
+            sys.stderr.write('export on definition:\n%s\n' % res.group(0))
         else:
-            decls.append(('', decl))
+            decl = exportutils.normalize(decl)
+            res = nmere.search(decl)
+            if res is not None:
+                decls.append((res.group('name'), decl))
+            else:
+                decls.append(('', decl))
         res = expre.search(data, pos)
     return decls
 
