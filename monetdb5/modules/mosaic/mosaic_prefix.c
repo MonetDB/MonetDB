@@ -900,8 +900,33 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 		case TYPE_int: projection_prefix(int, unsigned short); break;
 		case TYPE_lng: projection_prefix(lng, ulng); break;
 		case TYPE_oid: projection_prefix(oid, ulng); break;
-		case TYPE_flt: projection_prefix(flt, unsigned int); break;
+		case TYPE_flt: //projection_prefix(flt, unsigned int); break;
+{	flt *r;
+    unsigned int *dst =  (unsigned int*)  (((char*) blk) + MosaicBlkSize);
+    unsigned int mask = *dst++;
+    unsigned int val  =  *dst++,v;
+    unsigned int m;
+    BitVector base;
+    int residu;
+    flt value;
+	m = ~mask;
+	residu = (int) val & m;
+	val = val & mask;
+	base = (BitVector) dst;
+	r= (flt*) task->src;
+	for(; first < last; first++,i++){
+		MOSskipit();
+		v = decompress(base,i,residu);
+		value =  (flt) ((unsigned int)val |(unsigned int) v);
+		*r++ = value;
+		task->n--;
+		task->cnt++;
+	}
+	task->src = (char*) r;
+}
+break;
 		case TYPE_dbl: //projection_prefix(dbl, ulng); break;
+/*
 {	dbl *r;
     ulng *dst =  (ulng*)  (((char*) blk) + MosaicBlkSize);
     ulng mask = *dst++;
@@ -925,6 +950,7 @@ MOSprojection_prefix(Client cntxt,  MOStask task)
 	}
 	task->src = (char*) r;
 }
+*/
 #ifdef HAVE_HGE
 		case TYPE_hge: projection_prefix(hge, unsigned long long); break;
 #endif
