@@ -249,6 +249,7 @@ geom_export str wkbPointOnSurface(wkb**, wkb**);
 geom_export str wkbForceDim(wkb**, wkb**, const int*);
 geom_export str wkbForceDim_bat(bat *outBAT_id, bat *inBAT_id, const int*);
 geom_export str wkbSegmentize(wkb**, wkb**, dbl*);
+geom_export str wkbSegmentize_bat(bat *outBAT_id, bat *inBAT_id, double *flag);
 
 geom_export str wkbDump(bat* idBAT_id, bat* geomBAT_id, wkb**);
 geom_export str wkbDumpP(bat* partentBAT_id, bat* idBAT_id, bat* geomBAT_id, wkb**, int* parent);

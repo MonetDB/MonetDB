@@ -3354,7 +3354,7 @@ wkbBasicInt(int *out, wkb *geom, int (*func) (const GEOSGeometry *), const char 
 	}
 
 	if ((geosGeometry = wkb2geos(geom)) == NULL)
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, name, "%s: wkb2geos failed", name);
 
 	*out = (*func) (geosGeometry);
 
@@ -3488,7 +3488,7 @@ wkbBasic(wkb **out, wkb **geom, GEOSGeometry *(*func) (const GEOSGeometry *), co
 	}
 	if ((geosGeometry = wkb2geos(*geom)) == NULL) {
 		*out = NULL;
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, name, "%s: wkb2geos failed", name);
 	}
 
 	if ((outGeometry = (*func) (geosGeometry)) == NULL) {
@@ -3858,7 +3858,7 @@ wkbBorderPoint(wkb **out, wkb **geom, GEOSGeometry *(*func) (const GEOSGeometry 
 	*out = NULL;
 	geosGeometry = wkb2geos(*geom);
 	if (geosGeometry == NULL) {
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, name, "%s: wkb2geos failed", name);
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) != GEOS_LINESTRING) {
@@ -4709,7 +4709,7 @@ wkbanalysis(wkb **out, wkb **geom1WKB, wkb **geom2WKB, GEOSGeometry *(*func) (co
 			GEOSGeom_destroy(geom1Geometry);
 		if (geom2Geometry)
 			GEOSGeom_destroy(geom2Geometry);
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, name, "%s: wkb2geos failed", name);
 	}
     srid = GEOSGetSRID(geom1Geometry);
 
@@ -5628,7 +5628,7 @@ wkbspatialXYZ(bit *out, wkb **geomWKB_a, double *x, double *y, double *z, int *s
 
 	geosGeometry_a = wkb2geos(*geomWKB_a);
 	if (geosGeometry_a == NULL) {
-		throw(MAL, name, "wkb2geos failed");
+		throw(MAL, name, "%s: wkb2geos failed", name);
 	}
 
     /*Build Geometry b*/
@@ -7573,10 +7573,12 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 	rBAT_iter = bat_iterator(br);
 
     /*Get the Geometry for the inner BAT*/
-    rGeometries = (GEOSGeom*) GDKmalloc(sizeof(GEOSGeom) * BATcount(br));
+    rGeometries = (GEOSGeom*) GDKzalloc(sizeof(GEOSGeom) * BATcount(br));
     BATloop(br, pr, qr) {
         wkb *rWKB = (wkb *) BUNtail(rBAT_iter, pr);
-        rGeometries[j] = wkb2geos(rWKB);
+        rGeometries[pr] = wkb2geos(rWKB);
+        if ( !rGeometries[pr] )
+    		throw(MAL, "algebra.instersects", "wkb2geos failed");
     }
 
     lo = bl->hseqbase;
@@ -7589,6 +7591,8 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
 
         lWKB = (wkb *) BUNtail(lBAT_iter, pl);
         lGeometry = wkb2geos(lWKB);
+        if ( !lGeometry )
+    		throw(MAL, "algebra.instersects", "wkb2geos failed");
 
 	    lMBR = mbrFromGeos(lGeometry);
 	    if (lMBR == NULL || mbr_isnil(lMBR)) {
@@ -7612,7 +7616,7 @@ Intersectssubjoin_intern(bat *lres, bat *rres, bat *lid, bat *rid)
                 BBPunfix(*rid);
                 BBPunfix(xl->batCacheid);
                 BBPunfix(xr->batCacheid);
-                throw(MAL, "geom.Intersects", "wkb2geos failed");
+                throw(MAL, "geom.Intersects", "One of the geometries is NULL");
             }
 
             if (GEOSGetSRID(lGeometry) != GEOSGetSRID(rGeometry)) {

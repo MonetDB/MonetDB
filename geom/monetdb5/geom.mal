@@ -695,6 +695,9 @@ function Z(w:bat[:wkb]) :bat[:dbl];
 	return c;
 end Z;
 
+command Segmentize(g:bat[:wkb], sz:dbl) :wkb address wkbSegmentize_bat
+comment "It creates a new geometry with all segments on it smaller or equal to sz";
+
 command ForceDimensions(g:bat[:wkb], d:int) :bat[:wkb] address wkbForceDim_bat
 comment "Removes or Adds additional coordinates in the geometry to make it d dimensions";
 
