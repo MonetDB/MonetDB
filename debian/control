@@ -8,11 +8,10 @@ Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libgsl0-dev, libpcre3-dev, libreadline-dev, liblzma-dev,
- libssl-dev, libxml2-dev, perl, pkg-config, python, python3,
+ libssl-dev, libxml2-dev, perl, pkg-config, python,
  unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
-X-Python3-Version: >= 3.0
 
 Package: libmonetdb13
 Architecture: any
@@ -163,7 +162,7 @@ Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  monetdb5-server (= ${source:Version}),
  perl-monetdb-client (= ${source:Version}),
  php5-monetdb-client (= ${source:Version}),
- python-monetdb (= ${source:Version}),
+ python-monetdb (>= 1.0),
  monetdb5-sql (= ${source:Version})
 Description: MonetDB client testing tools
  MonetDB is a database management system that is developed from a
@@ -343,32 +342,6 @@ Description: MonetDB testing Python programs
  testing the MonetDB packages.  You probably don't need this, unless
  you are a developer, but if you do want to test, this is the package
  you need.
-
-Package: python-monetdb
-Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}
-Description: Native MonetDB client Python API
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL frontend.
- .
- This package contains the files needed to use MonetDB from a Python
- program.  This package is for Python version 2.  If you want to use
- Python version 3, you need python3-monetdb.
-
-Package: python3-monetdb
-Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
-Description: Native MonetDB client Python API
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL frontend.
- .
- This package contains the files needed to use MonetDB from a Python3
- program.  This package is for Python version 3.  If you want to use
- Python version 2, you need python-monetdb.
 
 Package: monetdb-dbg
 Architecture: any

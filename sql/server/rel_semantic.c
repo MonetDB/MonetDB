@@ -43,6 +43,9 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
+	if (!b || !n) {
+		return NULL;
+	}
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';

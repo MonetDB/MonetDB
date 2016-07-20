@@ -237,7 +237,6 @@ SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case DDL_ROLLBACK:
 		if (sql->session->auto_commit == 1)
 			throw(SQL, "sql.trans", "2DM30!ROLLBACK: not allowed in auto commit mode");
-		RECYCLEdrop(cntxt);
 		ret = mvc_rollback(sql, chain, name);
 		if (ret < 0 && name) {
 			snprintf(buf, BUFSIZ, "3B000!ROLLBACK TO SAVEPOINT: (%s) failed", name);
@@ -248,7 +247,6 @@ SQLtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (sql->session->auto_commit == 0)
 			throw(SQL, "sql.trans", "25001!START TRANSACTION: cannot start a transaction within a transaction");
 		if (sql->session->active) {
-			RECYCLEdrop(cntxt);
 			mvc_rollback(sql, 0, NULL);
 		}
 		sql->session->auto_commit = 0;
@@ -298,7 +296,6 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (sql->session->active) {
-		RECYCLEdrop(cntxt);
 		mvc_rollback(sql, 0, NULL);
 	}
 	return msg;
@@ -332,7 +329,6 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", "25001!START TRANSACTION: cannot start a transaction within a transaction");
 	if (sql->session->active) {
-		RECYCLEdrop(cntxt);
 		mvc_rollback(sql, 0, NULL);
 	}
 	sql->session->auto_commit = 0;

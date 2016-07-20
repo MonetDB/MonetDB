@@ -24,6 +24,9 @@ list *
 list_create(fdestroy destroy)
 {
 	list *l = MNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = NULL;
 	l->destroy = destroy;

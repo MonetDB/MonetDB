@@ -56,10 +56,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
-	name= getArg(q,0)= newVariable(mb,GDKstrdup("name"),TYPE_str);
+	name= getArg(q,0)= newVariable(mb,"name",4,TYPE_str);
 	defineQuery = pushArgument(mb,defineQuery,name);
 	q = newStmt(mb, "mtime", "current_timestamp");
-	start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_timestamp);
+	start= getArg(q,0)= newVariable(mb,"start",5,TYPE_timestamp);
 	defineQuery = pushArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
@@ -67,16 +67,16 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 
-	arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
+	arg= getArg(q,0)= newVariable(mb,"args",4,TYPE_str);
 
 
 	q = newStmt(mb, "alarm", "usec");
-	xtime = getArg(q,0)= newVariable(mb,GDKstrdup("xtime"),TYPE_lng);
-	user = newVariable(mb,GDKstrdup("user"),TYPE_lng);
-	nice = newVariable(mb,GDKstrdup("nice"),TYPE_lng);
-	sys = newVariable(mb,GDKstrdup("sys"),TYPE_lng);
-	idle = newVariable(mb,GDKstrdup("idle"),TYPE_lng);
-	iowait = newVariable(mb,GDKstrdup("iowait"),TYPE_lng);
+	xtime = getArg(q,0)= newVariable(mb,"xtime",5,TYPE_lng);
+	user = newVariable(mb,"user",4,TYPE_lng);
+	nice = newVariable(mb,"nice",4,TYPE_lng);
+	sys = newVariable(mb,"sys",3,TYPE_lng);
+	idle = newVariable(mb,"idle",4,TYPE_lng);
+	iowait = newVariable(mb,"iowait",6,TYPE_lng);
 	q = newStmt(mb, "profiler", "cpustats");
 	q->retc= q->argc =0;
 	q = pushReturn(mb,q,user);
@@ -85,7 +85,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	q = pushReturn(mb,q,idle);
 	q = pushReturn(mb,q,iowait);
 	q = newAssignment(mb);
-	tuples= getArg(q,0) = newVariable(mb,GDKstrdup("tuples"),TYPE_lng);
+	tuples= getArg(q,0) = newVariable(mb,"tuples",6,TYPE_lng);
 	(void) pushLng(mb,q,1);
 
 	for (i = 1; i < limit; i++) {
@@ -102,7 +102,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			getArg(r,0)=xtime;
 
 			q = newStmt(mb, "alarm", "usec");
-			rtime= getArg(q,0)= newVariable(mb,GDKstrdup("rtime"),TYPE_lng);
+			rtime= getArg(q,0)= newVariable(mb,"rtime",5,TYPE_lng);
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -121,7 +121,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				r = pushArgument(mb, r, xtime);
 				getArg(r,0)=xtime;
 				q = newStmt(mb, "alarm", "usec");
-				rtime= getArg(q,0)= newVariable(mb,GDKstrdup("rtime"),TYPE_lng);
+				rtime= getArg(q,0)= newVariable(mb,"rtime",5,TYPE_lng);
 			}
 			q = newStmt(mb, "alarm", "usec");
 			r = newStmt(mb, calcRef, "-");
@@ -132,12 +132,12 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			 * Post execution statistics gathering
 			 */
 			q = newStmt(mb, "mtime", "current_timestamp");
-			finish= getArg(q,0)= newVariable(mb,GDKstrdup("finish"),TYPE_any);
+			finish= getArg(q,0)= newVariable(mb,"finish",6,TYPE_any);
 
 			q = newStmt(mb, "profiler", "cpuload");
-			load = newVariable(mb,GDKstrdup("load"),TYPE_int);
+			load = newVariable(mb,"load",4,TYPE_int);
 			getArg(q,0)= load;
-			io = newVariable(mb,GDKstrdup("io"),TYPE_int);
+			io = newVariable(mb,"io",2,TYPE_int);
 			q= pushReturn(mb,q,io);
 			q = pushArgument(mb,q,user);
 			q = pushArgument(mb,q,nice);
@@ -162,21 +162,21 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (p->barrier == YIELDsymbol){
 			/* the factory yield may return */
 			q = newStmt(mb, "mtime", "current_timestamp");
-			start= getArg(q,0)= newVariable(mb,GDKstrdup("start"),TYPE_any);
+			start= getArg(q,0)= newVariable(mb,"start",5,TYPE_any);
 			q = newStmt(mb, sqlRef, "argRecord");
 			for ( argc=1; argc < old[0]->argc; argc++)
 				q = pushArgument(mb, q, getArg(old[0],argc));
-			arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
+			arg= getArg(q,0)= newVariable(mb,"args",4,TYPE_str);
 			q = newAssignment(mb);
 			q = pushLng(mb,q,0);
 			q = newAssignment(mb);
 			q = pushLng(mb,q,0);
-			tuples= getArg(q,0)= newVariable(mb,GDKstrdup("tuples"),TYPE_lng);
+			tuples= getArg(q,0)= newVariable(mb,"tuples",6,TYPE_lng);
 			newFcnCall(mb,"profiler","setMemoryFlag");
 			q->argc--;
 			pushLng(mb,q,1);
 			q = newStmt(mb, "alarm", "usec");
-			xtime = getArg(q,0)= newVariable(mb,GDKstrdup("xtime"),TYPE_lng);
+			xtime = getArg(q,0)= newVariable(mb,"xtime",5,TYPE_lng);
 		}
 	}
 

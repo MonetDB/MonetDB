@@ -48,7 +48,6 @@
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
 #include "opt_querylog.h"
-#include "opt_recycler.h"
 #include "opt_reduce.h"
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
@@ -82,7 +81,6 @@ struct{
 	{"profiler", &OPTprofilerImplementation},
 	{"pushselect", &OPTpushselectImplementation},
 	{"querylog", &OPTquerylogImplementation},
-	{"recycler", &OPTrecyclerImplementation},
 	{"reduce", &OPTreduceImplementation},
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},

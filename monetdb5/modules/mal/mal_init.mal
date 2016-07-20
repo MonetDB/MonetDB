@@ -69,7 +69,6 @@ include bbp;
 include mal_io;
 include manifold;
 include factories;
-include recycle;
 include remote;
 
 include mat;
